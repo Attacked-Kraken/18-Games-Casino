@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>18 Games Casino</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="app-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="18 Games Casino">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#4d0a1c">
+<meta name="robots" content="noindex">
+<script src="age-gate.js"></script>
+<style>
+/* Layout: one narrow column of two game cards on a deep night-lounge backdrop (single dark look by choice). */
+:root {
+  --bg: #0b0815; --glow-a: #3b1d7a; --glow-b: #0d4d63;
+  --card: #151a2e; --line: #2a3150; --fg: #eef4ff; --mut: #a9b9d6;
+  --age-bg: #3a1a26; --age-fg: #ff9aa8; --go-a: #2dd4bf; --go-b: #7c5cff; --go-fg: #06101e;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { min-height: 100%; }
+body { margin:0; padding-top: calc(22px + env(safe-area-inset-top)) !important; background: radial-gradient(900px 520px at 0% -10%, var(--glow-a), transparent 60%), radial-gradient(700px 440px at 100% 0%, var(--glow-b), transparent 55%), var(--bg);
+  background-color: var(--bg); color: var(--fg); font-family: var(--body); padding: 22px 16px 40px; }
+.w { max-width: 560px; margin: 0 auto; display: grid; gap: 12px; }
+h1 { font-family: var(--display); font-size: 34px; letter-spacing: -.5px; margin: 6px 0 0; text-wrap: balance; }
+.sub { color: var(--mut); margin: 0 0 8px; line-height: 1.45; }
+a.g { display: flex; gap: 14px; align-items: center; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px; }
+a.g:focus-visible { outline: 3px solid var(--go-a); outline-offset: 2px; }
+a.g img { width: 76px; height: 76px; border-radius: 18px; flex: none; object-fit: cover; max-width: 100%; }
+a.g div { flex: 1; min-width: 0; }
+a.g b { font-family: var(--display); font-size: 20px; }
+a.g p { margin: 4px 0 0; color: var(--mut); font-size: 14px; line-height: 1.35; }
+.age { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border-radius: 8px; background: var(--age-bg); color: var(--age-fg); vertical-align: 3px; }
+a.g i { font-style: normal; font-weight: 800; background: linear-gradient(135deg, var(--go-a), var(--go-b)); color: var(--go-fg); border-radius: 12px; padding: 10px 12px; flex: none; }
+.note { color: var(--mut); font-size: 12.5px; margin-top: 6px; line-height: 1.5; }
+.gate { position: fixed; inset: 0; background: rgba(5,4,12,.82); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 9; }
+.gate.on { display: flex; }
+.gate .box { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; max-width: 360px; width: 100%; }
+.gate h2 { font-family: var(--display); margin: 0 0 6px; font-size: 22px; }
+.gate p { color: var(--mut); margin: 0 0 14px; line-height: 1.45; font-size: 14px; }
+.gate .row { display: flex; gap: 8px; margin-bottom: 14px; }
+.gate select { flex: 1; font: inherit; font-size: 16px; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.gate button { font: inherit; font-weight: 800; border: 0; border-radius: 12px; padding: 11px 14px; }
+.gate .go { background: linear-gradient(135deg, var(--go-a), var(--go-b)); color: var(--go-fg); width: 100%; }
+.gate .x { background: transparent; color: var(--mut); width: 100%; margin-top: 6px; }
+</style>
+</head><body>
+<div class="w">
+  <h1>18 Games Casino</h1>
+  <p class="sub">Two games for older players. Progress saves on this device.</p>
+  <a class="g" href="steelfront.html"><img src="steelfront-icon.png" alt=""><div><b>Steelfront</b><span class="age">13+</span><p>3D first-person tactical shooter. Team battles, operations and a gun range.</p></div><i>Play ›</i></a>
+  <a class="g" href="velvet21.html"><img src="velvet21-icon.png" alt=""><div><b>Velvet 21</b><span class="age">18+</span><p>Blackjack night at the Velvet tables. Fun chips only, never money.</p></div><i>Play ›</i></a>
+  <p class="note">Turn your phone sideways for Steelfront. Playing with friends isn't available here.<br>Add to Home Screen: tap Share, then Add to Home Screen.</p>
+</div>
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gT"><div class="box">
+  <h2 id="gT">When were you born?</h2>
+  <p id="gP">We ask once on this device. Your answer stays on this phone and isn't sent anywhere.</p>
+  <div class="row" id="gRow"><select id="gM" aria-label="Month"></select><select id="gY" aria-label="Year"></select></div>
+  <button class="go" id="gGo" type="button">Continue</button>
+  <button class="x" id="gX" type="button">Cancel</button>
+</div></div>
+<script>
+(function () {
+  var M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var gM = document.getElementById('gM'), gY = document.getElementById('gY'), gate = document.getElementById('gate'), want = '';
+  gM.innerHTML = '<option value="">Month</option>' + M.map(function (n, i) { return '<option value="' + (i + 1) + '">' + n + '</option>'; }).join('');
+  var y0 = new Date().getFullYear(), ys = '<option value="">Year</option>';
+  for (var y = y0; y >= y0 - 100; y--) ys += '<option>' + y + '</option>';
+  gY.innerHTML = ys;
+  function names(id) { return id === 'velvet21' ? 'Velvet 21' : 'Steelfront'; }
+  function sorry(id) {
+    document.getElementById('gT').textContent = 'Sorry, not this one';
+    document.getElementById('gP').textContent = names(id) + ' is for players ' + AXAge.NEED[id] + ' and older.';
+    document.getElementById('gRow').style.display = 'none'; document.getElementById('gGo').style.display = 'none';
+    document.getElementById('gX').textContent = 'OK'; gate.classList.add('on');
+  }
+  function open(id) {
+    want = id;
+    if (AXAge.born()) { if (AXAge.ok(id)) location.href = id + '.html'; else sorry(id); return; }
+    gate.classList.add('on'); gM.focus();
+  }
+  document.getElementById('gGo').onclick = function () {
+    var m = +gM.value, y = +gY.value; if (!m || !y) return;
+    AXAge.save(m, y); gate.classList.remove('on'); open(want);
+  };
+  document.getElementById('gX').onclick = function () { gate.classList.remove('on'); };
+  Array.prototype.forEach.call(document.querySelectorAll('a.g'), function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); open(a.getAttribute('href').replace('.html', '')); });
+  });
+  var q = (location.search.match(/play=(velvet21|steelfront)/) || [])[1];
+  if (q) { history.replaceState(null, '', './'); open(q); }
+})();
+</script>
+</body></html>
