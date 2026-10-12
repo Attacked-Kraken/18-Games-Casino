@@ -76,7 +76,7 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
       if (!move || (move.kind !== 'hurdle' && move.kind !== 'stiff')) play(speed > 5 ? 'Sprint_Loop' : speed < 2 ? 'Walk_Loop' : 'Jog_Fwd_Loop', .2, false, speed > 5 ? 1.1 : 1.05);
       if ((nextFall -= dt) <= 0 && !move) { nextFall = 30 + rnd() * 30; if (rnd() < .5) { st = 'trip'; stT = 1.5; play('Death01', .12, true); } else { st = 'trip'; stT = 1.2; play('Roll', .1, true); } }
       if ((chk -= dt) <= 0) { if (Math.hypot(x - cx0, z - cz0) < 1) { if (api.mode === 'tunnel') { x = 0; z = STAD.tz1; } else if (!pickRoute(api.mode === 'toField' ? 0 : null, 58.8) && nav) { const d = nav.random(rnd, casinoOK); if (d) { x = d[0]; z = d[1]; } } } chk = 3; cx0 = x; cz0 = z; } }
-    function fieldStep(dt) { if (api.mode === 'toCasino') { if (steerTo(0, STAD.tz1 - 4, 4, dt) || z < STAD.tz1 - 3) { if (z < 60.8) { api.mode = 'casino'; save(); pickRoute(); } else { steerTo(0, 58, 4, dt); } } play('Jog_Fwd_Loop'); return; }
+    function fieldStep(dt) { if (api.mode === 'toCasino') { const sp = api.spd === 'sprint' ? 6.2 : api.spd === 'walk' ? 1.6 : 4.2; if (z < 60.8) { api.mode = 'casino'; save(); route = null; if (api.cmd === 'roam') pickRoute(); } else if (z > STAD.tz1 - 3) steerTo(Math.abs(x) > 2 ? 0 : x * .5, STAD.tz1 - 4, sp, dt); else steerTo(0, 58, sp, dt); play(sp > 5 ? 'Sprint_Loop' : sp < 2 ? 'Walk_Loop' : 'Jog_Fwd_Loop'); return; }
       if (!stadium.built) stadium.buildNow();
       if (st === 'celebrate') { stT -= dt; vx = vz = 0; if (stT <= 0) st = 'run'; return; }
       if (api.cmd !== 'roam' && ppos) { if (!inStad(ppos.z)) { if (api.cmd !== 'stay') { api.bringBack(); } else { vx = vz = 0; play('Idle_Loop'); } return; }
