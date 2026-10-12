@@ -50,16 +50,16 @@ export async function loadHumans(THREE, base = 'characters/base-human-v2/') {
   const clips = {}; a.animations.forEach((c) => (clips[c.name] = c));
   const hairSrc = {}; await Promise.all(['simpleparted', 'buzzed', 'buzzedfemale', 'beard', 'long', 'buns'].map((n) => L.loadAsync(base + 'hair/hair_' + n + '.glb').then((g) => { g.scene.traverse((o) => { if (o.isSkinnedMesh) hairSrc[n] = o; }); }).catch(() => {})));
   function realHair(obj, body, names, hc) { const bones = {}; obj.traverse((b) => { if (b.isBone) bones[b.name] = b; }); let ok = false;
-    names.forEach((n) => { const s = hairSrc[n]; if (!s) return; const sk = new THREE.Skeleton(s.skeleton.bones.map((b) => bones[b.name] || bones.Head), s.skeleton.boneInverses); const m = new THREE.SkinnedMesh(s.geometry, new THREE.MeshStandardMaterial({ map: s.material.map, color: hc, roughness: .6, metalness: 0 })); m.frustumCulled = false; body.parent.add(m); m.bind(sk, body.bindMatrix); ok = true; }); return ok; } const LOGO = logoTex(THREE); const src = { m: m.scene, f: f.scene };
+    names.forEach((n) => { const s = hairSrc[n]; if (!s) return; const sk = new THREE.Skeleton(s.skeleton.bones.map((b) => bones[b.name] || bones.Head), s.skeleton.boneInverses); const m = new THREE.SkinnedMesh(s.geometry, new THREE.MeshStandardMaterial({ map: s.material.map, color: hc, roughness: .6, metalness: 0, side: THREE.DoubleSide })); m.frustumCulled = false; body.parent.add(m); m.bind(sk, body.bindMatrix); ok = true; }); return ok; } const LOGO = logoTex(THREE); const src = { m: m.scene, f: f.scene };
   const col = (h) => new THREE.Color(h);
   function bodyMat(orig, g, o, cols, skin) { const mat = new THREE.MeshStandardMaterial({ map: orig.map, roughness: .7, metalness: 0 }); const lm = LM[g];
     const U = { uSkin: { value: new THREE.Vector3(...SKINS[skin]) }, uTop: { value: col(cols.top) }, uBot: { value: col(cols.bottom) }, uJak: { value: col(cols.jacket ?? cols.top) }, uShoe: { value: col(cols.shoes) },
       uCfg: { value: new THREE.Vector4(o.top, o.sleeves, o.bottom, o.shoes) }, uJ: { value: { none: 0, denim: 1, blazer: 2, vest: 3 }[o.jacket || 'none'] }, uLogo: { value: LOGO },
-      uL1: { value: new THREE.Vector4(lm.neck, lm.chest, lm.waist, lm.hip) }, uL2: { value: new THREE.Vector4(lm.knee, lm.ankle, lm.sleeveS, lm.sleeveL) }, uSh: { value: lm.shoulder } };
+      uL1: { value: new THREE.Vector4(lm.neck, lm.chest, lm.waist, lm.hip) }, uL2: { value: new THREE.Vector4(lm.knee, lm.ankle, lm.sleeveS, lm.sleeveL) }, uSh: { value: lm.shoulder }, uScalp: { value: 0 }, uHair: { value: new THREE.Color(0x2e1c12) }, uHd: { value: new THREE.Vector4(lm.headC, lm.headR, 0, 0) } };
     mat.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vB;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvB = position;');
       sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-varying vec3 vB; uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec4 uCfg,uL1,uL2; uniform float uJ,uSh; uniform sampler2D uLogo;
+varying vec3 vB; uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec4 uCfg,uL1,uL2; uniform float uJ,uSh,uScalp; uniform vec3 uHair; uniform vec4 uHd; uniform sampler2D uLogo;
 float hsh(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 vec4 outfit(vec3 p){ float ax=abs(p.x); float neck=uL1.x,chest=uL1.y,waist=uL1.z,hip=uL1.w,knee=uL2.x,ankle=uL2.y,sS=uL2.z,sL=uL2.w;
   float top=uCfg.x,slv=uCfg.y,bot=uCfg.z,sho=uCfg.w; bool arm = ax>uSh+.07 && p.y>chest-.08; vec3 c=vec3(0.); float a=0.;
@@ -67,7 +67,7 @@ vec4 outfit(vec3 p){ float ax=abs(p.x); float neck=uL1.x,chest=uL1.y,waist=uL1.z
   bool torso = !arm && p.y<(ax>.075 ? neck+.06 : neck-.03) && p.y>waist-.02; bool legs = !arm && p.y<=waist-.02;
   if(arm){ float lim = slv<.5 ? 0. : slv<1.5 ? sS : sL; if(ax<lim){ c = uJ>.5 && uJ<2.5 ? uJak : uTop; a=1.; if(top>3.5&&top<4.5&&abs(p.z+.01)<.012) c=vec3(.95);} }
   if(torso){ c=uTop; a=1.;
-    if(top>5.5){ if(p.y>chest+.06 && (ax>.05)) a=0.; }                                   /* straps / bodice */
+    if(top>5.5){ if(p.y>chest+.06 && abs(ax-.1)>.014) a=0.; }                                   /* straps / bodice */
     if(top>1.5&&top<2.5){ float s=step(.5,fract(p.x*28.))*.5+step(.5,fract(p.y*28.))*.5; c=mix(c,c*0.55+vec3(.05),s*.6); }   /* plaid */
     if(top>0.5&&top<1.5&&p.z>0.&&abs(p.x)<.11&&p.y>chest-.12&&p.y<chest+.1){ vec4 l=texture2D(uLogo,vec2(p.x/.22+.5,(p.y-chest+.12)/.22)); c=mix(c,l.rgb,l.a); }
     if((top>2.5&&top<4.5)&&p.z>0.&&abs(p.x)<.07&&p.y>chest-.04&&p.y<chest+.1){ vec4 l=texture2D(uLogo,vec2(p.x/.14+.5,(p.y-chest+.04)/.14)); c=mix(c,l.rgb,l.a); }
@@ -79,8 +79,9 @@ vec4 outfit(vec3 p){ float ax=abs(p.x); float neck=uL1.x,chest=uL1.y,waist=uL1.z
     if(bot>3.5 && p.y>end && abs(p.z+.03)<.01) c=vec3(.95); }
   return vec4(c,a); }`)
         .replace('#include <map_fragment>', `#include <map_fragment>
-vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);`); };
-    mat.customProgramCacheKey = () => 'hum2'; return mat; }
+vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);
+  if(uScalp>.5){ vec3 q=vB-vec3(0.,uHd.x,0.); float r=uHd.y; bool sc = q.y > r*.62 || (q.z < -r*.05 && q.y > -r*.55) || (q.z < r*.3 && q.y > r*.1 && abs(q.x) > r*.55); if(q.y > -r*.6 && sc) diffuseColor.rgb = uHair*(.8+.2*fract(sin(dot(floor(vB.xy*900.),vec2(12.9,78.2)))*43758.)); }`); };
+    mat.customProgramCacheKey = () => 'hum2'; mat.userData.U = U; return mat; }
   function hairMesh(style, g, hc) { const lm = LM[g], mat = new THREE.MeshStandardMaterial({ color: hc, roughness: .55, metalness: .05 }), grp = new THREE.Group(), R = lm.headR;
     const cap = (s = 1.06, cov = .52, back = .02) => { const m = new THREE.Mesh(new THREE.SphereGeometry(R * s * 1.08, 18, 12, 0, Math.PI * 2, 0, Math.PI * (cov + .08)), mat); m.rotation.x = -.5; m.position.set(0, .004, -back - .012); m.scale.set(1, 1, 1.06); return m; };
     const add = (m, x, y, z) => { m.position.set(x, y, z); grp.add(m); return m; };
@@ -100,6 +101,7 @@ vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.
         else if (n.material && /Superhero|SuperHero/i.test(n.material.name)) { n.material = bodyMat(n.material, g, o, cols, spec.skin ?? 1); bodyMesh = n; } } });
     const attach = (bone, mesh, wx, wy, wz) => { if (!bone || !mesh) return; obj.add(mesh); mesh.position.set(wx, wy, wz); mesh.updateMatrixWorld(true); bone.attach(mesh); };
     const hs = spec.hair || HAIR[g][0]; const used = bodyMesh && REAL_HAIR[hs] && !o.helmet && realHair(obj, bodyMesh, REAL_HAIR[hs], spec.hairCol ?? 0x2e1c12);
+    if (bodyMesh && !o.helmet && hs !== 'bald_beard' && hs !== 'bald') { const U = bodyMesh.material.userData.U; if (U) { U.uScalp.value = 1; U.uHair.value.set(spec.hairCol ?? 0x2e1c12).multiplyScalar(.85); } }
     if (!used && !o.helmet) { const hair = hairMesh(hs, g, spec.hairCol ?? 0x2e1c12); if (hair) attach(head, hair, 0, lm.headC, -.01); }
     if (o.bandana) { const b = new THREE.Mesh(new THREE.TorusGeometry(lm.headR * 1.08, .016, 6, 24), new THREE.MeshStandardMaterial({ color: cols.acc, roughness: .6 })); b.rotation.x = Math.PI / 2 - .3; attach(head, b, 0, lm.headC + .035, -.01); }
     if (o.hood) { const hd = new THREE.Mesh(new THREE.TorusGeometry(.1, .04, 8, 16, Math.PI), new THREE.MeshStandardMaterial({ color: cols.top, roughness: .8 })); hd.rotation.set(Math.PI / 2 + .3, 0, Math.PI); attach(neck, hd, 0, lm.neck - .02, -.07); }
