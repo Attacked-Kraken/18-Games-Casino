@@ -749,11 +749,11 @@ function frame(now) {
   if (TP.on && boss) { const s = Math.sin(P.yaw), c = Math.cos(P.yaw); let [cx, cz] = collide(P.x + s * 3.1, P.z + c * 3.1); TP.cx += (cx - TP.cx) * Math.min(1, dt * 8); TP.cz += (cz - TP.cz) * Math.min(1, dt * 8);
     cam.position.set(TP.cx, 2.35, TP.cz); cam.rotation.set(P.pitch - .22, P.yaw, 0, 'YXZ');
     const sp = Math.hypot(P.x - TP.lx, P.z - TP.lz) / Math.max(dt, .001); TP.lx = P.x; TP.lz = P.z; boss.object.visible = true; boss.object.position.set(P.x, 0, P.z); boss.object.rotation.y = P.yaw + Math.PI;
-    boss.play(sp > 4.2 ? 'Jog_Fwd_Loop' : sp > .4 ? 'Walk_Formal_Loop' : 'Idle_Loop'); boss.mixer.update(dt);
+    boss.play(sp > 4.2 ? 'Jog_Fwd_Loop' : sp > .4 ? 'Walk_Formal_Loop' : 'Idle_Loop'); boss.mixer.update(dt); if (boss.tickSmoke) boss.tickSmoke(t, scene);
     { const bb = $('bBook'); if (bb) bb.style.display = P.z > 70 && !BV.coach ? 'block' : 'none'; }
     if (people.ready && (TP.rt -= dt) < 0) { TP.rt = .5; for (const q of people.list) if (q.kind === 'walk' && q.st === 'walk' && q.o.visible && !(q.bossT > t) && Math.hypot(q.o.position.x - P.x, q.o.position.z - P.z) < 4.5) { q.bossT = t + 25; q.st = 'wave'; q.tm = 2.2; q.play('Interact', .3, true); } }
     if (cruz && cruz.team) cruz.team.boss = [P.x, P.z]; }
-  else if (boss) { boss.object.visible = BV.k > .05 && TP.on; if (cruz && cruz.team) cruz.team.boss = null; }
+  else if (boss) { boss.object.visible = BV.k > .05 && TP.on; if (boss.smoke) boss.smoke.forEach((s) => (s.visible = false)); if (cruz && cruz.team) cruz.team.boss = null; }
   BV.k += ((BV.on ? 1 : 0) - BV.k) * Math.min(1, dt * 3.2); if (BV.k < .002) BV.k = 0;
   if (BV.k > 0) { const e = BV.k * BV.k * (3 - 2 * BV.k); fpQ.copy(cam.quaternion); if (BV.coach) bvPos.set(BV.x, BV.h, BV.z - BV.h * .75); else bvPos.set(BV.x, BV.h, BV.z + BV.h * .5); bvM.lookAt(bvPos, new THREE.Vector3(BV.x, 0, BV.z), UPV); bvQ.setFromRotationMatrix(bvM);
     cam.position.lerp(bvPos, e); cam.quaternion.copy(fpQ).slerp(bvQ, e); }

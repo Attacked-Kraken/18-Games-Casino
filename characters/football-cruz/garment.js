@@ -3,7 +3,7 @@
    offset along smoothed normals: squared pad shell with arch + caps, jersey drapes from pad edge, slight blouse, tucked at belt,
    loose sleeve cuff over the biceps. Secondary motion: vertex sway/flutter on hem + sleeves driven by the rig's velocity. */
 const CACHE = new WeakMap();
-export function addKit(THREE, h, body, T) {
+export function shellFactory(THREE, body) {
   const src = body.geometry, P = src.attributes.position, N = P.count;
   /* smoothed normals keyed by position (welds UV seams so offsets never crack) */
   const key = (i) => `${Math.round(P.getX(i) * 2000)},${Math.round(P.getY(i) * 2000)},${Math.round(P.getZ(i) * 2000)}`;
@@ -20,20 +20,23 @@ export function addKit(THREE, h, body, T) {
     g.setAttribute('bindP', new THREE.BufferAttribute(bind, 3));
     const out = []; for (let t = 0; t < idx.length; t += 3) { const a = idx[t], b = idx[t + 1], c = idx[t + 2]; if (keepTri((P.getX(a) + P.getX(b) + P.getX(c)) / 3, (P.getY(a) + P.getY(b) + P.getY(c)) / 3, (P.getZ(a) + P.getZ(b) + P.getZ(c)) / 3)) out.push(a, b, c); }
     g.setIndex(out); g.computeVertexNormals(); g.computeBoundingSphere(); cache[name] = g; const m = new THREE.SkinnedMesh(g); m.name = name; m.frustumCulled = false; return m; }
-  const pad = (x, y, z) => { const ax = Math.abs(x); return sm(1.33, 1.42, y) * (1 - sm(.27, .31, ax)); };
+  return { shell, sm };
+}
+export function addKit(THREE, h, body, T) { const src = body.geometry; const { shell, sm } = shellFactory(THREE, body);
+  const pad = (x, y, z) => { const ax = Math.abs(x); return sm(1.35, 1.43, y) * (1 - sm(.25, .285, ax)); };
   const inTorso = (x, y, z) => { const ax = Math.abs(x); if (ax > .27 && y > 1.28) return ax < .425; if (y > 1.56 || y < .94) return false; if (z > 0 && y > 1.52 + 1.6 * ax) return false; return ax < .27; };
   /* shoulder pads: squared shell, raised arch over the collarbones, rounded caps */
   const padM = shell((x, y, z) => y > 1.32 && y < 1.55 && Math.abs(x) < .335 && !(z > 0 && y > 1.50 + 1.6 * Math.abs(x)),
     (x, y, z, n) => { const ax = Math.abs(x), cap = Math.exp(-(((ax - .25) / .05) ** 2) - (((y - 1.43) / .06) ** 2)); const arch = sm(.06, .14, ax) * (1 - sm(.24, .3, ax)) * sm(1.42, 1.5, y);
-      return [.022 + .03 * pad(x, y, z) + .012 * cap, .012 * arch]; }, 'pads');
+      return [.014 + .02 * pad(x, y, z) + .006 * cap, .006 * arch]; }, 'pads');
   padM.material = new THREE.MeshStandardMaterial({ color: 0x1c1626, roughness: .7 });
   /* jersey cloth */
   const lat = (x, y, z) => { const ax = Math.abs(x); return Math.exp(-(((ax - .19) / .05) ** 2) - (((y - 1.24) / .1) ** 2)); };
   const jM = shell(inTorso, (x, y, z, n) => { const ax = Math.abs(x);
-      const base = .016 + .056 * sm(1.3, 1.42, y) * (1 - sm(.22, .38, ax)) + .012 * lat(x, y, z) * (z < 0 ? 1 : .4);
+      const base = .014 + .034 * sm(1.33, 1.43, y) * (1 - sm(.24, .32, ax)) + .012 * lat(x, y, z) * (z < 0 ? 1 : .4);
       if (ax > .27 && y > 1.28) return [base + .014 * sm(.3, .4, ax), 0];                                                              /* sleeve: loose cuff */
       const blouse = Math.exp(-(((y - 1.04) / .04) ** 2)), tuck = sm(.965, 1.0, y);
-      return [(base + .006 * blouse) * (.25 + .75 * tuck), .01 * sm(1.3, 1.42, y) * pad(x, y, z)]; }, 'jersey');
+      return [(base + .006 * blouse) * (.25 + .75 * tuck), .005 * sm(1.33, 1.43, y) * pad(x, y, z)]; }, 'jersey');
   const U = { uNum: { value: T.NUMT }, uName: { value: T.NAMET }, uM: { value: T.MT }, uVel: { value: new THREE.Vector3() }, uT: { value: 0 } };
   const jm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .6, envMap: T.ENV, envMapIntensity: .5, side: THREE.DoubleSide });
   jm.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);

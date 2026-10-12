@@ -80,16 +80,28 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
     /* lower back + side flaps (jaw guards) closing the shell down to the neck/jaw */
     const backG = new THREE.SphereGeometry(.1, 32, 10, Math.PI * 1.1, Math.PI * .8, Math.PI * .5, Math.PI * .3); piece(backG, flapM, -.32); piece(backG, linerM, -.32);
     for (const s of [-1, 1]) { const g = new THREE.SphereGeometry(.1, 14, 10, s < 0 ? -Math.PI * .1 : Math.PI * .76, Math.PI * .34, Math.PI * .5, Math.PI * .32); piece(g, flapM, -.32); piece(g, linerM, -.32);
-      const ear = new THREE.Mesh(new THREE.CircleGeometry(.011, 16), new THREE.MeshBasicMaterial({ color: 0x050308 })); ear.rotation.y = s * Math.PI / 2; at(B.Head, ear, s * (HR[0] + .002), 1.672, -.012);
+      const ear = new THREE.Mesh(new THREE.CircleGeometry(.011, 16), new THREE.MeshBasicMaterial({ color: 0x050308 })); ear.scale.set(1.5, 1, 1); ear.rotation.y = s * Math.PI / 2; at(B.Head, ear, s * (HR[0] + .002), 1.672, -.012);
       const jp = new THREE.Mesh(new THREE.CapsuleGeometry(.012, .035, 4, 8), new THREE.MeshStandardMaterial({ color: 0x241a2c, roughness: .8 })); at(B.Head, jp, s * .088, 1.63, .045);
       const clip = new THREE.Mesh(new THREE.CylinderGeometry(.009, .009, .008, 12), new THREE.MeshStandardMaterial({ color: 0xc9cbd0, metalness: .5, roughness: .3 })); clip.rotation.z = Math.PI / 2; at(B.Head, clip, s * (HR[0] + .003), 1.64, .06); }
     { const ridge = new THREE.Mesh(new THREE.TorusGeometry(.1, .006, 6, 40, Math.PI * .9), shellM); ridge.scale.set(1, HR[1] / .1 * 1.02, HR[2] / .1 * 1.02); ridge.rotation.set(-.32, Math.PI / 2, 0); at(B.Head, ridge, ...HC); }
     /* cage: grey/white bars anchored on the shell at the temples & jaw clips */
     const gm = new THREE.MeshStandardMaterial({ color: 0xcfd1d6, metalness: .35, roughness: .32 }); const bar = (geo, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, gm); m.rotation.set(rx, ry, rz); at(B.Head, m, x, y, z); return m; };
-    for (const [y, r, sz] of [[1.675, .118, 1.22], [1.64, .116, 1.24], [1.605, .106, 1.28]]) { const a = bar(new THREE.TorusGeometry(r, .0042, 6, 36, Math.PI * .86), 0, y, .004, Math.PI / 2, 0, Math.PI * .07); a.scale.set(1, sz, 1); }
-    for (const x of [-.05, 0, .05]) bar(new THREE.CylinderGeometry(.0038, .0038, .075, 6), x, 1.64, x ? .136 : .146);
+    for (const [y, r, sz] of [[1.675, .118, 1.22], [1.64, .116, 1.24], [1.605, .106, 1.28]]) { const a = bar(new THREE.TorusGeometry(r, .0062, 8, 36, Math.PI * .86), 0, y, .004, Math.PI / 2, 0, Math.PI * .07); a.scale.set(1, sz, 1); }
+    for (const x of [-.05, 0, .05]) bar(new THREE.CylinderGeometry(.0056, .0056, .075, 8), x, 1.64, x ? .136 : .146);
     { const cup = new THREE.Mesh(new THREE.CapsuleGeometry(.016, .022, 4, 10), new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: .5 })); cup.rotation.z = Math.PI / 2; at(B.Head, cup, 0, 1.6, .092); }
-    for (const s of [-1, 1]) { const post = bar(new THREE.CylinderGeometry(.0042, .0042, .075, 6), s * .112, 1.64, .03); post.rotation.x = .1; }
+    for (const s of [-1, 1]) { const post = bar(new THREE.CylinderGeometry(.006, .006, .075, 8), s * .112, 1.64, .03); post.rotation.x = .1; }
+
+    /* Riddell-style details: top vents, clear cage clips, chin strap with buckles, rear bumper */
+    { const rx = -.32, ell = (th, ph, k = 1) => { const v = new THREE.Vector3(Math.sin(th) * Math.sin(ph) * HR[0] * k, Math.cos(th) * HR[1] * k, Math.sin(th) * Math.cos(ph) * HR[2] * k); v.applyAxisAngle(new THREE.Vector3(1, 0, 0), rx); return v.add(new THREE.Vector3(...HC)); };
+      const vm = new THREE.MeshStandardMaterial({ color: 0x08060c, roughness: .8 });
+      for (const [th, ph] of [[.42, .32], [.42, -.32], [.62, .55], [.62, -.55], [.55, 2.9], [.55, -2.9]]) { const v = new THREE.Mesh(new THREE.CapsuleGeometry(.0055, .022, 3, 8), vm); const p = ell(th, ph, 1.005); v.lookAt(p.clone().sub(new THREE.Vector3(...HC)).add(p)); v.rotateX(Math.PI / 2); at(B.Head, v, p.x, p.y, p.z); }
+      const clipM = new THREE.MeshPhysicalMaterial({ color: 0xe8eef2, roughness: .15, transmission: 0, clearcoat: 1, metalness: 0 });
+      for (const s of [-1, 1]) { const c = new THREE.Mesh(new THREE.BoxGeometry(.016, .012, .01), clipM); at(B.Head, c, s * .07, 1.726, .093); }
+      const strapM = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: .7 }), bkM = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: .8, roughness: .3 });
+      for (const s of [-1, 1]) for (const [a, b, c] of [[[s * .108, 1.648, -.01], [s * .085, 1.6, .05], [s * .03, 1.585, .095]], [[s * .1, 1.67, .06], [s * .08, 1.62, .085], [s * .03, 1.6, .1]]]) {
+        const cur = new THREE.CatmullRomCurve3([a, b, c].map((q) => new THREE.Vector3(...q))); const tb = new THREE.Mesh(new THREE.TubeGeometry(cur, 10, .0035, 5), strapM); tb.scale.set(1, 1, 1); obj.add(tb); tb.updateMatrixWorld(true); B.Head.attach(tb);
+        const bk = new THREE.Mesh(new THREE.BoxGeometry(.012, .012, .004), bkM); const m = cur.getPoint(.45); bk.lookAt(m.clone().add(new THREE.Vector3(s, 0, .3))); at(B.Head, bk, m.x + s * .003, m.y, m.z); }
+      { const bump = new THREE.Mesh(new THREE.TorusGeometry(.1, .007, 6, 20, Math.PI * .5), new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: .5 })); bump.scale.set(HR[0] / .1 * 1.03, 1, HR[2] / .1 * 1.03); bump.rotation.set(Math.PI / 2, 0, Math.PI * 1.25); at(B.Head, bump, 0, 1.635, -.012); } }
     /* heavy build: bone scaling */
     const S = (n, x, y = x, z = x) => B[n] && B[n].scale.set(x, y, z);
     S('spine_03', 1.06); S('neck_01', 1.1); S('Head', 1 / (1.06 * 1.1)); S('clavicle_l', 1.07); S('clavicle_r', 1.07);
