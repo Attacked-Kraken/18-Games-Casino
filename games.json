@@ -56,6 +56,18 @@
    "category": "cards",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "baccaratnoir",
+   "file": "baccaratnoir.html",
+   "title": "Baccarat Noir",
+   "tagline": "3D punto banco with bead road and live tables for 6. Fun chips only.",
+   "rating": "18+",
+   "icon": "baccaratnoir-icon.png",
+   "accent": "#c04dff",
+   "category": "cards",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }

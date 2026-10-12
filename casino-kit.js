@@ -146,7 +146,7 @@ export async function boot(o) {
     m.renderOrder = 3; return m; };
   K.rbox = (w, h, d, r, m) => { const s = new THREE.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r);
     s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
-    const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelSize: Math.min(.03, r * .5), bevelThickness: Math.min(.03, r * .5), bevelSegments: 3, curveSegments: 8 }); g.translate(0, 0, -d / 2);
+    const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelSize: Math.min(.03, r * .5), bevelThickness: Math.min(.03, r * .5), bevelSegments: 3, curveSegments: 8 }); g.translate(0, 0, -d / 2); { const P = g.attributes.position, U = g.attributes.uv; for (let i = 0; i < U.count; i++) U.setXY(i, (P.getX(i) + w / 2) / w, (P.getY(i) + h / 2) / h); }
     const me = new THREE.Mesh(g, m); me.castShadow = me.receiveShadow = true; return me; };
 
   /* ---------- casino backdrop: patterned carpet, distant glowing machines, bokeh ---------- */
