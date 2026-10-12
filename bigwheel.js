@@ -42,7 +42,7 @@ K.$('bwC').onclick = () => { if (spinning) return; K.give(total()); SEG.forEach(
 let last = null;
 K.$('bwGo').onclick = () => { if (spinning) return; if (!total()) { if (last && K.take(Object.values(last).reduce((a, b) => a + b, 0))) { Object.assign(bets, last); upd(); } else { K.msg('Bet on a symbol', 1200); return; } } K.$('bwGo').disabled = true; tb.go(); };
 function onResult(i) { spinTo(i, () => { const k = LAY[i], s = SEG.find(x => x.k === k); K.msg(k === 'JOKER' ? 'Joker' : k === 'STAR' ? 'Star' : k, 1500, s.pay >= 11);
-    const st = total(); if (st) { const ret = bets[k] ? bets[k] * (s.pay + 1) : 0; BU.glow([K.$('bwS' + k)]); BU.settle(SEG.filter(x => bets[x.k]).map(x => ({ el: K.$('bwS' + x.k), win: x.k === k }))); BU.banner(st, ret); K.payout(st, ret, C.clone().add(new THREE.Vector3(0, RAD, .5)), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); last = { ...bets }; }
+    K.say(k === 'JOKER' ? 'Joker!' : k === 'STAR' ? 'Star!' : k, 1); const st = total(); if (st) { const ret = bets[k] ? bets[k] * (s.pay + 1) : 0; BU.glow([K.$('bwS' + k)]); BU.settle(SEG.filter(x => bets[x.k]).map(x => ({ el: K.$('bwS' + x.k), win: x.k === k }))); BU.banner(st, ret); K.payout(st, ret, C.clone().add(new THREE.Vector3(0, RAD, .5)), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); last = { ...bets }; }
     SEG.forEach(x => bets[x.k] = 0); K.$('bwT').textContent = '0'; K.$('bwGo').disabled = false; }); }
 let phase = 'bet';
 const tb = K.sharedRounds({ game: 'bw', betMs: 15000, goMs: 9000, roll: () => M.bwSpin(), onResult, blurb: 'Open a table and share the code. Everyone bets during the countdown; one spin for the whole table.',

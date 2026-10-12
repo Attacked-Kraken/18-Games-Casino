@@ -62,7 +62,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#070505;color:var(--fg
 /* ---------- sound (WebAudio synthesis, shared mute) ---------- */
 let AC = null, master = null, muted = false;
 try { muted = localStorage.getItem('gc18_mute') === '1'; } catch (e) {}
-function ac() { if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = muted ? 0 : .5; master.connect(AC.destination); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
+function ac() { if (!AC && window.GAudio) { const c = GAudio.ctx(); if (c) { AC = c; master = GAudio.sfxBus; return AC; } } if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); master = AC.createGain(); master.gain.value = muted ? 0 : .5; master.connect(AC.destination); } catch (e) {} } if (AC && AC.state === 'suspended') AC.resume(); return AC; }
 export function tone(f, d, type = 'sine', v = .2, t0 = 0, slide = 0) { const a = ac(); if (!a) return; const t = a.currentTime + t0, o = a.createOscillator(), g = a.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + d);
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .008); g.gain.exponentialRampToValueAtTime(.0008, t + d); o.connect(g).connect(master); o.start(t); o.stop(t + d + .05); }
@@ -99,7 +99,8 @@ export async function boot(o) {
   $('ckRules').onclick = () => $('ckRulesS').classList.add('on');
   document.querySelectorAll('[data-x]').forEach(b => b.onclick = () => b.closest('.ck-sheet').classList.remove('on'));
   const setMute = () => { $('ckMute').textContent = muted ? 'Muted' : 'Sound'; if (master) master.gain.value = muted ? 0 : .5; };
-  $('ckMute').onclick = () => { muted = !muted; try { localStorage.setItem('gc18_mute', muted ? '1' : '0'); } catch (e) {} setMute(); }; setMute();
+  if (window.GAudio) { GAudio.bindButton($('ckMute')); GAudio.music(o.id); } else { $('ckMute').onclick = () => { muted = !muted; try { localStorage.setItem('gc18_mute', muted ? '1' : '0'); } catch (e) {} setMute(); }; setMute(); }
+  K.say = (t, f) => window.GAudio && GAudio.say(t, f); K.fx = (n) => window.GAudio && GAudio.sfx(n);
   addEventListener('pointerdown', () => ac(), { once: true });
   K.ctrl = $('ckCtrl');
   /* chips */
@@ -359,7 +360,7 @@ export async function boot(o) {
     $('ckDailyGo').onclick = () => { Chips.give(amt); try { localStorage.setItem('gc18_daily', JSON.stringify({ d: today(), run })); } catch (e) {} $('ckDaily').classList.remove('on'); SFX.win(true); K.burst(new THREE.Vector3(0, 1.5, 0), 40); };
     setTimeout(() => $('ckDaily').classList.add('on'), 900); };
   /* call after each settled round: staked, returned (incl. stake), where (Vector3) */
-  K.payout = (staked, returned, where, mode) => { K.result(staked, returned, mode); const net = returned - staked;
+  K.payout = (staked, returned, where, mode) => { K.result(staked, returned, mode); const net = returned - staked; if (window.GAudio) { if (net >= staked * 10 && staked) { GAudio.sfx('bigwin'); GAudio.say('Big winner!'); } else if (net > 0) GAudio.sfx('win'); else if (net < 0) GAudio.sfx('lose'); }
     if (returned > 0) K.give(returned);
     if (net > 0) { streak++; const big = returned >= staked * 5; K.msg((big ? 'BIG WIN ' : 'WIN ') + '+' + fmt(net) + (streak >= 3 ? '  ·  streak ' + streak : ''), big ? 2600 : 1800, big);
       SFX.win(big); K.burst(where, big ? 70 : 24); if (K.winLight) K.winLight.intensity = big ? 60 : 30; K.shake = big ? .08 : .02; }

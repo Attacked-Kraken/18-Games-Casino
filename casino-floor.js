@@ -648,8 +648,8 @@ if (window.Chips) showChips(); else fetch('chips.js', { method: 'HEAD', cache: '
 /* ---------- ambient casino synth ---------- */
 let AC = null, master = null, muted = true; try { muted = localStorage.getItem(SKEY) !== '0'; } catch (e) {}
 const sndBtn = $('bSnd'); sndBtn.textContent = muted ? 'Muted' : 'Sound';
-sndBtn.onclick = () => { muted = !muted; try { localStorage.setItem(SKEY, muted ? '1' : '0'); } catch (e) {} sndBtn.textContent = muted ? 'Muted' : 'Sound'; audioOn(); if (master) master.gain.setTargetAtTime(muted ? 0 : .5, AC.currentTime, .3); };
-function audioOn() { if (AC || muted) { if (AC && AC.state === 'suspended') AC.resume(); return; }
+if (window.GAudio) GAudio.bindButton(sndBtn); else sndBtn.onclick = () => { muted = !muted; try { localStorage.setItem(SKEY, muted ? '1' : '0'); } catch (e) {} sndBtn.textContent = muted ? 'Muted' : 'Sound'; audioOn(); if (master) master.gain.setTargetAtTime(muted ? 0 : .5, AC.currentTime, .3); };
+function audioOn() { if (window.GAudio) { GAudio.unlock(); if (!AC) { GAudio.music('lobby'); GAudio.ambience(); } AC = GAudio.ctx(); master = GAudio.sfxBus; muted = false; return; } if (AC || muted) { if (AC && AC.state === 'suspended') AC.resume(); return; }
   try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
   master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination); master.gain.setTargetAtTime(.5, AC.currentTime, 1);
   const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900; lp.connect(master);

@@ -64,6 +64,7 @@ button { font:inherit; font-weight:800; border:0; border-radius:12px; cursor:poi
 <link rel="stylesheet" href="lux-ui.css">
 <link rel="icon" type="image/png" href="velvet21-icon.png">
 <link rel="apple-touch-icon" href="velvet21-icon.png">
+<script src="audio.js"></script>
 </head><body>
 <canvas id="c"></canvas>
 <div class="top">
@@ -192,7 +193,7 @@ class Engine {
     st.seats.forEach(s => { if (!s) return; s.net = 0; s.hands.forEach(h => { const t = total(h.cards).t; let r;
       if (t > 21) r = 'lose'; else if (isBJ(h) && !dBJ) r = 'bj'; else if (dBJ) r = isBJ(h) ? 'push' : 'lose'; else if (d > 21 || t > d) r = 'win'; else if (t === d) r = 'push'; else r = 'lose';
       h.res = r; s.net += r === 'bj' ? h.bet * 1.5 : r === 'win' ? h.bet : r === 'lose' ? -h.bet : 0; }); });
-    st.phase = 'done'; st.note = d > 21 ? 'Dealer busts' : 'Dealer has ' + d; this.busy = false; this.push();
+    st.phase = 'done'; st.note = d > 21 ? 'Dealer busts' : 'Dealer has ' + d; if (window.GAudio) GAudio.say(st.note, 1); this.busy = false; this.push();
     setTimeout(() => { st.phase = 'bet'; st.round++; st.dealer = { cards: [] }; st.note = 'Place your bets'; st.seats.forEach(s => { if (s) { s.hands = []; s.ready = false; s.net = 0; } }); this.push(); }, FAST ? 2500 : 4500); }
   tick() { const st = this.st; if (!st.deadline || Date.now() < st.deadline || this.busy) return;
     if (st.phase === 'bet') { this.maybeDeal(); this.push(); }

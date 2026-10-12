@@ -49,7 +49,7 @@ document.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { if (busy 
   if ((k === 'pass' || k === 'dont') && point) { K.msg('Line bets go on before the point', 1300); return; } if ((k === '6' || k === '8') && !point) { K.msg('Place bets work once a point is set', 1300); return; }
   const v = chip.get(); if (!K.take(v)) return; if (k === '6' || k === '8') bets.place[k] += v; else bets[k] += v; tb.say('bet', { amt: v }); upd(); });
 K.$('dGo').onclick = () => { if (busy) return; if (!onTable()) { K.msg('Put chips on PASS or FIELD', 1300); return; } K.$('dGo').disabled = true; tb.go(); };
-function onResult(d) { busy = true; throwDice(d, () => { const before = onTable(), res = M.crapsRoll({ point }, bets, d); K.$('dR').textContent = d[0] + ' + ' + d[1] + ' = ' + res.total;
+function onResult(d) { busy = true; K.fx('dice'); throwDice(d, () => { const before = onTable(), res = M.crapsRoll({ point }, bets, d); K.$('dR').textContent = d[0] + ' + ' + d[1] + ' = ' + res.total; K.say(res.total === 7 ? (point ? 'Seven out' : 'Seven, winner') : res.total === point ? 'Winner! ' + res.total : res.total === 11 ? 'Yo eleven' : String(res.total), 1);
     /* stakes leaving the table */ let staked = 0; ['pass', 'dont', 'field'].forEach(k => { if (res.clear[k]) { staked += bets[k]; bets[k] = 0; } }); [6, 8].forEach(n => { if (res.clear['place' + n]) { staked += bets.place[n]; bets.place[n] = 0; } });
     const ret = res.ret; const placeWins = Object.values(res.out.place).reduce((a, b) => a + b, 0); if (placeWins) staked += 0;
     const hit = ret > staked;

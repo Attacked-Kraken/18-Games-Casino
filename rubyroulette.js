@@ -40,7 +40,7 @@ function ballPos() { ball.position.set(Math.sin(ballA) * ballR, ballY, -Math.cos
 K.onFrame((dt, t) => { rotA += rotV * dt; rotor.rotation.y = -rotA; ruby.rotation.y += dt * 2;
   if (anim) anim(dt); else { ballA = -rotA + restIdx * step + step / 2 * 0; ballA = rotA2pocket(restIdx); } ballPos(); });
 let restIdx = 0; const rotA2pocket = (i) => rotA + i * step; /* pocket centre angle in world (clockwise from -z) */
-function spinTo(num, done) { spinning = true; const idx = M.RL_WHEEL.indexOf(num); rotV = 1.6; let t = 0; const T = 5.2, t0 = performance.now(); const a0 = ballA;
+function spinTo(num, done) { spinning = true; K.say('No more bets'); K.fx('ball'); const idx = M.RL_WHEEL.indexOf(num); rotV = 1.6; let t = 0; const T = 5.2, t0 = performance.now(); const a0 = ballA;
   /* ball: fast counter orbit that decays, then drops in and locks to pocket */
   const totalBall = -Math.PI * 2 * 5.5; let ticked = 0;
   anim = (dt) => { t = (performance.now() - t0) / 1000; const k = Math.min(1, t / T), e = 1 - Math.pow(1 - k, 3);
@@ -107,7 +107,7 @@ function drawStrip() { const cnt = {}; hist.forEach(n => cnt[n] = (cnt[n] || 0) 
 /* ----- result ----- */
 function showResult(n) { while (resLbl.children.length) resLbl.remove(resLbl.children[0]);
   const col = M.rlColor(n), l = K.label(String(n), { size: .9, bg: col === 'red' ? '#8e1b2c' : col === 'green' ? '#0f5a3e' : '#14101a', color: '#fff', stroke: '#000' }); resLbl.add(l); }
-function onResult(n) { spinTo(n, () => { showResult(n); hist.unshift(n); hist.length = Math.min(60, hist.length); drawStrip();
+function onResult(n) { spinTo(n, () => { showResult(n); K.say(n + (n ? ' ' + M.rlColor(n) : ' green'), 1); hist.unshift(n); hist.length = Math.min(60, hist.length); drawStrip();
     const staked = total(); let ret = 0; bets.forEach(b => ret += M.rlPayout(b.cover, b.stake, n));
     BU.glow([spots.get('n' + n).el]); BU.settle(bets.map(b => ({ el: spots.get(b.key).el, win: b.cover.includes(n) })));
     if (staked) { BU.banner(staked, ret); K.payout(staked, ret, new THREE.Vector3(0, 1, 0), table.isLive() ? 'net' : 'cpu'); if (ret > staked) table.say('won', { amt: ret - staked }); }
