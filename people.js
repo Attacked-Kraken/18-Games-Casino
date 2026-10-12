@@ -10,12 +10,15 @@ export function createPeople(ctx) { const { THREE, scene, mobile } = ctx; const 
       const p = H.make(spec, (g === 'f' ? 1.64 : 1.76) + (rnd() - .5) * .08); scene.add(p.object); p.o = p.object; return p; };
     const P = ctx.PATHS, cap = (n) => Math.round(n * (mobile ? .55 : 1));
     for (let i = 0; i < cap(16); i++) { const p = make(); Object.assign(p, { kind: 'walk', path: P[i % P.length], u: rnd(), dir: rnd() < .5 ? 1 : -1, off: (rnd() - .5) * 1.2, sp: 1.05 + rnd() * .25, st: 'walk', tm: 3 + rnd() * 8, formal: i % 3 === 0 }); p.mixer.setTime(rnd() * 2); p.play(p.formal ? 'Walk_Formal_Loop' : 'Walk_Loop', 0); list.push(p); }
-    ctx.seats.slice(0, cap(18)).forEach((s, j) => { const p = make(); p.ts = .8 + rnd() * .4; Object.assign(p, { kind: 'sit', x: s.x, z: s.z, ry: s.ry, y: s.y ?? 0, st: 'sit', tm: 4 + rnd() * 10 }); p.play(j % 3 ? 'Sitting_Idle_Loop' : 'Sitting_Talking_Loop', 0); p.mixer.setTime(rnd() * 3); list.push(p); });
+    ctx.seats.slice(0, cap(18)).forEach((s, j) => { const p = make(); p.ts = .8 + rnd() * .4; Object.assign(p, { kind: 'sit', x: s.x, z: s.z, ry: s.ry, y: s.y ?? 0, sy: s.sy, st: 'sit', tm: 4 + rnd() * 10 }); p.play(j % 3 ? 'Sitting_Idle_Loop' : 'Sitting_Talking_Loop', 0); p.mixer.setTime(rnd() * 3); list.push(p); });
     ctx.pairs.slice(0, cap(6)).forEach(([x, z, a]) => { for (let s = 0; s < 2; s++) { const p = make(); const dx = Math.sin(a) * .5 * (s ? 1 : -1), dz = Math.cos(a) * .5 * (s ? 1 : -1);
       Object.assign(p, { kind: 'talk', x: x + dx, z: z + dz, ry: a + (s ? Math.PI : 0), st: 'talk', tm: 3 + rnd() * 6 }); p.play('Idle_Talking_Loop', 0); p.mixer.setTime(rnd() * 4); list.push(p); } });
     ctx.bar.slice(0, cap(8)).forEach(([x, z, ry], j) => { const p = make(); Object.assign(p, { kind: 'bar', x, z, ry, st: 'bar', tm: 5 + rnd() * 8 }); p.play(j % 2 ? 'Idle_Talking_Loop' : 'Idle_Loop', 0); list.push(p); });
     ctx.dealers.slice(0, cap(30)).forEach(([x, z, ry]) => { const p = make({ dealer: 1 }); Object.assign(p, { kind: 'dealer', x, z, ry, st: 'deal', tm: 2 + rnd() * 6 }); p.play('Idle_Loop', 0); p.mixer.setTime(rnd() * 3); list.push(p); });
     list.forEach((p) => { if (p.kind !== 'walk') { p.o.position.set(p.x, p.y || 0, p.z); p.o.rotation.y = p.ry; } });
+    /* seat by pelvis: after posing the sit clip, shift the root so the pelvis bone sits on the seat cushion (no floating / sinking) */
+    const pv = new THREE.Vector3(); list.forEach((p) => { if (p.kind !== 'sit') return; p.mixer.update(0); p.o.updateMatrixWorld(true); let pel = null; p.o.traverse((n) => { if (!pel && n.isBone && /^pelvis$/i.test(n.name)) pel = n; }); if (!pel) return;
+      pel.getWorldPosition(pv); const bx = -Math.sin(p.ry) * .04, bz = -Math.cos(p.ry) * .04; p.o.position.x += p.x + bx - pv.x; p.o.position.z += p.z + bz - pv.z; p.o.position.y += (p.sy ?? .65) - pv.y; p.seatFix = 1; });
     const tmp = new THREE.Vector3(); let fr = 0; const zv = ctx.zoneVisible || (() => true);
     api.update = (dt, t, pos) => { fr++; list.forEach((p, i) => {
       if (p.kind === 'walk') { p.tm -= dt; const [[ax, az], [bx, bz]] = p.path, L = Math.hypot(bx - ax, bz - az) || 1;

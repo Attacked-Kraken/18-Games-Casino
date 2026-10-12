@@ -520,7 +520,7 @@ function poseWalkers(t, all) { walkers.forEach((w, i) => { if (w.seat && !all) r
   set(PI_.arm, i * 2, -.22, 1.56, 0, -sw * .8); set(PI_.arm, i * 2 + 1, .22, 1.56, 0, sw * .8); set(PI_.head, i, 0, 1.76, 0); set(PI_.hair, i, 0, 1.775, -.01); });
   Object.values(PI_).forEach((m) => (m.instanceMatrix.needsUpdate = true)); }
 poseWalkers(0, true);
-const slotSeats = []; SLOTS.forEach((arr) => arr.forEach((s, i) => { if ((i * 5) % 7 < 2) { const [fx, fz] = fwdOf(s.ry); slotSeats.push({ x: s.x + fx * .78, z: s.z + fz * .78, ry: s.ry + Math.PI, y: 0 }); } }));
+const slotSeats = []; SLOTS.forEach((arr) => arr.forEach((s, i) => { if ((i * 5) % 7 < 2) { const [fx, fz] = fwdOf(s.ry); slotSeats.push({ x: s.x + fx * .93, z: s.z + fz * .93, ry: s.ry + Math.PI, y: 0, sy: .74 }); } }));
 const pplV = new THREE.Vector3();
 /* dealers: one per table (main floor + Grand Hall), standing on the dealer side facing the players */
 const toW = (x, z, ry, lx, lz) => { const c = Math.cos(ry), s = Math.sin(ry); return [x + lx * c + lz * s, z - lx * s + lz * c]; };
