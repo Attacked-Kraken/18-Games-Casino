@@ -62,7 +62,7 @@ body.walk #hud { display: block; }
 #hTitle { font: 400 19px var(--serif); letter-spacing: .06em; color: var(--gold2); margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 #hChips { display: none; align-items: center; gap: 6px; padding: 0 10px; height: 36px; border-radius: 2px; background: rgba(10,8,8,.72); border: 1px solid var(--line); font: 400 16px var(--serif); color: var(--gold2); }
 #hChips.on { display: flex; }
-#mini { position: fixed; z-index: 5; left: 8px; top: calc(112px + env(safe-area-inset-top)); width: 132px; height: 72px; opacity: .92; border-radius: 2px; background: rgba(10,8,8,.72); border: 1px solid var(--line); cursor: pointer; }
+#mini { position: fixed; z-index: 5; left: 8px; top: calc(112px + env(safe-area-inset-top)); width: 92px; height: 138px; opacity: .92; border-radius: 2px; background: rgba(10,8,8,.72); border: 1px solid var(--line); cursor: pointer; }
 #prompt { position: fixed; z-index: 6; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
   transition: opacity .3s, transform .3s; font: 400 21px var(--serif); letter-spacing: .06em; border: 1px solid #e8d3a0; border-radius: 2px; padding: 12px 26px; color: #1a1208;
   background: linear-gradient(#e2c587,#b08d57 55%,#8a6a3a); box-shadow: 0 10px 30px rgba(0,0,0,.6); white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
@@ -98,7 +98,7 @@ body.walk #hud { display: block; }
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
     <button class="hb" id="bWallet" type="button">Wallet</button><button class="hb" id="bGames" type="button">Games</button><button class="hb" id="bZoom" type="button">Zoom Out</button><button class="hb" id="bSnd" type="button" aria-label="Sound">Muted</button><button class="hb" id="bList" type="button">List</button></div>
-  <canvas id="mini" width="336" height="184" aria-label="Map: tap for the games list"></canvas>
+  <canvas id="mini" width="276" height="414" aria-label="Map: tap for the games list"></canvas>
   <div id="joy"><i></i></div>
   <div id="hint"></div>
   <button id="prompt" type="button"></button>

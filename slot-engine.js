@@ -10,6 +10,14 @@ export async function slotGame(T) {
   K.backdrop({ carpet: T.carpet, pattern: T.pattern, y: -1 }); K.setFloor(-1); K.lights({ c1: T.light1, c2: T.light2, key: 16, keyPos: [1, 6, 9], target: [0, 2.6, 0] });
   /* ---------- symbol sprites ---------- */
   const TS = 200, sprites = T.symbols.map((s, i) => paintSym(s, i));
+  /* drawn dragon-head emblem (vector paths, renders on every device; no font glyphs) */
+  function dragonEmblem(g, cx, cy) { g.save(); g.translate(cx, cy); g.shadowColor = '#ffb400'; g.shadowBlur = 14;
+    const gr = g.createLinearGradient(0, -44, 0, 40); gr.addColorStop(0, '#fff2a0'); gr.addColorStop(1, '#d08a10'); g.fillStyle = gr; g.strokeStyle = '#3a0800'; g.lineWidth = 4;
+    g.beginPath(); g.moveTo(-46, 10); g.quadraticCurveTo(-40, -30, -8, -34); g.lineTo(-18, -52); g.lineTo(4, -38); g.lineTo(10, -56); g.lineTo(22, -34);
+    g.quadraticCurveTo(46, -26, 54, -2); g.lineTo(40, 2); g.lineTo(50, 14); g.quadraticCurveTo(22, 20, 6, 12); g.lineTo(14, 30); g.lineTo(-6, 18); g.lineTo(-12, 36); g.lineTo(-22, 18); g.quadraticCurveTo(-36, 22, -46, 10); g.closePath(); g.fill(); g.stroke(); g.shadowBlur = 0;
+    g.fillStyle = '#c2261a'; g.beginPath(); g.ellipse(16, -16, 8, 5, -.3, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(18, -17, 2.4, 0, 7); g.fill();
+    g.strokeStyle = '#7a2a04'; g.lineWidth = 3; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(-18 + i * 10, -4 + i * 2, 9, .3, 2.2); g.stroke(); }
+    g.fillStyle = '#ff6a2a'; g.beginPath(); g.moveTo(52, 6); g.quadraticCurveTo(72, 0, 80, 12); g.quadraticCurveTo(70, 10, 66, 20); g.quadraticCurveTo(60, 10, 52, 6); g.fill(); g.restore(); }
   function paintSym(s, i) { const c = document.createElement('canvas'); c.width = c.height = TS; const g = c.getContext('2d'), h = TS / 2;
     const bg = g.createRadialGradient(h, h * .8, 10, h, h, TS * .7); bg.addColorStop(0, s.bg ? s.bg[0] : T.tile[0]); bg.addColorStop(1, s.bg ? s.bg[1] : T.tile[1]); g.fillStyle = bg; g.fillRect(0, 0, TS, TS);
     g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 4; g.strokeRect(2, 2, TS - 4, TS - 4); g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -21,7 +29,7 @@ export async function slotGame(T) {
     if (s.t === 'gem') gem(s.c, s.d || '#222'); else if (s.t === 'coin') coin(s.c, s.label); else if (s.t === 'cherry') { g.strokeStyle = '#2a7a1a'; g.lineWidth = 7; g.beginPath(); g.moveTo(70, 120); g.quadraticCurveTo(100, 30, 140, 40); g.moveTo(130, 128); g.quadraticCurveTo(120, 60, 140, 40); g.stroke(); for (const [x, y] of [[70, 130], [132, 136]]) { const r = g.createRadialGradient(x - 10, y - 12, 4, x, y, 34); r.addColorStop(0, '#fff'); r.addColorStop(.3, '#ff2030'); r.addColorStop(1, '#600'); g.fillStyle = r; g.beginPath(); g.arc(x, y, 32, 0, 7); g.fill(); } }
     else if (s.t === 'bar') { for (let k = 0; k < s.n; k++) { const y = h - (s.n - 1) * 26 + k * 52; g.fillStyle = '#111'; g.fillRect(28, y - 22, TS - 56, 44); g.strokeStyle = '#ffd34a'; g.lineWidth = 4; g.strokeRect(28, y - 22, TS - 56, 44); g.font = '900 34px "Arial Black",Georgia'; g.fillStyle = '#fff'; g.fillText('BAR', h, y + 2); } }
     else if (s.t === 'pyramid') { const gr = g.createLinearGradient(40, 40, 160, 170); gr.addColorStop(0, '#fff2a0'); gr.addColorStop(1, '#a8650a'); g.fillStyle = gr; g.beginPath(); g.moveTo(h, 28); g.lineTo(178, 168); g.lineTo(22, 168); g.fill(); g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.moveTo(h, 28); g.lineTo(178, 168); g.lineTo(h, 168); g.fill(); txt(s.label || 'BONUS', 30, '#fff', '#ffd34a', 182); }
-    else if (s.t === 'wild') { g.fillStyle = grad(s.c || '#ffd34a', s.d || '#a8650a'); g.beginPath(); g.roundRect(14, 46, TS - 28, TS - 92, 18); g.fill(); if (s.glyph) txt(s.glyph, 70, '#fff', '#fff2c0', 62); txt('WILD', 44, '#fff', s.c || '#ffd34a', s.glyph ? 140 : h); }
+    else if (s.t === 'wild') { g.fillStyle = grad(s.c || '#ffd34a', s.d || '#a8650a'); g.beginPath(); g.roundRect(14, 46, TS - 28, TS - 92, 18); g.fill(); if (s.emblem === 'dragon') dragonEmblem(g, h, 66); else if (s.glyph) txt(s.glyph, 70, '#fff', '#fff2c0', 62); txt('WILD', 44, '#fff', s.c || '#ffd34a', s.glyph ? 140 : h); }
     else txt(s.g, s.size || (s.g.length > 2 ? 60 : s.g.length > 1 ? 80 : 108), s.c || '#fff', s.d || T.accent2);
     return c; }
   /* ---------- reel window (canvas texture on a curved panel) ---------- */

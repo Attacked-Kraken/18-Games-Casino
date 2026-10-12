@@ -8,13 +8,13 @@
    -> card list view (index.html). */
 import * as THREE from './three.module.min.js';
 import { createPeople } from './people.js';
-import { createHall, HALL } from './hall-wing.js';
+import { createHall, HALL, HALL_TABLES, HALL_BARS } from './hall-wing.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 import { EffectComposer } from './vendor/EffectComposer.js';
 import { RenderPass } from './vendor/RenderPass.js';
 import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
 import { createWing, WING } from './forum-wing.js';
-import { openShop } from './shops.js';
+import { openShop, getAvatar } from './shops.js';
 import { OutputPass } from './vendor/OutputPass.js';
 
 const $ = (id) => document.getElementById(id);
@@ -516,9 +516,21 @@ function poseWalkers(t, all) { walkers.forEach((w, i) => { if (w.seat && !all) r
 poseWalkers(0, true);
 const slotSeats = []; SLOTS.forEach((arr) => arr.forEach((s, i) => { if ((i * 5) % 7 < 2) { const [fx, fz] = fwdOf(s.ry); slotSeats.push({ x: s.x + fx * .78, z: s.z + fz * .78, ry: s.ry + Math.PI, y: 0 }); } }));
 const pplV = new THREE.Vector3();
-const people = createPeople({ THREE, scene, mobile, PATHS, seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()),
-  pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]],
-  onReady: () => Object.values(PI_).forEach((m) => (m.visible = false)) });
+/* dealers: one per table (main floor + Grand Hall), standing on the dealer side facing the players */
+const toW = (x, z, ry, lx, lz) => { const c = Math.cos(ry), s = Math.sin(ry); return [x + lx * c + lz * s, z - lx * s + lz * c]; };
+const dealerOf = (k, x, z, ry) => k === 'poker' || k === 'pokerB' ? [...toW(x, z, ry, -1.5, 0), ry + Math.PI / 2] : k === 'roul' ? [...toW(x, z, ry, .9, -1.0), ry] : k === 'craps' ? [...toW(x, z, ry, 0, -1.35), ry] : [...toW(x, z, ry, 0, -1.0), ry];
+const DEALERS = []; Object.keys(TAB).forEach((k) => TAB[k].forEach((tb) => DEALERS.push(dealerOf(k, tb.x, tb.z, tb.ry))));
+const hallSeats = [], HDEAL = []; HALL_TABLES.forEach(([k, x, z, ry]) => { HDEAL.push(dealerOf(k, x, z, ry));
+  if (k === 'bj' || k === 'bac') for (let i = 0; i < 6; i += 2) { const a = -1.2 + i / 5 * 2.4, [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.55, -.55 + Math.cos(a) * 1.55); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); }
+  if (k === 'poker' || k === 'pokerB') for (let i = 0; i < 8; i += 2) { const a = i / 8 * Math.PI * 2 + Math.PI / 8; if (Math.abs(a - Math.PI * 1.5) < .5) continue; const [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.45, Math.cos(a) * 1.45); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); } });
+const HALL_PATHS = [[[-34, -21], [34, -21]], [[-34, -36], [34, -36]], [[0, -19], [0, -56]], [[-10, -27.5], [10, -27.5]], [[-21, -60], [21, -60]], [[-34, -48], [-12, -48]]];
+const people = createPeople({ THREE, scene, mobile, PATHS: PATHS.concat(HALL_PATHS), seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()).slice(0, 12).concat(hallSeats.slice(0, 8)),
+  dealers: DEALERS.concat(HDEAL), zoneVisible: (x, z) => z > HALL.z1 + .5 || !!(hall && hall.root.visible),
+  pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-20, -40.5, .3], [10, -52, 1], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]].concat(HALL_BARS.flatMap(([bx, bz]) => [[bx - 3.6, bz + 2.6, Math.PI], [bx - 1.2, bz + 2.6, Math.PI], [bx + 2.4, bz + 2.6, Math.PI]])),
+  onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); } });
+/* the player's own avatar (Gift shop > Choose look), visible in the Zoom Out view */
+let me = null, meLast = [0, 0]; function mkMe() { if (!people.H) return; if (me) scene.remove(me.object); me = people.H.make(getAvatar() || { g: 'm', outfit: 'tee_jeans', hair: 'short', skin: 1, hairCol: 0x2e1c12 }, 1.76); me.object.visible = false; scene.add(me.object); me.play('Idle_Loop', 0); }
+addEventListener('gc18-avatar', mkMe); window.__people = people;
 Object.values(PI_).forEach((m) => { if (m.instanceColor) m.instanceColor.needsUpdate = true; });
 
 /* ---------- post ---------- */
@@ -627,14 +639,27 @@ $('bWallet').onclick = () => window.Wallet && Wallet.open(); $('hChips').onclick
 $('bGames').onclick = () => { audioOn(); $('panel').classList.add('on'); }; $('pX').onclick = closePanel;
 $('panel').addEventListener('click', (e) => { if (e.target.id === 'panel') closePanel(); });
 $('mini').onclick = () => { audioOn(); $('panel').classList.add('on'); };
-const mini = $('mini'), mg = mini.getContext('2d'); let miniBase = null;
+const mini = $('mini'), mg = mini.getContext('2d'); let miniBase = null; const FULLMAP = true;
 function m2(x, z) { return [(x + W / 2) / W * (mini.width - 16) + 8, (z + D / 2) / D * (mini.height - 16) + 8]; }
 function drawWingMini() { const w = mini.width, h = mini.height, g = mg, s = Math.min((w - 12) / 44, (h - 10) / 46), ox = w / 2, oz = 4 - 17 * s; const q = (x, z) => [ox + x * s, oz + z * s];
   g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(232,220,196,.9)'; g.beginPath(); const [a0, b0] = q(-21, WING.z0); g.moveTo(a0, b0); g.lineTo(...q(-21, WING.zc)); g.arc(...q(0, WING.zc), 21 * s, Math.PI, 0, true); g.lineTo(...q(21, WING.z0)); g.closePath(); g.fill();
   g.fillRect(...q(-2, 16), 4 * s, 5 * s); g.fillStyle = '#3ab0d0'; g.beginPath(); g.arc(...q(0, WING.zc), 4.2 * s, 0, 7); g.fill();
   g.font = '600 12px Georgia'; g.textAlign = 'center'; g.fillStyle = '#4a2a10'; [['SPORTS', -13, WING.z0 + 9], ['VIP', 13, WING.z0 + 9], ['FOUNTAIN', 0, WING.zc + 7.5], ['CASINO ▲', 0, 17.5]].forEach(([tx, x, z]) => { const [a, b] = q(x, z); g.fillText(tx, a, b); });
   const [px, py] = q(P.x, P.z); g.save(); g.translate(px, py); g.rotate(-P.yaw); g.fillStyle = '#7a1424'; g.beginPath(); g.moveTo(0, -10); g.lineTo(7, 7); g.lineTo(0, 3); g.lineTo(-7, 7); g.closePath(); g.fill(); g.restore(); }
-function drawMini(full) {
+/* whole-complex overview: Grand Hall (north) + main oval + Forum Shops wing (south), player arrow, zone labels */
+function drawFullMini(full) { const w = mini.width, h = mini.height, s = Math.min((w - 8) / 84, (h - 8) / 128), ox = w / 2, oz = h / 2 + 1 * s, q = (x, z) => [ox + x * s, oz + z * s];
+  if (full || !miniBase || miniBase._v !== 2) { miniBase = document.createElement('canvas'); miniBase._v = 2; miniBase.width = w; miniBase.height = h; const g = miniBase.getContext('2d');
+    g.fillStyle = 'rgba(150,40,56,.92)'; g.fillRect(...q(HALL.x0, HALL.z0), (HALL.x1 - HALL.x0) * s, (HALL.z1 - HALL.z0) * s); g.strokeStyle = '#d9b065'; g.lineWidth = 1; g.strokeRect(...q(HALL.x0, HALL.z0), (HALL.x1 - HALL.x0) * s, (HALL.z1 - HALL.z0) * s);
+    g.fillStyle = 'rgba(217,166,64,.85)'; g.fillRect(...q(14, -56), 24 * s, 17 * s); g.fillStyle = 'rgba(40,160,90,.9)'; g.fillRect(...q(-14, -61), 12 * s, 2.5 * s); g.fillStyle = 'rgba(30,20,40,.9)'; [[-28, -58], [6, -58]].forEach(([x, z]) => g.fillRect(...q(x - 5, z - 2), 10 * s, 4 * s));
+    g.beginPath(); { const [a, b] = q(-RX, -RR); g.moveTo(a, b); } g.lineTo(...q(RX, -RR)); g.arc(...q(RX, 0), RR * s, -Math.PI / 2, Math.PI / 2); g.lineTo(...q(-RX, RR)); g.arc(...q(-RX, 0), RR * s, Math.PI / 2, Math.PI * 1.5); g.closePath(); g.fillStyle = 'rgba(120,20,70,.92)'; g.fill(); g.stroke();
+    g.fillStyle = 'rgba(13,106,110,.95)'; for (const [px] of PITS) { g.beginPath(); g.arc(...q(px, 0), 6.6 * s, 0, 7); g.fill(); }
+    if (WING) { g.fillStyle = 'rgba(226,214,190,.92)'; g.beginPath(); { const [a, b] = q(-21, WING.z0); g.moveTo(a, b); } g.lineTo(...q(-21, WING.zc)); g.arc(...q(0, WING.zc), 21 * s, Math.PI, 0, true); g.lineTo(...q(21, WING.z0)); g.closePath(); g.fill(); g.stroke(); g.fillRect(...q(-2.1, RR), 4.2 * s, (WING.z0 - RR) * s); g.fillStyle = '#3ab0d0'; g.beginPath(); g.arc(...q(0, WING.zc), 4.2 * s, 0, 7); g.fill(); }
+    g.fillStyle = 'rgba(150,40,56,.92)'; g.fillRect(...q(-4.2, -RR - .5), 8.4 * s, 1.5 * s);
+    g.font = `700 ${Math.max(9, 7 * s)}px system-ui`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)';
+    [['GRAND HALL', -14, -42], ['HI-LIMIT', 26, -47], ['CASHIER', -8, -56.5], ['CASINO', 0, 1.5], ['FORUM SHOPS', 0, 50]].forEach(([tx, x, z]) => { const [a, b] = q(x, z); g.strokeText(tx, a, b); g.fillStyle = '#ffe9a8'; g.fillText(tx, a, b); }); }
+  mg.clearRect(0, 0, w, h); mg.drawImage(miniBase, 0, 0); const [px, py] = q(P.x, P.z); mg.save(); mg.translate(px, py); mg.rotate(-P.yaw); mg.fillStyle = '#fff'; mg.shadowColor = '#000'; mg.shadowBlur = 6;
+  mg.beginPath(); mg.moveTo(0, -9); mg.lineTo(6, 6); mg.lineTo(0, 3); mg.lineTo(-6, 6); mg.closePath(); mg.fill(); mg.restore(); }
+function drawMini(full) { if (FULLMAP) { drawFullMini(full); return; }
   if (P.z > 17.5) { drawWingMini(); return; }
   if (full || !miniBase) { miniBase = document.createElement('canvas'); miniBase.width = mini.width; miniBase.height = mini.height; const g = miniBase.getContext('2d');
     const sx = (mini.width - 16) / W, sz = (mini.height - 16) / D; g.save(); g.translate(mini.width / 2, mini.height / 2); g.scale(sx, sz);
@@ -708,6 +733,7 @@ function frame(now) {
   if (!still) {
     for (const s of stations) { const w = s.grp.userData.wheel; if (w) w.rotation.y += dt * .4; s.ring.material.opacity = s === near ? .95 : .45 + Math.sin(t * 3 + s.center.x) * .2; }
     if (!people.ready) poseWalkers(t); else people.update(dt, t, pplV.set(P.x, 0, P.z), false);
+    if (me) { const sp = Math.hypot(P.x - meLast[0], P.z - meLast[1]) / Math.max(dt, .001); meLast = [P.x, P.z]; me.object.visible = BV.k > .05; me.object.position.set(P.x, 0, P.z); me.object.rotation.y = P.yaw + Math.PI; me.play(sp > .4 ? 'Walk_Loop' : 'Idle_Loop'); if (me.object.visible) me.mixer.update(dt); }
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);

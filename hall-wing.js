@@ -3,6 +3,9 @@
    ropes, two bars with stools, and the Cashier cage (opens the wallet). Built lazily the first time the player heads
    north, hidden whenever the player is back in the main oval (zone streaming), every repeated mesh instanced. */
 export const HALL = { x0: -40, x1: 40, z0: -63, z1: -17, door: 4.2, H: 9 };
+export const HALL_TABLES = [['bj', -6, -40, 0, 'velvet21'], ['bj', 6, -40, 0, 'velvet21'], ['bac', -6, -47, Math.PI, 'baccaratnoir'], ['bac', 6, -47, Math.PI, 'baccaratnoir'], ['roul', -16, -44, Math.PI / 2, 'rubyroulette'], ['craps', 16, -44, -Math.PI / 2, 'dicepalace'],
+      ['poker', -30, -44, 0, 'holdemroyale'], ['poker', -30, -54, 0, 'holdemroyale'], ['pokerB', -20, -55, 0, 'holdemroyale'], ['bac', 26 - 2, -50 + 6, 0, 'baccaratnoir'], ['bj', 26 + 7, -50 + 6, 0, 'velvet21']];
+export const HALL_BARS = [[-28, -58], [6, -58]];
 export const inHall = (x, z, m = 0) => x > HALL.x0 + m && x < HALL.x1 - m && z > HALL.z0 + m && z < HALL.z1 + .6 && (z < HALL.z1 - m || Math.abs(x) < HALL.door - m);
 export function createHall(ctx) { const { THREE, scene, P, inst, canvasTex, signMesh, neonTex } = ctx; const root = new THREE.Group(); root.visible = false; scene.add(root);
   let built = false; const boxes = [], billboards = [];
@@ -16,14 +19,14 @@ export function createHall(ctx) { const { THREE, scene, P, inst, canvasTex, sign
     const fl = PM(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: cT, roughness: .95 }), cx, .005, cz); fl.rotation.x = -Math.PI / 2;
     /* gold ceiling with glowing coffers */
     const ceT = canvasTex(256, 256, (g, w) => { g.fillStyle = '#2a1608'; g.fillRect(0, 0, w, w); g.fillStyle = '#c9a056'; g.fillRect(0, 0, w, 14); g.fillRect(0, 0, 14, w); const r = g.createRadialGradient(w / 2, w / 2, 10, w / 2, w / 2, 110); r.addColorStop(0, '#fff2c8'); r.addColorStop(1, '#8a5a20'); g.fillStyle = r; g.fillRect(30, 30, w - 46, w - 46); });
-    ceT.wrapS = ceT.wrapT = THREE.RepeatWrapping; ceT.repeat.set(W / 5, D / 5); const ce = PM(new THREE.PlaneGeometry(W, D), new THREE.MeshBasicMaterial({ map: ceT, color: 0xb8a088 }), cx, H, cz); ce.rotation.x = Math.PI / 2; ce.userData.ceil = 1; ctx.markCeil && ctx.markCeil(ce);
+    ceT.wrapS = ceT.wrapT = THREE.RepeatWrapping; ceT.repeat.set(W / 5, D / 5); const ce = PM(new THREE.PlaneGeometry(W, D), new THREE.MeshBasicMaterial({ map: ceT, color: 0xf0e0c8 }), cx, H, cz); ce.rotation.x = Math.PI / 2; ce.userData.ceil = 1; ctx.markCeil && ctx.markCeil(ce);
     /* walls */
-    const wT = canvasTex(256, 512, (g, w, h) => { g.fillStyle = '#3a0a14'; g.fillRect(0, 0, w, h); g.fillStyle = '#2a1408'; g.fillRect(0, h - 120, w, 120); g.fillStyle = '#c9a056'; g.fillRect(0, h - 124, w, 6); g.fillRect(0, 40, w, 4); g.strokeStyle = 'rgba(201,160,86,.5)'; g.lineWidth = 3; g.strokeRect(30, 70, w - 60, h - 220); });
+    const wT = canvasTex(256, 512, (g, w, h) => { g.fillStyle = '#7a2230'; g.fillRect(0, 0, w, h); g.fillStyle = '#2a1408'; g.fillRect(0, h - 120, w, 120); g.fillStyle = '#c9a056'; g.fillRect(0, h - 124, w, 6); g.fillRect(0, 40, w, 4); g.strokeStyle = 'rgba(201,160,86,.5)'; g.lineWidth = 3; g.strokeRect(30, 70, w - 60, h - 220); });
     const wm = (len) => { const t = wT.clone(); t.wrapS = THREE.RepeatWrapping; t.repeat.set(len / 3, 1); t.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: .7, side: THREE.DoubleSide }); };
     PM(new THREE.PlaneGeometry(W, H), wm(W), cx, H / 2, z0); for (const sx of [-1, 1]) { const w2 = PM(new THREE.PlaneGeometry(D, H), wm(D), sx < 0 ? x0 : x1, H / 2, cz); w2.rotation.y = Math.PI / 2; }
     for (const sx of [-1, 1]) { const sw = (W / 2 - door); PM(new THREE.PlaneGeometry(sw, H), wm(sw), sx * (door + sw / 2), H / 2, z1 - .02, Math.PI); }
     /* lighting (few lights; materials do the rest) */
-    root.add(new THREE.HemisphereLight(0xffe2b8, 0x2a0a10, .5)); [[-20, -30], [20, -30], [0, -50], [-26, -52], [26, -52]].forEach(([x, z]) => { const l = new THREE.PointLight(0xffd8a0, 7, 30, 1.6); l.position.set(x, H - 1, z); root.add(l); });
+    root.add(new THREE.HemisphereLight(0xfff0d8, 0x4a2a20, 1.15)); [[-20, -30], [20, -30], [0, -50], [-26, -52], [26, -52], [0, -24], [-30, -40], [30, -40]].forEach(([x, z]) => { const l = new THREE.PointLight(0xffe0b0, 16, 34, 1.4); l.position.set(x, H - 1, z); root.add(l); });
     /* chandeliers: instanced glowing crystal drums */
     { const ch = new THREE.Group(); ch.add(new THREE.Mesh(new THREE.CylinderGeometry(1.1, .7, .9, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff0c8, side: THREE.DoubleSide, toneMapped: false }))); ch.children[0].position.y = H - 1.2;
       const L = []; for (let x = -30; x <= 30; x += 15) for (const z of [-24, -40, -56]) L.push({ x, z }); inst(ch, L, root); }
@@ -39,8 +42,7 @@ export function createHall(ctx) { const { THREE, scene, P, inst, canvasTex, sign
     for (let t = 0; t < 4; t++) { const s = rows.filter((r) => r.type === t); if (s.length) inst(ctx.slotProto(t), s, root); }
     /* table pit (center) + salon tables */
     const nT0 = Object.fromEntries(Object.entries(ctx.TAB).map(([k, v]) => [k, v.length])), nC0 = ctx.CHAIRS.length;
-    [['bj', -6, -40, 0, 'velvet21'], ['bj', 6, -40, 0, 'velvet21'], ['bac', -6, -47, Math.PI, 'baccaratnoir'], ['bac', 6, -47, Math.PI, 'baccaratnoir'], ['roul', -16, -44, Math.PI / 2, 'rubyroulette'], ['craps', 16, -44, -Math.PI / 2, 'dicepalace'],
-      ['poker', -30, -44, 0, 'holdemroyale'], ['poker', -30, -54, 0, 'holdemroyale'], ['pokerB', -20, -55, 0, 'holdemroyale'], ['bac', hx - 2, hz + 6, 0, 'baccaratnoir'], ['bj', hx + 7, hz + 6, 0, 'velvet21']].forEach((a) => ctx.table(...a));
+    HALL_TABLES.forEach((a) => ctx.table(...a));
     Object.keys(ctx.TAB).forEach((k) => { const s = ctx.TAB[k].slice(nT0[k]); if (s.length) inst(ctx.protoOf[k](), s, root); }); const ch = ctx.CHAIRS.slice(nC0); if (ch.length) inst(ctx.chairProto(), ch, root);
     const games = ctx.games(); ctx.clones.forEach((c) => { if (!c.g && !c.action) c.g = games.find((g) => g.id === c.id) || null; });
     /* velvet ropes around the salon */
@@ -51,7 +53,7 @@ export function createHall(ctx) { const { THREE, scene, P, inst, canvasTex, sign
     sgn('HIGH LIMIT SALON', '#ffd34a', hx, 4.4, hz + 11.2, 5.4, Math.PI); sgn('GRAND HALL', '#ff5a7a', 0, 5.6, z1 - .3, 6, Math.PI); sgn('TABLE GAMES', '#40e0ff', 0, 4.4, -36, 4.6, Math.PI);
     /* bars */
     const barM = new THREE.MeshStandardMaterial({ color: 0x3a1a0c, roughness: .4, metalness: .1 }), topM = new THREE.MeshStandardMaterial({ color: 0x111114, roughness: .15, metalness: .3 }), glowM = new THREE.MeshBasicMaterial({ color: 0xffb040, toneMapped: false });
-    const stools = []; [[-28, -58, 'GOLDEN BAR'], [6, -58, 'LUXE LOUNGE']].forEach(([bx, bz, nm]) => { PM(new THREE.BoxGeometry(10, 1.1, 1.2), barM, bx, .55, bz + 1.2); PM(new THREE.BoxGeometry(10.3, .08, 1.5), topM, bx, 1.14, bz + 1.2); PM(new THREE.BoxGeometry(10, .05, .05), glowM, bx, .2, bz + 1.85);
+    const stools = []; [[...HALL_BARS[0], 'GOLDEN BAR'], [...HALL_BARS[1], 'LUXE LOUNGE']].forEach(([bx, bz, nm]) => { PM(new THREE.BoxGeometry(10, 1.1, 1.2), barM, bx, .55, bz + 1.2); PM(new THREE.BoxGeometry(10.3, .08, 1.5), topM, bx, 1.14, bz + 1.2); PM(new THREE.BoxGeometry(10, .05, .05), glowM, bx, .2, bz + 1.85);
       PM(new THREE.BoxGeometry(11, 3.2, .6), barM, bx, 1.6, bz - 2.2); for (let k = 0; k < 3; k++) PM(new THREE.BoxGeometry(10.6, .06, .5), glowM, bx, 1 + k * .8, bz - 1.9); for (let i = 0; i < 24; i++) { const b = PM(new THREE.CylinderGeometry(.06, .06, .3, 8), new THREE.MeshBasicMaterial({ color: [0x2aa860, 0xc0402a, 0xd9a640, 0x3a6aff][i % 4] }), bx - 5 + i * .43, 1.2 + (i % 3) * .8, bz - 1.85); b.scale.y = .8 + (i % 2) * .4; }
       sgn(nm, '#ffd34a', bx, 3.8, bz - 1.85, 4.2); box(bx, bz + 1.2, 5.2, .75); box(bx, bz - 2.2, 5.6, .5); for (let i = 0; i < 8; i++) stools.push({ x: bx - 4.2 + i * 1.2, z: bz + 2.6, ry: Math.PI }); });
     { const st = new THREE.Group(); const seat = new THREE.Mesh(new THREE.CylinderGeometry(.24, .24, .1, 16), new THREE.MeshStandardMaterial({ color: 0x7a0a1e, roughness: .5 })); seat.position.y = .78; const leg = new THREE.Mesh(new THREE.CylinderGeometry(.04, .14, .78, 10), new THREE.MeshStandardMaterial({ color: 0xd9a640, metalness: .9, roughness: .3 })); leg.position.y = .39; st.add(seat, leg); inst(st, stools, root); }

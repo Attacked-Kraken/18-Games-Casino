@@ -1,0 +1,4 @@
+Bodies, faces, eyes, eyebrows: Quaternius "Superhero" base characters (Universal Base Characters), CC0 1.0.
+Animations: Quaternius Universal Animation Library, CC0 1.0.
+Source mirror: https://codeberg.org/jamesonBradfield/Quaternius_IK_Rigged_with_animations (CC0 LICENSE).
+Outfits, hair meshes, VV logo, shader: original work for this project (CC0).
