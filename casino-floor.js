@@ -411,11 +411,17 @@ bulbs.count = bi; dummy.scale.set(1, 1, 1); scene.add(bulbs);
 
 /* ---------- octagonal centerpiece: cashier island + jackpot tower ---------- */
 { const c = new THREE.Group();
+  const tellerM = new THREE.MeshBasicMaterial({ transparent: true, map: canvasTex(384, 270, (g, w, h) => { g.fillStyle = '#3a2410'; g.fillRect(0, 0, w, h); g.fillStyle = '#7a1424'; g.fillRect(8, 8, w - 16, 56);
+    g.fillStyle = '#f0c860'; g.font = 'bold 40px Georgia'; g.textAlign = 'center'; g.fillText('CASHIER', w / 2, 50); const gr = g.createLinearGradient(0, 70, 0, h); gr.addColorStop(0, '#2c4a58'); gr.addColorStop(1, '#6a8c96');
+    g.fillStyle = gr; g.fillRect(16, 72, w - 32, h - 88); g.strokeStyle = '#d4a840'; g.lineWidth = 4; for (let x = 40; x < w - 20; x += 26) { g.beginPath(); g.moveTo(x, 72); g.lineTo(x, h - 50); g.stroke(); }
+    g.lineWidth = 8; g.strokeRect(16, 72, w - 32, h - 88); g.fillStyle = '#d4a840'; g.fillRect(16, h - 50, w - 32, 8); g.fillStyle = '#1a0c06'; g.beginPath(); g.ellipse(w / 2, h - 16, 70, 28, 0, Math.PI, 0); g.fill();
+    g.fillStyle = '#ffe9b0'; g.font = '18px Georgia'; g.fillText('CHIPS · REDEEM · VIP', w / 2, h - 60); }) });
   c.add(P3(new THREE.CylinderGeometry(3.2, 3.3, 1.05, 8), wood, 0, .52, 0, { ry: Math.PI / 8 }), P3(new THREE.CylinderGeometry(3.35, 3.35, .08, 8), new THREE.MeshPhysicalMaterial({ color: 0xe8e0d0, roughness: .15, clearcoat: 1 }), 0, 1.09, 0, { ry: Math.PI / 8 }), P3(new THREE.CylinderGeometry(3.32, 3.32, .06, 8), brassM, 0, .2, 0, { ry: Math.PI / 8 }));
   c.add(P3(new THREE.CylinderGeometry(1.3, 1.5, 4.6, 8), new THREE.MeshPhysicalMaterial({ color: 0x1a1210, roughness: .2, clearcoat: 1, metalness: .3 }), 0, 2.3, 0, { ry: Math.PI / 8 }));
   const jc = document.createElement('canvas'); jc.width = 512; jc.height = 140; jpDraw(jc, 1250000); const jt = new THREE.CanvasTexture(jc); jt.colorSpace = THREE.SRGBColorSpace; jpCanvas.push({ c: jc, t: jt, v: 1250000 });
   for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; const p = new THREE.Mesh(new THREE.PlaneGeometry(1.05, .3), new THREE.MeshBasicMaterial({ map: jt })); p.position.set(Math.sin(a) * 1.4, 3.5, Math.cos(a) * 1.4); p.rotation.y = a; c.add(p);
-    const w = new THREE.Mesh(new THREE.BoxGeometry(.9, .55, .05), new THREE.MeshBasicMaterial({ color: 0xfff2d8 })); w.position.set(Math.sin(a) * 3.0, 1.6, Math.cos(a) * 3.0); w.rotation.y = a; if (i % 2 === 0) c.add(w); }
+    if (i % 2 === 0) { const w = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.05), tellerM); w.position.set(Math.sin(a) * 3.05, 1.62, Math.cos(a) * 3.05); w.rotation.y = a; c.add(w);
+      for (const s of [-1, 1]) c.add(P3(new THREE.CylinderGeometry(.04, .04, 1.1, 8), brassM, Math.sin(a) * 3.05 + Math.cos(a) * .78 * s, 1.64, Math.cos(a) * 3.05 - Math.sin(a) * .78 * s)); } }
   c.add(P3(new THREE.CylinderGeometry(1.7, 1.3, .3, 8), brassM, 0, 4.7, 0, { ry: Math.PI / 8 }), P3(new THREE.OctahedronGeometry(.6, 0), new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0, metalness: .1, clearcoat: 1, emissive: 0x6a5030 }), 0, 5.4, 0));
   const cs2 = signMesh(neonTex('Cashier', '#c9a45c'), 2.2); cs2.position.set(0, 2.55, 0); c.add(cs2); billboards.push(cs2);
   scene.add(c); blockR(0, 0, 3.6); }
@@ -519,7 +525,7 @@ const pplV = new THREE.Vector3();
 /* dealers: one per table (main floor + Grand Hall), standing on the dealer side facing the players */
 const toW = (x, z, ry, lx, lz) => { const c = Math.cos(ry), s = Math.sin(ry); return [x + lx * c + lz * s, z - lx * s + lz * c]; };
 const dealerOf = (k, x, z, ry) => k === 'poker' || k === 'pokerB' ? [...toW(x, z, ry, -1.5, 0), ry + Math.PI / 2] : k === 'roul' ? [...toW(x, z, ry, .9, -1.0), ry] : k === 'craps' ? [...toW(x, z, ry, 0, -1.35), ry] : [...toW(x, z, ry, 0, -1.0), ry];
-const DEALERS = []; Object.keys(TAB).forEach((k) => TAB[k].forEach((tb) => DEALERS.push(dealerOf(k, tb.x, tb.z, tb.ry))));
+const DEALERS = []; for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2; DEALERS.push([Math.sin(a) * 2.45, Math.cos(a) * 2.45, a]); } Object.keys(TAB).forEach((k) => TAB[k].forEach((tb) => DEALERS.push(dealerOf(k, tb.x, tb.z, tb.ry))));
 const hallSeats = [], HDEAL = []; HALL_TABLES.forEach(([k, x, z, ry]) => { HDEAL.push(dealerOf(k, x, z, ry));
   if (k === 'bj' || k === 'bac') for (let i = 0; i < 6; i += 2) { const a = -1.2 + i / 5 * 2.4, [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.55, -.55 + Math.cos(a) * 1.55); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); }
   if (k === 'poker' || k === 'pokerB') for (let i = 0; i < 8; i += 2) { const a = i / 8 * Math.PI * 2 + Math.PI / 8; if (Math.abs(a - Math.PI * 1.5) < .5) continue; const [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.45, Math.cos(a) * 1.45); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); } });
