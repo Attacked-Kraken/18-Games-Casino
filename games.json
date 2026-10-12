@@ -68,6 +68,18 @@
    "category": "cards",
    "multiplayer": true,
    "new": true
+  },
+  {
+   "id": "plinkodrop",
+   "file": "plinkodrop.html",
+   "title": "Plinko Drop",
+   "tagline": "3D pegboard, three risk levels, auto-drop. Fun chips only.",
+   "rating": "18+",
+   "icon": "plinkodrop-icon.png",
+   "accent": "#ff3fa4",
+   "category": "instant",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
