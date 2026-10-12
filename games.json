@@ -104,6 +104,18 @@
    "category": "instant",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "bigwheel",
+   "file": "bigwheel.html",
+   "title": "Big Wheel",
+   "tagline": "Giant 3D money wheel with Joker and Star, live tables for 6. Fun chips only.",
+   "rating": "18+",
+   "icon": "bigwheel-icon.png",
+   "accent": "#ffd21f",
+   "category": "tables",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }
