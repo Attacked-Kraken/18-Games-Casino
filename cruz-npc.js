@@ -34,6 +34,15 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
     api.sendToField = () => { if (api.mode === 'field' || api.mode === 'toField') return; api.mode = 'toField'; pickRoute(0, 58.8); st = 'run'; save(); };
     api.bringBack = () => { if (api.mode === 'casino') return; api.mode = 'toCasino'; tasks = []; task = null; st = 'run'; save(); };
     api.setOn = (v) => { api.on = v; save(); };
+    /* player commands (menu): come / follow / stay / roam, speed, moves, pass */
+    api.cmd = 'roam'; api.spd = 'auto'; let ppos = null, repT = 0, fo = null;
+    const inStad = (pz) => pz > 60.2;
+    api.command = (c) => { api.cmd = c; repT = 0; route = null; if (c === 'roam' && api.mode === 'casino') pickRoute(); if ((c === 'come' || c === 'follow') && (api.mode === 'field' || api.mode === 'toCasino') && ppos && !inStad(ppos.z)) api.bringBack(); if (c === 'field') { api.cmd = 'roam'; api.sendToField(); } };
+    api.setSpeed = (s) => { api.spd = s; };
+    api.doMove = (k) => { if (st !== 'run') return; if (k === 'celebrate' || k === 'wave') { st = 'celebrate'; stT = k === 'wave' ? 1.6 : 2.4; h.clip = ''; play(k === 'wave' ? 'Interact' : 'Dance_Loop', .15, k === 'wave'); return; }
+      const s = rnd() < .5 ? -1 : 1; move = { kind: k, s, t: 0, d: { hurdle: .75, juke: .4, spin: .55 }[k] || .5 }; moveT = move.d; cool = move.d + .5; if (k === 'hurdle') play('Jump_Loop', .1); };
+    api.throwPass = () => { if (st !== 'run') return; st = 'celebrate'; stT = .9; h.clip = ''; play('Spell_Simple_Shoot', .1, true); setTimeout(() => { let tx = x + Math.sin(yaw) * 14, tz = z + Math.cos(yaw) * 14; const c = collide(tx, tz); throwBall([c[0], 1.2, c[1]]); }, 350); };
+    const fx0 = (pz) => pz; 
     if (wantField) { api.mode = 'field'; x = 0; z = 90; }
     const sepFrom = (r0, hard) => { for (const q of people.list) { const qx = q.o.position.x, qz = q.o.position.z, ex = x - qx, ez = z - qz, d = Math.hypot(ex, ez); if (d < r0 && d > 1e-4) { if (hard) { const c = collide(qx + ex / d * r0, qz + ez / d * r0); x = c[0]; z = c[1]; } else { vx += ex / d * (r0 - d) * 6; vz += ez / d * (r0 - d) * 6; } } } };
     function steerTo(tx, tz, speed, dt, face = true) { const ex = tx - x, ez = tz - z, d = Math.hypot(ex, ez); if (d < .35) return true; const k = Math.min(speed, d * 4) / d; vx += (ex * k - vx) * Math.min(1, dt * 6); vz += (ez * k - vz) * Math.min(1, dt * 6); if (face) turn(Math.atan2(ex, ez), dt, 8); return false; }
@@ -41,12 +50,17 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
     function casinoStep(dt, pos) {
       if (st === 'trip' || st === 'down' || st === 'getup') { stT -= dt; vx *= Math.pow(.05, dt); vz *= Math.pow(.05, dt); if (stT <= 0) { if (st === 'trip') { st = 'down'; stT = .9; } else if (st === 'down') { st = 'getup'; stT = 1.3; play('Fixing_Kneeling', .35); } else { st = 'run'; boost = 1.2; } } return; }
       if (st === 'celebrate') { stT -= dt; vx = vz = 0; if (stT <= 0) st = 'run'; return; }
+      if (fo) { fo = null; }
+      if (api.cmd !== 'roam' && ppos && api.mode === 'casino') { const dP = Math.hypot(ppos.x - x, ppos.z - z);
+        if (api.cmd === 'stay' || dP < 2.3) { vx *= Math.pow(.02, dt); vz *= Math.pow(.02, dt); if (dP < 10) turn(Math.atan2(ppos.x - x, ppos.z - z), dt, 5); if (!move) play('Idle_Loop', .3); if (api.cmd === 'come' && dP < 2.3) api.cmd = 'stay'; return; }
+        if (inStad(ppos.z)) { if (api.mode === 'casino' && (!route || repT <= 0)) { pickRoute(0, 58.8); api.mode = 'toField'; repT = 99; } }
+        else if ((repT -= dt) <= 0 || !route || wi >= route.length) { repT = 1.2; const n = nav && nav.nearest(ppos.x - Math.sin(ppos.yaw || 0) * 0, ppos.z); if (n) { const r = nav.path(x, z, n[0], n[1]); if (r && r.length) { route = r; wi = 0; } } } }
       const w = route && route[wi]; let fx = Math.sin(yaw), fz = Math.cos(yaw);
       if (!w) { if (api.mode === 'toField') { api.mode = 'tunnel'; route = [[0, STAD.tz1 + 2], [0, 92]]; wi = 0; } else pickRoute(); }
       else { const ex = w[0] - x, ez = w[1] - z, d = Math.hypot(ex, ez); if (d < .6) { wi++; if (api.mode === 'tunnel' && wi >= route.length) { api.mode = 'field'; tasks = []; nextTask(); save(); } }
         else { fx = ex / d; fz = ez / d; } }
       if (sprintT <= 0 && rnd() < dt * .08) sprintT = 2 + rnd() * 3; sprintT -= dt; boost -= dt; moveT -= dt; cool -= dt;
-      const speed = (boost > 0 || sprintT > 0) ? 6.2 : 3.6; let lx = 0, lz = 0;
+      const speed = api.spd === 'walk' ? 1.5 : api.spd === 'jog' ? 3.6 : api.spd === 'sprint' ? 6.4 : (boost > 0 || sprintT > 0) ? 6.2 : 3.6; let lx = 0, lz = 0;
       /* look ahead for a guest in the lane */
       if (moveT <= 0 && cool <= 0) { let best = null, bd = 2.8; for (const q of people.list) { const qx = q.o.position.x - x, qz = q.o.position.z - z, f = qx * fx + qz * fz, l = qx * fz - qz * fx; if (f > .3 && f < bd && Math.abs(l) < 1.1) { bd = f; best = { q, l }; } }
         if (best) { const side = best.l > 0 ? -1 : 1; const ok = (s) => { const tx = x + fz * s * 1.6, tz = z - fx * s * 1.6, c = collide(tx, tz); return Math.hypot(c[0] - tx, c[1] - tz) < .05; }; const s = ok(side) ? side : -side;
@@ -59,16 +73,22 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
       if (!move || move.kind !== 'hurdle') sepFrom(1.05, false);
       if (pos) { const ex = x - pos.x, ez = z - pos.z, d = Math.hypot(ex, ez); if (d < 1.3 && d > 1e-4) { vx += ex / d * (1.3 - d) * 8; vz += ez / d * (1.3 - d) * 8; } }
       if (!move) turn(Math.atan2(vx, vz), dt, 7);
-      if (!move || (move.kind !== 'hurdle' && move.kind !== 'stiff')) play(speed > 5 ? 'Sprint_Loop' : 'Jog_Fwd_Loop', .2, false, speed > 5 ? 1.1 : 1.05);
+      if (!move || (move.kind !== 'hurdle' && move.kind !== 'stiff')) play(speed > 5 ? 'Sprint_Loop' : speed < 2 ? 'Walk_Loop' : 'Jog_Fwd_Loop', .2, false, speed > 5 ? 1.1 : 1.05);
       if ((nextFall -= dt) <= 0 && !move) { nextFall = 30 + rnd() * 30; if (rnd() < .5) { st = 'trip'; stT = 1.5; play('Death01', .12, true); } else { st = 'trip'; stT = 1.2; play('Roll', .1, true); } }
       if ((chk -= dt) <= 0) { if (Math.hypot(x - cx0, z - cz0) < 1) { if (api.mode === 'tunnel') { x = 0; z = STAD.tz1; } else if (!pickRoute(api.mode === 'toField' ? 0 : null, 58.8) && nav) { const d = nav.random(rnd, casinoOK); if (d) { x = d[0]; z = d[1]; } } } chk = 3; cx0 = x; cz0 = z; } }
     function fieldStep(dt) { if (api.mode === 'toCasino') { if (steerTo(0, STAD.tz1 - 4, 4, dt) || z < STAD.tz1 - 3) { if (z < 60.8) { api.mode = 'casino'; save(); pickRoute(); } else { steerTo(0, 58, 4, dt); } } play('Jog_Fwd_Loop'); return; }
-      if (!stadium.built) stadium.buildNow(); if (!task) nextTask(); tT += dt; const t = task;
+      if (!stadium.built) stadium.buildNow();
+      if (st === 'celebrate') { stT -= dt; vx = vz = 0; if (stT <= 0) st = 'run'; return; }
+      if (api.cmd !== 'roam' && ppos) { if (!inStad(ppos.z)) { if (api.cmd !== 'stay') { api.bringBack(); } else { vx = vz = 0; play('Idle_Loop'); } return; }
+        const dP = Math.hypot(ppos.x - x, ppos.z - z); if (api.cmd === 'stay' || dP < 2.3) { vx = vz = 0; turn(Math.atan2(ppos.x - x, ppos.z - z), dt, 5); play('Idle_Loop', .3); if (api.cmd === 'come' && dP < 2.3) api.cmd = 'stay'; return; }
+        const sp2 = api.spd === 'walk' ? 1.5 : api.spd === 'sprint' ? 6.4 : 3.8; steerTo(ppos.x, ppos.z, sp2, dt); play(sp2 > 5 ? 'Sprint_Loop' : sp2 < 2 ? 'Walk_Loop' : 'Jog_Fwd_Loop'); return; }
+      if (api.team && api.team.active) { const c = api.team.cruzCtl(dt, x, z); if (c) { if (c.throwAt) throwBall(c.throwAt); if (c.anim) play(c.anim, .15, c.once, c.ts || 1); if (c.x != null) { const done = steerTo(c.x, c.z, c.speed || 0, dt, !c.back); if (done) { vx *= .5; vz *= .5; } } else { vx = vz = 0; } if (c.face != null) turn(c.face, dt, 8); return; } }
+      if (!task) nextTask(); tT += dt; const t = task;
       if (t.k === 'go') { const done = steerTo(t.x, t.z, t.speed, dt, !t.back); if (t.back) turn(0, dt, 6); play(t.anim, .2, false, t.ts); if (done || tT > 25) nextTask(); }
       else if (t.k === 'anim') { vx = vz = 0; if (t.face != null) turn(t.face, dt, 6); play(t.n, .25, t.once); if (tT > t.d) nextTask(); }
       else if (t.k === 'throw') { vx = vz = 0; play('Spell_Simple_Shoot', .1, true); if (tT > .35 && !t.done) { t.done = 1; throwBall(t.tgt); } if (tT > .9) nextTask(); }
       else if (t.k === 'pushups') { vx = vz = 0; play('Idle_Loop', .2); if (tT > t.d) { nextTask(); } } }
-    api.update = (dt, t, pos, vis) => { if (!api.ready) return; const prevYaw = yaw;
+    api.update = (dt, t, pos, vis) => { if (!api.ready) return; const prevYaw = yaw; ppos = pos ? { x: pos.x, z: pos.z } : null;
       if (api.mode === 'field' || api.mode === 'toCasino') fieldStep(dt); else casinoStep(dt, pos);
       const inField = api.mode === 'field' || api.mode === 'toCasino' || api.mode === 'tunnel';
       const c = collide(x + vx * dt, z + vz * dt); x = c[0]; z = c[1]; if (!inField && (!move || move.kind !== 'hurdle')) sepFrom(.75, true);
@@ -79,5 +99,5 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
       rig.rotation.set(push ? Math.PI / 2 - .12 + Math.sin(t * 4) * .06 : Math.min(.22, spd * .03), yaw + spin, push ? 0 : bank);
       api.x = ext.x = x; api.z = ext.z = z; const show = api.on && (inField ? (stadium.root.visible || z < 64) : (vis ? vis(x, z) : true)); rig.visible = show; ext.on = api.on && !inField; ball.visible = ball.visible && show;
       const d2 = pos ? (x - pos.x) ** 2 + (z - pos.z) ** 2 : 0; if (show && (d2 < 2500 || inField)) h.mixer.update(dt); };
-    api.pos = () => new THREE.Vector3(x, 1.2, z); api.ready = true; if (ctx.onReady) ctx.onReady(api); }).catch((e) => console.warn('cruz', e));
+    api.pos = () => new THREE.Vector3(x, 1.2, z); api.C = C; api.ball = ball; api.ready = true; if (ctx.onReady) ctx.onReady(api); }).catch((e) => console.warn('cruz', e));
   return api; }
