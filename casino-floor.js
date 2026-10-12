@@ -556,6 +556,7 @@ function buildPanel() { const box = $('pList'); box.innerHTML = '';
     const pl = document.createElement('button'); pl.className = 'pl'; pl.type = 'button'; pl.textContent = 'Play'; pl.onclick = () => { closePanel(); play(s); };
     r.append(im, d, go, pl); box.append(r); }); }
 function closePanel() { $('panel').classList.remove('on'); }
+$('bWallet').onclick = () => window.Wallet && Wallet.open(); $('hChips').onclick = () => window.Wallet && Wallet.open();
 $('bGames').onclick = () => { audioOn(); $('panel').classList.add('on'); }; $('pX').onclick = closePanel;
 $('panel').addEventListener('click', (e) => { if (e.target.id === 'panel') closePanel(); });
 $('mini').onclick = () => { audioOn(); $('panel').classList.add('on'); };
