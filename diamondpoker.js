@@ -11,6 +11,7 @@ K.backdrop({ carpet: '#06142a', pattern: ['#1f5f6e', '#4a1f5e', '#c9a45c'] }); K
 const CK = cardKit(K, '#1b2a52');
 /* cabinet deck */
 const deck = K.rbox(4.2, 2.4, .3, .2, K.felt('#06142e', (g, w, h) => { g.fillStyle = 'rgba(201,164,92,.3)'; g.font = '400 90px Georgia'; g.textAlign = 'center'; g.fillText('◆ DIAMOND POKER ◆', w / 2, h * .9); }));
+deck.traverse(o => { if (o.material && o.material.map) o.material.color.set(0x6a8cf0); }); /* deep sapphire */
 deck.rotation.x = -Math.PI / 2; deck.position.set(0, -.15, .2); scene.add(deck);
 /* paytable board */
 const pt = K.tex(1024, 420, (g, w, h) => { g.fillStyle = '#0a0808'; g.beginPath(); g.roundRect(0, 0, w, h, 4); g.fill(); g.strokeStyle = '#b08d57'; g.lineWidth = 3; g.stroke();
