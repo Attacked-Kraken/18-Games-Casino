@@ -18,6 +18,7 @@ import { createNav } from './nav.js';
 import { createStadium, STAD } from './stadium.js';
 import { createCruz } from './cruz-npc.js';
 import { createTeam } from './football-team.js';
+import { loadBoss } from './characters/coach-boss/boss.js';
 import { openShop, getAvatar } from './shops.js';
 import { OutputPass } from './vendor/OutputPass.js';
 
@@ -744,6 +745,14 @@ function frame(now) {
     for (const q of people.list) if (q.o.visible) pushOut(q.o.position.x, q.o.position.z, .62); for (const e of people.extra || []) if (e.on) pushOut(e.x, e.z, .7); }
   const bob = m > 0 ? Math.sin(t * 9) * .025 : 0;
   cam.position.set(P.x, 1.62 + bob, P.z); cam.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
+  if (TP.on && boss) { const s = Math.sin(P.yaw), c = Math.cos(P.yaw); let [cx, cz] = collide(P.x + s * 3.1, P.z + c * 3.1); TP.cx += (cx - TP.cx) * Math.min(1, dt * 8); TP.cz += (cz - TP.cz) * Math.min(1, dt * 8);
+    cam.position.set(TP.cx, 2.35, TP.cz); cam.rotation.set(P.pitch - .22, P.yaw, 0, 'YXZ');
+    const sp = Math.hypot(P.x - TP.lx, P.z - TP.lz) / Math.max(dt, .001); TP.lx = P.x; TP.lz = P.z; boss.object.visible = true; boss.object.position.set(P.x, 0, P.z); boss.object.rotation.y = P.yaw + Math.PI;
+    boss.play(sp > 4.2 ? 'Jog_Fwd_Loop' : sp > .4 ? 'Walk_Formal_Loop' : 'Idle_Loop'); boss.mixer.update(dt);
+    $('bBook').style.display = P.z > 70 && !BV.coach ? 'block' : 'none';
+    if (people.ready && (TP.rt -= dt) < 0) { TP.rt = .5; for (const q of people.list) if (q.kind === 'walk' && q.st === 'walk' && q.o.visible && !(q.bossT > t) && Math.hypot(q.o.position.x - P.x, q.o.position.z - P.z) < 4.5) { q.bossT = t + 25; q.st = 'wave'; q.tm = 2.2; q.play('Interact', .3, true); } }
+    if (cruz && cruz.team) cruz.team.boss = [P.x, P.z]; }
+  else if (boss) { boss.object.visible = BV.k > .05 && TP.on; if (cruz && cruz.team) cruz.team.boss = null; }
   BV.k += ((BV.on ? 1 : 0) - BV.k) * Math.min(1, dt * 3.2); if (BV.k < .002) BV.k = 0;
   if (BV.k > 0) { const e = BV.k * BV.k * (3 - 2 * BV.k); fpQ.copy(cam.quaternion); if (BV.coach) bvPos.set(BV.x, BV.h, BV.z - BV.h * .75); else bvPos.set(BV.x, BV.h, BV.z + BV.h * .5); bvM.lookAt(bvPos, new THREE.Vector3(BV.x, 0, BV.z), UPV); bvQ.setFromRotationMatrix(bvM);
     cam.position.lerp(bvPos, e); cam.quaternion.copy(fpQ).slerp(bvQ, e); }
@@ -757,7 +766,7 @@ function frame(now) {
   if (people.ready) people.update(dt, t, pplV.set(P.x, 0, P.z), false);
   if (!still) {
     for (const s of stations) { const w = s.grp.userData.wheel; if (w) w.rotation.y += dt * .4; s.ring.material.opacity = s === near ? .95 : .45 + Math.sin(t * 3 + s.center.x) * .2; }
-    if (me) { const sp = Math.hypot(P.x - meLast[0], P.z - meLast[1]) / Math.max(dt, .001); meLast = [P.x, P.z]; me.object.visible = BV.k > .05; me.object.position.set(P.x, 0, P.z); me.object.rotation.y = P.yaw + Math.PI; me.play(sp > .4 ? 'Walk_Loop' : 'Idle_Loop'); if (me.object.visible) me.mixer.update(dt); }
+    if (me) { const sp = Math.hypot(P.x - meLast[0], P.z - meLast[1]) / Math.max(dt, .001); meLast = [P.x, P.z]; me.object.visible = BV.k > .05 && !TP.on; me.object.position.set(P.x, 0, P.z); me.object.rotation.y = P.yaw + Math.PI; me.play(sp > .4 ? 'Walk_Loop' : 'Idle_Loop'); if (me.object.visible) me.mixer.update(dt); }
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);
@@ -817,3 +826,13 @@ function coachHudUpd() { if (!BV.coach) return; const tm = cruz && cruz.team; if
   $('hudBook').onclick = openBook; $('hudExit').onclick = () => setBirds(false); }
 setInterval(coachHudUpd, 250);
 window.__coach = { openBook, setBirds, BV };
+
+/* ---- Third-person "Boss" (Coach/Owner) avatar toggle; first person stays default ---- */
+const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0 }; let boss = null, bossLoading = false;
+{ const b = document.createElement('button'); b.className = 'hb'; b.id = 'bBoss'; b.type = 'button'; b.textContent = '🎩 Boss'; $('bZoom').after(b);
+  const pb = document.createElement('button'); pb.id = 'bBook'; pb.type = 'button'; pb.textContent = '📋 Coach Playbook'; pb.style.cssText = 'position:fixed;right:12px;bottom:calc(120px + env(safe-area-inset-bottom));z-index:25;display:none;background:#f5c542;color:#1a0a2a;border:0;border-radius:14px;padding:12px 16px;font:700 15px system-ui;box-shadow:0 4px 14px #0008'; document.body.appendChild(pb);
+  pb.onclick = () => openBook();
+  b.onclick = async () => { audioOn(); TP.on = !TP.on; b.textContent = TP.on ? '👁 First person' : '🎩 Boss'; TP.cx = P.x + Math.sin(P.yaw) * 3; TP.cz = P.z + Math.cos(P.yaw) * 3; TP.lx = P.x; TP.lz = P.z;
+    if (!TP.on) { pb.style.display = 'none'; if (boss) boss.object.visible = false; return; }
+    if (!boss && !bossLoading) { bossLoading = true; try { const L = await loadBoss(THREE); boss = L.make({ hat: true, shades: false }); scene.add(boss.object); } catch (e) { console.warn('boss', e); TP.on = false; b.textContent = '🎩 Boss'; } bossLoading = false; } }; }
+window.__tp = TP;

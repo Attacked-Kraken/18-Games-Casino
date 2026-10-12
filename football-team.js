@@ -25,7 +25,7 @@ export function createTeam(ctx) { const { THREE, scene, cruz, mobile } = ctx; co
       for (const p of arr) { const d = new THREE.Mesh(new THREE.CircleGeometry(isT ? .35 : .22, 12), new THREE.MeshBasicMaterial({ color: RC[k] || 0xffffff })); d.rotation.x = -Math.PI / 2; d.position.copy(p); ov.add(d); } }); ov.visible = true; }
   let ph = 'form', pt = 0, fly = null, carrier = null, mot = null; let reps = 0; T.drillT = 0; T.queue = null;
   const byPos = (p) => T.players.find((q) => q.pos === p);
-  const play = (q, n, ts = 1, once) => { if (q.h.clip !== n) { q.h.ts = ts; q.h.play(n, .2, once); } if (q.h.act) q.h.act.timeScale = ts; };
+  const play = (q, n, ts = 1, once) => { if (q.waveUntil > T.t && n !== 'Interact') return; if (q.h.clip !== n) { q.h.ts = ts; q.h.play(n, .2, once); } if (q.h.act) q.h.act.timeScale = ts; };
   function steer(q, tx, tz, sp, dt, face = true) { const ex = tx - q.x, ez = tz - q.z, d = Math.hypot(ex, ez); if (d < .25) { q.vx *= .6; q.vz *= .6; return true; } const k = Math.min(sp, d * 3) / d; q.vx += (ex * k - q.vx) * Math.min(1, dt * 6); q.vz += (ez * k - q.vz) * Math.min(1, dt * 6);
     if (face) { let dd = Math.atan2(ex, ez) - q.yaw; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); q.yaw += dd * Math.min(1, dt * 8); } return false; }
   const faceTo = (q, a, dt) => { let dd = a - q.yaw; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); q.yaw += dd * Math.min(1, dt * 6); };
@@ -46,7 +46,7 @@ export function createTeam(ctx) { const { THREE, scene, cruz, mobile } = ctx; co
   T.runPlay = (id) => { T.queue = id; if (ph === 'live' || ph === 'dead') return; ph = 'form'; pt = 0; nextPlay(); };
   T.setPlay = T.runPlay;
   nextPlay();
-  T.update = (dt, t, visible) => { const step = mobile ? 2 : 1; T.fr = (T.fr || 0) + 1; const pl = PL();
+  T.update = (dt, t, visible) => { T.t = t; const step = mobile ? 2 : 1; T.fr = (T.fr || 0) + 1; const pl = PL();
     if (reps >= 6 && T.queue == null) { T.drillT += dt; if (T.drillT > 28) { reps = 0; T.drillT = 0; } } /* Cruz drill break; backup QB keeps practice going */
     const useCruz = cruzQB(); const qbq = useCruz ? null : qb2;
     if (useCruz) { steer(qb2, -27, LOS - 2, 3, dt); play(qb2, Math.hypot(qb2.vx, qb2.vz) > .4 ? 'Jog_Fwd_Loop' : 'Idle_Loop'); if (Math.hypot(qb2.vx, qb2.vz) < .3) faceTo(qb2, Math.PI / 2, dt); }
@@ -68,6 +68,7 @@ export function createTeam(ctx) { const { THREE, scene, cruz, mobile } = ctx; co
       if ((carrier && carrier.catchT > 2.3) || pt > 9) { ph = 'dead'; pt = 0; } }
     else if (ph === 'dead') { skill.forEach((q) => { q.vx *= .8; q.vz *= .8; play(q, q === carrier ? 'Dance_Loop' : q.role === 'line' ? 'Idle_Loop' : 'Interact', 1, q !== carrier); }); if (carrier) ball.position.set(carrier.x, 1.2 + Math.abs(Math.sin(t * 6)) * .2, carrier.z);
       if (pt > 2.2) { ph = 'form'; pt = 0; carrier = null; mot = null; reps++; tCount = 0; trailG.setDrawRange(0, 0); T.players.forEach((q) => { q.h.clip = ''; }); nextPlay(); } }
+    if (T.boss && (ph === 'dead' || ph === 'form')) { const [bx, bz] = T.boss; T.players.forEach((q) => { const d = Math.hypot(bx - q.x, bz - q.z); if (d < 9 && q !== carrier && Math.hypot(q.vx, q.vz) < .6) { faceTo(q, Math.atan2(bx - q.x, bz - q.z), dt); if (!q.waved || t - q.waved > 20) { q.waved = t; q.waveUntil = t + 1.8; q.h.clip = ''; play(q, 'Interact', 1, true); } } }); }
     T.phase = ph; T.qbIsCruz = useCruz; ball.visible = visible; trail.visible = visible && tCount > 1; ov.visible = ov.visible && visible && T.overlay;
     T.players.forEach((q, i) => { q.x += q.vx * dt; q.z += q.vz * dt; q.x = Math.max(-30, Math.min(30, q.x)); q.z = Math.max(78, Math.min(195, q.z)); q.h.rig.position.set(q.x, 0, q.z); q.h.rig.rotation.set(Math.min(.2, Math.hypot(q.vx, q.vz) * .025), q.yaw, 0); q.h.rig.visible = visible;
       if (visible && (T.fr + i) % step === 0) q.h.mixer.update(dt * step); }); };
