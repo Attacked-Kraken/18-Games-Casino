@@ -140,6 +140,18 @@
    "category": "tables",
    "multiplayer": true,
    "new": true
+  },
+  {
+   "id": "holdemroyale",
+   "file": "holdemroyale.html",
+   "title": "Hold'em Royale",
+   "tagline": "No-limit Texas Hold'em: solo vs bots or room-code tables for 6. Fun chips only.",
+   "rating": "18+",
+   "icon": "holdemroyale-icon.png",
+   "accent": "#ffb400",
+   "category": "cards",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }
