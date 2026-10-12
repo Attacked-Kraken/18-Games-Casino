@@ -122,7 +122,7 @@ const STRIP = [0,1,0,2,3,0,1,4,2,0,5,1,3,6]; /* same strip on every reel, ~97% r
 const N = STRIP.length;
 const PAY = [[0,2,10,25,60],[0,0,12,30,80],[0,0,15,40,100],[0,0,25,60,200],[0,0,40,100,300],[0,0,80,250,800],[0,0,150,500,2500]];
 const LINES = [[1,1,1,1,1],[0,0,0,0,0],[2,2,2,2,2],[0,1,2,1,0],[2,1,0,1,2]];
-const LINE_COL = [0xffd36b, 0xff4d6d, 0x4dd8ff, 0x9dff6b, 0xd38bff];
+const LINE_COL = [0xd9bf85, 0xb0485a, 0x6a8ac0, 0x5a9a7a, 0x9a7ab0];
 const BETS = [5,10,25,50,100,250,500];
 const TOPUP = 1000, START = 2000, SKEY = 'gr_state';
 let S = { bal: START, bi: 1, day: '', spins: 0, best: 0, mute: false };
@@ -151,8 +151,8 @@ const SFX = {
   coin() { tone(1800 + Math.random() * 900, .12, 'square', .04); tone(2600 + Math.random() * 600, .1, 'sine', .04, .03); },
   click() { tone(900, .05, 'square', .05); },
 };
-$('muteB').textContent = S.mute ? '🔇' : '🔊';
-$('muteB').onclick = () => { S.mute = !S.mute; save(); $('muteB').textContent = S.mute ? '🔇' : '🔊'; if (master) master.gain.value = S.mute ? 0 : .5; };
+$('muteB').textContent = S.mute ? 'Muted' : 'Sound';
+$('muteB').onclick = () => { S.mute = !S.mute; save(); $('muteB').textContent = S.mute ? 'Muted' : 'Sound'; if (master) master.gain.value = S.mute ? 0 : .5; };
 
 /* ---------- renderer ---------- */
 const canvas = $('c');
@@ -165,8 +165,8 @@ R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.05;
 R.outputColorSpace = THREE.SRGBColorSpace;
 R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0c0306);
-scene.fog = new THREE.Fog(0x0c0306, 9, 22);
+scene.background = new THREE.Color(0x070505);
+scene.fog = new THREE.Fog(0x070505, 9, 22);
 const pmrem = new THREE.PMREMGenerator(R);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
 scene.environmentIntensity = .55;
@@ -182,51 +182,48 @@ function candy(g, path, c1, c2, sz, lw = .06) { /* fill a path with a candy grad
   g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = sz * .05; g.shadowOffsetY = sz * .035; g.fillStyle = gr; g.fill(b); g.restore();
   g.lineWidth = sz * lw; g.strokeStyle = '#1a0610'; g.lineJoin = 'round'; g.stroke(b); }
 function gloss(g, x, y, rx, ry, a = -.5) { g.save(); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(x, y, rx, ry, a, 0, 7); g.fill(); g.restore(); }
+/* lux 2026-10-12 (owner: "premium classic symbols: engraved gold 7s, diamonds, bars, crowns, gems in rich solid jewel tones"):
+   symbols are engraved/faceted in brushed gold and deep jewel tones on black lacquer cells. */
+function GOLDG(g, y0, y1) { const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, '#f6e3b0'); gr.addColorStop(.35, '#d4ae66'); gr.addColorStop(.6, '#9a7234'); gr.addColorStop(1, '#e2c27e'); return gr; };
+function gem(g, u, rx, ry, dark, mid, light) { /* faceted cushion-cut gem */
+  const n = 8, pts = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + Math.PI / 8; pts.push([Math.cos(a) * rx * u, Math.sin(a) * ry * u]); }
+  g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .03; g.fillStyle = dark; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); g.restore();
+  const inner = pts.map(([x, y]) => [x * .55, y * .55]);
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n; g.fillStyle = [mid, dark, light, mid, dark, mid, light, dark][i]; g.globalAlpha = .9; g.beginPath(); g.moveTo(...pts[i]); g.lineTo(...pts[j]); g.lineTo(...inner[j]); g.lineTo(...inner[i]); g.closePath(); g.fill(); }
+  g.globalAlpha = 1; const tg = g.createLinearGradient(-rx * u * .5, -ry * u * .5, rx * u * .5, ry * u * .5); tg.addColorStop(0, light); tg.addColorStop(1, mid); g.fillStyle = tg; g.beginPath(); inner.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill();
+  g.strokeStyle = GOLDG(g, -ry * u, ry * u); g.lineWidth = u * .022; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.moveTo(...inner[5]); g.lineTo(...inner[6]); g.lineTo(inner[6][0] * .4, inner[6][1] * .4); g.closePath(); g.fill(); }
+function engraved(g, text, u, font, fill) { g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.save(); g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = u * .04; g.shadowOffsetY = u * .025; g.fillStyle = '#2a1a08'; g.fillText(text, 0, u * .03); g.restore();
+  g.fillStyle = fill; g.fillText(text, 0, u * .02); g.lineWidth = u * .012; g.strokeStyle = 'rgba(255,240,200,.6)'; g.strokeText(text, 0, u * .015); }
 function drawSym(g, s, x, y, sz) {
   g.save(); g.translate(x, y); const u = sz;
-  const P = (f) => () => { const p = new Path2D(); f(p); return p; };
-  if (s.k === 'cherry') {
-    g.lineWidth = u * .05; g.strokeStyle = '#1a0610'; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(-u * .16, u * .06); g.quadraticCurveTo(-u * .05, -u * .25, u * .12, -u * .33); g.moveTo(u * .16, u * .1); g.quadraticCurveTo(u * .14, -u * .15, u * .12, -u * .33); g.stroke();
-    g.lineWidth = u * .028; g.strokeStyle = '#3fbf3a'; g.stroke();
-    candy(g, P(p => { p.ellipse(u * .16, -u * .33, u * .12, u * .055, -.4, 0, 7); }), '#7dff6a', '#1b7a1a', u * .5, .03);
-    [[-u * .16, u * .14], [u * .16, u * .18]].forEach(([cx, cy]) => { g.save(); g.translate(cx, cy); candy(g, P(p => p.arc(0, 0, u * .16, 0, 7)), '#ff3048', '#9a0016', u); gloss(g, -u * .06, -u * .06, u * .045, u * .025); g.restore(); });
-  } else if (s.k === 'lemon') {
-    candy(g, P(p => { p.ellipse(0, 0, u * .33, u * .23, -.25, 0, 7); p.moveTo(0, 0); }), '#fff35a', '#e0a800', u);
-    candy(g, P(p => { p.ellipse(u * .33, -u * .08, u * .06, u * .045, -.25, 0, 7); }), '#fff35a', '#d09000', u * .5, .04);
-    gloss(g, -u * .12, -u * .1, u * .1, u * .04, -.3);
-  } else if (s.k === 'grape') {
-    const pts = [[-.14, -.12], [0, -.14], [.14, -.12], [-.07, .02], [.07, .02], [0, .16], [-.2, .02], [.2, .02]];
-    pts.sort((a, b) => a[1] - b[1]).forEach(([a, b]) => { g.save(); g.translate(a * u, b * u + u * .04); candy(g, P(p => p.arc(0, 0, u * .095, 0, 7)), '#d77bff', '#5a0f9e', u * .6, .045); gloss(g, -u * .03, -u * .03, u * .025, u * .014); g.restore(); });
-    candy(g, P(p => { p.ellipse(u * .06, -u * .3, u * .1, u * .05, -.5, 0, 7); }), '#7dff6a', '#1b7a1a', u * .5, .03);
-  } else if (s.k === 'bell') {
-    candy(g, P(p => { p.moveTo(-u * .3, u * .2); p.quadraticCurveTo(-u * .22, u * .12, -u * .2, -u * .05); p.quadraticCurveTo(-u * .18, -u * .3, 0, -u * .3); p.quadraticCurveTo(u * .18, -u * .3, u * .2, -u * .05);
-      p.quadraticCurveTo(u * .22, u * .12, u * .3, u * .2); p.closePath(); }), '#ffd23a', '#d86a00', u);
-    candy(g, P(p => p.arc(0, u * .26, u * .07, 0, 7)), '#ffb02a', '#a04a00', u * .5, .05);
-    candy(g, P(p => p.arc(0, -u * .34, u * .045, 0, 7)), '#ffd23a', '#a04a00', u * .4, .05);
-    gloss(g, -u * .09, -u * .12, u * .04, u * .1, .25);
-  } else if (s.k === 'bar') {
-    candy(g, P(p => p.roundRect(-u * .36, -u * .17, u * .72, u * .34, u * .07)), '#45b8ff', '#0a3ec8', u);
-    g.font = '900 ' + u * .26 + 'px "Arial Black",Impact,system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineWidth = u * .035; g.strokeStyle = '#06143f'; g.strokeText('BAR', 0, u * .015); g.fillStyle = '#fff'; g.fillText('BAR', 0, u * .015);
-    gloss(g, -u * .2, -u * .11, u * .1, u * .025, 0);
-  } else if (s.k === 'seven') {
-    g.font = '900 ' + u * .78 + 'px Georgia,"Times New Roman",serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    const gr = g.createLinearGradient(0, -u * .3, 0, u * .3); gr.addColorStop(0, '#ff9ad0'); gr.addColorStop(.4, '#ff1f6e'); gr.addColorStop(1, '#a8002c');
-    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .035; g.lineWidth = u * .1; g.strokeStyle = '#1a0610'; g.lineJoin = 'round'; g.strokeText('7', 0, u * .05); g.restore();
-    g.lineWidth = u * .045; g.strokeStyle = '#ffd34a'; g.strokeText('7', 0, u * .05); g.fillStyle = gr; g.fillText('7', 0, u * .05);
-    gloss(g, -u * .1, -u * .2, u * .1, u * .025, -.1);
-  } else if (s.k === 'diamond') {
-    candy(g, P(p => { p.moveTo(-u * .32, -u * .1); p.lineTo(-u * .18, -u * .26); p.lineTo(u * .18, -u * .26); p.lineTo(u * .32, -u * .1); p.lineTo(0, u * .32); p.closePath(); }), '#8ffff2', '#0096b8', u);
-    g.lineWidth = u * .025; g.strokeStyle = 'rgba(10,40,60,.7)'; g.beginPath(); g.moveTo(-u * .32, -u * .1); g.lineTo(u * .32, -u * .1); g.moveTo(-u * .1, -u * .1); g.lineTo(0, u * .3); g.lineTo(u * .1, -u * .1);
-    g.moveTo(-u * .18, -u * .26); g.lineTo(-u * .1, -u * .1); g.lineTo(0, -u * .26); g.lineTo(u * .1, -u * .1); g.lineTo(u * .18, -u * .26); g.stroke();
-    gloss(g, -u * .12, -u * .17, u * .06, u * .02, -.2);
-  }
+  if (s.k === 'cherry') gem(g, u, .3, .3, '#3a0710', '#7a1424', '#c0384a');            /* ruby */
+  else if (s.k === 'lemon') gem(g, u, .26, .33, '#05301f', '#0f5a3e', '#3a9a6e');       /* emerald */
+  else if (s.k === 'grape') gem(g, u, .3, .27, '#0a1a3a', '#1d3f7a', '#4a78c0');        /* sapphire */
+  else if (s.k === 'bell') { /* crown */
+    const p = new Path2D(); p.moveTo(-u * .32, u * .18); p.lineTo(-u * .34, -u * .16); p.lineTo(-u * .17, u * .0); p.lineTo(0, -u * .26); p.lineTo(u * .17, u * .0); p.lineTo(u * .34, -u * .16); p.lineTo(u * .32, u * .18); p.closePath();
+    g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .03; g.fillStyle = GOLDG(g, -u * .26, u * .2); g.fill(p); g.restore();
+    g.fillStyle = GOLDG(g, u * .16, u * .28); g.fillRect(-u * .33, u * .16, u * .66, u * .1); g.strokeStyle = '#5a3e14'; g.lineWidth = u * .012; g.stroke(p); g.strokeRect(-u * .33, u * .16, u * .66, u * .1);
+    [[-u * .34, -u * .18, '#7a1424'], [0, -u * .28, '#1d3f7a'], [u * .34, -u * .18, '#0f5a3e']].forEach(([cx, cy, c]) => { g.fillStyle = c; g.beginPath(); g.arc(cx, cy, u * .045, 0, 7); g.fill(); g.strokeStyle = '#e2c27e'; g.stroke(); });
+    g.fillStyle = '#7a1424'; g.beginPath(); g.arc(0, u * .21, u * .03, 0, 7); g.fill(); }
+  else if (s.k === 'bar') { g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .03; g.fillStyle = '#0c0a0a'; g.fillRect(-u * .38, -u * .16, u * .76, u * .32); g.restore();
+    g.strokeStyle = GOLDG(g, -u * .16, u * .16); g.lineWidth = u * .03; g.strokeRect(-u * .36, -u * .14, u * .72, u * .28); g.lineWidth = u * .008; g.strokeRect(-u * .32, -u * .1, u * .64, u * .2);
+    engraved(g, 'BAR', u, '400 ' + u * .2 + 'px Didot,"Bodoni 72","Playfair Display",Georgia,serif', GOLDG(g, -u * .1, u * .1)); }
+  else if (s.k === 'seven') engraved(g, '7', u, '400 ' + u * .8 + 'px Didot,"Bodoni 72","Playfair Display",Georgia,serif', (() => { const gr = g.createLinearGradient(0, -u * .3, 0, u * .3); gr.addColorStop(0, '#f6e3b0'); gr.addColorStop(.45, '#c9a45c'); gr.addColorStop(.55, '#8a6a2a'); gr.addColorStop(1, '#d4ae66'); return gr; })());
+  else if (s.k === 'diamond') { /* brilliant-cut white diamond */
+    const pts = [[-u * .32, -u * .1], [-u * .18, -u * .26], [u * .18, -u * .26], [u * .32, -u * .1], [0, u * .32]];
+    g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .03; g.fillStyle = '#8a95a8'; g.beginPath(); pts.forEach(([a, b], i) => i ? g.lineTo(a, b) : g.moveTo(a, b)); g.closePath(); g.fill(); g.restore();
+    const f = (c, ...q) => { g.fillStyle = c; g.beginPath(); q.forEach(([a, b], i) => i ? g.lineTo(a, b) : g.moveTo(a, b)); g.closePath(); g.fill(); };
+    f('#e8eef6', [-u * .18, -u * .26], [0, -u * .26], [-u * .1, -u * .1]); f('#b8c4d6', [0, -u * .26], [u * .18, -u * .26], [u * .1, -u * .1]); f('#ffffff', [-u * .1, -u * .1], [0, -u * .26], [u * .1, -u * .1]);
+    f('#9aa6ba', [-u * .32, -u * .1], [-u * .1, -u * .1], [0, u * .32]); f('#d6dee9', [-u * .1, -u * .1], [u * .1, -u * .1], [0, u * .32]); f('#7a879c', [u * .1, -u * .1], [u * .32, -u * .1], [0, u * .32]);
+    f('#c8d2e0', [-u * .32, -u * .1], [-u * .18, -u * .26], [-u * .1, -u * .1]); f('#a8b4c6', [u * .18, -u * .26], [u * .32, -u * .1], [u * .1, -u * .1]);
+    g.strokeStyle = GOLDG(g, -u * .26, u * .32); g.lineWidth = u * .012; g.beginPath(); pts.forEach(([a, b], i) => i ? g.lineTo(a, b) : g.moveTo(a, b)); g.closePath(); g.stroke(); }
   g.restore();
 }
-function cellBg(g, y, w, h) { /* rich dark velvet panel per symbol with a soft center glow */
-  const rg = g.createRadialGradient(w / 2, y + h / 2, h * .05, w / 2, y + h / 2, h * .75); rg.addColorStop(0, '#5a1838'); rg.addColorStop(1, '#1c0614');
-  g.fillStyle = rg; g.fillRect(0, y, w, h); g.fillStyle = 'rgba(245,201,106,.55)'; g.fillRect(0, y, w, 3); }
+function cellBg(g, y, w, h) { /* black lacquer cell with a fine gold rule */
+  const rg = g.createRadialGradient(w / 2, y + h / 2, h * .05, w / 2, y + h / 2, h * .75); rg.addColorStop(0, '#1e1816'); rg.addColorStop(1, '#070505');
+  g.fillStyle = rg; g.fillRect(0, y, w, h); g.fillStyle = 'rgba(201,164,92,.5)'; g.fillRect(0, y, w, 2); }
 function symURL(i) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); drawSym(g, SYM[i], 48, 48, 96); return c.toDataURL(); }
 const CELL = 288; /* 288 x 14 = 4032 px tall, within iPhone texture limits */
 const reelTex = canvasTex(CELL, CELL * N, (g, w, h) => {
@@ -236,29 +233,29 @@ const reelTex = canvasTex(CELL, CELL * N, (g, w, h) => {
 reelTex.colorSpace = THREE.SRGBColorSpace; reelTex.generateMipmaps = true; reelTex.minFilter = THREE.LinearMipmapLinearFilter; reelTex.anisotropy = R.capabilities.getMaxAnisotropy();
 reelTex.flipY = false; reelTex.wrapT = THREE.RepeatWrapping;
 const carpet = canvasTex(512, 512, (g, w) => {
-  g.fillStyle = '#4a0b17'; g.fillRect(0, 0, w, w);
+  g.fillStyle = '#240a0c'; g.fillRect(0, 0, w, w);
   for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const cx = x * 128 + 64, cy = y * 128 + 64;
-    g.strokeStyle = '#c99a3c'; g.lineWidth = 4; g.beginPath(); g.moveTo(cx, cy - 46); g.lineTo(cx + 46, cy); g.lineTo(cx, cy + 46); g.lineTo(cx - 46, cy); g.closePath(); g.stroke();
-    g.fillStyle = '#1f3a6b'; g.beginPath(); g.arc(cx, cy, 16, 0, 7); g.fill(); g.fillStyle = '#e8b64a'; g.beginPath(); g.arc(cx, cy, 6, 0, 7); g.fill();
-    g.strokeStyle = '#7a1a2a'; g.lineWidth = 3; g.beginPath(); g.arc(x * 128, y * 128, 30, 0, 7); g.stroke(); }
+    g.strokeStyle = 'rgba(176,141,87,.3)'; g.lineWidth = 2; g.beginPath(); g.moveTo(cx, cy - 46); g.lineTo(cx + 46, cy); g.lineTo(cx, cy + 46); g.lineTo(cx - 46, cy); g.closePath(); g.stroke();
+    g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.arc(cx, cy, 16, 0, 7); g.fill(); g.fillStyle = 'rgba(176,141,87,.35)'; g.beginPath(); g.arc(cx, cy, 6, 0, 7); g.fill();
+    g.strokeStyle = 'rgba(176,141,87,.15)'; g.lineWidth = 1.5; g.beginPath(); g.arc(x * 128, y * 128, 30, 0, 7); g.stroke(); }
   const im = g.getImageData(0, 0, w, w), d = im.data; for (let i = 0; i < d.length; i += 4) { const n = (Math.random() - .5) * 22; d[i] += n; d[i + 1] += n; d[i + 2] += n; } g.putImageData(im, 0, 0);
 });
 carpet.wrapS = carpet.wrapT = THREE.RepeatWrapping; carpet.repeat.set(10, 10);
 const signTex = canvasTex(1024, 256, (g, w, h) => {
-  g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'italic 900 132px Georgia,serif';
-  g.shadowColor = '#ffb030'; g.shadowBlur = 30; g.fillStyle = '#ffd98a'; g.fillText('Gilded Reels', w / 2, h / 2 + 6); g.shadowBlur = 0; g.fillStyle = '#fff6dc'; g.fillText('Gilded Reels', w / 2, h / 2 + 6);
+  g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '400 118px Didot,"Bodoni 72","Playfair Display",Georgia,serif'; g.fillStyle = '#0a0808'; g.fillRect(0, 0, w, h); g.strokeStyle = '#b08d57'; g.lineWidth = 4; g.strokeRect(14, 14, w - 28, h - 28);
+  const gg = g.createLinearGradient(0, 60, 0, 200); gg.addColorStop(0, '#f6e3b0'); gg.addColorStop(.5, '#c9a45c'); gg.addColorStop(1, '#8a6a2a'); g.fillStyle = gg; g.fillText('Gilded Reels', w / 2, h / 2 + 6);
 });
 
 /* ---------- materials ---------- */
 const M = {
-  gold: new THREE.MeshPhysicalMaterial({ color: 0xe8b04a, metalness: 1, roughness: .22, clearcoat: .6, clearcoatRoughness: .1 }),
-  chrome: new THREE.MeshPhysicalMaterial({ color: 0xf2f4f8, metalness: 1, roughness: .06, clearcoat: 1, clearcoatRoughness: .03 }),
-  lacquer: new THREE.MeshPhysicalMaterial({ color: 0x7a0a1e, metalness: .15, roughness: .32, clearcoat: 1, clearcoatRoughness: .06, sheen: .5, sheenColor: new THREE.Color(0xff6680) }),
+  gold: new THREE.MeshPhysicalMaterial({ color: 0xc49a52, metalness: 1, roughness: .3, clearcoat: .4, clearcoatRoughness: .1 }),
+  chrome: new THREE.MeshPhysicalMaterial({ color: 0xb9b4ac, metalness: 1, roughness: .15, clearcoat: 1, clearcoatRoughness: .03 }),
+  lacquer: new THREE.MeshPhysicalMaterial({ color: 0x0a0809, metalness: .2, roughness: .25, clearcoat: 1, clearcoatRoughness: .05 }),
   black: new THREE.MeshPhysicalMaterial({ color: 0x0b0b10, metalness: .3, roughness: .4, clearcoat: .8 }),
   glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: .02, transparent: true, opacity: .015, clearcoat: 0, ior: 1.5, specularIntensity: .02, envMapIntensity: .03, depthWrite: false }),
   reel: new THREE.MeshStandardMaterial({ color: 0xffffff, map: reelTex, roughness: .85, metalness: 0, envMapIntensity: .08 }),
-  red: new THREE.MeshPhysicalMaterial({ color: 0xff1030, roughness: .08, clearcoat: 1, emissive: 0x400008, transmission: 0 }),
-  sign: new THREE.MeshBasicMaterial({ map: signTex, toneMapped: false, color: new THREE.Color(1.6, 1.6, 1.6) }),
+  red: new THREE.MeshPhysicalMaterial({ color: 0x5e101c, roughness: .12, clearcoat: 1, emissive: 0x000000, transmission: 0 }),
+  sign: new THREE.MeshBasicMaterial({ map: signTex, toneMapped: false, color: new THREE.Color(.95, .95, .95) }),
   carpet: new THREE.MeshStandardMaterial({ map: carpet, roughness: .95 }),
 };
 
@@ -327,18 +324,18 @@ lever.position.x = 1.86; lever.rotation.x = -.12;
 /* floor + room */
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), M.carpet); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 /* distant machines (cheap silhouettes with glowing screens) */
-const farMat = new THREE.MeshStandardMaterial({ color: 0x2a070e, roughness: .5, metalness: .4 });
+const farMat = new THREE.MeshStandardMaterial({ color: 0x140c0a, roughness: .5, metalness: .4 });
 for (let i = 0; i < 14; i++) { const side = i % 2 ? 1 : -1, x = side * (3.6 + (i >> 1) % 3 * 1.8), z = -2.5 - Math.floor(i / 6) * 2.6 - (i % 3);
   const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.6, 1), farMat); m.position.set(x, 1.3, z); scene.add(m);
   const sc = new THREE.Mesh(new THREE.PlaneGeometry(.9, .6), new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(Math.random(), .8, .55), toneMapped: false })); sc.position.set(x, 1.8, z + .51); scene.add(sc); }
 /* bokeh ceiling lights */
-for (let i = 0; i < 40; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), new THREE.MeshBasicMaterial({ color: i % 3 ? 0xffc477 : 0xff4f6a, toneMapped: false })); b.position.set((Math.random() - .5) * 22, 5.5 + Math.random() * 2, -3 - Math.random() * 14); scene.add(b); }
+for (let i = 0; i < 40; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc477, toneMapped: false })); b.position.set((Math.random() - .5) * 22, 5.5 + Math.random() * 2, -3 - Math.random() * 14); scene.add(b); }
 /* lights */
-scene.add(new THREE.HemisphereLight(0xffd6a8, 0x2a0508, .35));
+scene.add(new THREE.HemisphereLight(0xffd6a8, 0x0c0606, .25));
 const key = new THREE.SpotLight(0xfff0d8, 28, 20, .55, .5, 1.6); key.position.set(2.5, 7.5, 5); key.target.position.set(0, 2, 0); key.castShadow = true;
 key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0004; key.shadow.normalBias = .02; scene.add(key, key.target);
-const rimL = new THREE.PointLight(0xff3050, 8, 10, 1.6); rimL.position.set(-3, 3.5, -1); scene.add(rimL);
-const rimR = new THREE.PointLight(0xffb040, 8, 10, 1.6); rimR.position.set(3, 3.5, -1); scene.add(rimR);
+const rimL = new THREE.PointLight(0xffb070, 6, 10, 1.6); rimL.position.set(-3, 3.5, -1); scene.add(rimL);
+const rimR = new THREE.PointLight(0xffc890, 6, 10, 1.6); rimR.position.set(3, 3.5, -1); scene.add(rimR);
 const winLight = new THREE.PointLight(0xffd070, 0, 6, 1.5); winLight.position.set(0, 3.6, 2.2); scene.add(winLight);
 
 /* ---------- coins (instanced) ---------- */
