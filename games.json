@@ -116,6 +116,18 @@
    "category": "tables",
    "multiplayer": true,
    "new": true
+  },
+  {
+   "id": "candyrush",
+   "file": "candyrush.html",
+   "title": "Candy Rush",
+   "tagline": "6x5 tumbling candy slot: 8+ anywhere pays, chain tumbles. Fun chips only.",
+   "rating": "18+",
+   "icon": "candyrush-icon.png",
+   "accent": "#ff3fa4",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
