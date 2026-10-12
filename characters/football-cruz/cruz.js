@@ -2,6 +2,7 @@
    Bulk via bone scaling (wider chest/shoulders, thick neck/arms/thighs), procedural pads, helmet with face mask, gloves, knee pads.
    Purple + goldfish-gold palette, original "M" monogram (no real team marks). */
 import { loadHumans } from './humans.js';
+import { addKit } from './garment.js';
 export const PURPLE = '#3a0a8c', GOLD = '#e0a81a';
 export function drawM(g, cx, cy, s, fill = GOLD, edge = '#ffffff', out = PURPLE) { /* original angular "M" monogram with a split-peak */
   const pts = [[-1, .8], [-1, -.8], [-.55, -.8], [0, -.05], [.55, -.8], [1, -.8], [1, .8], [.6, .8], [.6, -.15], [.12, .5], [-.12, .5], [-.6, -.15], [-.6, .8]];
@@ -65,6 +66,7 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
   { vec3 q=vB; if(q.y>.44&&q.y<.935&&abs(q.x)<.3) metalnessFactor=.45; }`).replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
   { vec3 q=vB; float jy=step(.975,q.y)*step(q.y,1.56); float py=step(.44,q.y)*step(q.y,.935); roughnessFactor = mix(roughnessFactor, .5, jy); roughnessFactor = mix(roughnessFactor, .3, py); if(abs(q.x)>.4&&abs(q.x)<.67) roughnessFactor=.42; }`); };
       mat.customProgramCacheKey = () => 'cruz2'; mat.needsUpdate = true; }
+    if (body) addKit(THREE, h, body, { NUMT, NAMET, MT, ENV });
     /* helmet v4 (Speedflex-style, original): opaque snug shell ~13% over skull, inner liner (no see-through), back ridge, ear holes, jaw flaps, attached grey cage */
     const ht = tex(THREE, 1024, 512, (g, w, hh) => { g.fillStyle = PURPLE; g.fillRect(0, 0, w, hh); for (const x of [w * .25, w * .75]) { g.fillStyle = '#fff'; g.fillRect(x - 22, 0, 44, hh); g.fillStyle = GOLD; g.fillRect(x - 15, 0, 30, hh); }
       for (const x of [0, w / 2, w]) drawM(g, x, hh * .5, 56); });
@@ -90,8 +92,8 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
     for (const s of [-1, 1]) { const post = bar(new THREE.CylinderGeometry(.0042, .0042, .075, 6), s * .112, 1.64, .03); post.rotation.x = .1; }
     /* heavy build: bone scaling */
     const S = (n, x, y = x, z = x) => B[n] && B[n].scale.set(x, y, z);
-    S('spine_03', 1.04); S('neck_01', 1.1); S('Head', 1 / (1.04 * 1.1)); S('clavicle_l', 1.07); S('clavicle_r', 1.07);
-    for (const s of ['l', 'r']) { S('upperarm_' + s, 1, 1.12, 1.12); S('lowerarm_' + s, 1, 1.06, 1.06); S('hand_' + s, 1 / (1.04 * 1.07), 1 / (1.04 * 1.07 * 1.12 * 1.06) * 1.05, 1 / (1.04 * 1.07 * 1.12 * 1.06) * 1.05); S('thigh_' + s, 1, 1.07, 1.07); S('calf_' + s, 1, 1.05, 1.05); S('foot_' + s, 1, 1 / 1.124, 1 / 1.124); }
+    S('spine_03', 1.06); S('neck_01', 1.1); S('Head', 1 / (1.06 * 1.1)); S('clavicle_l', 1.07); S('clavicle_r', 1.07);
+    for (const s of ['l', 'r']) { S('upperarm_' + s, 1, 1.17, 1.17); S('lowerarm_' + s, 1, 1.07, 1.07); S('hand_' + s, 1 / (1.06 * 1.07), 1 / (1.06 * 1.07 * 1.17 * 1.07) * 1.05, 1 / (1.06 * 1.07 * 1.17 * 1.07) * 1.05); S('thigh_' + s, 1, 1.07, 1.07); S('calf_' + s, 1, 1.12, 1.12); S('foot_' + s, 1, 1 / (1.07 * 1.12), 1 / (1.07 * 1.12)); }
     const rig = new THREE.Group(); rig.add(obj); h.rig = rig; return h; }
   return { make, H };
 }
