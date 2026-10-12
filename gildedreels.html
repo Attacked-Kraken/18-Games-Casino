@@ -43,6 +43,10 @@ button { font:inherit; font-weight:900; border:0; border-radius:14px; color:#2a1
 .sheet td:first-child { font-size:22px; }
 .sheet p { color:var(--mut); font-size:13px; line-height:1.45; }
 .sheet .ok { width:100%; height:46px; margin-top:10px; background:linear-gradient(#ffe7a6,#c8902f); }
+.feed { position:fixed; left:8px; top:calc(54px + env(safe-area-inset-top)); width:170px; background:rgba(20,8,10,.78); border:1px solid rgba(245,201,106,.45); border-radius:12px; padding:6px 8px; font:700 11px system-ui; z-index:4; }
+.feed .fh { color:#f5c96a; margin-bottom:3px; } .feed ol { margin:0 0 4px; padding-left:18px; color:#fff; } .feed ol li { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#flog div { color:#d9c49c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } #flog div.w { color:#9dff6b; }
+.hide { display:none !important; }
 #fb { position:fixed; inset:0; display:none; align-items:center; justify-content:center; text-align:center; padding:24px; }
 #load { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0c0306; color:var(--gold); font:900 22px system-ui; letter-spacing:.1em; transition:opacity .5s; z-index:30; pointer-events:none; }
 </style>
@@ -50,7 +54,7 @@ button { font:inherit; font-weight:900; border:0; border-radius:14px; color:#2a1
 <canvas id="c"></canvas>
 <div id="load">GILDED REELS</div>
 <div id="msg"></div>
-<div class="top"><button id="payB" type="button">Paytable</button><button id="muteB" type="button">🔊</button></div>
+<div class="top"><button id="bankB" type="button">👥 Slot bank</button><button id="payB" type="button">Paytable</button><button id="muteB" type="button">🔊</button></div>
 <div class="hud">
   <div class="row">
     <div class="pill"><small>FUN CHIPS</small><b id="bal">0</b></div>
@@ -77,9 +81,22 @@ button { font:inherit; font-weight:900; border:0; border-radius:14px; color:#2a1
   <p id="brokeP">Here’s your free daily top-up of 1,000 fun chips.</p>
   <button class="ok" type="button" id="brokeGo">Collect</button>
 </div></div>
+<div id="feed" class="feed hide"><div class="fh"><b id="fCode"></b> <span id="fN"></span></div><ol id="board"></ol><div id="flog"></div></div>
+<div class="sheet" id="bank"><div class="box">
+  <h2>Slot bank</h2>
+  <p>Spin together with up to 6 friends: everyone sees each other’s spins and wins in a live feed and a leaderboard. Your reels and chips stay your own.</p>
+  <input id="bName" maxlength="16" placeholder="Your name" style="width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:10px;border-radius:12px;border:1px solid rgba(245,201,106,.45);background:#0c0306;color:#fff;text-align:center">
+  <div id="bIn"><button class="ok" type="button" id="bCreate">Create a bank</button>
+  <div style="display:flex;gap:8px;margin-top:10px"><input id="bCode" maxlength="6" placeholder="CODE" style="flex:1;min-width:0;font:900 18px system-ui;letter-spacing:.25em;text-transform:uppercase;padding:10px;border-radius:12px;border:1px solid rgba(245,201,106,.45);background:#0c0306;color:#fff;text-align:center" autocomplete="off"><button class="ok" type="button" id="bJoin" style="width:auto;margin:0;padding:0 16px">Join</button></div></div>
+  <div id="bOn" class="hide"><div style="font:900 40px system-ui;letter-spacing:.25em;color:#f5c96a;text-align:center" id="bBig"></div><button class="ok" type="button" id="bShare">Share invite</button><button class="ok" type="button" id="bLeave" style="background:#3a1a20;color:#f5c96a">Leave bank</button></div>
+  <p id="bErr" style="color:#ff9aa8;text-align:center"></p>
+  <button class="ok" type="button" id="bX" style="background:transparent;color:#d9c49c">Close</button>
+</div></div>
 <div id="fb"><div><h2 style="color:var(--gold)">Gilded Reels needs 3D graphics</h2><p>This phone or browser has 3D (WebGL) turned off. Try a newer browser.</p><a href="./" style="color:var(--gold)">‹ Back to the casino</a></div></div>
 <script src="extra-shell.js"></script>
 <script src="arcade-record.js"></script>
+<script src="vendor/peerjs.min.js"></script>
+<script src="mp.js"></script>
 <script>ArcadeShell.init({});</script>
 <script type="module">
 import * as THREE from './three.module.min.js';
@@ -392,6 +409,7 @@ function evaluate() {
   let total = 0, hits = [];
   LINES.forEach((L, li) => { const s = grid(L[0], 0); let n = 1; while (n < 5 && grid(L[n], n) === s) n++; const p = PAY[s][n - 1] * lineBet(); if (p > 0) { total += p; hits.push({ li, n, L }); } });
   lastWin = total; S.bal += total; S.best = Math.max(S.best, total); save();
+  if (bankRoom) bankRoom.send('spin', { bet: bet(), win: total });
   try { ArcadeRecord.add('gildedreels', 'cpu', total > bet() ? 'w' : total > 0 ? 'd' : 'l'); } catch (e) {}
   if (total > 0) { const x = total / bet(), big = x >= 10;
     hits.forEach(h => { lineGs[h.li].userData.on = true; for (let c = 0; c < h.n; c++) frames[c * 3 + h.L[c]].material.opacity = 1; });
@@ -452,6 +470,36 @@ function frame(now) {
 }
 ui(); requestAnimationFrame(frame);
 setTimeout(() => { $('load').style.opacity = 0; }, 250);
-window.__gr = { spin: pull, state: () => ({ bal: S.bal, busy, lastWin, q: qLvl, stops: reels.map(r => r.stop) }) };
+/* ---------- slot bank (mp.js): shared feed + session leaderboard; the host just tallies, every player's reels and chips are local ---------- */
+let bankRoom = null, bankHost = null;
+const escH = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+function bankEngine(r) { const st = r.state || { board: {}, feed: [] };
+  const push = () => { r.players.forEach(p => { st.board[p.key] = st.board[p.key] || { name: p.name, spins: 0, won: 0, net: 0, best: 0 }; st.board[p.key].on = p.on; st.board[p.key].name = p.name; }); r.setState(JSON.parse(JSON.stringify(st))); };
+  r.on('players', push);
+  r.on('msg', (t, d, k) => { if (t !== 'spin') return; const b = Math.max(0, +d.bet || 0), w = Math.max(0, +d.win || 0), p = r.players.find(x => x.key === k); if (!p) return;
+    const e = st.board[k] = st.board[k] || { name: p.name, spins: 0, won: 0, net: 0, best: 0 }; e.spins++; e.won += w; e.net += w - b; e.best = Math.max(e.best, w);
+    st.feed.unshift({ n: p.name, b, w, t: Date.now() }); st.feed.length = Math.min(st.feed.length, 12); push(); });
+  push(); return { push }; }
+function showBank(st) { if (!bankRoom || !st) return; $('feed').classList.remove('hide'); $('fCode').textContent = 'BANK ' + bankRoom.code; $('fN').textContent = '· ' + bankRoom.players.filter(p => p.on).length + '/6';
+  const rows = Object.entries(st.board).sort((a, b) => b[1].won - a[1].won).slice(0, 6);
+  $('board').innerHTML = rows.map(([k, e]) => '<li>' + (k === bankRoom.me ? '<b>' : '') + escH(e.name) + ' · ' + fmt(e.won) + (k === bankRoom.me ? '</b>' : '') + (e.on === false ? ' ⚠︎' : '') + '</li>').join('');
+  $('flog').innerHTML = st.feed.slice(0, 4).map(f => '<div class="' + (f.w > 0 ? 'w' : '') + '">' + escH(f.n) + (f.w > 0 ? ' won +' + fmt(f.w) : ' spun ' + fmt(f.b)) + '</div>').join('');
+  const top = st.feed[0]; if (top && top.t !== showBank.last && top.w >= top.b * 10 && top.n !== bankRoom.name) msg('★ ' + top.n + ' +' + fmt(top.w), 2000); showBank.last = top && top.t; }
+function bankUp(r) { bankRoom = r; $('bIn').classList.add('hide'); $('bOn').classList.remove('hide'); $('bBig').textContent = r.code; $('bErr').textContent = '';
+  r.on('state', showBank); r.on('players', () => showBank(r.state));
+  r.on('host', () => { bankHost = bankEngine(r); }); r.on('status', s => { if (s === 'reconnecting') msg('Reconnecting…', 1500); });
+  r.on('closed', (why) => { bankDown(); if (why) msg(why, 3000); });
+  if (r.isHost) bankHost = bankEngine(r); else showBank(r.state); history.replaceState(null, '', '?room=' + r.code); }
+function bankDown() { if (bankRoom) { const r = bankRoom; bankRoom = null; try { r.leave(); } catch (e) {} } bankHost = null; $('feed').classList.add('hide'); $('bIn').classList.remove('hide'); $('bOn').classList.add('hide'); history.replaceState(null, '', location.pathname); }
+const bName = () => { const n = $('bName').value.trim().slice(0, 16) || 'Player'; S.name = n; save(); return n; };
+$('bName').value = S.name || '';
+$('bankB').onclick = () => $('bank').classList.add('on'); $('bX').onclick = () => $('bank').classList.remove('on');
+$('bCreate').onclick = async () => { $('bErr').textContent = 'Opening…'; try { bankUp(await MP.create({ game: 'gr', name: bName(), max: 6 })); } catch (e) { $('bErr').textContent = e.message; } };
+$('bJoin').onclick = async () => { $('bErr').textContent = 'Joining…'; try { bankUp(await MP.join($('bCode').value, { game: 'gr', name: bName(), max: 6 })); $('bank').classList.remove('on'); } catch (e) { $('bErr').textContent = e.message; } };
+$('bShare').onclick = async () => { if (bankRoom && await MP.share(bankRoom, 'Spin Gilded Reels with me') === 'copied') msg('Invite copied', 1400); };
+$('bLeave').onclick = () => { bankDown(); $('bank').classList.remove('on'); };
+if (!window.MP || !MP.available()) $('bankB').style.display = 'none';
+else { const rc = MP.codeFromUrl(); if (rc) { $('bCode').value = rc; $('bank').classList.add('on'); } }
+window.__gr = { bank: () => bankRoom, spin: pull, state: () => ({ bal: S.bal, busy, lastWin, q: qLvl, stops: reels.map(r => r.stop) }) };
 </script>
 </body></html>
