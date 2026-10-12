@@ -9,6 +9,7 @@
      can't be bought, won as prizes or cashed out; each player's chips stay on their own phone (saved under v21_<name>, same key
      as before so balances carry over). 18+ through age-gate.js. Rules: 6 decks, dealer stands on all 17, blackjack pays 3 to 2,
      double on any two cards, one split, split aces get one card, dealer peeks for blackjack. -->
+<script src="chips.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" href="velvet21-icon.png">
@@ -125,7 +126,8 @@ const BET_T = FAST ? 6000 : 15000, TURN_T = FAST ? 8000 : 20000, SEATS = 6, MIN 
 const uname = () => { try { return (localStorage.getItem('ps_username') || '').trim() || 'guest'; } catch (e) { return 'guest'; } };
 const KEY = () => 'v21_' + uname().toLowerCase();
 let S = {}; try { S = JSON.parse(localStorage.getItem(KEY()) || '{}') || {}; } catch (e) {}
-if (typeof S.chips !== 'number') S.chips = 10000; S.v3 = S.v3 || { rid: '', topDay: '', name: '' };
+delete S.chips; /* balance now lives in the shared fun-chip wallet (chips.js) */
+Object.defineProperty(S, 'chips', { enumerable: false, get: () => Chips.bal(), set: (v) => { const d = Math.round(v - Chips.bal()); if (d > 0) Chips.give(d); else if (d < 0) Chips.take(-d); } }); S.v3 = S.v3 || { rid: '', topDay: '', name: '' };
 const save = () => { try { localStorage.setItem(KEY(), JSON.stringify(S)); } catch (e) {} };
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -343,7 +345,7 @@ function render(st) { ST = st; const seen = new Set();
     const k = stacks[si]; if (k.amt !== amt) { if (k.g) scene.remove(k.g); k.g = null; k.amt = amt; if (amt > 0) { k.g = chipStack(amt); k.g.position.copy(ell(seatTh(si), .8)); k.g.position.y = 0; scene.add(k.g); } } });
   /* my seat, results, settle */
   const me = st.seats.find(s => s && s.key === room.me), mi = st.seats.indexOf(me);
-  if (st.phase === 'done' && me && me.hands.length && S.v3.rid !== rkey(st)) { S.v3.rid = rkey(st); S.chips = Math.max(0, S.chips + me.net); save();
+  if (st.phase === 'done' && me && me.hands.length && S.v3.rid !== rkey(st)) { S.v3.rid = rkey(st); S.chips = Math.max(0, S.chips + me.net); save(); { const st0 = me.hands.reduce((a, h) => a + h.bet, 0); if (window.Wallet) Wallet.session('velvet21', st0, st0 + me.net); }
     if (me.net > 0) SFX.win(); else if (me.net < 0) SFX.lose(); try { ArcadeRecord.add('velvet21', room.solo ? 'cpu' : 'net', me.net > 0 ? 'w' : me.net < 0 ? 'l' : 'd'); } catch (e) {}
     toast(me.net > 0 ? 'You win ' + fmt(me.net) + ' chips' : me.net < 0 ? 'You lose ' + fmt(-me.net) : 'Push'); }
   if (st.phase === 'bet' && me && !me.ready && myBet === 0 && S.v3.lastRound !== st.round) { S.v3.lastRound = st.round; myBet = 0; }

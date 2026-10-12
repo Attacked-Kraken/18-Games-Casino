@@ -36,7 +36,7 @@ K.onFrame((dt) => { for (let i = balls.length - 1; i >= 0; i--) { const b = ball
   pegs.forEach(q => q.scale.setScalar(Math.max(1, q.scale.x - dt * 4))); bins.forEach(g => g.position.y += ((TOP - ROWS * GAP - .05) - g.position.y) * Math.min(1, dt * 10)); });
 function land(b) { const mult = M.PLINKO[b.risk][b.bin], ret = Math.round(b.bet * mult); bins[b.bin].position.y -= .15;
   if (ret > b.bet) { const where = bins[b.bin].position.clone().add(new THREE.Vector3(0, .4, .3)); K.payout(b.bet, ret, where); }
-  else { K.result(b.bet, ret); if (ret) K.give(ret); K.SFX.pop(mult < 1 ? 0 : 4); K.checkBroke(); } }
+  else { K.result(b.bet, ret); if (ret) K.give(ret); K.session(b.bet, ret); K.msg(ret ? 'Returned ' + K.fmt(ret) + ' · net −' + K.fmt(b.bet - ret) : 'No win · −' + K.fmt(b.bet), 1400); K.SFX.pop(mult < 1 ? 0 : 4); K.checkBroke(); } }
 /* hud */
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
 K.el(`<div class="ck-row" id="pkRisk"><button class="ck-sm" data-r="low">LOW</button><button class="ck-sm on" data-r="mid">MID</button><button class="ck-sm" data-r="high">HIGH</button><button class="ck-sm" id="pkAuto" type="button">AUTO ×10</button><button class="ck-go" type="button" id="pkGo">DROP</button></div>`);

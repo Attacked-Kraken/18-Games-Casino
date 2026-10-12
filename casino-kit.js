@@ -289,7 +289,7 @@ export async function boot(o) {
   function frame(now) { requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000); last = now; K.t += dt; if (document.hidden) return;
     for (const f of frames) { try { f(dt, K.t); } catch (e) { console.error(e); } }
     stepParts(dt); if (K.winLight) K.winLight.intensity *= .95;
-    K.shake *= .9; cam.position.copy(camPos).add(K.camOffset); cam.position.x += Math.sin(K.t * .23) * .06 + (Math.random() - .5) * K.shake; cam.position.y += Math.sin(K.t * .31) * .03 + (Math.random() - .5) * K.shake; cam.lookAt(camLook);
+    K.shake *= .9; cam.position.copy(camPos).add(K.camOffset); cam.position.x += Math.sin(K.t * .23) * .06 + (Math.random() - .5) * K.shake; cam.position.y += Math.sin(K.t * .31) * .03 + (Math.random() - .5) * K.shake; cam.lookAt(camLook.x + K.camOffset.x * (K.camLookFollow || 0), camLook.y + K.camOffset.y * (K.camLookFollow || 0), camLook.z + K.camOffset.z * (K.camLookFollow || 0));
     shown += (Chips.bal() - shown) * Math.min(1, dt * 6); if (Math.abs(Chips.bal() - shown) < 1) shown = Chips.bal(); $('ckBal').textContent = fmt(shown);
     if (composer && useBloom) composer.render(); else R.render(scene, cam);
     if (K.t > 2.5 && qLvl < 3) { fAcc += dt; fN++; if (fN >= 90) { if (fAcc / fN > 1 / 38) degrade(); fAcc = 0; fN = 0; } } }
@@ -363,10 +363,12 @@ export async function boot(o) {
     if (returned > 0) K.give(returned);
     if (net > 0) { streak++; const big = returned >= staked * 5; K.msg((big ? 'BIG WIN ' : 'WIN ') + '+' + fmt(net) + (streak >= 3 ? '  ·  streak ' + streak : ''), big ? 2600 : 1800, big);
       SFX.win(big); K.burst(where, big ? 70 : 24); if (K.winLight) K.winLight.intensity = big ? 60 : 30; K.shake = big ? .08 : .02; }
-    else if (net === 0 && staked > 0) { K.msg('Push', 1200); }
-    else { streak = 0; SFX.lose(); setTimeout(K.checkBroke, 900); }
-    showStreak(); return net; };
+    else if (net === 0 && staked > 0) { K.msg('Push · bet returned', 1400); }
+    else { streak = 0; SFX.lose(); K.msg(returned > 0 ? 'Returned ' + fmt(returned) + ' · net −' + fmt(-net) : 'No win · −' + fmt(staked), 1600); setTimeout(K.checkBroke, 900); }
+    K.session(staked, returned); showStreak(); return net; };
   K.streak = () => streak;
+  K.session = (staked, returned) => { if (window.Wallet) Wallet.session(o.id, staked, returned); };
+  if (window.Wallet) Wallet.session(o.id);
   setTimeout(() => { if (!Chips.broke()) K.daily(); }, 1500);
   return K;
 }

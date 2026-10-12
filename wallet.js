@@ -86,7 +86,13 @@
     $('wlDone').onclick = render; }
   function open() { ensure(); loadStats(); needChips(function () { render(); $('wlS').classList.add('on'); }); }
   function close() { var d = $('wlS'); if (d) d.classList.remove('on'); }
-  window.Wallet = { open: open, close: close, log: log };
+  /* session stats (this visit, per game): rounds, won, lost, net */
+  function session(id, staked, returned) { var SK = 'gc18_sess_' + id, SS = { n: 0, won: 0, lost: 0 }; try { SS = JSON.parse(sessionStorage.getItem(SK)) || SS; } catch (e) {}
+    if (staked != null) { SS.n++; var net = returned - staked; if (net > 0) SS.won += net; else SS.lost += -net; try { sessionStorage.setItem(SK, JSON.stringify(SS)); } catch (e) {} window.__lastResult = { staked: staked, returned: returned, net: net, t: Date.now() }; }
+    var el = $('ckSess'); if (!el) { el = document.createElement('div'); el.id = 'ckSess'; el.style.cssText = 'position:fixed;z-index:30;left:10px;top:calc(env(safe-area-inset-top) + 62px);background:rgba(12,9,8,.82);border:1px solid rgba(176,141,87,.6);border-radius:14px;padding:5px 10px;font:500 11px Helvetica,Arial,sans-serif;color:#e8d3a0;letter-spacing:.03em;pointer-events:none'; document.body.appendChild(el); }
+    var f = function (n) { return Math.round(n).toLocaleString('en-US'); }, nt = SS.won - SS.lost;
+    el.innerHTML = (id === 'holdemroyale' ? 'Hands ' : 'Rounds ') + '<b>' + SS.n + '</b> · Won <b style="color:#8fd0a4">' + f(SS.won) + '</b> · Lost <b style="color:#d98a96">' + f(SS.lost) + '</b> · Net <b style="color:' + (nt >= 0 ? '#8fd0a4' : '#d98a96') + '">' + (nt >= 0 ? '+' : '−') + f(Math.abs(nt)) + '</b>'; }
+  window.Wallet = { open: open, close: close, log: log, session: session };
   needChips(function () {});
   function addFab() { if (game === 'index' || game === 'floor' || $('wlFab')) return; var b = document.createElement('button'); b.id = 'wlFab'; b.className = 'wlFab'; b.type = 'button'; b.textContent = 'Wallet';
     if (game === 'steelfront') return; b.onclick = open; addCss(); document.body.appendChild(b); }

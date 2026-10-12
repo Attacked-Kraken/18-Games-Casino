@@ -113,7 +113,7 @@ function render() { if (!S) return; const me = mySeat();
   setLbl(potL, S.pot ? 'POT ' + K.fmt(S.pot) : '', scene, new THREE.Vector3(0, .2, .55), { size: .3, bg: '#14081e', color: '#c9a45c' });
   if (S.dealer >= 0) dealerBtn.position.copy(seatG[view(S.dealer)].position).multiplyScalar(.7).add(new THREE.Vector3(.55, .03, 0));
   turnRing.visible = S.toAct >= 0; if (S.toAct >= 0) turnRing.position.copy(seatG[view(S.toAct)].position).multiplyScalar(.78).add(new THREE.Vector3(0, .02, 0));
-  if (S.show && S.show.text !== render.lastShow) { render.lastShow = S.show.text; const mine = me >= 0 && S.show.winners.includes(me); K.msg(S.show.text, 2600, mine); if (mine) { K.SFX.win(S.seats[me].win > BB * 20); K.burst(seatG[0].position.clone().add(new THREE.Vector3(0, .5, 0)), 40); K.record('w', room ? 'net' : 'cpu'); } else if (me >= 0 && S.seats[me] && S.seats[me].tot) K.record('l', room ? 'net' : 'cpu'); }
+  if (S.show && S.show.text !== render.lastShow) { render.lastShow = S.show.text; const mine = me >= 0 && S.show.winners.includes(me); if (me >= 0 && S.seats[me] && window.Wallet) { const sm = S.seats[me]; Wallet.session('holdemroyale', sm.tot || 0, mine ? (sm.win || 0) : 0); } K.msg(S.show.text, 2600, mine); if (mine) { K.SFX.win(S.seats[me].win > BB * 20); K.burst(seatG[0].position.clone().add(new THREE.Vector3(0, .5, 0)), 40); K.record('w', room ? 'net' : 'cpu'); } else if (me >= 0 && S.seats[me] && S.seats[me].tot) K.record('l', room ? 'net' : 'cpu'); }
   if (seated) savePending(); hud(); }
 /* hud */
 K.el(`<div class="ck-row"><div class="ck-pill" style="min-width:150px"><small id="hS">TABLE</small><b id="hInfo">–</b></div><div class="ck-pill"><small>STACK</small><b id="hStack">–</b></div></div>`);
