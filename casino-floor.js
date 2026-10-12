@@ -77,7 +77,7 @@ const parqT = canvasTex(512, 512, (g, w) => { g.fillStyle = '#8a4a20'; g.fillRec
 const brassM = new THREE.MeshStandardMaterial({ color: 0xc9a056, metalness: 1, roughness: .28 });
 const AISLES = [[0, 0, 24, 14], [0, 0, 11, D - .5]];
 AISLES.forEach(([x, z, w, d], k) => { const t = parqT.clone(); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(w / 3, d / 3); t.needsUpdate = true;
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshPhysicalMaterial({ map: t, roughness: .3, clearcoat: .6, clearcoatRoughness: .2, envMapIntensity: .5 })); m.rotation.x = -Math.PI / 2; m.position.set(x, .005 + k * .001, z); scene.add(m);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ map: t, roughness: .82, metalness: 0, envMapIntensity: .15 })); m.rotation.x = -Math.PI / 2; m.position.set(x, .005 + k * .001, z); scene.add(m);
   for (const s of [-1, 1]) { const e = new THREE.Mesh(w > d ? new THREE.PlaneGeometry(w, .1) : new THREE.PlaneGeometry(.1, d), brassM); e.rotation.x = -Math.PI / 2; if (w > d) e.position.set(x, .012, z + s * d / 2); else e.position.set(x + s * w / 2, .012, z); scene.add(e); } });
 const tealT = canvasTex(256, 256, (g, w) => { g.fillStyle = '#0d6a6e'; g.fillRect(0, 0, w, w); g.strokeStyle = 'rgba(220,190,120,.35)'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(128, 128, 30 + i * 30, 0, 7); g.stroke(); } for (let i = 0; i < 3000; i++) { g.fillStyle = `rgba(0,0,0,${rnd() * .08})`; g.fillRect(rnd() * w, rnd() * w, 2, 2); } }, [5, 5]);
 const PITS = [[-19, 1], [19, -1]];
@@ -113,7 +113,7 @@ scene.add(new THREE.HemisphereLight(0xfff2de, 0x6a3a2a, 1.05));
 scene.add(new THREE.AmbientLight(0xffe8d0, .2));
 const sun = new THREE.DirectionalLight(0xfff0dc, .85); sun.position.set(6, 12, 8); scene.add(sun);
 const sun2 = new THREE.DirectionalLight(0xffe0c0, .45); sun2.position.set(-8, 10, -12); scene.add(sun2);
-const pts = [[0, 0], [-8, 8], [8, 8], [-8, -8], [8, -8], [-19, 0], [19, 0], [-28, 0], [28, 0]].map(([x, z]) => { const l = new THREE.PointLight(0xffd8a8, 16, 12, 1.7); l.position.set(x, H - .6, z); scene.add(l); return l; });
+const pts = [[0, 0], [-8, 8], [8, 8], [-8, -8], [8, -8], [-19, 0], [19, 0], [-28, 0], [28, 0]].map(([x, z]) => { const l = new THREE.PointLight(0xffd8a8, 9, 11, 1.8); l.position.set(x, H - .6, z); scene.add(l); return l; });
 
 /* ---------- colliders ---------- */
 const boxes = [];
@@ -133,7 +133,7 @@ function neonTex(text, col, sub, badge, lock) {
     if (lock) { g.font = '500 16px Helvetica, Arial, sans-serif'; g.fillStyle = '#ff9aa8'; g.fillText('MEMBERS ONLY', w / 2, 150); }
   });
 }
-function signMesh(tex, w) { return new THREE.Mesh(new THREE.PlaneGeometry(w, w * 192 / 512), new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false, color: 0xe6e6e6 })); }
+function signMesh(tex, w) { const g = new THREE.PlaneGeometry(w, w * 192 / 512), mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide, depthWrite: false, color: 0xe6e6e6 }); const m = new THREE.Mesh(g, mat); const back = new THREE.Mesh(g, mat); back.rotation.y = Math.PI; m.add(back); return m; }
 const billboards = [];
 
 /* ---------- materials ---------- */
@@ -185,33 +185,55 @@ const topAtlas = canvasTex(768, 512, (g) => { THEMES.forEach((t, i) => { const x
 const scrMat = atlasMat(screenAtlas, .95), topMat = atlasMat(topAtlas, 1.0);
 const btnGlow = glowW(0xffcf6a, 1.1), btnRed = glowW(0xe02a3a, 1.0);
 
-/* ---------- slot cabinet prototypes (front = +z) ---------- */
+/* ---------- slot cabinet prototypes (front = +z): modern portrait cabinets ---------- */
+/* portrait game-screen atlas (3 x 2 cells of 256 x 512): title band, 5x4 reel window with bright symbols, win meter */
+const SYMC = ['#ff3b5c', '#ffd34a', '#3bd1ff', '#7dff6a', '#ff8a2a', '#d06bff'];
+const portAtlas = canvasTex(768, 1024, (g) => { THEMES.forEach((t, i) => { const x = (i % 3) * 256, y = (i < 3 ? 0 : 1) * 512;
+  const gr = g.createLinearGradient(x, y, x, y + 512); gr.addColorStop(0, t.bg[1]); gr.addColorStop(.55, t.bg[0]); gr.addColorStop(1, t.bg[1]); g.fillStyle = gr; g.fillRect(x, y, 256, 512);
+  for (let k = 0; k < 18; k++) { const a = k / 18 * 6.283; g.strokeStyle = 'rgba(255,240,190,.13)'; g.lineWidth = 10; g.beginPath(); g.moveTo(x + 128, y + 80); g.lineTo(x + 128 + Math.cos(a) * 300, y + 80 + Math.sin(a) * 300); g.stroke(); }
+  g.textAlign = 'center'; g.textBaseline = 'middle'; const words = t.n.split(' '); g.font = '900 ' + (words.length > 1 ? 36 : 44) + 'px Georgia,serif';
+  words.forEach((wd, k) => { const yy = y + 62 + (k - (words.length - 1) / 2) * 40; g.lineWidth = 8; g.strokeStyle = '#1a0a02'; g.strokeText(wd, x + 128, yy); const tg = g.createLinearGradient(0, yy - 20, 0, yy + 20); tg.addColorStop(0, '#fffbe0'); tg.addColorStop(.5, '#ffd34a'); tg.addColorStop(1, '#c47a10'); g.fillStyle = tg; g.fillText(wd, x + 128, yy); });
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x + 10, y + 128, 236, 300); g.strokeStyle = '#ffd76a'; g.lineWidth = 4; g.strokeRect(x + 10, y + 128, 236, 300);
+  for (let c = 0; c < 5; c++) for (let r = 0; r < 4; r++) { const cx = x + 34 + c * 47, cy = y + 165 + r * 72, col = SYMC[(c * 2 + r + i) % 6];
+    const rg = g.createRadialGradient(cx - 6, cy - 8, 2, cx, cy, 24); rg.addColorStop(0, '#fff'); rg.addColorStop(.35, col); rg.addColorStop(1, 'rgba(0,0,0,.8)'); g.fillStyle = rg; g.beginPath(); g.arc(cx, cy, 21, 0, 7); g.fill();
+    g.font = '800 20px Georgia,serif'; g.fillStyle = '#fff'; g.strokeStyle = '#000'; g.lineWidth = 3; const s = t.sy[(c + r) % 3]; g.strokeText(s.length > 1 ? s.slice(0, 3) : s, cx, cy + 1); g.fillText(s.length > 1 ? s.slice(0, 3) : s, cx, cy + 1); }
+  g.strokeStyle = 'rgba(255,230,120,.9)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 14, y + 237); g.lineTo(x + 242, y + 309); g.stroke();
+  g.fillStyle = '#120808'; g.fillRect(x + 10, y + 440, 236, 62); g.font = '700 15px Helvetica'; g.fillStyle = '#9fe8ff'; g.fillText('CREDIT 2,500  ·  BET 1.00', x + 128, y + 458); g.font = '900 24px Helvetica'; g.fillStyle = '#ffd34a'; g.fillText('WIN 1,250', x + 128, y + 486); }); });
+const portMat = atlasMat(portAtlas, 1.0);
+/* ticking progressive meters (shared atlas, one cell per theme) */
+const meterC = document.createElement('canvas'); meterC.width = 768; meterC.height = 128; const meterT = new THREE.CanvasTexture(meterC); meterT.colorSpace = THREE.SRGBColorSpace;
+const meterV = THEMES.map((_, i) => 8000 + i * 1931.37);
+function drawMeters() { const g = meterC.getContext('2d'); THEMES.forEach((t, i) => { const x = (i % 3) * 256, y = (i < 3 ? 0 : 1) * 64; g.fillStyle = '#0a0204'; g.fillRect(x, y, 256, 64); g.strokeStyle = t.c; g.lineWidth = 3; g.strokeRect(x + 3, y + 3, 250, 58);
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '700 13px Helvetica'; g.fillStyle = '#ffb4c0'; g.fillText('GRAND JACKPOT', x + 128, y + 16); g.font = '900 30px Helvetica'; g.fillStyle = '#ff4a5a'; g.shadowColor = '#ff2030'; g.shadowBlur = 10; g.fillText('$' + meterV[i].toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), x + 128, y + 42); g.shadowBlur = 0; }); meterT.needsUpdate = true; }
+drawMeters();
+const meterMat = atlasMat(meterT, 1.15);
+const ledMat = new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false });
+const LED_COL = [0xff3070, 0x30c8ff, 0xffb020, 0x40ff90, 0xc060ff, 0xff6020];
 function slotProto(type) {
-  const p = new THREE.Group(); const T = { ud: { tint: 'tint' } };
-  if (type === 0) { /* upright */
-    p.add(P3(new THREE.BoxGeometry(.78, .95, .72), tintLac, 0, .475, 0, T), P3(new THREE.BoxGeometry(.78, 1.05, .5), tintLac, 0, 1.47, -.11, T));
-    p.add(P3(new THREE.PlaneGeometry(.62, .56), scrMat, 0, 1.5, .145, { ud: { atlas: 1 } }), P3(new THREE.BoxGeometry(.7, .64, .02), blackGl, 0, 1.5, .13));
-    p.add(P3(new THREE.BoxGeometry(.78, .4, .44), blackGl, 0, 2.2, -.12), P3(new THREE.PlaneGeometry(.7, .34), topMat, 0, 2.2, .105, { ud: { atlas: 1 } }));
-    p.add(P3(new THREE.BoxGeometry(.8, .05, .5), gold, 0, 2.0, -.11), P3(new THREE.BoxGeometry(.8, .05, .5), gold, 0, 2.42, -.11));
-  } else if (type === 1) { /* slant-top */
-    p.add(P3(new THREE.BoxGeometry(.82, .8, .95), tintLac, 0, .4, 0, T), P3(new THREE.BoxGeometry(.82, .55, .45), tintLac, 0, 1.05, -.25, T));
-    p.add(P3(new THREE.PlaneGeometry(.66, .5), scrMat, 0, 1.02, .16, { rx: -.95, ud: { atlas: 1 } }), P3(new THREE.BoxGeometry(.74, .58, .03), blackGl, 0, 1.0, .15, { rx: -.95 }));
-    p.add(P3(new THREE.PlaneGeometry(.7, .4), topMat, 0, 1.42, -.03, { ud: { atlas: 1 } }), P3(new THREE.BoxGeometry(.84, .04, .97), gold, 0, .8, 0));
-  } else if (type === 2) { /* curved tall screen */
-    p.add(P3(new THREE.BoxGeometry(.8, 1.0, .72), tintLac, 0, .5, 0, T));
-    const cg = new THREE.CylinderGeometry(1.4, 1.4, 1.3, 16, 1, true, -.27, .54); cg.translate(0, 0, -1.4 + .02);
-    p.add(P3(cg, scrMat, 0, 1.75, .02, { ud: { atlas: 1 } }), P3(new THREE.BoxGeometry(.06, 1.4, .3), chrome, -.4, 1.75, -.12), P3(new THREE.BoxGeometry(.06, 1.4, .3), chrome, .4, 1.75, -.12));
-    p.add(P3(new THREE.BoxGeometry(.8, 1.4, .3), blackGl, 0, 1.75, -.3), P3(new THREE.BoxGeometry(.84, .08, .4), gold, 0, 2.48, -.2));
-  } else { /* tall-topper progressive */
-    p.add(P3(new THREE.BoxGeometry(.8, .95, .72), tintLac, 0, .475, 0, T), P3(new THREE.BoxGeometry(.8, 1.05, .5), blackGl, 0, 1.47, -.11));
-    p.add(P3(new THREE.PlaneGeometry(.64, .7), scrMat, 0, 1.5, .145, { ud: { atlas: 1 } }));
-    p.add(P3(new THREE.BoxGeometry(.8, 1.0, .4), tintLac, 0, 2.5, -.12, T), P3(new THREE.PlaneGeometry(.72, .9), topMat, 0, 2.5, .085, { ud: { atlas: 1 } }));
-    p.add(P3(new THREE.BoxGeometry(.84, .06, .44), gold, 0, 3.02, -.12), P3(new THREE.BoxGeometry(.84, .06, .44), gold, 0, 1.98, -.12));
-  }
-  /* button deck + buttons + stool */
-  const dy = type === 1 ? .82 : .98;
-  p.add(P3(new THREE.BoxGeometry(.8, .08, .32), blackGl, 0, dy, .38, { rx: -.2 }), P3(new THREE.BoxGeometry(.5, .025, .06), btnGlow, -.05, dy + .05, .42, { rx: -.2 }), P3(new THREE.CylinderGeometry(.05, .05, .03, 14), btnRed, .28, dy + .055, .4));
-  p.add(P3(new THREE.CylinderGeometry(.22, .2, .1, 18), chairLeather, 0, .72, .95, { ud: { tint: 'stool' } }), P3(new THREE.CylinderGeometry(.03, .03, .68, 6), chrome, 0, .35, .95), P3(new THREE.CylinderGeometry(.2, .22, .03, 14), chrome, 0, .015, .95));
+  const p = new THREE.Group(); const T = { ud: { tint: 'tint' } }, L = { ud: { tint: 'led' } }, A = { ud: { atlas: 1 } };
+  /* base + lit belly panel */
+  p.add(P3(new THREE.BoxGeometry(.74, .92, .66), blackGl, 0, .46, 0), P3(new THREE.PlaneGeometry(.6, .5), tintLac, 0, .45, .331, T));
+  p.add(P3(new THREE.BoxGeometry(.6, .03, .02), ledMat, 0, .73, .335, L), P3(new THREE.BoxGeometry(.6, .03, .02), ledMat, 0, .17, .335, L));
+  /* button deck */
+  p.add(P3(new THREE.BoxGeometry(.76, .07, .34), blackGl, 0, .96, .3, { rx: -.12 }), P3(new THREE.BoxGeometry(.66, .012, .2), new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: .3, metalness: .5 }), 0, 1.0, .3, { rx: -.12 }));
+  for (let b = 0; b < 5; b++) p.add(P3(new THREE.BoxGeometry(.07, .025, .05), btnGlow, -.26 + b * .1, 1.01, .38, { rx: -.12 }));
+  p.add(P3(new THREE.CylinderGeometry(.055, .055, .03, 18), btnRed, .25, 1.02, .27));
+  /* screen body */
+  const SH = type === 3 ? 1.0 : 1.14, sy = 1.0 + SH / 2 + .04;
+  if (type === 2) { const cg = new THREE.CylinderGeometry(1.3, 1.3, SH + .12, 20, 1, true, -.25, .5); cg.translate(0, 0, -1.3); p.add(P3(cg, portMat, 0, sy, .2, A), P3(new THREE.BoxGeometry(.7, SH + .14, .3), blackGl, 0, sy, -.06)); }
+  else { p.add(P3(new THREE.BoxGeometry(.74, SH + .1, .42), blackGl, 0, sy, -.02, type === 1 ? { rx: -.1 } : {})); p.add(P3(new THREE.PlaneGeometry(.64, SH), portMat, 0, sy, .2 + (type === 1 ? .055 : 0), { ...A, rx: type === 1 ? -.1 : 0 })); }
+  /* LED edge trim (left/right of screen and base) */
+  for (const sx of [-.375, .375]) p.add(P3(new THREE.BoxGeometry(.022, SH + .95, .022), ledMat, sx, (SH + .95) / 2 + .5, .2, L));
+  /* topper with ticking meter */
+  const ty = sy + SH / 2 + .06;
+  p.add(P3(new THREE.PlaneGeometry(.66, .16), meterMat, 0, ty + .08, .2, A), P3(new THREE.BoxGeometry(.74, .2, .3), blackGl, 0, ty + .08, .04));
+  if (type === 1) { p.add(P3(new THREE.CylinderGeometry(.36, .36, .14, 32), blackGl, 0, ty + .55, 0, { rx: Math.PI / 2 }), P3(new THREE.CircleGeometry(.31, 32), topMat, 0, ty + .55, .075, A), P3(new THREE.TorusGeometry(.34, .02, 6, 40), ledMat, 0, ty + .55, .075, L)); }
+  else { const TH = type === 3 ? .8 : .44; p.add(P3(new THREE.BoxGeometry(.76, TH, .32), blackGl, 0, ty + .2 + TH / 2, 0), P3(new THREE.PlaneGeometry(.68, TH - .06), topMat, 0, ty + .2 + TH / 2, .165, A));
+    p.add(P3(new THREE.BoxGeometry(.78, .022, .022), ledMat, 0, ty + .2 + TH, .17, L), P3(new THREE.BoxGeometry(.78, .022, .022), ledMat, 0, ty + .19, .17, L)); }
+  /* casino slot chair: chrome pedestal, padded round seat, tall rounded back */
+  p.add(P3(new THREE.CylinderGeometry(.24, .26, .03, 20), chrome, 0, .015, .95), P3(new THREE.CylinderGeometry(.035, .035, .5, 10), chrome, 0, .27, .95));
+  p.add(P3(new THREE.CylinderGeometry(.25, .23, .13, 24), chairLeather, 0, .58, .95, { ud: { tint: 'stool' } }), P3(new THREE.TorusGeometry(.245, .03, 8, 24), chairLeather, 0, .64, .95, { rx: Math.PI / 2, ud: { tint: 'stool' } }));
+  p.add(P3(new THREE.BoxGeometry(.44, .5, .09), chairLeather, 0, .92, 1.2, { rx: .12, ud: { tint: 'stool' } }), P3(new THREE.CylinderGeometry(.045, .045, .44, 12), chairLeather, 0, 1.17, 1.23, { rz: Math.PI / 2, ud: { tint: 'stool' } }), P3(new THREE.BoxGeometry(.04, .32, .04), chrome, 0, .72, 1.18));
   return p;
 }
 /* ---------- table prototypes ---------- */
@@ -312,7 +334,7 @@ function bank(cx, cz, n, alongX, type, colI, slotIdx) {
   for (let side = -1; side <= 1; side += 2) for (let i = 0; i < n; i++) {
     const o = (i - (n - 1) / 2) * sp; const x = alongX ? cx + o : cx + side * .45, z = alongX ? cz + side * .45 : cz + o;
     const ry = alongX ? (side > 0 ? 0 : Math.PI) : (side > 0 ? Math.PI / 2 : -Math.PI / 2);
-    SLOTS[type].push({ x, z, ry, tint: col, stool: 0x6a1420, cell: (colI + i) % 6, ent: ent(SLOT_IDS[(slotIdx + i) % SLOT_IDS.length], x, z, ry, 1.5) });
+    SLOTS[type].push({ x, z, ry, tint: col, stool: 0x9a1222, led: LED_COL[(colI + i) % 6], cell: (colI + i) % 6, ent: ent(SLOT_IDS[(slotIdx + i) % SLOT_IDS.length], x, z, ry, 1.5) });
   }
   if (alongX) block(cx, cz, n * sp / 2 + .1, .9); else block(cx, cz, .9, n * sp / 2 + .1);
   if (type === 3) JP_SIGNS.push([cx, cz, alongX]);
@@ -331,7 +353,7 @@ function table(k, x, z, ry, id) { const e = ent(id, x, z, ry, k === 'roul' || k 
   else if (k === 'roul') { blockRot(x, z, ry, 1.6, .75); for (let i = 0; i < 4; i++) put(-.3 + i * .55, 1.0, Math.PI, 0x4a0a14); }
   else blockRot(x, z, ry, 1.9, 1.0);
 }
-Object.entries(HERO).forEach(([id, h]) => { if (TAB[h.k]) table(h.k, h.x, h.z, h.ry, id); else if (h.k === 'slot') SLOTS[h.type].push({ x: h.x, z: h.z, ry: h.ry, tint: 0x8c1a2b, stool: 0x6a1420, cell: h.cell, ent: ent(id, h.x, h.z, h.ry, 1.5) }); });
+Object.entries(HERO).forEach(([id, h]) => { if (TAB[h.k]) table(h.k, h.x, h.z, h.ry, id); else if (h.k === 'slot') SLOTS[h.type].push({ x: h.x, z: h.z, ry: h.ry, tint: 0x8c1a2b, stool: 0x9a1222, led: LED_COL[h.cell % 6], cell: h.cell, ent: ent(id, h.x, h.z, h.ry, 1.5) }); });
 /* left pit: roulette + blackjack; right pit: craps + baccarat (teal, curved rail) */
 table('roul', -21.5, 2.8, Math.PI / 2, 'rubyroulette'); table('bj', -15.6, 3.2, Math.PI / 2, 'velvet21');
 table('roul', 21.5, 2.8, -Math.PI / 2, 'rubyroulette'); table('bac', 15.6, 3.2, -Math.PI / 2, 'baccaratnoir');
@@ -411,7 +433,7 @@ const ZONES = {
   high:    { label: 'HIGH LIMIT SLOTS', col: '#c9a45c', sign: [11.5, -11] },
   instant: { label: 'INSTANT WINS',   col: '#c9a45c', sign: [-10, 11.6] },
   arcade:  { label: 'ARCADE · BIG WHEEL', col: '#c9a45c', sign: [11, 11.2] } };
-Object.values(ZONES).forEach((zn) => { const s = signMesh(neonTex(zn.label, zn.col), 4.6); s.position.set(zn.sign[0], 4.75, zn.sign[1]); s.rotation.y = Math.abs(zn.sign[0]) > 20 ? (zn.sign[0] > 0 ? -1 : 1) * Math.PI / 2 * .6 : 0; s.material.side = THREE.DoubleSide; scene.add(s);
+Object.values(ZONES).forEach((zn) => { const s = signMesh(neonTex(zn.label, zn.col), 4.6); s.position.set(zn.sign[0], 4.75, zn.sign[1]); s.rotation.y = Math.abs(zn.sign[0]) > 20 ? (zn.sign[0] > 0 ? -1 : 1) * Math.PI / 2 * .6 : 0; scene.add(s);
   const ch = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, H - 5.7, 4), chrome); for (const dx of [-2.0, 2.0]) { const c2 = ch.clone(); c2.position.set(zn.sign[0] + dx, (H + 5.7) / 2, zn.sign[1]); scene.add(c2); } });
 
 /* ---------- hero stations: signs, rings, special machines ---------- */
@@ -493,7 +515,7 @@ Object.values(PI_).forEach((m) => { if (m.instanceColor) m.instanceColor.needsUp
 /* ---------- post ---------- */
 let composer = null, bloom = null;
 try { composer = new EffectComposer(R); composer.addPass(new RenderPass(scene, cam));
-  bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .22, .35, 1.05); composer.addPass(bloom); composer.addPass(new OutputPass()); } catch (e) { composer = null; }
+  bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .2, .3, 1.25); composer.addPass(bloom); composer.addPass(new OutputPass()); } catch (e) { composer = null; }
 function resize() { const w = innerWidth, h = innerHeight; R.setPixelRatio(TIERS[tier].pr); R.setSize(w, h, false); cam.aspect = w / h; cam.fov = w < h ? 74 : 62; cam.updateProjectionMatrix();
   if (composer) { composer.setPixelRatio(TIERS[tier].pr); composer.setSize(w, h); bloom.resolution.set(w / 2, h / 2); } drawMini(true); }
 addEventListener('resize', resize);
@@ -571,8 +593,8 @@ function drawMini(full) {
     g.fillStyle = 'rgba(13,106,110,.95)'; for (const [px] of PITS) { g.beginPath(); g.arc(px, 0, 6.6, 0, 7); g.fill(); }
     g.fillStyle = '#5a3a1a'; g.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * 6.283 + Math.PI / 8; g.lineTo(Math.cos(a) * 3.3, Math.sin(a) * 3.3); } g.fill();
     g.fillStyle = '#2a1a3a'; for (const [x, z] of [[-7, 6.5], [7, 6.5], [-7, -6.5], [7, -6.5]]) g.fillRect(x - 2.7, z - .9, 5.4, 1.8);
-    g.restore(); g.font = '600 15px Georgia'; g.textAlign = 'center'; g.fillStyle = '#f3dfae';
-    [['POKER', -27, 0], ['POKER', 27, 0], ['KENO', -10, -13], ['HIGH LIMIT', 11, -13], ['BAR', 0, -12.6], ['ENTRANCE', 0, 15.5]].forEach(([t, x, z]) => { const [a, b] = m2(x, z); g.fillText(t, a, b + 5); });
+    g.restore(); g.font = '600 13px Georgia'; g.textAlign = 'center'; g.fillStyle = '#f3dfae';
+    [['POKER', -27, 0], ['POKER', 27, 0], ['KENO', -11, -13.5], ['HI-LIMIT', 12.5, -13.5], ['ENTRANCE', 0, 16]].forEach(([t, x, z]) => { const [a, b] = m2(x, z); g.fillText(t, a, b + 5); });
     stations.forEach((s) => { const [x, y] = m2(s.center.x, s.center.z); g.fillStyle = s.locked ? '#444' : '#7a1424'; g.beginPath(); g.arc(x, y, 4.5, 0, 7); g.fill(); g.strokeStyle = '#e8d3a0'; g.lineWidth = 1.2; g.stroke(); }); }
   mg.clearRect(0, 0, mini.width, mini.height); mg.drawImage(miniBase, 0, 0);
   const [px, py] = m2(P.x, P.z); mg.save(); mg.translate(px, py); mg.rotate(-P.yaw); mg.fillStyle = '#e8d3a0'; mg.shadowColor = '#000'; mg.shadowBlur = 8;
@@ -604,7 +626,7 @@ document.addEventListener('visibilitychange', () => { if (!AC) return; document.
 
 /* ---------- loop ---------- */
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let last = performance.now(), t = 0, acc = 0, frames = 0, slowT = 0, fastT = 0, miniT = 0;
+let meterAcc = 0; let last = performance.now(), t = 0, acc = 0, frames = 0, slowT = 0, fastT = 0, miniT = 0;
 const fwd = new THREE.Vector3();
 cv.addEventListener('webglcontextlost', (e) => { e.preventDefault(); try { localStorage.setItem(VKEY, 'list'); } catch (er) {} document.body.classList.remove('walk'); });
 function frame(now) {
@@ -635,6 +657,8 @@ function frame(now) {
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);
   if ((miniT += dt) > .1) { miniT = 0; drawMini(); }
+  if ((meterAcc += dt) > .25) { meterAcc = 0; for (let i = 0; i < meterV.length; i++) meterV[i] += .01 + Math.random() * .37; drawMeters(); }
+  { const k = 1.15 + Math.sin(t * 3.1) * .35; ledMat.color.setRGB(k, k, k); }
   if (composer && TIERS[tier].bloom) composer.render(); else R.render(scene, cam);
   /* adaptive quality: step down when slow, back up when steady */
   if (t > 2) { frames++; if (dt > 1 / 40) slowT += dt; else fastT += dt;
