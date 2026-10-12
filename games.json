@@ -32,6 +32,18 @@
    "accent": "#2ad8ff",
    "category": "action",
    "multiplayer": false
+  },
+  {
+   "id": "rubyroulette",
+   "file": "rubyroulette.html",
+   "title": "Ruby Roulette",
+   "tagline": "3D single-zero roulette wheel, live tables for 6. Fun chips only.",
+   "rating": "18+",
+   "icon": "rubyroulette-icon.png",
+   "accent": "#ff2b4e",
+   "category": "tables",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }

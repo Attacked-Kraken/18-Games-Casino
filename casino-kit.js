@@ -51,6 +51,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#07030c;color:var(--fg
 .hide{display:none!important}
 #ckLoad{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#07030c;color:var(--gold);font:900 24px system-ui;letter-spacing:.12em;transition:opacity .5s;z-index:40;pointer-events:none;text-shadow:0 0 18px var(--ac)}
 #ckFb{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:50;background:#07030c}
+@media (max-width:430px){.ck-title{visibility:hidden}}
 @media (orientation:landscape) and (max-height:500px){.ck-go{height:44px;font-size:16px;min-width:110px}.ck-chip{width:36px;height:36px}.ck-sm{height:34px}#ckMsg{font-size:22px;top:50px}#ckMsg.big{font-size:30px}.ck-hud{gap:4px;padding-top:4px}}
 `;
 
@@ -269,5 +270,25 @@ export async function boot(o) {
     const T = K.table({ game: so.game, blurb: so.blurb, onRoom: S.attach, onLeave: S.detach }); S.T = T;
     setInterval(() => { if (!S.room || !S.room.state) return; const st = S.room.state; so.onTick && so.onTick(st, Math.max(0, Math.ceil((st.ends - Date.now()) / 1000))); }, 250);
     return S; };
+  /* ---------- juice: streaks, daily bonus, win celebrations (shared by every game) ---------- */
+  body.insertAdjacentHTML('beforeend', `<div id="ckStreak" style="position:fixed;right:8px;top:calc(56px + env(safe-area-inset-top));z-index:8;font:900 13px system-ui;color:#fff;background:rgba(14,6,22,.82);border:1px solid var(--gold);border-radius:12px;padding:4px 10px;display:none"></div>
+<div class="ck-sheet" id="ckDaily"><div class="ck-box" style="text-align:center"><h2>🎁 Daily bonus</h2><p id="ckDailyP"></p><div style="font:900 44px system-ui;color:var(--gold);text-shadow:0 0 18px var(--ac)" id="ckDailyN"></div><button class="ck-ok" type="button" id="ckDailyGo">Collect</button></div></div>`);
+  let streak = 0; const today = () => { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+  const showStreak = () => { const e = $('ckStreak'); if (streak >= 2) { e.style.display = 'block'; e.textContent = '🔥 ' + streak + ' win streak'; } else e.style.display = 'none'; };
+  K.daily = () => { let st = {}; try { st = JSON.parse(localStorage.getItem('gc18_daily') || '{}'); } catch (e) {} if (st.d === today()) return;
+    const y = new Date(Date.now() - 864e5), yd = y.getFullYear() + '-' + (y.getMonth() + 1) + '-' + y.getDate(); const run = st.d === yd ? Math.min(7, (st.run || 0) + 1) : 1, amt = 250 * run;
+    $('ckDailyP').textContent = 'Day ' + run + ' in a row · come back tomorrow for more (up to 7 days).'; $('ckDailyN').textContent = '+' + fmt(amt);
+    $('ckDailyGo').onclick = () => { Chips.give(amt); try { localStorage.setItem('gc18_daily', JSON.stringify({ d: today(), run })); } catch (e) {} $('ckDaily').classList.remove('on'); SFX.win(true); K.burst(new THREE.Vector3(0, 1.5, 0), 40); };
+    setTimeout(() => $('ckDaily').classList.add('on'), 900); };
+  /* call after each settled round: staked, returned (incl. stake), where (Vector3) */
+  K.payout = (staked, returned, where, mode) => { K.result(staked, returned, mode); const net = returned - staked;
+    if (returned > 0) K.give(returned);
+    if (net > 0) { streak++; const big = returned >= staked * 5; K.msg((big ? 'BIG WIN ' : 'WIN ') + '+' + fmt(net) + (streak >= 3 ? '  🔥x' + streak : ''), big ? 2600 : 1800, big);
+      SFX.win(big); K.burst(where, big ? 70 : 24); if (K.winLight) K.winLight.intensity = big ? 60 : 30; K.shake = big ? .08 : .02; }
+    else if (net === 0 && staked > 0) { K.msg('Push', 1200); }
+    else { streak = 0; SFX.lose(); setTimeout(K.checkBroke, 900); }
+    showStreak(); return net; };
+  K.streak = () => streak;
+  setTimeout(() => { if (!Chips.broke()) K.daily(); }, 1500);
   return K;
 }
