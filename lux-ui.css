@@ -1,0 +1,8 @@
+/* lux-ui: typography/UI override for the older pages (Gilded Reels, Velvet 21) so they match the high-limit restyle. */
+:root{--lux-serif:'Didot','Bodoni 72','Playfair Display','Cormorant Garamond',Georgia,'Times New Roman',serif;--lux-sans:'Helvetica Neue',-apple-system,'Segoe UI',Roboto,Arial,sans-serif}
+body{font-family:var(--lux-sans)!important}
+h1,h2,h3{font-family:var(--lux-serif)!important;font-weight:400!important;font-style:normal!important;letter-spacing:.04em!important;text-shadow:none!important;color:#e8d3a0!important}
+button{font-family:var(--lux-sans)!important;font-weight:500!important;letter-spacing:.12em!important;text-transform:uppercase;border-radius:2px!important;text-shadow:none!important}
+b,strong{font-family:var(--lux-serif)!important;font-weight:400!important}
+input,select{border-radius:2px!important}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.45) 100%)}
