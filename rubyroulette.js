@@ -1,11 +1,12 @@
 /* Ruby Roulette: single-zero European wheel (97.3% RTP, casino-math.js). 3D mahogany wheel, ball physics-feel spin, bet board sheet,
    live tables via mp.js (host spins one result for everyone, up to 6). FUN CHIPS ONLY. */
 import { boot, CANDY } from './casino-kit.js';
+import * as BU from './bet-ui.js';
 const M = window.CMath;
 const K = await boot({ id: 'rubyroulette', title: 'Ruby Roulette', accent: '#8e1b2c', bloom: .5,
   rules: `<p>European single-zero wheel. Place chips, then SPIN. Every bet returns 97.3% over time.</p><table><tr><th>Bet</th><th>Pays</th></tr>
 <tr><td>Straight number</td><td>35:1</td></tr><tr><td>Dozen / Column</td><td>2:1</td></tr><tr><td>Red, Black, Odd, Even, 1-18, 19-36</td><td>1:1</td></tr></table><p>Live table: everyone bets during the countdown, one spin for the whole table.</p>`,
-  view: (p) => p ? { pos: [0, 9.4, 6.4], look: [0, 0, .7], fov: 48 } : { pos: [0, 5.2, 5.2], look: [0, 0, .2], fov: 38 } });
+  view: (p) => p ? { pos: [0, 9.4, 6.4], look: [0, 0, .7], fov: 48 } : { pos: [2.9, 6.2, 4.6], look: [2.9, 0, .9], fov: 40 } });
 const { THREE, scene } = K;
 K.backdrop({ carpet: '#2a0610' }); K.lights({ c1: 0xff2b4e, c2: 0xffb400, target: [0, 0, 0] });
 /* ----- wheel ----- */
@@ -51,42 +52,67 @@ function spinTo(num, done) { spinning = true; const idx = M.RL_WHEEL.indexOf(num
     rotV = 1.6 * (1 - e) + .35 * e;
     if (k >= 1) { anim = null; restIdx = idx; spinning = false; done(); } };
   K.SFX.whoosh(); }
-/* ----- bets ----- */
-let bets = []; /* {k,v,cover,stake,label} */
+/* ----- bets: real betting layout (DOM board, chips rendered on spots) ----- */
+let bets = []; /* {key,k,v,cover,stake} */
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
-const info = K.el(`<div class="ck-row"><div class="ck-pill"><small>BET</small><b id="rBet">0</b></div><div class="ck-pill"><small>LAST</small><b id="rLast">–</b></div><div class="ck-pill" id="rTimerP" style="display:none"><small>SPIN IN</small><b id="rTimer">–</b></div></div>`);
-const quick = K.el(`<div class="ck-row"></div>`);
-[['RED', 'red', CANDY.red], ['BLACK', 'black', '#222'], ['ODD', 'odd'], ['EVEN', 'even'], ['1-18', 'low'], ['19-36', 'high']].forEach(([l, k, c]) => {
-  const b = document.createElement('button'); b.className = 'ck-sm'; b.type = 'button'; b.textContent = l; if (c) b.style.background = c; b.onclick = () => place(k, null, l); quick.appendChild(b); });
-const act = K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="rBoard">Numbers</button><button class="ck-sm" type="button" id="rUndo">↶</button><button class="ck-sm" type="button" id="rRe">Rebet</button><button class="ck-go" type="button" id="rSpin">SPIN</button></div>`);
-document.body.insertAdjacentHTML('beforeend', `<div class="ck-sheet" id="rBS"><div class="ck-box"><h2>Number board</h2><div id="rGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px"></div>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px" id="rOut"></div><button class="ck-ok" type="button" data-y>Done</button></div></div>`);
-const grid = K.$('rGrid'); const z = document.createElement('button'); z.style.gridColumn = '1/4';
-const cell = (b, n) => { b.type = 'button'; b.className = 'ck-sm'; b.style.background = M.rlColor(n) === 'red' ? '#8e1b2c' : M.rlColor(n) === 'green' ? '#0f5a3e' : '#1c1622'; b.textContent = n; b.onclick = () => place('n', n, '' + n); b.dataset.n = n; };
-cell(z, 0); grid.appendChild(z); for (let n = 1; n <= 36; n++) { const b = document.createElement('button'); cell(b, n); grid.appendChild(b); }
-[['1st 12', 'dozen', 0], ['2nd 12', 'dozen', 1], ['3rd 12', 'dozen', 2], ['Col 1', 'col', 0], ['Col 2', 'col', 1], ['Col 3', 'col', 2]].forEach(([l, k, v]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ck-sm'; b.textContent = l; b.onclick = () => place(k, v, l); K.$('rOut').appendChild(b); });
-K.$('rBS').querySelector('[data-y]').onclick = () => K.$('rBS').classList.remove('on');
-K.$('rBoard').onclick = () => K.$('rBS').classList.add('on');
+const info = K.el(`<div class="ck-row" style="gap:6px"><div class="ck-pill"><small>TOTAL BET</small><b id="rBet">0</b></div><div class="ck-pill" id="rTimerP" style="display:none"><small>SPIN IN</small><b id="rTimer">–</b></div><div id="rStrip" style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;max-width:300px;font:800 11px system-ui"></div></div>`);
+const boardWrap = K.el(`<div class="ck-row" style="justify-content:center"><div id="rBoardEl" style="position:relative;user-select:none;-webkit-user-select:none;touch-action:manipulation"></div></div>`);
+const act = K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="rUndo">↶ Undo</button><button class="ck-sm" type="button" id="rClr">Clear</button><button class="ck-sm" type="button" id="rRe">Rebet</button><button class="ck-sm" type="button" id="rX2">×2</button><button class="ck-go" type="button" id="rSpin">SPIN</button></div>`);
+const B = K.$('rBoardEl'); const spots = new Map(); /* key -> {el, k, v, cover, rect} */
+const RED = (n) => M.rlColor(n) === 'red';
+const nx = (n) => Math.ceil(n / 3), ny = (n) => 2 - ((n - 1) % 3); /* logical 14x5: x 0=zero, 1..12 numbers, 13=2to1; y 0..2 numbers, 3 dozens, 4 outside */
+function addSpot(key, k, v, rect, html, style, hot) { const e = document.createElement('div'); e.innerHTML = html || ''; e.dataset.key = key;
+  e.style.cssText = `position:absolute;display:flex;align-items:center;justify-content:center;box-sizing:border-box;cursor:pointer;font:700 13px Georgia;color:#fff;${hot ? 'z-index:4;' : 'border:1px solid rgba(255,230,170,.55);'}${style || ''}`;
+  e.onclick = (ev) => { ev.stopPropagation(); place(k, v, key); }; B.appendChild(e); spots.set(key, { el: e, k, v, cover: M.rlCover(k, v), rect, hot }); }
+addSpot('n0', 'n', 0, [0, 0, 1, 3], '0', 'background:#0f6a46;border-radius:40% 0 0 40%');
+for (let n = 1; n <= 36; n++) addSpot('n' + n, 'n', n, [nx(n), ny(n), 1, 1], n, `background:${RED(n) ? '#b0182e' : '#16121a'}`);
+for (let c = 0; c < 3; c++) addSpot('c' + c, 'col', c, [13, 2 - c, 1, 1], '2to1', 'background:#0b4a33;font-size:10px');
+['1st 12', '2nd 12', '3rd 12'].forEach((l, d) => addSpot('d' + d, 'dozen', d, [1 + d * 4, 3, 4, 1], l, 'background:#0b4a33'));
+[['1-18', 'low'], ['EVEN', 'even'], ['RED', 'red', 'background:#b0182e'], ['BLACK', 'black', 'background:#16121a'], ['ODD', 'odd'], ['19-36', 'high']]
+  .forEach(([l, k, s], i) => addSpot(k, k, null, [1 + i * 2, 4, 2, 1], l, (s || 'background:#0b4a33')));
+/* splits / streets / corners as small hot zones on the lines */
+const HZ = .34;
+for (let n = 1; n <= 36; n++) { const x = nx(n), y = ny(n);
+  if (n % 3 !== 0) addSpot('s' + n + '_' + (n + 1), 'split', [n, n + 1], [x + .5 - HZ / 2, y - HZ / 2, HZ, HZ], '', '', 1);
+  if (n <= 33) addSpot('s' + n + '_' + (n + 3), 'split', [n, n + 3], [x + 1 - HZ / 2, y + .5 - HZ / 2, HZ, HZ], '', '', 1);
+  if (n % 3 !== 0 && n <= 32) addSpot('q' + n, 'corner', [n, n + 1, n + 3, n + 4], [x + 1 - HZ / 2, y - HZ / 2, HZ, HZ], '', '', 1);
+  if (n % 3 === 1) addSpot('t' + n, 'street', [n, n + 1, n + 2], [x + .5 - HZ / 2, 3 - HZ / 2, HZ, HZ], '', '', 1); }
+let portrait = false;
+function layout() { portrait = innerHeight > innerWidth; const vw = innerWidth, vh = innerHeight;
+  const W = portrait ? Math.min(vw * .94, 380) : Math.min(vw * .56, 680, (vh - 150) * 14 / 5 / 1.05), H = portrait ? Math.min(vh * .42, W * 14 / 5 * .62) : W * 5 / 14 * 1.05;
+  B.style.width = W + 'px'; B.style.height = H + 'px';
+  Object.assign(boardWrap.style, portrait ? { position: '', right: '', top: '', zIndex: '' } : { position: 'fixed', right: '14px', top: Math.max(96, (vh - H) / 2 - 20) + 'px', zIndex: '5', margin: 0 });
+  spots.forEach(({ el, rect: [x, y, w, h] }) => { let L, T, Wd, Ht;
+    if (!portrait) { L = x / 14; T = y / 5; Wd = w / 14; Ht = h / 5; } else { L = (5 - (y + h)) / 5; T = x / 14; Wd = h / 5; Ht = w / 14; }
+    Object.assign(el.style, { left: L * 100 + '%', top: T * 100 + '%', width: Wd * 100 + '%', height: Ht * 100 + '%' }); }); }
+layout(); addEventListener('resize', layout);
 let lastBets = [];
 const total = () => bets.reduce((s, b) => s + b.stake, 0);
-const chipStacks = new THREE.Group(); scene.add(chipStacks);
-function drawBets() { K.$('rBet').textContent = K.fmt(total()); while (chipStacks.children.length) chipStacks.remove(chipStacks.children[0]);
-  bets.forEach((b, i) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 24), K.candy(chip.colorOf(b.chipV) || '#1d3f7a')); const a = -2.2 + (i % 9) * .55; c.position.set(a, .03 + Math.floor(i / 9) * .05, 3.0); chipStacks.add(c); });
-  grid.querySelectorAll('button').forEach(x => x.style.outline = bets.some(b => b.k === 'n' && b.v === +x.dataset.n) ? '3px solid #c9a45c' : ''); }
-function place(k, v, label) { if (spinning || (table.isLive() && phase !== 'bet')) return; const s = chip.get(); if (!K.take(s)) return;
-  const ex = bets.find(b => b.k === k && b.v === v); if (ex) ex.stake += s; else bets.push({ k, v, cover: M.rlCover(k, v), stake: s, label, chipV: s });
-  table.say('bet', { amt: s }); drawBets(); }
-K.$('rUndo').onclick = () => { const b = bets.pop(); if (b) { K.give(b.stake); drawBets(); } };
-K.$('rRe').onclick = () => { if (spinning || bets.length) return; const need = lastBets.reduce((s, b) => s + b.stake, 0); if (!need || !K.take(need)) return; bets = lastBets.map(b => ({ ...b })); drawBets(); };
-K.$('rSpin').onclick = () => { if (spinning) return; if (!bets.length) { K.msg('Place a bet first', 1200); return; } K.$('rSpin').disabled = true; table.go(); };
+function drawBets() { K.$('rBet').textContent = K.fmt(total()); spots.forEach((s, key) => { const b = bets.find(x => x.key === key); BU.stackOn(s.el, b ? b.stake : 0); }); }
+const canBet = () => !(spinning || (table.isLive() && phase !== 'bet'));
+function place(k, v, key) { if (!canBet()) return; const s = chip.get(); if (!K.take(s)) { K.msg('Not enough chips', 1200); return; }
+  key = key || (k + (v == null ? '' : v)); const ex = bets.find(b => b.key === key); if (ex) ex.stake += s; else bets.push({ key, k, v, cover: M.rlCover(k, v), stake: s });
+  K.tone(900, .04, 'triangle', .05); table.say('bet', { amt: s }); drawBets(); }
+const undo = []; /* stack of keys placed */
+const _place = place; place = (k, v, key) => { const before = total(); _place(k, v, key); if (total() > before) undo.push([key || (k + (v == null ? '' : v)), total() - before]); };
+K.$('rUndo').onclick = () => { if (!canBet()) return; const u = undo.pop(); if (!u) return; const b = bets.find(x => x.key === u[0]); if (!b) return; b.stake -= u[1]; K.give(u[1]); if (b.stake <= 0) bets = bets.filter(x => x !== b); drawBets(); };
+K.$('rClr').onclick = () => { if (!canBet()) return; const t = total(); if (t) K.give(t); bets = []; undo.length = 0; drawBets(); };
+K.$('rRe').onclick = () => { if (!canBet() || bets.length) return; const need = lastBets.reduce((s, b) => s + b.stake, 0); if (!need) { K.msg('No previous bets', 1000); return; } if (!K.take(need)) { K.msg('Not enough chips', 1200); return; } bets = lastBets.map(b => ({ ...b })); undo.length = 0; drawBets(); };
+K.$('rX2').onclick = () => { if (!canBet() || !bets.length) return; const t = total(); if (!K.take(t)) { K.msg('Not enough chips to double', 1200); return; } bets.forEach(b => { undo.push([b.key, b.stake]); b.stake *= 2; }); drawBets(); };
+K.$('rSpin').onclick = () => { if (spinning) return; if (!bets.length) { K.msg('Tap the board to place a bet', 1400); return; } K.$('rSpin').disabled = true; table.go(); };
+function drawStrip() { const cnt = {}; hist.forEach(n => cnt[n] = (cnt[n] || 0) + 1); const ranked = Object.keys(cnt).map(Number).sort((a, b) => cnt[b] - cnt[a]);
+  const cold = []; for (let n = 0; n <= 36; n++) if (!cnt[n]) cold.push(n);
+  const ball = (n, big) => `<span style="display:inline-block;min-width:${big ? 26 : 20}px;padding:${big ? 4 : 2}px 3px;border-radius:12px;text-align:center;background:${M.rlColor(n) === 'red' ? '#b0182e' : M.rlColor(n) === 'green' ? '#0f6a46' : '#16121a'};color:#fff;border:1px solid #c9a45c">${n}</span>`;
+  K.$('rStrip').innerHTML = hist.slice(0, 10).map((n, i) => ball(n, !i)).join('') + (hist.length >= 5 ? `<span style="color:#ff8a5c;margin-left:6px">🔥${ranked.slice(0, 3).join(' ')}</span><span style="color:#8fd0ff;margin-left:6px">❄${(cold.length ? cold : ranked.slice(-3)).slice(0, 3).join(' ')}</span>` : ''); }
 /* ----- result ----- */
 function showResult(n) { while (resLbl.children.length) resLbl.remove(resLbl.children[0]);
   const col = M.rlColor(n), l = K.label(String(n), { size: .9, bg: col === 'red' ? '#8e1b2c' : col === 'green' ? '#0f5a3e' : '#14101a', color: '#fff', stroke: '#000' }); resLbl.add(l); }
-function onResult(n) { spinTo(n, () => { showResult(n); hist.unshift(n); hist.length = Math.min(8, hist.length); K.$('rLast').textContent = hist.slice(0, 5).join(' · ');
+function onResult(n) { spinTo(n, () => { showResult(n); hist.unshift(n); hist.length = Math.min(60, hist.length); drawStrip();
     const staked = total(); let ret = 0; bets.forEach(b => ret += M.rlPayout(b.cover, b.stake, n));
-    if (staked) { K.payout(staked, ret, new THREE.Vector3(0, 1, 0), table.isLive() ? 'net' : 'cpu'); if (ret > staked) table.say('won', { amt: ret - staked }); }
+    BU.glow([spots.get('n' + n).el]); BU.settle(bets.map(b => ({ el: spots.get(b.key).el, win: b.cover.includes(n) })));
+    if (staked) { BU.banner(staked, ret); K.payout(staked, ret, new THREE.Vector3(0, 1, 0), table.isLive() ? 'net' : 'cpu'); if (ret > staked) table.say('won', { amt: ret - staked }); }
     else K.msg(n + ' ' + M.rlColor(n).toUpperCase(), 1500);
-    if (bets.length) lastBets = bets.map(b => ({ ...b })); bets = []; drawBets(); K.$('rSpin').disabled = false; }); }
+    if (bets.length) lastBets = bets.map(b => ({ ...b })); bets = []; undo.length = 0; K.$('rBet').textContent = '0'; K.$('rSpin').disabled = false; }); }
 let phase = 'bet';
 const table = K.sharedRounds({ game: 'rr', betMs: 15000, goMs: 8000, roll: () => M.rlSpin(), onResult,
   blurb: 'Open a table and share the code. Everyone bets during the countdown; one spin for the whole table.',
