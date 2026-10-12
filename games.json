@@ -92,6 +92,18 @@
    "category": "instant",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "luckykeno",
+   "file": "luckykeno.html",
+   "title": "Lucky Keno",
+   "tagline": "Pick up to 10 of 80, watch 20 balls drop from the globe. Fun chips only.",
+   "rating": "18+",
+   "icon": "luckykeno-icon.png",
+   "accent": "#00d2b4",
+   "category": "instant",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
