@@ -91,10 +91,10 @@ const total = () => bets.reduce((s, b) => s + b.stake, 0);
 function drawBets() { K.$('rBet').textContent = K.fmt(total()); spots.forEach((s, key) => { const b = bets.find(x => x.key === key); BU.stackOn(s.el, b ? b.stake : 0); }); }
 const canBet = () => !(spinning || (table.isLive() && phase !== 'bet'));
 function place(k, v, key) { if (!canBet()) return; const s = chip.get(); if (!K.take(s)) { K.msg('Not enough chips', 1200); return; }
-  key = key || (k + (v == null ? '' : v)); const ex = bets.find(b => b.key === key); if (ex) ex.stake += s; else bets.push({ key, k, v, cover: M.rlCover(k, v), stake: s });
+  if (!spots.has(key)) { key = null; spots.forEach((s, kk) => { if (!key && s.k === k && JSON.stringify(s.v) === JSON.stringify(v ?? null)) key = kk; }); } if (!key) return; lastKey = key; const ex = bets.find(b => b.key === key); if (ex) ex.stake += s; else bets.push({ key, k, v, cover: M.rlCover(k, v), stake: s });
   K.tone(900, .04, 'triangle', .05); table.say('bet', { amt: s }); drawBets(); }
-const undo = []; /* stack of keys placed */
-const _place = place; place = (k, v, key) => { const before = total(); _place(k, v, key); if (total() > before) undo.push([key || (k + (v == null ? '' : v)), total() - before]); };
+const undo = []; let lastKey = null; /* stack of keys placed */
+const _place = place; place = (k, v, key) => { const before = total(); _place(k, v, key); if (total() > before) undo.push([lastKey, total() - before]); };
 K.$('rUndo').onclick = () => { if (!canBet()) return; const u = undo.pop(); if (!u) return; const b = bets.find(x => x.key === u[0]); if (!b) return; b.stake -= u[1]; K.give(u[1]); if (b.stake <= 0) bets = bets.filter(x => x !== b); drawBets(); };
 K.$('rClr').onclick = () => { if (!canBet()) return; const t = total(); if (t) K.give(t); bets = []; undo.length = 0; drawBets(); };
 K.$('rRe').onclick = () => { if (!canBet() || bets.length) return; const need = lastBets.reduce((s, b) => s + b.stake, 0); if (!need) { K.msg('No previous bets', 1000); return; } if (!K.take(need)) { K.msg('Not enough chips', 1200); return; } bets = lastBets.map(b => ({ ...b })); undo.length = 0; drawBets(); };
