@@ -8,6 +8,7 @@
    -> card list view (index.html). */
 import * as THREE from './three.module.min.js';
 import { createPeople } from './people.js';
+import { createHall, HALL } from './hall-wing.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 import { EffectComposer } from './vendor/EffectComposer.js';
 import { RenderPass } from './vendor/RenderPass.js';
@@ -95,7 +96,7 @@ const wallTex = canvasTex(256, 512, (g, w, h) => { g.fillStyle = '#d8c6a4'; g.fi
   g.strokeStyle = '#b8955a'; g.lineWidth = 3; g.strokeRect(22, 30, w - 44, h * .7); g.strokeStyle = 'rgba(120,90,50,.35)'; g.lineWidth = 1; g.strokeRect(32, 40, w - 64, h * .7 - 20);
   for (let i = 0; i < 400; i++) { g.fillStyle = `rgba(120,90,60,${rnd() * .06})`; g.fillRect(rnd() * w, rnd() * h * .77, 3, 3); } }, [1, 1]);
 { const mk = (len) => { const t = wallTex.clone(); t.wrapS = THREE.RepeatWrapping; t.repeat.set(len / 2.6, 1); t.needsUpdate = true; return new THREE.MeshStandardMaterial({ map: t, roughness: .6, side: THREE.DoubleSide }); };
-  for (const sz of [-1, 1]) { if (sz > 0) { const DW = 2.2, sw = RX - DW; for (const sx of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, H), mk(sw)); m.position.set(sx * (DW + sw / 2), H / 2, RR); m.rotation.y = Math.PI; scene.add(m); } const lt = new THREE.Mesh(new THREE.PlaneGeometry(DW * 2, H - 3.6), mk(DW * 2)); lt.position.set(0, 3.6 + (H - 3.6) / 2, RR); lt.rotation.y = Math.PI; scene.add(lt); } else { const m = new THREE.Mesh(new THREE.PlaneGeometry(RX * 2, H), mk(RX * 2)); m.position.set(0, H / 2, sz * RR); m.rotation.y = 0; scene.add(m); }
+  for (const sz of [-1, 1]) { if (sz > 0) { const DW = 2.2, sw = RX - DW; for (const sx of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(sw, H), mk(sw)); m.position.set(sx * (DW + sw / 2), H / 2, RR); m.rotation.y = Math.PI; scene.add(m); } const lt = new THREE.Mesh(new THREE.PlaneGeometry(DW * 2, H - 3.6), mk(DW * 2)); lt.position.set(0, 3.6 + (H - 3.6) / 2, RR); lt.rotation.y = Math.PI; scene.add(lt); } else { const DB = 4.2, sb = RX - DB; for (const sx of [-1, 1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(sb, H), mk(sb)); m.position.set(sx * (DB + sb / 2), H / 2, -RR); scene.add(m); const pl = new THREE.Mesh(new THREE.BoxGeometry(.4, 4.2, .5), brassM); pl.position.set(sx * (DB + .1), 2.1, -RR); scene.add(pl); } const lt = new THREE.Mesh(new THREE.PlaneGeometry(DB * 2, H - 4.2), mk(DB * 2)); lt.position.set(0, 4.2 + (H - 4.2) / 2, -RR); scene.add(lt); const ln = new THREE.Mesh(new THREE.BoxGeometry(DB * 2 + .6, .3, .5), brassM); ln.position.set(0, 4.25, -RR); scene.add(ln); }
     const n = new THREE.Mesh(new THREE.BoxGeometry(RX * 2, .16, .12), brassM); n.position.set(0, H - .2, sz * (RR - .06)); scene.add(n); }
   for (const sx of [-1, 1]) { const g = new THREE.CylinderGeometry(RR, RR, H, 64, 1, true, sx > 0 ? 0 : Math.PI, Math.PI); const m = new THREE.Mesh(g, mk(Math.PI * RR)); m.position.set(sx * RX, H / 2, 0); scene.add(m);
     const n = new THREE.Mesh(new THREE.TorusGeometry(RR - .06, .08, 6, 64, Math.PI), brassM); n.rotation.x = Math.PI / 2; n.rotation.z = sx > 0 ? -Math.PI / 2 : Math.PI / 2; n.position.set(sx * RX, H - .2, 0); scene.add(n); }
@@ -530,6 +531,8 @@ addEventListener('resize', resize);
 
 /* ---------- player & controls ---------- */
 const P = { x: 0, z: 15.2, yaw: 0, pitch: -.06 }, RAD = .38, SPEED = 4.2;
+const extraCeil = []; let hall = null; try { hall = createHall({ THREE, scene, P, inst, canvasTex, signMesh, neonTex, slotIds: CELL_GAME, cellOf: (id, c) => CELL_GAME.indexOf(id) >= 0 ? CELL_GAME.indexOf(id) : c, ent, LED: LED_COL, slotProto, TAB, CHAIRS, table, protoOf, chairProto,
+  games: () => (L.games || []), clones, addStation: (s) => clones.push(s), markCeil: (m) => extraCeil.push(m) }); } catch (e) { console.warn('hall', e); }
 let wing = null; try { wing = createWing({ THREE, scene, canvasTex, P, inst, addStation: (s) => clones.push(s), openShop }); } catch (e) { console.warn('wing', e); }
 /* ---------- bird's-eye "Zoom Out" view: drag to pan, pinch/wheel to zoom, tap a game/zone to fly there ---------- */
 const BV = { on: false, k: 0, x: 0, z: 8, h: 52, ptr: new Map(), pinch: 0, moved: 0 };
@@ -540,10 +543,10 @@ function birdsTap(e) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / inn
   if (!ray.ray.intersectPlane(new THREE.Plane(UPV, 0), pt)) return; let best = null, bd = 2.6;
   for (const s of stations.concat(clones)) { if (!s.g) continue; const d = Math.hypot(s.center.x - pt.x, s.center.z - pt.z); if (d < bd) { bd = d; best = s; } }
   if (best) { teleport(best); setBirds(false); blip(880, .1); return; }
-  if (inStadium(pt.x, pt.z, 1) || (wing && WING && pt.z > 16 && Math.abs(pt.x) < 22)) { P.x = pt.x; P.z = pt.z; auto = null; setBirds(false); } }
+  if (inStadium(pt.x, pt.z, 1) || (wing && WING && pt.z > 16 && Math.abs(pt.x) < 22) || (hall && pt.z < HALL.z1 && pt.z > HALL.z0 + 1 && Math.abs(pt.x) < HALL.x1 - 1)) { P.x = pt.x; P.z = pt.z; auto = null; setBirds(false); } }
 function birdsPtr(type, e) { if (type === 'down') { BV.ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); BV.moved = 0; BV.pinch = 0; return; }
   if (type === 'move') { const o = BV.ptr.get(e.pointerId); if (!o) return; if (BV.ptr.size >= 2) { const [a, b] = [...BV.ptr.values()]; const d0 = Math.hypot(a.x - b.x, a.y - b.y); o.x = e.clientX; o.y = e.clientY; const d1 = Math.hypot(a.x - b.x, a.y - b.y); if (BV.pinch) BV.h = Math.max(14, Math.min(90, BV.h * d0 / Math.max(1, d1))); BV.pinch = 1; BV.moved += 20; return; }
-    const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY; BV.moved += Math.abs(dx) + Math.abs(dy); const s = BV.h / innerHeight * 1.1; BV.x = Math.max(-36, Math.min(36, BV.x - dx * s)); BV.z = Math.max(-20, Math.min(62, BV.z - dy * s)); return; }
+    const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY; BV.moved += Math.abs(dx) + Math.abs(dy); const s = BV.h / innerHeight * 1.1; BV.x = Math.max(-36, Math.min(36, BV.x - dx * s)); BV.z = Math.max(-62, Math.min(62, BV.z - dy * s)); return; }
   if (type === 'up') { const had = BV.ptr.delete(e.pointerId); if (had && BV.ptr.size === 0 && BV.moved < 8) birdsTap(e); } }
 cv.addEventListener('wheel', (e) => { if (!BV.on) return; e.preventDefault(); BV.h = Math.max(14, Math.min(90, BV.h * (e.deltaY > 0 ? 1.1 : .9))); }, { passive: false });
 const keys = {}; let joy = null, look = null, jx = 0, jy = 0;
@@ -576,7 +579,7 @@ function teleport(st) { P.x = st.stand.x; P.z = st.stand.z; faceTo(st, true); au
 function faceTo(st, snap) { const y = Math.atan2(-(st.center.x - P.x), -(st.center.z - P.z)); if (snap) { P.yaw = y; P.pitch = -.12; } return y; }
 function collide(nx, nz) {
   { const w = wing && wing.collide(nx, nz, RAD); if (w) return w; }
-  { const m = RAD + .25; if (Math.abs(nx) <= RX) nz = Math.max(-RR + m, Math.min(RR - m, nz)); else { const cx = Math.sign(nx) * RX, dx = nx - cx, d = Math.hypot(dx, nz); if (d > RR - m) { nx = cx + dx / d * (RR - m); nz = nz / d * (RR - m); } } }
+  const hc = hall && hall.collide(nx, nz, RAD); if (hc) { nx = hc[0]; nz = hc[1]; } else { const m = RAD + .25; if (Math.abs(nx) <= RX) nz = Math.max(-RR + m, Math.min(RR - m, nz)); else { const cx = Math.sign(nx) * RX, dx = nx - cx, d = Math.hypot(dx, nz); if (d > RR - m) { nx = cx + dx / d * (RR - m); nz = nz / d * (RR - m); } } }
   for (const b of boxes) { if (nx + RAD > b[0] && nx - RAD < b[2] && nz + RAD > b[1] && nz - RAD < b[3]) {
     const pushL = nx + RAD - b[0], pushR = b[2] - (nx - RAD), pushU = nz + RAD - b[1], pushD = b[3] - (nz - RAD), m = Math.min(pushL, pushR, pushU, pushD);
     if (m === pushL) nx -= pushL; else if (m === pushR) nx += pushR; else if (m === pushU) nz -= pushU; else nz += pushD; } }
@@ -600,7 +603,7 @@ function setPrompt(st) { if (st === shown) return; shown = st; updFav(); infoEl.
   sm.textContent = lk ? `For players ${L.need(st.g.id)}+ only` : st.action ? st.g.tagline : `${st.g.rating}+ · ${st.g.tagline}`.slice(0, 64); promptEl.append(sm); promptEl.classList.add('on'); }
 function buildPanel() { const box = $('pList'); box.innerHTML = '';
   { const zs = document.createElement('div'); zs.className = 'fv-sec'; zs.innerHTML = '<h3>QUICK TRAVEL</h3>'; const row = document.createElement('div'); row.className = 'fv-row';
-    [['Casino floor', 0, 14.5, 0], ['Poker room', -20, 0, Math.PI / 2], ['High limit', 10, -11, 0], ['Forum Shops', 0, 24, Math.PI], ['Fountain', 0, 31, Math.PI], ['Sportsbook', -10, 30, Math.PI / 2], ['VIP Lounge', 10, 30, -Math.PI / 2]].forEach(([n, x, z, yaw]) => {
+    [['Casino floor', 0, 14.5, 0], ['Grand Hall', 0, -20, Math.PI], ['High-limit salon', 26, -36, Math.PI], ['Cashier', -8, -55, Math.PI], ['Poker room', -20, 0, Math.PI / 2], ['High limit', 10, -11, 0], ['Forum Shops', 0, 24, Math.PI], ['Fountain', 0, 31, Math.PI], ['Sportsbook', -10, 30, Math.PI / 2], ['VIP Lounge', 10, 30, -Math.PI / 2]].forEach(([n, x, z, yaw]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'go2'; b.style.flex = 'none'; b.textContent = n; b.onclick = () => { P.x = x; P.z = z; P.yaw = yaw; P.pitch = -.06; auto = null; closePanel(); }; row.append(b); });
     zs.append(row); box.append(zs); }
   const favs = window.Fav ? Fav.list().map((id) => stations.find((s) => s.g.id === id)).filter(Boolean) : [];
@@ -704,7 +707,7 @@ function frame(now) {
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);
-  if (wing) wing.update(dt, t, BV.k > .15);
+  if (wing) wing.update(dt, t, BV.k > .15); if (hall) hall.update(dt, t, BV.k > .15); extraCeil.forEach((m) => (m.visible = BV.k <= .15));
   if ((miniT += dt) > .1) { miniT = 0; drawMini(); }
   if ((meterAcc += dt) > .25) { meterAcc = 0; for (let i = 0; i < meterV.length; i++) meterV[i] += .01 + Math.random() * .37; drawMeters(); }
   { const k = 1.15 + Math.sin(t * 3.1) * .35; ledMat.color.setRGB(k, k, k); }
