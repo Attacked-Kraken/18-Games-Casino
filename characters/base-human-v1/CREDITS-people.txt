@@ -1,0 +1,1 @@
+people.glb: Quaternius Universal Animation Library mannequin + animations, CC0 1.0 (via codeberg.org/jamesonBradfield/Quaternius_IK_Rigged_with_animations), stripped to 11 clips.
