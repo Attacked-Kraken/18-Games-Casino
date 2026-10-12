@@ -36,7 +36,7 @@ export function createWing(ctx) {
     /* storefronts: positions along straight sides and the apse arc, facing inward */
     const SHOPS = [];
     for (const sx of [-1, 1]) for (let i = 0; i < 3; i++) SHOPS.push({ x: sx * (r - .3), z: z0 + 3.3 + i * 6, ry: sx > 0 ? -Math.PI / 2 : Math.PI / 2 });
-    for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i + .5) / 7 * Math.PI; SHOPS.push({ x: Math.sin(a) * (r - .3), z: zc + Math.cos(a) * (r - .3), ry: a + Math.PI }); }
+    for (let i = 0; i < 7; i++) { if (i === 3) continue; /* apex: glass doors to Cruz Field */ const a = -Math.PI / 2 + (i + .5) / 7 * Math.PI; SHOPS.push({ x: Math.sin(a) * (r - .3), z: zc + Math.cos(a) * (r - .3), ry: a + Math.PI }); }
     const BRANDS = [['Aurelia', '#d9b065', 'JEWELLERS'], ['Vestara', '#f0f0f0', 'COUTURE'], ['Lumière Nova', '#ffd6e8', 'PARFUMS'], ['Castellan', '#c9a45c', 'TIMEPIECES'], ['Olivetto', '#b8e0c0', 'LEATHER'], ['Seraphine', '#ffd0a0', 'MAISON'],
       ['Palatino', '#e0c890', 'GIFTS · CHIPS'], ['Bellacrest', '#a8d8ff', 'EYEWEAR'], ['Corvina', '#ffffff', 'SHOES'], ['Café Forum', '#ffcf8a', 'ESPRESSO BAR'], ['Marcellus', '#e8b8ff', 'ATELIER'], ['Valenzo', '#ffe08a', 'FINE WATCHES'], ['Ivory & Oak', '#f0e0c0', 'HOME']];
     const facadeM = M({ color: 0xc8b89c, roughness: .55 }), goldM = M({ color: 0xc9a056, metalness: 1, roughness: .3 }), glassM = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: .18, roughness: .05, metalness: .1 });
