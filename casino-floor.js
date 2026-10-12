@@ -563,7 +563,7 @@ const extraCeil = []; let hall = null; try { hall = createHall({ THREE, scene, P
 let wing = null; try { wing = createWing({ THREE, scene, canvasTex, P, inst, addStation: (s) => clones.push(s), openShop }); } catch (e) { console.warn('wing', e); }
 let stadium = null; try { stadium = createStadium({ THREE, scene, P, mobile }); } catch (e) { console.warn('stadium', e); }
 /* ---------- bird's-eye "Zoom Out" view: drag to pan, pinch/wheel to zoom, tap a game/zone to fly there ---------- */
-const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0 }; let boss = null, bossLoading = false;
+const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0, d: 3.1, show: false, oy: 0, op: .15, od: 2.6, by: 0, ptr: new Map() }; let boss = null, bossLoading = false;
 const BV = { on: false, k: 0, x: 0, z: 8, h: 52, ptr: new Map(), pinch: 0, moved: 0 };
 const bvQ = new THREE.Quaternion(), fpQ = new THREE.Quaternion(), bvPos = new THREE.Vector3(), bvM = new THREE.Matrix4(), UPV = new THREE.Vector3(0, 1, 0);
 function setBirds(on, coach) { BV.coach = !!(on && coach); { const ch = $('coachHud'); if (ch) ch.style.display = BV.coach ? 'block' : 'none'; } BV.on = on; if (on && BV.coach) { BV.x = 0; BV.z = 116; BV.h = 34; } else if (on) { BV.x = P.x; BV.z = P.z - 4; joy = null; jx = jy = 0; joyEl.style.display = 'none'; } $('bZoom').textContent = on ? 'Walk' : 'Zoom Out'; document.body.classList.toggle('birds', on); }
@@ -577,25 +577,27 @@ function birdsPtr(type, e) { if (type === 'down') { BV.ptr.set(e.pointerId, { x:
   if (type === 'move') { const o = BV.ptr.get(e.pointerId); if (!o) return; if (BV.ptr.size >= 2) { const [a, b] = [...BV.ptr.values()]; const d0 = Math.hypot(a.x - b.x, a.y - b.y); o.x = e.clientX; o.y = e.clientY; const d1 = Math.hypot(a.x - b.x, a.y - b.y); if (BV.pinch) BV.h = Math.max(14, Math.min(90, BV.h * d0 / Math.max(1, d1))); BV.pinch = 1; BV.moved += 20; return; }
     const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY; BV.moved += Math.abs(dx) + Math.abs(dy); const s = BV.h / innerHeight * 1.1; BV.x = Math.max(-36, Math.min(36, BV.x - dx * s * (BV.coach ? -1 : 1))); BV.z = Math.max(BV.coach ? 70 : -62, Math.min(BV.coach ? 190 : 62, BV.z - dy * s * (BV.coach ? -1 : 1))); return; }
   if (type === 'up') { const had = BV.ptr.delete(e.pointerId); if (had && BV.ptr.size === 0 && BV.moved < 8) birdsTap(e); } }
-cv.addEventListener('wheel', (e) => { if (!BV.on) return; e.preventDefault(); BV.h = Math.max(14, Math.min(90, BV.h * (e.deltaY > 0 ? 1.1 : .9))); }, { passive: false });
+cv.addEventListener('wheel', (e) => { if (TP.on && !BV.on) { e.preventDefault(); const k = e.deltaY > 0 ? 1.1 : .9; if (TP.show) TP.od = Math.max(.55, Math.min(5.5, TP.od * k)); else TP.d = Math.max(1.6, Math.min(6, TP.d * k)); return; } if (!BV.on) return; e.preventDefault(); BV.h = Math.max(14, Math.min(90, BV.h * (e.deltaY > 0 ? 1.1 : .9))); }, { passive: false });
 const keys = {}; let joy = null, look = null, jx = 0, jy = 0;
 addEventListener('keydown', (e) => { if (e.target.tagName === 'SELECT') return; keys[e.code] = true; if ((e.code === 'Enter' || e.code === 'KeyE' || e.code === 'Space') && near && !panelOpen() && !gateOpen()) { e.preventDefault(); play(near); } });
 addEventListener('keyup', (e) => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 const joyEl = $('joy'), knob = joyEl.firstElementChild;
 cv.addEventListener('pointerdown', (e) => {
-  audioOn(); hint(0); if (BV.on) { birdsPtr('down', e); cv.setPointerCapture(e.pointerId); return; }
+  audioOn(); hint(0); if (TP.show && !BV.on) { TP.ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); TP.pinch = 0; cv.setPointerCapture(e.pointerId); return; } if (BV.on) { birdsPtr('down', e); cv.setPointerCapture(e.pointerId); return; }
   if (e.pointerType === 'touch' && e.clientX < innerWidth * .45 && !joy) { joy = { id: e.pointerId, x: e.clientX, y: e.clientY }; joyEl.style.left = e.clientX + 'px'; joyEl.style.top = e.clientY + 'px'; joyEl.style.display = 'block'; }
   else if (!look) look = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 };
   cv.setPointerCapture(e.pointerId);
 });
 cv.addEventListener('pointermove', (e) => {
+  if (TP.show && !BV.on) { const o = TP.ptr.get(e.pointerId); if (!o) return; if (TP.ptr.size >= 2) { const [a, b] = [...TP.ptr.values()]; const d0 = Math.hypot(a.x - b.x, a.y - b.y); o.x = e.clientX; o.y = e.clientY; const d1 = Math.hypot(a.x - b.x, a.y - b.y); if (d0 > 0) TP.od = Math.max(.55, Math.min(5.5, TP.od * d0 / d1)); return; }
+    TP.oy -= (e.clientX - o.x) * .009; TP.op = Math.max(-.5, Math.min(1.1, TP.op + (e.clientY - o.y) * .006)); o.x = e.clientX; o.y = e.clientY; return; }
   if (BV.on) { birdsPtr('move', e); return; }
   if (joy && e.pointerId === joy.id) { let dx = e.clientX - joy.x, dy = e.clientY - joy.y; const m = Math.hypot(dx, dy), mx = 50; if (m > mx) { dx *= mx / m; dy *= mx / m; } jx = dx / mx; jy = dy / mx; knob.style.transform = `translate(${dx}px,${dy}px)`; }
   else if (look && e.pointerId === look.id) { const dx = e.clientX - look.x, dy = e.clientY - look.y; look.x = e.clientX; look.y = e.clientY; look.moved += Math.abs(dx) + Math.abs(dy);
     const s = e.pointerType === 'touch' ? .0055 : .0035; P.yaw -= dx * s; P.pitch = Math.max(-.9, Math.min(.6, P.pitch - dy * s)); }
 });
-function endPtr(e) { if (BV.on) { birdsPtr('up', e); return; } if (joy && e.pointerId === joy.id) { joy = null; jx = jy = 0; joyEl.style.display = 'none'; knob.style.transform = ''; } if (look && e.pointerId === look.id) { const tap = look.moved < 8; look = null; if (tap) tapPick(e); } }
+function endPtr(e) { if (TP.ptr.delete(e.pointerId) && TP.show) return; if (BV.on) { birdsPtr('up', e); return; } if (joy && e.pointerId === joy.id) { joy = null; jx = jy = 0; joyEl.style.display = 'none'; knob.style.transform = ''; } if (look && e.pointerId === look.id) { const tap = look.moved < 8; look = null; if (tap) tapPick(e); } }
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 /* tap a station/sign directly to walk up to it */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -746,8 +748,13 @@ function frame(now) {
     for (const q of people.list) if (q.o.visible) pushOut(q.o.position.x, q.o.position.z, .62); for (const e of people.extra || []) if (e.on) pushOut(e.x, e.z, .7); }
   const bob = m > 0 ? Math.sin(t * 9) * .025 : 0;
   cam.position.set(P.x, 1.62 + bob, P.z); cam.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
-  if (TP.on && boss) { const s = Math.sin(P.yaw), c = Math.cos(P.yaw); let [cx, cz] = collide(P.x + s * 3.1, P.z + c * 3.1); TP.cx += (cx - TP.cx) * Math.min(1, dt * 8); TP.cz += (cz - TP.cz) * Math.min(1, dt * 8);
-    cam.position.set(TP.cx, 2.35, TP.cz); cam.rotation.set(P.pitch - .22, P.yaw, 0, 'YXZ');
+  if (TP.on && boss && TP.show) { const zf = Math.min(1, Math.max(0, (TP.od - .55) / 3)); const ty = 1.7 - .75 * zf; const cp = Math.cos(TP.op);
+    cam.position.set(P.x + Math.sin(TP.oy) * cp * TP.od, ty + Math.sin(TP.op) * TP.od, P.z + Math.cos(TP.oy) * cp * TP.od); cam.lookAt(P.x, ty, P.z);
+    const want = Math.atan2(cam.position.x - P.x, cam.position.z - P.z); let dd = want - TP.by; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); TP.by += dd * Math.min(1, dt * 2.5);
+    boss.object.visible = true; boss.object.position.set(P.x, 0, P.z); boss.object.rotation.y = TP.by; boss.play(Math.abs(dd) > .25 ? 'Walk_Loop' : 'Idle_Loop'); boss.mixer.update(dt); if (boss.tickSmoke) boss.tickSmoke(t, scene);
+    if (Math.hypot(P.x - TP.lx, P.z - TP.lz) > .05) showMode(false); }
+  else if (TP.on && boss) { const s = Math.sin(P.yaw), c = Math.cos(P.yaw); let [cx, cz] = collide(P.x + s * TP.d, P.z + c * TP.d); TP.cx += (cx - TP.cx) * Math.min(1, dt * 8); TP.cz += (cz - TP.cz) * Math.min(1, dt * 8);
+    cam.position.set(TP.cx, 1.2 + TP.d * .37, TP.cz); cam.rotation.set(P.pitch - .22, P.yaw, 0, 'YXZ');
     const sp = Math.hypot(P.x - TP.lx, P.z - TP.lz) / Math.max(dt, .001); TP.lx = P.x; TP.lz = P.z; boss.object.visible = true; boss.object.position.set(P.x, 0, P.z); boss.object.rotation.y = P.yaw + Math.PI;
     boss.play(sp > 4.2 ? 'Jog_Fwd_Loop' : sp > .4 ? 'Walk_Formal_Loop' : 'Idle_Loop'); boss.mixer.update(dt); if (boss.tickSmoke) boss.tickSmoke(t, scene);
     { const bb = $('bBook'); if (bb) bb.style.display = P.z > 70 && !BV.coach ? 'block' : 'none'; }
@@ -833,6 +840,12 @@ window.__coach = { openBook, setBirds, BV };
   b.onclick = async () => { audioOn(); TP.on = !TP.on; b.textContent = TP.on ? '👁 First person' : '🎩 Boss'; TP.cx = P.x + Math.sin(P.yaw) * 3; TP.cz = P.z + Math.cos(P.yaw) * 3; TP.lx = P.x; TP.lz = P.z;
     if (!TP.on) { pb.style.display = 'none'; if (boss) boss.object.visible = false; return; }
     if (!boss && !bossLoading) { bossLoading = true; try { const L = await loadBoss(THREE); boss = L.make({ hat: true, shades: false }); scene.add(boss.object); } catch (e) { console.warn('boss', e); TP.on = false; b.textContent = '🎩 Boss'; } bossLoading = false; } }; }
-window.__tp = TP;
+const vm = document.createElement('div'); vm.id = 'viewMe'; vm.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:26;display:none;gap:8px';
+vm.innerHTML = '<button id="vmGo">👁 View Me</button><button id="vmReset" style="display:none">↺ Reset</button><button id="vmExit" style="display:none">✕ Exit</button>'; document.body.appendChild(vm);
+[...vm.children].forEach((b) => (b.style.cssText = 'background:rgba(20,10,35,.85);color:#f5c542;border:1px solid #f5c542;border-radius:14px;padding:11px 15px;font:700 14px system-ui;margin:0 3px' + (b.id === 'vmGo' ? '' : ';display:none')));
+function showMode(on) { TP.show = on; TP.ptr.clear(); $('vmGo').style.display = on ? 'none' : ''; $('vmReset').style.display = $('vmExit').style.display = on ? '' : 'none'; if (on) { TP.oy = P.yaw + Math.PI; TP.op = .12; TP.od = 2.6; TP.by = P.yaw + Math.PI; TP.lx = P.x; TP.lz = P.z; } }
+$('vmGo').onclick = () => showMode(true); $('vmReset').onclick = () => { TP.oy = TP.by; TP.op = .12; TP.od = 2.6; }; $('vmExit').onclick = () => showMode(false);
+setInterval(() => { vm.style.display = TP.on && boss && !BV.on ? 'flex' : 'none'; if (!TP.on && TP.show) showMode(false); }, 300);
+window.__tp = TP; window.__showMode = showMode;
 
 }

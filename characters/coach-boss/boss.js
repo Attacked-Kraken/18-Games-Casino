@@ -41,7 +41,7 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
         sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vB;').replace('#include <color_fragment>', `#include <color_fragment>
   { vec3 q = vB; float ax = abs(q.x); bool arm = ax > .27 && q.y > 1.24;
     if (!arm && q.z > 0. && q.y > 1.1 && ax < .016 + (q.y - 1.1) * .34) discard;                                            /* V opening to the button */
-    if (arm && ax > .615) discard; if (!arm && q.y < .975) discard;
+    if (arm && ax > .615) discard; if (!arm && (q.y < .975 || q.y > 1.515)) discard;
     float s = abs(fract((q.x + q.z * .3) * 60.) - .5); diffuseColor.rgb *= 1. + .45 * smoothstep(.03, .01, s);
     if (!arm && q.z > 0. && q.y > 1.1 && ax < .05 + (q.y - 1.1) * .34) diffuseColor.rgb *= .75; }`); };
       jm.customProgramCacheKey = () => 'bossJacket2'; jk.material = jm;
@@ -63,12 +63,13 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
     if (vB.z < -.9985 && y < .88) discard;                                                                   /* back vent */
     float s = abs(fract(atan(vB.x, vB.z) * 9.55) - .5); diffuseColor.rgb *= 1. + .45 * smoothstep(.03, .01, s); }`); };
         sm2.customProgramCacheKey = () => 'bossSkirt1'; const sk = new THREE.Mesh(g, sm2); at(B.pelvis, sk, 0, 0, 0); } }
+    obj.traverse((n) => { if (n.isMesh && n.geometry.type === 'TorusGeometry' && Math.abs(n.geometry.parameters.radius - .075) < 1e-4) n.visible = false; });   /* drop base blazer neck ring */
     /* 3D lapels (notched, rolled) + jacket back collar + white shirt collar points */
     const lapM = new THREE.MeshStandardMaterial({ color: 0x0f1424, roughness: .4 });
     for (const s of [-1, 1]) { const sp = new THREE.Shape(); sp.moveTo(0, 0); sp.lineTo(.045, .05); sp.lineTo(.07, .3); sp.lineTo(.045, .335); sp.lineTo(.03, .305); sp.lineTo(.012, .33); sp.lineTo(0, .3); sp.lineTo(0, 0);
       const g = new THREE.ExtrudeGeometry(sp, { depth: .006, bevelEnabled: true, bevelSize: .003, bevelThickness: .003, bevelSegments: 1 }); const lp = new THREE.Mesh(g, lapM); lp.scale.x = -s; lp.rotation.set(-.2, s * -.5, 0); at(B.spine_03 || B.spine_02, lp, s * .016, 1.1, .158);
       const col = new THREE.Mesh(new THREE.ConeGeometry(.016, .04, 3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .5 })); col.scale.z = .3; col.rotation.set(-.2, 0, s * 2.75); at(B.neck_01 || B.spine_03, col, s * .022, 1.47, .1); }
-    { const bc = new THREE.Mesh(new THREE.TorusGeometry(.078, .014, 8, 24, Math.PI * 1.2), lapM); bc.scale.set(1, 1, 1.1); bc.rotation.set(Math.PI / 2 - .35, 0, Math.PI * .9 + Math.PI); at(B.spine_03, bc, 0, 1.52, -.005); }
+    { const bc = new THREE.Mesh(new THREE.TorusGeometry(.078, .014, 8, 24, Math.PI * .9), lapM); bc.scale.set(1, 1, 1.1); bc.rotation.set(Math.PI / 2 + .35, 0, Math.PI * .05); const bg = new THREE.Group(); bg.add(bc); bg.rotation.y = Math.PI; at(B.spine_03, bg, 0, 1.52, -.005); }
     /* Cuban chain + pocket-watch pendant */
     { const curve = new THREE.CatmullRomCurve3([[-.075, 1.5, .03], [-.09, 1.4, .12], [-.05, 1.25, .15], [0, 1.16, .155], [.05, 1.25, .15], [.09, 1.4, .12], [.075, 1.5, .03]].map((v) => new THREE.Vector3(...v)));
       const L = 46, lg = new THREE.TorusGeometry(.0085, .0035, 5, 10); for (let i = 0; i <= L; i++) { const u = i / L, p = curve.getPoint(u), tg = curve.getTangent(u); const l = new THREE.Mesh(lg, gold); l.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tg); if (i % 2) l.rotateX(Math.PI / 2); at(B.spine_03, l, p.x, p.y, p.z); }
