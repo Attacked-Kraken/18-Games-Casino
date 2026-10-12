@@ -25,9 +25,10 @@ export function createWing(ctx) {
     const sky = canvasTex(1024, 1024, (g, w) => { const gr = g.createLinearGradient(0, 0, 0, w); gr.addColorStop(0, '#5aa0e8'); gr.addColorStop(1, '#a8d4f8'); g.fillStyle = gr; g.fillRect(0, 0, w, w);
       for (let i = 0; i < 70; i++) { const x = rnd() * w, y = rnd() * w, s = 30 + rnd() * 90; for (let k = 0; k < 9; k++) { const rg = g.createRadialGradient(x + (rnd() - .5) * s, y + (rnd() - .5) * s * .4, 2, x, y, s); rg.addColorStop(0, 'rgba(255,255,255,.55)'); rg.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = rg; g.beginPath(); g.arc(x + (rnd() - .5) * s, y + (rnd() - .5) * s * .4, s * (.4 + rnd() * .5), 0, 7); g.fill(); } } }, [2, 2]);
     const skyM = new THREE.MeshBasicMaterial({ map: sky, side: THREE.BackSide, fog: false });
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(r + 2, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), skyM); dome.scale.set(1, .35, 1); dome.position.set(0, H - 2, zc); root.add(dome);
-    const vault = new THREE.Mesh(new THREE.CylinderGeometry(r + 1, r + 1, zc - z0 + 1, 32, 1, true, -Math.PI / 2, Math.PI), skyM); vault.rotation.x = Math.PI / 2; vault.rotation.y = Math.PI / 2; vault.scale.set(1, 1, .3); vault.position.set(0, H - 2, (z0 + zc) / 2); root.add(vault);
-    skyParts = [dome, vault]; anim.push((t) => { const k = (Math.sin(t * .05) + 1) / 2; skyM.color.setRGB(1, 1 - k * .3, 1 - k * .55); sky.offset.x = t * .002; });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(r + 2, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), skyM); dome.scale.set(1, .35, 1); dome.position.set(0, H - .3, zc); root.add(dome);
+    /* flat painted-sky ceiling over the promenade (overhead only; FrontSide facing down, no vertical faces) */
+    const skyF = skyM.clone(); skyF.side = THREE.DoubleSide; skyM.side = THREE.BackSide; const vault = new THREE.Mesh(new THREE.PlaneGeometry(2 * r + 2, zc - z0 + 1), skyF); vault.rotation.x = Math.PI / 2; vault.position.set(0, H - .3, (z0 + zc) / 2); root.add(vault); skyM.userData.f = skyF;
+    skyParts = [dome, vault]; anim.push((t) => { const k = (Math.sin(t * .05) + 1) / 2; skyM.color.setRGB(1, 1 - k * .3, 1 - k * .55); skyF.color.copy(skyM.color); sky.offset.x = t * .002; });
     /* entrance corridor walls */
     const wallM = M({ color: 0xb8a888, roughness: .7 });
     for (const sx of [-1, 1]) add(new THREE.BoxGeometry(.3, 5, z0 - 16.5), wallM, sx * 2.25, 2.5, (z0 + 16.5) / 2);
