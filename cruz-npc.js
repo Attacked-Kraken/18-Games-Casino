@@ -98,6 +98,6 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
       rig.position.set(x, push ? .28 + Math.max(0, Math.sin(t * 4)) * .14 : y + (task && task.k === 'go' && task.anim === 'Jog_Fwd_Loop' && task.ts > 1.5 ? Math.abs(Math.sin(t * 9)) * .12 : 0), z);
       rig.rotation.set(push ? Math.PI / 2 - .12 + Math.sin(t * 4) * .06 : Math.min(.22, spd * .03), yaw + spin, push ? 0 : bank);
       api.x = ext.x = x; api.z = ext.z = z; const show = api.on && (inField ? (stadium.root.visible || z < 64) : (vis ? vis(x, z) : true)); rig.visible = show; ext.on = api.on && !inField; ball.visible = ball.visible && show;
-      const d2 = pos ? (x - pos.x) ** 2 + (z - pos.z) ** 2 : 0; if (show && (d2 < 2500 || inField)) h.mixer.update(dt); };
-    api.pos = () => new THREE.Vector3(x, 1.2, z); api.C = C; api.ball = ball; api.ready = true; if (ctx.onReady) ctx.onReady(api); }).catch((e) => console.warn('cruz', e));
+      const d2 = pos ? (x - pos.x) ** 2 + (z - pos.z) ** 2 : 0; if (show && (d2 < 2500 || inField)) { h.mixer.update(dt); if (api.postPose) api.postPose(h, dt); } };
+    api.pos = () => new THREE.Vector3(x, 1.2, z); api.C = C; api.h = h; api.ball = ball; api.ready = true; if (ctx.onReady) ctx.onReady(api); }).catch((e) => console.warn('cruz', e));
   return api; }
