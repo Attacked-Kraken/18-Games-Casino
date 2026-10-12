@@ -128,6 +128,18 @@
    "category": "slots",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "dicepalace",
+   "file": "dicepalace.html",
+   "title": "Dice Palace",
+   "tagline": "3D craps: pass, field and place bets, hot rolls, live tables for 6. Fun chips only.",
+   "rating": "18+",
+   "icon": "dicepalace-icon.png",
+   "accent": "#7ad400",
+   "category": "tables",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }
