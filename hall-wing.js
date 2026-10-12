@@ -71,6 +71,6 @@ export function createHall(ctx) { const { THREE, scene, P, inst, canvasTex, sign
       const m = RAD + .2; nx = Math.max(HALL.x0 + m, Math.min(HALL.x1 - m, nx)); if (nz > HALL.z1 - m && Math.abs(nx) > HALL.door - m) nz = HALL.z1 - m; nz = Math.max(HALL.z0 + m, nz);
       for (const b of boxes) if (nx + RAD > b[0] && nx - RAD < b[2] && nz + RAD > b[1] && nz - RAD < b[3]) { const pl = nx + RAD - b[0], pr = b[2] - (nx - RAD), pu = nz + RAD - b[1], pd = b[3] - (nz - RAD), mm = Math.min(pl, pr, pu, pd); if (mm === pl) nx -= pl; else if (mm === pr) nx += pr; else if (mm === pu) nz -= pu; else nz += pd; }
       return [nx, nz]; },
-    update(dt, t, over) { if (!built && (P.z < HALL.z1 + 10 || over)) build(); root.visible = built && (P.z < HALL.z1 + 14 || over); },
+    update(dt, t, over) { this.t = (this.t || 0) + dt; if (!built && (P.z < 8 || this.t > 6 || over)) build(); root.visible = built && (P.z < 17 || over); },
     get built() { return built; }, buildNow() { if (!built) build(); } };
 }
