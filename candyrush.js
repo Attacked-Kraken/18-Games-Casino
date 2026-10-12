@@ -2,15 +2,15 @@
    falls in, tumble chains multiply the fun. Glossy 3D candies, cascade combo counter, turbo + autoplay. FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
 const M = window.CMath, S = M.CR_SYM;
-const K = await boot({ id: 'candyrush', title: 'Candy Rush', accent: '#ff3fa4', bloom: .5, fog: [30, 70],
+const K = await boot({ id: 'candyrush', title: 'Candy Rush', accent: '#7a1a4a', bloom: .5, fog: [30, 70],
   rules: `<p>8 or more of the same candy ANYWHERE on the 6×5 grid wins. Winning candy pops, new candy tumbles down, and new wins keep paying until no more form.</p><table><tr><th>Candy</th><th>8-9</th><th>10-11</th><th>12+</th></tr>${S.map(s => `<tr><td style="color:${s.c}">● ${s.k}</td><td>${s.p[0]}×</td><td>${s.p[1]}×</td><td>${s.p[2]}×</td></tr>`).join('')}</table>`,
   view: (p) => p ? { pos: [0, 2.5, 12.5], look: [0, 2.4, 0], fov: 46 } : { pos: [0, 2.6, 8.5], look: [0, 2.5, 0], fov: 44 } });
 const { THREE, scene } = K;
-K.backdrop({ carpet: '#2a0624', pattern: ['#ff3fa4', '#ffd21f', '#7ad400'], y: -1 }); K.setFloor(-1); K.lights({ c1: 0xff3fa4, c2: 0x2bc8ff, key: 18, keyPos: [1, 6, 9], target: [0, 2.5, 0] });
+K.backdrop({ carpet: '#2a0624', pattern: ['#7a1a4a', '#c9a45c', '#3e6b1e'], y: -1 }); K.setFloor(-1); K.lights({ c1: 0xff3fa4, c2: 0x2bc8ff, key: 18, keyPos: [1, 6, 9], target: [0, 2.5, 0] });
 const COLS = 6, ROWS = 5, D = .82, X0 = -(COLS - 1) * D / 2, Y0 = 2.4 + (ROWS - 1) * D / 2;
-const panel = K.rbox(COLS * D + .5, ROWS * D + .5, .2, .3, K.felt('#3a0a48')); panel.position.set(0, 2.4, -.4); scene.add(panel);
-const frame = K.rbox(COLS * D + .8, ROWS * D + .8, .15, .4, K.candy('#ff3fa4')); frame.position.set(0, 2.4, -.55); scene.add(frame);
-const sign = K.label('CANDY RUSH', { size: .75, glow: 1.5, color: '#ffd21f', stroke: '#6a0040' }); sign.position.set(0, 2.4 + ROWS * D / 2 + .85, 0); scene.add(sign);
+const panel = K.rbox(COLS * D + .5, ROWS * D + .5, .2, .3, K.M.black); panel.position.set(0, 2.4, -.4); scene.add(panel);
+const frame = K.rbox(COLS * D + .8, ROWS * D + .8, .15, .4, K.M.gold); frame.position.set(0, 2.4, -.55); scene.add(frame);
+const sign = K.label('CANDY RUSH', { size: .75, glow: 1.5, color: '#c9a45c', stroke: '#6a0040' }); sign.position.set(0, 2.4 + ROWS * D / 2 + .85, 0); scene.add(sign);
 /* candy geometries */
 const geos = [
   (() => { const s = new THREE.Shape(); s.moveTo(0, -.3); s.bezierCurveTo(-.45, .05, -.3, .35, 0, .15); s.bezierCurveTo(.3, .35, .45, .05, 0, -.3); const g = new THREE.ExtrudeGeometry(s, { depth: .14, bevelEnabled: true, bevelSize: .06, bevelThickness: .06, bevelSegments: 4 }); g.center(); return g; })(), /* heart */
@@ -34,7 +34,7 @@ K.onFrame((dt, t) => { cells.forEach(col => col.forEach(m => { if (!m) return; c
 setGrid(M.crGrid(), false);
 /* hud */
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
-K.el(`<div class="ck-row"><div class="ck-pill"><small>TUMBLE</small><b id="crT">–</b></div><div class="ck-pill"><small>WIN</small><b id="crW">0</b></div><button class="ck-sm" type="button" id="crTurbo">⚡</button><button class="ck-sm" type="button" id="crAuto">AUTO 10</button><button class="ck-go" type="button" id="crGo">SPIN</button></div>`);
+K.el(`<div class="ck-row"><div class="ck-pill"><small>TUMBLE</small><b id="crT">–</b></div><div class="ck-pill"><small>WIN</small><b id="crW">0</b></div><button class="ck-sm" type="button" id="crTurbo">Turbo</button><button class="ck-sm" type="button" id="crAuto">AUTO 10</button><button class="ck-go" type="button" id="crGo">SPIN</button></div>`);
 let busy = false, turbo = false, auto = 0; const sleep = ms => new Promise(r => setTimeout(r, turbo ? ms * .45 : ms));
 K.$('crTurbo').onclick = () => { turbo = !turbo; K.$('crTurbo').classList.toggle('on', turbo); };
 K.$('crAuto').onclick = () => { if (auto) { auto = 0; K.$('crAuto').textContent = 'AUTO 10'; return; } auto = 10; K.$('crAuto').textContent = 'STOP'; if (!busy) spin(); };

@@ -10,7 +10,7 @@ open(gid + '.html', 'w').write(f'''<!doctype html>
 <meta name="theme-color" content="#07030c"><meta name="robots" content="noindex">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="{gid}-icon.png">
 <script src="chips.js"></script><script src="arcade-record.js"></script><script src="casino-math.js"></script>
-{mps}</head><body style="--ac:{ac}">
+{mps}</head><body>
 <script type="module" src="{gid}.js"></script>
 </body></html>
 ''')

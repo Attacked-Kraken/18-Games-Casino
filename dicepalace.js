@@ -2,18 +2,18 @@
    point puck, hot-roll streak, live tables via mp.js (host throws the dice for everyone). FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
 const M = window.CMath;
-const K = await boot({ id: 'dicepalace', title: 'Dice Palace', accent: '#7ad400', bloom: .5,
+const K = await boot({ id: 'dicepalace', title: 'Dice Palace', accent: '#3e6b1e', bloom: .5,
   rules: `<p><b>Pass</b>: come-out 7 or 11 wins, 2/3/12 loses, anything else sets the POINT; then hit the point before a 7 to win 1:1. <b>Don't Pass</b> is the opposite (12 pushes on come-out).</p>
 <p><b>Field</b> (one roll): 3, 4, 9, 10, 11 pay 1:1; 2 pays 2:1; 12 pays 3:1. <b>Place 6 / 8</b> (works while a point is on): pays 7:6 every time it rolls, lost on a 7.</p><p>Live table: one shooter (the host) throws for everyone.</p>`,
   view: (p) => p ? { pos: [0, 10.8, 6.6], look: [0, 0, .3], fov: 46 } : { pos: [0, 6.2, 5.6], look: [0, 0, 0], fov: 40 } });
 const { THREE, scene } = K;
-K.backdrop({ carpet: '#0c1c04', pattern: ['#7ad400', '#ffd21f', '#ff2b6b'] }); K.lights({ c1: 0x7ad400, c2: 0xff3fa4, key: 18, hemi: .35 });
+K.backdrop({ carpet: '#0c1c04', pattern: ['#3e6b1e', '#c9a45c', '#ff2b6b'] }); K.lights({ c1: 0x7ad400, c2: 0xff3fa4, key: 18, hemi: .35 });
 const felt = K.felt('#0d5a2a', (g, w, h) => { g.textAlign = 'center'; g.strokeStyle = '#ffd166'; g.lineWidth = 6; g.fillStyle = '#ffe9a8';
-  g.strokeRect(60, 60, w - 120, 180); g.font = '900 70px Georgia'; g.fillText('PASS LINE', w / 2, 175);
-  g.strokeRect(60, 280, w - 120, 150); g.font = '900 50px Georgia'; g.fillText("DON'T PASS · BAR 12", w / 2, 375);
-  g.strokeRect(60, 470, w - 120, 170); g.font = '900 56px Georgia'; g.fillStyle = '#ffd21f'; g.fillText('FIELD  2 · 3 · 4 · 9 · 10 · 11 · 12', w / 2, 575);
-  g.fillStyle = '#ffe9a8'; [[6, .35], [8, .65]].forEach(([n, x]) => { g.strokeRect(w * x - 120, 690, 240, 220); g.font = '900 140px Georgia'; g.fillText(n, w * x, 860); });
-  g.font = 'italic 900 60px Georgia'; g.fillStyle = 'rgba(255,210,31,.5)'; g.fillText('Dice Palace', w / 2, 980); });
+  g.strokeRect(60, 60, w - 120, 180); g.font = '400 70px Georgia'; g.fillText('PASS LINE', w / 2, 175);
+  g.strokeRect(60, 280, w - 120, 150); g.font = '400 50px Georgia'; g.fillText("DON'T PASS · BAR 12", w / 2, 375);
+  g.strokeRect(60, 470, w - 120, 170); g.font = '400 56px Georgia'; g.fillStyle = '#c9a45c'; g.fillText('FIELD  2 · 3 · 4 · 9 · 10 · 11 · 12', w / 2, 575);
+  g.fillStyle = '#ffe9a8'; [[6, .35], [8, .65]].forEach(([n, x]) => { g.strokeRect(w * x - 120, 690, 240, 220); g.font = '400 140px Georgia'; g.fillText(n, w * x, 860); });
+  g.font = 'italic 400 60px Georgia'; g.fillStyle = 'rgba(255,210,31,.5)'; g.fillText('Dice Palace', w / 2, 980); });
 const table = K.rbox(5.4, 4.2, .3, .6, felt); table.rotation.x = -Math.PI / 2; table.position.y = -.15; scene.add(table);
 const rail = K.rbox(5.9, 4.7, .2, .7, K.M.wood); rail.rotation.x = -Math.PI / 2; rail.position.y = -.25; scene.add(rail);
 /* dice */
@@ -22,8 +22,8 @@ const pip = (v, col) => K.tex(256, 256, (g, w) => { g.fillStyle = col; g.beginPa
   P.forEach(([x, y]) => { g.beginPath(); g.arc(x * w, y * w, w * .09, 0, 7); g.fill(); }); });
 const FACES = [3, 4, 1, 6, 2, 5]; /* +x -x +y -y +z -z */
 const UP = { 1: [0, 0, 0], 3: [0, 0, Math.PI / 2], 4: [0, 0, -Math.PI / 2], 6: [Math.PI, 0, 0], 2: [-Math.PI / 2, 0, 0], 5: [Math.PI / 2, 0, 0] };
-const dice = ['#ff2b4e', '#2b7bff'].map((c, i) => { const ms = FACES.map(v => K.M.mat(0xffffff, { map: pip(v, c), roughness: .25, metalness: 0 })); const d = new THREE.Mesh(new THREE.BoxGeometry(.38, .38, .38), ms); d.castShadow = true; d.position.set(-.4 + i * .8, .19, 1.5); scene.add(d); return d; });
-const puck = new THREE.Mesh(new THREE.CylinderGeometry(.24, .24, .06, 32), K.M.mat(0xffffff, { map: K.tex(128, 128, (g) => { g.fillStyle = '#111'; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '900 40px system-ui'; g.textAlign = 'center'; g.fillText('OFF', 64, 78); }) }));
+const dice = ['#8e1b2c', '#1d3f7a'].map((c, i) => { const ms = FACES.map(v => K.M.mat(0xffffff, { map: pip(v, c), roughness: .25, metalness: 0 })); const d = new THREE.Mesh(new THREE.BoxGeometry(.38, .38, .38), ms); d.castShadow = true; d.position.set(-.4 + i * .8, .19, 1.5); scene.add(d); return d; });
+const puck = new THREE.Mesh(new THREE.CylinderGeometry(.24, .24, .06, 32), K.M.mat(0xffffff, { map: K.tex(128, 128, (g) => { g.fillStyle = '#111'; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '500 40px Georgia'; g.textAlign = 'center'; g.fillText('OFF', 64, 78); }) }));
 puck.position.set(2.2, .03, -1.5); scene.add(puck);
 function setPuck(p) { puck.material.map = K.tex(128, 128, (g) => { g.fillStyle = p ? '#fff' : '#111'; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill(); g.fillStyle = p ? '#111' : '#fff'; g.font = '900 ' + (p ? 60 : 40) + 'px system-ui'; g.textAlign = 'center'; g.fillText(p ? p : 'OFF', 64, p ? 84 : 78); }); puck.material.needsUpdate = true;
   const zx = { 4: -1.8, 5: -1.1, 6: -.4, 8: .4, 9: 1.1, 10: 1.8 }; puck.position.set(p ? zx[p] : 2.2, .03, -1.5); }
@@ -56,9 +56,9 @@ function onResult(d) { busy = true; throwDice(d, () => { const before = onTable(
     if (placeWins && !staked) { /* place hits returned winnings only (bet stays up) */ }
     if (ret > staked) tb.say('won', { amt: ret - staked });
     if (!point && res.point) { K.msg('POINT IS ' + res.point, 1500); K.SFX.pop(5); }
-    if (point && !res.point && res.total === point) { hot++; K.msg('🔥 POINT HIT! Hot roll ×' + hot, 1800, true); } if (res.total === 7 && point) hot = 0;
+    if (point && !res.point && res.total === point) { hot++; K.msg('Point made · hot hand ' + hot, 1800, true); } if (res.total === 7 && point) hot = 0;
     point = res.point; setPuck(point); upd(); busy = false; K.$('dGo').disabled = false; void before; }); }
 const tb = K.sharedRounds({ game: 'dice', betMs: 12000, goMs: 4000, roll: () => M.roll(), onResult, blurb: 'Open a table and share the code. The host is the shooter; everyone bets on the same dice.',
-  onPhase: st => { phase = st ? st.phase : 'bet'; K.$('dTP').style.display = st ? '' : 'none'; }, onTick: (st, s) => K.$('dTm').textContent = st.phase === 'bet' ? s + 's' : '🎲' });
+  onPhase: st => { phase = st ? st.phase : 'bet'; K.$('dTP').style.display = st ? '' : 'none'; }, onTick: (st, s) => K.$('dTm').textContent = st.phase === 'bet' ? s + 's' : '·' });
 window.__game = { bet: (k) => document.querySelector(`[data-b="${k}"]`).click(), roll: () => K.$('dGo').click() };
 upd(); K.start();

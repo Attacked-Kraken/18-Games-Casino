@@ -5,14 +5,14 @@ import { boot } from './casino-kit.js';
 import { cardKit } from './cards3d.js';
 const M = window.CMath;
 const BUY = 1000, SB = 10, BB = 20, SEATS = 6, BOTN = ['Ruby', 'Ace', 'Vegas', 'Lucky', 'Duke', 'Kitty', 'Bluff', 'Jade'];
-const K = await boot({ id: 'holdemroyale', title: "Hold'em Royale", accent: '#ffb400', bloom: .5,
+const K = await boot({ id: 'holdemroyale', title: "Hold'em Royale", accent: '#c9a45c', bloom: .5,
   rules: `<p>No-Limit Texas Hold'em. Blinds ${SB}/${BB}. Sit down with ${BUY} fun chips from your wallet; CASH OUT returns your stack to the wallet.</p><p>Make the best five-card hand from your two cards and the five on the board. Royal flush › straight flush › four of a kind › full house › flush › straight › three of a kind › two pair › pair › high card.</p><p><b>Live table</b>: open a table and share the code; up to 6 friends, bots fill empty seats. The table opener deals.</p>`,
   onBack: () => { cashOut(); },
   view: (p) => p ? { pos: [0, 12, 7.2], look: [0, 0, .6], fov: 50 } : { pos: [0, 6.6, 6.2], look: [0, 0, .2], fov: 42 } });
 const { THREE, scene } = K;
-K.backdrop({ carpet: '#1e1204', pattern: ['#ffb400', '#ff2b4e', '#2bc8ff'], y: -1.2 }); K.setFloor(-1.2); K.lights({ c1: 0xffb400, c2: 0xff2b6b, key: 16, hemi: .35 });
-const CK = cardKit(K, '#7a0a1e');
-const felt = K.felt('#0f5a35', (g, w, h) => { g.textAlign = 'center'; g.font = 'italic 900 70px Georgia'; g.fillStyle = 'rgba(255,180,0,.45)'; g.fillText("Hold'em Royale", w / 2, h * .66); g.strokeStyle = 'rgba(255,214,102,.5)'; g.lineWidth = 5; g.beginPath(); g.roundRect(w * .22, h * .38, w * .56, h * .2, 30); g.stroke(); });
+K.backdrop({ carpet: '#1e1204', pattern: ['#c9a45c', '#8e1b2c', '#1f5f6e'], y: -1.2 }); K.setFloor(-1.2); K.lights({ c1: 0xffb400, c2: 0xff2b6b, key: 16, hemi: .35 });
+const CK = cardKit(K, '#5e101c');
+const felt = K.felt('#0f5a35', (g, w, h) => { g.textAlign = 'center'; g.font = 'italic 400 70px Georgia'; g.fillStyle = 'rgba(255,180,0,.45)'; g.fillText("Hold'em Royale", w / 2, h * .66); g.strokeStyle = 'rgba(255,214,102,.5)'; g.lineWidth = 5; g.beginPath(); g.roundRect(w * .22, h * .38, w * .56, h * .2, 30); g.stroke(); });
 const tbl = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, .3, 64), [K.M.wood, felt, K.M.wood]); tbl.scale.set(3.2, 1, 2.1); tbl.position.y = -.15; const leg = new THREE.Mesh(new THREE.CylinderGeometry(.5, .9, 1.1, 24), K.M.wood); leg.position.y = -.75; scene.add(leg); tbl.receiveShadow = true; scene.add(tbl);
 const rail = new THREE.Mesh(new THREE.TorusGeometry(1, .09, 16, 96), K.M.mat(0x2a0a0a, { roughness: .6 })); rail.rotation.x = -Math.PI / 2; rail.scale.set(3.25, 2.15, 1); scene.add(rail);
 const glow = new THREE.Mesh(new THREE.TorusGeometry(1, .015, 8, 96), K.neon(0xffb400, 1.8)); glow.rotation.x = -Math.PI / 2; glow.scale.set(3.4, 2.3, 1); glow.position.y = -.2; scene.add(glow);
@@ -97,7 +97,7 @@ addEventListener('pagehide', () => { if (seated) savePending(); });
 const boardM = [], seatViews = [];
 const potL = { m: null, s: '' }; function setLbl(o, txt, parent, pos, opt) { if (o.s === txt) return; o.s = txt; if (o.m) parent.remove(o.m); if (!txt) { o.m = null; return; } o.m = K.label(txt, opt); o.m.position.copy(pos); o.m.rotation.x = -1.0; parent.add(o.m); }
 for (let i = 0; i < SEATS; i++) seatViews.push({ name: { m: null, s: '' }, bet: { m: null, s: '' }, cards: [], key: '' });
-const dealerBtn = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 24), K.M.mat(0xffffff, { map: K.tex(64, 64, g => { g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#111'; g.font = '900 40px system-ui'; g.textAlign = 'center'; g.fillText('D', 32, 46); }) })); scene.add(dealerBtn);
+const dealerBtn = new THREE.Mesh(new THREE.CylinderGeometry(.16, .16, .05, 24), K.M.mat(0xffffff, { map: K.tex(64, 64, g => { g.fillStyle = '#fff'; g.fillRect(0, 0, 64, 64); g.fillStyle = '#111'; g.font = '500 40px Georgia'; g.textAlign = 'center'; g.fillText('D', 32, 46); }) })); scene.add(dealerBtn);
 const turnRing = new THREE.Mesh(new THREE.TorusGeometry(.62, .03, 8, 48), K.neon(0xffd21f, 2.4)); turnRing.rotation.x = -Math.PI / 2; scene.add(turnRing);
 let lastHand = -1, lastBoard = 0;
 const view = (i) => { const me = Math.max(0, mySeat()); return (i - me + SEATS) % SEATS; };
@@ -106,18 +106,18 @@ function render() { if (!S) return; const me = mySeat();
   while (lastBoard < S.board.length) { const k = lastBoard++; const m = CK.make(null); m.set(S.board[k]); m.scale.setScalar(.85); m.position.set(0, 1.2, -2.5); m.rotation.x = Math.PI / 2; scene.add(m); boardM.push(m); CK.fly(m, new THREE.Vector3(-1.2 + k * .6, .03, -.15), 420, true, (k % 3) * 120); }
   S.seats.forEach((s, i) => { const v = seatViews[i], g = seatG[view(i)], p = g.position;
     setLbl(v.name, s ? (s.name + ' · ' + K.fmt(s.stack) + (s.allin ? ' ALL-IN' : '')) : 'empty', scene, p.clone().add(new THREE.Vector3(0, .25, Math.sign(p.z) * .5 || .5)), { size: .27, bg: s && S.show && S.show.winners.includes(i) ? '#b8860b' : s && s.folded ? '#2a2030' : 'rgba(20,8,30,.9)', color: '#fff' });
-    setLbl(v.bet, s && s.bet ? K.fmt(s.bet) : '', scene, p.clone().multiplyScalar(.62).add(new THREE.Vector3(0, .12, 0)), { size: .2, bg: '#ffb400', color: '#2a1400', stroke: '#fff3c4' });
+    setLbl(v.bet, s && s.bet ? K.fmt(s.bet) : '', scene, p.clone().multiplyScalar(.62).add(new THREE.Vector3(0, .12, 0)), { size: .2, bg: '#c9a45c', color: '#2a1400', stroke: '#fff3c4' });
     if (s && s.cards.length && !v.dealt && !s.folded) { v.dealt = true; s.cards.forEach((c, j) => { const m = CK.make(null); m.scale.setScalar(view(i) === 0 ? 1 : .7); m.position.set(0, 1, -.2); m.rotation.x = Math.PI / 2; scene.add(m); v.cards.push(m); CK.fly(m, p.clone().multiplyScalar(.78).add(new THREE.Vector3((j - .5) * (view(i) === 0 ? .55 : .4), .04 + j * .003, 0)), 380, false, (i * 2 + j) * 80); }); }
     const reveal = i === me || (S.show && S.show.reveal && !s.folded);
     v.cards.forEach((m, j) => { if (!s || s.folded) { m.visible = false; return; } m.visible = true; if (reveal && m.userData.c !== s.cards[j]) { m.set(s.cards[j]); } m.rotation.x = reveal ? -Math.PI / 2 : Math.PI / 2; }); });
-  setLbl(potL, S.pot ? 'POT ' + K.fmt(S.pot) : '', scene, new THREE.Vector3(0, .2, .55), { size: .3, bg: '#14081e', color: '#ffd21f' });
+  setLbl(potL, S.pot ? 'POT ' + K.fmt(S.pot) : '', scene, new THREE.Vector3(0, .2, .55), { size: .3, bg: '#14081e', color: '#c9a45c' });
   if (S.dealer >= 0) dealerBtn.position.copy(seatG[view(S.dealer)].position).multiplyScalar(.7).add(new THREE.Vector3(.55, .03, 0));
   turnRing.visible = S.toAct >= 0; if (S.toAct >= 0) turnRing.position.copy(seatG[view(S.toAct)].position).multiplyScalar(.78).add(new THREE.Vector3(0, .02, 0));
   if (S.show && S.show.text !== render.lastShow) { render.lastShow = S.show.text; const mine = me >= 0 && S.show.winners.includes(me); K.msg(S.show.text, 2600, mine); if (mine) { K.SFX.win(S.seats[me].win > BB * 20); K.burst(seatG[0].position.clone().add(new THREE.Vector3(0, .5, 0)), 40); K.record('w', room ? 'net' : 'cpu'); } else if (me >= 0 && S.seats[me] && S.seats[me].tot) K.record('l', room ? 'net' : 'cpu'); }
   if (seated) savePending(); hud(); }
 /* hud */
 K.el(`<div class="ck-row"><div class="ck-pill" style="min-width:150px"><small id="hS">TABLE</small><b id="hInfo">–</b></div><div class="ck-pill"><small>STACK</small><b id="hStack">–</b></div></div>`);
-const bar = K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="hFold" style="background:#5a1a2a">FOLD</button><button class="ck-sm" type="button" id="hCall">CHECK</button><button class="ck-sm" type="button" id="hR1">+½ POT</button><button class="ck-sm" type="button" id="hR2">POT</button><button class="ck-sm" type="button" id="hAll" style="background:#d6102e">ALL IN</button></div>`);
+const bar = K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="hFold" style="background:#5a1a2a">FOLD</button><button class="ck-sm" type="button" id="hCall">CHECK</button><button class="ck-sm" type="button" id="hR1">+½ POT</button><button class="ck-sm" type="button" id="hR2">POT</button><button class="ck-sm" type="button" id="hAll" style="background:#8e1b2c">ALL IN</button></div>`);
 K.el(`<div class="ck-row"><button class="ck-go" type="button" id="hSit">SIT DOWN · ${BUY}</button><button class="ck-sm hide" type="button" id="hOut">CASH OUT</button></div>`);
 function send(type, amt) { const me = mySeat(); if (me < 0) return; K.SFX.chip(); if (room && !room.isHost) room.send('act', { type, amt }); else { if (act(S, me, type, amt)) push(); } }
 K.$('hFold').onclick = () => send('fold'); K.$('hCall').onclick = () => { const s = S.seats[mySeat()]; send(S.curBet > s.bet ? 'call' : 'check'); };

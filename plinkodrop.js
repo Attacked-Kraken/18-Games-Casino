@@ -1,20 +1,20 @@
 /* Plinko Drop: 12-row pegboard, fair 50/50 bounces (casino-math.js), three risk tables, many balls at once, auto-drop. FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
 const M = window.CMath;
-const K = await boot({ id: 'plinkodrop', title: 'Plinko Drop', accent: '#ff3fa4', bloom: .6, fog: [30, 70],
+const K = await boot({ id: 'plinkodrop', title: 'Plinko Drop', accent: '#7a1a4a', bloom: .6, fog: [30, 70],
   rules: `<p>Pick a risk, DROP a ball. It bounces left or right at every peg (50/50) and lands in a slot that multiplies your bet.</p>${['low', 'mid', 'high'].map(r => `<h3>${r.toUpperCase()}</h3><p>${M.PLINKO[r].join(' · ')}×</p>`).join('')}<p>Every risk level returns about 97–99% over time.</p>`,
   view: (p) => p ? { pos: [0, 3.6, 17.5], look: [0, 3.4, 0], fov: 46 } : { pos: [0, 3.4, 9.5], look: [0, 3.2, 0], fov: 46 } });
 const { THREE, scene } = K;
-K.backdrop({ carpet: '#20061c', pattern: ['#ff3fa4', '#2bc8ff', '#ffd21f'], y: -1 }); K.setFloor(-1); K.lights({ c1: 0xff3fa4, c2: 0x2bc8ff, key: 22, keyPos: [2, 8, 9], target: [0, 3, 0] });
+K.backdrop({ carpet: '#20061c', pattern: ['#7a1a4a', '#1f5f6e', '#c9a45c'], y: -1 }); K.setFloor(-1); K.lights({ c1: 0xff3fa4, c2: 0x2bc8ff, key: 22, keyPos: [2, 8, 9], target: [0, 3, 0] });
 const ROWS = 12, GAP = .5, TOP = 6.6;
-const back = K.rbox(ROWS * GAP + 1.6, 7.6, .2, .3, K.felt('#2a0838')); back.position.set(0, 3.0, -.25); scene.add(back);
+const back = K.rbox(ROWS * GAP + 1.6, 7.6, .2, .3, K.M.leather); back.position.set(0, 3.0, -.25); scene.add(back);
 [-1, 1].forEach(sx => { const t = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 7.4, 8), K.neon(sx < 0 ? 0xff3fa4 : 0x2bc8ff, 2)); t.position.set(sx * (ROWS * GAP / 2 + .75), 3, -.05); scene.add(t); });
-const sign = K.label('PLINKO DROP', { size: .7, glow: 1.6, color: '#ffd21f', stroke: '#5a0030' }); sign.position.set(0, 7.35, 0); scene.add(sign);
+const sign = K.label('PLINKO DROP', { size: .7, glow: 1.6, color: '#c9a45c', stroke: '#5a0030' }); sign.position.set(0, 7.35, 0); scene.add(sign);
 const pegG = new THREE.SphereGeometry(.07, 16, 12), pegM = K.M.chrome; const pegs = [];
 for (let r = 0; r < ROWS; r++) for (let i = 0; i <= r + 2; i++) { if (r === 0 && false) continue; const p = new THREE.Mesh(pegG, pegM); p.position.set((i - (r + 2) / 2) * GAP, TOP - r * GAP, 0); scene.add(p); pegs.push(p); }
 /* bins */
 const BINS = ROWS + 1; let risk = 'mid'; const bins = [];
-const binCols = ['#ff2b4e', '#ff7a1a', '#ffd21f', '#7ad400', '#00c46a', '#00d2b4', '#2b7bff', '#00d2b4', '#00c46a', '#7ad400', '#ffd21f', '#ff7a1a', '#ff2b4e'];
+const binCols = ['#8e1b2c', '#9a5a18', '#c9a45c', '#3e6b1e', '#0f5a3e', '#1f5f6e', '#1d3f7a', '#1f5f6e', '#0f5a3e', '#3e6b1e', '#c9a45c', '#9a5a18', '#8e1b2c'];
 function buildBins() { bins.forEach(b => scene.remove(b)); bins.length = 0;
   M.PLINKO[risk].forEach((m, i) => { const g = new THREE.Group(); const x = (i - ROWS / 2) * GAP; g.position.set(x, TOP - ROWS * GAP - .05, 0);
     const box = K.rbox(GAP * .9, .42, .3, .07, K.candy(binCols[i])); g.add(box);
@@ -23,7 +23,7 @@ buildBins();
 /* balls */
 const ballG = new THREE.SphereGeometry(.11, 24, 16); const balls = [];
 function drop(bet) { const path = M.plinkoPath(ROWS), bin = path.reduce((a, b) => a + b, 0);
-  const m = new THREE.Mesh(ballG, K.candy(['#ff3fa4', '#ffd21f', '#2bc8ff', '#7ad400'][balls.length % 4], { emissive: 0x000000 })); m.castShadow = true; scene.add(m);
+  const m = new THREE.Mesh(ballG, (balls.length % 2 ? K.M.gold : K.M.chrome)); m.castShadow = true; scene.add(m);
   /* waypoints: start above, then each peg row offset */
   const pts = [new THREE.Vector3((Math.random() - .5) * .1, TOP + .6, .12)]; let pos = 0;
   for (let r = 0; r < ROWS; r++) { pos += path[r]; pts.push(new THREE.Vector3((pos - (r + 1) / 2) * GAP, TOP - r * GAP - GAP * .55, .12)); }

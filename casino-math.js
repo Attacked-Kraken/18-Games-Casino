@@ -152,8 +152,8 @@
   M.kenoDraw = function () { var a = []; for (var i = 1; i <= 80; i++) a.push(i); return M.shuffle(a).slice(0, 20); };
 
   /* ---------------- Big Wheel: 50 segments, every bet returns 96% ---------------- */
-  M.BW_SEG = [{ k: '1', pay: 1, n: 24, c: '#ffd23a' }, { k: '3', pay: 3, n: 12, c: '#3ad1ff' }, { k: '5', pay: 5, n: 8, c: '#ff4fa3' }, { k: '11', pay: 11, n: 4, c: '#7dff6a' },
-    { k: 'JOKER', pay: 47, n: 1, c: '#b46bff' }, { k: 'STAR', pay: 47, n: 1, c: '#ff7a1a' }];
+  M.BW_SEG = [{ k: '1', pay: 1, n: 24, c: '#e9dfc8' }, { k: '3', pay: 3, n: 12, c: '#1d3f7a' }, { k: '5', pay: 5, n: 8, c: '#7a1424' }, { k: '11', pay: 11, n: 4, c: '#0f5a3e' },
+    { k: 'JOKER', pay: 47, n: 1, c: '#141414' }, { k: 'STAR', pay: 47, n: 1, c: '#9a6a18' }];
   M.bwLayout = function () { /* fixed, spread-out order of the 50 segments */
     var order = []; var pat = ['1', '3', '1', '5', '1', '3', '1', '11', '1', '3', '1', '5'], cnt = {}; M.BW_SEG.forEach(function (s) { cnt[s.k] = s.n; });
     for (var i = 0; order.length < 48; i++) { var k = pat[i % pat.length]; if (cnt[k] > 0) { order.push(k); cnt[k]--; } else { var alt = ['1', '3', '5', '11'].filter(function (q) { return cnt[q] > 0; })[0]; order.push(alt); cnt[alt]--; } }
