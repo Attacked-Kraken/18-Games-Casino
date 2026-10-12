@@ -44,6 +44,18 @@
    "category": "tables",
    "multiplayer": true,
    "new": true
+  },
+  {
+   "id": "diamondpoker",
+   "file": "diamondpoker.html",
+   "title": "Diamond Poker",
+   "tagline": "Jacks or Better video poker with hold hints and double-up. Fun chips only.",
+   "rating": "18+",
+   "icon": "diamondpoker-icon.png",
+   "accent": "#2bc8ff",
+   "category": "cards",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
