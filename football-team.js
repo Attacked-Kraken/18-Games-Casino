@@ -46,8 +46,9 @@ export function createTeam(ctx) { const { THREE, scene, cruz, stadium, mobile } 
         if (carrier) ball.position.set(carrier.x + Math.sin(carrier.yaw + .6) * .25, 1.15, carrier.z + Math.cos(carrier.yaw + .6) * .25);
         if ((carrier && carrier.catchT > 2.3) || pt > 9) { ph = 'dead'; pt = 0; } }
       else if (ph === 'dead') { T.players.forEach((q) => { q.vx *= .8; q.vz *= .8; play(q, q === carrier ? 'Dance_Loop' : q.role === 'line' ? 'Idle_Loop' : 'Interact', 1, q !== carrier); }); if (carrier) ball.position.set(carrier.x, 1.2 + Math.abs(Math.sin(t * 6)) * .2, carrier.z);
-        if (pt > 2.2) { ph = 'form'; pt = 0; carrier = null; T.play++; plays++; T.players.forEach((q) => { q.h.clip = ''; }); } } }
+        if (pt > 2.2) { ph = 'form'; pt = 0; carrier = null; if (T.queue != null) { T.play = T.queue; T.queue = null; } else T.play++; plays++; T.players.forEach((q) => { q.h.clip = ''; }); } } }
     T.phase = ph; const vis = visible; ball.visible = vis;
     T.players.forEach((q, i) => { q.x += q.vx * dt; q.z += q.vz * dt; q.x = Math.max(-30, Math.min(30, q.x)); q.z = Math.max(78, Math.min(195, q.z)); q.h.rig.position.set(q.x, 0, q.z); q.h.rig.rotation.set(Math.min(.2, Math.hypot(q.vx, q.vz) * .025), q.yaw, 0); q.h.rig.visible = vis;
       if (vis && (T.fr + i) % step === 0) q.h.mixer.update(dt * step); }); };
+  T.PLAYS = PLAYS.map((p) => p.name); T.queue = null; T.setPlay = (i) => { T.queue = i; };
   return T; }
