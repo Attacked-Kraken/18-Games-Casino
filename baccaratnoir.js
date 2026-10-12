@@ -39,7 +39,7 @@ K.$('bGo').onclick = () => { if (busy) return; if (!stake()) { if (lastBets) { c
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function onResult(res) { busy = true; K.$('bGo').disabled = true; live.forEach(m => scene.remove(m)); live = []; totals.forEach(t => t.visible = false);
   const from = shoeBox.position.clone().add(new THREE.Vector3(0, .3, 0)); const seq = [[res.p[0], P, 0], [res.b[0], B, 0], [res.p[1], P, 1], [res.b[1], B, 1]];
-  const put = async (c, at, i) => { const m = CK.make(null); m.set(c); m.position.copy(from); m.rotation.x = Math.PI / 2; scene.add(m); live.push(m); await CK.fly(m, at.clone().add(new THREE.Vector3((i - 1) * .7 + .35, i * .002, i === 2 ? .2 : 0)), 420, true); if (i === 2) m.rotation.z = Math.PI / 2; };
+  const put = async (c, at, i) => { const m = CK.make(null); m.set(c); m.position.copy(from); m.rotation.x = Math.PI / 2; scene.add(m); live.push(m); await CK.fly(m, at.clone().add(new THREE.Vector3(i === 2 ? 0 : (i - 1) * .7 + .35, i * .002, i === 2 ? .85 : 0)), 420, true); if (i === 2) m.rotation.z = Math.PI / 2; };
   for (const [c, at, i] of seq) await put(c, at, i);
   const tot = h => h.reduce((s, c) => s + M.bacVal(c), 0) % 10; setTotal(0, tot(res.p.slice(0, 2)), '#1d3f7a'); setTotal(1, tot(res.b.slice(0, 2)), '#8e1b2c');
   if (res.p[2] != null) { await sleep(500); K.SFX.tease(); await put(res.p[2], P, 2); setTotal(0, res.pt, '#1d3f7a'); }

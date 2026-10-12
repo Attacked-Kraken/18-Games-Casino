@@ -17,8 +17,8 @@ const BINS = ROWS + 1; let risk = 'mid'; const bins = [];
 const binCols = ['#8e1b2c', '#9a5a18', '#c9a45c', '#3e6b1e', '#0f5a3e', '#1f5f6e', '#1d3f7a', '#1f5f6e', '#0f5a3e', '#3e6b1e', '#c9a45c', '#9a5a18', '#8e1b2c'];
 function buildBins() { bins.forEach(b => scene.remove(b)); bins.length = 0;
   M.PLINKO[risk].forEach((m, i) => { const g = new THREE.Group(); const x = (i - ROWS / 2) * GAP; g.position.set(x, TOP - ROWS * GAP - .05, 0);
-    const box = K.rbox(GAP * .9, .42, .3, .07, K.candy(binCols[i])); g.add(box);
-    const l = K.label(m + '×', { size: .26, color: '#fff' }); l.position.z = .2; g.add(l); scene.add(g); bins.push(g); }); }
+    const box = K.rbox(GAP * .94, .5, .3, .04, K.candy(binCols[i])); g.add(box);
+    const l = K.label(String(m), { size: .34, h: 96, font: `500 64px ${K.SERIF}` }); if (l.geometry.parameters.width > GAP * .9) l.scale.x = GAP * .9 / l.geometry.parameters.width; l.position.z = .2; g.add(l); scene.add(g); bins.push(g); }); }
 buildBins();
 /* balls */
 const ballG = new THREE.SphereGeometry(.11, 24, 16); const balls = [];

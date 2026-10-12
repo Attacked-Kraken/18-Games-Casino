@@ -12,7 +12,7 @@ export { THREE };
 const $ = (id) => document.getElementById(id);
 export const fmt = (n) => Math.round(n).toLocaleString('en-US');
 export const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-export const CANDY = { red: '#ff2b4e', pink: '#ff3fa4', orange: '#ff7a1a', yellow: '#ffd21f', lime: '#7ad400', green: '#00c46a', teal: '#00d2b4', blue: '#2b7bff', sky: '#2bc8ff', purple: '#9b4dff', violet: '#c04dff' };
+export const CANDY = { red: '#7a1424', pink: '#6a1a3e', orange: '#8a4a18', yellow: '#9a6a18', lime: '#3e5a1e', green: '#0f5a3e', teal: '#0f4a4a', blue: '#1d3f7a', sky: '#1b4a6a', purple: '#4a1f5e', violet: '#5a1f6a' }; /* lux jewel tones */
 
 const CSS = `
 :root{--ac:#8e1b2c;--gold:#c9a45c;--gold2:#e8d3a0;--fg:#efe6d6;--mut:#a89c8a;--serif:'Didot','Bodoni 72','Playfair Display','Cormorant Garamond',Georgia,'Times New Roman',serif;--sans:'Helvetica Neue',-apple-system,'Segoe UI',Roboto,Arial,sans-serif;color-scheme:dark}
@@ -82,7 +82,7 @@ export const SFX = {
 /* ---------- boot ---------- */
 export async function boot(o) {
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
-  document.documentElement.style.setProperty('--ac', (() => { const c = new THREE.Color(o.accent || '#8e1b2c'), h = {}; c.getHSL(h); return new THREE.Color().setHSL(h.h, Math.min(.7, h.s * .85), .27).getStyle(); })());
+  document.documentElement.style.setProperty('--ac', (() => { const c = new THREE.Color(o.accent || '#8e1b2c'), h = {}; c.getHSL(h, THREE.SRGBColorSpace); return new THREE.Color().setHSL(h.h, Math.min(.7, h.s * .85), .27, THREE.SRGBColorSpace).getStyle(); })());
   const body = document.body;
   body.insertAdjacentHTML('afterbegin', `<canvas id="c"></canvas><div id="ckVig"></div><div id="ckLoad">${esc(o.title.toUpperCase())}</div><div id="ckMsg"></div>
 <div class="ck-top"><button class="ck-b" id="ckBack" type="button">‹ Lobby</button><div class="ck-title">${esc(o.title)}</div>
@@ -192,18 +192,18 @@ export async function boot(o) {
   const mat2 = (c, p = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c }, p));
   K.M.gold = mat2(0xc49a52, { metalness: 1, roughness: .32, normalMap: brushedN, normalScale: new THREE.Vector2(.25, .25) });
   K.M.chrome = mat2(0xb9b4ac, { metalness: 1, roughness: .22 });
-  K.M.black = mat2(0x0b0a0c, { roughness: .35, metalness: .2, clearcoat: 1 });
+  K.M.black = new THREE.MeshPhysicalMaterial({ color: 0x0b0a0c, roughness: .35, metalness: .2, clearcoat: 1 });
   K.M.wood = new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: repTex(woodTex.clone(), 1, 1), normalMap: woodN, normalScale: new THREE.Vector2(.35, .35), roughness: .38, clearcoat: .8, clearcoatRoughness: .18 });
   K.M.wood.map.needsUpdate = true;
   K.M.leather = mat2(0x1a0d0a, { roughness: .58, normalMap: repTex(leatherN, 6, 6), normalScale: new THREE.Vector2(.6, .6) });
   K.M.marble = new THREE.MeshPhysicalMaterial({ color: 0xffffff, map: marbleTex, roughness: .18, clearcoat: 1, clearcoatRoughness: .05 });
   K.M.glass = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .04, metalness: 0, transparent: true, opacity: .14, depthWrite: false, clearcoat: 1 });
   /* jewel-tone mapping: any requested colour keeps its hue but becomes a deep, rich, solid jewel tone */
-  K.jewel = (c) => { const col = new THREE.Color(c), hsl = {}; col.getHSL(hsl); return new THREE.Color().setHSL(hsl.h, Math.min(.85, hsl.s * .9), Math.min(.36, Math.max(.12, hsl.l * .62))); };
+  K.jewel = (c) => { const col = new THREE.Color(c), hsl = {}; col.getHSL(hsl, THREE.SRGBColorSpace); return new THREE.Color().setHSL(hsl.h, Math.min(.85, hsl.s * .9), Math.min(.36, Math.max(.12, hsl.l * .62)), THREE.SRGBColorSpace); };
   K.candy = (c, p = {}) => new THREE.MeshPhysicalMaterial(Object.assign({ color: K.jewel(c), roughness: .3, metalness: .05, clearcoat: 1, clearcoatRoughness: .08 }, p));
   K.neon = (c, k = 2.2) => { const col = new THREE.Color(c).lerp(new THREE.Color(0xffc27a), .6).multiplyScalar(Math.min(1.25, k * .55)); return new THREE.MeshBasicMaterial({ color: col, toneMapped: false }); };
   /* real woven felt: flat jewel colour, fine weave normal map, soft lamp falloff, printed layout lines */
-  K.felt = (hex, draw) => { const jb = K.jewel(hex), hb = {}; jb.getHSL(hb); const base = new THREE.Color().setHSL(hb.h, Math.min(.7, hb.s), Math.min(.2, hb.l)).getStyle(); const t = K.tex(1024, 1024, (g, w, h) => { g.fillStyle = base; g.fillRect(0, 0, w, h);
+  K.felt = (hex, draw) => { const jb = K.jewel(hex), hb = {}; jb.getHSL(hb, THREE.SRGBColorSpace); const base = new THREE.Color().setHSL(hb.h, Math.min(.65, hb.s), Math.min(.15, hb.l), THREE.SRGBColorSpace).getStyle(); const t = K.tex(1024, 1024, (g, w, h) => { g.fillStyle = base; g.fillRect(0, 0, w, h);
       const rg = g.createRadialGradient(w / 2, h / 2, w * .1, w / 2, h / 2, w * .75); rg.addColorStop(0, 'rgba(255,240,210,.06)'); rg.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = rg; g.fillRect(0, 0, w, h);
       for (let i = 0; i < 14000; i++) { g.fillStyle = `rgba(${Math.random() < .5 ? '0,0,0' : '255,255,255'},.03)`; g.fillRect(rnd(0, w), rnd(0, h), 1.5, 1.5); }
       if (draw) { const fs = g.fillText.bind(g); g.save(); draw(g, w, h); g.restore(); } });
@@ -225,7 +225,7 @@ export async function boot(o) {
       g.fillStyle = o2.glow ? '#f2d9a0' : (o2.color && !/^#(fff|ffffff)$/i.test(o2.color) ? K.jewelText(o2.color) : '#efe2c6'); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = h * .05; g.fillText(text, w / 2, h * .54); });
     const s = o2.size || .3; const m = new THREE.Mesh(new THREE.PlaneGeometry(s * w / h, s), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, toneMapped: true, color: o2.glow ? 0xffffff : 0xf0f0f0 }));
     m.renderOrder = 3; return m; };
-  K.jewelText = (c) => { const col = new THREE.Color(c), hsl = {}; col.getHSL(hsl); return new THREE.Color().setHSL(hsl.h, Math.min(.7, hsl.s), Math.max(.55, Math.min(.72, hsl.l))).getStyle(); };
+  K.jewelText = (c) => { const col = new THREE.Color(c), hsl = {}; col.getHSL(hsl, THREE.SRGBColorSpace); return new THREE.Color().setHSL(hsl.h, Math.min(.7, hsl.s), Math.max(.55, Math.min(.72, hsl.l)), THREE.SRGBColorSpace).getStyle(); };
   /* high-limit room: patterned wool carpet (low contrast damask), dark walnut walls with brass sconces, distant warm lamps */
   K.backdrop = (bo = {}) => { const g = new THREE.Group(); scene.add(g); const y0 = bo.y ?? 0;
     const carpet = K.tex(512, 512, (c, w, h) => { c.fillStyle = '#2a0a0e'; c.fillRect(0, 0, w, h); for (let i = 0; i < 9000; i++) { c.fillStyle = `rgba(0,0,0,${rnd(.02, .08)})`; c.fillRect(rnd(0, w), rnd(0, h), 2, 2); }
@@ -240,7 +240,7 @@ export async function boot(o) {
     return g; };
   /* cinematic light: warm hard key spot making a pool on the table, soft warm fill, amber rims (no coloured club lights) */
   K.lights = (lo = {}) => { scene.add(new THREE.HemisphereLight(0xffe0b8, 0x0c0606, (lo.hemi ?? .4) * .55));
-    const key = new THREE.SpotLight(0xffe2b8, (lo.key ?? 30) * 1.1, 30, .55, .75, 1.4); key.position.set(...(lo.keyPos || [1.5, 9, 4.5])); key.target.position.set(...(lo.target || [0, 0, 0])); key.castShadow = true;
+    const key = new THREE.SpotLight(0xffe2b8, (lo.key ?? 30) * .8, 30, .55, .75, 1.4); key.position.set(...(lo.keyPos || [1.5, 9, 4.5])); key.target.position.set(...(lo.target || [0, 0, 0])); key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0004; key.shadow.normalBias = .02; key.shadow.radius = 4; scene.add(key, key.target);
     const warm = (c) => new THREE.Color(c ?? 0xffb070).lerp(new THREE.Color(0xffb070), .75);
     const a = new THREE.PointLight(warm(lo.c1), (lo.rim ?? 10) * .7, 14, 1.6); a.position.set(-5, 4, -2); const b = new THREE.PointLight(warm(lo.c2), (lo.rim ?? 10) * .7, 14, 1.6); b.position.set(5, 4, -2); scene.add(a, b);

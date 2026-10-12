@@ -13,7 +13,7 @@ const { THREE, scene } = K;
 K.backdrop({ carpet: '#1e1204', pattern: ['#c9a45c', '#8e1b2c', '#1f5f6e'], y: -1.2 }); K.setFloor(-1.2); K.lights({ c1: 0xffb400, c2: 0xff2b6b, key: 16, hemi: .35 });
 const CK = cardKit(K, '#5e101c');
 const felt = K.felt('#0f5a35', (g, w, h) => { g.textAlign = 'center'; g.font = 'italic 400 70px Georgia'; g.fillStyle = 'rgba(255,180,0,.45)'; g.fillText("Hold'em Royale", w / 2, h * .66); g.strokeStyle = 'rgba(255,214,102,.5)'; g.lineWidth = 5; g.beginPath(); g.roundRect(w * .22, h * .38, w * .56, h * .2, 30); g.stroke(); });
-const tbl = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, .3, 64), [K.M.wood, felt, K.M.wood]); tbl.scale.set(3.2, 1, 2.1); tbl.position.y = -.15; const leg = new THREE.Mesh(new THREE.CylinderGeometry(.5, .9, 1.1, 24), K.M.wood); leg.position.y = -.75; scene.add(leg); tbl.receiveShadow = true; scene.add(tbl);
+const tbl = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, .3, 64), [K.M.wood, felt, K.M.wood]); tbl.scale.set(3.2, 1, 2.1); felt.map.center.set(.5, .5); felt.map.rotation = Math.PI / 2; felt.normalMap.repeat.set(16, 10); tbl.position.y = -.15; const leg = new THREE.Mesh(new THREE.CylinderGeometry(.5, .9, 1.1, 24), K.M.wood); leg.position.y = -.75; scene.add(leg); tbl.receiveShadow = true; scene.add(tbl);
 const rail = new THREE.Mesh(new THREE.TorusGeometry(1, .09, 16, 96), K.M.mat(0x2a0a0a, { roughness: .6 })); rail.rotation.x = -Math.PI / 2; rail.scale.set(3.25, 2.15, 1); scene.add(rail);
 const glow = new THREE.Mesh(new THREE.TorusGeometry(1, .015, 8, 96), K.neon(0xffb400, 1.8)); glow.rotation.x = -Math.PI / 2; glow.scale.set(3.4, 2.3, 1); glow.position.y = -.2; scene.add(glow);
 /* seat geometry: index 0 = bottom (me), then clockwise */

@@ -10,9 +10,8 @@ const { THREE, scene } = K;
 K.backdrop({ carpet: '#06142a', pattern: ['#1f5f6e', '#4a1f5e', '#c9a45c'] }); K.lights({ c1: 0x2bc8ff, c2: 0x9b4dff, key: 16, hemi: .3 });
 const CK = cardKit(K, '#1b2a52');
 /* cabinet deck */
-const deck = K.rbox(4.2, 2.4, .3, .2, K.felt('#0a2d6b', (g, w, h) => { g.fillStyle = 'rgba(201,164,92,.3)'; g.font = '400 90px Georgia'; g.textAlign = 'center'; g.fillText('◆ DIAMOND POKER ◆', w / 2, h * .9); }));
+const deck = K.rbox(4.2, 2.4, .3, .2, K.felt('#06142e', (g, w, h) => { g.fillStyle = 'rgba(201,164,92,.3)'; g.font = '400 90px Georgia'; g.textAlign = 'center'; g.fillText('◆ DIAMOND POKER ◆', w / 2, h * .9); }));
 deck.rotation.x = -Math.PI / 2; deck.position.set(0, -.15, .2); scene.add(deck);
-const trim = new THREE.Mesh(new THREE.TorusGeometry(1, .015, 8, 4), K.neon(0x2bc8ff, 1.6)); trim.rotation.set(-Math.PI / 2, 0, Math.PI / 4); trim.scale.set(3.0, 1.75, 1); trim.position.set(0, .02, .2); scene.add(trim);
 /* paytable board */
 const pt = K.tex(1024, 420, (g, w, h) => { g.fillStyle = '#0a0808'; g.beginPath(); g.roundRect(0, 0, w, h, 4); g.fill(); g.strokeStyle = '#b08d57'; g.lineWidth = 3; g.stroke();
   g.font = '400 32px Georgia'; M.VP_PAY.forEach((r, i) => { const y = 52 + i * 41; g.fillStyle = i === 0 ? '#e8d3a0' : '#c9b48a'; g.textAlign = 'left'; g.fillText(r[0].toUpperCase(), 40, y);

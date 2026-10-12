@@ -49,7 +49,7 @@ const cam = new THREE.PerspectiveCamera(68, 1, .1, 120);
 /* ---------- room ---------- */
 const W = 36, D = 56, H = 7.5;            // x: -18..18, z: -28..28
 const CANDY = [0x7a1424, 0x9a6a18, 0x1d3f7a, 0x4a1f5e, 0x0f5a3e, 0x8a4a18, 0x5e101c, 0x1b2a52]; /* lux: jewel tones */
-const J = (c) => { const col = new THREE.Color(c), h = {}; col.getHSL(h); return new THREE.Color().setHSL(h.h, Math.min(.75, h.s * .85), Math.min(.3, Math.max(.1, h.l * .55))).getHex(); };
+const J = (c) => { const col = new THREE.Color(c), h = {}; col.getHSL(h, THREE.SRGBColorSpace); return new THREE.Color().setHSL(h.h, Math.min(.75, h.s * .85), Math.min(.3, Math.max(.1, h.l * .55)), THREE.SRGBColorSpace).getHex(); };
 function canvasTex(w, h, fn, rep) { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); } return t; }
 /* patterned casino carpet: deep plum base, candy medallions, gold lattice */
