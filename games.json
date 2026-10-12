@@ -80,6 +80,18 @@
    "category": "instant",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "rocketcrash",
+   "file": "rocketcrash.html",
+   "title": "Rocket Crash",
+   "tagline": "Cash out before the rocket explodes. Auto cash-out. Fun chips only.",
+   "rating": "18+",
+   "icon": "rocketcrash-icon.png",
+   "accent": "#ff7a1a",
+   "category": "instant",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
