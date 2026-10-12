@@ -563,9 +563,10 @@ const extraCeil = []; let hall = null; try { hall = createHall({ THREE, scene, P
 let wing = null; try { wing = createWing({ THREE, scene, canvasTex, P, inst, addStation: (s) => clones.push(s), openShop }); } catch (e) { console.warn('wing', e); }
 let stadium = null; try { stadium = createStadium({ THREE, scene, P, mobile }); } catch (e) { console.warn('stadium', e); }
 /* ---------- bird's-eye "Zoom Out" view: drag to pan, pinch/wheel to zoom, tap a game/zone to fly there ---------- */
+const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0 }; let boss = null, bossLoading = false;
 const BV = { on: false, k: 0, x: 0, z: 8, h: 52, ptr: new Map(), pinch: 0, moved: 0 };
 const bvQ = new THREE.Quaternion(), fpQ = new THREE.Quaternion(), bvPos = new THREE.Vector3(), bvM = new THREE.Matrix4(), UPV = new THREE.Vector3(0, 1, 0);
-function setBirds(on, coach) { BV.coach = !!(on && coach); $('coachHud').style.display = BV.coach ? 'block' : 'none'; BV.on = on; if (on && BV.coach) { BV.x = 0; BV.z = 116; BV.h = 34; } else if (on) { BV.x = P.x; BV.z = P.z - 4; joy = null; jx = jy = 0; joyEl.style.display = 'none'; } $('bZoom').textContent = on ? 'Walk' : 'Zoom Out'; document.body.classList.toggle('birds', on); }
+function setBirds(on, coach) { BV.coach = !!(on && coach); { const ch = $('coachHud'); if (ch) ch.style.display = BV.coach ? 'block' : 'none'; } BV.on = on; if (on && BV.coach) { BV.x = 0; BV.z = 116; BV.h = 34; } else if (on) { BV.x = P.x; BV.z = P.z - 4; joy = null; jx = jy = 0; joyEl.style.display = 'none'; } $('bZoom').textContent = on ? 'Walk' : 'Zoom Out'; document.body.classList.toggle('birds', on); }
 $('bZoom').onclick = () => { audioOn(); setBirds(!BV.on); };
 function birdsTap(e) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam); const pt = new THREE.Vector3();
   if (!ray.ray.intersectPlane(new THREE.Plane(UPV, 0), pt)) return; let best = null, bd = 2.6;
@@ -749,7 +750,7 @@ function frame(now) {
     cam.position.set(TP.cx, 2.35, TP.cz); cam.rotation.set(P.pitch - .22, P.yaw, 0, 'YXZ');
     const sp = Math.hypot(P.x - TP.lx, P.z - TP.lz) / Math.max(dt, .001); TP.lx = P.x; TP.lz = P.z; boss.object.visible = true; boss.object.position.set(P.x, 0, P.z); boss.object.rotation.y = P.yaw + Math.PI;
     boss.play(sp > 4.2 ? 'Jog_Fwd_Loop' : sp > .4 ? 'Walk_Formal_Loop' : 'Idle_Loop'); boss.mixer.update(dt);
-    $('bBook').style.display = P.z > 70 && !BV.coach ? 'block' : 'none';
+    { const bb = $('bBook'); if (bb) bb.style.display = P.z > 70 && !BV.coach ? 'block' : 'none'; }
     if (people.ready && (TP.rt -= dt) < 0) { TP.rt = .5; for (const q of people.list) if (q.kind === 'walk' && q.st === 'walk' && q.o.visible && !(q.bossT > t) && Math.hypot(q.o.position.x - P.x, q.o.position.z - P.z) < 4.5) { q.bossT = t + 25; q.st = 'wave'; q.tm = 2.2; q.play('Interact', .3, true); } }
     if (cruz && cruz.team) cruz.team.boss = [P.x, P.z]; }
   else if (boss) { boss.object.visible = BV.k > .05 && TP.on; if (cruz && cruz.team) cruz.team.boss = null; }
@@ -802,8 +803,6 @@ function frame(now) {
 window.__floor = { P, stations, teleport, collide, get near() { return near; }, get tier() { return tier; } };
 resize(); layout(L.games); L.onGames((g) => layout(g)); faceTo({ center: new THREE.Vector3(0, 0, 0) }, true); P.pitch = -.04;
 requestAnimationFrame(frame); intro.set(.4); setTimeout(() => intro.set(.65), 1500); setTimeout(() => intro.set(.85), 4000); setTimeout(() => intro.done(), 15000);
-}
-
 /* ---- Coach playbook sheet + HUD ---- */
 { const st = document.createElement('style'); st.textContent = `#coachHud{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;display:none;background:rgba(30,10,50,.82);border:1px solid #f5c542;color:#fff;padding:6px 14px;border-radius:12px;font:600 14px system-ui;text-align:center;max-width:92vw;pointer-events:auto}
 #coachHud small{display:block;color:#f5c542;font-weight:500;font-size:12px}#coachHud button{margin-top:4px;background:#f5c542;border:0;border-radius:8px;padding:4px 10px;font:600 12px system-ui}
@@ -828,7 +827,6 @@ setInterval(coachHudUpd, 250);
 window.__coach = { openBook, setBirds, BV };
 
 /* ---- Third-person "Boss" (Coach/Owner) avatar toggle; first person stays default ---- */
-const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0 }; let boss = null, bossLoading = false;
 { const b = document.createElement('button'); b.className = 'hb'; b.id = 'bBoss'; b.type = 'button'; b.textContent = '🎩 Boss'; $('bZoom').after(b);
   const pb = document.createElement('button'); pb.id = 'bBook'; pb.type = 'button'; pb.textContent = '📋 Coach Playbook'; pb.style.cssText = 'position:fixed;right:12px;bottom:calc(120px + env(safe-area-inset-bottom));z-index:25;display:none;background:#f5c542;color:#1a0a2a;border:0;border-radius:14px;padding:12px 16px;font:700 15px system-ui;box-shadow:0 4px 14px #0008'; document.body.appendChild(pb);
   pb.onclick = () => openBook();
@@ -836,3 +834,5 @@ const TP = { on: false, cx: 0, cz: 0, lx: 0, lz: 0, rt: 0 }; let boss = null, bo
     if (!TP.on) { pb.style.display = 'none'; if (boss) boss.object.visible = false; return; }
     if (!boss && !bossLoading) { bossLoading = true; try { const L = await loadBoss(THREE); boss = L.make({ hat: true, shades: false }); scene.add(boss.object); } catch (e) { console.warn('boss', e); TP.on = false; b.textContent = '🎩 Boss'; } bossLoading = false; } }; }
 window.__tp = TP;
+
+}
