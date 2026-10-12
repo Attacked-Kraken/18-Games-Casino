@@ -332,7 +332,8 @@ function relock() { if (!gateOpen()) return; const iv = setInterval(() => { if (
 function refreshLocks() { if (stations.some((s) => s.locked !== L.locked(s.g.id))) layout(L.games); }
 const gateOpen = () => $('gate').classList.contains('on');
 const panelOpen = () => $('panel').classList.contains('on');
-function setPrompt(st) { if (st === shown) return; shown = st; if (!st) { promptEl.classList.remove('on'); return; }
+const infoEl = $('pInfo'); infoEl.onclick = () => near && window.HowTo && HowTo.open(near.g.id);
+function setPrompt(st) { if (st === shown) return; shown = st; infoEl.classList.toggle('on', !!(st && window.HowTo && HowTo.RULES[st.g.id])); if (!st) { promptEl.classList.remove('on'); return; }
   const lk = L.locked(st.g.id); promptEl.classList.toggle('lock', lk);
   promptEl.innerHTML = ''; promptEl.append(lk ? st.g.title + ' · members only' : 'Play ' + st.g.title); const sm = document.createElement('small');
   sm.textContent = lk ? `For players ${L.need(st.g.id)}+ only` : `${st.g.rating}+ · ${st.g.tagline}`.slice(0, 64); promptEl.append(sm); promptEl.classList.add('on'); }
