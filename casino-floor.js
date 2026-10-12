@@ -15,6 +15,8 @@ import { RenderPass } from './vendor/RenderPass.js';
 import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
 import { createWing, WING } from './forum-wing.js';
 import { createNav } from './nav.js';
+import { createStadium, STAD } from './stadium.js';
+import { createCruz } from './cruz-npc.js';
 import { openShop, getAvatar } from './shops.js';
 import { OutputPass } from './vendor/OutputPass.js';
 
@@ -534,7 +536,8 @@ const HALL_PATHS = [[[-34, -21], [34, -21]], [[-34, -36], [34, -36]], [[0, -19],
 const people = createPeople({ THREE, scene, mobile, collide: (x, z) => collide(x, z), getNav: () => { if (hall) hall.buildNow(); if (wing && wing.buildNow) wing.buildNow(); return createNav(collide); }, PATHS: PATHS.concat(HALL_PATHS), seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()).slice(0, 12).concat(hallSeats.slice(0, 8)),
   dealers: DEALERS.concat(HDEAL), zoneVisible: (x, z) => z > HALL.z1 + .5 || !!(hall && hall.root.visible),
   pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-20, -40.5, .3], [10, -52, 1], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]].concat(HALL_BARS.flatMap(([bx, bz]) => [[bx - 3.6, bz + 2.6, Math.PI], [bx - 1.2, bz + 2.6, Math.PI], [bx + 2.4, bz + 2.6, Math.PI]])),
-  onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); } });
+  onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); try { cruz = createCruz({ THREE, scene, collide, people, stadium }); window.__cruz = cruz; } catch (e) { console.warn('cruz', e); } } });
+let cruz = null;
 /* the player's own avatar (Gift shop > Choose look), visible in the Zoom Out view */
 let me = null, meLast = [0, 0]; function mkMe() { if (!people.H) return; if (me) scene.remove(me.object); me = people.H.make(getAvatar() || { g: 'm', outfit: 'tee_jeans', hair: 'short', skin: 1, hairCol: 0x2e1c12 }, 1.76); me.object.visible = false; scene.add(me.object); me.play('Idle_Loop', 0); }
 addEventListener('gc18-avatar', mkMe); window.__people = people;
@@ -553,6 +556,7 @@ const P = { x: 0, z: 15.2, yaw: 0, pitch: -.06 }, RAD = .38, SPEED = 4.2;
 const extraCeil = []; let hall = null; try { hall = createHall({ THREE, scene, P, inst, canvasTex, signMesh, neonTex, slotIds: CELL_GAME, cellOf: (id, c) => CELL_GAME.indexOf(id) >= 0 ? CELL_GAME.indexOf(id) : c, ent, LED: LED_COL, slotProto, TAB, CHAIRS, table, protoOf, chairProto,
   games: () => (L.games || []), clones, addStation: (s) => clones.push(s), markCeil: (m) => extraCeil.push(m) }); } catch (e) { console.warn('hall', e); }
 let wing = null; try { wing = createWing({ THREE, scene, canvasTex, P, inst, addStation: (s) => clones.push(s), openShop }); } catch (e) { console.warn('wing', e); }
+let stadium = null; try { stadium = createStadium({ THREE, scene, P, mobile }); } catch (e) { console.warn('stadium', e); }
 /* ---------- bird's-eye "Zoom Out" view: drag to pan, pinch/wheel to zoom, tap a game/zone to fly there ---------- */
 const BV = { on: false, k: 0, x: 0, z: 8, h: 52, ptr: new Map(), pinch: 0, moved: 0 };
 const bvQ = new THREE.Quaternion(), fpQ = new THREE.Quaternion(), bvPos = new THREE.Vector3(), bvM = new THREE.Matrix4(), UPV = new THREE.Vector3(0, 1, 0);
@@ -601,6 +605,7 @@ function glide(st) { auto = { st, x: st.stand.x, z: st.stand.z }; }
 function teleport(st) { P.x = st.stand.x; P.z = st.stand.z; faceTo(st, true); auto = null; }
 function faceTo(st, snap) { const y = Math.atan2(-(st.center.x - P.x), -(st.center.z - P.z)); if (snap) { P.yaw = y; P.pitch = -.12; } return y; }
 function collide(nx, nz) {
+  { const s = stadium && stadium.collide(nx, nz, RAD); if (s) return s; }
   { const w = wing && wing.collide(nx, nz, RAD); if (w) return w; }
   const hc = hall && hall.collide(nx, nz, RAD); if (hc) { nx = hc[0]; nz = hc[1]; } else { const m = RAD + .25; if (Math.abs(nx) <= RX) nz = Math.max(-RR + m, Math.min(RR - m, nz)); else { const cx = Math.sign(nx) * RX, dx = nx - cx, d = Math.hypot(dx, nz); if (d > RR - m) { nx = cx + dx / d * (RR - m); nz = nz / d * (RR - m); } } }
   for (const b of boxes) { if (nx + RAD > b[0] && nx - RAD < b[2] && nz + RAD > b[1] && nz - RAD < b[3]) {
@@ -626,7 +631,7 @@ function setPrompt(st) { if (st === shown) return; shown = st; updFav(); infoEl.
   sm.textContent = lk ? `For players ${L.need(st.g.id)}+ only` : st.action ? st.g.tagline : `${st.g.rating}+ · ${st.g.tagline}`.slice(0, 64); promptEl.append(sm); promptEl.classList.add('on'); }
 function buildPanel() { const box = $('pList'); box.innerHTML = '';
   { const zs = document.createElement('div'); zs.className = 'fv-sec'; zs.innerHTML = '<h3>QUICK TRAVEL</h3>'; const row = document.createElement('div'); row.className = 'fv-row';
-    [['Casino floor', 0, 14.5, 0], ['Grand Hall', 0, -20, Math.PI], ['High-limit salon', 26, -36, Math.PI], ['Cashier', -8, -55, Math.PI], ['Poker room', -20, 0, Math.PI / 2], ['High limit', 10, -11, 0], ['Forum Shops', 0, 24, Math.PI], ['Fountain', 0, 31, Math.PI], ['Sportsbook', -10, 30, Math.PI / 2], ['VIP Lounge', 10, 30, -Math.PI / 2]].forEach(([n, x, z, yaw]) => {
+    [['Casino floor', 0, 14.5, 0], ['Grand Hall', 0, -20, Math.PI], ['High-limit salon', 26, -36, Math.PI], ['Cashier', -8, -55, Math.PI], ['Poker room', -20, 0, Math.PI / 2], ['High limit', 10, -11, 0], ['Forum Shops', 0, 24, Math.PI], ['Cruz Field', 0, 84, Math.PI], ['Fountain', 0, 31, Math.PI], ['Sportsbook', -10, 30, Math.PI / 2], ['VIP Lounge', 10, 30, -Math.PI / 2]].forEach(([n, x, z, yaw]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'go2'; b.style.flex = 'none'; b.textContent = n; b.onclick = () => { P.x = x; P.z = z; P.yaw = yaw; P.pitch = -.06; auto = null; closePanel(); }; row.append(b); });
     zs.append(row); box.append(zs); }
   const favs = window.Fav ? Fav.list().map((id) => stations.find((s) => s.g.id === id)).filter(Boolean) : [];
@@ -663,10 +668,15 @@ function drawFullMini(full) { const w = mini.width, h = mini.height, s = Math.mi
     if (WING) { g.fillStyle = 'rgba(226,214,190,.92)'; g.beginPath(); { const [a, b] = q(-21, WING.z0); g.moveTo(a, b); } g.lineTo(...q(-21, WING.zc)); g.arc(...q(0, WING.zc), 21 * s, Math.PI, 0, true); g.lineTo(...q(21, WING.z0)); g.closePath(); g.fill(); g.stroke(); g.fillRect(...q(-2.1, RR), 4.2 * s, (WING.z0 - RR) * s); g.fillStyle = '#3ab0d0'; g.beginPath(); g.arc(...q(0, WING.zc), 4.2 * s, 0, 7); g.fill(); }
     g.fillStyle = 'rgba(150,40,56,.92)'; g.fillRect(...q(-4.2, -RR - .5), 8.4 * s, 1.5 * s);
     g.font = `700 ${Math.max(9, 7 * s)}px system-ui`; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)';
-    [['GRAND HALL', -14, -42], ['HI-LIMIT', 26, -47], ['CASHIER', -8, -56.5], ['CASINO', 0, 1.5], ['FORUM SHOPS', 0, 50]].forEach(([tx, x, z]) => { const [a, b] = q(x, z); g.strokeText(tx, a, b); g.fillStyle = '#ffe9a8'; g.fillText(tx, a, b); }); }
+    [['GRAND HALL', -14, -42], ['HI-LIMIT', 26, -47], ['CASHIER', -8, -56.5], ['CASINO', 0, 1.5], ['FORUM SHOPS', 0, 50], ['▼ CRUZ FIELD', 0, 62.5]].forEach(([tx, x, z]) => { const [a, b] = q(x, z); g.strokeText(tx, a, b); g.fillStyle = '#ffe9a8'; g.fillText(tx, a, b); }); }
   mg.clearRect(0, 0, w, h); mg.drawImage(miniBase, 0, 0); const [px, py] = q(P.x, P.z); mg.save(); mg.translate(px, py); mg.rotate(-P.yaw); mg.fillStyle = '#fff'; mg.shadowColor = '#000'; mg.shadowBlur = 6;
   mg.beginPath(); mg.moveTo(0, -9); mg.lineTo(6, 6); mg.lineTo(0, 3); mg.lineTo(-6, 6); mg.closePath(); mg.fill(); mg.restore(); }
-function drawMini(full) { if (FULLMAP) { drawFullMini(full); return; }
+function drawStadMini() { const w = mini.width, h = mini.height, s = Math.min((w - 8) / 66, (h - 8) / 140), ox = w / 2, oz = 4 - 58 * s, q = (x, z) => [ox + x * s, oz + z * s]; const g = mg; g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(40,20,60,.92)'; g.fillRect(...q(-33, 76), 66 * s, 122 * s); g.fillStyle = '#2f8034'; g.fillRect(...q(-STAD.gx, STAD.gz0), 2 * STAD.gx * s, (STAD.gz1 - STAD.gz0) * s); g.fillStyle = '#4a1478'; g.fillRect(...q(-STAD.fx, STAD.z0), 2 * STAD.fx * s, 9.1 * s); g.fillStyle = '#f2b51c'; g.fillRect(...q(-STAD.fx, STAD.z1 - 9.1), 2 * STAD.fx * s, 9.1 * s);
+  g.fillStyle = '#c9b89c'; g.fillRect(...q(-2.7, 58), 5.4 * s, 19 * s); g.font = `700 ${Math.max(9, 6 * s)}px system-ui`; g.textAlign = 'center'; g.fillStyle = '#ffe9a8'; g.fillText('CRUZ FIELD', ...q(0, 135)); g.fillText('▲ FORUM', ...q(0, 66));
+  if (cruz && cruz.ready && cruz.on) { const [a, b] = q(cruz.x, cruz.z); g.fillStyle = '#f2b51c'; g.beginPath(); g.arc(a, b, 3.5, 0, 7); g.fill(); }
+  const [px, py] = q(P.x, P.z); g.save(); g.translate(px, py); g.rotate(-P.yaw); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -9); g.lineTo(6, 6); g.lineTo(0, 3); g.lineTo(-6, 6); g.closePath(); g.fill(); g.restore(); }
+function drawMini(full) { if (P.z > 58) { drawStadMini(); return; } if (FULLMAP) { drawFullMini(full); if (cruz && cruz.ready && cruz.on && cruz.mode === 'casino') { const w = mini.width, h = mini.height, s = Math.min((w - 8) / 84, (h - 8) / 128); mg.fillStyle = '#f2b51c'; mg.beginPath(); mg.arc(w / 2 + cruz.x * s, h / 2 + s + cruz.z * s, 3, 0, 7); mg.fill(); } return; }
   if (P.z > 17.5) { drawWingMini(); return; }
   if (full || !miniBase) { miniBase = document.createElement('canvas'); miniBase.width = mini.width; miniBase.height = mini.height; const g = miniBase.getContext('2d');
     const sx = (mini.width - 16) / W, sz = (mini.height - 16) / D; g.save(); g.translate(mini.width / 2, mini.height / 2); g.scale(sx, sz);
@@ -733,19 +743,21 @@ function frame(now) {
   BV.k += ((BV.on ? 1 : 0) - BV.k) * Math.min(1, dt * 3.2); if (BV.k < .002) BV.k = 0;
   if (BV.k > 0) { const e = BV.k * BV.k * (3 - 2 * BV.k); fpQ.copy(cam.quaternion); bvPos.set(BV.x, BV.h, BV.z + BV.h * .5); bvM.lookAt(bvPos, new THREE.Vector3(BV.x, 0, BV.z), UPV); bvQ.setFromRotationMatrix(bvM);
     cam.position.lerp(bvPos, e); cam.quaternion.copy(fpQ).slerp(bvQ, e); }
-  { const ov = BV.k > .15; ceil.visible = !ov; scene.fog.far = ov ? 400 : 80; scene.fog.near = ov ? 200 : 30; }
+  { const ov = BV.k > .15; ceil.visible = !ov; scene.fog.far = ov ? 400 : P.z > 58 ? 320 : 80; scene.fog.near = ov ? 200 : P.z > 58 ? 120 : 30; }
   /* nearest station in front */
   cam.getWorldDirection(fwd); let best = null, bd = 3.4;
   for (const s of stations.concat(clones)) { if (!s.g) continue; const dx = s.center.x - P.x, dz = s.center.z - P.z, d = Math.hypot(dx, dz); if (d < bd && (dx * fwd.x + dz * fwd.z) / d > .2) { bd = d; best = s; } }
   near = best; setPrompt(best);
   /* animate */
+  /* people always live (reduced-motion only stops decorative effects) */
+  if (!people.ready) poseWalkers(t); else people.update(dt, t, pplV.set(P.x, 0, P.z), false);
   if (!still) {
     for (const s of stations) { const w = s.grp.userData.wheel; if (w) w.rotation.y += dt * .4; s.ring.material.opacity = s === near ? .95 : .45 + Math.sin(t * 3 + s.center.x) * .2; }
-    if (!people.ready) poseWalkers(t); else people.update(dt, t, pplV.set(P.x, 0, P.z), false);
     if (me) { const sp = Math.hypot(P.x - meLast[0], P.z - meLast[1]) / Math.max(dt, .001); meLast = [P.x, P.z]; me.object.visible = BV.k > .05; me.object.position.set(P.x, 0, P.z); me.object.rotation.y = P.yaw + Math.PI; me.play(sp > .4 ? 'Walk_Loop' : 'Idle_Loop'); if (me.object.visible) me.mixer.update(dt); }
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);
+  if (stadium) stadium.update(dt, t, BV.k > .15, R, cruz && cruz.ready && (cruz.mode !== 'casino') ? cruz.pos() : null); if (cruz) cruz.update(dt, t, pplV.set(P.x, 0, P.z), (x, z) => (z > HALL.z1 + .5 || !!(hall && hall.root.visible)) && Math.hypot(x - P.x, z - P.z) < 45);
   if (wing) wing.update(dt, t, BV.k > .15); if (hall) hall.update(dt, t, BV.k > .15); extraCeil.forEach((m) => (m.visible = BV.k <= .15));
   if ((miniT += dt) > .1) { miniT = 0; drawMini(); }
   if ((meterAcc += dt) > .25) { meterAcc = 0; for (let i = 0; i < meterV.length; i++) meterV[i] += .01 + Math.random() * .37; drawMeters(); }
@@ -755,6 +767,14 @@ function frame(now) {
   if (t > 2) { frames++; if (dt > 1 / 40) slowT += dt; else fastT += dt;
     if (frames >= 90) { if (slowT > .6 && tier < TIERS.length - 1) { tier++; resize(); } else if (slowT < .05 && fastT > 1.4 && tier > (mobile ? 1 : 0)) { tier--; resize(); } frames = 0; slowT = fastT = 0; } }
 }
+{ const b = document.createElement('button'); b.type = 'button'; b.id = 'bCruz'; b.textContent = '🏈'; b.title = 'Cruz'; b.setAttribute('aria-label', 'Cruz avatar menu');
+  b.style.cssText = 'position:fixed;left:10px;top:262px;z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid #f2b51c;background:#4a1478;color:#fff;font-size:22px;box-shadow:0 2px 10px rgba(0,0,0,.5)';
+  const m = document.createElement('div'); m.id = 'cruzMenu'; m.style.cssText = 'position:fixed;left:62px;top:250px;z-index:31;display:none;flex-direction:column;gap:6px;background:rgba(30,10,46,.96);border:1px solid #f2b51c;border-radius:12px;padding:10px;font:600 14px system-ui;color:#ffe9a8';
+  const mk = (id, fn) => { const x = document.createElement('button'); x.type = 'button'; x.id = id; x.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid #f2b51c;background:#4a1478;color:#fff;font:600 14px system-ui;text-align:left'; x.onclick = () => { fn(); upd(); }; m.append(x); return x; };
+  m.innerHTML = '<div style="color:#f2b51c">CRUZ · #12 QB</div>';
+  const bShow = mk('cShow', () => cruz && cruz.setOn(!cruz.on)), bField = mk('cField', () => { if (!cruz) return; if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.sendToField(); else cruz.bringBack(); }), bWatch = mk('cWatch', () => { if (!cruz) return; if (cruz.mode === 'casino') { P.x = cruz.x; P.z = cruz.z + 3; } else { P.x = 0; P.z = 84; P.yaw = Math.PI; } auto = null; m.style.display = 'none'; });
+  function upd() { if (!cruz) return; bShow.textContent = cruz.on ? '🙈 Hide Cruz' : '👀 Show Cruz'; bField.textContent = cruz.mode === 'casino' || cruz.mode === 'toCasino' ? '🏟️ Send to Field' : '↩ Bring back to casino'; bWatch.textContent = '📍 Go watch'; }
+  b.onclick = () => { upd(); m.style.display = m.style.display === 'none' ? 'flex' : 'none'; }; document.body.append(b, m); }
 window.__floor = { P, stations, teleport, collide, get near() { return near; }, get tier() { return tier; } };
 resize(); layout(L.games); L.onGames((g) => layout(g)); faceTo({ center: new THREE.Vector3(0, 0, 0) }, true); P.pitch = -.04;
 requestAnimationFrame(frame);
