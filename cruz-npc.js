@@ -8,7 +8,7 @@ export function createCruz(ctx) { const { THREE, scene, collide, people, stadium
   const save = () => { try { localStorage.setItem('gc18_cruz', JSON.stringify({ on: api.on, field: api.mode === 'field' || api.mode === 'toField' })); } catch (e) {} };
   const rnd = Math.random; const ext = { x: 0, z: 50, on: true }; 
   loadCruz(THREE, 'characters/football-cruz/').then((C) => { const h = C.make(); const rig = h.rig; rig.rotation.order = 'YXZ'; scene.add(rig); const nav = people.nav; (people.extra || (people.extra = [])).push(ext);
-    const ball = new THREE.Mesh(new THREE.SphereGeometry(.12, 12, 8), new THREE.MeshStandardMaterial({ color: 0x7a3a1a, roughness: .5 })); ball.scale.set(1, .62, .62); ball.visible = false; scene.add(ball); let fly = null;
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(.17, 14, 10), new THREE.MeshStandardMaterial({ color: 0x8a3a14, roughness: .45, emissive: 0x2a0c02 })); ball.scale.set(1, .62, .62); ball.visible = false; scene.add(ball); let fly = null;
     let x = 0, z = 50, yaw = Math.PI, vx = 0, vz = 0, route = null, wi = 0, st = 'run', stT = 0, move = null, moveT = 0, boost = 0, nextFall = 30 + rnd() * 30, chk = 3, cx0 = x, cz0 = z, lastYaw = yaw, bank = 0, y = 0, spin = 0, cool = 0, sprintT = 0;
     const casinoOK = (px, pz) => pz < 58.5;
     const pickRoute = (tx, tz) => { if (!nav) return; for (let k = 0; k < 5; k++) { let d = tx != null ? [tx, tz] : nav.random(rnd, (a, b) => casinoOK(a, b) && Math.hypot(a - x, b - z) > 18); if (!d) continue; const r = nav.path(x, z, d[0], d[1]); if (r && r.length) { route = r; wi = 0; return true; } } route = null; return false; };

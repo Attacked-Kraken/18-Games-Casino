@@ -564,7 +564,7 @@ let stadium = null; try { stadium = createStadium({ THREE, scene, P, mobile }); 
 /* ---------- bird's-eye "Zoom Out" view: drag to pan, pinch/wheel to zoom, tap a game/zone to fly there ---------- */
 const BV = { on: false, k: 0, x: 0, z: 8, h: 52, ptr: new Map(), pinch: 0, moved: 0 };
 const bvQ = new THREE.Quaternion(), fpQ = new THREE.Quaternion(), bvPos = new THREE.Vector3(), bvM = new THREE.Matrix4(), UPV = new THREE.Vector3(0, 1, 0);
-function setBirds(on) { BV.on = on; if (on) { BV.x = P.x; BV.z = P.z - 4; joy = null; jx = jy = 0; joyEl.style.display = 'none'; } $('bZoom').textContent = on ? 'Walk' : 'Zoom Out'; document.body.classList.toggle('birds', on); }
+function setBirds(on, coach) { BV.coach = !!(on && coach); $('coachHud').style.display = BV.coach ? 'block' : 'none'; BV.on = on; if (on && BV.coach) { BV.x = 0; BV.z = 116; BV.h = 34; } else if (on) { BV.x = P.x; BV.z = P.z - 4; joy = null; jx = jy = 0; joyEl.style.display = 'none'; } $('bZoom').textContent = on ? 'Walk' : 'Zoom Out'; document.body.classList.toggle('birds', on); }
 $('bZoom').onclick = () => { audioOn(); setBirds(!BV.on); };
 function birdsTap(e) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam); const pt = new THREE.Vector3();
   if (!ray.ray.intersectPlane(new THREE.Plane(UPV, 0), pt)) return; let best = null, bd = 2.6;
@@ -573,7 +573,7 @@ function birdsTap(e) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / inn
   if (inStadium(pt.x, pt.z, 1) || (wing && WING && pt.z > 16 && Math.abs(pt.x) < 22) || (hall && pt.z < HALL.z1 && pt.z > HALL.z0 + 1 && Math.abs(pt.x) < HALL.x1 - 1)) { P.x = pt.x; P.z = pt.z; auto = null; setBirds(false); } }
 function birdsPtr(type, e) { if (type === 'down') { BV.ptr.set(e.pointerId, { x: e.clientX, y: e.clientY }); BV.moved = 0; BV.pinch = 0; return; }
   if (type === 'move') { const o = BV.ptr.get(e.pointerId); if (!o) return; if (BV.ptr.size >= 2) { const [a, b] = [...BV.ptr.values()]; const d0 = Math.hypot(a.x - b.x, a.y - b.y); o.x = e.clientX; o.y = e.clientY; const d1 = Math.hypot(a.x - b.x, a.y - b.y); if (BV.pinch) BV.h = Math.max(14, Math.min(90, BV.h * d0 / Math.max(1, d1))); BV.pinch = 1; BV.moved += 20; return; }
-    const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY; BV.moved += Math.abs(dx) + Math.abs(dy); const s = BV.h / innerHeight * 1.1; BV.x = Math.max(-36, Math.min(36, BV.x - dx * s)); BV.z = Math.max(-62, Math.min(62, BV.z - dy * s)); return; }
+    const dx = e.clientX - o.x, dy = e.clientY - o.y; o.x = e.clientX; o.y = e.clientY; BV.moved += Math.abs(dx) + Math.abs(dy); const s = BV.h / innerHeight * 1.1; BV.x = Math.max(-36, Math.min(36, BV.x - dx * s * (BV.coach ? -1 : 1))); BV.z = Math.max(BV.coach ? 70 : -62, Math.min(BV.coach ? 190 : 62, BV.z - dy * s * (BV.coach ? -1 : 1))); return; }
   if (type === 'up') { const had = BV.ptr.delete(e.pointerId); if (had && BV.ptr.size === 0 && BV.moved < 8) birdsTap(e); } }
 cv.addEventListener('wheel', (e) => { if (!BV.on) return; e.preventDefault(); BV.h = Math.max(14, Math.min(90, BV.h * (e.deltaY > 0 ? 1.1 : .9))); }, { passive: false });
 const keys = {}; let joy = null, look = null, jx = 0, jy = 0;
@@ -745,7 +745,7 @@ function frame(now) {
   const bob = m > 0 ? Math.sin(t * 9) * .025 : 0;
   cam.position.set(P.x, 1.62 + bob, P.z); cam.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
   BV.k += ((BV.on ? 1 : 0) - BV.k) * Math.min(1, dt * 3.2); if (BV.k < .002) BV.k = 0;
-  if (BV.k > 0) { const e = BV.k * BV.k * (3 - 2 * BV.k); fpQ.copy(cam.quaternion); bvPos.set(BV.x, BV.h, BV.z + BV.h * .5); bvM.lookAt(bvPos, new THREE.Vector3(BV.x, 0, BV.z), UPV); bvQ.setFromRotationMatrix(bvM);
+  if (BV.k > 0) { const e = BV.k * BV.k * (3 - 2 * BV.k); fpQ.copy(cam.quaternion); if (BV.coach) bvPos.set(BV.x, BV.h, BV.z - BV.h * .75); else bvPos.set(BV.x, BV.h, BV.z + BV.h * .5); bvM.lookAt(bvPos, new THREE.Vector3(BV.x, 0, BV.z), UPV); bvQ.setFromRotationMatrix(bvM);
     cam.position.lerp(bvPos, e); cam.quaternion.copy(fpQ).slerp(bvQ, e); }
   { const ov = BV.k > .15; ceil.visible = !ov; scene.fog.far = ov ? 400 : P.z > 58 ? 320 : 80; scene.fog.near = ov ? 200 : P.z > 58 ? 120 : 30; }
   /* nearest station in front */
@@ -783,8 +783,8 @@ function frame(now) {
   row('Speed', [['sWalk', 'Walk', () => cruz.setSpeed('walk')], ['sJog', 'Jog', () => cruz.setSpeed('jog')], ['sSprint', 'Sprint', () => cruz.setSpeed('sprint')], ['sAuto', 'Auto', () => cruz.setSpeed('auto')]]);
   row('Do a move', [['mJuke', 'Juke', () => cruz.doMove('juke')], ['mSpin', 'Spin', () => cruz.doMove('spin')], ['mHurdle', 'Hurdle', () => cruz.doMove('hurdle')], ['mCel', 'Celebrate', () => cruz.doMove('celebrate')], ['mWave', 'Wave', () => cruz.doMove('wave')], ['mPass', '🏈 Throw a pass', () => cruz.throwPass()]]);
   row('', [['cField', 'Go to field', () => { if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.command('field'); else { cruz.command('roam'); cruz.bringBack(); } }], ['cShow', 'Hide', () => cruz.setOn(!cruz.on)], ['cWatch', '📍 Go watch', () => { if (cruz.mode === 'casino') { P.x = cruz.x; P.z = cruz.z + 3; } else { P.x = 0; P.z = 98; P.yaw = Math.PI; } auto = null; m.style.display = 'none'; }]]);
-  row('Coach view & playbook (on Cruz Field)', [['pCoach', '🎥 Coach View', () => { P.x = 0; P.z = 101; P.yaw = Math.PI; P.pitch = -.22; auto = null; if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.command('field'); else cruz.command('roam'); m.style.display = 'none'; }],
-    ...['Slant', 'Post', 'Seam', 'Wheel'].map((n, i) => ['pb' + i, '📋 ' + n, () => { if (team && team.setPlay) team.setPlay(i); if (cruz.cmd !== 'roam') cruz.command('roam'); }])]);
+  row('Coach view & playbook (on Cruz Field)', [['pCoach', '🎥 Coach View', () => { P.x = 0; P.z = 101; P.yaw = Math.PI; P.pitch = -.22; auto = null; if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.command('field'); else cruz.command('roam'); m.style.display = 'none'; setBirds(true, true); }],
+    ['pBook', '📋 Playbook (500)', () => { m.style.display = 'none'; openBook(); }]]);
   function upd() { if (!cruz || !cruz.ready) return; btns.cShow.textContent = cruz.on ? '🙈 Hide Cruz' : '👀 Show Cruz'; btns.cField.textContent = cruz.mode === 'casino' || cruz.mode === 'toCasino' ? '🏟️ Go to field' : '↩ Bring back';
     const hi = (id, on) => { btns[id].style.background = on ? '#f2b51c' : '#4a1478'; btns[id].style.color = on ? '#1a0a28' : '#fff'; };
     hi('cCome', cruz.cmd === 'come'); hi('cFollow', cruz.cmd === 'follow'); hi('cStay', cruz.cmd === 'stay'); hi('cRoam', cruz.cmd === 'roam'); hi('sWalk', cruz.spd === 'walk'); hi('sJog', cruz.spd === 'jog'); hi('sSprint', cruz.spd === 'sprint'); hi('sAuto', cruz.spd === 'auto'); }
@@ -794,3 +794,26 @@ window.__floor = { P, stations, teleport, collide, get near() { return near; }, 
 resize(); layout(L.games); L.onGames((g) => layout(g)); faceTo({ center: new THREE.Vector3(0, 0, 0) }, true); P.pitch = -.04;
 requestAnimationFrame(frame); intro.set(.4); setTimeout(() => intro.set(.65), 1500); setTimeout(() => intro.set(.85), 4000); setTimeout(() => intro.done(), 15000);
 }
+
+/* ---- Coach playbook sheet + HUD ---- */
+{ const st = document.createElement('style'); st.textContent = `#coachHud{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:30;display:none;background:rgba(30,10,50,.82);border:1px solid #f5c542;color:#fff;padding:6px 14px;border-radius:12px;font:600 14px system-ui;text-align:center;max-width:92vw;pointer-events:auto}
+#coachHud small{display:block;color:#f5c542;font-weight:500;font-size:12px}#coachHud button{margin-top:4px;background:#f5c542;border:0;border-radius:8px;padding:4px 10px;font:600 12px system-ui}
+#book{position:fixed;left:0;right:0;bottom:0;max-height:78vh;z-index:40;display:none;flex-direction:column;background:rgba(18,8,32,.96);border-top:2px solid #f5c542;border-radius:16px 16px 0 0;color:#fff;font:14px system-ui;padding:10px 10px calc(10px + env(safe-area-inset-bottom))}
+#book input{width:100%;box-sizing:border-box;font-size:16px;padding:10px;border-radius:10px;border:1px solid #6b3fa0;background:#2a1444;color:#fff}
+#book .chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0}#book .chips button{flex:none;padding:8px 12px;border-radius:16px;border:1px solid #6b3fa0;background:#2a1444;color:#fff;font-size:13px}#book .chips button.on{background:#f5c542;color:#1a0a2a;border-color:#f5c542}
+#book .list{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch}#book .it{padding:10px 8px;border-bottom:1px solid #3a2258;cursor:pointer}#book .it b{color:#f5c542}#book .it span{color:#bba;font-size:12px;display:block}#book .hd{display:flex;justify-content:space-between;align-items:center}#book .hd button{background:none;border:0;color:#fff;font-size:22px}`; document.head.appendChild(st); }
+const hudEl = document.createElement('div'); hudEl.id = 'coachHud'; document.body.appendChild(hudEl);
+const bookEl = document.createElement('div'); bookEl.id = 'book'; bookEl.innerHTML = '<div class="hd"><b>📋 Playbook</b><span id="bkN"></span><button id="bkX">✕</button></div><input id="bkQ" placeholder="Search plays, formations, concepts…"><div class="chips" id="bkC"></div><div class="list" id="bkL"></div>'; document.body.appendChild(bookEl);
+let bkCat = 'All';
+function renderBook() { const tm = cruz && cruz.team; const bk = (tm && tm.book) || []; const q = $('bkQ').value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const r = bk.filter((p) => (bkCat === 'All' || p.cat === bkCat) && q.every((w) => (p.name + ' ' + p.cat + ' ' + p.concept + ' ' + p.form).toLowerCase().includes(w)));
+  $('bkN').textContent = r.length + ' / ' + bk.length; $('bkL').innerHTML = r.slice(0, 120).map((p) => `<div class="it" data-i="${bk.indexOf(p)}"><b>${p.name}</b><span>${p.cat} · ${p.form} · ${p.concept} · target ${p.tgt}</span></div>`).join('') + (r.length > 120 ? '<div class="it"><span>…refine search to see more</span></div>' : ''); }
+function openBook() { const cats = ['All', 'Quick', 'Dropback', 'Deep', 'Play Action', 'Motion']; $('bkC').innerHTML = cats.map((c) => `<button class="${c === bkCat ? 'on' : ''}">${c}</button>`).join(''); [...$('bkC').children].forEach((b) => (b.onclick = () => { bkCat = b.textContent; openBook(); })); bookEl.style.display = 'flex'; renderBook(); }
+$('bkQ').oninput = renderBook; $('bkX').onclick = () => (bookEl.style.display = 'none');
+$('bkL').onclick = (e) => { const it = e.target.closest('.it[data-i]'); if (!it) return; const tm = cruz && cruz.team; if (!tm) return; tm.runPlay(+it.dataset.i); bookEl.style.display = 'none';
+  if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.command('field'); else if (cruz.cmd !== 'roam') cruz.command('roam'); P.x = 0; P.z = 101; P.yaw = Math.PI; setBirds(true, true); };
+function coachHudUpd() { if (!BV.coach) return; const tm = cruz && cruz.team; if (!tm || !tm.cur) { hudEl.innerHTML = 'Loading playbook…'; return; } const k = tm.cur.id + (tm.overlay ? 'o' : '') + tm.phase;
+  if (hudEl.dataset.k === k) return; hudEl.dataset.k = k; hudEl.innerHTML = `${tm.overlay ? '🎯 ' : '🔁 Free practice: '}${tm.cur.name}<small>${tm.cur.form} · ${tm.cur.concept} · ${tm.cur.cat} · QB ${tm.qbIsCruz ? '#12 Cruz' : '#7 Ross'} · ${tm.phase}</small><button id="hudBook">📋 Playbook</button> <button id="hudExit">Exit</button>`;
+  $('hudBook').onclick = openBook; $('hudExit').onclick = () => setBirds(false); }
+setInterval(coachHudUpd, 250);
+window.__coach = { openBook, setBirds, BV };
