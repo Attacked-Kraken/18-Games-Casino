@@ -68,16 +68,64 @@ a.g i { font-style: normal; font-weight: 900; background: linear-gradient(180deg
 .gate .go { background: linear-gradient(180deg, var(--go-a), var(--go-b)); color: var(--go-fg); width: 100%; }
 .gate .x { background: transparent; color: var(--mut); width: 100%; margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { h1, a.g::before { animation: none; } }
+
+/* fl1 2026-10-11 (owner: "make the casino floor more like a casino floor, walk to the games to play"): walkable 3D floor
+   (floor.js). The card list below stays as the "list view" fallback: no WebGL, low-end phone, or the List button. */
+body.walk { padding: 0; overflow: hidden; height: 100%; touch-action: none; -webkit-user-select: none; user-select: none; background: #0a0208; }
+body.walk .w { display: none; }
+body.walk #floor3d { pointer-events: auto; z-index: 0; opacity: 1; }
+#hud { display: none; }
+body.walk #hud { display: block; }
+.hb { position: fixed; z-index: 5; font: 800 13px system-ui, sans-serif; color: #ffe9b0; background: rgba(18,4,14,.78); border: 1px solid rgba(255,206,110,.55);
+  border-radius: 14px; padding: 0 12px; height: 38px; cursor: pointer; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+#hTop { position: fixed; z-index: 5; top: calc(8px + env(safe-area-inset-top)); left: 8px; right: 8px; display: flex; gap: 6px; align-items: center; pointer-events: none; }
+#hTop > * { pointer-events: auto; position: static; }
+#hTitle { font: italic 900 20px Georgia, serif; color: #fff3d6; text-shadow: 0 0 6px #ffcf6a, 0 0 16px #ff3a8a; margin-right: auto; white-space: nowrap; }
+#hChips { display: none; align-items: center; gap: 6px; padding: 0 10px; height: 38px; border-radius: 14px; background: rgba(18,4,14,.78); border: 1px solid rgba(255,206,110,.55); font: 900 15px system-ui; color: #ffd84a; }
+#hChips.on { display: flex; }
+#mini { position: fixed; z-index: 5; right: 8px; top: calc(54px + env(safe-area-inset-top)); width: 110px; height: 140px; border-radius: 14px;
+  background: rgba(18,4,14,.72); border: 1px solid rgba(255,206,110,.55); cursor: pointer; }
+#prompt { position: fixed; z-index: 6; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom)); transform: translate(-50%, 30px) scale(.9); opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s; font: 900 20px system-ui, sans-serif; letter-spacing: .04em; border: 0; border-radius: 18px; padding: 14px 26px; color: #2a0a00;
+  background: linear-gradient(180deg, #fff2a8, #ffb02e 55%, #ff6a1a); box-shadow: 0 5px 0 #8a3600, 0 0 30px rgba(255,170,40,.8); white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+#prompt.on { opacity: 1; transform: translate(-50%, 0) scale(1); pointer-events: auto; }
+#prompt.lock { background: linear-gradient(180deg, #ffb3c7, #ff3a6e); color: #fff; box-shadow: 0 5px 0 #7a0a2a; }
+#prompt small { display: block; font: 700 12px system-ui; letter-spacing: 0; opacity: .8; }
+#joy { position: fixed; z-index: 4; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(255,220,140,.55); background: rgba(255,255,255,.07); display: none; pointer-events: none; }
+#joy i { position: absolute; left: 35px; top: 35px; width: 50px; height: 50px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff4c0, #ffb02e); box-shadow: 0 0 16px #ffa020; }
+#hint { position: fixed; z-index: 4; left: 0; right: 0; bottom: calc(96px + env(safe-area-inset-bottom)); text-align: center; font: 700 13px system-ui; color: #ffe9c0; text-shadow: 0 1px 3px #000; transition: opacity 1s; pointer-events: none; }
+#panel { position: fixed; z-index: 8; inset: 0; background: rgba(8,2,6,.7); display: none; align-items: flex-end; justify-content: center; }
+#panel.on { display: flex; }
+#panel .box { width: 100%; max-width: 520px; max-height: 78vh; overflow: auto; background: #1c0716; border: 1px solid rgba(255,206,110,.5); border-radius: 22px 22px 0 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
+#panel h2 { margin: 2px 4px 10px; font: 900 20px system-ui; color: #ffd84a; display: flex; justify-content: space-between; align-items: center; }
+#panel h2 button { font: 800 14px system-ui; background: none; border: 0; color: #ffe9b0; cursor: pointer; }
+.pr { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 14px; margin-bottom: 6px; background: rgba(255,255,255,.05); border-left: 5px solid var(--ac, #ffd84a); }
+.pr img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; }
+.pr div { flex: 1; min-width: 0; color: #fff3df; font: 800 15px system-ui; }
+.pr div small { display: block; font: 600 12px system-ui; color: #d8c29b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr button { font: 900 13px system-ui; border: 0; border-radius: 10px; padding: 9px 10px; cursor: pointer; }
+.pr .go2 { background: #3a1440; color: #ffe9b0; }
+.pr .pl { background: linear-gradient(180deg, #fff2a8, #ffb02e); color: #2a0a00; }
+.pr.lk { opacity: .55; }
+.vt { display: block; margin: 4px auto 0; }
 </style>
 </head><body>
 <canvas id="floor3d" aria-hidden="true"></canvas>
+<div id="hud">
+  <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
+    <button class="hb" id="bGames" type="button">🎰 Games</button><button class="hb" id="bSnd" type="button" aria-label="Sound">🔇</button><button class="hb" id="bList" type="button">List</button></div>
+  <canvas id="mini" width="220" height="280" aria-label="Map: tap for the games list"></canvas>
+  <div id="joy"><i></i></div>
+  <div id="hint"></div>
+  <button id="prompt" type="button"></button>
+</div>
+<div id="panel" role="dialog" aria-modal="true" aria-label="Games"><div class="box"><h2>Games on the floor <button id="pX" type="button">Close ✕</button></h2><div id="pList"></div></div></div>
 <div class="w">
   <div class="sign"><h1>18 Games Casino</h1>
-  <p class="sub">Three games on the casino floor. Progress saves on this device.</p></div>
-  <a class="g" href="gildedreels.html"><img src="gildedreels-icon.png" alt=""><div><b>Gilded Reels</b><span class="age">18+</span><span class="new">NEW</span><p>3D five-reel slot with a pull lever. Fun chips only, never money.</p></div><i>Play ›</i></a>
-  <a class="g" href="steelfront.html"><img src="steelfront-icon.png" alt=""><div><b>Steelfront</b><span class="age">13+</span><p>3D first-person tactical shooter. Team battles, operations and a gun range.</p></div><i>Play ›</i></a>
-  <a class="g" href="velvet21.html"><img src="velvet21-icon.png" alt=""><div><b>Velvet 21</b><span class="age">18+</span><p>Blackjack night at the Velvet tables. Fun chips only, never money.</p></div><i>Play ›</i></a>
-  <p class="note">Turn your phone sideways for Steelfront. Playing with friends isn't available here.<br>Add to Home Screen: tap Share, then Add to Home Screen.</p>
+  <p class="sub" id="sub">Games on the casino floor. Progress saves on this device.</p></div>
+  <div id="cards"></div>
+  <p class="note">Turn your phone sideways for Steelfront.<br>Add to Home Screen: tap Share, then Add to Home Screen.</p>
+  <button class="hb vt" id="bWalk" type="button" hidden>🚶 Walk the casino floor</button>
 </div>
 <div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gT"><div class="box">
   <h2 id="gT">When were you born?</h2>
@@ -87,35 +135,89 @@ a.g i { font-style: normal; font-weight: 900; background: linear-gradient(180deg
   <button class="x" id="gX" type="button">Cancel</button>
 </div></div>
 <script>
+/* Lobby core (list view + age gate + ?play= deep links). Games come from games.json (auto picks up new entries); built-in list if
+   it's missing. window.Lobby is shared with the 3D floor (floor.js). */
 (function () {
+  var BUILTIN = [
+    { id: 'gildedreels', file: 'gildedreels.html', title: 'Gilded Reels', tagline: '3D five-reel slot with a pull lever. Fun chips only, never money.', rating: '18+', icon: 'gildedreels-icon.png', accent: '#ff3aa0', category: 'slots', multiplayer: true },
+    { id: 'velvet21', file: 'velvet21.html', title: 'Velvet 21', tagline: 'Wide 3D blackjack table, 6 seats. Fun chips only, never money.', rating: '18+', icon: 'velvet21-icon.png', accent: '#ff2a55', category: 'cards', multiplayer: true },
+    { id: 'steelfront', file: 'steelfront.html', title: 'Steelfront', tagline: '3D first-person tactical shooter. Team battles, operations and a gun range.', rating: '13+', icon: 'steelfront-icon.png', accent: '#2ad8ff', category: 'action', multiplayer: false }
+  ];
+  var CATS = ['slots', 'tables', 'cards', 'instant', 'action'];
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function norm(g) {
+    if (!g || !g.id) return null;
+    var id = String(g.id).replace(/[^a-z0-9_-]/gi, ''); if (!id) return null;
+    var file = String(g.file || id + '.html'); if (!/^[a-z0-9_./-]+\.html$/i.test(file) || /\.\./.test(file) || /^\//.test(file)) file = id + '.html';
+    var r = parseInt(g.rating, 10); if (!(r >= 0)) r = (window.AXAge && AXAge.NEED[id]) || 18;
+    var cat = String(g.category || '').toLowerCase(); if (CATS.indexOf(cat) < 0) cat = 'slots';
+    var ac = /^#[0-9a-f]{3,8}$/i.test(g.accent || g.color || '') ? (g.accent || g.color) : '#ffd84a';
+    return { id: id, file: file, title: String(g.title || g.name || id), tagline: String(g.tagline || g.desc || ''), rating: r,
+      icon: g.icon ? String(g.icon) : (id + '-icon.png'), accent: ac, category: cat, multiplayer: !!g.multiplayer, isNew: !!g.new };
+  }
+  var games = BUILTIN.map(norm), byId = {};
+  function index() { byId = {}; games.forEach(function (g) { byId[g.id] = g; }); }
+  index();
+  function need(id) { var g = byId[id]; return Math.max((window.AXAge && AXAge.NEED[id]) || 0, g ? g.rating : 18); }
+  function knownAge() { return !!(window.AXAge && AXAge.born()); }
+  function allowed(id) { return knownAge() && AXAge.age() >= need(id); }
+  function locked(id) { return knownAge() && !allowed(id); }
+
   var M = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var gM = document.getElementById('gM'), gY = document.getElementById('gY'), gate = document.getElementById('gate'), want = '';
   gM.innerHTML = '<option value="">Month</option>' + M.map(function (n, i) { return '<option value="' + (i + 1) + '">' + n + '</option>'; }).join('');
   var y0 = new Date().getFullYear(), ys = '<option value="">Year</option>';
   for (var y = y0; y >= y0 - 100; y--) ys += '<option>' + y + '</option>';
   gY.innerHTML = ys;
-  function names(id) { return { velvet21: 'Velvet 21', gildedreels: 'Gilded Reels' }[id] || 'Steelfront'; }
+  function resetGate() {
+    document.getElementById('gT').textContent = 'When were you born?';
+    document.getElementById('gP').textContent = "We ask once on this device. Your answer stays on this phone and isn't sent anywhere.";
+    document.getElementById('gRow').style.display = ''; document.getElementById('gGo').style.display = ''; document.getElementById('gX').textContent = 'Cancel';
+  }
   function sorry(id) {
+    var g = byId[id];
     document.getElementById('gT').textContent = 'Sorry, not this one';
-    document.getElementById('gP').textContent = names(id) + ' is for players ' + AXAge.NEED[id] + ' and older.';
+    document.getElementById('gP').textContent = (g ? g.title : id) + ' is for players ' + need(id) + ' and older.';
     document.getElementById('gRow').style.display = 'none'; document.getElementById('gGo').style.display = 'none';
     document.getElementById('gX').textContent = 'OK'; gate.classList.add('on');
   }
   function open(id) {
-    want = id;
-    if (AXAge.born()) { if (AXAge.ok(id)) location.href = id + '.html'; else sorry(id); return; }
+    var g = byId[id]; if (!g) return;
+    want = id; resetGate();
+    if (knownAge()) { if (allowed(id)) location.href = g.file; else sorry(id); return; }
     gate.classList.add('on'); gM.focus();
   }
   document.getElementById('gGo').onclick = function () {
     var m = +gM.value, y = +gY.value; if (!m || !y) return;
-    AXAge.save(m, y); gate.classList.remove('on'); open(want);
+    AXAge.save(m, y); gate.classList.remove('on'); render(); fire(); open(want);
   };
   document.getElementById('gX').onclick = function () { gate.classList.remove('on'); };
-  Array.prototype.forEach.call(document.querySelectorAll('a.g'), function (a) {
-    a.addEventListener('click', function (e) { e.preventDefault(); open(a.getAttribute('href').replace('.html', '')); });
+
+  function render() {
+    document.getElementById('sub').textContent = games.length + ' games on the casino floor. Progress saves on this device.';
+    document.getElementById('cards').innerHTML = games.map(function (g) {
+      return '<a class="g" style="margin-bottom:14px" href="' + esc(g.file) + '" data-id="' + esc(g.id) + '"><img src="' + esc(g.icon) + '" alt="" onerror="this.style.visibility=\'hidden\'"><div><b>' + esc(g.title) + '</b><span class="age">' + g.rating + '+</span>' +
+        (g.isNew ? '<span class="new">NEW</span>' : '') + (locked(g.id) ? '<span class="age">🔒</span>' : '') + '<p>' + esc(g.tagline) + '</p></div><i>Play ›</i></a>';
+    }).join('');
+  }
+  document.getElementById('cards').addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a.g'); if (!a) return; e.preventDefault(); open(a.getAttribute('data-id'));
   });
-  var q = (location.search.match(/play=(velvet21|steelfront|gildedreels)/) || [])[1];
-  if (q) { history.replaceState(null, '', './'); open(q); }
+  var listeners = [];
+  function fire() { listeners.forEach(function (f) { try { f(games); } catch (e) { console.warn(e); } }); }
+  window.Lobby = { get games() { return games; }, byId: function (id) { return byId[id]; }, open: open, locked: locked, need: need, knownAge: knownAge,
+    onGames: function (f) { listeners.push(f); if (loaded) f(games); } };
+  var loaded = false;
+  render();
+  function deep() {
+    var m = location.search.match(/[?&]play=([a-z0-9_-]+)/i), q = m && m[1];
+    if (q && byId[q]) { history.replaceState(null, '', './'); open(q); }
+  }
+  fetch('games.json', { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }).then(function (j) {
+    var list = Array.isArray(j) ? j : (j && (j.games || j.list)) || [];
+    var got = list.map(norm).filter(Boolean);
+    if (got.length) { var seen = {}; games = got.filter(function (g) { return !seen[g.id] && (seen[g.id] = 1); }); index(); }
+  }).catch(function () {}).then(function () { loaded = true; render(); deep(); fire(); });
 })();
 </script>
 <script type="module" src="casino-floor.js"></script>

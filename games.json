@@ -1,0 +1,37 @@
+{
+ "games": [
+  {
+   "id": "gildedreels",
+   "file": "gildedreels.html",
+   "title": "Gilded Reels",
+   "tagline": "3D five-reel slot with a pull lever. Fun chips only, never money.",
+   "rating": "18+",
+   "icon": "gildedreels-icon.png",
+   "accent": "#ff3aa0",
+   "category": "slots",
+   "multiplayer": true
+  },
+  {
+   "id": "velvet21",
+   "file": "velvet21.html",
+   "title": "Velvet 21",
+   "tagline": "Wide 3D blackjack table, 6 seats. Fun chips only, never money.",
+   "rating": "18+",
+   "icon": "velvet21-icon.png",
+   "accent": "#ff2a55",
+   "category": "cards",
+   "multiplayer": true
+  },
+  {
+   "id": "steelfront",
+   "file": "steelfront.html",
+   "title": "Steelfront",
+   "tagline": "3D first-person tactical shooter. Team battles, operations and a gun range.",
+   "rating": "13+",
+   "icon": "steelfront-icon.png",
+   "accent": "#2ad8ff",
+   "category": "action",
+   "multiplayer": false
+  }
+ ]
+}
