@@ -18,6 +18,12 @@ ACT = {
   'rocketcrash': ("__game.launch();setTimeout(()=>{try{__game.cash()}catch(e){}},1600)", 12000),
   'luckykeno': ("__game.quick();setTimeout(__game.play,400)", 12000),
   'bigwheel': ("__game.bet(Object.keys({1:1})[0]);__game.spin()", 14000),
+  'pharaohsgold': ("__game.spin()", 30000),
+  'poseidonsfortune': ("__game.spin()", 30000),
+  'diamondclub': ("__game.spin()", 30000),
+  'classic777': ("__game.spin()", 30000),
+  'gemburst': ("__game.spin()", 30000),
+  'dragonjackpot': ("__game.spin()", 30000),
   'dicepalace': ("__game.bet('field');__game.roll()", 9000),
   'holdemroyale': ("__game.sit();setInterval(()=>{const s=__game.state();if(s&&s.toAct===0)__game.call()},400)", 40000),
   'velvet21': ("document.getElementById('soloB').click();setTimeout(()=>{document.querySelector('.chipB').click();document.getElementById('dealB').click()},800);"

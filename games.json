@@ -152,6 +152,78 @@
    "category": "cards",
    "multiplayer": true,
    "new": true
+  },
+  {
+   "id": "pharaohsgold",
+   "file": "pharaohsgold.html",
+   "title": "Pharaoh's Gold",
+   "tagline": "Themed 3D video slot with free spins and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "pharaohsgold-icon.png",
+   "accent": "#b8862e",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "poseidonsfortune",
+   "file": "poseidonsfortune.html",
+   "title": "Poseidon's Fortune",
+   "tagline": "Themed 3D video slot with hold & spin and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "poseidonsfortune-icon.png",
+   "accent": "#0a7a8a",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "diamondclub",
+   "file": "diamondclub.html",
+   "title": "Diamond Club 1920s",
+   "tagline": "Themed 3D video slot with bonus wheel and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "diamondclub-icon.png",
+   "accent": "#1d4f9a",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "classic777",
+   "file": "classic777.html",
+   "title": "Classic 777 Triple",
+   "tagline": "Themed 3D video slot with free spins and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "classic777-icon.png",
+   "accent": "#9a1428",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "gemburst",
+   "file": "gemburst.html",
+   "title": "Gem Burst",
+   "tagline": "Themed 3D video slot with expanding wilds and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "gemburst-icon.png",
+   "accent": "#6a1aa8",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "dragonjackpot",
+   "file": "dragonjackpot.html",
+   "title": "Dragon Jackpot",
+   "tagline": "Themed 3D video slot with hold & spin and progressive jackpots. Fun chips only.",
+   "rating": "18+",
+   "icon": "dragonjackpot-icon.png",
+   "accent": "#c2261a",
+   "category": "slots",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }

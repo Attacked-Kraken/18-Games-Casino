@@ -323,9 +323,10 @@ const HERO = {
   bigwheel: { x: 14, z: 13.6, ry: Math.PI, k: 'wheel' }, steelfront: { x: 8.8, z: 14.8, ry: Math.PI, k: 'arcade' } };
 const EXTRA_SLOT_SPOTS = [[-3.8, -6.5], [3.8, -6.5], [-9.5, 3.4], [9.5, 3.4], [-9.5, -3.4], [9.5, -3.4], [12.6, -9.8], [7.4, -9.8]];
 const SLOT_IDS = ['gildedreels', 'candyrush'];
+const CELL_GAME = ['classic777', 'diamondclub', 'pharaohsgold', 'poseidonsfortune', 'dragonjackpot', 'gemburst']; /* THEMES order */
 const clones = [];
 const fwdOf = (ry) => [Math.sin(ry), Math.cos(ry)];
-function ent(id, x, z, ry, dist) { const [fx, fz] = fwdOf(ry); const e = { id, g: null, center: new THREE.Vector3(x, 0, z), stand: new THREE.Vector3(x + fx * dist, 0, z + fz * dist) }; clones.push(e); return e; }
+function ent(id, x, z, ry, dist) { const [fx, fz] = fwdOf(ry); const e = { id, ry, g: null, center: new THREE.Vector3(x, 0, z), stand: new THREE.Vector3(x + fx * dist, 0, z + fz * dist) }; clones.push(e); return e; }
 const heroAt = (x, z) => Object.values(HERO).some((h) => Math.hypot(h.x - x, h.z - z) < 3.2);
 const SLOTS = [[], [], [], []], CHAIRS = [];
 const BANK_COL = [0x8c1a2b, 0x1d4f9a, 0x5a2a7a, 0x0f6b4e, 0xb8862e, 0x111114, 0xa8501e, 0x22407a];
@@ -335,7 +336,7 @@ function bank(cx, cz, n, alongX, type, colI, slotIdx) {
   for (let side = -1; side <= 1; side += 2) for (let i = 0; i < n; i++) {
     const o = (i - (n - 1) / 2) * sp; const x = alongX ? cx + o : cx + side * .45, z = alongX ? cz + side * .45 : cz + o;
     const ry = alongX ? (side > 0 ? 0 : Math.PI) : (side > 0 ? Math.PI / 2 : -Math.PI / 2);
-    SLOTS[type].push({ x, z, ry, tint: col, stool: 0x9a1222, led: LED_COL[(colI + i) % 6], cell: (colI + i) % 6, ent: ent(SLOT_IDS[(slotIdx + i) % SLOT_IDS.length], x, z, ry, 1.5) });
+    SLOTS[type].push({ x, z, ry, tint: col, stool: 0x9a1222, led: LED_COL[(colI + i) % 6], cell: (colI + i) % 6, ent: ent(CELL_GAME[(colI + i) % 6], x, z, ry, 1.5) });
   }
   if (alongX) block(cx, cz, n * sp / 2 + .1, .9); else block(cx, cz, .9, n * sp / 2 + .1);
   if (type === 3) JP_SIGNS.push([cx, cz, alongX]);
@@ -484,7 +485,7 @@ function layout(games) {
   stations.length = 0; boxes.length = stationBlocksStart;
   const byId = {}; games.forEach((g) => (byId[g.id] = g)); clones.forEach((c) => { if (!c.action) c.g = byId[c.id] || null; });
   let extra = 0;
-  games.forEach((g) => { let h = HERO[g.id]; if (!h) { const sp = EXTRA_SLOT_SPOTS[extra++ % EXTRA_SLOT_SPOTS.length]; h = { x: sp[0], z: sp[1], ry: sp[0] < 0 ? Math.PI / 2 : -Math.PI / 2, k: 'slot', type: 3 }; if (!g._slotPlaced) { const e = ent(g.id, h.x, h.z, h.ry, 1.5); e.g = g; } }
+  games.forEach((g) => { let h = HERO[g.id]; const cl = !h && clones.find((c) => c.id === g.id && c.ry != null); if (cl) h = { x: cl.center.x, z: cl.center.z, ry: cl.ry, k: 'slot', type: 0, noBlock: 1 }; if (!h) { const sp = EXTRA_SLOT_SPOTS[extra++ % EXTRA_SLOT_SPOTS.length]; h = { x: sp[0], z: sp[1], ry: sp[0] < 0 ? Math.PI / 2 : -Math.PI / 2, k: 'slot', type: 3 }; if (!g._slotPlaced) { const e = ent(g.id, h.x, h.z, h.ry, 1.5); e.g = g; } }
     stations.push(buildStation(g, h, L.locked(g.id))); });
   buildPanel(); drawMini(true);
 }
