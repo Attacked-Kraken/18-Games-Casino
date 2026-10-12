@@ -129,7 +129,8 @@ const pts = [[0, 0], [-8, 8], [8, 8], [-8, -8], [8, -8], [-19, 0], [19, 0], [-28
 /* ---------- colliders ---------- */
 const boxes = [];
 function block(x, z, hw, hd) { boxes.push([x - hw, z - hd, x + hw, z + hd]); }
-function blockR(x, z, r) { block(x, z, r * .85, r * .85); }
+const circles = [];
+function blockR(x, z, r) { block(x, z, r * .85, r * .85); circles.push([x, z, r]); }
 function blockRot(x, z, ry, hw, hd) { const s = Math.abs(Math.sin(ry)) > .5; block(x, z, s ? hd : hw, s ? hw : hd); }
 
 /* ---------- signs ---------- */
@@ -432,7 +433,7 @@ bulbs.count = bi; dummy.scale.set(1, 1, 1); scene.add(bulbs);
       for (const s of [-1, 1]) c.add(P3(new THREE.CylinderGeometry(.04, .04, 1.1, 8), brassM, Math.sin(a) * 3.05 + Math.cos(a) * .78 * s, 1.64, Math.cos(a) * 3.05 - Math.sin(a) * .78 * s)); } }
   c.add(P3(new THREE.CylinderGeometry(1.7, 1.3, .3, 8), brassM, 0, 4.7, 0, { ry: Math.PI / 8 }), P3(new THREE.OctahedronGeometry(.6, 0), new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0, metalness: .1, clearcoat: 1, emissive: 0x6a5030 }), 0, 5.4, 0));
   const cs2 = signMesh(neonTex('Cashier', '#c9a45c'), 2.2); cs2.position.set(0, 2.55, 0); c.add(cs2); billboards.push(cs2);
-  scene.add(c); blockR(0, 0, 3.6); }
+  scene.add(c); blockR(0, 0, 3.6); circles[circles.length - 1][2] = 3.5; }
 /* potted palms */
 { const pp = new THREE.Group(); pp.add(P3(new THREE.CylinderGeometry(.4, .3, .7, 16), new THREE.MeshPhysicalMaterial({ color: 0x1a1210, roughness: .2, clearcoat: 1 }), 0, .35, 0), P3(new THREE.CylinderGeometry(.06, .08, 1.6, 6), new THREE.MeshStandardMaterial({ color: 0x5a3a1a, roughness: .9 }), 0, 1.4, 0), P3(new THREE.TorusGeometry(.41, .03, 6, 24), brassM, 0, .7, 0, { rx: Math.PI / 2 }));
   const leafG = new THREE.ConeGeometry(.16, 1.3, 4); leafG.translate(0, .65, 0); const leafM = new THREE.MeshStandardMaterial({ color: 0x1f6a2a, roughness: .7, side: THREE.DoubleSide });
@@ -616,6 +617,7 @@ function collide(nx, nz) {
   { const s = stadium && stadium.collide(nx, nz, RAD); if (s) return s; }
   { const w = wing && wing.collide(nx, nz, RAD); if (w) return w; }
   const hc = hall && hall.collide(nx, nz, RAD); if (hc) { nx = hc[0]; nz = hc[1]; } else { const m = RAD + .25; if (Math.abs(nx) <= RX) nz = Math.max(-RR + m, Math.min(RR - m, nz)); else { const cx = Math.sign(nx) * RX, dx = nx - cx, d = Math.hypot(dx, nz); if (d > RR - m) { nx = cx + dx / d * (RR - m); nz = nz / d * (RR - m); } } }
+  for (const c of circles) { const dx = nx - c[0], dz = nz - c[1], d = Math.hypot(dx, dz), R = c[2] + RAD; if (d < R) { if (d < 1e-4) { nx = c[0] + R; } else { nx = c[0] + dx / d * R; nz = c[1] + dz / d * R; } } }
   for (const b of boxes) { if (nx + RAD > b[0] && nx - RAD < b[2] && nz + RAD > b[1] && nz - RAD < b[3]) {
     const pushL = nx + RAD - b[0], pushR = b[2] - (nx - RAD), pushU = nz + RAD - b[1], pushD = b[3] - (nz - RAD), m = Math.min(pushL, pushR, pushU, pushD);
     if (m === pushL) nx -= pushL; else if (m === pushR) nx += pushR; else if (m === pushU) nz -= pushU; else nz += pushD; } }

@@ -44,7 +44,11 @@ export function createPeople(ctx) { const { THREE, scene, mobile } = ctx; const 
       if ((p.chk -= dt) <= 0) { const mv = Math.hypot(p.x - p.cx0, p.z - p.cz0); if (mv < .6) { p.stuck++; if (p.stuck >= 2) { relocate(p, pos); p.stuck = 0; } else pickDest(p); } else p.stuck = 0; p.chk = 3; p.cx0 = p.x; p.cz0 = p.z; } }
     api.walkers = walkers;
     const tmp = new THREE.Vector3(); let fr = 0; const zv = ctx.zoneVisible || (() => true);
-    api.update = (dt, t, pos) => { fr++; list.forEach((p, i) => {
+    /* spawn validation + periodic overlap check: anyone standing inside a solid (counters, bars, tables) is pushed out / relocated */
+    const solidFix = (p) => { if (!ctx.collide || p.kind === 'sit' || p.kind === 'dealer') return false; const o = p.o.position; const r = ctx.collide(o.x, o.z); if (!r) return false; const d = Math.hypot(r[0] - o.x, r[1] - o.z); if (d < .04) return false;
+      o.x = r[0]; o.z = r[1]; if (p.x != null) { p.x = r[0]; p.z = r[1]; } if (p.kind === 'walk' && p.path) { p.repath = 1; p.stuckT = 99; } return true; };
+    list.forEach(solidFix); api.solidFixes = 0; let ovT = 0;
+    api.update = (dt, t, pos) => { fr++; if ((ovT += dt) > 1.5) { ovT = 0; list.forEach((p) => { if (p.o.visible && solidFix(p)) api.solidFixes++; }); } list.forEach((p, i) => {
       if (p.kind === 'walk' && nav) walkNav(p, dt, pos);
       else if (p.kind === 'walk') { p.tm -= dt; const [[ax, az], [bx, bz]] = p.path, L = Math.hypot(bx - ax, bz - az) || 1;
         if (p.st === 'walk') { p.u += p.dir * p.sp * dt / L; if (p.u > 1) { p.u = 1; p.dir = -1; } if (p.u < 0) { p.u = 0; p.dir = 1; }
