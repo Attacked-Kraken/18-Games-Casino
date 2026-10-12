@@ -56,7 +56,11 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
   if(y<=.12){ c=BLK; if(y<.022) c=GLD*.6; if(abs(p.z-.05)<.035 && y>.05 && y<.08 && ax>.09) c=PUR*1.3; return vec4(c,1.); }  /* cleats */
   return vec4(0.); }`).replace('vec4 oc = outfit(vB);', `vec4 oc = cruzFit(vB);
   if(oc.a<.5){ vec3 q=vB; float ax=abs(q.x); if(ax>.38&&ax<.7){ float bi=exp(-pow((ax-.47)/.05,2.)), fo=exp(-pow((ax-.6)/.06,2.)); float top=smoothstep(1.40,1.46,q.y); diffuseColor.rgb*=.86+.22*(bi*top+fo*.6)+.05*sin(ax*90.); }
-    if(q.y>1.66&&q.y<1.69&&ax>.022&&ax<.058&&q.z>.07) diffuseColor.rgb=vec3(.03); }`); };
+    if(q.y>1.66&&q.y<1.69&&ax>.022&&ax<.058&&q.z>.07) diffuseColor.rgb=vec3(.03); }
+  else { vec3 q=vB; float jer = step(.975,q.y)*step(q.y,1.56); vec2 m = q.xy*vec2(260.,260.) + vec2(q.z*260.,0.); vec2 f=fract(m)-.5; float hole = smoothstep(.22,.12,length(f));     /* athletic mesh knit */
+    diffuseColor.rgb *= 1. - jer*hole*.22; float pan = step(.44,q.y)*step(q.y,.935); diffuseColor.rgb *= 1. - pan*.06*step(.5,fract((q.y+q.x)*400.)); }`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+  { vec3 q=vB; float jy=step(.975,q.y)*step(q.y,1.56); float py=step(.44,q.y)*step(q.y,.935); roughnessFactor = mix(roughnessFactor, .78, jy); roughnessFactor = mix(roughnessFactor, .38, py); if(abs(q.x)>.4&&abs(q.x)<.67) roughnessFactor=.42; }`); };
       mat.customProgramCacheKey = () => 'cruz2'; mat.needsUpdate = true; }
     /* helmet: glossy shell with centre stripe + M decals, cage facemask, tinted visor, chin strap */
     const ht = tex(THREE, 1024, 512, (g, w, hh) => { g.fillStyle = PURPLE; g.fillRect(0, 0, w, hh); for (const x of [w * .25, w * .75]) { g.fillStyle = '#fff'; g.fillRect(x - 26, 0, 52, hh); g.fillStyle = GOLD; g.fillRect(x - 18, 0, 36, hh); }
@@ -65,7 +69,7 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
     helm.scale.set(1, 1.02, 1.12); helm.rotation.x = -.28; at(B.Head, helm, 0, 1.722, -.018);
     const gm = new THREE.MeshStandardMaterial({ color: 0x9a9aa2, metalness: .85, roughness: .3 }); const bar = (geo, x, y, z, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, gm); m.rotation.set(rx, ry, rz); at(B.Head, m, x, y, z); };
     for (const [y, r] of [[1.672, .148], [1.635, .14], [1.6, .125]]) { const g = new THREE.TorusGeometry(r, .0075, 6, 28, Math.PI * .78); bar(g, 0, y, .012, Math.PI / 2, 0, Math.PI + Math.PI * .11); }
-    for (const x of [-.045, 0, .045]) bar(new THREE.CylinderGeometry(.006, .006, .085, 6), x, 1.635, .148 - Math.abs(x) * .25);
+    for (const x of [-.07, -.035, 0, .035, .07]) bar(new THREE.CylinderGeometry(.006, .006, .085, 6), x, 1.635, .148 - Math.abs(x) * .25);
     const vis = new THREE.Mesh(new THREE.SphereGeometry(.158, 24, 8, -Math.PI * .28, Math.PI * .56, Math.PI * .4, Math.PI * .12), new THREE.MeshPhysicalMaterial({ color: 0x20202e, transparent: true, opacity: .6, roughness: .04, metalness: .4 })); at(B.Head, vis, 0, 1.712, .0);
     for (const s of [-1, 1]) { const jaw = new THREE.Mesh(new THREE.BoxGeometry(.03, .065, .085), new THREE.MeshPhysicalMaterial({ color: PURPLE, roughness: .25, clearcoat: 1 })); jaw.rotation.y = s * .25; at(B.Head, jaw, s * .132, 1.62, .045);
       const snap = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .01, 10), gm); snap.rotation.z = Math.PI / 2; at(B.Head, snap, s * .15, 1.6, .06); }
