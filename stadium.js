@@ -85,9 +85,11 @@ export function createStadium(ctx) { const { THREE, scene, P, mobile } = ctx; co
     add(new THREE.PlaneGeometry(24, 2.2), new THREE.MeshBasicMaterial({ map: jt, toneMapped: false }), 0, -7.6, .05, 0, jg);
     add(new THREE.CylinderGeometry(.6, .6, 14, 8), pole, -8, -14, -1, 0, jg); add(new THREE.CylinderGeometry(.6, .6, 14, 8), pole, 8, -14, -1, 0, jg); }
   let jf = 0;
-  api.update = (dt, t, over, R, cruzPos) => { const near = P.z > 34 || over; if (near && !built) build(); root.visible = built && (near); if (!root.visible) return; anim.forEach((f) => f(t, dt));
+  api.update = (dt, t, over, R, cruzPos) => { const near = P.z > 12 || over;   /* visible from the whole Forum so the Cruz Field doors never show a void */ if (near && !built) build(); root.visible = built && (near); if (!root.visible) return; anim.forEach((f) => f(t, dt));
     if (R && jumboRT && cruzPos && (jf++ % (mobile ? 6 : 3) === 0)) { jumboCam.position.set(cruzPos.x + 4, 2.6, cruzPos.z - 6); jumboCam.lookAt(cruzPos.x, 1.2, cruzPos.z); const prev = R.getRenderTarget(); R.setRenderTarget(jumboRT); R.render(scene, jumboCam); R.setRenderTarget(prev); } };
   api.buildNow = () => { if (!built) build(); };
+  /* preload the stadium shell early (idle) so it is ready before anyone reaches the doors */
+  setTimeout(() => { const go = () => { if (!built) build(); }; if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 }); else go(); }, 9000);
   api.collide = (nx, nz, RAD) => { if (!inStadium(nx, nz)) return null; const { door, tz1, gx, gz0, gz1 } = STAD;
     if (nz < gz0 + RAD) { nx = Math.max(-2.65 + RAD, Math.min(2.65 - RAD, nx)); if (nz < door + .1 && Math.abs(nx) > 1.3) nx = Math.sign(nx) * 1.3; return [nx, nz]; }
     nx = Math.max(-gx + RAD, Math.min(gx - RAD, nx)); nz = Math.min(gz1 - RAD, nz); if (nz < gz0 + RAD && Math.abs(nx) > 2.65 - RAD) nz = gz0 + RAD; return [nx, nz]; };
