@@ -95,6 +95,6 @@
   window.Wallet = { open: open, close: close, log: log, session: session };
   needChips(function () {});
   function addFab() { if (game === 'index' || game === 'floor' || $('wlFab')) return; var b = document.createElement('button'); b.id = 'wlFab'; b.className = 'wlFab'; b.type = 'button'; b.textContent = 'Wallet';
-    if (game === 'steelfront') return; b.onclick = open; addCss(); document.body.appendChild(b); }
+    b.onclick = open; addCss(); if (game === 'steelfront') { b.style.top = 'calc(10px + env(safe-area-inset-top))'; b.style.right = '52px'; b.style.bottom = 'auto'; b.style.left = 'auto'; } document.body.appendChild(b); }
   if (document.body) addFab(); else document.addEventListener('DOMContentLoaded', addFab);
 })();

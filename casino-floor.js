@@ -570,9 +570,13 @@ function endPtr(e) { if (BV.on) { birdsPtr('up', e); return; } if (joy && e.poin
 cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
 /* tap a station/sign directly to walk up to it */
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const floorPl = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+/* tap far away / on a storefront: glide to the nearest station (shops, cashier, sportsbook or a game) around that point */
+function nearTap(fp) { let best = null, bd = 4; for (const s of clones) { if (!s.g) continue; const d = Math.hypot(s.center.x - fp.x, s.center.z - fp.z) - (s.action ? 1.5 : 0); if (d < bd) { bd = d; best = s; } } if (best) glide(best); }
 function tapPick(e) { ndc.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ndc, cam);
-  const hits = ray.intersectObjects([stationRoot, ...stations.map((s) => s.sign), ...pickInst], true); if (!hits.length || hits[0].distance > 18) return;
-  let o = hits[0].object; if (o.isInstancedMesh && o.userData.ents) { const e = o.userData.ents[hits[0].instanceId]; if (e && e.g) glide(e); return; } const st = stations.find((s) => s.sign === o || (function up(x) { while (x) { if (x === s.grp) return true; x = x.parent; } return false; })(o)); if (st) glide(st); }
+  const hits = ray.intersectObjects([stationRoot, ...stations.map((s) => s.sign), ...pickInst], true);
+  if (!hits.length || hits[0].distance > 18) { const fp = new THREE.Vector3(); if (ray.ray.intersectPlane(floorPl, fp) && fp.distanceTo(cam.position) < 40) nearTap(fp); return; }
+  let o = hits[0].object; if (o.isInstancedMesh && o.userData.ents) { const e = o.userData.ents[hits[0].instanceId]; if (e && e.g) glide(e); return; } const st = stations.find((s) => s.sign === o || (function up(x) { while (x) { if (x === s.grp) return true; x = x.parent; } return false; })(o)); if (st) glide(st); else nearTap(hits[0].point); }
 let auto = null;
 function glide(st) { auto = { st, x: st.stand.x, z: st.stand.z }; }
 function teleport(st) { P.x = st.stand.x; P.z = st.stand.z; faceTo(st, true); auto = null; }

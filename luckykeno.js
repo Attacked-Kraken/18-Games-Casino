@@ -1,5 +1,6 @@
 /* Lucky Keno: pick 1-10 of 80, 20 balls are drawn (casino-math.js paytable). 3D lit board, tumbling ball globe, quick pick. FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
+import { banner as buBanner } from './bet-ui.js';
 const M = window.CMath;
 const K = await boot({ id: 'luckykeno', title: 'Lucky Keno', accent: '#1f5f6e', bloom: .55, fog: [30, 70],
   rules: `<p>Tap 1 to 10 numbers on the board (or QUICK PICK), then PLAY. 20 balls are drawn. The more of your numbers hit, the more you win.</p><table><tr><th>Picks</th><th>Hits → pays ×bet</th></tr>${Object.keys(M.KENO_PAY).map(k => `<tr><td>${k}</td><td>${M.KENO_PAY[k].map((v, h) => v ? h + '→' + v : '').filter(Boolean).join(', ')}</td></tr>`).join('')}</table>`,
@@ -47,7 +48,7 @@ K.$('kGo').onclick = async () => { if (busy) return; if (!picks.size) { K.msg('P
     outBalls.push({ m, to: new THREE.Vector3(-2.34 + (i % 10) * .52, i < 10 ? 5.0 : 4.52, .2) });
     if (hit) { K.SFX.pop(hits.size + 3); K.tone(880 + hits.size * 110, .15, 'triangle', .1); } else K.SFX.tick(); paint(); upd(); }
   const mult = (M.KENO_PAY[picks.size] || [])[hits.size] || 0, ret = Math.round(bet * mult);
-  K.$('kT').textContent = mult ? '×' + mult : 'no win'; K.payout(bet, ret, new THREE.Vector3(0, 2.5, 1));
+  K.$('kT').textContent = mult ? '×' + mult : 'no win'; K.payout(bet, ret, new THREE.Vector3(0, 2.5, 1)); buBanner(bet, ret); if (ret > bet) K.say && K.say(ret >= bet * 10 ? 'Big keno winner!' : 'Keno winner', 1);
   busy = false; K.$('kGo').disabled = false; };
 window.__game = { quick: () => K.$('kQ').click(), play: () => K.$('kGo').click() };
 paint(); upd(); K.start();
