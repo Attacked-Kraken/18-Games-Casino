@@ -30,20 +30,20 @@ button { font:inherit; font-weight:800; border:0; border-radius:12px; cursor:poi
 .bot { position:fixed; left:0; right:0; bottom:0; padding:8px 10px calc(10px + env(safe-area-inset-bottom)); display:grid; gap:8px; justify-items:center; z-index:5;
   background:linear-gradient(transparent, rgba(8,2,4,.8) 35%); }
 .row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; align-items:center; }
-.chipB { width:48px; height:48px; border-radius:50%; font:900 12px system-ui; color:#fff; border:4px dashed rgba(255,255,255,.85); box-shadow:0 3px 0 rgba(0,0,0,.5), inset 0 0 0 3px rgba(0,0,0,.25); }
+.chipB { width:48px; height:48px; border-radius:50% !important; padding:0 !important; font:600 13px Georgia,serif; color:#fff; border:3px dashed rgba(243,223,174,.7); box-shadow:0 3px 0 rgba(0,0,0,.5), inset 0 0 0 3px rgba(0,0,0,.25); }
 .act { min-width:74px; height:48px; font-size:16px; }
 .act:disabled, .gold:disabled { filter:grayscale(.7) brightness(.6); }
 #tbar { width:min(420px,90vw); height:5px; border-radius:4px; background:rgba(255,255,255,.12); overflow:hidden; display:none; }
-#tbar i { display:block; height:100%; background:linear-gradient(90deg,#ffd36b,#ff6a3a); width:100%; }
+#tbar i { display:block; height:100%; background:linear-gradient(90deg,#d9bf85,#8a6a2a); width:100%; }
 #info { font:800 14px system-ui; color:#fff3d0; text-shadow:0 1px 4px #000; text-align:center; min-height:18px; }
-.lbl { position:fixed; transform:translate(-50%,-50%); pointer-events:none; text-align:center; font:800 11px system-ui; color:#fff; z-index:3; white-space:nowrap; }
+.lbl { position:fixed; transform:translate(-50%,-50%); pointer-events:none; text-align:center; font:600 11px Georgia,serif; color:#fff; z-index:3; white-space:nowrap; }
 .lbl .n { background:rgba(10,4,6,.78); border:1px solid rgba(240,197,106,.35); border-radius:9px; padding:2px 7px; display:inline-block; }
 .lbl.turn .n { border-color:#ffd36b; box-shadow:0 0 12px #ffb340; color:#ffe6a6; }
 .lbl.me .n { background:rgba(70,12,28,.85); }
 .lbl .t { display:inline-block; margin-top:2px; background:#fff3d6; color:#2a1200; border-radius:8px; padding:1px 6px; font-weight:900; }
 .lbl .r { display:block; margin-top:2px; font:900 12px system-ui; }
 .lbl .bub { position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:#fff; color:#222; border-radius:10px; padding:2px 7px; font-size:15px; margin-bottom:3px; }
-.win { color:#7dff9a; } .lose { color:#ff7a8a; } .push { color:#ffe08a; }
+.win { color:#8fd0a4; } .lose { color:#d98a96; } .push { color:#d9bf85; }
 .sheet { position:fixed; inset:0; background:rgba(6,2,4,.86); display:none; align-items:center; justify-content:center; padding:16px; z-index:20; }
 .sheet.on { display:flex; }
 .sheet .box { background:#1a080d; border:1px solid var(--line); border-radius:20px; padding:18px; max-width:380px; width:100%; max-height:90vh; overflow:auto; display:grid; gap:10px; }
@@ -248,12 +248,12 @@ const rail = new THREE.Mesh(new THREE.TubeGeometry(arcPts(1.05, .05), 160, .17, 
 const trim = new THREE.Mesh(new THREE.TubeGeometry(arcPts(.995, .03), 160, .025, 10), goldM); scene.add(trim);
 const back = new THREE.Mesh(new THREE.BoxGeometry(AX * 2.1, .14, .3), wood); back.position.set(0, .0, ZB - .35); back.castShadow = true; scene.add(back);
 /* floor */
-const carpet = ctex(512, 512, (g, w) => { g.fillStyle = '#2a0710'; g.fillRect(0, 0, w, w); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const cx = x * 128 + 64, cy = y * 128 + 64; g.strokeStyle = '#8a6a2c'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx, cy - 40); g.lineTo(cx + 40, cy); g.lineTo(cx, cy + 40); g.lineTo(cx - 40, cy); g.closePath(); g.stroke(); } });
+const carpet = ctex(512, 512, (g, w) => { g.fillStyle = '#2a0710'; g.fillRect(0, 0, w, w); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const cx = x * 128 + 64, cy = y * 128 + 64; g.strokeStyle = 'rgba(176,141,87,.22)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx, cy - 40); g.lineTo(cx + 40, cy); g.lineTo(cx, cy + 40); g.lineTo(cx - 40, cy); g.closePath(); g.stroke(); } });
 carpet.wrapS = carpet.wrapT = THREE.RepeatWrapping; carpet.repeat.set(12, 12);
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ map: carpet, roughness: 1 })); floor.rotation.x = -Math.PI / 2; floor.position.y = -1.8; floor.receiveShadow = true; scene.add(floor);
 /* neon sign behind the dealer */
-const signTex = ctex(1024, 256, (g, w, h) => { g.clearRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = 'italic 900 150px Georgia,serif'; g.shadowColor = '#ff2a6a'; g.shadowBlur = 24; g.fillStyle = '#ffc0d8'; g.fillText('Velvet 21', w / 2, h / 2); g.shadowBlur = 0; g.fillStyle = '#fff'; g.fillText('Velvet 21', w / 2, h / 2); });
-const sign = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false, color: new THREE.Color(1.7, 1.5, 1.6), depthWrite: false })); sign.position.set(0, 2.6, -4.5); scene.add(sign);
+const signTex = ctex(1024, 256, (g, w, h) => { g.clearRect(0, 0, w, h); g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '400 130px Didot,"Bodoni 72","Playfair Display",Georgia,serif'; const gg = g.createLinearGradient(0, 60, 0, 200); gg.addColorStop(0, '#f6e3b0'); gg.addColorStop(.5, '#c9a45c'); gg.addColorStop(1, '#8a6a2a'); g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 10; g.shadowOffsetY = 4; g.fillStyle = gg; g.fillText('Velvet 21', w / 2, h / 2); });
+const sign = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), new THREE.MeshBasicMaterial({ map: signTex, transparent: true, toneMapped: false, color: new THREE.Color(.95, .95, .95), depthWrite: false })); sign.position.set(0, 2.6, -4.5); scene.add(sign);
 const wall = new THREE.Mesh(new THREE.PlaneGeometry(30, 10), new THREE.MeshStandardMaterial({ color: 0x1a0509, roughness: .9 })); wall.position.set(0, 2, -4.7); scene.add(wall);
 /* dealer shoe + chip tray */
 const shoe = new THREE.Group(); shoe.position.set(-2.35, 0, -.75); shoe.rotation.y = .5; scene.add(shoe);
@@ -262,12 +262,12 @@ const shoe = new THREE.Group(); shoe.position.set(-2.35, 0, -.75); shoe.rotation
   const g2 = new THREE.Mesh(new THREE.BoxGeometry(.56, .03, .82), goldM); g2.position.y = .31; shoe.add(g2); }
 const SHOE_POS = new THREE.Vector3(-2.2, .35, -.45);
 /* chips */
-const DEN = [[5000, '#ff7a1a', '#fff'], [1000, '#e8c02a', '#222'], [500, '#7a3ad8', '#fff'], [100, '#18181c', '#fff'], [25, '#1f9a4a', '#fff'], [5, '#d81f2c', '#fff']];
+const DEN = [[5000, '#8a5a1e', '#f3dfae'], [1000, '#b08d57', '#1a1208'], [500, '#3e1a5e', '#f3dfae'], [100, '#121214', '#f3dfae'], [25, '#0f4a2c', '#f3dfae'], [5, '#6a0f1c', '#f3dfae']];
 const chipMats = {}; DEN.forEach(([v, c, ink]) => {
-  const top = ctex(256, 256, (g, w) => { g.fillStyle = c; g.beginPath(); g.arc(128, 128, 128, 0, 7); g.fill(); g.fillStyle = '#fff'; for (let i = 0; i < 8; i++) { g.save(); g.translate(128, 128); g.rotate(i * Math.PI / 4); g.fillRect(-14, -128, 28, 30); g.restore(); }
-    g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 5; g.setLineDash([10, 8]); g.beginPath(); g.arc(128, 128, 82, 0, 7); g.stroke(); g.setLineDash([]); g.fillStyle = c; g.beginPath(); g.arc(128, 128, 70, 0, 7); g.fill();
-    g.fillStyle = ink; g.font = '900 ' + (v >= 1000 ? 54 : 64) + 'px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(v >= 1000 ? v / 1000 + 'K' : v, 128, 132); });
-  const edge = ctex(256, 16, (g, w, h) => { g.fillStyle = c; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; for (let i = 0; i < 8; i++) g.fillRect(i * 32 + 4, 0, 12, h); });
+  const top = ctex(256, 256, (g, w) => { g.fillStyle = c; g.beginPath(); g.arc(128, 128, 128, 0, 7); g.fill(); g.fillStyle = '#e8dcc0'; for (let i = 0; i < 8; i++) { g.save(); g.translate(128, 128); g.rotate(i * Math.PI / 4); g.fillRect(-14, -128, 28, 30); g.restore(); }
+    g.strokeStyle = 'rgba(232,220,192,.75)'; g.lineWidth = 4; g.setLineDash([10, 8]); g.beginPath(); g.arc(128, 128, 82, 0, 7); g.stroke(); g.setLineDash([]); g.fillStyle = c; g.beginPath(); g.arc(128, 128, 70, 0, 7); g.fill();
+    g.fillStyle = ink; g.font = '600 ' + (v >= 1000 ? 54 : 64) + 'px Georgia,serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(v >= 1000 ? v / 1000 + 'K' : v, 128, 132); });
+  const edge = ctex(256, 16, (g, w, h) => { g.fillStyle = c; g.fillRect(0, 0, w, h); g.fillStyle = '#e8dcc0'; for (let i = 0; i < 8; i++) g.fillRect(i * 32 + 4, 0, 12, h); });
   chipMats[v] = [new THREE.MeshPhysicalMaterial({ map: edge, roughness: .4, clearcoat: .6 }), new THREE.MeshPhysicalMaterial({ map: top, roughness: .35, clearcoat: .8 }), new THREE.MeshPhysicalMaterial({ map: top, roughness: .35 })]; });
 const chipG = new THREE.CylinderGeometry(.1, .1, .022, 36);
 function chipStack(amount) { const g = new THREE.Group(); let left = amount, n = 0, col = 0; for (const [v] of DEN) { let k = 0; while (left >= v && n < 40) { const m = new THREE.Mesh(chipG, chipMats[v]); m.position.set(col * .21 - .1, .011 + k * .023, 0); m.rotation.y = Math.random() * 6; m.castShadow = true; g.add(m); left -= v; k++; n++; if (k >= 12) { col++; k = 0; } } if (k) col++; }
@@ -309,7 +309,7 @@ function cardMesh(c) { const m = new THREE.Mesh(cardG, [edgeMat, edgeMat, c.h ? 
 scene.add(new THREE.HemisphereLight(0xffe0c0, 0x200408, .25));
 const key = new THREE.SpotLight(0xfff1dc, 26, 16, .75, .55, 1.6); key.position.set(0, 7, 1.5); key.target.position.set(0, 0, .3); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); key.shadow.bias = -.0004; key.shadow.normalBias = .02; scene.add(key, key.target);
 const warmL = new THREE.PointLight(0xff8a50, 6, 12, 1.6); warmL.position.set(-4, 2.5, 1); scene.add(warmL);
-const pinkL = new THREE.PointLight(0xff2a6a, 8, 10, 1.6); pinkL.position.set(0, 2.5, -4); scene.add(pinkL);
+const pinkL = new THREE.PointLight(0xffb070, 5, 10, 1.6); pinkL.position.set(0, 2.5, -4); scene.add(pinkL);
 let composer = null, useBloom = true; try { composer = new EffectComposer(R); composer.addPass(new RenderPass(scene, cam)); composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), .5, .5, 1.0)); composer.addPass(new OutputPass()); } catch (e) { composer = null; }
 const look = new THREE.Vector3();
 function resize() { const w = innerWidth, h = innerHeight; R.setSize(w, h, false); cam.aspect = w / h; const portrait = h > w;
