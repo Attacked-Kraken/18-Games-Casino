@@ -29,10 +29,21 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
       const RX = [[.9, .19], [1.0, .19], [1.2, .2], [1.36, .235], [1.43, .255], [1.5, .2], [1.56, .1]], RZ = [[.9, .14], [1.0, .14], [1.2, .15], [1.4, .15], [1.5, .12], [1.56, .08]];
       const hull = (x, y, z) => { const rx = lerpT(RX, y), rz = lerpT(RZ, y), cz = .005; const dz = z - cz; const ang = Math.atan2(x / rx, dz / rz), s = Math.sin(ang), c = Math.cos(ang);
         const k = 3.2, se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / k); return [rx * se(s), cz + rz * se(c)]; };
-      const jk = shell(keep, (x, y, z, n) => { const ax = Math.abs(x);
-        if (ax > .27 && y > 1.24) return [.026 + .012 * (1 - sm(.27, .36, ax)) + .006 * sm(.5, .62, ax), 0];
-        const [hx, hz] = hull(x, y, z); const w = 1 - sm(.23, .28, ax); const d0 = Math.hypot(x, z - .005), d1 = Math.hypot(hx, hz - .005);
-        const push = Math.max(.02, (d1 - d0)) * w + .026 * (1 - w); return [push, .006 * sm(1.36, 1.46, y) * w]; }, 'bossJacket2');
+      /* measured hull: per-height torso extents + per-segment sleeve tubes, so the cloth never follows the muscles */
+      const BP = body.geometry.attributes.position, TB = {}, AB = {};
+      for (let i = 0; i < BP.count; i++) { const x = BP.getX(i), y = BP.getY(i), z = BP.getZ(i), ax = Math.abs(x);
+        if (ax > .27 && y > 1.24) { const k = Math.round(ax / .02); const e = AB[k] || (AB[k] = { n: 0, y: 0, z: 0, pts: [] }); e.n++; e.y += y; e.z += z; e.pts.push([y, z]); }
+        else if (y > .9 && y < 1.6) { const k = Math.round(y / .02); const e = TB[k] || (TB[k] = { x: 0, z0: 9, z1: -9 }); e.x = Math.max(e.x, ax); e.z0 = Math.min(e.z0, z); e.z1 = Math.max(e.z1, z); } }
+      for (const k in AB) { const e = AB[k]; e.y /= e.n; e.z /= e.n; e.r = 0; for (const [y, z] of e.pts) e.r = Math.max(e.r, Math.hypot(y - e.y, z - e.z)); }
+      const tb = (y) => { const k = Math.round(y / .02); let rx = 0, z0 = 9, z1 = -9; for (let j = k - 3; j <= k + 3; j++) { const e = TB[j]; if (e) { rx = Math.max(rx, e.x); z0 = Math.min(z0, e.z0); z1 = Math.max(z1, e.z1); } } return [rx, z0, z1]; };
+      const ab = (ax) => { const k = Math.round(ax / .02); let r = 0, yy = 0, zz = 0, n = 0; for (let j = k - 1; j <= k + 1; j++) { const e = AB[j]; if (e) { r = Math.max(r, e.r); yy += e.y; zz += e.z; n++; } } return n ? [yy / n, zz / n, r] : null; };
+      const jk = shell(keep, (x, y, z, n) => { const ax = Math.abs(x), sx = Math.sign(x) || 1;
+        if (ax > .27 && y > 1.24) { const A = null; if (!A) return [.022 + .01 * (1 - sm(.27, .34, ax)) + .006 * sm(.5, .62, ax), 0]; const dy = y - A[0], dz = z - A[1], d = Math.hypot(dy, dz) || 1e-3; const R = A[2] + .014 + .006 * sm(.5, .62, ax), bl = sm(.31, .36, ax); const Rb = Math.max(R, d + .012) * bl + (d + .03) * (1 - bl);
+          return { p: [x, A[0] + dy / d * Rb, A[1] + dz / d * Rb] }; }
+        const [rx0, z0, z1] = tb(Math.max(y, 1.0)); const pad = .028 * Math.exp(-(((y - 1.42) / .05) ** 2)); const rx = rx0 + .03 + pad, cz = (z0 + z1) / 2, rz = (z1 - z0) / 2 + .03;
+        const ang = Math.atan2(x / rx, (z - cz) / rz), k = 3.4, se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / k); let hx = rx * se(Math.sin(ang)), hz = cz + rz * se(Math.cos(ang));
+        const d0 = Math.hypot(x, z - cz), d1 = Math.hypot(hx, hz - cz); if (d1 < d0 + .015) { const s = (d0 + .015) / d1; hx *= s; hz = cz + (hz - cz) * s; }
+        const w = 1 - sm(.24, .28, ax); return { p: [hx * w + (x + n[0] * .03) * (1 - w), y + .006 * sm(1.36, 1.46, y) * w, hz * w + (z + n[2] * .03) * (1 - w)] }; }, 'bossJacket3');
       const U = { uT: { value: 0 } };
       const jm = new THREE.MeshStandardMaterial({ color: NAVY, roughness: .62, side: THREE.DoubleSide });
       const vOpen = `float vo = ax < .016 + (q.y - 1.1) * .34 && q.y > 1.1 && q.z > 0.;`;
@@ -53,7 +64,7 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
       tm.customProgramCacheKey = () => 'bossTrousers1'; tr.material = tm;
       for (const m of [jk, tr]) { body.parent.add(m); m.bind(body.skeleton, body.bindMatrix); m.position.copy(body.position); m.quaternion.copy(body.quaternion); m.scale.copy(body.scale); }
       /* jacket skirt: one continuous hem to mid-hip (rigid on pelvis), front cutaway + back vent */
-      { const seg = 48, rows = 6, pos = [], bp = [], ix = []; for (let r = 0; r <= rows; r++) { const y = 1.03 - r * (.25 / rows), fl = r / rows; for (let i = 0; i <= seg; i++) { const a = i / seg * Math.PI * 2; const [hx, hz] = hull(Math.sin(a) * .2, 1.0, Math.cos(a) * .2);
+      { const seg = 48, rows = 6, pos = [], bp = [], ix = []; for (let r = 0; r <= rows; r++) { const y = 1.03 - r * (.25 / rows), fl = r / rows; for (let i = 0; i <= seg; i++) { const a = i / seg * Math.PI * 2; const [rx0, z0, z1] = tb(1.0); const rx = rx0 + .03, cz = (z0 + z1) / 2, rz = (z1 - z0) / 2 + .03, se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / 3.4); const hx = rx * se(Math.sin(a)), hz = cz + rz * se(Math.cos(a)) + .005;
           const ex = 1.12 + fl * .1; pos.push(hx * ex + Math.sign(hx) * .01, y, (hz - .005) * (1.2 + fl * .1) + .005); bp.push(Math.sin(a), y, Math.cos(a)); } }
         for (let r = 0; r < rows; r++) for (let i = 0; i < seg; i++) { const a = r * (seg + 1) + i, b2 = a + seg + 1; ix.push(a, b2, a + 1, a + 1, b2, b2 + 1); }
         const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('bindP', new THREE.Float32BufferAttribute(bp, 3)); g.setIndex(ix); g.computeVertexNormals();

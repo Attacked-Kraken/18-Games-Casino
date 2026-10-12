@@ -16,7 +16,7 @@ export function shellFactory(THREE, body) {
   function shell(keepTri, offset, name) { if (cache[name]) { const m = new THREE.SkinnedMesh(cache[name]); m.name = name; m.frustumCulled = false; return m; } const g = new THREE.BufferGeometry(); for (const k of ['position', 'normal', 'uv', 'skinIndex', 'skinWeight']) if (src.attributes[k]) g.setAttribute(k, src.attributes[k].clone());
     const p = g.attributes.position, bind = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), n = sn(i), d = offset(x, y, z, n); bind[i * 3] = x; bind[i * 3 + 1] = y; bind[i * 3 + 2] = z;
-      p.setXYZ(i, x + n[0] * d[0] + (d[1] || 0) * 0, y + n[1] * d[0] + (d[1] || 0), z + n[2] * d[0]); }
+      if (d.p) p.setXYZ(i, d.p[0], d.p[1], d.p[2]); else p.setXYZ(i, x + n[0] * d[0] + (d[1] || 0) * 0, y + n[1] * d[0] + (d[1] || 0), z + n[2] * d[0]); }
     g.setAttribute('bindP', new THREE.BufferAttribute(bind, 3));
     const out = []; for (let t = 0; t < idx.length; t += 3) { const a = idx[t], b = idx[t + 1], c = idx[t + 2]; if (keepTri((P.getX(a) + P.getX(b) + P.getX(c)) / 3, (P.getY(a) + P.getY(b) + P.getY(c)) / 3, (P.getZ(a) + P.getZ(b) + P.getZ(c)) / 3)) out.push(a, b, c); }
     g.setIndex(out); g.computeVertexNormals(); g.computeBoundingSphere(); cache[name] = g; const m = new THREE.SkinnedMesh(g); m.name = name; m.frustumCulled = false; return m; }
