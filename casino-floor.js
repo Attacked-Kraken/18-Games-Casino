@@ -66,7 +66,7 @@ function pool(x, z, s, col, o = .5) { const m = new THREE.Mesh(new THREE.PlaneGe
   m.rotation.x = -Math.PI / 2; m.position.set(x, .012, z); scene.add(m); return m; }
 /* glossy walkway strips (reflect the env map) */
 const marbleT = canvasTex(512, 512, (g, w, h) => { g.fillStyle = '#0e0c0c'; g.fillRect(0, 0, w, h); for (let i = 0; i < 24; i++) { g.strokeStyle = `rgba(225,215,195,${.08 + Math.random() * .35})`; g.lineWidth = .4 + Math.random() * 2; g.beginPath(); let x = Math.random() * w, y = 0; g.moveTo(x, y); while (y < h) { x += (Math.random() - .5) * 36; y += 6 + Math.random() * 16; g.lineTo(x, y); } g.stroke(); } }, [2, 8]);
-const stripMat = new THREE.MeshStandardMaterial({ map: marbleT, color: 0x6a6460, roughness: .2, metalness: 0 });
+const stripMat = new THREE.MeshStandardMaterial({ map: marbleT, color: 0x2a2523, roughness: .45, metalness: 0, envMapIntensity: .35 });
 [[0, 0, 3.2, D - 2], [0, 14, W - 2, 2.4], [0, -12, W - 2, 2.4]].forEach(([x, z, w, d]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), stripMat); m.rotation.x = -Math.PI / 2; m.position.set(x, .006, z); scene.add(m);
   const e = new THREE.Mesh(new THREE.PlaneGeometry(w, .08), new THREE.MeshStandardMaterial({ color: 0xb08d57, metalness: 1, roughness: .3 })); e.rotation.x = -Math.PI / 2;
   const e2 = e.clone(); if (w > d) { e.position.set(x, .01, z - d / 2); e2.position.set(x, .01, z + d / 2); } else { e.geometry = new THREE.PlaneGeometry(.08, d); e2.geometry = e.geometry; e.position.set(x - w / 2, .01, z); e2.position.set(x + w / 2, .01, z); } scene.add(e, e2); });
@@ -83,7 +83,7 @@ const wallMat = (len) => { const t = wallTex.clone(); t.needsUpdate = true; t.re
 const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshLambertMaterial({ color: 0x0c0706 })); ceil.rotation.x = Math.PI / 2; ceil.position.y = H; scene.add(ceil);
 scene.add(new THREE.HemisphereLight(0xffe0c0, 0x140806, .75));
 const sun = new THREE.DirectionalLight(0xffd8a0, .7); sun.position.set(4, 10, 6); scene.add(sun);
-const pts = [[0, 0, 0xffc070], [-9, 10, 0xffb870], [9, 10, 0xffc890], [-9, -14, 0xffb870], [9, -14, 0xffc890], [0, -22, 0xffb870]].map(([x, z, c]) => { const l = new THREE.PointLight(c, 40, 16, 1.5); l.position.set(x, 5, z); scene.add(l); return l; });
+const pts = [[0, 0, 0xffc070], [-9, 10, 0xffb870], [9, 10, 0xffc890], [-9, -14, 0xffb870], [9, -14, 0xffc890], [0, -22, 0xffb870]].map(([x, z, c]) => { const l = new THREE.PointLight(c, 26, 16, 1.6); l.position.set(x, 5, z); scene.add(l); return l; });
 
 /* ---------- colliders ---------- */
 const boxes = []; // [minx, minz, maxx, maxz]
@@ -96,7 +96,7 @@ function neonTex(text, col, sub, badge, lock) {
     g.clearRect(0, 0, w, h); g.fillStyle = 'rgba(10,8,7,.92)'; g.fillRect(6, 6, w - 12, h - 12);
     g.strokeStyle = '#b08d57'; g.lineWidth = 3; g.strokeRect(10, 10, w - 20, h - 20); g.lineWidth = 1; g.strokeRect(18, 18, w - 36, h - 36);
     const SER = "'Didot','Bodoni 72','Playfair Display',Georgia,serif"; let fs = 58; g.font = `400 ${fs}px ${SER}`; while (g.measureText(text).width > w - (badge ? 170 : 70) && fs > 24) { fs -= 3; g.font = `400 ${fs}px ${SER}`; }
-    g.textAlign = 'center'; g.textBaseline = 'middle'; const tg = g.createLinearGradient(0, 40, 0, 120); tg.addColorStop(0, '#f3dfae'); tg.addColorStop(1, '#b8924f'); g.fillStyle = tg; g.fillText(text, badge ? w / 2 - 44 : w / 2, sub ? 80 : 96);
+    g.textAlign = 'center'; g.textBaseline = 'middle'; const tg = g.createLinearGradient(0, 40, 0, 120); tg.addColorStop(0, '#f3dfae'); tg.addColorStop(1, '#b8924f'); g.fillStyle = tg; g.fillText(text, w / 2, sub ? 80 : 96);
     if (sub) { g.font = '500 17px Helvetica, Arial, sans-serif'; g.fillStyle = '#a89c8a'; g.fillText(sub.toUpperCase(), w / 2, 146); }
     if (badge) { const bx = w - 74, by = 80; g.strokeStyle = '#b08d57'; g.lineWidth = 2; g.beginPath(); g.arc(bx, by, 36, 0, 7); g.stroke(); g.fillStyle = lock ? '#b0485a' : '#d9bf85';
       g.font = `400 30px ${SER}`; g.fillText(badge, bx, by + 2); }
@@ -147,7 +147,7 @@ chand.forEach(([x, z, r]) => {
   const ring2 = new THREE.Mesh(new THREE.TorusGeometry(r * .6, .04, 6, 30), gold); ring2.rotation.x = Math.PI / 2; ring2.position.set(x, H - .9, z); scene.add(ring2);
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, 1.3, 6), gold); rod.position.set(x, H - .65, z); scene.add(rod);
   for (let k = 0; k < per; k++) { const a = k / per * Math.PI * 2; for (const [rad, y] of [[r, H - 1.45 - (k % 2) * .18], [r * .6, H - 1.05]]) { dummy.position.set(x + Math.cos(a) * rad, y, z + Math.sin(a) * rad); dummy.rotation.set(0, 0, 0); dummy.updateMatrix(); bulbs.setMatrixAt(bi++, dummy.matrix); } }
-  pool(x, z, r * 5.5, 0xffc070, .32);
+  pool(x, z, r * 5.5, 0xffc070, .16);
 });
 bulbs.count = bi; scene.add(bulbs);
 /* ceiling twinkle lights */
@@ -176,7 +176,7 @@ scene.add(tw);
   const cs = signMesh(neonTex('18 Games Casino', '#c9a45c', 'High limit salon'), 4.2); cs.position.y = 2.95; bar.add(cs); billboards.push(cs);
   const col = new THREE.Mesh(new THREE.CylinderGeometry(.12, .12, 2.6, 8), gold); col.position.y = 3.5; bar.add(col);
   bar.userData.crown = crown; scene.add(bar); window.__crown = crown;
-  pool(0, 4, 12, 0xffc070, .22);
+  pool(0, 4, 12, 0xffc070, .1);
   blockR(0, 4, 3.4); for (let z = 1; z <= 7; z += .8) block(0, z, 3.35, .5);
 }
 
@@ -189,7 +189,7 @@ const ZONES = {
   action:  { label: 'ACTION ARCADE',  col: '#c9a45c', x: 0,   z: -21, axis: 'x', face: 0, sign: [0, -16.5] }
 };
 Object.values(ZONES).forEach((zn) => { const s = signMesh(neonTex(zn.label, zn.col), 5); s.position.set(zn.sign[0], 5.2, zn.sign[1]); scene.add(s); billboards.push(s);
-  pool(zn.x, zn.z, 13, 0xffc070, .2); });
+  pool(zn.x, zn.z, 13, 0xffc070, .1); });
 const stations = []; // { g, pos: Vector3 (front stand point), look: Vector3, mesh group, sign, ring }
 let stationRoot = new THREE.Group(); scene.add(stationRoot);
 const texLoader = new THREE.TextureLoader();
@@ -239,10 +239,10 @@ function buildStation(g, x, z, face, locked) {
   }
   /* pedestal glow ring + floating neon sign w/ rating badge */
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.05, 48), new THREE.MeshBasicMaterial({ color: locked ? 0x8e1b2c : 0xb08d57, transparent: true, opacity: .55 })); ring.rotation.x = -Math.PI / 2; ring.position.y = .02; grp.add(ring);
-  const sign = signMesh(neonTex(g.title, '#' + ac.getHexString(), (g.multiplayer ? 'Private tables · ' : '') + (locked ? 'Members 18+' : 'Approach to play'), g.rating + '+', locked), 2.9);
+  const sign = signMesh(neonTex(g.title, '#' + ac.getHexString(), null, null, locked), 2.9);
   sign.position.set(x, cat === 'tables' || cat === 'cards' ? 2.7 : 3.55 + (cat === 'instant' ? .6 : 0), z); scene.add(sign); billboards.push(sign);
   stationRoot.add(grp);
-  pool(x, z, 5, 0xffc070, .3);
+  pool(x, z, 5, 0xffc070, .16);
   const fwd = new THREE.Vector3(Math.sin(face), 0, Math.cos(face));
   const standDist = cat === 'tables' || cat === 'cards' ? 2.6 : 2.0;
   return { g, grp, sign, ring, center: new THREE.Vector3(x, 0, z), stand: new THREE.Vector3(x + fwd.x * standDist, 0, z + fwd.z * standDist), locked };
