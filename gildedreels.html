@@ -92,13 +92,13 @@ import { OutputPass } from './vendor/OutputPass.js';
 const $ = (id) => document.getElementById(id);
 /* ---------- game rules ---------- */
 const SYM = [
-  { k:'cherry', e:'🍒', c1:'#ff3b5c', c2:'#7a0016' },
-  { k:'lemon', e:'🍋', c1:'#ffe14d', c2:'#8a6a00' },
-  { k:'grape', e:'🍇', c1:'#b36bff', c2:'#3b0f6e' },
-  { k:'bell', e:'🔔', c1:'#ffc847', c2:'#7a4b00' },
+  { k:'cherry', c1:'#ff3b5c', c2:'#7a0016' },
+  { k:'lemon', c1:'#ffe14d', c2:'#8a6a00' },
+  { k:'grape', c1:'#b36bff', c2:'#3b0f6e' },
+  { k:'bell', c1:'#ffc847', c2:'#7a4b00' },
   { k:'bar', t:'BAR', c1:'#e9eef5', c2:'#33404f' },
   { k:'seven', t:'7', c1:'#ff2a2a', c2:'#5a0000' },
-  { k:'diamond', e:'💎', c1:'#7fe8ff', c2:'#0b4d66' },
+  { k:'diamond', c1:'#7fe8ff', c2:'#0b4d66' },
 ];
 const STRIP = [0,1,0,2,3,0,1,4,2,0,5,1,3,6]; /* same strip on every reel, ~97% return in simulation */
 const N = STRIP.length;
@@ -113,7 +113,7 @@ function save() { try { localStorage.setItem(SKEY, JSON.stringify(S)); } catch (
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (n) => Math.round(n).toLocaleString('en-US');
 $('payT').innerHTML = '<tr><td></td><td>×2</td><td>×3</td><td>×4</td><td>×5</td></tr>' + SYM.map((s, i) =>
-  '<tr><td>' + (s.e || '<b style="color:' + s.c1 + '">' + s.t + '</b>') + '</td>' + PAY[i].slice(1).map(p => '<td>' + (p || '–') + '</td>').join('') + '</tr>').slice(0).reverse().join('');
+  '<tr><td><img alt="' + s.k + '" width="40" height="40" src="' + symURL(i) + '"></td>' + PAY[i].slice(1).map(p => '<td>' + (p || '–') + '</td>').join('') + '</tr>').slice(0).reverse().join('');
 
 /* ---------- sound (WebAudio synthesis) ---------- */
 let AC = null, master = null;
@@ -157,22 +157,65 @@ const cam = new THREE.PerspectiveCamera(40, 1, .1, 60);
 /* ---------- textures ---------- */
 function canvasTex(w, h, draw, srgb = true) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = Math.min(8, R.capabilities.getMaxAnisotropy()); return t; }
+/* gr2 2026-10-11 (owner: symbols washed out on iPhone): symbols are painted by hand on canvas in bold candy colors with thick
+   dark outlines, a glossy highlight and a drop shadow, on a rich dark velvet panel per cell (no emoji, no cream face). */
+function candy(g, path, c1, c2, sz, lw = .06) { /* fill a path with a candy gradient, dark outline, gloss */
+  const b = path(); const gr = g.createRadialGradient(-sz * .12, -sz * .14, sz * .02, 0, 0, sz * .42); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.18, c1); gr.addColorStop(1, c2);
+  g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = sz * .05; g.shadowOffsetY = sz * .035; g.fillStyle = gr; g.fill(b); g.restore();
+  g.lineWidth = sz * lw; g.strokeStyle = '#1a0610'; g.lineJoin = 'round'; g.stroke(b); }
+function gloss(g, x, y, rx, ry, a = -.5) { g.save(); g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(x, y, rx, ry, a, 0, 7); g.fill(); g.restore(); }
 function drawSym(g, s, x, y, sz) {
-  g.save(); g.translate(x, y); g.textAlign = 'center'; g.textBaseline = 'middle';
-  const rg = g.createRadialGradient(0, 0, sz * .05, 0, 0, sz * .55); rg.addColorStop(0, s.c1 + '55'); rg.addColorStop(1, s.c1 + '00'); g.fillStyle = rg; g.fillRect(-sz / 2, -sz / 2, sz, sz);
-  if (s.e) { g.font = (sz * .62) + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = sz * .06; g.shadowOffsetY = sz * .03; g.fillText(s.e, 0, sz * .04); }
-  else { const big = s.t === '7'; g.font = '900 ' + (big ? sz * .78 : sz * .34) + 'px Georgia,"Times New Roman",serif';
-    const lg = g.createLinearGradient(0, -sz * .35, 0, sz * .35); lg.addColorStop(0, '#fff'); lg.addColorStop(.45, s.c1); lg.addColorStop(1, s.c2);
-    g.lineWidth = sz * .05; g.strokeStyle = big ? '#ffd76a' : '#1d2630'; g.lineJoin = 'round';
-    if (!big) { g.fillStyle = s.c2; g.beginPath(); g.roundRect(-sz * .38, -sz * .18, sz * .76, sz * .36, sz * .06); g.fill(); g.strokeStyle = '#f5c96a'; g.stroke(); g.fillStyle = lg; g.fillText(s.t, 0, sz * .02); }
-    else { g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = sz * .05; g.strokeText(s.t, 0, sz * .04); g.fillStyle = lg; g.fillText(s.t, 0, sz * .04); } }
+  g.save(); g.translate(x, y); const u = sz;
+  const P = (f) => () => { const p = new Path2D(); f(p); return p; };
+  if (s.k === 'cherry') {
+    g.lineWidth = u * .05; g.strokeStyle = '#1a0610'; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(-u * .16, u * .06); g.quadraticCurveTo(-u * .05, -u * .25, u * .12, -u * .33); g.moveTo(u * .16, u * .1); g.quadraticCurveTo(u * .14, -u * .15, u * .12, -u * .33); g.stroke();
+    g.lineWidth = u * .028; g.strokeStyle = '#3fbf3a'; g.stroke();
+    candy(g, P(p => { p.ellipse(u * .16, -u * .33, u * .12, u * .055, -.4, 0, 7); }), '#7dff6a', '#1b7a1a', u * .5, .03);
+    [[-u * .16, u * .14], [u * .16, u * .18]].forEach(([cx, cy]) => { g.save(); g.translate(cx, cy); candy(g, P(p => p.arc(0, 0, u * .16, 0, 7)), '#ff3048', '#9a0016', u); gloss(g, -u * .06, -u * .06, u * .045, u * .025); g.restore(); });
+  } else if (s.k === 'lemon') {
+    candy(g, P(p => { p.ellipse(0, 0, u * .33, u * .23, -.25, 0, 7); p.moveTo(0, 0); }), '#fff35a', '#e0a800', u);
+    candy(g, P(p => { p.ellipse(u * .33, -u * .08, u * .06, u * .045, -.25, 0, 7); }), '#fff35a', '#d09000', u * .5, .04);
+    gloss(g, -u * .12, -u * .1, u * .1, u * .04, -.3);
+  } else if (s.k === 'grape') {
+    const pts = [[-.14, -.12], [0, -.14], [.14, -.12], [-.07, .02], [.07, .02], [0, .16], [-.2, .02], [.2, .02]];
+    pts.sort((a, b) => a[1] - b[1]).forEach(([a, b]) => { g.save(); g.translate(a * u, b * u + u * .04); candy(g, P(p => p.arc(0, 0, u * .095, 0, 7)), '#d77bff', '#5a0f9e', u * .6, .045); gloss(g, -u * .03, -u * .03, u * .025, u * .014); g.restore(); });
+    candy(g, P(p => { p.ellipse(u * .06, -u * .3, u * .1, u * .05, -.5, 0, 7); }), '#7dff6a', '#1b7a1a', u * .5, .03);
+  } else if (s.k === 'bell') {
+    candy(g, P(p => { p.moveTo(-u * .3, u * .2); p.quadraticCurveTo(-u * .22, u * .12, -u * .2, -u * .05); p.quadraticCurveTo(-u * .18, -u * .3, 0, -u * .3); p.quadraticCurveTo(u * .18, -u * .3, u * .2, -u * .05);
+      p.quadraticCurveTo(u * .22, u * .12, u * .3, u * .2); p.closePath(); }), '#ffd23a', '#d86a00', u);
+    candy(g, P(p => p.arc(0, u * .26, u * .07, 0, 7)), '#ffb02a', '#a04a00', u * .5, .05);
+    candy(g, P(p => p.arc(0, -u * .34, u * .045, 0, 7)), '#ffd23a', '#a04a00', u * .4, .05);
+    gloss(g, -u * .09, -u * .12, u * .04, u * .1, .25);
+  } else if (s.k === 'bar') {
+    candy(g, P(p => p.roundRect(-u * .36, -u * .17, u * .72, u * .34, u * .07)), '#45b8ff', '#0a3ec8', u);
+    g.font = '900 ' + u * .26 + 'px "Arial Black",Impact,system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = u * .035; g.strokeStyle = '#06143f'; g.strokeText('BAR', 0, u * .015); g.fillStyle = '#fff'; g.fillText('BAR', 0, u * .015);
+    gloss(g, -u * .2, -u * .11, u * .1, u * .025, 0);
+  } else if (s.k === 'seven') {
+    g.font = '900 ' + u * .78 + 'px Georgia,"Times New Roman",serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const gr = g.createLinearGradient(0, -u * .3, 0, u * .3); gr.addColorStop(0, '#ff9ad0'); gr.addColorStop(.4, '#ff1f6e'); gr.addColorStop(1, '#a8002c');
+    g.save(); g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = u * .05; g.shadowOffsetY = u * .035; g.lineWidth = u * .1; g.strokeStyle = '#1a0610'; g.lineJoin = 'round'; g.strokeText('7', 0, u * .05); g.restore();
+    g.lineWidth = u * .045; g.strokeStyle = '#ffd34a'; g.strokeText('7', 0, u * .05); g.fillStyle = gr; g.fillText('7', 0, u * .05);
+    gloss(g, -u * .1, -u * .2, u * .1, u * .025, -.1);
+  } else if (s.k === 'diamond') {
+    candy(g, P(p => { p.moveTo(-u * .32, -u * .1); p.lineTo(-u * .18, -u * .26); p.lineTo(u * .18, -u * .26); p.lineTo(u * .32, -u * .1); p.lineTo(0, u * .32); p.closePath(); }), '#8ffff2', '#0096b8', u);
+    g.lineWidth = u * .025; g.strokeStyle = 'rgba(10,40,60,.7)'; g.beginPath(); g.moveTo(-u * .32, -u * .1); g.lineTo(u * .32, -u * .1); g.moveTo(-u * .1, -u * .1); g.lineTo(0, u * .3); g.lineTo(u * .1, -u * .1);
+    g.moveTo(-u * .18, -u * .26); g.lineTo(-u * .1, -u * .1); g.lineTo(0, -u * .26); g.lineTo(u * .1, -u * .1); g.lineTo(u * .18, -u * .26); g.stroke();
+    gloss(g, -u * .12, -u * .17, u * .06, u * .02, -.2);
+  }
   g.restore();
 }
-const CELL = 256;
+function cellBg(g, y, w, h) { /* rich dark velvet panel per symbol with a soft center glow */
+  const rg = g.createRadialGradient(w / 2, y + h / 2, h * .05, w / 2, y + h / 2, h * .75); rg.addColorStop(0, '#5a1838'); rg.addColorStop(1, '#1c0614');
+  g.fillStyle = rg; g.fillRect(0, y, w, h); g.fillStyle = 'rgba(245,201,106,.55)'; g.fillRect(0, y, w, 3); }
+function symURL(i) { const c = document.createElement('canvas'); c.width = c.height = 96; const g = c.getContext('2d'); drawSym(g, SYM[i], 48, 48, 96); return c.toDataURL(); }
+const CELL = 288; /* 288 x 14 = 4032 px tall, within iPhone texture limits */
 const reelTex = canvasTex(CELL, CELL * N, (g, w, h) => {
-  const bg = g.createLinearGradient(0, 0, w, 0); bg.addColorStop(0, '#b9ae98'); bg.addColorStop(.5, '#efe6d2'); bg.addColorStop(1, '#b9ae98'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
-  for (let i = 0; i < N; i++) { g.fillStyle = 'rgba(120,90,40,.25)'; g.fillRect(0, i * CELL, w, 2); drawSym(g, SYM[STRIP[i]], w / 2, i * CELL + CELL / 2, CELL * .92); }
+  for (let i = 0; i < N; i++) { cellBg(g, i * CELL, w, CELL); drawSym(g, SYM[STRIP[i]], w / 2, i * CELL + CELL / 2, CELL * .95); }
+  const sd = g.createLinearGradient(0, 0, w, 0); sd.addColorStop(0, 'rgba(0,0,0,.35)'); sd.addColorStop(.15, 'rgba(0,0,0,0)'); sd.addColorStop(.85, 'rgba(0,0,0,0)'); sd.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = sd; g.fillRect(0, 0, w, h);
 });
+reelTex.colorSpace = THREE.SRGBColorSpace; reelTex.generateMipmaps = true; reelTex.minFilter = THREE.LinearMipmapLinearFilter; reelTex.anisotropy = R.capabilities.getMaxAnisotropy();
 reelTex.flipY = false; reelTex.wrapT = THREE.RepeatWrapping;
 const carpet = canvasTex(512, 512, (g, w) => {
   g.fillStyle = '#4a0b17'; g.fillRect(0, 0, w, w);
@@ -194,10 +237,10 @@ const M = {
   chrome: new THREE.MeshPhysicalMaterial({ color: 0xf2f4f8, metalness: 1, roughness: .06, clearcoat: 1, clearcoatRoughness: .03 }),
   lacquer: new THREE.MeshPhysicalMaterial({ color: 0x7a0a1e, metalness: .15, roughness: .32, clearcoat: 1, clearcoatRoughness: .06, sheen: .5, sheenColor: new THREE.Color(0xff6680) }),
   black: new THREE.MeshPhysicalMaterial({ color: 0x0b0b10, metalness: .3, roughness: .4, clearcoat: .8 }),
-  glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: .02, transparent: true, opacity: .05, clearcoat: 1, clearcoatRoughness: 0, ior: 1.5, specularIntensity: .15, envMapIntensity: .2, depthWrite: false }),
-  reel: new THREE.MeshPhysicalMaterial({ color: 0xdcd6cc, map: reelTex, roughness: .5, metalness: 0, clearcoat: .25, clearcoatRoughness: .3, envMapIntensity: .35 }),
+  glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: .02, transparent: true, opacity: .015, clearcoat: 0, ior: 1.5, specularIntensity: .02, envMapIntensity: .03, depthWrite: false }),
+  reel: new THREE.MeshStandardMaterial({ color: 0xffffff, map: reelTex, roughness: .85, metalness: 0, envMapIntensity: .08 }),
   red: new THREE.MeshPhysicalMaterial({ color: 0xff1030, roughness: .08, clearcoat: 1, emissive: 0x400008, transmission: 0 }),
-  sign: new THREE.MeshBasicMaterial({ map: signTex, toneMapped: false }),
+  sign: new THREE.MeshBasicMaterial({ map: signTex, toneMapped: false, color: new THREE.Color(1.6, 1.6, 1.6) }),
   carpet: new THREE.MeshStandardMaterial({ map: carpet, roughness: .95 }),
 };
 
@@ -292,7 +335,7 @@ function spawnCoin() { const c = coins.find(c => !c.live); if (!c) return; c.liv
 
 /* ---------- post ---------- */
 let composer = null, bloom = null, useBloom = true;
-try { composer = new EffectComposer(R); composer.addPass(new RenderPass(scene, cam)); bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .5, .45, .96); composer.addPass(bloom); composer.addPass(new OutputPass()); }
+try { composer = new EffectComposer(R); composer.addPass(new RenderPass(scene, cam)); bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), .4, .4, 1.0) /* gr2: reels stay below threshold; only neon/bulbs bloom */; composer.addPass(bloom); composer.addPass(new OutputPass()); }
 catch (e) { composer = null; useBloom = false; }
 
 /* ---------- layout / camera ---------- */
@@ -339,7 +382,7 @@ function spin() {
   /* anticipation: if the first 2-3 reels already line up a high symbol on the middle row, stretch the last reels */
   const mid = stops.map(s => STRIP[s]); const hot = mid[0] >= 4 && mid[0] === mid[1];
   const now = performance.now(); dollyT = 1;
-  reels.forEach((r, i) => { r.from = r.ang; const base = angFor(stops[i]); let to = base; const turns = 3 + i * 1.2 + (hot && i >= 2 ? (i - 1) * 1.6 : 0);
+  reels.forEach((r, i) => { r.from = r.ang; const base = angFor(stops[i]); let to = base; const turns = 1.6 + i * .55 + (hot && i >= 2 ? (i - 1) * .7 : 0) /* gr2: capped top speed so symbols stay readable */;
     while (to < r.from + turns * Math.PI * 2) to += Math.PI * 2; r.to = to; r.t0 = now + i * 90; r.dur = 1200 + i * 330 + (hot && i >= 2 ? (i - 1) * 650 : 0); r.spinning = true; r.stop = stops[i]; r.done = false; r.hot = hot && i >= 2; });
   if (hot) setTimeout(() => { SFX.tease(); msg('✨ Feeling lucky…', 1400); }, 1300);
 }
@@ -385,7 +428,7 @@ function frame(now) {
   if (leverT > 0 && !drag) { const t = (now - leverT) / 650; lever.rotation.x = -.12 + (t < .35 ? t / .35 : Math.max(0, 1 - (t - .35) / .65 * 1.1) ** 1) * 1.1 * (t < 1 ? 1 : 0); if (t >= 1) { lever.rotation.x = -.12; leverT = -1; } }
   btn.position.y = 1.05 - (busy ? .02 : 0);
   /* lights / bulbs */
-  bulbs.forEach((b, i) => { const on = anyActive ? ((i + Math.floor(tick * 14)) % 3 === 0) : (Math.sin(tick * 2 + i * .5) > -.2); b.material.color.setHex(on ? 0xffe2a0 : 0x5a3a10); });
+  bulbs.forEach((b, i) => { const on = anyActive ? ((i + Math.floor(tick * 14)) % 3 === 0) : (Math.sin(tick * 2 + i * .5) > -.2); b.material.color.setHex(on ? 0xffe2a0 : 0x5a3a10); if (on) b.material.color.multiplyScalar(1.8); });
   winLight.intensity *= .96;
   const pulse = .55 + .45 * Math.sin(tick * 8);
   lineGs.forEach(g => { g.userData.mat.opacity += ((g.userData.on ? pulse : 0) - g.userData.mat.opacity) * .3; });
