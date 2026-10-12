@@ -12,6 +12,7 @@
 <meta name="theme-color" content="#070505">
 <meta name="robots" content="noindex">
 <script src="age-gate.js"></script>
+<script src="fav.js"></script>
 <style>
 /* lux1 2026-10-12 (owner: "real adult luxury-casino look, Vegas/Macau high-limit rooms"): walnut, brass, burgundy and
    jewel tones, engraved serif display type with a thin sans for labels, square brass-edged controls, no neon/cartoon. */
@@ -67,6 +68,8 @@ body.walk #hud { display: block; }
   background: linear-gradient(#e2c587,#b08d57 55%,#8a6a3a); box-shadow: 0 10px 30px rgba(0,0,0,.6); white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
 #pInfo { position: fixed; z-index: 6; left: calc(50% + 150px); bottom: calc(34px + env(safe-area-inset-bottom)); width: 40px; height: 40px; border-radius: 50%; border: 1px solid #b08d57; background: rgba(12,9,8,.9); color: #e8d3a0; font: italic 600 20px Georgia,serif; display: none; cursor: pointer; }
 #pInfo.on { display: block; }
+#pFav { position: fixed; z-index: 6; display: none; left: calc(50% + 196px); bottom: calc(34px + env(safe-area-inset-bottom)); }
+@media (max-width: 480px) { #pFav { left: auto; right: 10px; bottom: calc(144px + env(safe-area-inset-bottom)); } }
 @media (max-width: 480px) { #pInfo { left: auto; right: 10px; bottom: calc(96px + env(safe-area-inset-bottom)); } }
 #prompt.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
 #prompt.lock { background: linear-gradient(#5e101c, #3a0a12); color: var(--gold2); }
@@ -176,12 +179,17 @@ body.walk #hud { display: block; }
 
   function render() {
     document.getElementById('sub').textContent = games.length + ' games on the casino floor. Progress saves on this device.';
-    document.getElementById('cards').innerHTML = games.map(function (g) {
+    var fv = window.Fav ? Fav.list() : [], favG = fv.map(function (id) { return byId[id]; }).filter(Boolean);
+    var top = favG.length ? '<div class="fv-sec"><h3>★ FAVORITES</h3><div class="fv-row">' + favG.map(function (g) { return '<button type="button" class="fv-tile" data-play="' + esc(g.id) + '"><img src="' + esc(g.icon) + '" alt="">' + esc(g.title) + '</button>'; }).join('') + '</div></div>' : '';
+    document.getElementById('cards').innerHTML = top + games.map(function (g) {
       return '<a class="g" style="margin-bottom:14px" href="' + esc(g.file) + '" data-id="' + esc(g.id) + '"><img src="' + esc(g.icon) + '" alt="" onerror="this.style.visibility=\'hidden\'"><div><b>' + esc(g.title) + '</b><span class="age">' + g.rating + '+</span>' +
         (g.isNew ? '<span class="new">NEW</span>' : '') + (locked(g.id) ? '<span class="age">🔒</span>' : '') + '<p>' + esc(g.tagline) + '</p></div><i>Play ›</i></a>';
     }).join('');
+    if (window.Fav) [].forEach.call(document.querySelectorAll('#cards a.g'), function (a) { var b = Fav.button(a.getAttribute('data-id')); b.style.flex = 'none'; a.insertBefore(b, a.querySelector('i')); });
   }
+  if (window.Fav) Fav.onChange(function () { render(); });
   document.getElementById('cards').addEventListener('click', function (e) {
+    var f = e.target.closest && e.target.closest('[data-play]'); if (f) { open(f.getAttribute('data-play')); return; }
     var a = e.target.closest && e.target.closest('a.g'); if (!a) return; e.preventDefault(); open(a.getAttribute('data-id'));
   });
   var listeners = [];

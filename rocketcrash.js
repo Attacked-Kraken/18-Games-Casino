@@ -48,7 +48,7 @@ let lastBeep = 1;
 K.camLookFollow = 1;
 K.onFrame((dt, T) => { stars.position.y = K.camOffset.y - ((R.position.y * 1.6) % 30); flame.scale.y = 1 + Math.sin(T * 40) * .2; flame2.scale.y = 1 + Math.cos(T * 37) * .2; padRing.material.color.setRGB(1.1, .65 + Math.sin(T * 3) * .08, .25);
   if (st === 'fly') { t += dt; mult = Math.min(crash, Math.floor(M.crashAt(t) * 100) / 100); X.textContent = mult.toFixed(2) + '×'; X.style.transform = `scale(${1 + Math.min(.4, (mult - 1) * .04)})`;
-    const h = Math.log(mult) * 6; R.position.set(Math.sin(t * .7) * .6, h, 0); R.rotation.z = -Math.cos(t * .7) * .12; K.camOffset.set(0, Math.max(0, h - 1.2), 0);
+    const h = Math.log(mult) * 6; R.position.set(Math.sin(t * .7) * .6, h, 0); R.rotation.z = -Math.cos(t * .7) * .12; K.camOffset.set(0, Math.max(0, h - (K.portrait ? 2.6 : 1.2)), 0);
     trailPts.push(R.position.clone().add(new THREE.Vector3(0, -1.2, 0))); if (trailPts.length > 200) trailPts.shift(); trail.geometry.setFromPoints(trailPts);
     K.$('rcW').textContent = cashed ? 'cashed' : K.fmt(bet * mult);
     if (mult >= lastBeep + .5 || (mult >= 2 && mult >= lastBeep * 1.25)) { lastBeep = mult; K.tone(400 + mult * 40, .08, 'square', .04); }

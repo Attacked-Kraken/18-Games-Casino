@@ -565,18 +565,26 @@ function relock() { if (!gateOpen()) return; const iv = setInterval(() => { if (
 function refreshLocks() { if (stations.some((s) => s.locked !== L.locked(s.g.id))) layout(L.games); }
 const gateOpen = () => $('gate').classList.contains('on');
 const panelOpen = () => $('panel').classList.contains('on');
+let favEl = null; if (window.Fav) { favEl = document.createElement('button'); favEl.type = 'button'; favEl.id = 'pFav'; favEl.className = 'fv-star'; favEl.onclick = (e) => { e.stopPropagation(); if (near) { Fav.toggle(near.g.id); updFav(); } }; document.body.append(favEl); }
+function updFav() { if (!favEl) return; const on = !!(shown && Fav.has(shown.g.id)); favEl.textContent = Fav.star(on); favEl.classList.toggle('on', on); favEl.style.display = shown ? 'block' : 'none'; }
 const infoEl = $('pInfo'); infoEl.onclick = () => near && window.HowTo && HowTo.open(near.g.id);
-function setPrompt(st) { if (st === shown) return; shown = st; infoEl.classList.toggle('on', !!(st && window.HowTo && HowTo.RULES[st.g.id])); if (!st) { promptEl.classList.remove('on'); return; }
+function setPrompt(st) { if (st === shown) return; shown = st; updFav(); infoEl.classList.toggle('on', !!(st && window.HowTo && HowTo.RULES[st.g.id])); if (!st) { promptEl.classList.remove('on'); return; }
   const lk = L.locked(st.g.id); promptEl.classList.toggle('lock', lk);
   promptEl.innerHTML = ''; promptEl.append(lk ? st.g.title + ' · members only' : 'Play ' + st.g.title); const sm = document.createElement('small');
   sm.textContent = lk ? `For players ${L.need(st.g.id)}+ only` : `${st.g.rating}+ · ${st.g.tagline}`.slice(0, 64); promptEl.append(sm); promptEl.classList.add('on'); }
 function buildPanel() { const box = $('pList'); box.innerHTML = '';
+  const favs = window.Fav ? Fav.list().map((id) => stations.find((s) => s.g.id === id)).filter(Boolean) : [];
+  const sec = document.createElement('div'); sec.className = 'fv-sec'; sec.innerHTML = '<h3>★ FAVORITES</h3>'; const row = document.createElement('div'); row.className = 'fv-row';
+  if (favs.length) favs.forEach((s) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'fv-tile'; b.innerHTML = `<img src="${s.g.icon}" alt="">${s.g.title}`; b.onclick = () => { closePanel(); play(s); }; row.append(b); });
+  else row.innerHTML = '<small style="color:#9a8a6a">Tap ☆ on any game to pin it here for quick launch.</small>';
+  sec.append(row); box.append(sec);
   stations.forEach((s) => { const r = document.createElement('div'); r.className = 'pr' + (s.locked ? ' lk' : ''); r.style.setProperty('--ac', s.g.accent);
     const im = document.createElement('img'); im.src = s.g.icon; im.alt = ''; im.onerror = () => (im.style.visibility = 'hidden');
     const d = document.createElement('div'); d.textContent = s.g.title + '  ' + s.g.rating + '+' + (s.locked ? ' · locked' : ''); const sm = document.createElement('small'); sm.textContent = ({ slots: 'SLOTS', tables: 'TABLE GAMES', cards: 'CARD ROOM', instant: 'INSTANT WINS', action: 'ARCADE' }[s.g.category] || 'SLOTS') + ' · ' + s.g.tagline; d.append(sm);
     const go = document.createElement('button'); go.className = 'go2'; go.type = 'button'; go.textContent = 'Walk'; go.onclick = () => { teleport(s); closePanel(); };
     const pl = document.createElement('button'); pl.className = 'pl'; pl.type = 'button'; pl.textContent = 'Play'; pl.onclick = () => { closePanel(); play(s); };
-    r.append(im, d, go, pl); box.append(r); }); }
+    r.append(im, d); if (window.Fav) r.append(Fav.button(s.g.id)); r.append(go, pl); box.append(r); }); }
+if (window.Fav) Fav.onChange(() => { if ($('panel').classList.contains('on')) buildPanel(); else buildPanel(); });
 function closePanel() { $('panel').classList.remove('on'); }
 $('bWallet').onclick = () => window.Wallet && Wallet.open(); $('hChips').onclick = () => window.Wallet && Wallet.open();
 $('bGames').onclick = () => { audioOn(); $('panel').classList.add('on'); }; $('pX').onclick = closePanel;
