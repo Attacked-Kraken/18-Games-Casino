@@ -32,22 +32,24 @@ const trailPts = []; const trail = new THREE.Line(new THREE.BufferGeometry(), ne
 document.body.insertAdjacentHTML('beforeend', `<div id="rcX" style="position:fixed;left:0;right:0;top:22%;text-align:center;font:500 64px Georgia;color:#fff;text-shadow:0 0 18px #9a5a18,0 0 40px #9a5a18,0 3px 0 #000;z-index:7;pointer-events:none">1.00×</div>
 <div id="rcH" style="position:fixed;left:0;right:0;top:calc(56px + env(safe-area-inset-top));display:flex;gap:4px;justify-content:center;z-index:7;font:800 12px system-ui"></div>`);
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
-K.el(`<div class="ck-row"><div class="ck-pill"><small>AUTO CASH-OUT</small><b><select id="rcA" style="background:transparent;color:#fff;border:0;font:500 15px Georgia"><option value="0">off</option><option>1.5</option><option>2</option><option>3</option><option>5</option><option>10</option><option>50</option></select></b></div><div class="ck-pill"><small>WIN NOW</small><b id="rcW">–</b></div></div>`);
+K.el(`<div class="ck-row"><div class="ck-pill"><small>AUTO CASH-OUT</small><b><select id="rcA" style="background:transparent;color:#fff;border:0;font:500 15px Georgia"><option value="0">off</option><option>1.5</option><option>2</option><option>3</option><option>5</option><option>10</option><option>50</option></select></b></div><div class="ck-pill"><small>SPEED</small><b><select id="rcS" style="background:transparent;color:#fff;border:0;font:500 15px Georgia"><option value="0.6">Slow</option><option value="1">Medium</option><option value="1.7">Fast</option></select></b></div><div class="ck-pill"><small>WIN NOW</small><b id="rcW">–</b></div></div>`);
 K.el(`<div class="ck-row"><button class="ck-go" type="button" id="rcGo">LAUNCH</button></div>`);
+const rcS = K.$('rcS'); let SPD = 1; try { const v = localStorage.getItem('gc18_rc_speed'); if (v && [...rcS.options].some((o) => o.value === v)) rcS.value = v; } catch (e) {} SPD = +rcS.value || 1;
+rcS.onchange = () => { if (st === 'fly') { rcS.value = String(SPD); return; } SPD = +rcS.value || 1; try { localStorage.setItem('gc18_rc_speed', rcS.value); } catch (e) {} }; /* speed changes animation/growth pace only; crash odds unchanged */
 let st = 'idle', t = 0, crash = 1, bet = 0, cashed = 0, mult = 1, hist = [];
 const X = K.$('rcX'), go = K.$('rcGo');
-function launch() { if (!K.take(chip.get())) return; bet = chip.get(); crash = M.crashPoint(); t = 0; mult = 1; cashed = 0; st = 'fly'; trailPts.length = 0; R.visible = true; R.position.set(0, 0, 0); R.rotation.z = 0;
+function launch() { if (!K.take(chip.get())) return; bet = chip.get(); crash = M.crashPoint(); t = 0; mult = 1; cashed = 0; st = 'fly'; rcS.disabled = true; trailPts.length = 0; R.visible = true; R.position.set(0, 0, 0); R.rotation.z = 0;
   go.textContent = 'CASH OUT'; X.style.color = '#fff'; K.SFX.whoosh(); if (crash <= 1) boom(); }
 function cash() { if (st !== 'fly' || cashed) return; cashed = mult; const ret = Math.floor(bet * mult); K.payout(bet, ret, R.position.clone()); go.textContent = 'CASHED ' + mult.toFixed(2) + '×'; go.disabled = true; X.style.color = '#7dff6a'; }
 function boom() { st = 'boom'; X.textContent = 'BUST ' + crash.toFixed(2) + '×'; X.style.color = '#8e1b2c'; K.SFX.boom(); K.shake = .25; R.visible = false; K.burst(R.position.clone(), 50, { coins: false, sound: false, speed: 1.4 });
   if (!cashed) { K.result(bet, 0); K.msg('Crashed at ' + crash.toFixed(2) + '×', 1600); setTimeout(K.checkBroke, 900); }
   hist.unshift(crash); hist.length = Math.min(8, hist.length); K.$('rcH').innerHTML = hist.map(h => `<span style="padding:2px 7px;border-radius:9px;background:${h >= 2 ? '#0f5a3e' : h >= 1.2 ? '#9a5a18' : '#8e1b2c'};color:#fff">${h.toFixed(2)}×</span>`).join('');
-  setTimeout(() => { st = 'idle'; go.textContent = 'LAUNCH'; go.disabled = false; R.visible = true; R.position.set(0, 0, 0); R.rotation.z = 0; trailPts.length = 0; trail.geometry.setFromPoints([]); X.textContent = '1.00×'; X.style.color = '#fff'; }, 2400); }
+  setTimeout(() => { st = 'idle'; rcS.disabled = false; go.textContent = 'LAUNCH'; go.disabled = false; R.visible = true; R.position.set(0, 0, 0); R.rotation.z = 0; trailPts.length = 0; trail.geometry.setFromPoints([]); X.textContent = '1.00×'; X.style.color = '#fff'; }, 2400); }
 go.onclick = () => { if (st === 'idle') launch(); else if (st === 'fly') cash(); };
 let lastBeep = 1;
 K.camLookFollow = 1;
 K.onFrame((dt, T) => { stars.position.y = K.camOffset.y - ((R.position.y * 1.6) % 30); flame.scale.y = 1 + Math.sin(T * 40) * .2; flame2.scale.y = 1 + Math.cos(T * 37) * .2; padRing.material.color.setRGB(1.1, .65 + Math.sin(T * 3) * .08, .25);
-  if (st === 'fly') { t += dt; mult = Math.min(crash, Math.floor(M.crashAt(t) * 100) / 100); X.textContent = mult.toFixed(2) + '×'; X.style.transform = `scale(${1 + Math.min(.4, (mult - 1) * .04)})`;
+  if (st === 'fly') { t += dt * SPD; mult = Math.min(crash, Math.floor(M.crashAt(t) * 100) / 100); X.textContent = mult.toFixed(2) + '×'; X.style.transform = `scale(${1 + Math.min(.4, (mult - 1) * .04)})`;
     const h = Math.log(mult) * 6; R.position.set(Math.sin(t * .7) * .6, h, 0); R.rotation.z = -Math.cos(t * .7) * .12; K.camOffset.set(0, Math.max(0, h - (K.portrait ? 2.6 : 1.2)), 0);
     trailPts.push(R.position.clone().add(new THREE.Vector3(0, -1.2, 0))); if (trailPts.length > 200) trailPts.shift(); trail.geometry.setFromPoints(trailPts);
     K.$('rcW').textContent = cashed ? 'cashed' : K.fmt(bet * mult);
