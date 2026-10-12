@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
+<script>(function(){try{var q=location.search,p=sessionStorage.getItem("cf_view");if(!/[?&]view=list/.test(q)&&p!=="list")document.documentElement.classList.add("boot");}catch(e){document.documentElement.classList.add("boot");}})();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>18 Games Casino</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -91,9 +92,19 @@ body.walk #hud { display: block; }
 .pr .pl { background: linear-gradient(#e2c587,#b08d57 55%,#8a6a3a); color: #1a1208; border: 1px solid #e8d3a0; }
 .pr.lk { opacity: .55; }
 .vt { display: block; margin: 4px auto 0; position: static; }
+html.boot body > .w, html.boot body > :not(#intro):not(#floor3d):not(#gate):not(script) { visibility: hidden; }
+#intro { position: fixed; inset: 0; z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px; background: radial-gradient(ellipse at 50% 40%, #2a0e1e 0%, #12060c 55%, #050203 100%); transition: opacity .7s ease; }
+html.boot #intro { display: flex; } #intro.out { opacity: 0; pointer-events: none; }
+#intro .lg { font: 600 clamp(34px, 10vw, 64px)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: .04em; text-align: center; background: linear-gradient(100deg, #8a6420 0%, #f6e3a1 30%, #fff8dc 40%, #d9b065 52%, #8a6420 70%, #f6e3a1 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shim 2.4s linear infinite, rise 1s cubic-bezier(.2,.8,.2,1) both; filter: drop-shadow(0 2px 12px rgba(217,176,101,.35)); }
+#intro .lg b { display: block; font-size: .42em; letter-spacing: .5em; margin-top: .35em; font-weight: 600; }
+#intro .bar { width: min(260px, 62vw); height: 4px; border-radius: 4px; background: rgba(217,176,101,.18); overflow: hidden; animation: rise 1s .25s both; }
+#intro .bar i { display: block; height: 100%; width: 4%; background: linear-gradient(90deg, #8a6420, #f6e3a1, #d9b065); transition: width .4s ease; }
+#intro small { color: #b89a6a; font: 500 12px system-ui; letter-spacing: .2em; animation: rise 1s .4s both; }
+@keyframes shim { to { background-position: -250% 0; } } @keyframes rise { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
 </style>
 <script src="audio.js"></script>
 </head><body>
+<div id="intro" aria-label="Loading 18 Games Casino"><div class="lg">18 Games<b>CASINO</b></div><div class="bar"><i id="introBar"></i></div><small>FUN CHIPS ONLY · 18+</small></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>

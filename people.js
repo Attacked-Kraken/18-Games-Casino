@@ -4,7 +4,7 @@
    Phones get fewer people; mixers only tick near the player, far / hidden-zone people are not drawn. */
 import { loadHumans } from './characters/base-human-v2/humans.js';
 export function createPeople(ctx) { const { THREE, scene, mobile } = ctx; const api = { ready: false, list: [], update() {} };
-  loadHumans(THREE, 'characters/base-human-v2/').then(build).catch((e) => console.warn('people', e));
+  let tries = 0; const load = () => loadHumans(THREE, 'characters/base-human-v2/').then(build).catch((e) => { console.warn('people', e); if (++tries < 6) setTimeout(load, 2000 * tries); }); load();
   function build(H) { const rnd = ((s) => () => ((s = (s * 16807) % 2147483647) / 2147483647))(42), list = api.list;
     const make = (o = {}) => { const g = o.g || (rnd() < .5 ? 'f' : 'm'); const spec = o.spec || (o.dealer ? { g, skin: Math.floor(rnd() * 6), hair: H.HAIR[g][Math.floor(rnd() * 4)], hairCol: H.HAIR_COLS[Math.floor(rnd() * 6)], outfit: 'dealer' } : H.randomSpec(g, rnd));
       const p = H.make(spec, (g === 'f' ? 1.64 : 1.76) + (rnd() - .5) * .08); scene.add(p.object); p.o = p.object; return p; };

@@ -17,6 +17,7 @@ import { createWing, WING } from './forum-wing.js';
 import { createNav } from './nav.js';
 import { createStadium, STAD } from './stadium.js';
 import { createCruz } from './cruz-npc.js';
+import { createTeam } from './football-team.js';
 import { openShop, getAvatar } from './shops.js';
 import { OutputPass } from './vendor/OutputPass.js';
 
@@ -33,7 +34,10 @@ if (canWalk) { walkBtn.hidden = false; walkBtn.onclick = () => { try { sessionSt
 $('bList').onclick = () => { try { sessionStorage.setItem(VKEY, 'list'); } catch (e) {} location.reload(); };
 let pref = ''; try { pref = sessionStorage.getItem(VKEY) || ''; localStorage.removeItem(VKEY); } catch (e) {}
 const forceList = /[?&]view=list/.test(location.search), force3d = /[?&]view=3d/.test(location.search);
-if (canWalk && !forceList && (force3d || pref === '3d' || pref !== 'list')) start();
+const intro = { bar: document.getElementById('introBar'), set(p) { if (this.bar) this.bar.style.width = Math.round(p * 100) + '%'; },
+  done() { const el = document.getElementById('intro'); this.set(1); setTimeout(() => { document.documentElement.classList.remove('boot'); if (el) { el.classList.add('out'); setTimeout(() => el.remove(), 800); } }, 250); } };
+window.__intro = intro;
+if (canWalk && !forceList && (force3d || pref === '3d' || pref !== 'list')) start(); else intro.done();
 
 function start() {
 document.body.classList.add('walk');
@@ -522,7 +526,7 @@ function poseWalkers(t, all) { walkers.forEach((w, i) => { if (w.seat && !all) r
   const sw = Math.sin(ph) * .45; set(PI_.leg, i * 2, -.08, .86, 0, sw); set(PI_.leg, i * 2 + 1, .08, .86, 0, -sw); set(PI_.hips, i, 0, .9, 0); set(PI_.torso, i, 0, 1.3, 0);
   set(PI_.arm, i * 2, -.22, 1.56, 0, -sw * .8); set(PI_.arm, i * 2 + 1, .22, 1.56, 0, sw * .8); set(PI_.head, i, 0, 1.76, 0); set(PI_.hair, i, 0, 1.775, -.01); });
   Object.values(PI_).forEach((m) => (m.instanceMatrix.needsUpdate = true)); }
-poseWalkers(0, true);
+Object.values(PI_).forEach((m) => (m.visible = false)); /* blocky placeholders are never drawn */
 const slotSeats = []; SLOTS.forEach((arr) => arr.forEach((s, i) => { if ((i * 5) % 7 < 2) { const [fx, fz] = fwdOf(s.ry); slotSeats.push({ x: s.x + fx * .93, z: s.z + fz * .93, ry: s.ry + Math.PI, y: 0, sy: .74 }); } }));
 const pplV = new THREE.Vector3();
 /* dealers: one per table (main floor + Grand Hall), standing on the dealer side facing the players */
@@ -536,8 +540,8 @@ const HALL_PATHS = [[[-34, -21], [34, -21]], [[-34, -36], [34, -36]], [[0, -19],
 const people = createPeople({ THREE, scene, mobile, collide: (x, z) => collide(x, z), getNav: () => { if (hall) hall.buildNow(); if (wing && wing.buildNow) wing.buildNow(); return createNav(collide); }, PATHS: PATHS.concat(HALL_PATHS), seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()).slice(0, 12).concat(hallSeats.slice(0, 8)),
   dealers: DEALERS.concat(HDEAL), zoneVisible: (x, z) => z > HALL.z1 + .5 || !!(hall && hall.root.visible),
   pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-20, -40.5, .3], [10, -52, 1], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]].concat(HALL_BARS.flatMap(([bx, bz]) => [[bx - 3.6, bz + 2.6, Math.PI], [bx - 1.2, bz + 2.6, Math.PI], [bx + 2.4, bz + 2.6, Math.PI]])),
-  onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); try { cruz = createCruz({ THREE, scene, collide, people, stadium }); window.__cruz = cruz; } catch (e) { console.warn('cruz', e); } } });
-let cruz = null;
+  onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); intro.done(); try { cruz = createCruz({ THREE, scene, collide, people, stadium }); window.__cruz = cruz; } catch (e) { console.warn('cruz', e); } } });
+let cruz = null, team = null;
 /* the player's own avatar (Gift shop > Choose look), visible in the Zoom Out view */
 let me = null, meLast = [0, 0]; function mkMe() { if (!people.H) return; if (me) scene.remove(me.object); me = people.H.make(getAvatar() || { g: 'm', outfit: 'tee_jeans', hair: 'short', skin: 1, hairCol: 0x2e1c12 }, 1.76); me.object.visible = false; scene.add(me.object); me.play('Idle_Loop', 0); }
 addEventListener('gc18-avatar', mkMe); window.__people = people;
@@ -750,13 +754,15 @@ function frame(now) {
   near = best; setPrompt(best);
   /* animate */
   /* people always live (reduced-motion only stops decorative effects) */
-  if (!people.ready) poseWalkers(t); else people.update(dt, t, pplV.set(P.x, 0, P.z), false);
+  if (people.ready) people.update(dt, t, pplV.set(P.x, 0, P.z), false);
   if (!still) {
     for (const s of stations) { const w = s.grp.userData.wheel; if (w) w.rotation.y += dt * .4; s.ring.material.opacity = s === near ? .95 : .45 + Math.sin(t * 3 + s.center.x) * .2; }
     if (me) { const sp = Math.hypot(P.x - meLast[0], P.z - meLast[1]) / Math.max(dt, .001); meLast = [P.x, P.z]; me.object.visible = BV.k > .05; me.object.position.set(P.x, 0, P.z); me.object.rotation.y = P.yaw + Math.PI; me.play(sp > .4 ? 'Walk_Loop' : 'Idle_Loop'); if (me.object.visible) me.mixer.update(dt); }
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);
+  if (cruz && cruz.ready && stadium && stadium.built && !team) { try { team = createTeam({ THREE, scene, cruz, stadium, mobile }); cruz.team = team; window.__team = team; } catch (e) { console.warn('team', e); team = 1; } }
+  if (team && team.update) team.update(dt, t, stadium.root.visible);
   if (stadium) stadium.update(dt, t, BV.k > .15, R, cruz && cruz.ready && (cruz.mode !== 'casino') ? cruz.pos() : null); if (cruz) cruz.update(dt, t, pplV.set(P.x, 0, P.z), (x, z) => (z > HALL.z1 + .5 || !!(hall && hall.root.visible)) && Math.hypot(x - P.x, z - P.z) < 45);
   if (wing) wing.update(dt, t, BV.k > .15); if (hall) hall.update(dt, t, BV.k > .15); extraCeil.forEach((m) => (m.visible = BV.k <= .15));
   if ((miniT += dt) > .1) { miniT = 0; drawMini(); }
@@ -769,13 +775,20 @@ function frame(now) {
 }
 { const b = document.createElement('button'); b.type = 'button'; b.id = 'bCruz'; b.textContent = '🏈'; b.title = 'Cruz'; b.setAttribute('aria-label', 'Cruz avatar menu');
   b.style.cssText = 'position:fixed;left:10px;top:262px;z-index:30;width:44px;height:44px;border-radius:50%;border:2px solid #f2b51c;background:#4a1478;color:#fff;font-size:22px;box-shadow:0 2px 10px rgba(0,0,0,.5)';
-  const m = document.createElement('div'); m.id = 'cruzMenu'; m.style.cssText = 'position:fixed;left:62px;top:250px;z-index:31;display:none;flex-direction:column;gap:6px;background:rgba(30,10,46,.96);border:1px solid #f2b51c;border-radius:12px;padding:10px;font:600 14px system-ui;color:#ffe9a8';
-  const mk = (id, fn) => { const x = document.createElement('button'); x.type = 'button'; x.id = id; x.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid #f2b51c;background:#4a1478;color:#fff;font:600 14px system-ui;text-align:left'; x.onclick = () => { fn(); upd(); }; m.append(x); return x; };
-  m.innerHTML = '<div style="color:#f2b51c">CRUZ · #12 QB</div>';
-  const bShow = mk('cShow', () => cruz && cruz.setOn(!cruz.on)), bField = mk('cField', () => { if (!cruz) return; if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.sendToField(); else cruz.bringBack(); }), bWatch = mk('cWatch', () => { if (!cruz) return; if (cruz.mode === 'casino') { P.x = cruz.x; P.z = cruz.z + 3; } else { P.x = 0; P.z = 84; P.yaw = Math.PI; } auto = null; m.style.display = 'none'; });
-  function upd() { if (!cruz) return; bShow.textContent = cruz.on ? '🙈 Hide Cruz' : '👀 Show Cruz'; bField.textContent = cruz.mode === 'casino' || cruz.mode === 'toCasino' ? '🏟️ Send to Field' : '↩ Bring back to casino'; bWatch.textContent = '📍 Go watch'; }
+  const m = document.createElement('div'); m.id = 'cruzMenu'; m.style.cssText = 'position:fixed;left:8px;right:8px;bottom:12px;z-index:31;display:none;flex-direction:column;gap:6px;max-width:420px;margin:0 auto;max-height:62vh;overflow:auto;background:rgba(30,10,46,.97);border:1px solid #f2b51c;border-radius:14px;padding:10px;font:600 13px system-ui;color:#ffe9a8;box-shadow:0 6px 24px rgba(0,0,0,.6)';
+  const head = document.createElement('div'); head.style.cssText = 'display:flex;justify-content:space-between;align-items:center'; head.innerHTML = '<b style="color:#f2b51c;font-size:15px">🏈 CRUZ · #12 QB</b>'; const x = document.createElement('button'); x.type = 'button'; x.textContent = '✕'; x.style.cssText = 'background:none;border:0;color:#fff;font-size:20px;padding:4px 8px'; x.onclick = () => (m.style.display = 'none'); head.append(x); m.append(head);
+  const btns = {}; const row = (label, items) => { const r = document.createElement('div'); if (label) { const l = document.createElement('small'); l.textContent = label; l.style.cssText = 'display:block;margin:2px 0 3px;color:#c9b0e8'; r.append(l); } const g = document.createElement('div'); g.style.cssText = `display:grid;grid-template-columns:repeat(${Math.min(items.length, 3)},1fr);gap:6px`;
+    items.forEach(([id, txt, fn]) => { const bt = document.createElement('button'); bt.type = 'button'; bt.id = id; bt.textContent = txt; bt.style.cssText = 'min-height:42px;padding:6px 4px;border-radius:9px;border:1px solid #f2b51c;background:#4a1478;color:#fff;font:600 13px system-ui'; bt.onclick = () => { if (cruz && cruz.ready) fn(); upd(); }; btns[id] = bt; g.append(bt); }); r.append(g); m.append(r); };
+  row('', [['cCome', '📣 Come to me', () => cruz.command('come')], ['cFollow', '👣 Follow me', () => cruz.command('follow')], ['cStay', '✋ Stay here', () => cruz.command('stay')], ['cRoam', '🏃 Free roam', () => cruz.command('roam')]]);
+  row('Speed', [['sWalk', 'Walk', () => cruz.setSpeed('walk')], ['sJog', 'Jog', () => cruz.setSpeed('jog')], ['sSprint', 'Sprint', () => cruz.setSpeed('sprint')], ['sAuto', 'Auto', () => cruz.setSpeed('auto')]]);
+  row('Do a move', [['mJuke', 'Juke', () => cruz.doMove('juke')], ['mSpin', 'Spin', () => cruz.doMove('spin')], ['mHurdle', 'Hurdle', () => cruz.doMove('hurdle')], ['mCel', 'Celebrate', () => cruz.doMove('celebrate')], ['mWave', 'Wave', () => cruz.doMove('wave')], ['mPass', '🏈 Throw a pass', () => cruz.throwPass()]]);
+  row('', [['cField', 'Go to field', () => { if (cruz.mode === 'casino' || cruz.mode === 'toCasino') cruz.command('field'); else { cruz.command('roam'); cruz.bringBack(); } }], ['cShow', 'Hide', () => cruz.setOn(!cruz.on)], ['cWatch', '📍 Go watch', () => { if (cruz.mode === 'casino') { P.x = cruz.x; P.z = cruz.z + 3; } else { P.x = 0; P.z = 98; P.yaw = Math.PI; } auto = null; m.style.display = 'none'; }]]);
+  function upd() { if (!cruz || !cruz.ready) return; btns.cShow.textContent = cruz.on ? '🙈 Hide Cruz' : '👀 Show Cruz'; btns.cField.textContent = cruz.mode === 'casino' || cruz.mode === 'toCasino' ? '🏟️ Go to field' : '↩ Bring back';
+    const hi = (id, on) => { btns[id].style.background = on ? '#f2b51c' : '#4a1478'; btns[id].style.color = on ? '#1a0a28' : '#fff'; };
+    hi('cCome', cruz.cmd === 'come'); hi('cFollow', cruz.cmd === 'follow'); hi('cStay', cruz.cmd === 'stay'); hi('cRoam', cruz.cmd === 'roam'); hi('sWalk', cruz.spd === 'walk'); hi('sJog', cruz.spd === 'jog'); hi('sSprint', cruz.spd === 'sprint'); hi('sAuto', cruz.spd === 'auto'); }
+  setInterval(() => { if (m.style.display !== 'none') upd(); }, 800);
   b.onclick = () => { upd(); m.style.display = m.style.display === 'none' ? 'flex' : 'none'; }; document.body.append(b, m); }
 window.__floor = { P, stations, teleport, collide, get near() { return near; }, get tier() { return tier; } };
 resize(); layout(L.games); L.onGames((g) => layout(g)); faceTo({ center: new THREE.Vector3(0, 0, 0) }, true); P.pitch = -.04;
-requestAnimationFrame(frame);
+requestAnimationFrame(frame); intro.set(.4); setTimeout(() => intro.set(.65), 1500); setTimeout(() => intro.set(.85), 4000); setTimeout(() => intro.done(), 15000);
 }
