@@ -7,6 +7,7 @@
    Perf: pixel ratio <= 2, instanced decor, adaptive quality tiers, pauses when hidden. No WebGL / context lost / List button
    -> card list view (index.html). */
 import * as THREE from './three.module.min.js';
+import { createPeople } from './people.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 import { EffectComposer } from './vendor/EffectComposer.js';
 import { RenderPass } from './vendor/RenderPass.js';
@@ -512,6 +513,11 @@ function poseWalkers(t, all) { walkers.forEach((w, i) => { if (w.seat && !all) r
   set(PI_.arm, i * 2, -.22, 1.56, 0, -sw * .8); set(PI_.arm, i * 2 + 1, .22, 1.56, 0, sw * .8); set(PI_.head, i, 0, 1.76, 0); set(PI_.hair, i, 0, 1.775, -.01); });
   Object.values(PI_).forEach((m) => (m.instanceMatrix.needsUpdate = true)); }
 poseWalkers(0, true);
+const slotSeats = []; SLOTS.forEach((arr) => arr.forEach((s, i) => { if ((i * 5) % 7 < 2) { const [fx, fz] = fwdOf(s.ry); slotSeats.push({ x: s.x + fx * .78, z: s.z + fz * .78, ry: s.ry + Math.PI, y: 0 }); } }));
+const pplV = new THREE.Vector3();
+const people = createPeople({ THREE, scene, mobile, PATHS, seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()),
+  pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]],
+  onReady: () => Object.values(PI_).forEach((m) => (m.visible = false)) });
 Object.values(PI_).forEach((m) => { if (m.instanceColor) m.instanceColor.needsUpdate = true; });
 
 /* ---------- post ---------- */
@@ -694,7 +700,7 @@ function frame(now) {
   /* animate */
   if (!still) {
     for (const s of stations) { const w = s.grp.userData.wheel; if (w) w.rotation.y += dt * .4; s.ring.material.opacity = s === near ? .95 : .45 + Math.sin(t * 3 + s.center.x) * .2; }
-    poseWalkers(t);
+    if (!people.ready) poseWalkers(t); else people.update(dt, t, pplV.set(P.x, 0, P.z), false);
     if ((acc += dt) > 1) { acc = 0; jpCanvas.forEach((j) => { j.v += 3 + Math.random() * 40; jpDraw(j.c, j.v); j.t.needsUpdate = true; }); }
   }
   for (const b of billboards) b.quaternion.copy(cam.quaternion);

@@ -12,7 +12,7 @@
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
   var bar, fill, txt, dw;
   function today() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
-  function mount() { if (bar || !document.body) return; var floor = !!document.getElementById('floor3d'); bar = document.createElement('div'); bar.id = 'xpBar'; bar.style.top = floor ? 'calc(192px + env(safe-area-inset-top))' : 'calc(96px + env(safe-area-inset-top))';
+  function mount() { if (bar || !document.body) return; var floor = !!document.getElementById('floor3d'); bar = document.createElement('div'); bar.id = 'xpBar'; if (floor) { bar.style.top = 'calc(54px + env(safe-area-inset-top))'; bar.style.left = '50%'; bar.style.transform = 'translateX(-50%)'; bar.style.textAlign = 'center'; } else bar.style.top = 'calc(96px + env(safe-area-inset-top))';
     if (/steelfront/.test(location.pathname)) bar.style.display = 'none';
     bar.innerHTML = '<div class="t"><span id="xpL"></span><span id="xpN"></span></div><div class="b"><div class="f" id="xpF"></div></div><button type="button" class="dw" id="xpDW">🎡 DAILY SPIN</button>'; document.body.appendChild(bar);
     fill = bar.querySelector('#xpF'); txt = bar.querySelector('#xpL'); dw = bar.querySelector('#xpDW'); dw.onclick = openWheel; draw(); }
