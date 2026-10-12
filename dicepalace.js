@@ -1,6 +1,7 @@
 /* Dice Palace: craps (casino-math.js crapsRoll): Pass / Don't Pass, Field, Place 6 & 8. 3D candy dice thrown across a palace felt,
    point puck, hot-roll streak, live tables via mp.js (host throws the dice for everyone). FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
+import * as BU from './bet-ui.js';
 const M = window.CMath;
 const K = await boot({ id: 'dicepalace', title: 'Dice Palace', accent: '#3e6b1e', bloom: .5,
   rules: `<p><b>Pass</b>: come-out 7 or 11 wins, 2/3/12 loses, anything else sets the POINT; then hit the point before a 7 to win 1:1. <b>Don't Pass</b> is the opposite (12 pushes on come-out).</p>
@@ -40,10 +41,10 @@ function throwDice(d, done) { const t0 = performance.now(), T = 1500; const st =
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
 let bets = { pass: 0, dont: 0, field: 0, place: { 6: 0, 8: 0 } }, point = 0, busy = false, hot = 0, phase = 'bet';
 K.el(`<div class="ck-row"><div class="ck-pill"><small>POINT</small><b id="dPt">OFF</b></div><div class="ck-pill"><small>ON TABLE</small><b id="dOn">0</b></div><div class="ck-pill"><small>ROLL</small><b id="dR">–</b></div><div class="ck-pill" id="dTP" style="display:none"><small>ROLL IN</small><b id="dTm"></b></div></div>`);
-K.el(`<div class="ck-row"><button class="ck-sm" type="button" data-b="pass">PASS</button><button class="ck-sm" type="button" data-b="dont">DON'T</button><button class="ck-sm" type="button" data-b="field">FIELD</button><button class="ck-sm" type="button" data-b="6">6</button><button class="ck-sm" type="button" data-b="8">8</button></div>`);
+K.el(`<div class="ck-row" style="width:min(96vw,560px);margin:0 auto;gap:6px;flex-wrap:nowrap"><button type="button" data-b="pass" style="flex:1;min-width:0;height:62px;border-radius:10px;border:2px solid rgba(255,230,170,.7);background:#0f5a3e;color:#fff;font:700 14px Georgia;line-height:1.1;position:relative">PASS<br>LINE<br><small style=font-size:9px>1:1</small></button><button type="button" data-b="dont" style="flex:1;min-width:0;height:62px;border-radius:10px;border:2px solid rgba(255,230,170,.7);background:#0f5a3e;color:#fff;font:700 14px Georgia;line-height:1.1;position:relative;background:#14301f">DON'T<br>PASS<br><small style=font-size:9px>1:1</small></button><button type="button" data-b="field" style="flex:1;min-width:0;height:62px;border-radius:10px;border:2px solid rgba(255,230,170,.7);background:#0f5a3e;color:#fff;font:700 14px Georgia;line-height:1.1;position:relative;flex:1.4">FIELD<br><small style=font-size:9px>2·3·4·9·10·11·12<br>2 pays 2:1 · 12 pays 3:1</small></button><button type="button" data-b="6" style="flex:1;min-width:0;height:62px;border-radius:10px;border:2px solid rgba(255,230,170,.7);background:#0f5a3e;color:#fff;font:700 14px Georgia;line-height:1.1;position:relative;background:#7a1424">PLACE<br>6<br><small style=font-size:9px>7:6</small></button><button type="button" data-b="8" style="flex:1;min-width:0;height:62px;border-radius:10px;border:2px solid rgba(255,230,170,.7);background:#0f5a3e;color:#fff;font:700 14px Georgia;line-height:1.1;position:relative;background:#7a1424">PLACE<br>8<br><small style=font-size:9px>7:6</small></button></div>`);
 K.el(`<div class="ck-row"><button class="ck-go" type="button" id="dGo">ROLL</button></div>`);
 const onTable = () => bets.pass + bets.dont + bets.field + bets.place[6] + bets.place[8];
-const upd = () => { K.$('dPt').textContent = point || 'OFF'; K.$('dOn').textContent = K.fmt(onTable()); document.querySelectorAll('[data-b]').forEach(b => { const k = b.dataset.b, v = k === '6' || k === '8' ? bets.place[k] : bets[k]; b.classList.toggle('on', v > 0); b.title = v; }); };
+const upd = () => { K.$('dPt').textContent = point || 'OFF'; K.$('dOn').textContent = K.fmt(onTable()); document.querySelectorAll('[data-b]').forEach(b => { const k = b.dataset.b, v = k === '6' || k === '8' ? bets.place[k] : bets[k]; b.classList.toggle('on', v > 0); b.title = v; BU.stackOn(b, v); b.style.opacity = (k === 'pass' || k === 'dont') && point && !v ? '.55' : (k === '6' || k === '8') && !point ? '.55' : '1'; }); };
 document.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { if (busy || (tb.isLive() && phase !== 'bet')) return; const k = b.dataset.b;
   if ((k === 'pass' || k === 'dont') && point) { K.msg('Line bets go on before the point', 1300); return; } if ((k === '6' || k === '8') && !point) { K.msg('Place bets work once a point is set', 1300); return; }
   const v = chip.get(); if (!K.take(v)) return; if (k === '6' || k === '8') bets.place[k] += v; else bets[k] += v; tb.say('bet', { amt: v }); upd(); });
@@ -52,7 +53,7 @@ function onResult(d) { busy = true; throwDice(d, () => { const before = onTable(
     /* stakes leaving the table */ let staked = 0; ['pass', 'dont', 'field'].forEach(k => { if (res.clear[k]) { staked += bets[k]; bets[k] = 0; } }); [6, 8].forEach(n => { if (res.clear['place' + n]) { staked += bets.place[n]; bets.place[n] = 0; } });
     const ret = res.ret; const placeWins = Object.values(res.out.place).reduce((a, b) => a + b, 0); if (placeWins) staked += 0;
     const hit = ret > staked;
-    if (staked || ret) K.payout(staked, ret + (placeWins ? 0 : 0), new THREE.Vector3(0, .5, -.6), tb.isLive() ? 'net' : 'cpu'); else K.msg(res.total === 7 && !point ? 'SEVEN!' : String(res.total), 1000);
+    if (staked || ret) BU.banner(staked, ret); if (staked || ret) K.payout(staked, ret + (placeWins ? 0 : 0), new THREE.Vector3(0, .5, -.6), tb.isLive() ? 'net' : 'cpu'); else K.msg(res.total === 7 && !point ? 'SEVEN!' : String(res.total), 1000);
     if (placeWins && !staked) { /* place hits returned winnings only (bet stays up) */ }
     if (ret > staked) tb.say('won', { amt: ret - staked });
     if (!point && res.point) { K.msg('POINT IS ' + res.point, 1500); K.SFX.pop(5); }

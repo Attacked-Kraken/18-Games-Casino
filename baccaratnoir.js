@@ -1,6 +1,7 @@
 /* Baccarat Noir: 8-deck punto banco (casino-math.js drawing rules; Banker 0.95:1, Player 1:1, Tie 9:1), 3D noir felt table,
    squeeze-style card reveals, bead-road history, live tables via mp.js (host deals one coup for everyone). FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
+import * as BU from './bet-ui.js';
 import { cardKit } from './cards3d.js';
 const M = window.CMath;
 const K = await boot({ id: 'baccaratnoir', title: 'Baccarat Noir', accent: '#4a1f5e', bloom: .5,
@@ -25,9 +26,11 @@ function setTotal(i, v, col) { const l = K.label(String(v), { size: .42, bg: col
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
 K.el(`<div class="ck-row"><div class="ck-pill"><small>PLAYER</small><b id="bP">0</b></div><div class="ck-pill"><small>TIE</small><b id="bT">0</b></div><div class="ck-pill"><small>BANKER</small><b id="bB">0</b></div><div class="ck-pill" id="bTimerP" style="display:none"><small>DEAL IN</small><b id="bTimer"></b></div></div>`);
 K.el(`<div class="ck-row" id="bRoad" style="gap:3px;min-height:16px"></div>`);
-K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="xP" style="background:#1d3f7a">PLAYER</button><button class="ck-sm" type="button" id="xT" style="background:#0f5a3e">TIE</button><button class="ck-sm" type="button" id="xB" style="background:#8e1b2c">BANKER</button><button class="ck-sm" type="button" id="xC">Clear</button><button class="ck-go" type="button" id="bGo">DEAL</button></div>`);
+K.el(`<div class="ck-row" style="width:min(94vw,520px);margin:0 auto;gap:8px"><button type="button" id="xP" style="background:#1d3f7a;flex:1;min-width:0;height:66px;border-radius:12px;border:2px solid rgba(255,230,170,.7);font:700 15px Georgia;color:#fff;line-height:1.1;box-shadow:inset 0 0 0 4px rgba(0,0,0,.25)">PLAYER<br><small style=font-size:10px>1:1</small></button><button type="button" id="xT" style="background:#0f5a3e;flex:1;min-width:0;height:66px;border-radius:12px;border:2px solid rgba(255,230,170,.7);font:700 15px Georgia;color:#fff;line-height:1.1;box-shadow:inset 0 0 0 4px rgba(0,0,0,.25)">TIE<br><small style=font-size:10px>9:1</small></button><button type="button" id="xB" style="background:#8e1b2c;flex:1;min-width:0;height:66px;border-radius:12px;border:2px solid rgba(255,230,170,.7);font:700 15px Georgia;color:#fff;line-height:1.1;box-shadow:inset 0 0 0 4px rgba(0,0,0,.25)">BANKER<br><small style=font-size:10px>0.95:1</small></button></div>`);
+K.el(`<div class="ck-row"><button class="ck-sm" type="button" id="xC">Clear</button><button class="ck-go" type="button" id="bGo">DEAL</button></div>`);
 let bets = { player: 0, tie: 0, banker: 0 }, busy = false, phase = 'bet', road = [], lastBets = null;
-const upd = () => { K.$('bP').textContent = K.fmt(bets.player); K.$('bT').textContent = K.fmt(bets.tie); K.$('bB').textContent = K.fmt(bets.banker); };
+const SP = { player: 'xP', tie: 'xT', banker: 'xB' };
+const upd = () => { Object.keys(SP).forEach(k => BU.stackOn(K.$(SP[k]), bets[k])); K.$('bP').textContent = K.fmt(bets.player); K.$('bT').textContent = K.fmt(bets.tie); K.$('bB').textContent = K.fmt(bets.banker); };
 const stake = () => bets.player + bets.tie + bets.banker;
 const add = (k) => { if (busy || (tb.isLive() && phase !== 'bet')) return; const v = chip.get(); if (!K.take(v)) return; bets[k] += v; tb.say('bet', { amt: v }); upd(); dropChip(k); };
 const chipsG = new THREE.Group(); scene.add(chipsG);
@@ -45,9 +48,9 @@ async function onResult(res) { busy = true; K.$('bGo').disabled = true; live.for
   if (res.p[2] != null) { await sleep(500); K.SFX.tease(); await put(res.p[2], P, 2); setTotal(0, res.pt, '#1d3f7a'); }
   if (res.b[2] != null) { await sleep(500); K.SFX.tease(); await put(res.b[2], B, 2); setTotal(1, res.bt, '#8e1b2c'); }
   await sleep(450); K.msg(res.win === 'tie' ? 'TIE ' + res.pt : res.win.toUpperCase() + ' WINS ' + Math.max(res.pt, res.bt), 1600);
-  const st = stake(); if (st) { let ret = 0; ['player', 'banker', 'tie'].forEach(k => { if (bets[k]) ret += M.bacReturn(k, res.win, bets[k]); }); await sleep(900); K.payout(st, Math.round(ret), res.win === 'player' ? P.clone() : res.win === 'banker' ? B.clone() : new THREE.Vector3(0, .5, .8), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); lastBets = { ...bets }; }
+  const st = stake(); if (st) { let ret = 0; ['player', 'banker', 'tie'].forEach(k => { if (bets[k]) ret += M.bacReturn(k, res.win, bets[k]); }); await sleep(900); BU.glow([K.$(SP[res.win])]); BU.settle(Object.keys(SP).filter(k => bets[k]).map(k => ({ el: K.$(SP[k]), win: M.bacReturn(k, res.win, bets[k]) > 0 }))); BU.banner(st, Math.round(ret)); K.payout(st, Math.round(ret), res.win === 'player' ? P.clone() : res.win === 'banker' ? B.clone() : new THREE.Vector3(0, .5, .8), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); lastBets = { ...bets }; }
   road.unshift(res.win); road.length = Math.min(14, road.length); K.$('bRoad').innerHTML = road.map(w => `<span style="width:14px;height:14px;border-radius:50%;display:inline-block;background:${w === 'player' ? '#1d3f7a' : w === 'banker' ? '#8e1b2c' : '#0f5a3e'}"></span>`).join('');
-  bets = { player: 0, tie: 0, banker: 0 }; upd(); while (chipsG.children.length) chipsG.remove(chipsG.children[0]); busy = false; K.$('bGo').disabled = false; }
+  bets = { player: 0, tie: 0, banker: 0 }; K.$('bP').textContent = K.$('bT').textContent = K.$('bB').textContent = '0'; while (chipsG.children.length) chipsG.remove(chipsG.children[0]); busy = false; K.$('bGo').disabled = false; }
 const shoe = [];
 const tb = K.sharedRounds({ game: 'bac', betMs: 15000, goMs: 9000, roll: () => M.bacDeal(shoe), onResult, blurb: 'Open a table and share the code. Everyone bets during the countdown; one coup for the whole table.',
   onPhase: st => { phase = st ? st.phase : 'bet'; K.$('bTimerP').style.display = st ? '' : 'none'; }, onTick: (st, s) => K.$('bTimer').textContent = st.phase === 'bet' ? s + 's' : '…' });

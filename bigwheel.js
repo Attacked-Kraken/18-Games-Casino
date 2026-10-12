@@ -1,6 +1,7 @@
 /* Big Wheel: 50-segment money wheel (casino-math.js, every bet ~96%), giant 3D lit wheel with bulbs and a ticking clapper,
    live tables via mp.js (host spins once for everyone). FUN CHIPS ONLY. */
 import { boot } from './casino-kit.js';
+import * as BU from './bet-ui.js';
 const M = window.CMath;
 const SEG = M.BW_SEG, LAY = M.bwLayout(), N = LAY.length, step = Math.PI * 2 / N;
 const K = await boot({ id: 'bigwheel', title: 'Big Wheel', accent: '#c9a45c', bloom: .6, fog: [30, 70],
@@ -32,17 +33,17 @@ function spinTo(i, done) { spinning = true; const a0 = ang, target = a0 + Math.P
 const chip = K.chipPicker([10, 25, 100, 500, 1000]);
 const bets = {}; SEG.forEach(s => bets[s.k] = 0);
 const row = K.el(`<div class="ck-row"></div>`);
-SEG.forEach(s => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ck-sm'; b.style.background = s.c; b.style.color = s.k === '1' ? '#2a1f12' : '#efe2c6'; b.style.minWidth = '50px'; b.innerHTML = `${s.k === 'JOKER' ? 'Joker' : s.k === 'STAR' ? 'Star' : s.k}<br><small style="font-size:9px" id="bw${s.k}">${s.pay}:1</small>`; b.style.height = '46px'; b.style.lineHeight = '1';
+SEG.forEach(s => { const b = document.createElement('button'); b.type = 'button'; b.className = 'ck-sm'; b.style.background = s.c; b.style.color = s.k === '1' ? '#2a1f12' : '#efe2c6'; b.style.minWidth = '50px'; b.innerHTML = `${s.k === 'JOKER' ? 'Joker' : s.k === 'STAR' ? 'Star' : s.k}<br><small style="font-size:9px" id="bw${s.k}">${s.pay}:1</small>`; b.style.height = '60px'; b.style.position = 'relative'; b.id = 'bwS' + s.k; b.style.lineHeight = '1';
   b.onclick = () => { if (spinning || (tb.isLive() && phase !== 'bet')) return; const v = chip.get(); if (!K.take(v)) return; bets[s.k] += v; tb.say('bet', { amt: v }); upd(); }; row.appendChild(b); });
 K.el(`<div class="ck-row"><div class="ck-pill"><small>BET</small><b id="bwT">0</b></div><div class="ck-pill" id="bwTP" style="display:none"><small>SPIN IN</small><b id="bwTm"></b></div><button class="ck-sm" type="button" id="bwC">Clear</button><button class="ck-go" type="button" id="bwGo">SPIN</button></div>`);
 const total = () => Object.values(bets).reduce((a, b) => a + b, 0);
-function upd() { K.$('bwT').textContent = K.fmt(total()); SEG.forEach(s => K.$('bw' + s.k).textContent = bets[s.k] ? K.fmt(bets[s.k]) : s.pay + ':1'); }
+function upd() { SEG.forEach(s => BU.stackOn(K.$('bwS' + s.k), bets[s.k])); K.$('bwT').textContent = K.fmt(total()); SEG.forEach(s => K.$('bw' + s.k).textContent = bets[s.k] ? K.fmt(bets[s.k]) : s.pay + ':1'); }
 K.$('bwC').onclick = () => { if (spinning) return; K.give(total()); SEG.forEach(s => bets[s.k] = 0); upd(); };
 let last = null;
 K.$('bwGo').onclick = () => { if (spinning) return; if (!total()) { if (last && K.take(Object.values(last).reduce((a, b) => a + b, 0))) { Object.assign(bets, last); upd(); } else { K.msg('Bet on a symbol', 1200); return; } } K.$('bwGo').disabled = true; tb.go(); };
 function onResult(i) { spinTo(i, () => { const k = LAY[i], s = SEG.find(x => x.k === k); K.msg(k === 'JOKER' ? 'Joker' : k === 'STAR' ? 'Star' : k, 1500, s.pay >= 11);
-    const st = total(); if (st) { const ret = bets[k] ? bets[k] * (s.pay + 1) : 0; K.payout(st, ret, C.clone().add(new THREE.Vector3(0, RAD, .5)), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); last = { ...bets }; }
-    SEG.forEach(x => bets[x.k] = 0); upd(); K.$('bwGo').disabled = false; }); }
+    const st = total(); if (st) { const ret = bets[k] ? bets[k] * (s.pay + 1) : 0; BU.glow([K.$('bwS' + k)]); BU.settle(SEG.filter(x => bets[x.k]).map(x => ({ el: K.$('bwS' + x.k), win: x.k === k }))); BU.banner(st, ret); K.payout(st, ret, C.clone().add(new THREE.Vector3(0, RAD, .5)), tb.isLive() ? 'net' : 'cpu'); if (ret > st) tb.say('won', { amt: ret - st }); last = { ...bets }; }
+    SEG.forEach(x => bets[x.k] = 0); K.$('bwT').textContent = '0'; K.$('bwGo').disabled = false; }); }
 let phase = 'bet';
 const tb = K.sharedRounds({ game: 'bw', betMs: 15000, goMs: 9000, roll: () => M.bwSpin(), onResult, blurb: 'Open a table and share the code. Everyone bets during the countdown; one spin for the whole table.',
   onPhase: st => { phase = st ? st.phase : 'bet'; K.$('bwTP').style.display = st ? '' : 'none'; }, onTick: (st, s) => K.$('bwTm').textContent = st.phase === 'bet' ? s + 's' : '…' });
