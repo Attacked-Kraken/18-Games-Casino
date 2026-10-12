@@ -8,7 +8,7 @@ export function inWing(x, z, m = 0) { const { z0, zc, r, door } = WING;
   if (z > zc) return Math.hypot(x, z - zc) < r - m; return false; }
 export function createWing(ctx) {
   const { THREE, scene, canvasTex, P, inst, addStation } = ctx; const { z0, zc, r, H } = WING;
-  const root = new THREE.Group(); root.visible = false; scene.add(root); let built = false; const anim = []; let skyParts = null, COLS = [];
+  const root = new THREE.Group(); root.visible = false; scene.add(root); let built = false; const anim = []; let skyParts = null, COLS = []; const OBX = [];
   const rnd = (() => { let s = 99; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
   const PM = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); return m; };
   const M = (o) => new THREE.MeshStandardMaterial(o);
@@ -81,7 +81,7 @@ export function createWing(ctx) {
       add(new THREE.SphereGeometry(.13, 16, 12), sm, 0, 3.32, 0, 0, g); add(new THREE.CylinderGeometry(.05, .06, .12, 10), sm, 0, 3.17, 0, 0, g);
       const arm = add(new THREE.CylinderGeometry(.045, .05, .62, 8), sm, .27, 2.95, .08, 0, g); arm.rotation.z = -2.3; const arm2 = add(new THREE.CylinderGeometry(.045, .05, .55, 8), sm, -.22, 2.75, .05, 0, g); arm2.rotation.z = .25;
       add(new THREE.SphereGeometry(.09, 12, 8), goldM, .5, 3.2, .08, 0, g); }
-    statue(fx, fz, 0); [[-6, zc - 6], [6, zc - 6], [-6, zc + 6], [6, zc + 6]].forEach(([x, z]) => statue(x, z, Math.atan2(-x, -(z - zc))));
+    statue(fx, fz, 0); [[-6, zc - 6], [6, zc - 6], [-6, zc + 6], [6, zc + 6]].forEach(([x, z]) => { statue(x, z, Math.atan2(-x, -(z - zc))); OBX.push([x - .75, z - .75, x + .75, z + .75]); });
     root.children[root.children.length - 1].position.y += 0; /* centre statue tops the fountain */ root.children.find((o) => o.isGroup && o.position.x === fx && o.position.z === fz).position.y = 3.75;
     /* sportsbook: big video wall + odds board + lounge seating (west side near entrance) */
     const sbC = document.createElement('canvas'); sbC.width = 1024; sbC.height = 384; const sbT = new THREE.CanvasTexture(sbC); sbT.colorSpace = THREE.SRGBColorSpace;
@@ -94,7 +94,7 @@ export function createWing(ctx) {
       TEAMS.forEach(([a, b], i) => { const y = 80 + i * 60; g.fillStyle = i % 2 ? '#121a30' : '#0e1426'; g.fillRect(648, y - 24, 360, 54); g.fillStyle = '#e8eefc'; g.font = '600 17px Helvetica'; g.fillText(a, 656, y - 2); g.fillText(b, 656, y + 20);
         const o1 = (1.5 + ((i * 37 + Math.floor(t)) % 17) / 10).toFixed(2), o2 = (1.6 + ((i * 53 + Math.floor(t * .7)) % 19) / 10).toFixed(2); g.fillStyle = '#7dff6a'; g.font = '800 20px Helvetica'; g.fillText(o1, 930, y - 2); g.fillStyle = '#ff8a5c'; g.fillText(o2, 930, y + 20); }); sbT.needsUpdate = true; }
     drawSB(0); let sbAcc = 0; anim.push((t, dt) => { if ((sbAcc += dt) > .12) { sbAcc = 0; drawSB(t); } });
-    const sbx = -13, sbz = z0 + 9;
+    const sbx = -13, sbz = z0 + 9; OBX.push([sbx + .7, sbz - 3.7, sbx + 5.1, sbz + 3.5], [sbx - 4.6, sbz - 4.8, sbx - 4.0, sbz + 4.8]);
     const scr = add(new THREE.PlaneGeometry(9, 3.4), new THREE.MeshBasicMaterial({ map: sbT, toneMapped: false }), sbx - 4.2, 4.2, sbz, Math.PI / 2); add(new THREE.BoxGeometry(.3, 3.8, 9.4), M({ color: 0x111, roughness: .3 }), sbx - 4.38, 4.2, sbz);
     const sign = canvasTex(1024, 160, (c, w, h) => { c.fillStyle = '#0a0a14'; c.fillRect(0, 0, w, h); c.textAlign = 'center'; c.textBaseline = 'middle'; c.shadowColor = '#3ad0ff'; c.shadowBlur = 30; c.fillStyle = '#bff0ff'; c.font = '800 96px Helvetica'; c.fillText('SPORTSBOOK', w / 2, h / 2); });
     add(new THREE.PlaneGeometry(6, .95), new THREE.MeshBasicMaterial({ map: sign, toneMapped: false }), sbx - 4.2, 6.5, sbz, Math.PI / 2);
@@ -103,7 +103,7 @@ export function createWing(ctx) {
     const desk = new THREE.Group(); desk.add(PM(new THREE.BoxGeometry(.66, .05, .4), M({ color: 0x3a2214, roughness: .3 }), 0, .72, -.5));
     const ST = []; for (let rr2 = 0; rr2 < 3; rr2++) for (let k = 0; k < 6; k++) ST.push({ x: sbx + 1.2 + rr2 * 1.6, z: sbz - 3.1 + k * 1.2, ry: -Math.PI / 2 }); inst(seat, ST, root); inst(desk, ST, root);
     /* VIP lounge (east side): velvet ropes, sofas, low tables, glowing sign */
-    const vx = 13, vz = z0 + 9, velvet = M({ color: 0x7a0a1e, roughness: .6 }), sofa = new THREE.Group();
+    const vx = 13, vz = z0 + 9, _o = OBX.push([vx - 3.15, vz - 5.3, vx + 3.7, vz + 3.3]), velvet = M({ color: 0x7a0a1e, roughness: .6 }), sofa = new THREE.Group();
     sofa.add(PM(new THREE.BoxGeometry(2.2, .45, .9), velvet, 0, .25, 0)); sofa.add(PM(new THREE.BoxGeometry(2.2, .7, .25), velvet, 0, .6, -.35));
     sofa.add(PM(new THREE.BoxGeometry(.25, .6, .9), velvet, -1.1, .4, 0)); sofa.add(PM(new THREE.BoxGeometry(.25, .6, .9), velvet, 1.1, .4, 0));
     inst(sofa, [{ x: vx + 3, z: vz - 3, ry: -Math.PI / 2 }, { x: vx + 3, z: vz + 1, ry: -Math.PI / 2 }, { x: vx - .5, z: vz - 4.6, ry: 0 }, { x: vx - .5, z: vz + 2.6, ry: Math.PI }], root);
@@ -123,6 +123,8 @@ export function createWing(ctx) {
     WING.shops = SHOPS; }
   return {
     update(dt, t, over) { const near = P.z > 9 || over; if (near && !built) build(); root.visible = near; if (skyParts) skyParts.forEach((o) => o.visible = !over); if (near) anim.forEach((f) => f(t, dt)); },
-    collide(nx, nz, RAD) { if (!inWing(nx, nz, RAD)) return null; const dx = nx, dz = nz - zc, d = Math.hypot(dx, dz), m = 4.4 + RAD; if (d < m) { nx = dx / d * m; nz = zc + dz / d * m; } for (const c of COLS) { const ex = nx - c.x, ez = nz - c.z, e = Math.hypot(ex, ez), mm = .5 + RAD; if (e < mm && e > 0) { nx = c.x + ex / e * mm; nz = c.z + ez / e * mm; } } return [nx, nz]; },
+    collide(nx, nz, RAD) { if (!inWing(nx, nz, RAD)) return null; const dx = nx, dz = nz - zc, d = Math.hypot(dx, dz), m = 4.4 + RAD; if (d < m) { nx = dx / d * m; nz = zc + dz / d * m; } for (const c of COLS) { const ex = nx - c.x, ez = nz - c.z, e = Math.hypot(ex, ez), mm = .5 + RAD; if (e < mm && e > 0) { nx = c.x + ex / e * mm; nz = c.z + ez / e * mm; } }
+      for (const b of OBX) if (nx + RAD > b[0] && nx - RAD < b[2] && nz + RAD > b[1] && nz - RAD < b[3]) { const l = nx + RAD - b[0], r = b[2] - (nx - RAD), u = nz + RAD - b[1], d = b[3] - (nz - RAD), m = Math.min(l, r, u, d); if (m === l) nx -= l; else if (m === r) nx += r; else if (m === u) nz -= u; else nz += d; }
+      return [nx, nz]; }, buildNow() { if (!built) build(); },
     get built() { return built; } };
 }

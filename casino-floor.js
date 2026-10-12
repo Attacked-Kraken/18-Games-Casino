@@ -14,6 +14,7 @@ import { EffectComposer } from './vendor/EffectComposer.js';
 import { RenderPass } from './vendor/RenderPass.js';
 import { UnrealBloomPass } from './vendor/UnrealBloomPass.js';
 import { createWing, WING } from './forum-wing.js';
+import { createNav } from './nav.js';
 import { openShop, getAvatar } from './shops.js';
 import { OutputPass } from './vendor/OutputPass.js';
 
@@ -530,7 +531,7 @@ const hallSeats = [], HDEAL = []; HALL_TABLES.forEach(([k, x, z, ry]) => { HDEAL
   if (k === 'bj' || k === 'bac') for (let i = 0; i < 6; i += 2) { const a = -1.2 + i / 5 * 2.4, [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.55, -.55 + Math.cos(a) * 1.55); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); }
   if (k === 'poker' || k === 'pokerB') for (let i = 0; i < 8; i += 2) { const a = i / 8 * Math.PI * 2 + Math.PI / 8; if (Math.abs(a - Math.PI * 1.5) < .5) continue; const [sx, sz] = toW(x, z, ry, Math.sin(a) * 1.45, Math.cos(a) * 1.45); hallSeats.push({ x: sx, z: sz, ry: ry + a + Math.PI }); } });
 const HALL_PATHS = [[[-34, -21], [34, -21]], [[-34, -36], [34, -36]], [[0, -19], [0, -56]], [[-10, -27.5], [10, -27.5]], [[-21, -60], [21, -60]], [[-34, -48], [-12, -48]]];
-const people = createPeople({ THREE, scene, mobile, PATHS: PATHS.concat(HALL_PATHS), seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()).slice(0, 12).concat(hallSeats.slice(0, 8)),
+const people = createPeople({ THREE, scene, mobile, collide: (x, z) => collide(x, z), getNav: () => { if (hall) hall.buildNow(); if (wing && wing.buildNow) wing.buildNow(); return createNav(collide); }, PATHS: PATHS.concat(HALL_PATHS), seats: slotSeats.concat(SEATED.map((c) => ({ x: c.x, z: c.z, ry: c.ry, y: 0 }))).sort(() => .5 - rnd()).slice(0, 12).concat(hallSeats.slice(0, 8)),
   dealers: DEALERS.concat(HDEAL), zoneVisible: (x, z) => z > HALL.z1 + .5 || !!(hall && hall.root.visible),
   pairs: [[-6.5, 10.5, .4], [7.5, 10.2, -.8], [-20, -40.5, .3], [10, -52, 1], [-14, 0, 1.2], [15, -1, 2], [0, 21.5, 0]], bar: [[-2.6, -12.6, Math.PI / 2], [2.6, -12.6, -Math.PI / 2], [-1.6, -10.9, Math.PI * .8], [1.6, -10.9, -Math.PI * .8], [0, -10.6, Math.PI]].concat(HALL_BARS.flatMap(([bx, bz]) => [[bx - 3.6, bz + 2.6, Math.PI], [bx - 1.2, bz + 2.6, Math.PI], [bx + 2.4, bz + 2.6, Math.PI]])),
   onReady: () => { Object.values(PI_).forEach((m) => (m.visible = false)); mkMe(); } });
@@ -725,6 +726,8 @@ function frame(now) {
       const ty = faceTo(auto.st); let dy = ty - P.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); P.yaw += dy * Math.min(1, dt * 4); P.pitch += (-.12 - P.pitch) * Math.min(1, dt * 3); } }
   const m = Math.hypot(mx, mz); if (m > 0) { const k = Math.min(1, m) / m * SPEED * dt * (keys.ShiftLeft ? 1.6 : 1); const s = Math.sin(P.yaw), c = Math.cos(P.yaw);
     const vx = (mx * c + mz * s) * k, vz = (-mx * s + mz * c) * k; [P.x, P.z] = collide(P.x + vx, P.z + vz); }
+  if (people.ready) { const pushOut = (qx, qz, R) => { const ex = P.x - qx, ez = P.z - qz, d = Math.hypot(ex, ez); if (d < R && d > 1e-4) [P.x, P.z] = collide(qx + ex / d * R, qz + ez / d * R); };
+    for (const q of people.list) if (q.o.visible) pushOut(q.o.position.x, q.o.position.z, .62); for (const e of people.extra || []) if (e.on) pushOut(e.x, e.z, .7); }
   const bob = m > 0 ? Math.sin(t * 9) * .025 : 0;
   cam.position.set(P.x, 1.62 + bob, P.z); cam.rotation.set(P.pitch, P.yaw, 0, 'YXZ');
   BV.k += ((BV.on ? 1 : 0) - BV.k) * Math.min(1, dt * 3.2); if (BV.k < .002) BV.k = 0;
@@ -752,7 +755,7 @@ function frame(now) {
   if (t > 2) { frames++; if (dt > 1 / 40) slowT += dt; else fastT += dt;
     if (frames >= 90) { if (slowT > .6 && tier < TIERS.length - 1) { tier++; resize(); } else if (slowT < .05 && fastT > 1.4 && tier > (mobile ? 1 : 0)) { tier--; resize(); } frames = 0; slowT = fastT = 0; } }
 }
-window.__floor = { P, stations, teleport, get near() { return near; }, get tier() { return tier; } };
+window.__floor = { P, stations, teleport, collide, get near() { return near; }, get tier() { return tier; } };
 resize(); layout(L.games); L.onGames((g) => layout(g)); faceTo({ center: new THREE.Vector3(0, 0, 0) }, true); P.pitch = -.04;
 requestAnimationFrame(frame);
 }
