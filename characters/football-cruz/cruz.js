@@ -97,9 +97,9 @@ vec4 cruzFit(vec3 p){ float ax=abs(p.x), y=p.y; vec3 c; bool arm = ax>.27 && y>1
       for (const [th, ph] of [[.42, .32], [.42, -.32], [.62, .55], [.62, -.55], [.55, 2.9], [.55, -2.9]]) { const v = new THREE.Mesh(new THREE.CapsuleGeometry(.0055, .022, 3, 8), vm); const p = ell(th, ph, 1.005); v.lookAt(p.clone().sub(new THREE.Vector3(...HC)).add(p)); v.rotateX(Math.PI / 2); at(B.Head, v, p.x, p.y, p.z); }
       const clipM = new THREE.MeshPhysicalMaterial({ color: 0xe8eef2, roughness: .15, transmission: 0, clearcoat: 1, metalness: 0 });
       for (const s of [-1, 1]) { const c = new THREE.Mesh(new THREE.BoxGeometry(.016, .012, .01), clipM); at(B.Head, c, s * .07, 1.726, .093); }
-      const strapM = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: .7 }), bkM = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: .8, roughness: .3 });
+      const strapM = new THREE.MeshStandardMaterial({ color: 0xa9814f, roughness: .85 }), bkM = new THREE.MeshStandardMaterial({ color: 0xb8bcc4, metalness: .8, roughness: .3 });
       for (const s of [-1, 1]) for (const [a, b, c] of [[[s * .108, 1.648, -.01], [s * .085, 1.6, .05], [s * .03, 1.585, .095]], [[s * .1, 1.67, .06], [s * .08, 1.62, .085], [s * .03, 1.6, .1]]]) {
-        const cur = new THREE.CatmullRomCurve3([a, b, c].map((q) => new THREE.Vector3(...q))); const tb = new THREE.Mesh(new THREE.TubeGeometry(cur, 10, .0035, 5), strapM); tb.scale.set(1, 1, 1); obj.add(tb); tb.updateMatrixWorld(true); B.Head.attach(tb);
+        const cur = new THREE.CatmullRomCurve3([a, b, c].map((q) => new THREE.Vector3(...q))); const tb = new THREE.Mesh(new THREE.TubeGeometry(cur, 10, .0042, 6), strapM); tb.scale.set(1, 1, 1); obj.add(tb); tb.updateMatrixWorld(true); B.Head.attach(tb);
         const bk = new THREE.Mesh(new THREE.BoxGeometry(.012, .012, .004), bkM); const m = cur.getPoint(.45); bk.lookAt(m.clone().add(new THREE.Vector3(s, 0, .3))); at(B.Head, bk, m.x + s * .003, m.y, m.z); }
       { const bump = new THREE.Mesh(new THREE.TorusGeometry(.1, .007, 6, 20, Math.PI * .5), new THREE.MeshStandardMaterial({ color: 0xf0f0f0, roughness: .5 })); bump.scale.set(HR[0] / .1 * 1.03, 1, HR[2] / .1 * 1.03); bump.rotation.set(Math.PI / 2, 0, Math.PI * 1.25); at(B.Head, bump, 0, 1.635, -.012); } }
     /* heavy build: bone scaling */

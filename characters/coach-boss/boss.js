@@ -19,31 +19,56 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
     if (oc.a > .5 && q.z > 0. && q.y > .98 && q.y < 1.5 && oc.r > .3) {                                                      /* shirt opening: waistcoat + patterned tie */
       float tw = .012 + .012 * smoothstep(1.43, 1.2, q.y);
       if (ax < tw && q.y > 1.13 && q.y < 1.47) { vec2 g = fract(q.xy * vec2(180., 180.)); oc.rgb = vec3(.025) + vec3(.07,.07,.075) * step(.5, g.x) * step(.5, g.y); }
-      else if (q.y < 1.43 - (.06 - ax) * 2.5) { oc.rgb = SUIT; if (abs(ax) < .006 && abs(fract(q.y * 22.) - .5) < .14) oc.rgb = vec3(.02); } } }`); };
+      else if (ax > (q.y - 1.27) * .42) { oc.rgb = SUIT; if (abs(ax) < .006 && abs(fract(q.y * 22.) - .5) < .14) oc.rgb = vec3(.02); } } }`); };
       mat.customProgramCacheKey = () => 'boss2'; mat.needsUpdate = true;
       /* jacket: separate skinned cloth over torso + full sleeves, open V front with lapels, hem below hips */
       const { shell, sm } = shellFactory(THREE, body);
-      const keep = (x, y, z) => { const ax = Math.abs(x); if (ax > .27 && y > 1.24) return ax < .63; if (y > 1.53 || y < .74) return false; if (y < .93 && ax < .05) return false; return ax < .3; };
-      const jk = shell(keep, (x, y, z) => { const ax = Math.abs(x); const sh = sm(1.32, 1.44, y) * (1 - sm(.22, .32, ax));
-        if (ax > .27 && y > 1.24) return [.016 + .012 * sh + .006 * sm(.5, .62, ax), 0];
-        return [.018 + .016 * sh + .03 * sm(.98, .76, y) + .008 * sm(1.1, 1.25, y) * (z > 0 ? 1 : .5), 0]; }, 'bossJacket');
+      const keep = (x, y, z) => { const ax = Math.abs(x); if (ax > .27 && y > 1.24) return ax < .63; if (y > 1.54 || y < .96) return false; return ax < .3; };
+      /* boxy hull: superellipse cross-section per height (padded shoulders), never follows the muscles */
+      const lerpT = (tab, y) => { for (let i = 1; i < tab.length; i++) if (y <= tab[i][0]) { const [y0, a0] = tab[i - 1], [y1, a1] = tab[i]; const u = (y - y0) / (y1 - y0); return a0 + (a1 - a0) * Math.min(1, Math.max(0, u)); } return tab[tab.length - 1][1]; };
+      const RX = [[.9, .19], [1.0, .19], [1.2, .2], [1.36, .235], [1.43, .255], [1.5, .2], [1.56, .1]], RZ = [[.9, .14], [1.0, .14], [1.2, .15], [1.4, .15], [1.5, .12], [1.56, .08]];
+      const hull = (x, y, z) => { const rx = lerpT(RX, y), rz = lerpT(RZ, y), cz = .005; const dz = z - cz; const ang = Math.atan2(x / rx, dz / rz), s = Math.sin(ang), c = Math.cos(ang);
+        const k = 3.2, se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / k); return [rx * se(s), cz + rz * se(c)]; };
+      const jk = shell(keep, (x, y, z, n) => { const ax = Math.abs(x);
+        if (ax > .27 && y > 1.24) return [.026 + .012 * (1 - sm(.27, .36, ax)) + .006 * sm(.5, .62, ax), 0];
+        const [hx, hz] = hull(x, y, z); const w = 1 - sm(.23, .28, ax); const d0 = Math.hypot(x, z - .005), d1 = Math.hypot(hx, hz - .005);
+        const push = Math.max(.02, (d1 - d0)) * w + .026 * (1 - w); return [push, .006 * sm(1.36, 1.46, y) * w]; }, 'bossJacket2');
       const U = { uT: { value: 0 } };
       const jm = new THREE.MeshStandardMaterial({ color: NAVY, roughness: .62, side: THREE.DoubleSide });
+      const vOpen = `float vo = ax < .016 + (q.y - 1.1) * .34 && q.y > 1.1 && q.z > 0.;`;
       jm.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
         sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 bindP; varying vec3 vB;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vB = bindP;');
         sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vB;').replace('#include <color_fragment>', `#include <color_fragment>
   { vec3 q = vB; float ax = abs(q.x); bool arm = ax > .27 && q.y > 1.24;
-    if (!arm && q.z > 0. && q.y > .99 && ax < .015 + (q.y - .99) * .3) discard;                                              /* open V front to the button */
-    if (!arm && q.z > 0. && q.y <= .99 && q.y > .74 && ax < .012 + (.99 - q.y) * .25) discard;                                /* cutaway front hem */
-    if (arm && ax > .615) discard; if (!arm && q.y < .76) discard;
-    float s = abs(fract((q.x + q.z * .3) * 60.) - .5); diffuseColor.rgb *= 1. + .5 * smoothstep(.03, .01, s);                 /* faint chalk stripe */
-    if (!arm && q.z > 0. && q.y > .99 && ax < .06 + (q.y - .99) * .3) diffuseColor.rgb *= .8; }`); };
-      jm.customProgramCacheKey = () => 'bossJacket1'; jk.material = jm; body.parent.add(jk); jk.bind(body.skeleton, body.bindMatrix); jk.position.copy(body.position); jk.quaternion.copy(body.quaternion); jk.scale.copy(body.scale); }
-    /* lapels (peaked, rolled) + white shirt collar */
-    const lapM = new THREE.MeshStandardMaterial({ color: 0x0e1322, roughness: .45, side: THREE.DoubleSide });
-    for (const s of [-1, 1]) { const sp = new THREE.Shape(); sp.moveTo(0, 0); sp.lineTo(.05, .02); sp.lineTo(.085, .29); sp.lineTo(.06, .33); sp.lineTo(.03, .3); sp.lineTo(.006, .33); sp.lineTo(-.004, .3); sp.lineTo(0, 0);
-      const g = new THREE.ShapeGeometry(sp); const lp = new THREE.Mesh(g, lapM); lp.scale.x = s; lp.rotation.set(-.12, s * .45, s * -.03); at(B.spine_03 || B.spine_02, lp, s * .02, 1.0, .148);
+    if (!arm && q.z > 0. && q.y > 1.1 && ax < .016 + (q.y - 1.1) * .34) discard;                                            /* V opening to the button */
+    if (arm && ax > .615) discard; if (!arm && q.y < .975) discard;
+    float s = abs(fract((q.x + q.z * .3) * 60.) - .5); diffuseColor.rgb *= 1. + .45 * smoothstep(.03, .01, s);
+    if (!arm && q.z > 0. && q.y > 1.1 && ax < .05 + (q.y - 1.1) * .34) diffuseColor.rgb *= .75; }`); };
+      jm.customProgramCacheKey = () => 'bossJacket2'; jk.material = jm;
+      /* trousers: separate cloth over legs, slight flare, front crease ridge */
+      const tr = shell((x, y, z) => y < .975 && y > .085 && !(Math.abs(x) > .27 && y > 1.24), (x, y, z, n) => [.012 + .018 * sm(.42, .12, y) + .004 * Math.max(0, n[2] - .9) * 10, 0], 'bossTrousers');
+      const tm = new THREE.MeshStandardMaterial({ color: NAVY, roughness: .62 }); tm.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 bindP; varying vec3 vB;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vB = bindP;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vB;').replace('#include <color_fragment>', `#include <color_fragment>
+  { if (vB.y < .1) discard; float s = abs(fract((vB.x + vB.z * .3) * 60.) - .5); diffuseColor.rgb *= 1. + .45 * smoothstep(.03, .01, s); }`); };
+      tm.customProgramCacheKey = () => 'bossTrousers1'; tr.material = tm;
+      for (const m of [jk, tr]) { body.parent.add(m); m.bind(body.skeleton, body.bindMatrix); m.position.copy(body.position); m.quaternion.copy(body.quaternion); m.scale.copy(body.scale); }
+      /* jacket skirt: one continuous hem to mid-hip (rigid on pelvis), front cutaway + back vent */
+      { const seg = 48, rows = 6, pos = [], bp = [], ix = []; for (let r = 0; r <= rows; r++) { const y = 1.03 - r * (.25 / rows), fl = r / rows; for (let i = 0; i <= seg; i++) { const a = i / seg * Math.PI * 2; const [hx, hz] = hull(Math.sin(a) * .2, 1.0, Math.cos(a) * .2);
+          const ex = 1.12 + fl * .1; pos.push(hx * ex + Math.sign(hx) * .01, y, (hz - .005) * (1.2 + fl * .1) + .005); bp.push(Math.sin(a), y, Math.cos(a)); } }
+        for (let r = 0; r < rows; r++) for (let i = 0; i < seg; i++) { const a = r * (seg + 1) + i, b2 = a + seg + 1; ix.push(a, b2, a + 1, a + 1, b2, b2 + 1); }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('bindP', new THREE.Float32BufferAttribute(bp, 3)); g.setIndex(ix); g.computeVertexNormals();
+        const sm2 = jm.clone(); sm2.onBeforeCompile = (sh) => { sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 bindP; varying vec3 vB;').replace('#include <begin_vertex>', '#include <begin_vertex>\n vB = bindP;');
+          sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vB;').replace('#include <color_fragment>', `#include <color_fragment>
+  { float y = vB.y; if (vB.z > .995 - max(0., 1. - y) * .25 && abs(vB.x) < .2) discard;                    /* cutaway front */
+    if (vB.z < -.9985 && y < .88) discard;                                                                   /* back vent */
+    float s = abs(fract(atan(vB.x, vB.z) * 9.55) - .5); diffuseColor.rgb *= 1. + .45 * smoothstep(.03, .01, s); }`); };
+        sm2.customProgramCacheKey = () => 'bossSkirt1'; const sk = new THREE.Mesh(g, sm2); at(B.pelvis, sk, 0, 0, 0); } }
+    /* 3D lapels (notched, rolled) + jacket back collar + white shirt collar points */
+    const lapM = new THREE.MeshStandardMaterial({ color: 0x0f1424, roughness: .4 });
+    for (const s of [-1, 1]) { const sp = new THREE.Shape(); sp.moveTo(0, 0); sp.lineTo(.045, .05); sp.lineTo(.07, .3); sp.lineTo(.045, .335); sp.lineTo(.03, .305); sp.lineTo(.012, .33); sp.lineTo(0, .3); sp.lineTo(0, 0);
+      const g = new THREE.ExtrudeGeometry(sp, { depth: .006, bevelEnabled: true, bevelSize: .003, bevelThickness: .003, bevelSegments: 1 }); const lp = new THREE.Mesh(g, lapM); lp.scale.x = -s; lp.rotation.set(-.2, s * -.5, 0); at(B.spine_03 || B.spine_02, lp, s * .016, 1.1, .158);
       const col = new THREE.Mesh(new THREE.ConeGeometry(.016, .04, 3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .5 })); col.scale.z = .3; col.rotation.set(-.2, 0, s * 2.75); at(B.neck_01 || B.spine_03, col, s * .022, 1.47, .1); }
+    { const bc = new THREE.Mesh(new THREE.TorusGeometry(.078, .014, 8, 24, Math.PI * 1.2), lapM); bc.scale.set(1, 1, 1.1); bc.rotation.set(Math.PI / 2 - .35, 0, Math.PI * .9 + Math.PI); at(B.spine_03, bc, 0, 1.52, -.005); }
     /* Cuban chain + pocket-watch pendant */
     { const curve = new THREE.CatmullRomCurve3([[-.075, 1.5, .03], [-.09, 1.4, .12], [-.05, 1.25, .15], [0, 1.16, .155], [.05, 1.25, .15], [.09, 1.4, .12], [.075, 1.5, .03]].map((v) => new THREE.Vector3(...v)));
       const L = 46, lg = new THREE.TorusGeometry(.0085, .0035, 5, 10); for (let i = 0; i <= L; i++) { const u = i / L, p = curve.getPoint(u), tg = curve.getTangent(u); const l = new THREE.Mesh(lg, gold); l.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), tg); if (i % 2) l.rotateX(Math.PI / 2); at(B.spine_03, l, p.x, p.y, p.z); }
