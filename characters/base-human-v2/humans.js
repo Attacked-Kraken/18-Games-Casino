@@ -10,7 +10,9 @@ import * as SkeletonUtils from '../../vendor/SkeletonUtils.js';
 
 export const SKINS = [[1.04, 1, .97], [.95, .84, .76], [.84, .68, .56], [.66, .5, .38], [.5, .36, .27], [.38, .27, .2]];
 export const HAIR_COLS = [0x1a1210, 0x2e1c12, 0x5a3a1e, 0x8a5a2e, 0xc8a060, 0xe8d0a0, 0x7a2a14, 0x9a9a9a, 0x3a1a4a];
-export const HAIR = { m: ['short', 'buzz', 'quiff', 'curly', 'bald', 'long'], f: ['long', 'bob', 'bun', 'ponytail', 'curly', 'pixie'] };
+export const HAIR = { m: ['parted', 'buzzed', 'parted_beard', 'buzzed_beard', 'bald_beard', 'long', 'curly', 'quiff'], f: ['long', 'buns', 'buzzedf', 'parted', 'long', 'bob', 'ponytail', 'curly'] };
+/* real CC0 Quaternius hair meshes (Universal Base Characters, skinned to the same rig); others fall back to built shapes */
+const REAL_HAIR = { parted: ['simpleparted'], buzzed: ['buzzed'], parted_beard: ['simpleparted', 'beard'], buzzed_beard: ['buzzed', 'beard'], bald_beard: ['beard'], long: ['long'], buns: ['buns'], buzzedf: ['buzzedfemale'], short: ['simpleparted'], buzz: ['buzzed'], bun: ['buns'] };
 /* top: 0 plain tee, 1 graphic tee (logo), 2 button-up (plaid), 3 hoodie, 4 tracksuit top (stripes), 5 dress shirt, 6 tank/straps
    sleeves: 0 none, 1 short, 2 long. bottom: 0 trousers, 1 jeans, 2 skirt, 3 dress (top colour continues), 4 track pants. shoes: 0 sneakers, 1 dress shoes, 2 heels */
 export const OUTFITS = {
@@ -45,7 +47,10 @@ function logoTex(THREE) { const c = document.createElement('canvas'); c.width = 
 
 export async function loadHumans(THREE, base = 'characters/base-human-v2/') {
   const L = new GLTFLoader(); const [m, f, a] = await Promise.all(['male', 'female', 'anims'].map((n) => L.loadAsync(base + n + '.glb')));
-  const clips = {}; a.animations.forEach((c) => (clips[c.name] = c)); const LOGO = logoTex(THREE); const src = { m: m.scene, f: f.scene };
+  const clips = {}; a.animations.forEach((c) => (clips[c.name] = c));
+  const hairSrc = {}; await Promise.all(['simpleparted', 'buzzed', 'buzzedfemale', 'beard', 'long', 'buns'].map((n) => L.loadAsync(base + 'hair/hair_' + n + '.glb').then((g) => { g.scene.traverse((o) => { if (o.isSkinnedMesh) hairSrc[n] = o; }); }).catch(() => {})));
+  function realHair(obj, body, names, hc) { const bones = {}; obj.traverse((b) => { if (b.isBone) bones[b.name] = b; }); let ok = false;
+    names.forEach((n) => { const s = hairSrc[n]; if (!s) return; const sk = new THREE.Skeleton(s.skeleton.bones.map((b) => bones[b.name] || bones.Head), s.skeleton.boneInverses); const m = new THREE.SkinnedMesh(s.geometry, new THREE.MeshStandardMaterial({ map: s.material.map, color: hc, roughness: .6, metalness: 0 })); m.frustumCulled = false; body.parent.add(m); m.bind(sk, body.bindMatrix); ok = true; }); return ok; } const LOGO = logoTex(THREE); const src = { m: m.scene, f: f.scene };
   const col = (h) => new THREE.Color(h);
   function bodyMat(orig, g, o, cols, skin) { const mat = new THREE.MeshStandardMaterial({ map: orig.map, roughness: .7, metalness: 0 }); const lm = LM[g];
     const U = { uSkin: { value: new THREE.Vector3(...SKINS[skin]) }, uTop: { value: col(cols.top) }, uBot: { value: col(cols.bottom) }, uJak: { value: col(cols.jacket ?? cols.top) }, uShoe: { value: col(cols.shoes) },
@@ -89,12 +94,13 @@ vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.
   function make(spec, h = 1.72) { const g = spec.g === 'f' ? 'f' : 'm', o = OUTFITS[g][spec.outfit] || Object.values(OUTFITS[g])[0], lm = LM[g];
     const pick = (k, i) => { const v = (spec.cols && spec.cols[k] != null) ? spec.cols[k] : o.cols[k] ? o.cols[k][(i ?? spec.ci ?? 0) % o.cols[k].length] : undefined; return v; };
     const cols = { top: pick('top'), bottom: pick('bottom') ?? pick('top'), jacket: pick('jacket'), shoes: pick('shoes') ?? 0x222222, acc: pick('acc') ?? 0x6a2aaa };
-    const obj = SkeletonUtils.clone(src[g]); const k = h / (g === 'f' ? 1.767 : 1.81); obj.scale.setScalar(k); obj.updateMatrixWorld(true); let head = null, pelvis = null, neck = null;
+    let bodyMesh = null; const obj = SkeletonUtils.clone(src[g]); const k = h / (g === 'f' ? 1.767 : 1.81); obj.scale.setScalar(k); obj.updateMatrixWorld(true); let head = null, pelvis = null, neck = null;
     obj.traverse((n) => { if (n.isBone) { if (n.name === 'Head') head = n; if (n.name === 'pelvis') pelvis = n; if (n.name === 'neck_01') neck = n; }
       if (n.isMesh) { n.frustumCulled = false; if (/Eyebrow|^Face$/i.test(n.name) || (n.material && /Hair/.test(n.material.name))) n.material = new THREE.MeshStandardMaterial({ map: n.material.map, color: spec.hairCol ?? 0x2e1c12, transparent: true, alphaTest: .3 });
-        else if (n.material && /Superhero|SuperHero/i.test(n.material.name)) n.material = bodyMat(n.material, g, o, cols, spec.skin ?? 1); } });
+        else if (n.material && /Superhero|SuperHero/i.test(n.material.name)) { n.material = bodyMat(n.material, g, o, cols, spec.skin ?? 1); bodyMesh = n; } } });
     const attach = (bone, mesh, wx, wy, wz) => { if (!bone || !mesh) return; obj.add(mesh); mesh.position.set(wx, wy, wz); mesh.updateMatrixWorld(true); bone.attach(mesh); };
-    const hair = hairMesh(spec.hair || HAIR[g][0], g, spec.hairCol ?? 0x2e1c12); if (hair) attach(head, hair, 0, lm.headC, -.01);
+    const hs = spec.hair || HAIR[g][0]; const used = bodyMesh && REAL_HAIR[hs] && !o.helmet && realHair(obj, bodyMesh, REAL_HAIR[hs], spec.hairCol ?? 0x2e1c12);
+    if (!used && !o.helmet) { const hair = hairMesh(hs, g, spec.hairCol ?? 0x2e1c12); if (hair) attach(head, hair, 0, lm.headC, -.01); }
     if (o.bandana) { const b = new THREE.Mesh(new THREE.TorusGeometry(lm.headR * 1.08, .016, 6, 24), new THREE.MeshStandardMaterial({ color: cols.acc, roughness: .6 })); b.rotation.x = Math.PI / 2 - .3; attach(head, b, 0, lm.headC + .035, -.01); }
     if (o.hood) { const hd = new THREE.Mesh(new THREE.TorusGeometry(.1, .04, 8, 16, Math.PI), new THREE.MeshStandardMaterial({ color: cols.top, roughness: .8 })); hd.rotation.set(Math.PI / 2 + .3, 0, Math.PI); attach(neck, hd, 0, lm.neck - .02, -.07); }
     if (o.bottom === 2 || o.bottom === 3) { const len = o.bottom === 3 ? (lm.waist - lm.knee - .1) : (lm.waist - lm.knee - .03); const sk = new THREE.Mesh(new THREE.CylinderGeometry(.17, .25, len, 20, 1, true), new THREE.MeshStandardMaterial({ color: o.bottom === 3 ? cols.top : cols.bottom, roughness: o.bottom === 3 ? .35 : .7, side: THREE.DoubleSide })); attach(pelvis, sk, 0, lm.waist - len / 2 - .01, -.03); }
