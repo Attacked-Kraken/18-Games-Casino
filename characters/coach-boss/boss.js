@@ -33,17 +33,29 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
       const BP = body.geometry.attributes.position, TB = {}, AB = {};
       for (let i = 0; i < BP.count; i++) { const x = BP.getX(i), y = BP.getY(i), z = BP.getZ(i), ax = Math.abs(x);
         if (ax > .27 && y > 1.24) { const k = Math.round(ax / .02); const e = AB[k] || (AB[k] = { n: 0, y: 0, z: 0, pts: [] }); e.n++; e.y += y; e.z += z; e.pts.push([y, z]); }
-        else if (y > .9 && y < 1.6) { const k = Math.round(y / .02); const e = TB[k] || (TB[k] = { x: 0, z0: 9, z1: -9 }); e.x = Math.max(e.x, ax); e.z0 = Math.min(e.z0, z); e.z1 = Math.max(e.z1, z); } }
+        else if (y > .9 && y < 1.6 && ax < .235) { const k = Math.round(y / .02); const e = TB[k] || (TB[k] = { x: 0, z0: 9, z1: -9 }); e.x = Math.max(e.x, ax); e.z0 = Math.min(e.z0, z); e.z1 = Math.max(e.z1, z); } }
       for (const k in AB) { const e = AB[k]; e.y /= e.n; e.z /= e.n; e.r = 0; for (const [y, z] of e.pts) e.r = Math.max(e.r, Math.hypot(y - e.y, z - e.z)); }
       const tb = (y) => { const k = Math.round(y / .02); let rx = 0, z0 = 9, z1 = -9; for (let j = k - 3; j <= k + 3; j++) { const e = TB[j]; if (e) { rx = Math.max(rx, e.x); z0 = Math.min(z0, e.z0); z1 = Math.max(z1, e.z1); } } return [rx, z0, z1]; };
       const ab = (ax) => { const k = Math.round(ax / .02); let r = 0, yy = 0, zz = 0, n = 0; for (let j = k - 1; j <= k + 1; j++) { const e = AB[j]; if (e) { r = Math.max(r, e.r); yy += e.y; zz += e.z; n++; } } return n ? [yy / n, zz / n, r] : null; };
+      /* tailored sleeve tubes: straight along the bone axis (shoulder->elbow->wrist), radius from the max arm extent per section, smooth taper */
+      const bw = (nm) => { const v = new THREE.Vector3(); B[nm].getWorldPosition(v); return obj.worldToLocal(v); };
+      const AX = {}; for (const s of ['l', 'r']) if (B['upperarm_' + s] && B['lowerarm_' + s] && B['hand_' + s]) AX[s] = [bw('upperarm_' + s), bw('lowerarm_' + s), bw('hand_' + s)];
+      const near = (s, x, y, z) => { const P0 = new THREE.Vector3(x, y, z); let best = null; AX[s].slice(0, 2).forEach((a, i) => { const b = AX[s][i + 1], ab2 = b.clone().sub(a); const u = Math.max(0, Math.min(1, P0.clone().sub(a).dot(ab2) / ab2.lengthSq()));
+          const c = a.clone().addScaledVector(ab2, u), d = P0.distanceTo(c); if (!best || d < best.d) best = { d, c, t: i + u }; }); return best; };
+      const SEC = { l: new Float32Array(22), r: new Float32Array(22) };
+      for (let i = 0; i < BP.count; i++) { const x = BP.getX(i), y = BP.getY(i), z = BP.getZ(i); if (!(Math.abs(x) > .27 && y > 1.24)) continue; const s = x > 0 ? 'l' : 'r'; if (!AX[s]) continue; const nb = near(s, x, y, z); const k = Math.min(21, Math.round(nb.t * 10)); if (nb.d < .1) SEC[s][k] = Math.max(SEC[s][k], nb.d); }
+      for (const s of ['l', 'r']) { const a = SEC[s], o = new Float32Array(22); for (let k = 0; k < 22; k++) { let m = 0; for (let j = k - 2; j <= k + 2; j++) if (j >= 0 && j < 22) m = Math.max(m, a[j]); o[k] = m; } SEC[s] = o; }
+      const sleeve = (x, y, z, n) => { const s = x > 0 ? 'l' : 'r'; if (!AX[s]) return null; if (AX[s][0].x * x < 0) return null; const nb = near(s, x, y, z); const tt = nb.t, k = Math.min(21, Math.round(tt * 10));
+        const R = Math.min(.088 - .016 * Math.min(2, tt), Math.max(SEC[s][k] + .012, .062 - .01 * Math.min(2, tt))) + .006 * sm(1.7, 2, tt); const dir = new THREE.Vector3(x, y, z).sub(nb.c); const d = dir.length() || 1e-3; dir.divideScalar(d);
+        const p = nb.c.clone().addScaledVector(dir, Math.max(R, d + .01)); const w = sm(.06, .22, tt) * (1 - sm(R + .01, R + .04, d));                                       /* blend into the shoulder seam */
+        return { p: [p.x * w + (x + n[0] * .03) * (1 - w), p.y * w + (y + n[1] * .03) * (1 - w), p.z * w + (z + n[2] * .03) * (1 - w)] }; };
       const jk = shell(keep, (x, y, z, n) => { const ax = Math.abs(x), sx = Math.sign(x) || 1;
-        if (ax > .27 && y > 1.24) { const A = null; if (!A) return [.022 + .01 * (1 - sm(.27, .34, ax)) + .006 * sm(.5, .62, ax), 0]; const dy = y - A[0], dz = z - A[1], d = Math.hypot(dy, dz) || 1e-3; const R = A[2] + .014 + .006 * sm(.5, .62, ax), bl = sm(.31, .36, ax); const Rb = Math.max(R, d + .012) * bl + (d + .03) * (1 - bl);
+        if (ax > .27 && y > 1.24) { const S = sleeve(x, y, z, n); if (S) return S; return [.022, 0]; const dy = y - A[0], dz = z - A[1], d = Math.hypot(dy, dz) || 1e-3; const R = A[2] + .014 + .006 * sm(.5, .62, ax), bl = sm(.31, .36, ax); const Rb = Math.max(R, d + .012) * bl + (d + .03) * (1 - bl);
           return { p: [x, A[0] + dy / d * Rb, A[1] + dz / d * Rb] }; }
         const [rx0, z0, z1] = tb(Math.max(y, 1.0)); const pad = .028 * Math.exp(-(((y - 1.42) / .05) ** 2)); const rx = rx0 + .03 + pad, cz = (z0 + z1) / 2, rz = (z1 - z0) / 2 + .03;
         const ang = Math.atan2(x / rx, (z - cz) / rz), k = 3.4, se = (v) => Math.sign(v) * Math.pow(Math.abs(v), 2 / k); let hx = rx * se(Math.sin(ang)), hz = cz + rz * se(Math.cos(ang));
         const d0 = Math.hypot(x, z - cz), d1 = Math.hypot(hx, hz - cz); if (d1 < d0 + .015) { const s = (d0 + .015) / d1; hx *= s; hz = cz + (hz - cz) * s; }
-        const w = 1 - sm(.24, .28, ax); return { p: [hx * w + (x + n[0] * .03) * (1 - w), y + .006 * sm(1.36, 1.46, y) * w, hz * w + (z + n[2] * .03) * (1 - w)] }; }, 'bossJacket3');
+        const w = 1 - sm(.19, .25, ax); return { p: [hx * w + (x + n[0] * .03) * (1 - w), y + .006 * sm(1.36, 1.46, y) * w, hz * w + (z + n[2] * .03) * (1 - w)] }; }, 'bossJacket4');
       const U = { uT: { value: 0 } };
       const jm = new THREE.MeshStandardMaterial({ color: NAVY, roughness: .62, side: THREE.DoubleSide });
       const vOpen = `float vo = ax < .016 + (q.y - 1.1) * .34 && q.y > 1.1 && q.z > 0.;`;
@@ -77,8 +89,8 @@ export async function loadBoss(THREE, base = 'characters/base-human-v2/') {
     obj.traverse((n) => { if (n.isMesh && n.geometry.type === 'TorusGeometry' && Math.abs(n.geometry.parameters.radius - .075) < 1e-4) n.visible = false; });   /* drop base blazer neck ring */
     /* 3D lapels (notched, rolled) + jacket back collar + white shirt collar points */
     const lapM = new THREE.MeshStandardMaterial({ color: 0x0f1424, roughness: .4 });
-    for (const s of [-1, 1]) { const sp = new THREE.Shape(); sp.moveTo(0, 0); sp.lineTo(.045, .05); sp.lineTo(.07, .3); sp.lineTo(.045, .335); sp.lineTo(.03, .305); sp.lineTo(.012, .33); sp.lineTo(0, .3); sp.lineTo(0, 0);
-      const g = new THREE.ExtrudeGeometry(sp, { depth: .006, bevelEnabled: true, bevelSize: .003, bevelThickness: .003, bevelSegments: 1 }); const lp = new THREE.Mesh(g, lapM); lp.scale.x = -s; lp.rotation.set(-.2, s * -.5, 0); at(B.spine_03 || B.spine_02, lp, s * .016, 1.1, .158);
+    for (const s of [-1, 1]) { const sp = new THREE.Shape(), pts = [[.018, 0], [.128, .33], [.148, .3], [.162, .345], [.19, .312], [.075, .02]]; pts.forEach(([x, y], i) => (i ? sp.lineTo(s * x, y) : sp.moveTo(s * x, y))); sp.closePath();
+      const g = new THREE.ExtrudeGeometry(sp, { depth: .005, bevelEnabled: true, bevelSize: .002, bevelThickness: .002, bevelSegments: 1 }); const lp = new THREE.Mesh(g, lapM); lp.rotation.set(-.14, 0, 0); at(B.spine_03 || B.spine_02, lp, 0, 1.1, .168);
       const col = new THREE.Mesh(new THREE.ConeGeometry(.016, .04, 3), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .5 })); col.scale.z = .3; col.rotation.set(-.2, 0, s * 2.75); at(B.neck_01 || B.spine_03, col, s * .022, 1.47, .1); }
     { const bc = new THREE.Mesh(new THREE.TorusGeometry(.078, .014, 8, 24, Math.PI * .9), lapM); bc.scale.set(1, 1, 1.1); bc.rotation.set(Math.PI / 2 + .35, 0, Math.PI * .05); const bg = new THREE.Group(); bg.add(bc); bg.rotation.y = Math.PI; at(B.spine_03, bg, 0, 1.52, -.005); }
     /* Cuban chain + pocket-watch pendant */
