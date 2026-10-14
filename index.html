@@ -968,6 +968,8 @@ textarea.vin { min-height: 74px; resize: vertical; }
         var ddx = cx - W * .7, ddy = cy - (HZ + 16), dd = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
         if (dd < 150) { cx += ddx / dd * (150 - dd); cy += ddy / dd * (150 - dd); }
       }
+      var kdx = cx - W * .7, kdy = cy - (HZ + 16), kd = Math.sqrt(kdx * kdx + kdy * kdy) || 1, krr = fh / 2 + 34;
+      if (kd < krr) { cx += kdx / kd * (krr - kd); cy += kdy / kd * (krr - kd); if (cy < fh / 2 + 6) cy = fh / 2 + 6; }
       if (ts > gzNext) {
         if (watching) { var vx = watchX - cx, vy = watchY - cy, vm = Math.sqrt(vx * vx + vy * vy) || 1;
           gzTX = Math.max(-1, Math.min(1, vx / vm * 1.4)); gzTY = Math.max(-.8, Math.min(.8, vy / vm * 1.1)); }
@@ -995,7 +997,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
         }
         if (b < 64 && eye < 0) continue;
         var x = gx + i * cw, y = gy + j * chh;
-        var dx = x - W * .7, dy = y - (HZ + 16); if (dx * dx + dy * dy < 3600) continue;
+        /* v12i: no hole - she is drawn whole; her center is kept off the door's side instead */
         var t = (b - 64) / 191; if (t < 0) t = 0; if (t > 1) t = 1;
         if (eye >= 0) {
           var pupil = (i === eye + 3 + Math.round(gzX * 2)) && (j === 44 + (gzY > .3 ? 1 : 0));
