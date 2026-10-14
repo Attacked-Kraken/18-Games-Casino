@@ -11,7 +11,7 @@ function meshNormal() { if (MESHN) return MESHN; const n = 64, c = document.crea
   for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) { const i = (y * n + x) * 4; const ox = ((x + (Math.floor(y / 8) % 2) * 4) % 8) - 4, oy = (y % 8) - 4, d = Math.hypot(ox, oy), h = d < 2.2 ? (2.2 - d) / 2.2 : 0;
     const nx = d > 0 ? (ox / d) * h * 0.8 : 0, ny = d > 0 ? (oy / d) * h * 0.8 : 0; im.data[i] = 128 + nx * 110; im.data[i + 1] = 128 + ny * 110; im.data[i + 2] = 255; im.data[i + 3] = 255; }
   g.putImageData(im, 0, 0); MESHN = new THREE.CanvasTexture(c); MESHN.wrapS = MESHN.wrapT = THREE.RepeatWrapping; MESHN.repeat.set(70, 36); return MESHN; }
-function decalTex(u, num, nm, drawLogo) { const c = document.createElement('canvas'); c.width = 4096; c.height = 2048; const g = c.getContext('2d'), W = 4096, H = 2048;
+function decalTex(u, num, nm, drawLogo) { const c = document.createElement('canvas'); c.width = 1024; c.height = 512; const g = c.getContext('2d'), W = 4096, H = 2048; g.scale(0.25, 0.25);
   g.fillStyle = u.jersey; g.fillRect(0, 0, W, H);
   /* u = j/NA: front centre u=.25, back centre u=.75; v: 0 hem .. 1 top (canvas top = top) */
   const vy = (y) => (1 - (y - Y0) / (Y1 - Y0)) * H, F = 1024, B = 3072;
