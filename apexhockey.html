@@ -59,6 +59,17 @@
   #rotOv { display:none; position:fixed; inset:0; z-index:99999; background:#000; color:#fff;
     align-items:center; justify-content:center; font-size:22px; letter-spacing:.1em; text-align:center; padding:30px; }
   @media (orientation: portrait) { #rotOv { display:flex; } }
+  .bigbtn.alt { background:#1d3a52; color:#cfe9ff; box-shadow:none; font-size:16px; padding:13px 34px; }
+  #starCard { font:600 14px ui-monospace, Menlo, monospace; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
+  #myCode { font:600 12px ui-monospace, Menlo, monospace; color:#8fd8a8; margin:14px 0 4px; letter-spacing:.06em; }
+  #cancelMatch, #hubReset { font:600 12px ui-monospace, Menlo, monospace; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
+  #hubBody { font:400 14px ui-monospace, Menlo, monospace; color:#d7ecff; line-height:1.75; text-align:center; margin-bottom:16px; max-width:92vw; }
+  #hubBody table { margin:8px auto; border-collapse:collapse; font-size:13px; }
+  #hubBody td, #hubBody th { padding:2px 9px; text-align:left; }
+  #hubBody tr.me td { color:#ffe9a8; font-weight:700; }
+  #friendIn { font:600 15px ui-monospace, Menlo, monospace; width:min(430px, 88vw); padding:12px 14px; border-radius:12px; border:1px solid #3f6f9f; background:#08182b; color:#eaffea; margin-bottom:10px; }
+  #friendErr { color:#ff9a9a; font:600 13px ui-monospace, Menlo, monospace; min-height:18px; margin-bottom:8px; }
+  .overlay .bigbtn { margin-top:10px; }
 </style>
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
 </head>
@@ -78,16 +89,36 @@
 <div id="charge"><div id="chargeFill"></div></div>
 <div class="overlay" id="menu">
   <h1>APEX ICE HOCKEY</h1>
-  <h2>Wolves vs Sharks · 3 periods · real rules: offsides, faceoffs, golden-goal overtime.<br>
-  Skate with the left stick — hold <b>SHOOT</b> to charge a slap shot, <b>PASS</b> to feed a teammate, <b>CHECK</b> to poke the puck loose and switch skaters.</h2>
-  <div class="keys">KEYBOARD — move: WASD / arrows · pass: J · shoot (hold): K · check/switch: L</div>
-  <button class="bigbtn" id="playBtn" type="button">TAP TO PLAY</button>
+  <h2 id="menuSub">3 periods · real rules: offsides, faceoffs, golden-goal overtime.</h2>
+  <div id="starCard"></div>
+  <button class="bigbtn" id="careerBtn" type="button">🏆 START A CAREER</button>
+  <button class="bigbtn alt" id="playBtn" type="button">⚡ QUICK GAME</button>
+  <button class="bigbtn alt" id="friendBtn" type="button">👥 PLAY A FRIEND (ENTER CODE)</button>
+  <button id="cancelMatch" type="button" style="display:none">✕ cancel this match</button>
+  <div id="myCode"></div>
+  <div class="keys">Skate with the left stick — hold <b>SHOOT</b> to charge a slap shot, <b>PASS</b> to feed a teammate, <b>CHECK</b> to poke the puck loose and switch skaters.<br>KEYBOARD — move: WASD / arrows · pass: J · shoot (hold): K · check/switch: L</div>
 </div>
 <div class="overlay" id="final">
   <h1 id="finalTitle">FINAL</h1>
   <div id="finalScore">0 – 0</div>
   <h2 id="finalSub"></h2>
   <button class="bigbtn" id="againBtn" type="button">PLAY AGAIN</button>
+</div>
+<div class="overlay" id="hub" style="display:none">
+  <h1>🏆 CAREER</h1>
+  <div id="hubBody"></div>
+  <button class="bigbtn" id="hubPlay" type="button">▶ PLAY NEXT MATCH</button>
+  <button class="bigbtn alt" id="hubNew" type="button" style="display:none">START NEW SEASON</button>
+  <button class="bigbtn alt" id="hubClose" type="button">CLOSE</button>
+  <button id="hubReset" type="button">reset career</button>
+</div>
+<div class="overlay" id="friendOv" style="display:none">
+  <h1>👥 FRIEND MATCH</h1>
+  <h2>Paste a friend's code. Their star and record ride inside it — you play their team, driven at their strength. Win, and it goes on your record.</h2>
+  <input id="friendIn" type="text" placeholder="APEX-XXXX-XXXX-..." autocomplete="off">
+  <div id="friendErr"></div>
+  <button class="bigbtn" id="friendGo" type="button">SET UP THE MATCH</button>
+  <button class="bigbtn alt" id="friendClose" type="button">CLOSE</button>
 </div>
 <div id="rotOv">Rotate your device</div>
 <script type="module">
@@ -112,6 +143,12 @@ const TEAMS = {
   home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
   away: { name:'SHARKS', dir:-1, jersey:0x0e7c7b, trim:0xffffff, helmet:0x123a3a, pads:0x0e7c7b },
 };
+/* career / friend match override: a pending match (set from the career hub)
+   re-skins the visitors BEFORE any skater or material is built from TEAMS. */
+window.__awayBoost = 1; window.__starBoost = 1; window.__starShot = 1;
+try { const pm = JSON.parse(localStorage.getItem('apex_hockey_match'));
+  if (pm && pm.oppDef) { TEAMS.away.name = pm.oppDef.name; TEAMS.away.jersey = pm.oppDef.jersey; TEAMS.away.helmet = pm.oppDef.helmet; TEAMS.away.pads = pm.oppDef.jersey; TEAMS.away.trim = pm.oppDef.trim; window.__awayBoost = Math.max(.9, Math.min(1.12, pm.oppDef.str / 84)); }
+} catch (e) {}
 const isTouch = matchMedia('(pointer: coarse)').matches;
 const COARSE = isTouch; // phones: cheaper renderer settings (owner reported lag)
 
@@ -647,6 +684,7 @@ function doPass(){
   const lead=0.45, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
   const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=54;
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=1.6;
+  puck.lastPass=from; puck.lastPassT=performance.now();
 }
 function doShoot(power){
   if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
@@ -660,9 +698,9 @@ function shootFrom(s, power, aimed){
     if(Math.sign(jx)===dir||Math.abs(jx)>0.7) aimZ=clamp(jz*8,-2.6,2.6);
   }
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
-  const sp=48+62*clamp(power,0.15,1);
+  const sp=(48+62*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
-  puck.shot={team:s.team,t:0};
+  puck.shot={team:s.team,t:0,by:s};
   s.phase+=1.2;
 }
 function doCheck(){
@@ -715,6 +753,7 @@ function nearestDot(x,z){
 function onGoal(team){
   state='goal'; stateT=3.2;
   if(team==='home'){scoreH++;}else{scoreA++;}
+  try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1;
   if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
@@ -796,6 +835,7 @@ function aiPass(s){
   const tx=best.pos.x+best.vel.x*0.4, tz=best.pos.z+best.vel.z*0.4;
   const dx=tx-puck.pos.x,dz=tz-puck.pos.z,d=Math.hypot(dx,dz)||1;
   puck.vel.set(dx/d*52,0,dz/d*52); puck.owner=null; puck.recv=best; puck.recvT=1.6;
+  puck.lastPass=s; puck.lastPassT=performance.now();
 }
 function aiGoalie(g,dt){
   const dir=TEAMS[g.team].dir, gl=-dir*GOAL_LINE, sgn=-dir; // defended line; sgn points center->net
@@ -855,7 +895,8 @@ function stepSkater(s,dt){
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
   s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
   const sp=Math.hypot(s.vel.x,s.vel.z);
-  if(sp>31){ s.vel.x*=31/sp; s.vel.z*=31/sp; }
+  const cap = s.star ? 31*(window.__starBoost||1) : (s.team==='away' ? 31*(window.__awayBoost||1) : 31);
+  if(sp>cap){ s.vel.x*=cap/sp; s.vel.z*=cap/sp; }
   s.pos.x+=s.vel.x*dt; s.pos.z+=s.vel.z*dt;
   // stay in rink (rounded)
   const ccx=HX-RINK.CR-1.2, ccz=HZ-RINK.CR-1.2;
@@ -1015,7 +1056,7 @@ function tick(now){
   let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
   Mus.setMode(state==='play'?'game':'menu');
   crowd.update(dt);
-  if(paused||state==='menu'||state==='over'){ renderer.render(scene,camera); return; }
+  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
   stateT-=dt;
   if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
@@ -1054,6 +1095,7 @@ function gameOver(){
   $('finalScore').textContent=scoreH+' – '+scoreA;
   $('finalSub').textContent=win==='home'?'The Wolves take it. What a game.':win==='away'?'The Sharks steal this one. Run it back.':'Dead even after overtime.';
   $('final').style.display='flex';
+  try{ careerAfterGame(); }catch(e){}
 }
 
 /* ================= wiring ================= */
@@ -1091,6 +1133,180 @@ document.addEventListener('visibilitychange',()=>{ paused=document.hidden;
 setupFaceoffPositions(0,0); // spread skaters for the menu backdrop
 camera.lookAt(0,0,0);
 updateHUD();
+
+/* ================= CAREER MODE + STAR + FRIEND CODES =================
+   Owner ask (2026-10-14): career options on the menu, a star player
+   featured on the menu, more options, and friend codes "to play
+   multiplayers". The site is static (no server), so friend matches are
+   asynchronous: a code carries a friend's star + record, and you play
+   their team with the CPU driving it at their strength. Real-time online
+   play would need a server (the owner's droplet could host it later). */
+const LG = [
+  { id:'WOLVES', jersey:0x1f6fd6, helmet:0x1f6fd6, trim:0xffffff, str:86 },
+  { id:'SHARKS', jersey:0x0e7c7b, helmet:0x123a3a, trim:0xffffff, str:84 },
+  { id:'BEARS', jersey:0x8a4b1f, helmet:0x5a2f10, trim:0xffd9a0, str:82 },
+  { id:'EAGLES', jersey:0xd8d8e2, helmet:0x8a1f2d, trim:0x1f3a8a, str:80 },
+  { id:'VIPERS', jersey:0x39d353, helmet:0x0d3a16, trim:0x111111, str:78 },
+  { id:'STAMPEDE', jersey:0xd64545, helmet:0x6e1420, trim:0xffffff, str:76 } ];
+const lgById = id => LG.find(t => t.id === id);
+const CKEY = 'apex_hockey_career_v1', MKEY = 'apex_hockey_match';
+function cLoad() { try { return JSON.parse(localStorage.getItem(CKEY)); } catch (e) { return null; } }
+function cSave(c) { try { localStorage.setItem(CKEY, JSON.stringify(c)); } catch (e) {} }
+function mLoad() { try { return JSON.parse(localStorage.getItem(MKEY)); } catch (e) { return null; } }
+function mSave(m) { try { if (m) localStorage.setItem(MKEY, JSON.stringify(m)); else localStorage.removeItem(MKEY); } catch (e) {} }
+const STAR_F = ['JAX','MIKO','DANTE','RYKER','COLE','NIKOLAI','EZRA','TITUS'];
+const STAR_L = ['KOVAC','REYES','LINDQVIST','MOREAU','PETROV','KANE','HALLORAN','VOSS'];
+function newCareer() {
+  const c = { season: 1, week: 1, phase: 'reg', table: {}, finalOpp: null,
+    star: { name: STAR_F[(Math.random()*STAR_F.length)|0] + ' ' + STAR_L[(Math.random()*STAR_L.length)|0], g: 0, a: 0, cg: 0, ca: 0 },
+    champ: 0, friends: { w: 0, l: 0 }, lastLine: '' };
+  for (const t of LG) c.table[t.id] = { w: 0, l: 0, t: 0, pts: 0, gf: 0, ga: 0 };
+  cSave(c); return c;
+}
+function starOVR(c) { return Math.min(96, 76 + Math.floor((c.star.cg + c.star.ca) * 0.6) + (c.season - 1)); }
+function starSkater() { return homeSkaters.find(s => s.role === 'C'); }
+function userOpp(c) { const order = ['SHARKS','BEARS','EAGLES','VIPERS','STAMPEDE']; return order[(c.week - 1) % 5]; }
+function applyResult(c, hId, hg, aId, ag) {
+  const H = c.table[hId], A = c.table[aId]; if (!H || !A) return;
+  H.gf += hg; H.ga += ag; A.gf += ag; A.ga += hg;
+  if (hg > ag) { H.w++; H.pts += 2; A.l++; } else if (ag > hg) { A.w++; A.pts += 2; H.l++; } else { H.t++; A.t++; H.pts++; A.pts++; }
+}
+function simScore(a, b) { return Math.max(0, Math.round(3.1 + (a.str - b.str) * 0.07 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.9)); }
+function simGame(c, hId, aId, noTie) {
+  const hg0 = simScore(lgById(hId), lgById(aId)); let hg = hg0; const ag = simScore(lgById(aId), lgById(hId));
+  if (noTie && hg === ag) hg++;
+  applyResult(c, hId, hg, aId, ag); return [hg, ag];
+}
+function ranked(c) { return LG.map(t => t.id).sort((x, y) => (c.table[y].pts - c.table[x].pts) || ((c.table[y].gf - c.table[y].ga) - (c.table[x].gf - c.table[x].ga))); }
+function simWeekOthers(c) {
+  const opp = userOpp(c); const rest = LG.map(t => t.id).filter(id => id !== 'WOLVES' && id !== opp);
+  const r = ((c.week + c.season) % 2) ? [rest[1], rest[2], rest[3], rest[0]] : rest;
+  simGame(c, r[0], r[1]); simGame(c, r[2], r[3]);
+}
+function careerPending(c) {
+  if (!c) return null;
+  if (c.phase === 'reg' && c.week <= 10) return { opp: userOpp(c), label: 'WEEK ' + c.week };
+  if (c.phase === 'semi') { const rk = ranked(c); const seed = rk.indexOf('WOLVES'); const opp = seed === 0 ? rk[3] : seed === 1 ? rk[2] : seed === 2 ? rk[1] : rk[0]; return { opp, label: 'SEMIFINAL' }; }
+  if (c.phase === 'final' && c.finalOpp) return { opp: c.finalOpp, label: 'THE FINAL' };
+  return null;
+}
+function defOf(id) { const t = lgById(id); return { name: t.id, jersey: t.jersey, helmet: t.helmet, trim: t.trim, str: t.str }; }
+function careerOnGoal(team) {
+  if (team !== 'home') return; const c = cLoad(); if (!c) return; const star = starSkater(); if (!star) return;
+  if (puck.shot && puck.shot.by === star) { c.star.g++; c.star.cg++; cSave(c); }
+  else if (puck.lastPass === star && performance.now() - (puck.lastPassT || 0) < 6000) { c.star.a++; c.star.ca++; cSave(c); }
+}
+function careerAfterGame() {
+  const m = mLoad(); if (!m) return; mSave(null);
+  if (m.kind === 'friend') {
+    const c = cLoad() || newCareer();
+    if (scoreH > scoreA) c.friends.w++; else if (scoreA > scoreH) c.friends.l++;
+    cSave(c);
+    $('finalSub').textContent = 'Friend match in the books — you are ' + c.friends.w + '–' + c.friends.l + ' against friends all-time.';
+    $('againBtn').textContent = 'BACK TO MENU'; return;
+  }
+  const c = cLoad(); if (!c) return;
+  let line = '';
+  if (c.phase === 'reg') {
+    applyResult(c, 'WOLVES', scoreH, m.opp, scoreA);
+    simWeekOthers(c);
+    if (c.week >= 10) { const rk = ranked(c); const seed = rk.indexOf('WOLVES') + 1;
+      if (seed <= 4) { c.phase = 'semi'; line = 'Regular season done — you finish #' + seed + '. PLAYOFFS: the semifinal is set.'; }
+      else { c.phase = 'done'; line = 'Regular season done — you finish #' + seed + ' and miss the playoffs. A new season waits in the career hub.'; } }
+    else { c.week++; line = 'Season ' + c.season + ' · Wolves are ' + c.table.WOLVES.w + '–' + c.table.WOLVES.l + (c.table.WOLVES.t ? '–' + c.table.WOLVES.t : '') + '. Next: WEEK ' + c.week + ' vs ' + userOpp(c) + '.'; }
+  } else if (c.phase === 'semi') {
+    const top4 = ranked(c).slice(0, 4); const others = top4.filter(id => id !== 'WOLVES' && id !== m.opp);
+    let otherWinner = others[0];
+    if (others.length === 2) { const r = simGame(c, others[0], others[1], true); otherWinner = r[0] > r[1] ? others[0] : others[1]; }
+    if (scoreH > scoreA) { c.phase = 'final'; c.finalOpp = otherWinner; line = 'You are through to THE FINAL vs ' + otherWinner + '.'; }
+    else { c.phase = 'done'; line = 'Out in the semifinal — ' + otherWinner + ' takes the other final spot. A new season waits in the hub.'; }
+  } else if (c.phase === 'final') {
+    c.phase = 'done';
+    if (scoreH > scoreA) { c.champ++; line = '🏆 CHAMPIONS! Season ' + c.season + ' belongs to the Wolves — and to ' + c.star.name + '. The next season waits in the hub.'; }
+    else line = 'Beaten in the final. So close — run it back with a new season from the hub.';
+  }
+  c.lastLine = line; cSave(c);
+  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →';
+}
+/* ---- friend codes ---- */
+function friendCode(c) {
+  const p = { v: 1, n: c.star.name, o: starOVR(c), g: c.star.cg, a: c.star.ca, w: c.table.WOLVES.w + c.friends.w, c: c.champ };
+  const s = btoa(JSON.stringify(p)).replace(/=+$/, '');
+  return 'APEX-' + (s.match(/.{1,4}/g) || [s]).join('-');
+}
+function parseFriendCode(txt) {
+  try { let s = String(txt || '').trim().replace(/^APEX-?/i, '').replace(/[-\s]/g, '');
+    while (s.length % 4) s += '=';
+    const p = JSON.parse(atob(s));
+    if (!p || typeof p.n !== 'string' || typeof p.o !== 'number') return null; return p; } catch (e) { return null; }
+}
+function friendDef(p) {
+  let h = 0; for (const ch of p.n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const jersey = new THREE.Color().setHSL((h % 360) / 360, 0.62, 0.42).getHex();
+  const last = (p.n.split(' ')[1] || 'FRIEND').toUpperCase();
+  return { name: last + ' ALL-STARS', jersey, helmet: jersey, trim: 0xffffff, str: Math.max(74, Math.min(95, Math.round(70 + (p.o - 70) * 0.9))) };
+}
+/* ---- menu showcase: your star, alone at center ice under a gold ring ---- */
+let starRing = null; const _cv = new THREE.Vector3();
+function careerShowcase(now) {
+  const s = starSkater(); if (!s) return;
+  if (!starRing) { starRing = new THREE.Mesh(new THREE.RingGeometry(2.3, 2.85, 40), new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: .8, side: THREE.DoubleSide })); starRing.rotation.x = -Math.PI / 2; starRing.position.y = 0.06; scene.add(starRing); }
+  s.pos.set(0, 0.1, 0); s.facing = Math.PI / 2 + Math.sin(now / 2400) * .3;
+  starRing.position.x = 0; starRing.position.z = 0;
+  starRing.material.opacity = .55 + .3 * Math.sin(now / 420);
+  const t = now / 1000;
+  _cv.set(Math.sin(t * .11) * 6, 6.8, 17 + Math.cos(t * .07) * 2);
+  camera.position.lerp(_cv, 0.04); camera.lookAt(0, 2.6, 0);
+}
+/* ---- menu + hub wiring ---- */
+function fmtRecord(c) { const t = c.table.WOLVES; return t.w + '–' + t.l + (t.t ? '–' + t.t : ''); }
+function renderMenu() {
+  const c = cLoad(), m = mLoad(), sc = $('starCard');
+  if (c) { sc.innerHTML = '⭐ <b>' + c.star.name + '</b> · OVR ' + starOVR(c) + '<br>Season ' + c.season + ': ' + c.star.g + ' G · ' + c.star.a + ' A &nbsp;·&nbsp; Career: ' + c.star.cg + ' G · ' + c.star.ca + ' A' + (c.champ ? ' · 🏆×' + c.champ : ''); $('myCode').textContent = 'MY FRIEND CODE: ' + friendCode(c); }
+  else { sc.innerHTML = '⭐ No star yet — start a CAREER and your center becomes the face of the Wolves.'; $('myCode').textContent = 'MY FRIEND CODE: start a career to get one'; }
+  const cb = $('careerBtn');
+  if (m) { cb.textContent = '▶ PLAY ' + m.label + ' vs ' + m.oppDef.name; $('playBtn').style.display = 'none'; $('friendBtn').style.display = 'none'; $('cancelMatch').style.display = 'block'; $('menuSub').textContent = m.kind === 'friend' ? 'Friend match is set — their star is already in the building.' : 'Career match is set — the visitors are already in the building.'; }
+  else { cb.textContent = c ? '🏆 CAREER · ' + fmtRecord(c) + ' · SEASON ' + c.season : '🏆 START A CAREER'; $('playBtn').style.display = ''; $('friendBtn').style.display = ''; $('cancelMatch').style.display = 'none'; }
+}
+function renderHub() {
+  const c = cLoad(), body = $('hubBody');
+  if (!c) { body.innerHTML = 'No career yet. Start one: a 10-game season, playoffs, and a star center who is yours to build.<br>Your friend code lives on the main menu.'; $('hubPlay').style.display = 'none'; $('hubNew').textContent = 'START MY CAREER'; $('hubNew').style.display = ''; return; }
+  const rk = ranked(c);
+  const rows = rk.map((id, i) => { const t = c.table[id]; return '<tr' + (id === 'WOLVES' ? ' class="me"' : '') + '><td>' + (i + 1) + '. ' + id + '</td><td>' + t.w + 'W</td><td>' + t.l + 'L</td><td>' + (t.t ? t.t + 'T' : '–') + '</td><td>' + t.pts + ' PTS</td></tr>'; }).join('');
+  const p = careerPending(c);
+  body.innerHTML = 'SEASON ' + c.season + (c.phase === 'reg' ? ' · WEEK ' + Math.min(c.week, 10) : ' · ' + c.phase.toUpperCase()) + '<br>⭐ ' + c.star.name + ' · OVR ' + starOVR(c) + ' · ' + c.star.g + ' G · ' + c.star.a + ' A this season' + (c.champ ? '<br>🏆 Championships: ' + c.champ : '') + '<table>' + rows + '</table>' + (c.lastLine ? '<div>' + c.lastLine + '</div>' : '') + (p ? '<div>NEXT: ' + p.label + ' vs ' + p.opp + '</div>' : '<div>Season complete.</div>') + '<div style="margin-top:6px">vs friends all-time: ' + c.friends.w + '–' + c.friends.l + '</div>';
+  $('hubPlay').style.display = p ? '' : 'none'; if (p) $('hubPlay').textContent = '▶ PLAY ' + p.label + ' vs ' + p.opp;
+  $('hubNew').style.display = c.phase === 'done' ? '' : 'none'; if (c.phase === 'done') $('hubNew').textContent = 'START SEASON ' + (c.season + 1);
+}
+$('careerBtn').addEventListener('click', () => { if (mLoad()) { $('playBtn').click(); return; } renderHub(); $('hub').style.display = 'flex'; });
+$('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''; $('friendOv').style.display = 'flex'; });
+$('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
+$('hubClose').addEventListener('click', () => { $('hub').style.display = 'none'; });
+$('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
+$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
+$('hubNew').addEventListener('click', () => {
+  let c = cLoad();
+  if (!c) { c = newCareer(); }
+  else if (c.phase === 'done') { c.season++; c.week = 1; c.phase = 'reg'; c.finalOpp = null; c.lastLine = ''; c.star.g = 0; c.star.a = 0; for (const t of LG) c.table[t.id] = { w: 0, l: 0, t: 0, pts: 0, gf: 0, ga: 0 }; cSave(c); }
+  renderHub(); renderMenu();
+});
+$('hubReset').addEventListener('click', (ev) => {
+  if (!ev.target.dataset.arm) { ev.target.dataset.arm = '1'; ev.target.textContent = 'tap again to erase the career'; return; }
+  try { localStorage.removeItem(CKEY); localStorage.removeItem(MKEY); } catch (e) {}
+  location.reload();
+});
+$('friendGo').addEventListener('click', () => {
+  const p = parseFriendCode($('friendIn').value);
+  if (!p) { $('friendErr').textContent = 'That code does not check out — paste the whole thing, starting with APEX-'; return; }
+  mSave({ kind: 'friend', oppDef: friendDef(p), label: 'FRIEND MATCH' });
+  location.reload();
+});
+(function careerBoot() {
+  const s = starSkater(); const c = cLoad();
+  if (s) { s.star = true; if (c) { const o = starOVR(c); window.__starBoost = 1 + (o - 76) * 0.004; window.__starShot = 1 + (o - 76) * 0.003; } }
+  renderMenu();
+})();
+
 requestAnimationFrame(tick);
 </script>
 </body>
