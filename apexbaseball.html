@@ -14,6 +14,13 @@
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:10px; z-index:9000;
     background:rgba(2,20,10,.78); border:1px solid rgba(90,255,130,.5); color:#d8ffe2;
     font:600 14px ui-monospace,Menlo,monospace; padding:10px 14px; border-radius:999px; cursor:pointer; }
+  /* view + mute buttons (top-right, clear of HUD and scorebug) */
+  #viewBtn, #muteBtn { position:fixed; top:calc(10px + env(safe-area-inset-top)); z-index:9060;
+    background:rgba(2,20,10,.78); border:1px solid rgba(90,255,130,.5); color:#d8ffe2;
+    min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer;
+    font:700 11px ui-monospace,Menlo,monospace; letter-spacing:.06em; }
+  #muteBtn { right:10px; font-size:19px; }
+  #viewBtn { right:62px; }
   /* portrait rotate overlay */
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#020b05;
     align-items:center; justify-content:center; text-align:center; padding:24px;
@@ -86,6 +93,8 @@
 <body>
 <div id="game"></div>
 <button id="back" type="button">‹ Back</button>
+<button id="viewBtn" type="button">CAM·AUTO</button>
+<button id="muteBtn" type="button">🔊</button>
 <div id="rotOv">Rotate your device</div>
 
 <div id="hud">
@@ -223,6 +232,8 @@ const matCache = {};
 function M(color){ if(!matCache[color]) matCache[color]=new THREE.MeshLambertMaterial({color}); return matCache[color]; }
 
 /* ---------------- field ---------------- */
+/* crowd state: declared before the field IIFE so buildGrandstands can use it */
+const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null };
 (function buildField(){
   const grass = new THREE.Mesh(new THREE.CircleGeometry(155, 28), M(0x2a7f36));
   grass.rotation.x = -Math.PI/2; scene.add(grass);
@@ -270,12 +281,7 @@ function M(color){ if(!matCache[color]) matCache[color]=new THREE.MeshLambertMat
     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,14,8), M(0xffd23f));
     p.position.set(s*WALL_R/Math.SQRT2, 7, -WALL_R/Math.SQRT2); scene.add(p);
   });
-  // stadium stands: cheap ring of boxes
-  for(let d=-70; d<=70; d+=10){
-    const a = d*Math.PI/180, r = 138;
-    const st = new THREE.Mesh(new THREE.BoxGeometry(20,11,9), M(d%20===0?0x24344d:0x1b2838));
-    st.position.set(Math.sin(a)*r, 5.5, -Math.cos(a)*r); st.rotation.y = -a; scene.add(st);
-  }
+  buildGrandstands();   // tiered stands + instanced crowd
   const board = new THREE.Mesh(new THREE.BoxGeometry(34,13,2), M(0x0a1420));
   board.position.set(0,17,-146); scene.add(board);
   const boardGlow = new THREE.Mesh(new THREE.PlaneGeometry(30,9), new THREE.MeshBasicMaterial({color:0x0f3d22}));
@@ -495,6 +501,7 @@ function setPhase(p){
   $('windupUI').style.display = (p==='windup') ? 'flex' : 'none';
   $('batUI').style.display = (p==='flight' && playerBatting()) ? 'flex' : 'none';
   $('aimWrap').style.display = (p==='aim') ? 'flex' : 'none';
+  musPhase(p);
 }
 
 /* ---------- PLAYER PITCHING ---------- */
@@ -850,6 +857,7 @@ function applyHitResult(r){
     G.hits[t]++;
     const label = runs>1 ? runs+'-RUN HOME RUN!' : 'HOME RUN!';
     banner(label, '', 1900);
+    crowdExcite(4); try{ Mus.riff(); }catch(e){}
   } else if (r.type==='error'){
     if (b[2]) runs++; if (b[1]) runs++;
     G.bases = [true, b[0]||b[1], b[1]||b[2]];   // batter safe, everyone moves up one
@@ -896,11 +904,39 @@ let camMode = 'pitch';
 const camLook = new THREE.Vector3(...PITCH_CAM.look);
 const _camTmp = new THREE.Vector3();
 let ALLFIGS = null;
+/* view options: AUTO (broadcast behavior), WIDE (whole stadium), CLOSE (behind the action) */
+let viewMode = 'auto';            // 'auto' | 'wide' | 'close'
+const WIDE_CAM = { pos:[0,44,64], look:[0,2,-90] };
+const PITCH_CLOSE_CAM = { pos:[0,4.4,7.2], look:[0,2.2,-20] };
+const BAT_CAM = { pos:[-4.8,3.6,3.4], look:[0,2.6,-20] };
+const camTgtP = new THREE.Vector3(), camTgtL = new THREE.Vector3();
+let camBlend = 0;
+const pitchingPhase = () => ['select','aim','windup','cpuWindup'].includes(G.phase);
+const battingClose = () => playerBatting() && (G.phase==='cpuWindup' || G.phase==='flight');
+function applyCam(c){ camera.position.set(...c.pos); camLook.set(...c.look); }
+function targetCam(){
+  if (viewMode==='wide') return WIDE_CAM;
+  if (viewMode==='close'){
+    if (camMode==='pitch'){
+      if (battingClose()) return BAT_CAM;
+      if (pitchingPhase()) return PITCH_CLOSE_CAM;
+    }
+    return FIELD_CAM;             // batted balls: broadcast field view
+  }
+  return camMode==='pitch' ? PITCH_CAM : FIELD_CAM;
+}
 function setCam(mode){
   camMode = mode;
-  if (mode==='pitch'){ camera.position.set(...PITCH_CAM.pos); camLook.set(...PITCH_CAM.look); }
-  else { camera.position.set(...FIELD_CAM.pos); camLook.set(...FIELD_CAM.look); }
+  camBlend = 0;                   // phase changes cut like a broadcast truck
+  applyCam(targetCam());
 }
+$('viewBtn').addEventListener('click', ()=>{
+  viewMode = viewMode==='auto' ? 'wide' : viewMode==='wide' ? 'close' : 'auto';
+  $('viewBtn').textContent = 'CAM·' + viewMode.toUpperCase();
+  const t = targetCam();
+  camTgtP.set(...t.pos); camTgtL.set(...t.look); camBlend = 1;
+  banner('CAMERA', 'VIEW: ' + viewMode.toUpperCase(), 900);
+});
 
 /* ---------------- procedural animation ---------------- */
 function animFigure(p, dt, mode){
@@ -1012,10 +1048,17 @@ function loop(){
     const busy = (windupAnim.active && windupAnim.who===f) || (swingAnim.active && swingAnim.who===f);
     if (!busy) animFigure(f, dt, 'idle');
   }
-  // camera tracking
-  if (camMode==='field' && ball.visible){
+  // camera tracking (not in wide stadium view)
+  if (camMode==='field' && ball.visible && viewMode!=='wide'){
     camLook.lerp(_camTmp.set(ball.position.x, 1, ball.position.z), 0.08);
   }
+  // view-button transitions glide to their target
+  if (camBlend>0){
+    const k = 1 - Math.exp(-6*dt);
+    camera.position.lerp(camTgtP, k); camLook.lerp(camTgtL, k);
+    if (camera.position.distanceToSquared(camTgtP) < 0.02 && camLook.distanceToSquared(camTgtL) < 0.02) camBlend = 0;
+  }
+  crowdTick(now/1000, dt);
   camera.lookAt(camLook);
   renderer.render(scene, camera);
 }
@@ -1100,6 +1143,170 @@ window.addEventListener('resize', ()=>{
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+/* ---------------- tiered grandstands + instanced crowd ---------------- */
+function crowdExcite(sec){ _crowd.exciteT = Math.max(_crowd.exciteT, sec||3); }
+function pickCrowdColor(){
+  const r = Math.random();
+  if (r<0.08) return 0x1e3fae;      // Comets blue
+  if (r<0.16) return 0x0e7c7b;      // Sharks teal
+  const muted = [0x5a6a7a,0x6b5a4a,0x4a5a6b,0x777777,0x3a4a3a,0x7a6a5a,0x8a4a4a,0x4a6a8a];
+  return muted[(Math.random()*muted.length)|0];
+}
+function pickSkin(){ const s=[0xd9a066,0xb57748,0x8c5a2b,0xe8b07e,0xc98a5a,0x6b4226]; return s[(Math.random()*s.length)|0]; }
+function buildGrandstands(){
+  _crowd.m = new THREE.Matrix4();
+  const NROWS = 7, seats = _crowd.seats;
+  const dummy = new THREE.Object3D(), v = new THREE.Vector3();
+  /* one tiered section: cx,cz = field-side center, width = seats width, rows = steps.
+     Local +z faces the field; rows step back along local -z. */
+  function section(cx, cz, faceX, faceZ, width, rows){
+    const rot = Math.atan2(faceX, faceZ);
+    dummy.position.set(cx, 0, cz); dummy.rotation.set(0, rot, 0); dummy.updateMatrix();
+    for(let r=0;r<rows;r++){
+      const y = 1.5 + r*1.15;
+      v.set(0, 0, -r*2.0).applyMatrix4(dummy.matrix);
+      const row = new THREE.Mesh(new THREE.BoxGeometry(width, 1.1, 2.4), M(r%2?0x232f40:0x1b2634));
+      row.position.set(v.x, y, v.z); row.rotation.y = rot; scene.add(row);
+      const n = Math.floor(width/1.05);
+      for(let i=0;i<n;i++){
+        if (Math.random()<0.08) continue;                       // empty seats
+        const lx = (i-(n-1)/2)*1.05 + (Math.random()-0.5)*0.3;
+        v.set(lx, 0, -r*2.0).applyMatrix4(dummy.matrix);
+        seats.push({ x:v.x, y:y+0.55, z:v.z, c:pickCrowdColor() });
+      }
+    }
+  }
+  // outfield grandstand: 5 angled sections behind the wall (wall radius 118)
+  [-48,-24,0,24,48].forEach(d=>{
+    const a = d*Math.PI/180;
+    section(Math.sin(a)*132, -Math.cos(a)*132, -Math.sin(a), Math.cos(a), 34, NROWS);
+  });
+  // foul-line stands: two sections each side, angled toward the infield
+  [1,-1].forEach(s=>{
+    [55,95].forEach(t=>{
+      const fx = s*t/Math.SQRT2, fz = -t/Math.SQRT2;
+      const cx = fx + s*16/Math.SQRT2, cz = fz + 16/Math.SQRT2;
+      section(cx, cz, -cx, -cz, 26, 6);
+    });
+  });
+  // one shared crowd: two InstancedMeshes (bodies + heads)
+  const N = seats.length;
+  const bodies = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16,0.24,0.62,5), new THREE.MeshLambertMaterial({color:0xffffff}), N);
+  const heads  = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11,6,5),          new THREE.MeshLambertMaterial({color:0xffffff}), N);
+  bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage); heads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const m = _crowd.m, col = new THREE.Color();
+  seats.forEach((st,i)=>{
+    m.makeTranslation(st.x, st.y+0.31, st.z); bodies.setMatrixAt(i, m); bodies.setColorAt(i, col.setHex(st.c));
+    m.makeTranslation(st.x, st.y+0.75, st.z); heads.setMatrixAt(i, m);  heads.setColorAt(i, col.setHex(pickSkin()));
+  });
+  bodies.instanceColor.needsUpdate = true; heads.instanceColor.needsUpdate = true;
+  scene.add(bodies); scene.add(heads);
+  _crowd.bodies = bodies; _crowd.heads = heads;
+  window.__seatCount = N;   // debug marker: crowd instance count
+}
+/* cheap life: a rotating window of ~60 seats bounces each frame */
+function crowdTick(t, dt){
+  const c = _crowd; if (!c.bodies) return;
+  c.exciteT = Math.max(0, c.exciteT - dt);
+  const amp = c.exciteT > 0 ? 0.24 : 0.055, m = c.m, seats = c.seats, N = seats.length;
+  for(let k=0;k<60;k++){
+    const i = (c.cursor + k) % N, s = seats[i];
+    const off = Math.sin(t*6 + i*1.7) * amp;
+    m.makeTranslation(s.x, s.y+0.31+off, s.z); c.bodies.setMatrixAt(i, m);
+    m.makeTranslation(s.x, s.y+0.75+off, s.z); c.heads.setMatrixAt(i, m);
+  }
+  c.cursor = (c.cursor + 60) % N;
+  c.bodies.instanceMatrix.needsUpdate = true; c.heads.instanceMatrix.needsUpdate = true;
+}
+
+/* ---------------- procedural music (WebAudio, no files) ---------------- */
+const Mus = {
+  ctx:null, master:null, noiseBuf:null, mode:'menu', step:0, nextT:0,
+  muted: (function(){ try{ return localStorage.getItem('apex_muted')==='1'; }catch(e){ return false; } })(),
+  init(){
+    if (this.ctx) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted ? 0 : 0.35;
+      this.master.connect(this.ctx.destination);
+      const len = this.ctx.sampleRate*0.25, buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = buf.getChannelData(0); for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      this.noiseBuf = buf;
+      this.nextT = this.ctx.currentTime + 0.1;
+      setInterval(()=>this.sched(), 40);
+    }catch(e){}
+  },
+  resume(){ try{ if(this.ctx && this.ctx.state==='suspended') this.ctx.resume(); }catch(e){} },
+  setMode(m){ if(this.mode===m) return; this.mode=m; this.step=0; if(this.ctx) this.nextT=this.ctx.currentTime+0.08; },
+  toggle(){
+    this.muted = !this.muted;
+    try{ localStorage.setItem('apex_muted', this.muted?'1':'0'); }catch(e){}
+    try{ if(this.master) this.master.gain.setTargetAtTime(this.muted?0:0.35, this.ctx.currentTime, 0.05); }catch(e){}
+    this.paint();
+  },
+  paint(){ const b=$('muteBtn'); if(b) b.textContent = this.muted ? '🔇' : '🔊'; },
+  tone(type, f0, f1, t, dur, vol){
+    try{
+      const c=this.ctx, o=c.createOscillator(), g=c.createGain();
+      o.type=type; o.frequency.setValueAtTime(f0,t);
+      if(f1 && f1!==f0) o.frequency.exponentialRampToValueAtTime(Math.max(f1,1), t+dur);
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.05);
+    }catch(e){}
+  },
+  kick(t){ this.tone('sine', 150, 42, t, 0.14, 0.5); },
+  hat(t, open){
+    try{
+      const c=this.ctx, s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
+      s.buffer=this.noiseBuf; f.type='highpass'; f.frequency.value=6500;
+      g.gain.setValueAtTime(open?0.16:0.10, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+(open?0.16:0.045));
+      s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+0.2);
+    }catch(e){}
+  },
+  pad(t, freqs, dur){ freqs.forEach(f=>this.tone('triangle', f*1.003, f*0.997, t, dur, 0.05)); },
+  sched(){
+    if(!this.ctx || this.ctx.state!=='running') return;
+    const menu = this.mode==='menu', bpm = menu?92:126, eighth = 60/bpm/2;
+    while(this.nextT < this.ctx.currentTime + 0.18){ this.playStep(this.step, this.nextT, menu, eighth); this.step++; this.nextT += eighth; }
+  },
+  playStep(s, t, menu, eighth){
+    const st = s%8, ch = Math.floor(s/8)%4;
+    if (menu){
+      // 92 BPM minor-key pads: Am F C G
+      const roots=[110,87.31,130.81,98], R=roots[ch];
+      const pad={0:[220,261.63,329.63],1:[174.61,220,261.63],2:[261.63,329.63,392],3:[196,246.94,293.66]}[ch];
+      if(st===0) this.pad(t, pad, eighth*8);
+      if(st===0||st===4) this.tone('triangle', R, R, t, eighth*2.2, 0.22);
+      if(st===2||st===5||st===7){ const p=[440,523.25,587.33,659.25][(ch+st)%4]; this.tone('square', p, p, t, eighth*0.9, 0.045); }
+    } else {
+      // 126 BPM laid-back groove: kick, hats, walking bass, arp
+      const roots=[98,98,110,87.31], R=roots[ch];
+      if(st===0||st===4) this.kick(t);
+      if(st%2===0) this.hat(t, st===6); else if(st===7) this.hat(t, false);
+      if(st===0||st===3||st===4||st===6){ const n=[R,R,R*1.5,R][st===6?3:st===3?2:0]; this.tone('triangle', n, n, t, eighth*1.4, 0.2); }
+      const arp=[R*4,R*4*1.189,R*4*1.498,R*4*1.782][st%4];
+      this.tone('square', arp, arp, t, eighth*0.8, 0.035);
+    }
+  },
+  riff(){ // organ-ish HR riff
+    if(!this.ctx || this.muted) return;
+    try{
+      const t0=this.ctx.currentTime+0.02, notes=[523.25,659.25,783.99,1046.5,783.99,1046.5];
+      notes.forEach((f,i)=>this.tone('triangle', f, f, t0+i*0.07, 0.16, 0.14));
+    }catch(e){}
+  }
+};
+window.__mus = Mus;
+function musPhase(p){ try{ Mus.setMode((p==='start'||p==='over')?'menu':'game'); }catch(e){} }
+document.addEventListener('pointerdown', ()=>{ Mus.init(); Mus.resume(); }, {passive:true});
+$('muteBtn').addEventListener('click', (e)=>{ e.stopPropagation(); Mus.toggle(); });
+$('startBtn').addEventListener('click', ()=>{ Mus.init(); Mus.resume(); });
+Mus.paint();
 
 /* ---------------- boot ---------------- */
 updateAimDot();
