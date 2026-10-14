@@ -8,8 +8,8 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04140a; font-family:ui-monospace,Menlo,Consolas,monospace; color:#eaffef; }
-  #game { position:fixed; inset:0; }
-  canvas { display:block; }
+  #game { position:fixed; inset:0; width:100%; height:100%; }
+  canvas { display:block; width:100% !important; height:100% !important; }
   /* back button */
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:10px; z-index:9000;
     background:rgba(2,20,10,.78); border:1px solid rgba(90,255,130,.5); color:#d8ffe2;
@@ -27,7 +27,7 @@
     font:600 20px ui-monospace,Menlo,monospace; letter-spacing:.12em; color:#9dffb4; }
   @media (orientation:portrait) { #rotOv { display:flex; } }
   /* HUD top */
-  #hud { position:fixed; top:calc(8px + env(safe-area-inset-top)); left:64px; right:8px; z-index:8000;
+  #hud { position:fixed; top:calc(8px + env(safe-area-inset-top)); left:98px; right:8px; z-index:8000;
     display:flex; gap:8px; align-items:flex-start; pointer-events:none; flex-wrap:wrap; }
   .panel { background:rgba(2,18,9,.82); border:1px solid rgba(90,255,130,.35); border-radius:10px; padding:6px 9px; font-size:12px; }
   #scoreboard table { border-collapse:collapse; font-size:11px; }
@@ -209,7 +209,7 @@ function addRuns(t,n){ ensureInn(t); G.score[t][G.inning-1]+=n; }
 /* ---------------- three.js setup ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference:'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, COARSE ? 1.5 : 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(window.innerWidth, window.innerHeight, false);
 if (isTouch) renderer.shadowMap.enabled = false;   // enforced: no shadow maps on touch
 else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; }
 $('game').appendChild(renderer.domElement);
@@ -218,8 +218,8 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06182e);
 scene.fog = new THREE.Fog(0x06182e, 160, 320);
 const camera = new THREE.PerspectiveCamera(58, window.innerWidth/window.innerHeight, 0.1, 600);
-const PITCH_CAM = { pos:[0,7.3,15.0], look:[0,2.4,-22] };
-const FIELD_CAM = { pos:[0,53,41.5], look:[0,0,-50] };
+const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
+const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
 scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x2e6b34, 0.95));
@@ -906,7 +906,7 @@ const _camTmp = new THREE.Vector3();
 let ALLFIGS = null;
 /* view options: AUTO (broadcast behavior), WIDE (whole stadium), CLOSE (behind the action) */
 let viewMode = 'auto';            // 'auto' | 'wide' | 'close'
-const WIDE_CAM = { pos:[0,44,64], look:[0,2,-90] };
+const WIDE_CAM = { pos:[0,33,48], look:[0,2,-90] };
 const PITCH_CLOSE_CAM = { pos:[0,4.4,7.2], look:[0,2.2,-20] };
 const BAT_CAM = { pos:[-4.8,3.6,3.4], look:[0,2.6,-20] };
 const camTgtP = new THREE.Vector3(), camTgtL = new THREE.Vector3();
@@ -969,8 +969,15 @@ function resetFigure(p){ p.armL.rotation.set(0,0,0); p.armR.rotation.set(0,0,0);
 
 /* ---------------- main loop ---------------- */
 const clock = new THREE.Clock();
+let fitFrames = 0;
 function loop(){
   requestAnimationFrame(loop);
+  if (++fitFrames >= 30){
+    fitFrames = 0;
+    const cw = document.documentElement.clientWidth || innerWidth;
+    const ch = document.documentElement.clientHeight || innerHeight;
+    if (Math.abs(cw - fitW) > 2 || Math.abs(ch - fitH) > 2) fitGame();
+  }
   const dt = Math.min(clock.getDelta(), 0.05);
   const now = performance.now();
 
@@ -1138,11 +1145,19 @@ window.addEventListener('keydown', e=>{
     else if (G.phase==='flight') playerSwing();
   }
 });
-window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+let fitW = 0, fitH = 0;
+function fitGame(){
+  const w = document.documentElement.clientWidth || innerWidth;
+  const h = document.documentElement.clientHeight || innerHeight;
+  if (!w || !h) return;
+  fitW = w; fitH = h;
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+addEventListener('resize', () => { fitGame(); setTimeout(fitGame, 150); setTimeout(fitGame, 450); });
+addEventListener('orientationchange', () => { setTimeout(fitGame, 60); setTimeout(fitGame, 300); setTimeout(fitGame, 700); });
+if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
+fitGame();
 
 /* ---------------- tiered grandstands + instanced crowd ---------------- */
 function crowdExcite(sec){ _crowd.exciteT = Math.max(_crowd.exciteT, sec||3); }
