@@ -99,30 +99,43 @@ body.walk #hud { display: block; }
 .pr.lk { opacity: .55; }
 .vt { display: block; margin: 4px auto 0; position: static; }
 html.boot body > .w, html.boot body > :not(#matrix):not(#floor3d):not(#gate):not(script) { visibility: hidden; }
-#matrix { position: fixed; inset: 0; z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); overflow-y: auto; background: radial-gradient(ellipse at 50% 32%, #2a0e1e 0%, #12060c 55%, #050203 100%); }
+#matrix { position: fixed; inset: 0; z-index: 9000; display: none; flex-direction: column; align-items: center; padding: calc(14px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; background: #000; }
 html.boot #matrix { display: flex; }
 #gate { z-index: 9500; }
-#matrix .brand { text-align: center; }
-#matrix .brand .lg { font: 600 clamp(30px, 8vw, 46px)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: .04em; background: linear-gradient(100deg, #8a6420 0%, #f6e3a1 30%, #d9b065 70%, #8a6420); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 12px rgba(217,176,101,.35)); }
-#matrix .brand .lg b { display: block; font-size: .42em; letter-spacing: .5em; margin-top: .35em; font-weight: 600; }
-#matrix .brand small { display: block; margin-top: 10px; color: #b89a6a; font: 500 11px system-ui; letter-spacing: .28em; text-transform: uppercase; }
-.mxgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: min(560px, 100%); }
-.mxtile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; cursor: pointer; padding: 16px 14px; min-height: 122px; color: var(--fg); background: linear-gradient(180deg, rgba(24,16,14,.96), rgba(12,9,8,.96)); border: 1px solid var(--line); border-radius: 3px; box-shadow: 0 12px 30px rgba(0,0,0,.55); font-family: var(--sans); }
-.mxtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ac, var(--gold)); }
+#mxRain { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; background: #000; }
+#matrix > *:not(#mxRain) { position: relative; z-index: 1; }
+#matrix .mxhead { width: min(560px, 100%); }
+#matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
+#matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
+#matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
+.mxtabs { display: none; gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+#matrix.open .mxtabs { display: flex; }
+#matrix .brand { cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.mxtabs::-webkit-scrollbar { display: none; }
+.mxtab { flex: none; cursor: pointer; font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: .06em; color: #baffd0; background: rgba(4,24,10,.85); border: 1px solid rgba(57,255,90,.55); border-radius: 999px; padding: 8px 13px; }
+.mxtab em { font-style: normal; margin-right: 6px; }
+.mxtab.soon { opacity: .45; cursor: default; border-style: dashed; }
+.mxgrid { display: none; grid-template-columns: 1fr 1fr; gap: 12px; width: min(560px, 100%); margin: auto 0; }
+#matrix.open .mxgrid { display: grid; }
+.mxtile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; cursor: pointer; padding: 16px 14px; min-height: 122px; color: #eaffef; background: rgba(3,18,8,.87); border: 1px solid rgba(57,255,90,.5); border-radius: 3px; box-shadow: 0 0 22px rgba(0,0,0,.6), 0 0 12px rgba(57,255,90,.12) inset; font-family: var(--sans); }
+.mxtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ac, #39ff5a); box-shadow: 0 0 8px var(--ac, #39ff5a); }
 .mxtile .ic { font-size: 30px; line-height: 1; min-height: 32px; }
-.mxtile .ic img { width: 40px; height: 40px; border-radius: 10px; display: block; box-shadow: 0 0 0 1px var(--line); }
-.mxtile b { font: 400 20px var(--serif); letter-spacing: .03em; color: var(--gold2); }
-.mxtile span { color: var(--mut); font-size: 12px; line-height: 1.4; }
-.mxtile .tag { position: absolute; top: 10px; right: 10px; font: 500 9px var(--sans); letter-spacing: .2em; padding: 2px 6px; border: 1px solid var(--gold); color: var(--gold2); }
+.mxtile .ic img { width: 40px; height: 40px; border-radius: 10px; display: block; box-shadow: 0 0 0 1px rgba(57,255,90,.5); }
+.mxtile b { font: 600 20px ui-monospace, Menlo, monospace; letter-spacing: .02em; color: #baffd0; text-shadow: 0 0 8px rgba(57,255,90,.35); }
+.mxtile span { color: #7fc98f; font-size: 12px; line-height: 1.4; }
+.mxtile .tag { position: absolute; top: 10px; right: 10px; font: 600 9px ui-monospace, Menlo, monospace; letter-spacing: .2em; padding: 2px 6px; border: 1px solid #39ff5a; color: #39ff5a; }
 .mxtile.soon { opacity: .55; cursor: default; border-style: dashed; }
-.mxtile.soon b { color: var(--mut); }
-#matrix .foot { color: #b89a6a; font: 500 11px system-ui; letter-spacing: .2em; }
+.mxtile.soon b { color: #57d977; }
+#matrix .foot { color: #57d977; font: 500 11px ui-monospace, Menlo, monospace; letter-spacing: .2em; text-align: center; margin-top: auto; }
+#matrix .foot span { display: block; font-size: 13px; letter-spacing: .3em; color: #baffd0; animation: mxpulse 2.2s ease-in-out infinite; cursor: pointer; }
+#matrix .foot small { display: block; margin-top: 8px; font-size: 10px; opacity: .75; }
+@keyframes mxpulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (max-width: 380px) { .mxgrid { grid-template-columns: 1fr; } .mxtile { min-height: 0; flex-direction: row; align-items: center; } }
 
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><div class="brand"><div class="lg">18 Games<b>CASINO</b></div><small>The Connector</small></div><div class="mxgrid" id="mxGrid"></div><div class="foot">FUN CHIPS ONLY · 18+</div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><div class="mxhead"><div class="brand" id="mxBrand"><div class="lg">18 GAMES<b>CASINO</b></div><small>The Connector</small></div><div class="mxtabs" id="mxTabs"></div></div><div class="mxgrid" id="mxGrid"></div><div class="foot"><span id="mxEnter">TAP TO ENTER</span><small>FUN CHIPS ONLY · 18+</small></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -294,6 +307,92 @@ html.boot #matrix { display: flex; }
     if (!t.soon && !noGL) b.addEventListener('click', t.act);
     grid.appendChild(b);
   });
+  /* the same TABS, as smaller tabs in the header */
+  var tabsEl = document.getElementById('mxTabs');
+  if (tabsEl) TABS.forEach(function (t) {
+    var noGL = (t.id === 'floor' && !canGL);
+    var b = document.createElement('button'); b.type = 'button';
+    b.className = 'mxtab' + ((t.soon || noGL) ? ' soon' : '');
+    b.innerHTML = '<em>' + (t.img ? '\u{1F3C0}' : t.icon) + '</em>' + t.title;
+    if (!t.soon && !noGL) b.addEventListener('click', t.act);
+    tabsEl.appendChild(b);
+  });
+  /* The tabs live in a secret area only the owner knows: triple-tap the
+     18 GAMES brand to reveal them. Once found, this device remembers
+     (localStorage mx_open). Everyone else just sees the rain: a plain tap
+     on the background or the TAP TO ENTER line walks onto the casino floor. */
+  var mxEl = document.getElementById('matrix');
+  function reveal() { if (mxEl) mxEl.classList.add('open');
+    try { localStorage.setItem('mx_open', '1'); } catch (e) {} }
+  try { if (localStorage.getItem('mx_open') === '1') reveal(); } catch (e) {}
+  var taps = [];
+  var brand = document.getElementById('mxBrand');
+  if (brand) brand.addEventListener('click', function (ev) { ev.stopPropagation();
+    var now = Date.now(); taps = taps.filter(function (t) { return now - t < 1300; });
+    taps.push(now); if (taps.length >= 3) { taps = []; reveal(); } });
+  if (mxEl) mxEl.addEventListener('click', function (ev) {
+    if (ev.target === mxEl || ev.target.id === 'mxRain' || ev.target.id === 'mxEnter') enterFloor(); });
+  /* The Matrix floor: an intricate live scene on one canvas - dense binary
+     rain in two depth layers falls to a glowing horizon, and below it a
+     perspective floor of running numbers streams toward the viewer.
+     Lightweight (~18fps steps, 1x resolution) and it stops the moment the
+     hub leaves the page. */
+  (function rain() {
+    if (!document.documentElement.classList.contains('boot')) return;
+    var cv = document.getElementById('mxRain'); if (!cv) return;
+    var ctx = cv.getContext('2d'); if (!ctx) return;
+    var W = 0, H = 0, HZ = 0, glow = null, far = [], near = [], rows = [];
+    var MONO = "ui-monospace, Menlo, Consolas, monospace";
+    function bit() { return Math.random() < .5 ? '0' : '1'; }
+    function mkRow(t) { var s = ''; var n = Math.ceil(W / 9) + 2;
+      for (var i = 0; i < n; i++) s += bit(); return { t: t, s: s }; }
+    function size() { W = cv.width = cv.clientWidth || innerWidth; H = cv.height = cv.clientHeight || innerHeight;
+      HZ = Math.round(H * .54);
+      glow = ctx.createRadialGradient(W / 2, HZ, 4, W / 2, HZ, W * .62);
+      glow.addColorStop(0, 'rgba(120,255,160,.22)'); glow.addColorStop(.45, 'rgba(40,220,100,.08)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+      function layer(fs, sp) { var a = [], n = Math.max(8, Math.floor(W / fs));
+        for (var i = 0; i < n; i++) a.push({ x: i * fs, y: Math.random() * HZ, s: sp * (.6 + Math.random() * .8) }); return a; }
+      far = layer(11, .55); near = layer(17, 1.05);
+      rows = []; for (var i = 0; i < 15; i++) rows.push(mkRow((i + 1) / 15));
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+    size(); addEventListener('resize', size);
+    function drawLayer(a, fs, head, trail) {
+      ctx.font = fs + 'px ' + MONO;
+      for (var i = 0; i < a.length; i++) { var d = a[i], y = d.y;
+        ctx.fillStyle = head; ctx.fillText(bit(), d.x, y);
+        ctx.fillStyle = trail; ctx.fillText(bit(), d.x, y - fs); ctx.fillText(bit(), d.x, y - fs * 2);
+        d.y += d.s * fs * .16; if (d.y - fs * 2 > HZ + 6) { d.y = -Math.random() * 40; d.s = (fs === 11 ? .55 : 1.05) * (.6 + Math.random() * .8); } } }
+    var last = 0;
+    function frame(ts) {
+      if (!document.body || !document.body.contains(cv)) return;
+      if (!document.documentElement.classList.contains('boot')) return;
+      requestAnimationFrame(frame);
+      if (ts - last < 55) return; last = ts;
+      ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+      drawLayer(far, 11, 'rgba(140,255,175,.5)', 'rgba(35,190,80,.20)');
+      drawLayer(near, 17, 'rgba(205,255,220,.95)', 'rgba(43,214,86,.45)');
+      /* the floor: rows of running numbers rushing at the viewer */
+      ctx.textAlign = 'center';
+      for (var i = 0; i < rows.length; i++) { var r = rows[i];
+        r.t += .0045 + r.t * .008;
+        if (r.t > 1) { rows[i] = r = mkRow(.02); }
+        var y = HZ + (H - HZ) * Math.pow(r.t, 1.6);
+        var fs = 5 + r.t * 21, sp = fs * .62;
+        ctx.font = '600 ' + fs.toFixed(1) + 'px ' + MONO;
+        var flick = .75 + Math.random() * .25;
+        ctx.fillStyle = 'rgba(60,255,120,' + (0.10 + r.t * .55 * flick).toFixed(3) + ')';
+        var n = Math.ceil(W / sp) + 1, x0 = (W - (n - 1) * sp) / 2;
+        if (r.s.length < n * 2) r.s += r.s;
+        for (var j = 0; j < n; j++) {
+          if (Math.random() < .10) r.s = r.s.substring(0, j) + bit() + r.s.substring(j + 1);
+          ctx.fillText(r.s.charAt(j % r.s.length), x0 + j * sp, y); }
+        if (Math.random() < .3) { ctx.fillStyle = 'rgba(215,255,225,.9)';
+          ctx.fillText(bit(), x0 + Math.floor(Math.random() * n) * sp, y); } }
+      ctx.textAlign = 'left';
+    }
+    requestAnimationFrame(frame);
+  })();
   new MutationObserver(function () {
     if (!dismissed && !document.documentElement.classList.contains('boot'))
       document.documentElement.classList.add('boot');
