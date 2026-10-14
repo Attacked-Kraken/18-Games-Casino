@@ -310,9 +310,9 @@ function sfx(k, v = 1) {
   if (!AU.ctx || (SV && !SV.snd)) return;
   try {
     if (k === 'bounce') { tone('sine', 150, 70, 0.09, 0.32 * v); nHit(0.05, 900, 300, 0.12 * v); }
-    else if (k === 'swish') { nHit(0.32, 5200, 2600, 0.28, 'highpass'); nHit(0.2, 2400, 1400, 0.12, 'bandpass'); }
-    else if (k === 'rim') { tone('triangle', 820, 760, 0.35, 0.16); tone('square', 1310, 1240, 0.18, 0.05); nHit(0.08, 3000, 1200, 0.2, 'bandpass'); }
-    else if (k === 'board') { tone('sine', 210, 90, 0.16, 0.38); nHit(0.1, 1600, 400, 0.25); }
+    else if (k === 'swish') { nHit(0.3, 5800, 2300, 0.3, 'highpass'); nHit(0.24, 2100, 1150, 0.13, 'bandpass'); nHit(0.12, 3400, 2600, 0.1, 'bandpass'); } /* v13: crisper net snap up top, soft cord rustle under it */
+    else if (k === 'rim') { const rp = 0.97 + Math.random() * 0.06; tone('triangle', 1567 * rp, 1500 * rp, 0.38, 0.13 * v); tone('sine', 2093 * rp, 2010 * rp, 0.27, 0.09 * v); tone('sine', 2637 * rp, 2550 * rp, 0.18, 0.06 * v); tone('sine', 3419 * rp, 3320 * rp, 0.11, 0.04 * v); nHit(0.05, 3800, 1500, 0.2 * v, 'bandpass'); } /* v13: a real steel CLANG - inharmonic partials with staggered decays, detuned per hit */
+    else if (k === 'board') { tone('sine', 165, 52, 0.22, 0.5 * v); tone('triangle', 430, 170, 0.07, 0.16 * v); nHit(0.09, 950, 280, 0.3 * v); } /* v13: a heavy glass THUNK - deep body, hard knock, slap */
     else if (k === 'squeak') { const f = 2100 + Math.random() * 900; tone('sine', f, f * 1.25, 0.09, 0.05); }
     else if (k === 'whistle') { tone('sine', 2900, 3000, 0.42, 0.18); tone('sine', 3200, 3150, 0.42, 0.08); }
     else if (k === 'buzzer') { tone('sawtooth', 220, 218, 1.4, 0.16); tone('square', 330, 329, 1.4, 0.08); }
@@ -1690,7 +1690,7 @@ function stepBall(dt) {
       const sp = 1.6 + Math.random() * 2.6; B.st = 'loose'; B.vel.set(out.x * sp + (Math.random() - 0.5) * 1.2, 1.8 + Math.random() * 2.2, out.z * sp - (B.board ? G.dir[e.t] * 1.5 : 0)); G.shot = 24; G.reboundFrom = 'miss'; G.missBy = e;
       if (B.foul) { G.fouls[B.foul.t]++; whistle(`Shooting foul on ${nameOf(B.foul)}`); G.after = { t: 0.6, f: () => startFT(e, G.shotInfo.pts) }; B.st = 'dead'; return; }
       if (buzzer) { G.after = { t: 1.2, f: () => endPeriod() }; } return; } return; }
-  if (B.st === 'through') { B.vel.y -= 9.8 * dt; B.pos.addScaledVector(B.vel, dt); if (B.pos.y < BALLR) { B.pos.y = BALLR; B.vel.y = Math.abs(B.vel.y) * 0.5; } return; }
+  if (B.st === 'through') { const R = rimPos(G.shooter ? G.shooter.t : 0); B.vel.y -= 9.8 * dt; if (B.pos.y < R.y + 0.06 && B.pos.y > R.y - 0.52 && B.vel.y < -2.1) B.vel.y = -2.1; B.pos.addScaledVector(B.vel, dt); B.pos.x += (R.x - B.pos.x) * Math.min(1, dt * 5); B.pos.z += (R.z - B.pos.z) * Math.min(1, dt * 5); if (B.pos.y < BALLR) { B.pos.y = BALLR; B.vel.y = Math.abs(B.vel.y) * 0.5; } return; } /* v13: the net GRABS the ball - it squeezes down through the cords instead of free-falling past the hoop */
   if (B.st === 'loose') { B.vel.y -= 9.8 * dt; B.pos.addScaledVector(B.vel, dt);
     if (B.pos.y < BALLR) { B.pos.y = BALLR; if (Math.abs(B.vel.y) > 1) sfx('bounce', Math.min(1, Math.abs(B.vel.y) / 5)); B.vel.y = Math.abs(B.vel.y) * 0.72; B.vel.x *= 0.92; B.vel.z *= 0.92; }
     /* backboard */ for (const s of [-1, 1]) { const bz = s * BOARDZ; if (Math.abs(B.pos.x) < 0.92 && B.pos.y > 2.9 && B.pos.y < 3.97 && Math.abs(B.pos.z - bz) < BALLR && B.vel.z * s > 0) { B.vel.z *= -0.6; B.pos.z = bz - s * BALLR; sfx('board'); } }
@@ -1717,12 +1717,13 @@ function ftStep(dt) { const e = G.ftShooter, B = G.ball;
   const F = G.ft; if (!F.rel) { B.pos.copy(handPos(e));
     if (e.t === USER) { if (K.shoot && !F.held) { F.held = true; F.t = 0; $('meter').style.display = 'block'; } if (F.held) { F.t += dt; const m = F.t / 0.85; drawMeter(m, e); if (!K.shoot || m >= 1.2) ftRelease(e, m); } }
     else if (G.t > 1.2) ftRelease(e, null); return; }
-  /* ball in the air */ F.k += dt / 0.95; const k = clamp(F.k, 0, 1); B.pos.lerpVectors(F.from, F.to, k); B.pos.y += 4 * 1.25 * k * (1 - k);
+  /* ball in the air */ F.k += dt / 0.95; const k = clamp(F.k, 0, 1); B.pos.lerpVectors(F.from, F.to, k); B.pos.y += 4 * 1.45 * k * (1 - k); /* v13: a proper FT arc - drops down through the hoop, not a line drive */
   if (k >= 1 && !F.done) { F.done = true; const R = rimPos(e.t);
     if (F.make) { G.score[e.t] += 1; G.box[e.p.id].pts += 1; if (e.t === USER) SV.stats.pts++; jumboDraw(); sfx('swish'); const N = ARENA.nets.find((n) => Math.sign(n.s) === Math.sign(R.z)); if (N) N.t = 0.7; if (e.t === G.homeIdx) sfx('cheer', 0.6); }
     else { sfx('rim'); if (e.t === G.homeIdx) sfx('groan'); }
     G.ftLeft--; setTimeout(() => {}, 0);
     G.afterFT = 0.8; }
+  if (F.done && F.make) { const R = rimPos(e.t); F.vy = (F.vy == null ? -1.1 : F.vy) - 9.8 * dt; if (B.pos.y < R.y + 0.06 && B.pos.y > R.y - 0.52 && F.vy < -2.1) F.vy = -2.1; B.pos.y = Math.max(BALLR, B.pos.y + F.vy * dt); B.pos.x += (R.x - B.pos.x) * Math.min(1, dt * 5); B.pos.z += (R.z - B.pos.z) * Math.min(1, dt * 5); } /* v13: a made FT used to FREEZE at the rim until the inbound - now it drops through the net */
   if (F.done) { G.afterFT -= dt; if (G.afterFT <= 0) { if (G.ftLeft > 0) { G.phase = 'ftpause'; G.t = 0.4; return; }
       G.phase = 'live'; hint('');
       if (F.make) inbound(1 - e.t, 'made'); else { B.st = 'loose'; B.pos.copy(rimPos(e.t)); B.vel.set((Math.random() - 0.5) * 3, 2.5, -G.dir[e.t] * 2.5); G.reboundFrom = 'miss'; } } }
@@ -1730,7 +1731,7 @@ function ftStep(dt) { const e = G.ftShooter, B = G.ball;
 function ftRelease(e, m) { const F = G.ft; F.rel = true; $('meter').style.display = 'none'; let p = clamp(0.55 + (e.p.a.mid - 60) * 0.009, 0.4, 0.93) * (e.t === USER ? df().me : df().ai);
   if (m != null) { const err = Math.abs(m - 0.84); if (err < 0.05) { p = 0.97; showGrade('perfect'); sfx('perfect'); } else if (err < 0.13) { p = Math.max(p, 0.8); showGrade('good'); } else if (err > 0.25) { p *= 0.45; showGrade(m < 0.84 ? 'early' : 'late'); } }
   F.make = Math.random() < p; const R = rimPos(e.t); F.from = handPos(e); F.to = F.make ? V3(R.x, R.y + 0.05, R.z) : V3(R.x + (Math.random() - 0.5) * 0.4, R.y + 0.04, R.z + G.dir[e.t] * (Math.random() < 0.5 ? 0.22 : -0.22)); F.k = 0; F.done = false;
-  e.act = { k: 'shoot', t: 0.3, dur: 0.5, rel: true }; e.vy = 0.8; }
+  e.act = { k: 'shoot', t: 0, dur: 0.85, rel: true }; e.vy = 0; } /* v13: free throws are SET shots - full raise-and-release, feet planted (the old 0.8 hop made it a jump shot) */
 
 /* ---------- periods */
 function endPeriod() { const B = G.ball; sfx('buzzer'); G.phase = 'qbreak'; G.t = 0; B.st = 'dead'; B.holder = null; G.clock = 0;
@@ -1802,8 +1803,8 @@ function animate(dt) {
     /* h27b: speed relative to facing (forward / sideways), turn rate for leaning into cuts, stride timed to real foot speed */
     const fx = Math.sin(e.h), fz = Math.cos(e.h), fwd = e.vel.x * fx + e.vel.z * fz, side = e.vel.x * fz - e.vel.z * fx;
     const dh = angW(e.h - (e.lastH == null ? e.h : e.lastH)); e.lastH = e.h; e.turn = lerp(e.turn || 0, dt > 0 ? dh / dt : 0, Math.min(1, dt * 8));
-    e.sph = ((e.sph || 0) + dt * sp / (2.6 + sp * 0.14)) % 1; e.ph += dt * sp * 1.25;
-    const run = () => { const ready = hpose('ready', G.t + e.i, {}), mc = mpose('sprint', e.sph * 31.99); return lerpPose(ready, mc, clamp((sp - 0.4) / 3.4, 0, 1)); };
+    e.sph = ((e.sph || 0) + dt * sp / (1.5 + sp * 0.13)) % 1; e.ph += dt * sp * 1.25; /* v13: stride length matches anatomy (1.5m walk -> 2.5m sprint per cycle) - the old 2.6m+ base scissored the legs in slow motion while the body moved = gliding */
+    const run = () => { const ready = hpose('ready', G.t + e.i, {}), mc = mpose('sprint', e.sph * 31.99); return lerpPose(ready, mc, clamp((sp - 0.25) / 1.35, 0, 1)); }; /* v13: full stride by 1.6 m/s - the old blend kept the legs half-frozen at jog speeds, which read as skating */
     const defStance = G.mode === 'game' && G.phase === 'live' && e.t !== G.poss && B.st !== 'loose' && sp < 5.4 && e.mark && hdist(e.pos, e.mark.pos) < 4.5;
     if (a && (a.k === 'shoot')) { pose = hpose('shoot', G.t, { k: a.t / (a.dur || 0.6) }); kk = 26; }
     else if (a && (a.k === 'layup' || a.k === 'dunk')) { pose = hpose(a.k, G.t, { k: a.t / a.dur }); kk = 22; }
@@ -1814,18 +1815,18 @@ function animate(dt) {
     else if (a && a.k === 'steal') { pose = hpose('defend', G.t, { ph: e.ph }); pose.shR = [-1.5, 0, -0.2]; pose.elR[0] = -0.1; pose.spine[0] = 0.6; kk = 26; }
     else if (a && a.k === 'cross') { pose = hpose('dribble', G.t, { bk: 0.3 }); pose.chest[1] = Math.sin(a.t / a.dur * Math.PI) * 0.5; pose.spine[2] = Math.sin(a.t / a.dur * Math.PI) * 0.25; pose.shL = [-0.9, 0, 0.5]; pose.elL[0] = -0.5; kk = 24; }
     else if (a && a.k === 'celebrate') pose = hpose(e.i % 2 ? 'celebrate' : 'flex', G.t + e.i);
-    else if (B.holder === e && B.st === 'held') { if (sp > 1.4) { pose = run(); pose.shR = [-0.5 + e.bk * 0.25, 0, -0.35]; pose.elR = [-0.7 + e.bk * 0.45, 0, 0]; pose.shL = [-0.6, 0, 0.35]; pose.elL[0] = -1.0; } else pose = hpose('dribble', G.t, { ph: e.ph, bk: e.bk }); }
+    else if (B.holder === e && B.st === 'held') { if (sp > 0.9) { pose = run(); pose.shR = [-0.5 + e.bk * 0.25, 0, -0.35]; pose.elR = [-0.7 + e.bk * 0.45, 0, 0]; pose.shL = [-0.6, 0, 0.35]; pose.elL[0] = -1.0; } else pose = hpose('dribble', G.t, { ph: e.ph, bk: e.bk }); }
     else if (defStance) { pose = hpose('defend', G.t, { ph: e.ph, mv: false });
       if (sp > 0.5 && Math.abs(side) >= Math.abs(fwd) * 0.8) { /* defensive slide: push off, feet never cross */ const s2 = Math.sin(e.ph * 1.6); pose.hipL[2] = 0.38 + s2 * 0.2; pose.hipR[2] = -0.38 + s2 * 0.2; pose.knL[0] = 1.1 - Math.max(0, s2) * 0.2; pose.knR[0] = 1.1 - Math.max(0, -s2) * 0.2; }
       else if (sp > 0.5) { const s2 = Math.sin(e.ph * 1.5); pose.hipL[0] = -0.75 + s2 * 0.3; pose.hipR[0] = -0.75 - s2 * 0.3; }
       if (e.handsUp) { pose.shR = [-2.75, 0, -0.25]; pose.elR[0] = -0.15; pose.shL = [-0.8, 0, 1.0]; } }
-    else if (sp > 0.45) pose = run();
+    else if (sp > 0.35) pose = run();
     else pose = hpose(G.mode === 'game' && (G.phase === 'live' || G.phase === 'inbound') ? 'ready' : 'stand', G.t + e.i, {});
     applyPose(J, pose, Math.min(1, dt * (kk > 14 ? kk : 20)));
     const lean = (a && (a.k === 'shoot' || a.k === 'block')) ? 0 : clamp(fwd * 0.018, -0.08, 0.16), bank = clamp(-e.turn * 0.07, -0.28, 0.28) * clamp(sp / 4, 0, 1);
     J.body.rotation.x += (lean - J.body.rotation.x) * Math.min(1, dt * 8); J.body.rotation.z += (bank - J.body.rotation.z) * Math.min(1, dt * 8);
     J.body.position.y += ((pose.hy || 0) * 0.9 - J.body.position.y) * Math.min(1, dt * 12);
-    J.root.position.set(e.pos.x, e.y, e.pos.z); J.root.rotation.y = e.h; }
+    J.root.position.set(e.pos.x, e.y, e.pos.z); let ry = e.h; if (!a && !defStance && sp > 0.8) ry += angW(Math.atan2(e.vel.x, e.vel.z) - e.h) * 0.6; J.root.rotation.y += angW(ry - J.root.rotation.y) * Math.min(1, dt * 10); } /* v13: the body turns INTO its motion instead of moonwalk-strafing, and rotations ease with weight instead of snapping */
   for (const e2 of G.ents) if (e2.J.q) e2.J.q.sync();
   /* ball mesh */
   if (B) { BALL.position.copy(B.pos); if (B.st === 'shot' || B.st === 'pass' || B.st === 'loose') BALL.rotation.x += dt * 12; BSHAD.position.set(B.pos.x, 0.006, B.pos.z); BSHAD.material.opacity = clamp(0.4 - B.pos.y * 0.06, 0.08, 0.4); }
