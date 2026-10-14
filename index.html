@@ -103,39 +103,30 @@ html.boot body > .w, html.boot body > :not(#matrix):not(#floor3d):not(#gate):not
 html.boot #matrix { display: flex; }
 #gate { z-index: 9500; }
 #mxRain { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; background: #000; }
-#matrix > *:not(#mxRain) { position: relative; z-index: 1; }
+#matrix .mxhead, #matrix .foot { position: relative; z-index: 1; }
 #matrix .mxhead { width: min(560px, 100%); }
 #matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
-.mxtabs { display: none; gap: 8px; margin-top: 14px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-#matrix.open .mxtabs { display: flex; }
-#matrix .brand { cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-.mxtabs::-webkit-scrollbar { display: none; }
-.mxtab { flex: none; cursor: pointer; font: 600 12px ui-monospace, Menlo, monospace; letter-spacing: .06em; color: #baffd0; background: rgba(4,24,10,.85); border: 1px solid rgba(57,255,90,.55); border-radius: 999px; padding: 8px 13px; }
-.mxtab em { font-style: normal; margin-right: 6px; }
-.mxtab.soon { opacity: .45; cursor: default; border-style: dashed; }
-.mxgrid { display: none; grid-template-columns: 1fr 1fr; gap: 12px; width: min(560px, 100%); margin: auto 0; }
-#matrix.open .mxgrid { display: grid; }
-.mxtile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; cursor: pointer; padding: 16px 14px; min-height: 122px; color: #eaffef; background: rgba(3,18,8,.87); border: 1px solid rgba(57,255,90,.5); border-radius: 3px; box-shadow: 0 0 22px rgba(0,0,0,.6), 0 0 12px rgba(57,255,90,.12) inset; font-family: var(--sans); }
-.mxtile::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--ac, #39ff5a); box-shadow: 0 0 8px var(--ac, #39ff5a); }
-.mxtile .ic { font-size: 30px; line-height: 1; min-height: 32px; }
-.mxtile .ic img { width: 40px; height: 40px; border-radius: 10px; display: block; box-shadow: 0 0 0 1px rgba(57,255,90,.5); }
-.mxtile b { font: 600 20px ui-monospace, Menlo, monospace; letter-spacing: .02em; color: #baffd0; text-shadow: 0 0 8px rgba(57,255,90,.35); }
-.mxtile span { color: #7fc98f; font-size: 12px; line-height: 1.4; }
-.mxtile .tag { position: absolute; top: 10px; right: 10px; font: 600 9px ui-monospace, Menlo, monospace; letter-spacing: .2em; padding: 2px 6px; border: 1px solid #39ff5a; color: #39ff5a; }
-.mxtile.soon { opacity: .55; cursor: default; border-style: dashed; }
-.mxtile.soon b { color: #57d977; }
+#mxDoor { position: absolute; top: calc(4px + env(safe-area-inset-top)); right: 4px; z-index: 3; width: 74px; height: 74px; padding: 0; background: transparent; border: 0; color: rgba(130,255,170,.15); font: 600 15px ui-monospace, Menlo, monospace; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
+#worm[hidden] { display: none; }
+#wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+#worm .wormtabs, #worm .wormhint { position: relative; z-index: 1; }
+.wormtabs { display: flex; flex-direction: column; gap: 12px; width: min(300px, 78vw); }
+.wormtab { cursor: pointer; font: 600 17px ui-monospace, Menlo, monospace; letter-spacing: .04em; color: #d8ffe2; background: rgba(3,20,9,.88); border: 1px solid rgba(57,255,90,.65); border-radius: 999px; padding: 15px 18px; box-shadow: 0 0 24px rgba(57,255,90,.25), 0 0 12px rgba(57,255,90,.15) inset; }
+.wormtab em { font-style: normal; margin-right: 9px; }
+.wormhint { color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
 #matrix .foot { color: #57d977; font: 500 11px ui-monospace, Menlo, monospace; letter-spacing: .2em; text-align: center; margin-top: auto; }
 #matrix .foot span { display: block; font-size: 13px; letter-spacing: .3em; color: #baffd0; animation: mxpulse 2.2s ease-in-out infinite; cursor: pointer; }
 #matrix .foot small { display: block; margin-top: 8px; font-size: 10px; opacity: .75; }
 @keyframes mxpulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
-@media (max-width: 380px) { .mxgrid { grid-template-columns: 1fr; } .mxtile { min-height: 0; flex-direction: row; align-items: center; } }
+
 
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><div class="mxhead"><div class="brand" id="mxBrand"><div class="lg">18 GAMES<b>CASINO</b></div><small>The Connector</small></div><div class="mxtabs" id="mxTabs"></div></div><div class="mxgrid" id="mxGrid"></div><div class="foot"><span id="mxEnter">TAP TO ENTER</span><small>FUN CHIPS ONLY · 18+</small></div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><div class="mxhead"><div class="brand"><div class="lg">18 GAMES<b>CASINO</b></div><small>The Connector</small></div></div><button id="mxDoor" type="button" aria-label="Owner door">1</button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button></div><div class="wormhint">TAP OUTSIDE TO GO BACK</div></div><div class="foot"><span id="mxEnter">TAP TO ENTER</span><small>FUN CHIPS ONLY · 18+</small></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -266,12 +257,12 @@ html.boot #matrix { display: flex; }
 <script src="wallet.js"></script>
 <script src="engage.js"></script>
 <script>
-/* The Connector (matrix entrance): the app opens here. Tabs are data-driven -
-   add an entry to TABS to connect something new. Choosing a tab sets mx_seen so
-   in-session reloads (floor/list switches) skip the entrance; a fresh app open
-   (new session) always starts here. The floor loader removes the boot class when
-   it is ready (it used to dismiss the old intro); the MutationObserver below
-   keeps the entrance up until a tab is chosen. */
+/* The Connector (matrix entrance): the app opens here, on the code rain.
+   Choosing a door sets mx_seen so in-session reloads (floor/list switches)
+   skip the entrance; a fresh app open (new session) always starts here.
+   The floor loader removes the boot class when it is ready (it used to
+   dismiss the old intro); the MutationObserver below keeps the entrance up
+   until a door is chosen. */
 (function () {
   function seen() { try { sessionStorage.setItem('mx_seen', '1'); } catch (e) {} }
   var dismissed = false;
@@ -286,52 +277,61 @@ html.boot #matrix { display: flex; }
     seen(); try { sessionStorage.setItem('cf_view', 'list'); } catch (e) {} location.reload(); }
   var canGL = false;
   try { canGL = !!document.createElement('canvas').getContext('webgl2'); } catch (e) {}
-  /* TABS: add an entry to connect something new. icon may be an emoji or an img
-     file path; tag is an optional corner label; soon renders dimmed. */
-  var TABS = [
-    { id: 'hoops27', img: 'hoops27-icon.svg', title: 'Basketball', sub: '27Hoops · 5-on-5 league', accent: '#ff7a1a', tag: 'NEW',
-      act: function () { if (window.Lobby) Lobby.open('hoops27'); else location.href = 'hoops27.html'; } },
-    { id: 'floor', icon: '\u{1F3B0}', title: 'Casino Floor', sub: 'Walk the 3D casino floor', accent: '#c9a45c', act: enterFloor },
-    { id: 'games', icon: '\u{1F0CF}', title: 'All Games', sub: 'Every game, as a list', accent: '#7a4fd0', act: showList },
-    { id: 'soon', icon: '\uFF0B', title: 'More Soon', sub: 'New connections land here', accent: '#5a5a5a', soon: true }
-  ];
-  var grid = document.getElementById('mxGrid');
-  if (grid) TABS.forEach(function (t) {
-    var noGL = (t.id === 'floor' && !canGL);
-    var b = document.createElement('button'); b.type = 'button';
-    b.className = 'mxtile' + ((t.soon || noGL) ? ' soon' : '');
-    b.style.setProperty('--ac', t.accent);
-    b.innerHTML = (t.tag ? '<span class="tag">' + t.tag + '</span>' : '') +
-      '<span class="ic">' + (t.img ? '<img src="' + t.img + '" alt="">' : t.icon) + '</span>' +
-      '<b>' + t.title + '</b><span>' + (noGL ? 'Needs WebGL on this device' : t.sub) + '</span>';
-    if (!t.soon && !noGL) b.addEventListener('click', t.act);
-    grid.appendChild(b);
-  });
-  /* the same TABS, as smaller tabs in the header */
-  var tabsEl = document.getElementById('mxTabs');
-  if (tabsEl) TABS.forEach(function (t) {
-    var noGL = (t.id === 'floor' && !canGL);
-    var b = document.createElement('button'); b.type = 'button';
-    b.className = 'mxtab' + ((t.soon || noGL) ? ' soon' : '');
-    b.innerHTML = '<em>' + (t.img ? '\u{1F3C0}' : t.icon) + '</em>' + t.title;
-    if (!t.soon && !noGL) b.addEventListener('click', t.act);
-    tabsEl.appendChild(b);
-  });
-  /* The tabs live in a secret area only the owner knows: triple-tap the
-     18 GAMES brand to reveal them. Once found, this device remembers
-     (localStorage mx_open). Everyone else just sees the rain: a plain tap
-     on the background or the TAP TO ENTER line walks onto the casino floor. */
+  function openHoops() { if (window.Lobby) Lobby.open('hoops27'); else location.href = 'hoops27.html'; }
+  /* The owner's secret door: a lone dim "1" in the top-right corner of the
+     rain - it looks like part of the code until you tap it. It opens the
+     wormhole, a swirling binary vortex holding the owner's two tabs:
+     Casino Floor and Basketball. There is deliberately no games list in
+     the connector - everything casino lives on the floor. Everyone else
+     just sees the rain; a plain tap on the background or the TAP TO ENTER
+     line walks them onto the casino floor. */
   var mxEl = document.getElementById('matrix');
-  function reveal() { if (mxEl) mxEl.classList.add('open');
-    try { localStorage.setItem('mx_open', '1'); } catch (e) {} }
-  try { if (localStorage.getItem('mx_open') === '1') reveal(); } catch (e) {}
-  var taps = [];
-  var brand = document.getElementById('mxBrand');
-  if (brand) brand.addEventListener('click', function (ev) { ev.stopPropagation();
-    var now = Date.now(); taps = taps.filter(function (t) { return now - t < 1300; });
-    taps.push(now); if (taps.length >= 3) { taps = []; reveal(); } });
+  var worm = document.getElementById('worm');
+  var door = document.getElementById('mxDoor');
+  if (door) door.addEventListener('click', function (ev) { ev.stopPropagation();
+    if (worm) { worm.hidden = false; startWorm(); } });
+  if (worm) worm.addEventListener('click', function (ev) {
+    if (ev.target === worm || ev.target.id === 'wormCv') worm.hidden = true; });
+  var wF = document.getElementById('wFloor');
+  if (wF) { if (!canGL) { wF.style.opacity = .5;
+      wF.addEventListener('click', function () { worm.hidden = true; dismiss(); }); }
+    else wF.addEventListener('click', enterFloor); }
+  var wH = document.getElementById('wHoops');
+  if (wH) wH.addEventListener('click', openHoops);
   if (mxEl) mxEl.addEventListener('click', function (ev) {
     if (ev.target === mxEl || ev.target.id === 'mxRain' || ev.target.id === 'mxEnter') enterFloor(); });
+  /* The wormhole vortex: concentric rings of binary digits swirling into
+     the center, inner rings faster. Runs only while the wormhole is open. */
+  var wormStarted = false;
+  function startWorm() {
+    if (wormStarted) return; wormStarted = true;
+    var cv = document.getElementById('wormCv'); if (!cv) { wormStarted = false; return; }
+    var ctx = cv.getContext('2d'); if (!ctx) { wormStarted = false; return; }
+    var W = 0, H = 0, CX = 0, CY = 0, rings = [];
+    function size() { W = cv.width = cv.clientWidth || innerWidth; H = cv.height = cv.clientHeight || innerHeight;
+      CX = W / 2; CY = H / 2; rings = [];
+      var maxR = Math.sqrt(CX * CX + CY * CY);
+      for (var r = 48; r < maxR; r += 24) rings.push({ r: r, a: Math.random() * 6.28, sp: .3 + Math.random() * .55, fs: 8 + (r / maxR) * 9 });
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+    size(); addEventListener('resize', size);
+    var last = 0;
+    function frame(ts) {
+      if (!worm || worm.hidden || !document.body || !document.body.contains(cv)) { wormStarted = false; return; }
+      requestAnimationFrame(frame);
+      if (ts - last < 50) return; last = ts;
+      ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(0, 0, W, H);
+      for (var i = 0; i < rings.length; i++) { var g = rings[i]; g.a += g.sp * .045;
+        var n = Math.max(6, Math.floor(6.283 * g.r / (g.fs * 1.05)));
+        ctx.font = '600 ' + g.fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
+        for (var j = 0; j < n; j++) { var ang = g.a + (j / n) * 6.283;
+          ctx.fillStyle = (j % 9 === 0) ? 'rgba(208,255,222,.95)' : 'rgba(46,220,95,.55)';
+          ctx.fillText(Math.random() < .5 ? '0' : '1', CX + Math.cos(ang) * g.r, CY + Math.sin(ang) * g.r * .92); } }
+      var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
+      grd.addColorStop(0, 'rgba(160,255,190,.22)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
+    }
+    requestAnimationFrame(frame);
+  }
   /* The Matrix floor: an intricate live scene on one canvas - dense binary
      rain in two depth layers falls to a glowing horizon, and below it a
      perspective floor of running numbers streams toward the viewer.
