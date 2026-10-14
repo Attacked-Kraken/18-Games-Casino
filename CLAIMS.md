@@ -29,4 +29,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | This claims board + the cross-check-and-claim rule | Muse main (casino) | claims-board | this PR | 2026-10-14 16:05 CDT |
 | DONE | Door hold on/off switch: persistent toggle on hallway 1 - OFF = plain tap on the 0 (no hold), ON = hold-then-tap as now | Muse main (casino) | door-hold-switch | PR #30, main 6cd181a5 | 2026-10-14 17:22 CDT |
 | DONE | Hockey career mode: menu career options, star player showcase on menu, friend-code matches (async) | Muse main (casino) | hockey-career | PR #33, main 64cab4eb | 2026-10-14 17:40 CDT |
-| CLAIMED | Basketball (27Hoops) human-look + rules pass: full playtest, audit player look/movement, verify basketball rules, fix gaps | Muse algre141 | hoops-human-pass | — | 2026-10-14 18:56 CDT |
+| RELEASED | Basketball (27Hoops) human-look + rules pass: full playtest, audit player look/movement, verify basketball rules, fix gaps | Muse algre141 | hoops-human-pass | — | 2026-10-14 18:57 CDT |
