@@ -21,7 +21,12 @@
       if (screen.orientation && screen.orientation.lock) { var q = screen.orientation.lock('landscape'); if (q && q.catch) q.catch(function () {}); } } catch (e) {} }
   document.addEventListener('pointerdown', tryLock, { capture: true });
   /* resolution cap (2x still looks sharp on phones) */
-  var n = 0, iv = setInterval(function () { n++; var h = window.__h27, r = h && h.renderer;
-    if (r) { try { if (r.getPixelRatio() > 2) { r.setPixelRatio(2); r.setSize(window.innerWidth, window.innerHeight); window.dispatchEvent(new Event('resize')); } } catch (e) {} clearInterval(iv); }
+  var n = 0, qf = false, iv = setInterval(function () { n++; var h = window.__h27, r = h && h.renderer;
+    if (r) { try { if (r.getPixelRatio() > 2) { r.setPixelRatio(2); r.setSize(window.innerWidth, window.innerHeight); window.dispatchEvent(new Event('resize')); }
+      /* PERF BOT: touch devices run the game's own Fast preset (no shadow-map pass,
+         no bloom chain) - this is what stops the phone lag. Once per page load, so a
+         deliberate High choice in Settings is respected. */
+      if (!qf && window.matchMedia && matchMedia('(pointer: coarse)').matches && h.SV && h.SV.q !== 'low') { qf = true; h.SV.q = 'low'; window.dispatchEvent(new Event('resize')); }
+    } catch (e) {} clearInterval(iv); }
     if (n > 120) clearInterval(iv); }, 250);
 })();
