@@ -113,16 +113,21 @@ html.boot #matrix { display: flex; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
 #worm .wormtabs, #worm .wormhint { position: relative; z-index: 1; }
-.wormtabs { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; width: min(540px, 92vw); }
-.wormtab { flex: 1 1 42%; padding: 13px 10px; font-size: 15px; white-space: nowrap; }
+#worm .wormtabs { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+#worm .wormtab { position: absolute; width: 35%; padding: 15px 8px; font-size: 16px; white-space: nowrap; pointer-events: auto; }
+#worm .wormtab:nth-child(odd) { left: 2.5%; transform: perspective(420px) rotateY(20deg); transform-origin: right center; }
+#worm .wormtab:nth-child(even) { right: 2.5%; transform: perspective(420px) rotateY(-20deg); transform-origin: left center; }
+#worm .wormtab:nth-child(1), #worm .wormtab:nth-child(2) { top: 13%; }
+#worm .wormtab:nth-child(3), #worm .wormtab:nth-child(4) { top: 38%; }
+#worm .wormtab:nth-child(5), #worm .wormtab:nth-child(6) { top: 63%; }
 .wormtab { cursor: pointer; font: 600 17px ui-monospace, Menlo, monospace; letter-spacing: .04em; color: #d8ffe2; background: rgba(3,20,9,.88); border: 1px solid rgba(57,255,90,.65); border-radius: 999px; padding: 15px 18px; box-shadow: 0 0 24px rgba(57,255,90,.25), 0 0 12px rgba(57,255,90,.15) inset; }
 .wormtab em { font-style: normal; margin-right: 9px; }
 .wormhint { color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
-#wormDoor2 { position: absolute; left: 0; bottom: 0; z-index: 2; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#wormDoor2 { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); z-index: 2; width: 132px; height: 168px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #worm2 { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm2[hidden] { display: none; }
 #worm2Cv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
-#worm2Door { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: 120px; height: 120px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#worm2Door { position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 2; width: 88px; height: 200px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 .worm2hint { position: relative; z-index: 1; margin-top: 160px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
 #vault { position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.94); }
 #vault[hidden] { display: none; }
@@ -146,7 +151,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button><button class="wormtab" id="wHockey" type="button"><em>&#127954;</em>Hockey</button><button class="wormtab" id="wBaseball" type="button"><em>&#9918;</em>Baseball</button><button class="wormtab" id="wSoccer" type="button"><em>&#9917;</em>Soccer</button><button class="wormtab" id="wFlight" type="button"><em>&#9992;</em>Flight Sim</button></div><div class="wormhint">TAP OUTSIDE TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP OUTSIDE TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button><button class="wormtab" id="wHockey" type="button"><em>&#127954;</em>Hockey</button><button class="wormtab" id="wBaseball" type="button"><em>&#9918;</em>Baseball</button><button class="wormtab" id="wSoccer" type="button"><em>&#9917;</em>Soccer</button><button class="wormtab" id="wFlight" type="button"><em>&#9992;</em>Flight Sim</button></div><div class="wormhint">TAP THE HALL TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP THE HALL TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -397,15 +402,56 @@ textarea.vin { min-height: 74px; resize: vertical; }
   if (worm2) worm2.addEventListener('click', function (ev) {
     if (ev.target === worm2 || ev.target.id === 'worm2Cv') { worm2.hidden = true; if (worm) { worm.hidden = false; startWorm(); } } });
   var worm2Started = false;
+  function hall(ctx, W, H, VX, VY, ts, dir, lit, spk, mode) {
+    var t = ts / 1000, k, z, e, i, p, u, e2, x, y, fs;
+    var wash = ctx.createLinearGradient(0, 0, VX, 0);
+    wash.addColorStop(0, 'rgba(46,220,95,.17)'); wash.addColorStop(1, 'rgba(46,220,95,0)');
+    ctx.fillStyle = wash; ctx.fillRect(0, 0, VX, H);
+    wash = ctx.createLinearGradient(W, 0, VX, 0);
+    wash.addColorStop(0, 'rgba(46,220,95,.17)'); wash.addColorStop(1, 'rgba(46,220,95,0)');
+    ctx.fillStyle = wash; ctx.fillRect(VX, 0, W - VX, H);
+    for (k = 0; k < 9; k++) { z = ((k / 9) + t * .05 * dir) % 1; if (z < 0) z += 1;
+      e = Math.pow(z, 1.8);
+      ctx.strokeStyle = 'rgba(46,220,95,' + (.16 + .46 * e).toFixed(3) + ')'; ctx.lineWidth = 1 + 2.5 * e;
+      ctx.strokeRect(VX - (24 + (W * .56 - 24) * e), VY - (18 + (H * .54 - 18) * e), (24 + (W * .56 - 24) * e) * 2, (18 + (H * .54 - 18) * e) * 2); }
+    ctx.strokeStyle = 'rgba(46,220,95,.38)'; ctx.lineWidth = 1;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1], [-1, -.45], [1, -.45], [-1, .45], [1, .45], [-1, 0], [1, 0]].forEach(function (c) { ctx.beginPath(); ctx.moveTo(VX + c[0] * 24, VY + c[1] * 18); ctx.lineTo(VX + c[0] * W * .56, VY + c[1] * H * .54); ctx.stroke(); });
+    for (i = 0; i < spk.length; i++) { p = spk[i];
+      u = (p.u + dir * t * .05 * p.r) % 1; if (u < 0) u += 1;
+      e2 = Math.pow(u, 1.7);
+      x = VX + p.s * (20 + (W * .52 - 20) * e2);
+      y = VY + (p.v - .5) * (26 + (H * .96 - 26) * e2);
+      fs = 5 + 14 * e2;
+      ctx.font = '600 ' + fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
+      ctx.fillStyle = (i % 11 === 0) ? 'rgba(208,255,222,' + (.35 + .60 * e2).toFixed(3) + ')' : 'rgba(46,220,95,' + (.28 + .66 * e2).toFixed(3) + ')';
+      ctx.fillText(p.c, x, y); }
+    var grd = ctx.createRadialGradient(VX, VY, 2, VX, VY, 70);
+    grd.addColorStop(0, 'rgba(160,255,190,.26)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd; ctx.fillRect(VX - 70, VY - 70, 140, 140);
+    if (mode === 1) {
+      ctx.strokeStyle = 'rgba(120,255,165,' + (.35 + .45 * lit).toFixed(3) + ')'; ctx.lineWidth = 2;
+      ctx.strokeRect(VX - W * .085, VY - H * .14, W * .17, H * .28);
+      ctx.strokeStyle = 'rgba(120,255,165,' + (.14 + .30 * lit).toFixed(3) + ')'; ctx.lineWidth = 1;
+      ctx.strokeRect(VX - W * .065, VY - H * .115, W * .13, H * .23);
+      if (lit > .03) { var g2 = ctx.createRadialGradient(VX, VY, 2, VX, VY, 110);
+        g2.addColorStop(0, 'rgba(160,255,190,' + (.30 * lit).toFixed(3) + ')'); g2.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g2; ctx.fillRect(VX - 110, VY - 110, 220, 220); } }
+    else {
+      var dx = W * .055, dy = VY - H * .17, dw = W * .085, dh = H * .34;
+      ctx.strokeStyle = 'rgba(120,255,165,' + (.16 + .55 * lit).toFixed(3) + ')'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(dx + dw * .25, dy); ctx.lineTo(dx + dw, dy + dh * .12); ctx.lineTo(dx + dw, dy + dh * .88); ctx.lineTo(dx + dw * .25, dy + dh); ctx.closePath(); ctx.stroke();
+      if (lit > .03) { var g3 = ctx.createRadialGradient(W * .09, VY, 2, W * .09, VY, 100);
+        g3.addColorStop(0, 'rgba(160,255,190,' + (.30 * lit).toFixed(3) + ')'); g3.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g3; ctx.fillRect(0, VY - 100, 200, 200); } }
+  }
   function startWorm2() {
     if (worm2Started) return; worm2Started = true;
     var cv = document.getElementById('worm2Cv'); if (!cv) { worm2Started = false; return; }
     var ctx = cv.getContext('2d'); if (!ctx) { worm2Started = false; return; }
-    var W = 0, H = 0, CX = 0, CY = 0, rings = [];
+    var W = 0, H = 0, VX = 0, VY = 0, spk = [];
     function size() { W = cv.width = cv.clientWidth || innerWidth; H = cv.height = cv.clientHeight || innerHeight;
-      CX = W / 2; CY = H / 2; rings = [];
-      var maxR = Math.sqrt(CX * CX + CY * CY);
-      for (var r = 48; r < maxR; r += 24) rings.push({ r: r, a: Math.random() * 6.28, sp: .3 + Math.random() * .55, fs: 8 + (r / maxR) * 9 });
+      VX = W / 2; VY = Math.round(H * .46); spk = [];
+      for (var i = 0; i < 430; i++) spk.push({ s: Math.random() < .5 ? -1 : 1, u: Math.random(), v: Math.random(), c: Math.random() < .5 ? '0' : '1', r: .5 + Math.random() });
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
     size(); addEventListener('resize', size);
     var last = 0;
@@ -414,19 +460,10 @@ textarea.vin { min-height: 74px; resize: vertical; }
       requestAnimationFrame(frame);
       if (ts - last < 50) return; last = ts;
       ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(0, 0, W, H);
-      for (var i = 0; i < rings.length; i++) { var g = rings[i]; g.a -= g.sp * .045;
-        var n = Math.max(6, Math.floor(6.283 * g.r / (g.fs * 1.05)));
-        ctx.font = '600 ' + g.fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
-        for (var j = 0; j < n; j++) { var ang = g.a + (j / n) * 6.283;
-          ctx.fillStyle = (j % 9 === 0) ? 'rgba(208,255,222,.95)' : 'rgba(46,220,95,.55)';
-          ctx.fillText(Math.random() < .5 ? '0' : '1', CX + Math.cos(ang) * g.r, CY + Math.sin(ang) * g.r * .92); } }
-      var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
-      grd.addColorStop(0, 'rgba(160,255,190,.22)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
       var lit3T = window.__door3LitTarget ? window.__door3LitTarget() : 0;
       var lit3 = (window.__door3Lit || 0) + (lit3T - (window.__door3Lit || 0)) * .3;
       window.__door3Lit = lit3;
-      /* vault door: nothing painted at the heart any more (owner, 2026-10-14) */
+      hall(ctx, W, H, VX, VY, ts, -1, lit3, spk, 2);
     }
     requestAnimationFrame(frame);
   }
@@ -495,11 +532,10 @@ textarea.vin { min-height: 74px; resize: vertical; }
     if (wormStarted) return; wormStarted = true;
     var cv = document.getElementById('wormCv'); if (!cv) { wormStarted = false; return; }
     var ctx = cv.getContext('2d'); if (!ctx) { wormStarted = false; return; }
-    var W = 0, H = 0, CX = 0, CY = 0, rings = [];
+    var W = 0, H = 0, VX = 0, VY = 0, spk = [];
     function size() { W = cv.width = cv.clientWidth || innerWidth; H = cv.height = cv.clientHeight || innerHeight;
-      CX = W / 2; CY = H / 2; rings = [];
-      var maxR = Math.sqrt(CX * CX + CY * CY);
-      for (var r = 48; r < maxR; r += 24) rings.push({ r: r, a: Math.random() * 6.28, sp: .3 + Math.random() * .55, fs: 8 + (r / maxR) * 9 });
+      VX = W / 2; VY = Math.round(H * .46); spk = [];
+      for (var i = 0; i < 430; i++) spk.push({ s: Math.random() < .5 ? -1 : 1, u: Math.random(), v: Math.random(), c: Math.random() < .5 ? '0' : '1', r: .5 + Math.random() });
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
     size(); addEventListener('resize', size);
     var last = 0;
@@ -508,19 +544,10 @@ textarea.vin { min-height: 74px; resize: vertical; }
       requestAnimationFrame(frame);
       if (ts - last < 50) return; last = ts;
       ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(0, 0, W, H);
-      for (var i = 0; i < rings.length; i++) { var g = rings[i]; g.a += g.sp * .045;
-        var n = Math.max(6, Math.floor(6.283 * g.r / (g.fs * 1.05)));
-        ctx.font = '600 ' + g.fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
-        for (var j = 0; j < n; j++) { var ang = g.a + (j / n) * 6.283;
-          ctx.fillStyle = (j % 9 === 0) ? 'rgba(208,255,222,.95)' : 'rgba(46,220,95,.55)';
-          ctx.fillText(Math.random() < .5 ? '0' : '1', CX + Math.cos(ang) * g.r, CY + Math.sin(ang) * g.r * .92); } }
-      var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
-      grd.addColorStop(0, 'rgba(160,255,190,.22)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
       var lit2T = window.__door2LitTarget ? window.__door2LitTarget() : 0;
       var lit2 = (window.__door2Lit || 0) + (lit2T - (window.__door2Lit || 0)) * .3;
       window.__door2Lit = lit2;
-      /* deeper door: nothing painted - the app has only one zero (owner, 2026-10-14) */
+      hall(ctx, W, H, VX, VY, ts, 1, lit2, spk, 1);
     }
     requestAnimationFrame(frame);
   }
