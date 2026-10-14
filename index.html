@@ -931,8 +931,8 @@ textarea.vin { min-height: 74px; resize: vertical; }
     size(); addEventListener('resize', size);
 
     /* The face in the code v2 (owner, 2026-10-14): a better face - 64x84 glyph map with
-       real eye clusters. She PROTRUDES: the rain dims behind her, a halo lifts her off the
-       code, and she swells slowly toward you. And she LOOKS AROUND: pupils move inside her
+       real eye clusters. She is made of the code itself - nothing behind her, no halo -
+       and she swells slowly toward you. And she LOOKS AROUND: pupils move inside her
        eyes, the shading slides as her head turns, she blinks - and when you touch the
        entrance, her gaze goes to your hand. Security, watching. */
     var watchX = null, watchY = null, watchT = 0;
@@ -974,11 +974,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
       gzX += (gzTX - gzX) * .07; gzY += (gzTY - gzY) * .07;
       var blink = (el % 4.7) < .13;
       var gx = cx - fw / 2, gy = cy - fh / 2;
-      var grd = ctx.createRadialGradient(cx, cy, fw * .08, cx, cy, fw * .78);
-      grd.addColorStop(0, 'rgba(0,0,0,' + (.40 * env).toFixed(3) + ')');
-      grd.addColorStop(.75, 'rgba(0,10,4,' + (.22 * env).toFixed(3) + ')');
-      grd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grd; ctx.fillRect(cx - fw * .85, cy - fh * .62, fw * 1.7, fh * 1.24);
+      /* no halo, no shadow (owner): she IS the code - only the glyphs themselves form her */
       ctx.font = '600 ' + Math.max(3, Math.round(chh * .94)) + 'px ' + MONO;
       var sox = Math.round(gzX * 1.3), soy = Math.round(gzY * .9);
       for (var j = 0; j < FH; j++) for (var i = 0; i < FW; i++) {
