@@ -236,6 +236,54 @@
    "category": "action",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "apexhockey",
+   "file": "apexhockey.html",
+   "title": "Apex Ice Hockey",
+   "tagline": "3D ice hockey: 5-on-5, real rules - periods, faceoffs, offside, golden-goal overtime.",
+   "rating": "13+",
+   "icon": "apexhockey-icon.svg",
+   "accent": "#57c8ff",
+   "category": "action",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "apexbaseball",
+   "file": "apexbaseball.html",
+   "title": "Apex Baseball",
+   "tagline": "3D baseball with the real rulebook: balls and strikes, force outs, walk-offs. 3-inning arcade games.",
+   "rating": "13+",
+   "icon": "apexbaseball-icon.svg",
+   "accent": "#ff5347",
+   "category": "action",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "apexsoccer",
+   "file": "apexsoccer.html",
+   "title": "Apex Soccer",
+   "tagline": "3D soccer: 7-on-7, throw-ins, corners, offside and two halves on a striped pitch.",
+   "rating": "13+",
+   "icon": "apexsoccer-icon.svg",
+   "accent": "#37d67a",
+   "category": "action",
+   "multiplayer": false,
+   "new": true
+  },
+  {
+   "id": "apexflight",
+   "file": "apexflight.html",
+   "title": "Apex Flight",
+   "tagline": "3D flight simulator: take off, fly the pattern and grease the landing. Free flight + landing challenge.",
+   "rating": "13+",
+   "icon": "apexflight-icon.svg",
+   "accent": "#4db2ff",
+   "category": "action",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }
