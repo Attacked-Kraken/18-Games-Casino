@@ -4,8 +4,13 @@ import { buildJersey } from './jersey_v7.js';
 import { GLTFLoader } from './GLTFLoader.js';
 import { loadQ, buildHooperQ } from './hooper_q.js';
 const HAIRS = {};
-export async function loadQ2(names) { await loadQ(); const L = new GLTFLoader();
+export async function loadQ2(names) { await loadQ(); await loadHD(); const L = new GLTFLoader();
   await Promise.all(names.filter((n) => !HAIRS[n]).map(async (n) => { const g = await L.loadAsync('./characters/base-human-v2/hair/hair_' + n + '.glb'); g.scene.traverse((o) => { if (o.isSkinnedMesh) HAIRS[n] = o; }); })); }
+/* HD skin maps (2048px originals); loaded once, silently absent if missing */
+const HD = { base: null, normal: null, rough: null };
+async function loadHD() { if (HD.base) return; const TL = new THREE.TextureLoader();
+  const mk = (f, srgb) => new Promise((res) => TL.load(new URL('./hd/' + f, import.meta.url).href, (t) => { t.flipY = false; t.wrapS = t.wrapT = THREE.RepeatWrapping; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
+  [HD.base, HD.normal, HD.rough] = await Promise.all([mk('skin_base.png', true), mk('skin_normal.png', false), mk('skin_rough.png', false)]); }
 const lin = (h) => new THREE.Color(h), BASE = new THREE.Color('#e3b9a0');
 const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 function canvasTex(w, h, fn) { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
@@ -83,7 +88,9 @@ function clipMat(m, glsl, trim, key, trim2) { const U = { uTrimC: { value: lin(t
 const ARM = (p) => Math.abs(p.x) > 0.2 && p.y > 1.26;
 function bodyMat(orig, u, L) {
   const sk = lin(L.skin), mul = new THREE.Vector3(sk.r / BASE.r, sk.g / BASE.g, sk.b / BASE.b);
-  const m = new THREE.MeshPhysicalMaterial({ map: orig.map, roughness: 0.52, sheen: 0.25, sheenRoughness: 0.6, sheenColor: sk.clone().offsetHSL(0, -0.1, 0.12), clearcoat: 0 });
+  const m = new THREE.MeshPhysicalMaterial({ map: HD.base || orig.map, roughness: 0.52, sheen: 0.25, sheenRoughness: 0.6, sheenColor: sk.clone().offsetHSL(0, -0.1, 0.12), clearcoat: 0 });
+  if (HD.normal) { m.normalMap = HD.normal; m.normalScale = new THREE.Vector2(0.65, 0.65); }
+  if (HD.rough) { m.roughnessMap = HD.rough; m.roughness = 1.0; }
   const U = { uSkin: { value: mul }, uTrim: { value: lin(u.trim) }, uSide: { value: lin(u.side) }, uShoe: { value: lin(u.shoe) }, uSock: { value: lin(u.sock) }, uSleeve: { value: lin(u.sleeve) }, uUnder: { value: lin(u.jersey).multiplyScalar(0.8) },
     uFace: { value: new THREE.Vector4(L.jaw || 0, L.cheek || 0, L.nose || 0, L.brow || 0) }, uLeg: { value: lin(u.leg || '#f4f4f0') } };
   m.onBeforeCompile = (sh) => { Object.assign(sh.uniforms, U);
