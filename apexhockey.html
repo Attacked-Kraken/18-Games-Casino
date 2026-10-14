@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="age-gate.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -107,21 +106,23 @@ const TEAMS = {
   away: { name:'SHARKS', dir:-1, jersey:0x0e7c7b, trim:0xffffff, helmet:0x123a3a, pads:0x0e7c7b },
 };
 const isTouch = matchMedia('(pointer: coarse)').matches;
+const COARSE = isTouch; // phones: cheaper renderer settings (owner reported lag)
 
 /* ================= renderer / scene ================= */
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:!COARSE });
+renderer.setPixelRatio(Math.min(devicePixelRatio||1, COARSE?1.5:2));
 renderer.setSize(innerWidth, innerHeight);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x04070c);
 scene.fog = new THREE.Fog(0x04070c, 260, 520);
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 1, 1200);
-camera.position.set(0, 80, 120);
+const camera = new THREE.PerspectiveCamera(57, innerWidth/innerHeight, 1, 1200);
+camera.position.set(0, 92, 142);
 const hemi = new THREE.HemisphereLight(0xdfefff, 0x223344, 0.95); scene.add(hemi);
 const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(40, 120, 60); scene.add(key);
 const fill = new THREE.DirectionalLight(0xbcd6ff, 0.35); fill.position.set(-60, 80, -40); scene.add(fill);
-if (!isTouch) { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+if (COARSE) { renderer.shadowMap.enabled = false; } // phones: shadows fully off
+else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   key.castShadow = true; key.shadow.mapSize.set(1024,1024);
   key.shadow.camera.left=-120; key.shadow.camera.right=120; key.shadow.camera.top=90; key.shadow.camera.bottom=-90; }
 
@@ -326,6 +327,56 @@ const ring = new THREE.Mesh(new THREE.RingGeometry(1.9,2.35,28),
   new THREE.MeshBasicMaterial({color:0x9fd8ff, transparent:true, opacity:.9, side:THREE.DoubleSide}));
 ring.rotation.x=-Math.PI/2; ring.position.y=0.12; scene.add(ring);
 
+/* ============ real 3D athletes (base-human-v2, async; primitives stay as fallback) ============
+   The rig model faces +z in its bind pose; this game's forward is group-local +x
+   (facing=0 moves +x, g.rotation.y=-facing), so the athlete is yawed +PI/2. */
+const HAIR_STYLES = ['parted','buzzed','curly','quiff','long','parted_beard','buzzed_beard','bald_beard'];
+const HAIR_COLS = [0x1a1210,0x2e1c12,0x5a3a1e,0x8a5a2e,0xc8a060,0xe8d0a0,0x7a2a14,0x9a9a9a];
+const KIT = {
+  home: { top:0x1f6fd6, bottom:0x123c73, goalieTop:0xffd34d },
+  away: { top:0x0e7c7b, bottom:0x0a4443, goalieTop:0xff7a59 },
+};
+const ATH_H = 5.9, ATH_K = ATH_H/1.81; // match the primitive figure's ~5.9-unit height
+function attachAthletes(H){
+  let i = 0;
+  for(const s of skaters){
+    try{
+      const kit = KIT[s.team];
+      const a = H.make({
+        g:'m',
+        skin: i % 6,
+        hair: HAIR_STYLES[i % HAIR_STYLES.length],
+        hairCol: HAIR_COLS[(i*3) % HAIR_COLS.length],
+        outfit:'tee_jeans',
+        cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0xffffff },
+      }, ATH_H);
+      const wrap = new THREE.Group(); s.g.add(wrap);
+      a.object.rotation.y = Math.PI/2;
+      wrap.add(a.object);
+      if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
+      // stick in the right hand (bone space is scaled by the rig; compensate)
+      const stick = new THREE.Group();
+      const sh = new THREE.Mesh(GEO.shaft, MAT.stick); sh.position.y = 1.8; stick.add(sh);
+      const bl = new THREE.Mesh(GEO.blade, MAT.tape); bl.position.set(0.35, 0.08, 0.1); stick.add(bl);
+      stick.position.set(0.05,-0.02,0.08); stick.rotation.x = -0.5;
+      let hand = null;
+      a.object.traverse(o=>{ if(o.isBone && o.name==='hand_r') hand = o; });
+      if(hand){ stick.scale.setScalar(1/ATH_K); hand.add(stick); }
+      else { stick.position.set(0.9,2.2,0.2); wrap.add(stick); }
+      s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
+      s.ath = a; s.athWrap = wrap;
+    }catch(e){ /* that player stays primitive */ }
+    i++;
+  }
+}
+(async()=>{
+  try{
+    const { loadHumans } = await import('./characters/base-human-v2/humans.js');
+    const H = await loadHumans(THREE, './characters/base-human-v2/');
+    attachAthletes(H);
+  }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
+})();
+
 /* ================= puck ================= */
 const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), MAT.puck);
 puckMesh.castShadow=!isTouch; scene.add(puckMesh);
@@ -500,8 +551,8 @@ function aiSkater(s,dt){
   s.thinkT=0.15+Math.random()*0.1;
   const isHome=s.team==='home';
   const isControlled=isHome&&s===controlled&&state==='play';
-  if(isControlled) return; // input-driven
-  if(state!=='play'){ s.target.copy(s.pos); return; }
+  if(isControlled){ s._chasing=false; return; } // input-driven
+  if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
   // closest-two chase logic
   const mates=(isHome?homeSkaters:awaySkaters).filter(m=>m!==puck.owner);
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
@@ -527,13 +578,28 @@ function aiSkater(s,dt){
     const lead=oppHas?0.25:0;
     s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
                  puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
+    s._chasing=true;
+    // active pressure: poke it loose when right on the carrier
+    if(carrier && !carrier.goalie && Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z)<2.6 && Math.random()<0.08){
+      puck.owner=null; const pa=Math.random()*TAU;
+      puck.vel.set(Math.cos(pa)*rand(12,22),0,Math.sin(pa)*rand(12,22));
+      carrier.stun=0.35;
+    }
     return;
   }
-  // formation anchors, shifted toward puck
+  s._chasing=false;
+  // formation anchors, shifted toward puck — always drifting so nobody parks and freezes
   const b=BASE_ANCHOR[s.role];
-  let ax=b[0]*dir*0.55+puck.pos.x*0.45, az=b[1]*0.55+puck.pos.z*0.45;
-  if(weHave){ ax=b[0]*dir; az=b[1]; } // spread out on offense
-  s.target.set(clamp(ax,-78,78),0,clamp(az,-34,34));
+  const cx=carrier?carrier.pos.x:puck.pos.x, cz=carrier?carrier.pos.z:puck.pos.z;
+  let ax, az;
+  if(weHave){ // offense: cycle to open ice around the carrier
+    ax=b[0]*dir*0.8+cx*0.2+Math.sin(gameNow*0.9+s.phase)*6;
+    az=b[1]*0.8+cz*0.2+Math.cos(gameNow*0.7+s.phase*1.31)*6;
+  }else{ // defense: shade puck-side and track the play
+    ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*2.5;
+    az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*2.5;
+  }
+  s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
 }
 function aiPass(s){
   const mates=(s.team==='home'?homeSkaters:awaySkaters).filter(m=>m!==s);
@@ -557,6 +623,7 @@ function aiGoalie(g,dt){
   if(puck.shot&&puck.shot.team!==g.team&&(puck.vel.x*sgn)>30&&distLine>0&&distLine<40){
     tz=clamp(puck.pos.z+puck.vel.z*0.12,-9,9); sp=44; g._fly=0.35; // track the shot
   }
+  tz+=Math.sin(gameNow*1.3+(g.team==='home'?0:2.1))*0.6; // never stand statue-still
   g.pos.z+=(clamp(tz,-9,9)-g.pos.z)*Math.min(1,sp*dt/8);
   g.pos.x=gl+dir*2.2;
   g._fly=Math.max(0,(g._fly||0)-dt);
@@ -582,9 +649,10 @@ function bouncePuck(){
       puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
       if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; } } }); });
 }
+const _des=new THREE.Vector3(); // reused scratch (was: allocated per skater per frame)
 function stepSkater(s,dt){
   // desired velocity
-  let des=new THREE.Vector3();
+  const des=_des; des.set(0,0,0);
   if(s.goalie){ des.set(0,0,0); }
   else if(s.stun>0){ s.stun-=dt; des.set(0,0,0); }
   else if(s.team==='home'&&s===controlled&&state==='play'){
@@ -595,7 +663,11 @@ function stepSkater(s,dt){
     if(m>0.12){ const sp=Math.min(m,1)*30; des.set(ix/m*sp,0,iy/m*sp); }
   } else if(state==='play'){
     const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
-    if(d>2.5){ const sp=s.goalie?0:Math.min(30,10+d*0.55); des.set(dx/d*sp,0,dz/d*sp); }
+    const arr=s._chasing?1.0:2.5;
+    if(d>arr){ const sp=s.goalie?0:Math.min(30,10+d*0.55); des.set(dx/d*sp,0,dz/d*sp); }
+    else if(!s.goalie){ // on station: keep the skates shuffling, never freeze mid-play
+      des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
+    }
   }
   const k=(des.lengthSq()>0.01)?4.5:1.4; // snappy accel, glidey stop
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
@@ -618,6 +690,16 @@ function stepSkater(s,dt){
   const lat=(s.vel.x*Math.sin(s.facing)-s.vel.z*Math.cos(s.facing));
   s.body.rotation.z=clamp(-lat*0.012,-0.3,0.3);
   s.body.position.y=s.goalie?0:Math.abs(Math.sin(s.phase))*0.12*clamp(sp/30,0,1);
+  // real-athlete locomotion (primitive parts above are hidden once an athlete is attached)
+  if(s.ath){
+    const a=s.ath;
+    if(sp>0.4){ a.play('Walk_Loop'); a.ts=clamp(sp/1.7,0.7,2.3); }
+    else a.play('Idle_Loop');
+    if(a.act) a.act.timeScale=a.ts;
+    a.mixer.update(dt);
+    s.athWrap.rotation.z=-clamp(sp*0.012,0,0.18); // forward lean toward group-local +x
+    if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
+  }
 }
 function stepPuck(dt){
   if(puck.owner){
@@ -710,10 +792,10 @@ function possessionWatch(){
 }
 
 /* ================= camera ================= */
-const camTgt=new THREE.Vector3(0,80,120), lookTgt=new THREE.Vector3();
+const camTgt=new THREE.Vector3(0,92,142), lookTgt=new THREE.Vector3();
 function stepCamera(dt){
-  const px=clamp(puck.pos.x*0.55,-58,58);
-  camTgt.set(px,80,120);
+  const px=clamp(puck.pos.x*0.55,-64,64);
+  camTgt.set(px,92,142);
   camera.position.lerp(camTgt,Math.min(1,3.2*dt));
   lookTgt.set(px,0,0);
   camera.lookAt(lookTgt);
@@ -723,9 +805,10 @@ function stepCamera(dt){
 
 /* ================= main loop ================= */
 let lastT=performance.now();
+let gameNow=0; // wall clock for AI drift/idle motion (advances every frame)
 function tick(now){
   requestAnimationFrame(tick);
-  let dt=Math.min(0.033,(now-lastT)/1000); lastT=now;
+  let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
   if(paused||state==='menu'||state==='over'){ renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
   stateT-=dt;

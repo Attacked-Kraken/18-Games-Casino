@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="age-gate.js"></script>
 <link rel="manifest" href="manifest.webmanifest">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -119,15 +118,15 @@ document.getElementById('back').addEventListener('click', ()=>{ location.href='i
 /* ================= renderer / scene ================= */
 const canvas = document.getElementById('c3d');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:!coarse });
-renderer.setPixelRatio(Math.min(devicePixelRatio||1, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio||1, coarse ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = !coarse;
 if (!coarse) { renderer.shadowMap.type = THREE.PCFShadowMap; }
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x030a05);
 scene.fog = new THREE.Fog(0x030a05, 90, 190);
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.5, 400);
-camera.position.set(0, 26, 40);
+const camera = new THREE.PerspectiveCamera(56, innerWidth/innerHeight, 0.5, 400);
+camera.position.set(0, 31, 46);
 scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a2012, 0.95));
 const sun = new THREE.DirectionalLight(0xffffff, 1.35);
 sun.position.set(30, 55, 25);
@@ -355,10 +354,21 @@ function doKickoff(kickIdx){
   mate.pos.set(-4*kt.ad,0,2.5*kt.ad);
   if(kt.human) giveControl(kt.players.find(p=>p.role==='FWD'));
   else giveControl(teams[0].players.find(p=>p.role==='FWD'));
-  banner('KICKOFF', kt.name+' TO START · PASS TO BEGIN', 2.5);
+  banner('KICKOFF', kt.name+' TO START · MOVE OR PASS', 2.5);
   G.cpuKickT=0;
+  for(const p of allPlayers){ p.jx0=p.pos.x; p.jz0=p.pos.z; } // pre-kickoff jockey anchors
 }
 function beginPlay(){ G.st='play'; G.kickoffWait=false; }
+// taking the kickoff: a short pass to a teammate. The human can trigger it with PASS,
+// SHOOT, any stick movement, or just wait ~2.5s for the auto-take.
+function takeKickoff(p){
+  if(G.st!=='kickoff'||!G.kickoffWait) return;
+  const kt=teams[G.kickoffTeam];
+  if(!p||p.team!==kt) return;
+  const mate=findPassTarget(p)||kt.players.find(q=>q.role==='MID');
+  const dx=mate.pos.x-p.pos.x, dz=mate.pos.z-p.pos.z;
+  kickBall(p,dx,dz,11,0.6,mate); beginPlay();
+}
 
 /* ================= kicking ================= */
 function kickBall(p, dx, dz, speed, loft, intended){
@@ -397,13 +407,7 @@ function findPassTarget(p){
 function doPass(){
   if(G.st==='start'||G.st==='full') return;
   const p=H.player; if(!p) return;
-  if(G.st==='kickoff'&&G.kickoffWait){ // kickoff pass
-    const kt=teams[G.kickoffTeam];
-    if(p.team!==kt) return;
-    const mate=findPassTarget(p)||kt.players.find(q=>q.role==='MID');
-    const dx=mate.pos.x-p.pos.x, dz=mate.pos.z-p.pos.z;
-    kickBall(p,dx,dz,11,0.6,mate); beginPlay(); return;
-  }
+  if(G.st==='kickoff'&&G.kickoffWait){ takeKickoff(p); return; } // kickoff pass: PASS takes it
   if(G.st==='restart'){ restartKick(p,false); return; }
   if(G.st!=='play'||B.owner!==p) return;
   const mate=findPassTarget(p); if(!mate) return;
@@ -417,7 +421,9 @@ function doOffside(rec){
   B.owner=null; B.vel.set(0,0,0); B.intended=null;
   doRestart('freekick', opp(rec.team), rec.pos.x, rec.pos.z);
 }
-function startCharge(){ const canPlay=G.st==='play'&&B.owner===H.player;
+function startCharge(){
+  if(G.st==='kickoff'&&G.kickoffWait){ const kt=teams[G.kickoffTeam]; if(kt.human) takeKickoff(H.player); return; }
+  const canPlay=G.st==='play'&&B.owner===H.player;
   const canRestart=G.st==='restart'&&G.restart&&G.restart.team===H.player.team;
   if((canPlay||canRestart)&&!H.charging){ H.charging=true; H.charge=0;
   document.getElementById('chg').style.display='block'; document.getElementById('btnShoot').classList.add('charge'); } }
@@ -629,32 +635,40 @@ function aiCarrier(p,dt){
   movePlayer(p,gx,p.pos.z*0.3+weave,dist>30?8.6:6.8,dt);
 }
 function updateAI(dt){
+  const nowMs=performance.now();
   for(const t of teams){
     const ad=t.ad, hasBall=B.owner&&B.owner.team===t, oppHas=B.owner&&B.owner.team!==t;
     const sl=secondLastX(t);
+    // hoisted: one sort per team per frame (was rebuilt for every player)
+    const chaseOrder=t.players.filter(q=>q.role!=='GK').sort((a,b)=>distToBall(a)-distToBall(b));
     for(const p of t.players){
       if(p.controlled) continue;
       p.tackleCd-=dt; p.kickCd-=dt;
-      if(p.role==='GK'){ updateGK(p,dt); continue; }
+      // constant micro-jockeying so nobody stands perfectly still in open play
+      const jx=Math.sin(nowMs/700+p.id*2.1)*0.6, jz=Math.cos(nowMs/800+p.id*1.3)*0.6;
+      if(p.role==='GK'){ updateGK(p,dt); continue; } // keepers hold their line, tracking the ball
       if(hasBall){
         if(B.owner===p){ aiCarrier(p,dt); continue; }
         // support run: shift toward ball, stay onside
         let sx=clamp(p.hx*ad+B.pos.x*0.38,-52,52), sz=clamp(p.hz+B.pos.z*0.3,-32,32);
         if(sx*ad>sl-2) sx=(sl-2)*ad;
-        movePlayer(p,sx,sz,7.2,dt); continue;
+        movePlayer(p,sx+jx,sz+jz,7.2,dt); continue;
       }
       if(oppHas){
-        const chasers=t.players.filter(q=>q.role!=='GK').sort((a,b)=>distToBall(a)-distToBall(b)).slice(0,2);
-        if(chasers.includes(p)){ const c=B.owner;
+        const c=B.owner;
+        if(chaseOrder[0]===p){ // nearest pressures the carrier
           movePlayer(p,c.pos.x+c.vel.x*0.25,c.pos.z+c.vel.z*0.25,8.4,dt); continue; }
+        if(chaseOrder[1]===p){ // second cuts the passing lane
+          const mate=findPassTarget(c);
+          const mx=mate?(c.pos.x+mate.pos.x)/2:c.pos.x, mz=mate?(c.pos.z+mate.pos.z)/2:c.pos.z;
+          movePlayer(p,mx+jx*0.5,mz+jz*0.5,7.6,dt); continue; }
       }
-      if(!B.owner){ // loose: nearest chases
-        const chaser=t.players.filter(q=>q.role!=='GK').sort((a,b)=>distToBall(a)-distToBall(b))[0];
-        if(chaser===p){ movePlayer(p,B.pos.x,B.pos.z,8.6,dt); continue; }
+      if(!B.owner){ // loose ball: two nearest from each side converge
+        if(chaseOrder[0]===p||chaseOrder[1]===p){ movePlayer(p,B.pos.x+jx,B.pos.z+jz,8.6,dt); continue; }
       }
       // goal-side shape
       const gx=-ad*52.5;
-      movePlayer(p, p.hx*ad*0.55+B.pos.x*0.30+gx*0.15, p.hz*0.6+B.pos.z*0.25, 7, dt);
+      movePlayer(p, p.hx*ad*0.55+B.pos.x*0.30+gx*0.15+jx, p.hz*0.6+B.pos.z*0.25+jz, 7, dt);
     }
   }
 }
@@ -689,6 +703,9 @@ function updateHuman(dt){
   const p=H.player; if(!p) return;
   p.tackleCd-=dt; p.kickCd-=dt;
   const mv=moveInput();
+  if(G.st==='kickoff'&&G.kickoffWait&&teams[G.kickoffTeam].human&&p.team===teams[G.kickoffTeam]&&Math.hypot(mv.x,mv.z)>0.25){
+    takeKickoff(p); // any stick movement takes the kickoff
+  }
   if(G.st==='play'||G.st==='kickoff'){
     let sp=sprinting()?9.3:7;
     if(B.owner===p) sp=sprinting()?8:6.2;
@@ -704,7 +721,7 @@ function updateHuman(dt){
     if(Math.hypot(mv.x,mv.z)>0.1) p.face=Math.atan2(mv.z,mv.x);
   }
   if(H.charging){ H.charge=Math.min(1,H.charge+dt*0.95);
-    document.getElementById('chgFill').style.width=(H.charge*100)+'%'; }
+    chgFillEl.style.width=(H.charge*100)+'%'; }
   // auto-switch on defense
   if(G.st==='play'){
     switchCd-=dt;
@@ -761,6 +778,40 @@ function updateBall(dt){
   ballMesh.rotation.x+=B.vel.z*dt*2; ballMesh.rotation.z-=B.vel.x*dt*2;
 }
 
+/* ================= real 3D athletes (Quaternius CC0, async load; primitives stay as fallback) ================= */
+const chgFillEl = document.getElementById('chgFill');
+let athReady = false, athLoading = false;
+async function initAthletes(){
+  if (athReady || athLoading) return; athLoading = true;
+  try {
+    const { loadHumans } = await import('./characters/base-human-v2/humans.js');
+    const lib = await loadHumans(THREE, './characters/base-human-v2/');
+    const HAIR_STYLES = ['parted','buzzed','quiff','long','curly','buzzed_beard','parted_beard','bald'];
+    const HAIR_COLS = [0x1a1210,0x2e1c12,0x5a3a1e,0x8a5a2e,0xc8a060,0xe8d0a0,0x7a2a14,0x9a9a9a];
+    for (let ti = 0; ti < teams.length; ti++){
+      const t = teams[ti];
+      for (let i = 0; i < t.players.length; i++){
+        const p = t.players[i], isGK = p.role === 'GK';
+        const a = lib.make({
+          g: 'm',
+          skin: (i + ti * 3) % 6,
+          hair: HAIR_STYLES[(i + ti * 2) % HAIR_STYLES.length],
+          hairCol: HAIR_COLS[(i * 3 + ti) % HAIR_COLS.length],
+          outfit: 'tee_jeans',
+          cols: { top: isGK ? t.gk : t.shirt, bottom: isGK ? 0x101010 : t.shorts, shoes: 0xffffff }
+        }, 2.45);
+        // hide the primitive body meshes; the athlete rides in the same moved/rotated group
+        p.m.group.traverse(o => { if (o.isMesh) o.visible = false; });
+        a.object.traverse(o => { if (o.isMesh) o.castShadow = !coarse; });
+        a.object.rotation.y = 0; // group already yaws by Math.PI/2 - face; the GLB is +z-forward like the figure it replaces
+        p.m.group.add(a.object);
+        p.ath = a; p.athState = '';
+      }
+    }
+    athReady = true;
+  } catch (e) { /* loading failed: the primitive game keeps working */ }
+}
+
 /* ================= animation ================= */
 function animate(dt){
   for(const p of allPlayers){
@@ -772,16 +823,23 @@ function animate(dt){
     p.m.torso.rotation.x=0.06+sw*0.14;
     p.m.group.position.copy(p.pos);
     if(p.role!=='GK'||p.diveT<=0) p.m.group.rotation.y=Math.PI/2-p.face;
+    if(p.ath){
+      const want=sp>0.4?'Walk_Loop':'Idle_Loop';
+      if(p.athState!==want){ p.ath.play(want,0.25); p.athState=want; }
+      p.ath.ts=want==='Walk_Loop'?clamp(sp/1.7,0.7,2.3):1;
+      if(p.ath.act) p.ath.act.timeScale=p.ath.ts;
+      p.ath.mixer.update(dt);
+    }
   }
 }
 
 /* ================= camera ================= */
-const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,25,37);
+const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,31,46);
 function updateCamera(dt){
   camT.set(clamp(B.pos.x*0.62,-30,30),0,B.pos.z*0.3);
   camP.x+=(camT.x-camP.x)*Math.min(1,3*dt);
-  camP.y+=(25-camP.y)*Math.min(1,3*dt);
-  camP.z+=(37-camP.z)*Math.min(1,3*dt);
+  camP.y+=(31-camP.y)*Math.min(1,3*dt);
+  camP.z+=(46-camP.z)*Math.min(1,3*dt);
   camera.position.copy(camP);
   camera.lookAt(camT.x*1.15,0,camT.z);
 }
@@ -803,6 +861,7 @@ function doFulltime(){
 document.getElementById('btnStart').addEventListener('click',()=>{
   document.getElementById('startOv').hidden=true;
   setHalf(1); hud(); doKickoff(0);
+  initAthletes(); // loads the real athletes in the background; primitives cover until ready
 });
 document.getElementById('btnAgain').addEventListener('click',()=>location.reload());
 
@@ -812,11 +871,14 @@ function loop(now){
   requestAnimationFrame(loop);
   let dt=Math.min(0.05,(now-last)/1000); last=now;
   if(bannerT>0){ bannerT-=dt; if(bannerT<=0) bannerEl.classList.remove('show'); }
-  if(G.st==='kickoff'&&!teams[G.kickoffTeam].human){
+  if(G.st==='kickoff'&&G.kickoffWait){
     G.cpuKickT+=dt;
-    if(G.cpuKickT>1.2){ const kt=teams[G.kickoffTeam];
-      const kicker=kt.players.find(p=>p.role==='FWD'), mate=findPassTarget(kicker)||kt.players[4];
-      kickBall(kicker,mate.pos.x-kicker.pos.x,mate.pos.z-kicker.pos.z,11,0.6,mate); beginPlay(); }
+    const humanKick=teams[G.kickoffTeam].human;
+    if(G.cpuKickT>(humanKick?2.5:1.2)){ // human gets 2.5s to take it, then the kickoff auto-takes
+      const kt=teams[G.kickoffTeam];
+      const kicker=(humanKick&&H.player&&H.player.team===kt)?H.player:kt.players.find(p=>p.role==='FWD');
+      takeKickoff(kicker); G.cpuKickT=0;
+    }
   }
   if(G.st==='play'){
     G.clock-=dt;
@@ -826,6 +888,10 @@ function loop(now){
     if(sec!==hudSec){ hudSec=sec; hud(); }
   } else if(G.st==='kickoff'){
     updateHuman(dt); updateBall(dt);
+    const t=performance.now(); // pre-kickoff jockeying so the scene never sits frozen
+    for(const p of allPlayers){ if(p.controlled) continue;
+      p.pos.x=(p.jx0??p.pos.x)+Math.sin(t/700+p.id*2.1)*0.5;
+      p.pos.z=(p.jz0??p.pos.z)+Math.cos(t/800+p.id*1.3)*0.5; }
   } else if(G.st==='restart'){
     updateHuman(dt); cpuRestart(dt);
   } else if(G.st==='goal'){

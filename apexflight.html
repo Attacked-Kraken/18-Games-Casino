@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="age-gate.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest">
@@ -38,11 +37,17 @@
     z-index: 1100; border-radius: 50%; border: 2px solid rgba(57,255,90,.4); background: rgba(2,14,8,.4); touch-action: none; }
   #knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; border-radius: 50%;
     background: rgba(57,255,90,.35); border: 2px solid rgba(57,255,90,.8); transform: translate(-50%,-50%); }
-  #thr { position: fixed; right: 18px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 52px; height: 168px;
+  #thr { position: fixed; right: 12px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 72px; height: 190px;
     z-index: 1100; border-radius: 12px; border: 2px solid rgba(57,255,90,.4); background: rgba(2,14,8,.4);
-    touch-action: none; overflow: hidden; }
+    touch-action: none; overflow: hidden; pointer-events: none; }
   #thrFill { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: rgba(57,255,90,.45); }
   #thrLbl { position: absolute; top: 4px; width: 100%; text-align: center; font-size: 9px; letter-spacing: .18em; color: #9dffb4; }
+  #stick { pointer-events: none; }
+  /* enlarged touch zones (invisible hit areas over the stick and throttle) */
+  #stickZone { position: fixed; left: 0; bottom: 0; width: 45vw; height: 55vh; z-index: 1050; touch-action: none; }
+  #thrZone { position: fixed; right: 0; bottom: 0; width: 112px; height: 300px; z-index: 1050; touch-action: none; }
+  #thrUp { right: 96px; bottom: calc(244px + env(safe-area-inset-bottom)); }
+  #thrDn { right: 96px; bottom: calc(196px + env(safe-area-inset-bottom)); }
   .tbtn { position: fixed; z-index: 1100; background: rgba(2,14,8,.75); color: #9dffb4;
     border: 1px solid rgba(57,255,90,.5); border-radius: 10px; padding: 10px 12px;
     font: 700 11px ui-monospace, Menlo, monospace; letter-spacing: .1em; cursor: pointer; }
@@ -90,6 +95,10 @@
 
 <div id="stick"><div id="knob"></div></div>
 <div id="thr"><div id="thrFill"></div><div id="thrLbl">THR</div></div>
+<div id="stickZone"></div>
+<div id="thrZone"></div>
+<button class="tbtn" id="thrUp" type="button">THR +</button>
+<button class="tbtn" id="thrDn" type="button">THR &minus;</button>
 <button class="tbtn" id="viewBtn" type="button">VIEW</button>
 <button class="tbtn" id="resetBtn" type="button">RESET</button>
 
@@ -97,13 +106,13 @@
   <div class="panel">
     <h1>APEX FLIGHT</h1>
     <h2>SINGLE-PROP SIMULATOR</h2>
-    <p>Line up on runway 36, throttle up, rotate at 55 kt and climb. Grease the landing back on the centerline.</p>
+    <p>Line up on runway 36, push the throttle to full, and near 50 kt the nose rises on its own - stick up to climb. Grease the landing back on the centerline.</p>
     <button class="bigbtn" id="btnFree" type="button">FREE FLIGHT<small>Start on the runway - explore, practice, land anywhere</small></button>
     <button class="bigbtn" id="btnChal" type="button">LANDING CHALLENGE<small>Start on final approach - scored touchdown on runway 36</small></button>
     <div class="ctl">
       <b>Touch:</b> left stick = pitch &amp; roll &nbsp;|&nbsp; right slider = throttle<br>
       <b>Keys:</b> &#8592;&#8593;&#8595;&#8594; / WASD = pitch &amp; roll &nbsp;|&nbsp; R / F = throttle &nbsp;|&nbsp; C = view &nbsp;|&nbsp; Space = reset<br>
-      Stick up = climb &nbsp;|&nbsp; keep speed above 50 kt or you stall
+      Stick up = climb &nbsp;|&nbsp; keep speed above 49 kt or you stall
     </div>
   </div>
 </div>
@@ -136,10 +145,12 @@ const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 /* ================= constants ================= */
-const VSTALL = 26;          // m/s  (~50 kt)
-const VROT   = 29;          // m/s  (~56 kt) rotate speed
-const THRUST = 13.5;        // m/s^2 at full throttle
-const KLIFT  = 0.0078;      // lift coefficient
+const VSTALL = 25;          // m/s  (~49 kt) stall warning
+const VROT   = 26.5;        // m/s  (~52 kt) rotate speed
+const VROT_A = 25.7;        // m/s  (~50 kt) auto-rotate assist threshold
+const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
+const THRUST = 2.3;         // m/s^2 at full throttle (~13 s ground roll to rotate)
+const KLIFT  = 0.0155;      // lift coefficient
 const GRAV   = 9.81;
 const GEAR_H = 1.2;         // plane origin height above ground when on wheels
 const RWY_HALF = 700, RWY_W = 12;
@@ -156,8 +167,9 @@ const inp = { pitchUp: 0, rollRight: 0 };   // -1..1
 let stallNow = false, msgTimer = 0;
 
 /* ================= renderer / scene ================= */
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+const COARSE = matchMedia('(pointer: coarse)').matches;   // touch phones: cheap render path
+const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = false;                     // perf: shadows off
 renderer.domElement.className = 'game';
@@ -462,13 +474,14 @@ function pollKeys() {
   if (lf) inp.rollRight = -1; else if (rt) inp.rollRight = 1; else if (!stickActive) inp.rollRight = 0;
   if (keys['r'] || keys['shift']) P.thr = clamp(P.thr + 0.55 * lastDt, 0, 1);
   if (keys['f'] || keys['control']) P.thr = clamp(P.thr - 0.55 * lastDt, 0, 1);
+  if (thrRamp !== 0) P.thr = clamp(P.thr + thrRamp * 0.6 * lastDt, 0, 1);   // THR +/- hold buttons
   $('thrFill').style.height = (P.thr * 100) + '%';
 }
 
 /* ================= input: touch stick + throttle ================= */
 let stickActive = false;
 (function stick() {
-  const el = $('stick'), knob = $('knob');
+  const el = $('stick'), knob = $('knob'), zone = $('stickZone');
   const R = 44;
   const set = e => {
     const r = el.getBoundingClientRect();
@@ -479,24 +492,37 @@ let stickActive = false;
     inp.rollRight = clamp(dx / R, -1, 1);
     inp.pitchUp = clamp(-dy / R, -1, 1);      // drag up = climb
   };
-  el.addEventListener('pointerdown', e => { stickActive = true; el.setPointerCapture(e.pointerId); set(e); });
-  el.addEventListener('pointermove', e => { if (stickActive) set(e); });
+  zone.addEventListener('pointerdown', e => { stickActive = true;
+    try { zone.setPointerCapture(e.pointerId); } catch (x) {} set(e); });
+  zone.addEventListener('pointermove', e => { if (stickActive) set(e); });
   const end = () => { stickActive = false; inp.pitchUp = 0; inp.rollRight = 0;
     knob.style.transform = 'translate(-50%,-50%)'; };
-  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+  zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
 })();
 (function throttle() {
-  const el = $('thr');
+  const el = $('thr'), zone = $('thrZone');
   const set = e => {
     const r = el.getBoundingClientRect();
     P.thr = clamp(1 - (e.clientY - r.top) / r.height, 0, 1);
     $('thrFill').style.height = (P.thr * 100) + '%';
   };
-  el.addEventListener('pointerdown', e => { el.setPointerCapture(e.pointerId); set(e);
+  zone.addEventListener('pointerdown', e => { try { zone.setPointerCapture(e.pointerId); } catch (x) {} set(e);
     const mv = ev => set(ev);
-    const up = () => { el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); };
-    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up);
+    const up = () => { zone.removeEventListener('pointermove', mv); zone.removeEventListener('pointerup', up); };
+    zone.addEventListener('pointermove', mv); zone.addEventListener('pointerup', up);
   });
+})();
+/* THR +/- hold buttons: ramp throttle while held (alternative to the slider) */
+let thrRamp = 0;
+(function thrButtons() {
+  const bind = (id, dir) => {
+    const b = $(id);
+    const on = e => { e.preventDefault(); thrRamp = dir; };
+    const off = () => { if (thrRamp === dir) thrRamp = 0; };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+  };
+  bind('thrUp', 1); bind('thrDn', -1);
 })();
 
 /* ================= buttons ================= */
@@ -536,7 +562,13 @@ function step(dt) {
       if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.055 * dt; stallNow = true; }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
     } else {
-      P.pitch += (0 - P.pitch) * 4 * dt;
+      /* ground roll: the nose answers to the stick once fast, and an
+         auto-rotate assist gently raises the nose past 50 kt at full
+         throttle, so holding full throttle alone gets you airborne */
+      const noseAuth = clamp((v - (VROT - 9)) / 9, 0, 1);
+      let targetPitch = clamp(inp.pitchUp, 0, 1) * 0.16 * noseAuth;
+      if (P.thr > 0.85 && v > VROT_A) targetPitch = Math.max(targetPitch, 0.15);
+      P.pitch += (targetPitch - P.pitch) * 4 * dt;
       P.roll += (0 - P.roll) * 4 * dt;
       const vh = Math.hypot(P.vel.x, P.vel.z);
       P.yaw -= inp.rollRight * clamp(vh / 14, 0, 1) * 0.9 * dt;
@@ -553,8 +585,9 @@ function step(dt) {
   // forces
   ACC.set(0, -GRAV, 0);
   ACC.addScaledVector(F, THRUST * P.thr);
-  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.0035 * v + 0.04));   // drag
-  if (!P.ground) ACC.addScaledVector(U, KLIFT * v * v);              // lift
+  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00055 * v + 0.006));  // drag (top speed ~117 kt)
+  if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
+    ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa, LIFTCAP)); }      // lift, capped
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
 
@@ -575,7 +608,8 @@ function step(dt) {
     }
     P.ground = true; P.pos.y = GEAR_H;
     if (P.vel.y < 0) P.vel.y = 0;
-    if (v > VROT && P.pitch > 0.04 && KLIFT * v * v > GRAV * 0.92) P.ground = false;  // liftoff
+    if (v > VROT && P.pitch > 0.05) { P.ground = false;
+      if (phase === 'fly') flashMsg("YOU'RE FLYING - GENTLE INPUTS", 2600); }  // liftoff
   } else if (P.pos.y - GEAR_H > 0.01) {
     P.ground = false;
   }
@@ -608,18 +642,27 @@ function step(dt) {
 }
 
 /* ================= camera ================= */
-const camPos = new THREE.Vector3(0, 8, -620), camLook = new THREE.Vector3();
+const camPos = new THREE.Vector3(0, 8, -620), camLook = new THREE.Vector3(), camLookS = new THREE.Vector3(0, 4, 0);
+let fovCur = 62;
 function updateCamera(dt) {
+  /* speed feel: FOV eases 62 -> 68 as airspeed passes ~120kt (shared by both views) */
+  const kt = P.vel.length() * MS2KT;
+  const targetFov = 62 + 6 * clamp((kt - 90) / 30, 0, 1);
+  fovCur += (targetFov - fovCur) * Math.min(1, 3 * dt);
+  if (Math.abs(camera.fov - fovCur) > 0.1) { camera.fov = fovCur; camera.updateProjectionMatrix(); }
   if (cockpit) {
     camPos.copy(P.pos).addScaledVector(U, 1.15).addScaledVector(F, 1.1);
     camera.position.copy(camPos);
     camLook.copy(P.pos).addScaledVector(F, 60).addScaledVector(U, 0.9);
     camera.lookAt(camLook);
   } else {
-    camPos.copy(P.pos).addScaledVector(F, -13.5).addScaledVector(U, 4.4);
+    /* chase: ~10% farther back, ~20% higher than before, with a subtle
+       velocity look-ahead; the look target is eased too, so no jitter */
+    camPos.copy(P.pos).addScaledVector(F, -14.85).addScaledVector(U, 5.28);
     camera.position.lerp(camPos, Math.min(1, 5 * dt));
-    camLook.copy(P.pos).addScaledVector(F, 12);
-    camera.lookAt(camLook);
+    camLook.copy(P.pos).addScaledVector(F, 12).addScaledVector(P.vel, 0.18);
+    camLookS.lerp(camLook, Math.min(1, 6 * dt));
+    camera.lookAt(camLookS);
   }
 }
 
@@ -653,9 +696,11 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
-  // rotate cue on takeoff roll
-  if (mode === 'free' && phase === 'fly' && P.ground && v > VROT - 2 && msgTimer <= 0 && !stallNow) {
-    setMsg('ROTATE', false);
+  // takeoff coaching during the ground roll (contextual by state)
+  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow) {
+    const kt = v * MS2KT;
+    if (kt < 45) setMsg('FULL THROTTLE - BUILD SPEED', false);
+    else if (kt < VROT * MS2KT + 3) setMsg('STICK UP - CLIMB', false);
   }
 }
 
