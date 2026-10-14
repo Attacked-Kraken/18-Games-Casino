@@ -109,6 +109,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
 #mxDoor { position: absolute; top: calc(54% - 26px); left: calc(70% - 42px); z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#gateSw { position: absolute; right: 10px; bottom: 10px; z-index: 6; font: 600 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; color: #39ff6a; background: rgba(0, 22, 7, .78); border: 1px solid rgba(57, 255, 106, .5); border-radius: 999px; padding: 8px 13px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -151,7 +152,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button><button class="wormtab" id="wHockey" type="button"><em>&#127954;</em>Hockey</button><button class="wormtab" id="wBaseball" type="button"><em>&#9918;</em>Baseball</button><button class="wormtab" id="wSoccer" type="button"><em>&#9917;</em>Soccer</button><button class="wormtab" id="wFlight" type="button"><em>&#9992;</em>Flight Sim</button></div><div class="wormhint">TAP THE HALL TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP THE HALL TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button><button class="wormtab" id="wHockey" type="button"><em>&#127954;</em>Hockey</button><button class="wormtab" id="wBaseball" type="button"><em>&#9918;</em>Baseball</button><button class="wormtab" id="wSoccer" type="button"><em>&#9917;</em>Soccer</button><button class="wormtab" id="wFlight" type="button"><em>&#9992;</em>Flight Sim</button></div><div class="wormhint">TAP THE HALL TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button><button id="gateSw" type="button">HOLD-DOOR: ON</button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP THE HALL TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -324,6 +325,10 @@ textarea.vin { min-height: 74px; resize: vertical; }
      never reveals the way in. window.__doorLitTarget() tells the rain
      how awake the door is, so the painted digit can stay near-invisible
      at rest and glow only while its owner is holding it. */
+  /* gate switch (owner): HOLD-DOOR ON (default) = the 0 answers only to
+     hold-then-tap. OFF = a plain tap on the 0 walks straight in. The choice
+     is saved on this device and stays. */
+  var GATE_HOLD = true; try { GATE_HOLD = localStorage.getItem('mx_gate_hold') !== '0'; } catch (e) {}
   var doorArmT = 0, doorPress = false, doorHeld = false, doorHoldTimer = null,
       doorDownT = 0, doorPressArmed = false, doorPressHeld = false, doorOpenedAt = 0,
       doorPressHeldLatch = false;
@@ -335,7 +340,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
   if (door) {
     door.addEventListener('pointerdown', function (ev) { ev.preventDefault();
       doorPress = true; doorPressHeld = false;
-      doorPressArmed = performance.now() < doorArmT; doorDownT = performance.now();
+      doorPressArmed = !GATE_HOLD || performance.now() < doorArmT; doorDownT = performance.now();
       doorHoldTimer = setTimeout(function () { doorHeld = true; doorPressHeld = true;
         doorArmT = performance.now() + 2500;
         try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} }, 550); });
@@ -352,6 +357,13 @@ textarea.vin { min-height: 74px; resize: vertical; }
       if (doorPressHeldLatch) { doorPressHeldLatch = false; return; }
       if (performance.now() < doorArmT && performance.now() - doorOpenedAt > 600) openWormhole(); });
   }
+  var gateSw = document.getElementById('gateSw');
+  function gateLabel() { if (gateSw) gateSw.textContent = GATE_HOLD ? 'HOLD-DOOR: ON' : 'HOLD-DOOR: OFF'; }
+  if (gateSw) { gateSw.addEventListener('pointerdown', function (ev) { ev.stopPropagation(); });
+    gateSw.addEventListener('click', function (ev) { ev.stopPropagation(); GATE_HOLD = !GATE_HOLD;
+      try { localStorage.setItem('mx_gate_hold', GATE_HOLD ? '1' : '0'); } catch (e) {}
+      try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) {} gateLabel(); });
+    gateLabel(); }
   if (worm) worm.addEventListener('click', function (ev) {
     if (ev.target === worm || ev.target.id === 'wormCv') worm.hidden = true; });
   var wF = document.getElementById('wFloor');
