@@ -108,7 +108,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
-#mxDoor { position: absolute; top: calc(54% - 42px); right: 0; z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#mxDoor { position: absolute; top: calc(54% - 42px); left: calc(70% - 42px); z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -426,9 +426,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
       var lit3T = window.__door3LitTarget ? window.__door3LitTarget() : 0;
       var lit3 = (window.__door3Lit || 0) + (lit3T - (window.__door3Lit || 0)) * .3;
       window.__door3Lit = lit3;
-      ctx.font = '20px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(196,255,210,' + (.10 + .05 * Math.sin(ts / 900) + .80 * lit3).toFixed(3) + ')';
-      ctx.fillText('0', CX, CY + 7); ctx.textAlign = 'left';
+      /* vault door: nothing painted at the heart any more (owner, 2026-10-14) */
     }
     requestAnimationFrame(frame);
   }
@@ -522,9 +520,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
       var lit2T = window.__door2LitTarget ? window.__door2LitTarget() : 0;
       var lit2 = (window.__door2Lit || 0) + (lit2T - (window.__door2Lit || 0)) * .3;
       window.__door2Lit = lit2;
-      ctx.font = '13px ui-monospace, Menlo, monospace';
-      ctx.fillStyle = 'rgba(196,255,210,' + (.10 + .05 * Math.sin(ts / 900) + .80 * lit2).toFixed(3) + ')';
-      ctx.fillText('0', 26, H - 22);
+      /* deeper door: nothing painted - the app has only one zero (owner, 2026-10-14) */
     }
     requestAnimationFrame(frame);
   }
@@ -595,9 +591,9 @@ textarea.vin { min-height: 74px; resize: vertical; }
       var lit = (window.__doorLit || 0) + (litT - (window.__doorLit || 0)) * .3;
       window.__doorLit = lit;
       var idle = .05 + .03 * Math.sin(ts / 900);
-      ctx.font = '13px ' + MONO;
-      ctx.fillStyle = 'rgba(46,220,95,' + (.10 + .30 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ - 9);
-      ctx.fillStyle = 'rgba(196,255,210,' + (idle + .85 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ + 4);
+      ctx.font = '10px ' + MONO;
+      ctx.fillStyle = 'rgba(46,220,95,' + (.05 + .30 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ - 6);
+      ctx.fillStyle = 'rgba(196,255,210,' + (idle * .55 + .85 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ + 3);
     }
     requestAnimationFrame(frame);
   })();
