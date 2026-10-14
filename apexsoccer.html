@@ -55,11 +55,17 @@
     background:rgba(2,14,6,.62); color:#d8ffe2; font:700 11px ui-monospace,Menlo,monospace; letter-spacing:.05em; }
   .tbtn:active, .tbtn.on { background:rgba(57,255,90,.4); }
   #btnShoot.charge { background:rgba(255,170,40,.55); border-color:#ffb02e; }
+  /* camera view + mute buttons (top-right, clear of scoreboard and touch controls) */
+  #viewBtn, #muteBtn { position:fixed; top:12px; z-index:8100; width:44px; height:44px; border-radius:50%;
+    border:2px solid rgba(57,255,90,.55); background:rgba(2,14,6,.62); color:#d8ffe2; cursor:pointer;
+    font:700 10px ui-monospace,Menlo,monospace; letter-spacing:.03em; }
+  #viewBtn { right:12px; } #muteBtn { right:64px; font-size:20px; }
+  #viewBtn:active, #muteBtn:active { transform:scale(.94); }
   body.touch #joy { display:block; } body.touch #btns { display:grid; }
   #chg { position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%);
     width:200px; height:10px; border-radius:6px; background:rgba(255,255,255,.12); z-index:8100; display:none; overflow:hidden; }
   #chgFill { height:100%; width:0%; background:linear-gradient(90deg,#57ff5e,#ffb02e,#ff4b4b); }
-  @media (orientation: portrait) { #hud, #joy, #btns, #chg, #back { display:none !important; } }
+  @media (orientation: portrait) { #hud, #joy, #btns, #chg, #back, #viewBtn, #muteBtn { display:none !important; } }
 </style>
 <script type="importmap">{ "imports": { "three": "./three.module.min.js" } }</script>
 <style>
@@ -75,6 +81,8 @@
 <body>
 <canvas id="c3d"></canvas>
 <button id="back" type="button" aria-label="Back">&#8592;</button>
+<button id="viewBtn" type="button" aria-label="Camera view">FULL</button>
+<button id="muteBtn" type="button" aria-label="Mute music">&#128266;</button>
 <div id="rotOv">ROTATE YOUR DEVICE</div>
 <div id="hud"><span id="hScore">COMETS 0 - 0 SHARKS</span><span class="clk" id="hClock">1ST 2:30</span></div>
 <div id="banner"></div>
@@ -211,6 +219,75 @@ buildGoal(1); buildGoal(-1);
   const sm=new THREE.MeshStandardMaterial({ color:0x1b2a4a, roughness:1 });
   const st=(w,d,x,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,9,d),sm); m.position.set(x,4.5,z); scene.add(m); };
   st(PL+30,14,0,-(PW/2+14)); st(PL+30,14,0,PW/2+14); st(14,PW+30,-(PL/2+14),0); st(14,PW+30,PL/2+14,0);
+  /* ---- proper stadium: tiered stands on all four sides, no shadows ---- */
+  const standM=new THREE.MeshStandardMaterial({ color:0x161d29, roughness:1 });
+  const rowG=new THREE.BoxGeometry(1,0.9,1);
+  const ROWS=6, RSTEP=2.2, R0L=39.5, R0E=39.5; // long-side row0 center z, short-side row0 center x
+  for(let s=-1;s<=1;s+=2){
+    for(let i=0;i<ROWS;i++){
+      const z=s*(R0L+RSTEP*i), y=0.45+0.9*i;
+      const a=new THREE.Mesh(rowG,standM); a.scale.set(PL+24,1,RSTEP); a.position.set(0,y,z); scene.add(a);
+      const x=s*(R0E+RSTEP*i);
+      const b=new THREE.Mesh(rowG,standM); b.scale.set(RSTEP,1,PW+24); b.position.set(x,y,0); scene.add(b);
+    }
+  }
+}
+/* ---- crowd: two shared InstancedMeshes, cheap life via a rotating 30-instance update ---- */
+let crowdB=null, crowdH=null, crowdN=0, crowdCursor=0, crowdExcite=0;
+const crowdBase=[];
+{
+  const seats=[];
+  for(let s=-1;s<=1;s+=2){
+    for(let i=0;i<6;i++){
+      const top=0.9+0.9*i;
+      for(let x=-62;x<=62;x+=1.15) seats.push([x+(Math.random()-0.5)*0.5, top, s*(39.5+2.2*i)+(Math.random()-0.5)*0.5]);
+      for(let z=-42;z<=42;z+=1.4) seats.push([s*(39.5+2.2*i)+(Math.random()-0.5)*0.5, top, z+(Math.random()-0.5)*0.5]);
+    }
+  }
+  crowdN=seats.length;
+  const bodyG=new THREE.CylinderGeometry(0.16,0.24,0.6,5);
+  const headG=new THREE.SphereGeometry(0.11,6,5);
+  const bodyM=new THREE.MeshStandardMaterial({ roughness:.9 });
+  const headM=new THREE.MeshStandardMaterial({ roughness:.8 });
+  crowdB=new THREE.InstancedMesh(bodyG,bodyM,crowdN);
+  crowdH=new THREE.InstancedMesh(headG,headM,crowdN);
+  crowdB.castShadow=crowdH.castShadow=false; crowdB.receiveShadow=crowdH.receiveShadow=false;
+  const muted=[0x2a2f3a,0x3a3f4a,0x4a4238,0x5a4a3a,0x37414f,0x2e3a4e,0x50302a,0x2a4a3e];
+  const team=[0xe07b2a,0x1f6fd6]; // Comets orange / Sharks blue sprinkles
+  const skin=[0xf1c27d,0xe0ac69,0xc68642,0x8d5524,0xffdbac];
+  const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), S=new THREE.Vector3(), P=new THREE.Vector3();
+  const C=new THREE.Color();
+  for(let i=0;i<crowdN;i++){
+    const [x,ty,z]=seats[i], sc=0.9+Math.random()*0.2;
+    crowdBase.push([x,ty,z,sc]);
+    S.setScalar(sc);
+    P.set(x,ty+0.3*sc,z); M.compose(P,Q,S); crowdB.setMatrixAt(i,M);
+    P.set(x,ty+0.72*sc,z); M.compose(P,Q,S); crowdH.setMatrixAt(i,M);
+    C.setHex(Math.random()<0.15?team[(Math.random()*2)|0]:muted[(Math.random()*muted.length)|0]).multiplyScalar(0.7+Math.random()*0.5);
+    crowdB.setColorAt(i,C);
+    C.setHex(skin[(Math.random()*skin.length)|0]); crowdH.setColorAt(i,C);
+  }
+  crowdB.instanceMatrix.needsUpdate=true; crowdH.instanceMatrix.needsUpdate=true;
+  if(crowdB.instanceColor) crowdB.instanceColor.needsUpdate=true;
+  if(crowdH.instanceColor) crowdH.instanceColor.needsUpdate=true;
+  scene.add(crowdB); scene.add(crowdH);
+}
+const _cm=new THREE.Matrix4(), _cq=new THREE.Quaternion(), _cs=new THREE.Vector3(), _cp=new THREE.Vector3();
+let crowdT=0;
+function crowdTick(dt){
+  if(!crowdB) return;
+  crowdT+=dt; crowdExcite*=Math.pow(0.35,dt); // decays toward 0
+  const amp=0.05+crowdExcite*0.4;
+  for(let k=0;k<30;k++){
+    const i=(crowdCursor+k)%crowdN;
+    const [x,ty,z,sc]=crowdBase[i];
+    const b=Math.abs(Math.sin(crowdT*6+i*1.7))*amp*sc;
+    _cs.setScalar(sc);
+    _cp.set(x,ty+0.3*sc+b,z); _cm.compose(_cp,_cq,_cs); crowdB.setMatrixAt(i,_cm);
+    _cp.set(x,ty+0.72*sc+b,z); _cm.compose(_cp,_cq,_cs); crowdH.setMatrixAt(i,_cm);
+  }
+  crowdCursor=(crowdCursor+30)%crowdN;
+  crowdB.instanceMatrix.needsUpdate=true; crowdH.instanceMatrix.needsUpdate=true;
 }
 
 /* ================= ball ================= */
@@ -576,7 +653,7 @@ function cpuRestart(dt){
 
 /* ================= goals / out of bounds ================= */
 function doGoal(scoring){
-  G.st='goal'; G.goalT=3; G.lastScorer=scoring; scoring.score++;
+  G.st='goal'; G.goalT=3; G.lastScorer=scoring; scoring.score++; crowdExcite=1; // crowd erupts
   B.owner=null; B.intended=null;
   banner('GOAL!',`${scoring.name} · ${teams[0].score} - ${teams[1].score}`,2.8);
   try{ if(navigator.vibrate) navigator.vibrate([40,40,40]); }catch(e){}
@@ -778,6 +855,73 @@ function updateBall(dt){
   ballMesh.rotation.x+=B.vel.z*dt*2; ballMesh.rotation.z-=B.vel.x*dt*2;
 }
 
+/* ================= procedural music (WebAudio, no files) + mute ================= */
+const Mus={ ac:null, mode:'menu', muted:(()=>{ try{return localStorage.getItem('apex_muted')==='1';}catch(e){return false;} })(),
+  _timer:null, _step:0, _next:0, _noise:null };
+Mus.init=function(){
+  if(this.ac||!window.AudioContext&&!window.webkitAudioContext) return;
+  try{
+    this.ac=new (window.AudioContext||window.webkitAudioContext)();
+    this.master=this.ac.createGain(); this.master.gain.value=this.muted?0:0.35; this.master.connect(this.ac.destination);
+    const len=this.ac.sampleRate*0.5, buf=this.ac.createBuffer(1,len,this.ac.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1; this._noise=buf;
+    this._next=this.ac.currentTime+0.1; this._step=0;
+    this._timer=setInterval(()=>this.tick(),30);
+  }catch(e){}
+};
+Mus.tone=function(t,freq,type,gain,dur,slideTo){
+  try{
+    const o=this.ac.createOscillator(), g=this.ac.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(gain,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.05);
+  }catch(e){}
+};
+Mus.noise=function(t,gain,dur,fc){
+  try{
+    const s=this.ac.createBufferSource(); s.buffer=this._noise;
+    const f=this.ac.createBiquadFilter(); f.type='highpass'; f.frequency.value=fc||6000;
+    const g=this.ac.createGain(); g.gain.setValueAtTime(gain,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.05);
+  }catch(e){}
+};
+const MUS_CHORDS=[[110,130.81,164.81],[87.31,110,130.81],[130.81,164.81,196],[98,123.47,146.83]]; // Am F C G
+const MUS_PENTA=[220,261.63,293.66,329.63,392,440];
+const MUS_BASS=[55,43.65,65.41,49];
+Mus.tick=function(){
+  if(!this.ac) return;
+  if(this.ac.state==='suspended'){ try{this.ac.resume();}catch(e){} }
+  const game=this.mode==='game', spb=60/(game?132:92), ahead=this.ac.currentTime+0.15;
+  while(this._next<ahead){
+    const s=this._step, t=this._next, bar=(s>>4)%4;
+    if(game){
+      if(s%4===0) this.tone(t,150,'sine',0.85,0.24,44); // four-on-floor kick
+      if(s%4===2) this.noise(t,0.11,0.06); // offbeat hats
+      if(s%2===0) this.tone(t,MUS_BASS[bar],'triangle',0.24,0.28); // 8th-note bass
+      const arp=MUS_PENTA[(s*3+bar*2)%6]*2; this.tone(t,arp,'sine',0.055,0.09); // 16th arp
+    }else{
+      if(s%32===0){ const ch=MUS_CHORDS[bar]; // pad chord per bar
+        for(const f of ch) this.tone(t,f,'triangle',0.045,2.2); }
+      if(s%16===8) this.tone(t,MUS_PENTA[(s*5+bar)%6],'sine',0.10,0.5); // sparse pluck
+      if(s%32===16) this.tone(t,MUS_BASS[bar],'triangle',0.12,0.9); // soft bass
+    }
+    this._next+=spb/4; this._step=(this._step+1)%64;
+  }
+};
+Mus.setMuted=function(m){
+  this.muted=m;
+  try{ localStorage.setItem('apex_muted',m?'1':'0'); }catch(e){}
+  try{ if(this.master) this.master.gain.value=m?0:0.35; }catch(e){}
+  document.getElementById('muteBtn').innerHTML=m?'&#128263;':'&#128266;';
+};
+document.getElementById('muteBtn').addEventListener('click',()=>Mus.setMuted(!Mus.muted));
+document.addEventListener('pointerdown',()=>Mus.init());
+document.addEventListener('keydown',()=>Mus.init());
+Mus.setMuted(Mus.muted); // honor stored setting on load
+window.__mus=Mus;
+
 /* ================= real 3D athletes (Quaternius CC0, async load; primitives stay as fallback) ================= */
 const chgFillEl = document.getElementById('chgFill');
 let athReady = false, athLoading = false;
@@ -834,15 +978,39 @@ function animate(dt){
 }
 
 /* ================= camera ================= */
+/* camera view options: FULL (wide ball follow) / TEAM (tighter on your team) / CLOSE (hover over your player) / PLAYER (low over-the-shoulder) */
+const camModes=['FULL','TEAM','CLOSE','PLAYER']; let camMode=0;
 const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,31,46);
+const _bp=new THREE.Vector3(), _lk=new THREE.Vector3();
 function updateCamera(dt){
-  camT.set(clamp(B.pos.x*0.62,-30,30),0,B.pos.z*0.3);
+  const p=H.player; // dynamically the currently controlled player
+  // controlled player's world facing: group yaw is PI/2-face, GLB is +z-forward
+  const fx=p?Math.cos(p.face):0, fz=p?Math.sin(p.face):0;
+  const m=camModes[camMode];
+  if((m==='CLOSE'||m==='PLAYER')&&p){
+    if(m==='CLOSE'){ // hover just above/behind the controlled player, looking ahead of him
+      _bp.set(p.pos.x-fx*4,6,p.pos.z-fz*4); _lk.set(p.pos.x+fx*7,1.2,p.pos.z+fz*7);
+      camP.lerp(_bp,Math.min(1,4*dt));
+    }else{ // low over-the-shoulder: ~2.2 up, ~4.5 behind, look ~12 ahead
+      _bp.set(p.pos.x-fx*4.5,2.2,p.pos.z-fz*4.5); _lk.set(p.pos.x+fx*12,1.4,p.pos.z+fz*12);
+      camP.lerp(_bp,Math.min(1,5*dt));
+    }
+    camera.position.copy(camP); camera.lookAt(_lk); return;
+  }
+  let h=31,d=46,kx=0.62,kz=0.3,lk=1.15; // FULL
+  if(m==='TEAM'){ h=19; d=28; kx=0.62; kz=0.5; } // ~40% closer/lower, frames your team around the ball
+  camT.set(clamp(B.pos.x*kx,-30,30),0,B.pos.z*kz);
   camP.x+=(camT.x-camP.x)*Math.min(1,3*dt);
-  camP.y+=(31-camP.y)*Math.min(1,3*dt);
-  camP.z+=(46-camP.z)*Math.min(1,3*dt);
+  camP.y+=(h-camP.y)*Math.min(1,3*dt);
+  camP.z+=(d-camP.z)*Math.min(1,3*dt);
   camera.position.copy(camP);
-  camera.lookAt(camT.x*1.15,0,camT.z);
+  camera.lookAt(camT.x*lk,0,camT.z);
 }
+document.getElementById('viewBtn').addEventListener('click',()=>{
+  camMode=(camMode+1)%camModes.length;
+  document.getElementById('viewBtn').textContent=camModes[camMode];
+  banner('CAMERA: '+camModes[camMode],'',1.2);
+});
 
 /* ================= flow ================= */
 function doHalftime(){
@@ -850,6 +1018,7 @@ function doHalftime(){
   banner('HALF TIME',`COMETS ${teams[0].score} - ${teams[1].score} SHARKS`,3.2);
 }
 function doFulltime(){
+  Mus.mode='menu'; // back to the calm menu loop
   G.st='full';
   const a=teams[0].score,b=teams[1].score;
   document.getElementById('endScore').textContent=`${a} - ${b}`;
@@ -861,6 +1030,7 @@ function doFulltime(){
 document.getElementById('btnStart').addEventListener('click',()=>{
   document.getElementById('startOv').hidden=true;
   setHalf(1); hud(); doKickoff(0);
+  Mus.init(); Mus.mode='game'; // kick off the match music
   initAthletes(); // loads the real athletes in the background; primitives cover until ready
 });
 document.getElementById('btnAgain').addEventListener('click',()=>location.reload());
@@ -902,7 +1072,7 @@ function loop(now){
     G.breakT-=dt;
     if(G.breakT<=0){ setHalf(2); hud(); doKickoff(1); }
   }
-  animate(dt); updateCamera(dt);
+  animate(dt); updateCamera(dt); crowdTick(dt);
   renderer.render(scene,camera);
 }
 placeFormation(); hud();
