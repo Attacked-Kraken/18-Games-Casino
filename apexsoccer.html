@@ -9,7 +9,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04140a; touch-action:none; overscroll-behavior:none;
     font-family: ui-monospace, Menlo, Consolas, monospace; user-select:none; -webkit-user-select:none; }
-  #c3d { position:fixed; inset:0; display:block; }
+  #c3d { position:fixed; inset:0; display:block; width:100%; height:100%; }
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9000;
     width:44px; height:44px; border-radius:50%; border:1px solid rgba(57,255,90,.6);
     background:rgba(2,14,6,.82); color:#d8ffe2; font-size:20px; cursor:pointer; }
@@ -127,21 +127,33 @@ document.getElementById('back').addEventListener('click', ()=>{ location.href='i
 const canvas = document.getElementById('c3d');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:!coarse });
 renderer.setPixelRatio(Math.min(devicePixelRatio||1, coarse ? 1.5 : 2));
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(innerWidth, innerHeight, false);
 renderer.shadowMap.enabled = !coarse;
 if (!coarse) { renderer.shadowMap.type = THREE.PCFShadowMap; }
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x030a05);
-scene.fog = new THREE.Fog(0x030a05, 90, 190);
+scene.background = new THREE.Color(0x0a1420);
+scene.fog = new THREE.Fog(0x0a1420, 90, 190);
 const camera = new THREE.PerspectiveCamera(56, innerWidth/innerHeight, 0.5, 400);
-camera.position.set(0, 31, 46);
-scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a2012, 0.95));
+camera.position.set(0, 22, 32);
+scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a2012, 1.28));
 const sun = new THREE.DirectionalLight(0xffffff, 1.35);
 sun.position.set(30, 55, 25);
 if (!coarse) { sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
   const sc = sun.shadow.camera; sc.left=-70; sc.right=70; sc.top=70; sc.bottom=-70; sc.far=160; }
 scene.add(sun);
-addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+let fitW = 0, fitH = 0;
+function fitGame(){
+  const w = document.documentElement.clientWidth || innerWidth;
+  const h = document.documentElement.clientHeight || innerHeight;
+  if (!w || !h) return;
+  fitW = w; fitH = h;
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+addEventListener('resize', () => { fitGame(); setTimeout(fitGame, 150); setTimeout(fitGame, 450); });
+addEventListener('orientationchange', () => { setTimeout(fitGame, 60); setTimeout(fitGame, 300); setTimeout(fitGame, 700); });
+if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
+fitGame();
 
 /* ================= pitch ================= */
 function pitchTexture(){
@@ -220,7 +232,7 @@ buildGoal(1); buildGoal(-1);
   const st=(w,d,x,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,9,d),sm); m.position.set(x,4.5,z); scene.add(m); };
   st(PL+30,14,0,-(PW/2+14)); st(PL+30,14,0,PW/2+14); st(14,PW+30,-(PL/2+14),0); st(14,PW+30,PL/2+14,0);
   /* ---- proper stadium: tiered stands on all four sides, no shadows ---- */
-  const standM=new THREE.MeshStandardMaterial({ color:0x161d29, roughness:1 });
+  const standM=new THREE.MeshStandardMaterial({ color:0x2c3a52, roughness:1 });
   const rowG=new THREE.BoxGeometry(1,0.9,1);
   const ROWS=6, RSTEP=2.2, R0L=39.5, R0E=39.5; // long-side row0 center z, short-side row0 center x
   for(let s=-1;s<=1;s+=2){
@@ -980,7 +992,7 @@ function animate(dt){
 /* ================= camera ================= */
 /* camera view options: FULL (wide ball follow) / TEAM (tighter on your team) / CLOSE (hover over your player) / PLAYER (low over-the-shoulder) */
 const camModes=['FULL','TEAM','CLOSE','PLAYER']; let camMode=0;
-const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,31,46);
+const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,22,32);
 const _bp=new THREE.Vector3(), _lk=new THREE.Vector3();
 function updateCamera(dt){
   const p=H.player; // dynamically the currently controlled player
@@ -997,8 +1009,8 @@ function updateCamera(dt){
     }
     camera.position.copy(camP); camera.lookAt(_lk); return;
   }
-  let h=31,d=46,kx=0.62,kz=0.3,lk=1.15; // FULL
-  if(m==='TEAM'){ h=19; d=28; kx=0.62; kz=0.5; } // ~40% closer/lower, frames your team around the ball
+  let h=22,d=32,kx=0.62,kz=0.3,lk=1.15; // FULL
+  if(m==='TEAM'){ h=15; d=22; kx=0.62; kz=0.5; } // ~40% closer/lower, frames your team around the ball
   camT.set(clamp(B.pos.x*kx,-30,30),0,B.pos.z*kz);
   camP.x+=(camT.x-camP.x)*Math.min(1,3*dt);
   camP.y+=(h-camP.y)*Math.min(1,3*dt);
@@ -1036,9 +1048,11 @@ document.getElementById('btnStart').addEventListener('click',()=>{
 document.getElementById('btnAgain').addEventListener('click',()=>location.reload());
 
 /* ================= main loop ================= */
-let last=performance.now(), hudSec=-1;
+let last=performance.now(), hudSec=-1, fitTick=0;
 function loop(now){
   requestAnimationFrame(loop);
+  if(++fitTick>=30){ fitTick=0;
+    if(Math.abs(document.documentElement.clientWidth-fitW)>2||Math.abs(document.documentElement.clientHeight-fitH)>2) fitGame(); }
   let dt=Math.min(0.05,(now-last)/1000); last=now;
   if(bannerT>0){ bannerT-=dt; if(bannerT<=0) bannerEl.classList.remove('show'); }
   if(G.st==='kickoff'&&G.kickoffWait){
