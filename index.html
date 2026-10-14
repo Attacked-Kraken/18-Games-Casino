@@ -108,7 +108,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
-#mxDoor { position: absolute; top: 0; right: 0; z-index: 3; width: 64px; height: 64px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#mxDoor { position: absolute; top: 0; right: 0; z-index: 3; width: 76px; height: 76px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -286,8 +286,41 @@ html.boot #matrix { display: flex; }
   var mxEl = document.getElementById('matrix');
   var worm = document.getElementById('worm');
   var door = document.getElementById('mxDoor');
-  if (door) door.addEventListener('click', function (ev) { ev.stopPropagation();
-    if (worm) { worm.hidden = false; startWorm(); } });
+  /* The door answers only to a long hold followed by a tap: press the
+     top-right corner and hold (~0.55s, the hidden "1" glows to confirm
+     and the phone buzzes softly), release, then tap once within ~1.6s.
+     A plain tap does nothing, so a stray touch - or a curious stranger -
+     never reveals the way in. window.__doorLitTarget() tells the rain
+     how awake the door is, so the painted digit can stay near-invisible
+     at rest and glow only while its owner is holding it. */
+  var doorArmT = 0, doorPress = false, doorHeld = false, doorHoldTimer = null,
+      doorDownT = 0, doorPressArmed = false, doorPressHeld = false, doorOpenedAt = 0,
+      doorPressHeldLatch = false;
+  window.__doorLit = 0;
+  window.__doorLitTarget = function () {
+    return (doorPress || doorHeld || performance.now() < doorArmT) ? 1 : 0; };
+  function openWormhole() { doorArmT = 0; doorOpenedAt = performance.now();
+    if (worm) { worm.hidden = false; startWorm(); } }
+  if (door) {
+    door.addEventListener('pointerdown', function (ev) { ev.preventDefault();
+      doorPress = true; doorPressHeld = false;
+      doorPressArmed = performance.now() < doorArmT; doorDownT = performance.now();
+      doorHoldTimer = setTimeout(function () { doorHeld = true; doorPressHeld = true;
+        doorArmT = performance.now() + 2500;
+        try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} }, 550); });
+    var doorRelease = function () { if (!doorPress) return; doorPress = false;
+      if (doorHoldTimer) { clearTimeout(doorHoldTimer); doorHoldTimer = null; }
+      var dur = performance.now() - doorDownT;
+      if (doorPressHeld) { doorHeld = false; doorPressHeldLatch = true; doorArmT = performance.now() + 2500; }
+      else if (doorPressArmed && dur < 400) openWormhole(); };
+    door.addEventListener('pointerup', doorRelease);
+    door.addEventListener('pointercancel', doorRelease);
+    door.addEventListener('pointerleave', doorRelease);
+    door.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+    door.addEventListener('click', function (ev) { ev.stopPropagation();
+      if (doorPressHeldLatch) { doorPressHeldLatch = false; return; }
+      if (performance.now() < doorArmT && performance.now() - doorOpenedAt > 600) openWormhole(); });
+  }
   if (worm) worm.addEventListener('click', function (ev) {
     if (ev.target === worm || ev.target.id === 'wormCv') worm.hidden = true; });
   var wF = document.getElementById('wFloor');
@@ -387,12 +420,17 @@ html.boot #matrix { display: flex; }
           ctx.fillText(bit(), x0 + Math.floor(Math.random() * n) * sp, y); } }
       ctx.textAlign = 'left';
       /* the owner's door digit: a lone "1" up in the top-right of the rain
-         that never falls - the code runs all around it, and it breathes
-         slowly. Only the owner knows that this one is the door. */
-      var pulse = .48 + .27 * Math.sin(ts / 620);
-      ctx.font = '13px ' + MONO;
-      ctx.fillStyle = 'rgba(46,220,95,.30)'; ctx.fillText('1', W - 25, 20);
-      ctx.fillStyle = 'rgba(196,255,210,' + pulse.toFixed(3) + ')'; ctx.fillText('1', W - 25, 33);
+         that never falls. At rest it is barely there - a faint breath in
+         the code that anyone else would scroll past. While the owner
+         holds the corner (and for a breath after) it glows bright: the
+         only sign the door is awake. __doorLit eases toward the state. */
+      var litT = window.__doorLitTarget ? window.__doorLitTarget() : 0;
+      var lit = (window.__doorLit || 0) + (litT - (window.__doorLit || 0)) * .3;
+      window.__doorLit = lit;
+      var idle = .05 + .03 * Math.sin(ts / 900);
+      ctx.font = '12px ' + MONO;
+      ctx.fillStyle = 'rgba(46,220,95,' + (.10 + .30 * lit).toFixed(3) + ')'; ctx.fillText('1', W - 25, 20);
+      ctx.fillStyle = 'rgba(196,255,210,' + (idle + .85 * lit).toFixed(3) + ')'; ctx.fillText('1', W - 25, 33);
     }
     requestAnimationFrame(frame);
   })();
