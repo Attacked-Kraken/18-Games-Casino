@@ -224,6 +224,18 @@
    "category": "slots",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "hoops27",
+   "file": "hoops27.html",
+   "title": "27Hoops",
+   "tagline": "3D 5-on-5 basketball in a broadcast arena. Real 3D players, our own made-up league.",
+   "rating": "13+",
+   "icon": "hoops27-icon.svg",
+   "accent": "#ff7a1a",
+   "category": "action",
+   "multiplayer": false,
+   "new": true
   }
  ]
 }

@@ -1,0 +1,9 @@
+27Hoops real-player stack
+-------------------------
+Player bodies, faces and hair: Quaternius Universal Base Characters / Superhero
+models, CC0 1.0, loaded at runtime from this repo's characters/base-human-v2/
+(male.glb + hair). Animation poses come from the game's own rig.
+Kit builder (jersey_v7.js), body shader and player builder (hooper_v8.js,
+hooper_q.js) and the engine core (gfx.js) are adapted from the repo owner's
+player-preview work. GLTFLoader / SkeletonUtils / BufferGeometryUtils are
+three.js examples modules (MIT).
