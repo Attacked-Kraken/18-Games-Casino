@@ -108,7 +108,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
-#mxDoor { position: absolute; top: calc(54% - 42px); left: calc(70% - 42px); z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#mxDoor { position: absolute; top: calc(54% - 26px); left: calc(70% - 42px); z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -575,11 +575,13 @@ textarea.vin { min-height: 74px; resize: vertical; }
       rows = []; for (var i = 0; i < 15; i++) rows.push(mkRow((i + 1) / 15));
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
     size(); addEventListener('resize', size);
+    function bitAt(x, y) { var dx = x - W * .7, dy = y - (HZ + 16);
+      return (dx * dx + dy * dy < 2704) ? '1' : bit(); }
     function drawLayer(a, fs, head, trail) {
       ctx.font = fs + 'px ' + MONO;
       for (var i = 0; i < a.length; i++) { var d = a[i], y = d.y;
-        ctx.fillStyle = head; ctx.fillText(bit(), d.x, y);
-        ctx.fillStyle = trail; ctx.fillText(bit(), d.x, y - fs); ctx.fillText(bit(), d.x, y - fs * 2);
+        ctx.fillStyle = head; ctx.fillText(bitAt(d.x, y), d.x, y);
+        ctx.fillStyle = trail; ctx.fillText(bitAt(d.x, y - fs), d.x, y - fs); ctx.fillText(bitAt(d.x, y - fs * 2), d.x, y - fs * 2);
         d.y += d.s * fs * .16; if (d.y - fs * 2 > HZ + 6) { d.y = -Math.random() * 40; d.s = (fs === 11 ? .55 : 1.05) * (.6 + Math.random() * .8); } } }
     var last = 0;
     function frame(ts) {
@@ -619,8 +621,8 @@ textarea.vin { min-height: 74px; resize: vertical; }
       window.__doorLit = lit;
       var idle = .05 + .03 * Math.sin(ts / 900);
       ctx.font = '10px ' + MONO;
-      ctx.fillStyle = 'rgba(46,220,95,' + (.05 + .30 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ - 6);
-      ctx.fillStyle = 'rgba(196,255,210,' + (idle * .55 + .85 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ + 3);
+      ctx.fillStyle = 'rgba(46,220,95,' + (.03 + .30 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ + 10);
+      ctx.fillStyle = 'rgba(196,255,210,' + (idle * .34 + .85 * lit).toFixed(3) + ')'; ctx.fillText('0', Math.round(W * .7), HZ + 19);
     }
     requestAnimationFrame(frame);
   })();
