@@ -283,7 +283,7 @@ function uniColors(team, home) { const t = team;
 let user = (() => { try { return (localStorage.getItem('ps_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const skey = () => 'h27_' + (user || 'guest');
 let SV = null;
-function newSave(teamId) { const s = { team: teamId, season: 1, sched: [], week: 0, recs: {}, results: [], po: null, champs: 0, wins: 0, losses: 0, snd: 1, voice: 1, q: 'high', qlen: 3, diff: 1, zoom: 1, how: 0,
+function newSave(teamId) { const s = { team: teamId, season: 1, sched: [], week: 0, recs: {}, results: [], po: null, champs: 0, wins: 0, losses: 0, snd: 1, voice: 1, q: (window.matchMedia && matchMedia('(pointer: coarse)').matches ? 'low' : 'high'), qlen: 3, diff: 1, zoom: 1, how: 0,
   stats: { games: 0, pts: 0, threes: 0, dunks: 0, best: 0 }, active: null }; newSeason(s); return s; }
 function newSeason(s) { const others = TEAMS.filter((t) => t.id !== s.team).map((t) => t.id), r = rng(s.season * 977 + 3); others.sort(() => r() - 0.5);
   s.sched = others.concat(others.slice(0, 3)); s.week = 0; s.results = []; s.recs = {}; s.po = null; for (const t of TEAMS) s.recs[t.id] = [0, 0]; }
@@ -328,7 +328,7 @@ function sfx(k, v = 1) {
 }
 /* ------------------------------------------------------------------ engine shared with Exotic Racer Club (renderer, HDR glow, textures, sky, merged boxes, cars) */
 const canvas = $('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !(window.matchMedia && matchMedia('(pointer: coarse)').matches), powerPreference: 'high-performance', stencil: false });
 renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const MAXANI = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -953,7 +953,8 @@ function buildArena(home, away) {
   scene.background = new THREE.Color('#05070c'); scene.fog = new THREE.Fog('#05070c', 60, 150);
   /* glossy hardwood */
   const wt = woodTex(home); wt.anisotropy = MAXANI; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(-1, -1); wt.offset.set(1, 1);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(34, 20), new THREE.MeshPhysicalMaterial({ map: wt, roughness: 0.36, metalness: 0, clearcoat: 0.85, clearcoatRoughness: 0.1, envMapIntensity: 0.9 }));
+  const coarseUI = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(34, 20), coarseUI ? new THREE.MeshStandardMaterial({ map: wt, roughness: 0.42, metalness: 0, envMapIntensity: 0.7 }) : new THREE.MeshPhysicalMaterial({ map: wt, roughness: 0.36, metalness: 0, clearcoat: 0.85, clearcoatRoughness: 0.1, envMapIntensity: 0.9 }));
   floor.rotation.x = -Math.PI / 2; floor.rotation.z = -Math.PI / 2; floor.receiveShadow = true; A.add(floor);
   const base = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshStandardMaterial({ color: '#15171d', roughness: 0.8 })); base.rotation.x = -Math.PI / 2; base.position.y = -0.01; base.receiveShadow = true; A.add(base);
   /* stands: lower bowl, club ring with a ribbon board, upper bowl */
@@ -990,7 +991,7 @@ function buildArena(home, away) {
   for (const z of [-15, -9, -3, 3, 9, 15]) for (const x of [-10, -6, -2, 2, 6, 10]) { M4b.makeTranslation(x, 26, z); li.setMatrixAt(k++, M4b); } li.count = k; A.add(li);
   /* lights */
   const hemi = new THREE.HemisphereLight('#dfe8ff', '#3a2a18', 0.75); A.add(hemi);
-  const key = new THREE.DirectionalLight('#fff4e6', 2.4); key.position.set(4, 30, 6); key.target.position.set(0, 0, 0); key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+  const key = new THREE.DirectionalLight('#fff4e6', 2.4); key.position.set(4, 30, 6); key.target.position.set(0, 0, 0); key.castShadow = true; key.shadow.mapSize.setScalar((window.matchMedia && matchMedia('(pointer: coarse)').matches) ? 1024 : 2048);
   const sc = key.shadow.camera; sc.left = -11; sc.right = 11; sc.top = 17; sc.bottom = -17; sc.near = 5; sc.far = 60; key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; A.add(key, key.target);
   const fill = new THREE.DirectionalLight('#cfe0ff', 0.7); fill.position.set(-8, 20, -10); A.add(fill);
   /* reflections: a little arena made of light panels, turned into an environment map */
@@ -1993,7 +1994,7 @@ window.__apexLive = 1; (window.__apexQ || []).splice(0).forEach((b) => { try { b
 requestAnimationFrame(frame);
 /* h27c: open straight onto the live arena home page - a dark cover hides everything until the arena has drawn */
 setTimeout(() => { const b = $('boot'); if (b) { b.style.opacity = 0; setTimeout(() => b.remove(), 550); } }, 700);
-window.__h27 = { G, K, SV, step, newGame, startGame, passTo, startShot, releaseShot, setHolder, inbound, endPeriod, toHome, cam, renderer, saveSnap, showScreen, openSeason, pauseGame };
+window.__h27 = { G, K, SV, post, step, newGame, startGame, passTo, startShot, releaseShot, setHolder, inbound, endPeriod, toHome, cam, renderer, saveSnap, showScreen, openSeason, pauseGame };
 QLOAD.then(() => { if (Q2 && G.mode === 'menu') menuArena(); });
 </script>
 </body>
