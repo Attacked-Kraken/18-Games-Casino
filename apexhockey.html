@@ -9,7 +9,7 @@
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
     font-family: ui-monospace, Menlo, Consolas, monospace; -webkit-user-select:none; user-select:none;
     -webkit-tap-highlight-color: transparent; touch-action: none; }
-  #c { position:fixed; inset:0; display:block; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9999;
     background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:10px;
     font-size:15px; padding:9px 14px; cursor:pointer; }
@@ -119,13 +119,13 @@ const COARSE = isTouch; // phones: cheaper renderer settings (owner reported lag
 const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:!COARSE });
 renderer.setPixelRatio(Math.min(devicePixelRatio||1, COARSE?1.5:2));
-renderer.setSize(innerWidth, innerHeight);
+renderer.setSize(innerWidth, innerHeight, false);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x04070c);
-scene.fog = new THREE.Fog(0x04070c, 260, 520);
+scene.background = new THREE.Color(0x0a1220);
+scene.fog = new THREE.Fog(0x0a1220, 200, 460);
 const camera = new THREE.PerspectiveCamera(57, innerWidth/innerHeight, 1, 1200);
-camera.position.set(0, 92, 142);
-const hemi = new THREE.HemisphereLight(0xdfefff, 0x223344, 0.95); scene.add(hemi);
+camera.position.set(0, 66, 106);
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x2a3c55, 1.3); scene.add(hemi);
 const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(40, 120, 60); scene.add(key);
 const fill = new THREE.DirectionalLight(0xbcd6ff, 0.35); fill.position.set(-60, 80, -40); scene.add(fill);
 if (COARSE) { renderer.shadowMap.enabled = false; } // phones: shadows fully off
@@ -185,7 +185,7 @@ function makeIceTexture(){
 
 /* ================= arena: tiered stands, scoreboard, light rigs ================= */
 {
-  const standMat = new THREE.MeshStandardMaterial({ color:0x151c28, roughness:.9 });
+  const standMat = new THREE.MeshStandardMaterial({ color:0x27334a, roughness:.9 });
   // 6 stepped rows on all four sides, rising behind the boards
   for(let side=0;side<4;side++){
     for(let k=0;k<6;k++){
@@ -218,12 +218,12 @@ function makeIceTexture(){
   cable.position.set(0,92,0); scene.add(cable);
   window.__drawScoreboard = function(){ drawScoreboard(scoreH, scoreA); }; drawScoreboard(0,0);
   // 4 light-rig trusses with fake volumetric cones aimed at the ice
-  const coneMat = new THREE.MeshBasicMaterial({ color:0xbfd9ff, transparent:true, opacity:.055,
+  const coneMat = new THREE.MeshBasicMaterial({ color:0xbfd9ff, transparent:true, opacity:.032,
     blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false, fog:false });
   [[80,55],[-80,55],[80,-55],[-80,-55]].forEach(([x,z])=>{
     const truss = new THREE.Mesh(new THREE.BoxGeometry(20,3,3), sbDark);
     truss.position.set(x,78,z); scene.add(truss);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(20,75,12,1,true), coneMat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(15,75,12,1,true), coneMat);
     cone.position.set(x,40.5,z); scene.add(cone);
   });
 }
@@ -974,7 +974,7 @@ function possessionWatch(){
 }
 
 /* ================= camera ================= */
-const camTgt=new THREE.Vector3(0,92,142), lookTgt=new THREE.Vector3();
+const camTgt=new THREE.Vector3(0,66,106), lookTgt=new THREE.Vector3();
 const CAMNAMES=['FULL','TEAM','CLOSE','PLAYER'];
 let camMode=0, lastControlledRef=null, camEase=0;
 function cycleView(){
@@ -991,7 +991,7 @@ function stepCamera(dt){
     camTgt.set(s.pos.x-fx*4.5, 2.2, s.pos.z-fz*4.5);
     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
   } else {                // FULL / TEAM: broadcast follow of the puck
-    const px=clamp(puck.pos.x*0.55,-64,64), h=camMode===1?64:92, d=camMode===1?100:142;
+    const px=clamp(puck.pos.x*0.55,-64,64), h=camMode===1?46:66, d=camMode===1?72:106;
     camTgt.set(px,h,d); lookTgt.set(px,0,0);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
@@ -1005,8 +1005,13 @@ function stepCamera(dt){
 /* ================= main loop ================= */
 let lastT=performance.now();
 let gameNow=0; // wall clock for AI drift/idle motion (advances every frame)
+let fitTickN = 0;
 function tick(now){
   requestAnimationFrame(tick);
+  if (++fitTickN >= 30) { fitTickN = 0;
+    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
+    if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
+  }
   let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
   Mus.setMode(state==='play'?'game':'menu');
   crowd.update(dt);
@@ -1064,7 +1069,23 @@ document.addEventListener('pointerdown',()=>Mus.ensure());
 Mus.setMuted(Mus.muted || localStorage.getItem('apex_muted')==='1');
 document.getElementById('againBtn').addEventListener('click',()=>location.reload());
 function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
-addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+/* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
+     rotation and the rink rendered into half the screen). CSS now owns the display
+     size; fitGame() keeps the buffer + camera matched, is called on every signal
+     iOS offers, settles late rotations, and a watchdog in tick() self-heals misses. */
+let fitW = 0, fitH = 0;
+function fitGame(){
+  const w = document.documentElement.clientWidth || innerWidth;
+  const h = document.documentElement.clientHeight || innerHeight;
+  if (!w || !h) return;
+  fitW = w; fitH = h;
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+addEventListener('resize', () => { fitGame(); setTimeout(fitGame, 150); setTimeout(fitGame, 450); });
+addEventListener('orientationchange', () => { setTimeout(fitGame, 60); setTimeout(fitGame, 300); setTimeout(fitGame, 700); });
+if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
+fitGame();
 document.addEventListener('visibilitychange',()=>{ paused=document.hidden;
   if(Mus.ctx){ try{ if(document.hidden) Mus.ctx.suspend(); else Mus.ctx.resume(); }catch(e){} } });
 setupFaceoffPositions(0,0); // spread skaters for the menu backdrop
