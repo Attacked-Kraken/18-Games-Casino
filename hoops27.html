@@ -1223,7 +1223,7 @@ await __apexYield();
 function castNext() {
   if (CAST.busy || !CAST.q.length) return; const [t, who] = CAST.q.shift(); CAST.busy = true;
   try { const u = new SpeechSynthesisUtterance(t), v = who === 'color' ? CAST.color : CAST.pbp; if (v) u.voice = v;
-    u.rate = who === 'color' ? 0.98 : 1.02; u.pitch = 1.0; u.volume = 1; if (v && v.lang) u.lang = v.lang; /* fbr1: one smooth normal-pitch male voice, slightly relaxed pace, whole sentences (no chopped words) */
+    u.rate = (who === 'color' ? 1.05 : 1.09) + (Math.random() * 0.06 - 0.03); u.pitch = 1.0 + (Math.random() * 0.08 - 0.04); u.volume = 1; if (v && v.lang) u.lang = v.lang; /* cast2 (owner, 2026-10-14): a touch faster, and every line gets a slightly different rate and pitch so the booth stops droning at one robotic tempo */
     u.onend = u.onerror = () => { CAST.busy = false; setTimeout(castNext, 140); }; speechSynthesis.speak(u); setTimeout(() => { if (CAST.busy) { CAST.busy = false; castNext(); } }, 9000); }
   catch (e) { CAST.busy = false; } }
 const castPick = (a) => a[Math.floor(Math.random() * a.length)];
@@ -1743,6 +1743,11 @@ function leadLine() { const d = G.score[0] - G.score[1]; if (d === 0) return `Al
 
 /* ---------- broadcast booth: play-by-play that knows the players and the game */
 function statLine(e) { const b = G.box[e.p.id]; return b; }
+/* cast2: real ordinals for ANY count - the old word list stopped at 'seventh' and called
+   every three after that his seventh (owner made 20 and heard 'seventh') - plus a
+   per-player made-three streak tracker for heat-check calls */
+function castOrd(n) { const v = n % 100; if (v >= 11 && v <= 13) return n + 'th'; switch (n % 10) { case 1: return n + 'st'; case 2: return n + 'nd'; case 3: return n + 'rd'; default: return n + 'th'; } }
+const castHeat = {};
 function castScore(e, pts, kind) { const b = G.box[e.p.id], nm = nameOf(e), tm = G.T[e.t].name, run = G.run[e.t], lead = G.score[e.t] - G.score[1 - e.t], late = G.q >= 4 && G.clock < 120;
   let l1;
   if (kind === 'dunk') l1 = castPick([`${nm} throws it down!`, `Oh! ${nm} with the slam!`, `Rim rocker by ${nm}!`, `${nm}, are you kidding me? What a dunk!`]);
@@ -1751,13 +1756,21 @@ function castScore(e, pts, kind) { const b = G.box[e.p.id], nm = nameOf(e), tm =
   else if (kind === 'layup') l1 = castPick([`${nm} gets to the rim and lays it in.`, `Easy two for ${nm}.`, `${nm} finishes at the rack.`, `Off the glass, ${nm}.`]);
   else l1 = castPick([`${nm} pulls up... good!`, `${nm} with the jumper. Money.`, `Mid-range for ${nm}, nothing but net.`, `${nm} hits from ${Math.round(hdist(e.pos, rimPos(e.t)) * 3.28)} feet.`]);
   say(l1, 'pbp', 2);
-  let l2 = null;
-  if (b.pts >= 10 && b.pts - pts < 10) l2 = `That's double figures for ${nm}, ${b.pts} points tonight.`;
-  else if (pts === 3 && b.tpm >= 3) l2 = `That's his ${['', '', '', 'third', 'fourth', 'fifth', 'sixth', 'seventh'][Math.min(7, b.tpm)] || b.tpm + 'th'} three of the night. He is feeling it.`;
-  else if (run >= 7) l2 = `That's a ${run} to nothing run for ${tm}. Somebody needs a stop.`;
-  else if (late && Math.abs(lead) <= 3) l2 = castPick([`Tight one down the stretch.`, `${lead === 0 ? 'Tie game' : tm + (lead > 0 ? ' in front' : ' still trail')}, ${clockStr(G.clock)} to go.`]);
-  else if (lead > 0 && lead - pts <= 0) l2 = `And ${tm} take the lead!`;
-  else if (Math.random() < 0.18) l2 = `${nm} has ${b.pts} points${b.ast ? ', ' + b.ast + ' assists' : ''}${b.reb ? ', ' + b.reb + ' boards' : ''}.`;
+  if (pts === 3) castHeat[e.p.id] = (castHeat[e.p.id] || 0) + 1; else castHeat[e.p.id] = 0;
+  const heat = castHeat[e.p.id] || 0, team3 = G.ents.filter((x) => x.t === e.t).reduce((a, x) => a + (G.box[x.p.id] ? G.box[x.p.id].tpm : 0), 0);
+  const A = [];
+  if (pts === 3 && heat >= 3) A.push(`${nm} has buried ${heat} straight from beyond the arc! He cannot miss right now!`);
+  else if (pts === 3 && heat === 2 && b.tpm >= 4) A.push(`Back-to-back threes for ${nm}! That's his ${castOrd(b.tpm)} of the night!`);
+  if (pts === 3 && b.tpm >= 2) A.push(`That's his ${castOrd(b.tpm)} three of the night. He's ${b.tpm} for ${b.tpa} from deep.`);
+  if (pts === 3 && b.tpa >= 5 && Math.round(100 * b.tpm / b.tpa) >= 50) A.push(`${nm} is shooting ${Math.round(100 * b.tpm / b.tpa)} percent from three tonight. Scorching.`);
+  if (pts === 3 && team3 >= 6) A.push(`That's the ${castOrd(team3)} three of the night for ${tm} as a team.`);
+  if (b.pts >= 20 && b.pts - pts < 20) A.push(`That's ${b.pts} points for ${nm}. A huge night.`);
+  else if (b.pts >= 10 && b.pts - pts < 10) A.push(`That's double figures for ${nm}, ${b.pts} points tonight.`);
+  let l2 = A.length ? castPick(A.slice(0, 3)) : null;
+  if (!l2 && run >= 7) l2 = `That's a ${run} to nothing run for ${tm}. Somebody needs a stop.`;
+  else if (!l2 && late && Math.abs(lead) <= 3) l2 = castPick([`Tight one down the stretch.`, `${lead === 0 ? 'Tie game' : tm + (lead > 0 ? ' in front' : ' still trail')}, ${clockStr(G.clock)} to go.`]);
+  else if (!l2 && lead > 0 && lead - pts <= 0) l2 = `And ${tm} take the lead!`;
+  else if (!l2 && Math.random() < 0.3) l2 = `${nm}: ${b.pts} points on ${b.fgm} of ${b.fga} shooting${b.tpa ? `, ${b.tpm} of ${b.tpa} from three` : ''}${b.reb ? `, ${b.reb} rebounds` : ''}${b.ast ? `, ${b.ast} assists` : ''}.`;
   if (l2) setTimeout(() => say(l2, 'color', 1), 400); }
 await __apexYield();
 function castBlock(b, s) { say(castPick([`Rejected! ${nameOf(b)} sends it back!`, `Get that outta here! ${nameOf(b)} with the block!`, `Blocked by ${nameOf(b)}!`]), 'pbp', 2); }
