@@ -481,15 +481,75 @@ textarea.vin { min-height: 74px; resize: vertical; }
       return { iv: b64e(iv), ct: b64e(ct) }; }); }
   function vDec(key, o) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(o.iv) }, key, b64d(o.ct)).then(function (pt) {
       return new TextDecoder().decode(pt); }); }
+
+  /* Vault files (v13, owner ask 2026-10-14): photos and files in the vault. Blobs are
+     AES-GCM encrypted with the vault key and kept in IndexedDB (localStorage is far too
+     small for photos); the note index only holds a small file reference. */
+  var VDB = null;
+  function vDb() { if (!VDB) VDB = new Promise(function (res, rej) { var rq = indexedDB.open('mxvault_files', 1);
+    rq.onupgradeneeded = function () { rq.result.createObjectStore('files'); };
+    rq.onsuccess = function () { res(rq.result); }; rq.onerror = function () { rej(rq.error); }; }); return VDB; }
+  function vFilePut(id, buf) { var iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, vKey, buf).then(function (ct) {
+      return vDb().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction('files', 'readwrite');
+        tx.objectStore('files').put({ iv: b64e(iv), ct: ct }, id);
+        tx.oncomplete = function () { res(); }; tx.onerror = function () { rej(tx.error); }; }); }); }); }
+  function vFileGet(id) { return vDb().then(function (db) { return new Promise(function (res, rej) {
+    var rq = db.transaction('files').objectStore('files').get(id);
+    rq.onsuccess = function () { var rec = rq.result; if (!rec) { rej(new Error('gone')); return; }
+      crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(rec.iv) }, vKey, rec.ct).then(res, rej); };
+    rq.onerror = function () { rej(rq.error); }; }); }); }
+  function vFileDel(id) { return vDb().then(function (db) { try { db.transaction('files', 'readwrite').objectStore('files').delete(id); } catch (e) {} }).catch(function () {}); }
+  function vFmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  var vBlobUrl = null, vFileEl = null;
+  function vFileUi() { if (vFileEl) return vFileEl;
+    var st = document.createElement('style'); st.textContent = '#vfile{position:fixed;inset:0;z-index:9750;background:rgba(0,6,3,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}'
+      + '#vfile[hidden]{display:none}#vfile img{max-width:94vw;max-height:70vh;border:1px solid rgba(57,255,90,.45);border-radius:10px}'
+      + '#vfile .vfname{color:#c9ffd6;font:700 14px ui-monospace,Menlo,monospace;text-align:center;word-break:break-all}'
+      + '#vfile .vfrow{display:flex;gap:10px}#vfile button,#vfile a{background:rgba(3,26,10,.92);color:#eaffef;border:1px solid rgba(57,255,90,.65);border-radius:10px;padding:12px 18px;font:700 12px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-decoration:none;cursor:pointer}';
+    document.head.appendChild(st);
+    var el = document.createElement('div'); el.id = 'vfile'; el.hidden = true;
+    el.innerHTML = '<div class="vfname" id="vfname"></div><img id="vfimg" alt="" hidden><div class="vfrow"><a id="vfopen" target="_blank" rel="noopener">OPEN / SAVE</a><button id="vfclose" type="button">CLOSE</button></div>';
+    document.body.appendChild(el);
+    document.getElementById('vfclose').addEventListener('click', function () { el.hidden = true; var im = document.getElementById('vfimg'); im.hidden = true; im.removeAttribute('src'); if (vBlobUrl) { URL.revokeObjectURL(vBlobUrl); vBlobUrl = null; } });
+    vFileEl = el; return el; }
+  function vShowFile(it) { if (!it || !it.file) return; var el = vFileUi();
+    document.getElementById('vfname').textContent = it.file.name + ' · ' + vFmtSize(it.file.size);
+    var im = document.getElementById('vfimg'); im.hidden = true;
+    var a = document.getElementById('vfopen'); a.removeAttribute('href'); a.textContent = 'DECRYPTING…';
+    el.hidden = false;
+    vFileGet(it.file.id).then(function (buf) { if (vBlobUrl) URL.revokeObjectURL(vBlobUrl);
+      vBlobUrl = URL.createObjectURL(new Blob([buf], { type: it.file.type || 'application/octet-stream' }));
+      a.href = vBlobUrl; a.textContent = 'OPEN / SAVE'; a.setAttribute('download', it.file.name);
+      if ((it.file.type || '').indexOf('image/') === 0) { im.src = vBlobUrl; im.hidden = false; } })
+    .catch(function () { a.textContent = 'FILE NOT FOUND ON THIS DEVICE'; }); }
+  var vFileInput = null;
+  function vPickFile() { if (!vKey) return;
+    if (!vFileInput) { vFileInput = document.createElement('input'); vFileInput.type = 'file';
+      vFileInput.accept = 'image/*,video/*,.pdf,.txt,.md,.zip,.doc,.docx'; vFileInput.style.display = 'none'; document.body.appendChild(vFileInput);
+      vFileInput.addEventListener('change', function () { var f = vFileInput.files && vFileInput.files[0]; vFileInput.value = '';
+        if (!f) return;
+        if (f.size > 26214400) { alert('That file is over 25 MB - too big for the vault.'); return; }
+        f.arrayBuffer().then(function (buf) { var id = 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
+          vFilePut(id, buf).then(function () { vItems.unshift({ t: f.name, b: '', file: { id: id, name: f.name, type: f.type || '', size: f.size } });
+            vSave(); vRender(); if (window.__v3 && window.__v3.refresh) window.__v3.refresh(); })
+          .catch(function () { alert('Could not seal that file into the vault.'); }); }); }); }
+    vFileInput.click(); }
+  (function () { var b = v$('vAdd'); if (!b || document.getElementById('vFileBtn')) return;
+    var fb = document.createElement('button'); fb.id = 'vFileBtn'; fb.type = 'button'; fb.textContent = '+ FILE / PHOTO'; fb.className = b.className;
+    fb.style.marginTop = '8px'; fb.style.width = '100%';
+    b.parentNode.insertBefore(fb, b.nextSibling);
+    fb.addEventListener('click', function () { vPickFile(); }); })();
   function vSave() { var rec = vLoad(); if (!rec || !vKey) return;
     vEnc(vKey, JSON.stringify(vItems)).then(function (data) { rec.data = data; try { localStorage.setItem(VKEY, JSON.stringify(rec)); } catch (e) {} }); }
   function vRender() { var list = v$('vList'); if (!list) return; list.innerHTML = '';
     if (!vItems.length) { var e = document.createElement('div'); e.className = 'vempty'; e.textContent = 'The vault is empty.'; list.appendChild(e); return; }
     vItems.forEach(function (it, idx) { var d = document.createElement('div'); d.className = 'vitem';
       var del = document.createElement('button'); del.className = 'vdel'; del.type = 'button'; del.textContent = '\u2715';
-      del.addEventListener('click', function () { vItems.splice(idx, 1); vSave(); vRender(); });
+      del.addEventListener('click', function () { var dead = vItems.splice(idx, 1)[0]; if (dead && dead.file) vFileDel(dead.file.id); vSave(); vRender(); });
       var h = document.createElement('h4'); h.textContent = it.t || '(untitled)';
-      var p = document.createElement('p'); p.textContent = it.b || '';
+      var p = document.createElement('p'); p.textContent = it.file ? ('📎 ' + it.file.name + ' · ' + vFmtSize(it.file.size) + ' - tap to open') : (it.b || '');
+      if (it.file) { d.style.cursor = 'pointer'; d.addEventListener('click', function (ev) { if (ev.target !== del) vShowFile(it); }); }
       d.appendChild(del); d.appendChild(h); d.appendChild(p); list.appendChild(d); }); }
   function vShowOnly(id) { ['vSetup', 'vLock', 'vMain'].forEach(function (x) { var el = v$(x); if (el) el.hidden = x !== id; }); }
   function vaultShow() { vKey = null; vItems = [];
@@ -601,10 +661,10 @@ textarea.vin { min-height: 74px; resize: vertical; }
         + '<button id="v3add" type="button">+ ADD</button><button id="v3list" type="button">LIST</button><button id="v3lock" type="button">LOCK</button></div>'
         + '<div id="v3hint">DRAG TO LOOK AROUND &middot; TAP A GLOWING BOX</div>'
         + '<div id="v3note" hidden><h4 id="v3nt"></h4><p id="v3nb"></p><div class="v3row">'
-        + '<button id="v3ndel" type="button">DELETE</button><button id="v3nclose" type="button">CLOSE</button></div></div>'
+        + '<button id="v3nopen" type="button" hidden>OPEN</button><button id="v3ndel" type="button">DELETE</button><button id="v3nclose" type="button">CLOSE</button></div></div>'
         + '<div id="v3form" hidden><input id="v3ft" type="text" placeholder="Title">'
         + '<textarea id="v3fb" placeholder="The secret itself..."></textarea><div class="v3row">'
-        + '<button id="v3fsave" type="button">SAVE</button><button id="v3fcancel" type="button">CANCEL</button></div></div>';
+        + '<button id="v3fsave" type="button">SAVE</button><button id="v3fcancel" type="button">CANCEL</button></div><div class="v3row"><button id="v3ffile" type="button">+ FILE / PHOTO</button></div></div>';
       document.body.appendChild(el);
       v3el = el; v3cv = document.getElementById('v3cv');
       v3note = document.getElementById('v3note'); v3nt = document.getElementById('v3nt'); v3nb = document.getElementById('v3nb');
@@ -623,9 +683,11 @@ textarea.vin { min-height: 74px; resize: vertical; }
         v3Hide(); if (vaultEl) vaultEl.hidden = false;
       });
       document.getElementById('v3lock').addEventListener('click', function () { v3Lock(); });
+      document.getElementById('v3nopen').addEventListener('click', function () { if (openIdx >= 0 && vItems[openIdx] && vItems[openIdx].file) vShowFile(vItems[openIdx]); });
+      var v3ff = document.getElementById('v3ffile'); if (v3ff) v3ff.addEventListener('click', function () { v3form.hidden = true; vPickFile(); });
       document.getElementById('v3ndel').addEventListener('click', function () {
         if (openIdx < 0) return;
-        vItems.splice(openIdx, 1); vSave(); closeNote(); refreshSlots();
+        var dead3 = vItems.splice(openIdx, 1)[0]; if (dead3 && dead3.file) vFileDel(dead3.file.id); vSave(); closeNote(); refreshSlots();
       });
       document.getElementById('v3nclose').addEventListener('click', function () { closeNote(); });
       v3pointer();
@@ -634,6 +696,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
         taps: function () { return tapCount; },
         frames: function () { return frameCount; },
         snap: function () { if (!built) return false; try { v3size(); renderer.render(scene, camera); return true; } catch (e) { return 'err:' + String(e).slice(0, 60); } },
+        refresh: function () { try { refreshSlots(); } catch (e) {} },
         count: function () { if (!built) return -1; var n = 0, i; for (i = 0; i < slots.length; i++) if (slots[i].filled) n++; return n; },
         caminfo: function () { return camera ? { fov: camera.fov, aspect: camera.aspect, pos: [camera.position.x.toFixed(2), camera.position.y.toFixed(2), camera.position.z.toFixed(2)], fog: [scene.fog.near, scene.fog.far], el: [v3el.clientWidth, v3el.clientHeight], pm0: camera.projectionMatrix.elements[0].toFixed(4), mwi: Array.prototype.slice.call(camera.matrixWorldInverse.elements, 12, 15).map(function(n){return n.toFixed(2);}) } : null; },
         project: function (i) {
@@ -711,7 +774,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
       for (var i = 0; i < slots.length; i++) {
         var s = slots[i], it = vItems[i];
         s.filled = !!it;
-        s.light.color.set(it ? 0x2eff7a : 0x0a2a16);
+        s.light.color.set(it ? (it.file ? 0xffb340 : 0x2eff7a) : 0x0a2a16);
         s.drawer.material.color.set(it ? 0x232d33 : 0x151b1f);
         if (it) pickMeshes.push(s.drawer);
       }
@@ -751,7 +814,8 @@ textarea.vin { min-height: 74px; resize: vertical; }
       if (openIdx !== -1 && openIdx !== i) slots[openIdx].dir = -1;
       openIdx = i; slots[i].dir = 1;
       var it = vItems[i] || { t: '(untitled)', b: '' };
-      v3nt.textContent = it.t || '(untitled)'; v3nb.textContent = it.b || '';
+      v3nt.textContent = it.t || '(untitled)'; v3nb.textContent = it.file ? ('📎 ' + it.file.name + ' · ' + vFmtSize(it.file.size)) : (it.b || '');
+      var v3no = document.getElementById('v3nopen'); if (v3no) v3no.hidden = !it.file;
       v3note.hidden = false;
     }
 
