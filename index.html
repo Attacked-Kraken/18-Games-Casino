@@ -70,6 +70,12 @@ body.walk #hud { display: block; }
 #pInfo { position: fixed; z-index: 6; left: calc(50% + 150px); bottom: calc(34px + env(safe-area-inset-bottom)); width: 40px; height: 40px; border-radius: 50%; border: 1px solid #b08d57; background: rgba(12,9,8,.9); color: #e8d3a0; font: italic 600 20px Georgia,serif; display: none; cursor: pointer; }
 #pInfo.on { display: block; }
 #pFav { position: fixed; z-index: 6; display: none; left: calc(50% + 196px); bottom: calc(34px + env(safe-area-inset-bottom)); }
+/* hoops1: round basketball button, bottom-right of the floor (owner's marked spot) */
+#bHoops { position: fixed; z-index: 6; right: 14px; bottom: calc(58px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%;
+  border: 1px solid #e8d3a0; background: radial-gradient(circle at 35% 28%, #3a1c66, #170a30 72%); color: #e8d3a0; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; box-shadow: 0 10px 26px rgba(0,0,0,.6); padding: 0; }
+#bHoops svg { width: 34px; height: 34px; display: block; }
+#bHoops span { font: 500 8.5px var(--sans); letter-spacing: .18em; text-transform: uppercase; margin-top: 2px; }
 @media (max-width: 480px) { #pFav { left: auto; right: 10px; bottom: calc(144px + env(safe-area-inset-bottom)); } }
 @media (max-width: 480px) { #pInfo { left: auto; right: 10px; bottom: calc(96px + env(safe-area-inset-bottom)); } }
 #prompt.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
@@ -114,6 +120,7 @@ html.boot #intro { display: flex; } #intro.out { opacity: 0; pointer-events: non
   <div id="hint"></div>
   <button id="prompt" type="button"></button>
 <button id="pInfo" type="button" aria-label="How to play">i</button>
+<button id="bHoops" type="button" aria-label="Play 27Hoops basketball"><svg viewBox="0 0 512 512" aria-hidden="true"><circle cx="256" cy="256" r="230" fill="#e8720c"/><g fill="none" stroke="#2b1408" stroke-width="26"><circle cx="256" cy="256" r="230"/><path d="M26 256h460M256 26v460"/><path d="M110 92c110 96 110 232 0 328M402 92c-110 96-110 232 0 328"/></g></svg><span>Hoops</span></button>
 </div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Games"><div class="box"><h2>Games on the floor <button id="pX" type="button">Close ✕</button></h2><div id="pList"></div></div></div>
 <div class="w">
@@ -143,7 +150,8 @@ html.boot #intro { display: flex; } #intro.out { opacity: 0; pointer-events: non
     {"id": "pharaohsgold", "file": "pharaohsgold.html", "title": "Pharaoh's Gold", "tagline": "Themed 3D video slot with free spins and progressive jackpots. Fun chips only.", "rating": "18+", "icon": "pharaohsgold-icon.png", "accent": "#b8862e", "category": "slots", "multiplayer": false, "new": true},
     { id: 'gildedreels', file: 'gildedreels.html', title: 'Gilded Reels', tagline: '3D five-reel slot with a pull lever. Fun chips only, never money.', rating: '18+', icon: 'gildedreels-icon.png', accent: '#ff3aa0', category: 'slots', multiplayer: true },
     { id: 'velvet21', file: 'velvet21.html', title: 'Velvet 21', tagline: 'Wide 3D blackjack table, 6 seats. Fun chips only, never money.', rating: '18+', icon: 'velvet21-icon.png', accent: '#ff2a55', category: 'cards', multiplayer: true },
-    { id: 'steelfront', file: 'steelfront.html', title: 'Steelfront', tagline: '3D first-person tactical shooter. Team battles, operations and a gun range.', rating: '13+', icon: 'steelfront-icon.png', accent: '#2ad8ff', category: 'action', multiplayer: false }
+    { id: 'steelfront', file: 'steelfront.html', title: 'Steelfront', tagline: '3D first-person tactical shooter. Team battles, operations and a gun range.', rating: '13+', icon: 'steelfront-icon.png', accent: '#2ad8ff', category: 'action', multiplayer: false },
+    { id: 'hoops27', file: 'hoops27.html', title: '27Hoops', tagline: '3D 5-on-5 basketball in a broadcast arena. Real 3D players, our own made-up league.', rating: '13+', icon: 'hoops27-icon.svg', accent: '#ff7a1a', category: 'action', multiplayer: false, new: true }
   ];
   var CATS = ['slots', 'tables', 'cards', 'instant', 'action'];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
@@ -227,6 +235,7 @@ html.boot #intro { display: flex; } #intro.out { opacity: 0; pointer-events: non
   }).catch(function () {}).then(function () { loaded = true; render(); deep(); fire(); });
 })();
 </script>
+<script>document.getElementById('bHoops').addEventListener('click', function () { if (window.Lobby) Lobby.open('hoops27'); else location.href = 'hoops27.html'; });</script>
 <script src="rules.js"></script>
 <script src="wallet.js"></script>
 <script src="engage.js"></script>
