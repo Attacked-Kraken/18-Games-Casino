@@ -122,7 +122,7 @@ html.boot #matrix { display: flex; }
 #worm2[hidden] { display: none; }
 #worm2Cv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
 #worm2Door { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: 120px; height: 120px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-.worm2hint { position: relative; z-index: 1; margin-top: 160px; color: #d97777; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
+.worm2hint { position: relative; z-index: 1; margin-top: 160px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
 #vault { position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.94); }
 #vault[hidden] { display: none; }
 .vpanel { width: min(350px, 90vw); max-height: 86%; overflow-y: auto; background: rgba(2,14,6,.97); border: 1px solid rgba(57,255,90,.5); border-radius: 16px; padding: 20px 18px; box-shadow: 0 0 34px rgba(57,255,90,.18); color: #d8ffe2; font-family: ui-monospace, Menlo, monospace; }
@@ -413,16 +413,16 @@ textarea.vin { min-height: 74px; resize: vertical; }
         var n = Math.max(6, Math.floor(6.283 * g.r / (g.fs * 1.05)));
         ctx.font = '600 ' + g.fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
         for (var j = 0; j < n; j++) { var ang = g.a + (j / n) * 6.283;
-          ctx.fillStyle = (j % 9 === 0) ? 'rgba(255,215,215,.95)' : 'rgba(225,60,70,.5)';
+          ctx.fillStyle = (j % 9 === 0) ? 'rgba(208,255,222,.95)' : 'rgba(46,220,95,.55)';
           ctx.fillText(Math.random() < .5 ? '0' : '1', CX + Math.cos(ang) * g.r, CY + Math.sin(ang) * g.r * .92); } }
       var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
-      grd.addColorStop(0, 'rgba(255,150,150,.20)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+      grd.addColorStop(0, 'rgba(160,255,190,.22)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
       var lit3T = window.__door3LitTarget ? window.__door3LitTarget() : 0;
       var lit3 = (window.__door3Lit || 0) + (lit3T - (window.__door3Lit || 0)) * .3;
       window.__door3Lit = lit3;
       ctx.font = '20px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(255,96,106,' + (.13 + .05 * Math.sin(ts / 900) + .80 * lit3).toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(196,255,210,' + (.10 + .05 * Math.sin(ts / 900) + .80 * lit3).toFixed(3) + ')';
       ctx.fillText('0', CX, CY + 7); ctx.textAlign = 'left';
     }
     requestAnimationFrame(frame);
@@ -514,7 +514,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
       var lit2 = (window.__door2Lit || 0) + (lit2T - (window.__door2Lit || 0)) * .3;
       window.__door2Lit = lit2;
       ctx.font = '13px ui-monospace, Menlo, monospace';
-      ctx.fillStyle = 'rgba(255,96,106,' + (.13 + .05 * Math.sin(ts / 900) + .80 * lit2).toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(196,255,210,' + (.10 + .05 * Math.sin(ts / 900) + .80 * lit2).toFixed(3) + ')';
       ctx.fillText('0', 26, H - 22);
     }
     requestAnimationFrame(frame);
@@ -587,8 +587,8 @@ textarea.vin { min-height: 74px; resize: vertical; }
       window.__doorLit = lit;
       var idle = .05 + .03 * Math.sin(ts / 900);
       ctx.font = '13px ' + MONO;
-      ctx.fillStyle = 'rgba(255,70,80,' + (.06 + .25 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ - 9);
-      ctx.fillStyle = 'rgba(255,96,106,' + (.10 + idle + .80 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ + 4);
+      ctx.fillStyle = 'rgba(46,220,95,' + (.10 + .30 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ - 9);
+      ctx.fillStyle = 'rgba(196,255,210,' + (idle + .85 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ + 4);
     }
     requestAnimationFrame(frame);
   })();
