@@ -108,7 +108,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg { font: 600 25px/1.1 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; letter-spacing: .05em; color: #39ff5a; text-shadow: 0 0 14px rgba(57,255,90,.6), 0 0 3px rgba(57,255,90,.9); }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
-#mxDoor { position: absolute; top: 0; right: 0; z-index: 3; width: 76px; height: 76px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#mxDoor { position: absolute; top: calc(54% - 42px); right: 0; z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
 #wormCv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
@@ -117,6 +117,27 @@ html.boot #matrix { display: flex; }
 .wormtab { cursor: pointer; font: 600 17px ui-monospace, Menlo, monospace; letter-spacing: .04em; color: #d8ffe2; background: rgba(3,20,9,.88); border: 1px solid rgba(57,255,90,.65); border-radius: 999px; padding: 15px 18px; box-shadow: 0 0 24px rgba(57,255,90,.25), 0 0 12px rgba(57,255,90,.15) inset; }
 .wormtab em { font-style: normal; margin-right: 9px; }
 .wormhint { color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
+#wormDoor2 { position: absolute; left: 0; bottom: 0; z-index: 2; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#worm2 { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
+#worm2[hidden] { display: none; }
+#worm2Cv { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+#worm2Door { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 2; width: 120px; height: 120px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.worm2hint { position: relative; z-index: 1; margin-top: 160px; color: #d97777; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .26em; opacity: .85; }
+#vault { position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.94); }
+#vault[hidden] { display: none; }
+.vpanel { width: min(350px, 90vw); max-height: 86%; overflow-y: auto; background: rgba(2,14,6,.97); border: 1px solid rgba(57,255,90,.5); border-radius: 16px; padding: 20px 18px; box-shadow: 0 0 34px rgba(57,255,90,.18); color: #d8ffe2; font-family: ui-monospace, Menlo, monospace; }
+.vtitle { text-align: center; font-size: 17px; font-weight: 700; letter-spacing: .34em; margin-bottom: 12px; color: #9dffb4; }
+.vnote { font-size: 11px; line-height: 1.55; color: #7fc98d; letter-spacing: .02em; }
+.vin { width: 100%; box-sizing: border-box; margin: 7px 0; padding: 12px; border-radius: 10px; border: 1px solid rgba(57,255,90,.45); background: #010a03; color: #eaffef; font: 15px ui-monospace, Menlo, monospace; }
+textarea.vin { min-height: 74px; resize: vertical; }
+.vbtn { width: 100%; margin: 7px 0; padding: 13px; border-radius: 999px; border: 1px solid rgba(57,255,90,.65); background: rgba(3,20,9,.9); color: #d8ffe2; font: 600 14px ui-monospace, Menlo, monospace; letter-spacing: .05em; cursor: pointer; }
+.vbtn.ghost { border-color: rgba(120,140,125,.4); color: #9db8a4; }
+.verr { min-height: 15px; color: #ff7b84; font-size: 12px; text-align: center; }
+.vitem { border: 1px solid rgba(57,255,90,.28); border-radius: 10px; padding: 10px 12px; margin: 8px 0; background: rgba(4,24,10,.6); }
+.vitem h4 { margin: 0 22px 5px 0; font-size: 13px; color: #c9ffd6; }
+.vitem p { margin: 0; font-size: 12.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; color: #a9dcb4; }
+.vdel { float: right; border: 0; background: transparent; color: #ff7b84; font-size: 15px; cursor: pointer; padding: 0; }
+.vempty { text-align: center; color: #6f9a78; font-size: 12px; padding: 10px 0; }
 #matrix .foot { color: #57d977; font: 500 11px ui-monospace, Menlo, monospace; letter-spacing: .2em; text-align: center; margin-top: auto; }
 #matrix .foot small { font-size: 10px; opacity: .75; }
 
@@ -124,7 +145,7 @@ html.boot #matrix { display: flex; }
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button></div><div class="wormhint">TAP OUTSIDE TO GO BACK</div></div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button></div><div class="wormhint">TAP OUTSIDE TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP OUTSIDE TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -329,6 +350,137 @@ html.boot #matrix { display: flex; }
     else wF.addEventListener('click', enterFloor); }
   var wH = document.getElementById('wHoops');
   if (wH) wH.addEventListener('click', openHoops);
+  /* ==== v7: the deeper chain - wormhole 2 and the encrypted vault ====
+     The first wormhole hides a second door: a faint red "0" at its
+     bottom-left, answering to the same hold-then-tap. It opens a second
+     wormhole, red-shifted, whose only secret is a "0" at its heart -
+     hold-then-tap that and the vault asks for its PIN. The vault is
+     real encryption: AES-GCM, key stretched from the PIN by PBKDF2,
+     notes sealed on this device only, the PIN itself never stored. */
+  function holdTap(el, open) {
+    var armT = 0, press = false, holdTimer = null, downT = 0,
+        pressArmed = false, pressHeld = false, heldLatch = false, openedAt = 0;
+    var api = { state: function () { return (press || performance.now() < armT) ? 1 : 0; } };
+    el.addEventListener('pointerdown', function (ev) { ev.preventDefault(); ev.stopPropagation();
+      press = true; pressHeld = false; pressArmed = performance.now() < armT; downT = performance.now();
+      holdTimer = setTimeout(function () { pressHeld = true; armT = performance.now() + 2500;
+        try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {} }, 550); });
+    var rel = function () { if (!press) return; press = false;
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      var dur = performance.now() - downT;
+      if (pressHeld) { heldLatch = true; armT = performance.now() + 2500; }
+      else if (pressArmed && dur < 400) { openedAt = performance.now(); armT = 0; open(); } };
+    el.addEventListener('pointerup', rel); el.addEventListener('pointercancel', rel);
+    el.addEventListener('pointerleave', rel);
+    el.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+    el.addEventListener('click', function (ev) { ev.stopPropagation();
+      if (heldLatch) { heldLatch = false; return; }
+      if (performance.now() < armT && performance.now() - openedAt > 600) { openedAt = performance.now(); armT = 0; open(); } });
+    return api;
+  }
+  var worm2 = document.getElementById('worm2');
+  var vaultEl = document.getElementById('vault');
+  function openWorm2() { if (worm) worm.hidden = true; if (worm2) { worm2.hidden = false; startWorm2(); } }
+  function openVault() { if (worm2) worm2.hidden = true; if (vaultEl) { vaultEl.hidden = false; vaultShow(); } }
+  var d2api = null, d3api = null;
+  var d2el = document.getElementById('wormDoor2');
+  if (d2el) d2api = holdTap(d2el, openWorm2);
+  window.__door2LitTarget = function () { return d2api ? d2api.state() : 0; };
+  var d3el = document.getElementById('worm2Door');
+  if (d3el) d3api = holdTap(d3el, openVault);
+  window.__door3LitTarget = function () { return d3api ? d3api.state() : 0; };
+  if (worm2) worm2.addEventListener('click', function (ev) {
+    if (ev.target === worm2 || ev.target.id === 'worm2Cv') { worm2.hidden = true; if (worm) { worm.hidden = false; startWorm(); } } });
+  var worm2Started = false;
+  function startWorm2() {
+    if (worm2Started) return; worm2Started = true;
+    var cv = document.getElementById('worm2Cv'); if (!cv) { worm2Started = false; return; }
+    var ctx = cv.getContext('2d'); if (!ctx) { worm2Started = false; return; }
+    var W = 0, H = 0, CX = 0, CY = 0, rings = [];
+    function size() { W = cv.width = cv.clientWidth || innerWidth; H = cv.height = cv.clientHeight || innerHeight;
+      CX = W / 2; CY = H / 2; rings = [];
+      var maxR = Math.sqrt(CX * CX + CY * CY);
+      for (var r = 48; r < maxR; r += 24) rings.push({ r: r, a: Math.random() * 6.28, sp: .3 + Math.random() * .55, fs: 8 + (r / maxR) * 9 });
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+    size(); addEventListener('resize', size);
+    var last = 0;
+    function frame(ts) {
+      if (!worm2 || worm2.hidden || !document.body || !document.body.contains(cv)) { worm2Started = false; return; }
+      requestAnimationFrame(frame);
+      if (ts - last < 50) return; last = ts;
+      ctx.fillStyle = 'rgba(0,0,0,.30)'; ctx.fillRect(0, 0, W, H);
+      for (var i = 0; i < rings.length; i++) { var g = rings[i]; g.a -= g.sp * .045;
+        var n = Math.max(6, Math.floor(6.283 * g.r / (g.fs * 1.05)));
+        ctx.font = '600 ' + g.fs.toFixed(1) + 'px ui-monospace, Menlo, monospace';
+        for (var j = 0; j < n; j++) { var ang = g.a + (j / n) * 6.283;
+          ctx.fillStyle = (j % 9 === 0) ? 'rgba(255,215,215,.95)' : 'rgba(225,60,70,.5)';
+          ctx.fillText(Math.random() < .5 ? '0' : '1', CX + Math.cos(ang) * g.r, CY + Math.sin(ang) * g.r * .92); } }
+      var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
+      grd.addColorStop(0, 'rgba(255,150,150,.20)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
+      var lit3T = window.__door3LitTarget ? window.__door3LitTarget() : 0;
+      var lit3 = (window.__door3Lit || 0) + (lit3T - (window.__door3Lit || 0)) * .3;
+      window.__door3Lit = lit3;
+      ctx.font = '20px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,96,106,' + (.13 + .05 * Math.sin(ts / 900) + .80 * lit3).toFixed(3) + ')';
+      ctx.fillText('0', CX, CY + 7); ctx.textAlign = 'left';
+    }
+    requestAnimationFrame(frame);
+  }
+  /* ---- the vault: AES-GCM sealed notes, stored on this device only ---- */
+  var VKEY = 'mxvault_v1', vKey = null, vItems = [];
+  function v$(id) { return document.getElementById(id); }
+  function b64e(buf) { var s = ''; var b = new Uint8Array(buf); for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s); }
+  function b64d(s) { var bin = atob(s); var b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  function vLoad() { try { return JSON.parse(localStorage.getItem(VKEY) || 'null'); } catch (e) { return null; } }
+  function vDerive(pin, salt) { var enc = new TextEncoder();
+    return crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 150000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); }); }
+  function vEnc(key, text) { var iv = crypto.getRandomValues(new Uint8Array(12));
+    return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(text)).then(function (ct) {
+      return { iv: b64e(iv), ct: b64e(ct) }; }); }
+  function vDec(key, o) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64d(o.iv) }, key, b64d(o.ct)).then(function (pt) {
+      return new TextDecoder().decode(pt); }); }
+  function vSave() { var rec = vLoad(); if (!rec || !vKey) return;
+    vEnc(vKey, JSON.stringify(vItems)).then(function (data) { rec.data = data; try { localStorage.setItem(VKEY, JSON.stringify(rec)); } catch (e) {} }); }
+  function vRender() { var list = v$('vList'); if (!list) return; list.innerHTML = '';
+    if (!vItems.length) { var e = document.createElement('div'); e.className = 'vempty'; e.textContent = 'The vault is empty.'; list.appendChild(e); return; }
+    vItems.forEach(function (it, idx) { var d = document.createElement('div'); d.className = 'vitem';
+      var del = document.createElement('button'); del.className = 'vdel'; del.type = 'button'; del.textContent = '\u2715';
+      del.addEventListener('click', function () { vItems.splice(idx, 1); vSave(); vRender(); });
+      var h = document.createElement('h4'); h.textContent = it.t || '(untitled)';
+      var p = document.createElement('p'); p.textContent = it.b || '';
+      d.appendChild(del); d.appendChild(h); d.appendChild(p); list.appendChild(d); }); }
+  function vShowOnly(id) { ['vSetup', 'vLock', 'vMain'].forEach(function (x) { var el = v$(x); if (el) el.hidden = x !== id; }); }
+  function vaultShow() { vKey = null; vItems = [];
+    ['vPin1', 'vPin2', 'vPin', 'vTitle', 'vBody'].forEach(function (x) { var el = v$(x); if (el) el.value = ''; });
+    ['vErr1', 'vErr2'].forEach(function (x) { var el = v$(x); if (el) el.textContent = ''; });
+    vShowOnly(vLoad() ? 'vLock' : 'vSetup'); }
+  function vaultEnter(key, items) { vKey = key; vItems = items || []; vShowOnly('vMain'); vRender(); }
+  var vCreateBtn = v$('vCreate');
+  if (vCreateBtn) vCreateBtn.addEventListener('click', function () { var p1 = v$('vPin1').value, p2 = v$('vPin2').value;
+    if (p1.length < 4) { v$('vErr1').textContent = 'Use at least 4 characters.'; return; }
+    if (p1 !== p2) { v$('vErr1').textContent = 'The two PINs do not match.'; return; }
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    vDerive(p1, salt).then(function (key) {
+      return vEnc(key, 'VAULT-OK').then(function (ver) { return vEnc(key, '[]').then(function (data) {
+        try { localStorage.setItem(VKEY, JSON.stringify({ salt: b64e(salt), ver: ver, data: data })); } catch (e) {}
+        vaultEnter(key, []); }); }); }).catch(function () { v$('vErr1').textContent = 'Something went wrong sealing the vault.'; }); });
+  var vUnlockBtn = v$('vUnlock');
+  if (vUnlockBtn) vUnlockBtn.addEventListener('click', function () { var rec = vLoad(); if (!rec) { vaultShow(); return; }
+    var pin = v$('vPin').value;
+    vDerive(pin, b64d(rec.salt)).then(function (key) {
+      return vDec(key, rec.ver).then(function (chk) { if (chk !== 'VAULT-OK') throw new Error('bad');
+        return vDec(key, rec.data).then(function (json) { vaultEnter(key, JSON.parse(json || '[]')); }); });
+    }).catch(function () { v$('vErr2').textContent = 'Wrong PIN.'; var el = v$('vPin'); if (el) el.value = ''; }); });
+  var vAddBtn = v$('vAdd');
+  if (vAddBtn) vAddBtn.addEventListener('click', function () { var t = v$('vTitle').value.trim(), b = v$('vBody').value;
+    if (!t && !b.trim()) return;
+    vItems.unshift({ t: t, b: b }); v$('vTitle').value = ''; v$('vBody').value = ''; vSave(); vRender(); });
+  var vLockBtn = v$('vLockBtn');
+  if (vLockBtn) vLockBtn.addEventListener('click', function () { vaultShow(); });
+  var vCloseBtn = v$('vClose');
+  if (vCloseBtn) vCloseBtn.addEventListener('click', function () { vKey = null; vItems = []; if (vaultEl) vaultEl.hidden = true; });
   /* The wormhole vortex: concentric rings of binary digits swirling into
      the center, inner rings faster. Runs only while the wormhole is open. */
   var wormStarted = false;
@@ -358,6 +510,12 @@ html.boot #matrix { display: flex; }
       var grd = ctx.createRadialGradient(CX, CY, 2, CX, CY, 64);
       grd.addColorStop(0, 'rgba(160,255,190,.22)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grd; ctx.fillRect(CX - 64, CY - 64, 128, 128);
+      var lit2T = window.__door2LitTarget ? window.__door2LitTarget() : 0;
+      var lit2 = (window.__door2Lit || 0) + (lit2T - (window.__door2Lit || 0)) * .3;
+      window.__door2Lit = lit2;
+      ctx.font = '13px ui-monospace, Menlo, monospace';
+      ctx.fillStyle = 'rgba(255,96,106,' + (.13 + .05 * Math.sin(ts / 900) + .80 * lit2).toFixed(3) + ')';
+      ctx.fillText('0', 26, H - 22);
     }
     requestAnimationFrame(frame);
   }
@@ -428,9 +586,9 @@ html.boot #matrix { display: flex; }
       var lit = (window.__doorLit || 0) + (litT - (window.__doorLit || 0)) * .3;
       window.__doorLit = lit;
       var idle = .05 + .03 * Math.sin(ts / 900);
-      ctx.font = '12px ' + MONO;
-      ctx.fillStyle = 'rgba(46,220,95,' + (.10 + .30 * lit).toFixed(3) + ')'; ctx.fillText('1', W - 25, 20);
-      ctx.fillStyle = 'rgba(196,255,210,' + (idle + .85 * lit).toFixed(3) + ')'; ctx.fillText('1', W - 25, 33);
+      ctx.font = '13px ' + MONO;
+      ctx.fillStyle = 'rgba(255,70,80,' + (.06 + .25 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ - 9);
+      ctx.fillStyle = 'rgba(255,96,106,' + (.10 + idle + .80 * lit).toFixed(3) + ')'; ctx.fillText('0', W - 26, HZ + 4);
     }
     requestAnimationFrame(frame);
   })();
