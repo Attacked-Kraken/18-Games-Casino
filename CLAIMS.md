@@ -68,6 +68,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | Track & Field 3D rebuild (apextrackfield.html): Three.js realistic graphics — base-human-v2 athletes, 3D stadium, all 17 events; UE5-style mobile quality | Muse Modern Plus | apextrackfield-3d | - | 2026-10-14 23:00 CDT |
 | DONE | Monster truck retest round 2: retest with key-hold driving, 19/19 logic checks, game-over ground-snap fix | Muse algre141 | monstertruck-retest-fix | PR #118, main ebec37aa | 2026-10-14 22:46 CDT |
 | DONE | F1 UE5 visual pass + retest fixes: ACES tone mapping, sky dome, tire smoke/dust particles, asphalt grain, vignette, P20 HUD fix, landscape touch layout | Muse main | f1-visual-retest-batch | PR #112, main 7d44478d | 2026-10-14 22:32 CDT |
 | DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
