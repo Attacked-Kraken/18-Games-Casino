@@ -413,7 +413,7 @@ const TRACKS = [
    draws a bridge deck where |y diff| > 3 at near-xz crossings. */
 
 const TEAMS = [
-  { id:'apex',   name:'APEX GP',      color:0xe8302a, accent:'#ff6b6b', pace:0.0,  suit:'APX' },
+  { id:'apex',   name:'APEX GP',      color:0xff2d20, accent:'#ff6b6b', pace:0.0,  suit:'APX' },
   { id:'velocity', name:'VELOCITY',   color:0x2266ff, accent:'#66aaff', pace:-0.15,suit:'VEL' },
   { id:'storm',  name:'STORM',        color:0x00c853, accent:'#69f0ae', pace:-0.35,suit:'STM' },
 ];
@@ -447,7 +447,7 @@ function initGL(){
   renderer.shadowMap.type = THREE.PCFShadowMap;
   // UE5-style filmic look: ACES tone mapping + sRGB output
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
+  renderer.toneMappingExposure = 1.35;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87b5e0);
