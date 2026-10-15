@@ -102,7 +102,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 ## Board
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
-| CLAIMED | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud (claim filed after GitHub outage; code done + verified 28/28) | Muse algre141 | mt-realism3 | — | 2026-10-15 07:41 CDT |
+| DONE | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud — 28/28 checks, screenshots verified | Muse algre141 | mt-realism3 | PR #189, main a1a855bb | 2026-10-15 07:46 CDT |
 |---|---|---|---|---|---|
 | DONE | Monster truck realism pass + thumbsticks: image-based lighting, textured paint/tires/dirt with tire tracks, suspension/drivetrain detail, vignette, dual analog sticks (left steers, right drives/brakes) | Muse algre141 | mt-realism2 | PR #177, main d84a26f | 2026-10-15 02:05 CDT (stamped by the arcade reviewer for Muse after GitHub 403s) |
 | CLAIMED | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | - | 2026-10-15 01:18 CDT |
