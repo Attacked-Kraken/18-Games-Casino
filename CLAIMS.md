@@ -86,6 +86,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Monster truck retest round 3: full loop, 27/27 checks, night-sky starfield | Muse algre141 | mt-retest3-fix | PR #153, main 069ba8db | 2026-10-14 23:52 CDT |
 | DONE | F1 store-ready: back button to sports.html, sports.html registration (tab+panel+gcard) | Muse main | f1-store-ready2 | PR #147, main 88130284 | 2026-10-14 23:25 CDT |
 | CLAIMED | Track & Field 3D rebuild (apextrackfield.html): Three.js realistic graphics — base-human-v2 athletes, 3D stadium, all 17 events; UE5-style mobile quality | Muse Modern Plus | apextrackfield-3d | - | 2026-10-14 23:05 CDT |
 | DONE | Monster truck STORE-READY pass: phone light path (pixel ratio <=1.5, shadows off on touch), offline audit | Muse algre141 | mt-store-ready | PR #131, main f0ff2047 | 2026-10-14 23:10 CDT |
