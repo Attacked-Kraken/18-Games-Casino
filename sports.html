@@ -6,6 +6,17 @@
 <title>Apex Arcade Game Development</title>
 <meta name="description" content="The Apex Arcade sports lab - basketball, hockey, baseball, soccer and flight, all in active development.">
 <link rel="icon" href="hoops27-icon.svg">
+<!--
+  ADDING A NEW GAME (owner's rule, 2026-10-14):
+  New built games go HERE, on the Game Development page - never in the casino.
+  1. Add a <button class="tab"> in #tabs and a matching <section class="panel">
+     below (copy an existing game and edit it). Keep ids in the p-* pattern.
+  2. Point the panel's PLAY link at the game's .html file.
+  3. Do NOT register the game in games.json, the index.html lobby registry,
+     the casino floor or the hallway tabs. The casino is sealed behind the 0.
+  4. The game's own back button must return to sports.html.
+-->
+
 <style>
   :root { --red:#ff2a1e; --ink:#f2f4f8; --dim:#9aa6b5; --card:#12161d; --line:rgba(255,255,255,.09); }
   * { box-sizing: border-box; margin: 0; }
