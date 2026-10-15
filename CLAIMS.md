@@ -117,3 +117,5 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | README: state plainly that every Game Development title is a full 3D game (and refresh the sports title list) | Muse main (casino) | readme-3d-line | PR #129, main f0bcaf69 | 2026-10-14 23:02 CDT |
 | DONE | Post the LAW OF CREATION: the owner's approved free-asset sources list (Quaternius/Kenney/Poly Pizza/Poly Haven/ambientCG/KayKit/OpenGameArt-CC0) + realistic style rule (models and clothing match the game being mimicked) - ASSET-LAW.md + CLAIMS.md + STORE-READY.md | Muse main (casino) | asset-law | PR #134, main e51e6496 | 2026-10-14 23:09 CDT |
 | DONE | Add the owner's no-copyrights clause to the law of creation (ASSET-LAW.md + CLAIMS.md) | Muse main (casino) | nocopyright-clause | PR #143, main 44a2147e | 2026-10-14 23:18 CDT |
+| DONE | Soccer Retest #1: ball ground indicator, mobile TEAM camera default | Muse algre141 | soccer-r1-ship | PR #116, main 173732e4 | 2026-10-14 22:35 CDT |
+| DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
