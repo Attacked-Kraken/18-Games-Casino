@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Apex Arcade Game Development</title>
+<meta name="description" content="The Apex Arcade sports lab - basketball, hockey, baseball, soccer and flight, all in active development.">
+<link rel="icon" href="hoops27-icon.svg">
+<style>
+  :root { --red:#ff2a1e; --ink:#f2f4f8; --dim:#9aa6b5; --card:#12161d; --line:rgba(255,255,255,.09); }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #07090c radial-gradient(120% 90% at 50% 0%, #101722 0%, #07090c 55%); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; min-height: 100vh;
+    padding: calc(14px + env(safe-area-inset-top)) 16px calc(28px + env(safe-area-inset-bottom)); }
+  .back { color: var(--dim); text-decoration: none; font-size: 13px; letter-spacing: .14em; }
+  header { text-align: center; margin: 20px 0 6px; }
+  .eyebrow { color: var(--red); font-weight: 800; letter-spacing: .42em; font-size: 12px; }
+  h1 { font-size: clamp(26px, 7vw, 42px); font-weight: 900; letter-spacing: .06em; margin-top: 6px; }
+  .sub { color: var(--dim); font-size: 14.5px; line-height: 1.55; max-width: 520px; margin: 10px auto 0; }
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 18px 2px 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 1 0 auto; appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--dim);
+    border-radius: 999px; padding: 10px 14px; font: 700 13.5px/1 inherit; letter-spacing: .03em; cursor: pointer; white-space: nowrap; }
+  .tab.on { color: #fff; border-color: var(--red); background: linear-gradient(180deg, rgba(255,42,30,.28), rgba(255,42,30,.10));
+    box-shadow: 0 0 18px rgba(255,42,30,.25); }
+  .panel { display: none; margin-top: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 22px 20px 20px; text-align: center; }
+  .panel.on { display: block; }
+  .panel img { width: 96px; height: 96px; border-radius: 22px; }
+  .panel h2 { font-size: 24px; font-weight: 900; margin-top: 12px; letter-spacing: .02em; }
+  .tag { color: var(--dim); font-size: 14.5px; line-height: 1.55; max-width: 480px; margin: 8px auto 0; }
+  .chip { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,42,30,.55);
+    color: #ff7a6e; font: 800 10.5px/1.4 inherit; letter-spacing: .18em; }
+  .news { margin: 14px auto 0; max-width: 480px; background: rgba(255,255,255,.04); border: 1px solid var(--line);
+    border-radius: 12px; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; color: #cfd8e3; }
+  .news b { color: #fff; }
+  .play { display: inline-block; margin-top: 18px; background: linear-gradient(180deg, #ff4a2e, #d81f14); color: #fff;
+    text-decoration: none; font: 900 17px/1 inherit; letter-spacing: .08em; padding: 15px 42px; border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(255,42,30,.35); }
+  footer { text-align: center; color: #5d6875; font-size: 12px; letter-spacing: .1em; margin-top: 26px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&#8249; ENTRANCE</a>
+<header>
+  <div class="eyebrow">APEX ARCADE</div>
+  <h1>GAME DEVELOPMENT</h1>
+  <p class="sub">The sports lab. Every game here is in active development &mdash; new builds land the moment they ship, so check the notes and take the latest version for a run.</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab on" data-p="p-hoops" type="button">&#127936; Basketball</button>
+  <button class="tab" data-p="p-hockey" type="button">&#127954; Hockey</button>
+  <button class="tab" data-p="p-baseball" type="button">&#9918; Baseball</button>
+  <button class="tab" data-p="p-soccer" type="button">&#9917; Soccer</button>
+  <button class="tab" data-p="p-flight" type="button">&#9992; Flight</button>
+</nav>
+
+<section class="panel on" id="p-hoops">
+  <img src="hoops27-icon.svg" alt="27Hoops">
+  <h2>27Hoops</h2>
+  <p class="tag">3D 5-on-5 basketball in a broadcast arena. Real 3D players, our own made-up league.</p>
+  <div class="chip">IN DEVELOPMENT &middot; v20</div>
+  <p class="news"><b>Latest build:</b> a bigger court, a living crowd that claps, cheers, holds signs and does the wave &mdash; and the DUNK button. Get near the rim, tap it to dunk; tap again mid-rise for the layup off the glass.</p>
+  <a class="play" href="hoops27.html">PLAY</a>
+</section>
+
+<section class="panel" id="p-hockey">
+  <img src="apexhockey-icon.svg" alt="Apex Ice Hockey">
+  <h2>Apex Ice Hockey</h2>
+  <p class="tag">3D ice hockey: 5-on-5, real rules &mdash; periods, faceoffs, offside, golden-goal overtime.</p>
+  <div class="chip">IN DEVELOPMENT</div>
+  <p class="news"><b>Latest build:</b> Career Mode &mdash; a six-team league, standings, playoffs and championships, plus friend codes: build your star, share your code, play their All-Stars.</p>
+  <a class="play" href="apexhockey.html">PLAY</a>
+</section>
+
+<section class="panel" id="p-baseball">
+  <img src="apexbaseball-icon.svg" alt="Apex Baseball">
+  <h2>Apex Baseball</h2>
+  <p class="tag">3D baseball with the real rulebook: balls and strikes, force outs, walk-offs. 3-inning arcade games.</p>
+  <div class="chip">IN DEVELOPMENT</div>
+  <p class="news"><b>Latest build:</b> the pitch-versus-swing duel, tuned liftoff on fly balls and a crowd that erupts on home runs.</p>
+  <a class="play" href="apexbaseball.html">PLAY</a>
+</section>
+
+<section class="panel" id="p-soccer">
+  <img src="apexsoccer-icon.svg" alt="Apex Soccer">
+  <h2>Apex Soccer</h2>
+  <p class="tag">3D soccer: 7-on-7, throw-ins, corners, offside and two halves on a striped pitch.</p>
+  <div class="chip">IN DEVELOPMENT</div>
+  <p class="news"><b>Latest build:</b> a wider FULL camera that frames both goals, and a keeper who can finally be beaten in the corners.</p>
+  <a class="play" href="apexsoccer.html">PLAY</a>
+</section>
+
+<section class="panel" id="p-flight">
+  <img src="apexflight-icon.svg" alt="Apex Flight">
+  <h2>Apex Flight</h2>
+  <p class="tag">3D flight simulator: take off, fly the pattern and grease the landing. Free flight + landing challenge.</p>
+  <div class="chip">IN DEVELOPMENT</div>
+  <p class="news"><b>Latest build:</b> retuned takeoff and a real stall model &mdash; keep the nose honest on climb-out.</p>
+  <a class="play" href="apexflight.html">PLAY</a>
+</section>
+
+<footer>APEX ARCADE GAME DEVELOPMENT<br>SPORTS TITLES IN ACTIVE DEVELOPMENT</footer>
+
+<script>
+document.getElementById('tabs').addEventListener('click', function (e) {
+  var b = e.target.closest('.tab'); if (!b) return;
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t === b); });
+  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === b.dataset.p); });
+});
+</script>
+</body>
+</html>
