@@ -37,6 +37,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | Baseball human-look + movement + audio pass: re-apply stale PR #58 (merge conflicts) on fresh branch — realistic 1.82m athletes, uniforms/caps/helmets, fielders chase batted balls, baserunners run bases, bat drop, SFX | Muse algre141 | baseball-human-pass-2 | - | 2026-10-14 21:14 CDT |
 | DONE | F1 Apex Racing: realistic F1 game — real rules (DRS/tires/pits/points), real tracks, crowds, cheat-y AI, dynamic weather, career mode + friend-code multiplayer | Muse main | f1-apex-racing | PR #63, main de763763 | 2026-10-14 20:55 CDT |
 | DONE | Hockey arena fix: stands out of rink, realistic ice, pro rules, crowd audio (cheer/boo/goal swell), better cameras + landscape first-load lag & oversize fix | Muse main | hockey-arena-final | PR #46, main 3de86ba5 | 2026-10-14 19:38 CDT |
 | DONE | Hosting move: repo public again, GitHub Pages live — every merge to main auto-deploys | owner + Muse main | — | main @ 20871fb3 era | 2026-10-14 15:28 CDT |
