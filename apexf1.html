@@ -1750,6 +1750,8 @@ function loop(t){
       Track.updateCrowd(dt,0.15); Aud.crowdTick(dt,0.05);
     }
   }
+  // draw the 3D world (was missing — black screen)
+  if(glOK&&renderer&&scene&&camera) renderer.render(scene,camera);
 }
 /* boot */
 window.__apexBoot=true;
