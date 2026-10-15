@@ -1071,7 +1071,7 @@ class Car {
   placeMesh(dt){
     const p=Track.posAt(this.s,this.d,0.02), f=p.f;
     this.mesh.position.set(p.x,p.y,p.z);
-    const targetYaw=Math.atan2(f.tx,f.tz)-Math.PI/2 + this.steer*0.28 + (this.spin>0? this.spin*6:0);
+    const targetYaw=Math.atan2(f.tx,f.tz)-Math.PI/2 - this.steer*0.28 + (this.spin>0? this.spin*6:0);
     this.yaw += angDiff(this.yaw,targetYaw)*Math.min(1,dt*8);
     this.mesh.rotation.y=-this.yaw;
     // wheels spin + front steer
@@ -1509,8 +1509,9 @@ const Race = {
   },
   updateCamera(dt){
     const p=this.player, m=p.mesh;
-    const fwd=new THREE.Vector3(); m.getWorldDirection(fwd);
     const pp=Track.posAt(p.s,p.d,0);
+    const tf=Track.frameAt(p.s);
+    const fwd=new THREE.Vector3(tf.tx,0,tf.tz); // track direction, stable
     let cp=new THREE.Vector3(), lk=new THREE.Vector3(pp.x,1.5,pp.z);
     if(this.camMode===0){ // chase
       cp.set(pp.x-fwd.x*11, 5.2, pp.z-fwd.z*11);
