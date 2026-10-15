@@ -25,7 +25,10 @@
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#020b05;
     align-items:center; justify-content:center; text-align:center; padding:24px;
     font:600 20px ui-monospace,Menlo,monospace; letter-spacing:.12em; color:#9dffb4; }
-  @media (orientation:portrait) { #rotOv { display:flex; } }
+  #rotOv { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   /* HUD top */
   #hud { position:fixed; top:calc(8px + env(safe-area-inset-top)); left:98px; right:8px; z-index:8000;
     display:flex; gap:8px; align-items:flex-start; pointer-events:none; flex-wrap:wrap; }
@@ -1269,8 +1272,10 @@ function aimFromEvent(e){
   const r = aimPad.getBoundingClientRect();
   const px = (e.touches? e.touches[0].clientX : e.clientX);
   const py = (e.touches? e.touches[0].clientY : e.clientY);
-  aim.x = clamp(((px-r.left)/r.width)*6-3, -3, 3);
-  aim.y = clamp((1-(py-r.top)/r.height)*4.5, 0.2, 4.4);
+  let fxr=(px-r.left)/r.width, fyr=(py-r.top)/r.height;
+  if(innerHeight>innerWidth){ const _f=fxr; fxr=fyr; fyr=1-_f; } // rotated stage: remap to the landscape frame
+  aim.x = clamp(fxr*6-3, -3, 3);
+  aim.y = clamp((1-fyr)*4.5, 0.2, 4.4);
   updateAimDot();
 }
 aimPad.addEventListener('pointerdown', e=>{ aimFromEvent(e); aimPad.setPointerCapture(e.pointerId); });
@@ -1302,8 +1307,9 @@ window.addEventListener('keydown', e=>{
 });
 let fitW = 0, fitH = 0;
 function fitGame(){
-  const w = document.documentElement.clientWidth || innerWidth;
-  const h = document.documentElement.clientHeight || innerHeight;
+  let w = document.documentElement.clientWidth || innerWidth;
+  let h = document.documentElement.clientHeight || innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
   if (!w || !h) return;
   fitW = w; fitH = h;
   camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -1501,6 +1507,12 @@ updateAimDot();
 renderHUD();
 setPhase('start');
 loop();
+</script>
+
+<script>
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform
+   allows it (Android). iOS ignores the lock; the rotated stage carries it there. */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>

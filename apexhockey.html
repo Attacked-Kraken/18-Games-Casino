@@ -58,7 +58,10 @@
     font:700 11px ui-monospace, Menlo, monospace; letter-spacing:.08em; cursor:pointer; }
   #rotOv { display:none; position:fixed; inset:0; z-index:99999; background:#000; color:#fff;
     align-items:center; justify-content:center; font-size:22px; letter-spacing:.1em; text-align:center; padding:30px; }
-  @media (orientation: portrait) { #rotOv { display:flex; } }
+  #rotOv { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   .bigbtn.alt { background:#1d3a52; color:#cfe9ff; box-shadow:none; font-size:16px; padding:13px 34px; }
   #starCard { font:600 14px ui-monospace, Menlo, monospace; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
   #myCode { font:600 12px ui-monospace, Menlo, monospace; color:#8fd8a8; margin:14px 0 4px; letter-spacing:.06em; }
@@ -562,6 +565,7 @@ const joyVec = { x:0, y:0, active:false };
   const move=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
     let dx=t.clientX-cx, dy=t.clientY-cy; const d=Math.hypot(dx,dy), max=44;
     if(d>max){ dx=dx/d*max; dy=dy/d*max; }
+    if(innerHeight>innerWidth){ const _dx=dx; dx=dy; dy=-_dx; } // rotated stage: remap touch to the landscape frame
     setKnob(dx,dy); joyVec.x=dx/max; joyVec.y=dy/max; joyVec.active=true; } };
   joy.addEventListener('touchmove',e=>{e.preventDefault();move(e);},{passive:false});
   const end=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
@@ -1194,8 +1198,9 @@ function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioC
      iOS offers, settles late rotations, and a watchdog in tick() self-heals misses. */
 let fitW = 0, fitH = 0;
 function fitGame(){
-  const w = document.documentElement.clientWidth || innerWidth;
-  const h = document.documentElement.clientHeight || innerHeight;
+  let w = document.documentElement.clientWidth || innerWidth;
+  let h = document.documentElement.clientHeight || innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
   if (!w || !h) return;
   fitW = w; fitH = h;
   camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -1393,6 +1398,12 @@ $('friendGo').addEventListener('click', () => {
 
 requestAnimationFrame(tick);
 
+</script>
+
+<script>
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform
+   allows it (Android). iOS ignores the lock; the rotated stage carries it there. */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
