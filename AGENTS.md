@@ -15,3 +15,6 @@ Short version: no gambling, casino or real-money content in Game Development tit
 players or famous characters; no personal info, chat, ads, tracking or internet; CC0 assets only;
 keep save keys and arcade hooks; own branch + pull request; never undo anyone else's work; no Apex
 Arcade code in this repo. When a game is finished, tell the owner which game and what changed.
+
+**Game check:** after every merge the robot posts phone screenshots and results for every game to the
+game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.

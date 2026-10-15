@@ -1,0 +1,50 @@
+name: Game check
+
+# Plays every Game Development title like a phone after each merge to main, and posts a picture
+# report to the "game-checks" branch (open it on GitHub to see the README with all screenshots).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: game-check
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install the test browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+
+      - name: Play every game
+        run: |
+          python3 -m http.server 8811 >/dev/null 2>&1 &
+          sleep 2
+          node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+
+      - name: Post the report to the game-checks branch
+        if: always()
+        run: |
+          [ -f game-check-out/README.md ] || exit 0
+          cd game-check-out
+          git init -q
+          git checkout -q -b game-checks
+          git config user.name "game-check bot"
+          git config user.email "game-check-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
