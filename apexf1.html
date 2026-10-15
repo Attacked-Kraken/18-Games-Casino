@@ -73,7 +73,10 @@
   body.touch #btnDRS, body.touch #btnERS { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
-  @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
+  #rotateHint { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
   @media (pointer:coarse) and (orientation:landscape) {
     body.touch #stick { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:110px; height:110px; }
@@ -460,8 +463,10 @@ function initGL(){
   scene.add(sun); scene.userData.sun = sun;
   buildSkyDome();
   Particles.init();
-  addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
-  renderer.setSize(innerWidth,innerHeight);
+  function fitLand(){ let w=innerWidth,h=innerHeight; if(h>w){ const _t=w; w=h; h=_t; } // LANDSCAPE LAW
+    camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
+  addEventListener('resize', fitLand);
+  fitLand();
 }
 // GPU-cheap particle pool: tire smoke, lockup smoke, off-track dust
 const Particles = {
@@ -1029,8 +1034,14 @@ function initInput(){
   const setKnob=dx=>{ knob.style.transform=`translate(calc(-50% + ${dx}px),-50%)`; };
   const stickMove=t=>{
     const r=stick.getBoundingClientRect();
-    const cx=r.left+r.width/2;
-    let dx=(t.clientX-cx)/(r.width/2);
+    let dx;
+    if (window.innerHeight > window.innerWidth) {
+      const cy=r.top+r.height/2; // LANDSCAPE LAW: stage rotated; landscape-left = portrait-up
+      dx=(t.clientY-cy)/(r.height/2);
+    } else {
+      const cx=r.left+r.width/2;
+      dx=(t.clientX-cx)/(r.width/2);
+    }
     dx=Math.max(-1,Math.min(1,dx));
     // deadzone
     Input.steer=Math.abs(dx)<0.08?0:dx;
@@ -1723,6 +1734,8 @@ function initMenus(){
     selTrack=t.id; startWeekend();
   };
   document.addEventListener('pointerdown',()=>Aud.ensure(),{once:true});
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) Aud.crowdTick(1,0); });
 }
 function updateForecast(){
