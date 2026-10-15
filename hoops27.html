@@ -176,7 +176,7 @@
 </div>
 <div id="ctl" class="scr">
   <div id="stick"><div id="knob"></div></div>
-  <button class="ab" id="bShoot"><i>🏀</i>Shoot</button><button class="ab" id="bPass"><i>👐</i>Pass</button><button class="ab" id="bMove"><i>🌀</i>Move</button>
+  <button class="ab" id="bShoot"><i>🏀</i>Shoot</button><button class="ab" id="bDunk" style="display:none;background:radial-gradient(circle at 35% 30%,#ffb347,#e25822);color:#fff;"><i>💥</i>Dunk</button><button class="ab" id="bPass"><i>👐</i>Pass</button><button class="ab" id="bMove"><i>🌀</i>Move</button>
   <button class="ab" id="bBlock"><i>✋</i>Block</button><button class="ab" id="bSteal"><i>🫳</i>Steal</button><button class="ab" id="bSwitch"><i>🔄</i>Switch</button>
   <button class="ab" id="bSprint"><i>⚡</i>Sprint</button>
   <button class="tb" id="bCam">🎥</button><button class="tb" id="bPause">⏸</button>
@@ -1518,7 +1518,7 @@ function shotProb(e, info, ct) { const a = e.p.a; let p;
   const c = ct ? ct.c : 9, dr = ct && ct.who ? ct.who.p.a.def / 80 : 1; p -= Math.max(0, 1.7 - c) / 1.7 * (info.kind === 'jumper' ? 0.3 : 0.22) * dr;
   p -= Math.min(1, e.vel.length() / 7) * (info.kind === 'jumper' ? 0.1 : 0);
   return clamp(p, 0.03, 0.97); }
-function startShot(e, user) { if (e.act || G.ball.holder !== e) return; const info = shotInfo(e); e.shotInfo = info;
+function startShot(e, user) { if (e.act || G.ball.holder !== e) return; const info = shotInfo(e); if (e.forceKind) { info.kind = e.forceKind; e.forceKind = null; } e.shotInfo = info; /* v20: the dunk button forces the finish */
   const dur = info.kind === 'dunk' ? 0.62 : info.kind === 'layup' ? 0.55 : 0.6; e.act = { k: info.kind === 'jumper' ? 'shoot' : info.kind, t: 0, dur, user, meter: 0, rel: false };
   if (info.kind !== 'jumper') { const R = rimPos(e.t); face(e, R); const toR = tmpV.copy(R).sub(e.pos).setY(0); const L = toR.length(); e.vel.copy(toR.normalize().multiplyScalar(Math.min(4.5, L / dur + 1))); }
   else e.vel.multiplyScalar(0.3);
@@ -1711,6 +1711,8 @@ function moveAll(dt, frozen) {
   for (const e of G.ents) {
     let mx = 0, mz = 0; if (!frozen && e.stun <= 0 && !(e.act && (e.act.k === 'shoot' && e.y > 0))) { const d = tmpV.copy(e.tgt).sub(e.pos).setY(0), L = d.length(); if (L > 0.12) { d.multiplyScalar(1 / L); const vmax = (4.6 + e.p.a.spd * 0.038) * (e.spd == null ? 0.7 : e.spd) * (e.t !== USER ? df().ai * 0.98 + 0.03 : 1) * (G.ball.holder === e ? 0.93 : 1) * (e.onBall && e.t !== G.poss ? 1.0 : 1);
       const v = Math.min(vmax, L * 3.2); mx = d.x * v; mz = d.z * v; } }
+    if (e === G.ctrl) { if (e.dunkQ && G.ball.holder !== e) e.dunkQ = 0;
+      if (e.dunkQ && !e.act) { const Rd = rimPos(e.t); if (hdist(e.pos, Rd) < 2.3) { e.forceKind = 'dunk'; e.dunkQ = 0; startShot(e, false); } else { e.tgt.copy(Rd); e.spd = 1.15; } } } /* v20: the gather-drive - the dunk button from range sends him AT the rim, and the dunk fires itself on arrival */
     /* v15 agility: snappier plants and first steps, real air control.
        Reversing against your own momentum earns a plant bonus - hard stop, explode out. */
     let acc = e.y > 0.02 ? 5 : 26; if ((mx * e.vel.x + mz * e.vel.z) < -0.5) acc *= 1.6;
@@ -1942,7 +1944,7 @@ function hudUpdate() { if (G.mode !== 'game') return; const A = 1 - G.homeIdx, H
   hudTx('sbQ', `${qName(G.q)} ${clockStr(G.clock)}`); const s = Math.max(0, G.shot); hudTx('sbS', s < 5 ? s.toFixed(1) : Math.ceil(s)); $('sbS').classList.toggle('low', s < 5);
   const off = G.poss === USER, live = !G.over && (G.phase === 'live' || G.phase === 'inbound' || G.phase === 'ft' || G.phase === 'ftpause');
   const show = (id, on) => { $(id).style.display = on ? 'flex' : 'none'; };
-  $('stick').style.display = live ? 'block' : 'none'; show('bShoot', live && (off || G.phase === 'ft')); show('bPass', live && off && G.phase !== 'ft'); show('bMove', live && off && G.phase !== 'ft');
+  $('stick').style.display = live ? 'block' : 'none'; show('bShoot', live && (off || G.phase === 'ft')); show('bPass', live && off && G.phase !== 'ft'); show('bDunk', live && off && G.ball.holder && G.ball.holder === G.ctrl && hdist(G.ball.holder.pos, rimPos(G.ball.holder.t)) < 4.4) /* v20: the dunk button only exists near the rim */; show('bMove', live && off && G.phase !== 'ft');
   show('bBlock', live && !off && G.phase !== 'ft'); show('bSteal', live && !off && G.phase !== 'ft'); show('bSwitch', live && !off && G.phase !== 'ft'); show('bSprint', live && G.phase !== 'ft');
   $('bPause').style.display = 'block'; $('bCam').style.display = 'block';
   const c = G.ctrl, w = $('who'); if (c && live) { w.style.display = 'block'; const t = c.p.tier; const wh = `#${c.p.num} ${c.p.last} <b style="color:${TIERC[t]}">${t.toUpperCase()}</b>`; if (w._h !== wh) { w._h = wh; w.innerHTML = wh; } } else w.style.display = 'none'; }
@@ -2046,6 +2048,20 @@ $('stick').addEventListener('pointermove', (e) => { if (e.pointerId === STK.id) 
 const stickEnd = (e) => { if (e.pointerId !== STK.id) return; STK.id = null; K.mx = K.my = 0; $('knob').style.transform = ''; }; $('stick').addEventListener('pointerup', stickEnd); $('stick').addEventListener('pointercancel', stickEnd);
 function stickMove(e) { const R0 = $('stick').offsetWidth / 2; let dx = (e.clientX - STK.cx) / R0, dy = (e.clientY - STK.cy) / R0; if (document.body.classList.contains('rot')) { const t = dx; if (document.body.dataset.rd === '-1') { dx = -dy; dy = t; } else { dx = dy; dy = -t; } } const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; } K.mx = dx; K.my = -dy; $('knob').style.transform = `translate(${dx * R0 * 0.7}px,${dy * R0 * 0.7}px)`; }
 const hold = (id, on, off) => { const b = $(id); b.addEventListener('pointerdown', (e) => { e.preventDefault(); audioInit(); b.classList.add('on'); on(); try { b.setPointerCapture(e.pointerId); } catch (er) {} }); const up = () => { b.classList.remove('on'); if (off) off(); }; b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); };
+/* v20: the DUNK button. One tap: an instant dunk inside 2.6m, or a
+   gather-drive from further out. A quick second tap while he is rising
+   converts it into the layup - the fast, soft toss off the glass. */
+let dunkTapT = 0;
+{ const bD = $('bDunk');
+  if (bD) bD.addEventListener('pointerdown', (ev) => { ev.preventDefault(); try { audioInit(); } catch (er) {}
+    const c = G.ctrl, now = performance.now();
+    if (c && c.act && c.act.k === 'dunk' && !c.act.rel && now - dunkTapT < 900) { c.act.k = 'layup'; /* v20b: 900ms conversion window - the conversion can only happen mid-rise before release anyway, and busy frames on a struggling phone should not eat the gesture */ if (c.shotInfo) c.shotInfo.kind = 'layup'; c.vy = Math.min(c.vy, 4.05); popTxt('OFF THE GLASS'); dunkTapT = 0; return; }
+    if (!c || G.ball.holder !== c || c.act) return;
+    dunkTapT = now;
+    const Rd = rimPos(c.t), dd = hdist(c.pos, Rd);
+    if (dd < 2.6) { c.forceKind = 'dunk'; startShot(c, false); }
+    else if (dd < 4.6) c.dunkQ = 1;
+  }); }
 hold('bShoot', () => { K.shoot = true; K.shootDown = true; }, () => { K.shoot = false; });
 hold('bPass', () => { K.pass = true; }); hold('bMove', () => { K.move = true; });
 hold('bBlock', () => { K.block = true; }); hold('bSteal', () => { K.steal = true; }); hold('bSwitch', () => switchCtrl());
@@ -2119,7 +2135,7 @@ function perfReport() { const b = $('perfBody'); if (!b) return; const L = PERF_
   const pill = $('perfPill'); if (pill) pill.addEventListener('click', () => { perfReport(); const r = $('perfRep'); if (r) r.style.display = 'flex'; });
   const pc = $('perfClose'); if (pc) pc.addEventListener('click', () => { const r = $('perfRep'); if (r) r.style.display = 'none'; });
   const pr = $('perfReset'); if (pr) pr.addEventListener('click', () => { PERF.lvl = 0; perfApply(null); perfLog('You reset the tuner → back to FULL quality'); perfReport(); });
-  window.__perf = PERF;
+  window.__perf = PERF; window.__g = G; /* v20: game-state handle for testing */
 })();
 
 /* ================= v17: THE CROWD IS PEOPLE + APEX ARCADE PRESENTS =====
@@ -2176,12 +2192,15 @@ function cpBuild() {
     for (let i = 0; i < per; i++) { const ang = (i / per) * TAU + row * 0.11 + (Math.random() - 0.5) * 0.02;
       const [px, pz] = se(ang, 14.2 + (32.0 - 14.2) * tt, 22.0 + (40.3 - 22.0) * tt), y = 0.4 + (13.5 - 0.4) * tt;
       CP.ppl.push({ x: px * 0.965, z: pz * 0.965, y: y + 0.28, ang, row, tt, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, wk: 0, wsp: 0, wpause: 0, sc: (0.92 + Math.random() * 0.2) * 1.22 }); } }
+  for (let i = 0; i < per + 14; i++) { const ang = (i / (per + 14)) * TAU + 0.05 + (Math.random() - 0.5) * 0.02; const tt = 0.045;
+    const [px, pz] = se(ang, 14.2 + (32.0 - 14.2) * tt, 22.0 + (40.3 - 22.0) * tt), y = 0.4 + (13.5 - 0.4) * tt;
+    CP.ppl.push({ x: px * 0.965, z: pz * 0.965, y: y + 0.28, ang, row: -1, tt, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, wk: 0, wsp: 0, wpause: 0, sc: (0.98 + Math.random() * 0.2) * 1.3 }); } /* v20: a loud front row, right on the court */
   const NU = matchMedia('(pointer: coarse)').matches ? 240 : 360, perU = Math.round(NU / 6);
   for (let row = 0; row < 6; row++) { const tt = 0.14 + row * 0.14;
     for (let i = 0; i < perU; i++) { const ang = (i / perU) * TAU + row * 0.13 + (Math.random() - 0.5) * 0.02;
       const [px, pz] = se(ang, 33.0 + (48.0 - 33.0) * tt, 41.5 + (58.3 - 41.5) * tt), y = 15.2 + (30 - 15.2) * tt;
       CP.ppl.push({ x: px * 0.97, z: pz * 0.97, y: y + 0.3, ang, row: 20 + row, tt, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, wk: 0, wsp: 0, wpause: 0, up: 1, sc: (0.92 + Math.random() * 0.2) * 1.22 }); } }
-  for (let i = 0; i < CP.ppl.length; i += 29) { const p = CP.ppl[i]; if (!p.up) { p.wk = (i % 58 === 0) ? 1 : -1; p.wsp = 0.008 + Math.random() * 0.012; } }
+  let wkN = 0; for (let i = 0; i < CP.ppl.length; i += 17) { const p = CP.ppl[i]; if (!p.up) { p.wk = (i % 34 === 0) ? 1 : -1; p.wsp = 0.02 + Math.random() * 0.024; p.tt0 = p.tt; if (wkN++ % 5 === 4) p.stair = 1; } } /* v20: more walkers, quicker - and every fifth one works the stairs */
   for (let i = 0; i + 1 < CP.ppl.length; i += 2) { if (CP.ppl[i].row === CP.ppl[i + 1].row && CP.ppl[i].row < 20 && Math.random() < 0.55) { CP.ppl[i].pair = i + 1; CP.ppl[i + 1].pair = i; } }
   const signDefs = [['DEFENSE', '#f5f2ea', '#16213e'], ['APEX ARCADE', '#ffd76a', '#10131c'], ['MVP!', '#c8402e', '#ffffff'], ['MAKE NOISE', '#2456c8', '#ffffff'], ['27 HOOPS', '#10131c', '#ffd76a'], ['SWAT CITY', '#f5f2ea', '#c8402e'], ["LET'S GO", '#ffd76a', '#10131c'], ['APEX ARCADE', '#16213e', '#ffd76a']];
   CP.signs = [];
@@ -2198,9 +2217,9 @@ function crowdPeople(dt) {
   CP.t += dt; CP.tickN++;
   const q = window.__crowdQ || 1; if (q > 1 && (CP.tickN % q)) return; /* the perf tuner can thin the crowd's animation */
   if (G.mode === 'game') { const sh = G.score[G.homeIdx], sa = G.score[1 - G.homeIdx];
-    if (sh > CP.lastH) { CP.excite = 1; CP.mode = 'cheer'; CP.modeT = 2.8; } else if (sa > CP.lastA) { CP.excite = 0.12; CP.mode = 'slump'; CP.modeT = 1.8; }
+    if (sh > CP.lastH) { CP.excite = 1; CP.mode = 'cheer'; CP.modeT = 3.4; } /* v20: let the eruption breathe */ else if (sa > CP.lastA) { CP.excite = 0.12; CP.mode = 'slump'; CP.modeT = 1.8; }
     CP.lastH = sh; CP.lastA = sa;
-    if (G.phase !== 'live') { CP.deadT += dt; if (CP.deadT > 3.2 && CP.waveCool <= 0 && CP.waveT < 0) { CP.waveT = 0; CP.waveCool = 26; } } else CP.deadT = 0;
+    if (G.phase !== 'live') { CP.deadT += dt; if (CP.deadT > 2.2 && CP.waveCool <= 0 && CP.waveT < 0) { CP.waveT = 0; CP.waveCool = 18; } /* v20: the wave comes around more often */ } else CP.deadT = 0;
   } else { CP.lastH = 0; CP.lastA = 0; CP.deadT = 0; }
   if (CP.modeT > 0) { CP.modeT -= dt; if (CP.modeT <= 0) CP.mode = 'idle'; }
   CP.excite += ((CP.mode === 'cheer' ? 1 : CP.mode === 'slump' ? 0.12 : 0.45) - CP.excite) * Math.min(1, dt * 1.6);
@@ -2212,22 +2231,25 @@ function crowdPeople(dt) {
     let pose = 0, lift = 0, lean = 0;
     /* v19: the walkers stroll their row - to the concession, back to the
        seat - pausing for the big moments like everyone else. */
-    if (p.wk && CP.mode !== 'cheer' && CP.waveT < 0) { if (p.wpause > 0) p.wpause -= dt; else { p.ang += p.wk * p.wsp * dt; const ws = cpSeat(p.ang, p.tt); p.x = ws[0]; p.z = ws[1]; lift += Math.abs(Math.sin(CP.t * 7 + p.ph)) * 0.03; if (Math.random() < dt * 0.03) { p.wpause = 2 + Math.random() * 4; if (Math.random() < 0.3) p.wk = -p.wk; } } }
+    if (p.wk && CP.mode !== 'cheer' && CP.waveT < 0) { if (p.stair) { p.tt = clamp(p.tt0 + Math.sin(CP.t * 0.22 + p.ph) * 0.05, 0.03, 0.95); const ws = cpSeat(p.ang, p.tt); p.x = ws[0]; p.z = ws[1]; p.y = 0.4 + (13.5 - 0.4) * p.tt + 0.28 + Math.abs(Math.sin(CP.t * 6 + p.ph)) * 0.02; }
+      else if (p.wpause > 0) p.wpause -= dt; else { p.ang += p.wk * p.wsp * dt; const ws = cpSeat(p.ang, p.tt); p.x = ws[0]; p.z = ws[1]; lift += Math.abs(Math.sin(CP.t * 7 + p.ph)) * 0.03; if (Math.random() < dt * 0.03) { p.wpause = 2 + Math.random() * 4; if (Math.random() < 0.3) p.wk = -p.wk; } } }
     const bob = Math.sin(CP.t * 2 + p.ph) * 0.03 * (0.5 + CP.excite);
     if (CP.mode === 'cheer') { pose = 3; lift = Math.abs(Math.sin(CP.t * 5.2 + p.ph)) * 0.16; }
     else if (CP.mode === 'slump') { pose = 0; lift = -0.05; }
+    else if (Math.sin(CP.t * 0.7 + p.ph * 3.1) > 0.986) { pose = 3; lift = 0.05; } /* v20: somebody is always waving at somebody */
     else if (clapOn && ((p.ang * 3 + p.row) % 2 < 1)) { pose = Math.sin(CP.t * 9 + p.ph * 2) > 0 ? 1 : 2; lift = 0.02; }
     if (CP.waveT >= 0) { const front = (CP.waveT / 8.5) * TAU * 1.15; const dd = Math.abs(((p.ang - front) % TAU + TAU * 1.5) % TAU - TAU); if (dd < 0.38) { const k = 1 - dd / 0.38; pose = 3; lift = Math.max(lift, Math.sin(k * Math.PI) * 0.34); } }
     if (CP.mode === 'cheer' && p.pair > i && Math.sin(CP.t * 5.2 + p.ph) > 0.55) { pose = 3; lift = Math.max(lift, 0.2); lean = 0.16; CP.ppl[p.pair].hf = 0.2; }
     if (p.hf > 0) { pose = 3; lift = Math.max(lift, p.hf); lean = -0.16; p.hf = Math.max(0, p.hf - dt * 1.4); }
     const slot = p.cw * 4 + pose, c = counts[slot]; if (c >= 719) continue; counts[slot] = c + 1;
     CP_E.set(0, Math.atan2(p.x, p.z) + Math.PI, lean); CP_Q.setFromEuler(CP_E);
-    CP_V.set(p.x, p.y + lift + bob, p.z); CP_S.set(p.sc, p.sc * (1 + lift * 0.35), p.sc);
+    CP_V.set(p.x, p.y + lift + bob, p.z); CP_S.set(p.sc * 1.18, p.sc * (1 + lift * 0.35) * 1.18, p.sc * 1.18); /* v20: fans 18% bigger again - they have to READ as people from the broadcast camera */
     CP_M4.compose(CP_V, CP_Q, CP_S); CP.meshes[slot].setMatrixAt(c, CP_M4);
   }
   for (let i = 0; i < 12; i++) { CP.meshes[i].count = counts[i]; CP.meshes[i].instanceMatrix.needsUpdate = true; }
-  for (const s of CP.signs) { const u = s.userData; let up = 0;
+  for (let si = 0; si < CP.signs.length; si++) { const s = CP.signs[si]; const u = s.userData; let up = 0;
     if (CP.mode === 'cheer') up = 1; else if (clapOn) up = 0.7;
+    if (G.mode === 'game' && si % 2 === 0) up = Math.max(up, 0.85); /* v20: half the signs live UP during play - a crowd holding signs, not waiting to */
     if (CP.waveT >= 0) { const front = (CP.waveT / 8.5) * TAU * 1.15; const dd = Math.abs(((u.ang - front) % TAU + TAU * 1.5) % TAU - TAU); if (dd < 0.5) up = 1; }
     const target = u.baseY + (up ? 0.62 + Math.sin(CP.t * 6 + u.ph) * 0.07 : -0.5);
     s.position.y += (target - s.position.y) * Math.min(1, dt * 7); }
