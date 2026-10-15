@@ -1417,7 +1417,7 @@ const hdist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const nameOf = (e) => (e ? e.p.last : '');
 const teamOf = (e) => G.T[e.t];
 const USER = 0; /* the phone owner always runs team 0 */
-const DIFF = [{ n: 'Rookie', ai: 0.84, me: 1.12, d: 0.8 }, { n: 'All-Star', ai: 0.97, me: 1.04, d: 1 }, { n: 'Superstar', ai: 1.04, me: 1.0, d: 1.12 }, { n: 'Elite', ai: 1.1, me: 0.96, d: 1.25 }];
+const DIFF = [{ n: 'Rookie', ai: 0.84, me: 1.12, d: 0.8, sm: 0.55 }, { n: 'Pro', ai: 0.95, me: 1.05, d: 0.95, sm: 0.8 }, { n: 'All-Star', ai: 1.03, me: 1.0, d: 1.1, sm: 0.95 }, { n: 'Hall of Fame', ai: 1.12, me: 0.95, d: 1.28, sm: 1.1 }]; /* v18: the owner's ladder - Rookie / Pro / All-Star / Hall of Fame. sm = how smart the CPU plays: shot discipline, not just percentages. */
 const df = () => DIFF[SV.diff] || DIFF[1];
 
 /* Photo-style kit: fitted jersey with the team's own arched wordmark and big outlined numbers,
@@ -1513,7 +1513,8 @@ await __apexYield();
 function shotProb(e, info, ct) { const a = e.p.a; let p;
   if (info.kind === 'dunk') p = 0.9 + (a.ins - 70) * 0.003; else if (info.kind === 'layup') p = 0.6 + (a.ins - 70) * 0.007;
   else if (info.three) p = 0.37 + (a.thr - 70) * 0.0075 - Math.max(0, info.d - (e.p.elite ? 10.2 : 7.7)) * (e.p.elite ? 0.045 : 0.075);
-  if (e.p.tier === 'Superstar') p += 0.025; if (e.p.elite) p += 0.02; else if (info.d < 4.5) p = 0.47 + (a.mid - 70) * 0.006; else p = 0.42 + (a.mid - 70) * 0.006;
+  if (e.p.tier === 'Superstar') p += 0.025; if (e.p.elite) p += 0.02; else if (!info.three && info.d < 4.5) p = 0.47 + (a.mid - 70) * 0.006; else if (!info.three) p = 0.42 + (a.mid - 70) * 0.006;
+  if (info.three && info.d > 8.2) p -= (info.d - 8.2) * (e.p.elite ? 0.055 : 0.085); /* v18: THE half-court fix. The mid-range lines above used to overwrite EVERY three (the else had no three check), so a heave from the logo scored like a pull-up at ~40% and the AI launched it every trip. Threes keep their distance formula now, and past 8.2m the odds fall off a cliff. */
   const c = ct ? ct.c : 9, dr = ct && ct.who ? ct.who.p.a.def / 80 : 1; p -= Math.max(0, 1.7 - c) / 1.7 * (info.kind === 'jumper' ? 0.3 : 0.22) * dr;
   p -= Math.min(1, e.vel.length() / 7) * (info.kind === 'jumper' ? 0.1 : 0);
   return clamp(p, 0.03, 0.97); }
@@ -1576,7 +1577,7 @@ function trySteal(e) { if (e.act || e.stealCD > 0) return; e.stealCD = 0.7; e.ac
      across his body or from behind and it is a reach-in foul - and
      spamming the reach makes the whistle MORE likely, not less. */
   const nowS = performance.now(); e.chain = (nowS - (e.lastReach || 0) < 2600) ? (e.chain || 0) + 1 : 0; e.lastReach = nowS;
-  const lv = tmpV.copy(h.pos).sub(e.pos).setY(0).normalize(); e.vel.addScaledVector(lv, 3.0);
+  const lv = tmpV.copy(handPos(h)).sub(e.pos).setY(0).normalize(); e.vel.addScaledVector(lv, 3.0); /* v18: he lunges at the BALL, not the man's chest */
   const toE = tmpV2.copy(e.pos).sub(h.pos).setY(0).normalize(); const front = (Math.sin(h.h) * toE.x + Math.cos(h.h) * toE.z) > -0.15;
   const exposed = !!(h.act && h.act.k === 'cross') || !!h.drive;
   let pr = (0.16 + (e.p.a.stl - h.p.a.hnd) * 0.007) * (e.t === USER ? df().me : df().ai * df().d);
@@ -1584,7 +1585,7 @@ function trySteal(e) { if (e.act || e.stealCD > 0) return; e.stealCD = 0.7; e.ac
   if (Math.random() < pr) { const B = G.ball; G.box[e.p.id].stl++; e.chain = 0; sfx('catch'); popTxt('STEAL!'); castSteal(e, h); if (e.t === G.homeIdx) sfx('cheer', 1);
     if (Math.random() < 0.6) { setHolder(e); e.act = { k: 'steal', t: 0, dur: 0.38 }; }
     else { B.holder = null; B.st = 'loose'; B.pos.copy(handPos(h)); B.pos.y = 0.9; const v = tmpV.copy(e.pos).sub(h.pos).setY(0).normalize(); B.vel.set(v.x * 3.5, 1.5, v.z * 3.5); G.lastTouch = e; } }
-  else if (Math.random() < Math.min(0.75, (front ? 0.13 : 0.34) + (e.chain || 0) * 0.16)) { whistle(`Reach-in foul on ${nameOf(e)}`); G.fouls[e.t]++; G.shot = Math.max(G.shot, 14); G.resumeHolder = h; G.phase = 'foulpause'; G.t = 0; } }
+  else if (Math.random() < Math.min(0.75, (front ? 0.13 : 0.34) + (e.chain || 0) * 0.16)) { h.vel.addScaledVector(lv, -1.1); popTxt('REACH-IN FOUL'); whistle(`Reach-in foul on ${nameOf(e)}`); G.fouls[e.t]++; G.shot = Math.max(G.shot, 14); G.resumeHolder = h; G.phase = 'foulpause'; G.t = 0; } } /* v18: contact you can see - the reach bumps the handler off his dribble as the whistle blows */
 function jump(e) { if (e.y > 0.05 || e.act && e.act.k !== 'steal') return; e.act = { k: 'block', t: 0, dur: 0.7 }; e.vy = 3.85 + e.p.a.blk * 0.013; /* v15: up quicker, up higher */ if (e === G.ctrl) { const B = G.ball, tp = B.holder && B.holder.t !== e.t ? B.holder.pos : B.pos; const lv = tmpV.copy(tp).sub(e.pos).setY(0); const d = lv.length(); if (d > 0.6 && d < 4.5) e.vel.addScaledVector(lv.normalize(), 1.5); } }
 
 /* ---------- AI */
@@ -1597,7 +1598,14 @@ function aiOffense(e, dt) {
     const info = shotInfo(e), ct = contest(e), p = shotProb(e, info, ct), urgency = clamp((8 - G.shot) / 8, 0, 1), lateQ = G.clock < 6 && G.clock < G.shot;
     const ev = p * info.pts, need = 0.95 - urgency * 0.6 - (lateQ ? 0.6 : 0) - (ct.c > 2.6 ? 0.16 : 0); /* v15: a genuinely open look gets taken, not admired */
     if (info.kind !== 'jumper' && (p > 0.42 || urgency > 0.5)) { startShot(e); return; }
-    if (ev > need + Math.random() * 0.25 || G.shot < 2.2 || (lateQ && G.clock < 2.5)) { startShot(e); return; }
+    /* v18 strategy: know your range, know a dead look. A jumper past his
+       range - or one the defense has already killed - becomes a pass or a
+       drive, unless the clock is dying. Rookie CPUs still jack it up
+       sometimes; Hall of Fame CPUs almost never do. */
+    const range = 7.6 + Math.max(0, e.p.a.thr - 72) * 0.055 + (e.p.elite ? 0.9 : 0), dumb = e.t === USER ? 0.04 : (1.15 - (df().sm || 1)) * 0.3, desperate = G.shot < 3.2 || (lateQ && G.clock < 2.5);
+    const badShot = info.kind === 'jumper' && !desperate && (info.d > range || p < 0.17) && Math.random() >= dumb;
+    if ((ev > need + Math.random() * 0.25 || G.shot < 2.2 || (lateQ && G.clock < 2.5)) && !badShot) { startShot(e); return; }
+    if (badShot) { const m3 = bestPass(e); if (m3 && Math.random() < 0.7) { passTo(e, m3); return; } e.tgt.set(R.x, 0, R.z - s * 0.8); e.spd = 1; e.drive = true; return; }
     /* v15 brains: two men on you means somebody is open - find him */
     let pressN = 0; for (const o of G.ents) { if (o.t !== e.t && hdist(o.pos, e.pos) < 2.3) pressN++; }
     if (pressN >= 2) { const m2 = bestPass(e); if (m2 && Math.random() < 0.78) { passTo(e, m2); return; } }
@@ -1877,7 +1885,17 @@ function animate(dt) {
     else if (a && (a.k === 'block' || a.k === 'reb')) { pose = hpose('block', G.t, { k: a.t / 0.7 }); kk = 24; }
     else if (a && a.k === 'pass') { pose = hpose('pass', G.t, { k: a.t / a.dur }); kk = 26; }
     else if (a && a.k === 'catch') pose = hpose('catch', G.t);
-    else if (a && a.k === 'steal') { pose = hpose('defend', G.t, { ph: e.ph }); pose.shR = [-1.85, 0, -0.25]; pose.elR[0] = -0.05; pose.shL = [-0.9, 0, 0.5]; pose.elL[0] = -0.5; pose.spine[0] = 0.85; pose.spine[1] = -0.25; kk = 26; } /* v15: full lean, arm extended at the ball - the reach reads */
+    else if (a && a.k === 'steal') { pose = hpose('defend', G.t, { ph: e.ph });
+      /* v18: the hand hunts the BALL. The reach arm is picked by which side
+         the dribble is on, pitched at the ball's height, and the whole
+         upper body twists toward it - reach across the body and you can
+         SEE the foul the whistle is about to call. */
+      const bp = G.ball.holder ? handPos(G.ball.holder) : G.ball.pos, bdx = bp.x - e.pos.x, bdz = bp.z - e.pos.z, fx = Math.sin(e.h), fz = Math.cos(e.h);
+      const side = bdx * fz - bdz * fx, pitch = clamp(-1.2 - (bp.y - 0.85) * 0.45, -1.75, -0.75);
+      pose.spine[0] = 0.85; pose.spine[1] = clamp(side * 0.4, -0.5, 0.5);
+      if (side >= 0) { pose.shR = [pitch, clamp(-side * 0.3, -0.45, 0.1), -0.15]; pose.elR[0] = -0.06; pose.shL = [-0.75, 0, 0.5]; pose.elL[0] = -0.7; }
+      else { pose.shL = [pitch, clamp(-side * 0.3, -0.1, 0.45), 0.15]; pose.elL[0] = -0.06; pose.shR = [-0.75, 0, -0.5]; pose.elR[0] = -0.7; }
+      kk = 26; }
     else if (a && a.k === 'cross') { pose = hpose('dribble', G.t, { bk: 0.3 }); pose.chest[1] = Math.sin(a.t / a.dur * Math.PI) * 0.5; pose.spine[2] = Math.sin(a.t / a.dur * Math.PI) * 0.25; pose.shL = [-0.9, 0, 0.5]; pose.elL[0] = -0.5; kk = 24; }
     else if (a && a.k === 'celebrate') pose = hpose(e.i % 2 ? 'celebrate' : 'flex', G.t + e.i);
     else if (B.holder === e && B.st === 'held') { if (sp > 0.9) { pose = run(); pose.shR = [-0.5 + e.bk * 0.25, 0, -0.35]; pose.elR = [-0.7 + e.bk * 0.45, 0, 0]; pose.shL = [-0.6, 0, 0.35]; pose.elL[0] = -1.0; } else pose = hpose('dribble', G.t, { ph: e.ph, bk: e.bk }); }
