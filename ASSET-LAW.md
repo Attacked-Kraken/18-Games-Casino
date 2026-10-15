@@ -69,3 +69,28 @@ equivalent from the approved list.
   asset has to move. Best-looking AND fast.
 - When you use an asset, name it in your PR: what it is, which
   approved source, what license.
+
+---
+
+# Part II — the music & sound law (owner, 2026-10-14)
+
+**Every game must have home-page music, in-game music, and game
+sounds.** A silent game is an unfinished game.
+
+- **Home page / menu music** — every game's menu (its home page)
+  plays its own music track: calm, welcoming, looped.
+- **In-game music** — a second, distinct track drives the gameplay:
+  more energy, matched to the game's pace.
+- **Game sounds** — real sound effects for the game's core actions
+  and events (hits, scores, whistles, engines, UI taps — whatever the
+  game is about). No silent actions.
+- **Original audio only** — music and sounds are made for the game
+  (procedural WebAudio composition is the house method: no audio
+  files, zero download weight, and it can never be anybody's
+  copyright — Part I's no-copyrights law covers sound too). No ripped
+  tracks, no copyrighted music, no stock audio off the approved list.
+- **Player control** — a working mute toggle on every game, and the
+  choice persists between visits. Audio starts on the player's first
+  interaction (mobile autoplay rules) — never blast sound uninvited.
+- Music and sound are part of "done": a game does not get stamped
+  DONE without all three (menu music, game music, sounds) working.

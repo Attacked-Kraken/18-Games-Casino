@@ -76,3 +76,11 @@ game and the style of play it mimics. The full law, with sources and
 working rules, is **ASSET-LAW.md**. Always inside the performance
 budget above: sane poly counts, textures <= 2048px, GLB. If a better
 free model exists, the upgrade is the job.
+
+## Music and sound are required (owner, 2026-10-14)
+
+Every game ships with **home-page (menu) music, in-game music, and
+sound effects** for its core actions — all original audio (procedural
+WebAudio is the house method), a persisted mute toggle, and audio
+that starts on first interaction. A silent game is not store-ready.
+Full law: ASSET-LAW.md, Part II.
