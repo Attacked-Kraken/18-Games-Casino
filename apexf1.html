@@ -878,8 +878,9 @@ function buildCarMesh(color, teamName, carNumber){
     const s=new THREE.Shape();
     s.moveTo(0,0); s.lineTo(1.7,0); s.quadraticCurveTo(1.85,0.21,1.5,0.42); s.lineTo(0.2,0.42); s.quadraticCurveTo(-0.1,0.21,0,0);
     const sg=new THREE.ExtrudeGeometry(s,{depth:0.5,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.06,bevelSegments:4});
-    const pod=new THREE.Mesh(sg,mat); pod.rotation.y=Math.PI/2;
-    pod.position.set(0.62,0.28,sd>0?0.40:-0.96);
+    // the shape is drawn along X (car length) and extruded 0.5 along Z (width) - no extra turn, or it sticks out sideways
+    const pod=new THREE.Mesh(sg,mat);
+    pod.position.set(-1.15,0.28,sd>0?0.40:-0.90);
     g.add(pod);
     const inlet=B(0.45,0.2,0.12,dark); inlet.position.set(0.45,0.55,sd*0.88);
     for(let li=0;li<3;li++){ const lv=B(0.3,0.02,0.4,dark); lv.position.set(-0.35-li*0.18,0.68-li*0.02,sd*0.62); lv.rotation.z=0.15; }
@@ -1078,7 +1079,9 @@ class Car {
   placeMesh(dt){
     const p=Track.posAt(this.s,this.d,0.02), f=p.f;
     this.mesh.position.set(p.x,p.y,p.z);
-    const targetYaw=Math.atan2(f.tx,f.tz)-Math.PI/2 - this.headAngle*1.2 + (this.spin>0? this.spin*6:0);
+    // car model points along +X; with rotation.y=-yaw its nose faces (cos yaw, sin yaw) in x/z, so aim it down the track
+    // (tx,tz) and turn it toward the left normal (-tz,tx) by headAngle - the old formula was mirrored and sat cars sideways
+    const targetYaw=Math.atan2(f.tz,f.tx) + this.headAngle*1.2 + (this.spin>0? this.spin*6:0);
     this.yaw += angDiff(this.yaw,targetYaw)*Math.min(1,dt*8);
     this.mesh.rotation.y=-this.yaw;
     // wheels spin + front steer
