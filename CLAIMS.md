@@ -130,6 +130,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| DONE | Monster truck: studio-style redesign (big aggressive tires, wide -offset, lift-kit suspension, exhaust stacks with smoke on gas, Apex Arcade bed logos) + AI truck roster (different colors, pickup + SUV styles) | Muse algre141 | monstertruck-redesign-v2 | PR #240 | 2026-10-15 14:10 CDT |
 
 | CLAIMED | Exotic Racer Club mockup-faithful rebuild (apexracer.html): replace CC0 low-poly body with smooth procedural supercar matching the approved fleet mockup (quad round headlights, sculpted bumper, sleek curves); all 8 cars | Muse Cruz.inc | apexracer-mockup | — | 2026-10-15 12:35 CDT |
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
