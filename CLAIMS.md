@@ -33,6 +33,9 @@ or environments when a better free asset exists. Rules of the road:
   ambientCG, KayKit (free packs), OpenGameArt (CC0 items only). CC0
   means free to use even in a paid app. NOT approved: Sketchfab,
   Mixamo, TurboSquid, and anything ripped, leaked or paid.
+  **NO COPYRIGHTS: every asset must be copyright-free (CC0 / public
+  domain). If it carries a copyright, it does not go in — no
+  exceptions.**
 - **Realism is the target** — correct proportions, real materials and
   textures over stylized stand-ins, wherever the game is on screen.
   **Models and clothing must match the game and the style of play it
