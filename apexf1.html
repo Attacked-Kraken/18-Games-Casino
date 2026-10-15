@@ -57,10 +57,19 @@
   #btnR { left:112px; bottom:170px; width:84px; height:84px; font-size:30px; }
   #btnGas { right:14px; bottom:250px; width:96px; height:96px; font-size:15px; border-radius:18px; }
   #btnBrake { right:122px; bottom:250px; width:84px; height:84px; font-size:14px; border-radius:18px; }
-  #btnDRS { right:14px; bottom:170px; width:64px; height:52px; font-size:12px; border-radius:12px; }
-  #btnERS { right:90px; bottom:170px; width:64px; height:52px; font-size:12px; border-radius:12px; }
-  #btnPit { left:14px; bottom:270px; width:64px; height:52px; font-size:12px; border-radius:12px; }
-  #btnCam { left:90px; bottom:270px; width:64px; height:52px; font-size:12px; border-radius:12px; }
+  #btnDRS { right:14px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  #btnERS { right:98px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  #btnCam { left:98px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  /* mobile: HUD elements move clear of the thumb zones */
+  body.touch #minimap { left:12px; top:176px; bottom:auto; width:104px; height:104px; }
+  body.touch #ersbar { right:12px; top:176px; bottom:auto; }
+  body.touch #btnL, body.touch #btnR { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #btnGas, body.touch #btnBrake { bottom:calc(250px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #btnDRS, body.touch #btnERS { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
+  #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
+  @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
   #banner { position:fixed; left:50%; top:34%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(26px,6vw,52px); font-weight:900; letter-spacing:3px; text-shadow:0 3px 18px #000; }
@@ -105,6 +114,7 @@
   <div class="tbtn" id="btnPit">PIT</div>
   <div class="tbtn" id="btnCam">CAM</div>
 </div>
+<div id="rotateHint">🔄 Rotate your phone for the full circuit</div>
 
 <div id="banner"><div class="b1"></div><div class="b2"></div></div>
 <div id="lights" class="hidden"></div>
@@ -373,6 +383,7 @@ const TIRES = {
 /* ================= TRACK BUILDER ================= */
 let renderer, scene, camera;
 const isTouch = matchMedia('(pointer: coarse)').matches;
+if(isTouch) document.body.classList.add('touch');
 function initGL(){
   const canvas = $('c');
   renderer = new THREE.WebGLRenderer({ canvas, antialias:!isTouch });
