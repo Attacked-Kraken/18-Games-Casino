@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="characters/base-human-v2/male.glb" as="fetch" crossorigin>
+<link rel="preload" href="characters/base-human-v2/female.glb" as="fetch" crossorigin>
+<link rel="preload" href="characters/base-human-v2/anims.glb" as="fetch" crossorigin>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Apex Soccer · 18 Games Casino</title>
@@ -1041,6 +1044,7 @@ const chgFillEl = document.getElementById('chgFill');
 let athReady = false, athLoading = false;
 async function initAthletes(){
   if (athReady || athLoading) return; athLoading = true;
+  for(let attempt=1; attempt<=3 && !athReady; attempt++){
   try {
     const { loadHumans } = await import('./characters/base-human-v2/humans.js');
     const lib = await loadHumans(THREE, './characters/base-human-v2/');
@@ -1067,7 +1071,8 @@ async function initAthletes(){
       }
     }
     athReady = true;
-  } catch (e) { /* loading failed: the primitive game keeps working */ }
+  } catch (e) { if(attempt<3) await new Promise(r=>setTimeout(r,1200*attempt)); /* attempts exhausted: the primitive game keeps working */ }
+  }
 }
 initAthletes(); // start loading the real athletes while the menu is up so they're on the pitch at kickoff
 
