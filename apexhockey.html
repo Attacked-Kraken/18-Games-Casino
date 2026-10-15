@@ -723,9 +723,11 @@ function doPass(){
     const sc=align*2+Math.min(open,30)/15-d/90;
     if(sc>bs){bs=sc;best=s;} }
   if(!best) return;
-  const lead=0.45, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
-  const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=54;
-  puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=1.6;
+  const lead=0.30, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
+  const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=40;
+  puck.pos.set(from.pos.x+fx*2.1, 0.2, from.pos.z+fz*2.1); // release from the stick, not the skates
+  puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=2.2;
+  puck.passGrace=from; puck.passT=performance.now();
   puck.lastPass=from; puck.lastPassT=performance.now();
 }
 function doShoot(power){
@@ -740,7 +742,7 @@ function shootFrom(s, power, aimed){
     if(Math.sign(jx)===dir||Math.abs(jx)>0.7) aimZ=clamp(jz*8,-2.6,2.6);
   }
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
-  const sp=(48+62*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
+  const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
   puck.shot={team:s.team,t:0,by:s};
   s.phase+=1.2;
@@ -755,7 +757,7 @@ function doCheck(){
     const chance=dO<3?0.8:0.45;
     if(Math.random()<chance){ // poke it loose
       puck.owner=null;
-      const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(14,26),0,Math.sin(a)*rand(14,26));
+      const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(8,15),0,Math.sin(a)*rand(8,15));
       o.stun=0.5; o.vel.x+=(s.pos.x-o.pos.x)*2; o.vel.z+=(s.pos.z-o.pos.z)*2;
       banner('POKE CHECK','',700,'#9fd8ff');
     }
@@ -811,7 +813,7 @@ function aiSkater(s,dt){
   const dir=TEAMS[s.team].dir;
   s.thinkT-=dt;
   if(s.thinkT>0) return;
-  s.thinkT=0.15+Math.random()*0.1;
+  s.thinkT=0.25+Math.random()*0.15;
   const isHome=s.team==='home';
   const isControlled=isHome&&s===controlled&&state==='play';
   if(isControlled){ s._chasing=false; return; } // input-driven
@@ -821,19 +823,21 @@ function aiSkater(s,dt){
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
   const chasers=mates.slice(0,2);
   const carrier=puck.owner;
-  if(carrier===s){ // I have the puck
-    if(!isHome){ // away AI carrier
-      const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
-      let nearestOpp=1e9;
-      for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
-      s._decide=(s._decide||0)-0.4;
-      if(dGoal<58 && s._decide<=0){ shootFrom(s, rand(0.55,0.95), false); s._decide=rand(1,2); return; }
-      if(nearestOpp<7 && Math.random()<0.55 && s._decide<=0){ aiPass(s); s._decide=rand(1,2); return; }
-      s.target.set(dir*rand(70,82), 0, clamp(s.pos.z*0.4+rand(-14,14),-28,28));
-    } else { // home AI teammate somehow has puck (after pass) -> simple: skate up ice
-      s.target.set(dir*60,0,clamp(s.pos.z*0.5,-24,24));
-      if(Math.hypot(dir*GOAL_LINE-s.pos.x,s.pos.z)<58&&Math.random()<0.3) shootFrom(s,rand(0.5,0.9),false);
-    }
+  if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
+    const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
+    let nearestOpp=1e9;
+    for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
+    s._decide=(s._decide||0)-0.18;
+    if(dGoal<44 && s._decide<=0){ shootFrom(s, rand(0.55,0.95), false); s._decide=rand(1.4,2.4); return; }
+    if(nearestOpp<7 && Math.random()<0.55 && s._decide<=0){ aiPass(s); s._decide=rand(1.4,2.4); return; }
+    s.target.set(dir*rand(70,82), 0, clamp(s.pos.z*0.4+rand(-14,14),-28,28));
+    return;
+  }
+  if(!carrier && puck.recv===s && puck.recvT>0){ // a pass is coming to ME: skate to meet it
+    const pv=Math.hypot(puck.vel.x,puck.vel.z)||1, pd=Math.hypot(puck.pos.x-s.pos.x,puck.pos.z-s.pos.z);
+    const tt=Math.min(0.6, pd/(pv+22));
+    s.target.set(puck.pos.x+puck.vel.x*tt, 0, puck.pos.z+puck.vel.z*tt);
+    s._chasing=true;
     return;
   }
   const oppHas=carrier&&carrier.team!==s.team, weHave=carrier&&carrier.team===s.team;
@@ -843,9 +847,9 @@ function aiSkater(s,dt){
                  puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
     s._chasing=true;
     // active pressure: poke it loose when right on the carrier
-    if(carrier && !carrier.goalie && Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z)<2.6 && Math.random()<0.08){
+    if(carrier && !carrier.goalie && Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z)<2.3 && Math.random()<0.045){
       puck.owner=null; const pa=Math.random()*TAU;
-      puck.vel.set(Math.cos(pa)*rand(12,22),0,Math.sin(pa)*rand(12,22));
+      puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
       carrier.stun=0.35;
     }
     return;
@@ -855,12 +859,18 @@ function aiSkater(s,dt){
   const b=BASE_ANCHOR[s.role];
   const cx=carrier?carrier.pos.x:puck.pos.x, cz=carrier?carrier.pos.z:puck.pos.z;
   let ax, az;
-  if(weHave){ // offense: cycle to open ice around the carrier
-    ax=b[0]*dir*0.8+cx*0.2+Math.sin(gameNow*0.9+s.phase)*6;
-    az=b[1]*0.8+cz*0.2+Math.cos(gameNow*0.7+s.phase*1.31)*6;
+  if(weHave){ // SUPPORT: give the carrier real options - slot drive, far lane, points step up
+    const mates2=(isHome?homeSkaters:awaySkaters).filter(m=>m!==carrier);
+    const fw=mates2.filter(m=>m.role==='C'||m.role==='LW'||m.role==='RW')
+      .sort((p,q)=>((p.pos.x-cx)**2+(p.pos.z-cz)**2)-((q.pos.x-cx)**2+(q.pos.z-cz)**2));
+    if(s.role==='LD'||s.role==='RD'){ ax=dir*BLUE+dir*3; az=s.role==='LD'?-17:17; } // points at the attacking blue line
+    else if(fw[0]===s){ ax=clamp(cx+dir*21,-88,88); az=clamp(-cz*0.35,-15,15); } // nearest forward drives the slot
+    else if(fw[1]===s){ ax=clamp(cx+dir*7,-88,88); az=cz>0?-30:30; } // second forward: far-side lane, wide open
+    else { ax=clamp(cx-dir*8,-88,88); az=clamp(cz*0.4,-20,20); } // trailer: the safe outlet behind the play
+    ax+=Math.sin(gameNow*0.6+s.phase)*2.2; az+=Math.cos(gameNow*0.5+s.phase*1.3)*2.2;
   }else{ // defense: shade puck-side and track the play
-    ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*2.5;
-    az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*2.5;
+    ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*1.5;
+    az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*1.5;
   }
   s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
 }
@@ -874,9 +884,11 @@ function aiPass(s){
     for(const o of opps) open=Math.min(open,Math.hypot(o.pos.x-m.pos.x,o.pos.z-m.pos.z));
     const sc=fwd*1.5+Math.min(open,30)/15-d/100; if(sc>bs){bs=sc;best=m;} }
   if(!best) return;
-  const tx=best.pos.x+best.vel.x*0.4, tz=best.pos.z+best.vel.z*0.4;
+  const tx=best.pos.x+best.vel.x*0.3, tz=best.pos.z+best.vel.z*0.3;
   const dx=tx-puck.pos.x,dz=tz-puck.pos.z,d=Math.hypot(dx,dz)||1;
-  puck.vel.set(dx/d*52,0,dz/d*52); puck.owner=null; puck.recv=best; puck.recvT=1.6;
+  puck.pos.set(s.pos.x+Math.cos(s.facing)*2.1, 0.2, s.pos.z+Math.sin(s.facing)*2.1);
+  puck.vel.set(dx/d*37,0,dz/d*37); puck.owner=null; puck.recv=best; puck.recvT=2.2;
+  puck.passGrace=s; puck.passT=performance.now();
   puck.lastPass=s; puck.lastPassT=performance.now();
 }
 function aiGoalie(g,dt){
@@ -924,20 +936,20 @@ function stepSkater(s,dt){
     if(keys.KeyW||keys.ArrowUp)iy-=1; if(keys.KeyS||keys.ArrowDown)iy+=1;
     if(keys.KeyA||keys.ArrowLeft)ix-=1; if(keys.KeyD||keys.ArrowRight)ix+=1;
     const m=Math.hypot(ix,iy);
-    if(m>0.12){ const sp=Math.min(m,1)*30; des.set(ix/m*sp,0,iy/m*sp); }
+    if(m>0.12){ const sp=Math.min(m,1)*24; des.set(ix/m*sp,0,iy/m*sp); }
   } else if(state==='play'){
     const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
     const arr=s._chasing?1.0:2.5;
-    if(d>arr){ const sp=s.goalie?0:Math.min(30,10+d*0.55); des.set(dx/d*sp,0,dz/d*sp); }
+    if(d>arr){ const sp=s.goalie?0:Math.min(22.5,8.5+d*0.5); des.set(dx/d*sp,0,dz/d*sp); }
     else if(!s.goalie){ // on station: keep the skates shuffling, never freeze mid-play
       des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
     }
   }
-  const k=(des.lengthSq()>0.01)?4.5:1.4; // snappy accel, glidey stop
+  const k=(des.lengthSq()>0.01)?2.8:1.4; // smooth accel, glidey stop
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
   s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
   const sp=Math.hypot(s.vel.x,s.vel.z);
-  const cap = s.star ? 31*(window.__starBoost||1) : (s.team==='away' ? 31*(window.__awayBoost||1) : 31);
+  const cap = s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24);
   if(sp>cap){ s.vel.x*=cap/sp; s.vel.z*=cap/sp; }
   s.pos.x+=s.vel.x*dt; s.pos.z+=s.vel.z*dt;
   // stay in rink (rounded)
@@ -947,7 +959,7 @@ function stepSkater(s,dt){
     const dx=Math.abs(s.pos.x)-ccx, dz=Math.abs(s.pos.z)-ccz, d=Math.hypot(dx,dz), max=RINK.CR-1.2;
     if(d>max){ s.pos.x=Math.sign(s.pos.x)*(ccx+dx/d*max); s.pos.z=Math.sign(s.pos.z)*(ccz+dz/d*max); } }
   // facing + animation
-  if(sp>2){ const want=Math.atan2(s.vel.z,s.vel.x); s.facing=angLerp(s.facing,want,Math.min(1,10*dt)); }
+  if(sp>2){ const want=Math.atan2(s.vel.z,s.vel.x); s.facing=angLerp(s.facing,want,Math.min(1,7.5*dt)); }
   s.g.rotation.y=-s.facing;
   s.phase+=sp*dt*0.55;
   const swing=clamp(sp/30,0,1)*0.65;
@@ -978,7 +990,8 @@ function stepPuck(dt){
     return;
   }
   puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
-  puck.vel.multiplyScalar(Math.max(0,1-0.65*dt));
+  const _ps0=puck.vel.length();
+  puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
   if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
   bouncePuck();
   puckMesh.rotation.y+=puck.vel.length()*dt*0.4;
@@ -986,9 +999,11 @@ function stepPuck(dt){
   const ps=puck.vel.length();
   for(const s of skaters){
     if(s.goalie) continue; // goalies cover (whistle) instead of carrying
+    if(puck.passGrace===s && performance.now()-puck.passT<450) continue; // the passer can't instantly re-grab his own pass
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
-    const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.3;
-    if(d<grabR&&ps<36){ puck.owner=s; puck.recv=null; puck.shot=null; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
+    const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
+    const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
+    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1377,6 +1392,7 @@ $('friendGo').addEventListener('click', () => {
 })();
 
 requestAnimationFrame(tick);
+
 </script>
 </body>
 </html>
