@@ -69,6 +69,16 @@ toggle on every game, persisted; audio starts on first interaction.
 A game is not DONE without all three. Full text: ASSET-LAW.md
 Part II.
 
+## LANDSCAPE LAW (owner, 2026-10-15)
+
+**Every game starts in landscape, locked, already loaded. There is
+no "rotate your device" sign and no portrait state.** In portrait the
+stage presents rotated to landscape, the renderer sizes to the
+landscape box, touch input is remapped to the rotated frame, and the
+first tap requests fullscreen + an orientation lock where the
+platform allows it. If your game shows a turn sign, it breaks the
+law. Full text: STORE-READY.md, checklist item 2.
+
 ## STORE-READY RULE (owner, 2026-10-14)
 
 Every game here is headed for the Apple App Store and Google Play.
