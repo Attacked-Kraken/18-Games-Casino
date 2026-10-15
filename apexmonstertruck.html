@@ -664,6 +664,7 @@ function startGame() {
 }
 function endGame() {
   state = 'over';
+  T.y = groundHeight(T.x, T.z); T.vy = 0; T.grounded = true;   // don't leave the truck hanging mid-air behind the panel
   Snd.engine(0); Snd.cheer(true);
   document.getElementById('finalScore').textContent = score;
   let best = 0;
