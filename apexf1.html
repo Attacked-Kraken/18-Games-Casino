@@ -113,7 +113,7 @@
 <!-- MENU -->
 <div class="overlay" id="menu">
   <h1 class="title">APEX F1<small>CHAMPIONSHIP RACING</small></h1>
-  <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather — and rivals who will do anything to win.</div>
+  <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather — and rivals who will do anything to win.<br><span style="color:#ffd76a;letter-spacing:3px;font-size:12px">★ PRESENTED BY APEX ARCADE ★</span></div>
   <button class="bigbtn" id="quickBtn">⚡ QUICK RACE</button>
   <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
   <button class="bigbtn alt" id="friendBtn">👥 RACE A FRIEND (ENTER CODE)</button>
@@ -509,7 +509,7 @@ const Track = {
       dg.setAttribute('position', new THREE.Float32BufferAttribute(dv,3)); dg.setIndex(di);
       g.add(new THREE.Mesh(dg, drsMat));
     }
-    this.buildStands(g); this.buildPits(g); this.buildScenery(g);
+    this.buildStands(g); this.buildPits(g); this.buildScenery(g); this.buildSponsorBoards(g);
   },
   buildStands(g){
     // grandstands ringing the main straight + a few corners, with animated crowd
@@ -602,6 +602,48 @@ const Track = {
       const stack=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,1.6,8), tireM);
       stack.position.set(x,p.y+0.8,z); g.add(stack);
     }
+  },
+  buildSponsorBoards(g){
+    // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
+    const cv=document.createElement('canvas'); cv.width=512; cv.height=72;
+    const c=cv.getContext('2d');
+    c.fillStyle='#0a0e16'; c.fillRect(0,0,512,72);
+    c.fillStyle='#d21f26'; c.fillRect(0,0,512,9); c.fillRect(0,63,512,9);
+    c.font='900 40px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+    c.fillStyle='#ffffff'; c.fillText('APEX ARCADE', 256, 37);
+    const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace;
+    tex.anisotropy=4;
+    const mat=new THREE.MeshBasicMaterial({map:tex});
+    const geo=new THREE.BoxGeometry(15,1.5,0.25);
+    const step=140, count=Math.floor(this.length/step);
+    for(let i=0;i<count;i++){
+      const s=i*step+50, p=this.frameAt(s);
+      const side=i%2?1:-1, off=this.width/2+8;
+      const m=new THREE.Mesh(geo,mat);
+      m.position.set(p.x+p.nx*off*side, p.y+1.15, p.z+p.nz*off*side);
+      m.rotation.y=Math.atan2(-p.nx*side,-p.nz*side);
+      g.add(m);
+    }
+    // start/finish gantry
+    const f0=this.frameAt(0), W=this.width;
+    const postM=new THREE.MeshLambertMaterial({color:0x1a2436});
+    for(const sd of [-1,1]){
+      const post=new THREE.Mesh(new THREE.BoxGeometry(0.9,10,0.9), postM);
+      post.position.set(f0.x+f0.nx*(W/2+3)*sd, f0.y+5, f0.z+f0.nz*(W/2+3)*sd);
+      post.castShadow=!isTouch; g.add(post);
+    }
+    const gcv=document.createElement('canvas'); gcv.width=1024; gcv.height=96;
+    const gc=gcv.getContext('2d');
+    gc.fillStyle='#0a0e16'; gc.fillRect(0,0,1024,96);
+    gc.fillStyle='#d21f26'; gc.fillRect(0,0,1024,12); gc.fillRect(0,84,1024,12);
+    gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
+    gc.fillStyle='#ffd76a'; gc.fillText('★ APEX ARCADE ★', 512, 50);
+    const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
+      new THREE.MeshBasicMaterial({map:gtex}));
+    beam.position.set(f0.x, f0.y+9.5, f0.z);
+    beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2;
+    g.add(beam);
   },
   setWeather(wet01){ // darken track + fog when wet
     if(this.asphaltMat) this.asphaltMat.color.setHex(wet01>0.5?0x2c2f36:0x3a3d42);
