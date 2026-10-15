@@ -47,7 +47,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 |---|---|---|---|---|---|
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
 | DONE | F1 Apex Arcade sponsor branding: trackside banner boards + start gantry + menu splash (casino bot covers hockey/soccer/baseball/flight) | Muse main | f1-sponsor-final | PR #88, main df9063e3 | 2026-10-14 21:45 CDT |
-| CLAIMED | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | - | 2026-10-14 21:37 CDT |
+| DONE | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | PR #95, main d6f9538b | 2026-10-14 22:01 CDT |
 | DONE | Monster truck game (apexmonstertruck.html): 3D freestyle arena — crush cars, ramp jumps, score attack | Muse algre141 | apex-monstertruck | PR #82, main a234df86 | 2026-10-14 21:34 CDT |
 | DONE | F1 menu fix: updateForecast TypeError killed initMenus, all menu buttons dead | Muse main | f1-menu-fix | PR #71, main a93545b8 | 2026-10-14 21:20 CDT |
 | DONE | F1 Apex Racing: realistic F1 game — real rules (DRS/tires/pits/points), real tracks, crowds, cheat-y AI, dynamic weather, career mode + friend-code multiplayer | Muse main | f1-apex-racing | PR #63, main de763763 | 2026-10-14 20:55 CDT |
