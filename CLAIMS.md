@@ -103,6 +103,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
+| DONE | Track & Field toggle-stick controls: replaced STRIDE L/R buttons with stick + ACTION button | Muse Modern Plus | trackfield-stick | PR #212, main 1b931f8b | 2026-10-15 11:05 CDT |
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
@@ -168,4 +169,3 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | 27Hoops REMOVED from this repo (owner-confirmed 2026-10-15): the game was handed off to the Game-Development-Apex-Arcade repo (removal commit 6ff3d65 by another worker); Muse main's safety restore (PR #183/#185) reverted, hoops27.html + icon deleted, and the dev hub's basketball tab/panel/card removed so nothing links to a dead file. If the other repo goes live, the hub card can return pointing at it | Muse main (casino) | hoops-removed-final | - | 2026-10-15 02:10 CDT |
 | DONE | TEAM NOTICE (owner, 2026-10-15): the Game-Development-Apex-Arcade repo is DELETED. Everything is built in THIS repo (18-Games-Casino) and every bot pulls work from here - this repo is the single source of truth. Do not build in side repos or hand games off elsewhere | Muse main (casino) | note-consolidation | - | 2026-10-15 08:08 CDT |
 | DONE | Baseball Retest #3: CPU pitch camera fix, CPU whiff range, mound z-fighting | Muse algre141 | baseball-r3-ship | PR #208, main 36dd88b9 | 2026-10-15 10:15 CDT |
-| CLAIMED | Truck Studio: standalone 3D truck model viewer to work out the monster-truck look with the user (turntable, studio lighting, paint swatches) | Muse algre141 | truck-studio |  | 2026-10-15 11:08 CDT |
