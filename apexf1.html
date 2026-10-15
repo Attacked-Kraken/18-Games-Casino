@@ -55,8 +55,12 @@
   .tbtn:active,.tbtn.on { background:#d21f2666; border-color:#ff6b6b; }
   #btnL { left:14px; bottom:170px; width:84px; height:84px; font-size:30px; }
   #btnR { left:112px; bottom:170px; width:84px; height:84px; font-size:30px; }
+  /* thumbstick: left analog steering */
+  #stick { position:absolute; pointer-events:auto; left:14px; bottom:170px; width:120px; height:120px; border-radius:50%; background:#ffffff10; border:2px solid #ffffff44; }
+  #stickKnob { position:absolute; left:50%; top:50%; width:56px; height:56px; border-radius:50%; background:#ffffff2a; border:2px solid #ffffff88; transform:translate(-50%,-50%); }
   #btnGas { right:14px; bottom:250px; width:96px; height:96px; font-size:15px; border-radius:18px; }
   #btnBrake { right:122px; bottom:250px; width:84px; height:84px; font-size:14px; border-radius:18px; }
+  #btnRev { right:218px; bottom:250px; width:72px; height:72px; font-size:13px; border-radius:16px; }
   #btnDRS { right:14px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   #btnERS { right:98px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
@@ -64,20 +68,20 @@
   /* mobile: HUD elements move clear of the thumb zones */
   body.touch #minimap { left:12px; top:176px; bottom:auto; width:104px; height:104px; }
   body.touch #ersbar { right:12px; top:176px; bottom:auto; }
-  body.touch #btnL, body.touch #btnR { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
-  body.touch #btnGas, body.touch #btnBrake { bottom:calc(250px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #stick { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #btnGas, body.touch #btnBrake, body.touch #btnRev { bottom:calc(250px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnDRS, body.touch #btnERS { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
   @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
   /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
   @media (pointer:coarse) and (orientation:landscape) {
-    body.touch #btnL { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
-    body.touch #btnR { left:100px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
-    body.touch #btnPit { left:12px; bottom:calc(108px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
-    body.touch #btnCam { left:88px; bottom:calc(108px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #stick { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:110px; height:110px; }
+    body.touch #btnPit { left:134px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnCam { left:134px; bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
     body.touch #btnGas { right:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:88px; height:88px; }
     body.touch #btnBrake { right:112px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
+    body.touch #btnRev { right:200px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:64px; height:64px; }
     body.touch #btnDRS { right:12px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
     body.touch #btnERS { right:88px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
     body.touch #minimap { left:12px; top:140px; bottom:auto; width:80px; height:80px; }
@@ -134,10 +138,10 @@ setTimeout(function(){
 </div>
 
 <div id="touch" class="hidden">
-  <div class="tbtn" id="btnL">◀</div>
-  <div class="tbtn" id="btnR">▶</div>
+  <div id="stick"><div id="stickKnob"></div></div>
   <div class="tbtn" id="btnGas">GAS</div>
   <div class="tbtn" id="btnBrake">BRK</div>
+  <div class="tbtn" id="btnRev">REV</div>
   <div class="tbtn" id="btnDRS">DRS</div>
   <div class="tbtn" id="btnERS">ERS</div>
   <div class="tbtn" id="btnPit">PIT</div>
@@ -240,7 +244,7 @@ setTimeout(function(){
 <div class="overlay hidden" id="howMenu">
   <h1 class="title" style="font-size:30px">RULES &amp; CONTROLS</h1>
   <div class="card" style="font-size:13px;line-height:1.65">
-  <b style="color:#ffd76a">DRIVE:</b> ◀ ▶ steer · GAS / BRK pedals (or W A S D + arrows on desktop).<br>
+  <b style="color:#ffd76a">DRIVE:</b> left thumbstick to steer · GAS / BRK / REV pedals (or W A S D + arrows on desktop).<br>
   <b style="color:#ffd76a">DRS:</b> enabled after lap 2 — within 1s of the car ahead in a DRS zone, tap DRS (or press <b>D</b>) for a top-speed boost.<br>
   <b style="color:#ffd76a">DESKTOP KEYS:</b> <b>D</b>=DRS, <b>P</b>=request pit stop, <b>C</b>=cycle camera, <b>Shift</b>=ERS overtake, arrows/WASD to drive.<br>
   <b style="color:#ffd76a">ERS:</b> hold ERS for hybrid boost. It recharges under braking.<br>
@@ -933,7 +937,13 @@ class Car {
     else { this.ers=Math.min(100,this.ers+(brake>0.3?10:2.2)*dt); }
     // cornering: if too fast for corner, scrub + push wide
     if(this.v>topV){ acc-= (this.v-topV)*3.2; this.understeer=true; } else this.understeer=false;
-    this.v=clamp(this.v+acc*dt,0,97);
+    if(this.reverse && this.isPlayer){
+      // reverse gear: back up slowly
+      this.v=clamp(this.v-14*dt,-12,97);
+      if(this.v<0) this.v=Math.max(-12,this.v);
+    } else {
+      this.v=clamp(this.v+acc*dt,0,97);
+    }
     // steering -> lateral
     const steerAuthority=clamp(this.v/28,0,1)*(1-clamp(this.v/95,0,1)*0.55);
     this.d += this.steer*steerAuthority*14*dt*(this.understeer?0.55:1);
@@ -999,7 +1009,7 @@ class Car {
 }
 
 /* ================= INPUT ================= */
-const Input={ left:false,right:false,gas:false,brake:false,ers:false };
+const Input={ left:false,right:false,gas:false,brake:false,ers:false,steer:0,reverse:false };
 function bindHold(el,down,up){
   const on=e=>{e.preventDefault(); el.classList.add('on'); down();};
   const off=e=>{e.preventDefault(); el.classList.remove('on'); if(up)up();};
@@ -1009,11 +1019,32 @@ function bindHold(el,down,up){
   el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',()=>{el.classList.remove('on'); if(up)up();});
 }
 function initInput(){
-  bindHold($('btnL'),()=>Input.left=true,()=>Input.left=false);
-  bindHold($('btnR'),()=>Input.right=true,()=>Input.right=false);
   bindHold($('btnGas'),()=>Input.gas=true,()=>Input.gas=false);
   bindHold($('btnBrake'),()=>Input.brake=true,()=>Input.brake=false);
+  bindHold($('btnRev'),()=>Input.reverse=true,()=>Input.reverse=false);
   bindHold($('btnERS'),()=>Input.ers=true,()=>Input.ers=false);
+  // analog thumbstick: left = steering
+  const stick=$('stick'), knob=$('stickKnob');
+  let stickId=null;
+  const setKnob=dx=>{ knob.style.transform=`translate(calc(-50% + ${dx}px),-50%)`; };
+  const stickMove=t=>{
+    const r=stick.getBoundingClientRect();
+    const cx=r.left+r.width/2;
+    let dx=(t.clientX-cx)/(r.width/2);
+    dx=Math.max(-1,Math.min(1,dx));
+    // deadzone
+    Input.steer=Math.abs(dx)<0.08?0:dx;
+    setKnob(dx*(r.width/2-28));
+  };
+  stick.addEventListener('touchstart',e=>{ e.preventDefault(); const t=e.changedTouches[0]; stickId=t.identifier; stickMove(t); },{passive:false});
+  stick.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===stickId) stickMove(t); },{passive:false});
+  const stickEnd=e=>{ for(const t of e.changedTouches) if(t.identifier===stickId){ stickId=null; Input.steer=0; setKnob(0); } };
+  stick.addEventListener('touchend',stickEnd); stick.addEventListener('touchcancel',stickEnd);
+  // mouse fallback for desktop testing
+  let mouseDown=false;
+  stick.addEventListener('mousedown',e=>{ mouseDown=true; stickMove(e); });
+  addEventListener('mousemove',e=>{ if(mouseDown) stickMove(e); });
+  addEventListener('mouseup',()=>{ if(mouseDown){ mouseDown=false; Input.steer=0; setKnob(0); } });
   const keys={};
   addEventListener('keydown',e=>{
     keys[e.code]=true;
@@ -1035,9 +1066,11 @@ function initInput(){
 function readInput(car){
   const k=Input.keys||{};
   const L=Input.left||k['ArrowLeft']||k['KeyA'], R=Input.right||k['ArrowRight']||k['KeyD'];
-  car.steer=(R?1:0)-(L?1:0);
+  // analog thumbstick takes priority, keyboard as fallback
+  car.steer=Input.steer!==0?Input.steer:(R?1:0)-(L?1:0);
   car.throttle=(Input.gas||k['ArrowUp']||k['KeyW'])?1:0;
   car.brake=(Input.brake||k['ArrowDown']||k['KeyS'])?1:0;
+  car.reverse=!!Input.reverse;
   car.ersUse=!!Input.ers||!!k['ShiftLeft']||!!k['ShiftRight'];
   // auto DRS hint: enable automatically when eligible? No — manual per rules. Keep manual.
 }
