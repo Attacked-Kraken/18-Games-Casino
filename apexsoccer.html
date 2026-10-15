@@ -96,8 +96,9 @@
 <div id="chg"><div id="chgFill"></div></div>
 <div class="overlay" id="startOv">
   <div class="card">
+    <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX SOCCER</h1>
-    <h2>18 GAMES CASINO &middot; 7V7 &middot; 2 &times; 2:30</h2>
+    <h2>APEX ARCADE &middot; 7V7 &middot; 2 &times; 2:30</h2>
     <p><b>Comets</b> (orange, you) vs <b>Sharks</b> (blue). Real rules: kickoffs, throw-ins, corners, goal kicks, free kicks, offside, halftime &mdash; full time ends in a draw if level.</p>
     <p><b>Move:</b> left stick / WASD. <b>Pass:</b> button / J. <b>Shoot:</b> hold to charge, aim with stick / K. <b>Sprint:</b> hold / Shift. <b>Tackle / switch player:</b> button / L.</p>
     <p>Hold <b>SHOOT</b> longer for a rocket &mdash; but the keeper reads slow ones. Time your tackles: from behind is a foul.</p>
@@ -216,7 +217,7 @@ buildGoal(1); buildGoal(-1);
 /* ================= stadium dressing (cheap) ================= */
 {
   const bc=document.createElement('canvas'); bc.width=1024; bc.height=64;
-  const bg=bc.getContext('2d'); const words=['APEX ARCADE','COMETS','SHARKS','18 GAMES','FUN CHIPS'];
+  const bg=bc.getContext('2d'); const words=['APEX ARCADE','APEX ARCADE PRESENTS','APEX ARCADE','APEX ARCADE','APEX ARCADE']; /* the boards belong to the sponsor - always Apex Arcade */
   const cols=['#0b3d91','#b3122e','#0a6b3a','#5a2a8a','#8a5a00'];
   for(let i=0;i<16;i++){ bg.fillStyle=cols[i%5]; bg.fillRect(i*64,0,64,64);
     bg.fillStyle='#fff'; bg.font='bold 17px monospace'; bg.textAlign='center'; bg.fillText(words[i%5],i*64+32,38); }
