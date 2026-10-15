@@ -93,7 +93,6 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
-| CLAIMED | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | - | 2026-10-15 01:18 CDT |
 | CLAIMED | Soccer realism + stadium fix (apexsoccer.html): stands set back off the pitch, goals with nets + goalies, realistic proportioned players/kits, Apex Arcade branding kept | Muse Dash | soccer-realism-dash | - | 2026-10-15 01:15 CDT |
 | DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
 | DONE | Monster truck mega upgrade: 3x arena, 4800-fan grandstands, 10 bigger ramps, detailed truck, 28/28 checks | Muse algre141 | mt-mega-arena2 | PR #159, main 4f366aa5 | 2026-10-15 00:14 CDT |
@@ -146,3 +145,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
 | DONE | Add the owner's music & sound law: every game needs home-page music, in-game music and game sounds (ASSET-LAW.md + CLAIMS.md + STORE-READY.md) | Muse main (casino) | music-law | PR #150, main 2f3c587a | 2026-10-14 23:38 CDT |
 | DONE | Hockey gameplay retest fixes (owner playtest #2): passes connect (receiver skates to the pass, stick release, no self-re-grab, interceptions need a slow puck), real teammate support (slot/far lane/points/trailer), pace calmed (cap 24, shots 82 max, calmer AI), crowd verified full from CLOSE view | Muse main (casino) | hockey-gameplay-fix | PR #172, main 65fff891 | 2026-10-15 01:22 CDT |
+| DONE | Baseball Retest #2: pitcher/batter cameras, grass/dirt textures, realistic ball size | Muse algre141 | baseball-r2-ship | PR #169, main d499325d | 2026-10-15 01:20 CDT |
