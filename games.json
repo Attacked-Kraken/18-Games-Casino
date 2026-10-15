@@ -284,6 +284,18 @@
    "category": "action",
    "multiplayer": false,
    "new": true
+  },
+  {
+   "id": "apexf1",
+   "file": "apexf1.html",
+   "title": "Apex F1 Racing",
+   "tagline": "3D Formula racing: real rules \u2014 DRS, tire strategy, pit stops, dynamic weather \u2014 5 real circuits, career + friend codes.",
+   "rating": "13+",
+   "icon": "apexf1-icon.svg",
+   "accent": "#ff2d2d",
+   "category": "action",
+   "multiplayer": true,
+   "new": true
   }
  ]
 }
