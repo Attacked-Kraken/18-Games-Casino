@@ -108,6 +108,7 @@
 
 <div class="ovl" id="startOv">
   <div class="panel">
+    <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX FLIGHT</h1>
     <h2>SINGLE-PROP SIMULATOR</h2>
     <p>Line up on runway 36, push the throttle to full, and near 50 kt the nose rises on its own - stick up to climb. Grease the landing back on the centerline.</p>
@@ -292,6 +293,19 @@ const buildings = [];
   const sock = new THREE.Mesh(new THREE.ConeGeometry(0.7, 3.2, 8),
     new THREE.MeshLambertMaterial({ color: 0xe8641e }));
   sock.rotation.z = Math.PI / 2; sock.position.set(35.6, 6.6, -740); scene.add(sock);
+  // the sponsor boards flank the runway - Apex Arcade owns this field
+  const bn = document.createElement('canvas'); bn.width = 1024; bn.height = 96;
+  { const bg2 = bn.getContext('2d'); bg2.fillStyle = '#0e2a4a'; bg2.fillRect(0, 0, 1024, 96);
+    bg2.fillStyle = '#ffcc33'; bg2.font = '900 52px system-ui, sans-serif'; bg2.textAlign = 'center';
+    bg2.fillText('A P E X   A R C A D E', 512, 64); }
+  const bnTex = new THREE.CanvasTexture(bn); bnTex.colorSpace = THREE.SRGBColorSpace;
+  const bnMat = new THREE.MeshBasicMaterial({ map: bnTex, side: THREE.DoubleSide });
+  [[-(RWY_W + 9), -100], [RWY_W + 9, -100], [-(RWY_W + 9), 300], [RWY_W + 9, 300]].forEach(([bx, bz]) => {
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.4, 24), new THREE.MeshLambertMaterial({ color: 0x20303f }));
+    b.position.set(bx, 1.7, bz); scene.add(b);
+    const face = new THREE.Mesh(new THREE.PlaneGeometry(24, 2.6), bnMat);
+    face.position.set(bx + (bx < 0 ? 0.3 : -0.3), 1.9, bz); face.rotation.y = bx < 0 ? Math.PI / 2 : -Math.PI / 2; scene.add(face);
+  });
 })();
 
 /* trees: instanced cones + trunks, kept clear of the runway */
