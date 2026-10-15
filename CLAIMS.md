@@ -21,6 +21,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Hockey arena fix: stands out of rink, realistic ice, pro rules, crowd audio (cheer/boo/goal swell), better cameras + landscape first-load lag & oversize fix | Muse main | hockey-arena-final | PR #46, main 3de86ba5 | 2026-10-14 19:38 CDT |
 | DONE | Hosting move: repo public again, GitHub Pages live — every merge to main auto-deploys | owner + Muse main | — | main @ 20871fb3 era | 2026-10-14 15:28 CDT |
 | DONE | Layout fix: all four Apex games fill the screen after rotation + hockey framing/lighting | Muse main (casino) | layout-fix | PR #24 | 2026-10-14 14:33 CDT |
 | DONE | Face v12h (visits/scans/approach) + commentary cast2 (true stats) + soccer v4 (goals/keepers/scoring/teammates) | Muse main (casino) | face-v12h-cast2-soccer-v4 | PR #25, main 40ee0b8a | 2026-10-14 14:33 CDT |
@@ -31,6 +32,9 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Hockey career mode: menu career options, star player showcase on menu, friend-code matches (async) | Muse main (casino) | hockey-career | PR #33, main 64cab4eb | 2026-10-14 17:40 CDT |
 | DONE | Hoops v15: agility + realistic jumps, reach-in steal with fouls, jump swat block, smarter AI, clearer player visuals | Muse main (casino) | hoops-v15 | PR #37, main 89b1c15a | 2026-10-14 19:32 CDT |
 | DONE | Hoops perf auto-tuner: FPS watchdog steps graphics down until smooth, one-tap report of changes, persists per phone | Muse main (casino) | hoops-perf-tuner | PR #43, main 52d66264 | 2026-10-14 19:34 CDT |
-| CLAIMED | Hoops crowd people (clap/cheer/signs/high-fives/the wave) + 2K-style Apex Arcade sponsor presentation | Muse main (casino) | hoops-crowd-2k | - | 2026-10-14 19:34 CDT |
+| DONE | Hoops crowd people (clap/cheer/signs/high-fives/the wave) + 2K-style Apex Arcade sponsor presentation | Muse main (casino) | hoops-crowd-2k | PR #47, main 6c343e81 | 2026-10-14 19:55 CDT |
 | DONE | Soccer playability hotfix: kickoff pass to nearest mid, AI tackling, defender pace 8.9, keeper saves, idle-player AI assist | Muse algre141 | soccer-playability | PR #41, main 5e32edee | 2026-10-14 19:34 CDT |
+| DONE | Hoops v18: ball-tracking reach-in steal (arm aims at the ball, contact fouls), strategic AI shot discipline (no half-court 3 spam), difficulty tiers Rookie/Pro/All-Star/Hall of Fame | Muse main (casino) | hoops-v18 | PR #51, main 37d0a857 | 2026-10-14 19:57 CDT |
+| DONE | Vault reset: locked-out owner gets an erase-and-start-new-vault flow on the PIN screen (old contents stay crypto-locked, wipe is total) | Muse main (casino) | vault-reset | PR #53, main d667f9ff | 2026-10-14 20:05 CDT |
+| DONE | Hoops v19: bigger court (+15%) with arena/stands rebuilt around it, denser crowd + upper-bowl fans + walkers in the aisles | Muse main (casino) | hoops-v19 | PR #56, main 0edfd835 | 2026-10-14 20:16 CDT |
 | CLAIMED | Baseball (apexbaseball) human-look + rules pass: full playtest, audit player look/movement, verify baseball rules, fix gaps | Muse algre141 | baseball-human-pass | — | 2026-10-14 19:36 CDT |
