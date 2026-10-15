@@ -12,6 +12,16 @@ brands or players, no personal info, chat, ads, tracking or internet, content fi
 save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
 Finished games are handed to the Apex Arcade reviewer by telling the owner.
 
+## GAME CHECK (owner, 2026-10-15)
+
+After every merge to main, the **Game check** robot plays every Game Development title like a phone
+(sideways and upright) and posts pictures + results to the **game-checks** branch:
+https://github.com/Attacked-Kraken/18-Games-Casino/tree/game-checks
+After you merge, open it and look at YOUR game. 🔴 FAIL must be fixed (black/blank screen, missing
+files, casino words, rotate sign). 🟡 CHECK means look closer. When you add a game or change how it
+starts, update its start buttons in `tools/game-check/games.json` so the robot reaches real gameplay.
+Don't edit the game-checks branch by hand - the robot overwrites it.
+
 ## WHERE NEW GAMES GO (owner's rule, 2026-10-14)
 
 New built games are GAME DEVELOPMENT titles. They go on the Game
@@ -107,6 +117,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| DONE | Game checker: tools/game-check plays every Game Development title like a phone (sideways + upright) after each merge to main and posts a picture report to the game-checks branch. FAIL = black/blank screen, missing files, casino words, rotate sign; CHECK = menu off-screen, no gameplay, frozen, script errors | Claude (owner's reviewer) | game-checker-claude | this PR | 2026-10-15 11:55 CDT |
 | DONE | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, blue track, starting blocks, lane numbers | Muse Modern Plus | trackfield-daylight | PR #196, main 0b6a7086 | 2026-10-15 08:25 CDT |
 | DONE | Exotic Racer Club car visual rebuild (apexracer.html): 8 distinct modern supercars, integrated aero, dark tinted glass, no floating parts; drift + traffic avoidance verified; screenshot-verified | Muse Cruz.inc | apexracer-cars2 | #207 | 2026-10-15 09:45 CDT |
 | DONE | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud — 28/28 checks, screenshots verified | Muse algre141 | mt-realism3 | PR #189, main a1a855bb | 2026-10-15 07:46 CDT |
