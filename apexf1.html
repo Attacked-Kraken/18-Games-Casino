@@ -854,12 +854,12 @@ function buildCarMesh(color, teamName, carNumber){
   tubGeo.scale(1.9,1,1); // elongate
   const tub=new THREE.Mesh(tubGeo, mat);
   tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
-  // sculpted nose cone (lathed taper)
-  const nosePts=[]; for(let i=0;i<=20;i++){ const t=i/20; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
+  // sculpted nose cone (lathed taper) - shorter, blends with chassis
+  const nosePts=[]; for(let i=0;i<=20;i++){ const t=i/20; nosePts.push(new THREE.Vector2(0.24*(1-t*0.55), t*1.2)); }
   const noseGeo=new THREE.LatheGeometry(nosePts,48);
-  noseGeo.rotateZ(-Math.PI/2+0.05); // point forward along +X
+  noseGeo.rotateZ(-Math.PI/2); // point forward along +X
   const nose=new THREE.Mesh(noseGeo, mat);
-  nose.position.set(1.15,0.44,0); g.add(nose);
+  nose.position.set(0.9,0.46,0); g.add(nose);
   for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
   // front wing: extruded main plane + 3 flaps + endplates
   const fwShape=new THREE.Shape(); fwShape.moveTo(-0.28,0); fwShape.lineTo(0.28,0); fwShape.lineTo(0.22,0.06); fwShape.lineTo(-0.22,0.06); fwShape.closePath();
@@ -955,7 +955,7 @@ class Car {
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
     this.mesh=buildCarMesh(team.color, team.name, 1);
-    this.s=0; this.d=0; this.v=0; this.yaw=0;
+    this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
     this.ers=100; this.drsOpen=false; this.drsCount=0;
     this.lap=1; this.lastLapS=0; this.lapTimes=[]; this.bestLap=Infinity; this.totalTime=0;
@@ -1030,12 +1030,17 @@ class Car {
     } else {
       this.v=clamp(this.v+acc*dt,0,97);
     }
-    // steering -> lateral
-    const steerAuthority=clamp(this.v/28,0,1)*(1-clamp(this.v/95,0,1)*0.55);
-    this.d += this.steer*steerAuthority*14*dt*(this.understeer?0.55:1);
+    // steering -> car heading (proper turning, tires grip, no sideways slide)
+    const tireGrip=this.gripNow();
+    const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/95,0,1)*0.45);
+    this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
+    // tire grip pulls heading back toward track direction (no drift unless sliding)
+    this.headAngle *= Math.max(0, 1 - tireGrip*4*dt);
+    // clamp heading to prevent spinning
+    this.headAngle=clamp(this.headAngle,-0.6,0.6);
     // curvature pushes car outward (must steer to hold the line)
     const curv=Track.frameAt(this.s).curv;
-    this.d += (-curv)*this.v*dt*0.35;
+    this.headAngle += (-curv)*this.v*dt*0.006;
     // surface
     const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
@@ -1046,7 +1051,9 @@ class Car {
     } else if(absD>edge){ this.v*=(1-0.12*dt); this.offTrack=true; } // curb ok
     // track limits for player
     if(this.isPlayer && absD>edge+1.6 && this.v>15) Race.noteOffTrack(dt);
-    this.s+=this.v*dt; this.raceDist+=this.v*dt;
+    this.s+=Math.cos(this.headAngle)*this.v*dt;
+    this.d+=Math.sin(this.headAngle)*this.v*dt;
+    this.raceDist+=this.v*dt;
     // spin recovery
     if(this.spin>0){ this.spin-=dt; this.v*=(1-1.2*dt); }
     // tire smoke: spin / hard brake lockup / off-track dust
@@ -1071,7 +1078,7 @@ class Car {
   placeMesh(dt){
     const p=Track.posAt(this.s,this.d,0.02), f=p.f;
     this.mesh.position.set(p.x,p.y,p.z);
-    const targetYaw=Math.atan2(f.tx,f.tz)-Math.PI/2 - this.steer*0.28 + (this.spin>0? this.spin*6:0);
+    const targetYaw=Math.atan2(f.tx,f.tz)-Math.PI/2 - this.headAngle*1.2 + (this.spin>0? this.spin*6:0);
     this.yaw += angDiff(this.yaw,targetYaw)*Math.min(1,dt*8);
     this.mesh.rotation.y=-this.yaw;
     // wheels spin + front steer
