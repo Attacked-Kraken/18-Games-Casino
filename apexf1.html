@@ -847,15 +847,19 @@ function buildCarMesh(color, teamName, carNumber){
   const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); g.add(x); return x; };
   const floor=B(4.4,0.07,1.85,carbon); floor.position.set(0,0.14,0);
   const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
-  // sculpted chassis tub (lathed)
+  // sculpted chassis tub (lathed) - built along X axis directly, no twist
   const tubPts=[]; for(let i=0;i<=16;i++){ const t=i/16; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
-  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,48), mat);
-  tub.scale.set(1,1,1.9); tub.rotation.z=Math.PI/2; tub.rotation.y=Math.PI/2;
+  const tubGeo=new THREE.LatheGeometry(tubPts,48);
+  tubGeo.rotateZ(Math.PI/2); // lay flat along X
+  tubGeo.scale(1.9,1,1); // elongate
+  const tub=new THREE.Mesh(tubGeo, mat);
   tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
   // sculpted nose cone (lathed taper)
   const nosePts=[]; for(let i=0;i<=20;i++){ const t=i/20; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
-  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,48), mat);
-  nose.rotation.z=-Math.PI/2+0.05; nose.position.set(1.15,0.44,0); g.add(nose);
+  const noseGeo=new THREE.LatheGeometry(nosePts,48);
+  noseGeo.rotateZ(-Math.PI/2+0.05); // point forward along +X
+  const nose=new THREE.Mesh(noseGeo, mat);
+  nose.position.set(1.15,0.44,0); g.add(nose);
   for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
   // front wing: extruded main plane + 3 flaps + endplates
   const fwShape=new THREE.Shape(); fwShape.moveTo(-0.28,0); fwShape.lineTo(0.28,0); fwShape.lineTo(0.22,0.06); fwShape.lineTo(-0.22,0.06); fwShape.closePath();
