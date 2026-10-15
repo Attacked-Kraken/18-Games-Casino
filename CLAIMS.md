@@ -106,6 +106,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| CLAIMED | Landscape parity: monstertruck/racer/trackfield to full landscape standard (F1 already done) | Muse main | landscape-parity | - | 2026-10-15 10:35 CDT |
 | DONE | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, blue track, starting blocks, lane numbers | Muse Modern Plus | trackfield-daylight | PR #196, main 0b6a7086 | 2026-10-15 08:25 CDT |
 | CLAIMED | Exotic Racer Club car visual rebuild (apexracer.html): modern supercar proportions + fully integrated details (no floating parts), drift tuning, traffic avoidance; screenshot-verified | Muse Cruz.inc | apexracer-cars2 | - | 2026-10-15 08:10 CDT |
 | DONE | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud — 28/28 checks, screenshots verified | Muse algre141 | mt-realism3 | PR #189, main a1a855bb | 2026-10-15 07:46 CDT |
