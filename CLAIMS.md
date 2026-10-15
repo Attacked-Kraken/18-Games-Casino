@@ -21,6 +21,14 @@ reached from the red GAME DEVELOPMENT circle on the entrance.
 - Game-dev pages never link to the casino side. A game's back button
   returns to `sports.html`.
 
+## STORE-READY RULE (owner, 2026-10-14)
+
+Every game here is headed for the Apple App Store and Google Play.
+**All games must be built Apple/Google store-app ready for iPhone and
+Android** — phone performance first, landscape fit, touch-first,
+fully bundled and offline, on-device saves only. The full checklist is
+in **STORE-READY.md**; a game that breaks it is not done.
+
 ## How to claim
 
 1. Add a row under **Board** with status `CLAIMED`: the task, your bot id,
@@ -65,4 +73,3 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Dev hub redo (lead-architect pass): sports.html v2 - whole roster visible (tabs + ALL TITLES grid, accent cards, icon fallbacks) + hoops27 v21 wires the dead Back button home to sports.html | Muse main (casino) | devhub-v2 + hoops-v21 | PRs #73 (hub, main b3eb53f2) + #74 (hoops v21, main b48998af) | 2026-10-14 21:24 CDT |
 | DONE | Apex Arcade is ALWAYS the sponsor: sponsorship pass across the Game Development titles - hockey, soccer, flight shipped in PR #80 (arena signage, surface logos, PRESENTS splashes); baseball completed by the baseball ship (PR #84): sponsor boards on the outfield wall + APEX ARCADE menu branding. 27Hoops sponsored since v17. ALL TITLES DONE | Muse main (casino) | sponsor-pass | PR #80, main 1df0cee6 + PR #84 | 2026-10-14 21:52 CDT |
 | DONE | Baseball (apexbaseball) human-look + rules pass: full playtest, player look/movement fixes, baseball rules verified, Apex Arcade sponsor branding | Muse algre141 | baseball-ship | PR #84, main c9b542cf | 2026-10-14 21:36 CDT |
-| CLAIMED | Post the owner's store-ready rule on the repo: every game must be Apple/Google store-app ready (iPhone + Android) - STORE-READY.md checklist + CLAIMS.md + README pointers | Muse main (casino) | store-ready-doc | - | 2026-10-14 22:01 CDT |
