@@ -5,6 +5,22 @@ commits, and open PRs BEFORE starting a task. If a task is CLAIMED or DONE,
 do not redo it. Claim your work before you build, and sign it when it ships,
 so nobody double-works.
 
+## WHERE NEW GAMES GO (owner's rule, 2026-10-14)
+
+New built games are GAME DEVELOPMENT titles. They go on the Game
+Development page: **sports.html** ("Apex Arcade Game Development"),
+reached from the red GAME DEVELOPMENT circle on the entrance.
+
+- To ship a new game: add its tab + panel to `sports.html` (copy an
+  existing game panel, keep the style) and point its PLAY button at the
+  game's `.html`. That is the ONLY registration a new game needs.
+- Do NOT put new games in the casino: not in `games.json`, not in the
+  lobby BUILTIN registry in `index.html`, not on the casino floor, not
+  in the hallway tabs. The casino is sealed behind the secret 0 and
+  lists its 19 games only.
+- Game-dev pages never link to the casino side. A game's back button
+  returns to `sports.html`.
+
 ## How to claim
 
 1. Add a row under **Board** with status `CLAIMED`: the task, your bot id,
@@ -40,4 +56,3 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Hoops v19: bigger court (+15%) with arena/stands rebuilt around it, denser crowd + upper-bowl fans + walkers in the aisles | Muse main (casino) | hoops-v19 | PR #56, main 0edfd835 | 2026-10-14 20:16 CDT |
 | DONE | Hoops v20: crowd PRESENCE pass (bigger/denser fans, signs up in play, livelier idle, faster+more walkers incl. stairs, wave fires more) + DUNK button (tap dunk, double-tap layup) | Muse main (casino) | hoops-v20 | PR #60, main 00a35670 | 2026-10-14 20:32 CDT |
 | DONE | THE SPLIT: new Apex Arcade Game Development page (sports only, game tabs) + red-circle GAME DEVELOPMENT tab on the entrance; casino sealed behind the 0 - sports removed from hallways/floor/registry/games.json, back-links retargeted, casino wording cut on the sports side | Muse main (casino) | split-gamedev | PR #64, main cb4897ba | 2026-10-14 20:58 CDT |
-| CLAIMED | Post the owner's rule on the repo: new built games go on the Game Development page (sports.html), NOT the casino floor - notice in CLAIMS.md + README + sports.html | Muse main (casino) | gamedev-notice | - | 2026-10-14 21:05 CDT |
