@@ -9,14 +9,14 @@
 <!--
   ADDING A NEW GAME (owner's rule, 2026-10-14):
   New built games go HERE, on the Game Development page - never in the casino.
-  1. Add a <button class="tab"> in #tabs and a matching <section class="panel">
-     below (copy an existing game and edit it). Keep ids in the p-* pattern.
-  2. Point the panel's PLAY link at the game's .html file.
+  1. Add a <button class="tab"> in #tabs, a matching <section class="panel">
+     (copy an existing game and edit it), AND a card in the ALL TITLES grid.
+     Keep the ids in the p-* pattern and give the game its accent color.
+  2. Point every PLAY link at the game's .html file.
   3. Do NOT register the game in games.json, the index.html lobby registry,
      the casino floor or the hallway tabs. The casino is sealed behind the 0.
   4. The game's own back button must return to sports.html.
 -->
-
 <style>
   :root { --red:#ff2a1e; --ink:#f2f4f8; --dim:#9aa6b5; --card:#12161d; --line:rgba(255,255,255,.09); }
   * { box-sizing: border-box; margin: 0; }
@@ -28,16 +28,18 @@
   .eyebrow { color: var(--red); font-weight: 800; letter-spacing: .42em; font-size: 12px; }
   h1 { font-size: clamp(26px, 7vw, 42px); font-weight: 900; letter-spacing: .06em; margin-top: 6px; }
   .sub { color: var(--dim); font-size: 14.5px; line-height: 1.55; max-width: 520px; margin: 10px auto 0; }
-  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 18px 2px 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 8px; overflow-x: auto; padding: 14px 2px 10px;
+    background: linear-gradient(180deg, #07090c 78%, transparent); -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab { flex: 1 0 auto; appearance: none; border: 1px solid var(--line); background: var(--card); color: var(--dim);
     border-radius: 999px; padding: 10px 14px; font: 700 13.5px/1 inherit; letter-spacing: .03em; cursor: pointer; white-space: nowrap; }
   .tab.on { color: #fff; border-color: var(--red); background: linear-gradient(180deg, rgba(255,42,30,.28), rgba(255,42,30,.10));
     box-shadow: 0 0 18px rgba(255,42,30,.25); }
-  .panel { display: none; margin-top: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 20px;
-    padding: 22px 20px 20px; text-align: center; }
+  .panel { display: none; margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--acc, var(--red));
+    border-radius: 20px; padding: 22px 20px 20px; text-align: center; }
   .panel.on { display: block; }
-  .panel img { width: 96px; height: 96px; border-radius: 22px; }
+  .panel img, .med { width: 96px; height: 96px; border-radius: 22px; }
+  .med { display: inline-flex; align-items: center; justify-content: center; font-size: 52px; background: #0b0f16; border: 1px solid var(--line); }
   .panel h2 { font-size: 24px; font-weight: 900; margin-top: 12px; letter-spacing: .02em; }
   .tag { color: var(--dim); font-size: 14.5px; line-height: 1.55; max-width: 480px; margin: 8px auto 0; }
   .chip { display: inline-block; margin-top: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,42,30,.55);
@@ -48,6 +50,17 @@
   .play { display: inline-block; margin-top: 18px; background: linear-gradient(180deg, #ff4a2e, #d81f14); color: #fff;
     text-decoration: none; font: 900 17px/1 inherit; letter-spacing: .08em; padding: 15px 42px; border-radius: 999px;
     box-shadow: 0 8px 26px rgba(255,42,30,.35); }
+  h3.roster { margin: 26px 2px 10px; font-size: 13px; letter-spacing: .3em; color: var(--dim); font-weight: 800; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .gcard { background: var(--card); border: 1px solid var(--line); border-top: 3px solid var(--acc); border-radius: 16px;
+    padding: 14px 12px 12px; text-align: left; cursor: pointer; }
+  .gcard img, .gcard .med { width: 44px; height: 44px; border-radius: 11px; font-size: 24px; }
+  .gcard h4 { font-size: 15.5px; font-weight: 800; margin-top: 8px; }
+  .gcard p { color: var(--dim); font-size: 12.5px; line-height: 1.45; margin-top: 3px; min-height: 36px; }
+  .gcard .row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .gcard .bld { color: #ff7a6e; font: 800 9.5px/1 inherit; letter-spacing: .14em; }
+  .gcard .go { color: #fff; background: linear-gradient(180deg, #ff4a2e, #d81f14); text-decoration: none;
+    font: 900 12px/1 inherit; letter-spacing: .06em; padding: 8px 14px; border-radius: 999px; }
   footer { text-align: center; color: #5d6875; font-size: 12px; letter-spacing: .1em; margin-top: 26px; line-height: 1.7; }
 </style>
 </head>
@@ -67,35 +80,35 @@
   <button class="tab" data-p="p-flight" type="button">&#9992; Flight</button>
 </nav>
 
-<section class="panel on" id="p-hoops">
-  <img src="hoops27-icon.svg" alt="27Hoops">
+<section class="panel on" id="p-hoops" style="--acc:#ff7a1a">
+  <img src="hoops27-icon.svg" alt="27Hoops" data-emoji="&#127936;">
   <h2>27Hoops</h2>
   <p class="tag">3D 5-on-5 basketball in a broadcast arena. Real 3D players, our own made-up league.</p>
-  <div class="chip">IN DEVELOPMENT &middot; v20</div>
+  <div class="chip">IN DEVELOPMENT &middot; BUILD v20</div>
   <p class="news"><b>Latest build:</b> a bigger court, a living crowd that claps, cheers, holds signs and does the wave &mdash; and the DUNK button. Get near the rim, tap it to dunk; tap again mid-rise for the layup off the glass.</p>
   <a class="play" href="hoops27.html">PLAY</a>
 </section>
 
-<section class="panel" id="p-hockey">
-  <img src="apexhockey-icon.svg" alt="Apex Ice Hockey">
+<section class="panel" id="p-hockey" style="--acc:#57c8ff">
+  <img src="apexhockey-icon.svg" alt="Apex Ice Hockey" data-emoji="&#127954;">
   <h2>Apex Ice Hockey</h2>
   <p class="tag">3D ice hockey: 5-on-5, real rules &mdash; periods, faceoffs, offside, golden-goal overtime.</p>
-  <div class="chip">IN DEVELOPMENT</div>
+  <div class="chip">IN DEVELOPMENT &middot; CAREER MODE LIVE</div>
   <p class="news"><b>Latest build:</b> Career Mode &mdash; a six-team league, standings, playoffs and championships, plus friend codes: build your star, share your code, play their All-Stars.</p>
   <a class="play" href="apexhockey.html">PLAY</a>
 </section>
 
-<section class="panel" id="p-baseball">
-  <img src="apexbaseball-icon.svg" alt="Apex Baseball">
+<section class="panel" id="p-baseball" style="--acc:#ff5347">
+  <img src="apexbaseball-icon.svg" alt="Apex Baseball" data-emoji="&#9918;">
   <h2>Apex Baseball</h2>
   <p class="tag">3D baseball with the real rulebook: balls and strikes, force outs, walk-offs. 3-inning arcade games.</p>
   <div class="chip">IN DEVELOPMENT</div>
-  <p class="news"><b>Latest build:</b> the pitch-versus-swing duel, tuned liftoff on fly balls and a crowd that erupts on home runs.</p>
+  <p class="news"><b>Latest build:</b> real 3D athletes in team kits, camera views from broadcast-wide to behind-the-player, and a crowd that erupts on home runs.</p>
   <a class="play" href="apexbaseball.html">PLAY</a>
 </section>
 
-<section class="panel" id="p-soccer">
-  <img src="apexsoccer-icon.svg" alt="Apex Soccer">
+<section class="panel" id="p-soccer" style="--acc:#37d67a">
+  <img src="apexsoccer-icon.svg" alt="Apex Soccer" data-emoji="&#9917;">
   <h2>Apex Soccer</h2>
   <p class="tag">3D soccer: 7-on-7, throw-ins, corners, offside and two halves on a striped pitch.</p>
   <div class="chip">IN DEVELOPMENT</div>
@@ -103,8 +116,8 @@
   <a class="play" href="apexsoccer.html">PLAY</a>
 </section>
 
-<section class="panel" id="p-flight">
-  <img src="apexflight-icon.svg" alt="Apex Flight">
+<section class="panel" id="p-flight" style="--acc:#4db2ff">
+  <img src="apexflight-icon.svg" alt="Apex Flight" data-emoji="&#9992;">
   <h2>Apex Flight</h2>
   <p class="tag">3D flight simulator: take off, fly the pattern and grease the landing. Free flight + landing challenge.</p>
   <div class="chip">IN DEVELOPMENT</div>
@@ -112,14 +125,56 @@
   <a class="play" href="apexflight.html">PLAY</a>
 </section>
 
+<h3 class="roster">ALL TITLES</h3>
+<div class="grid" id="grid">
+  <div class="gcard" data-p="p-hoops" style="--acc:#ff7a1a">
+    <img src="hoops27-icon.svg" alt="" data-emoji="&#127936;">
+    <h4>27Hoops</h4><p>5-on-5 basketball in a broadcast arena.</p>
+    <div class="row"><span class="bld">BUILD v20</span><a class="go" href="hoops27.html">PLAY</a></div>
+  </div>
+  <div class="gcard" data-p="p-hockey" style="--acc:#57c8ff">
+    <img src="apexhockey-icon.svg" alt="" data-emoji="&#127954;">
+    <h4>Apex Ice Hockey</h4><p>5-on-5 hockey with a full career mode.</p>
+    <div class="row"><span class="bld">CAREER LIVE</span><a class="go" href="apexhockey.html">PLAY</a></div>
+  </div>
+  <div class="gcard" data-p="p-baseball" style="--acc:#ff5347">
+    <img src="apexbaseball-icon.svg" alt="" data-emoji="&#9918;">
+    <h4>Apex Baseball</h4><p>3-inning arcade ball, real rulebook.</p>
+    <div class="row"><span class="bld">IN DEV</span><a class="go" href="apexbaseball.html">PLAY</a></div>
+  </div>
+  <div class="gcard" data-p="p-soccer" style="--acc:#37d67a">
+    <img src="apexsoccer-icon.svg" alt="" data-emoji="&#9917;">
+    <h4>Apex Soccer</h4><p>7-on-7 with the full flow of the game.</p>
+    <div class="row"><span class="bld">IN DEV</span><a class="go" href="apexsoccer.html">PLAY</a></div>
+  </div>
+  <div class="gcard" data-p="p-flight" style="--acc:#4db2ff">
+    <img src="apexflight-icon.svg" alt="" data-emoji="&#9992;">
+    <h4>Apex Flight</h4><p>Take off, fly the pattern, grease it.</p>
+    <div class="row"><span class="bld">IN DEV</span><a class="go" href="apexflight.html">PLAY</a></div>
+  </div>
+</div>
+
 <footer>APEX ARCADE GAME DEVELOPMENT<br>SPORTS TITLES IN ACTIVE DEVELOPMENT</footer>
 
 <script>
+function selectGame(id) {
+  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.p === id); });
+  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === id); });
+}
 document.getElementById('tabs').addEventListener('click', function (e) {
-  var b = e.target.closest('.tab'); if (!b) return;
-  document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t === b); });
-  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === b.dataset.p); });
+  var b = e.target.closest('.tab'); if (b) selectGame(b.dataset.p);
 });
+document.getElementById('grid').addEventListener('click', function (e) {
+  if (e.target.closest('.go')) return;
+  var c = e.target.closest('.gcard'); if (!c) return;
+  selectGame(c.dataset.p);
+  document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+/* an icon that fails to load becomes an emoji medallion, never broken chrome */
+document.addEventListener('error', function (e) {
+  var t = e.target;
+  if (t && t.tagName === 'IMG' && t.dataset.emoji) { var s = document.createElement('span'); s.className = 'med'; s.innerHTML = t.dataset.emoji; t.replaceWith(s); }
+}, true);
 </script>
 </body>
 </html>
