@@ -37,6 +37,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | F1 menu fix: updateForecast TypeError killed initMenus, all menu buttons dead | Muse main | f1-menu-fix | - | 2026-10-14 21:15 CDT |
 | DONE | F1 Apex Racing: realistic F1 game — real rules (DRS/tires/pits/points), real tracks, crowds, cheat-y AI, dynamic weather, career mode + friend-code multiplayer | Muse main | f1-apex-racing | PR #63, main de763763 | 2026-10-14 20:55 CDT |
 | DONE | Hockey arena fix: stands out of rink, realistic ice, pro rules, crowd audio (cheer/boo/goal swell), better cameras + landscape first-load lag & oversize fix | Muse main | hockey-arena-final | PR #46, main 3de86ba5 | 2026-10-14 19:38 CDT |
 | DONE | Hosting move: repo public again, GitHub Pages live — every merge to main auto-deploys | owner + Muse main | — | main @ 20871fb3 era | 2026-10-14 15:28 CDT |
@@ -57,5 +58,5 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Hoops v20: crowd PRESENCE pass (bigger/denser fans, signs up in play, livelier idle, faster+more walkers incl. stairs, wave fires more) + DUNK button (tap dunk, double-tap layup) | Muse main (casino) | hoops-v20 | PR #60, main 00a35670 | 2026-10-14 20:32 CDT |
 | DONE | THE SPLIT: new Apex Arcade Game Development page (sports only, game tabs) + red-circle GAME DEVELOPMENT tab on the entrance; casino sealed behind the 0 - sports removed from hallways/floor/registry/games.json, back-links retargeted, casino wording cut on the sports side | Muse main (casino) | split-gamedev | PR #64, main cb4897ba | 2026-10-14 20:58 CDT |
 | DONE | Post the owner's rule on the repo: new built games go on the Game Development page (sports.html), NOT the casino floor - notice in CLAIMS.md + README + sports.html (claim row from PR #67 was dropped in a parallel board rewrite; work shipped in PR #68) | Muse main (casino) | gamedev-notice | PR #68, main eddbb068 | 2026-10-14 21:10 CDT |
+| DONE | Dev hub redo (lead-architect pass): sports.html v2 - whole roster visible (tabs + ALL TITLES grid, accent cards, icon fallbacks) + hoops27 v21 wires the dead Back button home to sports.html | Muse main (casino) | devhub-v2 + hoops-v21 | PRs #73 (hub, main b3eb53f2) + #74 (hoops v21, main b48998af) | 2026-10-14 21:24 CDT |
 | CLAIMED | Baseball (apexbaseball) human-look + rules pass: full playtest, audit player look/movement, verify baseball rules, fix gaps | Muse algre141 | baseball-human-pass | — | 2026-10-14 19:36 CDT |
-| CLAIMED | Dev hub redo (lead-architect pass): sports.html v2 - whole roster visible (tabs + ALL TITLES grid, accent cards, icon fallbacks) + hoops27 v21 wires the dead Back button home to sports.html | Muse main (casino) | devhub-v2 + hoops-v21 | - | 2026-10-14 21:14 CDT |
