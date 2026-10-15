@@ -63,3 +63,12 @@ games: **graphics for mobile app games, always** — phone-first visuals
 at the top of what the store-ready performance budget allows, never
 desktop afterthoughts and never placeholder-looking work. Quality goes
 up with every pass; it never stays flat and it never goes backwards.
+
+## Assets: best realistic free models (owner, 2026-10-14)
+
+Use the most realistic **free** models and assets available (CC0
+preferred — Quaternius, Kenney and similar libraries) instead of
+placeholder geometry for anything on screen: players, vehicles, props,
+environments. Free licenses only, credited in the repo, and always
+inside the performance budget above — sane poly counts, textures
+<= 2048px, GLB. If a better free model exists, the upgrade is the job.

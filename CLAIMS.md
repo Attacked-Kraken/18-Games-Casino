@@ -21,6 +21,29 @@ reached from the red GAME DEVELOPMENT circle on the entrance.
 - Game-dev pages never link to the casino side. A game's back button
   returns to `sports.html`.
 
+## ASSETS RULE (owner, 2026-10-14)
+
+**Use the best models: the most realistic FREE 3D models and assets
+available.** If a quality free model exists for something, use it —
+do not ship blocky placeholder geometry for players, vehicles, props
+or environments when a better free asset exists. Rules of the road:
+
+- **Free licenses only** — CC0 preferred (Quaternius, Kenney, Poly
+  Pizza CC0 and similar); other free licenses only when their terms
+  allow commercial app use, and credit the source in the repo
+  (CREDITS.txt / the asset folder's README). Never ripped, leaked or
+  paid assets.
+- **Realism is the target** — correct proportions, real materials and
+  textures over stylized stand-ins, wherever the game is on screen.
+- **Store-ready budget still applies** (see STORE-READY.md): pick the
+  best-looking model that stays inside the mobile performance budget —
+  sane poly counts, textures <= 2048px, GLB format, animations
+  included when the asset needs to move. Best-looking AND fast; if a
+  model is gorgeous but sinks a phone, optimize it or pick the next
+  best.
+- When you swap in a better model, say so in your PR: what asset,
+  from where, what license.
+
 ## STORE-READY RULE (owner, 2026-10-14)
 
 Every game here is headed for the Apple App Store and Google Play.
