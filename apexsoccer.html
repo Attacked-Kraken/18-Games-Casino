@@ -310,6 +310,9 @@ function crowdTick(dt){
 const ballMesh=new THREE.Mesh(new THREE.SphereGeometry(BALL_R,18,14),
   new THREE.MeshStandardMaterial({ color:0xffffff, roughness:.45 }));
 ballMesh.castShadow=!coarse; scene.add(ballMesh);
+const ballRing=new THREE.Mesh(new THREE.RingGeometry(0.28,0.42,24),
+  new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.55, side:THREE.DoubleSide, depthWrite:false }));
+ballRing.rotation.x=-Math.PI/2; ballRing.position.y=0.04; scene.add(ballRing);
 const B={ pos:new THREE.Vector3(0,BALL_R,0), vel:new THREE.Vector3(), owner:null, lastTouch:null, intended:null, noPickup:0 };
 
 /* ================= players ================= */
@@ -930,6 +933,8 @@ function updateBall(dt){
   }
   ballMesh.position.copy(B.pos);
   ballMesh.rotation.x+=B.vel.z*dt*2; ballMesh.rotation.z-=B.vel.x*dt*2;
+  ballRing.position.set(B.pos.x,0.04,B.pos.z);
+  ballRing.material.opacity=0.35+0.2*Math.sin(performance.now()/180);
 }
 
 /* ================= procedural music (WebAudio, no files) + mute ================= */
@@ -1057,7 +1062,8 @@ function animate(dt){
 
 /* ================= camera ================= */
 /* camera view options: FULL (wide ball follow) / TEAM (tighter on your team) / CLOSE (hover over your player) / PLAYER (low over-the-shoulder) */
-const camModes=['FULL','TEAM','CLOSE','PLAYER']; let camMode=0;
+const camModes=['FULL','TEAM','CLOSE','PLAYER']; let camMode=coarse?1:0;
+if(coarse) document.getElementById('viewBtn').textContent='TEAM';
 const camT=new THREE.Vector3(), camP=new THREE.Vector3(0,30,50);
 const _bp=new THREE.Vector3(), _lk=new THREE.Vector3();
 function updateCamera(dt){
