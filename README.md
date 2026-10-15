@@ -10,8 +10,11 @@ vault. The casino is finished and sealed: do not add games to it.
 **Game Development** (sports.html - "Apex Arcade Game Development"):
 where every new game we build and upgrade lives. It is reached from the
 red GAME DEVELOPMENT circle on the entrance and holds the sports titles:
-27Hoops basketball, Apex Ice Hockey, Apex Baseball, Apex Soccer and
-Apex Flight.
+27Hoops basketball, Apex Ice Hockey, Apex Baseball, Apex Soccer, Apex
+Flight, Apex Monster Truck, Apex F1 and more as they ship.
+**Every Game Development title is a full 3D game** (real-time 3D,
+Three.js) - 3D players, 3D arenas, 3D worlds. New titles are built 3D
+from the start; that is the standard for this library.
 
 ## Where new games go
 
