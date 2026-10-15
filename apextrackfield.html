@@ -105,8 +105,9 @@ width:104px;height:104px;border-radius:50%;border:3px solid #ffd34d;background:r
 color:#ffd34d;font-weight:900;font-size:15px;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;
 text-align:center;line-height:1.2}
 .tbtn:active{background:rgba(255,211,77,.45);color:#0a1626}
-#btnL{left:calc(env(safe-area-inset-left,0px) + 16px)}
-#btnR{left:calc(env(safe-area-inset-left,0px) + 136px)}
+#stick{position:absolute;left:calc(env(safe-area-inset-left,0px) + 16px);bottom:calc(env(safe-area-inset-bottom,0px) + 16px);pointer-events:auto;width:152px;height:152px;border-radius:50%;border:3px solid #ffd34d;background:rgba(255,211,77,.10);touch-action:none}
+#stick::before{content:'';position:absolute;left:18px;right:18px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:rgba(255,211,77,.25)}
+#stickKnob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe27a,#d9a419 70%,#8a6408);box-shadow:0 3px 10px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.25)}
 #btnA{right:calc(env(safe-area-inset-right,0px) + 16px);width:120px;height:120px;font-size:16px;
 background:rgba(55,200,113,.20);border-color:#37c871;color:#a9f5c6}
 #btnA:active{background:rgba(55,200,113,.55);color:#0a1626}
@@ -136,8 +137,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 </div>
 </div>
 <div id="touch">
-<div class="tbtn" id="btnL">STRIDE<br>LEFT</div>
-<div class="tbtn" id="btnR">STRIDE<br>RIGHT</div>
+<div id="stick" aria-label="Stride stick: rock left and right"><div id="stickKnob"></div></div>
 <div class="tbtn" id="btnA"><span id="btnALabel">ACTION</span></div>
 </div>
 <div class="kbdhint">ArrowLeft / ArrowRight or A / D to stride &nbsp;·&nbsp; Space = action</div>
@@ -232,7 +232,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div class="screen" id="howto">
 <div class="panel">
 <h2>HOW TO PLAY</h2>
-<div class="hint"><b>Striding:</b> tap STRIDE LEFT / RIGHT alternately (or ArrowLeft / ArrowRight, A / D). Alternating builds speed fast; same-side taps are weak. Speed fades — keep striding.</div>
+<div class="hint"><b>Striding:</b> rock the STICK left and right alternately (or ArrowLeft / ArrowRight, A / D). Alternating builds speed fast; same-side rocks are weak. Speed fades — keep striding.</div>
 <div class="hint"><b>Starts:</b> wait for the pistol on "SET". Moving early = false start. Two false starts = disqualified.</div>
 <div class="hint"><b>Distance:</b> watch STAMINA. Sprinting all-out early will empty the tank — save something for the final kick.</div>
 <div class="hint"><b>Hurdles:</b> tap ACTION (or Space) to jump each hurdle. Clip one and you lose speed.</div>
@@ -2634,9 +2634,40 @@ refreshMenuRival();
 setTimeout(()=>showScreen('menu'),900);
 }catch(err){ box.className='err'; box.textContent=err.message||'Invalid code.'; }
 });
-wireButton('btnL',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.stride('L'); });
-wireButton('btnR',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.stride('R'); });
 wireButton('btnA',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
+/* Stride stick: rock left/right to stride. Edge-triggered — each crossing of the engage threshold fires one stride; the knob must swing back through the dead zone to re-arm, so alternating rocks build speed exactly like alternating L/R taps did. */
+(function(){
+const stick=$('stick'),knob=$('stickKnob');
+if(!stick||!knob) return;
+const ENGAGE=26,RELEASE=10,TRAVEL=44;
+let pid=null,startX=0,zone=0;
+function live(){ return ENG&&document.body.classList.contains('playing'); }
+stick.addEventListener('pointerdown',e=>{
+if(pid!==null) return;
+pid=e.pointerId; startX=e.clientX; zone=0;
+knob.style.transition='none';
+try{ stick.setPointerCapture(pid); }catch(_){}
+e.preventDefault();
+},{passive:false});
+stick.addEventListener('pointermove',e=>{
+if(e.pointerId!==pid) return;
+let dx=e.clientX-startX;
+dx=Math.max(-TRAVEL,Math.min(TRAVEL,dx));
+knob.style.transform='translate('+dx+'px,0)';
+const z=dx>=ENGAGE?1:dx<=-ENGAGE?-1:(Math.abs(dx)<=RELEASE?0:zone);
+if(z!==0&&z!==zone&&live()) ENG.stride(z<0?'L':'R');
+zone=z;
+e.preventDefault();
+},{passive:false});
+function endStick(e){
+if(e.pointerId!==pid) return;
+pid=null; zone=0;
+knob.style.transition='transform .15s ease-out';
+knob.style.transform='translate(0,0)';
+}
+stick.addEventListener('pointerup',endStick);
+stick.addEventListener('pointercancel',endStick);
+})();
 window.addEventListener('keydown',e=>{
 if(!document.body.classList.contains('playing')||!ENG) return;
 if(e.code==='ArrowLeft'||e.code==='KeyA'){ e.preventDefault(); ENG.stride('L'); }
