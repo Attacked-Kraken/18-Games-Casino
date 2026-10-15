@@ -86,6 +86,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Track & Field 3D rebuild (apextrackfield.html v2): Three.js realistic graphics — Quaternius athletes, 3D stadium; career/tournament/free-play + Apex Games pageantry; tested (bugs/lag/store-ready) | Muse Modern Plus | apextrackfield-3d | PR #155, main b15512bd | 2026-10-14 23:58 CDT |
 | CLAIMED | Exotic Racer Club realism upgrade (apexracer.html): realistic supercar bodies/wheels/liveries, richer trackside detail, Apex Arcade branding, menu + in-game music, friend-code multiplayer, sports.html registration | Muse Cruz.inc | apexracer-ship | - | 2026-10-14 23:56 CDT |
 | DONE | Monster truck retest round 3: full loop, 27/27 checks, night-sky starfield | Muse algre141 | mt-retest3-fix | PR #153, main 069ba8db | 2026-10-14 23:52 CDT |
 | DONE | F1 store-ready: back button to sports.html, sports.html registration (tab+panel+gcard) | Muse main | f1-store-ready2 | PR #147, main 88130284 | 2026-10-14 23:25 CDT |
