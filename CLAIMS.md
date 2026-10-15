@@ -45,6 +45,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Track & Field college game (apextrackfield.html): all T&F events — sprints, hurdles, mid-distance, jumps, throws; sports.html tab+panel+card; Apex Arcade branded | Muse Modern Plus | apextrackfield | PR #110, main 7b8fc106 | 2026-10-14 22:24 CDT |
 | DONE | F1 UE5 visual pass + retest fixes: ACES tone mapping, sky dome, tire smoke/dust particles, asphalt grain, vignette, P20 HUD fix, landscape touch layout | Muse main | f1-visual-retest-batch | PR #112, main 7d44478d | 2026-10-14 22:32 CDT |
 | DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
