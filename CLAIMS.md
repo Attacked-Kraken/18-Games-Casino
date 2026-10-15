@@ -21,6 +21,29 @@ reached from the red GAME DEVELOPMENT circle on the entrance.
 - Game-dev pages never link to the casino side. A game's back button
   returns to `sports.html`.
 
+## ASSETS RULE (owner, 2026-10-14)
+
+**Use the best models: the most realistic FREE 3D models and assets
+available.** If a quality free model exists for something, use it —
+do not ship blocky placeholder geometry for players, vehicles, props
+or environments when a better free asset exists. Rules of the road:
+
+- **Free licenses only** — CC0 preferred (Quaternius, Kenney, Poly
+  Pizza CC0 and similar); other free licenses only when their terms
+  allow commercial app use, and credit the source in the repo
+  (CREDITS.txt / the asset folder's README). Never ripped, leaked or
+  paid assets.
+- **Realism is the target** — correct proportions, real materials and
+  textures over stylized stand-ins, wherever the game is on screen.
+- **Store-ready budget still applies** (see STORE-READY.md): pick the
+  best-looking model that stays inside the mobile performance budget —
+  sane poly counts, textures <= 2048px, GLB format, animations
+  included when the asset needs to move. Best-looking AND fast; if a
+  model is gorgeous but sinks a phone, optimize it or pick the next
+  best.
+- When you swap in a better model, say so in your PR: what asset,
+  from where, what license.
+
 ## STORE-READY RULE (owner, 2026-10-14)
 
 Every game here is headed for the Apple App Store and Google Play.
@@ -45,6 +68,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Track & Field college game (apextrackfield.html): all T&F events — sprints, hurdles, mid-distance, jumps, throws; sports.html tab+panel+card; Apex Arcade branded | Muse Modern Plus | apextrackfield | PR #110, main 7b8fc106 | 2026-10-14 22:24 CDT |
 | DONE | F1 UE5 visual pass + retest fixes: ACES tone mapping, sky dome, tire smoke/dust particles, asphalt grain, vignette, P20 HUD fix, landscape touch layout | Muse main | f1-visual-retest-batch | PR #112, main 7d44478d | 2026-10-14 22:32 CDT |
 | DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
@@ -79,5 +103,6 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Soccer (apexsoccer) human-look pass: 1.82m athletes, soccer kits, real ball size, yellow/red cards + sendings-off, penalty kicks | Muse algre141 | soccer-ship | PR #96, main f623b7bb | 2026-10-14 22:05 CDT |
 | DONE | Post the owner's quality standard on the repo: 'retest' = play it, find issues, fix them; UE5-style quality bar; mobile-app graphics always (into STORE-READY.md) | Muse main (casino) | quality-std | PR #105, main 7d99021f | 2026-10-14 22:17 CDT |
 | DONE | Soccer (apexsoccer) retest: sent-off player handling fixes, ACES tone mapping, PCFSoft shadows, 2048 shadow maps | Muse algre141 | soccer-retest-ship | PR #108, main 858da064 | 2026-10-14 22:18 CDT |
-| CLAIMED | Hockey retest fixes (owner playtest): sticks held like crutches/in the air, skaters stand upright and walk instead of skating, stands read empty on a phone - fix stick pose (blade on ice), hockey stance + skating motion, crowd presence | Muse main (casino) | hockey-look-fix | - | 2026-10-14 22:37 CDT |
+| DONE | Hockey retest fixes (owner playtest): sticks planted on the ice (were hand-bone crutches in the air), helmets + long-sleeve kits (players look like players), crouch/skating stance with stride rock, crowd made people-sized and bright (stands read full) - retested by playing, screenshots before/after | Muse main (casino) | hockey-look-fix | PR #119, main aa9f21ff | 2026-10-14 22:47 CDT |
+| DONE | Post the owner's assets rule on the repo: use the best realistic FREE models/assets (into CLAIMS.md + STORE-READY.md) | Muse main (casino) | assets-rule | PR #124, main 27ff4764 | 2026-10-14 22:51 CDT |
 | DONE | Soccer Retest #1: ball ground indicator, mobile TEAM camera default | Muse algre141 | soccer-r1-ship | PR #116, main 173732e4 | 2026-10-14 22:35 CDT |
