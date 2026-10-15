@@ -80,6 +80,7 @@ A game is not DONE without all three. Full text: ASSET-LAW.md
 Part II.
 
 ## LANDSCAPE LAW (owner, 2026-10-15)
+**PORTRAIT RULE (owner, 2026-10-15 — read before touching landscape):** the landscape presentation is built INTO each sports game file only. It must NEVER be injected from a shared script (engage.js loads on the entrance + every casino page — a landscape block there rotated the owner's entrance sideways and broke the app, removed in the portrait fix). The entrance (index.html), the dev hub (sports.html), and ALL casino pages are NOT games and stay PORTRAIT, exactly as designed.
 
 **Every game starts in landscape, locked, already loaded. There is
 no "rotate your device" sign and no portrait state.** In portrait the

@@ -5,6 +5,8 @@ iPhone/Android apps. Every game in this repo — new builds and upgrades —
 must be built **store-app ready**. If a change breaks any line of this
 checklist, it is not done, whatever the CLAIMS board says.
 
+**PORTRAIT RULE (owner, 2026-10-15):** the landscape presentation lives inside each game file only — never in shared scripts. Pages that are not games (the entrance index.html, the sports.html hub, and every casino page) stay portrait.
+
 ## The checklist
 
 1. **Runs great on real phones.** 60 fps on a mid-range iPhone/Android is

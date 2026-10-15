@@ -1,28 +1,9 @@
 /* Engagement layer (fun chips only): XP / level bar fed by every wager, level-up chip rewards, and a once-a-day spin wheel. */
 (function () {
-  /* LANDSCAPE LAW (owner): every game starts in landscape, locked, already loaded - no rotate sign.
-     In portrait the whole stage presents rotated to landscape from the first frame.
-     (steelfront.html rotates itself via its own resize(); it only needs the lock.) */
-  try {
-    if (!/steelfront\.html$/.test(location.pathname)) {
-      var _ls = document.createElement('style');
-      _ls.textContent = '@media (orientation: portrait){body{position:fixed;left:0;top:0;width:100vh;height:100vw;transform-origin:left top;transform:rotate(90deg) translateY(-100vw);}}';
-      (document.head || document.documentElement).appendChild(_ls);
-    }
-    addEventListener('pointerdown', function(){
-      try {
-        var el = document.documentElement;
-        if (el.requestFullscreen && !document.fullscreenElement) {
-          var p = el.requestFullscreen();
-          if (p && p.then) p.then(function(){
-            try { var q = screen.orientation.lock('landscape'); if (q && q.catch) q.catch(function(){}); } catch (e) {}
-          }).catch(function(){});
-        } else {
-          try { var q2 = screen.orientation.lock('landscape'); if (q2 && q2.catch) q2.catch(function(){}); } catch (e) {}
-        }
-      } catch (e) {}
-    }, { once: true });
-  } catch (e) {}
+  /* PORTRAIT RULE (owner, 2026-10-15): engage.js is a SHARED script - it loads on the
+     entrance (index.html) and every casino page. Those are NOT games: they stay PORTRAIT.
+     Landscape is built per-game-file only, never injected from a shared script.
+     (A landscape block here rotated the owner's entrance sideways and broke the app.) */
   function boot() {
   var XK = 'gc18_xp', DK = 'gc18_dwheel';
   var xp = +localStorage.getItem(XK) || 0;
