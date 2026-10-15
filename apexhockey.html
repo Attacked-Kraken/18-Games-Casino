@@ -77,7 +77,7 @@
 <canvas id="c"></canvas>
 <button id="back" type="button">‹ Back</button>
 <div id="hud"><span class="dim">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim">SHARKS</span><span id="period">1ST</span><span id="clock">2:00</span></div>
-<button id="viewBtn" type="button">VIEW · FULL</button><button id="muteBtn" type="button">🔊</button>
+<button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
 <div id="flash"></div>
 <div id="joy"><div id="knob"></div></div>
@@ -226,8 +226,9 @@ function makeIceTexture(){
   // 6 stepped rows on all four sides, rising behind the boards
   for(let side=0;side<4;side++){
     for(let k=0;k<6;k++){
-      const off = 52 + k*3.4, y = 2 + k*2.8; // y = row center; row top = y+1.1
-      const len = (side<2 ? 250 : 116);
+      // sides sit beyond the boards (HZ=42.5); ends sit beyond the goal lines (HX=100)
+      const off = (side<2 ? HZ+14 : HX+12) + k*3.4, y = 2 + k*2.8; // y = row center; row top = y+1.1
+      const len = (side<2 ? 250 : 150);
       const b = new THREE.Mesh(new THREE.BoxGeometry(side<2?len:3.2, 2.2, side<2?3.2:len), standMat);
       if(side===0) b.position.set(0,y,off); else if(side===1) b.position.set(0,y,-off);
       else if(side===2) b.position.set(off,y,0); else b.position.set(-off,y,0);
@@ -273,7 +274,7 @@ const crowd = (function(){
   for(let side=0;side<4;side++){
     const per = side<2 ? 100 : 35;
     for(let k=0;k<6;k++){
-      const off = 52 + k*3.4, top = 2 + k*2.8 + 1.1; // row top surface
+      const off = (side<2 ? HZ+14 : HX+12) + k*3.4, top = 2 + k*2.8 + 1.1; // row top surface
       for(let i=0;i<per;i++){
         let x, z;
         if(side<2){ x = -120 + (i+Math.random()*0.8)/per*240 + rand(-0.5,0.5); z = (side===0?1:-1)*off + rand(-0.6,0.6); }
@@ -611,6 +612,14 @@ const Mus = {
       this.nbuf = b;
       this.nextT = this.ctx.currentTime+0.06; this.step = 0;
       this.timer = setInterval(()=>this.sched(),30);
+      // stadium crowd ambience: looped shaped noise -> bandpass -> crowdGain
+      const clen=this.ctx.sampleRate*2, cb=this.ctx.createBuffer(1,clen,this.ctx.sampleRate), cd=cb.getChannelData(0);
+      let lv=0; for(let i=0;i<clen;i++){ const w=Math.random()*2-1; lv=(lv+0.02*w)/1.02; cd[i]=lv*3.4; }
+      const cs=this.ctx.createBufferSource(); cs.buffer=cb; cs.loop=true;
+      this.crowdFilter=this.ctx.createBiquadFilter(); this.crowdFilter.type='bandpass'; this.crowdFilter.frequency.value=850; this.crowdFilter.Q.value=0.5;
+      this.crowdGain=this.ctx.createGain(); this.crowdGain.gain.value=0.0;
+      cs.connect(this.crowdFilter); this.crowdFilter.connect(this.crowdGain); this.crowdGain.connect(this.master); cs.start();
+      this.crowdSwell=0;
     }catch(e){ /* WebAudio unavailable: game keeps playing silently */ }
   },
   m2f(m){ return 440*Math.pow(2,(m-69)/12); },
@@ -657,6 +666,21 @@ const Mus = {
     try{ localStorage.setItem('apex_muted',m?'1':'0'); }catch(e){}
     if(this.master) this.master.gain.value=m?0:0.35;
     const b=document.getElementById('muteBtn'); if(b) b.textContent=m?'🔇':'🔊';
+  },
+  crowdGoal(home){ // swell the stadium: loud cheer for us, muted boo-ish for them
+    if(!this.ctx||!this.crowdGain) return;
+    this.crowdSwell=home?1:0.45;
+    try{ this.crowdFilter.frequency.setTargetAtTime(home?1150:420,this.ctx.currentTime,0.12); }catch(e){}
+  },
+  crowdTick(dt){ // quiet murmur -> loud on big moments, driven every frame
+    if(!this.ctx||!this.crowdGain) return;
+    if(this.muted){ this.crowdGain.gain.value=0; return; }
+    this.crowdSwell=Math.max(0,this.crowdSwell-dt*0.45);
+    const target=0.045+0.22*crowdExcite+0.5*this.crowdSwell;
+    try{
+      this.crowdGain.gain.setTargetAtTime(Math.min(0.8,target),this.ctx.currentTime,0.25);
+      if(this.crowdSwell<=0.01) this.crowdFilter.frequency.setTargetAtTime(850,this.ctx.currentTime,1.5);
+    }catch(e){}
   }
 };
 window.__mus = Mus;
@@ -736,7 +760,7 @@ function setupFaceoffPositions(dx,dz){
   placeSkater(ald,dx+17,dz-10,Math.PI); placeSkater(ard,dx+17,dz+10,Math.PI);
   homeGoalie.pos.set(-GOAL_LINE+2.2,0.1,0); homeGoalie.facing=0; homeGoalie.vel.set(0,0,0);
   awayGoalie.pos.set(GOAL_LINE-2.2,0.1,0); awayGoalie.facing=Math.PI; awayGoalie.vel.set(0,0,0);
-  puck.pos.set(dx,0.2,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null;
+  puck.pos.set(dx,0.2,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null; puck.lastTouch=null;
   puck.recvT=0; prevPuckX=dx;
   controlled = nearestSkater('home',puck.pos);
 }
@@ -755,7 +779,7 @@ function onGoal(team){
   if(team==='home'){scoreH++;}else{scoreA++;}
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
-  banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1;
+  banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
   if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
 }
 function whistle(text,sub){
@@ -942,7 +966,7 @@ function stepPuck(dt){
     if(s.goalie) continue; // goalies cover (whistle) instead of carrying
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.3;
-    if(d<grabR&&ps<36){ puck.owner=s; puck.recv=null; puck.shot=null; break; }
+    if(d<grabR&&ps<36){ puck.owner=s; puck.recv=null; puck.shot=null; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -968,6 +992,19 @@ function rules(dt){
         whistle('OFFSIDE',TEAMS[t].name);
         prevPuckX=px; return;
       }
+    }
+  }
+  // ICING: dumped from the defensive half, crosses the far goal line untouched
+  if(!puck.owner&&puck.lastTouch){
+    const t=puck.lastTouch, dir=TEAMS[t].dir;
+    const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
+    const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
+    if(fromDeep&&crossedFar){
+      const key='e'+(dir>0?(puck.pos.z>0?3:4):(puck.pos.z>0?1:2)); // deep defensive-zone dot
+      const d=DOTS[key]||DOTS.center;
+      pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
+      whistle('ICING',TEAMS[t].name);
+      puck.lastTouch=null; prevPuckX=px; return;
     }
   }
   // goalie covers a slow loose puck
@@ -1015,13 +1052,14 @@ function possessionWatch(){
 }
 
 /* ================= camera ================= */
-const camTgt=new THREE.Vector3(0,66,106), lookTgt=new THREE.Vector3();
-const CAMNAMES=['FULL','TEAM','CLOSE','PLAYER'];
+const camTgt=new THREE.Vector3(0,44,74), lookTgt=new THREE.Vector3();
+const CAMNAMES=['BROADCAST','HIGH','CLOSE','PLAYER','END'];
+const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','BEHIND THE NET'];
 let camMode=0, lastControlledRef=null, camEase=0;
 function cycleView(){
-  camMode=(camMode+1)%4;
+  camMode=(camMode+1)%CAMNAMES.length;
   $('viewBtn').textContent='VIEW · '+CAMNAMES[camMode];
-  banner('VIEW: '+CAMNAMES[camMode], camMode===0?'FULL RINK':camMode===1?'TIGHTER ON YOUR TEAM':camMode===2?'FOLLOWING YOUR SKATER':'ON THE ICE', 700);
+  banner('VIEW: '+CAMNAMES[camMode], CAMSUB[camMode], 700);
 }
 function stepCamera(dt){
   const s=controlled, fx=Math.cos(s.facing), fz=Math.sin(s.facing);
@@ -1031,8 +1069,10 @@ function stepCamera(dt){
   } else if(camMode===3){ // PLAYER: ice-level over the shoulder
     camTgt.set(s.pos.x-fx*4.5, 2.2, s.pos.z-fz*4.5);
     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
-  } else {                // FULL / TEAM: broadcast follow of the puck
-    const px=clamp(puck.pos.x*0.55,-64,64), h=camMode===1?46:66, d=camMode===1?72:106;
+  } else if(camMode===4){ // END: behind the net you attack
+    camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
+  } else {                // BROADCAST / HIGH: TV follow of the puck
+    const px=clamp(puck.pos.x*0.55,-64,64), h=camMode===1?62:44, d=camMode===1?100:74;
     camTgt.set(px,h,d); lookTgt.set(px,0,0);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
@@ -1055,7 +1095,7 @@ function tick(now){
   }
   let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
   Mus.setMode(state==='play'?'game':'menu');
-  crowd.update(dt);
+  crowd.update(dt); Mus.crowdTick(dt);
   if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
   stateT-=dt;
@@ -1128,6 +1168,13 @@ addEventListener('resize', () => { fitGame(); setTimeout(fitGame, 150); setTimeo
 addEventListener('orientationchange', () => { setTimeout(fitGame, 60); setTimeout(fitGame, 300); setTimeout(fitGame, 700); });
 if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
 fitGame();
+/* first-load warmup (owner ask 2026-10-14): compile shaders + settle size before
+   the menu reveals, so landscape entry isn't laggy or oversized */
+try{
+  renderer.compile(scene,camera);
+  requestAnimationFrame(()=>{ fitGame(); try{renderer.render(scene,camera);}catch(e){} requestAnimationFrame(()=>fitGame()); });
+}catch(e){}
+addEventListener('load',()=>{ fitGame(); setTimeout(fitGame,300); });
 document.addEventListener('visibilitychange',()=>{ paused=document.hidden;
   if(Mus.ctx){ try{ if(document.hidden) Mus.ctx.suspend(); else Mus.ctx.resume(); }catch(e){} } });
 setupFaceoffPositions(0,0); // spread skaters for the menu backdrop
