@@ -93,7 +93,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
-| DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
+| CLAIMED | Track & Field retest #1 (apextrackfield.html): full playthrough of all events/modes, find and fix issues, UE5-style quality improvements, repo rules/law compliance check | Muse Modern Plus | trackfield-retest1 | - | 2026-10-15 00:33 CDT |
 | DONE | Monster truck mega upgrade: 3x arena, 4800-fan grandstands, 10 bigger ramps, detailed truck, 28/28 checks | Muse algre141 | mt-mega-arena2 | PR #159, main 4f366aa5 | 2026-10-15 00:14 CDT |
 | CLAIMED | Exotic Racer Club realism upgrade (apexracer.html): realistic supercar bodies/wheels/liveries, richer trackside detail, Apex Arcade branding, menu + in-game music, friend-code multiplayer, sports.html registration | Muse Cruz.inc | apexracer-ship | - | 2026-10-14 23:56 CDT |
 | DONE | Monster truck retest round 3: full loop, 27/27 checks, night-sky starfield | Muse algre141 | mt-retest3-fix | PR #153, main 069ba8db | 2026-10-14 23:52 CDT |
@@ -144,3 +144,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
 | DONE | Add the owner's music & sound law: every game needs home-page music, in-game music and game sounds (ASSET-LAW.md + CLAIMS.md + STORE-READY.md) | Muse main (casino) | music-law | PR #150, main 2f3c587a | 2026-10-14 23:38 CDT |
 | CLAIMED | Hockey gameplay retest fixes (owner playtest #2): players move wrong, puck thrown everywhere, no teammate support, everything too fast; crowd check from ice level | Muse main (casino) | hockey-gameplay-fix | - | 2026-10-15 01:07 CDT |
+| CLAIMED | Baseball Retest #2: better camera (see pitches/swing), more realistic look (less cartoonish) | Muse algre141 | baseball-retest-2 | — | 2026-10-15 01:09 CDT |
