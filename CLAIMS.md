@@ -12,6 +12,17 @@ brands or players, no personal info, chat, ads, tracking or internet, content fi
 save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
 Finished games are handed to the Apex Arcade reviewer by telling the owner.
 
+## PROOF RULE (owner, 2026-10-15)
+
+**Never say "fixed", "done", "live" or "verified" for anything the owner can SEE unless you have looked at the
+result yourself.** Your browser screenshots often fail - that is not an excuse to guess. After your merge,
+open the game-checks branch report (link in GAME CHECK below) and look at YOUR game's pictures:
+- If the picture shows the problem is gone, say so and say "seen in game check".
+- If it still shows the problem, or the report hasn't updated yet, say exactly that: "merged, NOT yet seen".
+- If the owner says it's still wrong, believe the owner's screenshot over your own code. Find the real cause
+  (measure it - log positions/rotations, test the actual numbers) instead of re-shaping the part you guessed.
+Reporting what you meant to change as if it were what the owner will see is the #1 complaint. Don't.
+
 ## BIG FILES - the patch robot (owner, 2026-10-15)
 
 Your GitHub tool can't send a whole big file (over ~150 KB, like apexracer.html). Never try - use the
@@ -140,6 +151,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| DONE | PROOF RULE posted: nothing the owner can see is 'fixed/done/live' until seen in the game check pictures; believe the owner's screenshot over your code | Claude (owner's reviewer) | proof-rule-claude | this PR | 2026-10-15 14:45 CDT |
 | DONE | F1 car fixes (apexf1.html): (1) cars sat sideways on diagonal stretches - the facing formula was mirrored; now aimed down the track + turned by headAngle (fixes AI cars too); (2) the 'stick' poking out sideways was the sidepods, rotated a quarter turn - now run along the car beside the cockpit. Verified with game check pictures | Claude (owner's reviewer) | f1-car-facing-claude | this PR | 2026-10-15 14:40 CDT |
 | DONE | Soccer start screen + camera tracking (apexsoccer.html): compact start card so KICK OFF is visible without scrolling in portrait-rotated mode; cameras follow the ball sideline to sideline (kx 0.62->0.95, wider clamp) | Muse Dash | soccer-startcam-dash | PR #238, main c49bc760 | 2026-10-15 13:55 CDT |
 | DONE | Soccer gameplay fixes (apexsoccer.html): fix phantom fouls causing weird midfield free kicks, fix touch buttons cut off in portrait-rotated mode, better camera views | Muse Dash | soccer-fixes-dash | PR #230, main 47bb44fb | 2026-10-15 13:20 CDT |
