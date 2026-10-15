@@ -12,7 +12,14 @@ checklist, it is not done, whatever the CLAIMS board says.
    (<= 1.5), shadows and post-processing off, textures modest
    (<= 2048px, most <= 1024px), draw calls kept low. If it only runs
    well on a desktop, it is not finished.
-2. **Landscape, full-screen, any screen.** Sports titles start and stay
+2. **Landscape, full-screen, any screen — and landscape FROM THE
+   FIRST FRAME.** Every game starts in landscape, locked, already
+   loaded: there is NO "rotate your device" sign and no portrait
+   state. The pattern: in portrait the whole stage presents rotated
+   to landscape (CSS), the renderer sizes to the landscape box, touch
+   input is remapped to the rotated frame, and on the first tap the
+   game requests fullscreen + `screen.orientation.lock('landscape')`
+   wherever the platform allows it. Sports titles start and stay
    in landscape. CSS owns the canvas size; the game refits on resize,
    rotation and visualViewport changes (the `fitGame()` pattern), and
    respects safe-area insets. Nothing important may sit off-screen on
