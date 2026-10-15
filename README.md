@@ -23,3 +23,10 @@ A game's back button returns to sports.html. See CLAIMS.md for the
 full rule and the claims board every worker must check before building.
 
 Plain static files. Saves stay on the player's device.
+
+## Store-ready rule
+
+Every game in this repo is built to ship as an Apple App Store /
+Google Play app for iPhone and Android: phone performance first,
+landscape, touch-first, fully bundled and offline. The checklist lives
+in STORE-READY.md — a game that breaks it is not done.
