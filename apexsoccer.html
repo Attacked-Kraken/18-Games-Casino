@@ -16,7 +16,10 @@
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#000;
     color:#9dffb4; align-items:center; justify-content:center; text-align:center;
     font-size:20px; letter-spacing:.2em; padding:24px; }
-  @media (orientation: portrait) { #rotOv { display:flex; } }
+  #rotOv { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
     z-index:8000; display:flex; align-items:center; gap:14px; padding:8px 18px;
     background:rgba(2,14,6,.85); border:1px solid rgba(57,255,90,.5); border-radius:999px;
@@ -65,7 +68,7 @@
   #chg { position:fixed; left:50%; bottom:calc(120px + env(safe-area-inset-bottom)); transform:translateX(-50%);
     width:200px; height:10px; border-radius:6px; background:rgba(255,255,255,.12); z-index:8100; display:none; overflow:hidden; }
   #chgFill { height:100%; width:0%; background:linear-gradient(90deg,#57ff5e,#ffb02e,#ff4b4b); }
-  @media (orientation: portrait) { #hud, #joy, #btns, #chg, #back, #viewBtn, #muteBtn { display:none !important; } }
+
 </style>
 <script type="importmap">{ "imports": { "three": "./three.module.min.js" } }</script>
 <style>
@@ -147,8 +150,9 @@ if (!coarse) { sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
 scene.add(sun);
 let fitW = 0, fitH = 0;
 function fitGame(){
-  const w = document.documentElement.clientWidth || innerWidth;
-  const h = document.documentElement.clientHeight || innerHeight;
+  let w = document.documentElement.clientWidth || innerWidth;
+  let h = document.documentElement.clientHeight || innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
   if (!w || !h) return;
   fitW = w; fitH = h;
   camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -417,6 +421,7 @@ function joyStart(e){ const t=e.changedTouches[0]; joy.id=t.identifier; joy.acti
 function joyMove(e){ for(const t of e.changedTouches){ if(t.identifier!==joy.id) continue;
   let dx=(t.clientX-joyCX)/52, dy=(t.clientY-joyCY)/52;
   const l=Math.hypot(dx,dy); if(l>1){ dx/=l; dy/=l; }
+  if(innerHeight>innerWidth){ const _dx=dx; dx=dy; dy=-_dx; } // rotated stage: remap touch to the landscape frame
   joy.x=dx; joy.y=dy; stick.style.transform=`translate(calc(-50% + ${dx*36}px), calc(-50% + ${dy*36}px))`; e.preventDefault(); } }
 function joyEnd(e){ for(const t of e.changedTouches){ if(t.identifier!==joy.id) continue;
   joy.id=null; joy.active=false; joy.x=joy.y=0; stick.style.transform='translate(-50%,-50%)'; } }
@@ -1191,6 +1196,12 @@ function loop(now){
 }
 placeFormation(); hud();
 requestAnimationFrame(loop);
+</script>
+
+<script>
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform
+   allows it (Android). iOS ignores the lock; the rotated stage carries it there. */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
