@@ -2136,6 +2136,15 @@ function perfReport() { const b = $('perfBody'); if (!b) return; const L = PERF_
   const pc = $('perfClose'); if (pc) pc.addEventListener('click', () => { const r = $('perfRep'); if (r) r.style.display = 'none'; });
   const pr = $('perfReset'); if (pr) pr.addEventListener('click', () => { PERF.lvl = 0; perfApply(null); perfLog('You reset the tuner → back to FULL quality'); perfReport(); });
   window.__perf = PERF; window.__g = G; /* v20: game-state handle for testing */
+  /* v21 (the split): the shell's Back button was dead chrome - display:none
+     forever and wired to nothing, while the other four games all exit to
+     the Game Development page. Wire it home, show it on menu screens. */
+  /* v21b: in portrait the rotate overlay's own handlers get first claim
+     on this button and swallow the tap, so listen in the CAPTURE phase at
+     the document instead - first claim, every orientation, and re-query
+     the button each tick in case the shell swaps the node. */
+  document.addEventListener('click', (e) => { if (e.target && e.target.id === 'back') { e.stopPropagation(); location.href = 'sports.html'; } }, true);
+  setInterval(() => { const b2 = document.getElementById('back'); if (b2) b2.style.display = (G.mode !== 'game') ? 'block' : 'none'; }, 700);
 })();
 
 /* ================= v17: THE CROWD IS PEOPLE + APEX ARCADE PRESENTS =====
