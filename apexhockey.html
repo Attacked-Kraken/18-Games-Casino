@@ -88,6 +88,7 @@
 </div>
 <div id="charge"><div id="chargeFill"></div></div>
 <div class="overlay" id="menu">
+  <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
   <h1>APEX ICE HOCKEY</h1>
   <h2 id="menuSub">3 periods · real rules: offsides, faceoffs, golden-goal overtime.</h2>
   <div id="starCard"></div>
@@ -193,6 +194,9 @@ function makeIceTexture(){
   // center circle + dot
   g.strokeStyle='#2b5fd9'; g.lineWidth=5; g.beginPath(); g.arc(X(0),Z(0),15*S,0,TAU); g.stroke();
   g.fillStyle='#2b5fd9'; g.beginPath(); g.arc(X(0),Z(0),1.1*S,0,TAU); g.fill();
+  // the sponsor, under the ice at center - like a real arena
+  g.fillStyle='rgba(43,95,217,.30)'; g.font='900 ' + Math.round(4.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
+  g.fillText('APEX', X(0), Z(0)-3.4*S); g.fillText('ARCADE', X(0), Z(0)+7.6*S);
   // faceoff dots + end-zone circles
   const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,20],[69,-20],[-69,20],[-69,-20]];
   g.fillStyle='#c8323c';
@@ -246,6 +250,8 @@ function makeIceTexture(){
     g.fillText('APEX HOCKEY', 256, 84);
     g.fillStyle='#ffe27d'; g.font='900 96px ui-monospace, Menlo, monospace';
     g.fillText(h+' - '+a, 256, 196);
+    g.fillStyle='#ffcc33'; g.font='800 21px ui-monospace, Menlo, monospace';
+    g.fillText('A P E X   A R C A D E', 256, 230);
     sbTex.needsUpdate = true;
   }
   const sbSide = new THREE.MeshBasicMaterial({ map:sbTex });
@@ -341,14 +347,19 @@ function roundedRectSegs(hw,hh,r){
   const kickMat = new THREE.MeshStandardMaterial({color:0xd8b400, roughness:.8});
   const boardMat = new THREE.MeshStandardMaterial({color:0xf5f8fa, roughness:.7});
   const glassMat = new THREE.MeshBasicMaterial({color:0xbfe0ff, transparent:true, opacity:.10, side:THREE.DoubleSide, depthWrite:false});
-  const adMat = new THREE.MeshBasicMaterial({color:0x0e2a4a});
+  const adCv = document.createElement('canvas'); adCv.width=1024; adCv.height=64;
+  { const ag = adCv.getContext('2d'); ag.fillStyle='#0e2a4a'; ag.fillRect(0,0,1024,64);
+    ag.fillStyle='#ffcc33'; ag.font='900 34px system-ui, sans-serif'; ag.textAlign='center';
+    ag.fillText('APEX ARCADE', 256, 43); ag.fillText('APEX ARCADE', 768, 43); }
+  const adTex = new THREE.CanvasTexture(adCv); adTex.colorSpace = THREE.SRGBColorSpace; adTex.wrapS = THREE.RepeatWrapping;
   roundedRectSegs(HX, HZ, RINK.CR).forEach(([x1,z1,x2,z2])=>{
     const len = Math.hypot(x2-x1, z2-z1); if(len<0.5) return;
     const mx=(x1+x2)/2, mz=(z1+z2)/2, ang=Math.atan2(z2-z1, x2-x1);
     const grp = new THREE.Group(); grp.position.set(mx,0,mz); grp.rotation.y = -ang;
     const kick = new THREE.Mesh(new THREE.BoxGeometry(len,1,0.7), kickMat); kick.position.y=0.5; grp.add(kick);
     const bd = new THREE.Mesh(new THREE.BoxGeometry(len,2.7,0.7), boardMat); bd.position.y=2.35; grp.add(bd);
-    const ad = new THREE.Mesh(new THREE.PlaneGeometry(len*0.92,1.6), adMat); ad.position.set(0,2.3,-0.36); ad.rotation.y=Math.PI; grp.add(ad);
+    const at = adTex.clone(); at.needsUpdate = true; at.repeat.x = Math.max(1, Math.round(len / 30));
+    const ad = new THREE.Mesh(new THREE.PlaneGeometry(len*0.92,1.6), new THREE.MeshBasicMaterial({ map: at })); ad.position.set(0,2.3,-0.36); ad.rotation.y=Math.PI; grp.add(ad);
     const gl = new THREE.Mesh(new THREE.PlaneGeometry(len,5.2), glassMat); gl.position.y=6.3; grp.add(gl);
     scene.add(grp);
   });
