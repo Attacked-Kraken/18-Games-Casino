@@ -211,7 +211,10 @@ const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference:'
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, COARSE ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 if (isTouch) renderer.shadowMap.enabled = false;   // enforced: no shadow maps on touch
-else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; }
+else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 $('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
