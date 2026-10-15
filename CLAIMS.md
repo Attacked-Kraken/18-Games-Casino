@@ -93,6 +93,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| DONE | Monster truck realism pass + thumbsticks: PBR env, textured paint/tires/dirt, mech detail, vignette, dual analog sticks, 28/28 checks | Muse algre141 | mt-realism2 | PR #177, main d84a26f6 | 2026-10-15 01:29 CDT |
 | CLAIMED | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | - | 2026-10-15 01:18 CDT |
 | CLAIMED | Soccer realism + stadium fix (apexsoccer.html): stands set back off the pitch, goals with nets + goalies, realistic proportioned players/kits, Apex Arcade branding kept | Muse Dash | soccer-realism-dash | - | 2026-10-15 01:15 CDT |
 | DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
