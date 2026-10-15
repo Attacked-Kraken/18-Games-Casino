@@ -130,7 +130,7 @@
 import * as THREE from 'three';
 
 /* ================= config ================= */
-const ARENA = 375;           // half-size of the dirt arena (2.5x each way = 6.25x area)
+const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
 const RUN_TIME = 120;        // seconds per freestyle run
 const GRAV = 24;
 const MAX_FWD = 33, MAX_REV = 12, ACCEL = 17, BRAKE = 28;
@@ -343,14 +343,14 @@ const dirtTex = makeTex(512, 512, (g, w, h) => {
     g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
   }
 });
-dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(170, 170);
+dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(880, 880);
 const dirt = new THREE.Mesh(
   new THREE.PlaneGeometry(ARENA * 2 + 20, ARENA * 2 + 20),
   new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 1 })
 );
 dirt.rotation.x = -Math.PI / 2; dirt.receiveShadow = true; scene.add(dirt);
 const outer = new THREE.Mesh(
-  new THREE.PlaneGeometry(1800, 1800),
+  new THREE.PlaneGeometry(9000, 9000),
   new THREE.MeshStandardMaterial({ color: 0x11141a, roughness: 1 })
 );
 outer.rotation.x = -Math.PI / 2; outer.position.y = -0.05; scene.add(outer);
@@ -461,39 +461,58 @@ function stepCrowd() {
   crowdMesh.instanceMatrix.needsUpdate = true;
 }
 
-/* ================= ramps ================= */
+/* ================= ramps: Monster Jam stadium style =================
+   Jump-to-jump doubles in the middle, freestyle ramps around.
+   Colors: red/blue/black with white edges (like the refs). */
 const ramps = [];
-const rampMat = new THREE.MeshStandardMaterial({ color: 0x2b303b, roughness: 0.85 });
-const edgeMat = new THREE.MeshStandardMaterial({ color: ACCENT, roughness: 0.6, emissive: 0x552f00 });
-function addRamp(x, z, ang, len, wid, h) {
+const rampMats = {
+  red: new THREE.MeshStandardMaterial({ color: 0xc02020, roughness: 0.85 }),
+  blue: new THREE.MeshStandardMaterial({ color: 0x2040c0, roughness: 0.85 }),
+  black: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 }),
+};
+const edgeMatW = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+function addRamp(x, z, ang, len, wid, h, color) {
   const dx = Math.sin(ang), dz = Math.cos(ang);
   const shape = new THREE.Shape();
   shape.moveTo(0, 0); shape.lineTo(len, 0); shape.lineTo(len, h); shape.lineTo(0, 0);
   const geo = new THREE.ExtrudeGeometry(shape, { depth: wid, bevelEnabled: false });
   geo.translate(0, 0, -wid / 2);
-  const mesh = new THREE.Mesh(geo, rampMat);
+  const mesh = new THREE.Mesh(geo, rampMats[color] || rampMats.black);
   mesh.castShadow = true; mesh.receiveShadow = true;
   const grp = new THREE.Group(); grp.add(mesh);
-  const e1 = new THREE.Mesh(new THREE.BoxGeometry(len, 0.25, 0.4), edgeMat);
-  e1.position.set(len / 2, h * 0.5 + 0.35, wid / 2 - 0.2); e1.rotation.z = Math.atan2(h, len); grp.add(e1);
-  const e2 = e1.clone(); e2.position.z = -wid / 2 + 0.2; grp.add(e2);
+  // white edges (like Monster Jam)
+  const e1 = new THREE.Mesh(new THREE.BoxGeometry(len, 0.3, 0.5), edgeMatW);
+  e1.position.set(len / 2, h * 0.5 + 0.4, wid / 2 - 0.25); e1.rotation.z = Math.atan2(h, len); grp.add(e1);
+  const e2 = e1.clone(); e2.position.z = -wid / 2 + 0.25; grp.add(e2);
   grp.position.set(x - dx * len / 2, 0, z - dz * len / 2);
   grp.rotation.y = Math.atan2(-dz, dx);
   scene.add(grp);
   ramps.push({ x, z, dx, dz, len, wid, h, lx: x - dx * len / 2, lz: z - dz * len / 2 });
 }
-addRamp(0, 170, 0, 48, 22, 15);
-addRamp(0, -170, Math.PI, 48, 22, 15);
-addRamp(-180, 180, -Math.PI * 0.25, 38, 18, 11);
-addRamp(180, 180, Math.PI * 0.25, 38, 18, 11);
-addRamp(-180, -180, -Math.PI * 0.75, 38, 18, 11);
-addRamp(180, -180, Math.PI * 0.75, 38, 18, 11);
-addRamp(280, 0, Math.PI / 2, 30, 15, 8);
-addRamp(-280, 0, -Math.PI / 2, 30, 15, 8);
-addRamp(0, 280, 0, 30, 15, 8);
-addRamp(0, -280, Math.PI, 30, 15, 8);
-addRamp(120, -40, Math.PI * 0.5, 24, 13, 6.5);
-addRamp(-120, 40, -Math.PI * 0.5, 24, 13, 6.5);
+// Helper: double jump (launch ramp -> gap -> landing ramp)
+function addDouble(x, z, ang, gap) {
+  const dx = Math.sin(ang), dz = Math.cos(ang);
+  // launch (red)
+  addRamp(x - dx * gap / 2, z - dz * gap / 2, ang, 60, 26, 18, 'red');
+  // landing (blue, facing opposite)
+  addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 60, 26, 18, 'blue');
+}
+// CENTER JAM ZONE: 4 doubles in a cross (jump ramp-to-ramp)
+addDouble(0, 0, 0, 120);                    // north-south double
+addDouble(0, 0, Math.PI / 2, 120);          // east-west double
+addDouble(300, 300, Math.PI * 0.25, 100);   // NE double
+addDouble(-300, -300, Math.PI * 1.25, 100); // SW double
+// Big tabletop in center (black)
+addRamp(0, 0, 0, 80, 40, 22, 'black');
+// OUTER FREESTYLE: bigger ramps around the stadium
+addRamp(0, 900, 0, 90, 35, 26, 'red');
+addRamp(0, -900, Math.PI, 90, 35, 26, 'blue');
+addRamp(900, 0, Math.PI / 2, 90, 35, 26, 'red');
+addRamp(-900, 0, -Math.PI / 2, 90, 35, 26, 'blue');
+addRamp(700, 700, Math.PI * 0.25, 70, 28, 20, 'black');
+addRamp(-700, 700, -Math.PI * 0.25, 70, 28, 20, 'black');
+addRamp(700, -700, Math.PI * 0.75, 70, 28, 20, 'black');
+addRamp(-700, -700, -Math.PI * 0.75, 70, 28, 20, 'black');
 
 function groundHeight(x, z) {
   let h = 0;
@@ -512,7 +531,7 @@ function groundHeight(x, z) {
 /* ================= tire stacks ================= */
 const tires = [];
 const tireMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
-for (const [tx, tz] of [[-100, 100], [100, 100], [-100, -75], [112, -62], [-175, 250], [-250, 25], [250, -225], [-62, -250], [175, -150], [-300, -150], [150, 300], [-150, -300], [300, 150], [0, -325], [-325, 0], [75, 150], [200, 200], [-200, -200]]) {
+for (const [tx, tz] of [[-500, 500], [500, 500], [-500, -375], [560, -310], [-875, 1250], [-1250, 125], [1250, -1125], [-310, -1250], [875, -750], [-1500, -750], [750, 1500], [-750, -1500], [1500, 750], [0, -1625], [-1625, 0], [375, 750], [1000, 1000], [-1000, -1000], [1200, -400], [-1200, 400]]) {
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const t = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.42, 10, 20), tireMat);
@@ -751,10 +770,10 @@ function spawnAI(color, x, z, style) {
   t.g.position.set(x, 0, z); scene.add(t.g);
   aiTrucks.push({ ...t, x, z, hd: Math.random() * Math.PI * 2, sp: 0, y: 0, vy: 0, grounded: true, target: null });
 }
-spawnAI(0x2e7fd9, 80, -60, 'pickup');   // blue pickup
-spawnAI(0x37c26a, -80, 60, 'suv');        // green SUV
-spawnAI(0xff7a1e, 60, 80, 'pickup');      // orange pickup
-spawnAI(0x8a2be2, -60, -80, 'suv');       // purple SUV
+spawnAI(0x2e7fd9, 400, -300, 'pickup');   // blue pickup
+spawnAI(0x37c26a, -400, 300, 'suv');        // green SUV
+spawnAI(0xff7a1e, 300, 400, 'pickup');      // orange pickup
+spawnAI(0x8a2be2, -300, -400, 'suv');       // purple SUV
 function stepAI(dt) {
   for (const a of aiTrucks) {
     if (!a.target || Math.hypot(a.x - a.target.x, a.z - a.target.z) < 30) {

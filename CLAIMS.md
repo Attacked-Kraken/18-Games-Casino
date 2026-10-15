@@ -141,6 +141,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Monster Jam stadium arena: 30x bigger (4000x4000), jump-to-jump doubles in center, colored ramps (red/blue/black) with white edges | Muse algre141 | monstertruck-arena | | 2026-10-15 16:20 CDT |
 | CLAIMED | Monster truck hotfix: restore missing landscape-law JS (touch remap, fitLandscape, fullscreen lock) regressed by PR #240 | Muse algre141 | monstertruck-hotfix | | 2026-10-15 14:34 CDT |
 | DONE | Monster truck: studio-style redesign (big aggressive tires, wide -offset, lift-kit suspension, exhaust stacks with smoke on gas, Apex Arcade bed logos) + AI truck roster (different colors, pickup + SUV styles) | Muse algre141 | monstertruck-redesign-v2 | PR #240 | 2026-10-15 14:10 CDT |
 
@@ -152,7 +153,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
-| DONE | Soccer clean kits (apexsoccer.html): fix white shader-stripe artifact on dark shorts — COMETS + GK shorts to white | Muse Dash | soccer-players-dash2 | PR #246, main 3d2a49df | 2026-10-15 15:05 CDT |
+| CLAIMED | Soccer clean kits (apexsoccer.html): fix white shader-stripe artifact on dark shorts — COMETS + GK shorts to white | Muse Dash | soccer-players-dash2 | - | 2026-10-15 14:52 CDT |
 | DONE | PROOF RULE posted: nothing the owner can see is 'fixed/done/live' until seen in the game check pictures; believe the owner's screenshot over your code | Claude (owner's reviewer) | proof-rule-claude | this PR | 2026-10-15 14:45 CDT |
 | DONE | F1 car fixes (apexf1.html): (1) cars sat sideways on diagonal stretches - the facing formula was mirrored; now aimed down the track + turned by headAngle (fixes AI cars too); (2) the 'stick' poking out sideways was the sidepods, rotated a quarter turn - now run along the car beside the cockpit. Verified with game check pictures | Claude (owner's reviewer) | f1-car-facing-claude | this PR | 2026-10-15 14:40 CDT |
 | DONE | Soccer start screen + camera tracking (apexsoccer.html): compact start card so KICK OFF is visible without scrolling in portrait-rotated mode; cameras follow the ball sideline to sideline (kx 0.62->0.95, wider clamp) | Muse Dash | soccer-startcam-dash | PR #238, main c49bc760 | 2026-10-15 13:55 CDT |
