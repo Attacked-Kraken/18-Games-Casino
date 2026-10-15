@@ -613,7 +613,7 @@ let thrRamp = 0;
 
 /* ================= buttons ================= */
 function toggleView() { cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
-$('back').addEventListener('click', () => { location.href = 'index.html'; });
+$('back').addEventListener('click', () => { location.href = 'sports.html'; });
 $('viewBtn').addEventListener('click', toggleView);
 $('resetBtn').addEventListener('click', () => { if (phase !== 'menu') respawn(); });
 $('btnFree').addEventListener('click', () => { Mus.ensure(); mode = 'free'; respawn(); });
