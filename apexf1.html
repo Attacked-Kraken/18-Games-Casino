@@ -797,23 +797,43 @@ const __liveryCache = {};
 function liveryTexture(color, teamName, carNumber){
   const key = color.toString(16)+teamName+carNumber;
   if(__liveryCache[key]) return __liveryCache[key];
-  const c = document.createElement('canvas'); c.width=512; c.height=256;
+  const c = document.createElement('canvas'); c.width=1024; c.height=512;
   const x = c.getContext('2d');
   const hex = '#'+color.toString(16).padStart(6,'0');
-  x.fillStyle = hex; x.fillRect(0,0,512,256);
-  x.fillStyle = 'rgba(255,255,255,0.16)';
-  x.beginPath(); x.moveTo(0,200); x.lineTo(512,140); x.lineTo(512,170); x.lineTo(0,230); x.fill();
-  x.fillStyle = 'rgba(0,0,0,0.22)';
-  x.beginPath(); x.moveTo(0,230); x.lineTo(512,170); x.lineTo(512,200); x.lineTo(0,256); x.fill();
-  x.fillStyle = '#ffd76a'; x.font = 'bold 44px sans-serif'; x.textAlign='center';
-  x.fillText('\u2605 APEX ARCADE \u2605', 256, 78);
-  x.fillStyle = 'rgba(255,255,255,0.92)'; x.font = 'bold 30px sans-serif';
-  x.fillText(teamName, 256, 122);
-  x.fillStyle = '#ffffff'; x.beginPath(); x.arc(256,180,34,0,7); x.fill();
-  x.fillStyle = '#111111'; x.font = 'bold 40px sans-serif';
-  x.fillText(String(carNumber), 256, 194);
+  // base with subtle vertical gradient for depth
+  const grd = x.createLinearGradient(0,0,0,512);
+  grd.addColorStop(0, hex); grd.addColorStop(0.5, hex);
+  grd.addColorStop(1, 'rgba(0,0,0,0.35)');
+  x.fillStyle = grd; x.fillRect(0,0,1024,512);
+  // speed stripes
+  x.fillStyle = 'rgba(255,255,255,0.20)';
+  x.beginPath(); x.moveTo(0,400); x.lineTo(1024,280); x.lineTo(1024,340); x.lineTo(0,460); x.fill();
+  x.fillStyle = 'rgba(0,0,0,0.25)';
+  x.beginPath(); x.moveTo(0,460); x.lineTo(1024,340); x.lineTo(1024,400); x.lineTo(0,512); x.fill();
+  // accent pinstripes
+  x.fillStyle = '#ffd76a'; x.fillRect(0,272,1024,6);
+  x.fillStyle = 'rgba(255,255,255,0.85)'; x.fillRect(0,282,1024,3);
+  // Apex Arcade title sponsor (large)
+  x.fillStyle = '#ffd76a'; x.font = 'bold 88px sans-serif'; x.textAlign='center';
+  x.fillText('\u2605 APEX ARCADE \u2605', 512, 130);
+  // team name
+  x.fillStyle = 'rgba(255,255,255,0.95)'; x.font = 'bold 60px sans-serif';
+  x.fillText(teamName, 512, 210);
+  // secondary sponsors row
+  x.fillStyle = 'rgba(255,255,255,0.75)'; x.font = 'bold 28px sans-serif';
+  x.fillText('VELOCITY RACING  \u2022  APEX OIL  \u2022  TURBO MAX', 512, 260);
+  // racing number roundel (large)
+  x.fillStyle = '#ffffff'; x.beginPath(); x.arc(512,370,68,0,7); x.fill();
+  x.lineWidth=6; x.strokeStyle='#ffd76a'; x.stroke();
+  x.fillStyle = '#111111'; x.font = 'bold 80px sans-serif';
+  x.fillText(String(carNumber), 512, 398);
+  // small sponsor decals scattered
+  x.fillStyle = 'rgba(255,255,255,0.6)'; x.font = 'bold 22px sans-serif'; x.textAlign='left';
+  x.fillText('APEX', 40, 60); x.fillText('ARCADE', 40, 90);
+  x.textAlign='right'; x.fillText('APEX', 984, 60); x.fillText('ARCADE', 984, 90);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
   __liveryCache[key]=t; return t;
 }
 function buildCarMesh(color, teamName, carNumber){
@@ -829,12 +849,12 @@ function buildCarMesh(color, teamName, carNumber){
   const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
   // sculpted chassis tub (lathed)
   const tubPts=[]; for(let i=0;i<=8;i++){ const t=i/8; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
-  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,12), mat);
+  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,32), mat);
   tub.scale.set(1,1,1.9); tub.rotation.z=Math.PI/2; tub.rotation.y=Math.PI/2;
   tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
   // sculpted nose cone (lathed taper)
   const nosePts=[]; for(let i=0;i<=10;i++){ const t=i/10; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
-  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,10), mat);
+  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,32), mat);
   nose.rotation.z=-Math.PI/2+0.05; nose.position.set(1.15,0.44,0); g.add(nose);
   for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
   // front wing: extruded main plane + 3 flaps + endplates
@@ -842,7 +862,7 @@ function buildCarMesh(color, teamName, carNumber){
   const fwGeo=new THREE.ExtrudeGeometry(fwShape,{depth:1.96,bevelEnabled:true,bevelThickness:0.015,bevelSize:0.015,bevelSegments:1});
   fwGeo.translate(0,0,-0.98);
   const fw0=new THREE.Mesh(fwGeo,carbon); fw0.position.set(3.25,0.14,0); g.add(fw0);
-  for(let i=0;i<3;i++){ const f=B(0.3-i*0.04,0.035,1.9-i*0.06,carbon); f.position.set(3.18-i*0.02,0.25+i*0.09,0); f.rotation.z=-0.14-i*0.05; }
+  for(let i=0;i<5;i++){ const f=B(0.26-i*0.03,0.025,1.92-i*0.05,carbon); f.position.set(3.18-i*0.015,0.24+i*0.07,0); f.rotation.z=-0.12-i*0.04; }
   for(const sd of [-1,1]){
     const ep=B(0.55,0.42,0.045,paint); ep.position.set(3.25,0.34,sd*1.0); ep.rotation.z=0.08;
   }
@@ -913,6 +933,14 @@ function buildCarMesh(color, teamName, carNumber){
   }
   const rl=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.28,0.2), new THREE.MeshBasicMaterial({color:0xff2222}));
   rl.position.set(-2.32,0.85,0); g.add(rl); g.userData.rainLight=rl; rl.visible=false;
+  // fine details: brake ducts, bargeboards, antenna, floor strakes
+  for(const sd of [-1,1]){
+    const bd=B(0.3,0.25,0.18,carbon); bd.position.set(2.45,0.42,sd*0.72); // brake ducts
+    const bb=B(0.7,0.35,0.04,carbon); bb.position.set(1.35,0.35,sd*0.85); bb.rotation.y=sd*0.15; // bargeboards
+    for(let si=0;si<3;si++){ const st=B(0.4,0.02,0.06,carbon); st.position.set(-1.7-si*0.15,0.18,sd*(0.5+si*0.2)); } // floor strakes
+  }
+  const ant=B(0.02,0.35,0.02,carbon); ant.position.set(-0.15,1.35,0); // antenna
+  const twb=B(0.25,0.04,0.6,carbon); twb.position.set(-1.85,1.05,0); // T-wing
   scene.add(g);
   return g;
 }
