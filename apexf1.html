@@ -848,13 +848,13 @@ function buildCarMesh(color, teamName, carNumber){
   const floor=B(4.4,0.07,1.85,carbon); floor.position.set(0,0.14,0);
   const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
   // sculpted chassis tub (lathed)
-  const tubPts=[]; for(let i=0;i<=8;i++){ const t=i/8; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
-  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,32), mat);
+  const tubPts=[]; for(let i=0;i<=16;i++){ const t=i/16; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
+  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,48), mat);
   tub.scale.set(1,1,1.9); tub.rotation.z=Math.PI/2; tub.rotation.y=Math.PI/2;
   tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
   // sculpted nose cone (lathed taper)
-  const nosePts=[]; for(let i=0;i<=10;i++){ const t=i/10; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
-  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,32), mat);
+  const nosePts=[]; for(let i=0;i<=20;i++){ const t=i/20; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
+  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,48), mat);
   nose.rotation.z=-Math.PI/2+0.05; nose.position.set(1.15,0.44,0); g.add(nose);
   for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
   // front wing: extruded main plane + 3 flaps + endplates
@@ -873,7 +873,7 @@ function buildCarMesh(color, teamName, carNumber){
   for(const sd of [-1,1]){
     const s=new THREE.Shape();
     s.moveTo(0,0); s.lineTo(1.7,0); s.quadraticCurveTo(1.85,0.21,1.5,0.42); s.lineTo(0.2,0.42); s.quadraticCurveTo(-0.1,0.21,0,0);
-    const sg=new THREE.ExtrudeGeometry(s,{depth:0.5,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.06,bevelSegments:2});
+    const sg=new THREE.ExtrudeGeometry(s,{depth:0.5,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.06,bevelSegments:4});
     const pod=new THREE.Mesh(sg,mat); pod.rotation.y=Math.PI/2;
     pod.position.set(0.62,0.28,sd>0?0.40:-0.96);
     g.add(pod);
@@ -882,7 +882,7 @@ function buildCarMesh(color, teamName, carNumber){
   }
   // airbox (extruded intake)
   const abShape=new THREE.Shape(); abShape.moveTo(0,0); abShape.lineTo(0.75,0); abShape.quadraticCurveTo(0.8,0.3,0.45,0.5); abShape.lineTo(0.1,0.5); abShape.quadraticCurveTo(-0.05,0.25,0,0);
-  const abGeo=new THREE.ExtrudeGeometry(abShape,{depth:0.36,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.05,bevelSegments:2});
+  const abGeo=new THREE.ExtrudeGeometry(abShape,{depth:0.36,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.05,bevelSegments:4});
   abGeo.translate(0,0,-0.18);
   const airbox=new THREE.Mesh(abGeo,mat); airbox.position.set(-0.32,0.78,0); g.add(airbox);
   const intake=B(0.2,0.28,0.24,dark); intake.position.set(0.02,1.05,0);
