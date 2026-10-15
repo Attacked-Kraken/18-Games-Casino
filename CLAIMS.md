@@ -93,6 +93,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | F1 CRITICAL: add missing renderer.render() — 3D scene was built but never drawn (black screen) | Muse main | f1-blackfix-01 | - | 2026-10-15 01:10 CDT |
 | DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
 | DONE | Monster truck mega upgrade: 3x arena, 4800-fan grandstands, 10 bigger ramps, detailed truck, 28/28 checks | Muse algre141 | mt-mega-arena2 | PR #159, main 4f366aa5 | 2026-10-15 00:14 CDT |
 | CLAIMED | Exotic Racer Club realism upgrade (apexracer.html): realistic supercar bodies/wheels/liveries, richer trackside detail, Apex Arcade branding, menu + in-game music, friend-code multiplayer, sports.html registration | Muse Cruz.inc | apexracer-ship | - | 2026-10-14 23:56 CDT |
