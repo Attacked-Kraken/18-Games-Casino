@@ -804,23 +804,31 @@ function detailGeo(pk, paintHex) {
    fleet mockup (sleek curves, quad round headlights, sculpted bumper). Built procedurally
    to reproduce the mockup design; not a CC0 asset. */
 function mockupBodyGeo(sx, sy, sz) {
-  const key = 'mkb' + sx.toFixed(3) + '_' + sy.toFixed(3) + '_' + sz.toFixed(3);
+  const key = 's7b' + sx.toFixed(3) + '_' + sy.toFixed(3) + '_' + sz.toFixed(3);
   if (GC[key]) return GC[key];
   const s = new THREE.Shape();
-  s.moveTo(2.35, 0.28);
-  s.quadraticCurveTo(2.38, 0.46, 2.10, 0.54);
-  s.quadraticCurveTo(1.50, 0.64, 0.90, 0.70);
-  s.quadraticCurveTo(0.55, 0.74, 0.30, 0.94);
-  s.quadraticCurveTo(0.00, 1.06, -0.60, 1.02);
-  s.quadraticCurveTo(-1.10, 0.98, -1.50, 0.86);
-  s.quadraticCurveTo(-2.00, 0.76, -2.30, 0.70);
-  s.quadraticCurveTo(-2.38, 0.50, -2.34, 0.30);
-  s.lineTo(2.32, 0.14);
-  s.quadraticCurveTo(2.38, 0.18, 2.35, 0.28);
-  const g = new THREE.ExtrudeGeometry(s, { depth: 1.62, bevelEnabled: true, bevelThickness: 0.18, bevelSize: 0.16, bevelSegments: 5, steps: 1, curveSegments: 28 });
-  g.translate(0, 0, -0.81);
+  s.moveTo(2.38, 0.24);
+  s.quadraticCurveTo(2.42, 0.42, 2.15, 0.50);
+  s.quadraticCurveTo(1.55, 0.58, 0.95, 0.64);
+  s.quadraticCurveTo(0.60, 0.68, 0.35, 0.88);
+  s.quadraticCurveTo(0.10, 1.00, -0.55, 0.98);
+  s.quadraticCurveTo(-1.05, 0.94, -1.45, 0.84);
+  s.quadraticCurveTo(-1.95, 0.74, -2.28, 0.68);
+  s.quadraticCurveTo(-2.36, 0.48, -2.32, 0.28);
+  s.lineTo(2.34, 0.12);
+  s.quadraticCurveTo(2.40, 0.16, 2.38, 0.24);
+  const g = new THREE.ExtrudeGeometry(s, { depth: 1.60, bevelEnabled: true, bevelThickness: 0.14, bevelSize: 0.12, bevelSegments: 4, steps: 1, curveSegments: 28 });
+  g.translate(0, 0, -0.80);
   g.scale(sx, sy, sz);
   g.computeVertexNormals();
+  // Hood power bulge
+  const bs = new THREE.Shape();
+  bs.moveTo(2.10, 0.50); bs.quadraticCurveTo(1.55, 0.60, 0.95, 0.66);
+  bs.quadraticCurveTo(0.70, 0.68, 0.65, 0.66); bs.quadraticCurveTo(1.00, 0.62, 1.55, 0.56);
+  bs.quadraticCurveTo(2.00, 0.52, 2.10, 0.50);
+  const bg2 = new THREE.ExtrudeGeometry(bs, { depth: 0.50, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.05, bevelSegments: 3, curveSegments: 16 });
+  bg2.translate(0, 0, -0.25); bg2.scale(sx, sy, sz);
+  // Merge: for simplicity, return body; bulge added as separate mesh in details
   return (GC[key] = g);
 }
 function mockupGlassGeo(sx, sy, sz) {
@@ -840,38 +848,58 @@ function mockupDetails(tilt, sx, sy, sz, simple, cfg, paint) {
   const X = (x) => x * sx, Y = (y) => y * sy, Z = (z) => z * sz;
   const glassM = new THREE.MeshPhysicalMaterial({ color: 0x0a0e14, metalness: 0.9, roughness: 0.05, clearcoat: 1, envMapIntensity: 1.6 });
   const glass = new THREE.Mesh(mockupGlassGeo(sx, sy, sz), glassM); tilt.add(glass);
+  // Hood bulge
+  const bs = new THREE.Shape();
+  bs.moveTo(2.10, 0.50); bs.quadraticCurveTo(1.55, 0.60, 0.95, 0.66);
+  bs.quadraticCurveTo(0.70, 0.68, 0.65, 0.66); bs.quadraticCurveTo(1.00, 0.62, 1.55, 0.56);
+  bs.quadraticCurveTo(2.00, 0.52, 2.10, 0.50);
+  const bg2 = new THREE.ExtrudeGeometry(bs, { depth: 0.50, bevelEnabled: true, bevelThickness: 0.06, bevelSize: 0.05, bevelSegments: 3, curveSegments: 16 });
+  bg2.translate(0, 0, -0.25); bg2.scale(sx, sy, sz);
+  const bulge = new THREE.Mesh(bg2, paint); tilt.add(bulge);
   if (simple) return;
   const darkM = MAT.dark;
-  const hlM = new THREE.MeshStandardMaterial({ color: 0xeaf2ff, emissive: 0xd0e4ff, emissiveIntensity: 0.6, roughness: 0.1, metalness: 0.25 });
-  const bezM = new THREE.MeshStandardMaterial({ color: 0x0e0f12, roughness: 0.35, metalness: 0.65 });
-  for (const sd of [-1, 1]) for (const [hz, hy, hr] of [[0.48, 0.56, 0.17], [0.80, 0.54, 0.155]]) {
-    const hl = new THREE.Mesh(new THREE.SphereGeometry(hr * Math.min(sx, sy), 24, 18), hlM);
-    hl.scale.set(0.45, 0.7, 1.0); hl.position.set(X(2.28), Y(hy), sd * Z(hz)); hl.rotation.y = 0.15; tilt.add(hl);
-    const bez = new THREE.Mesh(new THREE.TorusGeometry(hr * Math.min(sx, sy), 0.026 * sx, 12, 24), bezM);
-    bez.scale.set(0.45, 0.7, 1.0); bez.position.set(X(2.30), Y(hy), sd * Z(hz)); bez.rotation.y = Math.PI / 2 + 0.15; tilt.add(bez);
-  }
-  const cint = new THREE.Mesh(BOXG, darkM); cint.scale.set(0.28*sx, 0.24*sy, 0.98*sz); cint.position.set(X(2.32), Y(0.32), 0); tilt.add(cint);
+  // HEADLIGHTS: large angular teardrop (S7-style)
+  const hlM = new THREE.MeshStandardMaterial({ color: 0xdfe8f2, emissive: 0xbfd4ff, emissiveIntensity: 0.4, roughness: 0.15, metalness: 0.3 });
   for (const sd of [-1, 1]) {
-    const si = new THREE.Mesh(BOXG, darkM); si.scale.set(0.24*sx, 0.22*sy, 0.44*sz); si.position.set(X(2.30), Y(0.32), sd*Z(0.80)); si.rotation.y = sd*0.28; tilt.add(si);
+    const shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.quadraticCurveTo(0.28, 0.10, 0.55, 0.06);
+    shape.quadraticCurveTo(0.62, 0.02, 0.55, -0.04);
+    shape.quadraticCurveTo(0.28, -0.10, 0, -0.06);
+    shape.quadraticCurveTo(-0.08, 0, 0, 0);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.02, bevelSegments: 2, curveSegments: 12 });
+    const m = new THREE.Mesh(geo, hlM);
+    m.rotation.y = sd * 0.35; m.rotation.z = -0.12;
+    m.position.set(X(2.08), Y(0.54), sd * Z(0.62)); m.scale.set(1.25*sx, 1.15*sy, 1.0);
+    tilt.add(m);
   }
-  const split = new THREE.Mesh(BOXG, darkM); split.scale.set(0.55*sx, 0.07*sy, 2.05*sz); split.position.set(X(2.15), Y(0.10), 0); tilt.add(split);
+  // FRONT BUMPER (aggressive)
+  const bumper = new THREE.Mesh(BOXG, paint); bumper.scale.set(0.35*sx, 0.28*sy, 1.85*sz); bumper.position.set(X(2.30), Y(0.28), 0); tilt.add(bumper);
+  const cint = new THREE.Mesh(BOXG, darkM); cint.scale.set(0.20*sx, 0.20*sy, 1.00*sz); cint.position.set(X(2.48), Y(0.26), 0); tilt.add(cint);
   for (const sd of [-1, 1]) {
-    const si = new THREE.Mesh(BOXG, darkM); si.scale.set(0.88*sx, 0.44*sy, 0.12*sz); si.position.set(X(-0.52), Y(0.52), sd*Z(0.90)); tilt.add(si);
+    const si = new THREE.Mesh(BOXG, darkM); si.scale.set(0.18*sx, 0.22*sy, 0.42*sz); si.position.set(X(2.46), Y(0.28), sd*Z(0.78)); si.rotation.y = sd*0.20; tilt.add(si);
     for (let k = 0; k < 4; k++) {
-      const sl = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({ color: 0x2b2e34, metalness: 0.7, roughness: 0.4 }));
-      sl.scale.set(0.09*sx, 0.38*sy, 0.14*sz); sl.position.set(X(-0.78 + k*0.18), Y(0.52), sd*Z(0.90)); tilt.add(sl);
+      const sl = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({ color: 0x1a1c1f, metalness: 0.6, roughness: 0.4 }));
+      sl.scale.set(0.04*sx, 0.18*sy, 0.06*sz); sl.position.set(X(2.56), Y(0.28), sd*Z(0.66 + k*0.09)); tilt.add(sl);
     }
-    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.028*sx, 0.028*sx, 0.24*sy, 10), darkM);
-    stalk.rotation.x = Math.PI/2; stalk.position.set(X(0.38), Y(0.92), sd*Z(0.76)); tilt.add(stalk);
-    const hous = new THREE.Mesh(new THREE.SphereGeometry(0.09*Math.min(sx,sy), 16, 12), paint);
-    hous.scale.set(1.4, 0.8, 1.0); hous.position.set(X(0.38), Y(0.94), sd*Z(0.90)); tilt.add(hous);
   }
-  const wingM = new THREE.MeshStandardMaterial({ color: 0x131418, roughness: 0.32, metalness: 0.55 });
-  const wing = new THREE.Mesh(BOXG, wingM); wing.scale.set(0.44*sx, 0.055*sy, 1.90*sz); wing.position.set(X(-2.02), Y(1.04), 0); wing.rotation.z = 0.09; tilt.add(wing);
+  const split = new THREE.Mesh(BOXG, darkM); split.scale.set(0.55*sx, 0.06*sy, 2.00*sz); split.position.set(X(2.28), Y(0.09), 0); tilt.add(split);
+  // SIDE INTAKES with vertical slats
   for (const sd of [-1, 1]) {
-    const up = new THREE.Mesh(BOXG, wingM); up.scale.set(0.32*sx, 0.32*sy, 0.055*sz); up.position.set(X(-2.02), Y(0.86), sd*Z(0.62)); tilt.add(up);
-    const plate = new THREE.Mesh(BOXG, wingM); plate.scale.set(0.46*sx, 0.24*sy, 0.035*sz); plate.position.set(X(-2.02), Y(1.04), sd*Z(0.95)); tilt.add(plate);
+    const si = new THREE.Mesh(BOXG, darkM); si.scale.set(0.90*sx, 0.46*sy, 0.12*sz); si.position.set(X(-0.50), Y(0.48), sd*Z(0.88)); tilt.add(si);
+    for (let k = 0; k < 5; k++) {
+      const sl = new THREE.Mesh(BOXG, new THREE.MeshStandardMaterial({ color: 0x23262b, metalness: 0.65, roughness: 0.4 }));
+      sl.scale.set(0.07*sx, 0.40*sy, 0.14*sz); sl.position.set(X(-0.80 + k*0.16), Y(0.48), sd*Z(0.88)); tilt.add(sl);
+    }
+    const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.025*sx, 0.025*sx, 0.20*sy, 10), darkM);
+    stalk.rotation.x = Math.PI/2; stalk.position.set(X(0.40), Y(0.86), sd*Z(0.72)); tilt.add(stalk);
+    const hous = new THREE.Mesh(new THREE.SphereGeometry(0.085*Math.min(sx,sy), 16, 12), paint);
+    hous.scale.set(1.3, 0.75, 1.0); hous.position.set(X(0.40), Y(0.88), sd*Z(0.84)); tilt.add(hous);
   }
+  // REAR WING
+  const wingM = new THREE.MeshStandardMaterial({ color: 0x131418, roughness: 0.32, metalness: 0.55 });
+  const wing = new THREE.Mesh(BOXG, wingM); wing.scale.set(0.42*sx, 0.05*sy, 1.82*sz); wing.position.set(X(-2.00), Y(0.98), 0); wing.rotation.z = 0.08; tilt.add(wing);
+  for (const sd of [-1, 1]) { const up = new THREE.Mesh(BOXG, wingM); up.scale.set(0.30*sx, 0.28*sy, 0.05*sz); up.position.set(X(-2.00), Y(0.82), sd*Z(0.60)); tilt.add(up); }
   const tlM = new THREE.MeshBasicMaterial({ color: hdr('#ff1030', 3.5) });
   for (const sd of [-1, 1]) { const tl = new THREE.Mesh(BOXG, tlM); tl.scale.set(0.09*sx, 0.11*sy, 0.58*sz); tl.position.set(X(-2.34), Y(0.58), sd*Z(0.44)); tilt.add(tl); }
   tilt.userData.tlM = tlM;

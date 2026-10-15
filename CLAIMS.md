@@ -131,6 +131,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 ## Board
 
+| CLAIMED | Exotic Racer Club S7-sharp rebuild (apexracer.html): angular teardrop headlights, hood power bulge, raked windshield, aggressive bumper with slats, side intakes; matches Saleen S7 reference photos | Muse Cruz.inc | apexracer-s7 | — | 2026-10-15 13:35 CDT |
 | DONE | Exotic Racer Club mockup-faithful rebuild (apexracer.html): CC0 body replaced with original smooth procedural supercar matching approved mockup (quad round headlights, sculpted bumper, side intakes, wing); all 8 cars + traffic, 0 errors | Muse Cruz.inc | apexracer-mockup | PR #228, main ff0d86a | 2026-10-15 12:50 CDT |
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
