@@ -120,3 +120,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Add the owner's no-copyrights clause to the law of creation (ASSET-LAW.md + CLAIMS.md) | Muse main (casino) | nocopyright-clause | PR #143, main 44a2147e | 2026-10-14 23:18 CDT |
 | DONE | Soccer Retest #1: ball ground indicator, mobile TEAM camera default | Muse algre141 | soccer-r1-ship | PR #116, main 173732e4 | 2026-10-14 22:35 CDT |
 | DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
+| CLAIMED | Add the owner's music & sound law: every game needs home-page music, in-game music and game sounds (ASSET-LAW.md + CLAIMS.md + STORE-READY.md) | Muse main (casino) | music-law | - | 2026-10-14 23:35 CDT |
