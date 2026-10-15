@@ -884,12 +884,12 @@ function mpose(c, f) { const C = MOCAP[c], [i0, i1, t] = mframe(c, f), p = poseF
 function lerpA(a, b, t) { let d = b - a; if (d > Math.PI) d -= TAU; else if (d < -Math.PI) d += TAU; return a + d * t; }
 /* ------------------------------------------------------------------ 27Hoops arena: court runs along z (baselines at z = +/-14.33), x across (sidelines at +/-7.62).
    Everything is built here from shapes and canvas paint - no downloaded models, no real league logos. */
-const HL = 14.325, HWC = 7.62, RIMY = 3.05, RIMZ = 12.75, RIMR = 0.2286, BOARDZ = 13.125, BALLR = 0.12, ARC = 7.24, CORNER = 6.7;
+const HL = 16.47, HWC = 8.76, RIMY = 3.05, RIMZ = 14.72, RIMR = 0.2286, BOARDZ = 15.1, BALLR = 0.12, ARC = 7.9, CORNER = 7.35; /* v19: a BIGGER court - +15% of floor. Rims, spots, bounds and cameras all derive from these constants; the shooting math is re-ranged below and the arena/stands are rebuilt around it. */
 const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(42, 1, 0.2, 400);
 const ARENA = { g: null, jumbo: null, jumboTex: null, ribbon: null, nets: [], rims: [], boards: [], sclk: [] };
 
 function woodTex(home) {
-  const PX = 64, W = 34, D = 20, w = 2048, h = 1280; /* 34 m x 20 m of floor at 60 px per metre */
+  const PX = 64, W = 38.5, D = 22.5, w = 2048, h = 1280; /* v19: the paint now spans 38.5m x 22.5m */ /* 34 m x 20 m of floor at 60 px per metre */
   return ctex(w, h, (g) => {
     const sx = (z) => (z + W / 2) * (w / W), sy = (x) => (x + D / 2) * (h / D), m = w / W;
     /* maple planks along the length of the court */
@@ -973,18 +973,18 @@ function buildArena(home, away) {
   /* glossy hardwood */
   const wt = woodTex(home); wt.anisotropy = MAXANI; wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set(-1, -1); wt.offset.set(1, 1);
   const coarseUI = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(34, 20), coarseUI ? new THREE.MeshStandardMaterial({ map: wt, roughness: 0.42, metalness: 0, envMapIntensity: 0.7 }) : new THREE.MeshPhysicalMaterial({ map: wt, roughness: 0.36, metalness: 0, clearcoat: 0.85, clearcoatRoughness: 0.1, envMapIntensity: 0.9 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(38.5, 22.5) /* v19: bigger slab for the bigger court */, coarseUI ? new THREE.MeshStandardMaterial({ map: wt, roughness: 0.42, metalness: 0, envMapIntensity: 0.7 }) : new THREE.MeshPhysicalMaterial({ map: wt, roughness: 0.36, metalness: 0, clearcoat: 0.85, clearcoatRoughness: 0.1, envMapIntensity: 0.9 }));
   floor.rotation.x = -Math.PI / 2; floor.rotation.z = -Math.PI / 2; floor.receiveShadow = true; A.add(floor);
   const base = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshStandardMaterial({ color: '#15171d', roughness: 0.8 })); base.rotation.x = -Math.PI / 2; base.position.y = -0.01; base.receiveShadow = true; A.add(base);
   /* stands: lower bowl, club ring with a ribbon board, upper bowl */
   const ct = crowdTexH(home, away); ct.anisotropy = MAXANI;
   const cm = new THREE.MeshStandardMaterial({ map: ct, color: '#c8c8d0', roughness: 1, emissive: '#ffffff', emissiveMap: ct, emissiveIntensity: 0.1 });
-  A.add(bowl(12.6, 19.8, 0.4, 30, 38, 13.5, cm, 1.6, 30));
+  A.add(bowl(14.2, 22.0, 0.4, 32.0, 40.3, 13.5, cm, 1.6, 30)); /* v19: lower bowl pushed out around the bigger court */
   const rib = ledTex(['27HOOPS', 'APEX ARCADE', home.city.toUpperCase() + ' ' + home.name.toUpperCase(), 'APEX ARCADE PRESENTS', 'DEFENSE!', 'MAKE SOME NOISE!', away.city.toUpperCase() + ' ' + away.name.toUpperCase()], home.c2, '#ffffff'); rib.repeat.set(3, 1); /* v17: the sponsor rides the ribbon */
   const rm = new THREE.MeshBasicMaterial({ map: rib, color: hdr('#ffffff', 1.4) }); ARENA.ribbon = rib;
-  A.add(bowl(30, 38, 13.5, 30.2, 38.2, 14.6, rm, 1, 40));
-  A.add(bowl(31, 39.2, 15.2, 46, 56, 30, cm, 1.5, 34));
-  A.add(bowl(12.2, 19.4, 0, 12.6, 19.8, 0.4, new THREE.MeshStandardMaterial({ color: '#0d0f14' }), 1, 1));
+  A.add(bowl(32.0, 40.3, 13.5, 32.2, 40.5, 14.6, rm, 1, 40));
+  A.add(bowl(33.0, 41.5, 15.2, 48.0, 58.3, 30, cm, 1.5, 34)); /* v19: upper bowl too */
+  A.add(bowl(13.8, 21.6, 0, 14.2, 22.0, 0.4, new THREE.MeshStandardMaterial({ color: '#0d0f14' }), 1, 1));
   /* courtside LED boards and the scorer's table */
   const lb = ledTex(['27HOOPS', 'APEX ARCADE', 'LONE STAR', home.name.toUpperCase(), 'APEX ARCADE PRESENTS 27HOOPS', 'FAST BREAK', 'BUCKETS'], home.c2, '#ffffff', 1024, 48); lb.repeat.set(4, 1);
   const lm = new THREE.MeshBasicMaterial({ map: lb, color: hdr('#ffffff', 1.25) }); ARENA.led = lb;
@@ -1512,9 +1512,9 @@ function contest(e) { const R = rimPos(e.t); let best = 99, who = null; for (con
 await __apexYield();
 function shotProb(e, info, ct) { const a = e.p.a; let p;
   if (info.kind === 'dunk') p = 0.9 + (a.ins - 70) * 0.003; else if (info.kind === 'layup') p = 0.6 + (a.ins - 70) * 0.007;
-  else if (info.three) p = 0.37 + (a.thr - 70) * 0.0075 - Math.max(0, info.d - (e.p.elite ? 10.2 : 7.7)) * (e.p.elite ? 0.045 : 0.075);
+  else if (info.three) p = 0.37 + (a.thr - 70) * 0.0075 - Math.max(0, info.d - (e.p.elite ? 10.7 : 8.35)) * (e.p.elite ? 0.045 : 0.075); /* v19: range starts re-based for the bigger court */
   if (e.p.tier === 'Superstar') p += 0.025; if (e.p.elite) p += 0.02; else if (!info.three && info.d < 4.5) p = 0.47 + (a.mid - 70) * 0.006; else if (!info.three) p = 0.42 + (a.mid - 70) * 0.006;
-  if (info.three && info.d > 8.2) p -= (info.d - 8.2) * (e.p.elite ? 0.055 : 0.085); /* v18: THE half-court fix. The mid-range lines above used to overwrite EVERY three (the else had no three check), so a heave from the logo scored like a pull-up at ~40% and the AI launched it every trip. Threes keep their distance formula now, and past 8.2m the odds fall off a cliff. */
+  if (info.three && info.d > 8.8) p -= (info.d - 8.8) * (e.p.elite ? 0.055 : 0.085); /* v19: deep falloff re-based */ /* v18: THE half-court fix. The mid-range lines above used to overwrite EVERY three (the else had no three check), so a heave from the logo scored like a pull-up at ~40% and the AI launched it every trip. Threes keep their distance formula now, and past 8.2m the odds fall off a cliff. */
   const c = ct ? ct.c : 9, dr = ct && ct.who ? ct.who.p.a.def / 80 : 1; p -= Math.max(0, 1.7 - c) / 1.7 * (info.kind === 'jumper' ? 0.3 : 0.22) * dr;
   p -= Math.min(1, e.vel.length() / 7) * (info.kind === 'jumper' ? 0.1 : 0);
   return clamp(p, 0.03, 0.97); }
@@ -1602,7 +1602,7 @@ function aiOffense(e, dt) {
        range - or one the defense has already killed - becomes a pass or a
        drive, unless the clock is dying. Rookie CPUs still jack it up
        sometimes; Hall of Fame CPUs almost never do. */
-    const range = 7.6 + Math.max(0, e.p.a.thr - 72) * 0.055 + (e.p.elite ? 0.9 : 0), dumb = e.t === USER ? 0.04 : (1.15 - (df().sm || 1)) * 0.3, desperate = G.shot < 3.2 || (lateQ && G.clock < 2.5);
+    const range = 8.3 + Math.max(0, e.p.a.thr - 72) * 0.055 + (e.p.elite ? 0.9 : 0), dumb /* v19: AI range re-based for the bigger court */ = e.t === USER ? 0.04 : (1.15 - (df().sm || 1)) * 0.3, desperate = G.shot < 3.2 || (lateQ && G.clock < 2.5);
     const badShot = info.kind === 'jumper' && !desperate && (info.d > range || p < 0.17) && Math.random() >= dumb;
     if ((ev > need + Math.random() * 0.25 || G.shot < 2.2 || (lateQ && G.clock < 2.5)) && !badShot) { startShot(e); return; }
     if (badShot) { const m3 = bestPass(e); if (m3 && Math.random() < 0.7) { passTo(e, m3); return; } e.tgt.set(R.x, 0, R.z - s * 0.8); e.spd = 1; e.drive = true; return; }
@@ -2156,6 +2156,7 @@ function cpSignTex(txt, bg, fg) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const CP_M4 = new THREE.Matrix4(), CP_Q = new THREE.Quaternion(), CP_E = new THREE.Euler(), CP_V = new THREE.Vector3(), CP_S = new THREE.Vector3(1, 1, 1);
+function cpSeat(ang, tt) { const c = Math.cos(ang), s = Math.sin(ang), n = 0.28, a = 14.2 + (32.0 - 14.2) * tt, b = 22.0 + (40.3 - 22.0) * tt; return [a * Math.sign(c) * Math.pow(Math.abs(c), n) * 0.965, b * Math.sign(s) * Math.pow(Math.abs(s), n) * 0.965]; }
 function cpBuild() {
   CP.grp = new THREE.Group(); CP.meshes = [];
   const tex = cpTex();
@@ -2168,16 +2169,24 @@ function cpBuild() {
   }
   const se = (t, a, b) => { const c = Math.cos(t), s = Math.sin(t), n = 0.28; return [a * Math.sign(c) * Math.pow(Math.abs(c), n), b * Math.sign(s) * Math.pow(Math.abs(s), n)]; };
   CP.ppl = [];
-  const N = matchMedia('(pointer: coarse)').matches ? 460 : 680, per = Math.round(N / 10);
+  /* v19: REAL stands - more fans, bigger fans, a second crowd in the
+     upper bowl, and walkers who stroll the aisles between moments. */
+  const N = matchMedia('(pointer: coarse)').matches ? 640 : 920, per = Math.round(N / 10);
   for (let row = 0; row < 10; row++) { const tt = 0.10 + row * 0.088;
     for (let i = 0; i < per; i++) { const ang = (i / per) * TAU + row * 0.11 + (Math.random() - 0.5) * 0.02;
-      const [px, pz] = se(ang, 12.6 + (30 - 12.6) * tt, 19.8 + (38 - 19.8) * tt), y = 0.4 + (13.5 - 0.4) * tt;
-      CP.ppl.push({ x: px * 0.965, z: pz * 0.965, y: y + 0.28, ang, row, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, sc: 0.92 + Math.random() * 0.2 }); } } /* v17b: fans sit proud of the bowl slope, not buried in it */
-  for (let i = 0; i + 1 < CP.ppl.length; i += 2) { if (CP.ppl[i].row === CP.ppl[i + 1].row && Math.random() < 0.55) { CP.ppl[i].pair = i + 1; CP.ppl[i + 1].pair = i; } }
+      const [px, pz] = se(ang, 14.2 + (32.0 - 14.2) * tt, 22.0 + (40.3 - 22.0) * tt), y = 0.4 + (13.5 - 0.4) * tt;
+      CP.ppl.push({ x: px * 0.965, z: pz * 0.965, y: y + 0.28, ang, row, tt, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, wk: 0, wsp: 0, wpause: 0, sc: (0.92 + Math.random() * 0.2) * 1.22 }); } }
+  const NU = matchMedia('(pointer: coarse)').matches ? 240 : 360, perU = Math.round(NU / 6);
+  for (let row = 0; row < 6; row++) { const tt = 0.14 + row * 0.14;
+    for (let i = 0; i < perU; i++) { const ang = (i / perU) * TAU + row * 0.13 + (Math.random() - 0.5) * 0.02;
+      const [px, pz] = se(ang, 33.0 + (48.0 - 33.0) * tt, 41.5 + (58.3 - 41.5) * tt), y = 15.2 + (30 - 15.2) * tt;
+      CP.ppl.push({ x: px * 0.97, z: pz * 0.97, y: y + 0.3, ang, row: 20 + row, tt, ph: Math.random() * TAU, cw: (Math.random() * 3) | 0, pair: -1, hf: 0, wk: 0, wsp: 0, wpause: 0, up: 1, sc: (0.92 + Math.random() * 0.2) * 1.22 }); } }
+  for (let i = 0; i < CP.ppl.length; i += 29) { const p = CP.ppl[i]; if (!p.up) { p.wk = (i % 58 === 0) ? 1 : -1; p.wsp = 0.008 + Math.random() * 0.012; } }
+  for (let i = 0; i + 1 < CP.ppl.length; i += 2) { if (CP.ppl[i].row === CP.ppl[i + 1].row && CP.ppl[i].row < 20 && Math.random() < 0.55) { CP.ppl[i].pair = i + 1; CP.ppl[i + 1].pair = i; } }
   const signDefs = [['DEFENSE', '#f5f2ea', '#16213e'], ['APEX ARCADE', '#ffd76a', '#10131c'], ['MVP!', '#c8402e', '#ffffff'], ['MAKE NOISE', '#2456c8', '#ffffff'], ['27 HOOPS', '#10131c', '#ffd76a'], ['SWAT CITY', '#f5f2ea', '#c8402e'], ["LET'S GO", '#ffd76a', '#10131c'], ['APEX ARCADE', '#16213e', '#ffd76a']];
   CP.signs = [];
   signDefs.forEach((sd, i) => { const ang = (i / signDefs.length) * TAU + 0.4;
-    const [px, pz] = se(ang, 12.6 + (30 - 12.6) * 0.10, 19.8 + (38 - 19.8) * 0.10), y = 0.4 + (13.5 - 0.4) * 0.10;
+    const [px, pz] = se(ang, 14.2 + (32.0 - 14.2) * 0.10, 22.0 + (40.3 - 22.0) * 0.10), y = 0.4 + (13.5 - 0.4) * 0.10; /* v19: signs follow the new front row */
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 0.66), new THREE.MeshBasicMaterial({ map: cpSignTex(sd[0], sd[1], sd[2]), side: THREE.DoubleSide, transparent: true }));
     m.position.set(px, y - 0.5, pz); m.rotation.y = Math.atan2(px, pz) + Math.PI; m.userData = { baseY: y, ang, ph: Math.random() * TAU };
     CP.signs.push(m); CP.grp.add(m); });
@@ -2201,6 +2210,9 @@ function crowdPeople(dt) {
   const counts = new Array(12).fill(0);
   for (let i = 0; i < CP.ppl.length; i++) { const p = CP.ppl[i];
     let pose = 0, lift = 0, lean = 0;
+    /* v19: the walkers stroll their row - to the concession, back to the
+       seat - pausing for the big moments like everyone else. */
+    if (p.wk && CP.mode !== 'cheer' && CP.waveT < 0) { if (p.wpause > 0) p.wpause -= dt; else { p.ang += p.wk * p.wsp * dt; const ws = cpSeat(p.ang, p.tt); p.x = ws[0]; p.z = ws[1]; lift += Math.abs(Math.sin(CP.t * 7 + p.ph)) * 0.03; if (Math.random() < dt * 0.03) { p.wpause = 2 + Math.random() * 4; if (Math.random() < 0.3) p.wk = -p.wk; } } }
     const bob = Math.sin(CP.t * 2 + p.ph) * 0.03 * (0.5 + CP.excite);
     if (CP.mode === 'cheer') { pose = 3; lift = Math.abs(Math.sin(CP.t * 5.2 + p.ph)) * 0.16; }
     else if (CP.mode === 'slump') { pose = 0; lift = -0.05; }
