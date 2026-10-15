@@ -201,11 +201,13 @@ const dustTex = makeTex(64, 64, (g, w, h) => {
 
 /* ================= renderer / scene ================= */
 const canvas = document.getElementById('c');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+// STORE-READY light path: phones get capped pixel ratio, no shadows, no AA
+const LOWFX = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !LOWFX });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOWFX ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = !LOWFX;
+if (!LOWFX) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0e13);
@@ -216,7 +218,7 @@ const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerH
 scene.add(new THREE.HemisphereLight(0xbdd0ff, 0x4a3220, 0.75));
 const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
 sun.position.set(60, 90, 30);
-sun.castShadow = true;
+sun.castShadow = !LOWFX;
 sun.shadow.mapSize.set(2048, 2048);
 sun.shadow.camera.left = -80; sun.shadow.camera.right = 80;
 sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -80;
@@ -638,7 +640,7 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => { const k = keyMap[e.code]; if (k) input[k] = false; });
 
-if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) document.body.classList.add('touchmode');
+if (LOWFX) document.body.classList.add('touchmode');
 function bindBtn(id, name) {
   const el = document.getElementById(id);
   const on = (e) => { e.preventDefault(); input[name] = true; el.classList.add('on'); };
