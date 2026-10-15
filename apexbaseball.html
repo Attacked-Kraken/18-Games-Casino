@@ -4,7 +4,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Apex Baseball · 18 Games Casino</title>
+<title>Apex Baseball · Apex Arcade</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04140a; font-family:ui-monospace,Menlo,Consolas,monospace; color:#eaffef; }
@@ -142,7 +142,7 @@
 <div class="overlay" id="startOv">
   <div class="card">
     <h1>APEX BASEBALL</h1>
-    <h2>18 GAMES CASINO · ARCADE · 3 INNINGS</h2>
+    <h2>APEX ARCADE · 3 INNINGS</h2>
     <p>You are the home <b style="color:#9dffb4">Comets</b> (blue) hosting the <b style="color:#5eead4">Sharks</b> (teal).
     You play <b>BOTH sides</b>: you <b>BAT</b> in the bottom of each inning and you <b>PITCH</b> in the top of each inning, against the CPU.</p>
     <ul>
@@ -275,6 +275,23 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
     const seg = new THREE.Mesh(new THREE.BoxGeometry(11,3.2,1), M(0x0f4d26));
     seg.position.set(Math.sin(a)*WALL_R, 1.6, -Math.cos(a)*WALL_R);
     seg.rotation.y = -a; scene.add(seg);
+  }
+  // Apex Arcade sponsor boards on the outfield wall
+  {
+    const sc = document.createElement('canvas'); sc.width = 512; sc.height = 96;
+    const sg = sc.getContext('2d');
+    sg.fillStyle = '#0b3d91'; sg.fillRect(0,0,512,96);
+    sg.strokeStyle = '#ffd23f'; sg.lineWidth = 6; sg.strokeRect(4,4,504,88);
+    sg.fillStyle = '#ffd23f'; sg.font = 'bold 54px sans-serif'; sg.textAlign = 'center';
+    sg.fillText('APEX ARCADE', 256, 66);
+    const st = new THREE.CanvasTexture(sc); st.colorSpace = THREE.SRGBColorSpace;
+    const sm = new THREE.MeshBasicMaterial({ map: st });
+    for (let d=-30; d<=30; d+=15){
+      const a = d*Math.PI/180;
+      const board = new THREE.Mesh(new THREE.PlaneGeometry(10, 1.9), sm);
+      board.position.set(Math.sin(a)*(WALL_R-0.7), 1.6, -Math.cos(a)*(WALL_R-0.7));
+      board.rotation.y = -a; scene.add(board);
+    }
   }
   // foul poles
   [[1],[-1]].forEach(([s])=>{
