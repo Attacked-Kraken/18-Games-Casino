@@ -14,7 +14,7 @@ export const HAIR = { m: ['parted', 'buzzed', 'parted_beard', 'buzzed_beard', 'b
 /* real CC0 Quaternius hair meshes (Universal Base Characters, skinned to the same rig); others fall back to built shapes */
 const REAL_HAIR = { parted: ['simpleparted'], buzzed: ['buzzed'], parted_beard: ['simpleparted', 'beard'], buzzed_beard: ['buzzed', 'beard'], bald_beard: ['beard'], long: ['long'], buns: ['buns'], buzzedf: ['buzzedfemale'], short: ['simpleparted'], buzz: ['buzzed'], bun: ['buns'] };
 /* top: 0 plain tee, 1 graphic tee (logo), 2 button-up (plaid), 3 hoodie, 4 tracksuit top (stripes), 5 dress shirt, 6 tank/straps
-   sleeves: 0 none, 1 short, 2 long. bottom: 0 trousers, 1 jeans, 2 skirt, 3 dress (top colour continues), 4 track pants. shoes: 0 sneakers, 1 dress shoes, 2 heels */
+   sleeves: 0 none, 1 short, 2 long. bottom: 0 trousers, 1 jeans, 2 skirt, 3 dress (top colour continues), 4 track pants, 5 shorts. shoes: 0 sneakers, 1 dress shoes, 2 heels */
 export const OUTFITS = {
   m: {
     tee_jeans:      { name: 'Graphic tee + jeans', set: 'casual', top: 1, sleeves: 1, bottom: 1, shoes: 0, cols: { top: [0x111114, 0xe8e2d6, 0x8a1a2a, 0x1d4a6a], bottom: [0x2a3a5a, 0x1a2234], shoes: [0xf2f2f2, 0x222222] } },
@@ -25,7 +25,9 @@ export const OUTFITS = {
     suit_open:      { name: 'Evening suit, open collar', set: 'evening', top: 5, sleeves: 2, jacket: 'blazer', bottom: 0, shoes: 1, cols: { top: [0x111114], jacket: [0x5a0f1c, 0x2a2a2e], bottom: [0x111114], shoes: [0x111111] } },
     track_purple:   { name: 'VV purple tracksuit', set: 'street', top: 4, sleeves: 2, hood: 1, bottom: 4, shoes: 0, bandana: 1, cols: { top: [0x5a1a8a], bottom: [0x5a1a8a], shoes: [0xf2f2f2], acc: [0x7a2aaa] } },
     dealer:         { name: 'Casino dealer', set: 'staff', top: 5, sleeves: 2, jacket: 'vest', bottom: 0, shoes: 1, cols: { top: [0xf4f2ec], jacket: [0x111114], bottom: [0x111114], shoes: [0x111111] } },
-    vest_street:    { name: 'VV vest + hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x4a1a7a], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } } },
+    vest_street:    { name: 'VV vest + hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x4a1a7a], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } },
+    baseball_kit:   { name: 'Baseball uniform', set: 'sport', top: 1, sleeves: 1, bottom: 0, shoes: 0, cols: { top: [0x1e3fae, 0xb3122e], bottom: [0xe8e8e8], shoes: [0x222222] } },
+    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } } },
   f: {
     tee_jeans:      { name: 'Graphic tee + jeans', set: 'casual', top: 1, sleeves: 1, bottom: 1, shoes: 0, cols: { top: [0xf2ede4, 0x111114, 0xd06a8a], bottom: [0x2a3a5a, 0x5a7aa0], shoes: [0xf2f2f2] } },
     denimjacket:    { name: 'Denim jacket + skirt', set: 'casual', top: 0, sleeves: 2, jacket: 'denim', bottom: 2, shoes: 0, cols: { top: [0xf2ede4], jacket: [0x5a7aa0], bottom: [0x111114, 0x8a1a2a], shoes: [0xf2f2f2] } },
@@ -35,7 +37,9 @@ export const OUTFITS = {
     blazer:         { name: 'Blazer + trousers', set: 'evening', top: 6, sleeves: 0, jacket: 'blazer', bottom: 0, shoes: 2, cols: { top: [0x111114], jacket: [0xe8e2d6, 0x1a1a1e, 0x8a1a2a], bottom: [0x111114, 0xe8e2d6], shoes: [0x111111] } },
     track_purple:   { name: 'VV purple tracksuit', set: 'street', top: 4, sleeves: 2, hood: 1, bottom: 4, shoes: 0, bandana: 1, cols: { top: [0x5a1a8a], bottom: [0x5a1a8a], shoes: [0xf2f2f2], acc: [0x7a2aaa] } },
     dealer:         { name: 'Casino dealer', set: 'staff', top: 5, sleeves: 2, jacket: 'vest', bottom: 0, shoes: 1, cols: { top: [0xf4f2ec], jacket: [0x111114], bottom: [0x111114], shoes: [0x111111] } },
-    vest_street:    { name: 'VV vest + crop hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x6a2aaa], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } } } };
+    vest_street:    { name: 'VV vest + crop hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x6a2aaa], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } },
+    baseball_kit:   { name: 'Baseball uniform', set: 'sport', top: 1, sleeves: 1, bottom: 0, shoes: 0, cols: { top: [0x1e3fae, 0xb3122e], bottom: [0xe8e8e8], shoes: [0x222222] } },
+    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } } } };
 /* landmarks of the bind pose (metres, T-pose, facing +z) */
 const LM = { m: { neck: 1.535, chest: 1.36, waist: 1.0, hip: .93, knee: .55, ankle: .11, sleeveS: .36, sleeveL: .68, shoulder: .2, headC: 1.70, headTop: 1.81, headR: .115 },
              f: { neck: 1.50, chest: 1.32, waist: .99, hip: .91, knee: .54, ankle: .10, sleeveS: .32, sleeveL: .62, shoulder: .15, headC: 1.665, headTop: 1.77, headR: .108 } };
@@ -74,7 +78,7 @@ vec4 outfit(vec3 p){ float ax=abs(p.x); float neck=uL1.x,chest=uL1.y,waist=uL1.z
     if(top>4.5&&top<5.5&&p.z>0.&&ax<.006) c*=.7;                                          /* placket */
     if(uJ>.5){ bool v = p.z>0. && ax < .09*(p.y-waist)/(neck-waist) + .015 && uJ<2.5; if(!v){ c=uJak; if(uJ>2.5&&p.z>0.&&ax<.03) c=uTop; } }
     if(uJ>.5&&uJ<1.5){ float n=hsh(floor(p.xy*400.)); c*=.9+.12*n; } }
-  if(legs){ bool skirt = bot>1.5&&bot<3.5; float end = skirt ? (bot>2.5 ? knee+.12 : knee+.04) : ankle+.02;
+  if(legs){ bool skirt = bot>1.5&&bot<3.5; float end = skirt ? (bot>2.5 ? knee+.12 : knee+.04) : (bot>4.5 ? (hip+knee)*.5+.02 : ankle+.02);
     if(p.y>end){ c = bot>2.5&&bot<3.5 ? uTop : uBot; a=1.; if(bot>0.5&&bot<1.5){ float n=hsh(floor(p.xy*500.)); c*=.85+.25*n; } if(bot>3.5&&abs(abs(p.x)-.11)>.07&&abs(p.z)<.02) c=vec3(.95); }
     if(bot>3.5 && p.y>end && abs(p.z+.03)<.01) c=vec3(.95); }
   return vec4(c,a); }`)
