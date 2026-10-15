@@ -68,7 +68,10 @@
   #rotHint { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
     background:rgba(7,9,12,.88); text-align:center; padding:24px; font-size:15px; line-height:1.6; color:#cfd8e3; }
   #rotHint b { color:#ffb200; }
-  @media (orientation:portrait) and (pointer:coarse) { #rotHint { display:flex; } }
+  #rotHint { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
 </style>
 </head>
 <body>
