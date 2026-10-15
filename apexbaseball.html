@@ -223,6 +223,9 @@ scene.fog = new THREE.Fog(0x06182e, 160, 320);
 const camera = new THREE.PerspectiveCamera(58, window.innerWidth/window.innerHeight, 0.1, 600);
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
 const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
+// Retest #2: dedicated views so you can actually see the pitch and the swing
+const PITCHER_VIEW = { pos:[0,7.5,-31], look:[0,1.3,4] };   // behind the mound, looking to the plate
+const BATTER_VIEW = { pos:[0,4.4,10.5], look:[0,2.1,-19] }; // behind the plate, low, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
 scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x2e6b34, 0.95));
@@ -238,14 +241,32 @@ function M(color){ if(!matCache[color]) matCache[color]=new THREE.MeshLambertMat
 /* crowd state: declared before the field IIFE so buildGrandstands can use it */
 const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null };
 (function buildField(){
-  const grass = new THREE.Mesh(new THREE.CircleGeometry(155, 28), M(0x2a7f36));
-  grass.rotation.x = -Math.PI/2; scene.add(grass);
+  const grassC = document.createElement('canvas'); grassC.width = grassC.height = 512;
+  const gg = grassC.getContext('2d');
+  for (let i=0; i<8; i++){ gg.fillStyle = i%2 ? '#2a7f36' : '#2f9440'; gg.fillRect(i*64, 0, 64, 512); }
+  // subtle noise for realism
+  for (let i=0; i<800; i++){ gg.fillStyle = `rgba(0,0,0,${Math.random()*0.06})`;
+    gg.fillRect(Math.random()*512, Math.random()*512, 2, 2); }
+  const grassT = new THREE.CanvasTexture(grassC); grassT.colorSpace = THREE.SRGBColorSpace;
+  grassT.wrapS = grassT.wrapT = THREE.RepeatWrapping; grassT.repeat.set(6,6);
+  const grass = new THREE.Mesh(new THREE.CircleGeometry(155, 28),
+    new THREE.MeshStandardMaterial({ map:grassT, roughness:0.95 }));
+  grass.rotation.x = -Math.PI/2; grass.receiveShadow = true; scene.add(grass);
   for(let i=0;i<6;i++){ // mow stripes
     const ring = new THREE.Mesh(new THREE.RingGeometry(24+i*22, 24+(i+1)*22-2, 40), M(i%2?0x2f8c3d:0x2a7f36));
     ring.rotation.x = -Math.PI/2; ring.position.y = 0.01; scene.add(ring);
   }
-  const dirt = new THREE.Mesh(new THREE.PlaneGeometry(66,66), M(0xb08050));
-  dirt.rotation.x = -Math.PI/2; dirt.rotation.z = Math.PI/4; dirt.position.set(0,0.02,-21.21); scene.add(dirt);
+  const dirtC = document.createElement('canvas'); dirtC.width = dirtC.height = 256;
+  const dg = dirtC.getContext('2d'); dg.fillStyle = '#b08050'; dg.fillRect(0,0,256,256);
+  for (let i=0; i<1200; i++){ const v = Math.random();
+    dg.fillStyle = v<0.5 ? `rgba(0,0,0,${Math.random()*0.08})` : `rgba(255,255,255,${Math.random()*0.05})`;
+    dg.fillRect(Math.random()*256, Math.random()*256, 3, 3); }
+  const dirtT = new THREE.CanvasTexture(dirtC); dirtT.colorSpace = THREE.SRGBColorSpace;
+  dirtT.wrapS = dirtT.wrapT = THREE.RepeatWrapping; dirtT.repeat.set(3,3);
+  const dirt = new THREE.Mesh(new THREE.PlaneGeometry(66,66),
+    new THREE.MeshStandardMaterial({ map:dirtT, roughness:1 }));
+  dirt.rotation.x = -Math.PI/2; dirt.rotation.z = Math.PI/4; dirt.position.set(0,0.02,-21.21);
+  dirt.receiveShadow = true; scene.add(dirt);
   const hc = new THREE.Mesh(new THREE.CircleGeometry(6.5, 20), M(0xb08050));
   hc.rotation.x = -Math.PI/2; hc.position.set(0,0.021,0); scene.add(hc);
   const md = new THREE.Mesh(new THREE.CircleGeometry(5.5, 20), M(0xb08050));
@@ -484,7 +505,7 @@ function athletePose(f, kind, dt){
 }
 
 /* ball + timing ring */
-const ball = new THREE.Mesh(new THREE.SphereGeometry(0.34,10,8), new THREE.MeshBasicMaterial({color:0xffffff}));
+const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,10), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.4}));
 ball.visible = false; scene.add(ball);
 const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5,0.09,8,28), new THREE.MeshBasicMaterial({color:0xffd23f, transparent:true, opacity:0.85}));
 ring.position.set(0,2.2,0.6); ring.visible=false; scene.add(ring);
@@ -1027,7 +1048,8 @@ function targetCam(){
     }
     return FIELD_CAM;             // batted balls: broadcast field view
   }
-  return camMode==='pitch' ? PITCH_CAM : FIELD_CAM;
+  if (camMode==='pitch') return playerBatting() ? BATTER_VIEW : PITCHER_VIEW;
+  return FIELD_CAM;
 }
 function setCam(mode){
   camMode = mode;
