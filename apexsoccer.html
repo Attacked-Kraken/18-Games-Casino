@@ -238,7 +238,7 @@ buildGoal(1); buildGoal(-1);
   /* ---- proper stadium: tiered stands on all four sides, no shadows ---- */
   const standM=new THREE.MeshStandardMaterial({ color:0x2c3a52, roughness:1 });
   const rowG=new THREE.BoxGeometry(1,0.9,1);
-  const ROWS=6, RSTEP=2.2, R0L=39.5, R0E=39.5; // long-side row0 center z, short-side row0 center x
+  const ROWS=6, RSTEP=2.2, R0L=39.5, R0E=PL/2+8; // long-side row0 center z; END row0 sits 8m BEHIND the goal line (was 39.5: inside the pitch, swallowing goals+keepers)
   for(let s=-1;s<=1;s+=2){
     for(let i=0;i<ROWS;i++){
       const z=s*(R0L+RSTEP*i), y=0.45+0.9*i;
@@ -257,7 +257,7 @@ const crowdBase=[];
     for(let i=0;i<6;i++){
       const top=0.9+0.9*i;
       for(let x=-62;x<=62;x+=1.15) seats.push([x+(Math.random()-0.5)*0.5, top, s*(39.5+2.2*i)+(Math.random()-0.5)*0.5]);
-      for(let z=-42;z<=42;z+=1.4) seats.push([s*(39.5+2.2*i)+(Math.random()-0.5)*0.5, top, z+(Math.random()-0.5)*0.5]);
+      for(let z=-44;z<=44;z+=1.4) seats.push([s*((PL/2+8)+2.2*i)+(Math.random()-0.5)*0.5, top, z+(Math.random()-0.5)*0.5]);
     }
   }
   crowdN=seats.length;
@@ -317,32 +317,59 @@ const B={ pos:new THREE.Vector3(0,BALL_R,0), vel:new THREE.Vector3(), owner:null
 
 /* ================= players ================= */
 const SKIN=[0xf1c27d,0xe0ac69,0xc68642,0x8d5524,0xffdbac];
-function makePlayerMesh(shirt, shorts, skin){
+function makePlayerMesh(shirt, shorts, skin, num){
+  // realistic 1.82m footballer (fallback until the rigged athletes load):
+  // tapered kit torso with squad number, shorts, socks+boots, skin-tone limbs, hair
   const g=new THREE.Group();
   const sm=(c,r=0.7)=>new THREE.MeshStandardMaterial({ color:c, roughness:r });
+  const css=h=>'#'+h.toString(16).padStart(6,'0');
+  let shirtMap=null;
+  try{
+    const c=document.createElement('canvas'); c.width=c.height=128;
+    const x2=c.getContext('2d');
+    x2.fillStyle=css(shirt); x2.fillRect(0,0,128,128);
+    x2.fillStyle='rgba(0,0,0,.22)'; x2.fillRect(0,102,128,26); // shirt trim
+    x2.fillStyle='rgba(255,255,255,.95)'; x2.font='bold 58px monospace';
+    x2.textAlign='center'; x2.textBaseline='middle';
+    x2.fillText(String(num||''),64,56);
+    shirtMap=new THREE.CanvasTexture(c); shirtMap.colorSpace=THREE.SRGBColorSpace;
+    shirtMap.offset.x=0.5; // chest faces +z (cylinder u=0 seam)
+  }catch(e){}
   const legG=[];
   for(const s of [-1,1]){
-    const hip=new THREE.Group(); hip.position.set(s*0.17,0.98,0);
-    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(0.13,0.5,3,8), sm(0x222222));
-    leg.position.y=-0.42; leg.castShadow=!coarse; hip.add(leg); g.add(hip); legG.push(hip);
-    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.12,0.34), sm(0x111111,0.4));
-    boot.position.set(0,-0.86,0.06); hip.add(boot);
+    const hip=new THREE.Group(); hip.position.set(s*0.11,0.96,0);
+    const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(0.075,0.30,3,8), sm(skin,0.6));
+    thigh.position.y=-0.21; thigh.castShadow=!coarse; hip.add(thigh);
+    const sock=new THREE.Mesh(new THREE.CylinderGeometry(0.062,0.055,0.40,8), sm(0xf2f2f2,0.8));
+    sock.position.y=-0.55; hip.add(sock);
+    const boot=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.09,0.28), sm(0x141414,0.45));
+    boot.position.set(0,-0.88,0.05); hip.add(boot);
+    g.add(hip); legG.push(hip);
   }
-  const torsoG=new THREE.Group(); torsoG.position.y=0.98; g.add(torsoG);
-  const shortsM=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.33,0.34,10), sm(shorts));
-  shortsM.position.y=0.12; torsoG.add(shortsM);
-  const body=new THREE.Mesh(new THREE.CapsuleGeometry(0.29,0.5,4,10), sm(shirt,0.6));
-  body.position.y=0.62; body.castShadow=!coarse; torsoG.add(body);
+  const torsoG=new THREE.Group(); torsoG.position.y=0.96; g.add(torsoG);
+  const shortsM=new THREE.Mesh(new THREE.CylinderGeometry(0.185,0.205,0.30,12), sm(shorts,0.8));
+  shortsM.position.y=0.10; torsoG.add(shortsM);
+  const shirtM=new THREE.MeshStandardMaterial({ roughness:0.75, map:shirtMap, color:shirtMap?0xffffff:shirt });
+  const chest=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.165,0.58,14), shirtM);
+  chest.position.y=0.47; chest.castShadow=!coarse; torsoG.add(chest);
   const armG=[];
   for(const s of [-1,1]){
-    const sh=new THREE.Group(); sh.position.set(s*0.4,0.82,0);
-    const arm=new THREE.Mesh(new THREE.CapsuleGeometry(0.1,0.42,3,8), sm(shirt,0.6));
-    arm.position.y=-0.3; arm.castShadow=!coarse; sh.add(arm); torsoG.add(sh); armG.push(sh);
+    const sh=new THREE.Group(); sh.position.set(s*0.26,0.62,0);
+    const upper=new THREE.Mesh(new THREE.CapsuleGeometry(0.058,0.20,3,8), sm(shirt,0.75));
+    upper.position.y=-0.14; upper.castShadow=!coarse; sh.add(upper);
+    const fore=new THREE.Mesh(new THREE.CapsuleGeometry(0.05,0.22,3,8), sm(skin,0.6));
+    fore.position.y=-0.40; sh.add(fore);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(0.055,8,6), sm(skin,0.6));
+    hand.position.y=-0.56; sh.add(hand);
+    torsoG.add(sh); armG.push(sh);
   }
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.21,14,12), sm(skin,0.55));
-  head.position.y=1.28; head.castShadow=!coarse; torsoG.add(head);
-  const hair=new THREE.Mesh(new THREE.SphereGeometry(0.215,12,10,0,Math.PI*2,0,1.4), sm(0x2a1a0e,0.9));
-  hair.position.y=1.32; torsoG.add(hair);
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.055,0.08,8), sm(skin,0.6));
+  neck.position.y=0.68; torsoG.add(neck);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.12,14,12), sm(skin,0.55));
+  head.position.y=0.76; head.castShadow=!coarse; torsoG.add(head);
+  const hairs=[0x14100c,0x2e1c12,0x5a3a1e,0x8a5a2e,0x111111,0x6e6e6e];
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(0.126,12,10,0,Math.PI*2,0,1.5), sm(hairs[(Math.random()*hairs.length)|0],0.9));
+  hair.position.y=0.775; torsoG.add(hair);
   return { group:g, torso:torsoG, legL:legG[0], legR:legG[1], armL:armG[0], armR:armG[1] };
 }
 const ring=new THREE.Mesh(new THREE.RingGeometry(0.55,0.75,24),
@@ -363,7 +390,7 @@ let PID=0;
 for(const t of teams){
   FORM.forEach((f,i)=>{
     const isGK=f.role==='GK';
-    const mesh=makePlayerMesh(isGK?t.gk:t.shirt, isGK?0x101010:t.shorts, SKIN[(PID+i)%SKIN.length]);
+    const mesh=makePlayerMesh(isGK?t.gk:t.shirt, isGK?0x101010:t.shorts, SKIN[(PID+i)%SKIN.length], isGK?1:i+1);
     scene.add(mesh.group);
     t.players.push({ id:PID++, team:t, role:f.role, hx:f.x, hz:f.z, m:mesh,
       pos:new THREE.Vector3(), vel:new THREE.Vector3(), face:0, phase:Math.random()*6,
@@ -1037,6 +1064,7 @@ async function initAthletes(){
     athReady = true;
   } catch (e) { /* loading failed: the primitive game keeps working */ }
 }
+initAthletes(); // start loading the real athletes while the menu is up so they're on the pitch at kickoff
 
 /* ================= animation ================= */
 function animate(dt){
