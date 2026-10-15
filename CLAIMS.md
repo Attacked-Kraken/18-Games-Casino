@@ -141,6 +141,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Monster truck hotfix: restore missing landscape-law JS (touch remap, fitLandscape, fullscreen lock) regressed by PR #240 | Muse algre141 | monstertruck-hotfix | | 2026-10-15 14:34 CDT |
 | DONE | Monster truck: studio-style redesign (big aggressive tires, wide -offset, lift-kit suspension, exhaust stacks with smoke on gas, Apex Arcade bed logos) + AI truck roster (different colors, pickup + SUV styles) | Muse algre141 | monstertruck-redesign-v2 | PR #240 | 2026-10-15 14:10 CDT |
 
 | CLAIMED | Exotic Racer Club mockup-faithful rebuild (apexracer.html): replace CC0 low-poly body with smooth procedural supercar matching the approved fleet mockup (quad round headlights, sculpted bumper, sleek curves); all 8 cars | Muse Cruz.inc | apexracer-mockup | — | 2026-10-15 12:35 CDT |
