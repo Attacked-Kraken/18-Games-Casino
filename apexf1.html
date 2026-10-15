@@ -189,7 +189,8 @@
   <h1 class="title" style="font-size:30px">RULES &amp; CONTROLS</h1>
   <div class="card" style="font-size:13px;line-height:1.65">
   <b style="color:#ffd76a">DRIVE:</b> ◀ ▶ steer · GAS / BRK pedals (or W A S D + arrows on desktop).<br>
-  <b style="color:#ffd76a">DRS:</b> enabled after lap 2 — within 1s of the car ahead in a DRS zone, tap DRS for a top-speed boost.<br>
+  <b style="color:#ffd76a">DRS:</b> enabled after lap 2 — within 1s of the car ahead in a DRS zone, tap DRS (or press <b>D</b>) for a top-speed boost.<br>
+  <b style="color:#ffd76a">DESKTOP KEYS:</b> <b>D</b>=DRS, <b>P</b>=request pit stop, <b>C</b>=cycle camera, <b>Shift</b>=ERS overtake, arrows/WASD to drive.<br>
   <b style="color:#ffd76a">ERS:</b> hold ERS for hybrid boost. It recharges under braking.<br>
   <b style="color:#ffd76a">TIRES:</b> Soft = fast, wears fast · Medium = balanced · Hard = slow, lasts. In a dry race you must use 2 compounds — pit at least once. Inters/Wets for rain.<br>
   <b style="color:#ffd76a">PIT:</b> tap PIT near the pit entry; pick tires; the crew does the rest.<br>
@@ -829,7 +830,14 @@ function initInput(){
   bindHold($('btnBrake'),()=>Input.brake=true,()=>Input.brake=false);
   bindHold($('btnERS'),()=>Input.ers=true,()=>Input.ers=false);
   const keys={};
-  addEventListener('keydown',e=>{ keys[e.code]=true; if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault(); });
+  addEventListener('keydown',e=>{
+    keys[e.code]=true;
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+    if(e.repeat) return;
+    if(e.code==='KeyD') Race.toggleDRS();
+    if(e.code==='KeyP') Race.wantPit();
+    if(e.code==='KeyC') Race.cycleCam();
+  });
   addEventListener('keyup',e=>{ keys[e.code]=false; });
   Input.keys=keys;
   $('btnDRS').addEventListener('touchstart',e=>{e.preventDefault();Race.toggleDRS();},{passive:false});
@@ -989,6 +997,7 @@ const Race = {
     order.forEach((c,i)=>{
       const row=Math.floor(i/2), side=i%2?1:-1;
       c.s=Track.length-12-row*8; c.d=side*2.2; c.v=0; c.lap=1; c.raceDist=0;
+      c.position=i+1; // grid slot = starting position (fixes P1 HUD during lights)
       c.throttle=0; c.brake=0; c.steer=0; c.finished=false; c.lapTimes=[]; c.bestLap=Infinity;
       c.wear=0; c.tireAge=0; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
       c.placeMesh(0.016);
@@ -1014,7 +1023,7 @@ const Race = {
     if(this.stateT>4.2+this._holdT){
       for(let i=0;i<5;i++) lights[i].className='light out';
       setTimeout(()=>$('lights').classList.add('hidden'),600);
-      this.mode='race'; this.raceT=0;
+      this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
       banner('LIGHTS OUT!','',900,'#37d67a'); Aud.beep(880,0.25,0.3);
       Aud.cheer(true);
     }
@@ -1126,7 +1135,7 @@ const Race = {
     if(!this.drsEnabled && this.lap>=2){ this.drsEnabled=true; banner('DRS ENABLED','','1000','#37d67a'); }
     this.updateWeather(dt);
     this.updateCars(dt,false);
-    carContact(this.cars,dt);
+    if(this.contactGrace>0) this.contactGrace-=dt; else carContact(this.cars,dt);
     const order=this.positions();
     // lap crossing + finish
     for(const c of this.cars){
@@ -1286,8 +1295,10 @@ const HUD={
     c.closePath(); c.stroke();
     for(const car of order){
       const pos=Track.posAt(car.s,car.d,0);
+      const r=car.isPlayer?4:3;
       c.fillStyle=car.isPlayer?'#ffd76a':'#ff5a5a';
-      c.beginPath(); c.arc(X(pos.x),Z(pos.z),car.isPlayer?3.4:2.2,0,TAU); c.fill();
+      c.beginPath(); c.arc(X(pos.x),Z(pos.z),r+1.2,0,TAU); c.fillStyle='#0a0e16'; c.fill();
+      c.beginPath(); c.arc(X(pos.x),Z(pos.z),r,0,TAU); c.fillStyle=car.isPlayer?'#ffd76a':'#ff5a5a'; c.fill();
     }
   }
 };
@@ -1499,7 +1510,7 @@ function updateQuali(dt){
 function finishQuali(time){
   if(Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; }
   const p=Race.player;
-  p.qualiTime = time?? (function(){ const o=[...Race.cars].filter(c=>!c.isPlayer).sort((a,b)=>a.qualiTime-b.qualiTime); return o[Math.min(11,o.length-1)].qualiTime+0.05; })();
+  p.qualiTime = time?? (function(){ const o=[...Race.cars].filter(c=>!c.isPlayer).sort((a,b)=>a.qualiTime-b.qualiTime); return o[Math.min(11,o.length-1)].qualiTime-0.05; })();
   Race.placeGrid(false);
   // grid list UI
   const order=[...Race.cars].sort((a,b)=>a.qualiTime-b.qualiTime);
