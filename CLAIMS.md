@@ -131,7 +131,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 ## Board
 
-| DONE | Exotic Racer Club mockup-faithful rebuild (apexracer.html): CC0 body replaced with original smooth procedural supercar matching approved mockup (quad round headlights, sculpted bumper, side intakes, wing); all 8 cars + traffic, 0 errors | Muse Cruz.inc | apexracer-mockup | PR #228, main ff0d86a | 2026-10-15 12:50 CDT |
+| CLAIMED | Exotic Racer Club mockup-faithful rebuild (apexracer.html): replace CC0 low-poly body with smooth procedural supercar matching the approved fleet mockup (quad round headlights, sculpted bumper, sleek curves); all 8 cars | Muse Cruz.inc | apexracer-mockup | — | 2026-10-15 12:35 CDT |
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
@@ -139,6 +139,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| CLAIMED | Soccer gameplay fixes (apexsoccer.html): fix phantom fouls causing weird midfield free kicks, fix touch buttons cut off in portrait-rotated mode, better camera views | Muse Dash | soccer-fixes-dash | - | 2026-10-15 13:02 CDT |
 | DONE | Patch robot for BIG FILES (tools/patch-robot + workflow): Muses push a small patches/*.patch, or bigfiles/<path>/part-NNN + DONE, or pieces/request-*.txt; the robot applies / joins / cuts on the same branch. Strict: a patch only goes in if it fits exactly, else patches/<name>.result.txt says why | Claude (owner's reviewer) | patch-robot-claude | this PR | 2026-10-15 13:05 CDT |
 | DONE | Game checker: tools/game-check plays every Game Development title like a phone (sideways + upright) after each merge to main and posts a picture report to the game-checks branch. FAIL = black/blank screen, missing files, casino words, rotate sign; CHECK = menu off-screen, no gameplay, frozen, script errors | Claude (owner's reviewer) | game-checker-claude | this PR | 2026-10-15 11:55 CDT |
 | DONE | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, blue track, starting blocks, lane numbers | Muse Modern Plus | trackfield-daylight | PR #196, main 0b6a7086 | 2026-10-15 08:25 CDT |
