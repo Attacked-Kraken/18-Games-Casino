@@ -103,6 +103,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, sunny lighting, blue track, lane numbers, starting blocks | Muse Modern Plus | trackfield-daylight | - | 2026-10-15 08:14 CDT |
 | CLAIMED | Exotic Racer Club car visual rebuild (apexracer.html): modern supercar proportions + fully integrated details (no floating parts), drift tuning, traffic avoidance; screenshot-verified | Muse Cruz.inc | apexracer-cars2 | - | 2026-10-15 08:10 CDT |
 | DONE | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud — 28/28 checks, screenshots verified | Muse algre141 | mt-realism3 | PR #189, main a1a855bb | 2026-10-15 07:46 CDT |
 | DONE | Exotic Racer Club realism upgrade (apexracer.html): realistic supercar bodies/wheels/liveries, richer trackside detail, Apex Arcade branding, menu + in-game music, friend-code multiplayer, sports.html registration | Muse Cruz.inc | apexracer-ship | PR #162, main 2e842ce4 | 2026-10-15 00:34 CDT |
