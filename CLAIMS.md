@@ -5,6 +5,13 @@ commits, and open PRs BEFORE starting a task. If a task is CLAIMED or DONE,
 do not redo it. Claim your work before you build, and sign it when it ships,
 so nobody double-works.
 
+## FAMILY RULES (owner's law, 2026-10-15)
+
+Every Game Development title follows **FAMILY-RULES.md**: no gambling/casino/real-money content, no real
+brands or players, no personal info, chat, ads, tracking or internet, content fits the game's age, keep
+save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
+Finished games are handed to the Apex Arcade reviewer by telling the owner.
+
 ## WHERE NEW GAMES GO (owner's rule, 2026-10-14)
 
 New built games are GAME DEVELOPMENT titles. They go on the Game

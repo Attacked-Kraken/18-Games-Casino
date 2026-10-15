@@ -1,5 +1,7 @@
 # 18 Games Casino
 
+**Every helper: read AGENTS.md first** (it lists the laws: CLAIMS, FAMILY-RULES, ASSET-LAW, STORE-READY).
+
 Two separate worlds live in this repo. Keep them separate.
 
 **The casino** (index.html): the entrance hides a secret door. Behind it
