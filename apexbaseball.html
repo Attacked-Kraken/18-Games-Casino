@@ -273,7 +273,7 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
   const hc = new THREE.Mesh(new THREE.CircleGeometry(6.5, 20), M(0xb08050));
   hc.rotation.x = -Math.PI/2; hc.position.set(0,0.021,0); scene.add(hc);
   const md = new THREE.Mesh(new THREE.CircleGeometry(5.5, 20), M(0xb08050));
-  md.rotation.x = -Math.PI/2; md.position.set(MOUND[0],0.53,MOUND[2]); scene.add(md);
+  md.rotation.x = -Math.PI/2; md.position.set(MOUND[0],0.545,MOUND[2]); scene.add(md);
   const moundHill = new THREE.Mesh(new THREE.CylinderGeometry(5.5,6.5,0.55,18), M(0xa3764a));
   moundHill.position.set(MOUND[0],0.26,MOUND[2]); scene.add(moundHill);
   const rubber = new THREE.Mesh(new THREE.BoxGeometry(1.6,0.12,0.4), M(0xf5f5f5));
@@ -629,7 +629,7 @@ function deliverPitch(type, tx, ty, byPlayer){
     if (Math.random() < p){
       flight.cpuSwing = true;
       const skill = type==='fast' ? 0.085 : 0.105;
-      flight.cpuDt = (Math.random()+Math.random()+Math.random()-1.5)/1.5*skill*2;
+      flight.cpuDt = (Math.random()+Math.random()+Math.random()-1.5)/1.5*skill*2.4;
       flight.swingAt = flight.T*rnd(0.55,0.75);
     }
   }
@@ -664,6 +664,7 @@ function cpuChoosePitch(){
   return { type, tx, ty };
 }
 function startCpuPitch(){
+  setCam('pitch');
   dressDefense('away');
   dress(pitcherMesh,'away'); dress(catcherMesh,'away'); dress(batterMesh,'home');
   place(pitcherMesh, 0,0.55,-20.17, 0); place(catcherMesh, 0,0,2.4, Math.PI);
