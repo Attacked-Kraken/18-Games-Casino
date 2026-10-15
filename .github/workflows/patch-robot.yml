@@ -1,0 +1,43 @@
+name: Patch robot
+
+# Applies small patch files / joins big-file parts / cuts big files into readable pieces, on the same branch
+# they were pushed to. See tools/patch-robot/robot.py and the BIG FILES section in CLAIMS.md.
+on:
+  push:
+    paths:
+      - 'patches/**'
+      - 'bigfiles/**'
+      - 'pieces/request-*.txt'
+  workflow_dispatch:
+
+concurrency:
+  group: patch-robot-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  robot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Do the work
+        run: ROBOT_SUMMARY=/tmp/robot-summary.txt python3 tools/patch-robot/robot.py
+
+      - name: Save it on the same branch
+        run: |
+          git config user.name "patch robot"
+          git config user.email "patch-robot@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "nothing changed"; exit 0; fi
+          git commit -q -m "Patch robot: $(cat /tmp/robot-summary.txt | cut -c1-200)"
+          for i in 1 2 3; do
+            git push -q origin HEAD:${GITHUB_REF#refs/heads/} && exit 0
+            git pull -q --rebase origin ${GITHUB_REF#refs/heads/}
+          done
+          exit 1

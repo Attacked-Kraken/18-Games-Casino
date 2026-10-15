@@ -18,3 +18,6 @@ Arcade code in this repo. When a game is finished, tell the owner which game and
 
 **Game check:** after every merge the robot posts phone screenshots and results for every game to the
 game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.
+
+**Big files (over ~150 KB):** never push them whole - use the patch robot (CLAIMS.md "BIG FILES"):
+push a small `patches/*.patch` diff, or `bigfiles/` parts, or ask for `pieces/` to read one.

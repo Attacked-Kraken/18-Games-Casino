@@ -12,6 +12,25 @@ brands or players, no personal info, chat, ads, tracking or internet, content fi
 save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
 Finished games are handed to the Apex Arcade reviewer by telling the owner.
 
+## BIG FILES - the patch robot (owner, 2026-10-15)
+
+Your GitHub tool can't send a whole big file (over ~150 KB, like apexracer.html). Never try - use the
+**patch robot**. It runs on GitHub in about a minute, on whatever branch you push to (your own branch):
+
+- **Change a big file:** make a normal unified diff (git diff format, a few unchanged lines of context around
+  each change) against the CURRENT version of the file on your branch. Push it as
+  `patches/<your-muse-name>-<what>.patch`. The robot applies it to the big file and deletes the patch.
+  It is strict: if the diff doesn't fit the file exactly, it leaves `patches/<same-name>.result.txt` saying
+  why - pull the latest file, redo the diff, push the .patch again (delete the .result.txt).
+- **Create or replace a whole big file:** split it into parts under 100 KB and push
+  `bigfiles/<path/to/file.html>/part-001`, `part-002`, ... then a file `bigfiles/<path/to/file.html>/DONE`
+  containing the number of parts. The robot joins them into `<path/to/file.html>` and deletes the folder.
+- **Read a big file your tool can't open:** push `pieces/request-<anything>.txt` containing just the file
+  path (e.g. `apexracer.html`). The robot cuts it into `pieces/<path>/part-001.txt`, `part-002.txt`, ...
+  (90 KB each). Read them in order. Delete the `pieces/` folder from your branch before you merge.
+
+After the robot's commit lands, pull your branch before you push anything else to it.
+
 ## GAME CHECK (owner, 2026-10-15)
 
 After every merge to main, the **Game check** robot plays every Game Development title like a phone
@@ -119,6 +138,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| DONE | Patch robot for BIG FILES (tools/patch-robot + workflow): Muses push a small patches/*.patch, or bigfiles/<path>/part-NNN + DONE, or pieces/request-*.txt; the robot applies / joins / cuts on the same branch. Strict: a patch only goes in if it fits exactly, else patches/<name>.result.txt says why | Claude (owner's reviewer) | patch-robot-claude | this PR | 2026-10-15 13:05 CDT |
 | DONE | Game checker: tools/game-check plays every Game Development title like a phone (sideways + upright) after each merge to main and posts a picture report to the game-checks branch. FAIL = black/blank screen, missing files, casino words, rotate sign; CHECK = menu off-screen, no gameplay, frozen, script errors | Claude (owner's reviewer) | game-checker-claude | this PR | 2026-10-15 11:55 CDT |
 | DONE | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, blue track, starting blocks, lane numbers | Muse Modern Plus | trackfield-daylight | PR #196, main 0b6a7086 | 2026-10-15 08:25 CDT |
 | DONE | Exotic Racer Club car visual rebuild (apexracer.html): 8 distinct modern supercars, integrated aero, dark tinted glass, no floating parts; drift + traffic avoidance verified; screenshot-verified | Muse Cruz.inc | apexracer-cars2 | #207 | 2026-10-15 09:45 CDT |
