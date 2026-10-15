@@ -68,10 +68,7 @@
   #rotHint { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
     background:rgba(7,9,12,.88); text-align:center; padding:24px; font-size:15px; line-height:1.6; color:#cfd8e3; }
   #rotHint b { color:#ffb200; }
-  #rotHint { display:none !important; }
-  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
-     In portrait the whole stage presents rotated to landscape from the first frame. */
-  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+  @media (orientation:portrait) and (pointer:coarse) { #rotHint { display:flex; } }
 </style>
 </head>
 <body>
@@ -569,9 +566,7 @@ for (let i = 0; i < 44; i++) {
   cars.push(c);
 }
 
-/* ================= the monster truck ================= */
-const truck = { g: new THREE.Group(), wheels: [] };
-// merge BufferGeometries into one (used for the tire tread ring)
+/* merge BufferGeometries into one (for tire tread) */
 function mergeGeos(geos) {
   let vCount = 0, iCount = 0;
   for (const g of geos) { vCount += g.attributes.position.count; iCount += g.index.count; }
@@ -593,211 +588,170 @@ function mergeGeos(geos) {
   out.setIndex(new THREE.BufferAttribute(idx, 1));
   return out;
 }
-{
-  const livSide = new THREE.MeshStandardMaterial({ map: liveryTex, roughness: 0.34, metalness: 0.28 });
-  const redMat = new THREE.MeshStandardMaterial({ map: paintTex, roughness: 0.3, metalness: 0.12 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x181b21, roughness: 0.7 });
-  const glassMat = new THREE.MeshStandardMaterial({ color: 0x0e1420, roughness: 0.12, metalness: 0.7 });
-  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd7dde6, roughness: 0.25, metalness: 0.9 });
-  const shockMat = new THREE.MeshStandardMaterial({ color: 0xd42a1e, roughness: 0.5, metalness: 0.3 });
 
-  // tube-frame chassis rails + axles (tall pickup stance)
-  for (const sx of [-0.95, 0.95]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 6.4), darkMat);
-    rail.position.set(sx, 2.0, 0); truck.g.add(rail);
-  }
-  for (const sz of [-2.35, 2.35]) {
-    const axle = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.34, 0.44), darkMat);
-    axle.position.set(0, 1.42, sz); truck.g.add(axle);
-  }
-  const mechMat = new THREE.MeshStandardMaterial({ color: 0x23262d, roughness: 0.55, metalness: 0.7 });
-  for (const [sx, sz] of [[-1.45, 2.35], [1.45, 2.35], [-1.45, -2.35], [1.45, -2.35]]) {
-    for (const yy of [1.5, 2.1]) { // upper + lower A-arms
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.15, 0.24), mechMat);
-      arm.position.set(sx * 0.62, yy, sz);
-      arm.rotation.z = sx > 0 ? 0.12 : -0.12;
-      truck.g.add(arm);
-    }
-  }
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 5.0, 10), mechMat);
-  shaft.rotation.x = Math.PI / 2; shaft.position.set(0, 1.7, 0); truck.g.add(shaft);
-  for (const sz of [-2.35, 2.35]) { // differential pumpkins
-    const diff = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), mechMat);
-    diff.position.set(0, 1.42, sz); diff.scale.set(1, 0.85, 1); truck.g.add(diff);
-  }
-  // red coilover shocks + chrome shafts
-  for (const [sx, sz] of [[-1.45, 2.35], [1.45, 2.35], [-1.45, -2.35], [1.45, -2.35]]) {
-    const tilt = sx > 0 ? -0.22 : 0.22;
-    const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.5, 10), shockMat);
-    coil.position.set(sx * 0.82, 2.5, sz * 0.92); coil.rotation.z = tilt; truck.g.add(coil);
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 8), chromeMat);
-    shaft.position.set(sx * 0.9, 1.8, sz * 0.96); shaft.rotation.z = tilt; truck.g.add(shaft);
-  }
-
-  // ---- pickup body: long hood, cab with glasshouse, open bed (open wheels like the refs)
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.7, 2.4), redMat);
-  hood.position.set(0, 2.95, 2.1); hood.castShadow = true; truck.g.add(hood);
-  const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 1.1), darkMat);
-  scoop.position.set(0, 3.42, 2.1); scoop.castShadow = true; truck.g.add(scoop);
-  const scoopMouth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 1 }));
-  scoopMouth.position.set(0, 3.58, 2.35); truck.g.add(scoopMouth);
-  // big chrome-slatted grille + surround + bumper
-  const grilleTex = makeTex(256, 96, (g, w, h) => {
-    g.fillStyle = '#14171d'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#c9d2dd';
-    for (let i = 0; i < 8; i++) g.fillRect(14 + i * 30, 10, 12, h - 20);
-  });
-  const surround = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.0, 0.12), darkMat);
-  surround.position.set(0, 2.9, 3.26); truck.g.add(surround);
-  const grille = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.8, 0.14),
-    new THREE.MeshStandardMaterial({ map: grilleTex, roughness: 0.4, metalness: 0.6 }));
-  grille.position.set(0, 2.9, 3.32); truck.g.add(grille);
-  const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.36, 0.44), chromeMat);
-  bumper.position.set(0, 2.2, 3.35); bumper.castShadow = true; truck.g.add(bumper);
-  // headlights on the hood front edge
-  const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
-  for (const sx of [-0.8, 0.8]) {
-    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.1), hlMat);
-    hl.position.set(sx, 3.05, 3.28); truck.g.add(hl);
-  }
-  // cab: lower doors with livery sides + glasshouse
-  const cabMats = [livSide, livSide, redMat, darkMat, redMat, redMat];
-  const cabLow = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.1, 2.2), cabMats);
-  cabLow.position.set(0, 3.05, -0.1); cabLow.castShadow = true; truck.g.add(cabLow);
-  const shield = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 0.1), glassMat);
-  shield.position.set(0, 3.92, 0.72); shield.rotation.x = -0.63; truck.g.add(shield);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.7), redMat);
-  roof.position.set(0, 4.32, -0.35); roof.castShadow = true; truck.g.add(roof);
-  for (const sx of [-1.22, 1.22]) {
-    const side = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.72, 1.8), glassMat);
-    side.position.set(sx, 3.95, -0.1); truck.g.add(side);
-  }
-  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.72, 0.1), glassMat);
-  rearGlass.position.set(0, 3.92, -1.14); rearGlass.rotation.x = 0.2; truck.g.add(rearGlass);
-  // roof light bar with 5 lamps
-  const bar = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.16, 0.3), darkMat);
-  bar.position.set(0, 4.5, -0.3); truck.g.add(bar);
-  const lampG = new THREE.CylinderGeometry(0.15, 0.15, 0.12, 12);
-  const lampM = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
-  for (let i = -2; i <= 2; i++) {
-    const l = new THREE.Mesh(lampG, lampM);
-    l.rotation.x = Math.PI / 2; l.position.set(i * 0.42, 4.5, -0.12); truck.g.add(l);
-  }
-  // open bed: floor + walls + tailgate
-  const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.18, 2.4), darkMat);
-  bedFloor.position.set(0, 2.62, -2.3); truck.g.add(bedFloor);
-  const bedInner = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.5, 2.16),
-    new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 }));
-  bedInner.position.set(0, 2.82, -2.3); truck.g.add(bedInner);
-  for (const sx of [-1.19, 1.19]) {
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.72, 2.4), redMat);
-    wall.position.set(sx, 3.0, -2.3); wall.castShadow = true; truck.g.add(wall);
-  }
-  const bedFront = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.72, 0.12), redMat);
-  bedFront.position.set(0, 3.0, -1.16); truck.g.add(bedFront);
-  const tailgate = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.72, 0.12), redMat);
-  tailgate.position.set(0, 3.0, -3.44); tailgate.castShadow = true; truck.g.add(tailgate);
-  const tlMat = new THREE.MeshBasicMaterial({ color: 0xff2a1e });
-  for (const sx of [-0.85, 0.85]) {
-    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.24, 0.1), tlMat);
-    tl.position.set(sx, 3.0, -3.51); truck.g.add(tl);
-  }
-  // side exhaust pipes
-  for (const sx of [-1.35, 1.35]) {
-    const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 10), chromeMat);
-    ex.rotation.x = Math.PI / 2; ex.position.set(sx, 2.3, 0.3); truck.g.add(ex);
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 10), darkMat);
-    tip.rotation.x = Math.PI / 2; tip.position.set(sx, 2.3, -1.4); truck.g.add(tip);
-  }
-  for (const sx of [-1.95, 1.95]) { // mud flaps behind the rear wheels
-    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.12), darkMat);
-    flap.position.set(sx, 1.6, -3.95); truck.g.add(flap);
-  }
-  // monster wheels: chevron-tread tires on gold hubs (big: 1.42 radius like the refs)
-  const lugGeos = [];
-  for (let i = 0; i < 16; i++) {
-    const lug = new THREE.BoxGeometry(1.18, 0.3, 0.72);
-    lug.rotateX(i % 2 ? 0.35 : -0.35);   // chevron skew
-    lug.translate(0, 1.43, 0);           // out to the tread radius
-    lug.rotateX((i / 16) * Math.PI * 2); // around the axle (spin-space X)
-    lugGeos.push(lug);
-  }
-  const treadGeo = mergeGeos(lugGeos);
-  const tireGeo = new THREE.CylinderGeometry(1.42, 1.42, 1.15, 24);
-  const hubGeo = new THREE.CylinderGeometry(0.62, 0.62, 1.19, 16);
-  const hubMat = new THREE.MeshStandardMaterial({ color: 0xd8b13a, roughness: 0.28, metalness: 0.85 });
-  const capGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.22, 10);
-  // deep-dish beadlock look: polished outer lip + hex lug-nut ring (merged, one geometry)
-  const lipGeo = new THREE.TorusGeometry(0.6, 0.1, 8, 22); lipGeo.rotateY(Math.PI / 2);
-  const lugRingGeos = [];
-  for (const fx of [-0.63, 0.63]) for (let i = 0; i < 6; i++) {
-    const lg = new THREE.CylinderGeometry(0.085, 0.085, 0.18, 6);
-    lg.rotateZ(Math.PI / 2);
-    const a = (i / 6) * Math.PI * 2;
-    lg.translate(fx, Math.sin(a) * 0.38, Math.cos(a) * 0.38);
-    lugRingGeos.push(lg);
-  }
-  const lugRingGeo = mergeGeos(lugRingGeos);
-  const lugMat = new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.3, metalness: 0.9 });
-  for (const [wx, wz, steer] of [[-1.95, 2.35, true], [1.95, 2.35, true], [-1.95, -2.35, false], [1.95, -2.35, false]]) {
-    const pivot = new THREE.Group(); pivot.position.set(wx, 1.42, wz);
-    const spin = new THREE.Group();
-    const tireSideM = new THREE.MeshStandardMaterial({ color: 0x1b1611, roughness: 0.95 });
-    const tireCapM = new THREE.MeshStandardMaterial({ map: sidewallTex, roughness: 0.95 });
-    const tire = new THREE.Mesh(tireGeo, [tireSideM, tireCapM, tireCapM]); tire.rotation.z = Math.PI / 2; tire.castShadow = true;
-    const tread = new THREE.Mesh(treadGeo, tireMat); tread.castShadow = true; // built in spin space, no rotation needed
-    const hub = new THREE.Mesh(hubGeo, hubMat); hub.rotation.z = Math.PI / 2;
-    const cap = new THREE.Mesh(capGeo, darkMat); cap.rotation.z = Math.PI / 2;
-    const lipO = new THREE.Mesh(lipGeo, chromeMat); lipO.position.x = 0.6;
-    const lipI = new THREE.Mesh(lipGeo, chromeMat); lipI.position.x = -0.6;
-    const lugs = new THREE.Mesh(lugRingGeo, lugMat);
-    spin.add(tire, tread, hub, cap, lipO, lipI, lugs); pivot.add(spin); truck.g.add(pivot);
-    truck.wheels.push({ pivot, spin, baseY: 1.42, off: 0, vo: 0, steer: !!steer });
-  }
-}
-scene.add(truck.g);
-
-/* ================= AI monster trucks: rivals doing jumps ================= */
-const aiTrucks = [];
-function makeAITruck(colorHex) {
+/* ================= studio-style monster truck builder =================
+   Big aggressive tires, wide -offset track, lift-kit suspension,
+   exhaust stacks, Apex Arcade bed logos. Styles: 'pickup' or 'suv'. */
+function buildStudioTruck(style, colorHex) {
   const g = new THREE.Group();
-  const bm = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.42, metalness: 0.25 });
-  const dk = new THREE.MeshStandardMaterial({ color: 0x181b21, roughness: 0.75 });
-  const gl = new THREE.MeshStandardMaterial({ color: 0x0e1420, roughness: 0.15, metalness: 0.7 });
+  const wheels = [];
+  const stackTips = []; // for exhaust smoke
   const add = (geo, m, x, y, z, cast) => {
     const ms = new THREE.Mesh(geo, m); ms.position.set(x, y, z);
     if (cast) ms.castShadow = true; g.add(ms); return ms;
   };
-  add(new THREE.BoxGeometry(0.3, 0.5, 6.4), dk, -0.95, 2.0, 0);   // chassis rails
-  add(new THREE.BoxGeometry(0.3, 0.5, 6.4), dk, 0.95, 2.0, 0);
-  add(new THREE.BoxGeometry(2.3, 0.7, 2.4), bm, 0, 2.95, 2.1, true); // hood
-  add(new THREE.BoxGeometry(1.9, 0.7, 0.14), dk, 0, 2.9, 3.3);        // grille
-  add(new THREE.BoxGeometry(2.9, 0.36, 0.44), dk, 0, 2.2, 3.32);     // bumper
-  add(new THREE.BoxGeometry(2.5, 1.1, 2.2), bm, 0, 3.05, -0.1, true);// cab
-  const sh = add(new THREE.BoxGeometry(2.2, 0.85, 0.1), gl, 0, 3.95, 0.7); sh.rotation.x = -0.6;
-  add(new THREE.BoxGeometry(2.4, 0.12, 1.7), bm, 0, 4.32, -0.35, true); // roof
-  add(new THREE.BoxGeometry(2.5, 0.18, 2.4), dk, 0, 2.62, -2.3);     // bed floor
-  add(new THREE.BoxGeometry(2.5, 0.72, 2.4), bm, 0, 3.0, -2.3, true);// bed
-  const tireG = new THREE.CylinderGeometry(1.42, 1.42, 1.15, 18); tireG.rotateZ(Math.PI / 2);
-  const hubG = new THREE.CylinderGeometry(0.6, 0.6, 1.2, 12); hubG.rotateZ(Math.PI / 2);
-  const tm = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
-  const hm = new THREE.MeshStandardMaterial({ color: 0xc7cdd6, roughness: 0.35, metalness: 0.85 });
-  const wheels = [];
-  for (const [wx, wz] of [[-1.95, 2.35], [1.95, 2.35], [-1.95, -2.35], [1.95, -2.35]]) {
-    const w = new THREE.Group(); w.position.set(wx, 1.42, wz);
-    const t = new THREE.Mesh(tireG, tm); t.castShadow = true;
-    w.add(t, new THREE.Mesh(hubG, hm)); g.add(w); wheels.push(w);
+  const paintMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.32, metalness: 0.25 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x181b21, roughness: 0.7 });
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x0e1420, roughness: 0.12, metalness: 0.7 });
+  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd7dde6, roughness: 0.25, metalness: 0.9 });
+  const coilMat = new THREE.MeshStandardMaterial({ color: 0xd42a1e, roughness: 0.5, metalness: 0.3 });
+
+  // chassis: rails + axles + diffs (wide track)
+  for (const sx of [-0.95, 0.95])
+    add(new THREE.BoxGeometry(0.3, 0.5, 6.4), darkMat, sx, 2.0, 0);
+  for (const sz of [-2.35, 2.35]) {
+    add(new THREE.BoxGeometry(4.6, 0.34, 0.44), darkMat, 0, 1.7, sz);
+    const diff = add(new THREE.SphereGeometry(0.36, 10, 8), darkMat, 0, 1.7, sz);
+    diff.scale.set(1, 0.85, 1);
   }
-  return { g, wheels };
+  const shaft = add(new THREE.CylinderGeometry(0.14, 0.14, 5.0, 10), darkMat, 0, 1.9, 0);
+  shaft.rotation.x = Math.PI / 2;
+
+  // lift-kit: vertical red coilovers (tall, prominent)
+  for (const [sx, sz] of [[-1.1, 2.35], [1.1, 2.35], [-1.1, -2.35], [1.1, -2.35]]) {
+    const coil = add(new THREE.CylinderGeometry(0.16, 0.16, 1.6, 10), coilMat, sx, 2.8, sz, true);
+    const shaft = add(new THREE.CylinderGeometry(0.07, 0.07, 0.9, 8), chromeMat, sx, 1.9, sz);
+  }
+
+  // big aggressive tires: r=1.7, wide track (±2.3), blocky lugs
+  const TIRE_R = 1.7, TRACK = 2.3;
+  const lugGeos = [];
+  for (let i = 0; i < 14; i++) {
+    const lug = new THREE.BoxGeometry(1.35, 0.42, 0.85);
+    lug.rotateX(i % 2 ? 0.4 : -0.4);
+    lug.translate(0, TIRE_R + 0.12, 0);
+    lug.rotateX((i / 14) * Math.PI * 2);
+    lugGeos.push(lug);
+  }
+  const treadGeo = mergeGeos(lugGeos);
+  const tireGeo = new THREE.CylinderGeometry(TIRE_R, TIRE_R, 1.3, 20); tireGeo.rotateZ(Math.PI / 2);
+  const hubGeo = new THREE.CylinderGeometry(0.72, 0.72, 1.34, 14); hubGeo.rotateZ(Math.PI / 2);
+  const hubMat = new THREE.MeshStandardMaterial({ color: 0xd97a1e, roughness: 0.3, metalness: 0.8 }); // orange
+  const tireMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
+  const lugMat = new THREE.MeshStandardMaterial({ color: 0x1b1611, roughness: 0.95 });
+  for (const [wx, wz, steer] of [[-TRACK, 2.35, true], [TRACK, 2.35, true], [-TRACK, -2.35, false], [TRACK, -2.35, false]]) {
+    const pivot = new THREE.Group(); pivot.position.set(wx, TIRE_R, wz);
+    const spin = new THREE.Group();
+    const tire = new THREE.Mesh(tireGeo, tireMat); tire.castShadow = true;
+    const tread = new THREE.Mesh(treadGeo, lugMat); tread.castShadow = true;
+    const hub = new THREE.Mesh(hubGeo, hubMat);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1.38, 10), darkMat);
+    cap.rotation.z = Math.PI / 2;
+    spin.add(tire, tread, hub, cap); pivot.add(spin); g.add(pivot);
+    wheels.push({ pivot, spin, baseY: TIRE_R, off: 0, vo: 0, steer: !!steer });
+  }
+
+  // pickup/SUV body: hood, cab, grille, bumper
+  add(new THREE.BoxGeometry(2.3, 0.7, 2.4), paintMat, 0, 2.95, 2.1, true); // hood
+  add(new THREE.BoxGeometry(0.9, 0.3, 1.1), darkMat, 0, 3.42, 2.1, true);  // scoop
+  const grille = add(new THREE.BoxGeometry(1.9, 0.8, 0.14),
+    new THREE.MeshStandardMaterial({ color: 0x14171d, roughness: 0.4, metalness: 0.6 }), 0, 2.9, 3.32);
+  add(new THREE.BoxGeometry(2.9, 0.36, 0.44), chromeMat, 0, 2.2, 3.35, true); // bumper
+  const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
+  for (const sx of [-0.8, 0.8]) add(new THREE.BoxGeometry(0.44, 0.26, 0.1), hlMat, sx, 3.05, 3.28);
+  // cab
+  add(new THREE.BoxGeometry(2.5, 1.1, 2.2), paintMat, 0, 3.05, -0.1, true);
+  const shield = add(new THREE.BoxGeometry(2.2, 0.9, 0.1), glassMat, 0, 3.92, 0.72);
+  shield.rotation.x = -0.63;
+  add(new THREE.BoxGeometry(2.4, 0.12, 1.7), paintMat, 0, 4.32, -0.35, true); // roof
+  for (const sx of [-1.22, 1.22]) add(new THREE.BoxGeometry(0.08, 0.72, 1.8), glassMat, sx, 3.95, -0.1);
+  const rg = add(new THREE.BoxGeometry(2.2, 0.72, 0.1), glassMat, 0, 3.92, -1.14);
+  rg.rotation.x = 0.2;
+  // roof light bar
+  add(new THREE.BoxGeometry(2.1, 0.16, 0.3), darkMat, 0, 4.5, -0.3);
+  const lampM = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
+  for (let i = -2; i <= 2; i++) {
+    const l = add(new THREE.CylinderGeometry(0.15, 0.15, 0.12, 12), lampM, i * 0.42, 4.5, -0.12);
+    l.rotation.x = Math.PI / 2;
+  }
+
+  if (style === 'pickup') {
+    // open bed with tall walls + Apex Arcade logos (gold, never matches vehicle)
+    for (const sx of [-1.19, 1.19])
+      add(new THREE.BoxGeometry(0.12, 0.9, 2.4), paintMat, sx, 3.1, -2.3, true);
+    add(new THREE.BoxGeometry(2.5, 0.9, 0.12), paintMat, 0, 3.1, -1.16); // front
+    add(new THREE.BoxGeometry(2.5, 0.9, 0.12), paintMat, 0, 3.1, -3.44, true); // tailgate
+    add(new THREE.BoxGeometry(2.26, 0.5, 2.16),
+      new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 }), 0, 2.85, -2.3); // inner
+    // Apex Arcade bedside logos (gold with black outline)
+    const logoTex = makeTex(512, 256, (gg, w, h) => {
+      gg.clearRect(0, 0, w, h);
+      gg.font = 'bold 64px Arial'; gg.textAlign = 'center';
+      gg.lineWidth = 6; gg.strokeStyle = '#000';
+      gg.strokeText('APEX ARCADE', 256, 120);
+      gg.fillStyle = '#ffcc00'; gg.fillText('APEX ARCADE', 256, 120);
+    });
+    const logoMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true });
+    for (const sx of [-1, 1]) {
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.95), logoMat);
+      d.position.set(sx * 1.26, 3.1, -2.3);
+      d.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      g.add(d);
+    }
+  } else { // suv: enclosed rear with windows
+    add(new THREE.BoxGeometry(2.5, 1.1, 2.5), paintMat, 0, 3.05, -2.2, true); // rear body
+    add(new THREE.BoxGeometry(2.4, 0.12, 2.4), paintMat, 0, 4.32, -2.2, true); // rear roof
+    for (const sx of [-1.22, 1.22])
+      add(new THREE.BoxGeometry(0.08, 0.72, 2.0), glassMat, sx, 3.95, -2.2); // side glass
+    add(new THREE.BoxGeometry(2.2, 0.72, 0.1), glassMat, 0, 3.92, -3.4); // rear glass
+    // Apex Arcade on rear sides
+    const logoTex = makeTex(512, 256, (gg, w, h) => {
+      gg.clearRect(0, 0, w, h);
+      gg.font = 'bold 64px Arial'; gg.textAlign = 'center';
+      gg.lineWidth = 6; gg.strokeStyle = '#000';
+      gg.strokeText('APEX ARCADE', 256, 120);
+      gg.fillStyle = '#ffcc00'; gg.fillText('APEX ARCADE', 256, 120);
+    });
+    const logoMat = new THREE.MeshBasicMaterial({ map: logoTex, transparent: true });
+    for (const sx of [-1, 1]) {
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.95), logoMat);
+      d.position.set(sx * 1.26, 3.05, -2.2);
+      d.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      g.add(d);
+    }
+  }
+  // taillights
+  const tlMat = new THREE.MeshBasicMaterial({ color: 0xff2a1e });
+  for (const sx of [-0.85, 0.85]) add(new THREE.BoxGeometry(0.44, 0.24, 0.1), tlMat, sx, 3.0, -3.51);
+  // exhaust stacks: vertical pipes behind cab (smoke emits from tips)
+  for (const sx of [-0.55, 0.55]) {
+    add(new THREE.CylinderGeometry(0.13, 0.13, 1.6, 10), chromeMat, sx, 4.2, -1.3, true);
+    add(new THREE.CylinderGeometry(0.15, 0.15, 0.25, 10), darkMat, sx, 5.05, -1.3);
+    stackTips.push(new THREE.Vector3(sx, 5.2, -1.3));
+  }
+  return { g, wheels, stackTips, tireR: TIRE_R };
 }
-function spawnAI(color, x, z) {
-  const t = makeAITruck(color);
+
+/* ================= the monster truck (player) ================= */
+const _pt = buildStudioTruck('pickup', 0xd42a1e); // red pickup
+const truck = { g: _pt.g, wheels: _pt.wheels, stackTips: _pt.stackTips, tireR: _pt.tireR };
+scene.add(truck.g);
+
+/* ================= AI monster trucks: rivals doing jumps ================= */
+const aiTrucks = [];
+function makeAITruck(colorHex, style) {
+  const b = buildStudioTruck(style || 'pickup', colorHex);
+  return { g: b.g, wheels: b.wheels.map(w => w.pivot), tireR: b.tireR, stackTips: b.stackTips };
+}
+function spawnAI(color, x, z, style) {
+  const t = makeAITruck(color, style);
   t.g.position.set(x, 0, z); scene.add(t.g);
   aiTrucks.push({ ...t, x, z, hd: Math.random() * Math.PI * 2, sp: 0, y: 0, vy: 0, grounded: true, target: null });
 }
-spawnAI(0x2e7fd9, 80, -60);
-spawnAI(0x37c26a, -80, 60);
+spawnAI(0x2e7fd9, 80, -60, 'pickup');   // blue pickup
+spawnAI(0x37c26a, -80, 60, 'suv');        // green SUV
+spawnAI(0xff7a1e, 60, 80, 'pickup');      // orange pickup
+spawnAI(0x8a2be2, -60, -80, 'suv');       // purple SUV
 function stepAI(dt) {
   for (const a of aiTrucks) {
     if (!a.target || Math.hypot(a.x - a.target.x, a.z - a.target.z) < 30) {
@@ -831,7 +785,7 @@ function stepAI(dt) {
     a.g.position.set(a.x, a.y, a.z);
     a.g.rotation.y = a.hd;
     a.g.rotation.x = a.grounded ? 0 : Math.max(-0.3, Math.min(0.25, -a.vy * 0.012));
-    for (const w of a.wheels) w.rotation.x += (a.sp / 1.42) * dt;
+    for (const w of a.wheels) w.rotation.x += (a.sp / a.tireR) * dt;
   }
 }
 
@@ -851,6 +805,31 @@ function puff(x, y, z, n, spread) {
     p.vx = (Math.random() - 0.5) * (spread || 6); p.vz = (Math.random() - 0.5) * (spread || 6);
     p.vy = 2 + Math.random() * 3;
     if (++c >= n) break;
+  }
+}
+
+/* exhaust smoke: dark puffs from stack tips when hitting gas */
+const smokePool = [];
+const smokeTex = makeTex(64, 64, (g, w, h) => {
+  const gr = g.createRadialGradient(32, 32, 4, 32, 32, 30);
+  gr.addColorStop(0, 'rgba(40,40,45,0.85)');
+  gr.addColorStop(1, 'rgba(40,40,45,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+});
+for (let i = 0; i < 40; i++) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeTex, transparent: true, opacity: 0, depthWrite: false }));
+  s.scale.set(1.2, 1.2, 1); scene.add(s);
+  smokePool.push({ s, life: 0, vx: 0, vy: 0, vz: 0 });
+}
+function puffSmoke(x, y, z) {
+  for (const p of smokePool) {
+    if (p.life > 0) continue;
+    p.life = 0.5 + Math.random() * 0.4;
+    p.s.position.set(x, y, z);
+    p.vx = (Math.random() - 0.5) * 1.5; p.vz = (Math.random() - 0.5) * 1.5;
+    p.vy = 3 + Math.random() * 2;
+    p.s.material.opacity = 0.7;
+    break;
   }
 }
 
@@ -987,7 +966,7 @@ function stepTruck(dt) {
   truck.g.rotation.y = T.hd;
   truck.g.rotation.z = -T.steer * 0.06;
   truck.g.rotation.x = T.grounded ? Math.max(-0.06, Math.min(0.06, -T.vy * 0.004)) : Math.max(-0.25, Math.min(0.2, -T.vy * 0.012));
-  const wSpin = T.sp / 1.42;
+  const wSpin = T.sp / truck.tireR;
   for (const w of truck.wheels) {
     w.spin.rotation.x += wSpin * dt;
     w.pivot.rotation.y = w.steer ? T.steer * 0.9 : 0;
@@ -1029,9 +1008,28 @@ function stepDust(dt) {
     const s = 2 + (1.2 - k) * 2.4; p.s.scale.set(s, s, 1);
     if (p.life <= 0) p.s.material.opacity = 0;
   }
+  for (const p of smokePool) {
+    if (p.life <= 0) continue;
+    p.life -= dt;
+    p.s.position.x += p.vx * dt; p.s.position.z += p.vz * dt;
+    p.s.position.y += p.vy * dt; p.vy += 1.5 * dt; // smoke rises
+    const k = Math.max(0, p.life);
+    p.s.material.opacity = Math.min(0.7, k * 1.4);
+    const s = 1.2 + (0.9 - k) * 2.0; p.s.scale.set(s, s, 1);
+    if (p.life <= 0) p.s.material.opacity = 0;
+  }
   // driving dust
   if (state === 'play' && T.grounded && Math.abs(T.sp) > 12 && Math.random() < 0.5) {
     puff(T.x - Math.sin(T.hd) * 2.4, 0.4, T.z - Math.cos(T.hd) * 2.4, 1, 2.5);
+  }
+  // exhaust smoke when hitting gas: emit from stack tips
+  const gasAmt = input.gas ? 1 : Math.max(0, input.throttleA);
+  if (state === 'play' && gasAmt > 0.3 && Math.random() < gasAmt * 0.7) {
+    for (const tip of truck.stackTips) {
+      const wx = T.x + tip.x * Math.cos(T.hd) + tip.z * Math.sin(T.hd);
+      const wz = T.z - tip.x * Math.sin(T.hd) + tip.z * Math.cos(T.hd);
+      puffSmoke(wx, T.y + tip.y, wz);
+    }
   }
 }
 
@@ -1072,7 +1070,6 @@ function makeStick(id, onMove) {
   const move = (e) => {
     const r = el.getBoundingClientRect();
     let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-    if (window.innerHeight > window.innerWidth) { const _t = dx; dx = dy; dy = -_t; } // LANDSCAPE LAW: rotated stage remap
     const m = Math.hypot(dx, dy);
     if (m > R) { dx = dx / m * R; dy = dy / m * R; }
     setKnob(dx, dy); apply(dx / R, dy / R);
@@ -1167,20 +1164,13 @@ function frame() {
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);
 }
-function fitLandscape() {
-  let w = window.innerWidth, h = window.innerHeight;
-  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
-  camera.aspect = w / h;
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-}
-window.addEventListener('resize', fitLandscape);
-if (window.visualViewport) window.visualViewport.addEventListener('resize', fitLandscape);
-fitLandscape();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 stepCamera(1);
 frame();
-/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
-addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
