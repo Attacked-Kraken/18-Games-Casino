@@ -140,7 +140,6 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div id="fps" title="tap to hide"></div>
 <button id="muteBtn">MUTE</button>
 
-<!-- HUD -->
 <div id="hud">
   <div id="hudTop">
     <div>
@@ -156,7 +155,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- Touch controls -->
 <div id="touch">
   <div class="tbtn" id="btnL">STRIDE<br>LEFT</div>
   <div class="tbtn" id="btnR">STRIDE<br>RIGHT</div>
@@ -164,12 +162,11 @@ body.playing:not(.touch) .kbdhint{display:block}
 </div>
 <div class="kbdhint">ArrowLeft / ArrowRight or A / D to stride &nbsp;·&nbsp; Space = action</div>
 
-<!-- MENU -->
 <div class="screen on" id="menu">
   <div class="panel">
     <h1>APEX TRACK &amp; FIELD 3D</h1>
     <div class="sponsor">PRESENTED BY <b>APEX ARCADE</b> · APEX GAMES SERIES</div>
-    <label class="f" for="athName">ATHLETE NAME</label>
+    <label class="f" for="athName">PLAYER NICKNAME</label>
     <input class="txt" id="athName" maxlength="14" value="YOU" autocomplete="off">
     <label class="f">COLLEGE COLORS</label>
     <div class="row2" style="align-items:center">
@@ -197,7 +194,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- EVENT GRID -->
 <div class="screen" id="grid">
   <div class="panel">
     <h2>CHOOSE EVENT</h2>
@@ -207,7 +203,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- EVENT CARD -->
 <div class="screen" id="card">
   <div class="panel">
     <h2 id="cardTitle">100m</h2>
@@ -222,7 +217,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- RESULTS -->
 <div class="screen" id="results">
   <div class="panel">
     <h2 id="resTitle">RESULT</h2>
@@ -238,7 +232,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- CAREER -->
 <div class="screen" id="career">
   <div class="panel">
     <h2>CAREER MODE</h2>
@@ -251,7 +244,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- TOURNAMENT -->
 <div class="screen" id="tourney">
   <div class="panel">
     <h2>APEX GAMES TOURNAMENT</h2>
@@ -264,7 +256,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- HOW TO PLAY -->
 <div class="screen" id="howto">
   <div class="panel">
     <h2>HOW TO PLAY</h2>
@@ -282,7 +273,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- BESTS -->
 <div class="screen" id="bests">
   <div class="panel">
     <h2>PERSONAL BESTS</h2>
@@ -291,7 +281,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- FRIEND CODE -->
 <div class="screen" id="fcode">
   <div class="panel">
     <h2>MY FRIEND CODE</h2>
@@ -302,7 +291,6 @@ body.playing:not(.touch) .kbdhint{display:block}
   </div>
 </div>
 
-<!-- ADD RIVAL -->
 <div class="screen" id="rival">
   <div class="panel">
     <h2>ADD RIVAL</h2>
@@ -320,18 +308,10 @@ body.playing:not(.touch) .kbdhint{display:block}
 <script type="module">
 'use strict';
 
-
-
-
-
-
 import * as THREE from 'three';
 import { loadHumans } from 'humans';
 
-
-
 const HM = await loadHumans(THREE, './characters/base-human-v2/').catch(()=>null);
-
 
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:(v>b?b:v);
@@ -352,13 +332,13 @@ function ordinal(n){
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-
-const canvas = $('game');          
-const ovl = $('ovl');              
+const canvas = $('game');
+const ovl = $('ovl');
 const ox = ovl.getContext('2d');
-let W=0, H=0, DPR=1;
+let W=0, H=0, DPR=1, vG=null;
 const COARSE = (window.matchMedia && window.matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window);
 function fitGame(){
+  vG=null;
   DPR = Math.min(window.devicePixelRatio||1, 1.5);
   W = window.innerWidth; H = window.innerHeight;
   ovl.width = Math.round(W*DPR); ovl.height = Math.round(H*DPR);
@@ -368,10 +348,6 @@ function fitGame(){
 window.addEventListener('resize', fitGame);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGame,150));
 if(window.visualViewport) visualViewport.addEventListener('resize', fitGame);
-
-
-
-
 
 const Perf = {
   ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(window.devicePixelRatio||1,1.5),
@@ -406,7 +382,6 @@ const Perf = {
   }
 };
 $('fps').addEventListener('click', ()=>Perf.toggle());
-
 
 const AudioSys = {
   ctx:null, master:null, noiseBuf:null, crowdOn:false,
@@ -465,7 +440,7 @@ const AudioSys = {
     g.gain.exponentialRampToValueAtTime(0.001,t+dur);
     s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.1);
   },
-  
+
   fanfare(){
     if(!this.ctx) return;
     const notes=[523.25,659.25,783.99,1046.5,783.99,1046.5];
@@ -548,7 +523,6 @@ function firstGesture(){
 window.addEventListener('pointerdown', firstGesture, {passive:true});
 window.addEventListener('keydown', firstGesture);
 
-
 const Store={
   get(k,d){ try{ const v=localStorage.getItem('tfapex_'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
   set(k,v){ try{ localStorage.setItem('tfapex_'+k, JSON.stringify(v)); }catch(e){} }
@@ -571,7 +545,7 @@ const SEASONS=['Freshman','Sophomore','Junior','Senior'];
 let CAR = Store.get('career', null);
 function newCareer(){
   CAR={name:athleteName, colA:collegeCols.a, colB:collegeCols.b,
-    season:1, tp:0, up:{spd:0,stam:0,tech:0},
+    season:1, meet:0, tp:0, up:{spd:0,stam:0,tech:0},
     stats:{meets:0, wins:0, tpEarned:0}, done:false};
   Store.set('career', CAR);
 }
@@ -582,7 +556,6 @@ function careerMods(){
   if(!CAR) return {spd:1,stam:1,tech:1};
   return {spd:1+0.03*CAR.up.spd, stam:1+0.09*CAR.up.stam, tech:1+0.14*CAR.up.tech};
 }
-
 
 const EVENTS=[
  {id:'100m', name:'100m', eng:'sprint', timed:true, dist:100, ref:9.58,
@@ -622,7 +595,6 @@ const EVENTS=[
 ];
 const EV_BY_ID={}; EVENTS.forEach(e=>EV_BY_ID[e.id]=e);
 
-
 function pointsFor(ev, result){
   if(result==null||!isFinite(result)||result<=0) return 0;
   let p = ev.timed ? 1200*Math.pow(ev.ref/result,1.8)
@@ -635,10 +607,9 @@ function bestDisplay(ev){
   return 'Your best: '+(ev.timed? fmtTime(b) : fmtMark(b));
 }
 
-
 const BASE_RIVALS=[
   {name:'D. Carter', rating:0.93, kit:'#d23c3c'},
-  {name:'J. Okafor', rating:0.89, kit:'#2e9e5b'},
+  {name:'J. Osei', rating:0.89, kit:'#2e9e5b'},
   {name:'M. Reyes',  rating:0.86, kit:'#e6a02e'},
 ];
 const EXTRA_NAMES=['A. Diallo','K. Mensah','R. Silva','T. Novak','J. Park','L. Costa','D. Webb','S. Rossi'];
@@ -659,7 +630,6 @@ function rivalMark(ev, rating){
   return ev.ref*rating*rnd(0.94,1.03);
 }
 
-
 function makeFriendCode(name, rating){
   const payload={n:String(name||'YOU').slice(0,14), r:Math.round(clamp(rating,0,1)*100)/100};
   let b='';
@@ -677,7 +647,7 @@ function parseFriendCode(code){
   let obj;
   try{ obj=JSON.parse(decodeURIComponent(escape(atob(b)))); }
   catch(e){ throw new Error('Code data is corrupted.'); }
-  if(!obj||typeof obj.n!=='string'||!obj.n.trim()) throw new Error('Code has no athlete name.');
+  if(!obj||typeof obj.n!=='string'||!obj.n.trim()) throw new Error('Code has no player nickname.');
   const r=Number(obj.r);
   if(!isFinite(r)||r<=0||r>1) throw new Error('Code rating is out of range.');
   return {name:obj.n.trim().slice(0,14), rating:r};
@@ -695,8 +665,6 @@ function newRunner(){
 
 function applyStride(r, side, impulse){
   const alt = side!==r.lastSide;
-  
-
 
   const t=r.simT||0;
   if(t-r.tapWinStart>1){ r.tapWinStart=t; r.tapCount=0; }
@@ -709,14 +677,14 @@ function applyStride(r, side, impulse){
 function updateRunner(r, dt, maxSpd, drain){
   r.simT=(r.simT||0)+dt;
   const over2=Math.max(0,(r.tapCount||0)-10);
-  const capX=1/(1+over2*0.02);   
+  const capX=1/(1+over2*0.02);
   const cap = maxSpd*capX*(r.stamina<25 ? 0.70+0.30*(r.stamina/25) : 1);
-  const hardCap = maxSpd*1.02;                 
+  const hardCap = maxSpd*1.02;
   if(r.speed>hardCap) r.speed=hardCap;
   else if(r.speed>cap) r.speed=Math.max(cap, r.speed-10*dt);
   r.speed -= r.speed*0.30*dt + 0.10*dt;
   if(r.speed<0) r.speed=0;
-  
+
   const drainX=1+over2*0.15;
   if(r.speed>cap*0.86) r.stamina=Math.max(0, r.stamina-(r.speed/cap-0.86)*drain*drainX*dt);
   else r.stamina=Math.min(100, r.stamina+3*dt);
@@ -742,9 +710,7 @@ function updateLiveRival(a, dt, dist, kick){
   a.pos+=a.speed*dt; a.phase+=a.speed*dt*1.9;
 }
 
-
 let ENG=null;
-
 
 function createSprintEngine(ev, rivals){
   const S=8, dist=ev.dist;
@@ -807,9 +773,6 @@ function createSprintEngine(ev, rivals){
   return E;
 }
 
-
-
-
 function createDistanceEngine(ev, rivals){
   const S=8, dist=ev.dist;
   const ts = dist>=5000?6 : dist>=1500?3 : 1.6;
@@ -823,7 +786,7 @@ function createDistanceEngine(ev, rivals){
     stride(side){
       if(this.done||this.phase!=='run') return;
       let imp=0.92*this.ts;
-      if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.28;   
+      if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.28;
       applyStride(this.r, side, imp);
     },
     action(){},
@@ -926,7 +889,6 @@ function createHurdlesEngine(ev, rivals){
   };
   return E;
 }
-
 
 const RELAY_TEAM=['T. Brooks','S. Adeyemi','K. Tanaka','YOU'];
 function createRelayEngine(ev, rivals){
@@ -1053,7 +1015,6 @@ if(!this.foul){ AudioSys.cheer(1.0); }
   return E;
 }
 
-
 function createTripleJumpEngine(ev, rivals){
   const S=10, BOARD0=37.5, BOARD1=40;
   const E={
@@ -1120,7 +1081,6 @@ if(!this.foul){ AudioSys.cheer(1.0); }
   };
   return E;
 }
-
 
 function createVJumpEngine(ev, rivals, kind){
   const pv = kind==='pv';
@@ -1283,14 +1243,10 @@ this.phase='mark'; this.resT=2.2;
   return E;
 }
 
-
-
 const _updateRunnerOrig = updateRunner;
 updateRunner = function(r, dt, maxSpd, drain){
   return _updateRunnerOrig(r, dt, maxSpd*SIM_MODS.spd, drain/SIM_MODS.stam);
 };
-
-
 
 function rr(x,y,w,h,r){
   ox.beginPath();
@@ -1385,10 +1341,7 @@ const Confetti={
     ox.globalAlpha=1;
   }
 };
-function clearOverlay(){ ox.clearRect(0,0,W,H); }
-
-
-
+function clearOverlay(){ox.clearRect(0,0,W,H);if(!vG){const x=W/2,y=H/2;vG=ox.createRadialGradient(x,y,Math.min(W,H)*.4,x,y,Math.max(W,H)*.72);vG.addColorStop(0,'rgba(0,0,0,0)');vG.addColorStop(1,'rgba(3,6,14,.4)');}ox.fillStyle=vG;ox.fillRect(0,0,W,H);}
 
 function canvasTex(w,h,fn){
   const c=document.createElement('canvas'); c.width=w; c.height=h;
@@ -1397,7 +1350,6 @@ function canvasTex(w,h,fn){
   t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4;
   return t;
 }
-
 
 const TRK={straight:84.39, radius:36.8};
 TRK.curveLen=Math.PI*TRK.radius; TRK.total=2*TRK.straight+2*TRK.curveLen;
@@ -1440,7 +1392,6 @@ const W3D={
     const cam=new THREE.PerspectiveCamera(58, W/H, 0.1, 1200);
     this.camera=cam;
 
-    
     scene.add(new THREE.HemisphereLight(0xbdd7ff, 0x1d3a24, 0.85));
     const dir=new THREE.DirectionalLight(0xfff2dd, COARSE?0.9:1.25);
     dir.position.set(-40,70,-30);
@@ -1451,6 +1402,7 @@ const W3D={
       dir.shadow.bias=-0.0008;
     }
     scene.add(dir); this.dirLight=dir;
+    if(!COARSE){const q=new THREE.DirectionalLight(0x7fb2ff,.55);q.position.set(70,24,60);scene.add(q);}
     if(!COARSE){
       for(const [sx,sz] of [[-95,-72],[25,-72],[-95,72],[25,72]]){
         const sp=new THREE.SpotLight(0xdfeaff, 900, 260, 0.5, 0.45, 1.6);
@@ -1494,7 +1446,7 @@ const W3D={
     const g=new THREE.Mesh(new THREE.PlaneGeometry(1400,900),
       new THREE.MeshStandardMaterial({color:0x0b1526,roughness:1}));
     g.rotation.x=-Math.PI/2; g.position.y=-0.06; g.receiveShadow=true; this.scene.add(g);
-    
+
     const stripeTex=canvasTex(256,256,(c)=>{
       for(let i=0;i<8;i++){ c.fillStyle=i%2?'#2c7a37':'#359245'; c.fillRect(0,i*32,256,32); }
       for(let i=0;i<900;i++){ c.fillStyle='rgba(0,0,0,'+(Math.random()*0.06)+')';
@@ -1508,7 +1460,7 @@ const W3D={
   },
 
   buildTrack(){
-    
+
     const half=5.6, pts=[];
     for(let s=-118;s<=TRK.total;s+=2) pts.push(s);
     const n=pts.length, posA=new Float32Array(n*2*3), uvA=new Float32Array(n*2*2), idx=[];
@@ -1534,7 +1486,7 @@ const W3D={
     tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
     const m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({map:tex,roughness:0.94}));
     m.receiveShadow=true; this.scene.add(m);
-    
+
     const fl=new THREE.Mesh(new THREE.PlaneGeometry(0.5,11),
       new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.8}));
     fl.rotation.x=-Math.PI/2; fl.rotation.z=Math.PI/2; fl.position.set(0,0.012,-TRK.radius);
@@ -1559,7 +1511,7 @@ const W3D={
       mkStand(-42,-58,150,0), mkStand(-42,58,150,Math.PI),
       mkStand(28,0,86,Math.PI/2), mkStand(-112,0,86,-Math.PI/2),
     ];
-    
+
     const bodyG=new THREE.BoxGeometry(0.42,0.85,0.32);
     const bodyM=new THREE.MeshStandardMaterial({roughness:0.9});
     const cols=[0xff6b5e,0xffd34d,0x5eb2ff,0xf2f5f9,0xc58bff,0x4fe0b0,0xff9d5e,0xff5e8a,0x8affda];
@@ -1586,7 +1538,7 @@ const W3D={
     this.crowdMesh=this.crowdGroups[0];
   },
   buildCrowdLevel(){
-    
+
     if(!this.crowdGroups) return;
     const frac = Perf.level>=3 ? 0.5 : 1.0;
     for(const g of this.crowdGroups) g.count=Math.floor((g.userData.total||g.instanceMatrix.count)*frac);
@@ -1661,14 +1613,14 @@ const W3D={
     const white=new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:0.7});
     const sandM=new THREE.MeshStandardMaterial({color:0xe3cf9a,roughness:1});
     const matBlue=new THREE.MeshStandardMaterial({color:0x1e5fc2,roughness:0.85});
-    
+
     const rw=new THREE.Mesh(new THREE.BoxGeometry(45,0.08,1.4),gray);
     rw.position.set(-47.5,0.04,8); rw.receiveShadow=true; this.scene.add(rw);
     const board=new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,1.22),white);
     board.position.set(-31.25,0.06,8); this.scene.add(board); V.board=board;
     const pit=new THREE.Mesh(new THREE.BoxGeometry(11,0.5,3.2),sandM);
     pit.position.set(-24,0.22,8); pit.receiveShadow=true; this.scene.add(pit);
-    
+
     const hjMat=new THREE.Mesh(new THREE.BoxGeometry(4.2,0.7,2.6),matBlue);
     hjMat.position.set(-26,0.35,-10); hjMat.castShadow=true; this.scene.add(hjMat);
     const upM=new THREE.MeshStandardMaterial({color:0x8a8f96,roughness:0.5,metalness:0.6});
@@ -1680,7 +1632,7 @@ const W3D={
       new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.5}));
     bar.rotation.x=Math.PI/2; bar.position.set(-28,1.7,-10); this.scene.add(bar);
     V.barHJ=bar;
-    
+
     const pvrw=new THREE.Mesh(new THREE.BoxGeometry(45,0.08,1.3),gray);
     pvrw.position.set(-52.5,0.04,-20); pvrw.receiveShadow=true; this.scene.add(pvrw);
     const pvMat=new THREE.Mesh(new THREE.BoxGeometry(5.5,0.8,3.2),matBlue);
@@ -1697,7 +1649,7 @@ const W3D={
       new THREE.MeshStandardMaterial({color:0xd8b25a,roughness:0.5}));
     pole.position.set(-40,0.06,-20); pole.rotation.z=Math.PI/2-0.06; this.scene.add(pole);
     V.pole=pole;
-    
+
     const conc=new THREE.Mesh(new THREE.CylinderGeometry(1.07,1.07,0.06,24),
       new THREE.MeshStandardMaterial({color:0x9aa0a8,roughness:0.9}));
     conc.position.set(-52,0.03,20); conc.receiveShadow=true; this.scene.add(conc);
@@ -1714,7 +1666,6 @@ const W3D={
   },
 
   buildHurdles(){
-    
 
     const tex=canvasTex(128,128,(c)=>{
       c.clearRect(0,0,128,128);
@@ -1741,7 +1692,7 @@ const W3D={
     this.scene.add(im); this.hurdlesMesh=im;
   },
   setHurdles(list){
-    
+
     const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
           S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
     const n=Math.min(10,list.length);
@@ -1779,7 +1730,7 @@ const W3D={
 
   buildPodium(){
     const grp=new THREE.Group();
-    const cols=[0x8a8f96,0xd4a017,0x8a5a2e]; 
+    const cols=[0x8a8f96,0xd4a017,0x8a5a2e];
     const xs=[-1.7,0,1.7], hs=[0.7,1.05,0.45], order=[1,0,2];
     this.podiumSpots=[];
     order.forEach((pi,i)=>{
@@ -1803,7 +1754,6 @@ const W3D={
     }
   },
 
-  
   async buildAthletes(){
     let clipNames=[];
     if(HM && HM.clipNames) clipNames=HM.clipNames;
@@ -1818,7 +1768,7 @@ const W3D={
     const KITS=[
       {top:collegeCols.a, bottom:'#14141c', name:athleteName},
       {top:'#d23c3c', bottom:'#14141c', name:'D. Carter'},
-      {top:'#2e9e5b', bottom:'#f2f2f2', name:'J. Okafor'},
+      {top:'#2e9e5b', bottom:'#f2f2f2', name:'J. Osei'},
       {top:'#e6a02e', bottom:'#14141c', name:'M. Reyes'},
     ];
     for(let i=0;i<4;i++) this.rigs.push(this.makeRig(KITS[i], i));
@@ -1842,7 +1792,7 @@ const W3D={
     return rig;
   },
   buildFallbackBody(rig){
-    
+
     const top=new THREE.Color(rig.kit.top), skinC=new THREE.Color().setHSL(0.07,0.45,0.25+ (rig.idx*0.09)%0.35);
     const matT=new THREE.MeshStandardMaterial({color:top,roughness:0.7});
     const matS=new THREE.MeshStandardMaterial({color:skinC,roughness:0.7});
@@ -1888,7 +1838,7 @@ const W3D={
   },
   rigUpdate(rig, dt){
     if(rig.human && rig.h){ try{ rig.h.mixer.update(dt); }catch(e){} return; }
-    
+
     const p=rig.parts; if(!p) return;
     rig.phase += dt*(4+rig.speedFrac*22);
     const s=Math.sin(rig.phase), c2=Math.sin(rig.phase+Math.PI);
@@ -1924,7 +1874,6 @@ const W3D={
   },
   rigsHide(){ for(const r of this.rigs) r.group.visible=false; },
 
-  
   camSnap(px,py,pz,lx,ly,lz){
     this.camPos.set(px,py,pz); this.camLook.set(lx,ly,lz); this.camInit=true;
   },
@@ -1942,9 +1891,8 @@ const W3D={
     return {x:(_v3.x*0.5+0.5)*W, y:(-_v3.y*0.5+0.5)*H, behind:_v3.z>1};
   },
 
-  
   menuFrame(t, dt){
-    
+
     const cx=-40;
     this.camTo(cx+Math.cos(t*0.06)*95, 30, Math.sin(t*0.06)*95, cx,2,0, dt, 1.2);
     this.camApply();
@@ -1971,9 +1919,6 @@ const W3D={
   },
 };
 const _v1=new THREE.Vector3(), _v2=new THREE.Vector3(), _v3=new THREE.Vector3();
-
-
-
 
 function disposeRig(rig){
   W3D.scene.remove(rig.group);
@@ -2012,8 +1957,7 @@ function easeRigsToIdle(dt){
   for(const r of W3D.rigs){ if(r.group.visible){ W3D.rigAnim(r,'idle',0); W3D.rigUpdate(r,dt); } }
 }
 
-
-function straightX(p, dist){ return p-dist; }           
+function straightX(p, dist){ return p-dist; }
 function straightZ(lane){ return -TRK.radius+laneOff(lane); }
 const laneOff=i=>(i-3.5)*1.22;
 function placeStraight(rig,p,dist,lane,speed,maxSpd,airM){
@@ -2033,7 +1977,7 @@ function followCam(x,z,tx,tz,dt){
 
 function attachDriver3D(ENG){
   const ev=ENG.ev, rivals=ENG._rivals||[];
-  
+
   if(W3D._zoneMesh){ W3D.scene.remove(W3D._zoneMesh); W3D._zoneMesh=null; }
   styleRigsFor(rivals);
   W3D.hideImplement();
@@ -2044,7 +1988,6 @@ function attachDriver3D(ENG){
     : ev.eng==='distance'?10.4 : ev.eng==='hurdles'?(ev.dist<=110?9.2:9.8)
     : ev.eng==='relay'?10.8 : 10.5;
 
-  
   if(ev.eng==='sprint'){
     const straight = ev.dist<=110;
     const mapP=p=> straight? p : (400-ev.dist+p)%400;
@@ -2069,7 +2012,6 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='distance'){
     const mapP=p=>p%400;
     const lp0=lanePoint(0,laneOff(3));
@@ -2086,7 +2028,6 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='hurdles'){
     const straight=ev.dist<=110;
     const hWorld=ENG.hurdles.map(h=> straight
@@ -2112,10 +2053,9 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='relay'){
     W3D.camSnap(-100-9,3.9,straightZ(3)+5.4, -100+7.5,1.35,straightZ(3));
-    
+
     const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
       new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
     zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius);
@@ -2136,9 +2076,8 @@ function attachDriver3D(ENG){
     ENG.getResult=()=>{ if(ENG._zone){W3D.scene.remove(ENG._zone); ENG._zone=null; W3D._zoneMesh=null;} return _fin(); };
   }
 
-  
   else if(ev.eng==='longjump'){
-    const X0=-70, Z=8; 
+    const X0=-70, Z=8;
     W3D.camSnap(X0-2,3.6,Z+13, X0+18,1.2,Z);
     ENG.draw3=dt=>{
       let ax,airM=0,mode='run';
@@ -2163,7 +2102,6 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='triplejump'){
     const X0=-70, Z=8;
     W3D.camSnap(X0-2,3.6,Z+13, X0+18,1.2,Z);
@@ -2186,7 +2124,6 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='highjump'||ev.eng==='polevault'){
     const pv=ev.eng==='polevault';
     const AX=pv?-75:-45, Z=pv?-20:-10, BARX=pv?-29.5:-28;
@@ -2217,7 +2154,6 @@ function attachDriver3D(ENG){
     };
   }
 
-  
   else if(ev.eng==='throw'){
     const T=ENG.T, C=W3D.venueMats.throwC;
     W3D.camSnap(C.x-9,4.2,C.z+11, C.x+8,1.2,C.z);
@@ -2276,9 +2212,6 @@ function attachDriver3D(ENG){
   }
 }
 
-
-
-
 const G={mode:'champ', evIndex:0, rivals:[], totals:{}, rivalPts:{},
   singleEv:null, singleRival:null, resShown:false, final:false,
   car:null, trn:null};
@@ -2303,7 +2236,6 @@ function showScreen(id){
   if(id!=='results') stopCeremony();
   AudioSys.setMusic(id?'menu':null);
 }
-
 
 function startChamp(){
   const rivals=champRivals();
@@ -2359,9 +2291,8 @@ function medalTable(rows){
     rows.map(r=>'<tr'+(r.n===athleteName?' class="me"':'')+'><td><span class="medal '+r.m+'"></span></td><td>'+esc(r.n)+'</td><td>'+esc(r.d)+'</td></tr>').join('')+'</table>';
 }
 
-
 function startCeremony(top3){
-  
+
   AudioSys.fanfare(); Confetti.burst(170);
   if(!W3D.ready||W3D.failed) return;
   W3D.podium.visible=true;
@@ -2372,7 +2303,7 @@ function startCeremony(top3){
     const rig=W3D.rigs[i], sp=W3D.podiumSpots[i];
     W3D.rigPlace(rig, -42+sp.x, sp.y, -2+sp.z, 0);
     W3D.rigAnim(rig,'cheer',0);
-    
+
     if(rig.medalMesh) rig.group.remove(rig.medalMesh);
     const mm=new THREE.Mesh(new THREE.CircleGeometry(0.09,16),
       new THREE.MeshStandardMaterial({color:[0xd4a017,0xb9c2d0,0x9a5a2e][i],metalness:0.85,roughness:0.25}));
@@ -2406,7 +2337,7 @@ function finishEvent(){
   }else if(G.mode==='tourn'){
     tournMatchDone(ev,res,newBest);
   }else{
-    
+
     $('resTitle').textContent=ev.name.toUpperCase()+' — FREE PLAY';
     finishCommon(ev,res,newBest,[{n:athleteName+' — '+res.display,p:res.points}],'RETRY EVENT',()=>showCard(G.singleEv));
   }
@@ -2442,7 +2373,6 @@ function showFinal(){
   showScreen('results');
 }
 
-
 function seasonRivals(){
   const base=0.80+CAR.season*0.035;
   const rs=BASE_RIVALS.map((r,i)=>({name:r.name,rating:clamp(base+rnd(-0.015,0.015),0.8,0.985),kit:r.kit}));
@@ -2457,6 +2387,7 @@ function careerMeetEvents(){
 }
 function startCareerMeet(){
   if(!CAR||CAR.done) newCareer();
+  if(CAR.meet==null) CAR.meet=0;
   G.mode='career';
   G.car={meet:CAR.meet, champ:CAR.meet===3, evIdx:0, results:[], totals:null, rivalTotals:null};
   G.car.events=careerMeetEvents();
@@ -2501,7 +2432,7 @@ function careerMeetEnd(){
     saveCareer(); careerDashboard(); showScreen('career');
     return;
   }
-  
+
   const rows=Object.keys(C.totals).map(n=>({n:n,p:C.totals[n]})).sort((a,b)=>b.p-a.p);
   const won=rows[0].n===athleteName;
   if(won){
@@ -2569,7 +2500,6 @@ function careerDashboard(){
   }));
   $('bCareerMeet').textContent='PLAY '+(CAR.meet===3?'FINAL MEET':'MEET '+(CAR.meet+1));
 }
-
 
 const TRN_EVENTS=['100m','lj','400m'];
 const TRN_ROUNDS=['QUARTERFINAL','SEMIFINAL','FINAL'];
@@ -2641,7 +2571,7 @@ function tournMatchDone(ev,res,newBest){
     if(T.round===0){ T.sf=wObjs; }
     else if(T.round===1){ T.fin=wObjs; }
     else{
-      
+
       T.champ=true;
       $('resMark').textContent='TOURNAMENT CHAMPION';
       $('resPoints').textContent='You won the APEX GAMES tournament';
@@ -2667,7 +2597,6 @@ function tournMatchDone(ev,res,newBest){
   }
 }
 
-
 function barFill(id,v){
   const el=$(id).firstElementChild;
   if(el) el.style.transform='scaleX('+clamp(v==null?0:v,0,1).toFixed(3)+')';
@@ -2684,7 +2613,6 @@ function updateHUD(){
   const lbl=ENG.actionLabel?ENG.actionLabel():'ACTION';
   if(lbl!==updateHUD._l){ updateHUD._l=lbl; $('btnALabel').textContent=lbl; }
 }
-
 
 function refreshMenuRival(){
   $('menuRivalLine').textContent=friendRival?('Rival added: '+friendRival.name+' ('+friendRival.rating.toFixed(2)+')'):'';
@@ -2712,7 +2640,6 @@ function buildBests(){
   if(CAR) html+='<div class="hint">Career: <b>'+SEASONS[CAR.season-1]+'</b> · TP earned: <b>'+CAR.stats.tpEarned+'</b> · Meet wins: <b>'+CAR.stats.wins+'</b></div>';
   el.innerHTML=html;
 }
-
 
 function wireButton(id,fn){
   const el=$(id);
@@ -2774,7 +2701,7 @@ function boot(){
       setTimeout(()=>showScreen('menu'),900);
     }catch(err){ box.className='err'; box.textContent=err.message||'Invalid code.'; }
   });
-  
+
   wireButton('btnL',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.stride('L'); });
   wireButton('btnR',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.stride('R'); });
   wireButton('btnA',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
@@ -2788,7 +2715,6 @@ function boot(){
   showScreen('menu');
   requestAnimationFrame(frame);
 }
-
 
 let lastT=0, acc=0;
 function frame(now){
@@ -2817,7 +2743,6 @@ function frame(now){
   Perf.calls=W3D.renderer?W3D.renderer.info.render.calls:0;
   Perf.paint();
 }
-
 
 W3D.ceremonyFrame=function(dt){
   const c=this.ceremony; c.t+=dt;
