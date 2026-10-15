@@ -26,6 +26,16 @@ this list, do not use it.
 CC0 means the asset is free to use even inside a paid app. That is the
 whole point of the list.
 
+## No copyrights
+
+**No copyrighted material goes into these games. Ever.** Every asset
+must be copyright-free — CC0 / public domain, where the creator has
+given up the copyright entirely. If an asset carries a copyright (a ©
+notice, "all rights reserved", an attribution-required license, a
+"free download" that keeps the creator's rights), it does not go in,
+whatever it looks like. When in doubt, leave it out and pick the CC0
+equivalent from the approved list.
+
 ## NOT approved
 
 - **Sketchfab, Mixamo, TurboSquid** — skipped. License terms vary per
