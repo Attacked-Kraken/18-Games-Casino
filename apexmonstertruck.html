@@ -80,7 +80,8 @@
     <h1>MONSTER <span>TRUCK</span></h1>
     <div class="sponsor">FREESTYLE ARENA &middot; presented by <b>APEX ARCADE</b></div>
     <p class="rules">You have <b>120 seconds</b>. Crush every car you can find (<b>+100</b> each),
-      launch the ramps and stick the landing — air time scores too. Big air over <b>1.5s</b> earns a bonus.</p>
+      launch the ramps and stick the landing — air time scores too. Big air over <b>1.5s</b> earns a bonus.
+      Crushed cars come back after a few seconds, so keep hunting.</p>
     <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive &middot; <kbd>Space</kbd> brake<br>
       Touch: left pad steers, right pad drives.</p>
     <button class="bigbtn" id="playBtn" type="button">PLAY</button>
@@ -315,7 +316,7 @@ function groundHeight(x, z) {
 /* ================= tire stacks ================= */
 const tires = [];
 const tireMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
-for (const [tx, tz] of [[-14, 14], [14, 14], [-14, -12], [16, -8], [0, 38], [-38, 4], [38, -34], [-8, -38]]) {
+for (const [tx, tz] of [[-14, 14], [14, 14], [-14, -12], [16, -8], [-24, 36], [-38, 4], [38, -34], [-8, -38]]) {
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const t = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.42, 10, 20), tireMat);
@@ -435,8 +436,8 @@ function puff(x, y, z, n, spread) {
 }
 
 /* ================= game state ================= */
-const T = { x: 0, z: 34, hd: Math.PI, sp: 0, y: 0, vy: 0, grounded: true, airT0: 0, steer: 0 };
-let score = 0, timeLeft = RUN_TIME, state = 'menu', countT = 0, camShake = 0, elapsed = 0;
+const T = { x: 0, z: 38, hd: Math.PI, sp: 0, y: 0, vy: 0, grounded: true, airT0: 0, steer: 0 };
+let score = 0, timeLeft = RUN_TIME, state = 'menu', countT = 0, camShake = 0, elapsed = 0, justLanded = false;
 const input = { gas: false, brake: false, left: false, right: false };
 
 const scoreEl = document.getElementById('score'), timeEl = document.getElementById('time'),
@@ -482,12 +483,13 @@ function resetCars() {
   }
 }
 function resetTruck() {
-  T.x = 0; T.z = 34; T.hd = Math.PI; T.sp = 0; T.y = 0; T.vy = 0;
+  T.x = 0; T.z = 38; T.hd = Math.PI; T.sp = 0; T.y = 0; T.vy = 0;
   T.grounded = true; T.steer = 0; camShake = 0;
 }
 
 /* ================= physics & gameplay ================= */
 function stepTruck(dt) {
+  justLanded = false;
   const gasOn = input.gas, brakeOn = input.brake;
   if (gasOn) T.sp += ACCEL * dt;
   else if (brakeOn) T.sp -= (T.sp > 0.5 ? BRAKE : ACCEL * 0.7) * dt;
@@ -500,6 +502,7 @@ function stepTruck(dt) {
   T.hd += T.steer * Math.sign(T.sp || 1) * Math.min(1, Math.abs(T.sp) / 4) * dt * 2.2;
 
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
+  const px = T.x, pz = T.z, ghPrev = groundHeight(px, pz);
   T.x += fx * T.sp * dt; T.z += fz * T.sp * dt;
 
   // walls
@@ -519,6 +522,13 @@ function stepTruck(dt) {
     }
   }
 
+  // ramp side faces: a sudden tall step means we hit the side wall, not the slope
+  if (T.grounded && groundHeight(T.x, T.z) - ghPrev > 1.2) {
+    T.x = px; T.z = pz;
+    if (Math.abs(T.sp) > 5) { Snd.thud(); camShake = Math.max(camShake, 0.3); puff(T.x, 1, T.z, 5, 5); }
+    T.sp *= 0.35;
+  }
+
   // vertical: ramps & air
   const gh = groundHeight(T.x, T.z);
   if (T.grounded) {
@@ -532,7 +542,7 @@ function stepTruck(dt) {
     T.vy -= GRAV * dt; T.y += T.vy * dt;
     const gh2 = groundHeight(T.x, T.z);
     if (T.y <= gh2) {
-      T.y = gh2; T.grounded = true;
+      T.y = gh2; T.grounded = true; justLanded = true;
       const air = elapsed - T.airT0, impact = -T.vy; T.vy = 0;
       if (impact > 8) { Snd.thud(); puff(T.x, 0.5, T.z, 8, 8); camShake = Math.max(camShake, 0.4); }
       if (air > 0.45) {
@@ -544,14 +554,11 @@ function stepTruck(dt) {
     }
   }
 
-  // crush cars
+  // crush cars — any contact crushes (it's a monster truck)
   for (const c of cars) {
     if (c.crushed) continue;
     const d = Math.hypot(T.x - c.x, T.z - c.z);
-    if (d < 3.4 && T.y < 2.2) {
-      const landed = !T.grounded && T.vy <= 0.1;
-      if (landed || Math.abs(T.sp) > 4) crushCar(c, landed);
-    }
+    if (d < 3.2 && T.y < 2.2) crushCar(c, justLanded);
   }
 
   // truck visuals
@@ -631,7 +638,7 @@ window.addEventListener('keydown', (e) => {
 });
 window.addEventListener('keyup', (e) => { const k = keyMap[e.code]; if (k) input[k] = false; });
 
-if ('ontouchstart' in window || navigator.maxTouchPoints > 0) document.body.classList.add('touchmode');
+if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) document.body.classList.add('touchmode');
 function bindBtn(id, name) {
   const el = document.getElementById(id);
   const on = (e) => { e.preventDefault(); input[name] = true; el.classList.add('on'); };
