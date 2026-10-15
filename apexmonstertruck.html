@@ -127,7 +127,7 @@
 import * as THREE from 'three';
 
 /* ================= config ================= */
-const ARENA = 150;           // half-size of the dirt arena (3x)
+const ARENA = 375;           // half-size of the dirt arena (2.5x each way = 6.25x area)
 const RUN_TIME = 120;        // seconds per freestyle run
 const GRAV = 24;
 const MAX_FWD = 33, MAX_REV = 12, ACCEL = 17, BRAKE = 28;
@@ -269,10 +269,10 @@ const sun = new THREE.DirectionalLight(0xffe2b8, 1.55);
 sun.position.set(160, 220, 80);
 sun.castShadow = !LOWFX;
 sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -200; sun.shadow.camera.right = 200;
-sun.shadow.camera.top = 200; sun.shadow.camera.bottom = -200;
+sun.shadow.camera.left = -80; sun.shadow.camera.right = 80;
+sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -80;
 sun.shadow.camera.far = 700; sun.shadow.bias = -0.0004;
-scene.add(sun);
+scene.add(sun); scene.add(sun.target); // target follows the truck: crisp shadows anywhere in the big arena
 scene.add(new THREE.AmbientLight(0xffffff, 0.1));
 // cool rim light from behind-left: separates the truck from the dark arena, studio-style edge glow
 const rimL = new THREE.DirectionalLight(0xa9c4ff, 1.15);
@@ -340,7 +340,7 @@ const dirtTex = makeTex(512, 512, (g, w, h) => {
     g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
   }
 });
-dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(72, 72);
+dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(170, 170);
 const dirt = new THREE.Mesh(
   new THREE.PlaneGeometry(ARENA * 2 + 20, ARENA * 2 + 20),
   new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 1 })
@@ -360,9 +360,9 @@ function addWall(x, z, ry) {
   const wgrp = new THREE.Group();
   const wall = new THREE.Mesh(new THREE.BoxGeometry(WALL_D * 2, WALL_H, 1.2), wallMat);
   wall.position.y = WALL_H / 2; wall.receiveShadow = true; wgrp.add(wall);
-  for (const bx of [-WALL_D * 0.75, -WALL_D * 0.25, WALL_D * 0.25, WALL_D * 0.75]) {
+  for (let bi = 0; bi < 8; bi++) {
     const b = new THREE.Mesh(new THREE.PlaneGeometry(44, 5.2), bannerMat);
-    b.position.set(bx, 5.4, 0.75); wgrp.add(b);
+    b.position.set(-WALL_D + (bi + 0.5) * (WALL_D * 2 / 8), 5.4, 0.75); wgrp.add(b);
   }
   wgrp.position.set(x, 0, z); wgrp.rotation.y = ry; scene.add(wgrp);
 }
@@ -384,15 +384,16 @@ const crowdData = [];
 let crowdMesh = null, crowdTime = 0;
 {
   // stepped grandstand mounds: 8 rows x 4 sides + 4 back walls, one instanced mesh
-  const ROWS = 8, ROWLEN = 280, PER_ROW = 150;
+  const ROWS = 8, ROWLEN = Math.round(ARENA * 1.85), PER_ROW = 150;
   const stepGeo = new THREE.BoxGeometry(1, 1, 1);
   const stepMat = new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.95 });
   const steps = [];
+  const STAND_OFF = ARENA + 12;
   for (let s = 0; s < 4; s++) {
     const horiz = s < 2; // 0: north(+z) 1: south(-z) 2: east(+x) 3: west(-x)
     const sign = (s === 0 || s === 2) ? 1 : -1;
-    for (let i = 0; i < ROWS; i++) steps.push({ topY: 10 + i * 1.5, off: 160 + i * 2.6, horiz, sign, back: false });
-    steps.push({ topY: 26, off: 160 + ROWS * 2.6 + 1, horiz, sign, back: true });
+    for (let i = 0; i < ROWS; i++) steps.push({ topY: 10 + i * 1.5, off: STAND_OFF + i * 2.6, horiz, sign, back: false });
+    steps.push({ topY: 26, off: STAND_OFF + ROWS * 2.6 + 1, horiz, sign, back: true });
   }
   const standMesh = new THREE.InstancedMesh(stepGeo, stepMat, steps.length);
   {
@@ -421,7 +422,7 @@ let crowdMesh = null, crowdTime = 0;
   for (let s = 0; s < 4; s++) {
     const horiz = s < 2, sign = (s === 0 || s === 2) ? 1 : -1;
     for (let i = 0; i < ROWS; i++) {
-      const topY = 10 + i * 1.5, off = 160 + i * 2.6;
+      const topY = 10 + i * 1.5, off = STAND_OFF + i * 2.6;
       for (let p = 0; p < PER_ROW; p++) {
         const along = -ROWLEN / 2 + 12 + (p / (PER_ROW - 1)) * (ROWLEN - 24);
         const x = horiz ? along : sign * off, z = horiz ? sign * off : along;
@@ -478,16 +479,18 @@ function addRamp(x, z, ang, len, wid, h) {
   scene.add(grp);
   ramps.push({ x, z, dx, dz, len, wid, h, lx: x - dx * len / 2, lz: z - dz * len / 2 });
 }
-addRamp(0, 90, 0, 26, 14, 8);
-addRamp(0, -90, Math.PI, 26, 14, 8);
-addRamp(-75, 75, -Math.PI * 0.25, 22, 12, 6.5);
-addRamp(75, 75, Math.PI * 0.25, 22, 12, 6.5);
-addRamp(-75, -75, -Math.PI * 0.75, 22, 12, 6.5);
-addRamp(75, -75, Math.PI * 0.75, 22, 12, 6.5);
-addRamp(115, 45, Math.PI / 2, 18, 10, 5);
-addRamp(-115, 45, -Math.PI / 2, 18, 10, 5);
-addRamp(115, -45, Math.PI / 2, 18, 10, 5);
-addRamp(-115, -45, -Math.PI / 2, 18, 10, 5);
+addRamp(0, 170, 0, 48, 22, 15);
+addRamp(0, -170, Math.PI, 48, 22, 15);
+addRamp(-180, 180, -Math.PI * 0.25, 38, 18, 11);
+addRamp(180, 180, Math.PI * 0.25, 38, 18, 11);
+addRamp(-180, -180, -Math.PI * 0.75, 38, 18, 11);
+addRamp(180, -180, Math.PI * 0.75, 38, 18, 11);
+addRamp(280, 0, Math.PI / 2, 30, 15, 8);
+addRamp(-280, 0, -Math.PI / 2, 30, 15, 8);
+addRamp(0, 280, 0, 30, 15, 8);
+addRamp(0, -280, Math.PI, 30, 15, 8);
+addRamp(120, -40, Math.PI * 0.5, 24, 13, 6.5);
+addRamp(-120, 40, -Math.PI * 0.5, 24, 13, 6.5);
 
 function groundHeight(x, z) {
   let h = 0;
@@ -506,7 +509,7 @@ function groundHeight(x, z) {
 /* ================= tire stacks ================= */
 const tires = [];
 const tireMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
-for (const [tx, tz] of [[-40, 40], [40, 40], [-40, -30], [45, -25], [-70, 100], [-100, 10], [100, -90], [-25, -100], [70, -60], [-120, -60], [60, 120], [-60, -120], [120, 60], [0, -130], [-130, 0], [30, 60]]) {
+for (const [tx, tz] of [[-100, 100], [100, 100], [-100, -75], [112, -62], [-175, 250], [-250, 25], [250, -225], [-62, -250], [175, -150], [-300, -150], [150, 300], [-150, -300], [300, 150], [0, -325], [-325, 0], [75, 150], [200, 200], [-200, -200]]) {
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const t = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.42, 10, 20), tireMat);
@@ -554,7 +557,7 @@ function placeCar(c, avoid) {
   }
   c.x = (Math.random() * 2 - 1) * (ARENA - 20); c.z = (Math.random() * 2 - 1) * (ARENA - 20);
 }
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 44; i++) {
   const g = buildCar(carColors[i % carColors.length]);
   g.rotation.y = Math.random() * Math.PI * 2;
   scene.add(g);
@@ -595,152 +598,147 @@ function mergeGeos(geos) {
   const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd7dde6, roughness: 0.25, metalness: 0.9 });
   const shockMat = new THREE.MeshStandardMaterial({ color: 0xd42a1e, roughness: 0.5, metalness: 0.3 });
 
-  // tube-frame chassis rails + axles
+  // tube-frame chassis rails + axles (tall pickup stance)
   for (const sx of [-0.95, 0.95]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.5, 5.8), darkMat);
-    rail.position.set(sx, 1.55, 0); truck.g.add(rail);
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 6.4), darkMat);
+    rail.position.set(sx, 2.0, 0); truck.g.add(rail);
   }
-  for (const sz of [-2.1, 2.1]) {
-    const axle = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.32, 0.42), darkMat);
-    axle.position.set(0, 1.05, sz); truck.g.add(axle);
+  for (const sz of [-2.35, 2.35]) {
+    const axle = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.34, 0.44), darkMat);
+    axle.position.set(0, 1.42, sz); truck.g.add(axle);
   }
   const mechMat = new THREE.MeshStandardMaterial({ color: 0x23262d, roughness: 0.55, metalness: 0.7 });
-  for (const [sx, sz] of [[-1.45, 2.1], [1.45, 2.1], [-1.45, -2.1], [1.45, -2.1]]) {
-    for (const yy of [1.15, 1.75]) { // upper + lower A-arms
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.14, 0.22), mechMat);
+  for (const [sx, sz] of [[-1.45, 2.35], [1.45, 2.35], [-1.45, -2.35], [1.45, -2.35]]) {
+    for (const yy of [1.5, 2.1]) { // upper + lower A-arms
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.15, 0.24), mechMat);
       arm.position.set(sx * 0.62, yy, sz);
       arm.rotation.z = sx > 0 ? 0.12 : -0.12;
       truck.g.add(arm);
     }
   }
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 4.6, 10), mechMat);
-  shaft.rotation.x = Math.PI / 2; shaft.position.set(0, 1.35, 0); truck.g.add(shaft);
-  for (const sz of [-2.1, 2.1]) { // differential pumpkins
-    const diff = new THREE.Mesh(new THREE.SphereGeometry(0.34, 10, 8), mechMat);
-    diff.position.set(0, 1.05, sz); diff.scale.set(1, 0.85, 1); truck.g.add(diff);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 5.0, 10), mechMat);
+  shaft.rotation.x = Math.PI / 2; shaft.position.set(0, 1.7, 0); truck.g.add(shaft);
+  for (const sz of [-2.35, 2.35]) { // differential pumpkins
+    const diff = new THREE.Mesh(new THREE.SphereGeometry(0.36, 10, 8), mechMat);
+    diff.position.set(0, 1.42, sz); diff.scale.set(1, 0.85, 1); truck.g.add(diff);
   }
   // red coilover shocks + chrome shafts
-  for (const [sx, sz] of [[-1.45, 2.1], [1.45, 2.1], [-1.45, -2.1], [1.45, -2.1]]) {
+  for (const [sx, sz] of [[-1.45, 2.35], [1.45, 2.35], [-1.45, -2.35], [1.45, -2.35]]) {
     const tilt = sx > 0 ? -0.22 : 0.22;
-    const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 1.25, 10), shockMat);
-    coil.position.set(sx * 0.82, 1.95, sz * 0.92); coil.rotation.z = tilt; truck.g.add(coil);
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.7, 8), chromeMat);
-    shaft.position.set(sx * 0.9, 1.35, sz * 0.96); shaft.rotation.z = tilt; truck.g.add(shaft);
+    const coil = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.5, 10), shockMat);
+    coil.position.set(sx * 0.82, 2.5, sz * 0.92); coil.rotation.z = tilt; truck.g.add(coil);
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 8), chromeMat);
+    shaft.position.set(sx * 0.9, 1.8, sz * 0.96); shaft.rotation.z = tilt; truck.g.add(shaft);
   }
 
-  // main tub with livery sides
-  const mats = [livSide, livSide, redMat, darkMat, redMat, redMat];
-  const tub = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.95, 5.9), mats);
-  tub.position.y = 2.35; tub.castShadow = true; truck.g.add(tub);
-  // sloped hood
-  const hood = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.42, 1.9), redMat);
-  hood.position.set(0, 2.95, 2.0); hood.rotation.x = 0.1; hood.castShadow = true; truck.g.add(hood);
-  const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.28, 1.1), darkMat);
-  scoop.position.set(0, 3.22, 2.0); scoop.castShadow = true; truck.g.add(scoop);
-  const scoopMouth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.5),
+  // ---- pickup body: long hood, cab with glasshouse, open bed (open wheels like the refs)
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.7, 2.4), redMat);
+  hood.position.set(0, 2.95, 2.1); hood.castShadow = true; truck.g.add(hood);
+  const scoop = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 1.1), darkMat);
+  scoop.position.set(0, 3.42, 2.1); scoop.castShadow = true; truck.g.add(scoop);
+  const scoopMouth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 0.5),
     new THREE.MeshStandardMaterial({ color: 0x05070a, roughness: 1 }));
-  scoopMouth.position.set(0, 3.37, 2.25); truck.g.add(scoopMouth);
-  // cab with glasshouse
-  const cab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.05, 2.1), redMat);
-  cab.position.set(0, 3.35, -0.15); cab.castShadow = true; truck.g.add(cab);
-  const shield = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.72, 0.12), glassMat);
-  shield.position.set(0, 3.42, 0.94); shield.rotation.x = -0.18; truck.g.add(shield);
-  for (const sx of [-1.21, 1.21]) {
-    const side = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 1.5), glassMat);
-    side.position.set(sx, 3.42, -0.15); truck.g.add(side);
-  }
-  // chrome-slatted grille + bumper
+  scoopMouth.position.set(0, 3.58, 2.35); truck.g.add(scoopMouth);
+  // big chrome-slatted grille + surround + bumper
   const grilleTex = makeTex(256, 96, (g, w, h) => {
     g.fillStyle = '#14171d'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#c9d2dd';
     for (let i = 0; i < 8; i++) g.fillRect(14 + i * 30, 10, 12, h - 20);
   });
-  const surround = new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.94, 0.12), darkMat);
-  surround.position.set(0, 2.42, 2.9); truck.g.add(surround);
-  const grille = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.72, 0.14),
+  const surround = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.0, 0.12), darkMat);
+  surround.position.set(0, 2.9, 3.26); truck.g.add(surround);
+  const grille = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.8, 0.14),
     new THREE.MeshStandardMaterial({ map: grilleTex, roughness: 0.4, metalness: 0.6 }));
-  grille.position.set(0, 2.42, 3.0); truck.g.add(grille);
-  const valance = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.3, 0.34), darkMat);
-  valance.position.set(0, 1.52, 2.98); truck.g.add(valance);
-  const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.34, 0.42), chromeMat);
-  bumper.position.set(0, 1.82, 3.02); bumper.castShadow = true; truck.g.add(bumper);
+  grille.position.set(0, 2.9, 3.32); truck.g.add(grille);
+  const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.36, 0.44), chromeMat);
+  bumper.position.set(0, 2.2, 3.35); bumper.castShadow = true; truck.g.add(bumper);
+  // headlights on the hood front edge
+  const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
+  for (const sx of [-0.8, 0.8]) {
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.26, 0.1), hlMat);
+    hl.position.set(sx, 3.05, 3.28); truck.g.add(hl);
+  }
+  // cab: lower doors with livery sides + glasshouse
+  const cabMats = [livSide, livSide, redMat, darkMat, redMat, redMat];
+  const cabLow = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.1, 2.2), cabMats);
+  cabLow.position.set(0, 3.05, -0.1); cabLow.castShadow = true; truck.g.add(cabLow);
+  const shield = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 0.1), glassMat);
+  shield.position.set(0, 3.92, 0.72); shield.rotation.x = -0.63; truck.g.add(shield);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.7), redMat);
+  roof.position.set(0, 4.32, -0.35); roof.castShadow = true; truck.g.add(roof);
+  for (const sx of [-1.22, 1.22]) {
+    const side = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.72, 1.8), glassMat);
+    side.position.set(sx, 3.95, -0.1); truck.g.add(side);
+  }
+  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.72, 0.1), glassMat);
+  rearGlass.position.set(0, 3.92, -1.14); rearGlass.rotation.x = 0.2; truck.g.add(rearGlass);
   // roof light bar with 5 lamps
   const bar = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.16, 0.3), darkMat);
-  bar.position.set(0, 4.02, -0.1); truck.g.add(bar);
+  bar.position.set(0, 4.5, -0.3); truck.g.add(bar);
   const lampG = new THREE.CylinderGeometry(0.15, 0.15, 0.12, 12);
   const lampM = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
   for (let i = -2; i <= 2; i++) {
     const l = new THREE.Mesh(lampG, lampM);
-    l.rotation.x = Math.PI / 2; l.position.set(i * 0.42, 4.02, 0.08); truck.g.add(l);
+    l.rotation.x = Math.PI / 2; l.position.set(i * 0.42, 4.5, -0.12); truck.g.add(l);
   }
-  // sculpted arch fenders hugging the big tires — rounded, like the reference trucks
-  const archGeo = new THREE.TorusGeometry(1.4, 0.24, 10, 18, Math.PI * 0.85);
-  const archMat = new THREE.MeshStandardMaterial({ color: 0xc22418, roughness: 0.42, metalness: 0.25 });
-  for (const [sx, sz] of [[-1.95, 2.1], [1.95, 2.1], [-1.95, -2.1], [1.95, -2.1]]) {
-    const f = new THREE.Mesh(archGeo, archMat);
-    f.rotation.order = 'YXZ';
-    f.rotation.y = Math.PI / 2;        // arch spans fore-aft over the wheel
-    f.rotation.x = Math.PI * 0.075;    // center the arc on top
-    f.position.set(sx, 1.5, sz); f.castShadow = true; truck.g.add(f);
+  // open bed: floor + walls + tailgate
+  const bedFloor = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.18, 2.4), darkMat);
+  bedFloor.position.set(0, 2.62, -2.3); truck.g.add(bedFloor);
+  const bedInner = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.5, 2.16),
+    new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 1 }));
+  bedInner.position.set(0, 2.82, -2.3); truck.g.add(bedInner);
+  for (const sx of [-1.19, 1.19]) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.72, 2.4), redMat);
+    wall.position.set(sx, 3.0, -2.3); wall.castShadow = true; truck.g.add(wall);
   }
-  // side exhaust pipes
-  for (const sx of [-1.5, 1.5]) {
-    const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.6, 10), chromeMat);
-    ex.rotation.x = Math.PI / 2; ex.position.set(sx, 1.95, 0.2); truck.g.add(ex);
-    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 10), darkMat);
-    tip.rotation.x = Math.PI / 2; tip.position.set(sx, 1.95, -1.7); truck.g.add(tip);
-  }
-  for (const sx of [-1.75, 1.75]) { // mud flaps behind the rear wheels
-    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.12), darkMat);
-    flap.position.set(sx, 1.35, -3.35); truck.g.add(flap);
-  }
-  // big rear wing
-  const wing = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.14, 1.15), darkMat);
-  wing.position.set(0, 4.05, -2.75); wing.castShadow = true; truck.g.add(wing);
-  for (const sx of [-1.35, 1.35]) {
-    const fin = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.75, 1.15), redMat);
-    fin.position.set(sx, 3.68, -2.75); truck.g.add(fin);
-  }
-  // headlights / taillights
-  const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff3c0 });
-  for (const sx of [-0.85, 0.85]) {
-    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.26, 0.1), hlMat);
-    hl.position.set(sx, 2.95, 2.93); truck.g.add(hl);
-  }
+  const bedFront = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.72, 0.12), redMat);
+  bedFront.position.set(0, 3.0, -1.16); truck.g.add(bedFront);
+  const tailgate = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.72, 0.12), redMat);
+  tailgate.position.set(0, 3.0, -3.44); tailgate.castShadow = true; truck.g.add(tailgate);
   const tlMat = new THREE.MeshBasicMaterial({ color: 0xff2a1e });
   for (const sx of [-0.85, 0.85]) {
-    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.24, 0.1), tlMat);
-    tl.position.set(sx, 2.5, -2.96); truck.g.add(tl);
+    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.24, 0.1), tlMat);
+    tl.position.set(sx, 3.0, -3.51); truck.g.add(tl);
   }
-
-  // monster wheels: chevron-tread tires on gold hubs
+  // side exhaust pipes
+  for (const sx of [-1.35, 1.35]) {
+    const ex = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 3.2, 10), chromeMat);
+    ex.rotation.x = Math.PI / 2; ex.position.set(sx, 2.3, 0.3); truck.g.add(ex);
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.3, 10), darkMat);
+    tip.rotation.x = Math.PI / 2; tip.position.set(sx, 2.3, -1.4); truck.g.add(tip);
+  }
+  for (const sx of [-1.95, 1.95]) { // mud flaps behind the rear wheels
+    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.12), darkMat);
+    flap.position.set(sx, 1.6, -3.95); truck.g.add(flap);
+  }
+  // monster wheels: chevron-tread tires on gold hubs (big: 1.42 radius like the refs)
   const lugGeos = [];
-  for (let i = 0; i < 14; i++) {
-    const lug = new THREE.BoxGeometry(0.98, 0.26, 0.62);
+  for (let i = 0; i < 16; i++) {
+    const lug = new THREE.BoxGeometry(1.18, 0.3, 0.72);
     lug.rotateX(i % 2 ? 0.35 : -0.35);   // chevron skew
-    lug.translate(0, 1.16, 0);           // out to the tread radius
-    lug.rotateX((i / 14) * Math.PI * 2); // around the axle (spin-space X)
+    lug.translate(0, 1.43, 0);           // out to the tread radius
+    lug.rotateX((i / 16) * Math.PI * 2); // around the axle (spin-space X)
     lugGeos.push(lug);
   }
   const treadGeo = mergeGeos(lugGeos);
-  const tireGeo = new THREE.CylinderGeometry(1.15, 1.15, 0.95, 24);
-  const hubGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.99, 16);
+  const tireGeo = new THREE.CylinderGeometry(1.42, 1.42, 1.15, 24);
+  const hubGeo = new THREE.CylinderGeometry(0.62, 0.62, 1.19, 16);
   const hubMat = new THREE.MeshStandardMaterial({ color: 0xd8b13a, roughness: 0.28, metalness: 0.85 });
-  const capGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.02, 10);
+  const capGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.22, 10);
   // deep-dish beadlock look: polished outer lip + hex lug-nut ring (merged, one geometry)
-  const lipGeo = new THREE.TorusGeometry(0.5, 0.09, 8, 22); lipGeo.rotateY(Math.PI / 2);
+  const lipGeo = new THREE.TorusGeometry(0.6, 0.1, 8, 22); lipGeo.rotateY(Math.PI / 2);
   const lugRingGeos = [];
-  for (const fx of [-0.53, 0.53]) for (let i = 0; i < 6; i++) {
-    const lg = new THREE.CylinderGeometry(0.07, 0.07, 0.16, 6);
+  for (const fx of [-0.63, 0.63]) for (let i = 0; i < 6; i++) {
+    const lg = new THREE.CylinderGeometry(0.085, 0.085, 0.18, 6);
     lg.rotateZ(Math.PI / 2);
     const a = (i / 6) * Math.PI * 2;
-    lg.translate(fx, Math.sin(a) * 0.32, Math.cos(a) * 0.32);
+    lg.translate(fx, Math.sin(a) * 0.38, Math.cos(a) * 0.38);
     lugRingGeos.push(lg);
   }
   const lugRingGeo = mergeGeos(lugRingGeos);
   const lugMat = new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.3, metalness: 0.9 });
-  for (const [wx, wz, steer] of [[-1.75, 2.1, true], [1.75, 2.1, true], [-1.75, -2.1, false], [1.75, -2.1, false]]) {
-    const pivot = new THREE.Group(); pivot.position.set(wx, 1.15, wz);
+  for (const [wx, wz, steer] of [[-1.95, 2.35, true], [1.95, 2.35, true], [-1.95, -2.35, false], [1.95, -2.35, false]]) {
+    const pivot = new THREE.Group(); pivot.position.set(wx, 1.42, wz);
     const spin = new THREE.Group();
     const tireSideM = new THREE.MeshStandardMaterial({ color: 0x1b1611, roughness: 0.95 });
     const tireCapM = new THREE.MeshStandardMaterial({ map: sidewallTex, roughness: 0.95 });
@@ -748,14 +746,91 @@ function mergeGeos(geos) {
     const tread = new THREE.Mesh(treadGeo, tireMat); tread.castShadow = true; // built in spin space, no rotation needed
     const hub = new THREE.Mesh(hubGeo, hubMat); hub.rotation.z = Math.PI / 2;
     const cap = new THREE.Mesh(capGeo, darkMat); cap.rotation.z = Math.PI / 2;
-    const lipO = new THREE.Mesh(lipGeo, chromeMat); lipO.position.x = 0.5;
-    const lipI = new THREE.Mesh(lipGeo, chromeMat); lipI.position.x = -0.5;
+    const lipO = new THREE.Mesh(lipGeo, chromeMat); lipO.position.x = 0.6;
+    const lipI = new THREE.Mesh(lipGeo, chromeMat); lipI.position.x = -0.6;
     const lugs = new THREE.Mesh(lugRingGeo, lugMat);
     spin.add(tire, tread, hub, cap, lipO, lipI, lugs); pivot.add(spin); truck.g.add(pivot);
-    truck.wheels.push({ pivot, spin, baseY: 1.15, off: 0, vo: 0, steer: !!steer });
+    truck.wheels.push({ pivot, spin, baseY: 1.42, off: 0, vo: 0, steer: !!steer });
   }
 }
 scene.add(truck.g);
+
+/* ================= AI monster trucks: rivals doing jumps ================= */
+const aiTrucks = [];
+function makeAITruck(colorHex) {
+  const g = new THREE.Group();
+  const bm = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.42, metalness: 0.25 });
+  const dk = new THREE.MeshStandardMaterial({ color: 0x181b21, roughness: 0.75 });
+  const gl = new THREE.MeshStandardMaterial({ color: 0x0e1420, roughness: 0.15, metalness: 0.7 });
+  const add = (geo, m, x, y, z, cast) => {
+    const ms = new THREE.Mesh(geo, m); ms.position.set(x, y, z);
+    if (cast) ms.castShadow = true; g.add(ms); return ms;
+  };
+  add(new THREE.BoxGeometry(0.3, 0.5, 6.4), dk, -0.95, 2.0, 0);   // chassis rails
+  add(new THREE.BoxGeometry(0.3, 0.5, 6.4), dk, 0.95, 2.0, 0);
+  add(new THREE.BoxGeometry(2.3, 0.7, 2.4), bm, 0, 2.95, 2.1, true); // hood
+  add(new THREE.BoxGeometry(1.9, 0.7, 0.14), dk, 0, 2.9, 3.3);        // grille
+  add(new THREE.BoxGeometry(2.9, 0.36, 0.44), dk, 0, 2.2, 3.32);     // bumper
+  add(new THREE.BoxGeometry(2.5, 1.1, 2.2), bm, 0, 3.05, -0.1, true);// cab
+  const sh = add(new THREE.BoxGeometry(2.2, 0.85, 0.1), gl, 0, 3.95, 0.7); sh.rotation.x = -0.6;
+  add(new THREE.BoxGeometry(2.4, 0.12, 1.7), bm, 0, 4.32, -0.35, true); // roof
+  add(new THREE.BoxGeometry(2.5, 0.18, 2.4), dk, 0, 2.62, -2.3);     // bed floor
+  add(new THREE.BoxGeometry(2.5, 0.72, 2.4), bm, 0, 3.0, -2.3, true);// bed
+  const tireG = new THREE.CylinderGeometry(1.42, 1.42, 1.15, 18); tireG.rotateZ(Math.PI / 2);
+  const hubG = new THREE.CylinderGeometry(0.6, 0.6, 1.2, 12); hubG.rotateZ(Math.PI / 2);
+  const tm = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
+  const hm = new THREE.MeshStandardMaterial({ color: 0xc7cdd6, roughness: 0.35, metalness: 0.85 });
+  const wheels = [];
+  for (const [wx, wz] of [[-1.95, 2.35], [1.95, 2.35], [-1.95, -2.35], [1.95, -2.35]]) {
+    const w = new THREE.Group(); w.position.set(wx, 1.42, wz);
+    const t = new THREE.Mesh(tireG, tm); t.castShadow = true;
+    w.add(t, new THREE.Mesh(hubG, hm)); g.add(w); wheels.push(w);
+  }
+  return { g, wheels };
+}
+function spawnAI(color, x, z) {
+  const t = makeAITruck(color);
+  t.g.position.set(x, 0, z); scene.add(t.g);
+  aiTrucks.push({ ...t, x, z, hd: Math.random() * Math.PI * 2, sp: 0, y: 0, vy: 0, grounded: true, target: null });
+}
+spawnAI(0x2e7fd9, 80, -60);
+spawnAI(0x37c26a, -80, 60);
+function stepAI(dt) {
+  for (const a of aiTrucks) {
+    if (!a.target || Math.hypot(a.x - a.target.x, a.z - a.target.z) < 30) {
+      a.target = ramps[(Math.random() * ramps.length) | 0];
+    }
+    const r = a.target;
+    const tx = r.x - r.dx * r.len * 0.2, tz = r.z - r.dz * r.len * 0.2; // aim onto the ramp face, drive through
+    let des = Math.atan2(tx - a.x, tz - a.z);
+    if (Math.abs(a.x) > ARENA - 60 || Math.abs(a.z) > ARENA - 60) des = Math.atan2(-a.x, -a.z);
+    let dh = des - a.hd;
+    while (dh > Math.PI) dh -= 2 * Math.PI;
+    while (dh < -Math.PI) dh += 2 * Math.PI;
+    a.hd += Math.max(-1.7 * dt, Math.min(1.7 * dt, dh));
+    const px = a.x, pz = a.z, ghPrev = groundHeight(px, pz);
+    if (a.grounded) a.sp = Math.min(30, a.sp + 22 * dt); else a.sp = Math.max(18, a.sp - 4 * dt);
+    a.x += Math.sin(a.hd) * a.sp * dt; a.z += Math.cos(a.hd) * a.sp * dt;
+    const B = ARENA - 3;
+    if (Math.abs(a.x) > B || Math.abs(a.z) > B) {
+      a.x = Math.max(-B, Math.min(B, a.x)); a.z = Math.max(-B, Math.min(B, a.z)); a.sp *= 0.4;
+    }
+    if (a.grounded && groundHeight(a.x, a.z) - ghPrev > 1.2) { a.x = px; a.z = pz; a.sp *= 0.4; a.target = null; }
+    const gh = groundHeight(a.x, a.z);
+    if (a.grounded) {
+      if (gh > a.y + 0.02) { a.vy = (gh - a.y) / Math.max(dt, 1e-4); a.y = gh; }
+      else if (a.y > gh + 0.3) { a.grounded = false; a.vy += 3.5; }
+      else { a.y = gh; a.vy = 0; }
+    } else {
+      a.vy -= GRAV * dt; a.y += a.vy * dt;
+      if (a.y <= gh) { a.y = gh; a.grounded = true; a.vy = 0; puff(a.x, 0.5, a.z, 5, 6); }
+    }
+    a.g.position.set(a.x, a.y, a.z);
+    a.g.rotation.y = a.hd;
+    a.g.rotation.x = a.grounded ? 0 : Math.max(-0.3, Math.min(0.25, -a.vy * 0.012));
+    for (const w of a.wheels) w.rotation.x += (a.sp / 1.42) * dt;
+  }
+}
 
 /* ================= dust particles ================= */
 const dustPool = [];
@@ -878,6 +953,7 @@ function stepTruck(dt) {
       T.vy = (gh - T.y) / Math.max(dt, 1e-4); T.y = gh;
     } else if (T.y > gh + 0.3) {     // drove off the top edge -> airborne
       T.grounded = false; T.airT0 = elapsed; Snd.whoosh();
+      T.vy += 3.5; // lip pop: bigger ramps throw bigger air
     } else { T.y = gh; T.vy = 0; }
   }
   if (!T.grounded) {
@@ -908,7 +984,7 @@ function stepTruck(dt) {
   truck.g.rotation.y = T.hd;
   truck.g.rotation.z = -T.steer * 0.06;
   truck.g.rotation.x = T.grounded ? Math.max(-0.06, Math.min(0.06, -T.vy * 0.004)) : Math.max(-0.25, Math.min(0.2, -T.vy * 0.012));
-  const wSpin = T.sp / 0.95;
+  const wSpin = T.sp / 1.42;
   for (const w of truck.wheels) {
     w.spin.rotation.x += wSpin * dt;
     w.pivot.rotation.y = w.steer ? T.steer * 0.9 : 0;
@@ -959,7 +1035,7 @@ function stepDust(dt) {
 const camPos = new THREE.Vector3(0, 8, 42);
 function stepCamera(dt) {
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
-  const want = new THREE.Vector3(T.x - fx * 11, T.y + 5.2, T.z - fz * 11);
+  const want = new THREE.Vector3(T.x - fx * 13, T.y + 6.2, T.z - fz * 13);
   camPos.lerp(want, Math.min(1, dt * 4.5));
   camera.position.copy(camPos);
   if (camShake > 0.01) {
@@ -967,7 +1043,7 @@ function stepCamera(dt) {
     camera.position.y += (Math.random() - 0.5) * camShake * 0.7;
     camShake = Math.max(0, camShake - dt * 1.8);
   }
-  camera.lookAt(T.x + fx * 6, T.y + 2.2, T.z + fz * 6);
+  camera.lookAt(T.x + fx * 6, T.y + 2.6, T.z + fz * 6);
 }
 
 /* ================= input: keyboard + touch ================= */
@@ -1012,7 +1088,7 @@ function makeStick(id, onMove) {
   el.addEventListener('pointercancel', end);
   el.addEventListener('contextmenu', (e) => e.preventDefault());
 }
-makeStick('stickL', (x) => { input.steerA = x; });
+makeStick('stickL', (x) => { input.steerA = -x; }); // stick left = turn left on screen
 makeStick('stickR', (x, y) => { input.throttleA = -y; }); // push up = gas, down = brake/reverse
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
@@ -1078,8 +1154,11 @@ function frame() {
     Snd.engine(0);
   }
   if (state !== 'menu') stepDust(dt);
+  stepAI(dt); // rival trucks keep jumping, menu or not
   hero.position.set(T.x + 16, 30, T.z + 20); // studio key follows the truck
-  hero.target.position.set(T.x, 2, T.z);
+  hero.target.position.set(T.x, 2.5, T.z);
+  sun.position.set(T.x + 160, 220, T.z + 80); // shadow frustum follows the truck
+  sun.target.position.set(T.x, 0, T.z);
   stepCamera(dt);
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);
