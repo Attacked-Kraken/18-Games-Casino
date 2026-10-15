@@ -220,9 +220,14 @@ const paintTex = makeTex(256, 256, (g, w, h) => {
     g.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.045)';
     g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
   }
-  const gr = g.createLinearGradient(0, h * 0.5, 0, h);
-  gr.addColorStop(0, 'rgba(24,14,8,0)'); gr.addColorStop(1, 'rgba(24,14,8,0.38)');
+  const gr = g.createLinearGradient(0, h * 0.42, 0, h);
+  gr.addColorStop(0, 'rgba(24,14,8,0)'); gr.addColorStop(1, 'rgba(24,14,8,0.62)');
   g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 260; i++) { // mud splatter low on the body
+    g.fillStyle = 'rgba(46,30,16,' + (0.25 + Math.random() * 0.45) + ')';
+    const s = 2 + Math.random() * 6;
+    g.beginPath(); g.arc(Math.random() * w, h * 0.55 + Math.random() * h * 0.45, s, 0, Math.PI * 2); g.fill();
+  }
 });
 const sidewallTex = makeTex(256, 256, (g, w, h) => {
   g.fillStyle = '#141518'; g.fillRect(0, 0, w, h);
@@ -269,6 +274,14 @@ sun.shadow.camera.top = 200; sun.shadow.camera.bottom = -200;
 sun.shadow.camera.far = 700; sun.shadow.bias = -0.0004;
 scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff, 0.1));
+// cool rim light from behind-left: separates the truck from the dark arena, studio-style edge glow
+const rimL = new THREE.DirectionalLight(0xa9c4ff, 1.15);
+rimL.position.set(-35, 55, -95);
+scene.add(rimL);
+// hero spotlight: a studio key light that follows the truck so the paint/chrome always pop
+const hero = new THREE.SpotLight(0xfff1dd, 2.8, 0, 0.6, 0.7, 0);
+hero.position.set(16, 30, 20);
+scene.add(hero); scene.add(hero.target);
 
 /* image-based lighting: a tiny studio env so paint/chrome/glass read as real */
 {
@@ -576,7 +589,7 @@ function mergeGeos(geos) {
 }
 {
   const livSide = new THREE.MeshStandardMaterial({ map: liveryTex, roughness: 0.34, metalness: 0.28 });
-  const redMat = new THREE.MeshStandardMaterial({ map: paintTex, roughness: 0.32, metalness: 0.28 });
+  const redMat = new THREE.MeshStandardMaterial({ map: paintTex, roughness: 0.3, metalness: 0.12 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x181b21, roughness: 0.7 });
   const glassMat = new THREE.MeshStandardMaterial({ color: 0x0e1420, roughness: 0.12, metalness: 0.7 });
   const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd7dde6, roughness: 0.25, metalness: 0.9 });
@@ -642,9 +655,13 @@ function mergeGeos(geos) {
     g.fillStyle = '#c9d2dd';
     for (let i = 0; i < 8; i++) g.fillRect(14 + i * 30, 10, 12, h - 20);
   });
+  const surround = new THREE.Mesh(new THREE.BoxGeometry(2.24, 0.94, 0.12), darkMat);
+  surround.position.set(0, 2.42, 2.9); truck.g.add(surround);
   const grille = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.72, 0.14),
     new THREE.MeshStandardMaterial({ map: grilleTex, roughness: 0.4, metalness: 0.6 }));
-  grille.position.set(0, 2.42, 2.96); truck.g.add(grille);
+  grille.position.set(0, 2.42, 3.0); truck.g.add(grille);
+  const valance = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.3, 0.34), darkMat);
+  valance.position.set(0, 1.52, 2.98); truck.g.add(valance);
   const bumper = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.34, 0.42), chromeMat);
   bumper.position.set(0, 1.82, 3.02); bumper.castShadow = true; truck.g.add(bumper);
   // roof light bar with 5 lamps
@@ -656,10 +673,15 @@ function mergeGeos(geos) {
     const l = new THREE.Mesh(lampG, lampM);
     l.rotation.x = Math.PI / 2; l.position.set(i * 0.42, 4.02, 0.08); truck.g.add(l);
   }
-  // fender flares over the big tires
+  // sculpted arch fenders hugging the big tires — rounded, like the reference trucks
+  const archGeo = new THREE.TorusGeometry(1.4, 0.24, 10, 18, Math.PI * 0.85);
+  const archMat = new THREE.MeshStandardMaterial({ color: 0xc22418, roughness: 0.42, metalness: 0.25 });
   for (const [sx, sz] of [[-1.95, 2.1], [1.95, 2.1], [-1.95, -2.1], [1.95, -2.1]]) {
-    const f = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.3, 2.7), redMat);
-    f.position.set(sx, 3.28, sz); f.castShadow = true; truck.g.add(f);
+    const f = new THREE.Mesh(archGeo, archMat);
+    f.rotation.order = 'YXZ';
+    f.rotation.y = Math.PI / 2;        // arch spans fore-aft over the wheel
+    f.rotation.x = Math.PI * 0.075;    // center the arc on top
+    f.position.set(sx, 1.5, sz); f.castShadow = true; truck.g.add(f);
   }
   // side exhaust pipes
   for (const sx of [-1.5, 1.5]) {
@@ -703,18 +725,33 @@ function mergeGeos(geos) {
   const treadGeo = mergeGeos(lugGeos);
   const tireGeo = new THREE.CylinderGeometry(1.15, 1.15, 0.95, 24);
   const hubGeo = new THREE.CylinderGeometry(0.52, 0.52, 0.99, 16);
-  const hubMat = new THREE.MeshStandardMaterial({ color: 0xd8b13a, roughness: 0.35, metalness: 0.65 });
+  const hubMat = new THREE.MeshStandardMaterial({ color: 0xd8b13a, roughness: 0.28, metalness: 0.85 });
   const capGeo = new THREE.CylinderGeometry(0.2, 0.2, 1.02, 10);
+  // deep-dish beadlock look: polished outer lip + hex lug-nut ring (merged, one geometry)
+  const lipGeo = new THREE.TorusGeometry(0.5, 0.09, 8, 22); lipGeo.rotateY(Math.PI / 2);
+  const lugRingGeos = [];
+  for (const fx of [-0.53, 0.53]) for (let i = 0; i < 6; i++) {
+    const lg = new THREE.CylinderGeometry(0.07, 0.07, 0.16, 6);
+    lg.rotateZ(Math.PI / 2);
+    const a = (i / 6) * Math.PI * 2;
+    lg.translate(fx, Math.sin(a) * 0.32, Math.cos(a) * 0.32);
+    lugRingGeos.push(lg);
+  }
+  const lugRingGeo = mergeGeos(lugRingGeos);
+  const lugMat = new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.3, metalness: 0.9 });
   for (const [wx, wz, steer] of [[-1.75, 2.1, true], [1.75, 2.1, true], [-1.75, -2.1, false], [1.75, -2.1, false]]) {
     const pivot = new THREE.Group(); pivot.position.set(wx, 1.15, wz);
     const spin = new THREE.Group();
-    const tireSideM = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
+    const tireSideM = new THREE.MeshStandardMaterial({ color: 0x1b1611, roughness: 0.95 });
     const tireCapM = new THREE.MeshStandardMaterial({ map: sidewallTex, roughness: 0.95 });
     const tire = new THREE.Mesh(tireGeo, [tireSideM, tireCapM, tireCapM]); tire.rotation.z = Math.PI / 2; tire.castShadow = true;
     const tread = new THREE.Mesh(treadGeo, tireMat); tread.castShadow = true; // built in spin space, no rotation needed
     const hub = new THREE.Mesh(hubGeo, hubMat); hub.rotation.z = Math.PI / 2;
     const cap = new THREE.Mesh(capGeo, darkMat); cap.rotation.z = Math.PI / 2;
-    spin.add(tire, tread, hub, cap); pivot.add(spin); truck.g.add(pivot);
+    const lipO = new THREE.Mesh(lipGeo, chromeMat); lipO.position.x = 0.5;
+    const lipI = new THREE.Mesh(lipGeo, chromeMat); lipI.position.x = -0.5;
+    const lugs = new THREE.Mesh(lugRingGeo, lugMat);
+    spin.add(tire, tread, hub, cap, lipO, lipI, lugs); pivot.add(spin); truck.g.add(pivot);
     truck.wheels.push({ pivot, spin, baseY: 1.15, off: 0, vo: 0, steer: !!steer });
   }
 }
@@ -1041,6 +1078,8 @@ function frame() {
     Snd.engine(0);
   }
   if (state !== 'menu') stepDust(dt);
+  hero.position.set(T.x + 16, 30, T.z + 20); // studio key follows the truck
+  hero.target.position.set(T.x, 2, T.z);
   stepCamera(dt);
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);

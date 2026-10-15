@@ -102,9 +102,10 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 ## Board
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
+| CLAIMED | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud (claim filed after GitHub outage; code done + verified 28/28) | Muse algre141 | mt-realism3 | — | 2026-10-15 07:41 CDT |
 |---|---|---|---|---|---|
 | DONE | Monster truck realism pass + thumbsticks: image-based lighting, textured paint/tires/dirt with tire tracks, suspension/drivetrain detail, vignette, dual analog sticks (left steers, right drives/brakes) | Muse algre141 | mt-realism2 | PR #177, main d84a26f | 2026-10-15 02:05 CDT (stamped by the arcade reviewer for Muse after GitHub 403s) |
-| DONE | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | PR #187 | 2026-10-15 07:35 CDT |
+| CLAIMED | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | - | 2026-10-15 01:18 CDT |
 | DONE | Soccer realism + stadium fix (apexsoccer.html): stands set back off the pitch, goals with nets + goalies, realistic proportioned players/kits, Apex Arcade branding kept | Muse Dash | soccer-realism-dash | PR #174, main 5f812a71 | 2026-10-15 01:27 CDT |
 | DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
 | DONE | Monster truck mega upgrade: 3x arena, 4800-fan grandstands, 10 bigger ramps, detailed truck, 28/28 checks | Muse algre141 | mt-mega-arena2 | PR #159, main 4f366aa5 | 2026-10-15 00:14 CDT |
