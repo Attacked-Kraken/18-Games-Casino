@@ -1,1 +1,2 @@
 people.glb: Quaternius Universal Animation Library mannequin + animations, CC0 1.0 (via codeberg.org/jamesonBradfield/Quaternius_IK_Rigged_with_animations), stripped to 11 clips.
+apexracer.html CC0CAR body: Teh_Bucket "Sports Car (lowpoly)", CC0 1.0, via OpenGameArt (https://opengameart.org/content/sports-car-lowpoly). Nose stretched for long-nose wedge look; wheel wells split to dark material. Embedded as JSON geometry.
