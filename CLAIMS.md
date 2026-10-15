@@ -51,6 +51,17 @@ or environments when a better free asset exists. Rules of the road:
 - When you swap in a better model, say so in your PR: what asset,
   from where, what license.
 
+## MUSIC & SOUND LAW (owner, 2026-10-14)
+
+**Every game needs home-page music, in-game music, and game sounds.**
+Menu music (calm, looped), a distinct in-game track (energy matched
+to the game), and sound effects for the core actions. Original audio
+only — procedural WebAudio is the house method (no files, no
+copyright possible; the no-copyrights law covers sound too). Mute
+toggle on every game, persisted; audio starts on first interaction.
+A game is not DONE without all three. Full text: ASSET-LAW.md
+Part II.
+
 ## STORE-READY RULE (owner, 2026-10-14)
 
 Every game here is headed for the Apple App Store and Google Play.
