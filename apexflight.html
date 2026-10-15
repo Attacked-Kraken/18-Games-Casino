@@ -17,7 +17,10 @@
     border-radius: 10px; padding: 9px 14px; font: 600 14px ui-monospace, Menlo, monospace; cursor: pointer; }
   #rotOv { position: fixed; inset: 0; z-index: 6000; display: none; align-items: center; justify-content: center;
     background: #000; color: #9dffb4; font: 600 20px ui-monospace, Menlo, monospace; letter-spacing: .1em; text-align: center; padding: 24px; }
-  @media (orientation: portrait) { #rotOv { display: flex; } }
+  #rotOv { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(57,255,90,.35); border-radius: 10px; padding: 7px 10px; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
@@ -588,6 +591,7 @@ let stickActive = false;
     let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
     const d = Math.hypot(dx, dy);
     if (d > R) { dx *= R / d; dy *= R / d; }
+    if (innerHeight > innerWidth) { const _dx = dx; dx = dy; dy = -_dx; } // rotated stage: remap to the landscape frame
     knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
     inp.rollRight = clamp(dx / R, -1, 1);
     inp.pitchUp = clamp(-dy / R, -1, 1);      // drag up = climb
@@ -603,7 +607,7 @@ let stickActive = false;
   const el = $('thr'), zone = $('thrZone');
   const set = e => {
     const r = el.getBoundingClientRect();
-    P.thr = clamp(1 - (e.clientY - r.top) / r.height, 0, 1);
+    P.thr = (innerHeight > innerWidth) ? clamp((e.clientX - r.left) / r.width, 0, 1) : clamp(1 - (e.clientY - r.top) / r.height, 0, 1); // rotated stage reads the slider along screen-x
     $('thrFill').style.height = (P.thr * 100) + '%';
   };
   zone.addEventListener('pointerdown', e => { try { zone.setPointerCapture(e.pointerId); } catch (x) {} set(e);
@@ -637,8 +641,9 @@ $('crashOv').addEventListener('click', () => respawn());
 window.addEventListener('contextmenu', e => e.preventDefault());
 let fitW = 0, fitH = 0;
 function fitGame() {
-  const w = document.documentElement.clientWidth || innerWidth;
-  const h = document.documentElement.clientHeight || innerHeight;
+  let w = document.documentElement.clientWidth || innerWidth;
+  let h = document.documentElement.clientHeight || innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
   if (!w || !h) return;
   fitW = w; fitH = h;
   camera.aspect = w / h; camera.updateProjectionMatrix();
@@ -961,6 +966,12 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 requestAnimationFrame(loop);
+</script>
+
+<script>
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform
+   allows it (Android). iOS ignores the lock; the rotated stage carries it there. */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
