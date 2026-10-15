@@ -46,3 +46,20 @@ checklist, it is not done, whatever the CLAIMS board says.
 Boot the game on a phone-sized viewport with touch emulation and check:
 landscape fit, no console errors, no 404s, touch controls all reachable,
 frame rate steady in play. Say in your PR what you checked.
+
+## The quality standard (owner, 2026-10-14)
+
+**"Retest" is an order.** When the owner says *retest*, it means: load
+the game and actually PLAY it — do not just boot it — hunt for issues
+(visual defects, gameplay breaks, performance, screen fit, errors),
+**fix what you find**, then test again to prove the fixes. A retest
+report lists what was found and what was fixed. "It loads" is not a
+retest.
+
+**The bar is UE5-style quality.** Every testing and fixing pass should
+leave the game visibly better than you found it — lighting, materials,
+atmosphere, animation, game feel. We are building premium mobile app
+games: **graphics for mobile app games, always** — phone-first visuals
+at the top of what the store-ready performance budget allows, never
+desktop afterthoughts and never placeholder-looking work. Quality goes
+up with every pass; it never stays flat and it never goes backwards.
