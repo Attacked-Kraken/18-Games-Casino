@@ -102,7 +102,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 ## Board
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
-| CLAIMED | Landscape law for all games: f1/trackfield/monstertruck full pattern (CSS rotate + touch remap + landscape sizing + lock); 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | — | 2026-10-15 09:48 CDT |
+| DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
