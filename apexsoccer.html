@@ -454,9 +454,13 @@ function takeKickoff(p){
   if(G.st!=='kickoff'||!G.kickoffWait) return;
   const kt=teams[G.kickoffTeam];
   if(!p||p.team!==kt) return;
-  const mate=findPassTarget(p)||kt.players.find(q=>q.role==='MID');
+  // pass to the NEAREST mid (the one repositioned beside the ball), softly enough to control (pickup needs <7 m/s)
+  let mate=null, bd=1e9;
+  for(const q of kt.players){ if(q===p||q.role!=='MID') continue;
+    const d=Math.hypot(q.pos.x-p.pos.x,q.pos.z-p.pos.z); if(d<bd){ bd=d; mate=q; } }
+  mate=mate||kt.players.find(q=>q.role==='MID');
   const dx=mate.pos.x-p.pos.x, dz=mate.pos.z-p.pos.z;
-  kickBall(p,dx,dz,11,0.6,mate); beginPlay();
+  kickBall(p,dx,dz,6,0.6,mate); beginPlay();
 }
 
 /* ================= kicking ================= */
@@ -730,8 +734,10 @@ function updateAI(dt){
     const sl=secondLastX(t);
     // hoisted: one sort per team per frame (was rebuilt for every player)
     const chaseOrder=t.players.filter(q=>q.role!=='GK').sort((a,b)=>distToBall(a)-distToBall(b));
+    const him=moveInput(), himag=Math.hypot(him.x,him.z);
     for(const p of t.players){
-      if(p.controlled) continue;
+      // human's player with no input (and not charging or carrying) gets AI help so it never stands idle
+      if(p.controlled&&(himag>0.12||H.charging||B.owner===p)) continue;
       p.tackleCd-=dt; p.kickCd-=dt;
       // constant micro-jockeying so nobody stands perfectly still in open play
       const jx=Math.sin(nowMs/700+p.id*2.1)*0.6, jz=Math.cos(nowMs/800+p.id*1.3)*0.6;
@@ -746,7 +752,23 @@ function updateAI(dt){
       if(oppHas){
         const c=B.owner;
         if(chaseOrder[0]===p){ // nearest pressures the carrier
-          movePlayer(p,c.pos.x+c.vel.x*0.25,c.pos.z+c.vel.z*0.25,8.4,dt); continue; }
+          movePlayer(p,c.pos.x+c.vel.x*0.25,c.pos.z+c.vel.z*0.25,8.9,dt);
+          if(p.tackleCd<=0){ // AI tackle attempt, same rules as the human's L tackle
+            const d=Math.hypot(c.pos.x-p.pos.x,c.pos.z-p.pos.z);
+            if(d<1.9){
+              p.tackleCd=0.9;
+              const fx=Math.cos(p.face), fz=Math.sin(p.face);
+              const tx=(c.pos.x-p.pos.x)/d, tz=(c.pos.z-p.pos.z)/d;
+              const facingDot=fx*tx+fz*tz;
+              const behindDot=(-tx)*Math.cos(c.face)+(-tz)*Math.sin(c.face);
+              if(behindDot<-0.45){ doFoul(p,c); }
+              else if(facingDot>0.15&&Math.random()<0.55){ // clean poke, but not every time
+                B.owner=null; B.noPickup=0.25; B.lastTouch=p.team;
+                B.vel.set(fx*5,1.2,fz*5);
+              }
+            }
+          }
+          continue; }
         if(chaseOrder[1]===p){ // second cuts the passing lane
           const mate=findPassTarget(c);
           const mx=mate?(c.pos.x+mate.pos.x)/2:c.pos.x, mz=mate?(c.pos.z+mate.pos.z)/2:c.pos.z;
@@ -768,19 +790,19 @@ function updateGK(p,dt){
   const towardGoal=B.vel.x*ad<-9 && !B.owner;
   if(towardGoal&&p.diveT<=-0.5){
     const t=(gx+ad*1-B.pos.x)/(B.vel.x||-0.001);
-    if(t>0&&t<0.75){ const iz=B.pos.z+B.vel.z*t+(Math.random()-0.5)*1.2; // owner: keeper read EVERYTHING - later reaction + a real misread, so corners from range can beat him
-      if(Math.abs(iz)<6.5){ p.diveT=0.55; p.diveZ=clamp(iz,-3.4,3.4); } }
+    if(t>0&&t<0.9){ const iz=B.pos.z+B.vel.z*t+(Math.random()-0.5)*0.7; // tighter read: keepers judge shots better
+      if(Math.abs(iz)<4.2){ p.diveT=0.6; p.diveZ=clamp(iz,-3.5,3.5); } }
   }
   if(p.diveT>0){ // diving
-    movePlayer(p,gx+ad*0.7,p.diveZ,8.5,dt);
+    movePlayer(p,gx+ad*0.7,p.diveZ,10.5,dt);
     p.m.group.rotation.z+=((p.diveZ>=p.pos.z?1:-1)*1.25-p.m.group.rotation.z)*Math.min(1,12*dt);
-    if(Math.hypot(B.pos.x-p.pos.x,B.pos.z-p.pos.z)<1.1&&B.pos.y<2&&!B.owner){
+    if(Math.hypot(B.pos.x-p.pos.x,B.pos.z-p.pos.z)<1.35&&B.pos.y<2.2&&!B.owner){
       B.vel.set(-B.vel.x*0.22,3.2,(Math.random()-0.5)*15); B.lastTouch=p.team; B.noPickup=0.35;
       banner('SAVED',p.team.name+' KEEPER',1.2);
     }
   } else {
     p.m.group.rotation.z*=0.8;
-    movePlayer(p,gx+ad*1.15,clamp(B.pos.z*0.45,-3,3),6.5,dt);
+    movePlayer(p,gx+ad*1.15,clamp(B.pos.z*0.8,-3.2,3.2),7,dt);
   }
   if(B.owner===p){ p.holdT=(p.holdT||0)+dt;
     if(p.holdT>1.1){ p.holdT=0; kickBall(p,ad*26,(Math.random()*24-12),19,7.5,null); } }
