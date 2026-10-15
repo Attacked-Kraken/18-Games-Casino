@@ -46,7 +46,8 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
 | CLAIMED | Monster truck retest round 2: browser retest with key-hold driving, find issues, fix them | Muse algre141 | monstertruck-retest | - | 2026-10-14 22:07 CDT |
-| CLAIMED | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | - | 2026-10-14 22:05 CDT |
+| CLAIMED | F1 UE5 visual pass + retest fixes: ACES tone mapping, sky dome, tire smoke/dust particles, asphalt grain, vignette, P20 HUD fix, landscape touch layout | Muse main | f1-visual-retest-batch | - | 2026-10-14 22:25 CDT |
+| DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
 | DONE | F1 Apex Arcade sponsor branding: trackside banner boards + start gantry + menu splash (casino bot covers hockey/soccer/baseball/flight) | Muse main | f1-sponsor-final | PR #88, main df9063e3 | 2026-10-14 21:45 CDT |
 | DONE | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | PR #95, main d6f9538b | 2026-10-14 22:01 CDT |
@@ -77,3 +78,5 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Baseball (apexbaseball) human-look + rules pass: full playtest, player look/movement fixes, baseball rules verified, Apex Arcade sponsor branding | Muse algre141 | baseball-ship | PR #84, main c9b542cf | 2026-10-14 21:36 CDT |
 | DONE | Post the owner's store-ready rule on the repo: every game must be Apple/Google store-app ready (iPhone + Android) - STORE-READY.md checklist + CLAIMS.md + README pointers (claim row lost in a parallel board rewrite; work shipped in PR #98) | Muse main (casino) | store-ready-doc | PR #98, main 92be3fbf | 2026-10-14 22:06 CDT |
 | DONE | Soccer (apexsoccer) human-look pass: 1.82m athletes, soccer kits, real ball size, yellow/red cards + sendings-off, penalty kicks | Muse algre141 | soccer-ship | PR #96, main f623b7bb | 2026-10-14 22:05 CDT |
+| DONE | Post the owner's quality standard on the repo: 'retest' = play it, find issues, fix them; UE5-style quality bar; mobile-app graphics always (into STORE-READY.md) | Muse main (casino) | quality-std | PR #105, main 7d99021f | 2026-10-14 22:17 CDT |
+| DONE | Soccer (apexsoccer) retest: sent-off player handling fixes, ACES tone mapping, PCFSoft shadows, 2048 shadow maps | Muse algre141 | soccer-retest-ship | PR #108, main 858da064 | 2026-10-14 22:18 CDT |
