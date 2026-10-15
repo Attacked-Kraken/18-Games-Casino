@@ -130,7 +130,10 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias:!coarse });
 renderer.setPixelRatio(Math.min(devicePixelRatio||1, coarse ? 1.5 : 2));
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.shadowMap.enabled = !coarse;
-if (!coarse) { renderer.shadowMap.type = THREE.PCFShadowMap; }
+if (!coarse) { renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a1420);
 scene.fog = new THREE.Fog(0x0a1420, 90, 190);
@@ -139,7 +142,7 @@ camera.position.set(0, 30, 50);
 scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x0a2012, 1.28));
 const sun = new THREE.DirectionalLight(0xffffff, 1.35);
 sun.position.set(30, 55, 25);
-if (!coarse) { sun.castShadow = true; sun.shadow.mapSize.set(1024,1024);
+if (!coarse) { sun.castShadow = true; sun.shadow.mapSize.set(2048,2048);
   const sc = sun.shadow.camera; sc.left=-70; sc.right=70; sc.top=70; sc.bottom=-70; sc.far=160; }
 scene.add(sun);
 let fitW = 0, fitH = 0;
@@ -486,7 +489,7 @@ function checkOffside(passer, receiver, dirX){
 function findPassTarget(p){
   const fx=Math.cos(p.face), fz=Math.sin(p.face);
   let best=null, bs=-1e9;
-  for(const m of p.team.players){ if(m===p) continue;
+  for(const m of p.team.players){ if(m===p||m.sentOff) continue;
     const dx=m.pos.x-p.pos.x, dz=m.pos.z-p.pos.z, d=Math.hypot(dx,dz);
     if(d<2||d>42) continue;
     const dot=(dx*fx+dz*fz)/(d||1);
@@ -615,7 +618,7 @@ function doRestart(type,team,x,z){
     if(team.human) giveControl(taker);
   } else if(type==='goalkick'){
     r.x=-team.ad*46.5; r.z=0; B.pos.set(r.x,BALL_R,0);
-    const gk=team.players[0]; gk.pos.set(r.x-team.ad*1.5,0,0);
+    const gk=activeGK(team); if(gk) gk.pos.set(r.x-team.ad*1.5,0,0);
     if(team.human) giveControl(gk);
   } else if(type==='penalty'){
     // spot at 11m; keeper on the line; everyone else outside the box
@@ -623,8 +626,8 @@ function doRestart(type,team,x,z){
     const taker=nearestMate(team,r.x,r.z); taker.pos.set(r.x-team.ad*2.5,0,r.z);
     taker.face=Math.atan2(0,team.ad);
     if(team.human) giveControl(taker);
-    const dgk=opp(team).players[0];
-    dgk.pos.set(team.ad*52.2,0,0); dgk.face=Math.atan2(0,-team.ad);
+    const dgk=activeGK(opp(team));
+    if(dgk){ dgk.pos.set(team.ad*52.2,0,0); dgk.face=Math.atan2(0,-team.ad); }
     r.except=[taker,dgk];
     for(const p of allPlayers){
       if(p.sentOff||r.except.includes(p)) continue;
@@ -637,8 +640,8 @@ function doRestart(type,team,x,z){
     const taker=nearestMate(team,r.x,r.z); taker.pos.set(r.x-team.ad*1.4,0,r.z);
     taker.face=Math.atan2(0,team.ad);
     if(team.human) giveControl(taker);
-    const dgk=opp(team).players[0];
-    dgk.pos.set(team.ad*51.3,0,clamp(r.z*0.4,-3,3));
+    const dgk=activeGK(opp(team));
+    if(dgk) dgk.pos.set(team.ad*51.3,0,clamp(r.z*0.4,-3,3));
     r.except=[taker,dgk];
     let wall=0;
     for(const o of opp(team).players){ if(o.role==='GK'||wall>=2) continue;
@@ -650,7 +653,9 @@ function doRestart(type,team,x,z){
   banner(names[type],team.name+' · PASS OR SHOOT TO TAKE',2.2);
 }
 function nearestMate(team,x,z){ let best=null,bd=1e9;
-  for(const m of team.players){ const d=Math.hypot(m.pos.x-x,m.pos.z-z); if(d<bd){bd=d;best=m;} } return best; }
+  for(const m of team.players){ if(m.sentOff) continue; const d=Math.hypot(m.pos.x-x,m.pos.z-z); if(d<bd){bd=d;best=m;} } return best; }
+function activeGK(team){ for(const m of team.players){ if(!m.sentOff&&m.role==='GK') return m; }
+  for(const m of team.players){ if(!m.sentOff) return m; } return null; }
 function restartKick(p,isShot,power=0.5){
   const r=G.restart; if(!r||r.team!==p.team) return;
   if(r.type==='throwin'){
@@ -914,7 +919,7 @@ function updateBall(dt){
     if(B.noPickup<=0&&G.st==='play'){
       const hSpeed=Math.hypot(B.vel.x,B.vel.z);
       if(hSpeed<7){ let best=null,bd=1e9;
-        for(const p of allPlayers){ if(p.kickCd>0) continue;
+        for(const p of allPlayers){ if(p.kickCd>0||p.sentOff) continue;
           const d=Math.hypot(p.pos.x-B.pos.x,p.pos.z-B.pos.z); if(d<bd){bd=d;best=p;} }
         if(best&&bd<(best.role==='GK'?1.25:1.05)){
           B.owner=best; B.lastTouch=best.team; B.intended=null;
