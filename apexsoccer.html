@@ -405,14 +405,14 @@ const FORM=[ // attack +X frame
   {role:'FWD',x:-5,  z:0},
 ];
 const teams=[
-  { name:'COMETS', short:'COM', shirt:0xff7a1a, shorts:0x161616, gk:0xd7ff3c, ad:1,  score:0, players:[], human:true  },
+  { name:'COMETS', short:'COM', shirt:0xff7a1a, shorts:0xf2f2f2, gk:0xd7ff3c, ad:1,  score:0, players:[], human:true  },
   { name:'SHARKS', short:'SHA', shirt:0x19b8ff, shorts:0xf2f2f2, gk:0xff3cf2, ad:-1, score:0, players:[], human:false },
 ];
 let PID=0;
 for(const t of teams){
   FORM.forEach((f,i)=>{
     const isGK=f.role==='GK';
-    const mesh=makePlayerMesh(isGK?t.gk:t.shirt, isGK?0x101010:t.shorts, SKIN[(PID+i)%SKIN.length], isGK?1:i+1);
+    const mesh=makePlayerMesh(isGK?t.gk:t.shirt, isGK?0xf2f2f2:t.shorts, SKIN[(PID+i)%SKIN.length], isGK?1:i+1);
     scene.add(mesh.group);
     t.players.push({ id:PID++, team:t, role:f.role, hx:f.x, hz:f.z, m:mesh,
       pos:new THREE.Vector3(), vel:new THREE.Vector3(), face:0, phase:Math.random()*6,
@@ -1076,7 +1076,7 @@ async function initAthletes(){
           hair: HAIR_STYLES[(i + ti * 2) % HAIR_STYLES.length],
           hairCol: HAIR_COLS[(i * 3 + ti) % HAIR_COLS.length],
           outfit: 'soccer_kit',
-          cols: { top: isGK ? t.gk : t.shirt, bottom: isGK ? 0x101010 : t.shorts, shoes: 0xffffff }
+          cols: { top: isGK ? t.gk : t.shirt, bottom: isGK ? 0xf2f2f2 : t.shorts, shoes: 0xffffff }
         }, 1.82);
         // hide the primitive body meshes; the athlete rides in the same moved/rotated group
         p.m.group.traverse(o => { if (o.isMesh) o.visible = false; });
