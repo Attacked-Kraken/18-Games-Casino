@@ -290,8 +290,8 @@ const crowd = (function(){
     }
   }
   const N = seats.length;
-  const bodyGeo = new THREE.CylinderGeometry(0.16,0.24,0.6,5);
-  const headGeo = new THREE.SphereGeometry(0.11,6,5);
+  const bodyGeo = new THREE.CylinderGeometry(0.34,0.48,1.5,6);
+  const headGeo = new THREE.SphereGeometry(0.29,7,6);
   const bodyMat = new THREE.MeshLambertMaterial({ color:0xffffff });
   const headMat = new THREE.MeshLambertMaterial({ color:0xffffff });
   const bodies = new THREE.InstancedMesh(bodyGeo, bodyMat, N);
@@ -299,19 +299,19 @@ const crowd = (function(){
   bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   heads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   bodies.castShadow = heads.castShadow = false; bodies.frustumCulled = heads.frustumCulled = false;
-  const bodyCols = [0x5a6675,0x3a4250,0x6b5a4a,0x4a5a6b,0x707a88];
+  const bodyCols = [0x8a97a8,0xc8ccd4,0xb84a3a,0x3a6bc8,0xd8b84a,0x4a8a5a,0xe8e4da,0x7a4a8a,0xd97b2f,0x9fb6c9];
   const skinCols = [0xd9a066,0x8d5524,0xf1c27d,0x5c3a1e];
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sv = new THREE.Vector3(1,1,1), EA = new THREE.Euler();
   const C = new THREE.Color();
   seats.forEach((s,i)=>{
     const r = Math.random();
-    C.set(r<0.075?0x1f6fd6 : r<0.15?0x0e7c7b : bodyCols[(Math.random()*bodyCols.length)|0]);
+    C.set(r<0.10?0x1f6fd6 : r<0.20?0x0e7c7b : bodyCols[(Math.random()*bodyCols.length)|0]);
     bodies.setColorAt(i,C);
     C.set(skinCols[(Math.random()*skinCols.length)|0]);
     heads.setColorAt(i,C);
     EA.set(0,s.rotY,0); Q.setFromEuler(EA);
-    V.set(s.x, s.base+0.30, s.z); M.compose(V,Q,Sv); bodies.setMatrixAt(i,M);
-    V.set(s.x, s.base+0.72, s.z); M.compose(V,Q,Sv); heads.setMatrixAt(i,M);
+    V.set(s.x, s.base+0.75, s.z); M.compose(V,Q,Sv); bodies.setMatrixAt(i,M);
+    V.set(s.x, s.base+1.95, s.z); M.compose(V,Q,Sv); heads.setMatrixAt(i,M);
   });
   bodies.instanceColor.needsUpdate = true; heads.instanceColor.needsUpdate = true;
   scene.add(bodies); scene.add(heads);
@@ -324,8 +324,8 @@ const crowd = (function(){
       const i = (crowdFrame*50 + j) % N, s = seats[i];
       const bob = Math.sin(crowdT*3 + s.phase) * amp;
       _E.set(0,s.rotY,0); _Q.setFromEuler(_E);
-      _V.set(s.x, s.base+0.30+bob, s.z); _M.compose(_V,_Q,_S); bodies.setMatrixAt(i,_M);
-      _V.set(s.x, s.base+0.72+bob, s.z); _M.compose(_V,_Q,_S); heads.setMatrixAt(i,_M);
+      _V.set(s.x, s.base+0.75+bob, s.z); _M.compose(_V,_Q,_S); bodies.setMatrixAt(i,_M);
+      _V.set(s.x, s.base+1.95+bob, s.z); _M.compose(_V,_Q,_S); heads.setMatrixAt(i,_M);
     }
     bodies.instanceMatrix.needsUpdate = true; heads.instanceMatrix.needsUpdate = true;
   }
@@ -394,7 +394,7 @@ const GEO = {
   head: new THREE.SphereGeometry(0.55,12,10),
   helmet: new THREE.SphereGeometry(0.64,12,10),
   shaft: new THREE.CylinderGeometry(0.09,0.09,3.6,6),
-  blade: new THREE.BoxGeometry(1.5,0.14,0.28),
+  blade: new THREE.BoxGeometry(1.1,0.11,0.24),
   pad: new THREE.BoxGeometry(1.0,2.7,1.25),
   glove: new THREE.BoxGeometry(0.8,0.8,0.9),
 };
@@ -508,22 +508,29 @@ function attachAthletes(H){
         skin: i % 6,
         hair: HAIR_STYLES[i % HAIR_STYLES.length],
         hairCol: HAIR_COLS[(i*3) % HAIR_COLS.length],
-        outfit:'tee_jeans',
+        outfit:'hoodie',
         cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0xffffff },
       }, ATH_H);
       const wrap = new THREE.Group(); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
-      // stick in the right hand (bone space is scaled by the rig; compensate)
+      // stick PLANTED ON THE ICE in skater space: blade flat ahead-right, shaft rising
+      // back to the hands. (Bone-parenting it to the hand made it wave like a crutch.)
       const stick = new THREE.Group();
-      const sh = new THREE.Mesh(GEO.shaft, MAT.stick); sh.position.y = 1.8; stick.add(sh);
-      const bl = new THREE.Mesh(GEO.blade, MAT.tape); bl.position.set(0.35, 0.08, 0.1); stick.add(bl);
-      stick.position.set(0.05,-0.02,0.08); stick.rotation.x = -0.5;
-      let hand = null;
-      a.object.traverse(o=>{ if(o.isBone && o.name==='hand_r') hand = o; });
-      if(hand){ stick.scale.setScalar(1/ATH_K); hand.add(stick); }
-      else { stick.position.set(0.9,2.2,0.2); wrap.add(stick); }
+      const bl2 = new THREE.Mesh(GEO.blade, MAT.tape); bl2.position.set(0.45, 0.06, 0); stick.add(bl2);
+      const sh2 = new THREE.Mesh(GEO.shaft, MAT.stick); sh2.position.set(-0.30, 1.78, 0); sh2.rotation.z = 0.262; stick.add(sh2);
+      stick.position.set(1.15, 0, 0.72);
+      wrap.add(stick); s.athStick = stick;
+      // helmet on the head bone - a player wears a helmet, not hair
+      let headB = null;
+      a.object.traverse(o=>{ if(o.isBone && /head/i.test(o.name) && !headB) headB = o; });
+      if(headB){
+        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.47, 12, 8, 0, Math.PI*2, 0, Math.PI*0.58),
+          new THREE.MeshStandardMaterial({ color: TEAMS[s.team].helmet, roughness:.35 }));
+        helm.scale.setScalar(1/ATH_K); helm.position.y = 0.04;
+        headB.add(helm);
+      }
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
     }catch(e){ /* that player stays primitive */ }
@@ -951,11 +958,15 @@ function stepSkater(s,dt){
   // real-athlete locomotion (primitive parts above are hidden once an athlete is attached)
   if(s.ath){
     const a=s.ath;
-    if(sp>0.4){ a.play('Walk_Loop'); a.ts=clamp(sp/1.7,0.7,2.3); }
+    if(sp>0.4){ a.play('Walk_Loop'); a.ts=clamp(sp/2.4,0.6,1.8); }
     else a.play('Idle_Loop');
     if(a.act) a.act.timeScale=a.ts;
     a.mixer.update(dt);
-    s.athWrap.rotation.z=-clamp(sp*0.012,0,0.18); // forward lean toward group-local +x
+    const sf=clamp(sp/30,0,1); // hockey stance: crouched, leaning in, weight rocking stride to stride
+    s.athWrap.rotation.z=-(0.13+0.18*sf);
+    s.athWrap.rotation.x=Math.sin(s.phase)*0.055*sf;
+    s.athWrap.position.y=-0.22*(0.4+0.6*sf)+Math.abs(Math.sin(s.phase))*0.06*sf;
+    if(s.athStick) s.athStick.rotation.y = (puck.owner===s) ? Math.sin(s.phase*2)*0.10 : Math.sin(s.phase)*0.04*sf; // stickhandling sway
     if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
   }
 }
