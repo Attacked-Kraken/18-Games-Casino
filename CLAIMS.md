@@ -37,6 +37,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | Track & Field college game (apextrackfield.html): all T&F events — sprints, hurdles, mid-distance, jumps, throws; sports.html tab+panel+card; Apex Arcade branded | Muse Modern Plus | apextrackfield | - | 2026-10-14 21:55 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
 | DONE | F1 Apex Arcade sponsor branding: trackside banner boards + start gantry + menu splash (casino bot covers hockey/soccer/baseball/flight) | Muse main | f1-sponsor-final | PR #88, main df9063e3 | 2026-10-14 21:45 CDT |
 | CLAIMED | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | - | 2026-10-14 21:37 CDT |
