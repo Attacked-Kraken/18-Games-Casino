@@ -18,7 +18,10 @@ border:2px solid #ffd34d;border-radius:10px;font-weight:800;font-size:14px;lette
 #rotHint{display:none;position:fixed;inset:0;z-index:100;background:rgba(4,10,20,.93);
 align-items:center;justify-content:center;text-align:center;padding:32px;font-size:20px;font-weight:700;
 line-height:1.5;color:#ffd34d}
-@media (orientation:portrait) and (pointer:coarse){#rotHint{display:flex}}
+#rotHint{display:none !important}
+/* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+   In portrait the whole stage presents rotated to landscape from the first frame. */
+@media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
 #fps{position:fixed;z-index:65;display:none;pointer-events:auto;cursor:pointer;
 top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);
 background:rgba(6,12,24,.78);border:1px solid #4a6a8f;border-radius:8px;color:#9fe8ff;
@@ -308,6 +311,7 @@ function fitGame(){
 vG=null;
 DPR = Math.min(window.devicePixelRatio||1, 1.5);
 W = window.innerWidth; H = window.innerHeight;
+if (H > W) { const _t = W; W = H; H = _t; } // LANDSCAPE LAW: always size to the landscape box
 ovl.width = Math.round(W*DPR); ovl.height = Math.round(H*DPR);
 ox.setTransform(DPR,0,0,DPR,0,0);
 if(W3D.renderer){ W3D.renderer.setPixelRatio(Perf.pr); W3D.renderer.setSize(W,H); W3D.buildCrowdLevel(); }
@@ -485,6 +489,8 @@ if(mb&&!mb._w){ mb._w=1; mb.onclick=e=>{ e.stopPropagation(); AudioSys.init(); A
 document.body.classList.add('touch');
 }
 window.addEventListener('pointerdown', firstGesture, {passive:true});
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 window.addEventListener('keydown', firstGesture);
 const Store={
 get(k,d){ try{ const v=localStorage.getItem('tfapex_'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
