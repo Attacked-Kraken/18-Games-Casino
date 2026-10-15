@@ -22,7 +22,16 @@
   #rotOv { display:none !important; }
   /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
      In portrait the whole stage presents rotated to landscape from the first frame. */
-  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; width:100dvh; height:100vw; height:100dvw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); transform:rotate(90deg) translateY(-100dvw); }
+    /* rotated frame edge map: body right->screen bottom, body bottom->screen left, body top->screen right, body left->screen top */
+    #btns { right:calc(20px + env(safe-area-inset-bottom)); bottom:calc(22px + env(safe-area-inset-left)); }
+    #joy { left:calc(26px + env(safe-area-inset-top)); bottom:calc(26px + env(safe-area-inset-left)); }
+    #hud { top:calc(10px + env(safe-area-inset-right)); }
+    #viewBtn { top:calc(12px + env(safe-area-inset-right)); right:calc(12px + env(safe-area-inset-bottom)); }
+    #muteBtn { top:calc(12px + env(safe-area-inset-right)); right:calc(64px + env(safe-area-inset-bottom)); }
+    #back { top:calc(10px + env(safe-area-inset-right)); left:calc(12px + env(safe-area-inset-top)); }
+    #chg { bottom:calc(120px + env(safe-area-inset-left)); }
+  }
   #hud { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
     z-index:8000; display:flex; align-items:center; gap:14px; padding:8px 18px;
     background:rgba(2,14,6,.85); border:1px solid rgba(57,255,90,.5); border-radius:999px;
@@ -599,7 +608,7 @@ function doTackleSwitch(){
         B.owner=null; B.noPickup=0.25; B.lastTouch=p.team;
         B.vel.set(fx*5,1.2,fz*5); banner('WON IT','CLEAN TACKLE',1.2); giveControl(p); return;
       }
-      doFoul(p,c); return;
+      p.tackleCd=0.35; return; // side tackle whiffed — no foul, play on
     }
   }
   switchPlayer();
@@ -834,18 +843,19 @@ function updateAI(dt){
         const c=B.owner;
         if(chaseOrder[0]===p){ // nearest pressures the carrier
           movePlayer(p,c.pos.x+c.vel.x*0.25,c.pos.z+c.vel.z*0.25,8.9,dt);
-          if(p.tackleCd<=0){ // AI tackle attempt, same rules as the human's L tackle
+          if(p.tackleCd<=0 && !p.controlled){ // AI tackle attempt: front/side only, never your selected player — no more phantom from-behind fouls
             const d=Math.hypot(c.pos.x-p.pos.x,c.pos.z-p.pos.z);
             if(d<1.9){
-              p.tackleCd=0.9;
               const fx=Math.cos(p.face), fz=Math.sin(p.face);
               const tx=(c.pos.x-p.pos.x)/d, tz=(c.pos.z-p.pos.z)/d;
               const facingDot=fx*tx+fz*tz;
               const behindDot=(-tx)*Math.cos(c.face)+(-tz)*Math.sin(c.face);
-              if(behindDot<-0.45){ doFoul(p,c); }
-              else if(facingDot>0.15&&Math.random()<0.55){ // clean poke, but not every time
-                B.owner=null; B.noPickup=0.25; B.lastTouch=p.team;
-                B.vel.set(fx*5,1.2,fz*5);
+              if(behindDot>-0.3){ // not behind the carrier: safe to dive in
+                p.tackleCd=0.9;
+                if(facingDot>0.15&&Math.random()<0.55){ // clean poke, but not every time
+                  B.owner=null; B.noPickup=0.25; B.lastTouch=p.team;
+                  B.vel.set(fx*5,1.2,fz*5);
+                } else { p.tackleCd=0.45; } // whiffed — brief cooldown, no foul
               }
             }
           }
@@ -1119,8 +1129,8 @@ function updateCamera(dt){
     }
     camera.position.copy(camP); camera.lookAt(_lk); return;
   }
-  let h=30,d=50,kx=0.62,kz=0.3,lk=1.05; // FULL (owner, 2026-10-14: pulled back so BOTH goals + keepers stay in frame - the old 22/32 cropped the goalmouths out)
-  if(m==='TEAM'){ h=15; d=22; kx=0.62; kz=0.5; } // ~40% closer/lower, frames your team around the ball
+  let h=22,d=58,kx=0.62,kz=0.3,lk=1.05; // FULL: lower, wider broadcast framing so both goals + keepers stay in frame without the top-down feel
+  if(m==='TEAM'){ h=11; d=27; kx=0.62; kz=0.45; } // tighter broadcast angle on your team around the ball — players read much bigger on phones
   camT.set(clamp(B.pos.x*kx,-24,24),0,B.pos.z*kz);
   camP.x+=(camT.x-camP.x)*Math.min(1,3*dt);
   camP.y+=(h-camP.y)*Math.min(1,3*dt);
