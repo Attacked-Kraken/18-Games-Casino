@@ -108,6 +108,17 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<script>
+// Boot watchdog: if the game module fails (e.g. three.module.min.js blocked), explain instead of black screen.
+setTimeout(function(){
+  if(!window.__apexBoot && !document.querySelector('#menu .bigbtn')){
+    document.body.insertAdjacentHTML('beforeend',
+      '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:#04070d;color:#eaf2ff;font-family:sans-serif;text-align:center;padding:24px">'+
+      '<div><div style="font-size:22px;font-weight:800;margin-bottom:10px">⚠️ Apex F1 could not start</div>'+
+      '<div style="color:#8fa8c8">The 3D engine failed to load. Check your connection and reload.<br>If it persists, try Chrome or Safari directly (not an in-app browser).</div></div></div>');
+  }
+}, 8000);
+</script>
 
 <div id="hud" class="hidden">
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
@@ -145,6 +156,7 @@
   <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather — and rivals who will do anything to win.<br><span style="color:#ffd76a;letter-spacing:3px;font-size:12px">★ PRESENTED BY APEX ARCADE ★</span></div>
   <button class="bigbtn" id="quickBtn">⚡ QUICK RACE</button>
   <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
+  <button class="bigbtn alt" id="tournBtn">🏁 TOURNAMENT</button>
   <button class="bigbtn alt" id="friendBtn">👥 RACE A FRIEND (ENTER CODE)</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 13px ui-monospace,Menlo,monospace;color:#9fd8ff">Finish a race to earn your code</div>
@@ -159,6 +171,16 @@
   <div class="card"><h3>WEATHER FORECAST</h3><div id="wxForecast" style="font-size:14px;color:#9fd8ff">—</div></div>
   <button class="bigbtn gold" id="toTeamBtn">CONTINUE →</button>
   <button class="bigbtn alt" id="trackBack">‹ BACK</button>
+</div>
+
+<!-- TOURNAMENT SETUP: pick 3 circuits -->
+<div class="overlay hidden" id="tournMenu">
+  <h1 class="title" style="font-size:34px">🏁 TOURNAMENT</h1>
+  <div class="menuSub">Pick <b style="color:#ffd76a">3 circuits</b> — 3-lap sprint races, championship points across all three. Most points takes the trophy.</div>
+  <div class="card"><div class="row" id="tournRow"></div></div>
+  <div class="card"><h3>SELECTED (<span id="tournCount">0</span>/3)</h3><div id="tournList" style="font-size:14px;color:#9fd8ff">Tap circuits above</div></div>
+  <button class="bigbtn gold" id="tournToTeam">CONTINUE →</button>
+  <button class="bigbtn alt" id="tournBack">‹ BACK</button>
 </div>
 
 <!-- TEAM SELECT -->
@@ -403,9 +425,18 @@ const TIRES = {
 let renderer, scene, camera;
 const isTouch = matchMedia('(pointer: coarse)').matches;
 if(isTouch) document.body.classList.add('touch');
+let glOK=false, glError='';
 function initGL(){
+  if(glOK) return;
   const canvas = $('c');
-  renderer = new THREE.WebGLRenderer({ canvas, antialias:!isTouch });
+  try{
+    renderer = new THREE.WebGLRenderer({ canvas, antialias:!isTouch, powerPreference:'high-performance' });
+  }catch(err){
+    glError='3D could not start on this device ('+(err&&err.message||'WebGL unavailable')+'). Menus still work — try a different browser.';
+    const b=$('banner'); if(b){ b.innerHTML='<div class="b1" style="font-size:20px">⚠️ '+glError+'</div>'; b.classList.add('show'); }
+    return;
+  }
+  glOK=true;
   renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch?1.5:2));
   renderer.shadowMap.enabled = !isTouch;
   renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -476,7 +507,8 @@ function buildSkyDome(){
     fragmentShader:`varying vec3 vDir; uniform vec3 topColor,midColor,botColor,sunDir,sunColor; uniform float gloom;
       void main(){
         float h = clamp(vDir.y, -1.0, 1.0);
-        vec3 col = h>0.0 ? mix(midColor, topColor, pow(h,0.65)) : mix(midColor, botColor, pow(-h,0.6));
+        float ah = abs(h);
+        vec3 col = h>0.0 ? mix(midColor, topColor, pow(ah,0.65)) : mix(midColor, botColor, pow(ah,0.6));
         float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
         col += sunColor * (pow(s, 900.0)*1.2 + pow(s,18.0)*0.22) * (1.0-gloom*0.85);
         col = mix(col, vec3(dot(col, vec3(0.33))), gloom*0.45);
@@ -1483,13 +1515,36 @@ function showResults(R){
     const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
   }
   $('champTable').innerHTML=champHtml+(fl?`<div style="margin-top:6px;font-size:12px;color:#9fd8ff">⚡ Fastest lap: ${fl.name} ${fmtTime(fl.bestLap)}</div>`:'');
+  // tournament: accumulate points across the 3 races
+  const tourn=sessionCfg&&sessionCfg.tournament;
+  if(tourn){
+    const me=(sessionCfg.driver||'YOU').toUpperCase().slice(0,14);
+    order.forEach((c,i)=>{
+      const k=c.isPlayer?me:c.name;
+      tourn.points[k]=(tourn.points[k]||0)+(pts[c.name]||0);
+      if(c.isPlayer) tourn.names[me]='YOU';
+    });
+    tourn.raceIdx++;
+    const rows=Object.entries(tourn.points).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const tName=t=>TRACKS.find(x=>x.id===t).name;
+    champHtml='<div style="color:#ffd76a;font-weight:800;margin-bottom:6px">🏁 TOURNAMENT — after race '+tourn.raceIdx+' of 3 ('+tourn.tracks.slice(0,tourn.raceIdx).map(tName).join(', ')+')</div>'
+      +'<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map(([k,v])=>`<tr${k===me?' class="me"':''}><td>${k}${k===me?' (YOU)':''}</td><td>${v}</td></tr>`).join('');
+    $('champTable').innerHTML=champHtml;
+    if(tourn.raceIdx>=3){
+      const champ=rows[0];
+      $('resTitle').textContent = champ[0]===me ? '🏆 TOURNAMENT CHAMPION!' : '🏁 TOURNAMENT COMPLETE';
+      $('resNext').textContent='MAIN MENU';
+    } else {
+      $('resNext').textContent='NEXT RACE →';
+    }
+  }
   $('resultMenu').classList.remove('hidden');
 }
 function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixed(3).padStart(6,'0')}`; }
 
 /* ================= MENU FLOW ================= */
 let selTrack='monza', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
-function show(id){ ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','howMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+function show(id){ ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 function initMenus(){
   // tracks
   const tr=$('trackRow'); tr.innerHTML='';
@@ -1529,6 +1584,37 @@ function initMenus(){
     else { sessionCfg={career:true}; renderHub(); show('hub'); }
   };
   $('friendBtn').onclick=()=>{ $('friendErr').textContent=''; show('friendOv'); };
+  // tournament: pick 3 circuits
+  let tournTracks=[];
+  $('tournBtn').onclick=()=>{
+    tournTracks=[]; renderTournPicker(); show('tournMenu');
+  };
+  function renderTournPicker(){
+    const tr=$('tournRow'); tr.innerHTML='';
+    for(const t of TRACKS){
+      const d=document.createElement('div');
+      d.className='pick'+(tournTracks.includes(t.id)?' sel':'');
+      d.innerHTML=`<div class="t">${t.name}</div><div class="s">${t.country}</div>`;
+      d.onclick=()=>{
+        const i=tournTracks.indexOf(t.id);
+        if(i>=0) tournTracks.splice(i,1);
+        else if(tournTracks.length<3) tournTracks.push(t.id);
+        renderTournPicker();
+      };
+      tr.appendChild(d);
+    }
+    $('tournCount').textContent=tournTracks.length;
+    $('tournList').textContent=tournTracks.length? tournTracks.map(id=>TRACKS.find(t=>t.id===id).name).join(' → ') : 'Tap circuits above';
+    $('tournToTeam').disabled=tournTracks.length!==3;
+  }
+  $('tournBack').onclick=()=>show('menu');
+  $('tournToTeam').onclick=()=>{
+    if(tournTracks.length!==3) return;
+    pendingFriend=null;
+    sessionCfg={tournament:{tracks:[...tournTracks], raceIdx:0, points:{}, names:{}}};
+    selLaps=3;
+    show('teamMenu');
+  };
   $('friendClose').onclick=()=>show('menu');
   $('friendGo').onclick=()=>{
     const f=parseFriend($('friendIn').value);
@@ -1547,7 +1633,14 @@ function initMenus(){
   $('resMenu').onclick=()=>{ show('menu'); renderMenuCode(); };
   $('resNext').onclick=()=>{
     $('resultMenu').classList.add('hidden');
-    if(career&&sessionCfg&&sessionCfg.career){ renderHub(); show('hub'); }
+    const tourn=sessionCfg&&sessionCfg.tournament;
+    if(tourn&&tourn.raceIdx<3){
+      // next tournament race: same driver/team, next circuit
+      startWeekend();
+    } else if(tourn){
+      sessionCfg.tournament=null; $('resNext').textContent='CONTINUE →'; show('menu'); renderMenuCode();
+    }
+    else if(career&&sessionCfg&&sessionCfg.career){ renderHub(); show('hub'); }
     else show('menu');
   };
   $('hubMenu').onclick=()=>show('menu');
@@ -1583,12 +1676,14 @@ function startWeekend(){
   const aiDelta={ROOKIE:-0.12,PRO:0,CHEAT:0.06}[selDiff];
   const isNew=sessionCfg&&sessionCfg.career==='new';
   const isCareer=isNew||(sessionCfg&&sessionCfg.career===true);
+  const tourn=sessionCfg&&sessionCfg.tournament;
   if(isNew) newCareer(name,selTeam.id);
+  if(tourn) selTrack=tourn.tracks[tourn.raceIdx]; // tournament dictates the circuit
   const friend=pendingFriend; pendingFriend=null;
   const cfg={ track:selTrack, laps:selLaps, team:selTeam, driver:name,
     skill:driverSkill(), cheat, aiDelta, friend,
     wxSeed:(Math.random()*1e9)|0 };
-  sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam };
+  sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam, tournament:tourn||null };
   show(null);
   initGL._done||(initGL(),RainFX.init(),HUD.initMinimap(),initInput(),initGL._done=true);
   Race.setup(cfg);
@@ -1655,6 +1750,7 @@ function loop(t){
   }
 }
 /* boot */
+window.__apexBoot=true;
 initMenus();
 renderMenuCode();
 requestAnimationFrame(loop);
