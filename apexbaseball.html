@@ -379,15 +379,28 @@ function attachAthlete(p, slotIdx){
       skin: slotIdx % 6,
       hair: HAIR_M[slotIdx % HAIR_M.length],
       hairCol: HAIR_C[slotIdx % HAIR_C.length],
-      outfit:'tee_jeans',
+      outfit:'baseball_kit',
       cols:{ top: T.uni, bottom: PANT_COL, shoes: 0x222222 },
-    }, 2.1);
+    }, 1.82);
     a.object.rotation.y = 0;                    // rig bind pose faces +z, same as primitives
     a.object.traverse(o => { if (o.isMesh || o.isSkinnedMesh) o.castShadow = !isTouch; });
     p.g.add(a.object);
     for (const k of ['legL','legR','torso','head','cap','brim','armL','armR']) if (p[k]) p[k].visible = false;
     const bones = {}; a.object.traverse(o => { if (o.isBone) bones[o.name] = o; });
     p.bones = bones;
+    if (bones['Head']){ // cap (fielders) / batting helmet — the old primitives had them, the athletes lost them
+      const capGrp = new THREE.Group();
+      if (p.bat){
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.125,14,10,0,Math.PI*2,0,1.9), M(T.cap));
+        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.1,0.11), M(T.cap));
+        flap.position.set(-0.115,-0.03,0.02); capGrp.add(shell, flap);
+      } else {
+        const crown = new THREE.Mesh(new THREE.SphereGeometry(0.12,14,10,0,Math.PI*2,0,1.45), M(T.cap));
+        const brim = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.02,0.13), M(T.cap));
+        brim.position.set(0,0.015,0.155); capGrp.add(crown, brim);
+      }
+      capGrp.position.set(0,0.045,0); bones['Head'].add(capGrp);
+    }
     if (p.bat){                                 // batter: real bat in the right hand
       p.bat.visible = false;
       const bg = new THREE.Group();
