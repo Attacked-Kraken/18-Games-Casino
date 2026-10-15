@@ -73,10 +73,7 @@
   body.touch #btnDRS, body.touch #btnERS { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
-  #rotateHint { display:none !important; }
-  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
-     In portrait the whole stage presents rotated to landscape from the first frame. */
-  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+  @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
   /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
   @media (pointer:coarse) and (orientation:landscape) {
     body.touch #stick { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:110px; height:110px; }
@@ -463,10 +460,8 @@ function initGL(){
   scene.add(sun); scene.userData.sun = sun;
   buildSkyDome();
   Particles.init();
-  function fitLand(){ let w=innerWidth,h=innerHeight; if(h>w){ const _t=w; w=h; h=_t; } // LANDSCAPE LAW
-    camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h); }
-  addEventListener('resize', fitLand);
-  fitLand();
+  addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+  renderer.setSize(innerWidth,innerHeight);
 }
 // GPU-cheap particle pool: tire smoke, lockup smoke, off-track dust
 const Particles = {
@@ -797,83 +792,137 @@ const Track = {
   }
 };
 /* ================= CARS ================= */
-function buildCarMesh(color){
+// Livery texture cache: one canvas texture per team
+const __liveryCache = {};
+function liveryTexture(color, teamName, carNumber){
+  const key = color.toString(16)+teamName+carNumber;
+  if(__liveryCache[key]) return __liveryCache[key];
+  const c = document.createElement('canvas'); c.width=512; c.height=256;
+  const x = c.getContext('2d');
+  const hex = '#'+color.toString(16).padStart(6,'0');
+  x.fillStyle = hex; x.fillRect(0,0,512,256);
+  x.fillStyle = 'rgba(255,255,255,0.16)';
+  x.beginPath(); x.moveTo(0,200); x.lineTo(512,140); x.lineTo(512,170); x.lineTo(0,230); x.fill();
+  x.fillStyle = 'rgba(0,0,0,0.22)';
+  x.beginPath(); x.moveTo(0,230); x.lineTo(512,170); x.lineTo(512,200); x.lineTo(0,256); x.fill();
+  x.fillStyle = '#ffd76a'; x.font = 'bold 44px sans-serif'; x.textAlign='center';
+  x.fillText('\u2605 APEX ARCADE \u2605', 256, 78);
+  x.fillStyle = 'rgba(255,255,255,0.92)'; x.font = 'bold 30px sans-serif';
+  x.fillText(teamName, 256, 122);
+  x.fillStyle = '#ffffff'; x.beginPath(); x.arc(256,180,34,0,7); x.fill();
+  x.fillStyle = '#111111'; x.font = 'bold 40px sans-serif';
+  x.fillText(String(carNumber), 256, 194);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  __liveryCache[key]=t; return t;
+}
+function buildCarMesh(color, teamName, carNumber){
+  teamName = teamName||'APEX'; carNumber = carNumber||1;
   const g=new THREE.Group();
-  const mat=new THREE.MeshStandardMaterial({color, roughness:0.28, metalness:0.55});
+  const livTex = liveryTexture(color, teamName, carNumber);
+  const mat=new THREE.MeshStandardMaterial({map:livTex, roughness:0.25, metalness:0.6});
+  const paint=new THREE.MeshStandardMaterial({color, roughness:0.25, metalness:0.6});
   const dark=new THREE.MeshStandardMaterial({color:0x111318, roughness:0.6});
-  const carbon=new THREE.MeshStandardMaterial({color:0x1c1e24, roughness:0.5, metalness:0.3});
+  const carbon=new THREE.MeshStandardMaterial({color:0x1c1e24, roughness:0.45, metalness:0.35});
   const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); g.add(x); return x; };
-  // floor + chassis
   const floor=B(4.4,0.07,1.85,carbon); floor.position.set(0,0.14,0);
-  const chassis=B(2.1,0.52,1.02,mat); chassis.position.set(0.35,0.52,0); chassis.castShadow=!isTouch;
-  // nose cone — long, tapered, sloping
-  const nose=B(1.9,0.26,0.34,mat); nose.position.set(2.05,0.42,0); nose.rotation.z=0.06;
-  const noseTip=B(0.5,0.18,0.28,mat); noseTip.position.set(2.95,0.36,0);
-  // front wing: main plane + 2 flap elements + endplates
-  const fw0=B(0.55,0.05,2.0,carbon); fw0.position.set(3.25,0.16,0);
-  const fw1=B(0.4,0.04,1.92,carbon); fw1.position.set(3.2,0.26,0); fw1.rotation.z=-0.12;
-  const fw2=B(0.32,0.04,1.84,carbon); fw2.position.set(3.15,0.35,0); fw2.rotation.z=-0.18;
+  const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
+  // sculpted chassis tub (lathed)
+  const tubPts=[]; for(let i=0;i<=8;i++){ const t=i/8; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
+  const tub=new THREE.Mesh(new THREE.LatheGeometry(tubPts,12), mat);
+  tub.scale.set(1,1,1.9); tub.rotation.z=Math.PI/2; tub.rotation.y=Math.PI/2;
+  tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
+  // sculpted nose cone (lathed taper)
+  const nosePts=[]; for(let i=0;i<=10;i++){ const t=i/10; nosePts.push(new THREE.Vector2(0.20*(1-t*0.62), t*1.9)); }
+  const nose=new THREE.Mesh(new THREE.LatheGeometry(nosePts,10), mat);
+  nose.rotation.z=-Math.PI/2+0.05; nose.position.set(1.15,0.44,0); g.add(nose);
+  for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
+  // front wing: extruded main plane + 3 flaps + endplates
+  const fwShape=new THREE.Shape(); fwShape.moveTo(-0.28,0); fwShape.lineTo(0.28,0); fwShape.lineTo(0.22,0.06); fwShape.lineTo(-0.22,0.06); fwShape.closePath();
+  const fwGeo=new THREE.ExtrudeGeometry(fwShape,{depth:1.96,bevelEnabled:true,bevelThickness:0.015,bevelSize:0.015,bevelSegments:1});
+  fwGeo.translate(0,0,-0.98);
+  const fw0=new THREE.Mesh(fwGeo,carbon); fw0.position.set(3.25,0.14,0); g.add(fw0);
+  for(let i=0;i<3;i++){ const f=B(0.3-i*0.04,0.035,1.9-i*0.06,carbon); f.position.set(3.18-i*0.02,0.25+i*0.09,0); f.rotation.z=-0.14-i*0.05; }
   for(const sd of [-1,1]){
-    const ep=B(0.55,0.38,0.05,mat); ep.position.set(3.25,0.32,sd*0.99); ep.rotation.z=0.1;
-    // front suspension arms
-    const up=B(0.08,0.06,0.85,carbon); up.position.set(2.35,0.62,sd*0.55); up.rotation.y=sd*0.25;
-    const lo=B(0.08,0.06,0.85,carbon); lo.position.set(2.35,0.38,sd*0.55); lo.rotation.y=sd*0.25;
+    const ep=B(0.55,0.42,0.045,paint); ep.position.set(3.25,0.34,sd*1.0); ep.rotation.z=0.08;
   }
-  // sidepods with inlets
+  for(const sd of [-1,1]) for(const yy of [0.62,0.38]){
+    const arm=B(0.07,0.05,0.9,carbon); arm.position.set(2.3,yy,sd*0.55); arm.rotation.y=sd*0.28;
+  }
+  // sculpted sidepods (extruded)
   for(const sd of [-1,1]){
-    const pod=B(1.7,0.42,0.52,mat); pod.position.set(-0.25,0.48,sd*0.68);
-    const inlet=B(0.5,0.22,0.1,dark); inlet.position.set(0.35,0.52,sd*0.92);
+    const s=new THREE.Shape();
+    s.moveTo(0,0); s.lineTo(1.7,0); s.quadraticCurveTo(1.85,0.21,1.5,0.42); s.lineTo(0.2,0.42); s.quadraticCurveTo(-0.1,0.21,0,0);
+    const sg=new THREE.ExtrudeGeometry(s,{depth:0.5,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.06,bevelSegments:2});
+    const pod=new THREE.Mesh(sg,mat); pod.rotation.y=Math.PI/2;
+    pod.position.set(0.62,0.28,sd>0?0.40:-0.96);
+    g.add(pod);
+    const inlet=B(0.45,0.2,0.12,dark); inlet.position.set(0.45,0.55,sd*0.88);
+    for(let li=0;li<3;li++){ const lv=B(0.3,0.02,0.4,dark); lv.position.set(-0.35-li*0.18,0.68-li*0.02,sd*0.62); lv.rotation.z=0.15; }
   }
-  // airbox + engine cover shark fin
-  const airbox=B(0.75,0.5,0.42,mat); airbox.position.set(0.05,0.98,0);
-  const fin=B(1.6,0.5,0.06,mat); fin.position.set(-0.9,0.95,0); fin.rotation.z=0.08;
-  // halo: ring + front pillar + rear mounts
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.055,8,16,Math.PI),dark);
-  halo.position.set(0.45,1.02,0); halo.rotation.y=Math.PI/2; g.add(halo);
-  const pillar=B(0.08,0.4,0.08,dark); pillar.position.set(0.87,0.85,0); pillar.rotation.z=-0.25;
-  // cockpit + helmet + mirrors
-  const ckpit=B(0.7,0.18,0.6,dark); ckpit.position.set(0.45,0.78,0);
-  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.17,10,8), new THREE.MeshStandardMaterial({color:0xffd76a,roughness:0.25,metalness:0.2}));
-  helmet.position.set(0.45,0.92,0); g.add(helmet);
-  for(const sd of [-1,1]){ const mir=B(0.12,0.06,0.1,carbon); mir.position.set(0.75,0.95,sd*0.55); }
-  // rear wing: beam + main plane + DRS flap + endplates
+  // airbox (extruded intake)
+  const abShape=new THREE.Shape(); abShape.moveTo(0,0); abShape.lineTo(0.75,0); abShape.quadraticCurveTo(0.8,0.3,0.45,0.5); abShape.lineTo(0.1,0.5); abShape.quadraticCurveTo(-0.05,0.25,0,0);
+  const abGeo=new THREE.ExtrudeGeometry(abShape,{depth:0.36,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.05,bevelSegments:2});
+  abGeo.translate(0,0,-0.18);
+  const airbox=new THREE.Mesh(abGeo,mat); airbox.position.set(-0.32,0.78,0); g.add(airbox);
+  const intake=B(0.2,0.28,0.24,dark); intake.position.set(0.02,1.05,0);
+  // shark fin
+  const finShape=new THREE.Shape(); finShape.moveTo(0,0); finShape.lineTo(1.7,0.06); finShape.lineTo(1.7,0.14); finShape.quadraticCurveTo(0.8,0.5,0,0.52); finShape.closePath();
+  const finGeo=new THREE.ExtrudeGeometry(finShape,{depth:0.05,bevelEnabled:false}); finGeo.translate(0,0,-0.025);
+  const fin=new THREE.Mesh(finGeo,paint); fin.position.set(-1.95,0.82,0); g.add(fin);
+  // halo with aero fairing
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.06,10,20,Math.PI),carbon);
+  halo.position.set(0.45,1.04,0); halo.rotation.y=Math.PI/2; g.add(halo);
+  const fair=new THREE.Mesh(new THREE.SphereGeometry(0.42,12,8,0,Math.PI*2,0,Math.PI/2),paint);
+  fair.scale.set(1,0.35,1); fair.position.set(0.45,1.04,0); fair.rotation.y=Math.PI/2; g.add(fair);
+  const pillar=B(0.07,0.42,0.07,carbon); pillar.position.set(0.87,0.86,0); pillar.rotation.z=-0.25;
+  // cockpit + helmet + visor + mirrors
+  const ckpit=B(0.7,0.16,0.58,dark); ckpit.position.set(0.45,0.8,0);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.17,12,10), new THREE.MeshStandardMaterial({color:0xffd76a,roughness:0.2,metalness:0.3}));
+  helmet.position.set(0.45,0.94,0); g.add(helmet);
+  for(const sd of [-1,1]){ const mir=B(0.1,0.05,0.14,carbon); mir.position.set(0.78,0.98,sd*0.56); }
+  // rear wing: swan-neck + beam + main + DRS flap + endplates
+  const swan=B(0.08,0.5,0.12,carbon); swan.position.set(-2.08,0.85,0); swan.rotation.z=0.25;
   const beam=B(0.32,0.05,0.95,carbon); beam.position.set(-2.05,0.72,0);
-  const rw=B(0.42,0.06,1.06,carbon); rw.position.set(-2.1,1.02,0); rw.rotation.z=0.06;
-  const rwf=B(0.36,0.05,1.0,mat); rwf.position.set(-2.14,1.24,0); rwf.rotation.z=0.1;
+  const rwShape=new THREE.Shape(); rwShape.moveTo(-0.21,0); rwShape.lineTo(0.21,0); rwShape.lineTo(0.18,0.07); rwShape.lineTo(-0.18,0.07); rwShape.closePath();
+  const rwGeo=new THREE.ExtrudeGeometry(rwShape,{depth:1.02,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.01,bevelSegments:1}); rwGeo.translate(0,0,-0.51);
+  const rw=new THREE.Mesh(rwGeo,carbon); rw.position.set(-2.1,1.0,0); rw.rotation.z=0.06; g.add(rw);
+  const rwf=new THREE.Mesh(rwGeo,paint); rwf.scale.set(0.85,0.8,0.96); rwf.position.set(-2.14,1.22,0); rwf.rotation.z=0.1; g.add(rwf);
   g.userData.drsFlap=rwf;
   for(const sd of [-1,1]){
-    const ep=B(0.6,0.62,0.05,mat); ep.position.set(-2.1,1.05,sd*0.54);
-    // rear suspension arms
-    const up=B(0.08,0.06,0.8,carbon); up.position.set(-1.7,0.6,sd*0.5); up.rotation.y=-sd*0.2;
-    const lo=B(0.08,0.06,0.8,carbon); lo.position.set(-1.7,0.38,sd*0.5); lo.rotation.y=-sd*0.2;
+    const epShape=new THREE.Shape(); epShape.moveTo(0,0); epShape.lineTo(0.6,0); epShape.lineTo(0.6,0.62); epShape.quadraticCurveTo(0.3,0.58,0,0.5); epShape.closePath();
+    const epGeo=new THREE.ExtrudeGeometry(epShape,{depth:0.04,bevelEnabled:false}); epGeo.translate(0,0,-0.02);
+    const ep=new THREE.Mesh(epGeo,paint); ep.position.set(-2.4,0.78,sd*0.53); g.add(ep);
   }
-  // diffuser
-  const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
-  // wheels: tire + rim cover + sidewall ring
-  const wheelG=new THREE.CylinderGeometry(0.42,0.42,0.48,14);
-  const wheelM=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.9});
-  const rimM=new THREE.MeshStandardMaterial({color:0x2a2d34,roughness:0.35,metalness:0.7});
-  const ringM=new THREE.MeshStandardMaterial({color:0xd21f26,roughness:0.5});
+  for(const sd of [-1,1]) for(const yy of [0.6,0.38]){
+    const arm=B(0.07,0.05,0.85,carbon); arm.position.set(-1.68,yy,sd*0.5); arm.rotation.y=-sd*0.22;
+  }
+  // wheels: tire + glossy cover + Apex cap
+  const tireGeo=new THREE.CylinderGeometry(0.42,0.42,0.48,18);
+  const tireMat=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85});
+  const coverGeo=new THREE.CylinderGeometry(0.26,0.26,0.5,18);
+  const coverMat=new THREE.MeshStandardMaterial({color,roughness:0.15,metalness:0.85});
   g.userData.wheels=[];
   for(const [wx,wz] of [[2.45,0.98],[2.45,-0.98],[-1.55,0.98],[-1.55,-0.98]]){
     const w=new THREE.Group();
-    const tire=new THREE.Mesh(wheelG,wheelM); tire.rotation.x=Math.PI/2; w.add(tire);
-    const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.24,0.5,10),rimM); rim.rotation.x=Math.PI/2; w.add(rim);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.025,6,18),ringM); w.add(ring);
+    const tire=new THREE.Mesh(tireGeo,tireMat); tire.rotation.x=Math.PI/2; w.add(tire);
+    const cover=new THREE.Mesh(coverGeo,coverMat); cover.rotation.x=Math.PI/2; w.add(cover);
+    const cap=new THREE.Mesh(new THREE.CircleGeometry(0.12,16), new THREE.MeshBasicMaterial({color:0xffd76a}));
+    cap.position.z=0.251; w.add(cap); const cap2=cap.clone(); cap2.position.z=-0.251; cap2.rotation.y=Math.PI; w.add(cap2);
     w.position.set(wx,0.42,wz); g.add(w); g.userData.wheels.push(w);
   }
-  // rain light
   const rl=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.28,0.2), new THREE.MeshBasicMaterial({color:0xff2222}));
   rl.position.set(-2.32,0.85,0); g.add(rl); g.userData.rainLight=rl; rl.visible=false;
   scene.add(g);
   return g;
 }
 
+
 class Car {
   constructor(name, team, isPlayer, skill){
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
-    this.mesh=buildCarMesh(team.color);
+    this.mesh=buildCarMesh(team.color, team.name, 1);
     this.s=0; this.d=0; this.v=0; this.yaw=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
     this.ers=100; this.drsOpen=false; this.drsCount=0;
@@ -1034,14 +1083,8 @@ function initInput(){
   const setKnob=dx=>{ knob.style.transform=`translate(calc(-50% + ${dx}px),-50%)`; };
   const stickMove=t=>{
     const r=stick.getBoundingClientRect();
-    let dx;
-    if (window.innerHeight > window.innerWidth) {
-      const cy=r.top+r.height/2; // LANDSCAPE LAW: stage rotated; landscape-left = portrait-up
-      dx=(t.clientY-cy)/(r.height/2);
-    } else {
-      const cx=r.left+r.width/2;
-      dx=(t.clientX-cx)/(r.width/2);
-    }
+    const cx=r.left+r.width/2;
+    let dx=(t.clientX-cx)/(r.width/2);
     dx=Math.max(-1,Math.min(1,dx));
     // deadzone
     Input.steer=Math.abs(dx)<0.08?0:dx;
@@ -1734,8 +1777,6 @@ function initMenus(){
     selTrack=t.id; startWeekend();
   };
   document.addEventListener('pointerdown',()=>Aud.ensure(),{once:true});
-/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
-addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) Aud.crowdTick(1,0); });
 }
 function updateForecast(){
