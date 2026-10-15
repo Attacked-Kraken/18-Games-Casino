@@ -45,7 +45,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
-| CLAIMED | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | - | 2026-10-14 22:05 CDT |
+| DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
 | DONE | F1 Apex Arcade sponsor branding: trackside banner boards + start gantry + menu splash (casino bot covers hockey/soccer/baseball/flight) | Muse main | f1-sponsor-final | PR #88, main df9063e3 | 2026-10-14 21:45 CDT |
 | DONE | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | PR #95, main d6f9538b | 2026-10-14 22:01 CDT |
