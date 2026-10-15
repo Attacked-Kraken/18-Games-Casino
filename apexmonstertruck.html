@@ -1073,6 +1073,7 @@ function makeStick(id, onMove) {
   const move = (e) => {
     const r = el.getBoundingClientRect();
     let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    if (window.innerHeight > window.innerWidth) { const _t = dx; dx = dy; dy = -_t; } // LANDSCAPE LAW: rotated stage remap
     const m = Math.hypot(dx, dy);
     if (m > R) { dx = dx / m * R; dy = dy / m * R; }
     setKnob(dx, dy); apply(dx / R, dy / R);
@@ -1167,13 +1168,18 @@ function frame() {
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);
 }
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+function fitLandscape() {
+  let w = window.innerWidth, h = window.innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } /* LANDSCAPE LAW: always size to the landscape box */
+  camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h);
+}
+window.addEventListener('resize', fitLandscape);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitLandscape);
+fitLandscape();
 stepCamera(1);
 frame();
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
