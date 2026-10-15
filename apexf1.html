@@ -1393,7 +1393,7 @@ function initMenus(){
 function updateForecast(){
   const t=TRACKS.find(x=>x.id===selTrack);
   // build a throwaway forecast preview
-  const r=Math.random(); const wr=r()<0.45;
+  const wr=Math.random()<0.45;
   $('wxForecast').textContent = wr? `🌧 Changeable — rain possible mid-race` : `☀ Dry expected all race`;
   $('wxForecast').title=t.tag;
 }
