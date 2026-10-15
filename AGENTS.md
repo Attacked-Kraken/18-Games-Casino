@@ -21,3 +21,6 @@ game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before 
 
 **Big files (over ~150 KB):** never push them whole - use the patch robot (CLAIMS.md "BIG FILES"):
 push a small `patches/*.patch` diff, or `bigfiles/` parts, or ask for `pieces/` to read one.
+
+**Proof rule:** never tell the owner something he can see is "fixed", "done" or "live" until you have seen it in
+the game check pictures (CLAIMS.md "PROOF RULE"). If you haven't seen it, say "merged, NOT yet seen".
