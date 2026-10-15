@@ -70,6 +70,24 @@
   body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
   @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
+  /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
+  @media (pointer:coarse) and (orientation:landscape) {
+    body.touch #btnL { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
+    body.touch #btnR { left:100px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
+    body.touch #btnPit { left:12px; bottom:calc(108px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnCam { left:88px; bottom:calc(108px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnGas { right:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:88px; height:88px; }
+    body.touch #btnBrake { right:112px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
+    body.touch #btnDRS { right:12px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnERS { right:88px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #minimap { left:12px; top:140px; bottom:auto; width:80px; height:80px; }
+    body.touch #ersbar { right:12px; top:150px; bottom:auto; }
+    body.touch #speedo { right:12px; bottom:184px; }
+    body.touch #drsTag { bottom:24px; }
+  }
+  /* cinematic vignette + subtle grade — free UE5-style finish */
+  #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
   #banner { position:fixed; left:50%; top:34%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(26px,6vw,52px); font-weight:900; letter-spacing:3px; text-shadow:0 3px 18px #000; }
@@ -115,6 +133,7 @@
   <div class="tbtn" id="btnCam">CAM</div>
 </div>
 <div id="rotateHint">🔄 Rotate your phone for the full circuit</div>
+<div id="vignette"></div>
 
 <div id="banner"><div class="b1"></div><div class="b2"></div></div>
 <div id="lights" class="hidden"></div>
@@ -390,6 +409,10 @@ function initGL(){
   renderer.setPixelRatio(Math.min(devicePixelRatio, isTouch?1.5:2));
   renderer.shadowMap.enabled = !isTouch;
   renderer.shadowMap.type = THREE.PCFShadowMap;
+  // UE5-style filmic look: ACES tone mapping + sRGB output
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87b5e0);
   scene.fog = new THREE.Fog(0x87b5e0, 400, 1600);
@@ -399,8 +422,70 @@ function initGL(){
   if(!isTouch){ sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
     sun.shadow.camera.left=-160; sun.shadow.camera.right=160; sun.shadow.camera.top=160; sun.shadow.camera.bottom=-160; }
   scene.add(sun); scene.userData.sun = sun;
+  buildSkyDome();
+  Particles.init();
   addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
   renderer.setSize(innerWidth,innerHeight);
+}
+// GPU-cheap particle pool: tire smoke, lockup smoke, off-track dust
+const Particles = {
+  pool:[], idx:0, tex:null,
+  init(){
+    const cv=document.createElement('canvas'); cv.width=cv.height=64;
+    const c=cv.getContext('2d');
+    const g=c.createRadialGradient(32,32,4,32,32,30);
+    g.addColorStop(0,'rgba(255,255,255,0.85)'); g.addColorStop(1,'rgba(255,255,255,0)');
+    c.fillStyle=g; c.fillRect(0,0,64,64);
+    this.tex=new THREE.CanvasTexture(cv);
+    const mat=new THREE.SpriteMaterial({map:this.tex, transparent:true, depthWrite:false, opacity:0.5});
+    for(let i=0;i<140;i++){
+      const s=new THREE.Sprite(mat.clone());
+      s.visible=false; s.userData={life:0,max:1,vx:0,vy:0,vz:0,grow:1};
+      scene.add(s); this.pool.push(s);
+    }
+  },
+  spawn(x,y,z,vx,vy,vz,life,size,tint){
+    const s=this.pool[this.idx++%this.pool.length];
+    s.visible=true; s.position.set(x,y,z);
+    s.material.color.setHex(tint); s.material.opacity=0.45;
+    s.scale.set(size,size,1);
+    const u=s.userData; u.life=life; u.max=life; u.vx=vx; u.vy=vy; u.vz=vz; u.grow=size*1.8;
+  },
+  update(dt){
+    for(const s of this.pool){
+      const u=s.userData; if(!s.visible) continue;
+      u.life-=dt; if(u.life<=0){ s.visible=false; continue; }
+      s.position.x+=u.vx*dt; s.position.y+=u.vy*dt; s.position.z+=u.vz*dt;
+      u.vy+=1.2*dt;
+      const t=u.life/u.max;
+      s.material.opacity=0.45*t;
+      const ns=s.scale.x+u.grow*dt; s.scale.set(ns,ns,1);
+    }
+  }
+};
+// Gradient sky dome with sun disc — cheap, huge cinematic win
+let skyMat=null;
+function buildSkyDome(){
+  const geo = new THREE.SphereGeometry(3200, 24, 16);
+  skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite:false, fog:false,
+    uniforms:{ topColor:{value:new THREE.Color(0x2f6fd0)}, midColor:{value:new THREE.Color(0x87b5e0)},
+      botColor:{value:new THREE.Color(0xd8e8f5)}, sunDir:{value:new THREE.Vector3(200,300,120).normalize()},
+      sunColor:{value:new THREE.Color(0xfff3d6)}, gloom:{value:0} },
+    vertexShader:`varying vec3 vDir; void main(){ vDir=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:`varying vec3 vDir; uniform vec3 topColor,midColor,botColor,sunDir,sunColor; uniform float gloom;
+      void main(){
+        float h = clamp(vDir.y, -1.0, 1.0);
+        vec3 col = h>0.0 ? mix(midColor, topColor, pow(h,0.65)) : mix(midColor, botColor, pow(-h,0.6));
+        float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
+        col += sunColor * (pow(s, 900.0)*1.2 + pow(s,18.0)*0.22) * (1.0-gloom*0.85);
+        col = mix(col, vec3(dot(col, vec3(0.33))), gloom*0.45);
+        gl_FragColor = vec4(col, 1.0);
+      }`
+  });
+  const dome = new THREE.Mesh(geo, skyMat);
+  dome.frustumCulled = false; dome.renderOrder = -10;
+  scene.add(dome); scene.userData.skyDome = dome;
 }
 
 const Track = {
@@ -484,7 +569,12 @@ const Track = {
     tg.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
     tg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs,2));
     tg.setIndex(idx); tg.computeVertexNormals();
-    const asphalt=new THREE.Mesh(tg, new THREE.MeshStandardMaterial({color:0x3a3d42, roughness:0.94}));
+    // subtle asphalt grain (canvas noise) — breaks up the flat CG look
+    const acv=document.createElement('canvas'); acv.width=acv.height=128;
+    const ac=acv.getContext('2d'); ac.fillStyle='#808080'; ac.fillRect(0,0,128,128);
+    for(let i=0;i<900;i++){ const v=110+Math.random()*40|0; ac.fillStyle=`rgb(${v},${v},${v})`; ac.fillRect(Math.random()*128,Math.random()*128,2,2); }
+    const atex=new THREE.CanvasTexture(acv); atex.wrapS=atex.wrapT=THREE.RepeatWrapping; atex.repeat.set(40,2);
+    const asphalt=new THREE.Mesh(tg, new THREE.MeshStandardMaterial({color:0x9a9da2, roughness:0.94, map:atex}));
     asphalt.receiveShadow=true; g.add(asphalt); this.asphaltMat=asphalt.material;
     // curbs: red/white strips at edges
     for(const side of [1,-1]){
@@ -658,9 +748,10 @@ const Track = {
     g.add(beam);
   },
   setWeather(wet01){ // darken track + fog when wet
-    if(this.asphaltMat) this.asphaltMat.color.setHex(wet01>0.5?0x2c2f36:0x3a3d42);
+    if(this.asphaltMat) this.asphaltMat.color.setHex(wet01>0.5?0x5a5e66:0x9a9da2);
     scene.fog.color.setHex(wet01>0.5?0x6a7d90:0x87b5e0);
     scene.background.setHex(wet01>0.5?0x6a7d90:0x87b5e0);
+    if(skyMat) skyMat.uniforms.gloom.value = wet01; // overcast greys the sky dome
   }
 };
 /* ================= CARS ================= */
@@ -791,6 +882,18 @@ class Car {
     this.s+=this.v*dt; this.raceDist+=this.v*dt;
     // spin recovery
     if(this.spin>0){ this.spin-=dt; this.v*=(1-1.2*dt); }
+    // tire smoke: spin / hard brake lockup / off-track dust
+    if(this.v>8 && Particles.pool.length){
+      const p0=Track.posAt(this.s,this.d,0);
+      const smoking=this.spin>0, locking=this.brake>0.7&&this.v>35&&this.spin<=0;
+      const dusty=Math.abs(this.d)>Track.width/2+1.5;
+      if((smoking||locking||dusty) && Math.random()<0.6){
+        const tint=dusty?0x9a8a6a:0xcccccc;
+        for(let k=0;k<2;k++)
+          Particles.spawn(p0.x+rand(-1.5,1.5), p0.y+0.4, p0.z+rand(-1.5,1.5),
+            rand(-2,2), rand(1,3), rand(-2,2), rand(0.5,1.1), rand(1.2,2.2), tint);
+      }
+    }
     this.placeMesh(dt);
   }
   applyPitStop(){
@@ -1124,7 +1227,8 @@ const Race = {
       if(a.finished&&b.finished) return a.finishTime-b.finishTime;
       if(a.finished) return -1; if(b.finished) return 1;
       if(b.lap!==a.lap) return b.lap-a.lap;
-      return b.raceDist-a.raceDist;
+      const rd=b.raceDist-a.raceDist;
+      return rd!==0?rd:(a.position||99)-(b.position||99); // grid order until cars move
     });
     order.forEach((c,i)=>c.position=i+1);
     // gaps + threats + blue flags
@@ -1232,6 +1336,7 @@ const Race = {
     // shake
     if(this.shake>0){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
     camera.lookAt(lk);
+    if(scene.userData.skyDome) scene.userData.skyDome.position.copy(camera.position);
   }
 };
 /* ================= RAIN FX ================= */
@@ -1536,6 +1641,7 @@ let lastT=0;
 function loop(t){
   requestAnimationFrame(loop);
   const dt=Math.min(0.05,(t-lastT)/1000||0.016); lastT=t;
+  if(Particles.pool.length) Particles.update(dt);
   if(Race.mode==='quali'){ updateQuali(dt); }
   else if(Race.mode==='race'||Race.mode==='lights'){ Race.update(dt); RainFX.update(dt); }
   else if(Race.mode==='menu'||Race.mode==='grid'||Race.mode==='finished'){
