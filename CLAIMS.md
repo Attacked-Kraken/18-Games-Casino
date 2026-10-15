@@ -111,6 +111,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 ## Board
 
+| CLAIMED | Exotic Racer Club CC0 car model swap (apexracer.html): replace box-built bodies with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0), glossy paint per car, silver 5-spoke wheels, rear wing, side intakes; QA-scored 8+/10 vs reference on all points | Muse Cruz.inc | apexracer-cc0car | — | 2026-10-15 12:05 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
 | DONE | Track & Field toggle-stick controls: replaced STRIDE L/R buttons with stick + ACTION button | Muse Modern Plus | trackfield-stick | PR #212, main 1b931f8b | 2026-10-15 11:05 CDT |
