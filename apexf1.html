@@ -413,9 +413,9 @@ const TRACKS = [
    draws a bridge deck where |y diff| > 3 at near-xz crossings. */
 
 const TEAMS = [
-  { id:'apex',   name:'APEX GP',      color:0xd21f26, accent:'#ff5a5a', pace:0.0,  suit:'APX' },
-  { id:'velocity', name:'VELOCITY',   color:0x1e5aff, accent:'#5a8cff', pace:-0.15,suit:'VEL' },
-  { id:'storm',  name:'STORM',        color:0x10b060, accent:'#4de08a', pace:-0.35,suit:'STM' },
+  { id:'apex',   name:'APEX GP',      color:0xe8302a, accent:'#ff6b6b', pace:0.0,  suit:'APX' },
+  { id:'velocity', name:'VELOCITY',   color:0x2266ff, accent:'#66aaff', pace:-0.15,suit:'VEL' },
+  { id:'storm',  name:'STORM',        color:0x00c853, accent:'#69f0ae', pace:-0.35,suit:'STM' },
 ];
 const AI_NAMES = ['VER','HAM','LEC','NOR','PIA','RUS','ALO','SAI','STR','GAS','OCO','TSU','ALB','HUL','MAG','BOT','ZHO','SAR','RIC'];
 const POINTS = [25,18,15,12,10,8,6,4,2,1];
@@ -820,8 +820,8 @@ function buildCarMesh(color, teamName, carNumber){
   teamName = teamName||'APEX'; carNumber = carNumber||1;
   const g=new THREE.Group();
   const livTex = liveryTexture(color, teamName, carNumber);
-  const mat=new THREE.MeshStandardMaterial({map:livTex, roughness:0.25, metalness:0.6});
-  const paint=new THREE.MeshStandardMaterial({color, roughness:0.25, metalness:0.6});
+  const mat=new THREE.MeshStandardMaterial({map:livTex, roughness:0.18, metalness:0.75});
+  const paint=new THREE.MeshStandardMaterial({color, roughness:0.18, metalness:0.75});
   const dark=new THREE.MeshStandardMaterial({color:0x111318, roughness:0.6});
   const carbon=new THREE.MeshStandardMaterial({color:0x1c1e24, roughness:0.45, metalness:0.35});
   const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); g.add(x); return x; };
