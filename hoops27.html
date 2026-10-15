@@ -317,6 +317,7 @@ function sfx(k, v = 1) {
     else if (k === 'whistle') { tone('sine', 2900, 3000, 0.42, 0.18); tone('sine', 3200, 3150, 0.42, 0.08); }
     else if (k === 'buzzer') { tone('sawtooth', 220, 218, 1.4, 0.16); tone('square', 330, 329, 1.4, 0.08); }
     else if (k === 'block') { tone('sine', 180, 60, 0.14, 0.5); nHit(0.08, 2500, 500, 0.35); }
+    else if (k === 'swat') { nHit(0.07, 3200, 600, 0.55, 'bandpass'); tone('sine', 160, 50, 0.18, 0.65); nHit(0.16, 900, 300, 0.22); } /* v15: leather smack + thump */
     else if (k === 'catch') { tone('sine', 240, 140, 0.06, 0.32); }
     else if (k === 'net') nHit(0.25, 4200, 2200, 0.16, 'highpass');
     else if (k === 'cheer') { try { cheer(v); } catch (e) {} }
@@ -582,7 +583,7 @@ const WRAPS = { none: ['No wrap', 0], stripes: ['Racing Stripes', 4000], flames:
 const WC = {};
 function wrapTex(kind, paint, acc, part) {
   const key = kind + paint + acc + part; if (WC[key]) return WC[key];
-  const t = ctex(1024, 512, (g, w, h) => {
+  const KW = matchMedia('(pointer: coarse)').matches ? 1536 : 2048, KH = KW / 2; const t = ctex(KW, KH, (g, w, h) => { /* v15: crisper kits - numbers and names resolve instead of smearing (touch gets 1536, desktop 2048) */
     g.fillStyle = kind === 'neon' && part === 'e' ? '#000' : paint; g.fillRect(0, 0, w, h);
     const side = part === 's', em = part === 'e';
     if (em && kind !== 'neon') return;
@@ -1192,7 +1193,7 @@ function hpose(st, t, o = {}) {
   if (st === 'dunk') { const p = poseFor('idle', 0); p.hipL[0] = -0.9; p.knL[0] = 1.4; p.hipR[0] = 0.2; p.knR[0] = 0.6; p.head[0] = -0.3;
     p.shR = [lerp(-3.1, -2.2, k), 0, -0.1]; p.elR[0] = lerp(-0.4, -0.1, k); p.shL = [lerp(-3.0, -2.0, k), 0, 0.25]; p.elL[0] = lerp(-0.5, -0.2, k); p.spine[0] = lerp(-0.15, 0.25, k); return p; }
   if (st === 'hang') { const p = poseFor('idle', 0); p.shL = [-3.0, 0, 0.25]; p.shR = [-3.0, 0, -0.25]; p.elL[0] = -0.1; p.elR[0] = -0.1; p.hipL[0] = -0.5; p.knL[0] = 0.9; p.knR[0] = 0.4; return p; }
-  if (st === 'block' || st === 'reb') { const p = poseFor('idle', 0); p.shL = [-2.9, 0, 0.2]; p.shR = [-2.9, 0, -0.2]; p.elL[0] = -0.15; p.elR[0] = -0.15; p.knL[0] = 0.4 * (1 - k); p.knR[0] = 0.2; p.hipL[0] = -0.3; p.ftL[0] = p.ftR[0] = 0.4; return p; }
+  if (st === 'block' || st === 'reb') { const p = poseFor('idle', 0); if (k < 0.18) { /* v15: the gather - knees load, arms swing down, then explode up */ p.knL[0] = 0.95; p.knR[0] = 0.8; p.hipL[0] = -0.6; p.hipR[0] = -0.5; p.spine[0] = 0.35; p.shL = [-1.7, 0, 0.3]; p.shR = [-1.7, 0, -0.3]; p.elL[0] = -0.3; p.elR[0] = -0.3; p.ftL[0] = p.ftR[0] = 0.3; return p; } p.shL = [-2.9, 0, 0.2]; p.shR = [-2.9, 0, -0.2]; p.elL[0] = -0.15; p.elR[0] = -0.15; p.knL[0] = 0.4 * (1 - k); p.knR[0] = 0.2; p.hipL[0] = -0.3; p.ftL[0] = p.ftR[0] = 0.4; return p; }
   if (st === 'pass') { const p = poseFor('idle', 0); p.shL = [lerp(-1.2, -1.5, k), 0, 0.2]; p.shR = [lerp(-1.2, -1.5, k), 0, -0.2]; p.elL[0] = lerp(-1.6, -0.1, k); p.elR[0] = lerp(-1.6, -0.1, k); p.spine[0] = 0.2; p.knL[0] = 0.3; p.knR[0] = 0.3; p.hipL[0] = -0.3; return p; }
   if (st === 'catch') { const p = poseFor('idle', 0); p.shL = [-1.3, 0, 0.2]; p.shR = [-1.3, 0, -0.2]; p.elL[0] = -0.9; p.elR[0] = -0.9; p.spine[0] = 0.25; p.knL[0] = 0.5; p.knR[0] = 0.5; p.hipL[0] = p.hipR[0] = -0.3; return p; }
   if (st === 'ready') { const p = poseFor('idle', t); p.spine[0] = 0.22; p.knL[0] = 0.45; p.knR[0] = 0.45; p.hipL[0] = -0.3; p.hipR[0] = -0.3; p.shL = [-0.3, 0, 0.3]; p.shR = [-0.3, 0, -0.3]; p.elL[0] = -0.6; p.elR[0] = -0.6; return p; }
@@ -1518,7 +1519,9 @@ function releaseShot(e, meterQ) { const a = e.act; if (!a || a.rel) return; a.re
   const make = !blocked && Math.random() < p; const bx = G.box[e.p.id]; bx.fga++; if (info.three) bx.tpa++;
   if (e.t === USER && grade) { showGrade(grade); if (grade === 'perfect') sfx('perfect'); }
   const B = G.ball; B.holder = null; B.passer = null; e.hasBall = false; const hand = handPos(e); B.pos.copy(hand); G.lastTouch = e; G.shooter = e; G.shotInfo = info; G.shotFoul = foul; G.shotClockAtRel = G.clock;
-  if (blocked) { B.st = 'loose'; const away = tmpV.copy(e.pos).sub(bw.pos).setY(0).normalize(); B.vel.set(away.x * 5 + (Math.random() - 0.5) * 3, 2 + Math.random() * 2, away.z * 5 + (Math.random() - 0.5) * 3); G.box[bw.p.id].blk++; sfx('block');
+  if (blocked) { B.st = 'loose'; const away = tmpV.copy(e.pos).sub(bw.pos).setY(0).normalize(); const swat = bw.y > 0.38; /* v15: meet it at the top and it is a SWAT, not a tip */
+    if (swat) { B.vel.set(away.x * (10 + Math.random() * 3), -1.5, away.z * (10 + Math.random() * 3)); sfx('swat'); popTxt('SWATTED!'); if (bw === G.ctrl) CAMS.shake = Math.max(CAMS.shake || 0, 0.3); }
+    else B.vel.set(away.x * 5 + (Math.random() - 0.5) * 3, 2 + Math.random() * 2, away.z * 5 + (Math.random() - 0.5) * 3); G.box[bw.p.id].blk++; if (!swat) sfx('block');
     bigMsg('BLOCKED!', ''); castBlock(bw, e); G.lastTouch = bw; G.reboundFrom = 'block'; if (bw.t === G.homeIdx) sfx('cheer', 1.1); return; }
   const R = rimPos(e.t); B.st = 'shot'; B.from = hand.clone(); B.t = 0; B.make = make; B.kind = info.kind; B.pts = info.pts; B.foul = foul;
   if (make) { B.to = V3(R.x, R.y + 0.05, R.z); B.swish = info.kind === 'jumper' && Math.random() < 0.55; }
@@ -1547,21 +1550,24 @@ function bestPass(e, dirx, dirz) { let best = null, bs = -1e9; for (const o of G
 /* ---------- moves, steals, blocks (user + AI) */
 function crossOver(e) { if (e.act || G.ball.holder !== e || e.moveCD > 0) return; e.moveCD = 0.9; e.act = { k: 'cross', t: 0, dur: 0.38 }; const side = Math.random() < 0.5 ? 1 : -1, r = V3(Math.cos(e.h) * side, 0, -Math.sin(e.h) * side);
   e.vel.addScaledVector(r, 4.5); sfx('squeak'); const d = G.ents.find((o) => o.t !== e.t && hdist(o.pos, e.pos) < 2.0); if (d && Math.random() < 0.18 + (e.p.a.hnd - d.p.a.def) * 0.012) { d.stun = 0.7; if (e.t === USER) popTxt('ANKLES! 🔥'); say(castPick([`Oh! ${nameOf(e)} with the crossover! He's got him leaning!`, `Nasty handle by ${nameOf(e)}!`]), 'pbp', 1); } }
-function trySteal(e) { if (e.act || e.stealCD > 0) return; e.stealCD = 0.8; e.act = { k: 'steal', t: 0, dur: 0.3 }; const h = G.ball.holder; if (!h || h.t === e.t || hdist(h.pos, e.pos) > 1.7) return;
-  /* v14: a real reach, with real rules. He lunges in for it. In FRONT of
-     the handler - or while the handler is mid-crossover - the steal is
-     there: clean takeaway most of the time, knocked loose the rest.
-     Reach across his body or from behind and it is a reach-in foul. */
-  const lv = tmpV.copy(h.pos).sub(e.pos).setY(0).normalize(); e.vel.addScaledVector(lv, 2.2);
+function trySteal(e) { if (e.act || e.stealCD > 0) return; e.stealCD = 0.7; e.act = { k: 'steal', t: 0, dur: 0.38 }; const h = G.ball.holder; if (!h || h.t === e.t || hdist(h.pos, e.pos) > 2.15) return;
+  /* v15: the reach-in, played honestly. He steps IN for it (range 2.15,
+     lunge 3.0). In front of the handler - or while the ball is exposed
+     (mid-crossover, or out front on a hard drive) - the steal is there:
+     a clean takeaway most of the time, knocked loose the rest. Reach
+     across his body or from behind and it is a reach-in foul - and
+     spamming the reach makes the whistle MORE likely, not less. */
+  const nowS = performance.now(); e.chain = (nowS - (e.lastReach || 0) < 2600) ? (e.chain || 0) + 1 : 0; e.lastReach = nowS;
+  const lv = tmpV.copy(h.pos).sub(e.pos).setY(0).normalize(); e.vel.addScaledVector(lv, 3.0);
   const toE = tmpV2.copy(e.pos).sub(h.pos).setY(0).normalize(); const front = (Math.sin(h.h) * toE.x + Math.cos(h.h) * toE.z) > -0.15;
-  const exposed = !!(h.act && h.act.k === 'cross');
+  const exposed = !!(h.act && h.act.k === 'cross') || !!h.drive;
   let pr = (0.16 + (e.p.a.stl - h.p.a.hnd) * 0.007) * (e.t === USER ? df().me : df().ai * df().d);
   if (front) pr *= 1.5; if (exposed) pr *= 1.6;
-  if (Math.random() < pr) { const B = G.ball; G.box[e.p.id].stl++; sfx('catch'); popTxt('STEAL!'); castSteal(e, h); if (e.t === G.homeIdx) sfx('cheer', 1);
-    if (Math.random() < 0.55) { setHolder(e); e.act = { k: 'steal', t: 0, dur: 0.3 }; }
+  if (Math.random() < pr) { const B = G.ball; G.box[e.p.id].stl++; e.chain = 0; sfx('catch'); popTxt('STEAL!'); castSteal(e, h); if (e.t === G.homeIdx) sfx('cheer', 1);
+    if (Math.random() < 0.6) { setHolder(e); e.act = { k: 'steal', t: 0, dur: 0.38 }; }
     else { B.holder = null; B.st = 'loose'; B.pos.copy(handPos(h)); B.pos.y = 0.9; const v = tmpV.copy(e.pos).sub(h.pos).setY(0).normalize(); B.vel.set(v.x * 3.5, 1.5, v.z * 3.5); G.lastTouch = e; } }
-  else if (Math.random() < (front ? 0.13 : 0.34)) { whistle(`Reach-in foul on ${nameOf(e)}`); G.fouls[e.t]++; G.shot = Math.max(G.shot, 14); G.resumeHolder = h; G.phase = 'foulpause'; G.t = 0; } }
-function jump(e) { if (e.y > 0.05 || e.act && e.act.k !== 'steal') return; e.act = { k: 'block', t: 0, dur: 0.7 }; e.vy = 3.6 + e.p.a.blk * 0.012; if (e === G.ctrl) { const B = G.ball, tp = B.holder && B.holder.t !== e.t ? B.holder.pos : B.pos; const lv = tmpV.copy(tp).sub(e.pos).setY(0); const d = lv.length(); if (d > 0.6 && d < 4.5) e.vel.addScaledVector(lv.normalize(), 1.5); } }
+  else if (Math.random() < Math.min(0.75, (front ? 0.13 : 0.34) + (e.chain || 0) * 0.16)) { whistle(`Reach-in foul on ${nameOf(e)}`); G.fouls[e.t]++; G.shot = Math.max(G.shot, 14); G.resumeHolder = h; G.phase = 'foulpause'; G.t = 0; } }
+function jump(e) { if (e.y > 0.05 || e.act && e.act.k !== 'steal') return; e.act = { k: 'block', t: 0, dur: 0.7 }; e.vy = 3.85 + e.p.a.blk * 0.013; /* v15: up quicker, up higher */ if (e === G.ctrl) { const B = G.ball, tp = B.holder && B.holder.t !== e.t ? B.holder.pos : B.pos; const lv = tmpV.copy(tp).sub(e.pos).setY(0); const d = lv.length(); if (d > 0.6 && d < 4.5) e.vel.addScaledVector(lv.normalize(), 1.5); } }
 
 /* ---------- AI */
 function aiOffense(e, dt) {
@@ -1571,9 +1577,12 @@ function aiOffense(e, dt) {
     if (inBack) { e.tgt.set(clamp(e.pos.x * 0.6, -3, 3), 0, s * 3); e.spd = 0.85; return; }
     if (e.decT > 0) return; e.decT = 0.32 + Math.random() * 0.25;
     const info = shotInfo(e), ct = contest(e), p = shotProb(e, info, ct), urgency = clamp((8 - G.shot) / 8, 0, 1), lateQ = G.clock < 6 && G.clock < G.shot;
-    const ev = p * info.pts, need = 0.95 - urgency * 0.6 - (lateQ ? 0.6 : 0);
+    const ev = p * info.pts, need = 0.95 - urgency * 0.6 - (lateQ ? 0.6 : 0) - (ct.c > 2.6 ? 0.16 : 0); /* v15: a genuinely open look gets taken, not admired */
     if (info.kind !== 'jumper' && (p > 0.42 || urgency > 0.5)) { startShot(e); return; }
     if (ev > need + Math.random() * 0.25 || G.shot < 2.2 || (lateQ && G.clock < 2.5)) { startShot(e); return; }
+    /* v15 brains: two men on you means somebody is open - find him */
+    let pressN = 0; for (const o of G.ents) { if (o.t !== e.t && hdist(o.pos, e.pos) < 2.3) pressN++; }
+    if (pressN >= 2) { const m2 = bestPass(e); if (m2 && Math.random() < 0.78) { passTo(e, m2); return; } }
     /* drive if the lane is open */
     const toR = tmpV.copy(R).sub(e.pos).setY(0), L = toR.length(); toR.normalize(); let blocked = false; for (const o of G.ents) { if (o.t === e.t) continue; const ap = tmpV2.copy(o.pos).sub(e.pos).setY(0), al = ap.dot(toR); if (al > 0 && al < L && Math.abs(ap.x * toR.z - ap.z * toR.x) < 1.1) { blocked = true; break; } }
     if (!blocked && Math.random() < 0.55 + (e.p.a.hnd - 70) * 0.01) { e.tgt.set(R.x, 0, R.z - s * 0.8); e.spd = 1; e.drive = true; return; }
@@ -1585,7 +1594,10 @@ function aiOffense(e, dt) {
   e.cutT -= dt; if (e.cutT <= 0) { e.cut = !e.cut && Math.random() < 0.4; e.cutT = e.cut ? 1.4 : 2.5 + Math.random() * 3; }
   if (G.ball.st === 'shot' && (e.i >= 3 || Math.random() < 0.02)) { e.tgt.set(R.x * 0.6 + (e.i - 3) * 1.4, 0, R.z - s * 2.2); e.spd = 0.9; return; }
   if (e.cut && e.i !== 0) { e.tgt.set((e.i % 2 ? 1 : -1) * 1.0, 0, R.z - s * 1.6); e.spd = 1; }
-  else { e.tgt.copy(spot); e.spd = (e.pos.z * s < 0) ? 0.95 : 0.55; if (h && hdist(h.pos, e.pos) < 3.2) { const away = tmpV.copy(e.pos).sub(h.pos).setY(0).normalize(); e.tgt.addScaledVector(away, 2.5); } }
+  else { e.tgt.copy(spot); /* v15: spot covered? slide along the arc until you are open */
+    let cov = 99; for (const o of G.ents) { if (o.t !== e.t) cov = Math.min(cov, hdist(o.pos, e.tgt)); }
+    if (cov < 1.7) { const R2 = rimPos(e.t), tx = e.tgt.x - R2.x, tz = e.tgt.z - R2.z, tl = Math.hypot(tx, tz) || 1, sgn = (e.i % 2 ? 1 : -1); e.tgt.x += (-tz / tl) * 2.6 * sgn; e.tgt.z += (tx / tl) * 2.6 * sgn; }
+    e.spd = (e.pos.z * s < 0) ? 0.95 : 0.55; if (h && hdist(h.pos, e.pos) < 3.2) { const away = tmpV.copy(e.pos).sub(h.pos).setY(0).normalize(); e.tgt.addScaledVector(away, 2.5); } }
 }
 function aiDefense(e, dt) {
   /* h27b: real man-to-man. On the ball: square up between your man and the rim, mirror his first step (read where he is going), pick him up at the arc,
@@ -1673,10 +1685,16 @@ function moveAll(dt, frozen) {
   for (const e of G.ents) {
     let mx = 0, mz = 0; if (!frozen && e.stun <= 0 && !(e.act && (e.act.k === 'shoot' && e.y > 0))) { const d = tmpV.copy(e.tgt).sub(e.pos).setY(0), L = d.length(); if (L > 0.12) { d.multiplyScalar(1 / L); const vmax = (4.6 + e.p.a.spd * 0.038) * (e.spd == null ? 0.7 : e.spd) * (e.t !== USER ? df().ai * 0.98 + 0.03 : 1) * (G.ball.holder === e ? 0.93 : 1) * (e.onBall && e.t !== G.poss ? 1.0 : 1);
       const v = Math.min(vmax, L * 3.2); mx = d.x * v; mz = d.z * v; } }
-    const acc = e.y > 0.02 ? 2 : 16; e.vel.x += clamp(mx - e.vel.x, -acc * dt, acc * dt) * 1; e.vel.z += clamp(mz - e.vel.z, -acc * dt, acc * dt);
+    /* v15 agility: snappier plants and first steps, real air control.
+       Reversing against your own momentum earns a plant bonus - hard stop, explode out. */
+    let acc = e.y > 0.02 ? 5 : 26; if ((mx * e.vel.x + mz * e.vel.z) < -0.5) acc *= 1.6;
+    e.vel.x += clamp(mx - e.vel.x, -acc * dt, acc * dt) * 1; e.vel.z += clamp(mz - e.vel.z, -acc * dt, acc * dt);
     if (e.y > 0.02 && e.act && (e.act.k === 'shoot')) e.vel.multiplyScalar(0.96);
     e.pos.x += e.vel.x * dt; e.pos.z += e.vel.z * dt;
-    /* jumping */ if (e.vy || e.y > 0) { e.vy -= 9.8 * dt; e.y = Math.max(0, e.y + e.vy * dt); if (e.y === 0 && e.vy < 0) { e.vy = 0; if (e.act && (e.act.k === 'block' || e.act.k === 'reb')) e.act = null; } }
+    /* jumping - v15: a shaped arc. Full gravity off the floor, a float at
+       the apex (hang time), a faster fall, and a landing marker the pose reads. */
+    if (e.vy || e.y > 0) { const g = e.vy > 0.5 ? 9.8 : e.vy < -0.5 ? 11.6 : 6.4; e.vy -= g * dt; e.y = Math.max(0, e.y + e.vy * dt); if (e.y === 0 && e.vy < 0) { e.vy = 0; e.landT = 0.16; if (e.act && (e.act.k === 'block' || e.act.k === 'reb')) e.act = null; } }
+    if (e.landT > 0) e.landT -= dt;
     /* stay in bounds (a little room for inbounds) */
     e.pos.x = clamp(e.pos.x, -HWC - 0.6, HWC + 0.8); e.pos.z = clamp(e.pos.z, -HL - 0.8, HL + 0.8);
     /* facing: defenders face their man, ball handlers face where they go, shooters face the rim */
@@ -1841,7 +1859,7 @@ function animate(dt) {
     else if (a && (a.k === 'block' || a.k === 'reb')) { pose = hpose('block', G.t, { k: a.t / 0.7 }); kk = 24; }
     else if (a && a.k === 'pass') { pose = hpose('pass', G.t, { k: a.t / a.dur }); kk = 26; }
     else if (a && a.k === 'catch') pose = hpose('catch', G.t);
-    else if (a && a.k === 'steal') { pose = hpose('defend', G.t, { ph: e.ph }); pose.shR = [-1.5, 0, -0.2]; pose.elR[0] = -0.1; pose.spine[0] = 0.6; kk = 26; }
+    else if (a && a.k === 'steal') { pose = hpose('defend', G.t, { ph: e.ph }); pose.shR = [-1.85, 0, -0.25]; pose.elR[0] = -0.05; pose.shL = [-0.9, 0, 0.5]; pose.elL[0] = -0.5; pose.spine[0] = 0.85; pose.spine[1] = -0.25; kk = 26; } /* v15: full lean, arm extended at the ball - the reach reads */
     else if (a && a.k === 'cross') { pose = hpose('dribble', G.t, { bk: 0.3 }); pose.chest[1] = Math.sin(a.t / a.dur * Math.PI) * 0.5; pose.spine[2] = Math.sin(a.t / a.dur * Math.PI) * 0.25; pose.shL = [-0.9, 0, 0.5]; pose.elL[0] = -0.5; kk = 24; }
     else if (a && a.k === 'celebrate') pose = hpose(e.i % 2 ? 'celebrate' : 'flex', G.t + e.i);
     else if (B.holder === e && B.st === 'held') { if (sp > 0.9) { pose = run(); pose.shR = [-0.5 + e.bk * 0.25, 0, -0.35]; pose.elR = [-0.7 + e.bk * 0.45, 0, 0]; pose.shL = [-0.6, 0, 0.35]; pose.elL[0] = -1.0; } else pose = hpose('dribble', G.t, { ph: e.ph, bk: e.bk }); }
@@ -1855,7 +1873,7 @@ function animate(dt) {
     const lean = (a && (a.k === 'shoot' || a.k === 'block')) ? 0 : clamp(fwd * 0.018, -0.08, 0.16), bank = clamp(-e.turn * 0.07, -0.28, 0.28) * clamp(sp / 4, 0, 1);
     J.body.rotation.x += (lean - J.body.rotation.x) * Math.min(1, dt * 8); J.body.rotation.z += (bank - J.body.rotation.z) * Math.min(1, dt * 8);
     J.body.position.y += ((pose.hy || 0) * 0.9 - J.body.position.y) * Math.min(1, dt * 12);
-    J.root.position.set(e.pos.x, e.y, e.pos.z); let ry = e.h; if (!a && !defStance && sp > 0.8) ry += angW(Math.atan2(e.vel.x, e.vel.z) - e.h) * 0.6; J.root.rotation.y += angW(ry - J.root.rotation.y) * Math.min(1, dt * 10); } /* v13: the body turns INTO its motion instead of moonwalk-strafing, and rotations ease with weight instead of snapping */
+    J.root.position.set(e.pos.x, e.y - (e.landT > 0 ? Math.sin((e.landT / 0.16) * Math.PI) * 0.09 : 0), e.pos.z); let ry = e.h; /* v15: landing bend - the body absorbs the floor */ if (!a && !defStance && sp > 0.8) ry += angW(Math.atan2(e.vel.x, e.vel.z) - e.h) * 0.6; J.root.rotation.y += angW(ry - J.root.rotation.y) * Math.min(1, dt * 10); } /* v13: the body turns INTO its motion instead of moonwalk-strafing, and rotations ease with weight instead of snapping */
   for (const e2 of G.ents) if (e2.J.q) e2.J.q.sync();
   /* ball mesh */
   if (B) { BALL.position.copy(B.pos); if (B.st === 'shot' || B.st === 'pass' || B.st === 'loose') BALL.rotation.x += dt * 12; BSHAD.position.set(B.pos.x, 0.006, B.pos.z); BSHAD.material.opacity = clamp(0.4 - B.pos.y * 0.06, 0.08, 0.4); }
