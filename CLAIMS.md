@@ -28,13 +28,17 @@ available.** If a quality free model exists for something, use it —
 do not ship blocky placeholder geometry for players, vehicles, props
 or environments when a better free asset exists. Rules of the road:
 
-- **Free licenses only** — CC0 preferred (Quaternius, Kenney, Poly
-  Pizza CC0 and similar); other free licenses only when their terms
-  allow commercial app use, and credit the source in the repo
-  (CREDITS.txt / the asset folder's README). Never ripped, leaked or
-  paid assets.
+- **Approved sources ONLY — the full list is ASSET-LAW.md (the law of
+  creation):** Quaternius, Kenney, Poly Pizza (CC0 items), Poly Haven,
+  ambientCG, KayKit (free packs), OpenGameArt (CC0 items only). CC0
+  means free to use even in a paid app. NOT approved: Sketchfab,
+  Mixamo, TurboSquid, and anything ripped, leaked or paid.
 - **Realism is the target** — correct proportions, real materials and
   textures over stylized stand-ins, wherever the game is on screen.
+  **Models and clothing must match the game and the style of play it
+  mimics** (hockey players wear hockey gear, basketball players wear
+  basketball kits, drivers wear race suits). Generic outfits on
+  athletes are a defect.
 - **Store-ready budget still applies** (see STORE-READY.md): pick the
   best-looking model that stays inside the mobile performance budget —
   sane poly counts, textures <= 2048px, GLB format, animations
