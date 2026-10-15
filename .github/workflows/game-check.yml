@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: game-check
-  cancel-in-progress: true
+  cancel-in-progress: false   # let a running check finish; only the newest waiting one runs next
 
 permissions:
   contents: write
