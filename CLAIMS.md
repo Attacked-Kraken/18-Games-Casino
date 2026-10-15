@@ -45,7 +45,6 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
-| CLAIMED | Track & Field college game (apextrackfield.html): all T&F events — sprints, hurdles, mid-distance, jumps, throws; sports.html tab+panel+card; Apex Arcade branded | Muse Modern Plus | apextrackfield | - | 2026-10-14 21:55 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
 | DONE | F1 Apex Arcade sponsor branding: trackside banner boards + start gantry + menu splash (casino bot covers hockey/soccer/baseball/flight) | Muse main | f1-sponsor-final | PR #88, main df9063e3 | 2026-10-14 21:45 CDT |
 | CLAIMED | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | - | 2026-10-14 21:37 CDT |
@@ -75,3 +74,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Apex Arcade is ALWAYS the sponsor: sponsorship pass across the Game Development titles - hockey, soccer, flight shipped in PR #80 (arena signage, surface logos, PRESENTS splashes); baseball completed by the baseball ship (PR #84): sponsor boards on the outfield wall + APEX ARCADE menu branding. 27Hoops sponsored since v17. ALL TITLES DONE | Muse main (casino) | sponsor-pass | PR #80, main 1df0cee6 + PR #84 | 2026-10-14 21:52 CDT |
 | DONE | Baseball (apexbaseball) human-look + rules pass: full playtest, player look/movement fixes, baseball rules verified, Apex Arcade sponsor branding | Muse algre141 | baseball-ship | PR #84, main c9b542cf | 2026-10-14 21:36 CDT |
 | DONE | Post the owner's store-ready rule on the repo: every game must be Apple/Google store-app ready (iPhone + Android) - STORE-READY.md checklist + CLAIMS.md + README pointers (claim row lost in a parallel board rewrite; work shipped in PR #98) | Muse main (casino) | store-ready-doc | PR #98, main 92be3fbf | 2026-10-14 22:06 CDT |
+| DONE | Soccer (apexsoccer) human-look pass: 1.82m athletes, soccer kits, real ball size, yellow/red cards + sendings-off, penalty kicks | Muse algre141 | soccer-ship | PR #96, main f623b7bb | 2026-10-14 22:05 CDT |
