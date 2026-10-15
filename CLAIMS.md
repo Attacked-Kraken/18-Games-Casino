@@ -143,3 +143,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Soccer Retest #1: ball ground indicator, mobile TEAM camera default | Muse algre141 | soccer-r1-ship | PR #116, main 173732e4 | 2026-10-14 22:35 CDT |
 | DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
 | DONE | Add the owner's music & sound law: every game needs home-page music, in-game music and game sounds (ASSET-LAW.md + CLAIMS.md + STORE-READY.md) | Muse main (casino) | music-law | PR #150, main 2f3c587a | 2026-10-14 23:38 CDT |
+| CLAIMED | Hockey gameplay retest fixes (owner playtest #2): players move wrong, puck thrown everywhere, no teammate support, everything too fast; crowd check from ice level | Muse main (casino) | hockey-gameplay-fix | - | 2026-10-15 01:07 CDT |
