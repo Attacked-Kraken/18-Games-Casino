@@ -611,7 +611,7 @@ const Track = {
     const ac=acv.getContext('2d'); ac.fillStyle='#808080'; ac.fillRect(0,0,128,128);
     for(let i=0;i<900;i++){ const v=110+Math.random()*40|0; ac.fillStyle=`rgb(${v},${v},${v})`; ac.fillRect(Math.random()*128,Math.random()*128,2,2); }
     const atex=new THREE.CanvasTexture(acv); atex.wrapS=atex.wrapT=THREE.RepeatWrapping; atex.repeat.set(40,2);
-    const asphalt=new THREE.Mesh(tg, new THREE.MeshStandardMaterial({color:0x9a9da2, roughness:0.94, map:atex}));
+    const asphalt=new THREE.Mesh(tg, new THREE.MeshStandardMaterial({color:0xb8bcc2, roughness:0.94, map:atex, side:THREE.DoubleSide}));
     asphalt.receiveShadow=true; g.add(asphalt); this.asphaltMat=asphalt.material;
     // curbs: red/white strips at edges
     for(const side of [1,-1]){
