@@ -226,6 +226,22 @@ sun.shadow.camera.far = 260; sun.shadow.bias = -0.0004;
 scene.add(sun);
 scene.add(new THREE.AmbientLight(0xffffff, 0.15));
 
+/* ================= night sky starfield ================= */
+{
+  const starGeo = new THREE.BufferGeometry();
+  const N = 420, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const a = Math.random() * Math.PI * 2, e = Math.random() * Math.PI * 0.42 + 0.06;
+    const r = 380;
+    pos[i * 3] = Math.cos(a) * Math.cos(e) * r;
+    pos[i * 3 + 1] = Math.sin(e) * r;
+    pos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r;
+  }
+  starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xcfe0ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false });
+  scene.add(new THREE.Points(starGeo, starMat));
+}
+
 /* ================= ground & arena ================= */
 const dirtTex = makeTex(256, 256, (g, w, h) => {
   g.fillStyle = '#6e4b2a'; g.fillRect(0, 0, w, h);
