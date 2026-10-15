@@ -37,6 +37,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 
 | Status | Task | Bot | Branch | PR / sha | Updated |
 |---|---|---|---|---|---|
+| CLAIMED | Monster truck v1 playtest fixes: play the game, log issues, fix them | Muse algre141 | monstertruck-fixes | - | 2026-10-14 21:37 CDT |
 | DONE | Monster truck game (apexmonstertruck.html): 3D freestyle arena — crush cars, ramp jumps, score attack | Muse algre141 | apex-monstertruck | PR #82, main a234df86 | 2026-10-14 21:34 CDT |
 | DONE | F1 menu fix: updateForecast TypeError killed initMenus, all menu buttons dead | Muse main | f1-menu-fix | PR #71, main a93545b8 | 2026-10-14 21:20 CDT |
 | DONE | F1 Apex Racing: realistic F1 game — real rules (DRS/tires/pits/points), real tracks, crowds, cheat-y AI, dynamic weather, career mode + friend-code multiplayer | Muse main | f1-apex-racing | PR #63, main de763763 | 2026-10-14 20:55 CDT |
