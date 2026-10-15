@@ -71,11 +71,8 @@ body.walk #hud { display: block; }
 #pInfo.on { display: block; }
 #pFav { position: fixed; z-index: 6; display: none; left: calc(50% + 196px); bottom: calc(34px + env(safe-area-inset-bottom)); }
 /* hoops1: round basketball button, bottom-right of the floor (owner's marked spot) */
-#bHoops { position: fixed; z-index: 6; right: 14px; bottom: calc(58px + env(safe-area-inset-bottom)); width: 68px; height: 68px; border-radius: 50%;
   border: 1px solid #e8d3a0; background: radial-gradient(circle at 35% 28%, #3a1c66, #170a30 72%); color: #e8d3a0; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; box-shadow: 0 10px 26px rgba(0,0,0,.6); padding: 0; }
-#bHoops svg { width: 34px; height: 34px; display: block; }
-#bHoops span { font: 500 8.5px var(--sans); letter-spacing: .18em; text-transform: uppercase; margin-top: 2px; }
 @media (max-width: 480px) { #pFav { left: auto; right: 10px; bottom: calc(144px + env(safe-area-inset-bottom)); } }
 @media (max-width: 480px) { #pInfo { left: auto; right: 10px; bottom: calc(96px + env(safe-area-inset-bottom)); } }
 #prompt.on { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
@@ -109,6 +106,7 @@ html.boot #matrix { display: flex; }
 #matrix .brand .lg b { font-size: .54em; letter-spacing: .5em; font-weight: 600; color: #baffd0; margin-left: 10px; }
 #matrix .brand small { display: block; margin-top: 4px; color: #57d977; font: 500 10px ui-monospace, Menlo, monospace; letter-spacing: .34em; text-transform: uppercase; }
 #mxDoor { position: absolute; top: calc(54% - 26px); left: calc(70% - 42px); z-index: 3; width: 84px; height: 84px; padding: 0; background: transparent; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+#gdTab { position: absolute; top: 79%; left: 50%; transform: translate(-50%, -50%); z-index: 4; width: 168px; height: 168px; border-radius: 50%; border: 3px solid #ff2a1e; background: radial-gradient(circle at 50% 42%, rgba(60,4,2,.55), rgba(10,0,0,.72)); color: #ff4038; display: flex; align-items: center; justify-content: center; text-decoration: none; font: 800 16px/1.35 -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: .14em; text-align: center; box-shadow: 0 0 26px rgba(255,42,30,.35), inset 0 0 22px rgba(255,42,30,.22); -webkit-tap-highlight-color: transparent; }
 #gateSw { position: absolute; right: 10px; bottom: 10px; z-index: 6; font: 600 11px ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; color: #39ff6a; background: rgba(0, 22, 7, .78); border: 1px solid rgba(57, 255, 106, .5); border-radius: 999px; padding: 8px 13px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 #worm { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; background: #000; }
 #worm[hidden] { display: none; }
@@ -152,7 +150,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
 </style>
 <script src="audio.js"></script>
 </head><body>
-<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button><button class="wormtab" id="wHoops" type="button"><em>&#127936;</em>Basketball</button><button class="wormtab" id="wHockey" type="button"><em>&#127954;</em>Hockey</button><button class="wormtab" id="wBaseball" type="button"><em>&#9918;</em>Baseball</button><button class="wormtab" id="wSoccer" type="button"><em>&#9917;</em>Soccer</button><button class="wormtab" id="wFlight" type="button"><em>&#9992;</em>Flight Sim</button></div><div class="wormhint">TAP THE HALL TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button><button id="gateSw" type="button">HOLD-DOOR: ON</button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP THE HALL TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button><button class="vbtn ghost" id="vWipe" type="button" style="color:#ff8a7a;border-color:rgba(255,120,100,.45);margin-top:10px;">Forgot your PIN? Erase &amp; start a new vault</button><div id="vWipeAsk" hidden><p class="vnote" style="color:#ffb0a0;">Locked out for good? The old vault is sealed with the lost PIN - nobody can open it, not even us. Erasing deletes every note and file in it FOREVER and lets you seal a brand-new vault with a new PIN. Pick a PIN you will remember - there is no recovery after this either.</p><button class="vbtn" id="vWipeYes" type="button" style="background:#5a1610;color:#ffd9d2;">Erase everything &amp; start new</button><button class="vbtn ghost" id="vWipeNo" type="button">Keep trying my PIN</button></div></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
+<div id="matrix" aria-label="18 Games connector"><canvas id="mxRain" aria-hidden="true"></canvas><button id="mxDoor" type="button" aria-label="Owner door"></button><a id="gdTab" href="sports.html" aria-label="Apex Arcade Game Development"><span>GAME<br>DEVELOPMENT</span></a><div id="worm" hidden><canvas id="wormCv" aria-hidden="true"></canvas><div class="wormtabs"><button class="wormtab" id="wFloor" type="button"><em>&#127920;</em>Casino Floor</button></div><div class="wormhint">TAP THE HALL TO GO BACK</div><button id="wormDoor2" type="button" aria-label="Deeper door"></button><button id="gateSw" type="button">HOLD-DOOR: ON</button></div><div id="worm2" hidden><canvas id="worm2Cv" aria-hidden="true"></canvas><button id="worm2Door" type="button" aria-label="Vault piece"></button><div class="worm2hint">TAP THE HALL TO GO BACK</div></div><div id="vault" hidden><div class="vpanel"><div class="vtitle">VAULT</div><div id="vSetup" hidden><p class="vnote">This vault lives only on this device. Everything in it is sealed with AES encryption from your PIN - the PIN itself is never stored, and nothing is uploaded. Forget the PIN and the vault cannot be opened.</p><input class="vin" id="vPin1" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Create a PIN (4+ digits)"><input class="vin" id="vPin2" type="password" inputmode="numeric" autocomplete="new-password" placeholder="Repeat the PIN"><div class="verr" id="vErr1"></div><button class="vbtn" id="vCreate" type="button">Seal the vault</button></div><div id="vLock" hidden><p class="vnote">Enter your PIN to open the vault.</p><input class="vin" id="vPin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN"><div class="verr" id="vErr2"></div><button class="vbtn" id="vUnlock" type="button">Unlock</button><button class="vbtn ghost" id="vWipe" type="button" style="color:#ff8a7a;border-color:rgba(255,120,100,.45);margin-top:10px;">Forgot your PIN? Erase &amp; start a new vault</button><div id="vWipeAsk" hidden><p class="vnote" style="color:#ffb0a0;">Locked out for good? The old vault is sealed with the lost PIN - nobody can open it, not even us. Erasing deletes every note and file in it FOREVER and lets you seal a brand-new vault with a new PIN. Pick a PIN you will remember - there is no recovery after this either.</p><button class="vbtn" id="vWipeYes" type="button" style="background:#5a1610;color:#ffd9d2;">Erase everything &amp; start new</button><button class="vbtn ghost" id="vWipeNo" type="button">Keep trying my PIN</button></div></div><div id="vMain" hidden><div id="vList"></div><input class="vin" id="vTitle" type="text" placeholder="Title"><textarea class="vin" id="vBody" placeholder="The secret itself..."></textarea><button class="vbtn" id="vAdd" type="button">Add to vault</button><button class="vbtn ghost" id="vLockBtn" type="button">Lock</button></div><button class="vbtn ghost" id="vClose" type="button">Close</button></div></div></div>
 <canvas id="floor3d" aria-hidden="true"></canvas>
 <div id="hud">
   <div id="hTop"><span id="hTitle">18 Games Casino</span><span id="hChips" title="Fun chips"></span>
@@ -162,7 +160,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
   <div id="hint"></div>
   <button id="prompt" type="button"></button>
 <button id="pInfo" type="button" aria-label="How to play">i</button>
-<button id="bHoops" type="button" aria-label="Play 27Hoops basketball"><svg viewBox="0 0 512 512" aria-hidden="true"><circle cx="256" cy="256" r="230" fill="#e8720c"/><g fill="none" stroke="#2b1408" stroke-width="26"><circle cx="256" cy="256" r="230"/><path d="M26 256h460M256 26v460"/><path d="M110 92c110 96 110 232 0 328M402 92c-110 96-110 232 0 328"/></g></svg><span>Hoops</span></button>
+
 </div>
 <div id="panel" role="dialog" aria-modal="true" aria-label="Games"><div class="box"><h2>Games on the floor <button id="pX" type="button">Close ✕</button></h2><div id="pList"></div></div></div>
 <div class="w">
@@ -194,11 +192,6 @@ textarea.vin { min-height: 74px; resize: vertical; }
     { id: 'gildedreels', file: 'gildedreels.html', title: 'Gilded Reels', tagline: '3D five-reel slot with a pull lever. Fun chips only, never money.', rating: '18+', icon: 'gildedreels-icon.png', accent: '#ff3aa0', category: 'slots', multiplayer: true },
     { id: 'velvet21', file: 'velvet21.html', title: 'Velvet 21', tagline: 'Wide 3D blackjack table, 6 seats. Fun chips only, never money.', rating: '18+', icon: 'velvet21-icon.png', accent: '#ff2a55', category: 'cards', multiplayer: true },
     { id: 'steelfront', file: 'steelfront.html', title: 'Steelfront', tagline: '3D first-person tactical shooter. Team battles, operations and a gun range.', rating: '13+', icon: 'steelfront-icon.png', accent: '#2ad8ff', category: 'action', multiplayer: false },
-    { id: 'hoops27', file: 'hoops27.html', title: '27Hoops', tagline: '3D 5-on-5 basketball in a broadcast arena. Real 3D players, our own made-up league.', rating: '13+', icon: 'hoops27-icon.svg', accent: '#ff7a1a', category: 'action', multiplayer: false, new: true },
-    { id: 'apexhockey', file: 'apexhockey.html', title: 'Apex Ice Hockey', tagline: '3D ice hockey: 5-on-5, real rules - periods, faceoffs, offside, golden-goal overtime.', rating: '13+', icon: 'apexhockey-icon.svg', accent: '#57c8ff', category: 'action', multiplayer: false, new: true },
-    { id: 'apexbaseball', file: 'apexbaseball.html', title: 'Apex Baseball', tagline: '3D baseball with the real rulebook: balls and strikes, force outs, walk-offs. 3-inning arcade games.', rating: '13+', icon: 'apexbaseball-icon.svg', accent: '#ff5347', category: 'action', multiplayer: false, new: true },
-    { id: 'apexsoccer', file: 'apexsoccer.html', title: 'Apex Soccer', tagline: '3D soccer: 7-on-7, throw-ins, corners, offside and two halves on a striped pitch.', rating: '13+', icon: 'apexsoccer-icon.svg', accent: '#37d67a', category: 'action', multiplayer: false, new: true },
-    { id: 'apexflight', file: 'apexflight.html', title: 'Apex Flight', tagline: '3D flight simulator: take off, fly the pattern and grease the landing. Free flight + landing challenge.', rating: '13+', icon: 'apexflight-icon.svg', accent: '#4db2ff', category: 'action', multiplayer: false, new: true }
   ];
   var CATS = ['slots', 'tables', 'cards', 'instant', 'action'];
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
@@ -282,7 +275,7 @@ textarea.vin { min-height: 74px; resize: vertical; }
   }).catch(function () {}).then(function () { loaded = true; render(); deep(); fire(); });
 })();
 </script>
-<script>document.getElementById('bHoops').addEventListener('click', function () { if (window.Lobby) Lobby.open('hoops27'); else location.href = 'hoops27.html'; });</script>
+
 <script src="rules.js"></script>
 <script src="wallet.js"></script>
 <script src="engage.js"></script>
@@ -307,7 +300,6 @@ textarea.vin { min-height: 74px; resize: vertical; }
     seen(); try { sessionStorage.setItem('cf_view', 'list'); } catch (e) {} location.reload(); }
   var canGL = false;
   try { canGL = !!document.createElement('canvas').getContext('webgl2'); } catch (e) {}
-  function openHoops() { if (window.Lobby) Lobby.open('hoops27'); else location.href = 'hoops27.html'; }
   /* The owner's secret door is the ONLY way into this app. The entrance
      shows nothing but the rain - no names, no words, no buttons. The door
      is an invisible tap zone in the top-right corner; the rain itself
@@ -371,7 +363,6 @@ textarea.vin { min-height: 74px; resize: vertical; }
       wF.addEventListener('click', function () { worm.hidden = true; dismiss(); }); }
     else wF.addEventListener('click', enterFloor); }
   var wH = document.getElementById('wHoops');
-  if (wH) wH.addEventListener('click', openHoops);
   /* ==== v7: the deeper chain - wormhole 2 and the encrypted vault ====
      The first wormhole hides a second door: a faint red "0" at its
      bottom-left, answering to the same hold-then-tap. It opens a second
@@ -608,9 +599,6 @@ textarea.vin { min-height: 74px; resize: vertical; }
   var vCloseBtn = v$('vClose');
   if (vCloseBtn) vCloseBtn.addEventListener('click', function () { vKey = null; vItems = []; if (vaultEl) vaultEl.hidden = true; });
   function wormGame(id) { if (window.Lobby) Lobby.open(id); else location.href = id + '.html'; }
-  [['wHockey', 'apexhockey'], ['wBaseball', 'apexbaseball'], ['wSoccer', 'apexsoccer'], ['wFlight', 'apexflight']].forEach(function (p) {
-    var b = document.getElementById(p[0]);
-    if (b) b.addEventListener('click', function () { wormGame(p[1]); }); });
   /* The wormhole vortex: concentric rings of binary digits swirling into
      the center, inner rings faster. Runs only while the wormhole is open. */
   var wormStarted = false;
