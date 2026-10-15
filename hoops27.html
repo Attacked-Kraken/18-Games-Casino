@@ -158,6 +158,13 @@
 
 <div id="hud" class="scr">
   <div id="sb"><div class="tm" id="sbA">AWY</div><div class="sc" id="sbAs">0</div><div class="tm" id="sbH">HOM</div><div class="sc" id="sbHs">0</div><div class="qc" id="sbQ">1ST 3:00</div><div class="st" id="sbS">24</div></div>
+<button id="perfPill" type="button" style="display:none;position:fixed;left:50%;bottom:6px;transform:translateX(-50%);z-index:9400;font:600 10px ui-monospace,Menlo,monospace;letter-spacing:.08em;color:#bfe9c8;background:rgba(6,20,10,.66);border:1px solid rgba(120,255,160,.35);border-radius:999px;padding:4px 10px;">PERF</button>
+<div id="perfRep" style="display:none;position:fixed;inset:0;z-index:9900;background:rgba(2,6,4,.85);align-items:center;justify-content:center;">
+ <div style="width:min(430px,92vw);max-height:86vh;overflow:auto;background:#0a140d;border:1px solid rgba(120,255,160,.4);border-radius:16px;padding:18px 20px;color:#dff5e2;font:400 13px ui-monospace,Menlo,monospace;line-height:1.65;">
+  <div style="font-size:16px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;">PERFORMANCE REPORT</div>
+  <div id="perfBody"></div>
+  <div style="margin-top:12px;display:flex;gap:8px;"><button id="perfReset" type="button" style="flex:1;font:700 13px ui-monospace,Menlo,monospace;padding:10px;border-radius:999px;border:0;background:#39ff6a;color:#04140a;">RESET TO FULL</button><button id="perfClose" type="button" style="flex:1;font:700 13px ui-monospace,Menlo,monospace;padding:10px;border-radius:999px;border:1px solid rgba(120,255,160,.5);background:transparent;color:#dff5e2;">CLOSE</button></div>
+ </div></div>
   <div id="msgB"></div><div id="msgS"></div><div id="pop"></div><div id="grade"></div><div id="hint"></div><div id="who"></div>
   <div id="meter"><div class="z"></div><div class="p"></div><div class="f" id="mFill"></div></div>
 </div>
@@ -2029,13 +2036,14 @@ function resize() { const sb = safeBox(), rot = sb.w < sb.h; document.body.class
      sizes are now a no-op and the listeners below are debounced. */
   const rkey = W0 + 'x' + H0 + 'x' + pr.toFixed(3) + 'x' + SV.q; if (resize._k === rkey) return; resize._k = rkey;
   renderer.setPixelRatio(pr); renderer.setSize(W0, H0, false);
-  post.on = SV.q === 'high'; renderer.shadowMap.enabled = SV.q === 'high'; if (post.on) post.resize(Math.floor(W0 * pr), Math.floor(H0 * pr)); cam.aspect = W0 / H0; cam.updateProjectionMatrix(); }
+  post.on = SV.q === 'high' && !window.__perfLite; renderer.shadowMap.enabled = SV.q === 'high' && !window.__perfLite; /* v16: the tuner can force these off */ if (post.on) post.resize(Math.floor(W0 * pr), Math.floor(H0 * pr)); cam.aspect = W0 / H0; cam.updateProjectionMatrix(); }
 
 /* ---------- main loop */
 await __apexYield();
 let last = performance.now(), menuFr = 0, skipRender = false;
 function frame(now) {
   requestAnimationFrame(frame); let dt = Math.min(0.05, (now - last) / 1000); last = now;
+  try { perfTick(now); } catch (e) {} /* v16: the frame-rate watchdog samples here */
   try { ArcadeShell.frame(now); const mm = !SV.snd ? 'off' : G.mode === 'game' && !G.paused && !G.over ? 'game' : 'menu'; if (mm !== G.musMode) { G.musMode = mm; ArcadeShell.music(mm); } } catch (e) {}
   if (!G.paused) {
     if (slowT > 0) { slowT -= dt; dt *= 0.35; }
@@ -2051,9 +2059,43 @@ function frame(now) {
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && G.mode === 'game') { saveSnap(); if (!G.over) pauseGame(); } });
 addEventListener('pagehide', () => { if (G.mode === 'game') saveSnap(); });
+/* ================= v16: PERF AUTO-TUNER =================
+   The owner's pick from the Ideas tab: 27Hoops tunes itself to the phone
+   it runs on. A watchdog measures real frame rate during play; when it
+   sags, the heavy stuff steps down - render scale first, then (on high
+   quality) post + shadows, then crowd detail - and the level it lands on
+   is remembered, so this phone starts there next time. The pill at the
+   bottom of the screen is the one-tap report of exactly what changed. */
+const PERF = { lvl: 0, fps: 0, lastT: 0, acc: 0, fr: 0, bad: 0, cool: 0, seen: 0, bootNote: '', log: [] };
+const PERF_LV = [{ n: 'FULL', f: 1 }, { n: 'LIGHT', f: 0.85 }, { n: 'SMOOTH', f: 0.72 }, { n: 'LEAN', f: 0.6 }, { n: 'MIN', f: 0.5 }];
+function perfSave() { try { localStorage.setItem('hoops27_perf_v1', JSON.stringify({ lvl: PERF.lvl, log: PERF.log.slice(-10) })); } catch (e) {} }
+function perfPill() { const p = $('perfPill'); if (!p) return; p.style.display = G.mode === 'game' ? 'block' : 'none'; p.textContent = '⚡ ' + (PERF.fps || '--') + ' FPS · ' + PERF_LV[PERF.lvl].n; }
+function perfLog(msg) { const t = new Date(), hh = String(t.getHours()).padStart(2, '0'), mm = String(t.getMinutes()).padStart(2, '0'); PERF.log.push(hh + ':' + mm + ' ' + msg); if (PERF.log.length > 12) PERF.log.shift(); perfSave(); perfPill(); }
+function perfApply(why) { const L = PERF_LV[PERF.lvl]; window.__perfF = L.f; if (window.__shellQ == null) window.__shellQ = G.qScale || 1; G.qScale = window.__shellQ * L.f; window.__perfLite = PERF.lvl >= 2; window.__crowdQ = PERF.lvl >= 4 ? 3 : PERF.lvl >= 3 ? 2 : 1; try { resize(); } catch (e) {} if (why) perfLog(why + ' → level ' + PERF.lvl + ' (' + L.n + ': render ×' + L.f + (window.__perfLite ? ', post+shadows off' : '') + (PERF.lvl >= 3 ? ', crowd thinned' : '') + ')'); perfPill(); }
+function perfTick(now) {
+  if (G.mode !== 'game' || G.paused || G.over) { PERF.lastT = now; PERF.acc = 0; PERF.fr = 0; perfPill(); return; }
+  if (!PERF.lastT) { PERF.lastT = now; return; }
+  const d = Math.min(1000, now - PERF.lastT); PERF.lastT = now; /* v16c: every frame counts, delta capped at 1s - a one-second frame is the loudest low-FPS signal there is, not noise to discard */
+  PERF.acc += d; PERF.fr++; PERF.seen += d;
+  if (PERF.acc < 2500) return;
+  PERF.fps = Math.round(PERF.fr * 1000 / PERF.acc); PERF.acc = 0; PERF.fr = 0; perfPill();
+  if (PERF.seen < 5000 || now < PERF.cool) return; /* warmup + cooldown between steps */
+  if (PERF.fps < 42) PERF.bad++; else PERF.bad = 0;
+  if ((PERF.bad >= 2 || PERF.fps < 28) && PERF.lvl < PERF_LV.length - 1) { PERF.lvl++; PERF.bad = 0; PERF.cool = now + 6000; perfApply('Saw ' + PERF.fps + ' FPS in game'); }
+}
+function perfReport() { const b = $('perfBody'); if (!b) return; const L = PERF_LV[PERF.lvl];
+  b.innerHTML = 'This phone is running at <b>' + (PERF.fps || '--') + ' FPS</b> · tuner level <b>' + PERF.lvl + ' (' + L.n + ')</b>, render scale ×' + L.f + '.' + (PERF.bootNote ? '<br>' + PERF.bootNote : '') + '<br><br><b>What the tuner changed:</b><br>' + (PERF.log.length ? PERF.log.join('<br>') : 'Nothing yet — full quality is holding on this phone.'); }
+(function perfBoot() { try { const s = JSON.parse(localStorage.getItem('hoops27_perf_v1')); if (s) { PERF.lvl = Math.max(0, Math.min(PERF_LV.length - 1, s.lvl | 0)); PERF.log = Array.isArray(s.log) ? s.log : []; if (PERF.lvl > 0) PERF.bootNote = 'Started at level ' + PERF.lvl + ' — remembered from last time on this phone.'; } } catch (e) {}
+  perfApply(null);
+  const pill = $('perfPill'); if (pill) pill.addEventListener('click', () => { perfReport(); const r = $('perfRep'); if (r) r.style.display = 'flex'; });
+  const pc = $('perfClose'); if (pc) pc.addEventListener('click', () => { const r = $('perfRep'); if (r) r.style.display = 'none'; });
+  const pr = $('perfReset'); if (pr) pr.addEventListener('click', () => { PERF.lvl = 0; perfApply(null); perfLog('You reset the tuner → back to FULL quality'); perfReport(); });
+  window.__perf = PERF;
+})();
+
 try { ArcadeShell.init({ game: 'hoops27', backEl: '#back', minScale: 0.6, rotates: true,
   onBack: () => { if ($('oPause').style.display === 'flex' || G.mode === 'game') { $('oPause').style.display = 'none'; $('psQuit').onclick(); return true; }   /* bk6: Back in a game saves the spot and goes to the 27Hoops home; Back there goes to the Arcade */ if (G.setBack === 'game' && $('settings').style.display === 'flex') { $('settings').style.display = 'none'; G.setBack = null; return true; } if (G.screen && G.screen !== 'home') { showScreen('home'); return true; } return false; },
-  onPause: () => { if (AU.ctx) AU.ctx.suspend(); }, onResume: () => { if (AU.ctx) AU.ctx.resume(); }, onQuality: (sc) => { G.qScale = sc; resize(); } }); } catch (e) {}
+  onPause: () => { if (AU.ctx) AU.ctx.suspend(); }, onResume: () => { if (AU.ctx) AU.ctx.resume(); }, onQuality: (sc) => { window.__shellQ = sc; G.qScale = sc * (window.__perfF || 1); resize(); } /* v16: shell scale x tuner factor */ }); } catch (e) {}
 if (window.ArcadeShell && ArcadeShell.onResize) ArcadeShell.onResize(resize); else addEventListener('resize', resize); try { ArcadeShell.onRotDir(() => resize()); } catch (e) {}
 CAST.on = !!SV.voice;
 resize(); let rszT = null; const resizeSoon = () => { clearTimeout(rszT); rszT = setTimeout(resize, 140); };
