@@ -512,6 +512,14 @@ const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,10), new THREE.Mesh
 ball.visible = false; scene.add(ball);
 const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5,0.09,8,28), new THREE.MeshBasicMaterial({color:0xffd23f, transparent:true, opacity:0.85}));
 ring.position.set(0,2.2,0.6); ring.visible=false; scene.add(ring);
+// strike zone frame: subtle box showing the hitting zone to the batter
+const zoneGeo = new THREE.BoxGeometry(2.4, 2.2, 0.1);
+const zoneMat = new THREE.MeshBasicMaterial({ color:0xffd23f, transparent:true, opacity:0.18, depthWrite:false });
+const zoneBox = new THREE.Mesh(zoneGeo, zoneMat);
+zoneBox.position.set(0, 2.2, 0.6); zoneBox.visible = false; scene.add(zoneBox);
+const zoneEdge = new THREE.LineSegments(new THREE.EdgesGeometry(zoneGeo),
+  new THREE.LineBasicMaterial({ color:0xffd23f, transparent:true, opacity:0.5 }));
+zoneEdge.position.copy(zoneBox.position); zoneEdge.visible = false; scene.add(zoneEdge);
 
 /* ---------------- HUD ---------------- */
 function renderScoreboard(){
@@ -709,7 +717,7 @@ function resolveContact(q, dt, pitchType){
 function resetCount(){ G.balls=0; G.strikes=0; }
 function calledPitch(){
   const strike = umpireCall();
-  ball.visible = false; ring.visible = false; try{ Mus.pop(); }catch(e){}
+  ball.visible = false; ring.visible = false; zoneBox.visible=false; zoneEdge.visible=false; try{ Mus.pop(); }catch(e){}
   if (strike){ onStrike('called'); } else { onBall(); }
 }
 function nextPitchSoon(ms=950){ setTimeout(()=>{ if(!G.over) nextPitch(); }, ms); }
@@ -729,7 +737,7 @@ function onFoul(){
   else banner('FOUL BALL','count stays '+countText(), 1300);
   nextPitchSoon();
 }
-function swingingStrike(){ ball.visible=false; ring.visible=false; try{ Mus.pop(); }catch(e){} onStrike('swinging'); }
+function swingingStrike(){ ball.visible=false; ring.visible=false; zoneBox.visible=false; zoneEdge.visible=false; try{ Mus.pop(); }catch(e){} onStrike('swinging'); }
 function countText(){ return `${G.balls}-${G.strikes}`; }
 function onWalk(){
   ball.visible=false;
@@ -773,7 +781,7 @@ function startBattedBall(p){
   Object.assign(bip, { active:true, t:0, kind:p.kind, ang:p.ang, dist:p.dist, q:p.q, stage:0, stageT:0, anim:null });
   const [dx,,dz] = dirVec(p.ang);
   const lx = dx*p.dist, lz = dz*p.dist;
-  bip.land = [lx, 0, lz]; ring.visible = false;
+  bip.land = [lx, 0, lz]; ring.visible = false; zoneBox.visible=false; zoneEdge.visible=false;
   const isHR = p.dist > WALL_R && p.kind!=='grounder';
   if (p.kind==='grounder'){ bip.tf = clamp(p.dist/38, 0.35, 1.1); }
   else { bip.tf = clamp(0.5 + p.dist/70, 0.8, 2.4); }
