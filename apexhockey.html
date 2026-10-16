@@ -605,11 +605,6 @@ function attachAthletes(H){
               new THREE.MeshStandardMaterial({color:TEAMS[s.team].helmet, roughness:.6}));
             gl2.scale.setScalar(1/ATH_K); gl2.position.y=-0.08; o.add(gl2);
           }
-          if(/chest|spine_0[23]/i.test(o.name) && !s._chestDone){ s._chestDone=1;
-            const pd=new THREE.Mesh(new THREE.SphereGeometry(0.66,10,8),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.8}));
-            pd.scale.set(1.3/ATH_K, 0.8/ATH_K, 1.1/ATH_K); pd.position.y=0.1; o.add(pd);
-          }
           if(/thigh|upperleg/i.test(o.name)){
             const th=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.52,0.38),
               new THREE.MeshStandardMaterial({color:0x14181f, roughness:.85}));
