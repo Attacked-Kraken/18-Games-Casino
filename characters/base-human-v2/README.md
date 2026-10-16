@@ -13,3 +13,12 @@ so every UAL clip (anims.glb: 11 clips) drives both. Outfits are modular and ori
 - Size: male.glb 0.59 MB, female.glb 0.62 MB, anims.glb 0.27 MB (512px skin textures, normal/roughness maps dropped).
 
 v1 (`characters/base-human-v1/`) is frozen; this folder supersedes it in the casino.
+
+## Athlete kit: `gear.js` (sport gear + sport stances)
+
+`hockeyKit(THREE, h, colours)` dresses any `H.make()` body in real hockey gear. It rides the skeleton, so it bends with
+every animation, and it is batched into 5 meshes so 12 players stay light on a phone. Then call
+`kit.stance.apply({crouch, stride, phase})` each frame after `h.mixer.update(dt)`. That sets the owner's stance
+exactly: lean, knees, hips, wide feet, skates on the ice and the stick in both hands. `kit.stance.measure()` returns
+the numbers that the fix tests check. New sports are built from `gearKit` (tube, batch, makeStance). See
+STUDIO-STANDARD.md §1. All the gear is original, built in code (no outside models).

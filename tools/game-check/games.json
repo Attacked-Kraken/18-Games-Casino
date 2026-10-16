@@ -1,13 +1,13 @@
 {
   "_how": "One entry per Game Development title. 'start' = the buttons to press, in order, to get from the menu into real gameplay (CSS ids or button text). Steps that aren't on screen are skipped. When you add a game, add it here so the checker can play it.",
   "games": [
-    { "file": "apexbaseball.html",     "name": "Apex Baseball",       "start": ["#startBtn"] },
+    { "file": "apexbaseball.html",     "name": "Apex Baseball",       "start": ["#startBtn"], "people": true },
     { "file": "apexf1.html",           "name": "Apex F1 Racing",      "start": ["#quickBtn", "#toTeamBtn", "#startBtn", "#raceBtn"] },
     { "file": "apexflight.html",       "name": "Apex Flight",         "start": ["text=FREE FLIGHT", "#thrUp", "#thrUp", "#thrUp", "#thrUp"] },
-    { "file": "apexhockey.html",       "name": "Apex Ice Hockey",     "start": ["#playBtn"] },
+    { "file": "apexhockey.html",       "name": "Apex Ice Hockey",     "start": ["#playBtn"], "people": true },
     { "file": "apexmonstertruck.html", "name": "Apex Monster Truck",  "start": ["#playBtn"] },
     { "file": "apexracer.html",        "name": "Exotic Racer Club",   "start": ["#mRace", "#plist .pl", "#shGo"] },
-    { "file": "apexsoccer.html",       "name": "Apex Soccer",         "start": ["#btnStart"] },
-    { "file": "apextrackfield.html",   "name": "Apex Track & Field",  "start": ["#bFree", "#grid button", "#bCardStart"] }
+    { "file": "apexsoccer.html",       "name": "Apex Soccer",         "start": ["#btnStart"], "people": true },
+    { "file": "apextrackfield.html",   "name": "Apex Track & Field",  "start": ["#bFree", "#grid button", "#bCardStart"], "people": true }
   ]
 }

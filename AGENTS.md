@@ -33,3 +33,9 @@ FIRST, then you fix it. Only "fixed" when the game check shows ✅ next to his w
 `tools/model-viewer.html` with the game's `look-presets.js` preset; into the game only after 👍 (LOCKED). Never show the
 owner mockups - the game check robot photographs the real model for him. Idea scout: SCOUT.md. Full rules: CLAIMS.md
 "JOB BOARD, LOOK BOARDS & 3D MODEL GATE".
+
+**Studio standard (owner, 2026-10-16):** `STUDIO-STANDARD.md` is the quality bar for every job: real rigged people
+with their sport's gear and stance (shared parts: `characters/base-human-v2/humans.js` + `gear.js`), the phone budget,
+the job format (REFERENCE picture + DONE MEANS), and the art-director role. Free tools and what's allowed: `TOOLS.md`.
+The game check robot runs on every pull request and **blocks** a merge that adds a problem (see STUDIO-STANDARD.md §5).
+
