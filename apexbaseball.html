@@ -509,6 +509,13 @@ function athletePose(f, kind, dt){
 
 /* ball + timing ring */
 const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,10), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.4}));
+const TRAIL_N = 18;
+const trailPos = new Float32Array(TRAIL_N*3);
+const trailGeo = new THREE.BufferGeometry();
+trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
+const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color:0xffffff, transparent:true, opacity:0.45 }));
+trail.visible = false; trail.frustumCulled = false; scene.add(trail);
+let trailI = 0;
 ball.visible = false; scene.add(ball);
 const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5,0.09,8,28), new THREE.MeshBasicMaterial({color:0xffd23f, transparent:true, opacity:0.85}));
 ring.position.set(0,2.2,0.6); ring.visible=false; scene.add(ring);
@@ -626,7 +633,7 @@ function deliverPitch(type, tx, ty, byPlayer){
   flight.breakDir = tx >= 0 ? -1 : 1;   // curve breaks away from aim side
   flight.arrived = false; flight.onArrive = null; flight.swingAt = null;
   flight.cpuSwing = false;
-  ball.visible = true; ring.visible = true; ring.material.opacity = 0.85;
+  ball.visible = true; ring.visible = true; ring.material.opacity = 0.85; trailI = 0; trail.visible = false;
   setPhase('flight');
   if (byPlayer){
     // CPU batter decides based on where the pitch will actually cross
@@ -717,7 +724,7 @@ function resolveContact(q, dt, pitchType){
 function resetCount(){ G.balls=0; G.strikes=0; }
 function calledPitch(){
   const strike = umpireCall();
-  ball.visible = false; ring.visible = false; zoneBox.visible=false; zoneEdge.visible=false; try{ Mus.pop(); }catch(e){}
+  ball.visible = false; ring.visible = false; zoneBox.visible=false; zoneEdge.visible=false; trail.visible=false; try{ Mus.pop(); }catch(e){}
   if (strike){ onStrike('called'); } else { onBall(); }
 }
 function nextPitchSoon(ms=950){ setTimeout(()=>{ if(!G.over) nextPitch(); }, ms); }
@@ -732,7 +739,7 @@ function onStrike(how){
   }
 }
 function onFoul(){
-  ball.visible = false;
+  ball.visible = false; trail.visible=false;
   if (G.strikes<2){ G.strikes++; banner('FOUL BALL','Strike '+G.strikes, 1300); }
   else banner('FOUL BALL','count stays '+countText(), 1300);
   nextPitchSoon();
@@ -965,7 +972,7 @@ function endHalfInning(){
 }
 function nextPitch(){
   if (G.over) return;
-  ball.visible = false;
+  ball.visible = false; trail.visible=false;
   if (playerBatting()) startCpuPitch(); else startPlayerPitch();
 }
 function applyHitResult(r){
@@ -1152,6 +1159,11 @@ function loop(){
     const t = Math.min(flight.t, 1);
     const bp = ballPosAt(t);
     ball.position.set(bp[0],bp[1],bp[2]);
+    // trail: record position
+    trail.visible = true;
+    trailPos[trailI*3]=bp[0]; trailPos[trailI*3+1]=bp[1]; trailPos[trailI*3+2]=bp[2];
+    trailI = (trailI+1)%TRAIL_N;
+    trailGeo.attributes.position.needsUpdate = true;
     // timing ring pulse as ball arrives
     ring.material.opacity = 0.35 + 0.6*Math.pow(t,3);
     ring.scale.setScalar(1 + 0.5*Math.pow(t,4));
@@ -1173,7 +1185,7 @@ function loop(){
     const A = bip.anim;
     const s = A.steps[A.i];
     if (!s){ // animation done -> apply result
-      bip.active = false; ball.visible = false;
+      bip.active = false; ball.visible = false; trail.visible=false;
       for (const k of Object.keys(fielders)) if (fielders[k]) fielders[k].runTo = null;
       const r = A.r;
       setCam('pitch');
@@ -1262,7 +1274,7 @@ function playerSwing(){
   if (G.phase!=='flight' || !flight.active || flight.arrived) return;
   const dt = (performance.now()-flight.t0)/1000 - flight.T;
   flight.arrived = true; flight.active = false;   // swing resolves now
-  ball.visible = false;
+  ball.visible = false; trail.visible=false;
   doSwing(dt);
 }
 // aim pad
