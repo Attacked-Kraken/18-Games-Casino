@@ -66,7 +66,7 @@ Format (one section per model — keep the keys exactly like this):
 - view: tools/venue-viewer.html?m=models/hockey-arena.mjs&look=rink&name=Hockey%20arena&cheer=1
 - by: Claude (arcade reviewer)
 - version: 1
-- waits: the hockey-arena pull request (already built) - on 👍 ONLY set status LOCKED; the model gate robot merges it by itself.
+- waits: PR #347 (already built; also needs Hockey skater 👍) - on 👍 ONLY set status LOCKED; the model gate robot merges it by itself.
 - notes: venues/rink.md at real size - 60.96 x 25.9 m rink with every marking, boards + glass, goals, benches; 2-level bowl (38 rows, 18,000 seats, 16,000 moving fans in team colours who stand and cheer on goals), tunnels, LED ribbons, centre-hung 4-sided scoreboard, roof with trusses and a ring of lights. 12 draw calls. CODE-BUILT (venues/kit/stadium.js + rink.js, reused by every sport). Pictures: aerial (roof off), TV camera, behind the net.
 - status: WAITING OWNER
 
