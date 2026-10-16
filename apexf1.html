@@ -763,16 +763,37 @@ const Track = {
     }
   },
   buildScenery(g){
-    // trees + tire stacks + floodlights for flavor
-    const treeT=new THREE.MeshLambertMaterial({color:0x2c5f2c}), treeL=new THREE.MeshLambertMaterial({color:0x3f8a3f});
+    // trees (layered foliage, not cones) + gravel run-off + tire stacks
+    const treeT=new THREE.MeshLambertMaterial({color:0x4a3728});
+    const treeL1=new THREE.MeshLambertMaterial({color:0x2d6a2d});
+    const treeL2=new THREE.MeshLambertMaterial({color:0x3f8a3f});
+    const gravelMat=new THREE.MeshLambertMaterial({color:0xc9b99a});
     for(let i=0;i<60;i++){
       const s=rand(0,this.length), p=this.frameAt(s), side=Math.random()<0.5?1:-1;
       const off=rand(30,90), x=p.x+p.nx*off*side, z=p.z+p.nz*off*side;
       if(Math.abs(x)>900||Math.abs(z)>900) continue;
       const t=new THREE.Group();
-      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,4,5), treeT); trunk.position.y=2; t.add(trunk);
-      const leaf=new THREE.Mesh(new THREE.ConeGeometry(rand(2.5,4),rand(5,9),6), treeL); leaf.position.y=7; t.add(leaf);
-      t.position.set(x,p.y,z); g.add(t);
+      const trunk=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.6,3.5,6), treeT); trunk.position.y=1.75; t.add(trunk);
+      // layered spherical foliage
+      const s1=rand(2.2,3.2);
+      const f1=new THREE.Mesh(new THREE.SphereGeometry(s1,8,6), treeL1); f1.position.y=4.5; f1.scale.y=0.85; t.add(f1);
+      const f2=new THREE.Mesh(new THREE.SphereGeometry(s1*0.7,8,6), treeL2); f2.position.set(rand(-1,1),6.2,rand(-1,1)); f2.scale.y=0.8; t.add(f2);
+      const f3=new THREE.Mesh(new THREE.SphereGeometry(s1*0.45,7,5), treeL1); f3.position.set(rand(-0.8,0.8),7.4,rand(-0.8,0.8)); t.add(f3);
+      t.position.set(x,p.y,z);
+      const sc=rand(0.8,1.4); t.scale.set(sc,sc,sc);
+      g.add(t);
+    }
+    // gravel run-off areas at corners (tan patches outside turns)
+    for(let i=0;i<N;i+=40){
+      const p=this.samples[i];
+      const curv=Math.abs(p.curv);
+      if(curv>0.0008){
+        const side=p.curv>0?1:-1;
+        const gw=new THREE.Mesh(new THREE.CircleGeometry(rand(18,30),12), gravelMat);
+        gw.rotation.x=-Math.PI/2;
+        gw.position.set(p.x+p.nx*(W/2+16)*side, 0.01, p.z+p.nz*(W/2+16)*side);
+        g.add(gw);
+      }
     }
     // tire stacks near corners
     const tireM=new THREE.MeshLambertMaterial({color:0x181818});
@@ -882,118 +903,187 @@ function buildCarMesh(color, teamName, carNumber, accent){
   teamName = teamName||'APEX'; carNumber = carNumber||1;
   const g=new THREE.Group();
   const livTex = liveryTexture(color, teamName, carNumber);
-  const mat=new THREE.MeshStandardMaterial({map:livTex, roughness:0.18, metalness:0.75});
-  const paint=new THREE.MeshStandardMaterial({color, roughness:0.18, metalness:0.75});
+  const mat=new THREE.MeshStandardMaterial({map:livTex, roughness:0.12, metalness:0.85});
+  const paint=new THREE.MeshStandardMaterial({color, roughness:0.12, metalness:0.85});
+  const accentMat=new THREE.MeshStandardMaterial({color:new THREE.Color(accent), roughness:0.15, metalness:0.8});
   const dark=new THREE.MeshStandardMaterial({color:0x111318, roughness:0.6});
-  const carbon=new THREE.MeshStandardMaterial({color:0x1c1e24, roughness:0.45, metalness:0.35});
+  const carbon=new THREE.MeshStandardMaterial({color:0x1c1e24, roughness:0.4, metalness:0.4});
   const B=(w,h,d,m)=>{ const x=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m); g.add(x); return x; };
-  const floor=B(4.4,0.07,1.85,carbon); floor.position.set(0,0.14,0);
-  const dif=B(0.55,0.16,1.25,carbon); dif.position.set(-1.95,0.22,0); dif.rotation.z=-0.12;
-  // sculpted chassis tub (lathed) - built along X axis directly, no twist
-  const tubPts=[]; for(let i=0;i<=16;i++){ const t=i/16; tubPts.push(new THREE.Vector2(0.28+0.28*Math.sin(t*Math.PI*0.85), t*1.1)); }
-  const tubGeo=new THREE.LatheGeometry(tubPts,48);
-  tubGeo.rotateZ(Math.PI/2); // lay flat along X
-  tubGeo.scale(1.9,1,1); // elongate
+
+  // === MODERN F1 CHASSIS: slim monocoque ===
+  // Main tub: smooth tapered shape using lathe
+  const tubPts=[];
+  for(let i=0;i<=24;i++){
+    const t=i/24;
+    // Slim profile: narrow at front, wider at cockpit, tapering to rear
+    const r = 0.22 + 0.18*Math.sin(t*Math.PI*0.9) - 0.08*t;
+    tubPts.push(new THREE.Vector2(Math.max(0.08,r), t*1.6));
+  }
+  const tubGeo=new THREE.LatheGeometry(tubPts,64);
+  tubGeo.rotateZ(Math.PI/2);
+  tubGeo.scale(1.4,1,1);
   const tub=new THREE.Mesh(tubGeo, mat);
-  tub.position.set(0.35,0.52,0); tub.castShadow=!isTouch; g.add(tub);
-  // sculpted nose cone (lathed taper) - shorter, blends with chassis
-  const nosePts=[]; for(let i=0;i<=20;i++){ const t=i/20; nosePts.push(new THREE.Vector2(0.24*(1-t*0.55), t*1.2)); }
+  tub.position.set(-0.2,0.55,0); tub.castShadow=!isTouch; g.add(tub);
+
+  // === LOW POINTED NOSE ===
+  const nosePts=[];
+  for(let i=0;i<=24;i++){
+    const t=i/24;
+    const r = 0.16*(1-t*0.75); // sharp taper to point
+    nosePts.push(new THREE.Vector2(Math.max(0.02,r), t*1.5));
+  }
   const noseGeo=new THREE.LatheGeometry(nosePts,48);
-  noseGeo.rotateZ(-Math.PI/2); // point forward along +X
+  noseGeo.rotateZ(-Math.PI/2);
   const nose=new THREE.Mesh(noseGeo, mat);
-  nose.position.set(0.9,0.46,0); g.add(nose);
-  for(const sd of [-1,1]){ const py=B(0.5,0.22,0.05,carbon); py.position.set(2.85,0.28,sd*0.12); }
-  // front wing: extruded main plane + 3 flaps + endplates
-  const fwShape=new THREE.Shape(); fwShape.moveTo(-0.28,0); fwShape.lineTo(0.28,0); fwShape.lineTo(0.22,0.06); fwShape.lineTo(-0.22,0.06); fwShape.closePath();
-  const fwGeo=new THREE.ExtrudeGeometry(fwShape,{depth:1.96,bevelEnabled:true,bevelThickness:0.015,bevelSize:0.015,bevelSegments:1});
-  fwGeo.translate(0,0,-0.98);
-  const fw0=new THREE.Mesh(fwGeo,carbon); fw0.position.set(3.25,0.14,0); g.add(fw0);
-  for(let i=0;i<5;i++){ const f=B(0.26-i*0.03,0.025,1.92-i*0.05,carbon); f.position.set(3.18-i*0.015,0.24+i*0.07,0); f.rotation.z=-0.12-i*0.04; }
+  nose.position.set(0.85,0.42,0); g.add(nose);
+  // nose tip winglet
+  const tip=B(0.12,0.04,0.3,accentMat); tip.position.set(2.3,0.38,0);
+
+  // === FLOOR ===
+  const floor=B(4.6,0.06,1.9,carbon); floor.position.set(-0.1,0.12,0);
+  const dif=B(0.6,0.18,1.3,carbon); dif.position.set(-2.1,0.2,0); dif.rotation.z=-0.15;
+
+  // === FRONT WING: multi-element with endplates ===
+  const fwMain=new THREE.Shape();
+  fwMain.moveTo(-0.3,0); fwMain.lineTo(0.3,0); fwMain.lineTo(0.24,0.05); fwMain.lineTo(-0.24,0.05); fwMain.closePath();
+  const fwGeo=new THREE.ExtrudeGeometry(fwMain,{depth:2.0,bevelEnabled:true,bevelThickness:0.012,bevelSize:0.012,bevelSegments:2});
+  fwGeo.translate(0,0,-1.0);
+  const fw0=new THREE.Mesh(fwGeo,carbon); fw0.position.set(2.55,0.1,0); g.add(fw0);
+  // 5 flaps
+  for(let i=0;i<5;i++){
+    const f=B(0.24-i*0.025,0.02,1.94-i*0.04,carbon);
+    f.position.set(2.48-i*0.012,0.18+i*0.055,0); f.rotation.z=-0.1-i*0.035;
+  }
+  // tall endplates with livery
   for(const sd of [-1,1]){
-    const ep=B(0.55,0.42,0.045,paint); ep.position.set(3.25,0.34,sd*1.0); ep.rotation.z=0.08;
+    const epShape=new THREE.Shape();
+    epShape.moveTo(0,0); epShape.lineTo(0.5,0); epShape.lineTo(0.5,0.45);
+    epShape.quadraticCurveTo(0.25,0.42,0,0.35); epShape.closePath();
+    const epGeo=new THREE.ExtrudeGeometry(epShape,{depth:0.04,bevelEnabled:false});
+    const ep=new THREE.Mesh(epGeo,paint); ep.position.set(2.3,0.08,sd*1.0); g.add(ep);
+    // dive plane
+    const dp=B(0.3,0.02,0.15,carbon); dp.position.set(2.45,0.32,sd*0.85); dp.rotation.z=0.2;
   }
-  for(const sd of [-1,1]) for(const yy of [0.62,0.38]){
-    const arm=B(0.07,0.05,0.9,carbon); arm.position.set(2.3,yy,sd*0.55); arm.rotation.y=sd*0.28;
+  // suspension arms
+  for(const sd of [-1,1]) for(const yy of [0.55,0.35]){
+    const arm=B(0.06,0.04,0.95,carbon); arm.position.set(1.9,yy,sd*0.5); arm.rotation.y=sd*0.25;
   }
-  // sculpted sidepods (extruded)
+
+  // === SCULPTED SIDEPODS ===
   for(const sd of [-1,1]){
     const s=new THREE.Shape();
-    s.moveTo(0,0); s.lineTo(1.7,0); s.quadraticCurveTo(1.85,0.21,1.5,0.42); s.lineTo(0.2,0.42); s.quadraticCurveTo(-0.1,0.21,0,0);
-    const sg=new THREE.ExtrudeGeometry(s,{depth:0.5,bevelEnabled:true,bevelThickness:0.06,bevelSize:0.06,bevelSegments:4});
-    // the shape is drawn along X (car length) and extruded 0.5 along Z (width) - no extra turn, or it sticks out sideways
+    s.moveTo(0,0);
+    s.lineTo(1.4,0);
+    s.quadraticCurveTo(1.7,0.05,1.65,0.25);
+    s.quadraticCurveTo(1.6,0.45,1.2,0.48);
+    s.lineTo(0.25,0.48);
+    s.quadraticCurveTo(-0.05,0.35,-0.05,0.15);
+    s.quadraticCurveTo(-0.05,0.02,0,0);
+    const sg=new THREE.ExtrudeGeometry(s,{depth:0.45,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.05,bevelSegments:3});
     const pod=new THREE.Mesh(sg,mat);
-    pod.position.set(-1.15,0.28,sd>0?0.40:-0.90);
+    pod.position.set(-1.3,0.3,sd>0?0.42:-0.87);
     g.add(pod);
-    const inlet=B(0.45,0.2,0.12,dark); inlet.position.set(0.45,0.55,sd*0.88);
-    for(let li=0;li<3;li++){ const lv=B(0.3,0.02,0.4,dark); lv.position.set(-0.35-li*0.18,0.68-li*0.02,sd*0.62); lv.rotation.z=0.15; }
+    // inlet
+    const inlet=B(0.4,0.18,0.1,dark); inlet.position.set(0.15,0.58,sd*0.85);
+    // cooling louvers
+    for(let li=0;li<4;li++){
+      const lv=B(0.28,0.015,0.35,dark);
+      lv.position.set(-0.55-li*0.16,0.72-li*0.015,sd*0.6); lv.rotation.z=0.12;
+    }
   }
-  // airbox (extruded intake)
-  const abShape=new THREE.Shape(); abShape.moveTo(0,0); abShape.lineTo(0.75,0); abShape.quadraticCurveTo(0.8,0.3,0.45,0.5); abShape.lineTo(0.1,0.5); abShape.quadraticCurveTo(-0.05,0.25,0,0);
-  const abGeo=new THREE.ExtrudeGeometry(abShape,{depth:0.36,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.05,bevelSegments:4});
-  abGeo.translate(0,0,-0.18);
-  const airbox=new THREE.Mesh(abGeo,mat); airbox.position.set(-0.32,0.78,0); g.add(airbox);
-  const intake=B(0.2,0.28,0.24,dark); intake.position.set(0.02,1.05,0);
-  // shark fin
-  const finShape=new THREE.Shape(); finShape.moveTo(0,0); finShape.lineTo(1.7,0.06); finShape.lineTo(1.7,0.14); finShape.quadraticCurveTo(0.8,0.5,0,0.52); finShape.closePath();
-  const finGeo=new THREE.ExtrudeGeometry(finShape,{depth:0.05,bevelEnabled:false}); finGeo.translate(0,0,-0.025);
-  const fin=new THREE.Mesh(finGeo,paint); fin.position.set(-1.95,0.82,0); g.add(fin);
-  // halo with aero fairing
-  const halo=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.06,10,20,Math.PI),carbon);
-  halo.position.set(0.45,1.04,0); halo.rotation.y=Math.PI/2; g.add(halo);
-  const fair=new THREE.Mesh(new THREE.SphereGeometry(0.42,12,8,0,Math.PI*2,0,Math.PI/2),paint);
-  fair.scale.set(1,0.35,1); fair.position.set(0.45,1.04,0); fair.rotation.y=Math.PI/2; g.add(fair);
-  const pillar=B(0.07,0.42,0.07,carbon); pillar.position.set(0.87,0.86,0); pillar.rotation.z=-0.25;
-  // cockpit + helmet + visor + mirrors
-  const ckpit=B(0.7,0.16,0.58,dark); ckpit.position.set(0.45,0.8,0);
-  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.17,12,10), new THREE.MeshStandardMaterial({color:0xffd76a,roughness:0.2,metalness:0.3}));
-  helmet.position.set(0.45,0.94,0); g.add(helmet);
-  for(const sd of [-1,1]){ const mir=B(0.1,0.05,0.14,carbon); mir.position.set(0.78,0.98,sd*0.56); }
-  // rear wing: swan-neck + beam + main + DRS flap + endplates
-  const swan=B(0.08,0.5,0.12,carbon); swan.position.set(-2.08,0.85,0); swan.rotation.z=0.25;
-  const beam=B(0.32,0.05,0.95,carbon); beam.position.set(-2.05,0.72,0);
-  const rwShape=new THREE.Shape(); rwShape.moveTo(-0.21,0); rwShape.lineTo(0.21,0); rwShape.lineTo(0.18,0.07); rwShape.lineTo(-0.18,0.07); rwShape.closePath();
-  const rwGeo=new THREE.ExtrudeGeometry(rwShape,{depth:1.02,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.01,bevelSegments:1}); rwGeo.translate(0,0,-0.51);
-  const rw=new THREE.Mesh(rwGeo,carbon); rw.position.set(-2.1,1.0,0); rw.rotation.z=0.06; g.add(rw);
-  const rwf=new THREE.Mesh(rwGeo,paint); rwf.scale.set(0.85,0.8,0.96); rwf.position.set(-2.14,1.22,0); rwf.rotation.z=0.1; g.add(rwf);
-  g.userData.drsFlap=rwf;
+
+  // === AIRBOX + ENGINE FIN ===
+  const abShape=new THREE.Shape();
+  abShape.moveTo(0,0); abShape.lineTo(0.7,0);
+  abShape.quadraticCurveTo(0.78,0.28,0.45,0.48);
+  abShape.lineTo(0.12,0.48);
+  abShape.quadraticCurveTo(-0.03,0.24,0,0);
+  const abGeo=new THREE.ExtrudeGeometry(abShape,{depth:0.34,bevelEnabled:true,bevelThickness:0.04,bevelSize:0.04,bevelSegments:3});
+  abGeo.translate(0,0,-0.17);
+  const airbox=new THREE.Mesh(abGeo,mat); airbox.position.set(-0.55,0.82,0); g.add(airbox);
+  const intake=B(0.18,0.26,0.22,dark); intake.position.set(-0.22,1.08,0);
+  // tall engine fin
+  const finShape=new THREE.Shape();
+  finShape.moveTo(0,0); finShape.lineTo(1.9,0.05); finShape.lineTo(1.9,0.12);
+  finShape.quadraticCurveTo(0.9,0.55,0,0.58); finShape.closePath();
+  const finGeo=new THREE.ExtrudeGeometry(finShape,{depth:0.045,bevelEnabled:false});
+  finGeo.translate(0,0,-0.022);
+  const fin=new THREE.Mesh(finGeo,paint); fin.position.set(-2.2,0.85,0); g.add(fin);
+  // antenna
+  const ant=B(0.02,0.25,0.02,carbon); ant.position.set(-0.8,1.25,0);
+
+  // === HALO with aero fairing ===
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(0.44,0.055,12,24,Math.PI),carbon);
+  halo.position.set(0.15,1.06,0); halo.rotation.y=Math.PI/2; g.add(halo);
+  const fair=new THREE.Mesh(new THREE.SphereGeometry(0.44,16,10,0,Math.PI*2,0,Math.PI/2),paint);
+  fair.scale.set(1,0.3,1); fair.position.set(0.15,1.06,0); g.add(fair);
+  const pillar=B(0.06,0.44,0.06,carbon); pillar.position.set(0.59,0.88,0); pillar.rotation.z=-0.22;
+  // cockpit + driver
+  const ckpit=B(0.75,0.14,0.6,dark); ckpit.position.set(0.15,0.82,0);
+  const helmet=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,12),
+    new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.15,metalness:0.4}));
+  helmet.position.set(0.12,0.96,0); g.add(helmet);
+  const visor=B(0.1,0.06,0.2,dark); visor.position.set(0.24,0.96,0);
   for(const sd of [-1,1]){
-    const epShape=new THREE.Shape(); epShape.moveTo(0,0); epShape.lineTo(0.6,0); epShape.lineTo(0.6,0.62); epShape.quadraticCurveTo(0.3,0.58,0,0.5); epShape.closePath();
-    const epGeo=new THREE.ExtrudeGeometry(epShape,{depth:0.04,bevelEnabled:false}); epGeo.translate(0,0,-0.02);
-    const ep=new THREE.Mesh(epGeo,paint); ep.position.set(-2.4,0.78,sd*0.53); g.add(ep);
+    const mir=B(0.09,0.045,0.13,carbon); mir.position.set(0.48,1.0,sd*0.55);
   }
-  for(const sd of [-1,1]) for(const yy of [0.6,0.38]){
-    const arm=B(0.07,0.05,0.85,carbon); arm.position.set(-1.68,yy,sd*0.5); arm.rotation.y=-sd*0.22;
+
+  // === REAR WING: tall with DRS flap ===
+  const swan=B(0.07,0.55,0.11,carbon); swan.position.set(-2.25,0.88,0); swan.rotation.z=0.22;
+  const beamW=B(0.3,0.045,0.98,carbon); beamW.position.set(-2.22,0.75,0);
+  // main plane
+  const rwShape=new THREE.Shape();
+  rwShape.moveTo(-0.22,0); rwShape.lineTo(0.22,0); rwShape.lineTo(0.19,0.08); rwShape.lineTo(-0.19,0.08); rwShape.closePath();
+  const rwGeo=new THREE.ExtrudeGeometry(rwShape,{depth:1.05,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.01,bevelSegments:2});
+  rwGeo.translate(0,0,-0.525);
+  const rw=new THREE.Mesh(rwGeo,carbon); rw.position.set(-2.28,1.05,0); rw.rotation.z=0.05; g.add(rw);
+  // DRS flap (movable)
+  const rwf=new THREE.Mesh(rwGeo,paint); rwf.scale.set(0.88,0.85,0.97);
+  rwf.position.set(-2.32,1.28,0); rwf.rotation.z=0.09; g.add(rwf);
+  g.userData.drsFlap=rwf;
+  // tall endplates
+  for(const sd of [-1,1]){
+    const epShape=new THREE.Shape();
+    epShape.moveTo(0,0); epShape.lineTo(0.65,0); epShape.lineTo(0.65,0.68);
+    epShape.quadraticCurveTo(0.32,0.64,0,0.55); epShape.closePath();
+    const epGeo=new THREE.ExtrudeGeometry(epShape,{depth:0.035,bevelEnabled:false});
+    epGeo.translate(0,0,-0.017);
+    const ep=new THREE.Mesh(epGeo,mat); ep.position.set(-2.6,0.82,sd*0.545); g.add(ep);
   }
-  // wheels: tire + sidewall stripe + glossy cover + Apex cap
-  const tireGeo=new THREE.CylinderGeometry(0.42,0.42,0.48,18);
+  // rear suspension
+  for(const sd of [-1,1]) for(const yy of [0.62,0.4]){
+    const arm=B(0.06,0.045,0.88,carbon); arm.position.set(-1.85,yy,sd*0.5); arm.rotation.y=-sd*0.2;
+  }
+  // T-wing
+  const twb=B(0.22,0.035,0.55,carbon); twb.position.set(-2.0,1.12,0);
+  // floor strakes
+  for(const sd of [-1,1]) for(let si=0;si<3;si++){
+    const st=B(0.35,0.018,0.055,carbon);
+    st.position.set(-1.8-si*0.14,0.16,sd*(0.55+si*0.18));
+  }
+
+  // === WHEELS with sidewall stripes ===
+  const tireGeo=new THREE.CylinderGeometry(0.44,0.44,0.5,20);
   const tireMat=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85});
-  const stripeGeo=new THREE.TorusGeometry(0.36,0.025,8,24);
-  const stripeMat=new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.4,metalness:0.3});
-  const coverGeo=new THREE.CylinderGeometry(0.26,0.26,0.5,18);
-  const coverMat=new THREE.MeshStandardMaterial({color,roughness:0.15,metalness:0.85});
+  const stripeGeo=new THREE.TorusGeometry(0.375,0.028,8,28);
+  const stripeMat=new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.35,metalness:0.35});
+  const coverGeo=new THREE.CylinderGeometry(0.27,0.27,0.52,20);
+  const coverMat=new THREE.MeshStandardMaterial({color,roughness:0.12,metalness:0.88});
   g.userData.wheels=[];
-  for(const [wx,wz] of [[2.45,0.98],[2.45,-0.98],[-1.55,0.98],[-1.55,-0.98]]){
+  for(const [wx,wz,wr] of [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]]){
     const w=new THREE.Group();
-    const tire=new THREE.Mesh(tireGeo,tireMat); tire.rotation.x=Math.PI/2; w.add(tire);
-    for(const sz of [0.245,-0.245]){
+    const tg=new THREE.CylinderGeometry(wr,wr,0.5,20);
+    const tire=new THREE.Mesh(tg,tireMat); tire.rotation.x=Math.PI/2; w.add(tire);
+    for(const sz of [0.255,-0.255]){
       const stripe=new THREE.Mesh(stripeGeo,stripeMat); stripe.position.z=sz; w.add(stripe);
     }
     const cover=new THREE.Mesh(coverGeo,coverMat); cover.rotation.x=Math.PI/2; w.add(cover);
-    const cap=new THREE.Mesh(new THREE.CircleGeometry(0.12,16), new THREE.MeshBasicMaterial({color:0xffd76a}));
-    cap.position.z=0.251; w.add(cap); const cap2=cap.clone(); cap2.position.z=-0.251; cap2.rotation.y=Math.PI; w.add(cap2);
-    w.position.set(wx,0.42,wz); g.add(w); g.userData.wheels.push(w);
+    const cap=new THREE.Mesh(new THREE.CircleGeometry(0.13,18),
+      new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.2,metalness:0.7}));
+    cap.position.z=0.261; w.add(cap);
+    const cap2=cap.clone(); cap2.position.z=-0.261; cap2.rotation.y=Math.PI; w.add(cap2);
+    w.position.set(wx,0.44,wz); g.add(w); g.userData.wheels.push(w);
   }
-  const rl=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.28,0.2), new THREE.MeshBasicMaterial({color:0xff2222}));
-  rl.position.set(-2.32,0.85,0); g.add(rl); g.userData.rainLight=rl; rl.visible=false;
-  // fine details: brake ducts, bargeboards, antenna, floor strakes
-  for(const sd of [-1,1]){
-    const bd=B(0.3,0.25,0.18,carbon); bd.position.set(2.45,0.42,sd*0.72); // brake ducts
-    const bb=B(0.7,0.35,0.04,carbon); bb.position.set(1.35,0.35,sd*0.85); bb.rotation.y=sd*0.15; // bargeboards
-    for(let si=0;si<3;si++){ const st=B(0.4,0.02,0.06,carbon); st.position.set(-1.7-si*0.15,0.18,sd*(0.5+si*0.2)); } // floor strakes
-  }
-  const ant=B(0.02,0.35,0.02,carbon); ant.position.set(-0.15,1.35,0); // antenna
-  const twb=B(0.25,0.04,0.6,carbon); twb.position.set(-1.85,1.05,0); // T-wing
-  scene.add(g);
   return g;
 }
 
