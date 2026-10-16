@@ -178,6 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Venue + rules spec sheets (venues/, rules/), stadium kit with moving crowd (venues/kit/stadium.js) + MODELS.md stadium model, hands-off model gate robot (LOCKED -> auto-merge) | Claude (arcade reviewer) | venues-claude | | 2026-10-16 15:10 CDT |
 | DONE | Soccer title fix (apexsoccer.html): casino wording in page title -> Apex Arcade (game-check FAIL) | Muse Dash | soccer-title-dash | PR #343, main e776d9a2 | 2026-10-16 13:35 CDT |
 | DONE | Shared athlete kit (characters/base-human-v2/gear.js, hockeyKit) + STUDIO-STANDARD.md + TOOLS.md + game check blocks bad pull requests | Claude (arcade reviewer) | athlete-kit-claude | PR #340, main 31c5b40 | 2026-10-16 12:30 CDT |
 | CLAIMED | Hockey players -> shared athlete kit (owner's model sheet). PR #341 ready, WAITING OWNER 👍 on MODELS.md 'Hockey skater' | Claude (arcade reviewer) | hockey-kit-claude | PR #341 | 2026-10-16 12:30 CDT |
