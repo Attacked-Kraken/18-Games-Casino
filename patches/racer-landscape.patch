@@ -1,0 +1,10 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -2013,6 +2013,7 @@
+ $('rMute').onclick = () => toggleMute();
+ $('mSnd').onclick = () => toggleMute();
+ addEventListener('resize', resize);
++if (window.visualViewport) window.visualViewport.addEventListener('resize', resize); /* LANDSCAPE LAW: mobile viewport */
+ /* landscape parity 2026-10-15: lock to landscape on first interaction */
+ addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } else { try{ var q2=screen.orientation.lock('landscape'); if(q2&&q2.catch) q2.catch(function(){}); }catch(e){} } }catch(e){} }, { once:true });
+ document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'race') pause(); if (AU.ctx) AU.ctx.suspend(); } else if (AU.ctx) AU.ctx.resume(); });
