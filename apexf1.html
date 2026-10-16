@@ -722,7 +722,7 @@ const Track = {
     const barGeo=new THREE.BoxGeometry(4,1.1,0.6);
     const barMatW=new THREE.MeshLambertMaterial({color:0xf2f2f2});
     const barMatR=new THREE.MeshLambertMaterial({color:0xd21f26});
-    for(let i=0;i<N;i+=8){
+    for(let i=0;i<this.samples.length;i+=8){
       const p=this.samples[i];
       for(const sd of [-1,1]){
         const bar=new THREE.Mesh(barGeo, (i/8)%2?barMatR:barMatW);
@@ -784,7 +784,7 @@ const Track = {
       g.add(t);
     }
     // gravel run-off areas at corners (tan patches outside turns)
-    for(let i=0;i<N;i+=40){
+    for(let i=0;i<this.samples.length;i+=40){
       const p=this.samples[i];
       const curv=Math.abs(p.curv);
       if(curv>0.0008){
