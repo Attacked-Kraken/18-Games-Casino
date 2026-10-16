@@ -12,6 +12,8 @@ Two kinds of things live here:
 | Base humans | `characters/base-human-v2/humans.js` | real rigged CC0 bodies, hair, skin, 11 animations |
 | Athlete kit | `characters/base-human-v2/gear.js` | sport gear that rides the skeleton, plus exact sport stances (`hockeyKit`, `gearKit`) |
 | Model viewer | `tools/model-viewer.html` | see any `.glb` / `.mjs` model in the game's real lighting, front, side and back |
+| Model shelf | `tools/models.html` | the owner's page: every model in MODELS.md with **Open in 3D** and option buttons (team, goalie, skating...). Add your model's options to `OPTIONS` at the top of the page |
+| Venue viewer | `tools/venue-viewer.html` | whole places at real size: aerial, TV camera, end and floor cameras, plus a 📣 Goal! button |
 | Look presets | `look-presets.js` | the same lighting in the game and the viewer (`rink`, `field`, `track`, `night`, `studio`) |
 | Game check robot | `tools/game-check/` | plays every game like a phone, takes pictures, runs the fix tests, blocks bad pull requests |
 | Patch robot | `tools/patch-robot/` | moves big files through small patches |
