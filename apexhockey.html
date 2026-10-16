@@ -13,12 +13,19 @@
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9999;
     background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:10px;
     font-size:15px; padding:9px 14px; cursor:pointer; }
-  #hud { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
-    z-index:9000; display:flex; gap:14px; align-items:center; background:rgba(0,0,0,.55);
-    border:1px solid rgba(255,255,255,.25); border-radius:12px; padding:8px 18px; color:#fff;
-    font-size:15px; letter-spacing:.06em; white-space:nowrap; }
-  #hud .sc { font-weight:700; font-size:18px; }
-  #hud .dim { color:#9fd8ff; font-size:12px; }
+  #hud { position:fixed; top:calc(64px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
+    z-index:9000; display:flex; gap:8px; align-items:stretch; background:rgba(4,10,18,.78);
+    border:1px solid rgba(160,210,255,.35); border-radius:10px; padding:6px 8px; color:#fff;
+    font-size:15px; letter-spacing:.05em; white-space:nowrap; box-shadow:0 6px 22px rgba(0,0,0,.5); }
+  #hud .sc { font-weight:800; font-size:21px; align-self:center; padding:0 4px; }
+  #hud .dim { color:#fff; font-size:12px; font-weight:800; padding:5px 8px; border-radius:6px; align-self:center; letter-spacing:.08em; }
+  #hud .clk { display:flex; flex-direction:column; justify-content:center; align-self:center; padding:0 4px 0 2px; line-height:1.15; }
+  #hud #period { font-size:11px; color:#9fd8ff; font-weight:800; letter-spacing:.14em; }
+  #hud #clock { font-size:16px; font-weight:800; }
+  #shotTag { position:fixed; top:calc(120px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left)); z-index:9000;
+    background:rgba(4,10,18,.85); border:1px solid rgba(255,211,77,.55); color:#ffd34d; border-radius:8px;
+    font:800 13px ui-monospace, Menlo, monospace; letter-spacing:.1em; padding:6px 10px; opacity:0; transition:opacity .3s; pointer-events:none; }
+  #shotTag.show { opacity:1; }
   #banner { position:fixed; top:38%; left:50%; transform:translate(-50%,-50%) scale(1); z-index:9500;
     color:#fff; font-size:44px; font-weight:800; letter-spacing:.08em; text-shadow:0 0 24px rgba(80,180,255,.9), 0 3px 0 #000;
     opacity:0; transition:opacity .25s; pointer-events:none; text-align:center; white-space:nowrap; }
@@ -79,7 +86,7 @@
 <body>
 <canvas id="c"></canvas>
 <button id="back" type="button">‹ Back</button>
-<div id="hud"><span class="dim">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim">SHARKS</span><span id="period">1ST</span><span id="clock">2:00</span></div>
+<div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div>
 <button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
 <div id="flash"></div>
@@ -197,9 +204,10 @@ function makeIceTexture(){
   // center circle + dot
   g.strokeStyle='#2b5fd9'; g.lineWidth=5; g.beginPath(); g.arc(X(0),Z(0),15*S,0,TAU); g.stroke();
   g.fillStyle='#2b5fd9'; g.beginPath(); g.arc(X(0),Z(0),1.1*S,0,TAU); g.fill();
-  // the sponsor, under the ice at center - like a real arena
-  g.fillStyle='rgba(43,95,217,.30)'; g.font='900 ' + Math.round(4.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
-  g.fillText('APEX', X(0), Z(0)-3.4*S); g.fillText('ARCADE', X(0), Z(0)+7.6*S);
+  // center-ice logo, under the ice like a real arena: ring + bold APEX ARCADE wordmark
+  g.strokeStyle='rgba(31,111,214,.5)'; g.lineWidth=3.4*S; g.beginPath(); g.arc(X(0),Z(0),10.6*S,0,TAU); g.stroke();
+  g.fillStyle='rgba(31,111,214,.6)'; g.font='900 ' + Math.round(5.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
+  g.fillText('APEX', X(0), Z(0)-1.1*S); g.fillText('ARCADE', X(0), Z(0)+5.9*S);
   // faceoff dots + end-zone circles
   const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,20],[69,-20],[-69,20],[-69,-20]];
   g.fillStyle='#c8323c';
@@ -219,7 +227,7 @@ function makeIceTexture(){
 {
   const ice = new THREE.Mesh(
     new THREE.PlaneGeometry(RINK.L, RINK.W),
-    new THREE.MeshStandardMaterial({ map: makeIceTexture(), roughness:.55, metalness:.05 })
+    new THREE.MeshStandardMaterial({ map: makeIceTexture(), roughness:.3, metalness:.02 })
   );
   ice.rotation.x = -Math.PI/2; ice.receiveShadow = !isTouch; scene.add(ice);
   // dark surround
@@ -471,12 +479,13 @@ const BASE_ANCHOR = { // home attacking +x; away mirrors x
 const skaters = [];
 function buildTeam(teamKey){
   const t = TEAMS[teamKey];
+  const NUMS = teamKey==='home' ? {C:27,LW:13,RW:88,LD:4,RD:44,G:30} : {C:19,LW:91,RW:86,LD:8,RD:77,G:35};
   ['C','LW','RW','LD','RD'].forEach((role,i)=>{
-    const s = makeSkater(teamKey,false); s.role=role;
+    const s = makeSkater(teamKey,false); s.role=role; s.num=NUMS[role];
     const b = BASE_ANCHOR[role]; s.anchor.set(b[0]*t.dir, 0, b[1]);
     skaters.push(s);
   });
-  const gl = makeSkater(teamKey,true); gl.role='G';
+  const gl = makeSkater(teamKey,true); gl.role='G'; gl.num=NUMS.G;
   gl.pos.set(-GOAL_LINE*t.dir + t.dir*2.2, 0, 0);
   gl.facing = t.dir>0?0:Math.PI;
   skaters.push(gl);
@@ -488,8 +497,27 @@ const homeGoalie = skaters.find(s=>s.team==='home'&&s.goalie);
 const awayGoalie = skaters.find(s=>s.team==='away'&&s.goalie);
 // control ring
 const ring = new THREE.Mesh(new THREE.RingGeometry(1.9,2.35,28),
-  new THREE.MeshBasicMaterial({color:0x9fd8ff, transparent:true, opacity:.9, side:THREE.DoubleSide}));
+  new THREE.MeshBasicMaterial({color:0xffd34d, transparent:true, opacity:.9, side:THREE.DoubleSide}));
 ring.rotation.x=-Math.PI/2; ring.position.y=0.12; scene.add(ring);
+// broadcast name tag over your skater (TV-style graphic: name + number + role)
+const tagCv=document.createElement('canvas'); tagCv.width=320; tagCv.height=72;
+const tagTex=new THREE.CanvasTexture(tagCv); tagTex.colorSpace=THREE.SRGBColorSpace;
+const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:tagTex, transparent:true, depthTest:false}));
+tag.scale.set(11.5,2.6,1); tag.renderOrder=20; tag.visible=false; scene.add(tag);
+let tagFor=null;
+function drawTag(){
+  try{
+    const s=controlled, g=tagCv.getContext('2d'); g.clearRect(0,0,320,72);
+    let nm='YOU';
+    if(s.star){ const c=cLoad(); if(c&&c.star&&c.star.name) nm=c.star.name.split(' ').slice(-1)[0].toUpperCase(); }
+    const label=nm+(s.num?' · '+s.num:'')+' · '+s.role;
+    g.fillStyle='rgba(3,8,14,.85)'; g.beginPath(); g.roundRect(6,8,308,56,14); g.fill();
+    g.strokeStyle=s.star?'#ffd34d':'rgba(160,210,255,.7)'; g.lineWidth=3; g.beginPath(); g.roundRect(6,8,308,56,14); g.stroke();
+    g.fillStyle='#fff'; g.font='800 29px system-ui, sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(label,160,39);
+    tagTex.needsUpdate=true;
+  }catch(e){}
+}
 
 /* ============ real 3D athletes (base-human-v2, async; primitives stay as fallback) ============
    The rig model faces +z in its bind pose; this game's forward is group-local +x
@@ -512,7 +540,7 @@ function attachAthletes(H){
         hair: HAIR_STYLES[i % HAIR_STYLES.length],
         hairCol: HAIR_COLS[(i*3) % HAIR_COLS.length],
         outfit:'hoodie',
-        cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0xffffff },
+        cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0x14161a },
       }, ATH_H);
       const wrap = new THREE.Group(); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
@@ -534,6 +562,37 @@ function attachAthletes(H){
         helm.scale.setScalar(1/ATH_K); helm.position.y = 0.04;
         headB.add(helm);
       }
+      // jersey number on the back: a canvas plate riding the wrap (broadcast-visible)
+      if(!s.goalie && s.num){
+        try{
+          const nc=document.createElement('canvas'); nc.width=nc.height=160;
+          const ng=nc.getContext('2d');
+          ng.font='900 102px system-ui, sans-serif'; ng.textAlign='center'; ng.textBaseline='middle';
+          ng.lineWidth=10; ng.strokeStyle='rgba(0,0,0,.35)'; const ns=String(s.num);
+          ng.strokeText(ns,80,86); ng.fillStyle='#ffffff'; ng.fillText(ns,80,86);
+          const ntex=new THREE.CanvasTexture(nc); ntex.colorSpace=THREE.SRGBColorSpace;
+          const plate=new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.0),
+            new THREE.MeshBasicMaterial({map:ntex, transparent:true, side:THREE.DoubleSide}));
+          plate.position.set(-0.72,4.15,0); plate.rotation.y=-Math.PI/2;
+          wrap.add(plate);
+        }catch(e){}
+      }
+      // gloves on the hand bones + blades on the feet (same bone trick as the helmet)
+      try{
+        a.object.traverse(o=>{
+          if(!o.isBone) return;
+          if(/hand/i.test(o.name) && !/fore|thumb|index|middle|ring|pinky/i.test(o.name)){
+            const gl2=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.46,0.4),
+              new THREE.MeshStandardMaterial({color:TEAMS[s.team].helmet, roughness:.6}));
+            gl2.scale.setScalar(1/ATH_K); gl2.position.y=-0.08; o.add(gl2);
+          }
+          if(/foot/i.test(o.name) && !/toe/i.test(o.name)){
+            const bl3=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.07,0.1),
+              new THREE.MeshStandardMaterial({color:0xb9c4cc, roughness:.3, metalness:.7}));
+            bl3.scale.setScalar(1/ATH_K); bl3.position.set(0.05,-0.16,0); o.add(bl3);
+          }
+        });
+      }catch(e){}
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
     }catch(e){ /* that player stays primitive */ }
@@ -600,7 +659,14 @@ function fmtClock(){ if(period>3) return 'OT'; const m=(clockT/60)|0, s=('0'+((c
 const PNAME=['','1ST','2ND','3RD','OT'];
 let lastSB='';
 function updateHUD(){ $('score').textContent=scoreH+' – '+scoreA; $('period').textContent=PNAME[period]; $('clock').textContent=fmtClock();
-  const _sbk=scoreH+'-'+scoreA+'-'+period; if(_sbk!==lastSB){ lastSB=_sbk; if(window.__drawScoreboard) window.__drawScoreboard(); } }
+  const _sbk=scoreH+'-'+scoreA+'-'+period+'-'+TEAMS.away.name; if(_sbk!==lastSB){ lastSB=_sbk;
+    $('nmH').textContent=TEAMS.home.name; $('nmA').textContent=TEAMS.away.name;
+    $('nmH').style.background='#'+TEAMS.home.jersey.toString(16).padStart(6,'0');
+    $('nmA').style.background='#'+TEAMS.away.jersey.toString(16).padStart(6,'0');
+    if(window.__drawScoreboard) window.__drawScoreboard(); } }
+let shotTagTO=null;
+function showShotTag(mph){ const el=$('shotTag'); if(!el) return; el.textContent='SHOT · '+mph+' MPH'; el.classList.add('show');
+  clearTimeout(shotTagTO); shotTagTO=setTimeout(()=>el.classList.remove('show'),2200); }
 let bannerTO=null;
 function banner(main, sub, dur=1800, color){
   const b=$('banner'); b.innerHTML=main+(sub?`<small>${sub}</small>`:'');
@@ -749,6 +815,7 @@ function shootFrom(s, power, aimed){
   const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
   puck.shot={team:s.team,t:0,by:s};
+  if(s.team==='home') showShotTag(Math.round(sp*1.22));
   s.phase+=1.2;
 }
 function doCheck(){
@@ -1113,15 +1180,22 @@ function stepCamera(dt){
   } else if(camMode===4){ // END: behind the net you attack
     camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
   } else {                // BROADCAST / HIGH: TV follow of the puck
-    const px=clamp(puck.pos.x*0.55,-64,64), h=camMode===1?62:44, d=camMode===1?100:74;
-    camTgt.set(px,h,d); lookTgt.set(px,0,0);
+    const lead=clamp(puck.vel.x*0.35,-14,14);
+    const px=clamp((puck.pos.x+lead)*0.55,-64,64), pz=puck.pos.z*0.30;
+    const deep=Math.min(1,Math.abs(puck.pos.x)/95);
+    const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
+    camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
-  const k=Math.min(1,(camEase>0?6.5:3.2)*dt); camEase=Math.max(0,camEase-dt*2);
+  const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
   camera.position.lerp(camTgt,k);
   camera.lookAt(lookTgt);
   ring.position.set(controlled.pos.x,0.12,controlled.pos.z);
   ring.visible=(state==='play');
+  ring.material.opacity=.62+.3*Math.sin(gameNow*5);
+  tag.position.set(controlled.pos.x,7.9,controlled.pos.z);
+  tag.visible=(state==='play');
+  if(controlled!==tagFor){ tagFor=controlled; drawTag(); }
 }
 
 /* ================= main loop ================= */
