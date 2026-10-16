@@ -1831,24 +1831,33 @@ rig.h.ts=ts; if(rig.h.act) rig.h.act.timeScale=ts;
 rigUpdate(rig, dt){
 if(rig.human && rig.h){
   try{ rig.h.mixer.update(dt); }catch(e){}
-  // Procedural run cycle on GLB bones - guaranteed visible leg movement
+  // Natural run cycle on GLB bones: moderate amplitudes, proper timing
   const B=rig.bones;
   if(B && rig.mode==='run'){
-    rig.phase += dt*(6+(rig.speedFrac||0)*20);
+    rig.phase += dt*(5+(rig.speedFrac||0)*13);
     const s=Math.sin(rig.phase), c2=Math.sin(rig.phase+Math.PI);
     const sf=rig.speedFrac||0, tired=rig.tired||0;
-    const a=1.0*Math.min(1,0.3+sf)*(1-0.25*tired);
-    if(B.thigh_l) B.thigh_l.rotation.x=s*a*1.1;
-    if(B.thigh_r) B.thigh_r.rotation.x=c2*a*1.1;
-    const swL=Math.max(0,Math.sin(rig.phase+0.7)), swR=Math.max(0,Math.sin(rig.phase+Math.PI+0.7));
-    if(B.calf_l) B.calf_l.rotation.x=(0.2+swL*2.0)*Math.min(1,a*1.4);
-    if(B.calf_r) B.calf_r.rotation.x=(0.2+swR*2.0)*Math.min(1,a*1.4);
-    if(B.upperarm_l) B.upperarm_l.rotation.x=c2*a*0.9;
-    if(B.upperarm_r) B.upperarm_r.rotation.x=s*a*0.9;
-    if(B.lowerarm_l) B.lowerarm_l.rotation.x=-0.9;
-    if(B.lowerarm_r) B.lowerarm_r.rotation.x=-0.9;
-    if(B.pelvis){ B.pelvis.rotation.x=(0.08+0.1*sf); B.pelvis.position.y=Math.abs(Math.cos(rig.phase))*0.04; }
-    if(B.spine_01) B.spine_01.rotation.y=(s-c2)*0.08;
+    const a=Math.min(1,0.35+sf*0.85)*(1-0.2*tired);
+    // Thighs: swing +/- 35deg max
+    if(B.thigh_l) B.thigh_l.rotation.x=s*a*0.62;
+    if(B.thigh_r) B.thigh_r.rotation.x=c2*a*0.62;
+    // Knees: 15deg at strike, up to 95deg on swing-through
+    const swL=Math.max(0,Math.sin(rig.phase+0.9)), swR=Math.max(0,Math.sin(rig.phase+Math.PI+0.9));
+    if(B.calf_l) B.calf_l.rotation.x=0.26+swL*1.4*a;
+    if(B.calf_r) B.calf_r.rotation.x=0.26+swR*1.4*a;
+    // Arms: counter-swing +/- 30deg, elbows at 80deg
+    if(B.upperarm_l) B.upperarm_l.rotation.x=c2*a*0.52;
+    if(B.upperarm_r) B.upperarm_r.rotation.x=s*a*0.52;
+    if(B.lowerarm_l) B.lowerarm_l.rotation.x=-1.4;
+    if(B.lowerarm_r) B.lowerarm_r.rotation.x=-1.4;
+    // Pelvis: slight forward tilt, gentle bob
+    if(B.pelvis){ B.pelvis.rotation.x=0.06+0.08*sf; }
+    if(B.spine_01) B.spine_01.rotation.y=(s-c2)*0.05;
+  } else if(B){
+    // Reset to neutral when not running
+    for(const k of ['thigh_l','thigh_r','calf_l','calf_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','pelvis','spine_01']){
+      if(B[k]){ B[k].rotation.x=0; B[k].rotation.y=0; B[k].rotation.z=0; }
+    }
   }
   return;
 }
