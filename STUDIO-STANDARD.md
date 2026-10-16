@@ -54,6 +54,14 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 
 ## 3. Arenas and worlds
 
+- **Every place has a spec sheet in `venues/`** with real measurements and a MUST list: rink, soccer, ballpark,
+  track, F1 circuit, streets, monster truck arena, airport, planes. Never make up a venue.
+- **Use the shared parts:** `venues/kit/stadium.js` (the seating bowl and a moving crowd of 15,000+ fans in about
+  10 draw calls; presets `arena`, `stadium`, `ballpark`, `grandstand`) and `venues/kit/rink.js` (a real-size rink).
+  Check them in **`tools/venue-viewer.html`** (aerial, TV camera, end and floor cameras at real size).
+- **Every sport has a rules sheet in `rules/`**: what the game must enforce (offside, icing, fouls, outs...), the
+  game flow and the broadcast look.
+
 - Use the lighting preset from `look-presets.js` (`rink`, `field`, `track`, `night`, `studio`), the same one in the
   game and in the model viewer.
 - Real venue layout for the sport: correct lines, goals, boards, stands, lights, scoreboard. Our own sponsor names
@@ -87,14 +95,29 @@ Every job has **three parts**. A job without them is sent back:
 ```
 NEW JOB Jn <game>: <one line, what to make>
 REFERENCE: <the picture the owner sent, or a MODELS.md / looks/ entry>
+SPEC: venues/<place>.md and/or rules/<sport>.md (the job may just say "build the stadium", the sheet says how)
 DONE MEANS: <3-6 things the robot or the owner can check, with numbers where possible>
 ```
+If the owner's job only names a place or a rule ("build the stadium", "add icing"), the **spec sheet's "Robot checks"
+lines are the DONE MEANS**.
 
 Example: *"DONE MEANS: players 7.5 heads tall; lean 15–20°; knees 25–30°; helmet + visor; stick in both hands
 with the blade on the ice; under 300 draw calls."*
 
 Before starting, the Muse writes each "done means" line as a fix test. The job is done when the robot shows ✅ on
 every line **and** the owner gives 👍 on the pictures.
+
+## 6b. Hands-off approvals: the model gate robot
+
+1. Build the new player, venue or vehicle as a `models/*.mjs` file and add it to `MODELS.md` (`WAITING OWNER`).
+   Venues use `tools/venue-viewer.html` in the `view:` line.
+2. Build the game change that uses it on its own branch, and open the pull request **with the line
+   `waits-model: <id>` in its description**. Don't merge it yourself.
+3. The robot photographs the model. The owner taps 👍 or 👎 on his phone.
+   - **👍:** the Muse sets the model's status to `LOCKED`, nothing else. **`tools/model-gate.py` then merges every
+     pull request waiting for it** and re-runs the game check by itself.
+   - **👎:** his words come back to you. Fix exactly that, bump `version`, and set `WAITING OWNER` again. The waiting
+     pull request stays waiting.
 
 ## 7. Art director (one Muse window, picked by the owner)
 
