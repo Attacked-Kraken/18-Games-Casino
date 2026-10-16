@@ -1,10 +1,47 @@
-# 3D MODELS — 18 Games Casino
+# MODELS.md — every 3D model the owner sees before it goes in a game
 
-Models awaiting owner approval before going into games.
-Status: `WAITING OWNER` → owner approves → `APPROVED` → goes in game → `IN GAME`
+Owner rule: **never show the owner mockups or drawings. Show him the real model, in the real lighting, on his phone.**
 
-## Board
+How it works:
+1. Make or get the model (ASSET-LAW.md sources only, CC0, our own design — no real players, teams or brands).
+   Shrink it for phones (textures 1024–2048, one .glb, ideally under 3 MB; big files through the patch robot).
+2. Check it yourself in **tools/model-viewer.html** (same lighting as the game: `look-presets.js`):
+   `tools/model-viewer.html?m=<file.glb>&anims=<anims.glb>&look=<rink|field|track|night|studio>`
+3. Add a section below with `status: WAITING OWNER` and merge to main. The game check robot photographs it in the
+   viewer (you can't take WebGL pictures yourself — the robot can) and the owner's phone shows it with 👍 / 👎.
+4. **👎** = his words come back to you. Fix exactly that, bump `version`, set `WAITING OWNER` again.
+   **👍** = set `status: LOCKED`. Then put it in the game, using the same look preset as the viewer.
+5. A **LOCKED** model may not be replaced, re-colored or swapped for a boxy/placeholder version without a new 👍.
+6. **Never rewrite this file's format, `tools/model-viewer.html` or `look-presets.js`.** The owner's phone and the game
+   check robot read them exactly as they are. Add your model as a new `## MODEL:` section below - that's all.
+7. Prefer a real `.glb` model (Quaternius, Kenney, Poly Pizza - ASSET-LAW). A code-built `.mjs` model (boxes, tubes) is
+   allowed only if no real model fits, must say so in `notes`, and the viewer labels it CODE-BUILT for the owner.
 
-| Status | Model | Game | File | Viewer | Date |
-|--------|-------|------|------|--------|------|
-| WAITING OWNER | Main sport motorcycle | motorcycle-world | models/motorcycle-main.mjs | tools/model-viewer.html?model=../models/motorcycle-main.mjs&name=Main%20Motorcycle | 2026-10-16 |
+Format (one section per model — keep the keys exactly like this):
+
+```
+## MODEL: Hockey skater
+- id: hockey-skater
+- game: apexhockey.html
+- file: characters/hockey/skater.glb
+- anims: characters/base-human-v2/anims.glb
+- look: rink
+- view: tools/model-viewer.html?m=characters/hockey/skater.glb&anims=characters/base-human-v2/anims.glb&look=rink
+- by: your Muse account email
+- version: 1
+- notes: one line on what changed
+- status: WAITING OWNER
+```
+
+---
+
+## MODEL: Main sport motorcycle
+- id: motorcycle-main
+- game: new:motorcycle-world
+- file: models/motorcycle-main.mjs
+- look: studio
+- view: tools/model-viewer.html?m=models/motorcycle-main.mjs&look=studio&name=Main%20sport%20motorcycle
+- by: algre141@gmail.com
+- version: 1
+- notes: JOB J2 step 1. CODE-BUILT from shapes (not a real .glb) - owner decides
+- status: WAITING OWNER
