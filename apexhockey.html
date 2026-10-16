@@ -20,6 +20,9 @@
   #hud .sc { font-weight:800; font-size:21px; align-self:center; padding:0 4px; }
   #hud .dim { color:#fff; font-size:12px; font-weight:800; padding:5px 8px; border-radius:6px; align-self:center; letter-spacing:.08em; }
   #hud .clk { display:flex; flex-direction:column; justify-content:center; align-self:center; padding:0 4px 0 2px; line-height:1.15; }
+  #penTag { position:fixed; top:calc(124px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
+    z-index:9300; display:none; font:800 12px ui-monospace, Menlo, monospace; letter-spacing:.08em; color:#ffd34d;
+    background:rgba(24,12,0,.55); border:1px solid rgba(255,211,77,.5); padding:5px 10px; border-radius:8px; }
   #hud #period { font-size:11px; color:#9fd8ff; font-weight:800; letter-spacing:.14em; }
   #hud #clock { font-size:16px; font-weight:800; }
   #shotTag { position:fixed; top:calc(120px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left)); z-index:9000;
@@ -69,6 +72,15 @@
   /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
      In portrait the whole stage presents rotated to landscape from the first frame. */
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+  /* PORTRAIT GRIP: the stage is rotated, so place controls where the player's thumbs actually are:
+     stick at the visual bottom-left, action buttons at the visual bottom-right */
+  @media (orientation: portrait) {
+    #joy { left:auto; right:18px; }
+    #btns { left:auto; right:18px; top:calc(16px + env(safe-area-inset-top)); bottom:auto; }
+    #charge { left:auto; right:18px; top:calc(108px + env(safe-area-inset-top)); bottom:auto; }
+    #muteBtn { right:auto; left:12px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
+    #viewBtn { right:auto; left:76px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
+  }
   .bigbtn.alt { background:#1d3a52; color:#cfe9ff; box-shadow:none; font-size:16px; padding:13px 34px; }
   #starCard { font:600 14px ui-monospace, Menlo, monospace; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
   #myCode { font:600 12px ui-monospace, Menlo, monospace; color:#8fd8a8; margin:14px 0 4px; letter-spacing:.06em; }
@@ -86,7 +98,7 @@
 <body>
 <canvas id="c"></canvas>
 <button id="back" type="button">‹ Back</button>
-<div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div>
+<div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div><div id="penTag"></div>
 <button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
 <div id="flash"></div>
@@ -543,6 +555,29 @@ function attachAthletes(H){
         outfit:'hoodie',
         cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0x14161a },
       }, ATH_H);
+      // PRINTS that live IN the jersey paint (not floating plates): back name+number, crest, front number
+      const plateCv=document.createElement('canvas'); plateCv.width=256; plateCv.height=176;
+      const numCv=document.createElement('canvas'); numCv.width=numCv.height=128;
+      const plateTx=new THREE.CanvasTexture(plateCv); plateTx.colorSpace=THREE.SRGBColorSpace;
+      const numTx=new THREE.CanvasTexture(numCv); numTx.colorSpace=THREE.SRGBColorSpace;
+      const crestCv=document.createElement('canvas'); crestCv.width=crestCv.height=128;
+      { const g=crestCv.getContext('2d'); g.strokeStyle='#ffd34d'; g.lineWidth=9; g.beginPath(); g.arc(64,64,45,0,Math.PI*2); g.stroke();
+        g.fillStyle='#ffd34d'; g.font='900 60px system-ui, sans-serif'; g.textAlign='center'; g.fillText('A',64,85); }
+      const crestTx=new THREE.CanvasTexture(crestCv); crestTx.colorSpace=THREE.SRGBColorSpace;
+      s._redrawPrints=()=>{
+        const g=plateCv.getContext('2d'); g.clearRect(0,0,256,160);
+        g.textAlign='center'; g.fillStyle='#ffffff'; g.strokeStyle='rgba(0,0,0,.45)';
+        g.font='800 40px system-ui, sans-serif'; g.lineWidth=4; const sn=(s.surname||'').toUpperCase();
+        g.strokeText(sn,128,48); g.fillText(sn,128,48);
+        g.font='900 118px system-ui, sans-serif'; g.lineWidth=7;
+        g.strokeText(String(s.num||''),128,162); g.fillText(String(s.num||''),128,162);
+        plateTx.needsUpdate=true;
+        const ng=numCv.getContext('2d'); ng.clearRect(0,0,128,128);
+        ng.textAlign='center'; ng.font='900 80px system-ui, sans-serif'; ng.lineWidth=7; ng.strokeStyle='rgba(0,0,0,.45)';
+        ng.strokeText(String(s.num||''),64,90); ng.fillStyle='#ffffff'; ng.fillText(String(s.num||''),64,90);
+        numTx.needsUpdate=true;
+      };
+      s._redrawPrints();
       // THE UNIFORM IS PAINT, not pieces: extend the rig's own outfit shader with hockey zones
       try{
         a.object.traverse(o=>{
@@ -555,19 +590,23 @@ function attachAthletes(H){
           mat.onBeforeCompile=(sh)=>{
             orig(sh);
             sh.uniforms.uJer={value:jer}; sh.uniforms.uYoke={value:yok}; sh.uniforms.uPant={value:pan}; sh.uniforms.uTrm={value:trm};
+            sh.uniforms.uPlate={value:plateTx}; sh.uniforms.uCrest={value:crestTx}; sh.uniforms.uNum={value:numTx};
             sh.fragmentShader=sh.fragmentShader
-              .replace('uniform vec3 uSkin,uTop,uBot,uJak,uShoe;', 'uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec3 uJer,uYoke,uPant,uTrm;')
+              .replace('uniform vec3 uSkin,uTop,uBot,uJak,uShoe;', 'uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec3 uJer,uYoke,uPant,uTrm; uniform sampler2D uPlate,uCrest,uNum;')
               .replace('vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);',
 `vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);
   { vec3 p=vB; float ax2=abs(p.x); bool arm2 = ax2>0.27 && p.y>1.28;
-    if(!arm2 && p.y>0.98 && p.y<1.60){ vec3 c=uJer; if(p.y>1.44) c=uYoke; if(p.y<1.08) c=uTrm; if(p.y>1.11 && p.y<1.15) c=uTrm; diffuseColor.rgb=c; }
+    if(!arm2 && p.y>0.98 && p.y<1.60){ vec3 c=uJer; if(p.y>1.44) c=uYoke; if(p.y<1.08) c=uTrm; if(p.y>1.11 && p.y<1.15) c=uTrm; diffuseColor.rgb=c;
+      if(p.z<-0.045){ vec2 puv=vec2(p.x/0.44+0.5,(p.y-0.99)/0.52); if(puv.x>0.01&&puv.x<0.99&&puv.y>0.01&&puv.y<0.99){ vec4 pt=texture2D(uPlate,puv); diffuseColor.rgb=mix(diffuseColor.rgb,pt.rgb,pt.a); } }
+      if(p.z>0.045){ vec2 cuv=vec2(p.x/0.26+0.5,(p.y-1.13)/0.26); if(cuv.x>0.01&&cuv.x<0.99&&cuv.y>0.01&&cuv.y<0.99){ vec4 ct=texture2D(uCrest,cuv); diffuseColor.rgb=mix(diffuseColor.rgb,ct.rgb,ct.a); }
+        vec2 nuv=vec2((p.x-0.115)/0.115+0.5,(p.y-1.295)/0.135); if(nuv.x>0.01&&nuv.x<0.99&&nuv.y>0.01&&nuv.y<0.99){ vec4 nt=texture2D(uNum,nuv); diffuseColor.rgb=mix(diffuseColor.rgb,nt.rgb,nt.a); } } }
     else if(arm2){ if(ax2>=0.68){ diffuseColor.rgb=uYoke; } else { vec3 c=uJer; if(ax2<0.32) c=uYoke; if(ax2>0.46 && ax2<0.51) c=uTrm; if(ax2>0.56 && ax2<0.61) c=uTrm; diffuseColor.rgb=c; } }
     else if(!arm2 && p.y<=0.98 && p.y>0.13){ vec3 c=uPant; if(p.y<0.55){ c=uJer; if(p.y>0.40 && p.y<0.46) c=uTrm; if(p.y>0.29 && p.y<0.35) c=uTrm; } diffuseColor.rgb=c; } }`);
           };
           mat.customProgramCacheKey=()=>'hum2hock';
         });
       }catch(e){}
-      const wrap = new THREE.Group(); s.g.add(wrap);
+      const wrap = new THREE.Group(); wrap.scale.set(1.05,1,1.05); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
@@ -582,54 +621,21 @@ function attachAthletes(H){
       let headB = null;
       a.object.traverse(o=>{ if(o.isBone && /head/i.test(o.name) && !headB) headB = o; });
       if(headB){
-        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.52, 12, 8, 0, Math.PI*2, 0, Math.PI*0.7),
-          new THREE.MeshStandardMaterial({ color: TEAMS[s.team].helmet, roughness:.28 }));
-        helm.scale.setScalar(1/ATH_K); helm.position.y = 0.03;
+        // a real hockey helmet: elongated shell riding low, ear covers, back flap, full cage with a chin bar
+        const helmMat = new THREE.MeshStandardMaterial({ color: TEAMS[s.team].helmet, roughness:.28 });
+        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.54, 14, 10, 0, Math.PI*2, 0, Math.PI*0.66), helmMat);
+        helm.scale.set(0.98/ATH_K, 0.88/ATH_K, 1.14/ATH_K); helm.position.set(0, 0.05, 0.03);
         headB.add(helm);
-        // full CAGE mask, like the owner's reference models: dark steel grid over the face
+        for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.07,10), helmMat);
+          ear.scale.setScalar(1/ATH_K); ear.rotation.z=Math.PI/2; ear.position.set(sx*0.47,-0.14,0.02); headB.add(ear); }
+        const flap=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.36,0.06), helmMat);
+        flap.scale.setScalar(1/ATH_K); flap.position.set(0,-0.17,-0.45); flap.rotation.x=-0.22; headB.add(flap);
         const cage = new THREE.Group();
         const cageMat = new THREE.MeshStandardMaterial({ color:0x23262b, roughness:.45, metalness:.6 });
-        for(const hy of [0.08,-0.07,-0.22]){ const hb=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.055,0.055), cageMat); hb.position.set(0,hy,0.45); cage.add(hb); }
-        for(const vx of [-0.19,0,0.19]){ const vb=new THREE.Mesh(new THREE.BoxGeometry(0.055,0.56,0.055), cageMat); vb.position.set(vx,-0.07,0.45); cage.add(vb); }
+        for(const hy of [0.10,-0.04,-0.18,-0.32]){ const hb=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.05,0.05), cageMat); hb.position.set(0,hy,0.45); cage.add(hb); }
+        for(const vx of [-0.19,0,0.19]){ const vb=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.62,0.05), cageMat); vb.position.set(vx,-0.11,0.45); cage.add(vb); }
         cage.scale.setScalar(1/ATH_K);
         headB.add(cage);
-      }
-      // jersey number on the back: a canvas plate riding the wrap (broadcast-visible)
-      if(!s.goalie && s.num){
-        try{
-          const nc=document.createElement('canvas'); nc.width=256; nc.height=168;
-          const ng=nc.getContext('2d');
-          ng.textAlign='center'; ng.textBaseline='middle';
-          if(s.surname){ ng.font='800 37px system-ui, sans-serif'; ng.lineWidth=6; ng.strokeStyle='rgba(0,0,0,.35)';
-            ng.strokeText(s.surname,128,30); ng.fillStyle='#ffffff'; ng.fillText(s.surname,128,30); }
-          ng.font='900 104px system-ui, sans-serif'; ng.lineWidth=10; ng.strokeStyle='rgba(0,0,0,.35)'; const ns=String(s.num);
-          ng.strokeText(ns,128,112); ng.fillStyle='#ffffff'; ng.fillText(ns,128,112);
-          const ntex=new THREE.CanvasTexture(nc); ntex.colorSpace=THREE.SRGBColorSpace;
-          const plate=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.58),
-            new THREE.MeshBasicMaterial({map:ntex, transparent:true}));
-          plate.position.set(-0.60,4.3,0); plate.rotation.y=-Math.PI/2;
-          wrap.add(plate);
-          // chest crest: gold-ringed APEX shield on the front of the jersey
-          const cc=document.createElement('canvas'); cc.width=cc.height=128;
-          const cg=cc.getContext('2d');
-          cg.strokeStyle='#ffd34d'; cg.lineWidth=7; cg.beginPath(); cg.arc(64,64,46,0,Math.PI*2); cg.stroke();
-          cg.fillStyle='#ffffff'; cg.font='900 62px system-ui, sans-serif'; cg.textAlign='center'; cg.textBaseline='middle';
-          cg.fillText('A',64,68);
-          const ctex=new THREE.CanvasTexture(cc); ctex.colorSpace=THREE.SRGBColorSpace;
-          const crest=new THREE.Mesh(new THREE.PlaneGeometry(0.95,0.95),
-            new THREE.MeshBasicMaterial({map:ctex, transparent:true}));
-          crest.position.set(0.68,3.95,0); crest.rotation.y=Math.PI/2;
-          wrap.add(crest);
-          // small front number on the chest, beside the crest
-          const fnc=document.createElement('canvas'); fnc.width=fnc.height=96;
-          const fg=fnc.getContext('2d'); fg.font='900 60px system-ui, sans-serif'; fg.textAlign='center'; fg.textBaseline='middle';
-          fg.lineWidth=7; fg.strokeStyle='rgba(0,0,0,.35)'; fg.strokeText(ns,48,52); fg.fillStyle='#ffffff'; fg.fillText(ns,48,52);
-          const ftex=new THREE.CanvasTexture(fnc); ftex.colorSpace=THREE.SRGBColorSpace;
-          const fnum=new THREE.Mesh(new THREE.PlaneGeometry(0.55,0.55),
-            new THREE.MeshBasicMaterial({map:ftex, transparent:true}));
-          fnum.position.set(0.52,4.42,0.36); fnum.rotation.y=Math.PI/2;
-          wrap.add(fnum);
-        }catch(e){}
       }
       // hard equipment only — helmet + cage above, stick, and the skate blades here.
       // (The uniform itself is painted on by the shader — no bolted-on clothing.)
@@ -713,7 +719,11 @@ function updateHUD(){ $('score').textContent=scoreH+' – '+scoreA; $('period').
     $('nmH').textContent=TEAMS.home.name; $('nmA').textContent=TEAMS.away.name;
     $('nmH').style.background='#'+TEAMS.home.jersey.toString(16).padStart(6,'0');
     $('nmA').style.background='#'+TEAMS.away.jersey.toString(16).padStart(6,'0');
-    if(window.__drawScoreboard) window.__drawScoreboard(); } }
+    if(window.__drawScoreboard) window.__drawScoreboard(); }
+  { const pt=$('penTag'); if(pt){ let txt=''; if(PEN.away) txt=TEAMS.home.name+' PP · '+fmtPen(PEN.away.penT);
+    if(PEN.home) txt=(txt?txt+'  ·  ':'')+TEAMS.away.name+' PP · '+fmtPen(PEN.home.penT);
+    pt.textContent=txt; pt.style.display=txt?'block':'none'; } }
+}
 let shotTagTO=null;
 function showShotTag(mph){ const el=$('shotTag'); if(!el) return; el.textContent='SHOT · '+mph+' MPH'; el.classList.add('show');
   clearTimeout(shotTagTO); shotTagTO=setTimeout(()=>el.classList.remove('show'),2200); }
@@ -826,7 +836,7 @@ window.__mus = Mus;
 /* ================= actions ================= */
 function nearestSkater(team,pos,skipGoalie=true){
   let best=null,bd=1e9;
-  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue;
+  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue;
     const d=(s.pos.x-pos.x)**2+(s.pos.z-pos.z)**2; if(d<bd){bd=d;best=s;} }
   return best;
 }
@@ -835,7 +845,7 @@ function doPass(){
   if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
   const from=puck.owner, fx=Math.cos(from.facing), fz=Math.sin(from.facing);
   let best=null,bs=-1e9;
-  for(const s of homeSkaters){ if(s===from) continue;
+  for(const s of homeSkaters){ if(s===from||s.inBox) continue;
     const dx=s.pos.x-from.pos.x, dz=s.pos.z-from.pos.z, d=Math.hypot(dx,dz)||1;
     if(d>70) continue;
     const align=(dx*fx+dz*fz)/d;
@@ -868,6 +878,23 @@ function shootFrom(s, power, aimed){
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
   s.phase+=1.2;
 }
+/* ================= penalties ================= */
+const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
+const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
+function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
+function callPenalty(off, why){
+  if(!off || off.inBox || state!=='play') return;
+  off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
+  banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+  if(off===controlled) switchControl();
+  updateHUD();
+}
+function endPenalty(off, quiet){
+  if(!off) return;
+  off.inBox=false; off.penT=0; if(PEN[off.team]===off) PEN[off.team]=null;
+  if(!quiet) banner('FULL STRENGTH', TEAMS[off.team].name, 1400, '#9fe8a9');
+  updateHUD();
+}
 function doCheck(){
   if(state!=='play') return;
   switchControl();
@@ -875,14 +902,24 @@ function doCheck(){
   const dPuck=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
   if(dPuck<5.2 && o && o.team==='away' && !o.goalie){
     const dO=Math.hypot(s.pos.x-o.pos.x,s.pos.z-o.pos.z);
-    const chance=dO<3?0.8:0.45;
-    if(Math.random()<chance){ // poke it loose
-      puck.owner=null;
-      const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(8,15),0,Math.sin(a)*rand(8,15));
-      o.stun=0.5; o.vel.x+=(s.pos.x-o.pos.x)*2; o.vel.z+=(s.pos.z-o.pos.z)*2;
-      banner('POKE CHECK','',700,'#9fd8ff');
+    if(dO<3.4){ // contact ON the carrier: from behind is a penalty; front or side is a clean poke
+      const behind=(Math.cos(o.facing)*(s.pos.x-o.pos.x)+Math.sin(o.facing)*(s.pos.z-o.pos.z)) < -0.9;
+      if(behind){ callPenalty(s,'CHECK FROM BEHIND'); return; }
+      const chance=dO<3?0.8:0.45;
+      if(Math.random()<chance){ // poke it loose
+        puck.owner=null;
+        const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(8,15),0,Math.sin(a)*rand(8,15));
+        o.stun=0.5; o.vel.x+=(s.pos.x-o.pos.x)*2; o.vel.z+=(s.pos.z-o.pos.z)*2;
+        banner('POKE CHECK','',700,'#9fd8ff');
+      }
+      return;
     }
   }
+  // hitting a man who does NOT have the puck is interference
+  let oppNear=null, dOpp=1e9;
+  for(const op of awaySkaters){ if(op.goalie||op===puck.owner) continue;
+    const dd=Math.hypot(s.pos.x-op.pos.x,s.pos.z-op.pos.z); if(dd<dOpp){ dOpp=dd; oppNear=op; } }
+  if(oppNear && dOpp<2.6) callPenalty(s,'INTERFERENCE');
 }
 
 /* ================= faceoffs / whistles ================= */
@@ -903,9 +940,31 @@ function setupFaceoffPositions(dx,dz){
   awayGoalie.pos.set(GOAL_LINE-2.2,0.1,0); awayGoalie.facing=Math.PI; awayGoalie.vel.set(0,0,0);
   puck.pos.set(dx,0.2,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null; puck.lastTouch=null;
   puck.recvT=0; prevPuckX=dx;
+  for(const bs of skaters){ if(bs.inBox){ const bp=BOXSPOT[bs.team]; placeSkater(bs, bp[0], bp[1], bs.team==='home'?0:Math.PI); } } // boxed men stay in the box for the drop
   controlled = nearestSkater('home',puck.pos);
 }
+const LINE1R = { home:{ LW:[13,'FROST'], RW:[88,'VOLT'], LD:[4,'BRICK'], RD:[44,'HAVOC'] },
+                 away:{ C:[19,'MARLIN'], LW:[91,'REEF'], RW:[86,'JAWS'], LD:[8,'CORAL'], RD:[77,'ANCHOR'] } };
+const LINE2R = { home:{ LW:[71,'COMET'], RW:[17,'DASH'], LD:[6,'STONE'], RD:[55,'PILLAR'] },
+                 away:{ C:[14,'FINN'], LW:[63,'SURGE'], RW:[21,'RIP'], LD:[5,'COAST'], RD:[74,'BREAK'] } };
+const lineOn = { home:1, away:1 };
+function maybeSwapLines(){
+  for(const t of ['home','away']){
+    const act=(t==='home'?homeSkaters:awaySkaters).filter(x=>!x.inBox);
+    const avg=act.reduce((a,x)=>a+(x.stam??1),0)/Math.max(1,act.length);
+    if(avg>0.66 && Math.random()>0.30) continue; // fresh enough — the coach holds this line
+    lineOn[t]=lineOn[t]===1?2:1;
+    const roster=(lineOn[t]===1?LINE1R:LINE2R)[t];
+    for(const x of act){ if(t==='home'&&x.star){ x.stam=0.97; continue; } // the star stays out
+      const r=roster[x.role]; if(!r) continue;
+      x.num=r[0]; x.surname=r[1]; x.stam=0.97; if(x._redrawPrints) x._redrawPrints(); }
+    banner('LINE CHANGE', TEAMS[t].name+' · LINE '+lineOn[t]+' OVER THE BOARDS', 1300, '#9fd8ff');
+  }
+  tagFor=null; // the name tag redraws for whoever is controlled now
+}
 function faceoff(dx,dz,label){
+  maybeSwapLines();
+  offArm=null;
   setupFaceoffPositions(dx,dz);
   state='faceoff'; stateT=1.4; updateHUD();
   if(label) banner(label,'',1400);
@@ -918,6 +977,7 @@ function nearestDot(x,z){
 function onGoal(team){
   state='goal'; stateT=3.2;
   if(team==='home'){scoreH++;}else{scoreA++;}
+  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
@@ -939,6 +999,7 @@ function aiSkater(s,dt){
   const isControlled=isHome&&s===controlled&&state==='play';
   if(isControlled){ s._chasing=false; return; } // input-driven
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
+  if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
   const mates=(isHome?homeSkaters:awaySkaters).filter(m=>m!==puck.owner && !(isHome&&m===controlled)); // the user's skater is input-driven — never count him as a chaser
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
@@ -949,6 +1010,7 @@ function aiSkater(s,dt){
     let nearestOpp=1e9;
     for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
     s._decide=(s._decide||0)-0.18;
+    if((s.role==='LD'||s.role==='RD') && dGoal<72 && s._decide<=0 && Math.random()<0.5){ shootFrom(s, rand(0.5,0.85), false); s._decide=rand(1.4,2.4); return; } // point shot through traffic
     if(dGoal<44 && s._decide<=0){ shootFrom(s, rand(0.55,0.95), false); s._decide=rand(1.4,2.4); return; }
     if(nearestOpp<7 && Math.random()<0.55 && s._decide<=0){ aiPass(s); s._decide=rand(1.4,2.4); return; }
     s.target.set(dir*rand(70,82), 0, clamp(s.pos.z*0.4+rand(-14,14),-28,28));
@@ -973,11 +1035,19 @@ function aiSkater(s,dt){
     s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
                  puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
     s._chasing=true;
-    // active pressure: poke it loose when right on the carrier
-    if(carrier && !carrier.goalie && Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z)<2.3 && Math.random()<0.045){
-      puck.owner=null; const pa=Math.random()*TAU;
-      puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
-      carrier.stun=0.35;
+    // active pressure: poke it loose when right on the carrier — an IDLE carrier gets stripped
+    if(carrier && !carrier.goalie){
+      const cDist=Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z);
+      const cSpd=Math.hypot(carrier.vel.x,carrier.vel.z);
+      if(cDist<2.7 && Math.random() < (cSpd<3.5 ? 0.30 : 0.06)){
+        puck.owner=null; const pa=Math.random()*TAU;
+        puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
+        carrier.stun=0.35;
+      }
+    }
+    if(!carrier && Math.random()<0.010){ // rare: a chaser bumps a man without the puck — interference, to the box
+      for(const op of (isHome?awaySkaters:homeSkaters)){ if(op.goalie) continue;
+        if(Math.hypot(s.pos.x-op.pos.x,s.pos.z-op.pos.z)<2.1){ callPenalty(s,'INTERFERENCE'); break; } }
     }
     return;
   }
@@ -994,15 +1064,31 @@ function aiSkater(s,dt){
     else if(fw[0]===s){ ax=clamp(cx+dir*21,-88,88); az=clamp(-cz*0.35,-15,15); } // nearest forward drives the slot
     else if(fw[1]===s){ ax=clamp(cx+dir*7,-88,88); az=cz>0?-30:30; } // second forward: far-side lane, wide open
     else { ax=clamp(cx-dir*8,-88,88); az=clamp(cz*0.4,-20,20); } // trailer: the safe outlet behind the play
+    const cDepth=carrier.pos.x*dir;
+    if(cDepth<-35){ // BREAKOUT: wings wide to the boards at the hash marks, D partner low, C curls under
+      if(s.role==='LW'){ ax=dir*-52; az=-33; } else if(s.role==='RW'){ ax=dir*-52; az=33; }
+      else if(s.role==='C'){ ax=carrier.pos.x-dir*9; az=carrier.pos.z*0.5; }
+      else { ax=dir*-74; az=(s.role==='LD'?-20:20); }
+    } else if(cDepth>50 && possT[s.team]>3 && (s.role==='C'||s.role==='LW'||s.role==='RW')){ // O-ZONE CYCLE: rotate corner / behind the net / slot
+      const sg=Math.sign(carrier.pos.z||1), cyc=[[dir*88, sg*34],[dir*95, 0],[dir*72, -sg*10]];
+      const step=Math.floor(possT[s.team]/2.5)%3;
+      const slot = fw[0]===s ? 2 : fw[1]===s ? 0 : 1; // fw0 takes the slot point of the rotation
+      const cp=cyc[(slot+step)%3]; ax=clamp(cp[0],-96,96); az=clamp(cp[1],-38,38);
+    }
     ax+=Math.sin(gameNow*0.6+s.phase)*2.2; az+=Math.cos(gameNow*0.5+s.phase*1.3)*2.2;
   }else{ // defense: shade puck-side and track the play
     ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*1.5;
     az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*1.5;
   }
+  if(!weHave && (s.role==='LD'||s.role==='RD') && puck.pos.x*dir<-55){ // NET-FRONT: the closer D owns the crease
+    const otherD=(isHome?homeSkaters:awaySkaters).find(m=>m!==s&&(m.role==='LD'||m.role==='RD'));
+    const myD=Math.abs(s.pos.x+dir*GOAL_LINE), otD=otherD?Math.abs(otherD.pos.x+dir*GOAL_LINE):1e9;
+    if(myD<=otD){ ax=dir*-(GOAL_LINE-4); az=clamp(puck.pos.z*0.35,-8,8); }
+  }
   s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
 }
 function aiPass(s){
-  const mates=(s.team==='home'?homeSkaters:awaySkaters).filter(m=>m!==s);
+  const mates=(s.team==='home'?homeSkaters:awaySkaters).filter(m=>m!==s&&!m.inBox);
   let best=null,bs=-1e9;
   for(const m of mates){ const dx=m.pos.x-s.pos.x, dz=m.pos.z-s.pos.z, d=Math.hypot(dx,dz)||1;
     if(d>75) continue;
@@ -1058,6 +1144,8 @@ function stepSkater(s,dt){
   const des=_des; des.set(0,0,0);
   if(s.goalie){ des.set(0,0,0); }
   else if(s.stun>0){ s.stun-=dt; des.set(0,0,0); }
+  else if(s.inBox){ const bp=BOXSPOT[s.team]; const dx=bp[0]-s.pos.x, dz=bp[1]-s.pos.z, d=Math.hypot(dx,dz);
+    if(d>0.8) des.set(dx/d*Math.min(18,d*2),0,dz/d*Math.min(18,d*2)); }
   else if(s.team==='home'&&s===controlled&&state==='play'){
     let ix=joyVec.x, iy=joyVec.y;
     if(keys.KeyW||keys.ArrowUp)iy-=1; if(keys.KeyS||keys.ArrowDown)iy+=1;
@@ -1076,8 +1164,9 @@ function stepSkater(s,dt){
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
   s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
   const sp=Math.hypot(s.vel.x,s.vel.z);
-  const cap = s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24);
+  const cap = (s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24)) * (0.8+0.2*(s.stam??1)); // tired legs are slower legs
   if(sp>cap){ s.vel.x*=cap/sp; s.vel.z*=cap/sp; }
+  if(state==='play' && !s.inBox && !s.goalie){ s.stam=Math.max(0.45,(s.stam??1)-dt*(sp>16?0.020:0.010)); }
   s.pos.x+=s.vel.x*dt; s.pos.z+=s.vel.z*dt;
   // stay in rink (rounded)
   const ccx=HX-RINK.CR-1.2, ccz=HZ-RINK.CR-1.2;
@@ -1105,9 +1194,9 @@ function stepSkater(s,dt){
     a.mixer.update(dt);
     const sf=clamp(sp/30,0,1); // hockey stance: crouched, leaning in, weight rocking stride to stride
     s.bank=(s.bank||0)+(clamp((s._tr||0)*0.055,-0.24,0.24)*sf-(s.bank||0))*Math.min(1,9*dt); // bank into the turn
-    s.athWrap.rotation.z=-(0.15+0.2*sf);
+    s.athWrap.rotation.z=-(0.23+0.17*sf); // deep hockey crouch
     s.athWrap.rotation.x=Math.sin(s.phase)*0.055*sf+(s.bank||0);
-    s.athWrap.position.y=-0.22*(0.4+0.6*sf)+Math.abs(Math.sin(s.phase))*0.06*sf;
+    s.athWrap.position.y=-0.30*(0.4+0.6*sf)+Math.abs(Math.sin(s.phase))*0.06*sf;
     if(s.athStick) s.athStick.rotation.y = (puck.owner===s) ? Math.sin(s.phase*2)*0.10 : Math.sin(s.phase)*0.04*sf; // stickhandling sway
     if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
   }
@@ -1137,7 +1226,7 @@ function stepPuck(dt){
   // possession pickup
   const ps=puck.vel.length();
   for(const s of skaters){
-    if(s.goalie) continue; // goalies cover (whistle) instead of carrying
+    if(s.goalie||s.inBox) continue; // goalies cover (whistle) instead of carrying; boxed men are out
     if(puck.passGrace===s && performance.now()-puck.passT<450) continue; // the passer can't instantly re-grab his own pass
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
@@ -1150,37 +1239,58 @@ function stepPuck(dt){
 
 /* ================= rules ================= */
 let prevPuckX=0;
+let offArm=null; // delayed offside: {team, t}
+const possT={home:0,away:0}; // continuous possession clock per team, drives the cycle
 function rules(dt){
   if(state!=='play') return;
   const px=puck.pos.x;
+  for(const sk of skaters){ if(sk.inBox){ sk.penT-=dt; if(sk.penT<=0) endPenalty(sk); } } // every boxed man serves his own clock (two can sit at once)
+  for(const t of ['home','away']){ const bx=skaters.filter(x=>x.team===t&&x.inBox); PEN[t]=bx.length?bx.reduce((a,b)=>a.penT<=b.penT?a:b):null; }
+  if(PEN.home||PEN.away) updateHUD();
+  if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
   // GOAL: fully across the goal line between the posts
   if(px>GOAL_LINE+0.4&&Math.abs(puck.pos.z)<GOAL_HALF){ onGoal('home'); return; }
   if(px<-(GOAL_LINE+0.4)&&Math.abs(puck.pos.z)<GOAL_HALF){ onGoal('away'); return; }
-  // OFFSIDE: attacker across the far blue line before the puck
-  if(puck.owner){
-    const t=puck.owner.team, dir=TEAMS[t].dir, line=dir*BLUE;
-    const crossed=dir>0?(prevPuckX<=line&&px>line):(prevPuckX>=line&&px<line);
-    if(crossed){
-      const attackers=(t==='home'?homeSkaters:awaySkaters).filter(s=>s!==puck.owner);
-      if(attackers.some(s=>dir>0?s.pos.x>line+0.5:s.pos.x<line-0.5)){
-        const dot=nearestDot(px*0.5,puck.pos.z>0?20:-20), d=DOTS[dot];
-        pendingFaceoff={x:d[0],z:d[1],label:'OFFSIDE · FACEOFF'};
-        whistle('OFFSIDE',TEAMS[t].name);
-        prevPuckX=px; return;
+  // OFFSIDE, the real way: DELAYED — attackers caught deep get a window to TAG UP and clear.
+  if(offArm){
+    const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
+    const inZone=dir>0?px>line:px<line;
+    const stillOff=(t==='home'?homeSkaters:awaySkaters).some(o=>!o.goalie&&!o.inBox&&(dir>0?o.pos.x>line+0.5:o.pos.x<line-0.5));
+    if(!inZone||!stillOff){ offArm=null; } // tagged up or the puck came out — play on
+    else if((puck.owner&&puck.owner.team===t) || (offArm.t-=dt)<=0){
+      const dot=nearestDot(px*0.5,puck.pos.z>0?20:-20), d=DOTS[dot];
+      pendingFaceoff={x:d[0],z:d[1],label:'OFFSIDE · FACEOFF'};
+      whistle('OFFSIDE',TEAMS[t].name); offArm=null; prevPuckX=px; return;
+    }
+  }
+  if(!offArm){
+    for(const t of ['home','away']){
+      const dir=TEAMS[t].dir, line=dir*BLUE;
+      const crossed=dir>0?(prevPuckX<=line&&px>line):(prevPuckX>=line&&px<line);
+      if(!crossed) continue;
+      const ahead=(t==='home'?homeSkaters:awaySkaters).filter(o=>!o.goalie&&!o.inBox&&o!==puck.owner);
+      if(ahead.some(o=>dir>0?o.pos.x>line+0.5:o.pos.x<line-0.5)){
+        offArm={team:t, t:1.4}; banner('OFFSIDE WATCH', TEAMS[t].name+' · TAG UP!', 1200, '#ffd34d'); break;
       }
     }
   }
-  // ICING: dumped from the defensive half, crosses the far goal line untouched
+  // ICING (hybrid): dumped from the defensive half — the RACE to the puck decides, like the NHL.
+  // If the dumping team's man wins the race, it's waived and play goes on.
   if(!puck.owner&&puck.lastTouch){
     const t=puck.lastTouch, dir=TEAMS[t].dir;
     const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
     const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
     if(fromDeep&&crossedFar){
-      const key='e'+(dir>0?(puck.pos.z>0?3:4):(puck.pos.z>0?1:2)); // deep defensive-zone dot
-      const d=DOTS[key]||DOTS.center;
-      pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
-      whistle('ICING',TEAMS[t].name);
-      puck.lastTouch=null; prevPuckX=px; return;
+      let aD=1e9, dD=1e9;
+      for(const o of skaters){ if(o.goalie||o.inBox) continue;
+        const dd=Math.hypot(o.pos.x-px,o.pos.z-puck.pos.z);
+        if(o.team===t) aD=Math.min(aD,dd); else dD=Math.min(dD,dd); }
+      puck.lastTouch=null;
+      if(aD<dD-2){ banner('ICING WAIVED', TEAMS[t].name+' WINS THE RACE', 1600, '#9fe8a9'); prevPuckX=px; }
+      else { const key='e'+(dir>0?(puck.pos.z>0?3:4):(puck.pos.z>0?1:2));
+        const d=DOTS[key]||DOTS.center;
+        pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
+        whistle('ICING',TEAMS[t].name); prevPuckX=px; return; }
     }
   }
   // goalie covers a slow loose puck
