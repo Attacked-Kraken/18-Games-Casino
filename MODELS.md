@@ -54,7 +54,7 @@ Format (one section per model — keep the keys exactly like this):
 - view: tools/model-viewer.html?m=models/hockey-skater.mjs&look=rink&name=Hockey%20skater
 - by: Claude (arcade reviewer)
 - version: 1
-- waits: PR #341 (already built and tested) - on 👍 ONLY set status LOCKED; the model gate robot merges PR #341 by itself. Don't rebuild it.
+- waits: PR #350 (already built and tested) - on 👍 ONLY set status LOCKED; the model gate robot merges PR #350 by itself. Don't rebuild it.
 - notes: Owner's model sheet (2026-10-16). REAL CC0 rigged body (characters/base-human-v2) + CODE-BUILT gear from characters/base-human-v2/gear.js (no real hockey-gear .glb is CC0) - helmet + clear visor, shoulder/elbow pads under the jersey, oversized gloves, padded breezers, socks over shin guards, skates with steel blades, stick in both hands. Stance: lean 15-20, knees 25-30, hips back, wide. Away kit: add &team=away
 - status: WAITING OWNER
 
@@ -66,7 +66,7 @@ Format (one section per model — keep the keys exactly like this):
 - view: tools/venue-viewer.html?m=models/hockey-arena.mjs&look=rink&name=Hockey%20arena&cheer=1
 - by: Claude (arcade reviewer)
 - version: 1
-- waits: PR #347 (already built; also needs Hockey skater 👍) - on 👍 ONLY set status LOCKED; the model gate robot merges it by itself.
+- waits: PR #351 (already built; also needs Hockey skater 👍) - on 👍 ONLY set status LOCKED; the model gate robot merges it by itself.
 - notes: venues/rink.md at real size - 60.96 x 25.9 m rink with every marking, boards + glass, goals, benches; 2-level bowl (38 rows, 18,000 seats, 16,000 moving fans in team colours who stand and cheer on goals), tunnels, LED ribbons, centre-hung 4-sided scoreboard, roof with trusses and a ring of lights. 12 draw calls. CODE-BUILT (venues/kit/stadium.js + rink.js, reused by every sport). Pictures: aerial (roof off), TV camera, behind the net.
 - status: WAITING OWNER
 
