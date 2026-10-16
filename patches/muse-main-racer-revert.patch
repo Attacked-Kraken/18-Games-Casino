@@ -1,5 +1,5 @@
---- a/apexracer.html	2026-10-15 21:07:43.606048548 -0500
-+++ b/apexracer.html	2026-10-15 21:07:52.135223734 -0500
+--- a/apexracer.html	2026-10-15 21:11:18.815047698 -0500
++++ b/apexracer.html	2026-10-15 21:11:24.836694444 -0500
 @@ -142,8 +142,6 @@
    @media (max-height:520px) { #logo { max-height:36vh; } #mbtns .wide { padding:13px; } #spd { width:140px; height:140px; } #pos { font-size:36px; } #mini { width:104px; height:104px; } #bCam,#bPause,#bMute { top:calc(118px + var(--sat)); } }
    /* rec1 2026-10-10 (owner: totals box): short landscape phones keep the totals card in the free top-left corner under Back */
@@ -9,10 +9,10 @@
    /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
       In portrait the whole stage presents rotated to landscape from the first frame. */
    @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
-@@ -2014,8 +2012,6 @@
+@@ -2013,8 +2011,6 @@
+ $('rMute').onclick = () => toggleMute();
  $('mSnd').onclick = () => toggleMute();
  addEventListener('resize', resize);
- if (window.visualViewport) window.visualViewport.addEventListener('resize', resize); /* LANDSCAPE LAW: mobile viewport */
 -/* landscape parity 2026-10-15: lock to landscape on first interaction */
 -addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } else { try{ var q2=screen.orientation.lock('landscape'); if(q2&&q2.catch) q2.catch(function(){}); }catch(e){} } }catch(e){} }, { once:true });
  document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'race') pause(); if (AU.ctx) AU.ctx.suspend(); } else if (AU.ctx) AU.ctx.resume(); });
