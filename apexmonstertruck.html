@@ -274,7 +274,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb); // daytime sky
 scene.fog = new THREE.Fog(0x0b0e13, 260, 700);
 
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 1500);
+const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.5, 1500); // near 0.5 fixes phone z-fighting
 
 scene.add(new THREE.HemisphereLight(0xbdd8ff, 0x8a6a45, 0.9)); // daytime fill
 const sun = new THREE.DirectionalLight(0xfff2d8, 2.2); // daytime sun
@@ -340,6 +340,7 @@ const dirtTex = makeTex(512, 512, (g, w, h) => {
   }
 });
 dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(880, 880);
+dirtTex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // stop streaky dirt
 const dirt = new THREE.Mesh(
   new THREE.PlaneGeometry(ARENA * 2 + 20, ARENA * 2 + 20),
   new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 1 })
@@ -349,7 +350,7 @@ const outer = new THREE.Mesh(
   new THREE.PlaneGeometry(9000, 9000),
   new THREE.MeshStandardMaterial({ color: 0x11141a, roughness: 1 })
 );
-outer.rotation.x = -Math.PI / 2; outer.position.y = -0.05; scene.add(outer);
+outer.rotation.x = -Math.PI / 2; outer.position.y = -3; scene.add(outer); // -3 fixes phone z-fighting
 
 /* walls + Apex Arcade sponsor banners */
 const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1f28, roughness: 0.9 });
@@ -494,10 +495,10 @@ function addDouble(x, z, ang, gap) {
   addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 120, 52, 36, 'blue');
 }
 // RALLY JUMPS: 4 doubles spread apart (each launches you to land on the other)
-addDouble(0, -500, 0, 150);                 // north double (N-S)
-addDouble(0, 500, 0, 150);                  // south double (N-S)
-addDouble(-500, 0, Math.PI / 2, 150);       // west double (E-W)
-addDouble(500, 0, Math.PI / 2, 150);        // east double (E-W)
+addDouble(0, -600, 0, 220);                 // north double (N-S)
+addDouble(0, 600, 0, 220);                  // south double (N-S)
+addDouble(-600, 0, Math.PI / 2, 220);       // west double (E-W)
+addDouble(600, 0, Math.PI / 2, 220);        // east double (E-W)
 // Big tabletop in center (black) - standalone feature
 addRamp(0, 0, 0, 160, 80, 44, 'black'); // big tabletop for 4x trucks
 // OUTER FREESTYLE: bigger ramps around the stadium
