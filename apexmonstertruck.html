@@ -141,7 +141,7 @@ const RALLY_EVENTS = [
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
 const GRAV = 24;
-const MAX_FWD = 33, MAX_REV = 12, ACCEL = 17, BRAKE = 28;
+const MAX_FWD = 50, MAX_REV = 15, ACCEL = 26, BRAKE = 32; // faster!
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
 
@@ -504,6 +504,8 @@ addRamp(0, 0, 0, 160, 80, 44, 'black'); // big tabletop for 4x trucks
 // OUTER FREESTYLE: bigger ramps around the stadium
 addRamp(0, 900, 0, 90, 35, 26, 'red');
 addRamp(0, -900, Math.PI, 90, 35, 26, 'blue');
+// MEGA JUMP: super long ramp for high-speed launches
+addRamp(0, 1200, 0, 200, 60, 55, 'red');
 addRamp(900, 0, Math.PI / 2, 90, 35, 26, 'red');
 addRamp(-900, 0, -Math.PI / 2, 90, 35, 26, 'blue');
 addRamp(700, 700, Math.PI * 0.25, 70, 28, 20, 'black');
@@ -972,7 +974,7 @@ function stepTruck(dt) {
       T.vy = (gh - T.y) / Math.max(dt, 1e-4); T.y = gh;
     } else if (T.y > gh + 0.3) {     // drove off the top edge -> airborne
       T.grounded = false; T.airT0 = elapsed; Snd.whoosh();
-      T.vy += 3.5; // lip pop: bigger ramps throw bigger air
+      T.vy += 5.5; // lip pop: bigger ramps + faster speeds = bigger air
     } else { T.y = gh; T.vy = 0; }
   }
   if (!T.grounded) {
