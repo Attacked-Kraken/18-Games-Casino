@@ -132,6 +132,13 @@ import * as THREE from 'three';
 /* ================= config ================= */
 const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
 const RUN_TIME = 120;        // seconds per freestyle run
+/* Rally Career: 3 events with goals - complete all to win the rally */
+const RALLY_EVENTS = [
+  { name: "CRUSH RALLY", goal: "Crush 15 cars", target: 15, type: "crush" },
+  { name: "JUMP RALLY", goal: "Hit 5 big jumps", target: 5, type: "jump" },
+  { name: "FREESTYLE FINALE", goal: "Score 2000 points", target: 2000, type: "score" },
+];
+let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
 const GRAV = 24;
 const MAX_FWD = 33, MAX_REV = 12, ACCEL = 17, BRAKE = 28;
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
@@ -262,13 +269,13 @@ renderer.shadowMap.enabled = !LOWFX;
 if (!LOWFX) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0e13);
+scene.background = new THREE.Color(0x87ceeb); // daytime sky
 scene.fog = new THREE.Fog(0x0b0e13, 260, 700);
 
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 1500);
 
-scene.add(new THREE.HemisphereLight(0xbdd0ff, 0x4a3220, 0.5));
-const sun = new THREE.DirectionalLight(0xffe2b8, 1.55);
+scene.add(new THREE.HemisphereLight(0xbdd8ff, 0x8a6a45, 0.9)); // daytime fill
+const sun = new THREE.DirectionalLight(0xfff2d8, 2.2); // daytime sun
 sun.position.set(160, 220, 80);
 sun.castShadow = !LOWFX;
 sun.shadow.mapSize.set(2048, 2048);
@@ -304,21 +311,8 @@ scene.add(hero); scene.add(hero.target);
   pmrem.dispose();
 }
 
-/* ================= night sky starfield ================= */
-{
-  const starGeo = new THREE.BufferGeometry();
-  const N = 420, pos = new Float32Array(N * 3);
-  for (let i = 0; i < N; i++) {
-    const a = Math.random() * Math.PI * 2, e = Math.random() * Math.PI * 0.42 + 0.06;
-    const r = 1100;
-    pos[i * 3] = Math.cos(a) * Math.cos(e) * r;
-    pos[i * 3 + 1] = Math.sin(e) * r;
-    pos[i * 3 + 2] = Math.sin(a) * Math.cos(e) * r;
-  }
-  starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const starMat = new THREE.PointsMaterial({ color: 0xcfe0ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.8, fog: false });
-  scene.add(new THREE.Points(starGeo, starMat));
-}
+/* ================= daytime sky (no stars) ================= */
+// Daytime: clear blue sky, sun is the key light
 
 /* ================= ground & arena ================= */
 const dirtTex = makeTex(512, 512, (g, w, h) => {
@@ -497,12 +491,12 @@ function addDouble(x, z, ang, gap) {
   // landing (blue, facing opposite)
   addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 60, 26, 18, 'blue');
 }
-// CENTER JAM ZONE: 4 doubles in a cross (jump ramp-to-ramp)
-addDouble(0, 0, 0, 120);                    // north-south double
-addDouble(0, 0, Math.PI / 2, 120);          // east-west double
-addDouble(300, 300, Math.PI * 0.25, 100);   // NE double
-addDouble(-300, -300, Math.PI * 1.25, 100); // SW double
-// Big tabletop in center (black)
+// RALLY JUMPS: 4 doubles spread apart (each launches you to land on the other)
+addDouble(0, -500, 0, 150);                 // north double (N-S)
+addDouble(0, 500, 0, 150);                  // south double (N-S)
+addDouble(-500, 0, Math.PI / 2, 150);       // west double (E-W)
+addDouble(500, 0, Math.PI / 2, 150);        // east double (E-W)
+// Big tabletop in center (black) - standalone feature
 addRamp(0, 0, 0, 80, 40, 22, 'black');
 // OUTER FREESTYLE: bigger ramps around the stadium
 addRamp(0, 900, 0, 90, 35, 26, 'red');
@@ -587,6 +581,23 @@ for (let i = 0; i < 44; i++) {
   placeCar(c); g.position.set(c.x, 0, c.z);
   cars.push(c);
 }
+/* Rally car formations: lines of crushable cars near jumps (like real monster truck rallies) */
+function addCarLine(x, z, ang, n) {
+  for (let i = 0; i < n; i++) {
+    const g = buildCar(carColors[(cars.length + i) % carColors.length]);
+    const cx = x + Math.cos(ang) * i * 5, cz = z + Math.sin(ang) * i * 5;
+    g.rotation.y = ang + Math.PI / 2;
+    g.position.set(cx, 0, cz);
+    scene.add(g);
+    cars.push({ g, x: cx, z: cz, crushed: false, squash: 0, respawn: 0 });
+  }
+}
+// Car lines near each double (crush after landing jumps)
+addCarLine(0, -350, 0, 6);        // north double
+addCarLine(0, 350, Math.PI, 6);   // south double  
+addCarLine(-350, 0, Math.PI / 2, 6); // west double
+addCarLine(350, 0, -Math.PI / 2, 6); // east double
+addCarLine(0, 100, 0, 8);         // center tabletop
 
 /* merge BufferGeometries into one (for tire tread) */
 function mergeGeos(geos) {
@@ -616,6 +627,7 @@ function mergeGeos(geos) {
    exhaust stacks, Apex Arcade bed logos. Styles: 'pickup' or 'suv'. */
 function buildStudioTruck(style, colorHex) {
   const g = new THREE.Group();
+  g.scale.set(4, 4, 4); // 4x bigger trucks
   const wheels = [];
   const stackTips = []; // for exhaust smoke
   const add = (geo, m, x, y, z, cast) => {
@@ -751,7 +763,7 @@ function buildStudioTruck(style, colorHex) {
     add(new THREE.CylinderGeometry(0.15, 0.15, 0.25, 10), darkMat, sx, 5.05, -1.3);
     stackTips.push(new THREE.Vector3(sx, 5.2, -1.3));
   }
-  return { g, wheels, stackTips, tireR: TIRE_R };
+  return { g, wheels, stackTips, tireR: TIRE_R * 4 };
 }
 
 /* ================= the monster truck (player) ================= */
@@ -856,7 +868,7 @@ function puffSmoke(x, y, z) {
 }
 
 /* ================= game state ================= */
-const T = { x: 0, z: 60, hd: Math.PI, sp: 0, y: 0, vy: 0, grounded: true, airT0: 0, steer: 0 };
+const T = { x: 200, z: 200, hd: Math.PI, sp: 0, y: 0, vy: 0, grounded: true, airT0: 0, steer: 0 };
 let score = 0, timeLeft = RUN_TIME, state = 'menu', countT = 0, camShake = 0, elapsed = 0, justLanded = false;
 const input = { gas: false, brake: false, left: false, right: false, steerA: 0, throttleA: 0 };
 
@@ -903,7 +915,7 @@ function resetCars() {
   }
 }
 function resetTruck() {
-  T.x = 0; T.z = 60; T.hd = Math.PI; T.sp = 0; T.y = 0; T.vy = 0;
+  T.x = 200; T.z = 200; T.hd = Math.PI; T.sp = 0; T.y = 0; T.vy = 0;
   T.grounded = true; T.steer = 0; camShake = 0;
 }
 
@@ -1058,7 +1070,16 @@ function stepDust(dt) {
 const camPos = new THREE.Vector3(0, 8, 42);
 function stepCamera(dt) {
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
-  const want = new THREE.Vector3(T.x - fx * 13, T.y + 6.2, T.z - fz * 13);
+  let want;
+  if (state === 'count') {
+    // Intro: overhead view of all trucks
+    let cx = T.x, cz = T.z, n = 1;
+    for (const a of aiTrucks) { cx += a.x; cz += a.z; n++; }
+    cx /= n; cz /= n;
+    want = new THREE.Vector3(cx, 120, cz + 80); // high overhead
+  } else {
+    want = new THREE.Vector3(T.x - fx * 30, T.y + 14, T.z - fz * 30); // 4x trucks: farther camera
+  }
   camPos.lerp(want, Math.min(1, dt * 4.5));
   camera.position.copy(camPos);
   if (camShake > 0.01) {
@@ -1066,7 +1087,14 @@ function stepCamera(dt) {
     camera.position.y += (Math.random() - 0.5) * camShake * 0.7;
     camShake = Math.max(0, camShake - dt * 1.8);
   }
-  camera.lookAt(T.x + fx * 6, T.y + 2.6, T.z + fz * 6);
+  if (state === 'count') {
+    // Look at center of all trucks during intro
+    let cx = T.x, cz = T.z, n = 1;
+    for (const a of aiTrucks) { cx += a.x; cz += a.z; n++; }
+    camera.lookAt(cx / n, 0, cz / n);
+  } else {
+    camera.lookAt(T.x + fx * 6, T.y + 2.6, T.z + fz * 6);
+  }
 }
 
 /* ================= input: keyboard + touch ================= */
@@ -1143,7 +1171,7 @@ function endGame() {
 document.getElementById('playBtn').addEventListener('click', startGame);
 document.getElementById('againBtn').addEventListener('click', startGame);
 
-const COUNT_STEPS = ['3', '2', '1', 'GO!'];
+const COUNT_STEPS = ['3', '2', '1', 'GO RALLY!'];
 function stepCount(dt) {
   countT += dt;
   const i = Math.floor(countT / 0.75);
@@ -1153,8 +1181,8 @@ function stepCount(dt) {
   const label = COUNT_STEPS[i];
   if (countEl.textContent !== label) {
     countEl.textContent = label;
-    Snd.beep(label === 'GO!');
-    if (label === 'GO!') Snd.cheer(false);
+    Snd.beep(label === 'GO RALLY!');
+    if (label === 'GO RALLY!') Snd.cheer(false);
   }
 }
 

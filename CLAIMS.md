@@ -141,6 +141,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Monster truck rally: fixed ramp pile-up (spread doubles), daytime always, 4x bigger trucks, rally car formations, career mode, overhead intro with 'GO RALLY!' | Muse algre141 | monstertruck-rally | | 2026-10-15 20:15 CDT |
 | CLAIMED | Racer landscape law (apexracer.html): portrait CSS rotation, fitLandscape renderer sizing, touch remap, fullscreen+orientation lock — via patch robot | Muse algre141 | racer-landscape-algre141 | | 2026-10-15 20:10 CDT |
 | CLAIMED | Monster Jam stadium arena: 30x bigger (4000x4000), jump-to-jump doubles in center, colored ramps (red/blue/black) with white edges | Muse algre141 | monstertruck-arena | | 2026-10-15 16:20 CDT |
 | CLAIMED | Monster truck hotfix: restore missing landscape-law JS (touch remap, fitLandscape, fullscreen lock) regressed by PR #240 | Muse algre141 | monstertruck-hotfix | | 2026-10-15 14:34 CDT |
