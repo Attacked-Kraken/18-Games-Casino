@@ -494,10 +494,10 @@ function addDouble(x, z, ang, gap) {
   addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 120, 52, 36, 'blue');
 }
 // RALLY JUMPS: 4 doubles spread apart (each launches you to land on the other)
-addDouble(0, -600, 0, 220);                 // north double (N-S)
-addDouble(0, 600, 0, 220);                  // south double (N-S)
-addDouble(-600, 0, Math.PI / 2, 220);       // west double (E-W)
-addDouble(600, 0, Math.PI / 2, 220);        // east double (E-W)
+addDouble(0, -500, 0, 150);                 // north double (N-S)
+addDouble(0, 500, 0, 150);                  // south double (N-S)
+addDouble(-500, 0, Math.PI / 2, 150);       // west double (E-W)
+addDouble(500, 0, Math.PI / 2, 150);        // east double (E-W)
 // Big tabletop in center (black) - standalone feature
 addRamp(0, 0, 0, 160, 80, 44, 'black'); // big tabletop for 4x trucks
 // OUTER FREESTYLE: bigger ramps around the stadium
