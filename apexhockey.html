@@ -248,8 +248,10 @@ function makeIceTexture(){
 }
 
 /* ================= arena: tiered stands, scoreboard, light rigs ================= */
+const OLD_ARENA = [];
 {
   const standMat = new THREE.MeshStandardMaterial({ color:0x27334a, roughness:.9 });
+  // (these simple stands, the score cube and the old crowd are swapped for the shared stadium kit once it loads - see below)
   // 6 stepped rows on all four sides, rising behind the boards
   for(let side=0;side<4;side++){
     for(let k=0;k<6;k++){
@@ -259,7 +261,7 @@ function makeIceTexture(){
       const b = new THREE.Mesh(new THREE.BoxGeometry(side<2?len:3.2, 2.2, side<2?3.2:len), standMat);
       if(side===0) b.position.set(0,y,off); else if(side===1) b.position.set(0,y,-off);
       else if(side===2) b.position.set(off,y,0); else b.position.set(-off,y,0);
-      scene.add(b);
+      scene.add(b); OLD_ARENA.push(b);
     }
   }
   // center-hung scoreboard cube with a glowing score face
@@ -280,9 +282,9 @@ function makeIceTexture(){
   const sbSide = new THREE.MeshBasicMaterial({ map:sbTex });
   const sbDark = new THREE.MeshStandardMaterial({ color:0x0a0e14, roughness:.8 });
   const cube = new THREE.Mesh(new THREE.BoxGeometry(30,16,30), [sbSide,sbSide,sbDark,sbDark,sbSide,sbSide]);
-  cube.position.set(0,52,0); scene.add(cube);
+  cube.position.set(0,52,0); scene.add(cube); OLD_ARENA.push(cube);
   const cable = new THREE.Mesh(new THREE.BoxGeometry(1.6,64,1.6), sbDark);
-  cable.position.set(0,92,0); scene.add(cable);
+  cable.position.set(0,92,0); scene.add(cable); OLD_ARENA.push(cable);
   window.__drawScoreboard = function(){ drawScoreboard(scoreH, scoreA); }; drawScoreboard(0,0);
   // 4 light-rig trusses with fake volumetric cones aimed at the ice
   const coneMat = new THREE.MeshBasicMaterial({ color:0xbfd9ff, transparent:true, opacity:.032,
@@ -352,7 +354,7 @@ const crowd = (function(){
     }
     bodies.instanceMatrix.needsUpdate = true; heads.instanceMatrix.needsUpdate = true;
   }
-  return { update, count: N };
+  return { update, count: N, meshes: [bodies, heads] };
 })();
 
 /* ================= boards + glass ================= */
@@ -578,6 +580,25 @@ function attachAthletes(H){
     i++;
   }
 }
+/* ============ the real arena: shared stadium kit (venues/kit/stadium.js, venues/rink.md) ============
+   An 18,000-seat, 2-level bowl around the boards, with 16,000 moving fans in team colours who stand and cheer on goals,
+   LED ribbons, tunnels, a closed roof with trusses and a ring of lights, and a centre-hung 4-sided scoreboard. The
+   game's own ice, boards and glass stay. Units: this game uses feet (3.2808 per metre). */
+let ARENA = null;
+(async()=>{
+  try{
+    const { buildStadium } = await import('./venues/kit/stadium.js');
+    const st = buildStadium(THREE, { preset:'arena', floor:{ a:30.48, b:12.95, r:8.53 }, setback:2.6, unit:3.2808,
+      home:TEAMS.home.jersey, away:TEAMS.away.jersey });
+    scene.add(st.group);
+    OLD_ARENA.forEach(m=>{ m.visible=false; }); (crowd.meshes||[]).forEach(m=>{ m.visible=false; });
+    if(scene.fog) scene.fog.far = Math.max(scene.fog.far, 900);
+    const oldDraw = window.__drawScoreboard;
+    window.__drawScoreboard = function(){ if(oldDraw) oldDraw(); st.setScore({ home:TEAMS.home.name, away:TEAMS.away.name, hs:scoreH, as:scoreA, clock:'', period:'' }); };
+    window.__drawScoreboard();
+    ARENA = st; window.__arena = st;
+  }catch(e){ /* kit missing: the simple stands and crowd stay */ }
+})();
 (async()=>{
   try{
     const { loadHumans } = await import('./characters/base-human-v2/humans.js');
@@ -1342,6 +1363,7 @@ function tick(now){
   let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
   Mus.setMode(state==='play'?'game':'menu');
   crowd.update(dt); Mus.crowdTick(dt);
+  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(dt); }
   if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
   stateT-=dt;
