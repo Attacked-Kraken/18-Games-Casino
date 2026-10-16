@@ -83,6 +83,7 @@
   <div class="pill" id="scorePill"><small>SCORE</small><b id="score">0</b></div>
   <div class="pill"><small>TIME</small><span id="time">120</span></div>
   <div class="pill"><small>SPEED</small><span id="speed">0</span> mph</div>
+  <div class="pill" id="muteBtn" style="cursor:pointer"><small>SOUND</small><span id="muteIcon">🔊</span></div>
 </div>
 
 <div id="floaters"></div>
@@ -146,7 +147,7 @@ const ACCENT = 0xffb200;
 
 /* ================= audio (all synthesized) ================= */
 const Snd = {
-  ctx:null, eng:null, engGain:null, engFilter:null,
+  ctx:null, eng:null, engGain:null, engFilter:null, muted:false,
   init(){
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -158,13 +159,13 @@ const Snd = {
     this.eng.start();
   },
   engine(sp){ // sp 0..1
-    if (!this.ctx) return;
+    if (!this.ctx || this.muted) { if (this.ctx && this.muted && this.engGain) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); return; }
     this.eng.frequency.setTargetAtTime(48 + sp * 165, this.ctx.currentTime, 0.06);
     this.engFilter.frequency.setTargetAtTime(320 + sp * 900, this.ctx.currentTime, 0.08);
     this.engGain.gain.setTargetAtTime(sp < 0.02 ? 0 : 0.045 + sp * 0.075, this.ctx.currentTime, 0.09);
   },
   tone(f, dur, type, vol, slide){
-    if (!this.ctx) return;
+    if (!this.ctx || this.muted) return;
     const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.type = type || 'square'; o.frequency.setValueAtTime(f, t);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, slide), t + dur);
@@ -172,7 +173,7 @@ const Snd = {
     o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + dur + 0.02);
   },
   noise(dur, freq, vol, type){
-    if (!this.ctx) return;
+    if (!this.ctx || this.muted) return;
     const t = this.ctx.currentTime, len = Math.floor(this.ctx.sampleRate * dur);
     const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate), d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
@@ -189,7 +190,8 @@ const Snd = {
     this.noise(big ? 1.1 : 0.6, 1800, big ? 0.4 : 0.22, 'bandpass');
     this.tone(big ? 520 : 440, 0.35, 'triangle', 0.1, big ? 880 : 660);
   },
-  beep(final){ this.tone(final ? 880 : 440, final ? 0.5 : 0.18, 'square', 0.16); }
+  beep(final){ this.tone(final ? 880 : 440, final ? 0.5 : 0.18, 'square', 0.16); },
+  toggleMute(){ this.muted = !this.muted; const el = document.getElementById('muteIcon'); if (el) el.textContent = this.muted ? '🔇' : '🔊'; return this.muted; }
 };
 
 /* ================= canvas texture helpers ================= */
@@ -1169,6 +1171,7 @@ function endGame() {
   overEl.style.display = 'flex';
 }
 document.getElementById('playBtn').addEventListener('click', startGame);
+document.getElementById('muteBtn').addEventListener('click', () => { Snd.init(); Snd.toggleMute(); });
 document.getElementById('againBtn').addEventListener('click', startGame);
 
 const COUNT_STEPS = ['3', '2', '1', 'GO RALLY!'];
