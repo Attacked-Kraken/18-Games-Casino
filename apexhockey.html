@@ -581,7 +581,7 @@ function attachAthletes(H){
           const ntex=new THREE.CanvasTexture(nc); ntex.colorSpace=THREE.SRGBColorSpace;
           const plate=new THREE.Mesh(new THREE.PlaneGeometry(2.4,1.58),
             new THREE.MeshBasicMaterial({map:ntex, transparent:true}));
-          plate.position.set(-0.74,4.3,0); plate.rotation.y=-Math.PI/2;
+          plate.position.set(-0.60,4.3,0); plate.rotation.y=-Math.PI/2;
           wrap.add(plate);
           // chest crest: gold-ringed APEX shield on the front of the jersey
           const cc=document.createElement('canvas'); cc.width=cc.height=128;
@@ -594,8 +594,26 @@ function attachAthletes(H){
             new THREE.MeshBasicMaterial({map:ctex, transparent:true}));
           crest.position.set(0.68,3.95,0); crest.rotation.y=Math.PI/2;
           wrap.add(crest);
+          // small front number on the chest, beside the crest
+          const fnc=document.createElement('canvas'); fnc.width=fnc.height=96;
+          const fg=fnc.getContext('2d'); fg.font='900 60px system-ui, sans-serif'; fg.textAlign='center'; fg.textBaseline='middle';
+          fg.lineWidth=7; fg.strokeStyle='rgba(0,0,0,.35)'; fg.strokeText(ns,48,52); fg.fillStyle='#ffffff'; fg.fillText(ns,48,52);
+          const ftex=new THREE.CanvasTexture(fnc); ftex.colorSpace=THREE.SRGBColorSpace;
+          const fnum=new THREE.Mesh(new THREE.PlaneGeometry(0.55,0.55),
+            new THREE.MeshBasicMaterial({map:ftex, transparent:true}));
+          fnum.position.set(0.52,4.42,0.36); fnum.rotation.y=Math.PI/2;
+          wrap.add(fnum);
         }catch(e){}
       }
+      // the jersey HANGS: a flared skirt from the waist to mid-thigh + trim hem band
+      try{
+        const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.54,0.66,1.2,12,1,true),
+          new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.8, side:THREE.DoubleSide}));
+        skirt.position.set(0,2.5,0); wrap.add(skirt);
+        const hem=new THREE.Mesh(new THREE.CylinderGeometry(0.665,0.685,0.18,12,1,true),
+          new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8, side:THREE.DoubleSide}));
+        hem.position.set(0,1.97,0); wrap.add(hem);
+      }catch(e){}
       // gloves on the hand bones + blades on the feet (same bone trick as the helmet)
       try{
         a.object.traverse(o=>{
