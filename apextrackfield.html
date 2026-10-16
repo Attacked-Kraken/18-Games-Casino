@@ -475,14 +475,21 @@ if(ln&&s%4===2) this.tone(this.n2f(ln),'square',t,0.16,0.05);
 }
 }
 };
-function firstGesture(){
+function firstGesture(e){
+/* touch controls first: if audio start-up fails (iPhone inside a frame on the Game Development page), the
+   stick + ACTION button must still appear */
+if(!e||e.type!=='keydown') document.body.classList.add('touch');
+try{
 AudioSys.init(); AudioSys.resume(); AudioSys.crowdStart(); AudioSys.initMusic();
 AudioSys.setMusic(document.body.classList.contains('playing')?'game':'menu');
+}catch(err){}
 const mb=document.getElementById('muteBtn');
 if(mb&&!mb._w){ mb._w=1; mb.onclick=e=>{ e.stopPropagation(); AudioSys.init(); AudioSys.initMusic(); AudioSys.toggleMute(); }; }
 document.body.classList.add('touch');
 }
+if(COARSE) document.body.classList.add('touch');   /* phones/tablets: show touch controls from the start */
 window.addEventListener('pointerdown', firstGesture, {passive:true});
+window.addEventListener('touchstart', firstGesture, {passive:true});
 window.addEventListener('keydown', firstGesture);
 const Store={
 get(k,d){ try{ const v=localStorage.getItem('tfapex_'+k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
