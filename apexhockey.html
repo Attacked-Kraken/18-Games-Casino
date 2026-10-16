@@ -543,6 +543,30 @@ function attachAthletes(H){
         outfit:'hoodie',
         cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0x14161a },
       }, ATH_H);
+      // THE UNIFORM IS PAINT, not pieces: extend the rig's own outfit shader with hockey zones
+      try{
+        a.object.traverse(o=>{
+          if(!o.isMesh || !o.material || !o.material.userData || !o.material.userData.U) return;
+          const mat=o.material, orig=mat.onBeforeCompile;
+          const jer=new THREE.Color(s.goalie ? KIT[s.team].goalieTop : KIT[s.team].top);
+          const yok=new THREE.Color(KIT[s.team].bottom);
+          const pan=new THREE.Color(KIT[s.team].bottom).multiplyScalar(0.42);
+          const trm=new THREE.Color(TEAMS[s.team].trim);
+          mat.onBeforeCompile=(sh)=>{
+            orig(sh);
+            sh.uniforms.uJer={value:jer}; sh.uniforms.uYoke={value:yok}; sh.uniforms.uPant={value:pan}; sh.uniforms.uTrm={value:trm};
+            sh.fragmentShader=sh.fragmentShader
+              .replace('uniform vec3 uSkin,uTop,uBot,uJak,uShoe;', 'uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec3 uJer,uYoke,uPant,uTrm;')
+              .replace('vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);',
+`vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);
+  { vec3 p=vB; float ax2=abs(p.x); bool arm2 = ax2>0.27 && p.y>1.28;
+    if(!arm2 && p.y>0.98 && p.y<1.60){ vec3 c=uJer; if(p.y>1.44) c=uYoke; if(p.y<1.08) c=uTrm; if(p.y>1.11 && p.y<1.15) c=uTrm; diffuseColor.rgb=c; }
+    else if(arm2){ if(ax2>=0.68){ diffuseColor.rgb=uYoke; } else { vec3 c=uJer; if(ax2<0.32) c=uYoke; if(ax2>0.46 && ax2<0.51) c=uTrm; if(ax2>0.56 && ax2<0.61) c=uTrm; diffuseColor.rgb=c; } }
+    else if(!arm2 && p.y<=0.98 && p.y>0.13){ vec3 c=uPant; if(p.y<0.55){ c=uJer; if(p.y>0.40 && p.y<0.46) c=uTrm; if(p.y>0.29 && p.y<0.35) c=uTrm; } diffuseColor.rgb=c; } }`);
+          };
+          mat.customProgramCacheKey=()=>'hum2hock';
+        });
+      }catch(e){}
       const wrap = new THREE.Group(); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
       wrap.add(a.object);
@@ -607,86 +631,11 @@ function attachAthletes(H){
           wrap.add(fnum);
         }catch(e){}
       }
-      // uniform system (owner's reference kits): shoulder YOKE + collar in the accent colors
-      try{
-        const yoke=new THREE.Mesh(new THREE.SphereGeometry(0.58,12,8),
-          new THREE.MeshStandardMaterial({color:KIT[s.team].bottom, roughness:.8}));
-        yoke.scale.set(1.12,0.5,0.95); yoke.position.set(0,4.72,0); wrap.add(yoke);
-        const collar=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.07,8,18),
-          new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8}));
-        collar.rotation.x=Math.PI/2; collar.position.set(0.02,5.02,0); wrap.add(collar);
-      }catch(e){}
-      // the jersey HANGS: a flared skirt from the waist to mid-thigh + trim hem band
-      try{
-        const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.54,0.66,1.2,12,1,true),
-          new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.8, side:THREE.DoubleSide}));
-        skirt.position.set(0,2.5,0); wrap.add(skirt);
-        const hem=new THREE.Mesh(new THREE.CylinderGeometry(0.665,0.685,0.18,12,1,true),
-          new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8, side:THREE.DoubleSide}));
-        hem.position.set(0,1.97,0); wrap.add(hem);
-        const hem2=new THREE.Mesh(new THREE.CylinderGeometry(0.632,0.645,0.13,12,1,true),
-          new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8, side:THREE.DoubleSide}));
-        hem2.position.set(0,2.24,0); wrap.add(hem2);
-      }catch(e){}
-      // gloves on the hand bones + blades on the feet (same bone trick as the helmet)
+      // hard equipment only — helmet + cage above, stick, and the skate blades here.
+      // (The uniform itself is painted on by the shader — no bolted-on clothing.)
       try{
         a.object.traverse(o=>{
           if(!o.isBone) return;
-          if(o.name==='pelvis' && !s._beltDone){ s._beltDone=1;
-            const belt=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.36,0.13,10),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8}));
-            belt.scale.setScalar(1/ATH_K); belt.position.y=0.02; o.add(belt);
-          }
-          if(/upperarm/i.test(o.name) && s.num){
-            // shoulder/sleeve number band (number printed twice around the arm)
-            try{
-              const uc=document.createElement('canvas'); uc.width=256; uc.height=96;
-              const ug=uc.getContext('2d'); ug.font='900 64px system-ui, sans-serif'; ug.textAlign='center'; ug.textBaseline='middle';
-              ug.fillStyle='#ffffff'; ug.fillText(String(s.num),64,52); ug.fillText(String(s.num),192,52);
-              const utex=new THREE.CanvasTexture(uc); utex.colorSpace=THREE.SRGBColorSpace;
-              const ub=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.21,0.3,10,1,true),
-                new THREE.MeshBasicMaterial({map:utex, transparent:true, side:THREE.DoubleSide}));
-              { const sd=o.name.endsWith('_r')?-1:1; ub.scale.setScalar(1/ATH_K); ub.rotation.z=sd*Math.PI/2; ub.position.x=sd*0.18; o.add(ub); }
-            }catch(e){}
-          }
-          if(/lowerarm/i.test(o.name)){
-            // sleeve stripes + the glove cuff at the wrist
-            for(const rx of [0.3,0.42]){
-              const ring2=new THREE.Mesh(new THREE.CylinderGeometry(0.165,0.17,0.06,8),
-                new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.85}));
-              { const sd=o.name.endsWith('_r')?-1:1; ring2.scale.setScalar(1/ATH_K); ring2.rotation.z=sd*Math.PI/2; ring2.position.x=sd*rx; o.add(ring2); }
-            }
-            const cuff=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.2,0.24,8),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.8}));
-            { const sd=o.name.endsWith('_r')?-1:1; cuff.scale.setScalar(1/ATH_K); cuff.rotation.z=sd*Math.PI/2; cuff.position.x=sd*0.54; o.add(cuff); }
-          }
-          if(/hand/i.test(o.name) && !/fore|thumb|index|middle|ring|pinky/i.test(o.name)){
-            const gl2=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.54,0.46),
-              new THREE.MeshStandardMaterial({color:KIT[s.team].bottom, roughness:.6}));
-            gl2.scale.setScalar(1/ATH_K); gl2.position.x=(o.name.endsWith('_r')?-0.1:0.1); o.add(gl2);
-          }
-          if(/thigh|upperleg/i.test(o.name)){
-            const th=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.52,0.38),
-              new THREE.MeshStandardMaterial({color:0x14181f, roughness:.85}));
-            th.scale.setScalar(1/ATH_K); th.position.y=0.24; o.add(th);
-            const pst=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.5,0.3),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.85}));
-            pst.scale.setScalar(1/ATH_K); pst.position.set(o.name.endsWith('_r')?-0.2:0.2, 0.24, 0); o.add(pst);
-          }
-          if(/calf/i.test(o.name)){
-            // hockey SOCK over the shin: team tube + two trim stripes + the guard plate in front
-            const sock=new THREE.Mesh(new THREE.CylinderGeometry(0.21,0.235,0.78,8),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.85}));
-            sock.scale.setScalar(1/ATH_K); sock.position.y=0.05; o.add(sock);
-            for(const ry of [0.12,0.26]){
-              const band=new THREE.Mesh(new THREE.CylinderGeometry(0.228,0.232,0.075,8),
-                new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.85}));
-              band.scale.setScalar(1/ATH_K); band.position.y=ry; o.add(band);
-            }
-            const sg=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.46,0.1),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].jersey, roughness:.7}));
-            sg.scale.setScalar(1/ATH_K); sg.position.set(0,0.08,-0.14); o.add(sg);
-          }
           if(/foot/i.test(o.name) && !/toe/i.test(o.name)){
             const bl3=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.07,0.1),
               new THREE.MeshStandardMaterial({color:0xb9c4cc, roughness:.3, metalness:.7}));
@@ -991,7 +940,7 @@ function aiSkater(s,dt){
   if(isControlled){ s._chasing=false; return; } // input-driven
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
   // closest-two chase logic
-  const mates=(isHome?homeSkaters:awaySkaters).filter(m=>m!==puck.owner);
+  const mates=(isHome?homeSkaters:awaySkaters).filter(m=>m!==puck.owner && !(isHome&&m===controlled)); // the user's skater is input-driven — never count him as a chaser
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
   const chasers=mates.slice(0,2);
   const carrier=puck.owner;
@@ -1013,7 +962,13 @@ function aiSkater(s,dt){
     return;
   }
   const oppHas=carrier&&carrier.team!==s.team, weHave=carrier&&carrier.team===s.team;
-  if(!weHave && chasers.includes(s)){
+  let isChaser=chasers.includes(s);
+  if(!carrier && (puck.deadT||0)>1.0){ // DEAD PUCK: it has sat loose too long — the nearest skater on EACH team goes and gets it, no matter the slots
+    const mine=(isHome?homeSkaters:awaySkaters); let nd=1e18;
+    for(const m of mine){ if(m.goalie) continue; const dd=(m.pos.x-puck.pos.x)**2+(m.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
+    if((s.pos.x-puck.pos.x)**2+(s.pos.z-puck.pos.z)**2<=nd+0.01) isChaser=true;
+  }
+  if(!weHave && isChaser){
     const lead=oppHas?0.25:0;
     s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
                  puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
@@ -1173,6 +1128,7 @@ function stepPuck(dt){
     return;
   }
   puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
+  puck.deadT = puck.vel.lengthSq()<9 ? (puck.deadT||0)+dt : 0; // a nearly-stopped loose puck starts the dead-puck clock
   const _ps0=puck.vel.length();
   puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
   if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
@@ -1186,7 +1142,7 @@ function stepPuck(dt){
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
+    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1235,6 +1191,13 @@ function rules(dt){
       whistle('GOALIE COVERS','FACEOFF');
       prevPuckX=px; return;
     }
+  }
+  // DEAD PUCK: loose and nearly stopped for seconds with nobody able to take it — whistle it dead, faceoff
+  if(!puck.owner && (puck.deadT||0)>3.5){
+    const dot=nearestDot(puck.pos.x,puck.pos.z), d=DOTS[dot];
+    pendingFaceoff={x:d[0],z:d[1],label:'DEAD PUCK · FACEOFF'};
+    whistle('DEAD PUCK','FACEOFF');
+    puck.deadT=0; prevPuckX=px; return;
   }
   // safety: puck escaped somehow
   if(Math.abs(px)>HX+6||Math.abs(puck.pos.z)>HZ+6){
