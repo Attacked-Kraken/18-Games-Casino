@@ -1399,7 +1399,7 @@ this.scene.add(cl);
 },
 buildGround(){
 const g=new THREE.Mesh(new THREE.PlaneGeometry(1400,900),
-new THREE.MeshStandardMaterial({color:0x4a7a3f,roughness:1}));
+new THREE.MeshStandardMaterial({color:0x2a2f3a,roughness:1}));
 g.rotation.x=-Math.PI/2; g.position.y=-0.06; g.receiveShadow=true; this.scene.add(g);
 const stripeTex=canvasTex(256,256,(c)=>{
 for(let i=0;i<8;i++){ c.fillStyle=i%2?'#2c7a37':'#359245'; c.fillRect(0,i*32,256,32); }
@@ -1413,7 +1413,7 @@ inf.rotation.x=-Math.PI/2; inf.scale.set(46,34,1); inf.position.set(-42,-0.02,0)
 inf.receiveShadow=true; this.scene.add(inf);
 },
 buildTrack(){
-const half=5.6, pts=[];
+const half=7.5, pts=[];
 for(let s=-118;s<=TRK.total;s+=2) pts.push(s);
 const n=pts.length, posA=new Float32Array(n*2*3), uvA=new Float32Array(n*2*2), idx=[];
 pts.forEach((s,i)=>{
@@ -1427,7 +1427,7 @@ g.setAttribute('position', new THREE.BufferAttribute(posA,3));
 g.setAttribute('uv', new THREE.BufferAttribute(uvA,2));
 g.setIndex(idx); g.computeVertexNormals();
 const tex=canvasTex(256,256,(c)=>{
-c.fillStyle='#2f6fd0'; c.fillRect(0,0,256,256);
+c.fillStyle='#3a7fe0'; c.fillRect(0,0,256,256);
 for(let i=0;i<1400;i++){ c.fillStyle='rgba(0,0,0,'+(Math.random()*0.09)+')';
 c.fillRect(Math.random()*256,Math.random()*256,2,2); }
 for(let i=0;i<600;i++){ c.fillStyle='rgba(255,255,255,'+(Math.random()*0.03)+')';
@@ -1816,7 +1816,7 @@ const want = mode==='run' ? (c.run||c.idle) : mode==='idle' ? c.idle
 : mode==='jump' ? (c.jump||c.run||c.idle) : mode==='throw' ? (c.throw||c.idle)
 : mode==='cheer' ? (c.cheer||c.idle) : c.idle;
 if(want){ try{ rig.h.play(want); }catch(e){} }
-const ts=clamp(0.55+ (speedFrac||0)*0.9, 0.55, 1.7);
+const ts=clamp(0.7+ (speedFrac||0)*1.3, 0.7, 2.4);
 rig.h.ts=ts; if(rig.h.act) rig.h.act.timeScale=ts;
 }
 },
@@ -1830,14 +1830,14 @@ if(rig.mode==='run'){
    counter-swinging arms with bent elbows, forward lean, double-bounce bob. */
 const sf=rig.speedFrac||0;
 const tired=rig.tired||0; // 0=fresh, 1=exhausted
-const a=(0.95*Math.min(1,0.25+sf))*(1-0.35*tired);
+const a=(1.15*Math.min(1,0.3+sf))*(1-0.3*tired);
 // Hip flexion/extension: legs swing opposite, with slight asymmetry for realism
 const hipL=s*a, hipR=c2*a;
-p.legL.rotation.x=hipL; p.legR.rotation.x=hipR;
+p.legL.rotation.x=hipL*1.15; p.legR.rotation.x=hipR*1.15;
 // Knee: bends deeply during swing-through (when hip is flexing forward), extends at strike
 const swingL=Math.max(0,Math.sin(rig.phase+0.6)), swingR=Math.max(0,Math.sin(rig.phase+Math.PI+0.6));
-p.shinL.rotation.x=(0.25+swingL*1.9)*Math.min(1,a*1.4);
-p.shinR.rotation.x=(0.25+swingR*1.9)*Math.min(1,a*1.4);
+p.shinL.rotation.x=(0.15+swingL*2.2)*Math.min(1,a*1.5);
+p.shinR.rotation.x=(0.15+swingR*2.2)*Math.min(1,a*1.5);
 // Arms: opposite to legs, elbows bent ~90deg, hands pump hip-to-chest
 const armA=a*0.85*(1-0.3*tired);
 p.armL.rotation.x=c2*armA; p.armR.rotation.x=s*armA;
@@ -1847,7 +1847,7 @@ p.foreL.rotation.x=-1.15-0.25*Math.max(0,c2); p.foreR.rotation.x=-1.15-0.25*Math
 p.hips.rotation.x=(0.10+0.14*sf)*(1+0.8*tired);
 p.hips.rotation.y=(s-c2)*0.06*(1-tired*0.5);
 // Vertical: double-bounce per cycle (flight + stance), lower when tired
-p.hips.position.y=0.98+Math.abs(Math.cos(rig.phase))*0.055*(1+0.3*sf)-tired*0.06;
+p.hips.position.y=0.98+Math.abs(Math.cos(rig.phase))*0.075*(1+0.4*sf)-tired*0.07;
 // Head: steady, slight forward tilt, drops when exhausted
 if(p.head){ p.head.rotation.x=0.08+tired*0.35; }
 }else if(rig.mode==='jump'){
