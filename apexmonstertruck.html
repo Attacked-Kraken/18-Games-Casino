@@ -458,6 +458,100 @@ function stepCrowd() {
   crowdMesh.instanceMatrix.needsUpdate = true;
 }
 
+/* ================= walking crowds, trees, fun stuff ================= */
+// Walking people on the concourse (instanced, cheap)
+const walkers = [];
+let walkerMesh = null;
+{
+  const wGeo = new THREE.BoxGeometry(0.6, 1.2, 0.4);
+  wGeo.translate(0, 0.6, 0);
+  const wMat = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+  const N = 120;
+  walkerMesh = new THREE.InstancedMesh(wGeo, wMat, N);
+  walkerMesh.frustumCulled = false;
+  const palette = [0xff5a5a, 0xffb200, 0x37c26a, 0x2e7fd9, 0xe8e8e8, 0x9a4fd9, 0xff7ab8, 0x33d6d6];
+  const col = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
+  const R = ARENA + 30; // concourse ring
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + Math.random() * 0.1;
+    const r = R + (Math.random() - 0.5) * 20;
+    walkers.push({ a, r, spd: (0.02 + Math.random() * 0.03) * (Math.random() < 0.5 ? 1 : -1), phase: Math.random() * 6.28 });
+    col.setHex(palette[(Math.random() * palette.length) | 0]);
+    walkerMesh.setColorAt(i, col);
+  }
+  walkerMesh.instanceColor.needsUpdate = true;
+  scene.add(walkerMesh);
+}
+function stepWalkers(dt) {
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
+  for (let i = 0; i < walkers.length; i++) {
+    const w = walkers[i];
+    w.a += w.spd * dt;
+    const x = Math.cos(w.a) * w.r, z = Math.sin(w.a) * w.r;
+    const bob = Math.abs(Math.sin(w.a * 20 + w.phase)) * 0.15; // walking bob
+    e.set(0, -w.a + Math.PI / 2, 0); q.setFromEuler(e);
+    v.set(x, bob, z); m4.compose(v, q, s);
+    walkerMesh.setMatrixAt(i, m4);
+  }
+  walkerMesh.instanceMatrix.needsUpdate = true;
+}
+
+// Trees around the outside (instanced cones + cylinders)
+{
+  const trunkGeo = new THREE.CylinderGeometry(0.8, 1.2, 6, 6);
+  const leafGeo = new THREE.ConeGeometry(5, 12, 7);
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 1 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a2d, roughness: 1 });
+  const NT = 60;
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, NT);
+  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, NT);
+  trunks.frustumCulled = leaves.frustumCulled = false;
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
+  const R = ARENA + 80;
+  for (let i = 0; i < NT; i++) {
+    const a = (i / NT) * Math.PI * 2;
+    const r = R + Math.random() * 100;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const sc = 1.5 + Math.random() * 1.5; // 4x world needs bigger trees
+    s.set(sc, sc, sc);
+    v.set(x, 3 * sc, z); m4.compose(v, q, s); trunks.setMatrixAt(i, m4);
+    v.set(x, (6 + 6) * sc, z); m4.compose(v, q, s); leaves.setMatrixAt(i, m4);
+    s.set(1, 1, 1);
+  }
+  trunks.instanceMatrix.needsUpdate = leaves.instanceMatrix.needsUpdate = true;
+  scene.add(trunks); scene.add(leaves);
+}
+
+// Colorful flags on poles (fun stuff)
+{
+  const poleGeo = new THREE.CylinderGeometry(0.3, 0.3, 25, 6);
+  const flagGeo = new THREE.PlaneGeometry(8, 5);
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.6, metalness: 0.5 });
+  const flagColors = [0xff0000, 0x00ff00, 0x0000ff, 0xffff00, 0xff00ff, 0x00ffff];
+  const R = ARENA - 50;
+  window._flags = [];
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    const x = Math.cos(a) * R, z = Math.sin(a) * R;
+    const pole = new THREE.Mesh(poleGeo, poleMat);
+    pole.position.set(x, 12.5, z);
+    scene.add(pole);
+    const flag = new THREE.Mesh(flagGeo, new THREE.MeshStandardMaterial({ 
+      color: flagColors[i % flagColors.length], 
+      side: THREE.DoubleSide, roughness: 0.8 
+    }));
+    flag.position.set(x + 4, 22, z);
+    scene.add(flag);
+    window._flags.push({ mesh: flag, phase: Math.random() * 6.28, x });
+  }
+}
+function stepFlags(t) {
+  for (const f of window._flags) {
+    f.mesh.rotation.y = Math.sin(t * 2 + f.phase) * 0.4; // wave
+    f.mesh.position.x = f.x + 4 + Math.sin(t * 3 + f.phase) * 0.5;
+  }
+}
+
 /* ================= ramps: Monster Jam stadium style =================
    Jump-to-jump doubles in the middle, freestyle ramps around.
    Colors: red/blue/black with white edges (like the refs). */
@@ -1197,7 +1291,7 @@ const clock = new THREE.Clock();
 function frame() {
   requestAnimationFrame(frame);
   const dt = Math.min(0.05, clock.getDelta());
-  elapsed += dt; crowdTime += dt; stepCrowd();
+  elapsed += dt; crowdTime += dt; stepCrowd(); stepWalkers(dt); stepFlags(elapsed);
   if (state === 'count') stepCount(dt);
   else if (state === 'play') {
     timeLeft -= dt;
