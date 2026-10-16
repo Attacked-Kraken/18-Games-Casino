@@ -5,6 +5,53 @@ commits, and open PRs BEFORE starting a task. If a task is CLAIMED or DONE,
 do not redo it. Claim your work before you build, and sign it when it ships,
 so nobody double-works.
 
+## FAMILY RULES (owner's law, 2026-10-15)
+
+Every Game Development title follows **FAMILY-RULES.md**: no gambling/casino/real-money content, no real
+brands or players, no personal info, chat, ads, tracking or internet, content fits the game's age, keep
+save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
+Finished games are handed to the Apex Arcade reviewer by telling the owner.
+
+## PROOF RULE (owner, 2026-10-15)
+
+**Never say "fixed", "done", "live" or "verified" for anything the owner can SEE unless you have looked at the
+result yourself.** Your browser screenshots often fail - that is not an excuse to guess. After your merge,
+open the game-checks branch report (link in GAME CHECK below) and look at YOUR game's pictures:
+- If the picture shows the problem is gone, say so and say "seen in game check".
+- If it still shows the problem, or the report hasn't updated yet, say exactly that: "merged, NOT yet seen".
+- If the owner says it's still wrong, believe the owner's screenshot over your own code. Find the real cause
+  (measure it - log positions/rotations, test the actual numbers) instead of re-shaping the part you guessed.
+Reporting what you meant to change as if it were what the owner will see is the #1 complaint. Don't.
+
+## BIG FILES - the patch robot (owner, 2026-10-15)
+
+Your GitHub tool can't send a whole big file (over ~150 KB, like apexracer.html). Never try - use the
+**patch robot**. It runs on GitHub in about a minute, on whatever branch you push to (your own branch):
+
+- **Change a big file:** make a normal unified diff (git diff format, a few unchanged lines of context around
+  each change) against the CURRENT version of the file on your branch. Push it as
+  `patches/<your-muse-name>-<what>.patch`. The robot applies it to the big file and deletes the patch.
+  It is strict: if the diff doesn't fit the file exactly, it leaves `patches/<same-name>.result.txt` saying
+  why - pull the latest file, redo the diff, push the .patch again (delete the .result.txt).
+- **Create or replace a whole big file:** split it into parts under 100 KB and push
+  `bigfiles/<path/to/file.html>/part-001`, `part-002`, ... then a file `bigfiles/<path/to/file.html>/DONE`
+  containing the number of parts. The robot joins them into `<path/to/file.html>` and deletes the folder.
+- **Read a big file your tool can't open:** push `pieces/request-<anything>.txt` containing just the file
+  path (e.g. `apexracer.html`). The robot cuts it into `pieces/<path>/part-001.txt`, `part-002.txt`, ...
+  (90 KB each). Read them in order. Delete the `pieces/` folder from your branch before you merge.
+
+After the robot's commit lands, pull your branch before you push anything else to it.
+
+## GAME CHECK (owner, 2026-10-15)
+
+After every merge to main, the **Game check** robot plays every Game Development title like a phone
+(sideways and upright) and posts pictures + results to the **game-checks** branch:
+https://github.com/Attacked-Kraken/18-Games-Casino/tree/game-checks
+After you merge, open it and look at YOUR game. 🔴 FAIL must be fixed (black/blank screen, missing
+files, casino words, rotate sign). 🟡 CHECK means look closer. When you add a game or change how it
+starts, update its start buttons in `tools/game-check/games.json` so the robot reaches real gameplay.
+Don't edit the game-checks branch by hand - the robot overwrites it.
+
 ## WHERE NEW GAMES GO (owner's rule, 2026-10-14)
 
 New built games are GAME DEVELOPMENT titles. They go on the Game
@@ -20,6 +67,58 @@ reached from the red GAME DEVELOPMENT circle on the entrance.
   lists its 19 games only.
 - Game-dev pages never link to the casino side. A game's back button
   returns to `sports.html`.
+
+## ASSETS RULE (owner, 2026-10-14)
+
+**Use the best models: the most realistic FREE 3D models and assets
+available.** If a quality free model exists for something, use it —
+do not ship blocky placeholder geometry for players, vehicles, props
+or environments when a better free asset exists. Rules of the road:
+
+- **Approved sources ONLY — the full list is ASSET-LAW.md (the law of
+  creation):** Quaternius, Kenney, Poly Pizza (CC0 items), Poly Haven,
+  ambientCG, KayKit (free packs), OpenGameArt (CC0 items only). CC0
+  means free to use even in a paid app. NOT approved: Sketchfab,
+  Mixamo, TurboSquid, and anything ripped, leaked or paid.
+  **NO COPYRIGHTS: every asset must be copyright-free (CC0 / public
+  domain). If it carries a copyright, it does not go in — no
+  exceptions.**
+- **Realism is the target** — correct proportions, real materials and
+  textures over stylized stand-ins, wherever the game is on screen.
+  **Models and clothing must match the game and the style of play it
+  mimics** (hockey players wear hockey gear, basketball players wear
+  basketball kits, drivers wear race suits). Generic outfits on
+  athletes are a defect.
+- **Store-ready budget still applies** (see STORE-READY.md): pick the
+  best-looking model that stays inside the mobile performance budget —
+  sane poly counts, textures <= 2048px, GLB format, animations
+  included when the asset needs to move. Best-looking AND fast; if a
+  model is gorgeous but sinks a phone, optimize it or pick the next
+  best.
+- When you swap in a better model, say so in your PR: what asset,
+  from where, what license.
+
+## MUSIC & SOUND LAW (owner, 2026-10-14)
+
+**Every game needs home-page music, in-game music, and game sounds.**
+Menu music (calm, looped), a distinct in-game track (energy matched
+to the game), and sound effects for the core actions. Original audio
+only — procedural WebAudio is the house method (no files, no
+copyright possible; the no-copyrights law covers sound too). Mute
+toggle on every game, persisted; audio starts on first interaction.
+A game is not DONE without all three. Full text: ASSET-LAW.md
+Part II.
+
+## LANDSCAPE LAW (owner, 2026-10-15)
+**PORTRAIT RULE (owner, 2026-10-15 — read before touching landscape):** the landscape presentation is built INTO each sports game file only. It must NEVER be injected from a shared script (engage.js loads on the entrance + every casino page — a landscape block there rotated the owner's entrance sideways and broke the app, removed in the portrait fix). The entrance (index.html), the dev hub (sports.html), and ALL casino pages are NOT games and stay PORTRAIT, exactly as designed.
+
+**Every game starts in landscape, locked, already loaded. There is
+no "rotate your device" sign and no portrait state.** In portrait the
+stage presents rotated to landscape, the renderer sizes to the
+landscape box, touch input is remapped to the rotated frame, and the
+first tap requests fullscreen + an orientation lock where the
+platform allows it. If your game shows a turn sign, it breaks the
+law. Full text: STORE-READY.md, checklist item 2.
 
 ## STORE-READY RULE (owner, 2026-10-14)
 
@@ -42,9 +141,41 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Monster truck retest: fix spawn inside ramp (move to clear area), 31/31 logic tests pass | Muse algre141 | monstertruck-retest-fix | | 2026-10-15 19:45 CDT |
+| CLAIMED | Monster Jam stadium arena: 30x bigger (4000x4000), jump-to-jump doubles in center, colored ramps (red/blue/black) with white edges | Muse algre141 | monstertruck-arena | | 2026-10-15 16:20 CDT |
+| CLAIMED | Monster truck hotfix: restore missing landscape-law JS (touch remap, fitLandscape, fullscreen lock) regressed by PR #240 | Muse algre141 | monstertruck-hotfix | | 2026-10-15 14:34 CDT |
+| DONE | Monster truck: studio-style redesign (big aggressive tires, wide -offset, lift-kit suspension, exhaust stacks with smoke on gas, Apex Arcade bed logos) + AI truck roster (different colors, pickup + SUV styles) | Muse algre141 | monstertruck-redesign-v2 | PR #240 | 2026-10-15 14:10 CDT |
 
+| CLAIMED | Exotic Racer Club mockup-faithful rebuild (apexracer.html): replace CC0 low-poly body with smooth procedural supercar matching the approved fleet mockup (quad round headlights, sculpted bumper, sleek curves); all 8 cars | Muse Cruz.inc | apexracer-mockup | — | 2026-10-15 12:35 CDT |
+| DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
+| DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
+| DONE | Track & Field toggle-stick controls: replaced STRIDE L/R buttons with stick + ACTION button | Muse Modern Plus | trackfield-stick | PR #212, main 1b931f8b | 2026-10-15 11:05 CDT |
+| DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
+| DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
+| CLAIMED | Soccer clean kits (apexsoccer.html): fix white shader-stripe artifact on dark shorts — COMETS + GK shorts to white | Muse Dash | soccer-players-dash2 | - | 2026-10-15 14:52 CDT |
+| DONE | PROOF RULE posted: nothing the owner can see is 'fixed/done/live' until seen in the game check pictures; believe the owner's screenshot over your code | Claude (owner's reviewer) | proof-rule-claude | this PR | 2026-10-15 14:45 CDT |
+| DONE | F1 car fixes (apexf1.html): (1) cars sat sideways on diagonal stretches - the facing formula was mirrored; now aimed down the track + turned by headAngle (fixes AI cars too); (2) the 'stick' poking out sideways was the sidepods, rotated a quarter turn - now run along the car beside the cockpit. Verified with game check pictures | Claude (owner's reviewer) | f1-car-facing-claude | this PR | 2026-10-15 14:40 CDT |
+| DONE | Soccer start screen + camera tracking (apexsoccer.html): compact start card so KICK OFF is visible without scrolling in portrait-rotated mode; cameras follow the ball sideline to sideline (kx 0.62->0.95, wider clamp) | Muse Dash | soccer-startcam-dash | PR #238, main c49bc760 | 2026-10-15 13:55 CDT |
+| DONE | Soccer gameplay fixes (apexsoccer.html): fix phantom fouls causing weird midfield free kicks, fix touch buttons cut off in portrait-rotated mode, better camera views | Muse Dash | soccer-fixes-dash | PR #230, main 47bb44fb | 2026-10-15 13:20 CDT |
+| DONE | Patch robot for BIG FILES (tools/patch-robot + workflow): Muses push a small patches/*.patch, or bigfiles/<path>/part-NNN + DONE, or pieces/request-*.txt; the robot applies / joins / cuts on the same branch. Strict: a patch only goes in if it fits exactly, else patches/<name>.result.txt says why | Claude (owner's reviewer) | patch-robot-claude | this PR | 2026-10-15 13:05 CDT |
+| DONE | Game checker: tools/game-check plays every Game Development title like a phone (sideways + upright) after each merge to main and posts a picture report to the game-checks branch. FAIL = black/blank screen, missing files, casino words, rotate sign; CHECK = menu off-screen, no gameplay, frozen, script errors | Claude (owner's reviewer) | game-checker-claude | this PR | 2026-10-15 11:55 CDT |
+| DONE | Track & Field daylight restyle (apextrackfield.html): bright daytime look like reference photos — blue sky, blue track, starting blocks, lane numbers | Muse Modern Plus | trackfield-daylight | PR #196, main 0b6a7086 | 2026-10-15 08:25 CDT |
+| DONE | Exotic Racer Club car visual rebuild (apexracer.html): 8 distinct modern supercars, integrated aero, dark tinted glass, no floating parts; drift + traffic avoidance verified; screenshot-verified | Muse Cruz.inc | apexracer-cars2 | #207 | 2026-10-15 09:45 CDT |
+| DONE | Monster truck realism pass 2: sculpted arch fenders, deep-dish rims + lug nuts, hero spotlight, rim light, grille surround + valance, mud — 28/28 checks, screenshots verified | Muse algre141 | mt-realism3 | PR #189, main a1a855bb | 2026-10-15 07:46 CDT |
+| DONE | Exotic Racer Club realism upgrade (apexracer.html): realistic supercar bodies/wheels/liveries, richer trackside detail, Apex Arcade branding, menu + in-game music, friend-code multiplayer, sports.html registration | Muse Cruz.inc | apexracer-ship | PR #162, main 2e842ce4 | 2026-10-15 00:34 CDT |
+| DONE | Soccer athlete-load hardening (apexsoccer.html): preload athlete GLBs + retry initAthletes 3x with backoff so the realistic athletes reliably replace the fallback | Muse Dash | soccer-athload-dash | PR #191, main e85a54c8 | 2026-10-15 07:50 CDT |
+| DONE | Monster truck realism pass + thumbsticks: image-based lighting, textured paint/tires/dirt with tire tracks, suspension/drivetrain detail, vignette, dual analog sticks (left steers, right drives/brakes) | Muse algre141 | mt-realism2 | PR #177, main d84a26f | 2026-10-15 02:05 CDT (stamped by the arcade reviewer for Muse after GitHub 403s) |
+| DONE | Track & Field view fix (apextrackfield.html): landscape race view is black/broken, fix camera framing + scene lighting so athletes and track are clearly visible | Muse Modern Plus | trackfield-viewfix | PR #187 | 2026-10-15 07:35 CDT |
+| DONE | Soccer realism + stadium fix (apexsoccer.html): stands set back off the pitch, goals with nets + goalies, realistic proportioned players/kits, Apex Arcade branding kept | Muse Dash | soccer-realism-dash | PR #174, main 5f812a71 | 2026-10-15 01:27 CDT |
+| DONE | Track & Field retest #1 (apextrackfield.html): full playthrough, career crash fix, PLAYER NICKNAME law, Okafor->Osei rename, UE5 polish (rim light + vignette); 489/489 tests, lag + store-ready re-verified | Muse Modern Plus | trackfield-retest1 | PR #166, main 946a4686 | 2026-10-15 01:13 CDT |
+| DONE | Monster truck mega upgrade: 3x arena, 4800-fan grandstands, 10 bigger ramps, detailed truck, 28/28 checks | Muse algre141 | mt-mega-arena2 | PR #159, main 4f366aa5 | 2026-10-15 00:14 CDT |
+| DONE | Monster truck retest round 3: full loop, 27/27 checks, night-sky starfield | Muse algre141 | mt-retest3-fix | PR #153, main 069ba8db | 2026-10-14 23:52 CDT |
+| DONE | F1 store-ready: back button to sports.html, sports.html registration (tab+panel+gcard) | Muse main | f1-store-ready2 | PR #147, main 88130284 | 2026-10-14 23:25 CDT |
+| DONE | Track & Field 3D rebuild (apextrackfield.html v2): Three.js realistic graphics, Quaternius athletes, 3D stadium; career/tournament/free-play + Apex Games pageantry; music & sound law (menu/in-game music, mute); tested bugs/lag/store-ready | Muse Modern Plus | apextrackfield-3d | PR #155 (b15512bd) + v2.1 PR #158 (7f5b1e8f) | 2026-10-15 00:12 CDT |
+| DONE | Monster truck STORE-READY pass: phone light path (pixel ratio <=1.5, shadows off on touch), offline audit | Muse algre141 | mt-store-ready | PR #131, main f0ff2047 | 2026-10-14 23:10 CDT |
+| DONE | Monster truck retest round 2: retest with key-hold driving, 19/19 logic checks, game-over ground-snap fix | Muse algre141 | monstertruck-retest-fix | PR #118, main ebec37aa | 2026-10-14 22:46 CDT |
 | DONE | F1 UE5 visual pass + retest fixes: ACES tone mapping, sky dome, tire smoke/dust particles, asphalt grain, vignette, P20 HUD fix, landscape touch layout | Muse main | f1-visual-retest-batch | PR #112, main 7d44478d | 2026-10-14 22:32 CDT |
 | DONE | F1 mobile pass: fix touch/HUD overlaps (minimap+ERS bar), bigger DRS/ERS/PIT/CAM buttons, rotate hint, safe-area insets | Muse main | f1-mobile-pass | PR #102, main 714dfbfb | 2026-10-14 22:12 CDT |
 | DONE | F1 playtest fix batch: desktop DRS/PIT/CAM keys, 5s start no-contact grace, SKIP QUALI truly P12, grid-accurate HUD position, bigger minimap dots, keyboard docs | Muse main | f1-playtest-fixes | PR #92, main cf525630 | 2026-10-14 21:58 CDT |
@@ -79,4 +210,18 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Soccer (apexsoccer) human-look pass: 1.82m athletes, soccer kits, real ball size, yellow/red cards + sendings-off, penalty kicks | Muse algre141 | soccer-ship | PR #96, main f623b7bb | 2026-10-14 22:05 CDT |
 | DONE | Post the owner's quality standard on the repo: 'retest' = play it, find issues, fix them; UE5-style quality bar; mobile-app graphics always (into STORE-READY.md) | Muse main (casino) | quality-std | PR #105, main 7d99021f | 2026-10-14 22:17 CDT |
 | DONE | Soccer (apexsoccer) retest: sent-off player handling fixes, ACES tone mapping, PCFSoft shadows, 2048 shadow maps | Muse algre141 | soccer-retest-ship | PR #108, main 858da064 | 2026-10-14 22:18 CDT |
-| CLAIMED | Hockey retest fixes (owner playtest): sticks held like crutches/in the air, skaters stand upright and walk instead of skating, stands read empty on a phone - fix stick pose (blade on ice), hockey stance + skating motion, crowd presence | Muse main (casino) | hockey-look-fix | - | 2026-10-14 22:37 CDT |
+| DONE | Hockey retest fixes (owner playtest): sticks planted on the ice (were hand-bone crutches in the air), helmets + long-sleeve kits (players look like players), crouch/skating stance with stride rock, crowd made people-sized and bright (stands read full) - retested by playing, screenshots before/after | Muse main (casino) | hockey-look-fix | PR #119, main aa9f21ff | 2026-10-14 22:47 CDT |
+| DONE | Post the owner's assets rule on the repo: use the best realistic FREE models/assets (into CLAIMS.md + STORE-READY.md) | Muse main (casino) | assets-rule | PR #124, main 27ff4764 | 2026-10-14 22:51 CDT |
+| DONE | README: state plainly that every Game Development title is a full 3D game (and refresh the sports title list) | Muse main (casino) | readme-3d-line | PR #129, main f0bcaf69 | 2026-10-14 23:02 CDT |
+| DONE | Post the LAW OF CREATION: the owner's approved free-asset sources list (Quaternius/Kenney/Poly Pizza/Poly Haven/ambientCG/KayKit/OpenGameArt-CC0) + realistic style rule (models and clothing match the game being mimicked) - ASSET-LAW.md + CLAIMS.md + STORE-READY.md | Muse main (casino) | asset-law | PR #134, main e51e6496 | 2026-10-14 23:09 CDT |
+| DONE | Add the owner's no-copyrights clause to the law of creation (ASSET-LAW.md + CLAIMS.md) | Muse main (casino) | nocopyright-clause | PR #143, main 44a2147e | 2026-10-14 23:18 CDT |
+| DONE | Soccer Retest #1: ball ground indicator, mobile TEAM camera default | Muse algre141 | soccer-r1-ship | PR #116, main 173732e4 | 2026-10-14 22:35 CDT |
+| DONE | Baseball Retest #1: UE5 visual polish (ACES tone mapping, PCFSoft shadows, sRGB) | Muse algre141 | baseball-r1-ship | PR #137, main 72268e26 | 2026-10-14 23:05 CDT |
+| DONE | Add the owner's music & sound law: every game needs home-page music, in-game music and game sounds (ASSET-LAW.md + CLAIMS.md + STORE-READY.md) | Muse main (casino) | music-law | PR #150, main 2f3c587a | 2026-10-14 23:38 CDT |
+| DONE | Hockey gameplay retest fixes (owner playtest #2): passes connect (receiver skates to the pass, stick release, no self-re-grab, interceptions need a slow puck), real teammate support (slot/far lane/points/trailer), pace calmed (cap 24, shots 82 max, calmer AI), crowd verified full from CLOSE view | Muse main (casino) | hockey-gameplay-fix | PR #172, main 65fff891 | 2026-10-15 01:22 CDT |
+| DONE | Landscape-start law + build: every game starts in landscape, locked, already loaded - NO rotate sign. Law posted (PR #181); built into hockey/baseball/soccer/flight (PR #182: rotated stage in portrait, landscape-sized renderer, remapped touch, fullscreen+lock on first tap); 27Hoops already rotated via its shell + lock added, file restored in PR #183 after another worker removed it in a 'handoff' (see owner decision pending). F1/monstertruck/trackfield/racer follow under the law with their owners | Muse main (casino) | landscape-start | PR #182 + #183 | 2026-10-15 02:05 CDT |
+| DONE | 27Hoops REMOVED from this repo (owner-confirmed 2026-10-15): the game was handed off to the Game-Development-Apex-Arcade repo (removal commit 6ff3d65 by another worker); Muse main's safety restore (PR #183/#185) reverted, hoops27.html + icon deleted, and the dev hub's basketball tab/panel/card removed so nothing links to a dead file. If the other repo goes live, the hub card can return pointing at it | Muse main (casino) | hoops-removed-final | - | 2026-10-15 02:10 CDT |
+| DONE | TEAM NOTICE (owner, 2026-10-15): the Game-Development-Apex-Arcade repo is DELETED. Everything is built in THIS repo (18-Games-Casino) and every bot pulls work from here - this repo is the single source of truth. Do not build in side repos or hand games off elsewhere | Muse main (casino) | note-consolidation | - | 2026-10-15 08:08 CDT |
+| DONE | Baseball Retest #3: CPU pitch camera fix, CPU whiff range, mound z-fighting | Muse algre141 | baseball-r3-ship | PR #208, main 36dd88b9 | 2026-10-15 10:15 CDT |
+| DONE | Fix: owner's home-screen icon opened the STALE Netlify copy (pre-split build, no GAME DEVELOPMENT button). Deployed the full current main site (172 files) to Netlify - his existing icon now serves the current app on the same origin, vault/saves untouched. Verified live: gdTab present, sports.html + games 200 (Netlify deploy 6ad106b9) | Muse main (casino) | claim-netlify-mirror (PR #216) + stamp-netlify-mirror | - | 2026-10-15 12:03 CDT |
+| DONE | Portrait fix: LANDSCAPE LAW injection REMOVED from engage.js (it had rotated the entrance + all casino pages since a7008f6). Fix PR #222 (engage.js cleaned, XP/wheel untouched, syntax-checked; PORTRAIT RULE posted in CLAIMS.md + STORE-READY.md). Harness-verified portrait: entrance upright, red circle tappable -> sports.html, Velvet 21 upright, zero errors. Live-verified BOTH origins (Pages + Netlify deploy 6ad10ac6): engage.js carries no orientation lock; gdTab present | Muse main (casino) | claim-portrait-fix (PR #221) + fix PR #222 + stamp-portrait-fix | 222 | 2026-10-15 12:19 CDT |
