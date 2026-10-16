@@ -597,7 +597,7 @@ function attachAthletes(H){
 `vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);
   { vec3 p=vB; float ax2=abs(p.x); bool arm2 = ax2>0.27 && p.y>1.28;
     if(!arm2 && p.y>0.98 && p.y<1.60){ vec3 c=uJer; if(p.y>1.44) c=uYoke; if(p.y<1.08) c=uTrm; if(p.y>1.11 && p.y<1.15) c=uTrm; diffuseColor.rgb=c;
-      if(p.z<-0.045){ vec2 puv=vec2(p.x/0.44+0.5,(p.y-0.99)/0.52); if(puv.x>0.01&&puv.x<0.99&&puv.y>0.01&&puv.y<0.99){ vec4 pt=texture2D(uPlate,puv); diffuseColor.rgb=mix(diffuseColor.rgb,pt.rgb,pt.a); } }
+      if(p.z<-0.045){ vec2 puv=vec2(0.5-p.x/0.44,(p.y-0.99)/0.52); // flipped: the back is viewed from behind — un-flipped, the print reads mirrored if(puv.x>0.01&&puv.x<0.99&&puv.y>0.01&&puv.y<0.99){ vec4 pt=texture2D(uPlate,puv); diffuseColor.rgb=mix(diffuseColor.rgb,pt.rgb,pt.a); } }
       if(p.z>0.045){ vec2 cuv=vec2(p.x/0.26+0.5,(p.y-1.13)/0.26); if(cuv.x>0.01&&cuv.x<0.99&&cuv.y>0.01&&cuv.y<0.99){ vec4 ct=texture2D(uCrest,cuv); diffuseColor.rgb=mix(diffuseColor.rgb,ct.rgb,ct.a); }
         vec2 nuv=vec2((p.x-0.115)/0.115+0.5,(p.y-1.295)/0.135); if(nuv.x>0.01&&nuv.x<0.99&&nuv.y>0.01&&nuv.y<0.99){ vec4 nt=texture2D(uNum,nuv); diffuseColor.rgb=mix(diffuseColor.rgb,nt.rgb,nt.a); } } }
     else if(arm2){ if(ax2>=0.68){ diffuseColor.rgb=uYoke; } else { vec3 c=uJer; if(ax2<0.32) c=uYoke; if(ax2>0.46 && ax2<0.51) c=uTrm; if(ax2>0.56 && ax2<0.61) c=uTrm; diffuseColor.rgb=c; } }
@@ -623,7 +623,7 @@ function attachAthletes(H){
       if(headB){
         // a real hockey helmet: elongated shell riding low, ear covers, back flap, full cage with a chin bar
         const helmMat = new THREE.MeshStandardMaterial({ color: TEAMS[s.team].helmet, roughness:.28 });
-        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.54, 14, 10, 0, Math.PI*2, 0, Math.PI*0.66), helmMat);
+        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.54, 14, 10, 0, Math.PI*2, 0, Math.PI*0.58), helmMat);
         helm.scale.set(0.98/ATH_K, 0.88/ATH_K, 1.14/ATH_K); helm.position.set(0, 0.05, 0.03);
         headB.add(helm);
         for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.07,10), helmMat);
