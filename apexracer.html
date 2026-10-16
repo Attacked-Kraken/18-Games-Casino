@@ -141,6 +141,9 @@
   @media (max-height:520px) { #logo { max-height:36vh; } #mbtns .wide { padding:13px; } #spd { width:140px; height:140px; } #pos { font-size:36px; } #mini { width:104px; height:104px; } #bCam,#bPause,#bMute { top:calc(118px + var(--sat)); } }
   /* rec1 2026-10-10 (owner: totals box): short landscape phones keep the totals card in the free top-left corner under Back */
   @media (orientation:landscape) and (max-height:520px) { #recW { position:fixed; left:calc(10px + var(--sal)); top:calc(56px + var(--sat)); margin:0; z-index:21; } }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
 </style>
 </head>
 <body>
@@ -1949,7 +1952,9 @@ bind('bBrk', 'brake');
 const STK = { id: null };
 function stickReset() { K.sx = 0; K.sy = 0; STK.id = null; $('knob').style.transform = ''; }
 function stickMove(e) { const r = $('stick').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R0 = r.width * 0.36;
-  let dx = (e.clientX - cx) / R0, dy = (e.clientY - cy) / R0; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
+  let dx = (e.clientX - cx) / R0, dy = (e.clientY - cy) / R0;
+  if (window.innerHeight > window.innerWidth) { const _t = dx; dx = dy; dy = -_t; } // LANDSCAPE LAW: rotated stage remap
+  const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
   K.sx = Math.abs(dx) < 0.1 ? 0 : (dx - Math.sign(dx) * 0.1) / 0.9; K.sy = -dy; $('knob').style.transform = `translate(${dx * R0}px,${dy * R0}px)`; }
 $('stick').addEventListener('pointerdown', (e) => { e.preventDefault(); STK.id = e.pointerId; try { $('stick').setPointerCapture(e.pointerId); } catch (x) {} audioInit(); stickMove(e); });
 $('stick').addEventListener('pointermove', (e) => { if (e.pointerId === STK.id) { e.preventDefault(); stickMove(e); } });
@@ -1970,9 +1975,11 @@ $('mQ').onclick = () => { S.q = { ultra: 'high', high: 'fast', fast: 'ultra' }[S
 /* ------------------------------------------------------------------ loop */
 function resize() {
   const dpr = window.devicePixelRatio || 1, base = S.q === 'ultra' ? Math.min(dpr, 2) : S.q === 'high' ? Math.min(dpr, 2) : 1.5, pr = Math.max(0.6, base * (G.qScale || 1));
-  renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false); post.on = S.q !== 'fast'; renderer.shadowMap.enabled = S.q !== 'fast';
-  if (post.on) post.resize(Math.floor(innerWidth * pr), Math.floor(innerHeight * pr));
-  cam.aspect = gcam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); gcam.fov = innerWidth < innerHeight ? 50 : 36; gcam.updateProjectionMatrix();
+  let _w = innerWidth, _h = innerHeight;
+  if (_h > _w) { const _t = _w; _w = _h; _h = _t; } /* LANDSCAPE LAW: always size to the landscape box */
+  renderer.setPixelRatio(pr); renderer.setSize(_w, _h, false); post.on = S.q !== 'fast'; renderer.shadowMap.enabled = S.q !== 'fast';
+  if (post.on) post.resize(Math.floor(_w * pr), Math.floor(_h * pr));
+  cam.aspect = gcam.aspect = _w / _h; cam.updateProjectionMatrix(); gcam.fov = _w < _h ? 50 : 36; gcam.updateProjectionMatrix();
 }
 function updateGarage(dt, now) {
   if (gOrb.auto && !gOrb.drag) gOrb.th += dt * 0.18;
@@ -2012,6 +2019,8 @@ resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
 requestAnimationFrame(frame);
 window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
 </script>
 </body>
 </html>
