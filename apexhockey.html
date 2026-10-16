@@ -607,6 +607,15 @@ function attachAthletes(H){
           wrap.add(fnum);
         }catch(e){}
       }
+      // uniform system (owner's reference kits): shoulder YOKE + collar in the accent colors
+      try{
+        const yoke=new THREE.Mesh(new THREE.SphereGeometry(0.58,12,8),
+          new THREE.MeshStandardMaterial({color:KIT[s.team].bottom, roughness:.8}));
+        yoke.scale.set(1.12,0.5,0.95); yoke.position.set(0,4.72,0); wrap.add(yoke);
+        const collar=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.07,8,18),
+          new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.8}));
+        collar.rotation.x=Math.PI/2; collar.position.set(0.02,5.02,0); wrap.add(collar);
+      }catch(e){}
       // the jersey HANGS: a flared skirt from the waist to mid-thigh + trim hem band
       try{
         const skirt=new THREE.Mesh(new THREE.CylinderGeometry(0.54,0.66,1.2,12,1,true),
@@ -653,13 +662,16 @@ function attachAthletes(H){
           }
           if(/hand/i.test(o.name) && !/fore|thumb|index|middle|ring|pinky/i.test(o.name)){
             const gl2=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.54,0.46),
-              new THREE.MeshStandardMaterial({color:TEAMS[s.team].helmet, roughness:.6}));
+              new THREE.MeshStandardMaterial({color:KIT[s.team].bottom, roughness:.6}));
             gl2.scale.setScalar(1/ATH_K); gl2.position.x=(o.name.endsWith('_r')?-0.1:0.1); o.add(gl2);
           }
           if(/thigh|upperleg/i.test(o.name)){
             const th=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.52,0.38),
               new THREE.MeshStandardMaterial({color:0x14181f, roughness:.85}));
             th.scale.setScalar(1/ATH_K); th.position.y=0.24; o.add(th);
+            const pst=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.5,0.3),
+              new THREE.MeshStandardMaterial({color:TEAMS[s.team].trim, roughness:.85}));
+            pst.scale.setScalar(1/ATH_K); pst.position.set(o.name.endsWith('_r')?-0.2:0.2, 0.24, 0); o.add(pst);
           }
           if(/calf/i.test(o.name)){
             // hockey SOCK over the shin: team tube + two trim stripes + the guard plate in front
