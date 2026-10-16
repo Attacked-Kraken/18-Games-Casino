@@ -6,6 +6,8 @@
 // game's start buttons (games.json), photographs gameplay twice a moment apart, then opens it upright.
 // FAIL  = black/blank screen, page didn't load, missing files, casino words, a "rotate your device" sign
 // CHECK = menu runs off the screen, never got into gameplay, gameplay frozen, script errors
+// FIX LIST = the owner's own complaints, each turned into a test in fixes/<game>.mjs (see fixes/README.md).
+//            A fix that isn't done yet is a FAIL. Fix tests are never deleted, so a fixed thing can't quietly break again.
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
@@ -120,6 +122,36 @@ for (const g of games) {
   else if (pressed === 0) r.check.push("Couldn't press any start button - add/fix this game's steps in games.json");
   else if (changed(menu, play) < 0.04) r.check.push('Screen barely changed after pressing start - did gameplay begin?');
   if (pressed && changed(play, play2) < 0.003) r.check.push('Gameplay picture frozen for 1.5 seconds');
+  // ---------- the owner's FIX LIST for this game (tested while the game is running, sideways)
+  r.fixes = [];
+  const fixFile = path.join(here, 'fixes', slug + '.mjs');
+  if (fs.existsSync(fixFile)) {
+    let list = [];
+    try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
+    catch (e) { r.check.push('Fix list file has an error: ' + String(e.message).slice(0, 120)); }
+    const h = {
+      wait: ms => page.waitForTimeout(ms),
+      tap: (x, y) => page.touchscreen.tap(x, y),
+      press: sel => pressStep(page, sel),
+      shot: async () => measure(await page.screenshot({ type: 'jpeg', quality: 62 })),
+      changed,
+      eval: (fn, arg) => page.evaluate(fn, arg),
+      page,
+    };
+    for (const fx of list) {
+      let ok = false, note = '';
+      try {
+        const res = await Promise.race([fx.test(page, h), new Promise((_, rej) => setTimeout(() => rej(new Error('took over 30 s')), 30000))]);
+        ok = res === true; note = typeof res === 'string' ? res : '';
+      } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note });
+      if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+    }
+    if (r.fixes.length) {
+      const fixJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
+      fs.writeFileSync(path.join(out, 'img', slug + '-4-fixes.jpg'), fixJpg); r.img.fixes = 'img/' + slug + '-4-fixes.jpg';
+    }
+  }
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
   if (f1.rotate || f2.rotate) r.fail.push(`Shows a rotate sign sideways: "${f1.rotate || f2.rotate}"`);
@@ -161,6 +193,10 @@ for (const r of results.slice().sort((a, b) => order[a.status] - order[b.status]
   for (const x of r.fail) md += `- 🔴 ${x}\n`;
   for (const x of r.check) md += `- 🟡 ${x}\n`;
   if (r.status === 'PASS') md += `- Loaded, started and moving. Nothing flagged.\n`;
+  if (r.fixes && r.fixes.length) {
+    md += `\n**Owner's fix list** (${r.fixes.filter(f => f.ok).length} of ${r.fixes.length} done):\n`;
+    for (const f of r.fixes) md += `- ${f.ok ? '✅' : '❌'} ${f.ask}${!f.ok && f.note ? ' — ' + f.note : ''}\n`;
+  }
   md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">\n\n`;
 }
 md += `---\nMade by tools/game-check (runs after every merge to main). To check your game again, merge to main ` +
