@@ -1,0 +1,34 @@
+--- racer_orig.html	2026-10-15 20:09:53.068929506 -0500
++++ racer_new.html	2026-10-15 20:10:08.370929801 -0500
+@@ -116,8 +116,9 @@
+   #bCam { right:calc(12px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:20px; }
+   #bPause { right:calc(64px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:18px; }
+   #bMute { right:calc(116px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:18px; }
+-  #rotate { position:fixed; left:0; right:0; bottom:calc(10px + var(--sab)); z-index:70; display:none; justify-content:center; pointer-events:none; }
+-  #rotate span { background:#000a; border:1px solid #19e6ff66; color:#fff; font:800 13px system-ui; padding:10px 16px; border-radius:14px; }
++  /* LANDSCAPE LAW (Muse Modern Plus): start in landscape, locked, already loaded - no rotate sign.
++     In portrait the whole stage presents rotated to landscape from the first frame. */
++  @media (orientation:portrait){ body{ position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+   #fCode { font:900 20px/1.5 ui-monospace,monospace; letter-spacing:.06em; text-align:center; color:#fff; text-shadow:0 0 22px #19e6ff; margin:4px 0; word-break:break-all; }
+   /* ---------- result / pause / lobby / loading */
+   #result, #pause, #lobby, #mp, #loading { display:none; align-items:center; justify-content:center; padding:16px; background:#05030cbb; z-index:40; }
+@@ -146,7 +147,6 @@
+ <body>
+ <canvas id="c"></canvas>
+ <button id="back" type="button">‹ Back</button>
+-<div id="rotate"><span>🔄 Rotate your device for the full view — still playable like this</span></div>
+ 
+ <div id="menu" class="scr">
+   <svg id="logo" viewBox="0 0 380 128" role="img" aria-label="Exotic Racer Club">
+@@ -2005,9 +2005,8 @@
+ $('mSnd').onclick = () => toggleMute();
+ addEventListener('resize', resize);
+ document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'race') pause(); if (AU.ctx) AU.ctx.suspend(); } else if (AU.ctx) AU.ctx.resume(); });
+-let rotState = '';
+-function rotTick() { const s = (innerWidth < innerHeight && (G.mode === 'race' || G.mode === 'garage')) ? 'flex' : 'none'; if (s !== rotState) { rotState = s; $('rotate').style.display = s; } }
+-setInterval(rotTick, 500);
++/* Landscape law: first tap requests fullscreen + landscape lock where allowed (Android). iOS ignores the lock; the rotated stage carries it there. */
++addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
+ resize(); toMenu();
+ { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
+ requestAnimationFrame(frame);
