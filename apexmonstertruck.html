@@ -83,7 +83,7 @@
   <div class="pill" id="scorePill"><small>SCORE</small><b id="score">0</b></div>
   <div class="pill"><small>TIME</small><span id="time">120</span></div>
   <div class="pill"><small>SPEED</small><span id="speed">0</span> mph</div>
-  <div class="pill" id="muteBtn" style="cursor:pointer"><small>SOUND</small><span id="muteIcon">🔊</span></div>
+  <div class="pill" id="muteBtn" style="cursor:pointer;pointer-events:auto"><small>SOUND</small><span id="muteIcon">🔊</span></div>
 </div>
 
 <div id="floaters"></div>
@@ -488,10 +488,10 @@ function addRamp(x, z, ang, len, wid, h, color) {
 // Helper: double jump (launch ramp -> gap -> landing ramp)
 function addDouble(x, z, ang, gap) {
   const dx = Math.sin(ang), dz = Math.cos(ang);
-  // launch (red)
-  addRamp(x - dx * gap / 2, z - dz * gap / 2, ang, 60, 26, 18, 'red');
-  // landing (blue, facing opposite)
-  addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 60, 26, 18, 'blue');
+  // launch (red) - big for 4x trucks
+  addRamp(x - dx * gap / 2, z - dz * gap / 2, ang, 120, 52, 36, 'red');
+  // landing (blue, facing opposite) - big for 4x trucks
+  addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 120, 52, 36, 'blue');
 }
 // RALLY JUMPS: 4 doubles spread apart (each launches you to land on the other)
 addDouble(0, -500, 0, 150);                 // north double (N-S)
@@ -499,7 +499,7 @@ addDouble(0, 500, 0, 150);                  // south double (N-S)
 addDouble(-500, 0, Math.PI / 2, 150);       // west double (E-W)
 addDouble(500, 0, Math.PI / 2, 150);        // east double (E-W)
 // Big tabletop in center (black) - standalone feature
-addRamp(0, 0, 0, 80, 40, 22, 'black');
+addRamp(0, 0, 0, 160, 80, 44, 'black'); // big tabletop for 4x trucks
 // OUTER FREESTYLE: bigger ramps around the stadium
 addRamp(0, 900, 0, 90, 35, 26, 'red');
 addRamp(0, -900, Math.PI, 90, 35, 26, 'blue');
