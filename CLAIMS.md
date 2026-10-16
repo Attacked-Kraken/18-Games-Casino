@@ -178,7 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
-| CLAIMED | Soccer title fix (apexsoccer.html): casino wording in page title -> Apex Arcade (game-check FAIL) | Muse Dash | soccer-title-dash | - | 2026-10-16 13:32 CDT |
+| DONE | Soccer title fix (apexsoccer.html): casino wording in page title -> Apex Arcade (game-check FAIL) | Muse Dash | soccer-title-dash | PR #343, main e776d9a2 | 2026-10-16 13:35 CDT |
 | DONE | Shared athlete kit (characters/base-human-v2/gear.js, hockeyKit) + STUDIO-STANDARD.md + TOOLS.md + game check blocks bad pull requests | Claude (arcade reviewer) | athlete-kit-claude | PR #340, main 31c5b40 | 2026-10-16 12:30 CDT |
 | CLAIMED | Hockey players -> shared athlete kit (owner's model sheet). PR #341 ready, WAITING OWNER 👍 on MODELS.md 'Hockey skater' | Claude (arcade reviewer) | hockey-kit-claude | PR #341 | 2026-10-16 12:30 CDT |
 | DONE | Hockey invisible players fix: broken uniform shader comment; game check now FAILS broken shaders | Claude (arcade reviewer) | hockey-shader-fix-claude | | 2026-10-16 11:20 CDT |
