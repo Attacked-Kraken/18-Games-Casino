@@ -74,4 +74,21 @@ export default [
       });
     },
   },
+  {
+    id: 'real-arena-venue-sheet',
+    ask: 'Build a nice stadium, a big crowd in the stadium (venues/rink.md)',
+    async test(page, h) {
+      return h.eval(() => {
+        const A = window.__arena; if (!A) return 'the stadium kit did not load (old box stands still showing)';
+        const r = A.report(), out = [];
+        if (r.fans < 12000) out.push('only ' + r.fans + ' fans (sheet: 12,000+)');
+        if (r.tiers < 2) out.push('one level of seats (sheet: lower + upper bowl)');
+        if (r.scoreboard !== 'center-hung') out.push('no centre-hung scoreboard');
+        if (!r.roof) out.push('no roof');
+        if (r.drawCalls > 20) out.push('arena too heavy for phones: ' + r.drawCalls + ' draw calls');
+        return out.length ? out.join('; ') : true;
+      });
+    },
+  },
 ];
+
