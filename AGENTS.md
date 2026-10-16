@@ -24,3 +24,6 @@ push a small `patches/*.patch` diff, or `bigfiles/` parts, or ask for `pieces/` 
 
 **Proof rule:** never tell the owner something he can see is "fixed", "done" or "live" until you have seen it in
 the game check pictures (CLAIMS.md "PROOF RULE"). If you haven't seen it, say "merged, NOT yet seen".
+
+**Fix list (say it once):** every complaint from the owner becomes a test in `tools/game-check/fixes/<game>.mjs`
+FIRST, then you fix it. Only "fixed" when the game check shows ✅ next to his words (CLAIMS.md "FIX LIST").

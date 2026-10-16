@@ -8,6 +8,6 @@
     { "file": "apexmonstertruck.html", "name": "Apex Monster Truck",  "start": ["#playBtn"] },
     { "file": "apexracer.html",        "name": "Exotic Racer Club",   "start": ["#mRace", "#plist .pl", "#shGo"] },
     { "file": "apexsoccer.html",       "name": "Apex Soccer",         "start": ["#btnStart"] },
-    { "file": "apextrackfield.html",   "name": "Apex Track & Field",  "start": ["#bFree", "#bCardStart"] }
+    { "file": "apextrackfield.html",   "name": "Apex Track & Field",  "start": ["#bFree", "#grid button", "#bCardStart"] }
   ]
 }
