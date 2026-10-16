@@ -120,77 +120,13 @@
 </nav>
 
 
-<section class="panel on" id="p-hockey" style="--acc:#57c8ff">
-  <img src="apexhockey-icon.svg" alt="Apex Ice Hockey" data-emoji="&#127954;">
-  <h2>Apex Ice Hockey</h2>
-  <p class="tag">3D ice hockey: 5-on-5, real rules &mdash; periods, faceoffs, offside, golden-goal overtime.</p>
-  <div class="chip">IN DEVELOPMENT &middot; CAREER MODE LIVE</div>
-  <p class="news"><b>Latest build:</b> Career Mode &mdash; a six-team league, standings, playoffs and championships, plus friend codes: build your star, share your code, play their All-Stars.</p>
-  <a class="play" href="apexhockey.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-f1" style="--acc:#d21f26">
-  <img src="apexf1-icon.svg" alt="Apex F1 Racing" data-emoji="&#127937;">
-  <h2>Apex F1 Racing</h2>
-  <p class="tag">3D Formula racing: real rules &mdash; qualifying, DRS, tire strategy, dynamic weather, 20 drivers.</p>
-  <div class="chip">IN DEVELOPMENT &middot; CAREER + TOURNAMENT LIVE</div>
-  <p class="news"><b>Latest build:</b> five real circuits, career mode with seasons and standings, 3-race tournaments, friend codes, and rivals who cheat. Presented by Apex Arcade.</p>
-  <a class="play" href="apexf1.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-baseball" style="--acc:#ff5347">
-  <img src="apexbaseball-icon.svg" alt="Apex Baseball" data-emoji="&#9918;">
-  <h2>Apex Baseball</h2>
-  <p class="tag">3D baseball with the real rulebook: balls and strikes, force outs, walk-offs. 3-inning arcade games.</p>
-  <div class="chip">IN DEVELOPMENT</div>
-  <p class="news"><b>Latest build:</b> real 3D athletes in team kits, camera views from broadcast-wide to behind-the-player, and a crowd that erupts on home runs.</p>
-  <a class="play" href="apexbaseball.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-soccer" style="--acc:#37d67a">
-  <img src="apexsoccer-icon.svg" alt="Apex Soccer" data-emoji="&#9917;">
-  <h2>Apex Soccer</h2>
-  <p class="tag">3D soccer: 7-on-7, throw-ins, corners, offside and two halves on a striped pitch.</p>
-  <div class="chip">IN DEVELOPMENT</div>
-  <p class="news"><b>Latest build:</b> a wider FULL camera that frames both goals, and a keeper who can finally be beaten in the corners.</p>
-  <a class="play" href="apexsoccer.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-flight" style="--acc:#4db2ff">
-  <img src="apexflight-icon.svg" alt="Apex Flight" data-emoji="&#9992;">
-  <h2>Apex Flight</h2>
-  <p class="tag">3D flight simulator: take off, fly the pattern and grease the landing. Free flight + landing challenge.</p>
-  <div class="chip">IN DEVELOPMENT</div>
-  <p class="news"><b>Latest build:</b> retuned takeoff and a real stall model &mdash; keep the nose honest on climb-out.</p>
-  <a class="play" href="apexflight.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-monstertruck" style="--acc:#ffb200">
-  <img src="apexmonstertruck-icon.svg" alt="Apex Monster Truck" data-emoji="&#128665;">
-  <h2>Apex Monster Truck</h2>
-  <p class="tag">3D monster truck freestyle: crush cars, launch ramps and chase the high score in a packed dirt arena.</p>
-  <div class="chip">IN DEVELOPMENT &middot; NEW</div>
-  <p class="news"><b>Latest build:</b> v1 &mdash; a full freestyle arena with 12 crushable cars, 6 launch ramps, a synthesized engine roar and Apex Arcade banners ringing the stadium.</p>
-  <a class="play" href="apexmonstertruck.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-trackfield" style="--acc:#ffd23f">
-  <img src="apextrackfield-icon.svg" alt="Apex Track &amp; Field" data-emoji="&#127939;">
-  <h2>Apex Track &amp; Field</h2>
-  <p class="tag">College track &amp; field: 17 events &mdash; sprints, hurdles, distance, jumps and throws &mdash; in a floodlit Apex Arcade stadium.</p>
-  <div class="chip">IN DEVELOPMENT &middot; NEW</div>
-  <p class="news"><b>Latest build:</b> v1 &mdash; full championship mode across every event, stride-tap sprinting, timed hurdles, measured jumps and throws, AI rivals and friend codes, all presented by Apex Arcade.</p>
-  <a class="play" href="apextrackfield.html">PLAY</a>
-</section>
 
-<section class="panel" id="p-apexracer" style="--acc:#ff6a00">
-  <img src="apexracer-icon.svg" alt="Exotic Racer Club" data-emoji="&#127950;">
-  <h2>Exotic Racer Club</h2>
-  <p class="tag">3D exotic supercar racing: 8 exotics, deep tuning, a showroom garage and 100 world circuits.</p>
-  <div class="chip">IN DEVELOPMENT &middot; NEW</div>
-  <p class="news"><b>Latest build:</b> realistic supercars &mdash; sculpted bodies, detailed wheels and brakes, liveries &mdash; Apex Arcade trackside branding, menu and in-race music, and friend codes: share your code, race their car. Presented by Apex Arcade.</p>
-  <a class="play" href="apexracer.html">PLAY</a>
-</section>
 
 
 <h3 class="roster">LIVE LINEUP</h3>
@@ -245,9 +181,14 @@
 <footer>APEX ARCADE GAME DEVELOPMENT<br>SPORTS TITLES IN ACTIVE DEVELOPMENT</footer>
 
 <script>
+/* owner 2026-10-16: no big game panel at the top any more - a tab jumps straight to that game in the LIVE LINEUP */
 function selectGame(id) {
   document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('on', t.dataset.p === id); });
-  document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === id); });
+  var row = document.querySelector('.lrow[data-id="' + id + '"]');
+  if (row) {
+    var top = row.getBoundingClientRect().top + window.scrollY - (document.getElementById('tabs').offsetHeight + 8);
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
 }
 document.getElementById('tabs').addEventListener('click', function (e) {
   var b = e.target.closest('.tab'); if (b) selectGame(b.dataset.p);
@@ -256,7 +197,6 @@ document.getElementById('grid').addEventListener('click', function (e) {
   if (e.target.closest('.go')) return;
   var c = e.target.closest('.gcard'); if (!c) return;
   selectGame(c.dataset.p);
-  document.getElementById('tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 /* LIVE LINEUP: built from the ALL TITLES cards, so registering a game there is still all it takes */
 (function () {
