@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Model shelf</title>
+<style>
+  :root{--bg:#0f1218;--card:#181c25;--line:#2a3040;--ink:#f2f4f8;--dim:#9aa3b5;--blue:#2563eb;--ok:#16a34a;--wait:#d97706;--bad:#dc2626}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  header{padding:max(16px,env(safe-area-inset-top)) 16px 8px} h1{margin:0;font-size:24px} header p{margin:4px 0 0;color:var(--dim);font-size:14px}
+  .filters{display:flex;gap:8px;padding:8px 16px;overflow-x:auto} .filters button{flex:0 0 auto;border:1px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px}
+  .filters button.on{background:var(--blue);border-color:var(--blue)}
+  main{padding:8px 16px 40px;display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px} .card h2{margin:0;font-size:18px}
+  .tag{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap} .WAITING{background:#d9770633;color:#fbbf24} .LOCKED{background:#16a34a33;color:#4ade80} .NO{background:#dc262633;color:#f87171}
+  .meta{color:var(--dim);font-size:13px} .notes{font-size:14px;color:#c9cfdb;max-height:4.2em;overflow:hidden;position:relative} .notes.open{max-height:none}
+  .more{background:none;border:0;color:#7aa7ff;padding:0;font:inherit;font-size:13px;text-align:left}
+  .opts{display:flex;flex-wrap:wrap;gap:6px} .opts button{border:1px solid var(--line);background:#ffffff0d;color:var(--ink);border-radius:10px;padding:7px 11px;font:inherit;font-size:13px}
+  .opts button.on{background:#2563eb55;border-color:var(--blue)}
+  .go{display:block;text-align:center;background:var(--blue);color:#fff;text-decoration:none;font-weight:700;border-radius:12px;padding:12px}
+  .empty{color:var(--dim);padding:20px 16px}
+</style>
+</head><body>
+<header><h1>Model shelf</h1><p>Every 3D player, venue and vehicle in MODELS.md. Tap <b>Open in 3D</b> to spin it, zoom and try the options. Give 👍 / 👎 on your phone board.</p></header>
+<div class="filters" id="filters"></div>
+<main id="list"><div class="empty">Loading MODELS.md…</div></main>
+<script>
+/* Reads ../MODELS.md from this same site (no outside internet) and lists every model with a live 3D link.
+   Options are extra settings a model understands (its .mjs reads them from the page address). */
+const OPTIONS = {
+  'hockey-skater': [ ['Away team', 'team=away'], ['Goalie', 'goalie=1'], ['Kids cage', 'cage=1'], ['Skating', 'stride=0.8'], ['Female', 'g=f'], ['Skin 1', 'skin=0'], ['Skin 5', 'skin=4'] ],
+  'hockey-arena': [ ['Fans cheering', 'cheer=1'] ],
+};
+const list = document.getElementById('list'), filters = document.getElementById('filters');
+let all = [], show = 'all';
+function parse(md) {
+  const out = []; let cur = null, fence = false;
+  for (const line of md.split(/\r?\n/)) {
+    if (line.trim().startsWith('```')) { fence = !fence; cur = null; continue; }
+    if (fence) continue;
+    const h = line.trim().match(/^##\s*MODEL\s*:\s*(.+)$/i); if (h) { cur = { name: h[1].trim() }; out.push(cur); continue; }
+    if (line.startsWith('## ')) { cur = null; continue; }
+    const kv = line.match(/^\s*[-*]\s*([A-Za-z][A-Za-z ]{0,24}):\s*(.*)$/); if (cur && kv) cur[kv[1].trim().toLowerCase()] = kv[2].trim();
+  }
+  return out.filter((m) => m.file || m.view);
+}
+function viewOf(m) { const v = m.view && /(model|venue)-viewer\.html/.test(m.view) ? m.view.replace(/^.*?tools\//, '') : 'model-viewer.html?m=' + encodeURIComponent(m.file || '') + (m.anims ? '&anims=' + encodeURIComponent(m.anims) : '') + '&look=' + (m.look || 'studio');
+  return v + (/[?&]name=/.test(v) ? '' : '&name=' + encodeURIComponent(m.name)); }
+function statusOf(m) { const s = (m.status || '').toUpperCase(); return s.startsWith('LOCKED') ? 'LOCKED' : s.startsWith('NO') ? 'NO' : 'WAITING'; }
+const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function render() {
+  const items = all.filter((m) => show === 'all' || statusOf(m) === show);
+  list.innerHTML = items.length ? '' : '<div class="empty">Nothing here yet.</div>';
+  for (const m of items) {
+    const st = statusOf(m), card = document.createElement('div'); card.className = 'card'; const chosen = new Set();
+    card.innerHTML = `<div class="top"><h2>${esc(m.name)}</h2><span class="tag ${st}">${st === 'WAITING' ? 'WAITING FOR YOU' : st}</span></div>
+      <div class="meta">${esc(m.game || '')} · version ${esc(m.version || '1')} · by ${esc(m.by || '?')}</div>
+      <div class="notes">${esc(m.notes || '')}</div><button class="more">More…</button><div class="opts"></div><a class="go" href="#">Open in 3D</a>`;
+    const go = card.querySelector('.go'), opts = card.querySelector('.opts');
+    const link = () => { go.href = viewOf(m) + [...chosen].map((o) => '&' + o).join(''); };
+    for (const [label, q] of OPTIONS[m.id] || []) { const b = document.createElement('button'); b.textContent = label;
+      b.onclick = () => { chosen.has(q) ? chosen.delete(q) : chosen.add(q); b.classList.toggle('on'); link(); }; opts.appendChild(b); }
+    if (!opts.children.length) opts.remove();
+    card.querySelector('.more').onclick = (e) => { card.querySelector('.notes').classList.toggle('open'); e.target.textContent = e.target.textContent === 'More…' ? 'Less' : 'More…'; };
+    link(); list.appendChild(card);
+  }
+}
+for (const [k, label] of [['all', 'All'], ['WAITING', 'Waiting for you'], ['LOCKED', 'Approved'], ['NO', 'Turned down']]) {
+  const b = document.createElement('button'); b.textContent = label; b.className = k === 'all' ? 'on' : '';
+  b.onclick = () => { show = k; filters.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); render(); }; filters.appendChild(b); }
+fetch('../MODELS.md', { cache: 'no-store' }).then((r) => r.text()).then((t) => { all = parse(t).reverse(); render(); })
+  .catch(() => { list.innerHTML = '<div class="empty">Could not read MODELS.md.</div>'; });
+</script>
+</body></html>
