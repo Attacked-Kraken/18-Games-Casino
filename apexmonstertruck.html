@@ -141,7 +141,7 @@ const RALLY_EVENTS = [
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
 const GRAV = 24;
-const MAX_FWD = 50, MAX_REV = 15, ACCEL = 26, BRAKE = 32; // faster!
+const MAX_FWD = 70, MAX_REV = 18, ACCEL = 34, BRAKE = 36; // even faster!
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
 
@@ -1083,7 +1083,7 @@ function stepCamera(dt) {
     cx /= n; cz /= n;
     want = new THREE.Vector3(cx, 120, cz + 80); // high overhead
   } else {
-    want = new THREE.Vector3(T.x - fx * 48, T.y + 24, T.z - fz * 48); // out and up: see where you're going
+    want = new THREE.Vector3(T.x - fx * 51, T.y + 30, T.z - fz * 51); // 51 back, 30 up
   }
   camPos.lerp(want, Math.min(1, dt * 6)); // more responsive follow
   camera.position.copy(camPos);

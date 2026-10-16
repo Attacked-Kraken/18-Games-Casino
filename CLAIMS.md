@@ -151,6 +151,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Monster truck faster (70 top speed) + camera 51 back 30 up | Muse algre141 | monstertruck-faster | | 2026-10-16 01:02 CDT |
 | CLAIMED | Monster truck speed + mega jump ramp (faster truck, long ramp for big air) | Muse algre141 | monstertruck-speed | | 2026-10-16 00:55 CDT |
 | CLAIMED | Monster truck z-fighting fix: outer.y -3, camera near 0.5, dirt anisotropy | Muse algre141 | monstertruck-zfight | | 2026-10-15 23:30 CDT |
 | CLAIMED | Monster truck fixes: mute button clickable, bigger ramps for 4x trucks | Muse algre141 | monstertruck-fixes2 | | 2026-10-15 22:15 CDT |
