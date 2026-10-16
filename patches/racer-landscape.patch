@@ -1,5 +1,5 @@
---- racer_orig.html	2026-10-15 20:09:53.068929506 -0500
-+++ racer_new.html	2026-10-15 20:10:08.370929801 -0500
+--- a/apexracer.html
++++ b/apexracer.html
 @@ -116,8 +116,9 @@
    #bCam { right:calc(12px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:20px; }
    #bPause { right:calc(64px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:18px; }
