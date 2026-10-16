@@ -15,6 +15,7 @@ export async function buildHockeySkater() {
     : { jersey: 0x1f6fd6, yoke: 0x123c73, trim: 0xffffff, pants: 0x0d1a2e, helmet: 0x123c73, gloves: 0x123c73, num: 17, name: 'VANCE', crest: 'W', cage: q.get('cage') === '1', goalie: q.get('goalie') === '1' });
   const g = new THREE.Group(); g.add(a.object);
   // hold the pose every frame: the viewer's mixer drives the clip, the kit adds the stance on top
+  let t = 0;
   a.play('Idle_Loop', 0);
   const tick = () => { t += 1 / 60; a.mixer.update(1 / 60); kit.stance.apply({ crouch: 1, stride: +(q.get('stride') || 0), phase: t }); requestAnimationFrame(tick); };
   a.mixer.update(0); kit.stance.apply({ crouch: 1 }); a.object.updateMatrixWorld(true); requestAnimationFrame(tick);
