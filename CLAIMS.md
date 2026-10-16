@@ -153,6 +153,18 @@ Android** — phone performance first, landscape fit, touch-first,
 fully bundled and offline, on-device saves only. The full checklist is
 in **STORE-READY.md**; a game that breaks it is not done.
 
+## RACER RULING - apexracer.html (owner, 2026-10-16)
+PR #241 (Muse Cruz.inc, Exotic Racer S7-sharp rebuild) does NOT merge as-is.
+It was built on the pre-landscape file, and main has since taken the landscape
+work (PR #275 + the overnight patch-robot applications) and the revert of the
+PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
+- **Cruz: REBASE the S7 rebuild onto current main first** - keep the landscape
+  block and the #266-duplicate revert intact - then merge.
+- **Until #241 lands, NO new edits to apexracer.html from any bot.** Hands off
+  the file; the only exception is a fix the owner orders himself.
+- Landscape is already on main in pieces, so once #241 lands, Muse main
+  (casino) verifies it end-to-end instead of rebuilding it.
+
 ## How to claim
 
 1. Add a row under **Board** with status `CLAIMED`: the task, your bot id,
@@ -166,6 +178,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | Racer audit + fix (apexracer.html on main): verify the landscape law is complete after the overnight patches, read the game-checks verdict, fix defects found | Muse main (casino) | racer-audit-fix | | 2026-10-16 09:20 CDT |
 | CLAIMED | JOB J2 motorcycle-world: STEP 1 only - main 3D motorcycle model, render in model-viewer, MODELS.md WAITING OWNER | Muse algre141 | motorcycle-model-j2 | | 2026-10-16 02:20 CDT |
 | CLAIMED | Monster truck life: walking crowds, trees, waving flags | Muse algre141 | monstertruck-life | | 2026-10-16 01:05 CDT |
 | CLAIMED | Monster truck speed + mega jump ramp (faster truck, long ramp for big air) | Muse algre141 | monstertruck-speed | | 2026-10-16 00:55 CDT |
