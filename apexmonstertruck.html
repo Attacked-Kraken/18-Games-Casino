@@ -140,7 +140,7 @@ const RALLY_EVENTS = [
   { name: "FREESTYLE FINALE", goal: "Score 2000 points", target: 2000, type: "score" },
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
-const GRAV = 24;
+const GRAV = 38; // J5: snappy real gravity - truck comes down fast
 const MAX_FWD = 70, MAX_REV = 18, ACCEL = 34, BRAKE = 36; // even faster!
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
@@ -152,17 +152,42 @@ const Snd = {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     this.ctx = new AC();
-    this.eng = this.ctx.createOscillator(); this.eng.type = 'sawtooth'; this.eng.frequency.value = 55;
-    this.engFilter = this.ctx.createBiquadFilter(); this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 420;
-    this.engGain = this.ctx.createGain(); this.engGain.gain.value = 0;
-    this.eng.connect(this.engFilter); this.engFilter.connect(this.engGain); this.engGain.connect(this.ctx.destination);
-    this.eng.start();
+    // J5: layered V8 roar - sub-bass + 2 detuned saws + growl noise
+    const C = this.ctx;
+    this.engGain = C.createGain(); this.engGain.gain.value = 0;
+    this.engFilter = C.createBiquadFilter(); this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 380;
+    this.engFilter.connect(this.engGain); this.engGain.connect(C.destination);
+    this.engOsc = [];
+    const sub = C.createOscillator(); sub.type = 'sine'; sub.frequency.value = 35; // sub-bass chest feel
+    const saw1 = C.createOscillator(); saw1.type = 'sawtooth'; saw1.frequency.value = 55;
+    const saw2 = C.createOscillator(); saw2.type = 'sawtooth'; saw2.frequency.value = 57; // detuned growl
+    const g1 = C.createGain(); g1.gain.value = 0.5; const g2 = C.createGain(); g2.gain.value = 0.35; const g3 = C.createGain(); g3.gain.value = 0.35;
+    sub.connect(g1); saw1.connect(g2); saw2.connect(g3);
+    g1.connect(this.engFilter); g2.connect(this.engFilter); g3.connect(this.engFilter);
+    sub.start(); saw1.start(); saw2.start();
+    this.engOsc = [sub, saw1, saw2];
+    // throttle punch noise
+    const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), nd = nb.getChannelData(0);
+    for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    this.noiseBuf = nb;
+    this.punchGain = C.createGain(); this.punchGain.gain.value = 0;
+    const pf = C.createBiquadFilter(); pf.type = 'bandpass'; pf.frequency.value = 900; pf.Q.value = 0.8;
+    const ps = C.createBufferSource(); ps.buffer = nb; ps.loop = true;
+    ps.connect(pf); pf.connect(this.punchGain); this.punchGain.connect(C.destination); ps.start();
+    this.lastSp = 0;
   },
-  engine(sp){ // sp 0..1
+  engine(sp){ // sp 0..1 - deep roar 35Hz idle to 180Hz redline
     if (!this.ctx || this.muted) { if (this.ctx && this.muted && this.engGain) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); return; }
-    this.eng.frequency.setTargetAtTime(48 + sp * 165, this.ctx.currentTime, 0.06);
-    this.engFilter.frequency.setTargetAtTime(320 + sp * 900, this.ctx.currentTime, 0.08);
-    this.engGain.gain.setTargetAtTime(sp < 0.02 ? 0 : 0.045 + sp * 0.075, this.ctx.currentTime, 0.09);
+    const t = this.ctx.currentTime, f = 35 + sp * 145;
+    this.engOsc[0].frequency.setTargetAtTime(f * 0.5, t, 0.05); // sub
+    this.engOsc[1].frequency.setTargetAtTime(f, t, 0.05);
+    this.engOsc[2].frequency.setTargetAtTime(f * 1.03, t, 0.05); // detune growl
+    this.engFilter.frequency.setTargetAtTime(280 + sp * 1400, t, 0.08);
+    this.engGain.gain.setTargetAtTime(sp < 0.02 ? 0 : 0.06 + sp * 0.1, t, 0.09);
+    // throttle punch: swell noise on hard acceleration
+    const punch = Math.max(0, sp - this.lastSp) * 3;
+    this.punchGain.gain.setTargetAtTime(Math.min(0.12, punch), t, 0.04);
+    this.lastSp = sp;
   },
   tone(f, dur, type, vol, slide){
     if (!this.ctx || this.muted) return;
@@ -191,7 +216,51 @@ const Snd = {
     this.tone(big ? 520 : 440, 0.35, 'triangle', 0.1, big ? 880 : 660);
   },
   beep(final){ this.tone(final ? 880 : 440, final ? 0.5 : 0.18, 'square', 0.16); },
-  toggleMute(){ this.muted = !this.muted; const el = document.getElementById('muteIcon'); if (el) el.textContent = this.muted ? '🔇' : '🔊'; return this.muted; }
+  toggleMute(){ this.muted = !this.muted; const el = document.getElementById('muteIcon'); if (el) el.textContent = this.muted ? '🔇' : '🔊'; if (typeof Music !== 'undefined' && Music.setMuted) Music.setMuted(this.muted); return this.muted; }
+};
+
+/* ================= J5: procedural music (menu + game) ================= */
+const Music = {
+  ctx:null, musGain:null, timer:null, step:0, mode:'off', nextT:0,
+  init(snd){
+    if (this.ctx || !snd.ctx) return;
+    this.ctx = snd.ctx;
+    this.musGain = this.ctx.createGain(); this.musGain.gain.value = 0.32;
+    this.musGain.connect(this.ctx.destination);
+    this.snd = snd;
+  },
+  // Rock pattern: kick on 0,4,8,12 | hats on odds | bass riff
+  play(mode){ // 'menu' (112bpm) or 'game' (132bpm)
+    if (!this.ctx || this.mode === mode) return;
+    this.stop(); this.mode = mode; this.step = 0;
+    this.bpm = mode === 'menu' ? 112 : 132;
+    this.stepDur = 60 / this.bpm / 4; // 16th notes
+    this.nextT = this.ctx.currentTime + 0.05;
+    const tick = () => {
+      if (this.mode === 'off') return;
+      while (this.nextT < this.ctx.currentTime + 0.15) {
+        this.schedule(this.step, this.nextT);
+        this.nextT += this.stepDur; this.step = (this.step + 1) % 64;
+      }
+      this.timer = setTimeout(tick, 40);
+    };
+    tick();
+  },
+  schedule(s, t){
+    if (this.snd.muted) return;
+    const C = this.ctx, g = this.musGain;
+    const bass = this.mode === 'menu' ? [55,0,55,0,65.4,0,55,0,49,0,55,0,73.4,0,65.4,0] : [55,55,0,55,0,65.4,0,55,55,0,49,49,0,58.3,73.4,0];
+    // kick
+    if (s % 16 < 4 && s % 4 === 0) { const o = C.createOscillator(), gn = C.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(35, t + 0.12); gn.gain.setValueAtTime(0.5, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.14); o.connect(gn); gn.connect(g); o.start(t); o.stop(t + 0.16); }
+    // hats
+    if (s % 2 === 1) { const len = Math.floor(C.sampleRate * 0.04), b = C.createBuffer(1, len, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = C.createBufferSource(); src.buffer = b; const f = C.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 6000; const gn = C.createGain(); gn.gain.value = 0.12; src.connect(f); f.connect(gn); gn.connect(g); src.start(t); }
+    // bass
+    const n = bass[s % 16]; if (n) { const o = C.createOscillator(), gn = C.createGain(); o.type = 'square'; o.frequency.value = n; gn.gain.setValueAtTime(0.16, t); gn.gain.exponentialRampToValueAtTime(0.001, t + this.stepDur * 1.8); o.connect(gn); gn.connect(g); o.start(t); o.stop(t + this.stepDur * 2); }
+    // snare on 4,12
+    if (s % 16 === 4 || s % 16 === 12) { const len = Math.floor(C.sampleRate * 0.12), b = C.createBuffer(1, len, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = C.createBufferSource(); src.buffer = b; const f = C.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; const gn = C.createGain(); gn.gain.setValueAtTime(0.25, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.12); src.connect(f); f.connect(gn); gn.connect(g); src.start(t); }
+  },
+  stop(){ this.mode = 'off'; if (this.timer) { clearTimeout(this.timer); this.timer = null; } },
+  setMuted(m){ if (this.musGain) this.musGain.gain.setTargetAtTime(m ? 0 : 0.32, this.ctx.currentTime, 0.05); }
 };
 
 /* ================= canvas texture helpers ================= */
@@ -862,7 +931,8 @@ function buildStudioTruck(style, colorHex) {
     add(new THREE.CylinderGeometry(0.15, 0.15, 0.25, 10), darkMat, sx, 5.05, -1.3);
     stackTips.push(new THREE.Vector3(sx, 5.2, -1.3));
   }
-  return { g, wheels, stackTips, tireR: TIRE_R * 4 };
+  g.scale.setScalar(0.62); // J5: real proportions - truck ~2.7m tall, tires ~2.1m diameter
+  return { g, wheels, stackTips, tireR: TIRE_R * 4 * 0.62 };
 }
 
 /* ================= the monster truck (player) ================= */
@@ -913,7 +983,13 @@ function stepAI(dt) {
       else { a.y = gh; a.vy = 0; }
     } else {
       a.vy -= GRAV * dt; a.y += a.vy * dt;
-      if (a.y <= gh) { a.y = gh; a.grounded = true; a.vy = 0; puff(a.x, 0.5, a.z, 5, 6); }
+      if (a.y <= gh) {
+        a.y = gh; a.grounded = true;
+        const impact = Math.abs(a.vy);
+        a.vy = 0;
+        if (impact > 6) { puff(a.x, 0.5, a.z, 5 + impact, 6 + impact * 0.8); Snd.thud(); } // J5: heavy landing
+        else puff(a.x, 0.5, a.z, 5, 6);
+      }
     }
     a.g.position.set(a.x, a.y, a.z);
     a.g.rotation.y = a.hd;
@@ -1077,7 +1153,7 @@ function stepTruck(dt) {
     if (T.y <= gh2) {
       T.y = gh2; T.grounded = true; justLanded = true;
       const air = elapsed - T.airT0, impact = -T.vy; T.vy = 0;
-      if (impact > 8) { Snd.thud(); puff(T.x, 0.5, T.z, 8, 8); camShake = Math.max(camShake, 0.4); }
+      if (impact > 8) { Snd.thud(); puff(T.x, 0.5, T.z, 8 + impact * 0.5, 8 + impact * 0.4); camShake = Math.max(camShake, Math.min(1, 0.4 + impact / 25)); } // J5: heavy landing
       if (air > 0.45) {
         const pts = Math.round(air * 60) + (air > BIGAIR_T ? BIGAIR_BONUS : 0);
         score += pts; scoreEl.textContent = score;
@@ -1091,7 +1167,7 @@ function stepTruck(dt) {
   for (const c of cars) {
     if (c.crushed) continue;
     const d = Math.hypot(T.x - c.x, T.z - c.z);
-    if (d < 3.2 && T.y < 2.2) crushCar(c, justLanded);
+    if (d < 2.2 && T.y < 1.5) crushCar(c, justLanded); // J5: scaled for real-size truck
   }
 
   // truck visuals
@@ -1245,7 +1321,7 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 /* ================= flow: menu -> countdown -> play -> over ================= */
 function startGame() {
-  Snd.init();
+  Snd.init(); Music.init(Snd); Music.play('game');
   input.steerA = 0; input.throttleA = 0;
   score = 0; timeLeft = RUN_TIME;
   scoreEl.textContent = '0'; timeEl.textContent = RUN_TIME;
@@ -1257,7 +1333,7 @@ function startGame() {
 function endGame() {
   state = 'over';
   T.y = groundHeight(T.x, T.z); T.vy = 0; T.grounded = true;   // don't leave the truck hanging mid-air behind the panel
-  Snd.engine(0); Snd.cheer(true);
+  Snd.engine(0); Snd.cheer(true); Music.play('menu');
   document.getElementById('finalScore').textContent = score;
   let best = 0;
   try {
@@ -1269,6 +1345,7 @@ function endGame() {
 }
 document.getElementById('playBtn').addEventListener('click', startGame);
 document.getElementById('muteBtn').addEventListener('click', () => { Snd.init(); Snd.toggleMute(); });
+document.addEventListener('pointerdown', function mm(){ Snd.init(); Music.init(Snd); if (state === 'menu') Music.play('menu'); document.removeEventListener('pointerdown', mm); }, { once: true });
 document.getElementById('againBtn').addEventListener('click', startGame);
 
 const COUNT_STEPS = ['3', '2', '1', 'GO RALLY!'];
