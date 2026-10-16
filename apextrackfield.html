@@ -1760,8 +1760,8 @@ rig.group.add(h.object);
 rig.human=true; rig.h=h; rig.parts=null;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
 // Cache bones for procedural run animation
-rig.bones={};
-h.object.traverse(o=>{ if(o.isBone) rig.bones[o.name]=o; });
+rig.bones={}; rig.rest={};
+h.object.traverse(o=>{ if(o.isBone){ rig.bones[o.name]=o; rig.rest[o.name]=o.rotation.clone(); } });
 }catch(e){}
 }
 },
@@ -1777,7 +1777,8 @@ skin:idx%6, hair:['parted','buzzed','ponytail','long'][idx%4]}, 1.78);
 group.add(h.object);
 rig.human=true; rig.h=h;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
-rig.bones={}; h.object.traverse(o=>{ if(o.isBone) rig.bones[o.name]=o; });
+rig.bones={}; rig.rest={};
+h.object.traverse(o=>{ if(o.isBone){ rig.bones[o.name]=o; rig.rest[o.name]=o.rotation.clone(); } });
 }catch(e){ rig.human=false; }
 }
 if(!rig.human) this.buildFallbackBody(rig);
@@ -1839,24 +1840,23 @@ if(rig.human && rig.h){
     const sf=rig.speedFrac||0, tired=rig.tired||0;
     const a=Math.min(1,0.35+sf*0.85)*(1-0.2*tired);
     // Thighs: swing +/- 35deg max
-    if(B.thigh_l) B.thigh_l.rotation.x=s*a*0.62;
-    if(B.thigh_r) B.thigh_r.rotation.x=c2*a*0.62;
+    const R=rig.rest||{};
+    const setRX=(n,v)=>{ if(B[n]&&R[n]) B[n].rotation.x=R[n].x+v; };
+    const setRY=(n,v)=>{ if(B[n]&&R[n]) B[n].rotation.y=R[n].y+v; };
+    setRX('thigh_l',s*a*0.62); setRX('thigh_r',c2*a*0.62);
     // Knees: 15deg at strike, up to 95deg on swing-through
     const swL=Math.max(0,Math.sin(rig.phase+0.9)), swR=Math.max(0,Math.sin(rig.phase+Math.PI+0.9));
-    if(B.calf_l) B.calf_l.rotation.x=0.26+swL*1.4*a;
-    if(B.calf_r) B.calf_r.rotation.x=0.26+swR*1.4*a;
+    setRX('calf_l',0.26+swL*1.4*a); setRX('calf_r',0.26+swR*1.4*a);
     // Arms: counter-swing +/- 30deg, elbows at 80deg
-    if(B.upperarm_l) B.upperarm_l.rotation.x=c2*a*0.52;
-    if(B.upperarm_r) B.upperarm_r.rotation.x=s*a*0.52;
-    if(B.lowerarm_l) B.lowerarm_l.rotation.x=-1.4;
-    if(B.lowerarm_r) B.lowerarm_r.rotation.x=-1.4;
+    setRX('upperarm_l',c2*a*0.52); setRX('upperarm_r',s*a*0.52);
+    setRX('lowerarm_l',-1.4); setRX('lowerarm_r',-1.4);
     // Pelvis: slight forward tilt, gentle bob
-    if(B.pelvis){ B.pelvis.rotation.x=0.06+0.08*sf; }
-    if(B.spine_01) B.spine_01.rotation.y=(s-c2)*0.05;
+    setRX('pelvis',0.06+0.08*sf); setRY('spine_01',(s-c2)*0.05);
   } else if(B){
-    // Reset to neutral when not running
+    // Restore rest pose when not running
+    const RR=rig.rest||{};
     for(const k of ['thigh_l','thigh_r','calf_l','calf_r','upperarm_l','upperarm_r','lowerarm_l','lowerarm_r','pelvis','spine_01']){
-      if(B[k]){ B[k].rotation.x=0; B[k].rotation.y=0; B[k].rotation.z=0; }
+      if(B[k]&&RR[k]) B[k].rotation.copy(RR[k]);
     }
   }
   return;
