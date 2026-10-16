@@ -83,8 +83,8 @@ New built games are GAME DEVELOPMENT titles. They go on the Game
 Development page: **sports.html** ("Apex Arcade Game Development"),
 reached from the red GAME DEVELOPMENT circle on the entrance.
 
-- To ship a new game: add its tab + panel to `sports.html` (copy an
-  existing game panel, keep the style) and point its PLAY button at the
+- To ship a new game: add its tab + its card in the ALL TITLES grid to `sports.html` (copy an
+  existing card, keep the style; there is no big top panel any more - owner removed it 2026-10-16) and point its PLAY button at the
   game's `.html`. That is the ONLY registration a new game needs.
 - Do NOT put new games in the casino: not in `games.json`, not in the
   lobby BUILTIN registry in `index.html`, not on the casino floor, not

@@ -21,7 +21,7 @@ from the start; that is the standard for this library.
 ## Where new games go
 
 New built games go on the Game Development page (sports.html) - NOT the
-casino floor. Add the game's tab + panel to sports.html and point its
+casino floor. Add the game's tab + ALL TITLES card to sports.html and point its
 PLAY button at the game's .html. Never register a new game in
 games.json, the lobby registry in index.html, or the hallway tabs.
 A game's back button returns to sports.html. See CLAIMS.md for the
