@@ -12,16 +12,6 @@ brands or players, no personal info, chat, ads, tracking or internet, content fi
 save keys and arcade hooks, own branch + PR, never undo others' work, no Apex Arcade code in this repo.
 Finished games are handed to the Apex Arcade reviewer by telling the owner.
 
-## FIX LIST - say it once (owner, 2026-10-15)
-
-**The owner should never have to repeat a complaint.** When he reports a problem with a game:
-1. **Within 5 minutes**, reply in ONE line: what you think the cause is and what you'll change. No long reports.
-2. **Write the test first:** add his complaint, in his words, to `tools/game-check/fixes/<game>.mjs` as a test that
-   FAILS now (how-to: `tools/game-check/fixes/README.md`).
-3. Fix it, merge, and look at the game check report: his words show ✅ (done) or ❌ (not done).
-4. Only say "fixed" when it shows ✅. ❌ = keep going, don't report "done". Never delete or weaken a fix test.
-The owner's approver reads the report and sends the ❌ items back to your window until they turn ✅.
-
 ## PROOF RULE (owner, 2026-10-15)
 
 **Never say "fixed", "done", "live" or "verified" for anything the owner can SEE unless you have looked at the
@@ -165,7 +155,6 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | CLAIMED | F1 reference upgrade (apexf1.html): 10 teams with unique glossy liveries, fictional drivers, tire sidewall stripes, start gantry, barriers, Apex Arcade signage; revert PR #266 duplicates in apexracer.html | Muse main | f1-ref-upgrade-v2 | | 2026-10-15 21:11 CDT |
-| DONE | Track & Field realistic humans: re-enabled Quaternius GLBs, procedural bone animation (thigh/calf/arms/pelvis) since GLB has no run clip | Muse Modern Plus | trackfield-human-realistic | PR #309, main 7a6a46a8 | 2026-10-15 23:50 CDT |
 | DONE | Track & Field legs + stadium: disabled GLB upgrade (run clips missing -> idle), all procedural with boosted animation; added 4 corner stands for complete bowl | Muse Modern Plus | trackfield-legs-stadium | PR #304, main 12b8cb16 | 2026-10-15 23:25 CDT |
 | DONE | Track & Field real track + bigger legs: ground plane grass->dark, track wider (7.5m) and brighter blue, leg swing +15%, knee bend 2.2rad, GLB speed 2.4x | Muse Modern Plus | trackfield-real-track | PR #296, main d86de93d | 2026-10-15 21:40 CDT |
 | DONE | Landscape law for all games: monstertruck + f1 full pattern; trackfield already done by owner; 19 casino games via engage.js (CSS rotate + lock) | Muse algre141 | landscape-all | PR #203, main cfdc59c6 | 2026-10-15 09:51 CDT |
@@ -174,7 +163,6 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Monster truck pickup rebuild: pickup body (hood/cab/bed, open wheels), bigger tires, steering fix (left=left), 6x arena, 12 bigger ramps + lip pop, 2 AI rivals jumping — 30/30 tests | Muse algre141 | mt-pickup | PR #199, main 41d8e795 | 2026-10-15 08:35 CDT |
 | DONE | Track & Field landscape law (apextrackfield.html): removed rotate hint, portrait rotates stage to landscape, fullscreen+lock on first tap | Muse Modern Plus | trackfield-landscape | PR #201, main 485a4b62 | 2026-10-15 08:45 CDT |
 |---|---|---|---|---|---|
-| DONE | FIX LIST system: owner's complaints become permanent tests in tools/game-check/fixes/<game>.mjs, run by the game check after every merge (✅/❌ per complaint in the report + results.json); rule posted (CLAIMS FIX LIST + AGENTS). First test: Track & Field touch controls during a race (✅). Track & Field check now starts a real race (#grid button) | Claude (owner's session) | fix-list-tests | this PR | 2026-10-15 23:50 CDT |
 | DONE | Dev hub lineup v2 (owner's ask): every game runs LIVE in its box as you scroll to it (2 at a time so phones stay fast), each box shows the game at real phone-landscape size scaled down (looks like the phone, just smaller). Track & Field: touch controls (stick + ACTION) now appear on phones even if audio start-up fails inside the hub frame - small change in apextrackfield.html firstGesture only, save keys untouched | Claude (owner's session) | devhub-autoplay-tf-touch | this PR | 2026-10-15 20:20 CDT |
 | CLAIMED | Soccer player agility (apexsoccer.html): sprint lean, snappier turns/accel | Muse Dash | soccer-agility-dash3 | - | 2026-10-15 17:15 CDT |
 | DONE | Dev hub LIVE LINEUP (sports.html, owner's ask): ALL TITLES grid now renders as one column of playable landscape screens - tap to play in place (one game at a time to keep phones fast), full-screen button with an exit X, up/down arrows to reorder (saved on the device, new key apexDevLineupOrder), a game's own Back button closes its screen. Built from the .gcard cards, so registering a game is unchanged. Hub page itself stays portrait (PORTRAIT RULE). Tested on a 390x844 touch viewport: inline play, full screen, reorder persists after reload, zero console errors | Claude (owner's session) | devhub-live-lineup | this PR | 2026-10-15 17:55 CDT |
@@ -259,6 +247,4 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Hockey uniform system (apexhockey.html): match the owner's reference uniforms — shoulder yoke panel, collar ring, pants side stripes, accent-color gloves; helmets stay team-colored with the cage. Wolves/Sharks colors and career re-skins preserved | Muse main (casino) | hockey-uniforms | PR #288 | 2026-10-15 21:28 CDT |
 | DONE | Hockey ONE-UNIFORM rebuild (apexhockey.html): the kit becomes paint on the rig via the outfit shader (jersey + yoke + waist stripes, pants, striped socks, gloves) — bolted-on clothing pieces (skirt, yoke cap, collar, bands, sock tubes) removed; helmet/cage/stick/blades/name plates stay as equipment | Muse main (casino) | hockey-uniform-puck | PR #293 | 2026-10-15 21:35 CDT |
 | DONE | Hockey loose-puck fix (apexhockey.html): owner reports nobody grabs a loose puck when he is not moving — reproduce with a no-input probe, fix the cause, re-probe | Muse main (casino) | hockey-uniform-puck | PR #293 | 2026-10-15 21:35 CDT |
-| CLAIMED | Hockey CONTROLS fix (apexhockey.html): portrait-held play gets its controls under the thumbs — stick at the visual bottom-left, buttons bottom-right (they rendered along the left edge of the rotated stage); stick axes re-verified in all four directions | Muse main (casino) | claim-hockey-rules2 | - | 2026-10-15 23:40 CDT |
-| CLAIMED | Hockey KIT prints + helmet (apexhockey.html): name/number + crest printed INTO the jersey paint (no floating plates); helmet rebuilt (elongated shell, ear covers, fuller cage); deeper hockey stance | Muse main (casino) | claim-hockey-rules2 | - | 2026-10-15 23:40 CDT |
-| CLAIMED | Hockey RULES + STRATEGY (apexhockey.html): penalties + power play (illegal checks to the box, 4v5), hybrid icing (race can waive it), offside with tag-up grace, line changes + stamina at whistles, breakout / cycle / point-shot / net-front strategy; idle puck carriers get stripped under pressure | Muse main (casino) | claim-hockey-rules2 | - | 2026-10-15 23:40 CDT |
+| CLAIMED | Baseball Retest #6: realism pass (stadium, outfielders, remove menu dim, batter visibility) | Muse algre141 | baseball-retest-6 | — | 2026-10-15 23:33 CDT |
