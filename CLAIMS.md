@@ -141,6 +141,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| DONE | Soccer TEAM camera (apexsoccer.html): true broadcast follow-cam — sees most of field, tightly follows ball | Muse Dash | soccer-teamcam-dash | PR #297, main b2fbec08 | 2026-10-15 21:58 CDT |
 | CLAIMED | Monster truck mute button (HUD sound toggle) | Muse algre141 | monstertruck-mute | | 2026-10-15 21:42 CDT |
 | CLAIMED | Monster truck camera: move out/up (48 back, 24 up), look ahead, more responsive follow | Muse algre141 | monstertruck-camera | | 2026-10-15 21:40 CDT |
 | CLAIMED | Monster truck rally: fixed ramp pile-up (spread doubles), daytime always, 4x bigger trucks, rally car formations, career mode, overhead intro with 'GO RALLY!' | Muse algre141 | monstertruck-rally | | 2026-10-15 20:15 CDT |
