@@ -7,7 +7,7 @@
 <title>Apex Baseball · Apex Arcade</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html, body { width:100%; height:100%; overflow:hidden; background:#04140a; font-family:ui-monospace,Menlo,Consolas,monospace; color:#eaffef; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0e14; font-family:ui-monospace,Menlo,Consolas,monospace; color:#eaffef; }
   #game { position:fixed; inset:0; width:100%; height:100%; }
   canvas { display:block; width:100% !important; height:100% !important; }
   /* back button */
@@ -80,8 +80,8 @@
   #accNeedle { position:absolute; top:-2px; bottom:-2px; width:4px; background:#ffd23f; box-shadow:0 0 8px #ffd23f; }
   #accHint { font-size:10px; color:#7fc98d; }
   /* start / end overlays */
-  .overlay { position:fixed; inset:0; z-index:9400; background:rgba(1,8,4,.93); display:flex; align-items:center; justify-content:center; padding:20px; }
-  .card { width:min(560px,94vw); max-height:92vh; overflow-y:auto; background:rgba(2,20,10,.97); border:1px solid rgba(90,255,130,.5);
+  .overlay { position:fixed; inset:0; z-index:9400; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .card { width:min(560px,94vw); max-height:92vh; overflow-y:auto; background:rgba(10,12,14,.97); border:1px solid rgba(90,255,130,.5);
     border-radius:18px; padding:26px 24px; box-shadow:0 0 40px rgba(90,255,130,.15); }
   .card h1 { font-size:26px; letter-spacing:.18em; color:#9dffb4; text-align:center; margin-bottom:4px; }
   .card h2 { font-size:13px; letter-spacing:.3em; color:#7fc98d; text-align:center; margin-bottom:16px; font-weight:400; }
@@ -221,8 +221,8 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 $('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x06182e);
-scene.fog = new THREE.Fog(0x06182e, 160, 320);
+scene.background = new THREE.Color(0x87b5e0);
+scene.fog = new THREE.Fog(0x87b5e0, 180, 380);
 const camera = new THREE.PerspectiveCamera(58, window.innerWidth/window.innerHeight, 0.1, 600);
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
 const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
@@ -231,11 +231,15 @@ const PITCHER_VIEW = { pos:[0,7.5,-31], look:[0,1.3,4] };   // behind the mound,
 const BATTER_VIEW = { pos:[0,4.4,10.5], look:[0,2.1,-19] }; // behind the plate, low, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
-scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x2e6b34, 0.95));
-const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+scene.add(new THREE.HemisphereLight(0xbfd9ff, 0x3a7a44, 1.1));
+const sun = new THREE.DirectionalLight(0xfff5e8, 1.35);
 sun.position.set(50, 80, 30);
 if (!isTouch) { sun.castShadow = true; sun.shadow.camera.left=-90; sun.shadow.camera.right=90; sun.shadow.camera.top=90; sun.shadow.camera.bottom=-90; sun.shadow.mapSize.set(1024,1024); }
 scene.add(sun);
+// batter spotlight: keep the hitter clearly visible
+const batSpot = new THREE.SpotLight(0xffffff, 0.6, 30, 0.5, 0.4);
+batSpot.position.set(-2, 12, 8); batSpot.target.position.set(-2.4, 1, 0.6);
+scene.add(batSpot); scene.add(batSpot.target);
 
 const matCache = {};
 function M(color){ if(!matCache[color]) matCache[color]=new THREE.MeshLambertMaterial({color}); return matCache[color]; }
@@ -303,6 +307,13 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
     seg.position.set(Math.sin(a)*WALL_R, 1.6, -Math.cos(a)*WALL_R);
     seg.rotation.y = -a; scene.add(seg);
   }
+  // foul poles: yellow, at the foul lines (stadium realism)
+  [-1,1].forEach(s=>{
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.35,28,8), M(0xffd23f));
+    pole.position.set(s*WALL_R*0.7071, 14, -WALL_R*0.7071); scene.add(pole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.2,3,6), M(0xffd23f));
+    flag.position.set(s*WALL_R*0.7071, 26, -WALL_R*0.7071+ (s>0?-3:3)); scene.add(flag);
+  });
   // Apex Arcade sponsor boards on the outfield wall
   {
     const sc = document.createElement('canvas'); sc.width = 512; sc.height = 96;
