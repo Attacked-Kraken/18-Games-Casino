@@ -11,6 +11,9 @@ Owner: Mr. Cruz. Read these files, in this order, before any work. They are the 
 4. **STORE-READY.md** — phone performance, landscape, touch, fully offline, the quality bar.
 5. **README.md** — how the repo is laid out (sealed casino vs. Game Development / sports.html).
 
+6. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
+   owner 👎 or failed check, add one line to it.
+
 Short version: no gambling, casino or real-money content in Game Development titles; no real brands,
 players or famous characters; no personal info, chat, ads, tracking or internet; CC0 assets only;
 keep save keys and arcade hooks; own branch + pull request; never undo anyone else's work; no Apex
@@ -45,3 +48,8 @@ moving crowd, real rink) and check them in `tools/venue-viewer.html`. Game chang
 request marked `waits-model: <id>`. The owner's 👍 makes the model LOCKED, and the model gate robot merges them by itself
 (STUDIO-STANDARD.md §6b).
 
+
+**Daily scores & self-improvement (owner, 2026-10-16):** the owner's approver scores every game out of 100 once a day
+(robot check, fix tests, phone speed, real players, owner thumbs) and puts improvement jobs on the board for the weakest
+games. A job that starts with "DAILY SCORE" is one of these: fix every problem it lists, then improve the game. Every 👎
+becomes a line in `LESSONS.md` — the factory gets smarter with every mistake.
