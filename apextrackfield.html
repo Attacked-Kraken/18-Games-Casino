@@ -1737,7 +1737,6 @@ humansReady.then(()=>{ if(HM) this.upgradeAthletes(); });
 },
 upgradeAthletes(){
 if(!HM) return;
-return; // DISABLED: procedural rigs have guaranteed visible leg animation; GLB clips were too subtle/missing
 const clipNames=HM.clipNames||[];
 const pick=(...keys)=>{
 for(const k of keys){ const f=clipNames.find(n=>n.toLowerCase().includes(k)); if(f) return f; }
@@ -1760,13 +1759,16 @@ skin:rig.idx%6, hair:['parted','buzzed','ponytail','long'][rig.idx%4]}, 1.78);
 rig.group.add(h.object);
 rig.human=true; rig.h=h; rig.parts=null;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
+// Cache bones for procedural run animation
+rig.bones={};
+h.object.traverse(o=>{ if(o.isBone) rig.bones[o.name]=o; });
 }catch(e){}
 }
 },
 makeRig(kit, idx){
 const group=new THREE.Group(); this.scene.add(group);
 const rig={group, kit, idx, human:false, phase:Math.random()*6, mode:'idle', speedFrac:0, airY:0};
-if(false && HM){ // DISABLED: procedural only for guaranteed visible legs
+if(HM){
 try{
 const g=idx%2? 'f':'m';
 const h=HM.make({g, outfit:'soccer_kit',
@@ -1775,6 +1777,7 @@ skin:idx%6, hair:['parted','buzzed','ponytail','long'][idx%4]}, 1.78);
 group.add(h.object);
 rig.human=true; rig.h=h;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
+rig.bones={}; h.object.traverse(o=>{ if(o.isBone) rig.bones[o.name]=o; });
 }catch(e){ rig.human=false; }
 }
 if(!rig.human) this.buildFallbackBody(rig);
@@ -1826,7 +1829,29 @@ rig.h.ts=ts; if(rig.h.act) rig.h.act.timeScale=ts;
 }
 },
 rigUpdate(rig, dt){
-if(rig.human && rig.h){ try{ rig.h.mixer.update(dt); }catch(e){} return; }
+if(rig.human && rig.h){
+  try{ rig.h.mixer.update(dt); }catch(e){}
+  // Procedural run cycle on GLB bones - guaranteed visible leg movement
+  const B=rig.bones;
+  if(B && rig.mode==='run'){
+    rig.phase += dt*(6+(rig.speedFrac||0)*20);
+    const s=Math.sin(rig.phase), c2=Math.sin(rig.phase+Math.PI);
+    const sf=rig.speedFrac||0, tired=rig.tired||0;
+    const a=1.0*Math.min(1,0.3+sf)*(1-0.25*tired);
+    if(B.thigh_l) B.thigh_l.rotation.x=s*a*1.1;
+    if(B.thigh_r) B.thigh_r.rotation.x=c2*a*1.1;
+    const swL=Math.max(0,Math.sin(rig.phase+0.7)), swR=Math.max(0,Math.sin(rig.phase+Math.PI+0.7));
+    if(B.calf_l) B.calf_l.rotation.x=(0.2+swL*2.0)*Math.min(1,a*1.4);
+    if(B.calf_r) B.calf_r.rotation.x=(0.2+swR*2.0)*Math.min(1,a*1.4);
+    if(B.upperarm_l) B.upperarm_l.rotation.x=c2*a*0.9;
+    if(B.upperarm_r) B.upperarm_r.rotation.x=s*a*0.9;
+    if(B.lowerarm_l) B.lowerarm_l.rotation.x=-0.9;
+    if(B.lowerarm_r) B.lowerarm_r.rotation.x=-0.9;
+    if(B.pelvis){ B.pelvis.rotation.x=(0.08+0.1*sf); B.pelvis.position.y=Math.abs(Math.cos(rig.phase))*0.04; }
+    if(B.spine_01) B.spine_01.rotation.y=(s-c2)*0.08;
+  }
+  return;
+}
 const p=rig.parts; if(!p) return;
 rig.phase += dt*(4+rig.speedFrac*22);
 const s=Math.sin(rig.phase), c2=Math.sin(rig.phase+Math.PI);
