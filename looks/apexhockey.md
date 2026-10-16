@@ -17,6 +17,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
   under the socks; skates with steel blades. Build players with the shared kit (`characters/base-human-v2/gear.js`,
   `hockeyKit`). The numbers are tests in `tools/game-check/fixes/apexhockey.mjs`.
 - Stick held in both hands, blade flat on the ice; the puck rides the blade
+- The arena follows `venues/rink.md`, and the game follows `rules/hockey.md`
 
 ## NEVER
 - No real brands, leagues, teams, players or characters

@@ -230,7 +230,7 @@ try {
 fs.mkdirSync(path.join(out, 'img', 'models'), { recursive: true });
 for (const m of models.filter(m => m.file && !/^(LOCKED|NO)/i.test(m.status || ''))) {
   m.id = (m.id || m.name).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
-  let view = m.view && m.view.includes('model-viewer.html') ? m.view.replace(/^.*?tools\//, 'tools/') :
+  let view = m.view && /(model|venue)-viewer\.html/.test(m.view) ? m.view.replace(/^.*?tools\//, 'tools/') :
     `tools/model-viewer.html?m=${encodeURIComponent(m.file)}${m.anims ? '&anims=' + encodeURIComponent(m.anims) : ''}&look=${m.look || 'studio'}`;
   m.img = {}; m.problems = [];
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1 });
@@ -239,7 +239,7 @@ for (const m of models.filter(m => m.file && !/^(LOCKED|NO)/i.test(m.status || '
   for (const side of ['q', 'front', 'side']) {
     try {
       await page.goto(base + view + (view.includes('?') ? '&' : '?') + 'shot=' + side + '&name=' + encodeURIComponent(m.name), { waitUntil: 'load', timeout: 30000 });
-      await page.waitForFunction(() => document.title === 'ready' || document.title === 'error', null, { timeout: 30000 });
+      await page.waitForFunction(() => document.title === 'ready' || document.title === 'error', null, { timeout: 90000 });
       if (await page.title() === 'error') { m.problems.push(await page.textContent('#msg')); break; }
       const jpg = await page.screenshot({ type: 'jpeg', quality: 70 });
       fs.writeFileSync(path.join(out, 'img', 'models', `${m.id}-${side}.jpg`), jpg); m.img[side] = `img/models/${m.id}-${side}.jpg`;

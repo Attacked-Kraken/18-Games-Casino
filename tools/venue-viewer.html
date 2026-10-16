@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Venue view</title>
+<style>
+  html,body{margin:0;height:100%;background:#11141b;color:#fff;font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden;touch-action:none}
+  canvas{display:block;width:100vw;height:100vh}
+  #top{position:fixed;left:0;right:0;top:0;padding:max(10px,env(safe-area-inset-top)) 14px 8px;background:linear-gradient(#000a,#0000);pointer-events:none}
+  #top b{font-size:17px} #top span{display:block;font-size:12px;opacity:.75}
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:8px 10px max(10px,env(safe-area-inset-bottom));display:flex;gap:6px;overflow-x:auto;background:linear-gradient(#0000,#000b)}
+  #bar button{flex:0 0 auto;border:0;border-radius:999px;padding:9px 14px;font:inherit;font-weight:600;background:#ffffff22;color:#fff}
+  #bar button.on{background:#2563eb}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;pointer-events:none}
+</style>
+<script src="../apex-gfx.js"></script>
+<script type="importmap">{"imports":{"three":"../three.module.min.js"}}</script>
+</head><body>
+<div id="top"><b id="name">Loading…</b><span id="info"></span></div>
+<div id="msg">Loading the venue…</div>
+<div id="bar"></div>
+<script type="module">
+/* Venue viewer: the model viewer's big brother, for whole places (stadiums, arenas, airports). Same lighting as the
+   game (look-presets.js), but with real-size cameras: Aerial, Broadcast, End, Floor and Fans cheer.
+   ?m=models/<venue>.mjs  &look=rink|field|track|night|studio  &name=Hockey arena
+   Robot pictures (MODELS.md, same keys as the model viewer): &shot=q (aerial) | front (broadcast) | side (end)
+   A venue .mjs exports a function returning { group, cams?, stadium? } in METRES. cams: { name: { pos:[x,y,z], at:[x,y,z] } } */
+import * as THREE from '../three.module.min.js';
+import { applyLook } from '../look-presets.js';
+window.THREE = THREE;
+const q = new URLSearchParams(location.search), shot = q.get('shot'), $ = (id) => document.getElementById(id);
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: !!shot });
+R.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); R.setSize(innerWidth, innerHeight); document.body.prepend(R.domElement);
+const scene = new THREE.Scene();
+const look = applyLook(THREE, R, scene, q.get('look') || 'studio', { floor: false });
+look.sun.castShadow = false;
+const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.3, 4000);
+const root = (p) => new URL('../' + String(p || '').replace(/^\/+/, ''), location.href).href;
+const fail = (t) => { $('msg').textContent = t; document.title = 'error'; };
+let made, cams = {}, cur = null, yaw = 0, pitch = 0, dist = 100, target = new THREE.Vector3(), last = performance.now();
+try {
+  if (!q.get('m')) throw new Error('Add ?m=models/<venue>.mjs');
+  const mod = await import(root(q.get('m')));
+  const fn = Object.values(mod).find((v) => typeof v === 'function'); if (!fn) throw new Error('that .mjs file has no build function');
+  made = await fn(); const grp = made && (made.isObject3D ? made : made.group); if (!grp) throw new Error('the build function did not return a 3D group');
+  scene.add(grp);
+  // ground around the venue: the look's floor colour, big enough for a stadium
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(1500, 64), new THREE.MeshStandardMaterial({ color: look.preset.floor === '#e9f3fb' ? '#2a2f38' : look.preset.floor, roughness: .95 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -.05; scene.add(ground);
+  const box = new THREE.Box3().setFromObject(grp), size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+  const big = Math.max(size.x, size.z);
+  cams = { q: { pos: [ctr.x + big * .62, size.y * 2.6 + big * .35, ctr.z + big * .72], at: [ctr.x, 0, ctr.z], cut: true },
+           front: { pos: [ctr.x, size.y * .42, ctr.z + size.z * .40], at: [ctr.x, 1, ctr.z] },
+           side: { pos: [ctr.x + size.x * .40, size.y * .32, ctr.z], at: [ctr.x, 1, ctr.z] },
+           floor: { pos: [ctr.x - 6, 1.7, ctr.z + 4], at: [ctr.x + 20, 6, ctr.z - 8] }, ...(made.cams || {}) };
+  let tris = 0; grp.traverse((o) => { if (o.isMesh && o.geometry) tris += ((o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3) * (o.isInstancedMesh ? o.count : 1); });
+  const rep = made.stadium ? made.stadium.report() : null;
+  $('name').textContent = q.get('name') || q.get('m').split('/').pop();
+  $('info').textContent = 'VENUE · ' + Math.round(size.x) + ' × ' + Math.round(size.z) + ' m' + (rep ? ' · ' + rep.fans.toLocaleString() + ' fans · ' + rep.capacity.toLocaleString() + ' seats · ' + rep.drawCalls + ' draw calls' : '') + ' · ' + Math.round(tris / 1000) + 'k triangles · look: ' + look.name;
+  $('msg').textContent = '';
+  const bar = $('bar'), btn = (label, f) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => f(b); bar.appendChild(b); return b; };
+  const labels = { q: 'Aerial', front: 'Broadcast', side: 'End', floor: 'Floor' };
+  for (const k of Object.keys(cams)) btn(labels[k] || k, (b) => { use(k); bar.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); });
+  if (made.stadium) btn('📣 Goal!', () => made.stadium.crowd.excite(1.3));
+  use(shot && cams[shot] ? shot : 'q');
+  if (shot) { bar.style.display = 'none'; if (made.stadium && q.get('cheer') === '1') made.stadium.crowd.excite(1.2); }
+} catch (e) { fail("Couldn't load that venue: " + (e && e.message || e)); throw e; }
+function use(k) { const c = cams[k]; cur = k; target.set(...c.at); const p = new THREE.Vector3(...c.pos).sub(target);
+  dist = p.length(); yaw = Math.atan2(p.x, p.z); pitch = Math.asin(p.y / dist);
+  made.group.traverse((o) => { if (/^(roof|trusses|canopy)$/.test(o.name)) o.visible = !c.cut; }); }
+// drag to turn, pinch / wheel to zoom
+const pts = new Map(); let pinch0 = 0, dist0 = dist;
+addEventListener('pointerdown', (e) => { if (e.target.closest('#bar')) return; pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = dist; } });
+addEventListener('pointermove', (e) => { const p = pts.get(e.pointerId); if (!p) return;
+  if (pts.size === 2) { pts.set(e.pointerId, [e.clientX, e.clientY]); const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) dist = Math.max(3, dist0 * pinch0 / d); return; }
+  yaw -= (e.clientX - p[0]) * 0.006; pitch = Math.max(-0.2, Math.min(1.45, pitch + (e.clientY - p[1]) * 0.005)); pts.set(e.pointerId, [e.clientX, e.clientY]); });
+const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; }; addEventListener('pointerup', up); addEventListener('pointercancel', up);
+addEventListener('wheel', (e) => { dist = Math.max(3, dist * (1 + Math.sign(e.deltaY) * 0.1)); }, { passive: true });
+addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); });
+let t0 = performance.now();
+function frame(now) { const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (made.stadium) made.stadium.update(dt);
+  cam.position.set(target.x + Math.sin(yaw) * Math.cos(pitch) * dist, target.y + Math.sin(pitch) * dist, target.z + Math.cos(yaw) * Math.cos(pitch) * dist); cam.lookAt(target);
+  look.render(scene, cam, now / 1000);
+  if (!shot || now - t0 < 900) requestAnimationFrame(frame); else document.title = 'ready'; }
+requestAnimationFrame(frame);
+</script>
+</body></html>

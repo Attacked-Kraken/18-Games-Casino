@@ -39,3 +39,9 @@ with their sport's gear and stance (shared parts: `characters/base-human-v2/huma
 the job format (REFERENCE picture + DONE MEANS), and the art-director role. Free tools and what's allowed: `TOOLS.md`.
 The game check robot runs on every pull request and **blocks** a merge that adds a problem (see STUDIO-STANDARD.md §5).
 
+**Venues, rules and hands-off approvals (owner, 2026-10-16):** every place has a spec sheet in `venues/` (real sizes,
+MUST list, robot checks) and every sport a rules sheet in `rules/`. Build places with `venues/kit/` (stadium bowl +
+moving crowd, real rink) and check them in `tools/venue-viewer.html`. Game changes that need a new model wait in a pull
+request marked `waits-model: <id>`. The owner's 👍 makes the model LOCKED, and the model gate robot merges them by itself
+(STUDIO-STANDARD.md §6b).
+

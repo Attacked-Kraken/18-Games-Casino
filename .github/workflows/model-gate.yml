@@ -1,0 +1,31 @@
+name: Model gate
+
+# Hands-off (owner, 2026-10-16): when the owner's 👍 turns a model LOCKED in MODELS.md, merge every pull request that
+# was waiting for it ("waits-model: <id>" in its description) and re-run the game check. See tools/model-gate.py.
+on:
+  push:
+    branches: [main]
+    paths: [MODELS.md]
+  schedule:
+    - cron: '17 * * * *'   # hourly safety net, in case a LOCKED change landed while a waiting PR was still building
+  workflow_dispatch:
+
+concurrency:
+  group: model-gate
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge work that was waiting for an approved model
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/model-gate.py
