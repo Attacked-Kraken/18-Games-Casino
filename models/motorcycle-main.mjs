@@ -20,19 +20,25 @@ export function buildMotorcycle(colorHex = 0xd42a1e) {
     color: 0x0a0a0a, roughness: 0.95 
   });
   
-  // Wheels (front and rear)
+  // Wheels (front and rear) — solid rims, resting on y=0 (NEVER hollow / below ground)
   const wheelGeo = new THREE.TorusGeometry(0.35, 0.12, 12, 24);
-  const hubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.15, 12);
+  const rimGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.14, 20);
+  const hubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.18, 12);
+  const rimMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.4, metalness: 0.8 });
+  const WHEEL_R = 0.47; // torus outer radius: 0.35 + 0.12
   
   function makeWheel(x, z) {
     const pivot = new THREE.Group();
-    pivot.position.set(x, 0.35, z);
+    pivot.position.set(x, WHEEL_R, z); // bottom of tire touches y=0
     const tire = new THREE.Mesh(wheelGeo, tireMat);
     tire.rotation.y = Math.PI / 2;
     tire.castShadow = true;
+    const rim = new THREE.Mesh(rimGeo, rimMat); // solid disc fills the torus hole
+    rim.rotation.z = Math.PI / 2;
+    rim.castShadow = true;
     const hub = new THREE.Mesh(hubGeo, chromeMat);
     hub.rotation.z = Math.PI / 2;
-    pivot.add(tire, hub);
+    pivot.add(tire, rim, hub);
     g.add(pivot);
     wheels.push(pivot);
     return pivot;
