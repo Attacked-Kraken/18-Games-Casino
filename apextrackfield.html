@@ -1485,6 +1485,8 @@ return {x,z,w,rotY};
 this.standDefs=[
 mkStand(-42,-58,150,0), mkStand(-42,58,150,Math.PI),
 mkStand(28,0,86,Math.PI/2), mkStand(-112,0,86,-Math.PI/2),
+mkStand(45,-45,70,Math.PI/4), mkStand(45,45,70,3*Math.PI/4),
+mkStand(-129,-45,70,-Math.PI/4), mkStand(-129,45,70,-3*Math.PI/4),
 ];
 const bodyG=new THREE.BoxGeometry(0.42,0.85,0.32);
 const bodyM=new THREE.MeshStandardMaterial({roughness:0.9});
@@ -1735,6 +1737,7 @@ humansReady.then(()=>{ if(HM) this.upgradeAthletes(); });
 },
 upgradeAthletes(){
 if(!HM) return;
+return; // DISABLED: procedural rigs have guaranteed visible leg animation; GLB clips were too subtle/missing
 const clipNames=HM.clipNames||[];
 const pick=(...keys)=>{
 for(const k of keys){ const f=clipNames.find(n=>n.toLowerCase().includes(k)); if(f) return f; }
@@ -1744,6 +1747,8 @@ this.clips={
 run:pick('sprint','run'), idle:pick('idle'),
 jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory'),
 };
+// If no run clip, keep procedural rigs - their leg animation is guaranteed visible
+if(!this.clips.run){ return; }
 for(const rig of this.rigs){
 if(rig.human) continue;
 try{
@@ -1761,7 +1766,7 @@ h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
 makeRig(kit, idx){
 const group=new THREE.Group(); this.scene.add(group);
 const rig={group, kit, idx, human:false, phase:Math.random()*6, mode:'idle', speedFrac:0, airY:0};
-if(HM){
+if(false && HM){ // DISABLED: procedural only for guaranteed visible legs
 try{
 const g=idx%2? 'f':'m';
 const h=HM.make({g, outfit:'soccer_kit',
