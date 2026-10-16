@@ -1078,9 +1078,9 @@ function stepCamera(dt) {
     cx /= n; cz /= n;
     want = new THREE.Vector3(cx, 120, cz + 80); // high overhead
   } else {
-    want = new THREE.Vector3(T.x - fx * 30, T.y + 14, T.z - fz * 30); // 4x trucks: farther camera
+    want = new THREE.Vector3(T.x - fx * 48, T.y + 24, T.z - fz * 48); // out and up: see where you're going
   }
-  camPos.lerp(want, Math.min(1, dt * 4.5));
+  camPos.lerp(want, Math.min(1, dt * 6)); // more responsive follow
   camera.position.copy(camPos);
   if (camShake > 0.01) {
     camera.position.x += (Math.random() - 0.5) * camShake;
@@ -1093,7 +1093,7 @@ function stepCamera(dt) {
     for (const a of aiTrucks) { cx += a.x; cz += a.z; n++; }
     camera.lookAt(cx / n, 0, cz / n);
   } else {
-    camera.lookAt(T.x + fx * 6, T.y + 2.6, T.z + fz * 6);
+    camera.lookAt(T.x + fx * 18, T.y + 4, T.z + fz * 18); // look ahead
   }
 }
 
