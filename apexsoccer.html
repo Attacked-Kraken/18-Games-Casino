@@ -799,10 +799,10 @@ function movePlayer(p,tx,tz,maxSpd,dt){
   const dx=tx-p.pos.x,dz=tz-p.pos.z,d=Math.hypot(dx,dz);
   let vx=0,vz=0;
   if(d>0.15){ const s=Math.min(maxSpd,d*3); vx=dx/d*s; vz=dz/d*s; }
-  const k=Math.min(1,8*dt); p.vel.x+=(vx-p.vel.x)*k; p.vel.z+=(vz-p.vel.z)*k;
+  const k=Math.min(1,10*dt); p.vel.x+=(vx-p.vel.x)*k; p.vel.z+=(vz-p.vel.z)*k;
   p.pos.x=clamp(p.pos.x+p.vel.x*dt,-56,56); p.pos.z=clamp(p.pos.z+p.vel.z*dt,-37,37);
   const sp=Math.hypot(p.vel.x,p.vel.z);
-  if(sp>0.6) p.face+=angDiff(Math.atan2(p.vel.z,p.vel.x),p.face)*Math.min(1,10*dt);
+  if(sp>0.6) p.face+=angDiff(Math.atan2(p.vel.z,p.vel.x),p.face)*Math.min(1,14*dt);
 }
 function angDiff(a,b){ let d=a-b; while(d>Math.PI)d-=Math.PI*2; while(d<-Math.PI)d+=Math.PI*2; return d; }
 function aiCarrier(p,dt){
@@ -918,10 +918,10 @@ function updateHuman(dt){
     let sp=sprinting()?9.3:7;
     if(B.owner===p) sp=sprinting()?8:6.2;
     if(H.charging) sp*=0.45;
-    const k=Math.min(1,10*dt);
+    const k=Math.min(1,12*dt);
     p.vel.x+=(mv.x*sp-p.vel.x)*k; p.vel.z+=(mv.z*sp-p.vel.z)*k;
     p.pos.x=clamp(p.pos.x+p.vel.x*dt,-56,56); p.pos.z=clamp(p.pos.z+p.vel.z*dt,-37,37);
-    if(Math.hypot(mv.x,mv.z)>0.1) p.face+=angDiff(Math.atan2(mv.z,mv.x),p.face)*Math.min(1,12*dt);
+    if(Math.hypot(mv.x,mv.z)>0.1) p.face+=angDiff(Math.atan2(mv.z,mv.x),p.face)*Math.min(1,16*dt);
   } else if(G.st==='restart'&&G.restart&&G.restart.team===p.team){
     const k=Math.min(1,10*dt);
     p.vel.x+=(mv.x*3-p.vel.x)*k; p.vel.z+=(mv.z*3-p.vel.z)*k;
@@ -1101,7 +1101,7 @@ function animate(dt){
     const sw=clamp(sp/7,0,1.3), s=Math.sin(p.phase);
     p.m.legL.rotation.x=s*0.8*sw; p.m.legR.rotation.x=-s*0.8*sw;
     p.m.armL.rotation.x=-s*0.65*sw; p.m.armR.rotation.x=s*0.65*sw;
-    p.m.torso.rotation.x=0.06+sw*0.14;
+    p.m.torso.rotation.x=0.06+sw*0.24; // athletic forward lean at pace
     p.m.group.position.copy(p.pos);
     if(p.role!=='GK'||p.diveT<=0) p.m.group.rotation.y=Math.PI/2-p.face;
     if(p.ath){
@@ -1110,6 +1110,9 @@ function animate(dt){
       p.ath.ts=want==='Walk_Loop'?clamp(sp/1.7,0.7,2.3):1;
       if(p.ath.act) p.ath.act.timeScale=p.ath.ts;
       p.ath.mixer.update(dt);
+      // agile posture: lean forward into the run, upright at rest (smoothed so it never pops)
+      const leanTgt=clamp(sp/9,0,1)*0.22, lr=p.ath.object.rotation;
+      lr.x+=(leanTgt-lr.x)*Math.min(1,7*dt);
     }
   }
 }
