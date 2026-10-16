@@ -22,6 +22,21 @@ Finished games are handed to the Apex Arcade reviewer by telling the owner.
 4. Only say "fixed" when it shows ✅. ❌ = keep going, don't report "done". Never delete or weaken a fix test.
 The owner's approver reads the report and sends the ❌ items back to your window until they turn ✅.
 
+## JOB BOARD, LOOK BOARDS & 3D MODEL GATE (owner, 2026-10-16)
+- **Jobs** come from the owner's phone (his approver types them in as "NEW JOB Jn ..."). Claim it here, read
+  `looks/<game>.md`, split it into small steps, ship one step at a time. Finish with "JOB Jn merged, NOT yet seen".
+  A job is done only when the OWNER gives it 👍 from the game check pictures. A 👎 comes back with his words: add them
+  to the NEVER/MUST list in `looks/<game>.md` AND as a test in `tools/game-check/fixes/<game>.mjs`, then fix.
+- **Look boards** (`looks/<game>.md`): the owner's MUST / NEVER list for each game. Read it before every job on that
+  game. Never remove a line from it.
+- **3D models**: never show the owner mockups or drawings. Every new or changed model goes in `MODELS.md` as
+  `WAITING OWNER`, checked in `tools/model-viewer.html` with the game's preset from `look-presets.js`. The game check
+  robot photographs it for his phone (you can't take WebGL pictures - the robot can). Only after his 👍 (`LOCKED`) does it
+  go in the game, with the same preset. LOCKED models are never swapped for anything else without a new 👍.
+- **SEEN replies**: after you say "merged, NOT yet seen", the approver pastes the new game check picture into your chat.
+  Answer each thing you changed with `SEEN: yes` or `SEEN: no` - and fix every no.
+- **Idea scout**: only the window the owner picked as scout may browse, and only for SCOUT.md work.
+
 ## PROOF RULE (owner, 2026-10-15)
 
 **Never say "fixed", "done", "live" or "verified" for anything the owner can SEE unless you have looked at the

@@ -27,3 +27,9 @@ the game check pictures (CLAIMS.md "PROOF RULE"). If you haven't seen it, say "m
 
 **Fix list (say it once):** every complaint from the owner becomes a test in `tools/game-check/fixes/<game>.mjs`
 FIRST, then you fix it. Only "fixed" when the game check shows ✅ next to his words (CLAIMS.md "FIX LIST").
+
+**Jobs, look boards, 3D models (owner, 2026-10-16):** jobs arrive as "NEW JOB Jn" from the owner's approver; read
+`looks/<game>.md` first; done only on the owner's 👍. New/changed 3D models: `MODELS.md` (WAITING OWNER) + view them in
+`tools/model-viewer.html` with the game's `look-presets.js` preset; into the game only after 👍 (LOCKED). Never show the
+owner mockups - the game check robot photographs the real model for him. Idea scout: SCOUT.md. Full rules: CLAIMS.md
+"JOB BOARD, LOOK BOARDS & 3D MODEL GATE".
