@@ -166,6 +166,7 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | JOB J2 motorcycle-world: STEP 1 only - main 3D motorcycle model, render in model-viewer, MODELS.md WAITING OWNER | Muse algre141 | motorcycle-model-j2 | | 2026-10-16 02:20 CDT |
 | CLAIMED | Monster truck life: walking crowds, trees, waving flags | Muse algre141 | monstertruck-life | | 2026-10-16 01:05 CDT |
 | CLAIMED | Monster truck speed + mega jump ramp (faster truck, long ramp for big air) | Muse algre141 | monstertruck-speed | | 2026-10-16 00:55 CDT |
 | CLAIMED | Monster truck z-fighting fix: outer.y -3, camera near 0.5, dirt anisotropy | Muse algre141 | monstertruck-zfight | | 2026-10-15 23:30 CDT |
