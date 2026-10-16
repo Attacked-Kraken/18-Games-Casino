@@ -2,17 +2,22 @@ name: Game check
 
 # Plays every Game Development title like a phone after each merge to main, and posts a picture
 # report to the "game-checks" branch (open it on GitHub to see the README with all screenshots).
+# On a PULL REQUEST it plays only the games the PR touches and FAILS the check (red X, merge blocked) if the PR
+# adds a problem main doesn't already have - blob/box people, outside internet, real brands, casino words,
+# "Your name" boxes, broken shaders, missing files, owner's fix tests. See STUDIO-STANDARD.md.
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 concurrency:
-  group: game-check
-  cancel-in-progress: false   # let a running check finish; only the newest waiting one runs next
+  group: game-check-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}   # a new push to the PR replaces its old check
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   check:
@@ -20,6 +25,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -30,14 +37,41 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.48.2
           npx playwright install --with-deps chromium
 
-      - name: Play every game
+      - name: Pick the games this pull request touches
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch -q origin ${{ github.base_ref }} game-checks || true
+          git show origin/game-checks:results.json > base-results.json 2>/dev/null || echo '{}' > base-results.json
+          CH=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "$CH"
+          G=$(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$' | tr '\n' ',')
+          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
+          # shared 3D people / gear / three.js changed -> re-check every game that draws people
+          if echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|look-presets\.js|tools/game-check/)'; then
+            G="$G$(node -e "console.log(require('./tools/game-check/games.json').games.filter(g=>g.people).map(g=>g.file).join(','))"),"
+          fi
+          echo "ONLY=${G:-none}" >> $GITHUB_ENV
+          echo "STRICT=1" >> $GITHUB_ENV
+          echo "Checking: ${G:-no games (models only)}"
+
+      - name: Play the games
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
           sleep 2
-          node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+          BASELINE=base-results.json node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+
+      - name: Tell the pull request what to fix
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s game-check-out/blockers.txt ] || exit 0
+          { echo "### 🔴 Game check blocked this merge"; echo; echo "These problems are NEW in this pull request (main doesn't have them). Fix them and push again:"; echo;
+            sed 's/^/- /' game-check-out/blockers.txt; echo; echo "Rules: STUDIO-STANDARD.md · CLAIMS.md · FAMILY-RULES.md"; } > comment.md
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -F body=@comment.md >/dev/null || true
 
       - name: Post the report to the game-checks branch
-        if: always()
+        if: always() && github.event_name != 'pull_request'
         run: |
           [ -f game-check-out/README.md ] || exit 0
           cd game-check-out

@@ -6,6 +6,9 @@
 // game's start buttons (games.json), photographs gameplay twice a moment apart, then opens it upright.
 // FAIL  = black/blank screen, page didn't load, missing files, casino words, a "rotate your device" sign
 // CHECK = menu runs off the screen, never got into gameplay, gameplay frozen, script errors
+// STUDIO  = STUDIO-STANDARD.md checks: sports games must draw real rigged 3D bodies (no blob/box people), no outside
+//            internet, no real brands/leagues/players, "Player nickname" not "Your name"; heavy scenes get a CHECK.
+// STRICT=1 (pull requests): exits 1 if the PR adds a FAIL that main doesn't already have (BASELINE=main's results.json).
 // FIX LIST = the owner's own complaints, each turned into a test in fixes/<game>.mjs (see fixes/README.md).
 //            A fix that isn't done yet is a FAIL. Fix tests are never deleted, so a fixed thing can't quietly break again.
 import { chromium } from 'playwright';
@@ -29,6 +32,18 @@ try {
 if (process.env.ONLY) games = games.filter(g => process.env.ONLY.split(',').includes(g.file));
 
 const CASINO = /\b(casino|gambl\w*|jackpot|slot machine|slots|roulette|blackjack|poker|wager\w*|cash out|payouts?)\b/i;
+// real brands, leagues, teams, players and licensed characters (owner's law: our own names only). Whole words only.
+const BRANDS = /\b(NHL|NBA|NFL|MLB|MLS|WNBA|FIFA|UEFA|NASCAR|IndyCar|Monster Jam|Hot Wheels|Nike|Adidas|Puma|Reebok|Under Armour|Bauer|CCM|Wilson|Rawlings|Spalding|Ferrari|Lamborghini|Porsche|McLaren|Bugatti|Bentley|Maserati|Red Bull|Gatorade|Coca[- ]Cola|Pepsi|ESPN|Marvel|Disney|Pok[eé]mon|Nintendo|Super Mario|Fortnite|Minecraft|Roblox|Maple Leafs|Canadiens|Bruins|Blackhawks|Yankees|Dodgers|Lakers|Celtics|Real Madrid|Manchester United|Gretzky|Ovechkin|McDavid|LeBron|Messi|Ronaldo|Mbapp[eé]|Usain Bolt|Hamilton|Verstappen)\b/;
+// injected into every game page: counts skinned (rigged) shaders and draw calls per frame - works with any three.js build
+const STUDIO_PROBE = () => {
+  const S = window.__studio = { skinned: 0, draws: 0, frames: 0, sum: 0, max: 0, t: -1 };
+  const patch = (P) => { if (!P) return; const ss = P.shaderSource;
+    P.shaderSource = function (sh, src) { if (/#define USE_SKINNING/.test(src)) S.skinned++; return ss.call(this, sh, src); };
+    for (const k of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) { const f = P[k]; if (f) P[k] = function (...a) { S.draws++; return f.apply(this, a); }; } };
+  patch(window.WebGLRenderingContext && WebGLRenderingContext.prototype); patch(window.WebGL2RenderingContext && WebGL2RenderingContext.prototype);
+  const raf = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (cb) => raf((t) => { if (t !== S.t) { if (S.draws) { S.frames++; S.sum += S.draws; S.max = Math.max(S.max, S.draws); } S.draws = 0; S.t = t; } cb(t); });
+};
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
 const browser = await chromium.launch({
@@ -65,7 +80,7 @@ async function pressStep(page, step) {
 }
 
 async function pageFacts(page) {
-  return page.evaluate((casinoSrc) => {
+  return page.evaluate(([casinoSrc, brandSrc]) => {
     const re = new RegExp(casinoSrc, 'i');
     const vis = el => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && +s.opacity > 0.05; };
@@ -78,9 +93,12 @@ async function pageFacts(page) {
     const text = document.body ? document.body.innerText : '';
     const cm = (document.title + ' \n ' + text).match(re);
     const se = document.scrollingElement || document.documentElement;
-    return { title: document.title, casino: cm ? cm[0] : '', rotate,
+    const inputs = [...document.querySelectorAll('input,textarea,label')].map(e => (e.placeholder || '') + ' ' + (e.getAttribute('aria-label') || '') + ' ' + (e.tagName === 'LABEL' ? e.innerText : '')).join(' ');
+    const bm = (document.title + ' \n ' + text + ' ' + inputs).match(new RegExp(brandSrc));
+    const yn = (text + ' ' + inputs).match(/\b(your|enter( your)?) (real |full |first |last )?name\b/i);
+    return { title: document.title, casino: cm ? cm[0] : '', rotate, brand: bm ? bm[0] : '', yourName: yn ? yn[0] : '',
              overflow: Math.max(0, se.scrollHeight - window.innerHeight) };
-  }, CASINO.source);
+  }, [CASINO.source, BRANDS.source]);
 }
 
 const results = [];
@@ -89,8 +107,11 @@ for (const g of games) {
   const slug = g.file.replace('.html', '');
   // ---------- sideways (how the games are meant to be played)
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
+  await ctx.addInitScript(STUDIO_PROBE);
   const page = await ctx.newPage();
-  const errors = new Set(), missing = new Set();
+  const errors = new Set(), missing = new Set(), outside = new Set(); let bytes = 0;
+  page.on('request', q => { const u = q.url(); if (/^(https?|wss?):/i.test(u) && !u.startsWith(base)) { try { outside.add(new URL(u).host); } catch (e) { outside.add(u.slice(0, 60)); } } });
+  page.on('response', res => { bytes += +(res.headers()['content-length'] || 0); });
   page.on('pageerror', e => errors.add(String(e.message).split('\n')[0].slice(0, 140)));
   const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
   page.on('console', m => { const t = m.text(); if (m.type() === 'error' && /Shader Error|shader is not compiled|Program Info Log/i.test(t)) shaderErr.add(t.replace(/\s+/g, ' ').slice(0, 120)); });
@@ -124,6 +145,13 @@ for (const g of games) {
   else if (pressed === 0) r.check.push("Couldn't press any start button - add/fix this game's steps in games.json");
   else if (changed(menu, play) < 0.04) r.check.push('Screen barely changed after pressing start - did gameplay begin?');
   if (pressed && changed(play, play2) < 0.003) r.check.push('Gameplay picture frozen for 1.5 seconds');
+  // ---------- STUDIO-STANDARD.md
+  const st = await page.evaluate(() => window.__studio || null).catch(() => null);
+  if (st) { r.studio = { skinned: st.skinned, drawsPerFrame: st.frames ? Math.round(st.sum / st.frames) : 0, maxDraws: st.max };
+    if (g.people && !st.skinned) r.fail.push('Players are not real 3D bodies (no rigged/skinned model was drawn) - blob or box people break STUDIO-STANDARD.md; use characters/base-human-v2 + the athlete kit (gear.js)');
+    const dpf = r.studio.drawsPerFrame;
+    if (dpf > (g.maxDraws || 450)) r.check.push(`Heavy for phones: about ${dpf} draw calls per frame (aim under ${g.maxDraws || 450}; merge meshes - see STUDIO-STANDARD.md "Phone budget")`); }
+  if (bytes > 60e6) r.check.push(`Big download: about ${Math.round(bytes / 1e6)} MB before play (aim under 60 MB)`);
   // ---------- the owner's FIX LIST for this game (tested while the game is running, sideways)
   r.fixes = [];
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
@@ -156,6 +184,10 @@ for (const g of games) {
   }
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
+  const brand = f1.brand || f2.brand, yourName = f1.yourName || f2.yourName;
+  if (brand) r.fail.push(`Real brand / league / player name on screen: "${brand}" - use our own made-up names (owner's law)`);
+  if (yourName) r.fail.push(`"${yourName}" box - it must say "Player nickname" (store rule: no real names from kids)`);
+  for (const h of outside) r.fail.push('Calls the outside internet (games must work fully offline): ' + h);
   if (f1.rotate || f2.rotate) r.fail.push(`Shows a rotate sign sideways: "${f1.rotate || f2.rotate}"`);
   await ctx.close();
 
@@ -255,3 +287,16 @@ md += `---\nMade by tools/game-check (runs after every merge to main). To check 
 fs.writeFileSync(path.join(out, 'README.md'), md);
 fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, results, models: models.filter(m => m.img).map(m => ({ id: m.id, name: m.name, status: m.status || '', img: m.img, problems: m.problems, info: m.info })) }, null, 1));
 console.log(`\n${count('PASS')} pass, ${count('CHECK')} check, ${count('FAIL')} fail`);
+// ---------- pull requests: block only NEW problems (main's own report is the baseline, so old issues don't trap a Muse)
+if (process.env.STRICT) {
+  let base0 = {}; try { base0 = JSON.parse(fs.readFileSync(process.env.BASELINE || 'base-results.json', 'utf8')); } catch (e) {}
+  const norm = (x) => x.replace(/\d+/g, '#');
+  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).map(norm))]));
+  const blockers = [];
+  for (const r of results) for (const f of r.fail) { if (/owner'?s eyes/i.test(f)) continue; if (old.get(r.file) && old.get(r.file).has(norm(f))) continue; blockers.push(`${r.file}: ${f}`); }
+  const oldM = new Set((base0.models || []).flatMap(m => (m.problems || []).map(x => m.name + '|' + norm(String(x)))));
+  for (const m of models) for (const x of (m.problems || [])) if (!oldM.has(m.name + '|' + norm(String(x)))) blockers.push(`MODELS.md ${m.name}: ${x}`);
+  fs.writeFileSync(path.join(out, 'blockers.txt'), blockers.join('\n'));
+  if (blockers.length) { console.log('\nBLOCKED - this pull request adds problems main does not have:\n- ' + blockers.join('\n- ')); process.exit(1); }
+  console.log('\nNo new problems - OK to merge.');
+}

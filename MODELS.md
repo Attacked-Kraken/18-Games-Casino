@@ -45,3 +45,14 @@ Format (one section per model — keep the keys exactly like this):
 - version: 1
 - notes: JOB J2 step 1. CODE-BUILT from shapes (not a real .glb) - owner decides
 - status: WAITING OWNER
+
+## MODEL: Hockey skater (shared athlete kit)
+- id: hockey-skater
+- game: apexhockey.html
+- file: models/hockey-skater.mjs
+- look: rink
+- view: tools/model-viewer.html?m=models/hockey-skater.mjs&look=rink&name=Hockey%20skater
+- by: Claude (arcade reviewer)
+- version: 1
+- notes: Owner's model sheet (2026-10-16). REAL CC0 rigged body (characters/base-human-v2) + CODE-BUILT gear from characters/base-human-v2/gear.js (no real hockey-gear .glb is CC0) - helmet + clear visor, shoulder/elbow pads under the jersey, oversized gloves, padded breezers, socks over shin guards, skates with steel blades, stick in both hands. Stance: lean 15-20, knees 25-30, hips back, wide. Away kit: add &team=away
+- status: WAITING OWNER
