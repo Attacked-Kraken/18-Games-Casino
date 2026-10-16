@@ -92,6 +92,8 @@ for (const g of games) {
   const page = await ctx.newPage();
   const errors = new Set(), missing = new Set();
   page.on('pageerror', e => errors.add(String(e.message).split('\n')[0].slice(0, 140)));
+  const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
+  page.on('console', m => { const t = m.text(); if (m.type() === 'error' && /Shader Error|shader is not compiled|Program Info Log/i.test(t)) shaderErr.add(t.replace(/\s+/g, ' ').slice(0, 120)); });
   page.on('response', res => { if (res.status() >= 400) missing.add(res.url().replace(base, '').slice(0, 100)); });
   page.on('requestfailed', q => { const u = q.url(); if (u.startsWith(base)) missing.add(u.replace(base, '').slice(0, 100)); });
   try {
@@ -171,6 +173,7 @@ for (const g of games) {
   await ctx2.close();
 
   for (const m of missing) r.fail.push('Missing file: ' + m);
+  for (const e of [...shaderErr].slice(0, 2)) r.fail.push('Broken 3D shader (models using it are invisible): ' + e);
   for (const e of [...errors].slice(0, 4)) r.check.push('Script error: ' + e);
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
