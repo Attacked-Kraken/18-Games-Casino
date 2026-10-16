@@ -1,0 +1,66 @@
+--- apexracer.html	2026-10-15 20:10:19.029567503 -0500
++++ apexracer-new.html	2026-10-15 20:11:30.020091242 -0500
+@@ -20,6 +20,12 @@
+   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; }
+   html,body { margin:0; height:100%; overflow:hidden; background:#05030c; color:var(--ink); font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif; touch-action:none; }
+   #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
++  /* LANDSCAPE LAW (owner): portrait presents rotated to landscape from the first frame, no rotate sign */
++  @media (orientation: portrait) {
++    body { position:fixed; left:0; top:0; width:100vh; width:100dvh; height:100vw; height:100dvw;
++      transform-origin:left top; transform:rotate(90deg) translateY(-100vw); transform:rotate(90deg) translateY(-100dvw); }
++    #rotate { display:none !important; }
++  }
+   .scr { position:fixed; inset:0; display:none; z-index:20; }
+   button { font-family:inherit; cursor:pointer; }
+   .neo { border:0; border-radius:16px; padding:13px 18px; font:900 16px/1 system-ui; letter-spacing:.06em; color:#fff; text-transform:uppercase;
+@@ -1949,7 +1955,9 @@
+ const STK = { id: null };
+ function stickReset() { K.sx = 0; K.sy = 0; STK.id = null; $('knob').style.transform = ''; }
+ function stickMove(e) { const r = $('stick').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R0 = r.width * 0.36;
+-  let dx = (e.clientX - cx) / R0, dy = (e.clientY - cy) / R0; const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
++  let dx = (e.clientX - cx) / R0, dy = (e.clientY - cy) / R0;
++  if (innerHeight > innerWidth) { const _dx = dx; dx = dy; dy = -_dx; } // rotated stage: remap touch to landscape frame
++  const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
+   K.sx = Math.abs(dx) < 0.1 ? 0 : (dx - Math.sign(dx) * 0.1) / 0.9; K.sy = -dy; $('knob').style.transform = `translate(${dx * R0}px,${dy * R0}px)`; }
+ $('stick').addEventListener('pointerdown', (e) => { e.preventDefault(); STK.id = e.pointerId; try { $('stick').setPointerCapture(e.pointerId); } catch (x) {} audioInit(); stickMove(e); });
+ $('stick').addEventListener('pointermove', (e) => { if (e.pointerId === STK.id) { e.preventDefault(); stickMove(e); } });
+@@ -1960,7 +1968,10 @@
+ addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (KM[e.code]) { K[KM[e.code]] = 1; e.preventDefault(); audioInit(); } if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
+ addEventListener('keyup', (e) => { if (KM[e.code]) K[KM[e.code]] = 0; });
+ canvas.addEventListener('pointerdown', (e) => { if (G.mode !== 'garage' && G.mode !== 'menu') return; gOrb.drag = { x: e.clientX, y: e.clientY, th: gOrb.th, ph: gOrb.ph }; gOrb.auto = 0; audioInit(); });
+-addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; gOrb.th = d.th - (e.clientX - d.x) * 0.008; gOrb.ph = clamp(d.ph + (e.clientY - d.y) * 0.004, 0.03, 0.9); gOrb.tt = null; });
++addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return;
++  let mdx = e.clientX - d.x, mdy = e.clientY - d.y;
++  if (innerHeight > innerWidth) { const _dx = mdx; mdx = mdy; mdy = -_dx; } // rotated stage: remap drag delta
++  gOrb.th = d.th - mdx * 0.008; gOrb.ph = clamp(d.ph + mdy * 0.004, 0.03, 0.9); gOrb.tt = null; });
+ addEventListener('pointerup', () => { gOrb.drag = null; });
+ $('mRace').onclick = () => { audioInit(); sfx('tap'); openWorld(); };
+ $('mFriends').onclick = () => { audioInit(); sfx('tap'); openFriend(); };
+@@ -1970,9 +1981,11 @@
+ /* ------------------------------------------------------------------ loop */
+ function resize() {
+   const dpr = window.devicePixelRatio || 1, base = S.q === 'ultra' ? Math.min(dpr, 2) : S.q === 'high' ? Math.min(dpr, 2) : 1.5, pr = Math.max(0.6, base * (G.qScale || 1));
+-  renderer.setPixelRatio(pr); renderer.setSize(innerWidth, innerHeight, false); post.on = S.q !== 'fast'; renderer.shadowMap.enabled = S.q !== 'fast';
+-  if (post.on) post.resize(Math.floor(innerWidth * pr), Math.floor(innerHeight * pr));
+-  cam.aspect = gcam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); gcam.fov = innerWidth < innerHeight ? 50 : 36; gcam.updateProjectionMatrix();
++  let w = innerWidth, h = innerHeight;
++  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
++  renderer.setPixelRatio(pr); renderer.setSize(w, h, false); post.on = S.q !== 'fast'; renderer.shadowMap.enabled = S.q !== 'fast';
++  if (post.on) post.resize(Math.floor(w * pr), Math.floor(h * pr));
++  cam.aspect = gcam.aspect = w / h; cam.updateProjectionMatrix(); gcam.fov = 36; gcam.updateProjectionMatrix();
+ }
+ function updateGarage(dt, now) {
+   if (gOrb.auto && !gOrb.drag) gOrb.th += dt * 0.18;
+@@ -2005,9 +2018,9 @@
+ $('mSnd').onclick = () => toggleMute();
+ addEventListener('resize', resize);
+ document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'race') pause(); if (AU.ctx) AU.ctx.suspend(); } else if (AU.ctx) AU.ctx.resume(); });
+-let rotState = '';
+-function rotTick() { const s = (innerWidth < innerHeight && (G.mode === 'race' || G.mode === 'garage')) ? 'flex' : 'none'; if (s !== rotState) { rotState = s; $('rotate').style.display = s; } }
+-setInterval(rotTick, 500);
++/* LANDSCAPE LAW: no rotate sign — portrait presents rotated to landscape from the first frame */
++/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows it */
++addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
+ resize(); toMenu();
+ { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
+ requestAnimationFrame(frame);
