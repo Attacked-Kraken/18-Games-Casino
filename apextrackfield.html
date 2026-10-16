@@ -110,6 +110,11 @@ text-align:center;line-height:1.2}
 #stickKnob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe27a,#d9a419 70%,#8a6408);box-shadow:0 3px 10px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.25)}
 #btnA{right:calc(env(safe-area-inset-right,0px) + 16px);width:120px;height:120px;font-size:16px;
 background:rgba(55,200,113,.20);border-color:#37c871;color:#a9f5c6}
+#btnTap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);pointer-events:auto;width:110px;height:110px;border-radius:50%;border:3px solid #19e6ff;background:radial-gradient(circle at 35% 30%,#7df3ff,#0aa8c8 70%,#065a70);color:#04222b;font:900 18px/1.1 system-ui;letter-spacing:1px;display:flex;align-items:center;justify-content:center;touch-action:none;box-shadow:0 0 18px #19e6ff88;animation:tapPulse 0.9s ease-in-out infinite}
+#btnTap:active{transform:translateX(-50%) scale(0.92)}
+#btnTap.exhausted{border-color:#ff5252;background:radial-gradient(circle at 35% 30%,#ff8a8a,#c81e1e 70%,#700606);color:#fff;box-shadow:0 0 18px #ff525288;animation:none}
+@keyframes tapPulse{0%,100%{box-shadow:0 0 12px #19e6ff66}50%{box-shadow:0 0 26px #19e6ffcc}}
+@keyframes tapPulse{0%,100%{box-shadow:0 0 12px #19e6ff66}50%{box-shadow:0 0 26px #19e6ffcc}}
 #btnA:active{background:rgba(55,200,113,.55);color:#0a1626}
 .kbdhint{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 8px);left:0;right:0;z-index:29;
 display:none;text-align:center;font-size:11px;color:#9fb6cf;pointer-events:none}
@@ -138,6 +143,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 </div>
 <div id="touch">
 <div id="stick" aria-label="Stride stick: rock left and right"><div id="stickKnob"></div></div>
+<div id="btnTap" aria-label="Tap to run">TAP<br>RUN</div>
 <div class="tbtn" id="btnA"><span id="btnALabel">ACTION</span></div>
 </div>
 <div class="kbdhint">ArrowLeft / ArrowRight or A / D to stride &nbsp;·&nbsp; Space = action</div>
@@ -637,7 +643,13 @@ function updateRunner(r, dt, maxSpd, drain){
 r.simT=(r.simT||0)+dt;
 const over2=Math.max(0,(r.tapCount||0)-10);
 const capX=1/(1+over2*0.02);
-const cap = maxSpd*capX*(r.stamina<25 ? 0.70+0.30*(r.stamina/25) : 1);
+// EXHAUSTION: hit 0 stamina and you're exhausted - speed crashes, must recover to 30 to go again
+if(r.stamina<=0 && !r.exhausted){ r.exhausted=true; }
+if(r.exhausted){
+  if(r.stamina>=30) r.exhausted=false;
+}
+const exhCap = r.exhausted ? 0.30 : 1;
+const cap = maxSpd*capX*(r.stamina<25 ? 0.70+0.30*(r.stamina/25) : 1)*exhCap;
 const hardCap = maxSpd*1.02;
 if(r.speed>hardCap) r.speed=hardCap;
 else if(r.speed>cap) r.speed=Math.max(cap, r.speed-10*dt);
@@ -645,7 +657,7 @@ r.speed -= r.speed*0.30*dt + 0.10*dt;
 if(r.speed<0) r.speed=0;
 const drainX=1+over2*0.15;
 if(r.speed>cap*0.86) r.stamina=Math.max(0, r.stamina-(r.speed/cap-0.86)*drain*drainX*dt);
-else r.stamina=Math.min(100, r.stamina+3*dt);
+else r.stamina=Math.min(100, r.stamina+(r.exhausted?8:3)*dt); // recover faster when exhausted (catching breath)
 r.pos += r.speed*dt;
 r.phase += r.speed*dt*1.9;
 }
@@ -1775,7 +1787,7 @@ const hips=new THREE.Group(); hips.position.y=0.98; rig.group.add(hips); parts.h
 const torso=new THREE.Mesh(new THREE.CapsuleGeometry(0.14,0.42,4,10),matT);
 torso.position.y=0.32; torso.castShadow=!COARSE; hips.add(torso);
 const head=new THREE.Mesh(new THREE.SphereGeometry(0.11,12,10),matS);
-head.position.y=0.72; head.castShadow=!COARSE; hips.add(head);
+head.position.y=0.72; head.castShadow=!COARSE; hips.add(head); parts.head=head;
 const mkLimb=(parent,x,y,len,r,mat)=>{
 const piv=new THREE.Group(); piv.position.set(x,y,0); parent.add(piv);
 const m=new THREE.Mesh(new THREE.CapsuleGeometry(r,len,4,8),mat);
@@ -1796,8 +1808,8 @@ const sh=new THREE.Mesh(shoeG,matW); sh.position.set(0,-0.44,0.05); s.add(sh);
 }
 rig.parts=parts;
 },
-rigAnim(rig, mode, speedFrac){
-rig.mode=mode; rig.speedFrac=speedFrac||0;
+rigAnim(rig, mode, speedFrac, tired){
+rig.mode=mode; rig.speedFrac=speedFrac||0; rig.tired=tired||0;
 if(rig.human && rig.h){
 const c=this.clips;
 const want = mode==='run' ? (c.run||c.idle) : mode==='idle' ? c.idle
@@ -1814,13 +1826,30 @@ const p=rig.parts; if(!p) return;
 rig.phase += dt*(4+rig.speedFrac*22);
 const s=Math.sin(rig.phase), c2=Math.sin(rig.phase+Math.PI);
 if(rig.mode==='run'){
-const a=0.85*Math.min(1,0.3+rig.speedFrac);
-p.legL.rotation.x=s*a; p.legR.rotation.x=c2*a;
-p.shinL.rotation.x=Math.max(0,-c2)*1.2*a; p.shinR.rotation.x=Math.max(0,-s)*1.2*a;
-p.armL.rotation.x=c2*a*0.8; p.armR.rotation.x=s*a*0.8;
-p.foreL.rotation.x=-0.9; p.foreR.rotation.x=-0.9;
-p.hips.position.y=0.98+Math.abs(Math.cos(rig.phase))*0.05;
-p.hips.rotation.x=0.12*rig.speedFrac;
+/* Human run cycle: hip drive, knee lift on swing, foot strike under body,
+   counter-swinging arms with bent elbows, forward lean, double-bounce bob. */
+const sf=rig.speedFrac||0;
+const tired=rig.tired||0; // 0=fresh, 1=exhausted
+const a=(0.95*Math.min(1,0.25+sf))*(1-0.35*tired);
+// Hip flexion/extension: legs swing opposite, with slight asymmetry for realism
+const hipL=s*a, hipR=c2*a;
+p.legL.rotation.x=hipL; p.legR.rotation.x=hipR;
+// Knee: bends deeply during swing-through (when hip is flexing forward), extends at strike
+const swingL=Math.max(0,Math.sin(rig.phase+0.6)), swingR=Math.max(0,Math.sin(rig.phase+Math.PI+0.6));
+p.shinL.rotation.x=(0.25+swingL*1.9)*Math.min(1,a*1.4);
+p.shinR.rotation.x=(0.25+swingR*1.9)*Math.min(1,a*1.4);
+// Arms: opposite to legs, elbows bent ~90deg, hands pump hip-to-chest
+const armA=a*0.85*(1-0.3*tired);
+p.armL.rotation.x=c2*armA; p.armR.rotation.x=s*armA;
+p.armL.rotation.z=0.12; p.armR.rotation.z=-0.12;
+p.foreL.rotation.x=-1.15-0.25*Math.max(0,c2); p.foreR.rotation.x=-1.15-0.25*Math.max(0,s);
+// Torso: lean forward with speed, counter-rotate against hips, hunch when tired
+p.hips.rotation.x=(0.10+0.14*sf)*(1+0.8*tired);
+p.hips.rotation.y=(s-c2)*0.06*(1-tired*0.5);
+// Vertical: double-bounce per cycle (flight + stance), lower when tired
+p.hips.position.y=0.98+Math.abs(Math.cos(rig.phase))*0.055*(1+0.3*sf)-tired*0.06;
+// Head: steady, slight forward tilt, drops when exhausted
+if(p.head){ p.head.rotation.x=0.08+tired*0.35; }
 }else if(rig.mode==='jump'){
 p.legL.rotation.x=0.9; p.legR.rotation.x=0.5;
 p.armL.rotation.x=-2.2; p.armR.rotation.x=-1.8;
@@ -1926,14 +1955,14 @@ for(const r of W3D.rigs){ if(r.group.visible){ W3D.rigAnim(r,'idle',0); W3D.rigU
 function straightX(p, dist){ return p-dist; }
 function straightZ(lane){ return -TRK.radius+laneOff(lane); }
 const laneOff=i=>(i-3.5)*1.22;
-function placeStraight(rig,p,dist,lane,speed,maxSpd,airM){
+function placeStraight(rig,p,dist,lane,speed,maxSpd,airM,stam){
 W3D.rigPlace(rig, straightX(p,dist), airM||0, straightZ(lane), Math.PI/2);
-W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2));
+W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==null?0:clamp(1-stam/35,0,1));
 }
-function placeOval(rig,s,lane,speed,maxSpd,airM){
+function placeOval(rig,s,lane,speed,maxSpd,airM,stam){
 const lp=lanePoint(s,laneOff(lane));
 W3D.rigPlace(rig, lp.x, airM||0, lp.z, Math.atan2(lp.tx,lp.tz));
-W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2));
+W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==null?0:clamp(1-stam/35,0,1));
 return lp;
 }
 function followCam(x,z,tx,tz,dt){
@@ -1959,13 +1988,13 @@ else { const lp=lanePoint(mapP(0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*5.2,2.3,lp
 ENG.draw3=dt=>{
 const r=ENG.r;
 if(straight){
-placeStraight(R[0],r.pos,ev.dist,3,r.speed,PMAX,r.airY*0.011);
-ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+30) placeStraight(R[i+1],a.pos,ev.dist,1+i*2,a.speed,PMAX,0); });
+placeStraight(R[0],r.pos,ev.dist,3,r.speed,PMAX,r.airY*0.011,r.stamina);
+ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+30) placeStraight(R[i+1],a.pos,ev.dist,1+i*2,a.speed,PMAX,0,a.stamina); });
 if(r.speed>2&&Math.random()<dt*9) dustAt(straightX(r.pos,ev.dist),0.15,straightZ(3),1);
 followCam(straightX(r.pos,ev.dist),straightZ(3),1,0,dt);
 }else{
-const lp=placeOval(R[0],mapP(r.pos),3,r.speed,PMAX,r.airY*0.011);
-ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+40){ const q=placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0); } });
+const lp=placeOval(R[0],mapP(r.pos),3,r.speed,PMAX,r.airY*0.011,r.stamina);
+ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+40){ const q=placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0,a.stamina); } });
 if(r.speed>2&&Math.random()<dt*9){ const q=lanePoint(mapP(r.pos),laneOff(3)); dustAt(q.x,0.15,q.z,1); }
 const q2=lanePoint(mapP(r.pos),laneOff(3)); followCam(q2.x,q2.z,q2.tx,q2.tz,dt);
 }
@@ -1980,7 +2009,7 @@ const lp0=lanePoint(0,laneOff(3));
 W3D.camSnap(lp0.x-5.2,2.3,lp0.z+2.6, lp0.x+6.5,1.15,lp0.z);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
-const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011);
+const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
 ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0); });
 if(r.speed>2&&Math.random()<dt*7) dustAt(lp.x,0.15,lp.z,1);
 followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
@@ -2552,6 +2581,8 @@ $('hudSub').textContent=h.sub||'';
 $('hudPos').textContent=h.pos||'';
 $('hudPos').style.display=h.pos?'block':'none';
 barFill('barSpeed',h.speed); barFill('barStam',h.stam);
+const tapB=$('btnTap');
+if(tapB&&ENG.r){ tapB.classList.toggle('exhausted', !!ENG.r.exhausted); }
 const lbl=ENG.actionLabel?ENG.actionLabel():'ACTION';
 if(lbl!==updateHUD._l){ updateHUD._l=lbl; $('btnALabel').textContent=lbl; }
 }
@@ -2642,6 +2673,16 @@ setTimeout(()=>showScreen('menu'),900);
 }catch(err){ box.className='err'; box.textContent=err.message||'Invalid code.'; }
 });
 wireButton('btnA',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
+/* TAP TO RUN: mash the button to stride. Alternates L/R automatically for rhythm bonus.
+   Tapping drains stamina; hit 0 and you're EXHAUSTED until you recover. */
+wireButton('btnTap',()=>{
+  if(!ENG||!document.body.classList.contains('playing')) return;
+  if(ENG.r&&ENG.r.exhausted) return; // too tired to tap
+  const side=ENG._tapSide==='L'?'R':'L'; ENG._tapSide=side;
+  ENG.stride(side);
+  const b=$('btnTap'); b.style.transform='translateX(-50%) scale(0.88)';
+  setTimeout(()=>{ b.style.transform=''; },70);
+});
 /* Stride stick: rock left/right to stride. Edge-triggered — each crossing of the engage threshold fires one stride; the knob must swing back through the dead zone to re-arm, so alternating rocks build speed exactly like alternating L/R taps did. */
 (function(){
 const stick=$('stick'),knob=$('stickKnob');
