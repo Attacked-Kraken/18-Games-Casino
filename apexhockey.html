@@ -488,7 +488,8 @@ function makeSkater(teamKey, goalie){
 const BASE_ANCHOR = { // home attacking +x; away mirrors x
   C:[30,0], LW:[46,-22], RW:[46,22], LD:[4,-16], RD:[4,16]
 };
-const skaters = [];
+const STICK_REACH = 2.9; // puck rides mid-blade, a real stick-length ahead (kit blade [-.1,.8] m x 3.26 units/m)
+const skaters = []; window.__hk = { skaters }; // read-only peek for the game check fix tests
 function buildTeam(teamKey){
   const t = TEAMS[teamKey];
   const NUMS = teamKey==='home' ? {C:27,LW:13,RW:88,LD:4,RD:44,G:30} : {C:19,LW:91,RW:86,LD:8,RD:77,G:35};
@@ -542,6 +543,7 @@ const KIT = {
   away: { top:0x0e7c7b, bottom:0x0a4443, goalieTop:0xff7a59 },
 };
 const ATH_H = 5.9, ATH_K = ATH_H/1.81; // match the primitive figure's ~5.9-unit height
+let HK = null;
 function attachAthletes(H){
   let i = 0;
   for(const s of skaters){
@@ -555,100 +557,21 @@ function attachAthletes(H){
         outfit:'hoodie',
         cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0x14161a },
       }, ATH_H);
-      // PRINTS that live IN the jersey paint (not floating plates): back name+number, crest, front number
-      const plateCv=document.createElement('canvas'); plateCv.width=256; plateCv.height=176;
-      const numCv=document.createElement('canvas'); numCv.width=numCv.height=128;
-      const plateTx=new THREE.CanvasTexture(plateCv); plateTx.colorSpace=THREE.SRGBColorSpace;
-      const numTx=new THREE.CanvasTexture(numCv); numTx.colorSpace=THREE.SRGBColorSpace;
-      const crestCv=document.createElement('canvas'); crestCv.width=crestCv.height=128;
-      { const g=crestCv.getContext('2d'); g.strokeStyle='#ffd34d'; g.lineWidth=9; g.beginPath(); g.arc(64,64,45,0,Math.PI*2); g.stroke();
-        g.fillStyle='#ffd34d'; g.font='900 60px system-ui, sans-serif'; g.textAlign='center'; g.fillText('A',64,85); }
-      const crestTx=new THREE.CanvasTexture(crestCv); crestTx.colorSpace=THREE.SRGBColorSpace;
-      s._redrawPrints=()=>{
-        const g=plateCv.getContext('2d'); g.clearRect(0,0,256,160);
-        g.textAlign='center'; g.fillStyle='#ffffff'; g.strokeStyle='rgba(0,0,0,.45)';
-        g.font='800 40px system-ui, sans-serif'; g.lineWidth=4; const sn=(s.surname||'').toUpperCase();
-        g.strokeText(sn,128,48); g.fillText(sn,128,48);
-        g.font='900 118px system-ui, sans-serif'; g.lineWidth=7;
-        g.strokeText(String(s.num||''),128,162); g.fillText(String(s.num||''),128,162);
-        plateTx.needsUpdate=true;
-        const ng=numCv.getContext('2d'); ng.clearRect(0,0,128,128);
-        ng.textAlign='center'; ng.font='900 80px system-ui, sans-serif'; ng.lineWidth=7; ng.strokeStyle='rgba(0,0,0,.45)';
-        ng.strokeText(String(s.num||''),64,90); ng.fillStyle='#ffffff'; ng.fillText(String(s.num||''),64,90);
-        numTx.needsUpdate=true;
-      };
-      s._redrawPrints();
-      // THE UNIFORM IS PAINT, not pieces: extend the rig's own outfit shader with hockey zones
-      try{
-        a.object.traverse(o=>{
-          if(!o.isMesh || !o.material || !o.material.userData || !o.material.userData.U) return;
-          const mat=o.material, orig=mat.onBeforeCompile;
-          const jer=new THREE.Color(s.goalie ? KIT[s.team].goalieTop : KIT[s.team].top);
-          const yok=new THREE.Color(KIT[s.team].bottom);
-          const pan=new THREE.Color(KIT[s.team].bottom).multiplyScalar(0.42);
-          const trm=new THREE.Color(TEAMS[s.team].trim);
-          mat.onBeforeCompile=(sh)=>{
-            orig(sh);
-            sh.uniforms.uJer={value:jer}; sh.uniforms.uYoke={value:yok}; sh.uniforms.uPant={value:pan}; sh.uniforms.uTrm={value:trm};
-            sh.uniforms.uPlate={value:plateTx}; sh.uniforms.uCrest={value:crestTx}; sh.uniforms.uNum={value:numTx};
-            sh.fragmentShader=sh.fragmentShader
-              .replace('uniform vec3 uSkin,uTop,uBot,uJak,uShoe;', 'uniform vec3 uSkin,uTop,uBot,uJak,uShoe; uniform vec3 uJer,uYoke,uPant,uTrm; uniform sampler2D uPlate,uCrest,uNum;')
-              .replace('vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);',
-`vec4 oc = outfit(vB); diffuseColor.rgb = mix(diffuseColor.rgb*uSkin, oc.rgb, oc.a);
-  { vec3 p=vB; float ax2=abs(p.x); bool arm2 = ax2>0.27 && p.y>1.28;
-    if(!arm2 && p.y>0.98 && p.y<1.60){ vec3 c=uJer; if(p.y>1.44) c=uYoke; if(p.y<1.08) c=uTrm; if(p.y>1.11 && p.y<1.15) c=uTrm; diffuseColor.rgb=c;
-      if(p.z<-0.045){ vec2 puv=vec2(0.5-p.x/0.44,(p.y-0.99)/0.52); /* flipped: the back is viewed from behind - un-flipped, the print reads mirrored */ if(puv.x>0.01&&puv.x<0.99&&puv.y>0.01&&puv.y<0.99){ vec4 pt=texture2D(uPlate,puv); diffuseColor.rgb=mix(diffuseColor.rgb,pt.rgb,pt.a); } }
-      if(p.z>0.045){ vec2 cuv=vec2(p.x/0.26+0.5,(p.y-1.13)/0.26); if(cuv.x>0.01&&cuv.x<0.99&&cuv.y>0.01&&cuv.y<0.99){ vec4 ct=texture2D(uCrest,cuv); diffuseColor.rgb=mix(diffuseColor.rgb,ct.rgb,ct.a); }
-        vec2 nuv=vec2((p.x-0.115)/0.115+0.5,(p.y-1.295)/0.135); if(nuv.x>0.01&&nuv.x<0.99&&nuv.y>0.01&&nuv.y<0.99){ vec4 nt=texture2D(uNum,nuv); diffuseColor.rgb=mix(diffuseColor.rgb,nt.rgb,nt.a); } } }
-    else if(arm2){ if(ax2>=0.68){ diffuseColor.rgb=uYoke; } else { vec3 c=uJer; if(ax2<0.32) c=uYoke; if(ax2>0.46 && ax2<0.51) c=uTrm; if(ax2>0.56 && ax2<0.61) c=uTrm; diffuseColor.rgb=c; } }
-    else if(!arm2 && p.y<=0.98 && p.y>0.13){ vec3 c=uPant; if(p.y<0.55){ c=uJer; if(p.y>0.40 && p.y<0.46) c=uTrm; if(p.y>0.29 && p.y<0.35) c=uTrm; } diffuseColor.rgb=c; } }`);
-          };
-          mat.customProgramCacheKey=()=>'hum2hock';
-        });
-      }catch(e){}
-      const wrap = new THREE.Group(); wrap.scale.set(1.05,1,1.05); s.g.add(wrap);
+      HK.a = a;
+      // THE SHARED HOCKEY KIT (characters/base-human-v2/gear.js): real jersey over shoulder + elbow pads, padded
+      // breezers, team socks over shin guards, oversized gloves, helmet + clear visor, skates with steel blades,
+      // the stick in both hands, and the owner's skating stance (lean 15-20, knees 25-30, hips back, wide).
+      const T = TEAMS[s.team];
+      const kitG = HK({ jersey: s.goalie ? kit.goalieTop : kit.top, yoke: kit.bottom, trim: T.trim, pants: new THREE.Color(kit.bottom).multiplyScalar(.55).getHex(),
+        helmet: T.helmet, gloves: kit.bottom, socks: s.goalie ? kit.goalieTop : kit.top, num: s.num, name: s.surname || '', crest: T.name[0], goalie: !!s.goalie,
+        blade: s.goalie ? [0, .55] : [-.1, .8] });
+      s._redrawPrints = () => kitG.setPrints({ num: s.num, name: s.surname || '' });
+      const wrap = new THREE.Group(); s.g.add(wrap);
       a.object.rotation.y = Math.PI/2;
       wrap.add(a.object);
-      if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; });
-      // stick PLANTED ON THE ICE in skater space: blade flat ahead-right, shaft rising
-      // back to the hands. (Bone-parenting it to the hand made it wave like a crutch.)
-      const stick = new THREE.Group();
-      const bl2 = new THREE.Mesh(GEO.blade, MAT.tape); bl2.position.set(0.45, 0.06, 0); stick.add(bl2);
-      const sh2 = new THREE.Mesh(GEO.shaft, MAT.stick); sh2.position.set(-0.30, 1.78, 0); sh2.rotation.z = 0.262; stick.add(sh2);
-      stick.position.set(1.15, 0, 0.72);
-      wrap.add(stick); s.athStick = stick;
-      // helmet on the head bone - a player wears a helmet, not hair
-      let headB = null;
-      a.object.traverse(o=>{ if(o.isBone && /head/i.test(o.name) && !headB) headB = o; });
-      if(headB){
-        // a real hockey helmet: elongated shell riding low, ear covers, back flap, full cage with a chin bar
-        const helmMat = new THREE.MeshStandardMaterial({ color: TEAMS[s.team].helmet, roughness:.28 });
-        const helm = new THREE.Mesh(new THREE.SphereGeometry(0.54, 14, 10, 0, Math.PI*2, 0, Math.PI*0.58), helmMat);
-        helm.scale.set(0.98/ATH_K, 0.88/ATH_K, 1.14/ATH_K); helm.position.set(0, 0.05, 0.03);
-        headB.add(helm);
-        for(const sx of [-1,1]){ const ear=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.14,0.07,10), helmMat);
-          ear.scale.setScalar(1/ATH_K); ear.rotation.z=Math.PI/2; ear.position.set(sx*0.47,-0.14,0.02); headB.add(ear); }
-        const flap=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.36,0.06), helmMat);
-        flap.scale.setScalar(1/ATH_K); flap.position.set(0,-0.17,-0.45); flap.rotation.x=-0.22; headB.add(flap);
-        const cage = new THREE.Group();
-        const cageMat = new THREE.MeshStandardMaterial({ color:0x23262b, roughness:.45, metalness:.6 });
-        for(const hy of [0.10,-0.04,-0.18,-0.32]){ const hb=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.05,0.05), cageMat); hb.position.set(0,hy,0.45); cage.add(hb); }
-        for(const vx of [-0.19,0,0.19]){ const vb=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.62,0.05), cageMat); vb.position.set(vx,-0.11,0.45); cage.add(vb); }
-        cage.scale.setScalar(1/ATH_K);
-        headB.add(cage);
-      }
-      // hard equipment only — helmet + cage above, stick, and the skate blades here.
-      // (The uniform itself is painted on by the shader — no bolted-on clothing.)
-      try{
-        a.object.traverse(o=>{
-          if(!o.isBone) return;
-          if(/foot/i.test(o.name) && !/toe/i.test(o.name)){
-            const bl3=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.07,0.1),
-              new THREE.MeshStandardMaterial({color:0xb9c4cc, roughness:.3, metalness:.7}));
-            bl3.scale.setScalar(1/ATH_K); bl3.rotation.z=Math.PI/2; bl3.position.set(0,0.09,0.07); o.add(bl3);
-          }
-        });
-      }catch(e){}
+      if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
+      s.kit = kitG; s.athStick = kitG.stick;
+      a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
     }catch(e){ /* that player stays primitive */ }
@@ -659,6 +582,8 @@ function attachAthletes(H){
   try{
     const { loadHumans } = await import('./characters/base-human-v2/humans.js');
     const H = await loadHumans(THREE, './characters/base-human-v2/');
+    const { hockeyKit } = await import('./characters/base-human-v2/gear.js');
+    HK = (o) => hockeyKit(THREE, HK.a, o);
     attachAthletes(H);
   }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
 })();
@@ -855,7 +780,7 @@ function doPass(){
   if(!best) return;
   const lead=0.30, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
   const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=40;
-  puck.pos.set(from.pos.x+fx*2.1, 0.2, from.pos.z+fz*2.1); // release from the stick, not the skates
+  puck.pos.set(from.pos.x+fx*STICK_REACH, 0.2, from.pos.z+fz*STICK_REACH); // release from the stick, not the skates
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=2.2;
   puck.passGrace=from; puck.passT=performance.now();
   puck.lastPass=from; puck.lastPassT=performance.now();
@@ -1099,7 +1024,7 @@ function aiPass(s){
   if(!best) return;
   const tx=best.pos.x+best.vel.x*0.3, tz=best.pos.z+best.vel.z*0.3;
   const dx=tx-puck.pos.x,dz=tz-puck.pos.z,d=Math.hypot(dx,dz)||1;
-  puck.pos.set(s.pos.x+Math.cos(s.facing)*2.1, 0.2, s.pos.z+Math.sin(s.facing)*2.1);
+  puck.pos.set(s.pos.x+Math.cos(s.facing)*STICK_REACH, 0.2, s.pos.z+Math.sin(s.facing)*STICK_REACH);
   puck.vel.set(dx/d*37,0,dz/d*37); puck.owner=null; puck.recv=best; puck.recvT=2.2;
   puck.passGrace=s; puck.passT=performance.now();
   puck.lastPass=s; puck.lastPassT=performance.now();
@@ -1194,10 +1119,9 @@ function stepSkater(s,dt){
     a.mixer.update(dt);
     const sf=clamp(sp/30,0,1); // hockey stance: crouched, leaning in, weight rocking stride to stride
     s.bank=(s.bank||0)+(clamp((s._tr||0)*0.055,-0.24,0.24)*sf-(s.bank||0))*Math.min(1,9*dt); // bank into the turn
-    s.athWrap.rotation.z=-(0.23+0.17*sf); // deep hockey crouch
-    s.athWrap.rotation.x=Math.sin(s.phase)*0.055*sf+(s.bank||0);
-    s.athWrap.position.y=-0.30*(0.4+0.6*sf)+Math.abs(Math.sin(s.phase))*0.06*sf;
-    if(s.athStick) s.athStick.rotation.y = (puck.owner===s) ? Math.sin(s.phase*2)*0.10 : Math.sin(s.phase)*0.04*sf; // stickhandling sway
+    // the kit's stance sets lean, knees, hips and skates-on-the-ice every frame (owner's model sheet); the wrap only banks into turns
+    if(s.kit) s.kit.stance.apply({ crouch: 1, stride: sf, phase: s.phase/5.2, handle: puck.owner===s ? 1 : 0 });
+    s.athWrap.rotation.x=(s.bank||0);
     if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
   }
   // ice spray: hard stops and carving turns throw snow off the blades
@@ -1212,7 +1136,7 @@ function stepSkater(s,dt){
 function stepPuck(dt){
   if(puck.owner){
     const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
-    puck.pos.set(o.pos.x+fx*2.1, 0.2, o.pos.z+fz*2.1);
+    puck.pos.set(o.pos.x+fx*STICK_REACH, 0.2, o.pos.z+fz*STICK_REACH);
     puck.vel.set(o.vel.x,0,o.vel.z);
     return;
   }
