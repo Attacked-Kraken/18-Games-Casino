@@ -176,6 +176,45 @@ for (const g of games) {
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);
 }
+// ---------- 3D models waiting for the owner (MODELS.md): photograph each one in the model viewer, so the owner
+// sees the REAL model with the game's lighting - Muses can't take WebGL pictures themselves.
+const models = [];
+try {
+  const body = fs.readFileSync('MODELS.md', 'utf8');
+  let cur = null, fence = false;
+  for (const line of body.split(/\r?\n/)) {
+    if (line.trim().startsWith('```')) { fence = !fence; cur = null; continue; }
+    if (fence) continue;                                 // the example in the format box isn't a real model
+    const h = line.trim().match(/^##\s*MODEL\s*:\s*(.+)$/i);
+    if (h) { cur = { name: h[1].trim() }; models.push(cur); continue; }
+    if (line.startsWith('## ')) { cur = null; continue; }
+    const kv = line.match(/^\s*[-*]\s*([A-Za-z][A-Za-z ]{0,24}):\s*(.*)$/);
+    if (cur && kv) cur[kv[1].trim().toLowerCase()] = kv[2].trim();
+  }
+} catch (e) {}
+fs.mkdirSync(path.join(out, 'img', 'models'), { recursive: true });
+for (const m of models.filter(m => m.file && !/^(LOCKED|NO)/i.test(m.status || ''))) {
+  m.id = (m.id || m.name).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
+  let view = m.view && m.view.includes('model-viewer.html') ? m.view.replace(/^.*?tools\//, 'tools/') :
+    `tools/model-viewer.html?m=${encodeURIComponent(m.file)}${m.anims ? '&anims=' + encodeURIComponent(m.anims) : ''}&look=${m.look || 'studio'}`;
+  m.img = {}; m.problems = [];
+  const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 160)));
+  for (const side of ['q', 'front', 'side']) {
+    try {
+      await page.goto(base + view + (view.includes('?') ? '&' : '?') + 'shot=' + side + '&name=' + encodeURIComponent(m.name), { waitUntil: 'load', timeout: 30000 });
+      await page.waitForFunction(() => document.title === 'ready' || document.title === 'error', null, { timeout: 30000 });
+      if (await page.title() === 'error') { m.problems.push(await page.textContent('#msg')); break; }
+      const jpg = await page.screenshot({ type: 'jpeg', quality: 70 });
+      fs.writeFileSync(path.join(out, 'img', 'models', `${m.id}-${side}.jpg`), jpg); m.img[side] = `img/models/${m.id}-${side}.jpg`;
+    } catch (e) { m.problems.push('viewer did not finish: ' + String(e.message || e).slice(0, 120)); break; }
+  }
+  if (errs.length) m.problems.push(...errs.slice(0, 2));
+  m.info = await page.textContent('#info').catch(() => '');
+  await ctx.close();
+  console.log(`MODEL ${m.name}: ${Object.keys(m.img).length} pictures ${m.problems.join(' | ')}`);
+}
 await browser.close();
 
 // ---------- the report (README.md shows on GitHub, phone-friendly)
@@ -199,8 +238,17 @@ for (const r of results.slice().sort((a, b) => order[a.status] - order[b.status]
   }
   md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">\n\n`;
 }
+const shown = models.filter(m => m.img);
+if (shown.length) {
+  md += `# 3D models (MODELS.md)\n\nEach one photographed in tools/model-viewer.html with its game's lighting.\n\n`;
+  for (const m of shown) {
+    md += `## ${m.name} — ${m.status || ''}\n\n${m.info || ''}\n\n`;
+    for (const x of m.problems) md += `- 🔴 ${x}\n`;
+    md += ['q', 'front', 'side'].filter(k => m.img[k]).map(k => `<img src="${m.img[k]}" width="300">`).join(' ') + '\n\n';
+  }
+}
 md += `---\nMade by tools/game-check (runs after every merge to main). To check your game again, merge to main ` +
       `or run the "Game check" workflow by hand.\n`;
 fs.writeFileSync(path.join(out, 'README.md'), md);
-fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, results }, null, 1));
+fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, results, models: models.filter(m => m.img).map(m => ({ id: m.id, name: m.name, status: m.status || '', img: m.img, problems: m.problems, info: m.info })) }, null, 1));
 console.log(`\n${count('PASS')} pass, ${count('CHECK')} check, ${count('FAIL')} fail`);

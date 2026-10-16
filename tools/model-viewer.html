@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>3D model view</title>
+<style>
+  html,body{margin:0;height:100%;background:#11141b;color:#fff;font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden;touch-action:none}
+  canvas{display:block;width:100vw;height:100vh}
+  #top{position:fixed;left:0;right:0;top:0;padding:max(10px,env(safe-area-inset-top)) 14px 8px;background:linear-gradient(#000a,#0000);pointer-events:none}
+  #top b{font-size:17px} #top span{display:block;font-size:12px;opacity:.75}
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:8px 10px max(10px,env(safe-area-inset-bottom));display:flex;gap:6px;overflow-x:auto;background:linear-gradient(#0000,#000b)}
+  #bar button{flex:0 0 auto;border:0;border-radius:999px;padding:9px 14px;font:inherit;font-weight:600;background:#ffffff22;color:#fff}
+  #bar button.on{background:#2563eb}
+  #msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;pointer-events:none}
+</style>
+<script src="../apex-gfx.js"></script>
+<script type="importmap">{"imports":{"three":"../three.module.min.js"}}</script>
+</head><body>
+<div id="top"><b id="name">Loading…</b><span id="info"></span></div>
+<div id="msg">Loading the 3D model…</div>
+<div id="bar"></div>
+<script type="module">
+/* Owner's 3D model viewer (MODELS.md rule): shows the REAL model file with the same lighting the game uses
+   (look-presets.js). Drag to turn, pinch to zoom, tap a move to play it.
+   ?m=path/to/model.glb  (from the site root)   &anims=path/to/anims.glb (same skeleton, optional)
+   &look=rink|field|track|night|studio   &h=1.85 (height in meters, optional)   &name=Hockey player
+   Robot pictures: &shot=front|side|back|q (freezes, sets document.title = 'ready')  &clip=Name  &t=0.4 */
+import * as THREE from '../three.module.min.js';
+import { GLTFLoader } from '../vendor/GLTFLoader.js';
+import { applyLook } from '../look-presets.js';
+const q = new URLSearchParams(location.search);
+const shot = q.get('shot');
+const $ = id => document.getElementById(id);
+const R = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: !!shot });
+R.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); R.setSize(innerWidth, innerHeight); document.body.prepend(R.domElement);
+const scene = new THREE.Scene();
+const look = applyLook(THREE, R, scene, q.get('look') || 'studio');
+const cam = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 200);
+const root = (p) => new URL('../' + String(p || '').replace(/^\/+/, ''), location.href).href;
+const fail = t => { $('msg').textContent = t; document.title = 'error'; };
+if (!q.get('m')) { fail('Add ?m=path/to/model.glb'); throw 0; }
+const loader = new GLTFLoader();
+let model, mixer, actions = {}, current = null, height = 1.8, target = new THREE.Vector3(0, 0.9, 0);
+let yaw = 0.5, pitch = 0.12, dist = 4, spin = !shot, last = performance.now();
+try {
+  const g = await loader.loadAsync(root(q.get('m')));
+  model = g.scene;
+  model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  let box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3());
+  const wantH = +q.get('h');
+  if (wantH > 0 && size.y > 0) { model.scale.multiplyScalar(wantH / size.y); box = new THREE.Box3().setFromObject(model); size = box.getSize(new THREE.Vector3()); }
+  const c = box.getCenter(new THREE.Vector3());
+  model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
+  scene.add(model);
+  height = Math.max(size.x, size.y, size.z) || 1.8;
+  target.set(0, size.y * 0.46, 0); dist = height * 2.7;
+  let clips = g.animations || [];
+  if (q.get('anims')) { try { clips = clips.concat((await loader.loadAsync(root(q.get('anims')))).animations); } catch (e) {} }
+  let tris = 0; model.traverse(o => { if (o.isMesh && o.geometry) tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; });
+  $('name').textContent = q.get('name') || q.get('m').split('/').pop();
+  $('info').textContent = Math.round(tris).toLocaleString() + ' triangles · ' + size.y.toFixed(2) + ' m tall · look: ' + look.name + ' · drag to turn, pinch to zoom';
+  $('msg').textContent = '';
+  mixer = new THREE.AnimationMixer(model);
+  const bar = $('bar');
+  const btn = (label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = () => fn(b); bar.appendChild(b); return b; };
+  const spinBtn = btn('⟳ Spin', b => { spin = !spin; b.classList.toggle('on', spin); }); spinBtn.classList.toggle('on', spin);
+  btn('Front', () => { spin = false; spinBtn.classList.remove('on'); yaw = 0; }); btn('Side', () => { spin = false; spinBtn.classList.remove('on'); yaw = Math.PI / 2; });
+  btn('Back', () => { spin = false; spinBtn.classList.remove('on'); yaw = Math.PI; });
+  const play = (name, b) => {
+    if (current) current.fadeOut(0.25);
+    current = actions[name]; current.reset().fadeIn(0.25).play();
+    bar.querySelectorAll('.clip').forEach(x => x.classList.toggle('on', x === b));
+  };
+  clips.forEach(cl => { actions[cl.name] = mixer.clipAction(cl); const b = btn('▶ ' + cl.name.replace(/_/g, ' '), bb => play(cl.name, bb)); b.classList.add('clip'); });
+  const first = q.get('clip') && actions[q.get('clip')] ? q.get('clip') : (clips.find(c => /idle/i.test(c.name)) || clips[0] || {}).name;
+  if (first) play(first, [...bar.querySelectorAll('.clip')].find(b => b.textContent.includes(first.replace(/_/g, ' '))));
+  if (shot) { yaw = { front: 0, side: Math.PI / 2, back: Math.PI, q: 0.6 }[shot] ?? 0; if (mixer) mixer.setTime(+(q.get('t') || 0.4)); bar.style.display = 'none'; }
+} catch (e) { fail("Couldn't load that model: " + (e && e.message || e)); throw e; }
+// touch: drag to turn, pinch / wheel to zoom
+const pts = new Map(); let pinch0 = 0, dist0 = dist;
+addEventListener('pointerdown', e => { if (e.target.closest('#bar')) return; pts.set(e.pointerId, [e.clientX, e.clientY]); spin = false; document.querySelector('#bar button')?.classList.remove('on');
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); dist0 = dist; } });
+addEventListener('pointermove', e => { const p = pts.get(e.pointerId); if (!p) return;
+  if (pts.size === 2) { pts.set(e.pointerId, [e.clientX, e.clientY]); const [a, b] = [...pts.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) dist = Math.min(height * 6, Math.max(height * 0.4, dist0 * pinch0 / d)); return; }
+  yaw -= (e.clientX - p[0]) * 0.008; pitch = Math.max(-0.3, Math.min(1.2, pitch + (e.clientY - p[1]) * 0.006)); pts.set(e.pointerId, [e.clientX, e.clientY]); });
+const up = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch0 = 0; };
+addEventListener('pointerup', up); addEventListener('pointercancel', up);
+addEventListener('wheel', e => { dist = Math.min(height * 6, Math.max(height * 0.4, dist * (1 + Math.sign(e.deltaY) * 0.1))); }, { passive: true });
+addEventListener('resize', () => { R.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); });
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (spin) yaw += dt * 0.5;
+  if (mixer && !shot) mixer.update(dt);
+  cam.position.set(target.x + Math.sin(yaw) * Math.cos(pitch) * dist, target.y + Math.sin(pitch) * dist, target.z + Math.cos(yaw) * Math.cos(pitch) * dist);
+  cam.lookAt(target);
+  look.render(scene, cam, now / 1000);
+  if (!shot) requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+if (shot) setTimeout(() => { frame(performance.now()); document.title = 'ready'; }, 400);
+</script>
+</body></html>
