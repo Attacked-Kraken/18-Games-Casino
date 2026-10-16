@@ -1,5 +1,0 @@
-PATCH DID NOT APPLY: patches/muse-main-racer-landscape.patch
-
-error: home/hatch/workspace/landscape-parity/apexracer.html: No such file or directory
-
-What to do: pull the latest version of the big file on your branch, make your diff against THAT version (git diff format, with a few unchanged lines of context around each change), and push the .patch again.
