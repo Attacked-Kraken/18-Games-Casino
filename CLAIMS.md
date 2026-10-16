@@ -151,7 +151,6 @@ in **STORE-READY.md**; a game that breaks it is not done.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
-| CLAIMED | Monster truck faster (70 top speed) + camera 51 back 30 up | Muse algre141 | monstertruck-faster | | 2026-10-16 01:02 CDT |
 | CLAIMED | Monster truck speed + mega jump ramp (faster truck, long ramp for big air) | Muse algre141 | monstertruck-speed | | 2026-10-16 00:55 CDT |
 | CLAIMED | Monster truck z-fighting fix: outer.y -3, camera near 0.5, dirt anisotropy | Muse algre141 | monstertruck-zfight | | 2026-10-15 23:30 CDT |
 | CLAIMED | Monster truck fixes: mute button clickable, bigger ramps for 4x trucks | Muse algre141 | monstertruck-fixes2 | | 2026-10-15 22:15 CDT |
@@ -167,6 +166,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | CLAIMED | F1 reference upgrade (apexf1.html): 10 teams with unique glossy liveries, fictional drivers, tire sidewall stripes, start gantry, barriers, Apex Arcade signage; revert PR #266 duplicates in apexracer.html | Muse main | f1-ref-upgrade-v2 | | 2026-10-15 21:11 CDT |
+| DONE | Track & Field natural run: toned down bone animation (thigh 35deg, knee 95deg max, natural cadence), bone reset when idle | Muse Modern Plus | trackfield-natural-run | PR #320, main 5884307e | 2026-10-16 01:05 CDT |
 | DONE | Track & Field realistic humans: re-enabled Quaternius GLBs, procedural bone animation (thigh/calf/arms/pelvis) since GLB has no run clip | Muse Modern Plus | trackfield-human-realistic | PR #309, main 7a6a46a8 | 2026-10-15 23:50 CDT |
 | DONE | Track & Field legs + stadium: disabled GLB upgrade (run clips missing -> idle), all procedural with boosted animation; added 4 corner stands for complete bowl | Muse Modern Plus | trackfield-legs-stadium | PR #304, main 12b8cb16 | 2026-10-15 23:25 CDT |
 | DONE | Track & Field real track + bigger legs: ground plane grass->dark, track wider (7.5m) and brighter blue, leg swing +15%, knee bend 2.2rad, GLB speed 2.4x | Muse Modern Plus | trackfield-real-track | PR #296, main d86de93d | 2026-10-15 21:40 CDT |
