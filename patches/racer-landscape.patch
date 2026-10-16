@@ -1,0 +1,10 @@
+--- racer_branch.html	2026-10-15 20:16:36.598406036 -0500
++++ racer_fixed.html	2026-10-15 20:17:15.440728870 -0500
+@@ -2011,6 +2011,7 @@
+ $('rMute').onclick = () => toggleMute();
+ $('mSnd').onclick = () => toggleMute();
+ addEventListener('resize', resize);
++if (window.visualViewport) window.visualViewport.addEventListener('resize', resize); /* LANDSCAPE LAW: mobile viewport */
+ document.addEventListener('visibilitychange', () => { if (document.hidden) { if (G.mode === 'race') pause(); if (AU.ctx) AU.ctx.suspend(); } else if (AU.ctx) AU.ctx.resume(); });
+ let rotState = '';
+ function rotTick() { const s = (innerWidth < innerHeight && (G.mode === 'race' || G.mode === 'garage')) ? 'flex' : 'none'; if (s !== rotState) { rotState = s; $('rotate').style.display = s; } }
