@@ -8,6 +8,10 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - Solid dirt floor
+- J5: Engine is a deep layered V8 roar (sub-bass + detuned saws), revs 35Hz idle to 180Hz with speed
+- J5: Menu music (112 BPM rock) and game music (132 BPM driving riff) play; mute silences everything
+- J5: Truck ~2.7m tall with ~2.1m tires next to 4.4m cars - real Monster Jam proportions
+- J5: Jumps arc fast (GRAV 38), land hard with dust burst + camera shake + thud - no floating
 
 ## NEVER
 - No flicker between brown dirt and gray on phones (z-fighting)
