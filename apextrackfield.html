@@ -112,7 +112,6 @@ text-align:center;line-height:1.2}
 background:rgba(55,200,113,.20);border-color:#37c871;color:#a9f5c6}
 #btnTap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);pointer-events:auto;width:110px;height:110px;border-radius:50%;border:3px solid #19e6ff;background:radial-gradient(circle at 35% 30%,#7df3ff,#0aa8c8 70%,#065a70);color:#04222b;font:900 18px/1.1 system-ui;letter-spacing:1px;display:flex;align-items:center;justify-content:center;touch-action:none;box-shadow:0 0 18px #19e6ff88;animation:tapPulse 0.9s ease-in-out infinite}
 #btnTap:active{transform:translateX(-50%) scale(0.92)}
-#btnTap.exhausted{border-color:#ff5252;background:radial-gradient(circle at 35% 30%,#ff8a8a,#c81e1e 70%,#700606);color:#fff;box-shadow:0 0 18px #ff525288;animation:none}
 @keyframes tapPulse{0%,100%{box-shadow:0 0 12px #19e6ff66}50%{box-shadow:0 0 26px #19e6ffcc}}
 @keyframes tapPulse{0%,100%{box-shadow:0 0 12px #19e6ff66}50%{box-shadow:0 0 26px #19e6ffcc}}
 #btnA:active{background:rgba(55,200,113,.55);color:#0a1626}
@@ -245,7 +244,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div class="hint"><b>Relay:</b> in the 20m exchange zone tap ACTION to pass the baton. Clean timing = flying start for the next leg.</div>
 <div class="hint"><b>Jumps:</b> stride the run-up, tap ACTION on the board (over it = foul), then tap ACTION to set the takeoff angle. Triple jump: two more timed taps for hop and step.</div>
 <div class="hint"><b>High jump / Pole vault:</b> stride in, tap ACTION in the takeoff zone, then tap ACTION when the marker is inside the green window to clear the bar.</div>
-<div class="hint"><b>Throws:</b> tap ACTION to lock the power meter, then tap ACTION to release at the right angle. Discus / hammer: tap in rhythm with the 3 spin pulses first. Javelin: stride the run-up for extra speed.</div>
+<div class="hint"><b>Throws:</b> tap ACTION to lock the power meter, then tap ACTION to release at the right angle. DISCUS: hold ACTION to spin, release to throw - one action. Hammer: tap in rhythm with the 3 spin pulses first. Javelin: stride the run-up for extra speed.</div>
 <div class="hint"><b>Career:</b> earn training points from meet placements, spend them on Speed / Stamina / Technique. Win each season's final meet to advance from Freshman to Senior.</div>
 <div class="hint"><b>Tournament:</b> 8 athletes, single elimination. Win your head-to-head each round — the event changes every round.</div>
 <button class="btn" id="bHowBack">GOT IT</button>
@@ -566,7 +565,7 @@ hint:'Plant the pole, tap ACTION in the zone, then time the green window to clea
 {id:'sp', name:'Shot Put', eng:'throw', throwType:'shot', timed:false, ref:23.56,
 hint:'Tap ACTION to lock power, tap ACTION again to release at the best angle. 3 attempts.'},
 {id:'dt', name:'Discus Throw', eng:'throw', throwType:'discus', timed:false, ref:74.08,
-hint:'Tap ACTION in rhythm with the 3 spin pulses for bonus, then lock power and release angle. 3 attempts.'},
+hint:'ONE action: HOLD ACTION to spin, RELEASE to throw - like a real thrower. 3 attempts.'},
 {id:'ht', name:'Hammer Throw', eng:'throw', throwType:'hammer', timed:false, ref:86.74,
 hint:'Tap ACTION in rhythm with the 3 spin pulses for bonus, then lock power and release angle. 3 attempts.'},
 {id:'jt', name:'Javelin Throw', eng:'throw', throwType:'javelin', timed:false, ref:98.48,
@@ -664,13 +663,12 @@ function updateRunner(r, dt, maxSpd, drain){
 r.simT=(r.simT||0)+dt;
 const over2=Math.max(0,(r.tapCount||0)-10);
 const capX=1/(1+over2*0.02);
-// EXHAUSTION: hit 0 stamina and you're exhausted - speed crashes, must recover to 30 to go again
-if(r.stamina<=0 && !r.exhausted){ r.exhausted=true; }
-if(r.exhausted){
-  if(r.stamina>=30) r.exhausted=false;
-}
-const exhCap = r.exhausted ? 0.30 : 1;
-const cap = maxSpd*capX*(r.stamina<25 ? 0.70+0.30*(r.stamina/25) : 1)*exhCap;
+// JOB J7 keep-it (owner): NO exhaustion state. The old rule crashed speed to
+// 30% at 0 stamina and held it there until 30 recovered - on the long relay /
+// long races that is exactly what the owner hit: 'a RED button turns on and
+// blocks running'. Stamina still paces the runner (the under-25 taper below),
+// but running NEVER switches off and no button ever blocks TAP RUN.
+const cap = maxSpd*capX*(r.stamina<25 ? 0.70+0.30*(r.stamina/25) : 1);
 const hardCap = maxSpd*1.02;
 if(r.speed>hardCap) r.speed=hardCap;
 else if(r.speed>cap) r.speed=Math.max(cap, r.speed-10*dt);
@@ -678,7 +676,7 @@ r.speed -= r.speed*0.30*dt + 0.10*dt;
 if(r.speed<0) r.speed=0;
 const drainX=1+over2*0.15;
 if(r.speed>cap*0.86) r.stamina=Math.max(0, r.stamina-(r.speed/cap-0.86)*drain*drainX*dt);
-else r.stamina=Math.min(100, r.stamina+(r.exhausted?8:3)*dt); // recover faster when exhausted (catching breath)
+else r.stamina=Math.min(100, r.stamina+3*dt); // catching breath
 r.pos += r.speed*dt;
 r.phase += r.speed*dt*1.9;
 }
@@ -1140,17 +1138,50 @@ function createThrowEngine(ev, rivals){
 const T=THROW_DEF[ev.throwType];
 const E={
 ev, T, done:false, dq:false, attempt:1, attempts:[], best:0,
-phase: T.runup?'runup':(T.spin?'spin':'power'),
+phase: (ev.throwType==='discus')?'hold':(T.runup?'runup':(T.spin?'spin':'power')),
 r:newRunner(), power:0, pdir:1, ang:20, adir:1, locked:0,
 spinT:0, spinIdx:0, spinQ:[], runSpeed:0,
 fx:0, ft:0, fT:1, resT:0,
 aiBest: rivals.map(rv=>rivalMark(ev,rv.rating)),
 actionLabel(){
+if(ev.throwType==='discus'){
+if(this.phase==='hold') return 'HOLD TO SPIN';
+if(this.phase==='spinning') return 'RELEASE!';
+return 'THROW';
+}
 return this.phase==='runup'?'THROW':(this.phase==='spin'?'SPIN!':(this.phase==='power'?'LOCK':'RELEASE'));
 },
 stride(side){ if(this.done||this.phase!=='runup') return; applyStride(this.r,side,0.95); },
+// JOB J7 keep-it (owner): DISCUS is ONE simple action - hold to spin, release
+// to throw, like a real thrower (at most 2 taps: press, release). No rhythm
+// taps, no power lock, no angle tap. Other throws keep their own flows.
+actionDown(){
+if(ev.throwType!=='discus'){ this.action(); return; }
+if(this.done||this.phase!=='hold') return;
+this.phase='spinning'; this.spinT=0; AudioSys.click();
+},
+actionUp(){
+if(ev.throwType!=='discus') return;
+if(this.done||this.phase!=='spinning') return;
+this.releaseThrow();
+},
+releaseThrow(){
+const t=this.spinT;
+const q=clamp(1-Math.abs(t-1.55)/(1.15*SIM_MODS.tech), 0.5, 1); // ~1.55s of spin = two full turns, the perfect release window
+this.power=clamp(t/1.55, 0.15, 1);
+const d=Math.pow(this.power,1.5)*T.max*(0.62+0.38*q);
+this.jumpD=Math.max(1.5,d);
+this.phase='flight'; this.ft=0; this.fT=1.6; this.fx=0;
+AudioSys.pistol(); AudioSys.cheer(0.8);
+},
 action(){
 if(this.done) return;
+if(ev.throwType==='discus'){
+// tap-tap works too (press starts the spin, next tap throws) - never more than 2 taps
+if(this.phase==='hold'){ this.actionDown(); }
+else if(this.phase==='spinning'){ this.releaseThrow(); }
+return;
+}
 if(this.phase==='runup'){ this.runSpeed=this.r.speed; this.phase=T.spin?'spin':'power'; AudioSys.click(); }
 else if(this.phase==='spin'){
 const target=(this.spinIdx+1)*0.6, err=Math.abs(this.spinT-target);
@@ -1178,13 +1209,17 @@ this.phase='mark'; this.resT=2.2;
 reset(){
 this.r=newRunner(); this.power=0; this.pdir=1; this.ang=20; this.adir=1;
 this.spinT=0; this.spinIdx=0; this.spinQ=[]; this.runSpeed=0;
-this.phase=T.runup?'runup':(T.spin?'spin':'power');
+this.phase=(ev.throwType==='discus')?'hold':(T.runup?'runup':(T.spin?'spin':'power'));
 },
 update(dt){
 if(this.done){ this.finishT=(this.finishT||0)+dt; return; }
 if(this.phase==='runup'){
 updateRunner(this.r,dt,10.5,15);
 if(this.r.pos>=22){ this.runSpeed=this.r.speed; this.phase=T.spin?'spin':'power'; }
+}else if(this.phase==='spinning'){
+this.spinT+=dt;
+this.power=clamp(this.spinT/1.55,0,1);
+if(this.spinT>=3.1) this.releaseThrow(); // held far too long - the throw goes off anyway, never a dead end
 }else if(this.phase==='spin'){
 this.spinT+=dt;
 if(this.spinT>(this.spinIdx+1)*0.6+0.35){
@@ -1209,7 +1244,7 @@ else { this.attempt++; this.reset(); }
 }
 },
 hud(){
-const ph={runup:'RUN-UP',spin:'SPIN RHYTHM',power:'POWER',angle:'ANGLE',flight:'',mark:''}[this.phase];
+const ph={runup:'RUN-UP',spin:'SPIN RHYTHM',power:'POWER',angle:'ANGLE',flight:'',mark:'',hold:'HOLD ACTION TO SPIN',spinning:'RELEASE TO THROW'}[this.phase];
 return {event:T.name, main:this.best>0?fmtMark(this.best):'--',
 sub:'Attempt '+this.attempt+'/3'+(ph?' · '+ph:''),
 pos:'', speed:0, stam:1};
@@ -2305,7 +2340,11 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='throw'){
 const T=ENG.T, C=W3D.venueMats.throwC;
-W3D.camSnap(C.x-9,4.2,C.z+11, C.x+8,1.2,C.z);
+const DISC3 = ev.throwType==='discus';
+// JOB J7 keep-it (owner): the discus camera sits close behind/side of the
+// thrower so he fills the frame - never far away, never behind a meter.
+if(DISC3) W3D.camSnap(C.x-6,2.4,C.z+7, C.x+3,1.2,C.z);
+else W3D.camSnap(C.x-9,4.2,C.z+11, C.x+8,1.2,C.z);
 let spinA=0;
 ENG.draw3=dt=>{
 const R0=R[0];
@@ -2321,13 +2360,26 @@ W3D.implement.cur.rotation.z=-Math.PI/2+0.5-t*0.9;
 }
 }else{
 W3D.showImplement(ev.throwType,C.x+0.4,1.0,C.z);
-if(ENG.phase==='spin'){ spinA+=dt*7; }
+if(ENG.phase==='spin'||ENG.phase==='spinning'){ spinA+=dt*7; }
 }
-const heading=Math.PI/2+(ENG.phase==='spin'?spinA:0);
+const heading=Math.PI/2+((ENG.phase==='spin'||ENG.phase==='spinning')?spinA:0);
 W3D.rigPlace(R0,C.x,0,C.z,heading);
-W3D.rigAnim(R0, ENG.phase==='angle'||ENG.phase==='flight'?'throw':(ENG.phase==='spin'?'throw':'idle'), 0.4);
+W3D.rigAnim(R0, ENG.phase==='angle'||ENG.phase==='flight'?'throw':((ENG.phase==='spin'||ENG.phase==='spinning')?'throw':'idle'), 0.4);
 W3D.rigUpdate(R0,dt);
-W3D.camTo(C.x-8.5,4.0,C.z+10.5, C.x+10,1.0,C.z, dt, 3.5); W3D.camApply();
+if(DISC3) W3D.camTo(C.x-6,2.4,C.z+7, C.x+3,1.2,C.z, dt, 3.5);
+else W3D.camTo(C.x-8.5,4.0,C.z+10.5, C.x+10,1.0,C.z, dt, 3.5);
+W3D.camApply();
+if(DISC3&&(ENG.phase==='hold'||ENG.phase==='spinning')){
+// JOB J7 keep-it (owner): discus power shows as a slim bar on the screen EDGE -
+// the thrower is never hidden behind the old center power bar again.
+const bx=W-24, by0=H*0.24, bh=H*0.38;
+ox.fillStyle='rgba(6,14,26,.72)'; rr(bx-6,by0-24,26,bh+34,8); ox.fill();
+ox.fillStyle='#ffd34d'; ox.font='bold 11px system-ui,sans-serif'; ox.textAlign='center';
+ox.fillText(ENG.phase==='hold'?'HOLD':'SPIN', bx+7, by0-10);
+ox.fillStyle='#223a56'; rr(bx,by0,14,bh,6); ox.fill();
+const fh=bh*clamp(ENG.power||0,0,1);
+if(fh>2){ ox.fillStyle='#37c871'; rr(bx,by0+bh-fh,14,fh,6); ox.fill(); }
+}
 if(ENG.phase==='power') drawPowerMeter(ENG.power,'POWER — TAP ACTION TO LOCK');
 else if(ENG.phase==='angle') drawAngleMeter(ENG.ang,20,50);
 else if(ENG.phase==='spin'){
@@ -2772,8 +2824,6 @@ $('hudSub').textContent=h.sub||'';
 $('hudPos').textContent=h.pos||'';
 $('hudPos').style.display=h.pos?'block':'none';
 barFill('barSpeed',h.speed); barFill('barStam',h.stam);
-const tapB=$('btnTap');
-if(tapB&&ENG.r){ tapB.classList.toggle('exhausted', !!ENG.r.exhausted); }
 const lbl=ENG.actionLabel?ENG.actionLabel():'ACTION';
 if(lbl!==updateHUD._l){ updateHUD._l=lbl; $('btnALabel').textContent=lbl; }
 }
@@ -2866,13 +2916,20 @@ refreshMenuRival();
 setTimeout(()=>showScreen('menu'),900);
 }catch(err){ box.className='err'; box.textContent=err.message||'Invalid code.'; }
 });
-wireButton('btnA',()=>{ TFIN.act++; if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
+// ACTION button: pointerdown fires the action as always; engines that take a
+// hold (discus) also get the release. JOB J7 keep-it: discus = hold to spin,
+// release to throw.
+(function(){
+const el=$('btnA'); if(!el) return;
+el.addEventListener('pointerdown',e=>{ e.preventDefault(); TFIN.act++; if(ENG&&document.body.classList.contains('playing')){ if(ENG.actionDown) ENG.actionDown(); else ENG.action(); } },{passive:false});
+['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,()=>{ if(ENG&&ENG.actionUp) ENG.actionUp(); },{passive:true}));
+})();
 /* TAP TO RUN: mash the button to stride. Alternates L/R automatically for rhythm bonus.
-   Tapping drains stamina; hit 0 and you're EXHAUSTED until you recover. */
+   JOB J7 keep-it (owner): a tap ALWAYS strides - no state (stamina, exhaustion,
+   a held stick, another button) may ever block TAP RUN. */
 wireButton('btnTap',()=>{
   TFIN.tap++;
   if(!ENG||!document.body.classList.contains('playing')) return;
-  if(ENG.r&&ENG.r.exhausted) return; // too tired to tap
   const side=ENG._tapSide==='L'?'R':'L'; ENG._tapSide=side;
   ENG.stride(side);
   const b=$('btnTap'); b.style.transform='translateX(-50%) scale(0.88)';
@@ -2973,6 +3030,7 @@ visS:(lane,pos,dist)=>visS(lane,pos,dist),
 eng:()=>ENG,
 lanes:()=> W3D.laneLineInfo||null,
 follow:()=> W3D._follow||null,
+camPos:()=> W3D.camera? {x:+W3D.camera.position.x.toFixed(1), y:+W3D.camera.position.y.toFixed(1), z:+W3D.camera.position.z.toFixed(1)} : null, // JOB J7 keep-it: lets the discus test prove the camera sits close behind/side of the thrower
 sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, dpr: window.devicePixelRatio||1, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
 input:()=>({ tap:TFIN.tap, stick:TFIN.stick, act:TFIN.act, stickHeld:STICKHELD }),
 fill:()=>{ const c=document.getElementById('game'); const r=c.getBoundingClientRect(); const iw=window.innerWidth, ih=window.innerHeight; return { cov:(r.width*r.height)/(iw*ih), W, H, iw, ih }; },
