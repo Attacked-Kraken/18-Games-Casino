@@ -95,6 +95,15 @@ jobs:
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
           [ -n "$GAMES" ] || { echo "it was a fluke - nothing undone"; exit 0; }
+          # only undo THIS merge if it actually touched what broke (the game, its tests, or shared 3D/kit files)
+          CH=$(git diff --name-only $GITHUB_SHA^1 $GITHUB_SHA)
+          HIT=""
+          for G in $(echo "$GAMES" | tr ',' ' '); do
+            SL=${G%.html}
+            if echo "$CH" | grep -qE "^($SL\.|tools/game-check/fixes/$SL\.|characters/|models/|venues/|kit/|vendor/|three\.module|look-presets|apex-gfx|audio\.js|sports\.html)"; then HIT="$HIT$G,"; fi
+          done
+          [ -n "$HIT" ] || { echo "broken ($GAMES) but this merge didn't touch it - not undoing (an earlier merge did it)"; exit 0; }
+          GAMES=${HIT%,}
           git config user.name "auto-undo bot"; git config user.email "auto-undo-bot@users.noreply.github.com"
           git fetch -q origin main
           B="auto-undo-${GITHUB_SHA::7}"
