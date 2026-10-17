@@ -1,11 +1,12 @@
-// Main sport motorcycle for JOB J2 (motorcycle-world) — v3
+// Main sport motorcycle for JOB J2 (motorcycle-world) — v4 (JOB J11: real rider)
 // Crotch-rocket supersport: SOLID extruded aluminum twin-spar frame + swingarm,
-// human rider (tapered torso/limbs, neck, real helmet with chin bar + curved visor),
-// aggressive full fairing, clip-on bars, upswept tail. No raw boxes/cones for bodywork.
-// Returns { group, wheels } — wheels spin via pivot.rotation.x
+// REAL human rider from the shared athlete kit (characters/base-human-v2) in a racing
+// tuck — hands on the grips, feet on the pegs (2-bone IK), full-face helmet.
+// Aggressive full fairing, clip-on bars, upswept tail. No raw boxes/cones for bodywork.
+// Async: await buildMotorcycle(). Returns { group, wheels } — wheels spin via pivot.rotation.x
 // NEVER: wheels as hollow see-through tori or sinking below ground (looks/motorcycle-world.md)
 
-export function buildMotorcycle(colorHex = 0xc01818) {
+export async function buildMotorcycle(colorHex = 0xc01818) {
   const g = new THREE.Group();
   const wheels = [];
 
@@ -331,78 +332,107 @@ export function buildMotorcycle(colorHex = 0xc01818) {
     g.add(peg);
   }
 
-  // ---------- rider: HUMAN racing tuck (tapered, not capsule mannequin) ----------
-  // tapered limb segment between points
-  function tapered(a, b, r1, r2, mat, radial = 14) {
-    const dir = new THREE.Vector3().subVectors(b, a);
-    const len = dir.length();
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, len, radial), mat);
-    m.position.copy(a).addScaledVector(dir, 0.5);
-    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-    return shadowed(m);
+  // ---------- rider: REAL human from the shared athlete kit (characters/base-human-v2) ----------
+  // Owner (JOB J11): "no rider human person on bike" -> a real rigged person in a racing tuck,
+  // hands on the grips and feet on the pegs via 2-bone IK, full-face helmet on the head.
+  // (Old code-built mannequin removed - STUDIO-STANDARD: never build people from boxes/tubes.)
+  const hbase = new URL('../characters/base-human-v2/', import.meta.url).href;
+  const { loadHumans } = await import(hbase + 'humans.js');
+  const HH = await loadHumans(THREE, hbase);
+  // dark leathers: long sleeves, no hood / bandana / skirt add-ons
+  const rider = HH.make({ g: 'm', skin: 2, hair: 'buzzed', hairCol: 0x1a1210, outfit: 'denimjacket',
+    cols: { top: 0x17171b, jacket: 0x101014, bottom: 0x141416, shoes: 0x0e0e10 } }, 1.78);
+  const RB = {};
+  rider.object.traverse(o => { if (o.isBone) RB[o.name] = o; });
+
+  // --- pose helpers: object-space bone turns + 2-bone IK (pattern from gear.js stance) ---
+  const RX = new THREE.Vector3(1, 0, 0);
+  const rqa = new THREE.Quaternion(), rqp = new THREE.Quaternion(), rqo = new THREE.Quaternion(), rax = new THREE.Vector3();
+  const D2R = Math.PI / 180;
+  function rturn(name, axis, deg) {
+    const b = RB[name]; if (!b || !deg) return;
+    b.parent.updateWorldMatrix(true, false);
+    rider.object.getWorldQuaternion(rqo); b.parent.getWorldQuaternion(rqp);
+    rax.copy(axis).applyQuaternion(rqo).applyQuaternion(rqp.invert());
+    rqa.setFromAxisAngle(rax, deg * D2R); b.quaternion.premultiply(rqa);
   }
-  // torso: lathe with human taper (narrow waist -> wide chest -> neck)
-  const torsoPts = [
-    new THREE.Vector2(0.001, 0), new THREE.Vector2(0.092, 0.01),
-    new THREE.Vector2(0.104, 0.08), new THREE.Vector2(0.116, 0.16),
-    new THREE.Vector2(0.126, 0.24), new THREE.Vector2(0.128, 0.30),
-    new THREE.Vector2(0.112, 0.36), new THREE.Vector2(0.062, 0.40),
-    new THREE.Vector2(0.001, 0.415)
-  ];
-  const torso = shadowed(new THREE.Mesh(new THREE.LatheGeometry(torsoPts, 20), leather));
-  torso.scale.set(1.35, 1, 0.85); // shoulders wider than deep
-  torso.rotation.x = 0.9; // lean forward over tank
-  torso.position.set(0, 0.78, -0.30);
-  g.add(torso);
-  // neck
-  g.add(tapered(new THREE.Vector3(0, 1.045, 0.015), new THREE.Vector3(0, 1.09, 0.07), 0.048, 0.042, leather));
-  // helmet: shell + chin bar + curved visor (reads as a real helmet, not a ball)
-  const helmet = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.105, 22, 16), paint));
-  helmet.scale.set(0.95, 1.02, 1.18);
-  helmet.position.set(0, 1.155, 0.135);
-  helmet.rotation.x = 0.25; // face slightly down-forward
-  g.add(helmet);
-  const chin = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), paint));
-  chin.scale.set(0.88, 0.72, 1.05);
-  chin.position.set(0, 1.115, 0.205);
-  g.add(chin);
-  const visor = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.098, 0.098, 0.085, 18, 1, true, -0.62, 1.24), visorMat);
-  visor.position.set(0, 1.16, 0.155);
-  visor.rotation.x = 0.25;
-  visor.rotation.y = Math.PI; // curve faces forward
-  g.add(visor);
-  // arms: shoulder -> elbow -> wrist (tapered, human)
-  for (const sx of [-1, 1]) {
-    const sh = new THREE.Vector3(sx * 0.165, 1.03, 0.01);
-    const el = new THREE.Vector3(sx * 0.225, 0.915, 0.27);
-    const wr = new THREE.Vector3(sx * 0.265, 0.865, 0.495);
-    g.add(tapered(sh, el, 0.058, 0.047, leather));
-    g.add(tapered(el, wr, 0.047, 0.037, leather));
-    // glove: fist shaped around grip
-    const glove = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), leather));
-    glove.scale.set(0.95, 0.85, 1.35);
-    glove.position.set(sx * 0.268, 0.86, 0.51);
-    glove.rotation.x = 0.3;
-    g.add(glove);
+  const rv1 = new THREE.Vector3(), rv2 = new THREE.Vector3(), rSx = new THREE.Vector3(),
+        rEx = new THREE.Vector3(), rHx = new THREE.Vector3(), rTw = new THREE.Vector3(),
+        rPw = new THREE.Vector3(), rdS = new THREE.Vector3(),
+        rqw = new THREE.Quaternion(), rpw = new THREE.Quaternion(), rEw = new THREE.Vector3();
+  const raim = (b, from, to) => {
+    rv1.copy(from).normalize(); rv2.copy(to).normalize();
+    rqw.setFromUnitVectors(rv1, rv2);
+    b.parent.getWorldQuaternion(rpw);
+    b.quaternion.premultiply(rpw.clone().invert().multiply(rqw).multiply(rpw));
+  };
+  // put the `hand` bone exactly at (tx,ty,tz) given in rider.object local space
+  function rreach(upper, lower, hand, tx, ty, tz, px, py, pz) {
+    const U = RB[upper], L = RB[lower], Hd = RB[hand]; if (!U || !L || !Hd) return;
+    Hd.updateWorldMatrix(true, false);
+    U.getWorldPosition(rSx); L.getWorldPosition(rEx); Hd.getWorldPosition(rHx);
+    const l1 = rEx.distanceTo(rSx), l2 = rHx.distanceTo(rEx);
+    rTw.set(tx, ty, tz).applyMatrix4(rider.object.matrixWorld);
+    rdS.subVectors(rTw, rSx);
+    const d = Math.min(Math.max(rdS.length(), Math.abs(l1 - l2) + 1e-3), (l1 + l2) * .999);
+    rdS.normalize();
+    rPw.set(px, py, pz).applyQuaternion(rider.object.getWorldQuaternion(rqo));
+    rPw.addScaledVector(rdS, -rPw.dot(rdS)).normalize();
+    const a = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+    rEw.copy(rSx).addScaledVector(rdS, a).addScaledVector(rPw, h);
+    raim(U, rv1.subVectors(rEx, rSx).clone(), rv2.subVectors(rEw, rSx).clone());
+    Hd.updateWorldMatrix(true, false); L.getWorldPosition(rEx); Hd.getWorldPosition(rHx);
+    raim(L, rv1.subVectors(rHx, rEx).clone(), rv2.subVectors(rTw, rEx).clone());
   }
-  // legs: hip -> knee -> ankle (tapered, human)
-  for (const sx of [-1, 1]) {
-    const hp = new THREE.Vector3(sx * 0.10, 0.80, -0.28);
-    const kn = new THREE.Vector3(sx * 0.175, 0.60, 0.00);
-    const an = new THREE.Vector3(sx * 0.17, 0.33, -0.16);
-    g.add(tapered(hp, kn, 0.080, 0.060, leather));
-    g.add(tapered(kn, an, 0.060, 0.044, leather));
-    // boot: heel + toe
-    const boot = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 10), leather));
-    boot.scale.set(0.95, 0.85, 1.1);
-    boot.position.set(sx * 0.17, 0.30, -0.175);
-    g.add(boot);
-    const toe = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), leather));
-    toe.scale.set(0.9, 0.7, 1.4);
-    toe.position.set(sx * 0.17, 0.275, -0.10);
-    g.add(toe);
-  }
+
+  // seat the rider: pelvis exactly onto the seat (pad top ~0.72 at z=-0.28)
+  rider.object.position.set(0, -0.175, -0.30);
+  g.add(rider.object);
+  g.updateMatrixWorld(true);
+  { const pw = new THREE.Vector3(); RB['pelvis'].getWorldPosition(pw);
+    rider.object.position.x += 0 - pw.x;
+    rider.object.position.y += 0.74 - pw.y;
+    rider.object.position.z += -0.30 - pw.z;
+    g.updateMatrixWorld(true); }
+  // bike-space -> rider-local (rider.object carries translation only)
+  const RL = (x, y, z) => [x - rider.object.position.x, y - rider.object.position.y, z - rider.object.position.z];
+
+  // racing tuck: torso forward over the tank, head up to see ahead
+  rturn('pelvis', RX, 14);
+  rturn('spine_01', RX, 8); rturn('spine_02', RX, 8); rturn('spine_03', RX, 8);
+  rturn('neck_01', RX, -18); rturn('Head', RX, -14);
+  g.updateMatrixWorld(true);
+
+  // hands onto the grips, elbows down and slightly out
+  rreach('upperarm_l', 'lowerarm_l', 'hand_l', ...RL(-0.265, 0.86, 0.505), -0.35, -1, 0.25);
+  rreach('upperarm_r', 'lowerarm_r', 'hand_r', ...RL( 0.265, 0.86, 0.505),  0.35, -1, 0.25);
+  // feet onto the pegs, knees forward and slightly out
+  rreach('thigh_l', 'calf_l', 'foot_l', ...RL(-0.16, 0.30, -0.18), -0.30, 0.15, 1);
+  rreach('thigh_r', 'calf_r', 'foot_r', ...RL( 0.16, 0.30, -0.18),  0.30, 0.15, 1);
+  g.updateMatrixWorld(true);
+
+  // bake the static pose into the skeleton
+  rider.object.traverse(o => { if (o.isSkinnedMesh && o.skeleton) o.skeleton.update(); });
+
+  // full-face helmet on the posed head (generous shell so it always covers)
+  { const hw = new THREE.Vector3(); RB['Head'].getWorldPosition(hw);
+    const hl = rider.object.worldToLocal(hw.clone());
+    const helmet = new THREE.Group();
+    const shellMat = new THREE.MeshPhysicalMaterial({ color: 0x18181c, roughness: 0.25, metalness: 0.4, clearcoat: 0.8 });
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.14, 20, 16), shellMat);
+    shell.scale.set(0.95, 1.02, 1.12);
+    shell.position.set(0, 0.025, 0.005);
+    shell.castShadow = true;
+    helmet.add(shell);
+    const hvisor = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.128, 0.128, 0.085, 20, 1, true, -0.65, 1.3), visorMat);
+    hvisor.position.set(0, 0.03, 0.015);
+    hvisor.rotation.y = Math.PI; // opening faces forward
+    helmet.add(hvisor);
+    helmet.position.copy(hl);
+    helmet.rotation.x = 0.1; // match the head's slight forward tilt
+    rider.object.add(helmet); }
+  g.updateMatrixWorld(true);
 
   return { group: g, wheels };
 }
