@@ -21,19 +21,32 @@ export default [
     async test(page, h) {
       const ok0 = await h.eval(() => !!window.__tf);
       if (!ok0) return 'window.__tf missing - JOB J7 build not in the game';
+      // PLAY the race: alternate strides through the game's own input - the same
+      // stride() the arrow keys feed. Without strides the runner never leaves the
+      // blocks and there is no sprint to measure. (Never stride during SET: false start.)
+      // the driver lives IN the page (a held playing rhythm, like a real player's thumbs);
+      // one eval installs it - per-call eval round-trips are too slow to sprint with
+      await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+      const drive = () => h.eval(() => true);
       const t0 = Date.now(); let best = null;
       while (Date.now() - t0 < 25000) {
-        const p = await h.eval(() => window.__tf.pose());
-        for (const r of p) {
-          if (r.human && r.sf > 0.3 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) { best = r; break; }
+        await drive();
+        const s = await h.eval(() => { const e = window.__tf.eng(); return { pos: e && e.r ? e.r.pos : 0, pose: window.__tf.pose() }; });
+        // steady state only: past the block start (>12m) - that is the sprint being
+        // judged, not the crouch in the blocks this test used to end up measuring
+        if (s.pos > 12) {
+          for (const r of s.pose) {
+            if (r.human && r.sf > 0.3 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) { best = r; break; }
+          }
         }
         if (best) break;
-        await h.wait(350);
+        await h.wait(160);
       }
       if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
       // thigh swing over ~1.4s proves real leg drive (not a glide)
       let mn = 1e9, mx = -1e9;
       for (let i = 0; i < 7; i++) {
+        await drive();
         const p = await h.eval(() => window.__tf.pose());
         for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
         await h.wait(200);
@@ -46,16 +59,26 @@ export default [
     id: 'runners-stand-upright',
     ask: 'Runners must run standing upright like real sprinters',
     async test(page, h) {
+      // Drive the race with the game's own stride input, and judge the torso only in
+      // steady state (past 12m): a sprinter's block-start lean is not 'hunched over',
+      // and a standing athlete is not running at all. Threshold unchanged (0.42 rad).
+      // the driver lives IN the page (a held playing rhythm, like a real player's thumbs);
+      // one eval installs it - per-call eval round-trips are too slow to sprint with
+      await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+      const drive = () => h.eval(() => true);
       const t0 = Date.now(); let worst = -1, n = 0;
       while (Date.now() - t0 < 25000) {
-        const p = await h.eval(() => window.__tf.pose());
-        for (const r of p) {
-          if (r.human && r.sf > 0.55 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) {
-            worst = Math.max(worst, Math.abs(r.pelvis + r.spine)); n++;
+        await drive();
+        const s = await h.eval(() => { const e = window.__tf.eng(); return { pos: e && e.r ? e.r.pos : 0, pose: window.__tf.pose() }; });
+        if (s.pos > 12) {
+          for (const r of s.pose) {
+            if (r.human && r.sf > 0.55 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) {
+              worst = Math.max(worst, Math.abs(r.pelvis + r.spine)); n++;
+            }
           }
         }
         if (n >= 5) break;
-        await h.wait(300);
+        await h.wait(160);
       }
       if (n < 5) return 'never saw a runner at speed on a real run clip';
       if (worst > 0.42) return 'torso pitch too big at speed (' + worst.toFixed(2) + ' rad) - runners are hunched over';
