@@ -335,4 +335,56 @@ export default [
       });
     },
   },
+  {
+    id: 'players-kick-not-glide',
+    ask: 'The players need to physically kick ball. Players look like they are gliding and speed walking',
+    async test(page, h) {
+      // 1) KICK: force a kick and check the kicker plays a real leg-swing (kickT timer runs).
+      const kick = await h.eval(() => {
+        const S = window.__sc; if (!S || !S.ball) return 'game hooks missing (window.__sc)';
+        const B = S.ball, G = S.G, comets = S.teams[0];
+        const kicker = comets.players.find(p => p.role === 'MID') || comets.players[4];
+        kicker.pos.set(10, 0, 0); kicker.vel.set(0, 0, 0);
+        B.pos.set(10.6, 0.11, 0); B.vel.set(0, 0, 0); B.owner = kicker; B.intended = null;
+        G.st = 'play'; G.kickoffWait = false;
+        return true;
+      });
+      if (kick !== true) return kick;
+      // Make the kicker kick: simulate a pass via the game's own kick path.
+      await h.eval(() => {
+        const S = window.__sc;
+        const kicker = S.teams[0].players.find(p => p.role === 'MID') || S.teams[0].players[4];
+        // call the game's kickBall through a pass: set owner then trigger kick via eval of game fn
+        S.ball.owner = kicker;
+        // use the exposed path: kickBall is a top-level function in the module scope;
+        // instead, emulate by clearing owner with velocity (the game animates on kickCd/kickT)
+        kicker.kickT = 0.38; kicker.kickLeg = 'R';
+      });
+      await h.wait(150);
+      const swing = await h.eval(() => {
+        const S = window.__sc;
+        const kicker = S.teams[0].players.find(p => p.role === 'MID') || S.teams[0].players[4];
+        const r = kicker.m.legR.rotation.x;
+        return Math.abs(r) > 0.25 ? true : `kicking leg did not swing (rotation.x=${r.toFixed(2)}, need visible kick)`;
+      });
+      if (swing !== true) return swing;
+      // 2) NO GLIDE: a sprinting player must swing legs and bob - not slide.
+      await h.eval(() => {
+        const S = window.__sc;
+        const p = S.teams[1].players[4];
+        p.pos.set(-20, 0, 0); p.vel.set(6, 0, 0); p.kickT = 0; // sprint, not kicking
+        S.G.st = 'play';
+      });
+      await h.wait(400);
+      return h.eval(() => {
+        const S = window.__sc;
+        const p = S.teams[1].players[4];
+        const swing = Math.abs(p.m.legL.rotation.x) + Math.abs(p.m.legR.rotation.x);
+        const bob = Math.abs(p.m.group.position.y);
+        if (swing < 0.3) return `sprinting player legs barely move (swing=${swing.toFixed(2)}) - gliding`;
+        if (bob < 0.01) return 'sprinting player has no vertical bob - speed-walking on ice';
+        return true;
+      });
+    },
+  },
 ];
