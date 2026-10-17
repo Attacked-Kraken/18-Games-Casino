@@ -118,4 +118,36 @@ export default [
       return true;
     },
   },
+  {
+    id: 'running-lanes-and-race-camera',
+    ask: 'Add running lanes and move camera angel back 10 blocks and up 15 blocks and centered behind player',
+    async test(page, h) {
+      const L = await h.eval(() => (window.__tf && window.__tf.lanes) ? window.__tf.lanes() : null);
+      if (!L) return 'running lanes are not built as real markings (no lane-line geometry in the game)';
+      if (L.count < 9) return 'only ' + L.count + ' lane lines built, wants 9 (every edge of the 8 lanes)';
+      if (!(L.width >= 0.05)) return 'lane lines only ' + L.width + 'm wide - too thin to see';
+      const t0 = Date.now(); const S = [];
+      while (Date.now() - t0 < 22000 && S.length < 6) {
+        const fo = await h.eval(() => {
+          const tf = window.__tf; if (!tf || !tf.follow) return null;
+          const f = tf.follow(); if (!f) return null;
+          const e = tf.eng(); if (!e || !e.r || !(e.r.speed > 2)) return null;
+          return f;
+        });
+        if (fo) S.push(fo);
+        await h.wait(400);
+      }
+      if (S.length < 3) return 'never saw the race camera following the player at speed';
+      let behind = 0, lateral = 0, up = 0;
+      for (const f of S) {
+        behind += ((f.x - f.cx) * f.tx + (f.z - f.cz) * f.tz) / S.length;
+        lateral += ((f.cx - f.x) * (-f.tz) + (f.cz - f.z) * f.tx) / S.length;
+        up += f.cy / S.length;
+      }
+      if (Math.abs(behind - 10) > 2) return 'camera sits ' + behind.toFixed(1) + ' blocks behind the player, wants 10';
+      if (Math.abs(up - 15) > 2) return 'camera flies ' + up.toFixed(1) + ' blocks up, wants 15';
+      if (Math.abs(lateral) > 1) return 'camera rides ' + lateral.toFixed(1) + ' blocks off to the side, wants centered behind the player';
+      return true;
+    },
+  },
 ];
