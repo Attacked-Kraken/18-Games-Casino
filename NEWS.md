@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Save usage: the robot tests for you · no endless redos
+1) Do NOT play or measure the game in your own browser - that burns your usage fast. Push to your branch and open a pull request: the game-check robot plays it on a phone for free and posts pictures + every play test result. Read those. 2) When the owner sends a job back, write a FAILING play test for his complaint first, then fix it, and merge only when that test passes - a fix without a test is how the same thing comes back. 3) From the 3rd send-back the approver makes you list every past complaint and why each fix didn't stick, then fix ALL of them in ONE merge.
+
 ## 2026-10-17 · You are the store reviewer · career modes are robot-checked
 The owner gives a few words, not the details. Before any code on a job, play EVERY mode, level and event like an App Store reviewer and write the full gap list (STORE-READY.md "The store reviewer"), then fix it all. Career/season modes must be playable start to finish: add `play-career-...` tests (every level loads, plays, finishes, unlocks the next). The robot now gives a CHECK for a career mode without them and lists any that fail.
 ## 2026-10-17 · KEEP sections are locked - fix only what the owner names
