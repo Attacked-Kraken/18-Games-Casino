@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · CRASH FIRST: read the exact error, don't guess from pictures
+F1 stayed black through 3 tries; the real cause was ONE error message ("rain light" missing on the rebuilt car, crashing every frame) that the robot already had. Rule: when a game is black, frozen or broken, FIRST read the robot's exact "Script error" / "Missing file" lines on your PR or in the job message and fix that line. Never change looks or cameras while a crash error is open. After changing a model or part, search the code for everything that used the old part.
+
 ## 2026-10-17 · Career modes get a ⏭ Skip level button (development only)
 The Game Development page now opens every game with `?dev=1`. When that's in the address, every career/season/tournament mode must show a small "⏭ Skip level" button that wins the current level and moves to the next, so the owner can check all levels fast. Never show it without `dev=1`. This is for EVERY game with levels. Before a game goes to the Arcade, all testing tools are scrubbed out (STORE-READY.md "Scrub before the Arcade"). Also: every career level must be easy to SEE - nothing important off-screen or hidden behind buttons, menus or the power bar. Rules in STORE-READY.md "Developer skip".
 
