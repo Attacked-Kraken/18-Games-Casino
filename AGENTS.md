@@ -61,3 +61,15 @@ screen naming each maker. The asset check robot blocks anything else. Prefer a r
 **Art director (owner, 2026-10-16):** once a day one Muse gets an "ART DIRECTOR" job: grade every game harshly in
 `SCORES.md` (looks, play, fun, sound, phone feel, /50). It is half of each game's daily score. The robot only proves a
 game RUNS; the art director and the owner decide if it is GOOD. An open owner complaint caps a game at 50/100.
+
+**The owner's pipeline (owner, 2026-10-16) — this is how games get made here:**
+1. The idea scout puts ideas on the owner's vision board. The owner 👍s the ones to build.
+2. A Muse builds it: STEP 1 the main 3D model (owner 👍), STEP 2 the game — and the game MUST appear on the Game
+   Development page (`sports.html` ALL TITLES card + `tools/game-check/games.json`). The robot FAILS any apex*.html that
+   isn't on that page.
+3. Every game gets 5+ PLAY TESTS (`tools/game-check/fixes/<game>.mjs`, ids `play-...`, see fixes/README.md) that
+   actually play it by its rules. A broken game can no longer pass the robot.
+4. The owner plays it, draws on the screen and records it with the ✏️ pencil on the Game Development page, and sends it.
+   It arrives as an OWNER'S NOTE job with pictures: break it down, fix it, add a test for each point.
+5. Memory: every 👎 → one line in LESSONS.md. Every 👍 → one line in PLAYBOOK.md (what worked). Read both before every job.
+6. Games move to the Apex Arcade only when the owner says so (launch is about a month out).

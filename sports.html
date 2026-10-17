@@ -236,7 +236,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     var row = document.createElement('article');
     row.className = 'lrow'; row.dataset.id = g.id; row.style.setProperty('--acc', g.acc || '#ff2a1e');
     row.innerHTML = '<div class="lhead">' + iconHtml(g) + '<div class="lt"><h4>' + esc(g.name) + '</h4><span class="bld">' + esc(g.bld) +
-      '</span></div><div class="lbtns"><button class="stopb" type="button">STOP</button>' +
+      '</span></div><div class="lbtns"><button class="fbb" type="button" aria-label="Draw, record and send a note to the Muses">&#9999;&#65039;</button><button class="stopb" type="button">STOP</button>' +
       '<button class="mv" data-d="-1" type="button" aria-label="Move up">&#9650;</button>' +
       '<button class="mv" data-d="1" type="button" aria-label="Move down">&#9660;</button>' +
       '<button class="fsb" type="button" aria-label="Full screen">&#9974;</button></div></div>' +
@@ -257,6 +257,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
   }
   function stop(row) {
     var f = row.querySelector('iframe');
+    var fb = row.querySelector('.fbk'); if (fb && fb._close) fb._close();
     if (f) { try { f.src = 'about:blank'; } catch (e) {} f.remove(); }   /* free the game's 3D memory */
     exitFs(row);
     row.classList.remove('live');
@@ -313,6 +314,11 @@ document.getElementById('grid').addEventListener('click', function (e) {
     else if (e.target.closest('.fsb')) enterFs(row);
     else if (e.target.closest('.exitfs')) exitFs(row);
     else if (e.target.closest('.stopb')) stop(row);
+    else if (e.target.closest('.fbb')) {   /* owner's pencil: draw on the game, record it, send it to the Muses (feedback.js) */
+      var was = row.classList.contains('live');
+      enterFs(row);
+      setTimeout(function () { if (window.ApexFeedback) ApexFeedback.open(row.querySelector('.stage'), row.querySelector('iframe'), row._game.name); }, was ? 50 : 2500);
+    }
     else if (e.target.closest('.mv')) {
       var d = +e.target.closest('.mv').dataset.d;
       var other = d < 0 ? row.previousElementSibling : row.nextElementSibling;
@@ -348,5 +354,6 @@ document.addEventListener('error', function (e) {
   if (t && t.tagName === 'IMG' && t.dataset.emoji) { var s = document.createElement('span'); s.className = 'med'; s.innerHTML = t.dataset.emoji; t.replaceWith(s); }
 }, true);
 </script>
+<script src="feedback.js"></script>
 </body>
 </html>

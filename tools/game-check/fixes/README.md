@@ -39,3 +39,18 @@ export default [
 
 Return `true` when the complaint is gone. Return a short string (why it still fails) otherwise.
 Each test gets 30 seconds.
+
+## PLAY TESTS (owner, 2026-10-16) - tests that actually PLAY the game
+
+The robot used to only check that a game *runs*. A broken game (runners leaving the track, a truck the size of a dot)
+still passed. So every game also gets **at least 5 play tests** in the same file, with ids starting `play-`:
+
+- Write them from the game's `rules/<sport>.md` sheet and `looks/<game>.md` MUST list - the rules of the real sport.
+- They PLAY: press start, hold the controls (`h.tap`, `h.press`, `h.wait`), then read the game's state with `h.eval`
+  (expose a small read-only `window.__test = { ... }` object in the game for this - positions, sizes, score, state).
+- Examples: Track & Field `play-stay-in-lane` (run the whole 400 m: no runner ever leaves its lane), `play-finish`
+  (the race ends with a result screen). Monster Truck `play-truck-towers` (truck height > 2x a car's height),
+  `play-crush` (driving into a car crushes it). Soccer `play-ai-tackles` (within 30 s the computer wins the ball).
+  Hockey `play-puck-in-rink` (the puck never leaves the boards). Racer `play-on-track` (AI cars finish a lap).
+- A failing play test shows as a CHECK (it doesn't block merges) and pulls the game's daily score down until fixed.
+- Under 5 play tests = a CHECK on that game.
