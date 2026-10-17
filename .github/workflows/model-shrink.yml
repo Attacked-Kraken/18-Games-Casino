@@ -1,13 +1,15 @@
 name: Model shrink
 
-# Owner's toolbox (2026-10-17): Muses can't run Blender or a terminal, so the robot shrinks 3D models for them.
-# Commit a downloaded model as  <name>-raw.glb  on your branch (anywhere in the repo). This robot makes  <name>.glb
-# next to it - same look, much smaller (welded, quantized, textures as WebP at most 1024 px) so it loads fast on a
-# phone - commits it to the same branch and deletes the -raw file. Use <name>.glb in the game and in ASSETS.md.
+# Owner's toolbox (2026-10-17): Muses can't run Blender or a terminal, so this robot shrinks files for them.
+# Commit a download on your branch with "-raw" at the end of its name (anywhere in the repo):
+#   <name>-raw.glb                -> <name>.glb   same look, much smaller (welded, quantized, WebP textures <= 1024 px)
+#   <name>-raw.png / .jpg / .jpeg -> <name>.webp  picture/texture/sprite, at most 1024 px, see-through parts kept
+#   <name>-raw2k.png / .jpg       -> <name>.webp  same, but up to 2048 px (big ground textures, skies)
+# The robot commits the small file to the same branch and deletes the -raw one. Use the small file in the game.
 on:
   push:
     branches-ignore: [main, away, backup, game-checks]
-    paths: ['**/*-raw.glb']
+    paths: ['**/*-raw.glb', '**/*-raw.png', '**/*-raw.jpg', '**/*-raw.jpeg', '**/*-raw2k.png', '**/*-raw2k.jpg', '**/*-raw2k.jpeg']
 
 permissions:
   contents: write
@@ -21,22 +23,42 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Shrink every -raw.glb
+      - name: Shrink every -raw file
         run: |
           set -e
-          npm i -g @gltf-transform/cli@4 >/dev/null
-          found=0
-          while IFS= read -r f; do
-            found=1
-            out="${f%-raw.glb}.glb"
-            gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
-            before=$(stat -c %s "$f"); after=$(stat -c %s "$out")
-            echo "SHRUNK $f -> $out : $((before/1024)) KB -> $((after/1024)) KB" | tee -a shrink-report.txt
-            git rm -q "$f"
-          done < <(git ls-files '*-raw.glb')
-          [ "$found" = 1 ] || { echo "nothing to shrink"; exit 0; }
+          : > shrink-report.txt
+          kb() { echo $(( $(stat -c %s "$1") / 1024 )); }
+          models=$(git ls-files '*-raw.glb')
+          if [ -n "$models" ]; then
+            npm i -g @gltf-transform/cli@4 >/dev/null
+            while IFS= read -r f; do
+              out="${f%-raw.glb}.glb"
+              gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
+              echo "SHRUNK $f -> $out : $(kb "$f") KB -> $(kb "$out") KB" | tee -a shrink-report.txt
+              git rm -q "$f"
+            done <<< "$models"
+          fi
+          pics=$(git ls-files '*-raw.png' '*-raw.jpg' '*-raw.jpeg' '*-raw2k.png' '*-raw2k.jpg' '*-raw2k.jpeg')
+          if [ -n "$pics" ]; then
+            pip install -q pillow
+            while IFS= read -r f; do
+              case "$f" in *-raw2k.*) max=2048; out="${f%-raw2k.*}.webp";; *) max=1024; out="${f%-raw.*}.webp";; esac
+              python3 - "$f" "$out" "$max" <<'PY'
+          import sys
+          from PIL import Image
+          src, out, mx = sys.argv[1], sys.argv[2], int(sys.argv[3])
+          im = Image.open(src)
+          im = im.convert("RGBA" if (im.mode in ("RGBA", "LA") or "transparency" in im.info) else "RGB")
+          im.thumbnail((mx, mx), Image.LANCZOS)
+          im.save(out, "WEBP", quality=82, method=6)
+          PY
+              echo "SHRUNK $f -> $out : $(kb "$f") KB -> $(kb "$out") KB" | tee -a shrink-report.txt
+              git rm -q "$f"
+            done <<< "$pics"
+          fi
+          [ -s shrink-report.txt ] || { echo "nothing to shrink"; exit 0; }
           git config user.name "model-shrink robot"
           git config user.email "actions@users.noreply.github.com"
-          git add -A -- '*.glb'
-          git commit -m "Model shrink robot: $(paste -sd ' ' shrink-report.txt | cut -c1-200)"
+          git add -A -- '*.glb' '*.webp'
+          git commit -m "Shrink robot: $(paste -sd ' ' shrink-report.txt | cut -c1-200)"
           git push
