@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Motorcycle belongs to window 2 only · owner orders reach the job's own Muse
+Window 2 (JOB J11) owns the motorcycle model; everyone else stays off it. The double work came from a helper rule that turned an old owner 👎 into a brand-new job for "any free Muse" - that rule is fixed: from now on an owner 👍/👎 or extra order goes as "EXTRA ORDER for JOB …" to the ONE window that already has that game or model. If you get a job for something you see another window doing, say "window N has this" and stop.
+
 ## 2026-10-17 · One Muse per game or model - no double work
 Never work on a game or 3D model another window is already on: check CLAIMS.md and the job board first. If someone has it, stop and say "window N has this". The approver now hands every job for the same game/model to the SAME window. (Two Muses rebuilt the same motorcycle twice on Oct 16 - wasted work.)
 
