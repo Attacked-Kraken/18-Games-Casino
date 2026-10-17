@@ -7,7 +7,9 @@
 
    What's inside (guide: kit/README.md "Effects pack"):
    - fx.time                      one shared clock for every shader effect ({ value: seconds })
-   - fx.on(name, fn) / fx.emit(name, data)   tiny event bus: the game says WHAT happened, effects listen
+   - fx.on(name, fn) / fx.emit(name, data)   tiny event bus: the game says WHAT happened, effects + sounds listen
+                                  (also ApexKit.emit / ApexKit.on when the kit is there)
+   - fx.sound(event, sfx)         a kit sound on an event (goal->horn, score, hit, whistle, boost are linked already)
    - fx.burst(kind, pos, opts)    particles: 'ice' 'dust' 'dirt' 'sparks' 'confetti' 'splash' 'smoke'
    - fx.when(event, kind, opts)   wire an event to a burst once:  fx.when('skate_brake', 'ice')  then  fx.emit('skate_brake', {pos})
    - fx.flashes(opts)             crowd camera flashes twinkling over the stands (box or list of points)
@@ -318,6 +320,10 @@ function create(o) {
     off(name, fn) { const l = listeners[name]; if (l) { const i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); } },
     emit(name, data) { const l = listeners[name]; if (!l) return 0; for (const fn of l.slice()) { try { fn(data); } catch (e) { console.error('[ApexFX]', name, e); } } return l.length; },
     when(event, kind, opt) { return fx.on(event, (d) => burst(kind, d && (d.pos || d), Object.assign({}, opt, d && d.opts))); },
+    /* a sound on an event: fx.sound('goal', 'horn') - plays the kit's sound (ApexKit.audio) every time 'goal' is emitted.
+       A function works too: fx.sound('bounce', (t, bus, ctx) => {...}). Default links (sounds:false turns them off):
+       goal -> horn, score -> score, hit -> hit, whistle -> whistle, boost -> boost */
+    sound(event, name) { return fx.on(event, () => { try { const K = window.ApexKit; if (K && K.audio) { K.audio.sfx(name); fx._sounds++; } } catch (e) {} }); },
     burst, flashes, wave, glow,
     setQuality(q) { quality = q === 'low' || q === 'medium' ? q : 'high'; },
     update(dt) {
@@ -327,10 +333,18 @@ function create(o) {
       fx._alive = alive;
     },
     clear() { for (const k in systems) { systems[k].life.fill(0); systems[k].alpha.fill(0); } },
-    stats() { return { version: VERSION, time: +time.value.toFixed(2), bursts, particles: fx._alive || 0, kinds: Object.keys(systems), alive: Object.fromEntries(Object.keys(systems).map((k) => [k, systems[k].alive])), flashes: flashSets.reduce((a, f) => a + f.count, 0), waves: waves.length, glows: glows.length, quality }; },
-    _alive: 0,
+    stats() { return { version: VERSION, time: +time.value.toFixed(2), bursts, particles: fx._alive || 0, kinds: Object.keys(systems), alive: Object.fromEntries(Object.keys(systems).map((k) => [k, systems[k].alive])), flashes: flashSets.reduce((a, f) => a + f.count, 0), waves: waves.length, glows: glows.length, sounds: fx._sounds, quality }; },
+    _alive: 0, _sounds: 0,
   };
-  try { if (window.ApexKit && window.ApexKit.test) window.ApexKit.test.expose({ fx: () => fx.stats() }); } catch (e) {}
+  if (o.sounds !== false) for (const [ev, snd] of [['goal', 'horn'], ['score', 'score'], ['hit', 'hit'], ['whistle', 'whistle'], ['boost', 'boost']]) fx.sound(ev, snd);
+  try {
+    const K = window.ApexKit;
+    if (K) {
+      if (K.test) K.test.expose({ fx: () => fx.stats() });
+      /* one signal for everything: ApexKit.emit('goal', { pos }) == fx.emit(...) - sound AND effects answer it */
+      if (!K.emit) { K.emit = fx.emit; K.on = fx.on; K.off = fx.off; }
+    }
+  } catch (e) {}
   return fx;
 }
 
