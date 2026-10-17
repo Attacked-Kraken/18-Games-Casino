@@ -17,7 +17,7 @@ robots shrink, photograph and test them. Never "fake" a hero model from code box
 1. **Our own shelves:** `characters/` (rigged CC0 humans + gear), `models/`, `venues/kit/`, and the asset warehouse
    repo Attacked-Kraken/3D-Assests-for-Arcade (full Quaternius packs).
 2. **Kenney** (kenney.nl) - CC0, no credit needed: vehicles (cars, bikes, karts), sports props, city/track kits, UI,
-   **sound effects**. First stop for props, UI and sounds.
+   **sound effects** (music always stays our own - ASSET-LAW Part II). First stop for props, UI and sounds.
 3. **Quaternius** (quaternius.com) and **KayKit free packs** - CC0 low-poly characters, animals, vehicles.
 4. **Poly Pizza** (poly.pizza) - thousands of models; filter by license. CC0 first, then CC-BY (with credit).
 5. **Poly Haven** (polyhaven.com) and **ambientCG** (ambientcg.com) - CC0 **realistic textures** (grass, ice, asphalt,
