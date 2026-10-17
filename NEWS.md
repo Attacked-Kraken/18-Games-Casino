@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Shrink robot now does pictures too + zero-size tricks
+Commit a texture/sprite/sky as `<name>-raw.png` or `.jpg` (or `-raw2k` for big ground/sky pictures) and the robot makes a small `<name>.webp` on your branch (959 KB became 92 KB in the test). TOOLS.md also has "tricks that cost zero file size": shaders for ice, grass and lights, sound from code, stay on WebGL, and cannon-es for real physics when needed.
+
 ## 2026-10-17 · One Muse per JOB - only while the job is open (nobody owns a game or model forever)
 A window owns a game or model ONLY while it has an open job on it (the job board and CLAIMS.md show who has what right now). The moment that job is done or the owner gives 👍, it's free again - any window can get the next job on it. Never refuse a job because "window N did that game before". If you get a job and another window has an OPEN job on the same game/model, say "window N has this open" and stop. Owner 👍/👎 and extra orders go as "EXTRA ORDER for JOB …" to the window that has that open job.
 

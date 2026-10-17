@@ -43,7 +43,7 @@ WAITING OWNER for hero models.
 | Patch robot | `tools/patch-robot/` | moves big files through small patches |
 | three.js add-ons | `vendor/` | GLTFLoader, SkeletonUtils, BufferGeometryUtils (merging meshes), bloom and post-processing |
 | **Shared game kit** | `kit/apex-kit.js` (guide `kit/README.md`) | pause/settings, mute, saves, credits screen, touch controls, chase camera, `__test` hooks. Build every new game on it |
-| **Model shrink robot** | `.github/workflows/model-shrink.yml` | commit a download as `<name>-raw.glb` on your branch: the robot makes `<name>.glb` (welded, quantized, WebP textures ≤1024 px) and deletes the raw one. Use the small one |
+| **Shrink robot** | `.github/workflows/model-shrink.yml` | commit a download as `<name>-raw.glb` → you get a small `<name>.glb`; `<name>-raw.png/.jpg` → `<name>.webp` (≤1024 px, see-through kept); `<name>-raw2k.png/.jpg` → `<name>.webp` up to 2048 px for big ground textures and skies. Tested: a 959 KB picture became 92 KB. Always use the small file |
 | **Asset check robot** | `tools/asset-check.mjs` | blocks a PR whose 3D files aren't in ASSETS.md with an allowed license + credit |
 | **iPhone Safari pass** | `tools/game-check/safari.mjs` | the robot also plays every game in real iPhone Safari (WebKit) |
 | **Auto-undo** | `tools/game-check/undo.mjs` | a merge that newly breaks a game is reverted automatically; your branch keeps the work |
@@ -51,6 +51,16 @@ WAITING OWNER for hero models.
 | **Venue gate** | `venues/*.md` + robot | a game must show its real place (track inside a stadium, real rink) or it fails |
 | **Owner's notes** | jobs from the board, with his pencil drawings and screen recordings | the owner circles problems in the game itself; every point is a must-fix |
 | **Factory memory** | `NEWS.md`, `LESSONS.md`, `PLAYBOOK.md`, `SCORES.md` | owner decisions, mistakes never to repeat, what works, honest scores |
+
+## Tricks that cost zero file size (use them before adding heavy files)
+
+- **Shaders (GLSL in three.js materials):** shiny ice, wet asphalt, waving grass, crowd shimmer, stadium light cones -
+  made on the phone's graphics chip, no texture files. Keep them simple (the phone budget in STUDIO-STANDARD.md).
+- **Stay on WebGL (`WebGLRenderer`).** Not WebGPU: many owners' iPhones and the robot's test phone don't run it yet.
+- **Sound from code (Web Audio):** the house method (ASSET-LAW Part II): noise for crowds and engines, short sine/
+  square hits for bounces and bats, low thuds for body checks. Zero sound files.
+- **Physics:** simple maths first. If a game truly needs real physics (ball spin, collisions, ragdolls), vendor
+  **cannon-es** (MIT, small) or Rapier into `vendor/` - never load it from the internet.
 
 ## Free software (for a person at a computer - the robots already do the shrinking for you)
 
