@@ -93,6 +93,6 @@ Robot checks: fans >= 30000 (12k instanced, scales); jumps >= 6; crush cars >= 8
 - look: track
 - view: tools/venue-viewer.html?m=models/track-stadium.mjs&look=track&name=Track%20%26%20Field%20stadium&cheer=1
 - by: Muse main (casino)
-- version: 1
-- notes: venues/track.md at real size - 400m oval (84.39m straights, 36.5m bends, 8 lanes x 1.22m, finish line at the end of the home straight) inside a full 2-tier college bowl from the shared venues/kit/stadium.js (40,000+ seats, ~38,000 fans, roof ring with canopy lights, 2 big screens, APEX/GAMES scoreboard). Built with the EXACT config apextrackfield.html races in (JOB J7), so this is the very venue in the game, put on the shelf for the owner's approval. CODE-BUILT (venues/kit/stadium.js, reused by every sport). Pictures: TV camera over the home straight, aerial end view, at the finish line.
+- version: 2
+- notes: venues/track.md at real size - 400m oval (84.39m straights, 36.5m bends, 8 lanes x 1.22m, finish line at the end of the home straight) inside a full 2-tier college bowl from the shared venues/kit/stadium.js (40,000+ seats, ~38,000 fans, roof ring with canopy lights, 2 big screens, APEX/GAMES scoreboard). Built with the EXACT config apextrackfield.html races in (JOB J7), so this is the very venue in the game, put on the shelf for the owner's approval. CODE-BUILT (venues/kit/stadium.js, reused by every sport). Pictures: TV camera over the home straight, aerial end view, at the finish line. v2 (owner fix): track centered in the middle of the stadium - the v1 wrapper carried the game's -42.195m world offset on the bowl while the track sat at the origin.
 - status: WAITING OWNER
