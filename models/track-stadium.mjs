@@ -9,7 +9,10 @@ export async function buildTrackStadium() {
   const st = buildStadium(THREE, { floor: { a: 78.7, b: 36.5, r: 36.5 }, setback: 11, preset: 'stadium',
     tiers: [{ rows: 24, depth: .8, rise: .4 }, { rows: 18, depth: .8, rise: .52, gap: 3.5, lift: 4 }],
     home: 0x2456a8, away: 0xd8dde6, homeShare: 0.34, awayShare: 0.08, fill: 0.92 });
-  st.group.position.set(-42.195, 0, 0); // the game's own placement (straight = 84.39m)
+  // Centered: the kit builds the bowl symmetric around its own origin (measured bbox
+  // x -128.25..128.25, z -86.05..86.05), and the oval below is built around the same
+  // origin, so the track sits in the middle of the stadium. (The game offsets the bowl
+  // group inside its larger world layout; a standalone model must NOT copy that offset.)
   st.setScore({ home: 'APEX', away: 'GAMES', hs: '', as: '', clock: 'TRACK & FIELD', period: 'COLLEGE STADIUM' });
 
   // the 400m oval at real size: 84.39m straights, 36.5m bends, 8 lanes x 1.22m (venues/track.md)
@@ -43,6 +46,6 @@ export async function buildTrackStadium() {
   window.__venue = { stadium: st.report() };
   return { group: g, stadium: st,
     cams: { front: { pos: [0, 15, -95], at: [0, 2, -20] },          // TV camera: over the home straight
-            side: { pos: [100, 26, 0], at: [0, 0, 0] },              // aerial end view of the whole oval
+            side: { pos: [150, 55, 0], at: [0, 0, 0] },              // aerial end view of the whole oval
             floor: { pos: [-14, 1.8, -41.4], at: [30, 3, -41.4] } } }; // at the finish line, looking down the straight
 }
