@@ -1,0 +1,42 @@
+name: Model shrink
+
+# Owner's toolbox (2026-10-17): Muses can't run Blender or a terminal, so the robot shrinks 3D models for them.
+# Commit a downloaded model as  <name>-raw.glb  on your branch (anywhere in the repo). This robot makes  <name>.glb
+# next to it - same look, much smaller (welded, quantized, textures as WebP at most 1024 px) so it loads fast on a
+# phone - commits it to the same branch and deletes the -raw file. Use <name>.glb in the game and in ASSETS.md.
+on:
+  push:
+    branches-ignore: [main, away, backup, game-checks]
+    paths: ['**/*-raw.glb']
+
+permissions:
+  contents: write
+
+jobs:
+  shrink:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Shrink every -raw.glb
+        run: |
+          set -e
+          npm i -g @gltf-transform/cli@4 >/dev/null
+          found=0
+          while IFS= read -r f; do
+            found=1
+            out="${f%-raw.glb}.glb"
+            gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
+            before=$(stat -c %s "$f"); after=$(stat -c %s "$out")
+            echo "SHRUNK $f -> $out : $((before/1024)) KB -> $((after/1024)) KB" | tee -a shrink-report.txt
+            git rm -q "$f"
+          done < <(git ls-files '*-raw.glb')
+          [ "$found" = 1 ] || { echo "nothing to shrink"; exit 0; }
+          git config user.name "model-shrink robot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A -- '*.glb'
+          git commit -m "Model shrink robot: $(paste -sd ' ' shrink-report.txt | cut -c1-200)"
+          git push
