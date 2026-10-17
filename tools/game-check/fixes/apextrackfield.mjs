@@ -150,4 +150,40 @@ export default [
       return true;
     },
   },
+  {
+    id: 'full-field-humans-finish-banner',
+    ask: 'Make camera angle always right behind player. And make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.',
+    async test(page, h) {
+      const fin = await h.eval(() => (window.__tf && window.__tf.finish) ? window.__tf.finish() : null);
+      if (!fin || !fin.banner) return 'no finish banner to cross at the finish line';
+      const fld = await h.eval(() => (window.__tf && window.__tf.field) ? window.__tf.field() : null);
+      if (!fld) return 'no field report - the race has not started';
+      if (fld.ai < 6) return 'only ' + (fld.ai + 1) + ' runner(s) in the race - wants a full field of 7, one in each of lanes 1-7';
+      const t0 = Date.now(); let humans = 0, samples = 0, camBad = null;
+      while (Date.now() - t0 < 22000) {
+        const s = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return null;
+          const p = tf.pose(); const f = tf.follow();
+          return { humans: p.filter(r => r.human).length, f };
+        });
+        if (s) {
+          humans = Math.max(humans, s.humans);
+          if (s.f) {
+            samples++;
+            const behind = (s.f.x - s.f.cx) * s.f.tx + (s.f.z - s.f.cz) * s.f.tz;
+            const lateral = (s.f.cx - s.f.x) * (-s.f.tz) + (s.f.cz - s.f.z) * s.f.tx;
+            if (Math.abs(lateral) > 1 || Math.abs(behind - 10) > 2.5 || Math.abs(s.f.cy - 15) > 2.5) {
+              camBad = 'behind ' + behind.toFixed(1) + ', up ' + s.f.cy.toFixed(1) + ', off-center ' + lateral.toFixed(1);
+            }
+          }
+        }
+        if (humans >= 7 && samples >= 4 && !camBad) break;
+        await h.wait(500);
+      }
+      if (humans < 7) return 'only ' + humans + ' of the runners are the studio 3D humans - the rest are stand-ins';
+      if (samples < 2) return 'never saw the race camera behind the player';
+      if (camBad) return 'camera not right behind the player (' + camBad + ') - wants 10 back, 15 up, centered, always';
+      return true;
+    },
+  },
 ];
