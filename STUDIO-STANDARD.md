@@ -56,6 +56,10 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
   a few fps. When a game is slow, cut crowd detail, shadows, particles or draw calls instead. No depth-of-field, no
   heavy fog over the players, no downscaled player textures. The robot measures it on a 2x phone screen and gives a
   CHECK under 1.4x ("Blurry picture"). The shared kit's auto quality is OFF for this reason (apex-gfx "sharp").
+- **Full screen, always sideways (owner's law):** held upright, the game is shown sideways and fills the WHOLE screen
+  - never half a screen with black. The robot FAILS under 90%. Use `ApexKit.fit()` or size to the turned box.
+- **Controls work together:** holding the move stick never blocks the action buttons (run, shoot, jump) - every
+  game supports two thumbs at once (multi-touch). Add a play test that holds the stick and taps the button.
 
 ## 3. Arenas and worlds
 

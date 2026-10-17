@@ -241,6 +241,16 @@ for (const g of games) {
     let gl = false; try { gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
     return gl ? { ratio: Math.min(c.width / c.clientWidth, c.height / c.clientHeight), w: c.width, cw: c.clientWidth } : null;
   }).catch(() => null);
+  // FULL SCREEN UPRIGHT (owner, 2026-10-17: "landscape games go straight to landscape - I don't want to mention it again"):
+  // held upright, the sideways game must fill the WHOLE phone screen, never half of it
+  const fill = await p2.evaluate(() => {
+    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100);
+    cs.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight); const c = cs[0]; if (!c) return null;
+    const r = c.getBoundingClientRect(), vw = innerWidth, vh = innerHeight;
+    const ix = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0)), iy = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+    return ix * iy / (vw * vh);
+  }).catch(() => null);
+  if (fill != null) { r.uprightFill = +fill.toFixed(2); if (fill < 0.9) r.fail.push(`Upright the game fills only ${Math.round(fill * 100)}% of the screen (the rest is black) - a sideways game must fill the WHOLE screen when the phone is held upright (STORE-READY.md PORTRAIT RULE: size the renderer to the turned box, or use kit/apex-kit.js fit())`); }
   if (sharp) {
     r.sharpness = +sharp.ratio.toFixed(2);
     if (sharp.ratio < 1.4) r.check.push(`Blurry picture: the 3D game is drawn at ${sharp.ratio.toFixed(2)}x on a 2x phone screen - players and lines look soft. Draw at 1.5x (renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)) or the kit/apex-gfx "sharp" setting) - STUDIO-STANDARD.md "Sharp picture"`);
