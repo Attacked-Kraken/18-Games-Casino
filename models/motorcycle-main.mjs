@@ -1,6 +1,7 @@
-// Main sport motorcycle for JOB J2 (motorcycle-world) — v2
-// REALISTIC build: sculpted lathe tank, extruded fairings, tube exhaust/frame,
-// spoked wheels with brake discs, articulated rider. No raw boxes/cones for bodywork.
+// Main sport motorcycle for JOB J2 (motorcycle-world) — v3
+// Crotch-rocket supersport: SOLID extruded aluminum twin-spar frame + swingarm,
+// human rider (tapered torso/limbs, neck, real helmet with chin bar + curved visor),
+// aggressive full fairing, clip-on bars, upswept tail. No raw boxes/cones for bodywork.
 // Returns { group, wheels } — wheels spin via pivot.rotation.x
 // NEVER: wheels as hollow see-through tori or sinking below ground (looks/motorcycle-world.md)
 
@@ -118,7 +119,7 @@ export function buildMotorcycle(colorHex = 0xc01818) {
   ];
   const tail = shadowed(new THREE.Mesh(new THREE.LatheGeometry(tailPts, 24), paint));
   tail.scale.set(0.85, 2.0, 1); // stretch -> tail length along bike
-  tail.rotation.x = -(Math.PI / 2) + 0.35; // tip up at back
+  tail.rotation.x = -(Math.PI / 2) + 0.48; // aggressive upsweep (crotch rocket)
   tail.position.set(0, 0.60, -0.42);
   g.add(tail);
   // seat pad
@@ -129,7 +130,7 @@ export function buildMotorcycle(colorHex = 0xc01818) {
   // taillight
   const tl = new THREE.Mesh(new THREE.SphereGeometry(0.035, 12, 8), tailLensMat);
   tl.scale.set(1.6, 0.7, 0.6);
-  tl.position.set(0, 0.72, -0.78);
+  tl.position.set(0, 0.75, -0.78);
   g.add(tl);
 
   // ---------- front nose fairing: extruded side profile with bevel ----------
@@ -150,13 +151,13 @@ export function buildMotorcycle(colorHex = 0xc01818) {
   nose.position.set(0, 0.52, 0.78);
   nose.scale.set(1, 1, 1);
   g.add(nose);
-  // headlights: dual angled lenses in the nose
+  // headlights: slim aggressive slanted lenses (crotch rocket)
   for (const sx of [-1, 1]) {
     const hl = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), lensMat);
-    hl.scale.set(0.9, 0.75, 0.55);
-    hl.position.set(sx * 0.085, 0.72, 1.02);
-    hl.rotation.y = sx * 0.35;
-    hl.rotation.x = -0.15;
+    hl.scale.set(1.35, 0.55, 0.5);
+    hl.position.set(sx * 0.095, 0.73, 1.00);
+    hl.rotation.y = sx * 0.5;
+    hl.rotation.z = -sx * 0.28;
     g.add(hl);
   }
 
@@ -194,18 +195,54 @@ export function buildMotorcycle(colorHex = 0xc01818) {
   screen.rotation.x = 0.5; // tilt back at top, wide end down
   g.add(screen);
 
-  // ---------- frame: twin-spar tubes ----------
+  // ---------- frame: SOLID twin-spar aluminum beams (not hollow tubes) ----------
+  const aluMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.32, metalness: 0.9 });
+  const sparShape = new THREE.Shape();
+  sparShape.moveTo(0, 0);
+  sparShape.lineTo(1.12, 0.015);
+  sparShape.lineTo(1.15, 0.09);
+  sparShape.lineTo(0.06, 0.15);
+  sparShape.lineTo(0, 0.06);
+  sparShape.lineTo(0, 0);
+  const sparGeo = new THREE.ExtrudeGeometry(sparShape, {
+    depth: 0.05, bevelEnabled: true, bevelThickness: 0.012,
+    bevelSize: 0.010, bevelSegments: 2, curveSegments: 4
+  });
+  sparGeo.translate(0, 0, -0.025); // center width
   for (const sx of [-1, 1]) {
-    g.add(tube([
-      [sx * 0.09, 0.62, 0.55], [sx * 0.10, 0.58, 0.10],
-      [sx * 0.10, 0.55, -0.35], [sx * 0.09, 0.50, -0.62]
-    ], 0.028, darkMetal));
+    const spar = shadowed(new THREE.Mesh(sparGeo, aluMat));
+    spar.rotation.y = Math.PI / 2; // shape X -> world -Z (front to rear)
+    spar.position.set(sx * 0.095, 0.52, 0.58);
+    spar.rotation.x = -0.06; // slight drop toward rear
+    g.add(spar);
   }
-  // swingarm
+  // steering head: solid block tying spars to fork
+  const steerHead = shadowed(new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.22, 14), aluMat));
+  steerHead.position.set(0, 0.62, 0.56);
+  steerHead.rotation.x = 0.42;
+  g.add(steerHead);
+  // cross brace between spars
+  const brace = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.19, 10), darkMetal);
+  brace.rotation.z = Math.PI / 2;
+  brace.position.set(0, 0.56, -0.05);
+  g.add(brace);
+  // swingarm: SOLID plates (not tubes)
+  const swingShape = new THREE.Shape();
+  swingShape.moveTo(0, 0);
+  swingShape.lineTo(0.46, 0.01);
+  swingShape.lineTo(0.48, 0.07);
+  swingShape.lineTo(0.02, 0.10);
+  swingShape.lineTo(0, 0);
+  const swingGeo = new THREE.ExtrudeGeometry(swingShape, {
+    depth: 0.035, bevelEnabled: true, bevelThickness: 0.008,
+    bevelSize: 0.008, bevelSegments: 2, curveSegments: 4
+  });
+  swingGeo.translate(0, 0, -0.0175);
   for (const sx of [-1, 1]) {
-    g.add(tube([
-      [sx * 0.09, 0.42, -0.30], [sx * 0.085, 0.36, -0.55], [sx * 0.07, 0.325, -0.73]
-    ], 0.024, rimMat));
+    const sw = shadowed(new THREE.Mesh(swingGeo, aluMat));
+    sw.rotation.y = Math.PI / 2;
+    sw.position.set(sx * 0.085, 0.34, -0.28);
+    g.add(sw);
   }
 
   // ---------- front fork + fender ----------
@@ -233,24 +270,24 @@ export function buildMotorcycle(colorHex = 0xc01818) {
   fenderArc.rotation.x = -0.5; // swing arc over the front-top of wheel
   g.add(fenderArc);
 
-  // ---------- handlebar + mirrors + grips ----------
+  // ---------- handlebar: low clip-ons (crotch rocket) + mirrors + grips ----------
   g.add(tube([
-    [-0.26, 0.92, 0.52], [-0.12, 0.94, 0.56], [0, 0.93, 0.57],
-    [0.12, 0.94, 0.56], [0.26, 0.92, 0.52]
+    [-0.24, 0.855, 0.50], [-0.12, 0.87, 0.54], [0, 0.865, 0.55],
+    [0.12, 0.87, 0.54], [0.24, 0.855, 0.50]
   ], 0.016, darkMetal, 20));
   for (const sx of [-1, 1]) {
     const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.12, 10), leather);
     grip.rotation.z = Math.PI / 2 - sx * 0.25;
-    grip.position.set(sx * 0.28, 0.915, 0.515);
+    grip.position.set(sx * 0.265, 0.86, 0.505);
     g.add(grip);
     // mirror stalk + head
     const stalk = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.14, 8), darkMetal);
-    stalk.position.set(sx * 0.20, 1.0, 0.55);
+    stalk.position.set(sx * 0.20, 0.94, 0.54);
     stalk.rotation.z = -sx * 0.35;
     g.add(stalk);
     const mirror = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 8), paintDark));
     mirror.scale.set(1.3, 0.75, 0.45);
-    mirror.position.set(sx * 0.245, 1.07, 0.55);
+    mirror.position.set(sx * 0.245, 1.01, 0.54);
     g.add(mirror);
   }
 
@@ -294,53 +331,77 @@ export function buildMotorcycle(colorHex = 0xc01818) {
     g.add(peg);
   }
 
-  // ---------- rider: articulated racing tuck ----------
-  const H = (r, l) => new THREE.CapsuleGeometry(r, l, 6, 14);
-  // pelvis / hips
-  const hips = shadowed(new THREE.Mesh(H(0.105, 0.12), leather));
-  hips.position.set(0, 0.80, -0.30);
-  hips.rotation.x = 1.15;
-  g.add(hips);
-  // torso leaning forward over tank
-  const chestA = new THREE.Vector3(0, 0.86, -0.26);
-  const chestB = new THREE.Vector3(0, 1.02, 0.10);
-  g.add(limb(chestA, chestB, 0.115, leather));
-  // shoulders pad
-  const shoulders = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), leather));
-  shoulders.scale.set(1.45, 0.8, 0.9);
-  shoulders.position.set(0, 1.0, 0.06);
-  g.add(shoulders);
-  // helmet + visor
-  const helmetPos = new THREE.Vector3(0, 1.10, 0.22);
-  const helmet = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.105, 20, 14), paint));
-  helmet.position.copy(helmetPos);
+  // ---------- rider: HUMAN racing tuck (tapered, not capsule mannequin) ----------
+  // tapered limb segment between points
+  function tapered(a, b, r1, r2, mat, radial = 14) {
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, len, radial), mat);
+    m.position.copy(a).addScaledVector(dir, 0.5);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    return shadowed(m);
+  }
+  // torso: lathe with human taper (narrow waist -> wide chest -> neck)
+  const torsoPts = [
+    new THREE.Vector2(0.001, 0), new THREE.Vector2(0.092, 0.01),
+    new THREE.Vector2(0.104, 0.08), new THREE.Vector2(0.116, 0.16),
+    new THREE.Vector2(0.126, 0.24), new THREE.Vector2(0.128, 0.30),
+    new THREE.Vector2(0.112, 0.36), new THREE.Vector2(0.062, 0.40),
+    new THREE.Vector2(0.001, 0.415)
+  ];
+  const torso = shadowed(new THREE.Mesh(new THREE.LatheGeometry(torsoPts, 20), leather));
+  torso.scale.set(1.35, 1, 0.85); // shoulders wider than deep
+  torso.rotation.x = 0.9; // lean forward over tank
+  torso.position.set(0, 0.78, -0.30);
+  g.add(torso);
+  // neck
+  g.add(tapered(new THREE.Vector3(0, 1.045, 0.015), new THREE.Vector3(0, 1.09, 0.07), 0.048, 0.042, leather));
+  // helmet: shell + chin bar + curved visor (reads as a real helmet, not a ball)
+  const helmet = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.105, 22, 16), paint));
+  helmet.scale.set(0.95, 1.02, 1.18);
+  helmet.position.set(0, 1.155, 0.135);
+  helmet.rotation.x = 0.25; // face slightly down-forward
   g.add(helmet);
-  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.095, 16, 10), visorMat);
-  visor.scale.set(0.82, 0.55, 0.62);
-  visor.position.set(0, 1.095, 0.285);
+  const chin = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.075, 16, 12), paint));
+  chin.scale.set(0.88, 0.72, 1.05);
+  chin.position.set(0, 1.115, 0.205);
+  g.add(chin);
+  const visor = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.098, 0.098, 0.085, 18, 1, true, -0.62, 1.24), visorMat);
+  visor.position.set(0, 1.16, 0.155);
+  visor.rotation.x = 0.25;
+  visor.rotation.y = Math.PI; // curve faces forward
   g.add(visor);
-  // arms: shoulder -> elbow -> grip
+  // arms: shoulder -> elbow -> wrist (tapered, human)
   for (const sx of [-1, 1]) {
-    const sh = new THREE.Vector3(sx * 0.16, 1.00, 0.06);
-    const el = new THREE.Vector3(sx * 0.22, 0.90, 0.30);
-    const gr = new THREE.Vector3(sx * 0.28, 0.915, 0.515);
-    g.add(limb(sh, el, 0.048, leather));
-    g.add(limb(el, gr, 0.042, leather));
-    const glove = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), leather));
-    glove.position.copy(gr);
+    const sh = new THREE.Vector3(sx * 0.165, 1.03, 0.01);
+    const el = new THREE.Vector3(sx * 0.225, 0.915, 0.27);
+    const wr = new THREE.Vector3(sx * 0.265, 0.865, 0.495);
+    g.add(tapered(sh, el, 0.058, 0.047, leather));
+    g.add(tapered(el, wr, 0.047, 0.037, leather));
+    // glove: fist shaped around grip
+    const glove = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), leather));
+    glove.scale.set(0.95, 0.85, 1.35);
+    glove.position.set(sx * 0.268, 0.86, 0.51);
+    glove.rotation.x = 0.3;
     g.add(glove);
   }
-  // legs: hip -> knee -> footpeg
+  // legs: hip -> knee -> ankle (tapered, human)
   for (const sx of [-1, 1]) {
-    const hp = new THREE.Vector3(sx * 0.09, 0.80, -0.28);
-    const kn = new THREE.Vector3(sx * 0.16, 0.62, 0.02);
-    const ft = new THREE.Vector3(sx * 0.16, 0.31, -0.18);
-    g.add(limb(hp, kn, 0.068, leather));
-    g.add(limb(kn, ft, 0.052, leather));
-    const boot = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), leather));
-    boot.scale.set(0.9, 0.8, 1.5);
-    boot.position.set(sx * 0.16, 0.29, -0.14);
+    const hp = new THREE.Vector3(sx * 0.10, 0.80, -0.28);
+    const kn = new THREE.Vector3(sx * 0.175, 0.60, 0.00);
+    const an = new THREE.Vector3(sx * 0.17, 0.33, -0.16);
+    g.add(tapered(hp, kn, 0.080, 0.060, leather));
+    g.add(tapered(kn, an, 0.060, 0.044, leather));
+    // boot: heel + toe
+    const boot = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.062, 12, 10), leather));
+    boot.scale.set(0.95, 0.85, 1.1);
+    boot.position.set(sx * 0.17, 0.30, -0.175);
     g.add(boot);
+    const toe = shadowed(new THREE.Mesh(new THREE.SphereGeometry(0.048, 10, 8), leather));
+    toe.scale.set(0.9, 0.7, 1.4);
+    toe.position.set(sx * 0.17, 0.275, -0.10);
+    g.add(toe);
   }
 
   return { group: g, wheels };
