@@ -1425,7 +1425,7 @@ RP.forEach((p,i)=>{
 const nx=-p.tz, nz=p.tx;
 posA.set([p.x+nx*IN,0,p.z+nz*IN, p.x+nx*OUT,0,p.z+nz*OUT], i*6);
 uvA.set([0,i/6, 1,i/6], i*4);
-if(i<n-1){ const a=i*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
+if(i<n-1){ const a=i*2; idx.push(a,a+2,a+1, a+1,a+2,a+3); } // JOB J7 owner fix: winding flipped - faces point UP (were down: the track was culled/invisible from the race camera, which is why no lanes could be seen)
 });
 const g=new THREE.BufferGeometry();
 g.setAttribute('position', new THREE.BufferAttribute(posA,3));
@@ -1442,15 +1442,32 @@ c.fillStyle='rgba(246,246,246,0.95)';
 for(let k=0;k<=8;k++){ const off=0.30-k*1.22, u=(IN-off)/(IN-OUT), x=Math.round(u*512);
 c.fillRect(x-1,0,3,512); }
 });
-tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
 const m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({map:tex,roughness:0.94}));
 m.receiveShadow=true; this.scene.add(m);
+// JOB J7 owner fix: running lanes as REAL GEOMETRY - the texture-painted lines washed out
+// at race angles and the owner could not see lanes. 9 bright strips on the true boundaries.
+const lineOffs=[]; for(let k=0;k<=8;k++) lineOffs.push(0.30-k*1.22);
+const lnN=RP.length, lPos=new Float32Array(lnN*9*2*3), lIdx=[];
+lineOffs.forEach((off,li)=>{
+RP.forEach((p,i)=>{
+const nx=-p.tz, nz=p.tx;
+lPos.set([p.x+nx*(off+0.04),0.011,p.z+nz*(off+0.04), p.x+nx*(off-0.04),0.011,p.z+nz*(off-0.04)], li*lnN*6+i*6);
+if(i<lnN-1){ const a=li*lnN*2+i*2; lIdx.push(a,a+2,a+1, a+1,a+2,a+3); }
+});
+});
+const lg=new THREE.BufferGeometry();
+lg.setAttribute('position', new THREE.BufferAttribute(lPos,3));
+lg.setIndex(lIdx); lg.computeVertexNormals();
+const laneLines=new THREE.Mesh(lg, new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.55}));
+this.scene.add(laneLines);
+this.laneLineInfo={count:9, width:0.08, offsets:lineOffs};
 // white kerb on the inside of lane 1 (offsets +0.44..+0.16)
 const kn=RP.length, kPos=new Float32Array(kn*2*3), kIdx=[];
 RP.forEach((p,i)=>{
 const nx=-p.tz, nz=p.tx;
 kPos.set([p.x+nx*0.44,0.006,p.z+nz*0.44, p.x+nx*0.16,0.006,p.z+nz*0.16], i*6);
-if(i<kn-1){ const a=i*2; kIdx.push(a,a+1,a+2, a+1,a+3,a+2); }
+if(i<kn-1){ const a=i*2; kIdx.push(a,a+2,a+1, a+1,a+2,a+3); } // JOB J7 owner fix: faces up like the track
 });
 const kg=new THREE.BufferGeometry();
 kg.setAttribute('position', new THREE.BufferAttribute(kPos,3));
@@ -2023,8 +2040,10 @@ W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==nu
 return lp;
 }
 function followCam(x,z,tx,tz,dt){
-W3D.camTo(x-tx*5.2+(-tz)*2.6, 2.3, z-tz*5.2+tx*2.6, x+tx*6.5, 1.15, z+tz*6.5, dt, 5);
+// JOB J7 owner fix: race camera CENTERED BEHIND the player, 10 back and 15 up (owner's line - NEVER list)
+W3D.camTo(x-tx*10, 15, z-tz*10, x+tx*4, 1.2, z+tz*4, dt, 5);
 W3D.camApply();
+W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
 }
 function attachDriver3D(ENG){
 const ev=ENG.ev, rivals=ENG._rivals||[];
@@ -2047,8 +2066,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 
 const mapP=p=> straight? p : (400-ev.dist+p)%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
-if(straight) W3D.camSnap(-ev.dist-5.2,2.3,straightZ(3)+2.6, -ev.dist+6.5,1.15,straightZ(3));
-else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*5.2,2.3,lp.z-lp.tz*5.2, lp.x+lp.tx*6.5,1.15,lp.z+lp.tz*6.5); }
+if(straight) W3D.camSnap(-ev.dist-10,15,straightZ(3), -ev.dist+4,1.2,straightZ(3));
+else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*10,15,lp.z-lp.tz*10, lp.x+lp.tx*4,1.2,lp.z+lp.tz*4); }
 ENG.draw3=dt=>{
 const r=ENG.r;
 if(straight){
@@ -2070,7 +2089,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 else if(ev.eng==='distance'){
 const mapP=p=>(startSFor(ev.dist)+p)%400;
 const lp0=lanePoint(mapP(0),laneOff(3));
-W3D.camSnap(lp0.x-5.2,2.3,lp0.z+2.6, lp0.x+6.5,1.15,lp0.z);
+W3D.camSnap(lp0.x-lp0.tx*10,15,lp0.z-lp0.tz*10, lp0.x+lp0.tx*4,1.2,lp0.z+lp0.tz*4);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
@@ -2113,7 +2132,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='relay'){
-W3D.camSnap(-100-5.2,2.3,straightZ(3)+2.6, -100+6.5,1.15,straightZ(3));
+W3D.camSnap(-110,15,straightZ(3), -96,1.2,straightZ(3));
 const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
 new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
 zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius-4.58);
@@ -2849,6 +2868,8 @@ lanePoint:(s,l)=>lanePoint(s,laneOff(l)),
 laneOff:(l)=>laneOff(l),
 visS:(lane,pos,dist)=>visS(lane,pos,dist),
 eng:()=>ENG,
+lanes:()=> W3D.laneLineInfo||null,
+follow:()=> W3D._follow||null,
 rigs:()=>W3D.rigs,
 clips:()=>W3D.clips,
 kit:()=>{ const r=W3D.rigs[0]; return r&&r.h? r.h.spec.outfit : 'fallback'; },
