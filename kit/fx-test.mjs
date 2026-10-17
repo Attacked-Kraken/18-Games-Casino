@@ -34,5 +34,15 @@ ok('frame rate measured', g > 0, Math.round(g) + ' fps (software graphics)');
 ok('math helpers', await page.evaluate(() => { const m = window.ApexFX.math; const v = m.noise2(1.3, 2.7); return v >= 0 && v <= 1 && m.clamp(5, 0, 1) === 1 && m.lerp(0, 10, .5) === 5; }));
 ok('no errors (incl. shader compile)', errors.length === 0, errors.slice(0, 3).join(' | '));
 ok('no internet requests', outside.length === 0, outside.slice(0, 2).join(' '));
+// sounds answer the same signal (a stand-in kit records which sounds were asked for)
+const p2 = await ctx.newPage(); const err2 = []; p2.on('pageerror', (e) => err2.push(e.message));
+await p2.addInitScript(() => { window.__played = []; window.ApexKit = { audio: { sfx: (n) => { window.__played.push(n); return true; } }, test: { expose() {} } }; });
+await p2.goto(BASE + 'kit/fx-demo.html', { waitUntil: 'load' }); await p2.waitForTimeout(800);
+const r = await p2.evaluate(() => { window.ApexKit.emit('goal', { pos: { x: 0, y: 0, z: 0 } }); window.__fx.emit('hit', {}); return { played: window.__played.slice(), sameBus: typeof window.ApexKit.emit === 'function' }; });
+ok('goal signal plays the horn + hit plays hit', r.played.includes('horn') && r.played.includes('hit'), JSON.stringify(r.played));
+ok('ApexKit.emit is the same signal as fx.emit', r.sameBus);
+await p2.waitForTimeout(400);
+ok('goal signal through the kit also fires confetti', ((await p2.evaluate(() => window.__test.fx.alive)).confetti || 0) > 0);
+ok('no errors with the kit linked', err2.length === 0, err2.slice(0, 2).join(' | '));
 await browser.close();
 const pass = results.filter(Boolean).length; console.log(`\n${pass}/${results.length} passed`); process.exit(pass === results.length ? 0 : 1);

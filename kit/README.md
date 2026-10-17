@@ -137,6 +137,7 @@ const fx = ApexFX.create({ THREE, scene, floor: 0 });   // floor = ground height
 |---|---|
 | Ice spray, dust, dirt, sparks, confetti, water splash, smoke | `fx.burst('ice', pos, { dir, count, scale, color })` |
 | Effects that fire on game events | `fx.when('skate_brake', 'ice')` once, then in the game `fx.emit('skate_brake', { pos })`. Also `fx.on(name, fn)` / `fx.emit(name, data)` for anything |
+| A sound on the same signal | Already linked: `goal` → horn, `score`, `hit`, `whistle`, `boost`. Add more with `fx.sound('bounce', 'tap')`. With the kit booted, `ApexKit.emit('goal', { pos })` does the same as `fx.emit` - one signal, sound + effects. `sounds: false` in `create` turns the links off |
 | Crowd camera flashes over the stands | `const crowd = fx.flashes({ box: { min, max }, rate: 5 })`, then `crowd.burst(60)` on a goal |
 | Waving flag / banner / net / grass / water | `fx.wave(material, { amp, freq, speed, mode: 'cloth' / 'sway' / 'water', pin: 'left' })`. The mesh needs enough segments (e.g. `PlaneGeometry(2.4, 1.5, 24, 12)`); grass/plants: geometry base at y = 0 |
 | Glowing stadium lamp, goal light, puck glow | `fx.glow({ pos, size, color, pulse })` (returns a sprite) |
