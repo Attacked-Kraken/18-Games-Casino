@@ -66,3 +66,23 @@ The owner sees every `status: NEW` idea on his phone with 👍 Build it / 👎 N
 - size: quick
 - pictures: https://play-lh.googleusercontent.com/VSYFNaTO9mnoYqH-CRk_Ne0Z3W2c83l3EcxHQD9uSb1DsiYwhfvc538CbLjH6yC7LZEj=w640
 - gemini prompt: Cute round pebble hero character with determined eyes, full body front view AND side view on one sheet, A-pose style turnarounds, gray stone body with mossy green patches, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
+
+## IDEA: Critter Swarm
+- id: critter-swarm
+- status: NEW
+- pitch: One hero, a thousand critters — survive the swarm.
+- how it plays: On-screen joystick moves your hero around an arena, attacks fire automatically, grab gems to level up and pick 1 of 3 upgrades; survive 10 minutes of escalating waves.
+- why it sells: The survivors-like genre is on fire — Deep Rock Galactic: Survivor holds 4.8 stars with 710K recent installs, Cell Survivor sits at 8.5M installs, and BALL x PIT (Devolver) just debuted at 4.7 stars; the one-stick auto-attack loop is proven retention gold and fits a one-file build perfectly. Links: https://www.appbrain.com/stats/google-play-rankings/top_grossing/arcade/us https://www.appbrain.com/stats/google-play-rankings/top_grossing/arcade/de
+- size: big
+- pictures: https://play-lh.googleusercontent.com/ZkMhq2xNDw_zRqBf_ZSVFDfxqdbxYU0SEt1kjgyZrFQU2nczSnipJ2swB-5FxChqRQ=w2208-h450-rw https://play-lh.googleusercontent.com/VgM-wieMf5ideBBjHj2B-zktRFINyYO5Q9LeSPJVh1DKcviTBws4AwprnO89ODT1rw=w1052-h592
+- gemini prompt: Brave little round hero character with a tiny wooden sword, full body front view AND side view on one sheet, A-pose, big determined eyes, green tunic and brown boots, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
+
+## IDEA: Pocket Dungeon
+- id: pocket-dungeon
+- status: NEW
+- pitch: A tiny dungeon in your pocket — every run a new maze.
+- how it plays: Tap tiles to move your knight through a procedurally-built dungeon, bump into monsters to auto-fight them, collect keys and treasure; die and the dungeon reshuffles for the next run.
+- why it sells: Roguelike RPGs are climbing hard — Rogue Legend hit 1.7M installs with 490K in the last month at 4.7 stars across US/Canada/Brazil/Finland grossing charts, and the "one more run" permadeath loop is the genre's retention engine; tap-to-move keeps it one-handed and kid-friendly. Links: https://appbrain.com/stats/google-play-rankings/top_grossing/role_playing/us https://www.appbrain.com/stats/google-play-rankings/top_grossing/role_playing/fi
+- size: big
+- pictures: https://img.1ting.com/warehouse/upload/202105/21/211002476c121SgHC25E7XK8cbd.jpg https://img.apkcafe.it/img:bz1nODhsaG4mbD0xM2hsJmg9anBnJmY9Z2xtJmk9NTg
+- gemini prompt: Cute chibi knight character with a round shield, full body front view AND side view on one sheet, A-pose, shiny silver armor with blue cape and feathered helmet, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
