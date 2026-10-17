@@ -1,9 +1,33 @@
-# TOOLS.md — free tools for the studio (owner, 2026-10-16)
+# TOOLS.md — the studio toolbox (owner, 2026-10-16 · updated 2026-10-17)
 
-Two kinds of things live here:
-- **Software** you use to make or check things. Its licence only covers the program, and what you make with it is ours.
-- **Asset sources.** Anything that ends up inside a game must also pass **ASSET-LAW.md** (CC0 only). A source that
-  is not on the ASSET-LAW list is **not allowed** until the owner adds it there.
+Read this before every job. It lists **everything you can use right now** to make better graphics and better games,
+in the order to reach for it. Two kinds of things live here:
+- **Software / robots** you use to make or check things. What you make with them is ours.
+- **Asset sources.** Anything that ends up inside a game must pass **ASSET-LAW.md**: CC0, or CC-BY 3.0/4.0 with credit
+  (Part III). A source that is not on the ASSET-LAW list is **not allowed** until the owner adds it there.
+
+## What you can really do from a Muse window (no terminal)
+
+You have a **browser**, **GitHub** (commit files on your branch, open PRs) and the **robots below**, which run on GitHub
+for you. You do NOT have a terminal, Blender or a GPU. So: download real models in the browser, commit them, and let the
+robots shrink, photograph and test them. Never "fake" a hero model from code boxes when a real CC0/CC-BY one exists.
+
+## Real graphics fast - look in this order (owner's recommendation, 2026-10-17)
+
+1. **Our own shelves:** `characters/` (rigged CC0 humans + gear), `models/`, `venues/kit/`, and the asset warehouse
+   repo Attacked-Kraken/3D-Assests-for-Arcade (full Quaternius packs).
+2. **Kenney** (kenney.nl) - CC0, no credit needed: vehicles (cars, bikes, karts), sports props, city/track kits, UI,
+   **sound effects**. First stop for props, UI and sounds.
+3. **Quaternius** (quaternius.com) and **KayKit free packs** - CC0 low-poly characters, animals, vehicles.
+4. **Poly Pizza** (poly.pizza) - thousands of models; filter by license. CC0 first, then CC-BY (with credit).
+5. **Poly Haven** (polyhaven.com) and **ambientCG** (ambientcg.com) - CC0 **realistic textures** (grass, ice, asphalt,
+   dirt, wood, metal) and **HDRI skies** for real-looking lighting.
+6. **Sketchfab** - ONLY "CC Attribution" models with the maker's Download button (Part III). It needs a login: if the
+   browser asks you to sign in, don't - go back to 1-5 and tell the owner which model you wanted.
+7. **OpenGameArt** - ONLY items marked CC0 or CC-BY 3.0/4.0 (the asset check robot blocks everything else).
+
+Every model: ledger entry in `ASSETS.md` in the same PR, credit in the game's Credits screen if CC-BY, then MODELS.md
+WAITING OWNER for hero models.
 
 ## Already in this repo (use these first)
 
@@ -18,12 +42,21 @@ Two kinds of things live here:
 | Game check robot | `tools/game-check/` | plays every game like a phone, takes pictures, runs the fix tests, blocks bad pull requests |
 | Patch robot | `tools/patch-robot/` | moves big files through small patches |
 | three.js add-ons | `vendor/` | GLTFLoader, SkeletonUtils, BufferGeometryUtils (merging meshes), bloom and post-processing |
+| **Shared game kit** | `kit/apex-kit.js` (guide `kit/README.md`) | pause/settings, mute, saves, credits screen, touch controls, chase camera, `__test` hooks. Build every new game on it |
+| **Model shrink robot** | `.github/workflows/model-shrink.yml` | commit a download as `<name>-raw.glb` on your branch: the robot makes `<name>.glb` (welded, quantized, WebP textures ≤1024 px) and deletes the raw one. Use the small one |
+| **Asset check robot** | `tools/asset-check.mjs` | blocks a PR whose 3D files aren't in ASSETS.md with an allowed license + credit |
+| **iPhone Safari pass** | `tools/game-check/safari.mjs` | the robot also plays every game in real iPhone Safari (WebKit) |
+| **Auto-undo** | `tools/game-check/undo.mjs` | a merge that newly breaks a game is reverted automatically; your branch keeps the work |
+| **Play tests** | `tools/game-check/fixes/` (`play-` ids, `window.__test`) | the robot actually plays: start, move, score. 5+ per game |
+| **Venue gate** | `venues/*.md` + robot | a game must show its real place (track inside a stadium, real rink) or it fails |
+| **Owner's notes** | jobs from the board, with his pencil drawings and screen recordings | the owner circles problems in the game itself; every point is a must-fix |
+| **Factory memory** | `NEWS.md`, `LESSONS.md`, `PLAYBOOK.md`, `SCORES.md` | owner decisions, mistakes never to repeat, what works, honest scores |
 
-## Free software (make things)
+## Free software (for a person at a computer - the robots already do the shrinking for you)
 
 | Tool | Licence | Use it for |
 |---|---|---|
-| **Blender** (blender.org) | GPL (the program only, what you make is ours) | modelling, rigging, UV, baking, exporting `.glb` |
+| **Blender** (blender.org) | GPL (the program only, what you make is ours) | modelling, rigging, UV, baking, exporting `.glb` - **needs a person at a computer; Muses can't run it**. Ask the owner if a model truly needs it |
 | **glTF-Transform** (gltf-transform.dev) | MIT | shrinking `.glb` files: `gltf-transform optimize in.glb out.glb --compress meshopt --texture-compress webp` |
 | **meshoptimizer / gltfpack** | MIT | fewer triangles with the same look, LODs |
 | **KTX-Software (Basis)** | Apache-2.0 | GPU textures that load fast on phones |
@@ -35,8 +68,9 @@ Two kinds of things live here:
 
 ## Free asset sources: allowed now (on ASSET-LAW)
 
-Quaternius · Kenney · Poly Pizza (CC0 items only) · Poly Haven · ambientCG · KayKit free packs · OpenGameArt (CC0 items only).
-Keep the paper trail: source, link and licence go in the folder's `CREDITS.txt`.
+CC0: Quaternius · Kenney · Poly Pizza · Poly Haven · ambientCG · KayKit free packs · OpenGameArt.
+CC-BY 3.0/4.0 with credit (Part III): Poly Pizza · Sketchfab "CC Attribution" · OpenGameArt.
+Keep the paper trail in `ASSETS.md` (the robot checks it).
 
 ## Ask the owner first (NOT on ASSET-LAW yet, so don't use them until he adds them)
 
@@ -51,5 +85,5 @@ Keep the paper trail: source, link and licence go in the folder's `CREDITS.txt`.
 
 ## Never
 
-Sketchfab, Mixamo, TurboSquid (ASSET-LAW), anything ripped or "free download, all rights reserved", any CDN or web
+Mixamo, TurboSquid, any NC/ND/SA or "personal use" license, Sketchfab models that aren't "CC Attribution" (ASSET-LAW Part III), brands/logos, anything ripped or "free download, all rights reserved", any CDN or web
 font or online API in a game (games are fully offline).
