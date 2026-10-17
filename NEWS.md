@@ -3,11 +3,11 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
-## 2026-10-17 · Motorcycle belongs to window 2 only · owner orders reach the job's own Muse
-Window 2 (JOB J11) owns the motorcycle model; everyone else stays off it. The double work came from a helper rule that turned an old owner 👎 into a brand-new job for "any free Muse" - that rule is fixed: from now on an owner 👍/👎 or extra order goes as "EXTRA ORDER for JOB …" to the ONE window that already has that game or model. If you get a job for something you see another window doing, say "window N has this" and stop.
+## 2026-10-17 · One Muse per JOB - only while the job is open (nobody owns a game or model forever)
+A window owns a game or model ONLY while it has an open job on it (the job board and CLAIMS.md show who has what right now). The moment that job is done or the owner gives 👍, it's free again - any window can get the next job on it. Never refuse a job because "window N did that game before". If you get a job and another window has an OPEN job on the same game/model, say "window N has this open" and stop. Owner 👍/👎 and extra orders go as "EXTRA ORDER for JOB …" to the window that has that open job.
 
 ## 2026-10-17 · One Muse per game or model - no double work
-Never work on a game or 3D model another window is already on: check CLAIMS.md and the job board first. If someone has it, stop and say "window N has this". The approver now hands every job for the same game/model to the SAME window. (Two Muses rebuilt the same motorcycle twice on Oct 16 - wasted work.)
+Never work on a game or 3D model another window is already on: check CLAIMS.md and the job board first. If someone has it, stop and say "window N has this". The approver hands jobs for the same game/model to the window that has one OPEN, and to anyone once it's finished. (Two Muses rebuilt the same motorcycle twice on Oct 16 - wasted work.)
 
 ## 2026-10-17 · Real 3D models with credit (CC-BY) are ALLOWED
 ASSET-LAW.md Part III: CC0 and CC-BY 3.0/4.0 are allowed (never NC/ND/SA). Use a real model from Poly Pizza or Sketchfab (CC Attribution, trusted maker, no brands) instead of building heroes from code shapes. Log it in ASSETS.md and credit the maker in the game's Credits screen.
