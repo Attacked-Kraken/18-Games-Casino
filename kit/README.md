@@ -119,3 +119,31 @@ Do it on your own branch, one game per pull request, and say in the PR what chan
 `#akMute`, `#akPauseBtn`, `#akMenu`, `#akResume`, `#akRestart`, `#akSettings`, `#akCreditsBtn`, `#akBack`,
 `#akSound`, `#akMusicVol`, `#akQuality [data-q=low|medium|high]`, `#akCredits`, `#akPlay` (start card),
 `#akJoyZone`, `#akBtn-<id>`, `#akFps`.
+
+---
+
+## Effects pack (`kit/apex-fx.js`) - ready-made atmosphere, zero files (owner, 2026-10-17)
+
+One tested version of the effects every sports game needs, so no Muse rebuilds them. See them all in
+`kit/fx-demo.html` (tap the buttons). The robot checks the pack on every pull request that changes it (18 checks).
+
+```js
+import ApexFX from './kit/apex-fx.js';
+const fx = ApexFX.create({ THREE, scene, floor: 0 });   // floor = ground height, particles bounce on it
+// every frame (e.g. in ApexKit onFrame):  fx.update(dt);
+```
+
+| You want | Call |
+|---|---|
+| Ice spray, dust, dirt, sparks, confetti, water splash, smoke | `fx.burst('ice', pos, { dir, count, scale, color })` |
+| Effects that fire on game events | `fx.when('skate_brake', 'ice')` once, then in the game `fx.emit('skate_brake', { pos })`. Also `fx.on(name, fn)` / `fx.emit(name, data)` for anything |
+| Crowd camera flashes over the stands | `const crowd = fx.flashes({ box: { min, max }, rate: 5 })`, then `crowd.burst(60)` on a goal |
+| Waving flag / banner / net / grass / water | `fx.wave(material, { amp, freq, speed, mode: 'cloth' / 'sway' / 'water', pin: 'left' })`. The mesh needs enough segments (e.g. `PlaneGeometry(2.4, 1.5, 24, 12)`); grass/plants: geometry base at y = 0 |
+| Glowing stadium lamp, goal light, puck glow | `fx.glow({ pos, size, color, pulse })` (returns a sprite) |
+| Pictures drawn in code | `fx.tex.wood()`, `.seats({ colors })`, `.ice()`, `.grass({ stripes })`, `.asphalt()`, `.noise({ color })`, `.number('23', { bg, outline })`, `.label('HOME 2 - 1 AWAY')`, `.lines((g, w, h) => {...})` - all accept `repeat: [x, y]` |
+| One clock for your own shaders | `fx.time` (`{ value }` in seconds) - put it in your shader's uniforms |
+| Maths | `fx.math.range(a, b)`, `.pick(list)`, `.clamp`, `.lerp`, `.smooth`, `.noise2(x, y)`, `.fbm2(x, y)` |
+| Lower-end phones | `fx.setQuality('low')` halves the particles (follow the kit's graphics setting) |
+| Robot | `fx.stats()`, also on `window.__test.fx` when ApexKit is booted |
+
+Phone budget: each burst kind is one draw call with a fixed pool of 400 particles; nothing is created per frame.

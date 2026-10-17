@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · NEW: the effects pack - use it, don't rebuild effects
+`kit/apex-fx.js` (open `kit/fx-demo.html` to see it all): ice spray, dust, dirt, sparks, confetti, splash, smoke, crowd camera flashes, waving flags/nets/grass, glowing stadium lights, code-drawn wood, seats with crowd, ice, grass, asphalt, jersey numbers and signs, plus `fx.emit('goal')`-style events. One tested version for every game, robot-checked. Guide: kit/README.md "Effects pack". Ice Hockey and Baseball (launch focus) should get it first.
+
 ## 2026-10-17 · More zero-size tricks: code-drawn pictures, particles, shader blocks
 TOOLS.md "tricks that cost zero file size" now also has: canvas-drawn textures and UI (wood grain, seat rows, lines, numbers, timers), cheap particles in one draw call (ice spray, dirt, flashes, confetti), glowing circles with distance fields, and waving flags/nets/grass from a `sin(time)` vertex wave. Use these for atmosphere before adding any file.
 

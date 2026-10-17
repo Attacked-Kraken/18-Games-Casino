@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Effects Demo · Apex Arcade</title>
+<link rel="icon" href="../app-icon-192.png">
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b1018; touch-action:none; -webkit-user-select:none; user-select:none; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #bar { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:10; display:flex; gap:6px; flex-wrap:wrap; justify-content:center; max-width:96vw; }
+  #bar button { font:700 13px system-ui, sans-serif; color:#fff; background:rgba(20,28,40,.85); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:9px 11px; }
+  #hud { position:fixed; top:10px; left:12px; color:#eef3f8; font:700 13px system-ui, sans-serif; background:rgba(10,16,26,.7); padding:6px 10px; border-radius:10px; }
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+</style>
+<script type="importmap">{"imports":{"three":"../three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">Effects pack · tap a button</div>
+<div id="bar">
+  <button data-k="ice">❄️ Ice spray</button><button data-k="dust">💨 Dust</button><button data-k="dirt">🟤 Dirt</button>
+  <button data-k="sparks">✨ Sparks</button><button data-k="confetti">🎉 Confetti</button><button data-k="splash">💧 Splash</button>
+  <button data-k="smoke">🌫 Smoke</button><button data-k="flash">📸 Crowd flashes</button>
+</div>
+<script type="module">
+/* Proof that kit/apex-fx.js works: every effect on one screen. Robot test: node kit/fx-test.mjs */
+import * as THREE from 'three';
+import ApexFX from './apex-fx.js';
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#0e1626');
+const camera = new THREE.PerspectiveCamera(55, 2, 0.1, 300); camera.position.set(0, 6, 15); camera.lookAt(0, 2, 0);
+scene.add(new THREE.HemisphereLight('#dfe9ff', '#2a3a20', 1.1));
+const sun = new THREE.DirectionalLight('#ffffff', 1.8); sun.position.set(6, 12, 8); scene.add(sun);
+
+const fx = ApexFX.create({ THREE, scene, floor: 0 });
+
+/* code-drawn pictures on real surfaces */
+const ice = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshStandardMaterial({ map: fx.tex.ice(), roughness: .25 }));
+ice.rotation.x = -Math.PI / 2; ice.position.set(-6, 0, 0); scene.add(ice);
+const grassMap = fx.tex.grass({ repeat: [2, 2] });
+const field = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshStandardMaterial({ map: grassMap, roughness: .9 }));
+field.rotation.x = -Math.PI / 2; field.position.set(6, 0, 0); scene.add(field);
+const court = new THREE.Mesh(new THREE.PlaneGeometry(24, 6), new THREE.MeshStandardMaterial({ map: fx.tex.wood({ repeat: [6, 2] }), roughness: .5 }));
+court.rotation.x = -Math.PI / 2; court.position.set(0, 0.001, 7); scene.add(court);
+const stands = new THREE.Mesh(new THREE.PlaneGeometry(28, 7), new THREE.MeshStandardMaterial({ map: fx.tex.seats({ colors: ['#1f4fbf', '#d62839'] }) }));
+stands.position.set(0, 5, -9); stands.rotation.x = -0.35; scene.add(stands);
+const board = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: fx.tex.label('HOME 2 - 1 AWAY', { fg: '#ffd23f', border: '#ffd23f' }) }));
+board.position.set(0, 9.6, -8.6); scene.add(board);
+const jersey = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshStandardMaterial({ map: fx.tex.number('23', { bg: '#c8102e', outline: '#000' }) }));
+jersey.position.set(-9, 1.4, 3); scene.add(jersey);
+
+/* waving flag, net and grass tufts */
+const flagMat = fx.wave(new THREE.MeshStandardMaterial({ map: fx.tex.label('APEX', { w: 256, h: 160, bg: '#d62839', fg: '#fff' }), side: THREE.DoubleSide }), { amp: .18, freq: 2.5, speed: 4 });
+const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5, 24, 12), flagMat); flag.position.set(10.2, 5.2, -2); scene.add(flag);
+const pole = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 6), new THREE.MeshStandardMaterial({ color: '#cccccc' })); pole.position.set(9, 3, -2); scene.add(pole);
+const netMat = fx.wave(new THREE.MeshStandardMaterial({ color: '#ffffff', wireframe: true, side: THREE.DoubleSide }), { amp: .05, freq: 6, speed: 2, pin: 'none' });
+const net = new THREE.Mesh(new THREE.PlaneGeometry(3, 1.5, 16, 8), netMat); net.position.set(-6, .75, -3.5); scene.add(net);
+const tuftMat = fx.wave(new THREE.MeshStandardMaterial({ color: '#4fa64a', side: THREE.DoubleSide }), { amp: .25, freq: 1.5, speed: 2.5, mode: 'sway' });
+const tuftGeo = new THREE.ConeGeometry(.08, .7, 4); tuftGeo.translate(0, .35, 0);
+const tufts = new THREE.InstancedMesh(tuftGeo, tuftMat, 120); const m4 = new THREE.Matrix4();
+for (let i = 0; i < 120; i++) { m4.setPosition(2 + Math.random() * 8, 0, -3 + Math.random() * 6); tufts.setMatrixAt(i, m4); } scene.add(tufts);
+
+/* stadium lights that glow */
+for (let i = -2; i <= 2; i++) fx.glow({ pos: { x: i * 6, y: 11, z: -8 }, size: 3.2, color: '#fff3d6', pulse: .04 });
+const goalLight = fx.glow({ pos: { x: -6, y: 2.2, z: -3.6 }, size: 1.4, color: '#ff3030', pulse: .35, pulseSpeed: 8 });
+
+/* crowd flashes over the stands */
+const crowd = fx.flashes({ box: { min: { x: -13, y: 2.5, z: -10 }, max: { x: 13, y: 7.5, z: -8 } }, rate: 5, size: .5 });
+
+/* events: the game says what happened, the effects listen */
+fx.when('skate_brake', 'ice', { dir: { x: 1, y: .3, z: 0 } });
+fx.when('goal', 'confetti');
+fx.on('goal', () => crowd.burst(60));
+const spots = { ice: [-6, 0, 0], dust: [6, 0, 0], dirt: [6, 0, 2], sparks: [0, 1, 7], confetti: [0, 0, 0], splash: [-3, 0, 4], smoke: [3, 0, 4] };
+document.getElementById('bar').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k;
+  if (k === 'flash') { fx.emit('goal', { pos: { x: 0, y: 0, z: 0 } }); return; }
+  if (k === 'ice') { fx.emit('skate_brake', { pos: { x: -6, y: 0, z: 0 } }); return; }
+  const p = spots[k]; fx.burst(k, { x: p[0], y: p[1], z: p[2] });
+});
+
+function fit() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+addEventListener('resize', fit); fit();
+let last = 0, auto = 0;
+function frame(now) {
+  const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
+  auto += dt; if (auto > 1.6) { auto = 0; fx.emit('skate_brake', { pos: { x: -6 + Math.random() * 2, y: 0, z: Math.random() * 2 } }); fx.burst('dust', { x: 6, y: 0, z: 0 }); }
+  fx.update(dt); renderer.render(scene, camera);
+  document.getElementById('hud').textContent = 'Effects pack · particles ' + fx.stats().particles;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__fx = fx;
+Object.defineProperty(window, '__test', { configurable: true, get: () => ({ fx: fx.stats(), goal: goalLight.scale.x }) });
+</script>
+</body>
+</html>
