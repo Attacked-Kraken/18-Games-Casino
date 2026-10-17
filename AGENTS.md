@@ -53,3 +53,7 @@ request marked `waits-model: <id>`. The owner's 👍 makes the model LOCKED, and
 (robot check, fix tests, phone speed, real players, owner thumbs) and puts improvement jobs on the board for the weakest
 games. A job that starts with "DAILY SCORE" is one of these: fix every problem it lists, then improve the game. Every 👎
 becomes a line in `LESSONS.md` — the factory gets smarter with every mistake.
+
+**Real 3D models with credit (owner, 2026-10-16):** CC-BY models are now allowed as well as CC0 (ASSET-LAW.md Part III).
+Every 3D file goes in `ASSETS.md` (title, maker, source page, license); every game using a CC-BY model shows a Credits
+screen naming each maker. The asset check robot blocks anything else. Prefer a real model over shapes built in code.
