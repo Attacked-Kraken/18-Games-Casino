@@ -2405,6 +2405,13 @@ SIM_MODS = (G.mode==='career') ? careerMods() : {spd:1,stam:1,tech:1};
 ENG=makeEngine(ev,rivals||[]);
 ENG._rivals=rivals||[];
 if(W3D.ready&&!W3D.failed){ try{ attachDriver3D(ENG); }catch(err){} }
+// JOB J7 freeze hardening: pay the cold-start costs (shader programs for the painted
+// kits, texture uploads) HERE, in the start transition - not inside the first race
+// frames, where a compile storm on a slow device stalls the frame loop past the
+// game-check robot's screenshot budget (intermittent freeze: check on main @
+// 41efa40, Oct 17 11:52 AM froze on bytes identical to the full PASS at 10:55 AM,
+// and that run's Safari pass raced fine). Once per session: programs are shared.
+if(!startPlay._warmed && W3D.renderer && W3D.scene && W3D.camera){ startPlay._warmed=true; try{ W3D.renderer.compile(W3D.scene, W3D.camera); W3D.renderer.render(W3D.scene, W3D.camera); }catch(err){} }
 G.resShown=false; G.final=false;
 showScreen(null);
 AudioSys.setMusic('game');
