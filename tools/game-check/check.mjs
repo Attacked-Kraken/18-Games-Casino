@@ -129,6 +129,8 @@ for (const g of games) {
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
   const slug = g.file.replace('.html', '');
+  // one game that freezes the browser must never stop the whole report (Oct 17: Track & Field hung the robot)
+  try {
   // ---------- sideways (how the games are meant to be played)
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
   await ctx.addInitScript(STUDIO_PROBE);
@@ -235,6 +237,10 @@ for (const g of games) {
   for (const m of missing) r.fail.push('Missing file: ' + m);
   for (const e of [...shaderErr].slice(0, 2)) r.fail.push('Broken 3D shader (models using it are invisible): ' + e);
   for (const e of [...errors].slice(0, 4)) r.check.push('Script error: ' + e);
+  } catch (e) {
+    r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
+    for (const c of browser.contexts()) if (c !== lab.context()) await c.close().catch(() => {});
+  }
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);
