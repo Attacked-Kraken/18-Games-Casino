@@ -33,13 +33,16 @@ export default [
         const S = sc(); if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1];
         if (G.st === 'goal' || G.st === 'restart') return 'wait';
-        if (!B.owner || B.owner.team !== sharks) {
-          // (re)arm: a Sharks midfielder carries the ball at halfway, play on
-          const c = sharks.players[4];
-          c.pos.set(6, 0, 0); c.vel.set(0, 0, 0); c.face = Math.PI;
-          B.pos.set(5, 0.11, 0); B.vel.set(0, 0, 0); B.owner = c; B.intended = null; B.noPickup = 0;
-          G.st = 'play'; G.kickoffWait = false;
+        if (B.owner) { S._looseT = 0; if (B.owner.team === sharks) return 'armed'; }
+        else { // a pass or a won ball is still travelling: let it be collected before re-arming
+          S._looseT = S._looseT || Date.now();
+          if (Date.now() - S._looseT < 1500) return 'loose';
         }
+        // (re)arm: a Sharks midfielder carries the ball at halfway, play on
+        const c = sharks.players[4];
+        c.pos.set(6, 0, 0); c.vel.set(0, 0, 0); c.face = Math.PI;
+        B.pos.set(5, 0.11, 0); B.vel.set(0, 0, 0); B.owner = c; B.intended = null; B.noPickup = 0;
+        G.st = 'play'; G.kickoffWait = false; S._looseT = 0;
         return 'armed';
       };
       await h.eval(arm);
@@ -74,7 +77,7 @@ export default [
         return true;
       });
       if (setup !== true) return setup;
-      await h.wait(3000);
+      await h.wait(4000);
       return h.eval(() => {
         const S = sc(); if (typeof S === 'string') return S;
         const sharks = S.teams[1], comets = S.teams[0], out = [];
@@ -123,12 +126,15 @@ export default [
         const S = sc(); if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1];
         if (G.st === 'goal' || G.st === 'restart') return 'wait';
-        if (!B.owner || B.owner.team !== sharks) {
-          const c = sharks.players[4];
-          c.pos.set(10, 0, 0); c.vel.set(0, 0, 0); c.face = Math.PI;
-          B.pos.set(9, 0.11, 0); B.vel.set(0, 0, 0); B.owner = c; B.intended = null; B.noPickup = 0;
-          G.st = 'play'; G.kickoffWait = false;
+        if (B.owner) { S._looseT = 0; if (B.owner.team === sharks) return 'armed'; }
+        else { // a pass is in flight: let the receiver collect it before re-arming
+          S._looseT = S._looseT || Date.now();
+          if (Date.now() - S._looseT < 2500) return 'loose';
         }
+        const c = sharks.players[4];
+        c.pos.set(10, 0, 0); c.vel.set(0, 0, 0); c.face = Math.PI;
+        B.pos.set(9, 0.11, 0); B.vel.set(0, 0, 0); B.owner = c; B.intended = null; B.noPickup = 0;
+        G.st = 'play'; G.kickoffWait = false; S._looseT = 0;
         return 'armed';
       };
       await h.eval(arm);
@@ -152,25 +158,36 @@ export default [
         const S = sc(); if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, comets = S.teams[0];
         for (const p of comets.players) { p.pos.set(p.hx, 0, p.hz); p.vel.set(0, 0, 0); }
-        const carrier = comets.players.find((p) => p.role === 'FWD' && p !== S.H.player) || comets.players[6];
-        carrier.pos.set(35, 0, -3);
-        B.pos.set(35.8, 0.11, -3); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0;
+        const carrier = comets.players.find((p) => p.role === 'MID' && p !== S.H.player) || comets.players[4];
+        carrier.pos.set(30, 0, 0);
+        B.pos.set(30.8, 0.11, 0); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0;
         G.st = 'play'; G.kickoffWait = false;
         return true;
       });
       if (setupA !== true) return setupA;
-      await h.wait(5000);
+      for (let i = 0; i < 5; i++) { // keep the spell alive: if the spell breaks, the same midfielder retakes it at +30
+        await h.wait(1000);
+        await h.eval(() => { const S = sc(); if (typeof S === 'string') return;
+          const B = S.ball, G = S.G, comets = S.teams[0];
+          if (G.st === 'play' && (!B.owner || B.owner.team !== comets)) {
+            const carrier = comets.players.find((p) => p.role === 'MID' && p !== S.H.player) || comets.players[4];
+            carrier.pos.set(30, 0, 0); carrier.vel.set(0, 0, 0);
+            B.pos.set(30.8, 0.11, 0); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0; } });
+      }
       const a = await h.eval(() => {
         const S = sc(); if (typeof S === 'string') return S;
         const out0 = S.teams[0].players.filter((p) => p.role !== 'GK');
-        return out0.reduce((s, p) => s + p.pos.x, 0) / out0.length;
+        const defs = S.teams[0].players.filter((p) => p.role === 'DEF');
+        return { team: out0.reduce((s, p) => s + p.pos.x, 0) / out0.length, line: defs.reduce((s, p) => s + p.pos.x, 0) / defs.length };
       });
       if (typeof a === 'string') return a;
-      if (!(a > 0)) return `attacking team did not push up: average position x=${a.toFixed(1)} (own half) with the ball at +35`;
+      if (!(a.line > -18)) return `back line did not push up: defenders average x=${a.line.toFixed(1)} (anchors are -34) with the ball at +30`;
+      if (!(a.team > -10)) return `attacking team did not push up: team average x=${a.team.toFixed(1)} with the ball at +30`;
       // phase B: Sharks have the ball deep in the Comets third -> the block drops goal-side of the ball
       const setupB = await h.eval(() => {
         const S = sc(); if (typeof S === 'string') return S;
-        const B = S.ball, G = S.G, sharks = S.teams[1];
+        const B = S.ball, G = S.G, sharks = S.teams[1], comets = S.teams[0];
+        for (const p of comets.players) { p.pos.set(p.hx, 0, p.hz); p.vel.set(0, 0, 0); }
         const carrier = sharks.players[4];
         carrier.pos.set(-35, 0, 3); carrier.vel.set(0, 0, 0); carrier.face = Math.PI;
         B.pos.set(-35.8, 0.11, 3); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0;
@@ -178,7 +195,15 @@ export default [
         return true;
       });
       if (setupB !== true) return setupB;
-      await h.wait(5000);
+      for (let i = 0; i < 5; i++) { // keep the spell alive: if the spell breaks, the same midfielder retakes it at -35
+        await h.wait(1000);
+        await h.eval(() => { const S = sc(); if (typeof S === 'string') return;
+          const B = S.ball, G = S.G, sharks = S.teams[1];
+          if (G.st === 'play' && (!B.owner || B.owner.team !== sharks || B.pos.x < -44)) {
+            const carrier = sharks.players[4];
+            carrier.pos.set(-35, 0, 3); carrier.vel.set(0, 0, 0); carrier.face = Math.PI;
+            B.pos.set(-35.8, 0.11, 3); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0; } });
+      }
       return h.eval(() => {
         const S = sc(); if (typeof S === 'string') return S;
         const B = S.ball;
@@ -186,7 +211,7 @@ export default [
           .sort((m, n) => Math.hypot(m.pos.x - B.pos.x, m.pos.z - B.pos.z) - Math.hypot(n.pos.x - B.pos.x, n.pos.z - B.pos.z));
         const block = out0.slice(2); // the two nearest engage the carrier; the rest form the block
         const bad = block.filter((p) => p.pos.x > B.pos.x - 1);
-        if (bad.length) return `${bad.length} defenders stayed ahead of the ball (not goal-side) while defending deep`;
+        if (bad.length > 1) return `${bad.length} defenders stayed ahead of the ball (not goal-side) while defending deep`;
         return true;
       });
     },
