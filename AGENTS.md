@@ -11,7 +11,8 @@ Owner: Mr. Cruz. Read these files, in this order, before any work. They are the 
 4. **STORE-READY.md** — phone performance, landscape, touch, fully offline, the quality bar.
 5. **README.md** — how the repo is laid out (sealed casino vs. Game Development / sports.html).
 
-6. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
+6. **NEWS.md** — the owner's latest decisions (newest first). The approver also tells you each new one.
+7. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
    owner 👎 or failed check, add one line to it.
 
 Short version: no gambling, casino or real-money content in Game Development titles; no real brands,
@@ -90,3 +91,7 @@ to LESSONS.md. A brand-new failing fix test (test-first) never triggers an undo.
 touch joystick + buttons, chase camera, fps meter and `window.__test` hook. **Every NEW game is built on it.** Existing
 games move onto it when they are a launch-focus game (a "KIT MOVE" job). Fix the kit, not one game, when a shared thing
 is wrong — every game gets better at once. Never break the kit's self-test.
+
+**No double work (owner, 2026-10-17):** one game or 3D model = one Muse at a time. Before starting, check CLAIMS.md and
+the job board; if another window has it, stop and say so. The approver hands every job for the same game/model to the
+window already working on it. New owner decisions arrive as FACTORY NEWS and are listed in NEWS.md.
