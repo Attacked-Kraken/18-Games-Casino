@@ -167,8 +167,10 @@ export default [
         lateral += ((f.cx - f.x) * (-f.tz) + (f.cz - f.z) * f.tx) / S.length;
         up += f.cy / S.length;
       }
-      if (Math.abs(behind - 10) > 2) return 'camera sits ' + behind.toFixed(1) + ' blocks behind the player, wants 10';
-      if (Math.abs(up - 15) > 2) return 'camera flies ' + up.toFixed(1) + ' blocks up, wants 15';
+      // camera numbers re-spec'd by the owner (2026-10-17, ONE camera line on the looks
+      // board): about twice the old distance back, just above shoulder height, centered.
+      if (Math.abs(behind - 20) > 3) return 'camera sits ' + behind.toFixed(1) + ' blocks behind the player, wants about 20 (twice the old distance)';
+      if (Math.abs(up - 1.8) > 1.0) return 'camera flies ' + up.toFixed(1) + ' blocks up, wants about 1.8 (slightly above shoulder height)';
       if (Math.abs(lateral) > 1) return 'camera rides ' + lateral.toFixed(1) + ' blocks off to the side, wants centered behind the player';
       return true;
     },
@@ -195,7 +197,7 @@ export default [
             samples++;
             const behind = (s.f.x - s.f.cx) * s.f.tx + (s.f.z - s.f.cz) * s.f.tz;
             const lateral = (s.f.cx - s.f.x) * (-s.f.tz) + (s.f.cz - s.f.z) * s.f.tx;
-            if (Math.abs(lateral) > 1 || Math.abs(behind - 10) > 2.5 || Math.abs(s.f.cy - 15) > 2.5) {
+            if (Math.abs(lateral) > 1 || Math.abs(behind - 20) > 3.5 || Math.abs(s.f.cy - 1.8) > 1.2) {
               camBad = 'behind ' + behind.toFixed(1) + ', up ' + s.f.cy.toFixed(1) + ', off-center ' + lateral.toFixed(1);
             }
           }
@@ -205,7 +207,34 @@ export default [
       }
       if (humans < 7) return 'only ' + humans + ' of the runners are the studio 3D humans - the rest are stand-ins';
       if (samples < 2) return 'never saw the race camera behind the player';
-      if (camBad) return 'camera not right behind the player (' + camBad + ') - wants 10 back, 15 up, centered, always';
+      if (camBad) return 'camera not right behind the player (' + camBad + ') - wants about 20 back, just above shoulder height, centered, always';
+      return true;
+    },
+  },
+  {
+    id: 'camera-centered-pulled-back-sharp',
+    ask: "Camera: centered right behind the player's runner, pulled back far enough to see the player plus 2 lanes each side and the track ahead (about twice the old distance), slightly above shoulder height looking down the track - never off to the side. Runners always sharp.",
+    async test(page, h) {
+      const tt = () => h.eval(() => (window.__tf && window.__tf.follow) ? window.__tf.follow() : null);
+      const t0 = Date.now(); const S = [];
+      let sharp = null;
+      while (Date.now() - t0 < 22000 && S.length < 5) {
+        const f = await tt();
+        if (f) S.push(f);
+        if (!sharp) sharp = await h.eval(() => (window.__tf && window.__tf.sharp) ? window.__tf.sharp() : null);
+        await h.wait(400);
+      }
+      if (S.length < 3) return 'never saw the race camera behind the player';
+      for (const f of S) {
+        const behind = (f.x - f.cx) * f.tx + (f.z - f.cz) * f.tz;
+        const lateral = (f.cx - f.x) * (-f.tz) + (f.cz - f.z) * f.tx;
+        if (behind < 16) return 'camera only ' + behind.toFixed(1) + ' blocks behind the player - too close, wants about twice the old distance (20)';
+        if (f.cy < 1.1 || f.cy > 3.4) return 'camera height ' + f.cy.toFixed(1) + ' - wants slightly above shoulder height (about 1.8)';
+        if (Math.abs(lateral) > 1) return 'camera rides ' + lateral.toFixed(1) + ' blocks off to the side - wants centered right behind the player';
+      }
+      if (!sharp) return 'no sharpness report from the game';
+      if (sharp.pr < 1.5) return 'pixel ratio is ' + sharp.pr + ' - runners go blurry below 1.5 (apex-gfx sharp setting)';
+      if (sharp.fog > 0 && sharp.fog < 300) return 'fog starts at ' + sharp.fog + 'm - it hazes the runners; wants no fog on the runners';
       return true;
     },
   },
