@@ -1,0 +1,31 @@
+name: Branch sweeper
+
+# Housekeeping (owner, 2026-10-16): every Sunday delete branches whose pull request was merged or closed more than
+# 7 days ago, so old work never piles up. Never touches main, game-checks or a branch with an OPEN pull request.
+on:
+  schedule:
+    - cron: '23 9 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          R: ${{ github.repository }}
+        run: |
+          cutoff=$(date -u -d '7 days ago' +%s)
+          open=$(gh api "repos/$R/pulls?state=open&per_page=100" --paginate --jq '.[].head.ref' | sort -u)
+          gh api "repos/$R/pulls?state=closed&per_page=100" --paginate --jq '.[] | select(.head.repo.full_name == "'$R'") | .head.ref + " " + .closed_at' |
+          while read ref closed; do
+            case "$ref" in main|game-checks|gh-pages) continue;; esac
+            echo "$open" | grep -qx "$ref" && continue
+            [ $(date -u -d "$closed" +%s) -lt $cutoff ] || continue
+            gh api -X DELETE "repos/$R/git/refs/heads/$ref" >/dev/null 2>&1 && echo "deleted $ref"
+          done
+          echo done

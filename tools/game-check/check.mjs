@@ -109,9 +109,24 @@ async function pageFacts(page) {
   }, [CASINO.source, BRANDS.source]);
 }
 
+// VENUE GATE (owner, 2026-10-16): every game plays in a real place built from its venues/ sheet, approved by the owner
+// in MODELS.md (LOCKED) like the hockey arena. Without one the game gets a CHECK, which pulls its daily score down.
+const VENUE_OF = { apextrackfield: 'track', apexsoccer: 'soccer', apexhockey: 'rink', apexbaseball: 'ballpark', apexf1: 'circuit',
+  apexracer: 'circuit', apexflight: 'airport', apexmonstertruck: 'truck-arena' };
+const lockedVenues = new Set();
+try {
+  let cur = null;
+  for (const line of fs.readFileSync('MODELS.md', 'utf8').split('\n')) {
+    const h = line.match(/^##\s*MODEL:\s*(.+)$/); if (h) { cur = { name: h[1] }; continue; }
+    const kv = line.match(/^\s*-\s*([a-z ]+):\s*(.*)$/i); if (cur && kv) cur[kv[1].trim().toLowerCase()] = kv[2].trim();
+    if (cur && cur.status && cur.game && /^LOCKED/i.test(cur.status) && /arena|stadium|venue|rink|track|ballpark|circuit|airport|field/i.test((cur.id || '') + ' ' + cur.name)) lockedVenues.add(cur.game);
+  }
+} catch (e) {}
 const results = [];
 for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {} };
+  { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
+      r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
   const slug = g.file.replace('.html', '');
   // ---------- sideways (how the games are meant to be played)
