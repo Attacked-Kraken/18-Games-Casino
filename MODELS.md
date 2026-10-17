@@ -42,8 +42,8 @@ Format (one section per model — keep the keys exactly like this):
 - look: studio
 - view: tools/model-viewer.html?m=models/motorcycle-main.mjs&look=studio&name=Main%20sport%20motorcycle
 - by: algre141@gmail.com
-- version: 3
-- notes: Owner changes v3: solid extruded aluminum twin-spar frame + swingarm (was hollow tubes); human rider (tapered lathe torso, neck, helmet with chin bar + curved visor, tapered limbs, shaped gloves/boots — was capsule mannequin); crotch-rocket style (clip-on bars, slanted headlights, aggressive upswept tail, full fairing). No CC0 .glb motorcycle at approved sources — code-built per rule 7.
+- version: 4
+- notes: JOB J11: REAL human rider from the shared athlete kit (characters/base-human-v2, dark leathers) in a racing tuck — hands on grips, feet on pegs via 2-bone IK, full-face helmet; code-built mannequin removed. Bike bodywork unchanged (v3).
 - status: WAITING OWNER
 
 ## MODEL: Hockey skater (shared athlete kit)
