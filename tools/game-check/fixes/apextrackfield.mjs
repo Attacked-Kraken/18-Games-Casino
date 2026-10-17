@@ -542,5 +542,148 @@ export default [
       return true;
     },
   },
+  {
+    id: 'dev-skip-level-button',
+    ask: 'DEV-ONLY "Skip level" button (STORE-READY "Developer skip"): with dev=1 in the address, career mode shows a small Skip level button that wins the current level and moves to the next, saving like a real win; it must NEVER show without dev=1',
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      const skipState = () => h.eval(() => { const b = document.getElementById('btnSkip'); const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} return { has: !!b, vis: !!(b && b.offsetParent !== null && getComputedStyle(b).display !== 'none'), screen: on ? on.id : null, car: car ? { season: car.season, meet: car.meet, tp: car.tp, done: car.done } : null }; });
+      // PART 1: the game-check loads the game WITHOUT dev=1 - the button must not show
+      let s = await skipState();
+      if (s.vis) return 'the Skip level button is showing WITHOUT dev=1 in the address - it must never show for players';
+      // PART 2: reload WITH dev=1 and walk into a career meet
+      const url = page.url().split('?')[0] + '?dev=1';
+      await page.goto(url, { waitUntil: 'load' });
+      await h.wait(1500);
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); return screen; });
+      let guard = 0, before = null;
+      while (budget() && guard++ < 40) {
+        await step();
+        s = await skipState();
+        if (s.screen === 'card') { before = s.car; break; }
+        await h.wait(400);
+      }
+      s = await skipState();
+      if (!s.has) return 'no Skip level button exists in the game at all (a dev=1 career needs one)';
+      if (s.screen !== 'card') return 'could not reach a career event card to test the skip button (screen: ' + s.screen + ')';
+      if (!s.vis) return 'with dev=1 in the address, the Skip level button never showed on the career event card';
+      if (!before) return 'no career save found when the meet started - a skip cannot save like a real win';
+      // PART 3: click it - the level must be WON, the game moves to that event's results, and the save grows like a real win
+      await h.eval(() => { const b = document.getElementById('btnSkip'); if (b) b.click(); return true; });
+      await h.wait(900);
+      s = await skipState();
+      if (s.screen !== 'results') return 'clicking Skip level did not win the level and move on (screen is ' + s.screen + ', expected the results of the skipped event)';
+      const after = s.car;
+      if (!after) return 'the career save vanished after skipping';
+      if (!(after.tp > before.tp || after.meet > before.meet || after.season > before.season || after.done)) return 'skipping did not save like a real win (tp ' + before.tp + ' -> ' + after.tp + ', meet ' + (before.meet + 1) + ' -> ' + (after.meet + 1) + ')';
+      return true;
+    },
+  },
+  {
+    id: 'long-race-camera-low-behind',
+    ask: 'JOB J42 (owner): 1500 m and every long race - the camera stays LOW behind the player runner and follows him around the track, never up over the stands where he is a speck',
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null }; });
+      let started = false, guard = 0;
+      while (budget() && guard++ < 40 && !started) {
+        const s = await state();
+        if (!s.screen && s.ev === '1500m') started = true;
+        else if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
+        else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
+        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /1500/.test(x.textContent)); if (b) b.click(); return true; });
+        else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+        await h.wait(400);
+      }
+      if (!started) return 'the 1500m never loaded';
+      await h.eval(() => { if (!window.__tfdrv6) { window.__tk6 = false; window.__tfdrv6 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase === 'run') { e.stride(window.__tk6 ? 'R' : 'L'); window.__tk6 = !window.__tk6; } }, 110); } return true; });
+      const samples = [];
+      guard = 0;
+      while (budget() && guard++ < 80) {
+        const s = await state();
+        if (s.phase === 'run') {
+          const f = await h.eval(() => { const tf = window.__tf; const fo = tf.follow ? tf.follow() : null; const e = tf.eng(); return fo ? { cx: fo.cx, cy: fo.cy, cz: fo.cz, x: fo.x, z: fo.z, pos: e && e.r ? e.r.pos : 0 } : null; });
+          if (f) samples.push(f);
+          if (samples.length >= 8 && f && f.pos > 60) break;
+        }
+        await h.wait(300);
+      }
+      await h.eval(() => { if (window.__tfdrv6) { clearInterval(window.__tfdrv6); window.__tfdrv6 = null; } return true; });
+      if (samples.length < 5) return 'the follow camera never reported during the 1500m run - the long-race camera is not following the player at all';
+      const c0 = samples[0], c1 = samples[samples.length - 1];
+      if (Math.hypot(c1.cx - c0.cx, c1.cz - c0.cz) < 5) return 'the camera never moved during the 1500m - it froze at the start while the runner went around the track';
+      for (const f of samples) {
+        if (f.cy > 4.2 || f.cy < 1.8) return 'the 1500m camera left the low follow height (y=' + f.cy.toFixed(1) + 'm) - it must stay low behind the runner (~2.8m), never up over the stands';
+        const behind = Math.hypot(f.cx - f.x, f.cz - f.z);
+        if (behind > 10 || behind < 4) return 'the 1500m camera is ' + behind.toFixed(1) + 'm from the runner - he must stay big in the frame (~7m behind him)';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'throw-flight-camera-and-landing-marker',
+    ask: 'JOB J42 (owner): DISCUS (and shot put, javelin) - after the throw, the camera follows the implement through the air and shows its landing marker',
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null, done: e ? !!e.done : false }; });
+      const view = () => h.eval(() => { const tf = window.__tf; return tf && tf.throwView ? tf.throwView() : null; });
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      const navTo = async (idRe, btnRe) => { let g = 0; while (budget() && g++ < 40) { const s = await state(); if (!s.screen && s.ev && idRe.test(s.ev)) return true; if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; }); else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; }); else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => btnRe.test(x.textContent)); if (b) b.click(); return true; }); else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }); await h.wait(400); } return false; };
+      const judgeFlight = async (label) => {
+        // samples the flight, then returns the mark-phase view (or an error string)
+        let flight = [], g = 0, mark = null;
+        while (budget() && g++ < 70) {
+          const s = await state();
+          if (s.phase === 'flight') { const v = await view(); if (v && v.impl) flight.push(v); if (flight.length >= 3) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); return true; }); }
+          else if (s.phase === 'mark') { mark = await view(); break; }
+          await h.wait(150);
+        }
+        if (flight.length < 2) return label + ': no flight could be sampled - the throw was never visible to the camera check';
+        const mid = flight[Math.floor(flight.length / 2)];
+        if (!mid.impl || mid.impl.y < 1.2) return label + ': the implement was never seen in the air during its flight';
+        const camD = Math.hypot(mid.cam.x - mid.impl.x, mid.cam.z - mid.impl.z);
+        if (camD > 22) return label + ': the camera stayed at the circle while the throw flew - ' + camD.toFixed(0) + 'm away at mid-flight (it must follow the throw through the air)';
+        const lookD = Math.hypot(mid.look.x - mid.impl.x, mid.look.z - mid.impl.z);
+        if (lookD > 12) return label + ': the camera was not looking at the flying implement (look point ' + lookD.toFixed(0) + 'm from it)';
+        if (!mark) return label + ': the throw never reached the landing (mark) phase';
+        if (!mark.mark || !mark.mark.vis) return label + ': no landing marker shows where the throw landed';
+        if (mark.impl == null || Math.abs(mark.impl.x - mark.mark.x) > 2) return label + ': the landing marker is not where the implement landed';
+        return true;
+      };
+      // ---- DISCUS (hold to spin, release to throw)
+      if (!await navTo(/^dt$/, /Discus/i)) return 'the discus event never loaded';
+      let threw = false, g2 = 0;
+      while (budget() && g2++ < 30 && !threw) {
+        const s = await state();
+        if (s.phase === 'hold') { await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9 })); return true; }); await h.wait(1100); await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 })); return true; }); threw = true; }
+        await h.wait(200);
+      }
+      if (!threw) return 'the discus throw never started (no hold phase)';
+      const dj = await judgeFlight('discus');
+      if (dj !== true) return dj;
+      // finish the discus event so we can move on
+      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 200); } return true; });
+      let g3 = 0, doneEv = false;
+      while (budget() && g3++ < 40 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(300); }
+      await h.eval(() => { if (window.__tfdrv7) { clearInterval(window.__tfdrv7); window.__tfdrv7 = null; } return true; });
+      if (!doneEv) return 'the discus event never finished after the flight check';
+      // ---- SHOT PUT (same shared flight camera: power, angle, release)
+      if (!await navTo(/^sp$/, /Shot/i)) return 'the shot put event never loaded';
+      let g4 = 0, shotFlew = false;
+      while (budget() && g4++ < 40 && !shotFlew) {
+        const s = await state();
+        if (s.phase === 'power' || s.phase === 'angle') await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.action) e.action(); return true; });
+        else if (s.phase === 'flight') shotFlew = true;
+        await h.wait(200);
+      }
+      if (!shotFlew) return 'the shot put throw never flew';
+      const sj = await judgeFlight('shot put');
+      if (sj !== true) return sj;
+      return true;
+    },
+  },
 ];
-
