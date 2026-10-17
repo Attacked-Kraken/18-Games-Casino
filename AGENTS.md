@@ -57,3 +57,7 @@ becomes a line in `LESSONS.md` — the factory gets smarter with every mistake.
 **Real 3D models with credit (owner, 2026-10-16):** CC-BY models are now allowed as well as CC0 (ASSET-LAW.md Part III).
 Every 3D file goes in `ASSETS.md` (title, maker, source page, license); every game using a CC-BY model shows a Credits
 screen naming each maker. The asset check robot blocks anything else. Prefer a real model over shapes built in code.
+
+**Art director (owner, 2026-10-16):** once a day one Muse gets an "ART DIRECTOR" job: grade every game harshly in
+`SCORES.md` (looks, play, fun, sound, phone feel, /50). It is half of each game's daily score. The robot only proves a
+game RUNS; the art director and the owner decide if it is GOOD. An open owner complaint caps a game at 50/100.
