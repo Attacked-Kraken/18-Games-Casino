@@ -171,6 +171,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { loadHumans } from 'humans';
+import ApexFX from './kit/apex-fx.js';
 /* ============================================================
    APEX BASEBALL — arcade 3-inning baseball, real rules.
    You are the home Comets: you PITCH the top halves, BAT the bottom.
@@ -222,6 +223,12 @@ $('game').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87b5e0);
+const fx = ApexFX.create({ THREE, scene, floor: 0 });
+// 7-segment scoreboard (effects pack)
+const segClock = fx.tex.segments('TOP 1', { color: '#ffd23f' });
+const segMesh = new THREE.Mesh(new THREE.PlaneGeometry(14, 3.5),
+  new THREE.MeshBasicMaterial({ map: segClock.tex, transparent: true }));
+segMesh.position.set(0, 8, -117); scene.add(segMesh);
 scene.fog = new THREE.Fog(0x87b5e0, 180, 380);
 const camera = new THREE.PerspectiveCamera(58, window.innerWidth/window.innerHeight, 0.1, 600);
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
@@ -270,10 +277,12 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
     dg.fillRect(Math.random()*256, Math.random()*256, 3, 3); }
   const dirtT = new THREE.CanvasTexture(dirtC); dirtT.colorSpace = THREE.SRGBColorSpace;
   dirtT.wrapS = dirtT.wrapT = THREE.RepeatWrapping; dirtT.repeat.set(3,3);
-  const dirt = new THREE.Mesh(new THREE.PlaneGeometry(66,66),
+  const dirtGeo = new THREE.PlaneGeometry(66,66,32,32);
+  const dirt = new THREE.Mesh(dirtGeo,
     new THREE.MeshStandardMaterial({ map:dirtT, roughness:1 }));
   dirt.rotation.x = -Math.PI/2; dirt.rotation.z = Math.PI/4; dirt.position.set(0,0.02,-21.21);
   dirt.receiveShadow = true; scene.add(dirt);
+  fx.lightMask(dirt, { mode: 'sun', dir: { x: 1, z: -0.5 } });
   const hc = new THREE.Mesh(new THREE.CircleGeometry(6.5, 20), M(0xb08050));
   hc.rotation.x = -Math.PI/2; hc.position.set(0,0.021,0); scene.add(hc);
   const md = new THREE.Mesh(new THREE.CircleGeometry(5.5, 20), M(0xb08050));
@@ -558,6 +567,7 @@ function renderCount(){
   mk('dotsB',3,Math.min(G.balls,3),'onB'); mk('dotsS',2,Math.min(G.strikes,2),'onS'); mk('dotsO',2,Math.min(G.outs,2),'onO');
   $('bd1').classList.toggle('on',G.bases[0]); $('bd2').classList.toggle('on',G.bases[1]); $('bd3').classList.toggle('on',G.bases[2]);
   $('inningTag').textContent = `${G.half==='top'?'TOP':'BOT'} ${G.inning} ${G.half==='top'?'▲':'▼'}`;
+  try{ segClock.set(`${G.half==='top'?'TOP':'BOT'} ${G.inning}`); }catch(e){}
 }
 function renderHUD(){ renderScoreboard(); renderCount(); }
 let msgTimer=null;
@@ -715,7 +725,7 @@ function doSwing(dt){ // dt: seconds early(-)/late(+) vs arrival; null = take
   if (eff > 0.17){ swingingStrike(); return; }
   // contact!
   const q = 1 - eff/0.17;                    // 0..1 quality
-  try{ Mus.crack(); }catch(e){} resolveContact(q, dt, F.type);
+  try{ Mus.crack(); }catch(e){} fx.emit('hit', { pos: [-2.4, 2, 0.6] }); resolveContact(q, dt, F.type);
 }
 function resolveContact(q, dt, pitchType){
   const early = dt < 0;
@@ -1012,6 +1022,8 @@ function applyHitResult(r){
     G.hits[t]++;
     const label = runs>1 ? runs+'-RUN HOME RUN!' : 'HOME RUN!';
     banner(label, '', 1900);
+    fx.emit('goal', { pos: [0, 3, -40] });
+    fx.slowmo(0.25, 1.4);
     crowdExcite(4); try{ Mus.riff(); Mus.cheer(3); }catch(e){}
   } else if (r.type==='error'){
     if (b[2]) runs++; if (b[1]) runs++;
@@ -1128,13 +1140,14 @@ const clock = new THREE.Clock();
 let fitFrames = 0;
 function loop(){
   requestAnimationFrame(loop);
+  const rawDt = Math.min(clock.getDelta(), 0.05);
+  const dt = fx.update(rawDt);
   if (++fitFrames >= 30){
     fitFrames = 0;
     const cw = document.documentElement.clientWidth || innerWidth;
     const ch = document.documentElement.clientHeight || innerHeight;
     if (Math.abs(cw - fitW) > 2 || Math.abs(ch - fitH) > 2) fitGame();
   }
-  const dt = Math.min(clock.getDelta(), 0.05);
   const now = performance.now();
 
   // windup animation
@@ -1254,7 +1267,7 @@ function loop(){
   }
   crowdTick(now/1000, dt);
   camera.lookAt(camLook);
-  renderer.render(scene, camera);
+  fx.render(renderer, scene, camera);
 }
 
 /* ---------------- input ---------------- */
