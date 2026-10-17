@@ -21,7 +21,7 @@
 <div id="bar">
   <button data-k="ice">❄️ Ice spray</button><button data-k="dust">💨 Dust</button><button data-k="dirt">🟤 Dirt</button>
   <button data-k="sparks">✨ Sparks</button><button data-k="confetti">🎉 Confetti</button><button data-k="splash">💧 Splash</button>
-  <button data-k="smoke">🌫 Smoke</button><button data-k="flash">📸 Crowd flashes</button>
+  <button data-k="smoke">🌫 Smoke</button><button data-k="flash">📸 Goal!</button><button data-k="shake">💥 Body check</button><button data-k="slow">🐢 Slow-mo</button>
 </div>
 <script type="module">
 /* Proof that kit/apex-fx.js works: every effect on one screen. Robot test: node kit/fx-test.mjs */
@@ -38,17 +38,23 @@ const sun = new THREE.DirectionalLight('#ffffff', 1.8); sun.position.set(6, 12, 
 const fx = ApexFX.create({ THREE, scene, floor: 0 });
 
 /* code-drawn pictures on real surfaces */
-const ice = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshStandardMaterial({ map: fx.tex.ice(), roughness: .25 }));
+const ice = new THREE.Mesh(new THREE.PlaneGeometry(12, 8, 24, 16), new THREE.MeshStandardMaterial({ map: fx.tex.ice(), roughness: .25 }));
+fx.lightMask(ice, { mode: 'arena', spots: 2 });
 ice.rotation.x = -Math.PI / 2; ice.position.set(-6, 0, 0); scene.add(ice);
 const grassMap = fx.tex.grass({ repeat: [2, 2] });
-const field = new THREE.Mesh(new THREE.PlaneGeometry(12, 8), new THREE.MeshStandardMaterial({ map: grassMap, roughness: .9 }));
+const field = new THREE.Mesh(new THREE.PlaneGeometry(12, 8, 24, 16), new THREE.MeshStandardMaterial({ map: grassMap, roughness: .9 }));
+fx.lightMask(field, { mode: 'sun', dir: { x: 1, z: -0.5 } });
 field.rotation.x = -Math.PI / 2; field.position.set(6, 0, 0); scene.add(field);
 const court = new THREE.Mesh(new THREE.PlaneGeometry(24, 6), new THREE.MeshStandardMaterial({ map: fx.tex.wood({ repeat: [6, 2] }), roughness: .5 }));
 court.rotation.x = -Math.PI / 2; court.position.set(0, 0.001, 7); scene.add(court);
 const stands = new THREE.Mesh(new THREE.PlaneGeometry(28, 7), new THREE.MeshStandardMaterial({ map: fx.tex.seats({ colors: ['#1f4fbf', '#d62839'] }) }));
 stands.position.set(0, 5, -9); stands.rotation.x = -0.35; scene.add(stands);
 const board = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: fx.tex.label('HOME 2 - 1 AWAY', { fg: '#ffd23f', border: '#ffd23f' }) }));
-board.position.set(0, 9.6, -8.6); scene.add(board);
+board.position.set(-2.2, 9.6, -8.6); scene.add(board);
+const clockTex = fx.tex.segments('20:00', { color: '#ff3b30' });
+const clockBoard = new THREE.Mesh(new THREE.PlaneGeometry(4, 1.25), new THREE.MeshBasicMaterial({ map: clockTex }));
+clockBoard.position.set(3.4, 9.6, -8.6); scene.add(clockBoard);
+let clockLeft = 20 * 60;
 const jersey = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshStandardMaterial({ map: fx.tex.number('23', { bg: '#c8102e', outline: '#000' }) }));
 jersey.position.set(-9, 1.4, 3); scene.add(jersey);
 
@@ -78,6 +84,8 @@ const spots = { ice: [-6, 0, 0], dust: [6, 0, 0], dirt: [6, 0, 2], sparks: [0, 1
 document.getElementById('bar').addEventListener('click', (e) => {
   const b = e.target.closest('button'); if (!b) return; const k = b.dataset.k;
   if (k === 'flash') { fx.emit('goal', { pos: { x: 0, y: 0, z: 0 } }); return; }
+  if (k === 'shake') { fx.emit('hit', { pos: { x: -6, y: 1, z: 0 } }); fx.burst('ice', { x: -6, y: 0, z: 0 }, { count: 40 }); return; }
+  if (k === 'slow') { fx.slowmo(0.2, 1.5); fx.burst('confetti', { x: 0, y: 0, z: 0 }); return; }
   if (k === 'ice') { fx.emit('skate_brake', { pos: { x: -6, y: 0, z: 0 } }); return; }
   const p = spots[k]; fx.burst(k, { x: p[0], y: p[1], z: p[2] });
 });
@@ -88,13 +96,16 @@ let last = 0, auto = 0;
 function frame(now) {
   const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
   auto += dt; if (auto > 1.6) { auto = 0; fx.emit('skate_brake', { pos: { x: -6 + Math.random() * 2, y: 0, z: Math.random() * 2 } }); fx.burst('dust', { x: 6, y: 0, z: 0 }); }
-  fx.update(dt); renderer.render(scene, camera);
+  const gdt = fx.update(dt);
+  clockLeft = Math.max(0, clockLeft - gdt); const mm = Math.floor(clockLeft / 60), ss = Math.floor(clockLeft % 60);
+  const txt = String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); if (txt !== clockTex.text) clockTex.set(txt);
+  fx.render(renderer, scene, camera);
   document.getElementById('hud').textContent = 'Effects pack · particles ' + fx.stats().particles;
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 window.__fx = fx;
-Object.defineProperty(window, '__test', { configurable: true, get: () => ({ fx: fx.stats(), goal: goalLight.scale.x }) });
+Object.defineProperty(window, '__test', { configurable: true, get: () => ({ fx: fx.stats(), goal: goalLight.scale.x, clock: clockTex.text, cam: camera.position.toArray(), iceColors: !!ice.geometry.attributes.color }) });
 </script>
 </body>
 </html>
