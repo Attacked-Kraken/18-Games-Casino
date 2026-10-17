@@ -29,6 +29,14 @@ try {
     if (!games.find(g => g.file === m[1])) games.push({ file: m[1], name: m[1], start: [] });
   }
 } catch (e) {}
+// owner's law (2026-10-16): EVERY game in development must be playable on the Game Development page (sports.html)
+for (const f of fs.readdirSync('.').filter(f => /^apex[a-z0-9]*\.html$/.test(f))) {
+  const hubText = (() => { try { return fs.readFileSync('sports.html', 'utf8'); } catch (e) { return ''; } })();
+  if (!hubText.includes('href="' + f + '"')) {
+    const g = games.find(g => g.file === f) || (games.push({ file: f, name: f, start: [] }), games[games.length - 1]);
+    g.notOnHub = true;
+  }
+}
 if (process.env.ONLY) games = games.filter(g => process.env.ONLY.split(',').includes(g.file));
 
 const CASINO = /\b(casino|gambl\w*|jackpot|slot machine|slots|roulette|blackjack|poker|wager\w*|cash out|payouts?)\b/i;
@@ -104,6 +112,7 @@ async function pageFacts(page) {
 const results = [];
 for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {} };
+  if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
   const slug = g.file.replace('.html', '');
   // ---------- sideways (how the games are meant to be played)
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
@@ -175,13 +184,17 @@ for (const g of games) {
         ok = res === true; note = typeof res === 'string' ? res : '';
       } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
       r.fixes.push({ id: fx.id, ask: fx.ask, ok, note });
-      if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
     }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
       fs.writeFileSync(path.join(out, 'img', slug + '-4-fixes.jpg'), fixJpg); r.img.fixes = 'img/' + slug + '-4-fixes.jpg';
     }
   }
+  // PLAY TESTS (owner, 2026-10-16): every game needs at least 5 tests that actually PLAY it against its rules/ sheet
+  const plays = (r.fixes || []).filter(x => /^play-/.test(x.id || '')).length;
+  if (plays < 5) r.check.push(`Only ${plays} play test(s) - every game needs 5+ tests that play it by its rules (fixes/${slug}.mjs, ids 'play-...')`);
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
   const brand = f1.brand || f2.brand, yourName = f1.yourName || f2.yourName;
