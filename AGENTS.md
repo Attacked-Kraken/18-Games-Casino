@@ -73,3 +73,8 @@ game RUNS; the art director and the owner decide if it is GOOD. An open owner co
    It arrives as an OWNER'S NOTE job with pictures: break it down, fix it, add a test for each point.
 5. Memory: every 👎 → one line in LESSONS.md. Every 👍 → one line in PLAYBOOK.md (what worked). Read both before every job.
 6. Games move to the Apex Arcade only when the owner says so (launch is about a month out).
+
+**VENUE GATE (owner, 2026-10-16):** every game plays in a real place built from its `venues/<sheet>.md` (real sizes,
+stands all around, moving crowd) with `venues/kit/`, checked in `tools/venue-viewer.html` and approved by the owner in
+MODELS.md (WAITING OWNER → LOCKED) — exactly like the hockey arena. Build the venue BEFORE tuning gameplay. The robot
+flags every game without a LOCKED venue. Look at real TV pictures of the sport and the top store games before building.
