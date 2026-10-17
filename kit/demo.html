@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Kit Demo · Apex Arcade</title>
+<link rel="icon" href="../app-icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#0b1018; touch-action:none;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #hud { position:fixed; top:calc(12px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); z-index:9000;
+    padding:8px 12px; border-radius:12px; background:rgba(10,16,26,.7); color:#eef3f8; font:700 14px system-ui, sans-serif; }
+  /* LANDSCAPE LAW - lives in the GAME file, never in the kit (PORTRAIT RULE). Upright phones see the stage turned sideways. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+</style>
+<script type="importmap">{"imports":{"three":"../three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">Kit demo · <span id="dist">0</span> m · horn <span id="horns">0</span></div>
+<script type="module">
+import * as THREE from 'three';
+import ApexKit from './apex-kit.js';
+
+/* ---------- a tiny world ---------- */
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#9cc9f0'); scene.fog = new THREE.Fog('#9cc9f0', 40, 120);
+const camera = new THREE.PerspectiveCamera(60, 2, 0.1, 400);
+scene.add(new THREE.HemisphereLight('#eaf4ff', '#4a6a35', 1.2));
+const sun = new THREE.DirectionalLight('#fff4e0', 2.2); sun.position.set(5, 10, 3); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: '#3f7d32', roughness: .9 }));
+ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const grid = new THREE.GridHelper(200, 50, '#ffffff', '#2f5d26'); grid.position.y = 0.01; grid.material.opacity = .35; grid.material.transparent = true; scene.add(grid);
+const cones = new THREE.InstancedMesh(new THREE.ConeGeometry(.4, 1.2, 12), new THREE.MeshStandardMaterial({ color: '#ff8a2a' }), 40);
+const m4 = new THREE.Matrix4(); for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; m4.setPosition(Math.cos(a) * 25, .6, Math.sin(a) * 25); cones.setMatrixAt(i, m4); } scene.add(cones);
+const car = new THREE.Mesh(new THREE.BoxGeometry(1.6, .8, 3), new THREE.MeshStandardMaterial({ color: '#2f8f83', metalness: .3, roughness: .4 }));
+car.position.y = .4; scene.add(car);
+const nose = new THREE.Mesh(new THREE.BoxGeometry(1.2, .3, .4), new THREE.MeshStandardMaterial({ color: '#ffffff' })); nose.position.set(0, .3, 1.5); car.add(nose);
+
+/* ---------- game state ---------- */
+const st = { speed: 0, heading: 0, dist: 0, horns: 0, boosting: false };
+function reset() { car.position.set(0, .4, 0); car.rotation.set(0, 0, 0); st.speed = 0; st.heading = 0; st.dist = 0; st.horns = 0; cam.snap(); }
+
+/* ---------- the kit ---------- */
+ApexKit.boot({
+  id: 'kitdemo', name: 'Kit Demo', backHref: '../sports.html', startScreen: true,
+  three: { THREE, renderer, camera },
+  onStart() {}, onPause() {}, onResume() {}, onRestart: reset,
+  onFrame(dt) {
+    const inp = pad.read();
+    if (pad.pressed('horn')) { ApexKit.audio.sfx('horn'); st.horns++; }
+    st.boosting = inp.buttons.boost;
+    const top = st.boosting ? 22 : 12;
+    st.speed += ((-inp.y) * top - st.speed) * Math.min(1, dt * 2.5);   // up on the stick = forward
+    st.heading -= inp.x * dt * 2.2 * Math.sign(st.speed || 1) * Math.min(1, Math.abs(st.speed) / 4 + .3);
+    car.rotation.y = st.heading;
+    const step = st.speed * dt; car.position.x += Math.sin(st.heading) * step; car.position.z += Math.cos(st.heading) * step; st.dist += Math.abs(step);
+    cam.update(dt);
+    renderer.render(scene, camera);
+    document.getElementById('dist').textContent = st.dist.toFixed(0); document.getElementById('horns').textContent = st.horns;
+  },
+});
+const pad = ApexKit.controls({ buttons: [{ id: 'horn', label: 'HORN', key: 'Space' }, { id: 'boost', label: 'BOOST', key: 'ShiftLeft', onPress: () => ApexKit.audio.sfx('boost') }] });
+const cam = ApexKit.chase(camera, car, { distance: 8, height: 3.2, lag: .18, lookAhead: 4, THREE });
+ApexKit.credits.add({ title: 'Example Cone', maker: 'Sample Maker', license: 'CC-BY 4.0', source: 'poly.pizza/m/example', changes: 'recoloured orange, scaled to 1.2 m' });
+ApexKit.test.expose({
+  car: () => ({ x: +car.position.x.toFixed(3), z: +car.position.z.toFixed(3), heading: +st.heading.toFixed(3), speed: +st.speed.toFixed(3) }),
+  distance: () => +st.dist.toFixed(2), horns: () => st.horns,
+  camera: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }),
+});
+renderer.render(scene, camera);
+</script>
+</body>
+</html>
