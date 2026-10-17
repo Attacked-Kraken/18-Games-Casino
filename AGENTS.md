@@ -78,3 +78,9 @@ game RUNS; the art director and the owner decide if it is GOOD. An open owner co
 stands all around, moving crowd) with `venues/kit/`, checked in `tools/venue-viewer.html` and approved by the owner in
 MODELS.md (WAITING OWNER → LOCKED) — exactly like the hockey arena. Build the venue BEFORE tuning gameplay. The robot
 flags every game without a LOCKED venue. Look at real TV pictures of the sport and the top store games before building.
+
+**Safety net (owner, 2026-10-17):** after every merge the robot also opens every game in **iPhone Safari** (WebKit) —
+problems only Safari has show as "iPhone Safari: ..." CHECK items. If a merge **newly breaks** a game (a new FAIL, or an
+owner's fix test that passed before now fails) and a second check confirms it, the robot **undoes the merge by itself**
+("AUTO-UNDO: ..." on main). Nothing is lost: your branch still has the work — fix it and merge again, and add the lesson
+to LESSONS.md. A brand-new failing fix test (test-first) never triggers an undo.

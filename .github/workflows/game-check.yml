@@ -18,6 +18,7 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   check:
@@ -35,7 +36,7 @@ jobs:
       - name: Install the test browser
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
 
       - name: Pick the games this pull request touches
         if: github.event_name == 'pull_request'
@@ -54,11 +55,59 @@ jobs:
           echo "STRICT=1" >> $GITHUB_ENV
           echo "Checking: ${G:-no games (models only)}"
 
+      - name: Remember the last report (for auto-undo)
+        if: github.event_name != 'pull_request'
+        run: |
+          git fetch -q origin game-checks || true
+          git show origin/game-checks:results.json > prev-results.json 2>/dev/null || echo '{}' > prev-results.json
+
       - name: Play the games
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
           sleep 2
           BASELINE=base-results.json node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+
+      - name: iPhone Safari pass
+        if: always()
+        continue-on-error: true
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          python3 -m http.server 8812 >/dev/null 2>&1 &
+          sleep 2
+          timeout 900 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+
+      - name: Auto-undo a merge that newly broke a game
+        if: always() && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          MSG=$(git log -1 --format=%s $GITHUB_SHA)
+          case "$MSG" in AUTO-UNDO*|Revert*) echo "this is an undo itself - leave it"; exit 0;; esac
+          OUT=$(node tools/game-check/undo.mjs prev-results.json game-check-out/results.json)
+          GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
+          [ -n "$GAMES" ] || { echo "nothing newly broken"; exit 0; }
+          echo "Newly broken: $GAMES - checking once more to be sure it isn't a fluke"
+          python3 -m http.server 8813 >/dev/null 2>&1 &
+          sleep 2
+          ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json)
+          GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
+          WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
+          [ -n "$GAMES" ] || { echo "it was a fluke - nothing undone"; exit 0; }
+          git config user.name "auto-undo bot"; git config user.email "auto-undo-bot@users.noreply.github.com"
+          git fetch -q origin main
+          B="auto-undo-${GITHUB_SHA::7}"
+          git checkout -q -B "$B" origin/main
+          if [ $(git rev-list --parents -n1 $GITHUB_SHA | wc -w) -gt 2 ]; then R="-m 1"; else R=""; fi
+          if ! git revert --no-edit $R $GITHUB_SHA; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
+          git commit --amend -q -m "AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
+          git push -q origin "$B"
+          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
+          gh api -X PUT repos/${{ github.repository }}/pulls/$N/merge -f merge_method=squash >/dev/null
+          gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/$B >/dev/null || true
+          { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${GITHUB_SHA::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
+          gh workflow run game-check.yml --ref main || true
 
       - name: Tell the pull request what to fix
         if: failure() && github.event_name == 'pull_request'
