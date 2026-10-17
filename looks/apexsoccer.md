@@ -20,6 +20,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No white stripe on dark shorts
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- Players gliding / speed-walking instead of physically kicking the ball
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
