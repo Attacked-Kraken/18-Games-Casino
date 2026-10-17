@@ -222,7 +222,8 @@ for (const g of games) {
   await ctx.close();
 
   // ---------- upright (landscape law: no rotate sign, game still presented sideways)
-  const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
+  // deviceScaleFactor 2 like a real iPhone, so the robot also catches BLURRY games (drawn at low sharpness, owner 2026-10-17)
+  const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
   const p2 = await ctx2.newPage();
   try { await p2.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); } catch (e) {}
   await p2.waitForTimeout(6000);
@@ -232,6 +233,18 @@ for (const g of games) {
   const f3 = await pageFacts(p2).catch(() => ({ rotate: '' }));
   if (f3.rotate) r.fail.push(`Shows a rotate sign upright (landscape law says none): "${f3.rotate}"`);
   if (up.dark > 0.93 || up.std < 6) r.fail.push('Upright screen is black or blank');
+  // SHARPNESS (owner: "get them to not make blurry players"): the 3D picture must be drawn at 1.5x or more on a 2x phone
+  const sharp = await p2.evaluate(() => {
+    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100);
+    cs.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
+    const c = cs[0]; if (!c) return null;
+    let gl = false; try { gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
+    return gl ? { ratio: Math.min(c.width / c.clientWidth, c.height / c.clientHeight), w: c.width, cw: c.clientWidth } : null;
+  }).catch(() => null);
+  if (sharp) {
+    r.sharpness = +sharp.ratio.toFixed(2);
+    if (sharp.ratio < 1.4) r.check.push(`Blurry picture: the 3D game is drawn at ${sharp.ratio.toFixed(2)}x on a 2x phone screen - players and lines look soft. Draw at 1.5x (renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)) or the kit/apex-gfx "sharp" setting) - STUDIO-STANDARD.md "Sharp picture"`);
+  }
   await ctx2.close();
 
   for (const m of missing) r.fail.push('Missing file: ' + m);

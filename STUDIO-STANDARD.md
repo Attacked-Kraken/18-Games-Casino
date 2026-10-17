@@ -51,6 +51,11 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - **Per-frame code:** no `new THREE.*` inside the game loop, and reuse vectors. The kit's stance costs about
   0.2 ms per player.
 - Shadows: on desktop, off or baked on phones (`COARSE` / touch devices).
+- **Sharp picture (owner, 2026-10-17: "get them to not make blurry players"):** draw the 3D picture at
+  `Math.min(devicePixelRatio, 1.5)` on phones and **never lower it to save speed** - blurry players are worse than
+  a few fps. When a game is slow, cut crowd detail, shadows, particles or draw calls instead. No depth-of-field, no
+  heavy fog over the players, no downscaled player textures. The robot measures it on a 2x phone screen and gives a
+  CHECK under 1.4x ("Blurry picture"). The shared kit's auto quality is OFF for this reason (apex-gfx "sharp").
 
 ## 3. Arenas and worlds
 

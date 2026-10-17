@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · No blurry players - ever
+The owner saw blurry players in Track & Field: the game lowered its own sharpness when it got slow. NEW RULE (STUDIO-STANDARD.md §2 "Sharp picture"): draw at `Math.min(devicePixelRatio, 1.5)` on phones and never go lower to save speed - cut crowd detail, shadows or effects instead. The robot now checks sharpness on a 2x phone screen in every game check ("Blurry picture" CHECK under 1.4x). Today: Track & Field 1.25x (fix it), Hockey, Baseball, Soccer, Monster Truck 1.5x (good).
+
 ## 2026-10-17 · Effects pack: camera shake, slow motion, scoreboard clocks, baked lighting
 New in `kit/apex-fx.js` (try them in `kit/fx-demo.html`): camera shake on hits and goals (draw with `fx.render`), slow motion for goals/home runs (`fx.slowmo`, move the game with the time step `fx.update` returns), live 7-segment scoreboard clocks and counts (`fx.tex.segments`), and baked lighting for big floors: `'arena'` pools of light on rink ice, `'sun'` for open-air fields (`fx.lightMask`). Ice Hockey and Baseball first.
 
