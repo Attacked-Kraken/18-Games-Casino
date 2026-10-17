@@ -62,6 +62,13 @@ EVERY mode, level and event like an App Store reviewer and writes the full gap l
 missing, what's confusing, what breaks, what looks unfinished - controls, camera, career, menus, sound, credits,
 landscape, sharpness, loading), then fixes all of it. The owner's few words are the minimum, not the whole job.
 
+## Ready for the Arcade: progress is SAVED (owner, 2026-10-17)
+While a game is in testing on the Game Development page, saving is optional. Before it moves to the Apex Arcade it
+MUST save the player's progress on the phone and bring it back after the app or tab is closed: career level and
+unlocks, best times/scores, coins or upgrades, and settings (sound, graphics). Use `ApexKit.save` (kit/README.md).
+Add `play-save-...` tests: play, close (reload the page), and the progress is still there. The owner's "send it to
+the Arcade" job includes this step.
+
 ## Before you stamp DONE
 
 Boot the game on a phone-sized viewport with touch emulation and check:

@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Going to the Arcade = progress is saved
+In testing, saving is optional. When the owner sends a game to the Apex Arcade, it must save progress first: career level and unlocks, best scores/times, coins/upgrades and settings survive closing the app (`ApexKit.save`), proven by `play-save-...` tests (STORE-READY.md "Ready for the Arcade").
+
 ## 2026-10-17 · Save usage: the robot tests for you · no endless redos
 1) Do NOT play or measure the game in your own browser - that burns your usage fast. Push to your branch and open a pull request: the game-check robot plays it on a phone for free and posts pictures + every play test result. Read those. 2) When the owner sends a job back, write a FAILING play test for his complaint first, then fix it, and merge only when that test passes - a fix without a test is how the same thing comes back. 3) From the 3rd send-back the approver makes you list every past complaint and why each fix didn't stick, then fix ALL of them in ONE merge.
 
