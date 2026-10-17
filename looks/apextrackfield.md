@@ -4,6 +4,16 @@ Read this before every job on Track & Field. The owner says each thing ONCE; it 
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apextrackfield.mjs`.
 
+## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
+The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
+- The stadium and the crowd exactly as they are (the venue is also LOCKED in MODELS.md as track-stadium)
+- The track exactly as it is (true 400 m oval, 8 lanes, real-geometry lane lines, finish line + FINISH banner)
+- The runners exactly as they are (studio 3D humans, real Sprint/Jog/Crouch run cycles, upright sprinting)
+- The sharp picture exactly as it is (pixel ratio min(devicePixelRatio, 1.5), never lowered)
+- The start camera exactly as it is (7 m behind the runner, 2.8 m up, looking 10 m ahead, clamped inside the stadium)
+LOCKED means locked: change NOTHING this section protects. A play test (`keep-locked-look`) guards it.
+If a fix seems to need a KEEP thing changed, ask the owner first.
+
 **Lighting preset:** `look-presets.js` → `track` (use the same one in the game and in tools/model-viewer.html).
 
 ## MUST
@@ -12,6 +22,9 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - JOB J39 (owner, 2026-10-17): career mode must never stall
 - JOB J39 (owner, 2026-10-17): holding the stick must never block TAP RUN / HURDLE - two thumbs at once
 - JOB J39 (owner, 2026-10-17): held upright the game fills the WHOLE screen sideways (the robot fails under 90%)
+- JOB J7 keep-it (owner, 2026-10-17): CAREER MODE - every career level must load, play and unlock the next
+- JOB J7 keep-it (owner, 2026-10-17): no button may ever block TAP RUN - on the long relay / long races a RED button turns on and blocks running; holding the stick never blocks TAP RUN either
+- JOB J7 keep-it (owner, 2026-10-17): DISCUS is ONE simple action - hold to spin, release to throw, like a real thrower (at most 2 taps) - and the camera shows the thrower clearly from behind/side, never hidden behind the power bar
 
 ## NEVER
 - No capsule / stick figures
