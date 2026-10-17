@@ -18,7 +18,8 @@ ok('automatic ice/dust bursts run', t.fx.bursts >= 1 && t.fx.particles > 0, `bur
 ok('crowd flashes twinkle', t.fx.flashes > 3, 'flashes ' + t.fx.flashes);
 for (const k of ['ice', 'dust', 'dirt', 'sparks', 'confetti', 'splash', 'smoke']) {
   const before = ((await T()).fx.alive || {})[k] || 0;
-  await page.click(`button[data-k="${k}"]`); await page.waitForTimeout(300);
+  await page.click(`button[data-k="${k}"]`);
+  await page.waitForFunction(([k, b]) => ((window.__test.fx.alive || {})[k] || 0) > b, [k, before], { timeout: 3000 }).catch(() => {});
   const after = (await T()).fx.alive[k] || 0;
   ok(`button ${k} makes particles`, after > before, `${before} -> ${after}`);
 }
@@ -28,6 +29,18 @@ const f1 = (await T()).fx.flashes; await page.click('button[data-k="flash"]'); a
 ok('goal event: flashes burst', (await T()).fx.flashes >= f1 + 50);
 const p1 = (await T()).fx.particles; await page.waitForTimeout(3500);
 ok('particles fade out (nothing piles up)', (await T()).fx.particles < p1 + 60, `${p1} -> ${(await T()).fx.particles}`);
+const camBefore = (await T()).cam;
+await page.click('button[data-k="shake"]'); await page.waitForTimeout(150);
+let ts = await T(); ok('body check shakes the camera', ts.fx.shakes >= 1, 'shakes ' + ts.fx.shakes);
+await page.waitForTimeout(900); ts = await T();
+ok('camera goes back exactly after the shake', JSON.stringify(ts.cam) === JSON.stringify(camBefore), JSON.stringify(ts.cam));
+await page.click('button[data-k="slow"]'); await page.waitForTimeout(250);
+ok('slow motion slows time', (await T()).fx.timeScale < 0.8, 'scale ' + (await T()).fx.timeScale);
+await page.waitForFunction(() => window.__test.fx.timeScale === 1, null, { timeout: 15000 }).catch(() => {});
+ok('slow motion eases back to normal', (await T()).fx.timeScale === 1);
+const c1 = (await T()).clock; await page.waitForFunction((c) => window.__test.clock !== c, c1, { timeout: 8000 }).catch(() => {});
+ok('7-segment scoreboard clock counts down', (await T()).clock !== c1 && /^\d\d:\d\d$/.test((await T()).clock), c1 + ' -> ' + (await T()).clock);
+ok('baked arena lighting on the ice', (await T()).iceColors);
 const t1 = (await T()).fx.time; await page.waitForTimeout(500); ok('shared clock runs', (await T()).fx.time > t1);
 const g = await page.evaluate(() => { const s = []; const st = performance.now(); return new Promise((r) => { let n = 0; (function f() { n++; if (performance.now() - st < 2000) requestAnimationFrame(f); else r(n / 2); })(); }); });
 ok('frame rate measured', g > 0, Math.round(g) + ' fps (software graphics)');
@@ -41,7 +54,7 @@ await p2.goto(BASE + 'kit/fx-demo.html', { waitUntil: 'load' }); await p2.waitFo
 const r = await p2.evaluate(() => { window.ApexKit.emit('goal', { pos: { x: 0, y: 0, z: 0 } }); window.__fx.emit('hit', {}); return { played: window.__played.slice(), sameBus: typeof window.ApexKit.emit === 'function' }; });
 ok('goal signal plays the horn + hit plays hit', r.played.includes('horn') && r.played.includes('hit'), JSON.stringify(r.played));
 ok('ApexKit.emit is the same signal as fx.emit', r.sameBus);
-await p2.waitForTimeout(400);
+await p2.waitForFunction(() => (window.__test.fx.alive.confetti || 0) > 0, null, { timeout: 5000 }).catch(() => {});
 ok('goal signal through the kit also fires confetti', ((await p2.evaluate(() => window.__test.fx.alive)).confetti || 0) > 0);
 ok('no errors with the kit linked', err2.length === 0, err2.slice(0, 2).join(' | '));
 await browser.close();

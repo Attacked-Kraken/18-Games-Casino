@@ -15,7 +15,11 @@
    - fx.flashes(opts)             crowd camera flashes twinkling over the stands (box or list of points)
    - fx.wave(material, opts)      flags, nets, banners, grass, water wave by themselves (patches the material's shader)
    - fx.glow(opts)                soft glowing light (stadium lamp, puck glow, goal light) - a sprite, no picture file
-   - fx.tex.*                     pictures drawn in code: wood, seats, ice, grass, asphalt, number, label, lines, noise
+   - fx.tex.*                     pictures drawn in code: wood, seats, ice, grass, asphalt, number, label, segments (live
+                                  7-segment scoreboard digits), lines, noise
+   - fx.shake / fx.render         camera shake on hits and goals, drawn without fighting your camera code
+   - fx.slowmo                    slow motion that eases back; fx.update(dt) returns the game's time step
+   - fx.lightMask(mesh, {mode})   baked lighting on floors: 'arena' (rink pools of light) or 'sun' (open-air field)
    - fx.math                      rand, range, pick, clamp, lerp, smooth, noise2 (smooth noise), fbm2
    - fx.stats()                   counts for the robot (also on window.__test.fx when ApexKit is there)
    Phone budget: every burst kind is ONE draw call with a fixed size (default 400 particles), arrays are reused,
@@ -139,6 +143,41 @@ function texKit(THREE) {
         g.textAlign = 'center'; g.textBaseline = 'middle';
         g.fillStyle = o.fg || '#ffffff'; g.fillText(String(text), w / 2, h * 0.54);
       }, w, h);
+    },
+    /* scoreboard digits drawn as 7-segment lights (clocks, balls/strikes, scores). Live: t.set('12:44') redraws it.
+       const clock = fx.tex.segments('20:00', { color:'#ff3b30', bg:'#0b0b0b', w:512, h:160 }) */
+    segments(text, o = {}) {
+      const w = o.w || 512, h = o.h || 160, on = o.color || '#ff3b30', off = o.dim || 'rgba(255,255,255,.06)';
+      const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '', 'E': 'afged', 'H': 'fbgec', 'P': 'abfge', 'L': 'fed', 'A': 'abcefg', 'b': 'fgedc', 'C': 'afed', 'd': 'bgedc', 'F': 'afge', 'o': 'gcde', 'r': 'eg', 't': 'fged', 'U': 'fbcde' };
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+      const t = new THREE.CanvasTexture(c); if ('colorSpace' in t && THREE.SRGBColorSpace) t.colorSpace = THREE.SRGBColorSpace;
+      function bar(x, y, len, th, vert, lit) {
+        g.fillStyle = lit ? on : off; g.beginPath();
+        if (vert) { g.moveTo(x, y); g.lineTo(x + th / 2, y + th / 2); g.lineTo(x + th / 2, y + len - th / 2); g.lineTo(x, y + len); g.lineTo(x - th / 2, y + len - th / 2); g.lineTo(x - th / 2, y + th / 2); }
+        else { g.moveTo(x, y); g.lineTo(x + th / 2, y - th / 2); g.lineTo(x + len - th / 2, y - th / 2); g.lineTo(x + len, y); g.lineTo(x + len - th / 2, y + th / 2); g.lineTo(x + th / 2, y + th / 2); }
+        g.closePath(); g.fill();
+      }
+      t.set = (txt) => {
+        txt = String(txt); g.fillStyle = o.bg || '#0b0b0b'; g.fillRect(0, 0, w, h);
+        const chars = [...txt], digits = chars.filter((ch) => ch !== ':' && ch !== '.').length, colons = chars.length - digits;
+        const dh = h * 0.78, dw = Math.min(dh * 0.55, (w * 0.92) / (digits + colons * 0.35)), th = dw * 0.16, gap = dw * 0.28;
+        let x = (w - (digits * (dw + gap) + colons * dw * 0.35 - gap)) / 2; const y = (h - dh) / 2;
+        if (on && o.glow !== false) { g.shadowColor = on; g.shadowBlur = th * 1.2; }
+        for (const ch of chars) {
+          if (ch === ':' || ch === '.') { g.fillStyle = on; const cx = x + dw * 0.12; if (ch === ':') g.fillRect(cx - th / 2, y + dh * 0.3, th, th); g.fillRect(cx - th / 2, y + dh * 0.7 - th, th, th); x += dw * 0.35; continue; }
+          const L = SEG[ch] || SEG[ch.toUpperCase()] || '', hl = dw - th, vl = dh / 2 - th * 0.5;
+          bar(x + th / 2, y, hl, th, false, L.includes('a'));
+          bar(x + dw - th / 2, y + th * 0.25, vl, th, true, L.includes('b'));
+          bar(x + dw - th / 2, y + dh / 2 + th * 0.25, vl, th, true, L.includes('c'));
+          bar(x + th / 2, y + dh, hl, th, false, L.includes('d'));
+          bar(x + th / 2, y + dh / 2 + th * 0.25, vl, th, true, L.includes('e'));
+          bar(x + th / 2, y + th * 0.25, vl, th, true, L.includes('f'));
+          bar(x + th / 2, y + dh / 2, hl, th, false, L.includes('g'));
+          x += dw + gap;
+        }
+        g.shadowBlur = 0; t.text = txt; t.needsUpdate = true; return t;
+      };
+      return t.set(text);
     },
     /* draw your own lines (court lines, chalk, lane markings): fx.tex.lines((g, w, h) => { g.strokeRect(...) }, { size:1024, bg:'#3f8a3a' }) */
     lines(draw, o = {}) {
@@ -314,6 +353,54 @@ function create(o) {
     (opt.parent || scene).add(sp); glows.push(sp); return sp;
   }
 
+  /* ---- camera shake ("juice"): fx.shake(0.3, 0.4)  then draw with  fx.render(renderer, scene, camera)
+     (it nudges the camera only while drawing, then puts it back, so your camera code never fights it).
+     Linked already (shakes:false turns off): hit -> small shake, goal -> big shake. A pause/settings
+     "less motion" choice: fx.setMotion(false) turns shakes off. */
+  const shakeState = { amp: 0, dur: 0, t: 0, seed: Math.random() * 100, motion: true, count: 0 };
+  function shake(amount = 0.25, seconds = 0.35) { if (!shakeState.motion) return; shakeState.amp = Math.max(shakeState.amp * (1 - shakeState.t / Math.max(0.001, shakeState.dur)), amount); shakeState.dur = seconds; shakeState.t = 0; shakeState.count++; }
+  const _off = new THREE.Vector3();
+  function render(renderer, sc, camera) {
+    let k = 0;
+    if (shakeState.t < shakeState.dur && shakeState.amp > 0) {
+      const p = shakeState.t / shakeState.dur; k = shakeState.amp * (1 - p) * (1 - p);
+      const tt = time.value * 38 + shakeState.seed;
+      _off.set(Math.sin(tt) * k, Math.sin(tt * 1.3 + 1.7) * k * 0.7, Math.sin(tt * 0.9 + 3.1) * k * 0.5);
+      camera.position.add(_off);
+    }
+    renderer.render(sc, camera);
+    if (k) camera.position.sub(_off);
+  }
+
+  /* ---- slow motion ("bullet time"): fx.slowmo(0.25, 1.2) = quarter speed, easing back to normal over 1.2 s.
+     fx.update(dt) RETURNS the game time step - use it for your game:  const gdt = fx.update(dt);
+     Effects, waves and particles slow down too. Never during play the player controls - use it on goals,
+     home runs, finishes, replays. */
+  const slow = { scale: 1, from: 1, t: 0, dur: 0 };
+  function slowmo(speed = 0.25, seconds = 1.2) { slow.from = clamp(speed, 0.05, 1); slow.scale = slow.from; slow.t = 0; slow.dur = seconds; }
+
+  /* ---- light masks: bake lighting into a big floor/field mesh with vertex colours (free on phones).
+     fx.lightMask(iceMesh, { mode:'arena', spots:4 })  bright overhead pools on rink ice, darker boards
+     fx.lightMask(fieldMesh, { mode:'sun', dir:{x:1,z:-0.5} })  sunny side to shadow side, for open-air fields
+     The mesh needs segments (e.g. PlaneGeometry(60, 30, 60, 30)). */
+  function lightMask(mesh, opt = {}) {
+    const geo = mesh.geometry, pos = geo.attributes.position; if (!pos) return mesh;
+    geo.computeBoundingBox(); const bb = geo.boundingBox, cx = (bb.min.x + bb.max.x) / 2, cy = (bb.min.y + bb.max.y) / 2, cz = (bb.min.z + bb.max.z) / 2;
+    const sx = Math.max(1e-3, (bb.max.x - bb.min.x) / 2), sy = Math.max(1e-3, (bb.max.y - bb.min.y) / 2), sz = Math.max(1e-3, (bb.max.z - bb.min.z) / 2);
+    const flatY = sy < 1e-2; // a PlaneGeometry lies in x/y before it is rotated
+    const col = new Float32Array(pos.count * 3), mode = opt.mode || 'arena', lo = opt.min == null ? (mode === 'arena' ? 0.62 : 0.7) : opt.min, hi = opt.max == null ? 1.12 : opt.max;
+    const spots = opt.spots || 4, d = opt.dir || { x: 1, z: -0.4 }, dl = Math.hypot(d.x || 0, d.z || 0) || 1;
+    for (let i = 0; i < pos.count; i++) {
+      const u = (pos.getX(i) - cx) / sx, v = flatY ? (pos.getZ(i) - cz) / sz : (pos.getY(i) - cy) / sy; let f;
+      if (mode === 'sun') f = lerp(lo, hi, (((u * (d.x || 0) + v * (d.z || 0)) / dl) * 0.5 + 0.5)) * (1 - 0.06 * (u * u + v * v));
+      else { let b = 0; for (let k = 0; k < spots; k++) { const px = -0.75 + 1.5 * (spots === 1 ? 0.5 : k / (spots - 1)); b = Math.max(b, Math.exp(-((u - px) ** 2 * 5 + (v * 0.9) ** 2 * 3))); } f = lerp(lo, hi, b) * (1 - 0.18 * Math.max(Math.abs(u), Math.abs(v)) ** 4); }
+      col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = f;
+      if (opt.tint) { const tc = new THREE.Color(opt.tint); col[i * 3] *= tc.r; col[i * 3 + 1] *= tc.g; col[i * 3 + 2] *= tc.b; }
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]; for (const m of mats) { m.vertexColors = true; m.needsUpdate = true; }
+    return mesh;
+  }
   const fx = {
     version: VERSION, time, math, kinds: Object.keys(KINDS), tex: texKit(THREE),
     on(name, fn) { (listeners[name] = listeners[name] || []).push(fn); return () => fx.off(name, fn); },
@@ -324,18 +411,25 @@ function create(o) {
        A function works too: fx.sound('bounce', (t, bus, ctx) => {...}). Default links (sounds:false turns them off):
        goal -> horn, score -> score, hit -> hit, whistle -> whistle, boost -> boost */
     sound(event, name) { return fx.on(event, () => { try { const K = window.ApexKit; if (K && K.audio) { K.audio.sfx(name); fx._sounds++; } } catch (e) {} }); },
-    burst, flashes, wave, glow,
+    burst, flashes, wave, glow, shake, render, slowmo, lightMask,
+    setMotion(on) { shakeState.motion = !!on; if (!on) shakeState.amp = 0; },
+    get timeScale() { return slow.scale; },
     setQuality(q) { quality = q === 'low' || q === 'medium' ? q : 'high'; },
     update(dt) {
-      dt = Math.min(0.05, Math.max(0, +dt || 0)); time.value += dt;
+      dt = Math.min(0.05, Math.max(0, +dt || 0));
+      if (slow.dur > 0) { slow.t += dt; const p = clamp(slow.t / slow.dur, 0, 1); slow.scale = lerp(slow.from, 1, p * p * (3 - 2 * p)); if (p >= 1) { slow.dur = 0; slow.scale = 1; } }
+      shakeState.t += dt;
+      dt *= slow.scale; time.value += dt;
       const alive = stepSystems(dt); stepFlashes(dt);
       for (const g of glows) { const u = g.userData.fx; if (u.pulse) { const k = u.base * (1 + Math.sin(time.value * u.speed + u.seed) * u.pulse); g.scale.set(k, k, 1); } }
       fx._alive = alive;
+      return dt;
     },
     clear() { for (const k in systems) { systems[k].life.fill(0); systems[k].alpha.fill(0); } },
-    stats() { return { version: VERSION, time: +time.value.toFixed(2), bursts, particles: fx._alive || 0, kinds: Object.keys(systems), alive: Object.fromEntries(Object.keys(systems).map((k) => [k, systems[k].alive])), flashes: flashSets.reduce((a, f) => a + f.count, 0), waves: waves.length, glows: glows.length, sounds: fx._sounds, quality }; },
+    stats() { return { version: VERSION, time: +time.value.toFixed(2), bursts, particles: fx._alive || 0, kinds: Object.keys(systems), alive: Object.fromEntries(Object.keys(systems).map((k) => [k, systems[k].alive])), flashes: flashSets.reduce((a, f) => a + f.count, 0), waves: waves.length, glows: glows.length, sounds: fx._sounds, shakes: shakeState.count, shaking: shakeState.t < shakeState.dur && shakeState.amp > 0, timeScale: +slow.scale.toFixed(2), quality }; },
     _alive: 0, _sounds: 0,
   };
+  if (o.shakes !== false) { fx.on('hit', (d) => shake((d && d.shake) || 0.12, 0.25)); fx.on('goal', (d) => shake((d && d.shake) || 0.35, 0.6)); }
   if (o.sounds !== false) for (const [ev, snd] of [['goal', 'horn'], ['score', 'score'], ['hit', 'hit'], ['whistle', 'whistle'], ['boost', 'boost']]) fx.sound(ev, snd);
   try {
     const K = window.ApexKit;

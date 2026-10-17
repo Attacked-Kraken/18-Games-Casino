@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Effects pack: camera shake, slow motion, scoreboard clocks, baked lighting
+New in `kit/apex-fx.js` (try them in `kit/fx-demo.html`): camera shake on hits and goals (draw with `fx.render`), slow motion for goals/home runs (`fx.slowmo`, move the game with the time step `fx.update` returns), live 7-segment scoreboard clocks and counts (`fx.tex.segments`), and baked lighting for big floors: `'arena'` pools of light on rink ice, `'sun'` for open-air fields (`fx.lightMask`). Ice Hockey and Baseball first.
+
 ## 2026-10-17 · One signal = sound + effects
 `ApexKit.emit('goal', { pos })` (or `fx.emit`) now plays the horn AND fires the confetti/flashes - one line in the game. Linked already: goal → horn, score, hit, whistle, boost. Add more with `fx.sound('bounce', 'tap')`. Guide: kit/README.md "Effects pack".
 

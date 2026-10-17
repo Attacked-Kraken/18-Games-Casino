@@ -145,6 +145,10 @@ const fx = ApexFX.create({ THREE, scene, floor: 0 });   // floor = ground height
 | One clock for your own shaders | `fx.time` (`{ value }` in seconds) - put it in your shader's uniforms |
 | Maths | `fx.math.range(a, b)`, `.pick(list)`, `.clamp`, `.lerp`, `.smooth`, `.noise2(x, y)`, `.fbm2(x, y)` |
 | Lower-end phones | `fx.setQuality('low')` halves the particles (follow the kit's graphics setting) |
+| Camera shake on big moments | Already linked: `hit` = small shake, `goal` = big shake. Or `fx.shake(0.3, 0.4)`. Draw with `fx.render(renderer, scene, camera)` instead of `renderer.render` - it nudges the camera only while drawing, so your camera code never fights it. `fx.setMotion(false)` turns shakes off (a "less motion" setting). `shakes: false` in `create` unlinks them |
+| Slow motion (goals, home runs, finishes, replays) | `fx.slowmo(0.25, 1.2)` = quarter speed easing back over 1.2 s. Use the time step it gives you: `const gdt = fx.update(dt);` and move your game with `gdt`. Never while the player is steering |
+| Scoreboard clocks and counts (7-segment lights) | `const clock = fx.tex.segments('20:00', { color: '#ff3b30' })` on a plane; `clock.set('19:59')` redraws it (only when the text changes) |
+| Baked lighting on big floors (free on phones) | `fx.lightMask(iceMesh, { mode: 'arena', spots: 4 })` = pools of overhead light on rink ice; `fx.lightMask(fieldMesh, { mode: 'sun', dir: { x: 1, z: -0.5 } })` = sunny side to shadow side on an open-air field. The mesh needs segments, e.g. `PlaneGeometry(60, 30, 60, 30)` |
 | Robot | `fx.stats()`, also on `window.__test.fx` when ApexKit is booted |
 
 Phone budget: each burst kind is one draw call with a fixed pool of 400 particles; nothing is created per frame.
