@@ -80,6 +80,7 @@ Built from the venue spec: 110x50m dirt show floor with jumps (2-4m doubles, 6m 
 car crush lines, concrete barriers + catch fence, full football-bowl stadium (3 tiers, 4 sides),
 12,000 instanced crowd fans, big screens at both ends. Night lighting preset.
 
+Built as: `venues/kit/truck-arena.js` → `buildTruckArena(THREE)`
 View in: `tools/venue-viewer.html` (venue kit)
 In game: `apexmonstertruck.html` (stadium bowl surrounds the arena)
 
