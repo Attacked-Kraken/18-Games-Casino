@@ -178,7 +178,6 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
-| CLAIMED | JOB J11 motorcycle: real human rider on the bike (shared athlete kit) — owner: no rider person on bike | Muse Dash | j11-motorcycle-rider-dash | - | 2026-10-17 02:30 CDT |
 | DONE | Venue + rules spec sheets (venues/, rules/), stadium kit + rink kit + venue viewer, hands-off model gate robot | Claude (arcade reviewer) | venues-claude | PR #346 | 2026-10-16 16:10 CDT |
 | CLAIMED | Hockey arena in the game (stadium kit, 16k fans) - PR #351 ready, WAITING OWNER 👍 on MODELS.md 'Hockey arena' + 'Hockey skater' | Claude (arcade reviewer) | hockey-arena-v2 | PR #351 | 2026-10-16 16:10 CDT |
 | DONE | Soccer title fix (apexsoccer.html): casino wording in page title -> Apex Arcade (game-check FAIL) | Muse Dash | soccer-title-dash | PR #343, main e776d9a2 | 2026-10-16 13:35 CDT |
