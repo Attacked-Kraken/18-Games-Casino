@@ -23,6 +23,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
 - "They gave me this": blob players, upright floating sticks, scattered bits (2026-10-16)
+- "Why do I get offsides every time" (2026-10-17): AI teammates must hold the attacking blue line until the puck crosses it — never skate ahead of the puck into the zone
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
