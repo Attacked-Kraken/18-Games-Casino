@@ -28,19 +28,31 @@ export async function buildTrackStadium() {
   };
   const g = new THREE.Group();
   const trackShape = new THREE.Shape(capsule(36.5 + 9.76));
-  trackShape.holes.push(new THREE.Path(capsule(36.5 - 0.3)));
+  trackShape.holes.push(new THREE.Path(capsule(36.5)));
   const track = new THREE.Mesh(new THREE.ShapeGeometry(trackShape, 4),
     new THREE.MeshStandardMaterial({ color: 0x2e63a8, roughness: 0.95 }));
   track.rotation.x = -Math.PI / 2; track.position.y = 0.02;
   g.add(track);
-  const infield = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(capsule(36.5 - 0.3)), 4),
+  const infield = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(capsule(36.5)), 4),
     new THREE.MeshStandardMaterial({ color: 0x3d9950, roughness: 1 }));
   infield.rotation.x = -Math.PI / 2; infield.position.y = 0.015;
   g.add(infield);
-  const fin = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 9.76),
-    new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  fin.rotation.x = -Math.PI / 2; fin.rotation.z = Math.PI / 2;
-  fin.position.set(0, 0.035, -(36.5 + 4.58)); // the finish line, end of the home straight
+  // Runner lanes: a white line on every lane boundary (9 lines for 8 lanes x 1.22m),
+  // built as real geometry around the whole oval - the same way the game draws them.
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+  for (let k = 0; k <= 8; k++) {
+    const R = 36.5 + k * 1.22;
+    const s = new THREE.Shape(capsule(R + 0.04));
+    s.holes.push(new THREE.Path(capsule(R - 0.04)));
+    const line = new THREE.Mesh(new THREE.ShapeGeometry(s, 4), lineMat);
+    line.rotation.x = -Math.PI / 2; line.position.y = 0.032;
+    g.add(line);
+  }
+  // The finish line: a bold white band ACROSS all 8 lanes at the end of the home
+  // straight (the v1/v2 strip ran along the straight and read as nothing).
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.012, 9.76),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 }));
+  fin.position.set(0, 0.032, -(36.5 + 4.88));
   g.add(fin);
   g.add(st.group);
   window.__venue = { stadium: st.report() };
