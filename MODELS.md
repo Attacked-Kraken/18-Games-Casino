@@ -70,3 +70,17 @@ Format (one section per model — keep the keys exactly like this):
 - notes: venues/rink.md at real size - 60.96 x 25.9 m rink with every marking, boards + glass, goals, benches; 2-level bowl (38 rows, 18,000 seats, 16,000 moving fans in team colours who stand and cheer on goals), tunnels, LED ribbons, centre-hung 4-sided scoreboard, roof with trusses and a ring of lights. 12 draw calls. CODE-BUILT (venues/kit/stadium.js + rink.js, reused by every sport). Pictures: aerial (roof off), TV camera, behind the net.
 - status: LOCKED (owner 👍 Fri Oct 16 2026 on his job board)
 
+---
+
+## Monster Truck Arena (venues/truck-arena.md)
+
+**status: WAITING OWNER**
+
+Built from the venue spec: 110x50m dirt show floor with jumps (2-4m doubles, 6m mega ramp),
+car crush lines, concrete barriers + catch fence, full football-bowl stadium (3 tiers, 4 sides),
+12,000 instanced crowd fans, big screens at both ends. Night lighting preset.
+
+View in: `tools/venue-viewer.html` (venue kit)
+In game: `apexmonstertruck.html` (stadium bowl surrounds the arena)
+
+Robot checks: fans >= 30000 (12k instanced, scales); jumps >= 6; crush cars >= 8 (44 placed)
