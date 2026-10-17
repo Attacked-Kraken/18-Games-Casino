@@ -628,6 +628,7 @@ const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), M
 puckMesh.castShadow=!isTouch; scene.add(puckMesh);
 const puck = { mesh:puckMesh, pos:puckMesh.position, vel:new THREE.Vector3(), owner:null, recv:null, recvT:0, shot:null };
 puck.pos.set(0,0.2,0);
+window.__hk.puck = puck; window.__hk.BLUE = BLUE; // read-only peek for the offside fix test
 
 /* ================= input ================= */
 const joyVec = { x:0, y:0, active:false };
@@ -1044,6 +1045,13 @@ function aiSkater(s,dt){
     const otherD=(isHome?homeSkaters:awaySkaters).find(m=>m!==s&&(m.role==='LD'||m.role==='RD'));
     const myD=Math.abs(s.pos.x+dir*GOAL_LINE), otD=otherD?Math.abs(otherD.pos.x+dir*GOAL_LINE):1e9;
     if(myD<=otD){ ax=dir*-(GOAL_LINE-4); az=clamp(puck.pos.z*0.35,-8,8); }
+  }
+  if(weHave && s!==carrier && puck.pos.x*dir < BLUE && ax*dir > BLUE-1.5){
+    // OFFSIDE DISCIPLINE (owner: "Why do I get offsides every time") — the support runs
+    // used to send wingers 21 ft ahead of the carrier, so they beat the puck across the
+    // line and every entry was whistled. Nobody crosses the attacking blue line before
+    // the puck does: hold at the line until it is in.
+    ax = dir*(BLUE-1.5);
   }
   s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
 }
