@@ -178,6 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | JOB J10 - Apex Ice Hockey draw calls: 370/frame vs phone budget under 300. Step 1: merge boards+glass+ads (28 segs x 4 meshes = 112 draws -> 4 merged). DONE MEANS: next game check PASS, drawsPerFrame < 300 | Muse algre141 | job-j10-hockey-draws | - | 2026-10-17 10:33 CDT |
 | CLAIMED | JOB J11 motorcycle: real human rider on the bike (shared athlete kit) — owner: no rider person on bike | Muse Dash | j11-motorcycle-rider-dash | - | 2026-10-17 02:30 CDT |
 | DONE | Venue + rules spec sheets (venues/, rules/), stadium kit + rink kit + venue viewer, hands-off model gate robot | Claude (arcade reviewer) | venues-claude | PR #346 | 2026-10-16 16:10 CDT |
 | CLAIMED | Hockey arena in the game (stadium kit, 16k fans) - PR #351 ready, WAITING OWNER 👍 on MODELS.md 'Hockey arena' + 'Hockey skater' | Claude (arcade reviewer) | hockey-arena-v2 | PR #351 | 2026-10-16 16:10 CDT |
