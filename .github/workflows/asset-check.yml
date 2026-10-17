@@ -1,0 +1,19 @@
+name: Asset check
+
+# Owner's law (ASSET-LAW.md Part III): every 3D model file is in ASSETS.md with an allowed license (CC0 / CC-BY),
+# and every game using a CC-BY model credits its maker. Blocks the merge otherwise.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/asset-check.mjs

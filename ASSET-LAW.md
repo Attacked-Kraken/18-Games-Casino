@@ -1,4 +1,4 @@
-# THE LAW OF CREATION — assets (owner's law, 2026-10-14)
+# THE LAW OF CREATION — assets (owner's law, 2026-10-14; CC-BY added 2026-10-16 — see Part III)
 
 Every model, texture and asset used in these games comes from the
 owner's approved list of FREE sources below. This is the law for every
@@ -94,3 +94,35 @@ sounds.** A silent game is an unfinished game.
   interaction (mobile autoplay rules) — never blast sound uninvited.
 - Music and sound are part of "done": a game does not get stamped
   DONE without all three (menu music, game music, sounds) working.
+
+---
+
+# Part III — real 3D models with credit (CC-BY) (owner, 2026-10-16)
+
+The owner now allows **CC-BY** models as well as CC0, so the games can use real-looking 3D models (bikes, cars, gear,
+stadium props) instead of shapes built in code. This **replaces** the "no attribution-required license" line in Part I
+for 3D models and textures only. Everything else in Part I and II still stands (no brands, music stays original).
+
+**Allowed licenses — nothing else:** CC0 · CC-BY 3.0 · CC-BY 4.0.
+**Never:** NC (non-commercial — we sell these games), ND (no changes), SA (share-alike), "personal use only",
+"editorial", Standard/Royalty-free shop licenses, or any model whose license you have not read on its own page.
+
+**Allowed places to get CC-BY models:** Poly Pizza (poly.pizza — filter by license), and Sketchfab ONLY for models whose
+page shows the "CC Attribution" license AND a Download button from the maker. Everything in Part I stays approved.
+
+**The 6 rules for every CC-BY model (the robot checks 1–3):**
+1. **Ledger first.** Add it to `ASSETS.md` before (or in the same PR as) the file: title, maker, exact source page,
+   license, date, who downloaded it, which game, and what you changed.
+2. **Credit in the game.** Every game that uses a CC-BY model has a **Credits** screen (reachable from its menu) that
+   lists each one: *"Title" by Maker, CC-BY 4.0, source link, changes made.* The robot fails the game if a CC-BY
+   maker's name is missing from the game's files.
+3. **Allowed license only** (list above). The robot fails anything else.
+4. **Trusted makers only.** Pick makers with many uploads and their own style. Skip anything that looks ripped from
+   another game, says "ripped / from <game name> / fan art", or that only one upload exists for. Keep the source link —
+   it is our proof of where it came from.
+5. **No brands, ever.** No model that copies a real product (a Ducati, a Nike shoe, a real team's kit), no logos.
+   A license from an uploader cannot give us a brand's permission. Generic designs only.
+6. **Lessons.** If the owner rejects a model, add the reason to LESSONS.md like every other 👎.
+
+Why this is safe: CC-BY is free for paid apps, has no fees or royalties, the maker is not involved, and the license
+cannot be taken back. All it asks is credit — which rules 1–2 make automatic.
