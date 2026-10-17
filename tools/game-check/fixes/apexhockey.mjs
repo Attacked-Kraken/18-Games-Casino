@@ -90,5 +90,39 @@ export default [
       });
     },
   },
+  {
+    id: 'no-auto-offside',
+    ask: 'Why do I get offsides every time',
+    async test(page, h) {
+      try { await h.press('#playBtn'); } catch (e) {}
+      await h.wait(2200); // opening faceoff (1.4s) ends -> play
+      await h.eval(() => {
+        const H = window.__hk; if (!H || !H.puck) return 'no puck hook';
+        const S = H.skaters;
+        const carrier = S.find(s => s.team === 'home' && !s.goalie && s.role === 'C');
+        if (!carrier) return 'no home center';
+        H.puck.owner = carrier; H.puck.vel.set(0, 0, 0); H.puck.pos.set(12, 0.2, 0);
+        carrier.pos.set(12, 0.1, 0); carrier.vel.set(0, 0, 0);
+        carrier.target.set(12, 0, 0); carrier.thinkT = 999; // parked with the puck
+        S.filter(s => s.team === 'home' && !s.goalie && s !== carrier)
+          .forEach((s, i) => { s.pos.set(8 - i * 3, 0.1, (i % 2 ? -8 : 8)); s.vel.set(0, 0, 0); s.thinkT = 0; });
+        S.filter(s => s.team === 'away' && !s.goalie)
+          .forEach((s, i) => { s.pos.set(-55, 0.1, (i - 2) * 12); s.vel.set(0, 0, 0); s.thinkT = 999; });
+        S.filter(s => s.goalie).forEach(s => { s.thinkT = 999; });
+        return true;
+      });
+      await h.wait(900); // AI thinks a few cycles
+      return h.eval(() => {
+        const H = window.__hk; if (!H || !H.puck) return 'no puck hook';
+        const S = H.skaters, BLUE = H.BLUE, carrier = H.puck.owner;
+        if (!carrier || carrier.team !== 'home') return 'carrier lost';
+        const thought = S.filter(s => s.team === 'home' && !s.goalie && s !== carrier && Math.abs(s.target.x - s.pos.x) > 0.5);
+        if (!thought.length) return 'AI did not think during the window (game not in play?)';
+        const bad = S.filter(s => s.team === 'home' && !s.goalie && s !== carrier && s.target.x > BLUE);
+        if (bad.length) return bad.length + ' teammate(s) sent across the blue line ahead of the puck (targets ' + bad.map(s => Math.round(s.target.x)).join(',') + ' vs line ' + BLUE + ') - that is an automatic offside';
+        return true;
+      });
+    },
+  },
 ];
 
