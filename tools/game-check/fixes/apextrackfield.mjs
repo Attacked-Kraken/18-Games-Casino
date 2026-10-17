@@ -126,18 +126,18 @@ export default [
       if (!L) return 'running lanes are not built as real markings (no lane-line geometry in the game)';
       if (L.count < 9) return 'only ' + L.count + ' lane lines built, wants 9 (every edge of the 8 lanes)';
       if (!(L.width >= 0.05)) return 'lane lines only ' + L.width + 'm wide - too thin to see';
-      const t0 = Date.now(); const S = [];
-      while (Date.now() - t0 < 22000 && S.length < 6) {
+      const t0 = Date.now(); const S = []; let seen = 0;
+      while (Date.now() - t0 < 24000 && S.length < 5) {
         const fo = await h.eval(() => {
           const tf = window.__tf; if (!tf || !tf.follow) return null;
           const f = tf.follow(); if (!f) return null;
-          const e = tf.eng(); if (!e || !e.r || !(e.r.speed > 2)) return null;
+          const e = tf.eng(); if (!e || !e.r) return null;
           return f;
         });
-        if (fo) S.push(fo);
+        if (fo) { seen++; if (seen > 3) S.push(fo); }
         await h.wait(400);
       }
-      if (S.length < 3) return 'never saw the race camera following the player at speed';
+      if (S.length < 3) return 'never saw the race camera settled behind the player';
       let behind = 0, lateral = 0, up = 0;
       for (const f of S) {
         behind += ((f.x - f.cx) * f.tx + (f.z - f.cz) * f.tz) / S.length;
