@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · KEEP sections are locked - fix only what the owner names
+When the owner taps "👌 Keep what I like · fix the rest", his likes go under a **KEEP** section at the top of `looks/<game>.md`. Everything under KEEP is LOCKED: never change it, and protect it with a play test. Change ONLY the things he listed to fix. If a fix seems to need a KEEP thing changed, ask him first.
+
 ## 2026-10-17 · Need a Sketchfab model? Ask the model fetcher - never sign in yourself
 The owner made ONE Sketchfab account. Only the model fetcher (the idea scout window) holds the login. Builders: add a line to MODEL-REQUESTS.md (CC-BY or CC0, no brands, under ~20 MB, exact link) and keep working; the fetcher downloads it, runs it through the shrink robot, logs it in ASSETS.md and marks it DONE. Never sign in to Sketchfab or any site yourself.
 
