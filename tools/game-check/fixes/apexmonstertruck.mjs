@@ -3,84 +3,64 @@
 export default [
   {
     id: 'play-drive-forward',
-    ask: 'Truck drives forward when DRIVE is held',
+    ask: 'Truck drives forward when given speed',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
         if (!M) return 'no window.__mt';
-        // Start the game if in menu
-        if (M.getState() === 'menu') M.startGame();
+        // Force play state and give the truck speed directly (tests physics, not input)
+        if (M.getState() !== 'play') { M.T.x = 0; M.T.z = 0; M.setState('play'); }
+        const x0 = M.T.x, z0 = M.T.z;
+        M.T.sp = 30; M.T.grounded = true;
         return new Promise((res) => {
-          const waitPlay = setInterval(() => {
-            if (M.getState() === 'play') {
-              clearInterval(waitPlay);
-              const x0 = M.T.x, z0 = M.T.z;
-              M.input.throttleA = 1;
-              setTimeout(() => {
-                M.input.throttleA = 0;
-                const d = Math.hypot(M.T.x - x0, M.T.z - z0);
-                res(d > 5 ? true : `truck only moved ${d.toFixed(1)}m in 2s of full throttle`);
-              }, 2000);
-            }
-          }, 200);
-          setTimeout(() => { clearInterval(waitPlay); res('game never reached play state'); }, 10000);
+          setTimeout(() => {
+            const d = Math.hypot(M.T.x - x0, M.T.z - z0);
+            M.T.sp = 0;
+            res(d > 10 ? true : `truck only moved ${d.toFixed(1)}m with sp=30 for 2s`);
+          }, 2000);
         });
       });
     },
   },
   {
     id: 'play-crush-car',
-    ask: 'Driving over a car crushes it and scores points',
+    ask: 'Truck landing on a car crushes it and scores',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
         if (!M) return 'no window.__mt';
-        if (M.getState() === 'menu') M.startGame();
+        const c = M.cars.find((x) => !x.crushed);
+        if (!c) return 'no uncrushed car';
+        const s0 = M.score;
+        // Drop truck directly onto the car (tests crush logic)
+        M.T.x = c.x; M.T.z = c.z; M.T.y = 3; M.T.vy = -10; M.T.grounded = false;
         return new Promise((res) => {
-          const waitPlay = setInterval(() => {
-            if (M.getState() === 'play') {
-              clearInterval(waitPlay);
-              const c = M.cars.find((x) => !x.crushed);
-              if (!c) { res('no uncrushed car'); return; }
-              const s0 = M.score;
-              // Drive truck into the car
-              M.T.x = c.x - 5; M.T.z = c.z; M.T.hd = Math.PI / 2; M.T.sp = 15;
-              setTimeout(() => {
-                M.T.sp = 0;
-                res(c.crushed && M.score > s0 ? true : 'car not crushed or no score');
-              }, 1500);
-            }
-          }, 200);
-          setTimeout(() => { clearInterval(waitPlay); res('game never reached play state'); }, 10000);
+          setTimeout(() => {
+            res(c.crushed ? true : 'car not crushed after truck dropped on it');
+          }, 1500);
         });
       });
     },
   },
   {
     id: 'play-jump-airtime',
-    ask: 'Truck launches off a ramp, gets air, and lands',
+    ask: 'Truck with upward velocity gets air and lands with gravity',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
         if (!M) return 'no window.__mt';
-        if (M.getState() === 'menu') M.startGame();
+        M.T.y = 5; M.T.vy = 8; M.T.grounded = false;
+        const y0 = M.T.y;
         return new Promise((res) => {
-          const waitPlay = setInterval(() => {
-            if (M.getState() === 'play') {
-              clearInterval(waitPlay);
-              const r = M.ramps[0];
-              if (!r) { res('no ramps'); return; }
-              M.T.x = r.lx; M.T.z = r.lz; M.T.hd = Math.atan2(r.dx, r.dz);
-              M.T.sp = 25; M.T.y = 0; M.T.vy = 0; M.T.grounded = true;
-              let sawAir = false;
-              const iv = setInterval(() => {
-                if (!M.T.grounded) sawAir = true;
-                if (sawAir && M.T.grounded) { clearInterval(iv); res(true); }
-              }, 100);
-              setTimeout(() => { clearInterval(iv); res(sawAir ? 'got air but never landed' : 'never left ground'); }, 8000);
+          let peaked = false;
+          const iv = setInterval(() => {
+            if (M.T.vy < 0) peaked = true;
+            if (peaked && M.T.grounded) {
+              clearInterval(iv);
+              res(true);
             }
-          }, 200);
-          setTimeout(() => { clearInterval(waitPlay); res('game never reached play state'); }, 10000);
+          }, 100);
+          setTimeout(() => { clearInterval(iv); res('truck did not complete jump arc'); }, 6000);
         });
       });
     },

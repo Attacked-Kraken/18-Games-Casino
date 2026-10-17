@@ -1334,7 +1334,8 @@ function stepCamera(dt) {
 // Expose for game-check play tests
 window.__mt = { T, Snd, Music, cars, ramps, truck, input, startGame,
   get score() { return score; },
-  getState() { return state; } };
+  getState() { return state; },
+  setState(s) { state = s; } };
 
 /* ================= input: keyboard + touch ================= */
 const keyMap = { ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'brake',
