@@ -146,6 +146,7 @@
 <div id="rotOv">Rotate your device</div>
 <script type="module">
 import * as THREE from 'three';
+import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // JOB J10: merge static scenery into single draw calls
 
 /* ================= helpers ================= */
 const clamp = (v,a,b)=>v<a?a:(v>b?b:v);
@@ -377,17 +378,30 @@ function roundedRectSegs(hw,hh,r){
     ag.fillStyle='#ffcc33'; ag.font='900 34px system-ui, sans-serif'; ag.textAlign='center';
     ag.fillText('APEX ARCADE', 256, 43); ag.fillText('APEX ARCADE', 768, 43); }
   const adTex = new THREE.CanvasTexture(adCv); adTex.colorSpace = THREE.SRGBColorSpace; adTex.wrapS = THREE.RepeatWrapping;
+  const adMat = new THREE.MeshBasicMaterial({ map: adTex });
+  // JOB J10: 28 board segments x 4 meshes (kick/board/ad/glass) = 112 draw calls -> 4 merged meshes.
+  // Same look: ad texture repeat is baked into the merged UVs (was a per-segment texture clone).
+  const kickGeos=[], boardGeos=[], adGeos=[], glassGeos=[];
+  const _e=new THREE.Euler(), _q=new THREE.Quaternion(), _1=new THREE.Vector3(1,1,1);
   roundedRectSegs(HX, HZ, RINK.CR).forEach(([x1,z1,x2,z2])=>{
     const len = Math.hypot(x2-x1, z2-z1); if(len<0.5) return;
     const mx=(x1+x2)/2, mz=(z1+z2)/2, ang=Math.atan2(z2-z1, x2-x1);
-    const grp = new THREE.Group(); grp.position.set(mx,0,mz); grp.rotation.y = -ang;
-    const kick = new THREE.Mesh(new THREE.BoxGeometry(len,1,0.7), kickMat); kick.position.y=0.5; grp.add(kick);
-    const bd = new THREE.Mesh(new THREE.BoxGeometry(len,2.7,0.7), boardMat); bd.position.y=2.35; grp.add(bd);
-    const at = adTex.clone(); at.needsUpdate = true; at.repeat.x = Math.max(1, Math.round(len / 30));
-    const ad = new THREE.Mesh(new THREE.PlaneGeometry(len*0.92,1.6), new THREE.MeshBasicMaterial({ map: at })); ad.position.set(0,2.3,-0.36); ad.rotation.y=Math.PI; grp.add(ad);
-    const gl = new THREE.Mesh(new THREE.PlaneGeometry(len,5.2), glassMat); gl.position.y=6.3; grp.add(gl);
-    scene.add(grp);
+    _e.set(0,-ang,0); _q.setFromEuler(_e);
+    const M = new THREE.Matrix4().compose(new THREE.Vector3(mx,0,mz), _q.clone(), _1);
+    const kick = new THREE.BoxGeometry(len,1,0.7); kick.translate(0,0.5,0); kick.applyMatrix4(M); kickGeos.push(kick);
+    const bd = new THREE.BoxGeometry(len,2.7,0.7); bd.translate(0,2.35,0); bd.applyMatrix4(M); boardGeos.push(bd);
+    const rep = Math.max(1, Math.round(len/30));
+    const ad = new THREE.PlaneGeometry(len*0.92,1.6);
+    { const uv=ad.attributes.uv; for(let i=0;i<uv.count;i++) uv.setX(i, uv.getX(i)*rep); } // bake the old per-seg repeat
+    _e.set(0,Math.PI,0); _q.setFromEuler(_e);
+    const adM = M.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,2.3,-0.36), _q.clone(), _1));
+    ad.applyMatrix4(adM); adGeos.push(ad);
+    const gl = new THREE.PlaneGeometry(len,5.2); gl.translate(0,6.3,0); gl.applyMatrix4(M); glassGeos.push(gl);
   });
+  scene.add(new THREE.Mesh(mergeGeometries(kickGeos), kickMat));
+  scene.add(new THREE.Mesh(mergeGeometries(boardGeos), boardMat));
+  scene.add(new THREE.Mesh(mergeGeometries(adGeos), adMat));
+  scene.add(new THREE.Mesh(mergeGeometries(glassGeos), glassMat));
 }
 
 /* ================= goals ================= */
