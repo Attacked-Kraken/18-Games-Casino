@@ -1,0 +1,27 @@
+name: Effects pack check
+
+# The shared effects pack (kit/apex-fx.js) is used by every game - a change to it must still pass its 18 checks
+# (every burst kind, flashes, waves, glows, shared clock, no shader errors, no internet). Blocks the merge otherwise.
+on:
+  pull_request:
+    paths: ['kit/apex-fx.js', 'kit/fx-demo.html', 'kit/fx-test.mjs', 'three.module.min.js']
+  workflow_dispatch:
+
+jobs:
+  fx:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the test browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Run the effects checks
+        run: |
+          python3 -m http.server 8891 >/dev/null 2>&1 &
+          sleep 1
+          node kit/fx-test.mjs
