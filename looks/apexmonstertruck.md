@@ -12,6 +12,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - J5: Menu music (112 BPM rock) and game music (132 BPM driving riff) play; mute silences everything
 - J5: Truck ~2.7m tall with ~2.1m tires next to 4.4m cars - real Monster Jam proportions
 - J5: Jumps arc fast (GRAV 38), land hard with dust burst + camera shake + thud - no floating
+- J5 pic: camera 18 back / 9 up - truck fills the screen, not a tiny dot
+- J5 pic: dirt repeat 220 (not 880) - no obvious tiling/streaking
 
 ## NEVER
 - No flicker between brown dirt and gray on phones (z-fighting)

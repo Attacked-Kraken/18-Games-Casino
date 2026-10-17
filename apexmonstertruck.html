@@ -408,7 +408,7 @@ const dirtTex = makeTex(512, 512, (g, w, h) => {
     g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
   }
 });
-dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(880, 880);
+dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(220, 220); // J5 pic: less tiling
 dirtTex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // stop streaky dirt
 const dirt = new THREE.Mesh(
   new THREE.PlaneGeometry(ARENA * 2 + 20, ARENA * 2 + 20),
@@ -1253,7 +1253,7 @@ function stepCamera(dt) {
     cx /= n; cz /= n;
     want = new THREE.Vector3(cx, 120, cz + 80); // high overhead
   } else {
-    want = new THREE.Vector3(T.x - fx * 51, T.y + 30, T.z - fz * 51); // 51 back, 30 up
+    want = new THREE.Vector3(T.x - fx * 18, T.y + 9, T.z - fz * 18); // J5 pic: 18 back, 9 up - truck fills screen
   }
   camPos.lerp(want, Math.min(1, dt * 6)); // more responsive follow
   camera.position.copy(camPos);
