@@ -1,1 +1,155 @@
-Ly8gR2FtZS1jaGVjayBmaXggdGVzdHMgZm9yIEFwZXggRjEgKGFwZXhmMS5odG1sKSDigJQgSk9CIEozOAovLyBQTEFZIFRFU1RTOiB0aGVzZSBhY3R1YWxseSBQTEFZIHRoZSBnYW1lIGJ5IGl0cyBydWxlcy4KLy8gd2luZG93Ll9fdGVzdCBpcyBleHBvc2VkIGJ5IHRoZSBnYW1lIChzZWUgYm90dG9tIG9mIGFwZXhmMS5odG1sKS4KCmV4cG9ydCBkZWZhdWx0IFsKICB7CiAgICBpZDogJ3BsYXktY2Fycy1zdGF5LW9uLXRyYWNrJywKICAgIGFzazogJ2NhcnMgc3RheSBvbiB0aGUgdHJhY2snLAogICAgYXN5bmMgdGVzdChwYWdlLCBoKSB7CiAgICAgIGF3YWl0IGgucHJlc3MoJyNxdWlja0J0bicpOwogICAgICBhd2FpdCBoLndhaXQoODAwMCk7IC8vIGxldCB0aGUgcmFjZSBzdGFydCBhbmQgY2FycyBzcHJlYWQgb3V0CiAgICAgIGNvbnN0IGJhZCA9IGF3YWl0IGguZXZhbCgoKSA9PiB7CiAgICAgICAgY29uc3QgdCA9IHdpbmRvdy5fX3Rlc3Q7CiAgICAgICAgaWYgKCF0KSByZXR1cm4gJ25vIF9fdGVzdCc7CiAgICAgICAgY29uc3QgaGFsZiA9IHQudHJhY2tXaWR0aCgpIC8gMiArIDU7IC8vIDVtIG1hcmdpbiBmb3IgY3VyYi9ydW5vZmYKICAgICAgICByZXR1cm4gdC5jYXJzKCkKICAgICAgICAgIC5maWx0ZXIoYyA9PiBNYXRoLmFicyhjLmQpID4gaGFsZikKICAgICAgICAgIC5tYXAoYyA9PiBgJHtjLm5hbWV9OmQ9JHtjLmQudG9GaXhlZCgxKX1gKTsKICAgICAgfSk7CiAgICAgIGlmIChiYWQgPT09ICdubyBfX3Rlc3QnKSByZXR1cm4gJ3dpbmRvdy5fX3Rlc3Qgbm90IGV4cG9zZWQnOwogICAgICByZXR1cm4gYmFkLmxlbmd0aCA9PT0gMCB8fCBgY2FycyBvZmYgdHJhY2s6ICR7YmFkLmpvaW4oJywgJyl9YDsKICAgIH0sCiAgfSwKICB7CiAgICBpZDogJ3BsYXktYWktZmluaXNoZXMtbGFwJywKICAgIGFzazogJ0FJIGNhcnMgZmluaXNoIGEgbGFwJywKICAgIGFzeW5jIHRlc3QocGFnZSwgaCkgewogICAgICBhd2FpdCBoLnByZXNzKCcjcXVpY2tCdG4nKTsKICAgICAgYXdhaXQgaC53YWl0KDMwMDApOwogICAgICAvLyBHaXZlIHRoZSBwbGF5ZXIgZnVsbCB0aHJvdHRsZSBzbyB0aGUgcmFjZSBwcm9ncmVzc2VzOyBBSSBkcml2ZXMgaXRzZWxmCiAgICAgIGF3YWl0IGguZXZhbCgoKSA9PiB3aW5kb3cuX190ZXN0LnNldElucHV0KHsgZ2FzOiB0cnVlIH0pKTsKICAgICAgLy8gV2FpdCB1cCB0byA5MHMgZm9yIGFueSBBSSBjYXIgdG8gcmVhY2ggbGFwIDIKICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCAxODsgaSsrKSB7CiAgICAgICAgYXdhaXQgaC53YWl0KDUwMDApOwogICAgICAgIGNvbnN0IGxhcDIgPSBhd2FpdCBoLmV2YWwoKCkgPT4gewogICAgICAgICAgY29uc3QgdCA9IHdpbmRvdy5fX3Rlc3Q7CiAgICAgICAgICByZXR1cm4gdCA/IHQuY2FycygpLmZpbHRlcihjID0+ICFjLmlzUGxheWVyICYmIGMubGFwID49IDIpLmxlbmd0aCA6IC0xOwogICAgICAgIH0pOwogICAgICAgIGlmIChsYXAyID09PSAtMSkgcmV0dXJuICd3aW5kb3cuX190ZXN0IG5vdCBleHBvc2VkJzsKICAgICAgICBpZiAobGFwMiA+IDApIHJldHVybiB0cnVlOwogICAgICB9CiAgICAgIHJldHVybiAnbm8gQUkgY2FyIHJlYWNoZWQgbGFwIDIgd2l0aGluIDkwcyc7CiAgICB9LAogIH0sCiAgewogICAgaWQ6ICdwbGF5LWxhcC1jb3VudGVyLWdvZXMtdXAnLAogICAgYXNrOiAnbGFwIGNvdW50ZXIgZ29lcyB1cCcsCiAgICBhc3luYyB0ZXN0KHBhZ2UsIGgpIHsKICAgICAgYXdhaXQgaC5wcmVzcygnI3F1aWNrQnRuJyk7CiAgICAgIGF3YWl0IGgud2FpdCgzMDAwKTsKICAgICAgY29uc3QgbGFwMCA9IGF3YWl0IGguZXZhbCgoKSA9PiB3aW5kb3cuX190ZXN0ICYmIHdpbmRvdy5fX3Rlc3QucmFjZSgpLmxhcCk7CiAgICAgIGlmIChsYXAwID09IG51bGwpIHJldHVybiAnd2luZG93Ll9fdGVzdCBub3QgZXhwb3NlZCc7CiAgICAgIGF3YWl0IGguZXZhbCgoKSA9PiB3aW5kb3cuX190ZXN0LnNldElucHV0KHsgZ2FzOiB0cnVlIH0pKTsKICAgICAgLy8gV2FpdCB1cCB0byAxMjBzIGZvciB0aGUgcGxheWVyJ3MgbGFwIGNvdW50ZXIgdG8gaW5jcmVtZW50CiAgICAgIGZvciAobGV0IGkgPSAwOyBpIDwgMjQ7IGkrKykgewogICAgICAgIGF3YWl0IGgud2FpdCg1MDAwKTsKICAgICAgICBjb25zdCBsYXAgPSBhd2FpdCBoLmV2YWwoKCkgPT4gd2luZG93Ll9fdGVzdC5yYWNlKCkubGFwKTsKICAgICAgICBpZiAobGFwID4gbGFwMCkgcmV0dXJuIHRydWU7CiAgICAgIH0KICAgICAgcmV0dXJuIGBwbGF5ZXIgbGFwIGNvdW50ZXIgc3RheWVkIGF0ICR7bGFwMH0gYWZ0ZXIgMTIwc2A7CiAgICB9LAogIH0sCiAgewogICAgaWQ6ICdwbGF5LWJyYWtpbmctc2xvd3MtY2FyJywKICAgIGFzazogJ2JyYWtpbmcgc2xvd3MgdGhlIGNhcicsCiAgICBhc3luYyB0ZXN0KHBhZ2UsIGgpIHsKICAgICAgYXdhaXQgaC5wcmVzcygnI3F1aWNrQnRuJyk7CiAgICAgIGF3YWl0IGgud2FpdCgzMDAwKTsKICAgICAgLy8gR2V0IHVwIHRvIHNwZWVkIGZpcnN0CiAgICAgIGF3YWl0IGguZXZhbCgoKSA9PiB3aW5kb3cuX190ZXN0LnNldElucHV0KHsgZ2FzOiB0cnVlLCBicmFrZTogZmFsc2UgfSkpOwogICAgICBhd2FpdCBoLndhaXQoNTAwMCk7CiAgICAgIGNvbnN0IHYwID0gYXdhaXQgaC5ldmFsKCgpID0+IHsKICAgICAgICBjb25zdCBjID0gd2luZG93Ll9fdGVzdC5jYXJzKCkuZmluZChjID0+IGMuaXNQbGF5ZXIpOwogICAgICAgIHJldHVybiBjID8gYy52IDogLTE7CiAgICAgIH0pOwogICAgICBpZiAodjAgPCAwKSByZXR1cm4gJ3dpbmRvdy5fX3Rlc3Qgbm90IGV4cG9zZWQnOwogICAgICBpZiAodjAgPCA1KSByZXR1cm4gYGNhciB0b28gc2xvdyB0byB0ZXN0IGJyYWtpbmcgKHY9JHt2MC50b0ZpeGVkKDEpfSlgOwogICAgICAvLyBTbGFtIHRoZSBicmFrZXMKICAgICAgYXdhaXQgaC5ldmFsKCgpID0+IHdpbmRvdy5fX3Rlc3Quc2V0SW5wdXQoeyBnYXM6IGZhbHNlLCBicmFrZTogdHJ1ZSB9KSk7CiAgICAgIGF3YWl0IGgud2FpdCgzMDAwKTsKICAgICAgY29uc3QgdjEgPSBhd2FpdCBoLmV2YWwoKCkgPT4gewogICAgICAgIGNvbnN0IGMgPSB3aW5kb3cuX190ZXN0LmNhcnMoKS5maW5kKGMgPT4gYy5pc1BsYXllcik7CiAgICAgICAgcmV0dXJuIGMgPyBjLnYgOiAtMTsKICAgICAgfSk7CiAgICAgIGF3YWl0IGguZXZhbCgoKSA9PiB3aW5kb3cuX190ZXN0LnNldElucHV0KHsgYnJha2U6IGZhbHNlIH0pKTsKICAgICAgcmV0dXJuIHYxIDwgdjAgKiAwLjggfHwgYGJyYWtpbmcgZGlkIG5vdCBzbG93IHRoZSBjYXIgKHYgJHt2MC50b0ZpeGVkKDEpfSAtPiAke3YxLnRvRml4ZWQoMSl9KWA7CiAgICB9LAogIH0sCiAgewogICAgaWQ6ICdwbGF5LXRocm90dGxlLWFjY2VsZXJhdGVzLWNhcicsCiAgICBhc2s6ICd0aHJvdHRsZSBhY2NlbGVyYXRlcyB0aGUgY2FyJywKICAgIGFzeW5jIHRlc3QocGFnZSwgaCkgewogICAgICBhd2FpdCBoLnByZXNzKCcjcXVpY2tCdG4nKTsKICAgICAgYXdhaXQgaC53YWl0KDMwMDApOwogICAgICBjb25zdCB2MCA9IGF3YWl0IGguZXZhbCgoKSA9PiB7CiAgICAgICAgY29uc3QgYyA9IHdpbmRvdy5fX3Rlc3QuY2FycygpLmZpbmQoYyA9PiBjLmlzUGxheWVyKTsKICAgICAgICByZXR1cm4gYyA/IGMudiA6IC0xOwogICAgICB9KTsKICAgICAgaWYgKHYwIDwgMCkgcmV0dXJuICd3aW5kb3cuX190ZXN0IG5vdCBleHBvc2VkJzsKICAgICAgYXdhaXQgaC5ldmFsKCgpID0+IHdpbmRvdy5fX3Rlc3Quc2V0SW5wdXQoeyBnYXM6IHRydWUgfSkpOwogICAgICBhd2FpdCBoLndhaXQoNTAwMCk7CiAgICAgIGNvbnN0IHYxID0gYXdhaXQgaC5ldmFsKCgpID0+IHsKICAgICAgICBjb25zdCBjID0gd2luZG93Ll9fdGVzdC5jYXJzKCkuZmluZChjID0+IGMuaXNQbGF5ZXIpOwogICAgICAgIHJldHVybiBjID8gYy52IDogLTE7CiAgICAgIH0pOwogICAgICBhd2FpdCBoLmV2YWwoKCkgPT4gd2luZG93Ll9fdGVzdC5zZXRJbnB1dCh7IGdhczogZmFsc2UgfSkpOwogICAgICByZXR1cm4gdjEgPiB2MCArIDUgfHwgYHRocm90dGxlIGRpZCBub3QgYWNjZWxlcmF0ZSB0aGUgY2FyICh2ICR7djAudG9GaXhlZCgxKX0gLT4gJHt2MS50b0ZpeGVkKDEpfSlgOwogICAgfSwKICB9LAogIHsKICAgIGlkOiAncGxheS1yYWNlLWVuZHMtd2l0aC1yZXN1bHRzJywKICAgIGFzazogJ3RoZSByYWNlIGVuZHMgd2l0aCByZXN1bHRzJywKICAgIGFzeW5jIHRlc3QocGFnZSwgaCkgewogICAgICBhd2FpdCBoLnByZXNzKCcjcXVpY2tCdG4nKTsKICAgICAgYXdhaXQgaC53YWl0KDMwMDApOwogICAgICAvLyBQbGF5ZXIgKyBBSSBhdCBmdWxsIHBhY2U7IGEgMy1sYXAgc3ByaW50IHRha2VzIGEgZmV3IG1pbnV0ZXMuCiAgICAgIC8vIEZhc3QtZm9yd2FyZCBjaGVjazogdmVyaWZ5IHRoZSBmaW5pc2ggbWFjaGluZXJ5IHdvcmtzIGJ5IHdhdGNoaW5nCiAgICAgIC8vIGZvciBhbnkgY2FyIHRvIGZpbmlzaCwgdXAgdG8gNSBtaW51dGVzLgogICAgICBhd2FpdCBoLmV2YWwoKCkgPT4gd2luZG93Ll9fdGVzdC5zZXRJbnB1dCh7IGdhczogdHJ1ZSB9KSk7CiAgICAgIGZvciAobGV0IGkgPSAwOyBpIDwgNjA7IGkrKykgewogICAgICAgIGF3YWl0IGgud2FpdCg1MDAwKTsKICAgICAgICBjb25zdCBzdCA9IGF3YWl0IGguZXZhbCgoKSA9PiB7CiAgICAgICAgICBjb25zdCB0ID0gd2luZG93Ll9fdGVzdDsKICAgICAgICAgIGlmICghdCkgcmV0dXJuIG51bGw7CiAgICAgICAgICBjb25zdCByID0gdC5yYWNlKCk7CiAgICAgICAgICByZXR1cm4geyBoYXNSZXN1bHRzOiByLmhhc1Jlc3VsdHMsIGZpbmlzaGVkOiB0LmNhcnMoKS5maWx0ZXIoYyA9PiBjLmZpbmlzaGVkKS5sZW5ndGggfTsKICAgICAgICB9KTsKICAgICAgICBpZiAoIXN0KSByZXR1cm4gJ3dpbmRvdy5fX3Rlc3Qgbm90IGV4cG9zZWQnOwogICAgICAgIGlmIChzdC5oYXNSZXN1bHRzKSByZXR1cm4gdHJ1ZTsKICAgICAgfQogICAgICByZXR1cm4gJ3JhY2UgZGlkIG5vdCBwcm9kdWNlIHJlc3VsdHMgd2l0aGluIDUgbWludXRlcyc7CiAgICB9LAogIH0sCl07Cg==
+// Game-check fix tests for Apex F1 (apexf1.html) — JOB J38
+// PLAY TESTS: these actually PLAY the game by its rules.
+// window.__test is exposed by the game (see bottom of apexf1.html).
+
+export default [
+  {
+    id: 'game-starts-not-black',
+    ask: 'Game does not start',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(5000);
+      const state = await h.eval(() => {
+        const t = window.__test;
+        if (!t) return { error: 'no __test' };
+        const r = t.race();
+        const canvas = document.querySelector('canvas');
+        return { mode: r.mode, hasCanvas: !!canvas };
+      });
+      if (state.error) return state.error;
+      if (!state.hasCanvas) return 'no canvas element found';
+      if (!['race','lights','quali'].includes(state.mode)) {
+        return `game did not start (mode=${state.mode})`;
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-cars-stay-on-track',
+    ask: 'cars stay on the track',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(8000); // let the race start and cars spread out
+      const bad = await h.eval(() => {
+        const t = window.__test;
+        if (!t) return 'no __test';
+        const half = t.trackWidth() / 2 + 5; // 5m margin for curb/runoff
+        return t.cars()
+          .filter(c => Math.abs(c.d) > half)
+          .map(c => `${c.name}:d=${c.d.toFixed(1)}`);
+      });
+      if (bad === 'no __test') return 'window.__test not exposed';
+      return bad.length === 0 || `cars off track: ${bad.join(', ')}`;
+    },
+  },
+  {
+    id: 'play-ai-finishes-lap',
+    ask: 'AI cars finish a lap',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(3000);
+      // Give the player full throttle so the race progresses; AI drives itself
+      await h.eval(() => window.__test.setInput({ gas: true }));
+      // Wait up to 90s for any AI car to reach lap 2
+      for (let i = 0; i < 18; i++) {
+        await h.wait(5000);
+        const lap2 = await h.eval(() => {
+          const t = window.__test;
+          return t ? t.cars().filter(c => !c.isPlayer && c.lap >= 2).length : -1;
+        });
+        if (lap2 === -1) return 'window.__test not exposed';
+        if (lap2 > 0) return true;
+      }
+      return 'no AI car reached lap 2 within 90s';
+    },
+  },
+  {
+    id: 'play-lap-counter-goes-up',
+    ask: 'lap counter goes up',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(3000);
+      const lap0 = await h.eval(() => window.__test && window.__test.race().lap);
+      if (lap0 == null) return 'window.__test not exposed';
+      await h.eval(() => window.__test.setInput({ gas: true }));
+      // Wait up to 120s for the player's lap counter to increment
+      for (let i = 0; i < 24; i++) {
+        await h.wait(5000);
+        const lap = await h.eval(() => window.__test.race().lap);
+        if (lap > lap0) return true;
+      }
+      return `player lap counter stayed at ${lap0} after 120s`;
+    },
+  },
+  {
+    id: 'play-braking-slows-car',
+    ask: 'braking slows the car',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(3000);
+      // Get up to speed first
+      await h.eval(() => window.__test.setInput({ gas: true, brake: false }));
+      await h.wait(5000);
+      const v0 = await h.eval(() => {
+        const c = window.__test.cars().find(c => c.isPlayer);
+        return c ? c.v : -1;
+      });
+      if (v0 < 0) return 'window.__test not exposed';
+      if (v0 < 5) return `car too slow to test braking (v=${v0.toFixed(1)})`;
+      // Slam the brakes
+      await h.eval(() => window.__test.setInput({ gas: false, brake: true }));
+      await h.wait(3000);
+      const v1 = await h.eval(() => {
+        const c = window.__test.cars().find(c => c.isPlayer);
+        return c ? c.v : -1;
+      });
+      await h.eval(() => window.__test.setInput({ brake: false }));
+      return v1 < v0 * 0.8 || `braking did not slow the car (v ${v0.toFixed(1)} -> ${v1.toFixed(1)})`;
+    },
+  },
+  {
+    id: 'play-throttle-accelerates-car',
+    ask: 'throttle accelerates the car',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(3000);
+      const v0 = await h.eval(() => {
+        const c = window.__test.cars().find(c => c.isPlayer);
+        return c ? c.v : -1;
+      });
+      if (v0 < 0) return 'window.__test not exposed';
+      await h.eval(() => window.__test.setInput({ gas: true }));
+      await h.wait(5000);
+      const v1 = await h.eval(() => {
+        const c = window.__test.cars().find(c => c.isPlayer);
+        return c ? c.v : -1;
+      });
+      await h.eval(() => window.__test.setInput({ gas: false }));
+      return v1 > v0 + 5 || `throttle did not accelerate the car (v ${v0.toFixed(1)} -> ${v1.toFixed(1)})`;
+    },
+  },
+  {
+    id: 'play-race-ends-with-results',
+    ask: 'the race ends with results',
+    async test(page, h) {
+      await h.press('#quickBtn');
+      await h.wait(3000);
+      // Player + AI at full pace; a 3-lap sprint takes a few minutes.
+      // Fast-forward check: verify the finish machinery works by watching
+      // for any car to finish, up to 5 minutes.
+      await h.eval(() => window.__test.setInput({ gas: true }));
+      for (let i = 0; i < 60; i++) {
+        await h.wait(5000);
+        const st = await h.eval(() => {
+          const t = window.__test;
+          if (!t) return null;
+          const r = t.race();
+          return { hasResults: r.hasResults, finished: t.cars().filter(c => c.finished).length };
+        });
+        if (!st) return 'window.__test not exposed';
+        if (st.hasResults) return true;
+      }
+      return 'race did not produce results within 5 minutes';
+    },
+  },
+];

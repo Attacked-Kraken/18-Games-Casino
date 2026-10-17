@@ -594,7 +594,7 @@ const Track = {
   },
   clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); },
   buildMeshes(){
-    this.clearGroup(); const g=this.group, N=this.samples.length;
+    this.clearGroup(); const g=this.group, W=this.width, N=this.samples.length;
     // grass
     let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
     for(const p of this.samples){ minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z); }
@@ -606,7 +606,7 @@ const Track = {
     // asphalt ribbon
     const verts=[], idx=[], uvs=[];
     for(let i=0;i<=N;i++){ const p=this.samples[i%N];
-      verts.push(p.x+p.nx*this.width/2, p.y+0.02, p.z+p.nz*this.width/2, p.x-p.nx*this.width/2, p.y+0.02, p.z-p.nz*this.width/2);
+      verts.push(p.x+p.nx*W/2, p.y+0.02, p.z+p.nz*W/2, p.x-p.nx*W/2, p.y+0.02, p.z-p.nz*W/2);
       uvs.push(p.s/14,0, p.s/14,1);
       if(i<N){ const a=i*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } }
     const tg=new THREE.BufferGeometry();
@@ -624,7 +624,7 @@ const Track = {
     for(const side of [1,-1]){
       const cv=[], ci=[];
       for(let i=0;i<=N;i++){ const p=this.samples[i%N];
-        const o0=this.width/2, o1=this.width/2+1.6;
+        const o0=W/2, o1=W/2+1.6;
         cv.push(p.x+p.nx*o0*side, p.y+0.03, p.z+p.nz*o0*side, p.x+p.nx*o1*side, p.y+0.03, p.z+p.nz*o1*side);
         if(i<N){ const a=i*2; ci.push(a,a+1,a+2, a+1,a+3,a+2); } }
       const cg=new THREE.BufferGeometry();
@@ -640,7 +640,7 @@ const Track = {
     }
     // start/finish checker strip
     const f0=this.frameAt(0);
-    const stripe=new THREE.Mesh(new THREE.PlaneGeometry(this.width,3),
+    const stripe=new THREE.Mesh(new THREE.PlaneGeometry(W,3),
       new THREE.MeshBasicMaterial({color:0xffffff}));
     stripe.rotation.x=-Math.PI/2; stripe.rotation.z=-Math.atan2(f0.tx,f0.tz);
     stripe.position.set(f0.x, f0.y+0.05, f0.z); g.add(stripe);
@@ -649,7 +649,7 @@ const Track = {
     for(const [z0,z1] of this.cfg.drs){
       const s0=z0*this.length, s1=z1*this.length, steps=24, dv=[], di=[];
       for(let i=0;i<=steps;i++){ const p=this.frameAt(lerp(s0,s1,i/steps));
-        dv.push(p.x+p.nx*(this.width/2+0.4), p.y+0.04, p.z+p.nz*(this.width/2+0.4), p.x+p.nx*(this.width/2+1.2), p.y+0.04, p.z+p.nz*(this.width/2+1.2));
+        dv.push(p.x+p.nx*(W/2+0.4), p.y+0.04, p.z+p.nz*(W/2+0.4), p.x+p.nx*(W/2+1.2), p.y+0.04, p.z+p.nz*(W/2+1.2));
         if(i<steps){ const a=i*2; di.push(a,a+1,a+2,a+1,a+3,a+2); } }
       const dg=new THREE.BufferGeometry();
       dg.setAttribute('position', new THREE.Float32BufferAttribute(dv,3)); dg.setIndex(di);
@@ -726,7 +726,7 @@ const Track = {
       const p=this.samples[i];
       for(const sd of [-1,1]){
         const bar=new THREE.Mesh(barGeo, (i/8)%2?barMatR:barMatW);
-        bar.position.set(p.x+p.nx*(this.width/2+3.5)*sd, 0.55, p.z+p.nz*(this.width/2+3.5)*sd);
+        bar.position.set(p.x+p.nx*(W/2+3.5)*sd, 0.55, p.z+p.nz*(W/2+3.5)*sd);
         bar.rotation.y=Math.atan2(p.tx,p.tz); g.add(bar);
       }
     }
@@ -791,7 +791,7 @@ const Track = {
         const side=p.curv>0?1:-1;
         const gw=new THREE.Mesh(new THREE.CircleGeometry(rand(18,30),12), gravelMat);
         gw.rotation.x=-Math.PI/2;
-        gw.position.set(p.x+p.nx*(this.width/2+16)*side, 0.01, p.z+p.nz*(this.width/2+16)*side);
+        gw.position.set(p.x+p.nx*(W/2+16)*side, 0.01, p.z+p.nz*(W/2+16)*side);
         g.add(gw);
       }
     }
@@ -826,11 +826,11 @@ const Track = {
       g.add(m);
     }
     // start/finish gantry
-    const f0=this.frameAt(0);
+    const f0=this.frameAt(0), W=this.width;
     const postM=new THREE.MeshLambertMaterial({color:0x1a2436});
     for(const sd of [-1,1]){
       const post=new THREE.Mesh(new THREE.BoxGeometry(0.9,10,0.9), postM);
-      post.position.set(f0.x+f0.nx*(this.width/2+3)*sd, f0.y+5, f0.z+f0.nz*(this.width/2+3)*sd);
+      post.position.set(f0.x+f0.nx*(W/2+3)*sd, f0.y+5, f0.z+f0.nz*(W/2+3)*sd);
       post.castShadow=!isTouch; g.add(post);
     }
     const gcv=document.createElement('canvas'); gcv.width=1024; gcv.height=96;
@@ -840,7 +840,7 @@ const Track = {
     gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
     gc.fillStyle='#ffd76a'; gc.fillText('â APEX ARCADE â', 512, 50);
     const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
-    const beam=new THREE.Mesh(new THREE.BoxGeometry(this.width+8,2.2,0.6),
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
       new THREE.MeshBasicMaterial({map:gtex}));
     beam.position.set(f0.x, f0.y+9.5, f0.z);
     beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2;
@@ -1122,7 +1122,7 @@ class Car {
   }
   update(dt){
     if(this.finished) { this.v=Math.max(0,this.v-20*dt); }
-    
+    const W=Track.width;
     // --- pit lane routing ---
     const pitInS=Track.cfg.pitIn*Track.length, pitOutS=Track.cfg.pitOut*Track.length;
     if(this.pitIntent && !this.inPits && !this.finished){
@@ -1180,7 +1180,7 @@ class Car {
     const curv=Track.frameAt(this.s).curv;
     this.headAngle += (-curv)*this.v*dt*0.006;
     // surface
-    const edge=Track.width/2, absD=Math.abs(this.d);
+    const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
     if(absD>edge+1.6){
       if(absD>edge+3.2){ // wall
@@ -1309,7 +1309,7 @@ function readInput(car){
 }
 /* ================= AI (rivals that cheat a little) ================= */
 function aiDrive(car, dt){
-  const grip=car.gripNow();
+  const grip=car.gripNow(), W=Track.width;
   // --- THE CHEAT: rubber-band pace vs the player ---
   // Behind the player? Mysteriously finds pace. Ahead? Cruises.
   let cheat=1;
@@ -1333,22 +1333,22 @@ function aiDrive(car, dt){
   car.ersUse = curvNow<0.004 && car.ers>15 && car.throttle>0;
   // --- steering: racing line + defend + mistakes ---
   const f=Track.frameAt(car.s);
-  let dT = -Math.sign(f.curv)*Track.width*0.22; // use the inside
+  let dT = -Math.sign(f.curv)*W*0.22; // use the inside
   dT += car.lineBias||0;
   // defend: if a car is close behind, cover the inside
   const threat=car._threat;
   if(threat && !car.inPits){
-    dT = clamp(threat.d*0.85, -Track.width/2+1.2, Track.width/2-1.2);
+    dT = clamp(threat.d*0.85, -W/2+1.2, W/2-1.2);
     if(Math.random()<dt*0.5) car.weave=(car.weave||0)+rand(-1,1); // cheeky weave
   }
   if(car.weave) { dT+=clamp(car.weave,-1.5,1.5); car.weave*= (1-dt*2); }
   // mistakes
   car._mistT=(car._mistT||rand(20,60))-dt;
   if(car._mistT<0){ car._mistT=rand(25,70)*(Race.weather.wet>0.4?0.5:1);
-    if(Math.random()<0.35+Race.weather.wet*0.4){ car._mistD=rand(-1,1)*(Track.width/2-1); car._mistT2=rand(0.8,1.6); } }
+    if(Math.random()<0.35+Race.weather.wet*0.4){ car._mistD=rand(-1,1)*(W/2-1); car._mistT2=rand(0.8,1.6); } }
   if(car._mistT2>0){ car._mistT2-=dt; dT=car._mistD; }
   // blue flag: being lapped â move off line, lift
-  if(car._blue){ dT=Math.sign(dT||1)*(Track.width/2-1.5); vt*=0.94; }
+  if(car._blue){ dT=Math.sign(dT||1)*(W/2-1.5); vt*=0.94; }
   const dd=dT-car.d;
   car.steer=clamp(dd*0.55,-1,1);
   // DRS for AI

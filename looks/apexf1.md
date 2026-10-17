@@ -15,6 +15,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No rotate-your-phone sign
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- Game does not start (owner 2026-10-17 — the game must start and render gameplay, never a black/blank screen)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
