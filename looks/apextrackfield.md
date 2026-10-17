@@ -9,6 +9,9 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## MUST
 - A college track stadium with seating all the way around the oval
 - Realistic human athletes (real models), legs and arms clearly moving when they run
+- JOB J39 (owner, 2026-10-17): career mode must never stall
+- JOB J39 (owner, 2026-10-17): holding the stick must never block TAP RUN / HURDLE - two thumbs at once
+- JOB J39 (owner, 2026-10-17): held upright the game fills the WHOLE screen sideways (the robot fails under 90%)
 
 ## NEVER
 - No capsule / stick figures
@@ -17,7 +20,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Nothing built from boxes when a real model is possible
 - Add running lanes.
 - Make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.
-- Camera: centered right behind the player's runner, pulled back far enough to see the player plus 2 lanes each side and the track ahead (about twice the old distance), slightly above shoulder height looking down the track - never off to the side. Runners always sharp.
+- Camera 7 m behind the player's runner along the lane direction (it follows the lane around the curves), 2.8 m up, looking at a point 10 m ahead of the runner; it never goes behind the start line into the stands or through any wall - clamp it inside the stadium.
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
