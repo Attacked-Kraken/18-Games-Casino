@@ -16,6 +16,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
 - Add running lanes and move camera angel back 10 blocks and up 15 blocks and centered behind player.
+- Make camera angel always right behind player. And make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
