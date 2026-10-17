@@ -285,7 +285,7 @@ if (shown.length) {
 md += `---\nMade by tools/game-check (runs after every merge to main). To check your game again, merge to main ` +
       `or run the "Game check" workflow by hand.\n`;
 fs.writeFileSync(path.join(out, 'README.md'), md);
-fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, results, models: models.filter(m => m.img).map(m => ({ id: m.id, name: m.name, status: m.status || '', img: m.img, problems: m.problems, info: m.info })) }, null, 1));
+fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, results, models: models.filter(m => m.img).map(m => ({ id: m.id, name: m.name, status: m.status || '', version: m.version || '', img: m.img, problems: m.problems, info: m.info })) }, null, 1));
 console.log(`\n${count('PASS')} pass, ${count('CHECK')} check, ${count('FAIL')} fail`);
 // ---------- pull requests: block only NEW problems (main's own report is the baseline, so old issues don't trap a Muse)
 if (process.env.STRICT) {
