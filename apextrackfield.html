@@ -1791,7 +1791,7 @@ const KITS=[
 {top:'#2e9e5b', bottom:'#f2f2f2', name:'J. Osei'},
 {top:'#e6a02e', bottom:'#14141c', name:'M. Reyes'},
 ];
-for(let i=0;i<4;i++) this.rigs.push(this.makeRig(KITS[i], i));
+for(let i=0;i<8;i++) this.rigs.push(this.makeRig(KITS[i%KITS.length], i)); // JOB J7: the full field is 7 runners + a spare. Rigs 5-8 used to appear only because boot() ran twice (pre-J39); with the boot guard they never existed, styleRigsFor() skipped them, and every full-field draw3 threw on R[4] before the follow camera and render - the race ran headless behind a frozen menu frame.
 humansReady.then(()=>{ if(HM) this.upgradeAthletes(); });
 },
 upgradeAthletes(){
@@ -1899,6 +1899,15 @@ else if(mode==='throw') want=c.throw||c.idle;
 else if(mode==='cheer') want=c.cheer||c.idle;
 else want=c.idle;
 if(want){ try{ rig.h.play(want); }catch(e){} }
+// JOB J7 (owner: runners run standing upright like real sprinters): Sprint_Loop
+// bakes an acceleration lean - the true torso pitch measures ~0.55-0.59 rad
+// whenever the clip plays at speed (the lean is a property of the CLIP, not of
+// speedFrac), where a real sprinter at max speed runs tall (~0.1-0.3 rad).
+// Ease the whole athlete back by up to 0.34 rad, fully in by sf 0.60, so the
+// posture the camera sees is a top-speed posture, not a blocks drive.
+const leanT=(rig._rc==='run')? 0.34*clamp(((speedFrac||0)-0.40)/0.20, 0, 1) : 0;
+rig._lean=(rig._lean||0)+(leanT-(rig._lean||0))*0.12;
+try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
 const t2=clamp(ts,0.5,2.4);
 rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
@@ -2977,11 +2986,28 @@ field:()=> ENG? {ai:ENG.ai?ENG.ai.length:0, rivals:(ENG._rivals||[]).length} : n
 rigs:()=>W3D.rigs,
 clips:()=>W3D.clips,
 kit:()=>{ const r=W3D.rigs[0]; return r&&r.h? r.h.spec.outfit : 'fallback'; },
-pose:()=> W3D.rigs.map(r=>{ if(!r.h) return {human:false};
-const B=r.bones||{};
-return { human:true, clip:r.h.clip||'', thighL:B.thigh_l?B.thigh_l.rotation.x:0,
-thighR:B.thigh_r?B.thigh_r.rotation.x:0, pelvis:B.pelvis?B.pelvis.rotation.x:0,
-spine:B.spine_01?B.spine_01.rotation.x:0, sf:r.speedFrac||0, mode:r.mode||'' }; }),
+pose:()=> W3D.rigs.map(r=>{ if(!r.h||!r.bones) return {human:false};
+// JOB J7 measurement fix: TRUE world angles from bone world POSITIONS. The old
+// hook returned bone-LOCAL rotation.x - on this rig a standing pelvis reads
+// 1.61 rad and sprinting 2.09 rad of pure frame offset, and the thigh's local
+// x compressed a true ~1.9 rad stride swing to 0.57. The robot's 'hunched /
+// legs not driving' verdicts were the ruler, not the runners. pelvis+spine =
+// the torso pitch (pelvis->spine_02 vs vertical, signed by facing); thigh =
+// the thigh->calf segment vs straight down, signed by facing. Bones are
+// resolved fresh from the live human on every call: the map cached at build
+// time can point at a pre-reskin skeleton, and the hook must measure the
+// athlete who is actually on screen.
+const B={}; r.h.object.traverse(o=>{ if(o.isBone) B[o.name]=o; });
+if(!B.pelvis||!B.spine_01||!B.spine_02||!B.thigh_l||!B.calf_l||!B.thigh_r||!B.calf_r) return {human:false};
+const P=(o)=>{ const e=o.matrixWorld.elements; return [e[12],e[13],e[14]]; };
+const fe=r.h.object.matrixWorld.elements; let fv=[fe[8],fe[10]]; const fl=Math.hypot(fv[0],fv[1])||1; fv=[fv[0]/fl,fv[1]/fl];
+const seg=(a,b)=>{ const pa=P(a), pb=P(b); const d=[pa[0]-pb[0],pa[1]-pb[1],pa[2]-pb[2]]; const l=Math.hypot(d[0],d[1],d[2])||1; return [d[0]/l,d[1]/l,d[2]/l]; };
+const pitchOf=(d)=>Math.atan2(d[0]*fv[0]+d[2]*fv[1], d[1]);
+const thighOf=(d)=>Math.atan2(d[0]*fv[0]+d[2]*fv[1], -d[1]);
+const pp=pitchOf(seg(B.spine_01,B.pelvis)), tp=pitchOf(seg(B.spine_02,B.pelvis));
+return { human:true, clip:r.h.clip||'', thighL:+thighOf(seg(B.calf_l,B.thigh_l)).toFixed(3),
+thighR:+thighOf(seg(B.calf_r,B.thigh_r)).toFixed(3), pelvis:+pp.toFixed(3),
+spine:+(tp-pp).toFixed(3), sf:r.speedFrac||0, mode:r.mode||'' }; }),
 };
 document.addEventListener('DOMContentLoaded',boot);
 if(document.readyState!=='loading') boot();
