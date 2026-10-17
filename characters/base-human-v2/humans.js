@@ -27,7 +27,8 @@ export const OUTFITS = {
     dealer:         { name: 'Casino dealer', set: 'staff', top: 5, sleeves: 2, jacket: 'vest', bottom: 0, shoes: 1, cols: { top: [0xf4f2ec], jacket: [0x111114], bottom: [0x111114], shoes: [0x111111] } },
     vest_street:    { name: 'VV vest + hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x4a1a7a], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } },
     baseball_kit:   { name: 'Baseball uniform', set: 'sport', top: 1, sleeves: 1, bottom: 0, shoes: 0, cols: { top: [0x1e3fae, 0xb3122e], bottom: [0xe8e8e8], shoes: [0x222222] } },
-    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } } },
+    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } },
+    track_kit:      { name: 'Track singlet', set: 'sport', top: 6, sleeves: 0, bottom: 5, shoes: 0, cols: { top: [0xd23c3c, 0x2456a8], bottom: [0x14141c, 0xf2f2f2], shoes: [0xffffff] } } },
   f: {
     tee_jeans:      { name: 'Graphic tee + jeans', set: 'casual', top: 1, sleeves: 1, bottom: 1, shoes: 0, cols: { top: [0xf2ede4, 0x111114, 0xd06a8a], bottom: [0x2a3a5a, 0x5a7aa0], shoes: [0xf2f2f2] } },
     denimjacket:    { name: 'Denim jacket + skirt', set: 'casual', top: 0, sleeves: 2, jacket: 'denim', bottom: 2, shoes: 0, cols: { top: [0xf2ede4], jacket: [0x5a7aa0], bottom: [0x111114, 0x8a1a2a], shoes: [0xf2f2f2] } },
@@ -39,7 +40,8 @@ export const OUTFITS = {
     dealer:         { name: 'Casino dealer', set: 'staff', top: 5, sleeves: 2, jacket: 'vest', bottom: 0, shoes: 1, cols: { top: [0xf4f2ec], jacket: [0x111114], bottom: [0x111114], shoes: [0x111111] } },
     vest_street:    { name: 'VV vest + crop hoodie', set: 'street', top: 3, sleeves: 2, jacket: 'vest', bottom: 1, shoes: 0, bandana: 1, cols: { top: [0x6a2aaa], jacket: [0x111114], bottom: [0x1a1a22], shoes: [0x6a2aaa], acc: [0x6a2aaa] } },
     baseball_kit:   { name: 'Baseball uniform', set: 'sport', top: 1, sleeves: 1, bottom: 0, shoes: 0, cols: { top: [0x1e3fae, 0xb3122e], bottom: [0xe8e8e8], shoes: [0x222222] } },
-    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } } } };
+    soccer_kit:     { name: 'Soccer kit', set: 'sport', top: 1, sleeves: 1, bottom: 5, shoes: 0, cols: { top: [0xff7a1a, 0x19b8ff], bottom: [0x161616, 0xf2f2f2], shoes: [0xffffff, 0x111111] } },
+    track_kit:      { name: 'Track singlet', set: 'sport', top: 6, sleeves: 0, bottom: 5, shoes: 0, cols: { top: [0xd23c3c, 0x2456a8], bottom: [0x14141c, 0xf2f2f2], shoes: [0xffffff] } } } };
 /* landmarks of the bind pose (metres, T-pose, facing +z) */
 const LM = { m: { neck: 1.535, chest: 1.36, waist: 1.0, hip: .93, knee: .55, ankle: .11, sleeveS: .36, sleeveL: .68, shoulder: .2, headC: 1.70, headTop: 1.81, headR: .115 },
              f: { neck: 1.50, chest: 1.32, waist: .99, hip: .91, knee: .54, ankle: .10, sleeveS: .32, sleeveL: .62, shoulder: .15, headC: 1.665, headTop: 1.77, headR: .108 } };
