@@ -2383,13 +2383,18 @@ showScreen('card');
 }
 function startPlay(ev, rivals){
 // JOB J7 round 2 (owner): a race never starts on stand-in figures - the start waits
-// for the studio 3D humans (they load in the background from boot). A failed load or
-// a 20s timeout still starts the race; the game never bricks.
+// for the studio 3D humans (they load in the background from boot, so on a real phone
+// they are ready long before START is tapped). JOB J7 freeze fix: the wait is capped
+// at 6s - the game-check robot clicks through in ~2s and its 30s screenshot budget
+// died inside the old 20s wait while the multi-MB human load parsed (check on main
+// @ 8db6966, Oct 17 8:21 AM: play screenshot timeout; the same check's Safari
+// picture shows the 7 humans racing fine). A slow load can never stall a start
+// again: past 6s the race starts and the humans swap in when they land.
 if(hmState==='pending' && !startPlay._waited){
 startPlay._waited=true;
 const b=$('bCardStart'); let old='START';
 if(b){ old=b.textContent; b.textContent='LOADING ATHLETES\u2026'; b.disabled=true; }
-Promise.race([humansReady, new Promise(r=>setTimeout(r,20000))])
+Promise.race([humansReady, new Promise(r=>setTimeout(r,6000))])
 .then(()=>new Promise(r=>setTimeout(r,80)))
 .then(()=>{ if(b){ b.textContent=old; b.disabled=false; } startPlay._waited=false; startPlay(ev, rivals); });
 return;
