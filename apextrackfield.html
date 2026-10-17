@@ -312,16 +312,22 @@ const COARSE = (window.matchMedia && window.matchMedia('(pointer:coarse)').match
 function fitGame(){
 vG=null;
 DPR = Math.min(window.devicePixelRatio||1, 1.5);
-W = window.innerWidth; H = window.innerHeight;
+// JOB J39 + the owner's upright law: size the renderer + camera to the TURNED
+// (sideways) box. Held upright the stage is rotated, so the landscape size is
+// (innerHeight x innerWidth); sizing to the raw portrait box left the game on
+// 46% of the screen (the robot FAILS under 90% upright).
+if(window.innerHeight > window.innerWidth){ W = window.innerHeight; H = window.innerWidth; }
+else { W = window.innerWidth; H = window.innerHeight; }
 ovl.width = Math.round(W*DPR); ovl.height = Math.round(H*DPR);
 ox.setTransform(DPR,0,0,DPR,0,0);
 if(W3D.renderer){ W3D.renderer.setPixelRatio(Perf.pr); W3D.renderer.setSize(W,H); }
+if(W3D.camera){ W3D.camera.aspect = W/H; W3D.camera.updateProjectionMatrix(); }
 }
 window.addEventListener('resize', fitGame);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGame,150));
 if(window.visualViewport) visualViewport.addEventListener('resize', fitGame);
 const Perf = {
-ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(2,Math.max(1.5,window.devicePixelRatio||1)), // apex-gfx sharp: never below 1.5
+ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(window.devicePixelRatio||1,1.5), // STUDIO-STANDARD sharp rule: min(dpr, 1.5), never lowered to save speed
 calls:0, show:false,
 frame(dt){
 const ms=dt*1000;
@@ -335,7 +341,7 @@ this.level++; this.cool=180; this.apply();
 },
 apply(){
 const L=this.level;
-this.pr = Math.min(2,Math.max(1.5,window.devicePixelRatio||1)); // sharp1 (apex-gfx): quality steps never drop the pixel ratio - no automatic blur; runners stay sharp
+this.pr = Math.min(window.devicePixelRatio||1,1.5); // sharp rule at every quality level: cut crowd/shadows/effects for speed, never the pixel ratio
 if(W3D.renderer){ W3D.renderer.setPixelRatio(this.pr); W3D.renderer.setSize(W,H); }
 if(L>=4 && W3D.renderer) W3D.renderer.shadowMap.enabled=false;
 this.paint();
@@ -1529,7 +1535,7 @@ const ban=new THREE.Mesh(new THREE.PlaneGeometry(11.1,1.5), banMat);
 ban.rotation.y=s<0?-Math.PI/2:Math.PI/2;
 ban.position.set(s*0.03,4.72,-40.95); finG.add(ban);
 }
-this.scene.add(finG); this.finishBanner=true;
+this.scene.add(finG); this.finishBanner=true; if(this._blockers) this._blockers.push(finG); else this._blockers=[finG];
 this.buildStartGear();
 },
 
@@ -1587,6 +1593,7 @@ home:0x2456a8, away:0xd8dde6, homeShare:0.34, awayShare:0.08,
 fill:(typeof Perf!=='undefined'&&Perf.level>=3)?0.6:0.92});
 st.group.position.set(-TRK.straight/2, 0, 0);
 this.scene.add(st.group);
+if(this._blockers) this._blockers.push(st.group); else this._blockers=[st.group];
 this.stadium=st; window.__stadium=st;
 st.setScore({home:'APEX', away:'GAMES', hs:'', as:'', clock:'TRACK & FIELD', period:'COLLEGE STADIUM'});
 }catch(e){ this.stadium=null; }
@@ -2077,11 +2084,25 @@ W3D.rigPlace(rig, lp.x, airM||0, lp.z, Math.atan2(lp.tx,lp.tz));
 W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==null?0:clamp(1-stam/35,0,1));
 return lp;
 }
+function clampCamXZ(cx, cz){
+// JOB J39 ONE camera rule: the camera never leaves the stadium - clamp it to
+// the track capsule (the oval centreline segment) widened past the outer lane,
+// so it can never sit behind the start line in the stands or inside a wall.
+const R=48.5, x0=-TRK.straight, x1=0;
+const nx=Math.max(x0, Math.min(x1, cx));
+const dx=cx-nx, dz=cz; const d=Math.hypot(dx,dz);
+if(d>R){ const k=R/d; return [nx+dx*k, dz*k]; }
+return [cx, cz];
+}
 function followCam(x,z,tx,tz,dt){
-// JOB J7 camera (owner's ONE line, looks board): centered right behind the player's
-// runner, pulled back about twice the old distance (20 back), slightly above shoulder
-// height (1.8 up) looking down the track - never off to the side.
-W3D.camTo(x-tx*20, 1.8, z-tz*20, x+tx*6, 1.2, z+tz*6, dt, 5);
+// JOB J39 ONE camera rule (owner, via the helper - replaces the round-3 line):
+// 7m behind the runner along the lane (it follows the lane around the curves),
+// 2.8m up, looking at a point 10m ahead; clamped inside the stadium, so it never
+// goes behind the start line into the stands or through any wall. (The 20m
+// pull-back put the camera in the stands at the start - a grey wall filled the
+// view.) Runners stay sharp at every quality level (the sharp rule in Perf).
+const cc=clampCamXZ(x-tx*7, z-tz*7);
+W3D.camTo(cc[0], 2.8, cc[1], x+tx*10, 1.2, z+tz*10, dt, 5);
 W3D.camApply();
 W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
 }
@@ -2106,8 +2127,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 
 const mapP=p=> straight? p : (400-ev.dist+p)%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
-if(straight) W3D.camSnap(-ev.dist-20,1.8,straightZ(3), -ev.dist+6,1.2,straightZ(3));
-else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*20,1.8,lp.z-lp.tz*20, lp.x+lp.tx*6,1.2,lp.z+lp.tz*6); }
+if(straight) W3D.camSnap(-ev.dist-7,2.8,straightZ(3), -ev.dist+10,1.2,straightZ(3));
+else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*7,2.8,lp.z-lp.tz*7, lp.x+lp.tx*10,1.2,lp.z+lp.tz*10); }
 ENG.draw3=dt=>{
 const r=ENG.r;
 if(straight){
@@ -2129,7 +2150,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 else if(ev.eng==='distance'){
 const mapP=p=>(startSFor(ev.dist)+p)%400;
 const lp0=lanePoint(mapP(0),laneOff(3));
-W3D.camSnap(lp0.x-lp0.tx*20,1.8,lp0.z-lp0.tz*20, lp0.x+lp0.tx*6,1.2,lp0.z+lp0.tz*6);
+W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
@@ -2155,8 +2176,8 @@ W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
 // JOB J7 round 2 (owner): the hurdles camera also STARTS right behind the player (10 back, 15 up, centered)
-if(straight) W3D.camSnap(-ev.dist-20,1.8,straightZ(3), -ev.dist+6,1.2,straightZ(3));
-else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*20,1.8,lp.z-lp.tz*20, lp.x+lp.tx*6,1.2,lp.z+lp.tz*6); }
+if(straight) W3D.camSnap(-ev.dist-7,2.8,straightZ(3), -ev.dist+10,1.2,straightZ(3));
+else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*7,2.8,lp.z-lp.tz*7, lp.x+lp.tx*10,1.2,lp.z+lp.tz*10); }
 ENG.draw3=dt=>{
 const r=ENG.r, airM=r.airY*0.011;
 if(straight){
@@ -2175,7 +2196,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='relay'){
-W3D.camSnap(-120,1.8,straightZ(3), -94,1.2,straightZ(3));
+W3D.camSnap(-107,2.8,straightZ(3), -90,1.2,straightZ(3));
 const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
 new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
 zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius-4.58);
@@ -2384,6 +2405,7 @@ G.cardEv=ev;
 showScreen('card');
 }
 function startPlay(ev, rivals){
+if(!ev || !ev.eng){ showScreen('menu'); return; } // JOB J39 (career must never stall): a start with no event used to throw inside makeEngine ('reading eng') and dead-end the meet - fall back to the menu instead
 // JOB J7 round 2 (owner): a race never starts on stand-in figures - the start waits
 // for the studio 3D humans (they load in the background from boot, so on a real phone
 // they are ready long before START is tapped). JOB J7 freeze fix: the wait is capped
@@ -2772,6 +2794,7 @@ html+='</table><div class="hint">Championship best total: <b>'+champBest+' PTS</
 if(CAR) html+='<div class="hint">Career: <b>'+SEASONS[CAR.season-1]+'</b> · TP earned: <b>'+CAR.stats.tpEarned+'</b> · Meet wins: <b>'+CAR.stats.wins+'</b></div>';
 el.innerHTML=html;
 }
+const TFIN={tap:0,stick:0,act:0}; let STICKHELD=false; // JOB J39: input counters prove two thumbs work at once (__tf.input)
 function wireButton(id,fn){
 const el=$(id);
 el.addEventListener('pointerdown',e=>{ e.preventDefault(); fn(); },{passive:false});
@@ -2780,7 +2803,9 @@ function wireMenu(id,fn){
 const el=$(id);
 el.addEventListener('click',function(){ this.blur(); AudioSys.init(); AudioSys.resume(); AudioSys.initMusic(); AudioSys.click(); fn(); });
 }
+let _booted=false;
 function boot(){
+if(_booted) return; _booted=true; // JOB J39: boot() was running TWICE (the module fires it on readyState AND on DOMContentLoaded) - every handler fired twice per tap and TWO frame loops + two stadium/human loads burned double CPU and memory on the phone. One boot only.
 fitGame();
 W3D.init();
 $('athName').value=athleteName;
@@ -2832,10 +2857,11 @@ refreshMenuRival();
 setTimeout(()=>showScreen('menu'),900);
 }catch(err){ box.className='err'; box.textContent=err.message||'Invalid code.'; }
 });
-wireButton('btnA',()=>{ if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
+wireButton('btnA',()=>{ TFIN.act++; if(ENG&&document.body.classList.contains('playing')) ENG.action(); });
 /* TAP TO RUN: mash the button to stride. Alternates L/R automatically for rhythm bonus.
    Tapping drains stamina; hit 0 and you're EXHAUSTED until you recover. */
 wireButton('btnTap',()=>{
+  TFIN.tap++;
   if(!ENG||!document.body.classList.contains('playing')) return;
   if(ENG.r&&ENG.r.exhausted) return; // too tired to tap
   const side=ENG._tapSide==='L'?'R':'L'; ENG._tapSide=side;
@@ -2848,28 +2874,28 @@ wireButton('btnTap',()=>{
 const stick=$('stick'),knob=$('stickKnob');
 if(!stick||!knob) return;
 const ENGAGE=26,RELEASE=10,TRAVEL=44;
-let pid=null,startX=0,zone=0;
+let pid=null,startX=0,startY=0,portrait=false,zone=0;
 function live(){ return ENG&&document.body.classList.contains('playing'); }
 stick.addEventListener('pointerdown',e=>{
 if(pid!==null) return;
-pid=e.pointerId; startX=e.clientX; zone=0;
+pid=e.pointerId; startX=e.clientX; startY=e.clientY; portrait=window.innerHeight>window.innerWidth; STICKHELD=true; zone=0;
 knob.style.transition='none';
 try{ stick.setPointerCapture(pid); }catch(_){}
 e.preventDefault();
 },{passive:false});
 stick.addEventListener('pointermove',e=>{
 if(e.pointerId!==pid) return;
-let dx=e.clientX-startX;
+let dx=portrait?(e.clientY-startY):(e.clientX-startX); // JOB J39: held upright, rocking the stick reads the screen's Y - same local axis
 dx=Math.max(-TRAVEL,Math.min(TRAVEL,dx));
 knob.style.transform='translate('+dx+'px,0)';
 const z=dx>=ENGAGE?1:dx<=-ENGAGE?-1:(Math.abs(dx)<=RELEASE?0:zone);
-if(z!==0&&z!==zone&&live()) ENG.stride(z<0?'L':'R');
+if(z!==0&&z!==zone&&live()){ TFIN.stick++; ENG.stride(z<0?'L':'R'); }
 zone=z;
 e.preventDefault();
 },{passive:false});
 function endStick(e){
 if(e.pointerId!==pid) return;
-pid=null; zone=0;
+pid=null; zone=0; STICKHELD=false;
 knob.style.transition='transform .15s ease-out';
 knob.style.transform='translate(0,0)';
 }
@@ -2938,7 +2964,14 @@ visS:(lane,pos,dist)=>visS(lane,pos,dist),
 eng:()=>ENG,
 lanes:()=> W3D.laneLineInfo||null,
 follow:()=> W3D._follow||null,
-sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
+sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, dpr: window.devicePixelRatio||1, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
+input:()=>({ tap:TFIN.tap, stick:TFIN.stick, act:TFIN.act, stickHeld:STICKHELD }),
+fill:()=>{ const c=document.getElementById('game'); const r=c.getBoundingClientRect(); const iw=window.innerWidth, ih=window.innerHeight; return { cov:(r.width*r.height)/(iw*ih), W, H, iw, ih }; },
+camClear:()=>{ try{ if(!W3D.camera||!ENG||!ENG.r) return null; const from=W3D.camera.position; const to=new THREE.Vector3(ENG.r.ox,1.3,ENG.r.oz); const dir=to.clone().sub(from); const dist=dir.length(); const rc=new THREE.Raycaster(from, dir.normalize(), 0, Math.max(0.1,dist-1.2)); const hits=rc.intersectObjects(W3D._blockers||[], true); return { clear: hits.length===0, dist:+dist.toFixed(1) }; }catch(e){ return null; } },
+wallCheck:()=>{ try{ const test=(sx,sz,tx,tz)=>{ const cl=clampCamXZ(sx-tx*7, sz-tz*7); const cam=new THREE.Vector3(cl[0],2.8,cl[1]); const to=new THREE.Vector3(sx,1.3,sz); const dir=to.clone().sub(cam); const dist=dir.length(); const rc=new THREE.Raycaster(cam, dir.normalize(), 0, Math.max(0.1,dist-1.2)); return rc.intersectObjects(W3D._blockers||[], true).length===0; };
+const p100=lanePoint(visS(3,0,100), laneOff(3));
+const p400=lanePoint(140, laneOff(3));
+return { start100: test(p100.x,p100.z,p100.tx,p100.tz), curve400: test(p400.x,p400.z,p400.tx,p400.tz) }; }catch(e){ return null; } },
 finish:()=> W3D.finishBanner? {banner:true} : null,
 field:()=> ENG? {ai:ENG.ai?ENG.ai.length:0, rivals:(ENG._rivals||[]).length} : null,
 rigs:()=>W3D.rigs,
