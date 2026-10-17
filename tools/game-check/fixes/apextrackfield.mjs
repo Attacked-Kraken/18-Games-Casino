@@ -388,7 +388,7 @@ export default [
     },
   },
   {
-    id: 'career-levels-load-play-unlock',
+    id: 'play-career-levels-load-play-unlock',
     ask: "CAREER MODE: the levels don't work - every career level must load, play and unlock the next",
     async test(page, h) {
       const t0 = Date.now();
@@ -410,7 +410,7 @@ export default [
     },
   },
   {
-    id: 'career-championship-unlocks-next-season',
+    id: 'play-career-championship-unlocks-next-season',
     ask: 'Winning the career championship (final) meet must unlock the next season',
     async test(page, h) {
       const t0 = Date.now();
