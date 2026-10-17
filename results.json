@@ -1,0 +1,487 @@
+{
+ "when": "Oct 17, 2026, 2:00 PM",
+ "sha": "29ba2dc",
+ "results": [
+  {
+   "file": "apexbaseball.html",
+   "name": "Apex Baseball",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/ballpark.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexbaseball.mjs, ids 'play-...')"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexbaseball-1-menu.jpg",
+    "play": "img/apexbaseball-2-play.jpg",
+    "upright": "img/apexbaseball-3-upright.jpg",
+    "safari": "img/apexbaseball-5-safari.jpg"
+   },
+   "title": "Apex Baseball · Apex Arcade",
+   "studio": {
+    "skinned": 4,
+    "drawsPerFrame": 109,
+    "maxDraws": 139
+   },
+   "fixes": [],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexf1.html",
+   "name": "Apex F1 Racing",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/circuit.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexf1.mjs, ids 'play-...')",
+    "Blurry picture: the 3D game is drawn at 0.18x on a 2x phone screen - players and lines look soft. Draw at 1.5x (renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)) or the kit/apex-gfx \"sharp\" setting) - STUDIO-STANDARD.md \"Sharp picture\"",
+    "Script error: W is not defined",
+    "iPhone Safari: script error: Can't find variable: W"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexf1-1-menu.jpg",
+    "play": "img/apexf1-2-play.jpg",
+    "upright": "img/apexf1-3-upright.jpg",
+    "safari": "img/apexf1-5-safari.jpg"
+   },
+   "title": "Apex F1 Racing",
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 31,
+    "maxDraws": 44
+   },
+   "fixes": [],
+   "uprightFill": 1,
+   "sharpness": 0.18,
+   "status": "CHECK",
+   "safari": [
+    "iPhone Safari: script error: Can't find variable: W"
+   ]
+  },
+  {
+   "file": "apexflight.html",
+   "name": "Apex Flight",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/airport.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Gameplay picture frozen for 1.5 seconds",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexflight.mjs, ids 'play-...')"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexflight-1-menu.jpg",
+    "play": "img/apexflight-2-play.jpg",
+    "upright": "img/apexflight-3-upright.jpg",
+    "safari": "img/apexflight-5-safari.jpg"
+   },
+   "title": "Apex Flight · Apex Arcade",
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 50,
+    "maxDraws": 78
+   },
+   "fixes": [],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexhockey.html",
+   "name": "Apex Ice Hockey",
+   "fail": [],
+   "check": [
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexhockey.mjs, ids 'play-...')"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexhockey-1-menu.jpg",
+    "play": "img/apexhockey-2-play.jpg",
+    "fixes": "img/apexhockey-4-fixes.jpg",
+    "upright": "img/apexhockey-3-upright.jpg",
+    "safari": "img/apexhockey-5-safari.jpg"
+   },
+   "title": "Apex Ice Hockey · Apex Arcade",
+   "studio": {
+    "skinned": 8,
+    "drawsPerFrame": 164,
+    "maxDraws": 440
+   },
+   "fixes": [
+    {
+     "id": "real-players-not-blobs",
+     "ask": "They gave me this - blob players, upright floating sticks and scattered bits",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "model-sheet-stance",
+     "ask": "How do I get exactly this hockey player? (7.5 head heights, forward lean 15-20, knee flex 25-30, hips back over the heels, wide stance)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "gear-from-model-sheet",
+     "ask": "Helmet with visor, shoulder pads, oversized gloves, padded breezers, shin guards, skates with a wider stance - like my sheet",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "stick-in-hands-on-ice",
+     "ask": "Upright floating sticks",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "real-arena-venue-sheet",
+     "ask": "Build a nice stadium, a big crowd in the stadium (venues/rink.md)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "no-auto-offside",
+     "ask": "Why do I get offsides every time",
+     "ok": true,
+     "note": ""
+    }
+   ],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexmonstertruck.html",
+   "name": "Apex Monster Truck",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/truck-arena.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Play test failing: \"Truck drives forward when given speed\" (truck only moved 7.6m with sp=30 for 2s)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexmonstertruck-1-menu.jpg",
+    "play": "img/apexmonstertruck-2-play.jpg",
+    "fixes": "img/apexmonstertruck-4-fixes.jpg",
+    "upright": "img/apexmonstertruck-3-upright.jpg",
+    "safari": "img/apexmonstertruck-5-safari.jpg"
+   },
+   "title": "Apex Monster Truck · Apex Arcade Game Development",
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 384,
+    "maxDraws": 662
+   },
+   "fixes": [
+    {
+     "id": "play-drive-forward",
+     "ask": "Truck drives forward when given speed",
+     "ok": false,
+     "note": "truck only moved 7.6m with sp=30 for 2s"
+    },
+    {
+     "id": "play-crush-car",
+     "ask": "Truck landing on a car crushes it and scores",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "play-jump-airtime",
+     "ask": "Truck with upward velocity gets air and lands with gravity",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "play-engine-revs",
+     "ask": "Engine sound revs with speed (J5: 35Hz idle to 180Hz)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "play-music-plays",
+     "ask": "Menu and game music play, mute silences all (J5)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "play-real-sizes",
+     "ask": "J5: truck ~2.7m tall with ~2.1m tires next to 4.4m cars",
+     "ok": true,
+     "note": ""
+    }
+   ],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexracer.html",
+   "name": "Exotic Racer Club",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/circuit.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexracer.mjs, ids 'play-...')"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexracer-1-menu.jpg",
+    "play": "img/apexracer-2-play.jpg",
+    "upright": "img/apexracer-3-upright.jpg",
+    "safari": "img/apexracer-5-safari.jpg"
+   },
+   "title": "Exotic Racer Club · Apex Arcade",
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 433,
+    "maxDraws": 763
+   },
+   "fixes": [],
+   "uprightFill": 1,
+   "sharpness": 2,
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexsoccer.html",
+   "name": "Apex Soccer",
+   "fail": [
+    "Owner's fix NOT done yet: \"The players do not steal the ball - computer players must tackle and win the ball\" (defending AI won the ball 0x and kept it 0x in 22s (need 2 steals, 1 kept))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - mark like real soccer\" (an attacker at (-39,10) has no marker within 6m (nearest 9.8m); an attacker at (-36,3) has no marker within 6m (nearest 16.9m); an attacker at (-36,-13) has no marker within 6m (nearest 11.9m); an attacker at (-42,-4) has no marker within 6m (nearest 16.9m))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - spread out like real soccer\" (team is bunched: only 34m wide (need 40m+ of the 68m pitch))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - pass like real soccer\" (AI team completed only 1 passes in 16s of possession (need 3+))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - position like real soccer\" (back line did not push up: defenders average x=-30.7 (anchors are -34) with the ball at +30)"
+   ],
+   "check": [
+    "No owner-approved venue - build it from venues/soccer.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Play test failing: \"computer players win the ball back within 30 s\" (test error: took over 30 s)",
+    "Play test failing: \"a goal restarts from the centre spot\" (after a goal the ball did not restart from the centre spot)",
+    "Play test failing: \"11 v 11 - ten outfield players plus a goalkeeper per team\" (wrong team sizes: 7 v 7 (rules: 11 v 11))"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexsoccer-1-menu.jpg",
+    "play": "img/apexsoccer-2-play.jpg",
+    "fixes": "img/apexsoccer-4-fixes.jpg",
+    "upright": "img/apexsoccer-3-upright.jpg",
+    "safari": "img/apexsoccer-5-safari.jpg"
+   },
+   "title": "Apex Soccer · Apex Arcade",
+   "studio": {
+    "skinned": 4,
+    "drawsPerFrame": 105,
+    "maxDraws": 295
+   },
+   "fixes": [
+    {
+     "id": "stadium-is-real",
+     "ask": "The stadium is still not right - make it a real soccer stadium: stands all around, lights, a crowd",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "ai-tackles-and-wins",
+     "ask": "The players do not steal the ball - computer players must tackle and win the ball",
+     "ok": false,
+     "note": "defending AI won the ball 0x and kept it 0x in 22s (need 2 steals, 1 kept)"
+    },
+    {
+     "id": "defenders-mark-men",
+     "ask": "Players do not play correctly - mark like real soccer",
+     "ok": false,
+     "note": "an attacker at (-39,10) has no marker within 6m (nearest 9.8m); an attacker at (-36,3) has no marker within 6m (nearest 16.9m); an attacker at (-36,-13) has no marker within 6m (nearest 11.9m); an attacker at (-42,-4) has no marker within 6m (nearest 16.9m)"
+    },
+    {
+     "id": "team-spreads-out",
+     "ask": "Players do not play correctly - spread out like real soccer",
+     "ok": false,
+     "note": "team is bunched: only 34m wide (need 40m+ of the 68m pitch)"
+    },
+    {
+     "id": "ai-builds-up-with-passes",
+     "ask": "Players do not play correctly - pass like real soccer",
+     "ok": false,
+     "note": "AI team completed only 1 passes in 16s of possession (need 3+)"
+    },
+    {
+     "id": "team-positioning",
+     "ask": "Players do not play correctly - position like real soccer",
+     "ok": false,
+     "note": "back line did not push up: defenders average x=-30.7 (anchors are -34) with the ball at +30"
+    },
+    {
+     "id": "play-ai-wins-ball-30s",
+     "ask": "computer players win the ball back within 30 s",
+     "ok": false,
+     "note": "test error: took over 30 s"
+    },
+    {
+     "id": "play-keep-positions",
+     "ask": "players keep their positions (formation discipline, not everyone chasing)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "play-goal-restarts-centre",
+     "ask": "a goal restarts from the centre spot",
+     "ok": false,
+     "note": "after a goal the ball did not restart from the centre spot"
+    },
+    {
+     "id": "play-11v11",
+     "ask": "11 v 11 - ten outfield players plus a goalkeeper per team",
+     "ok": false,
+     "note": "wrong team sizes: 7 v 7 (rules: 11 v 11)"
+    },
+    {
+     "id": "play-kickoff-from-centre",
+     "ask": "kick-off starts from the centre spot",
+     "ok": true,
+     "note": ""
+    }
+   ],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "FAIL",
+   "safari": []
+  },
+  {
+   "file": "apextrackfield.html",
+   "name": "Apex Track & Field",
+   "fail": [
+    "Owner's fix NOT done yet: \"Career mode must never stall\" (could not get back to the menu (a race or results screen is stuck))",
+    "Owner's fix NOT done yet: \"Holding the stick must never block TAP RUN / HURDLE - two thumbs at once\" (test error: page.target is not a function)",
+    "Owner's fix NOT done yet: \"Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)\" (test error: page.setViewport is not a function)"
+   ],
+   "check": [
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apextrackfield.mjs, ids 'play-...')"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apextrackfield-1-menu.jpg",
+    "play": "img/apextrackfield-2-play.jpg",
+    "fixes": "img/apextrackfield-4-fixes.jpg",
+    "upright": "img/apextrackfield-3-upright.jpg",
+    "safari": "img/apextrackfield-5-safari.jpg"
+   },
+   "title": "Apex Track & Field 3D",
+   "studio": {
+    "skinned": 8,
+    "drawsPerFrame": 95,
+    "maxDraws": 153
+   },
+   "fixes": [
+    {
+     "id": "touch-controls",
+     "ask": "I can't play Track & Field - no way to control it",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "real-sprint-animation",
+     "ask": "Runners must run with natural arm and leg motion - a real sprint animation, not posed bones",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "runners-stand-upright",
+     "ask": "Runners must run standing upright like real sprinters",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "singlet-kit",
+     "ask": "Sprinters wear a track singlet kit, not a soccer kit",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "real-400-oval",
+     "ask": "A real 400m oval: 8 lanes of 1.22m, lane 1 lap is 400m",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "staggered-starts-own-lane",
+     "ask": "Staggered starts for 200m/400m and every runner in his own lane",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "real-college-bowl",
+     "ask": "A real college track stadium: seating all the way around the oval, 30,000+ crowd",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "running-lanes-and-race-camera",
+     "ask": "Add running lanes and move camera angel back 10 blocks and up 15 blocks and centered behind player",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "full-field-humans-finish-banner",
+     "ask": "Make camera angle always right behind player. And make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "camera-one-rule",
+     "ask": "Camera 7 m behind the player's runner along the lane direction (it follows the lane around the curves), 2.8 m up, looking at a point 10 m ahead of the runner; it never goes behind the start line into the stands or through any wall - clamp it inside the stadium.",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "camera-never-sees-a-wall",
+     "ask": "The camera never sees a wall in front of the runner at the 100 m start and on the 400 m curve (clamped inside the stadium)",
+     "ok": true,
+     "note": ""
+    },
+    {
+     "id": "career-never-stalls",
+     "ask": "Career mode must never stall",
+     "ok": false,
+     "note": "could not get back to the menu (a race or results screen is stuck)"
+    },
+    {
+     "id": "two-thumbs-at-once",
+     "ask": "Holding the stick must never block TAP RUN / HURDLE - two thumbs at once",
+     "ok": false,
+     "note": "test error: page.target is not a function"
+    },
+    {
+     "id": "portrait-fills-screen",
+     "ask": "Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)",
+     "ok": false,
+     "note": "test error: page.setViewport is not a function"
+    }
+   ],
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "status": "FAIL",
+   "safari": []
+  }
+ ],
+ "models": [
+  {
+   "id": "motorcycle-main",
+   "name": "Main sport motorcycle",
+   "status": "WAITING OWNER",
+   "version": "4",
+   "img": {
+    "q": "img/models/motorcycle-main-q.jpg",
+    "front": "img/models/motorcycle-main-front.jpg",
+    "side": "img/models/motorcycle-main-side.jpg"
+   },
+   "problems": [],
+   "info": "CODE-BUILT model · 29,628 triangles · 1.52 m tall · look: studio · drag to turn, pinch to zoom"
+  }
+ ],
+ "safari": {
+  "gl": true,
+  "when": "2026-10-17T19:02:45.633Z"
+ }
+}
