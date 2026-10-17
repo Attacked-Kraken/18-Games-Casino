@@ -84,3 +84,9 @@ problems only Safari has show as "iPhone Safari: ..." CHECK items. If a merge **
 owner's fix test that passed before now fails) and a second check confirms it, the robot **undoes the merge by itself**
 ("AUTO-UNDO: ..." on main). Nothing is lost: your branch still has the work — fix it and merge again, and add the lesson
 to LESSONS.md. A brand-new failing fix test (test-first) never triggers an undo.
+
+**Shared game kit (owner, 2026-10-17):** `kit/apex-kit.js` (guide: `kit/README.md`, demo: `kit/demo.html`, self-test:
+`kit/kit-test.mjs`) gives every game the same pause/settings menu, mute (house-wide `apex_muted`), saves, credits screen,
+touch joystick + buttons, chase camera, fps meter and `window.__test` hook. **Every NEW game is built on it.** Existing
+games move onto it when they are a launch-focus game (a "KIT MOVE" job). Fix the kit, not one game, when a shared thing
+is wrong — every game gets better at once. Never break the kit's self-test.
