@@ -50,6 +50,18 @@ checklist, it is not done, whatever the CLAIMS board says.
    its registration on the Game Development page (see the WHERE NEW
    GAMES GO rule in CLAIMS.md). Its back button returns to sports.html.
 
+## Career mode (owner, 2026-10-17)
+Every career / season / tournament mode must be playable start to finish on a phone: every level loads, can be
+played and won, the result screen shows, and the next level unlocks and is saved. No button may block another (two
+thumbs at once). Each game ships `play-career-...` play tests for this; the robot gives a CHECK without them and
+shows any that fail.
+
+## The store reviewer (owner, 2026-10-17: "I don't want to write all that")
+The owner only says a few words. The Muse that gets the job is the **store reviewer** first: before any code it plays
+EVERY mode, level and event like an App Store reviewer and writes the full gap list against this file (what's
+missing, what's confusing, what breaks, what looks unfinished - controls, camera, career, menus, sound, credits,
+landscape, sharpness, loading), then fixes all of it. The owner's few words are the minimum, not the whole job.
+
 ## Before you stamp DONE
 
 Boot the game on a phone-sized viewport with touch emulation and check:

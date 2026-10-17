@@ -212,6 +212,18 @@ for (const g of games) {
   // PLAY TESTS (owner, 2026-10-16): every game needs at least 5 tests that actually PLAY it against its rules/ sheet
   const plays = (r.fixes || []).filter(x => /^play-/.test(x.id || '')).length;
   if (plays < 5) r.check.push(`Only ${plays} play test(s) - every game needs 5+ tests that play it by its rules (fixes/${slug}.mjs, ids 'play-...')`);
+  // CAREER MODE (owner, 2026-10-17: "career modes need to be checked for playability"): a game with a career/season
+  // mode needs play tests that start EVERY career level, finish it and unlock the next (ids 'play-career-...')
+  try {
+    const src = fs.readFileSync(path.join(process.cwd(), g.file), 'utf8');
+    if (/career|season mode|tournament/i.test(src)) {
+      const car = (r.fixes || []).filter(x => /^play-career/.test(x.id || ''));
+      const bad = car.filter(x => !x.ok);
+      if (!car.length) r.check.push(`Career mode has NO playability test - add 'play-career-...' tests that start every career level, play it to the end and unlock the next (STORE-READY.md "Career mode")`);
+      for (const x of bad.slice(0, 3)) r.check.push(`Career mode broken: "${x.ask}"`);
+      r.career = { tests: car.length, failing: bad.length };
+    }
+  } catch (e) {}
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
   const brand = f1.brand || f2.brand, yourName = f1.yourName || f2.yourName;
