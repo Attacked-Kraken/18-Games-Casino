@@ -3,6 +3,8 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · You are the store reviewer · career modes are robot-checked
+The owner gives a few words, not the details. Before any code on a job, play EVERY mode, level and event like an App Store reviewer and write the full gap list (STORE-READY.md "The store reviewer"), then fix it all. Career/season modes must be playable start to finish: add `play-career-...` tests (every level loads, plays, finishes, unlocks the next). The robot now gives a CHECK for a career mode without them and lists any that fail.
 ## 2026-10-17 · KEEP sections are locked - fix only what the owner names
 When the owner taps "👌 Keep what I like · fix the rest", his likes go under a **KEEP** section at the top of `looks/<game>.md`. Everything under KEEP is LOCKED: never change it, and protect it with a play test. Change ONLY the things he listed to fix. If a fix seems to need a KEEP thing changed, ask him first.
 
