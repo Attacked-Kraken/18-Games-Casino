@@ -621,6 +621,65 @@ function stepFlags(t) {
   }
 }
 
+/* ================= J5 CHECK: stadium bowl from venues/truck-arena.md ================= */
+(function buildStadium(){
+  const S = 2200;
+  const standMat = new THREE.MeshStandardMaterial({ color: 0x3a4150, roughness: 0.9 });
+  const stepMat = new THREE.MeshStandardMaterial({ color: 0x2c3340, roughness: 0.9 });
+  for (let side = 0; side < 4; side++) {
+    const rotY = side * Math.PI / 2;
+    for (let tier = 0; tier < 3; tier++) {
+      const w = 2 * S - tier * 120, d = 90, hgt = 18 + tier * 22;
+      const y = hgt / 2 + tier * 8;
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), tier % 2 ? standMat : stepMat);
+      stand.position.set(Math.sin(rotY) * (S + d/2 + tier * 40), y, Math.cos(rotY) * (S + d/2 + tier * 40));
+      stand.rotation.y = rotY;
+      stand.receiveShadow = true;
+      scene.add(stand);
+    }
+  }
+  const COUNT = 12000;
+  const fans = new THREE.InstancedMesh(new THREE.BoxGeometry(0.5, 1.1, 0.35), new THREE.MeshLambertMaterial({ color: 0xffffff }), COUNT);
+  const dummy = new THREE.Object3D(), col = new THREE.Color();
+  const palette = [0xd94f2e, 0x2e7fd9, 0x37c26a, 0xe8c832, 0x9a4fd9, 0xd9d9d9, 0xf0f0f0];
+  let fi = 0;
+  for (let side = 0; side < 4 && fi < COUNT; side++) {
+    const ang = side * Math.PI / 2;
+    for (let tier = 0; tier < 3 && fi < COUNT; tier++) {
+      const y = 18 + tier * 22 + tier * 8 + 1.2;
+      const rad = S + 45 + tier * 40;
+      const per = Math.floor(COUNT / 12);
+      for (let i = 0; i < per && fi < COUNT; i++, fi++) {
+        const t = (i / per - 0.5) * (2 * S - tier * 120 - 20);
+        dummy.position.set(Math.sin(ang) * rad + Math.cos(ang) * t, y + Math.random() * 0.3, Math.cos(ang) * rad - Math.sin(ang) * t);
+        dummy.rotation.y = ang + Math.PI + (Math.random() - 0.5) * 0.4;
+        dummy.updateMatrix();
+        fans.setMatrixAt(fi, dummy.matrix);
+        fans.setColorAt(fi, col.setHex(palette[(Math.random() * palette.length) | 0]));
+      }
+    }
+  }
+  fans.count = fi;
+  fans.instanceMatrix.needsUpdate = true;
+  if (fans.instanceColor) fans.instanceColor.needsUpdate = true;
+  scene.add(fans);
+  const screenMat = new THREE.MeshBasicMaterial({ color: 0x0a0f1a });
+  for (const sz of [-1, 1]) {
+    const scr = new THREE.Mesh(new THREE.BoxGeometry(60, 34, 4), screenMat);
+    scr.position.set(0, 70, sz * (S + 60));
+    scene.add(scr);
+  }
+  const barMat = new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.8 });
+  const barGeo = new THREE.BoxGeometry(12, 2.5, 1.2);
+  for (let i = -8; i <= 8; i++) {
+    for (const [x, z, ry] of [[i * 13, S - 8, 0], [i * 13, -S + 8, 0], [S - 8, i * 13, Math.PI/2], [-S + 8, i * 13, Math.PI/2]]) {
+      const b = new THREE.Mesh(barGeo, barMat);
+      b.position.set(x, 1.25, z); b.rotation.y = ry;
+      scene.add(b);
+    }
+  }
+})();
+
 /* ================= ramps: Monster Jam stadium style =================
    Jump-to-jump doubles in the middle, freestyle ramps around.
    Colors: red/blue/black with white edges (like the refs). */
@@ -1271,6 +1330,10 @@ function stepCamera(dt) {
     camera.lookAt(T.x + fx * 18, T.y + 4, T.z + fz * 18); // look ahead
   }
 }
+
+// Expose for game-check play tests
+window.__mt = { T, Snd, Music, cars, ramps, truck, input,
+  get score() { return score; } };
 
 /* ================= input: keyboard + touch ================= */
 const keyMap = { ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'brake',
