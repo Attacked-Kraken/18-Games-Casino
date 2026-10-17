@@ -25,6 +25,9 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - JOB J7 keep-it (owner, 2026-10-17): CAREER MODE - every career level must load, play and unlock the next
 - JOB J7 keep-it (owner, 2026-10-17): no button may ever block TAP RUN - on the long relay / long races a RED button turns on and blocks running; holding the stick never blocks TAP RUN either
 - JOB J7 keep-it (owner, 2026-10-17): DISCUS is ONE simple action - hold to spin, release to throw, like a real thrower (at most 2 taps) - and the camera shows the thrower clearly from behind/side, never hidden behind the power bar
+- JOB J42 (owner, 2026-10-17): DEV-ONLY "Skip level" button in career/season/tournament modes - only when the address has dev=1, NEVER without; it wins the current level and moves to the next, saving like a real win (STORE-READY.md "Developer skip")
+- JOB J42 (owner, 2026-10-17): 1500 m and every long race - the camera stays LOW behind the player's runner and follows him around the whole track, never up over the stands where he is a speck
+- JOB J42 (owner, 2026-10-17): DISCUS (and shot put, javelin) - after the throw, the camera follows the implement through the air and shows its landing marker
 
 ## NEVER
 - No capsule / stick figures
