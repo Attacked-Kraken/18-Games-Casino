@@ -15,6 +15,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- Add running lanes and move camera angel back 10 blocks and up 15 blocks and centered behind player.
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
