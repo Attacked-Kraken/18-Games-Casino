@@ -3,11 +3,10 @@
 // around, lights, a crowd. The players do not steal the ball - computer players must tackle and
 // win the ball. Players do not play correctly - mark, spread out, pass and position like real soccer."
 // Tests drive the game through window.__sc / window.__stadium hooks the game exposes for this list.
-const sc = () => {
-  const S = window.__sc;
-  if (!S || !S.players || !S.ball) return 'game hooks missing (window.__sc)';
-  return S;
-};
+// NOTE: every function handed to h.eval runs ALONE in the page - it cannot see helpers
+// defined in this file (the runner ships the function source, not its closure). So each
+// eval'd function reads window.__sc for itself; a shared helper here crashed tests with
+// 'sc is not defined' in the 2026-10-16 22:13 game check. Thresholds unchanged.
 export default [
   {
     id: 'stadium-is-real',
@@ -30,7 +29,7 @@ export default [
     ask: 'The players do not steal the ball - computer players must tackle and win the ball',
     async test(page, h) {
       const arm = () => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1];
         if (G.st === 'goal' || G.st === 'restart') return 'wait';
         if (B.owner) { S._looseT = 0; if (B.owner.team === sharks) return 'armed'; }
@@ -50,7 +49,7 @@ export default [
       for (let i = 0; i < 22; i++) {
         await h.wait(1000);
         last = await h.eval(() => {
-          const S = sc(); if (typeof S === 'string') return { err: S };
+          const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return { err: S };
           return { tw: S.stats.tacklesWon, bw: S.stats.ballsWon };
         });
         if (last.err) return last.err;
@@ -65,7 +64,7 @@ export default [
     ask: 'Players do not play correctly - mark like real soccer',
     async test(page, h) {
       const setup = await h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1], comets = S.teams[0];
         const carrier = sharks.players[4];
         carrier.pos.set(-35, 0, 4); carrier.vel.set(0, 0, 0); carrier.face = Math.PI;
@@ -79,7 +78,7 @@ export default [
       if (setup !== true) return setup;
       await h.wait(4000);
       return h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const sharks = S.teams[1], comets = S.teams[0], out = [];
         for (const a of sharks.players) {
           if (a.role === 'GK' || a.pos.x > -17.5) continue; // attackers in the Comets defensive third
@@ -96,7 +95,7 @@ export default [
     ask: 'Players do not play correctly - spread out like real soccer',
     async test(page, h) {
       const setup = await h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, comets = S.teams[0];
         const carrier = comets.players.find((p) => p.role === 'MID' && p !== S.H.player) || comets.players[4];
         for (const p of comets.players) { p.pos.set(p.hx, 0, p.hz); p.vel.set(0, 0, 0); }
@@ -108,7 +107,7 @@ export default [
       if (setup !== true) return setup;
       await h.wait(3000);
       return h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const out0 = S.teams[0].players.filter((p) => p.role !== 'GK');
         const xs = out0.map((p) => p.pos.x), zs = out0.map((p) => p.pos.z);
         const xSpread = Math.max(...xs) - Math.min(...xs), zSpread = Math.max(...zs) - Math.min(...zs);
@@ -123,7 +122,7 @@ export default [
     ask: 'Players do not play correctly - pass like real soccer',
     async test(page, h) {
       const arm = () => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1];
         if (G.st === 'goal' || G.st === 'restart') return 'wait';
         if (B.owner) { S._looseT = 0; if (B.owner.team === sharks) return 'armed'; }
@@ -141,7 +140,7 @@ export default [
       let last = 0;
       for (let i = 0; i < 16; i++) {
         await h.wait(1000);
-        last = await h.eval(() => { const S = sc(); return typeof S === 'string' ? { err: S } : { p: S.stats.passes }; });
+        last = await h.eval(() => { const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; return typeof S === 'string' ? { err: S } : { p: S.stats.passes }; });
         if (last.err) return last.err;
         if (last.p >= 3) return true;
         await h.eval(arm);
@@ -155,7 +154,7 @@ export default [
     async test(page, h) {
       // phase A: Comets have the ball deep in the Sharks half -> the whole team pushes up
       const setupA = await h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, comets = S.teams[0];
         for (const p of comets.players) { p.pos.set(p.hx, 0, p.hz); p.vel.set(0, 0, 0); }
         const carrier = comets.players.find((p) => p.role === 'MID' && p !== S.H.player) || comets.players[4];
@@ -167,7 +166,7 @@ export default [
       if (setupA !== true) return setupA;
       for (let i = 0; i < 5; i++) { // keep the spell alive: if the spell breaks, the same midfielder retakes it at +30
         await h.wait(1000);
-        await h.eval(() => { const S = sc(); if (typeof S === 'string') return;
+        await h.eval(() => { const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return;
           const B = S.ball, G = S.G, comets = S.teams[0];
           if (G.st === 'play' && (!B.owner || B.owner.team !== comets)) {
             const carrier = comets.players.find((p) => p.role === 'MID' && p !== S.H.player) || comets.players[4];
@@ -175,7 +174,7 @@ export default [
             B.pos.set(30.8, 0.11, 0); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0; } });
       }
       const a = await h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const out0 = S.teams[0].players.filter((p) => p.role !== 'GK');
         const defs = S.teams[0].players.filter((p) => p.role === 'DEF');
         return { team: out0.reduce((s, p) => s + p.pos.x, 0) / out0.length, line: defs.reduce((s, p) => s + p.pos.x, 0) / defs.length };
@@ -185,7 +184,7 @@ export default [
       if (!(a.team > -10)) return `attacking team did not push up: team average x=${a.team.toFixed(1)} with the ball at +30`;
       // phase B: Sharks have the ball deep in the Comets third -> the block drops goal-side of the ball
       const setupB = await h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball, G = S.G, sharks = S.teams[1], comets = S.teams[0];
         for (const p of comets.players) { p.pos.set(p.hx, 0, p.hz); p.vel.set(0, 0, 0); }
         const carrier = sharks.players[4];
@@ -197,7 +196,7 @@ export default [
       if (setupB !== true) return setupB;
       for (let i = 0; i < 5; i++) { // keep the spell alive: if the spell breaks, the same midfielder retakes it at -35
         await h.wait(1000);
-        await h.eval(() => { const S = sc(); if (typeof S === 'string') return;
+        await h.eval(() => { const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return;
           const B = S.ball, G = S.G, sharks = S.teams[1];
           if (G.st === 'play' && (!B.owner || B.owner.team !== sharks || B.pos.x < -44)) {
             const carrier = sharks.players[4];
@@ -205,7 +204,7 @@ export default [
             B.pos.set(-35.8, 0.11, 3); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null; B.noPickup = 0; } });
       }
       return h.eval(() => {
-        const S = sc(); if (typeof S === 'string') return S;
+        const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return S;
         const B = S.ball;
         const out0 = S.teams[0].players.filter((p) => p.role !== 'GK')
           .sort((m, n) => Math.hypot(m.pos.x - B.pos.x, m.pos.z - B.pos.z) - Math.hypot(n.pos.x - B.pos.x, n.pos.z - B.pos.z));
