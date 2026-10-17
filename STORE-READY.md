@@ -56,6 +56,19 @@ played and won, the result screen shows, and the next level unlocks and is saved
 thumbs at once). Each game ships `play-career-...` play tests for this; the robot gives a CHECK without them and
 shows any that fail.
 
+### Developer skip (owner, 2026-10-17)
+On the Game Development page every game opens with `?dev=1` in its address. When `dev=1` is there, every career /
+season / tournament mode shows a small **⏭ Skip level** button (top of the screen, out of the way of the controls):
+it marks the current level won and jumps to the next one, so the owner can check every level fast. It must NOT appear
+without `dev=1` (the Arcade and the stores never show it), and skipping must save like a real win.
+This applies to EVERY game with levels, not only Track & Field.
+
+### Scrub before the Arcade (owner, 2026-10-17)
+Testing tools are for the Game Development page only. Before a game moves to the Apex Arcade, the "send it to the
+Arcade" job REMOVES them from the game: the dev=1 skip button and any dev menus, debug text, fps meters, test
+cheats and console logs. Keep `window.__test` only if it changes nothing for players. A `play-scrub-...` test opens
+the game WITHOUT dev=1 and proves no testing tool shows.
+
 ## The store reviewer (owner, 2026-10-17: "I don't want to write all that")
 The owner only says a few words. The Muse that gets the job is the **store reviewer** first: before any code it plays
 EVERY mode, level and event like an App Store reviewer and writes the full gap list against this file (what's

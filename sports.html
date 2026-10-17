@@ -271,7 +271,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     while (liveOrder.length > MAX_LIVE) stop(liveOrder.shift());
     if (row.classList.contains('live')) return;
     var f = document.createElement('iframe');
-    f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'v=' + (window.__hubStamp || (window.__hubStamp = Date.now())); f.title = row._game.name;
+    f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=' + (window.__hubStamp || (window.__hubStamp = Date.now()));   /* dev=1: Game Development tools (career skip) - never in the Arcade */ f.title = row._game.name;
     f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock');
     f.setAttribute('allowfullscreen', '');
     f.addEventListener('load', function () {
