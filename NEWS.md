@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Need a Sketchfab model? Ask the model fetcher - never sign in yourself
+The owner made ONE Sketchfab account. Only the model fetcher (the idea scout window) holds the login. Builders: add a line to MODEL-REQUESTS.md (CC-BY or CC0, no brands, under ~20 MB, exact link) and keep working; the fetcher downloads it, runs it through the shrink robot, logs it in ASSETS.md and marks it DONE. Never sign in to Sketchfab or any site yourself.
+
 ## 2026-10-17 · Upright phones: the game fills the WHOLE screen - owner's law, never again
 Held upright, a sideways game must fill the entire screen (the owner saw Track & Field on half the screen, the rest black). The robot now FAILS any game that fills under 90% upright. Fix: size the renderer and camera to the turned (sideways) box - `ApexKit.fit()` does it, or copy its sizing. Today: Track & Field 46% (FAIL - fix it), Hockey, F1, Baseball, Soccer, Racer 100%.
 

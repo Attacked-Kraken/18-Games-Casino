@@ -22,8 +22,9 @@ robots shrink, photograph and test them. Never "fake" a hero model from code box
 4. **Poly Pizza** (poly.pizza) - thousands of models; filter by license. CC0 first, then CC-BY (with credit).
 5. **Poly Haven** (polyhaven.com) and **ambientCG** (ambientcg.com) - CC0 **realistic textures** (grass, ice, asphalt,
    dirt, wood, metal) and **HDRI skies** for real-looking lighting.
-6. **Sketchfab** - ONLY "CC Attribution" models with the maker's Download button (Part III). It needs a login: if the
-   browser asks you to sign in, don't - go back to 1-5 and tell the owner which model you wanted.
+6. **Sketchfab** - ONLY "CC Attribution" models with the maker's Download button (Part III). Never sign in yourself:
+   add the model to **MODEL-REQUESTS.md** and the model fetcher (the idea scout window, which holds the owner's
+   login) downloads it for you.
 7. **OpenGameArt** - ONLY items marked CC0 or CC-BY 3.0/4.0 (the asset check robot blocks everything else).
 
 Every model: ledger entry in `ASSETS.md` in the same PR, credit in the game's Credits screen if CC-BY, then MODELS.md
