@@ -7,10 +7,6 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
 ## MUST
-- JOB J39 (owner's job board, 2026-10-17): Camera low and right behind MY car (chase cam like a real F1 game), my car big in the picture
-- JOB J39: A full grid of 10+ F1-style cars, all racing
-- JOB J39: A real F1 street-circuit race like Austin (COTA) or the Las Vegas strip circuit (no real names or logos) - cars on the track, a city around it, a crowd in the stands; never an empty green field
-- JOB J39: The game starts clean - no script errors; the race actually starts
 - Own fictional teams and drivers
 - The car in the game must look like the model the owner approved
 
