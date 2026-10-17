@@ -1118,6 +1118,18 @@ async function initAthletes(){
   }
 }
 window.__sc.players=allPlayers; window.__sc.teams=teams; window.__sc.ball=B; window.__sc.G=G; window.__sc.H=H;
+/* PLAY TESTS (owner, JOB J6): read-only snapshot for the game-check robot. */
+window.__test={
+  get score(){ return [teams[0].score, teams[1].score]; },
+  get state(){ return G.st; },
+  get half(){ return G.half; },
+  get ball(){ return { x:+B.pos.x.toFixed(2), z:+B.pos.z.toFixed(2), owner: B.owner? B.owner.team.name : null }; },
+  get players(){
+    return allPlayers.map(p=>({ team:p.team.name, role:p.role, x:+p.pos.x.toFixed(1), z:+p.pos.z.toFixed(1),
+      hx:p.hx, hz:p.hz }));
+  },
+  get teamSizes(){ return teams.map(t=>t.players.length); },
+};
 initAthletes(); // start loading the real athletes while the menu is up so they're on the pitch at kickoff
 
 /* ================= animation ================= */
