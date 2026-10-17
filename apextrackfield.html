@@ -314,7 +314,7 @@ DPR = Math.min(window.devicePixelRatio||1, 1.5);
 W = window.innerWidth; H = window.innerHeight;
 ovl.width = Math.round(W*DPR); ovl.height = Math.round(H*DPR);
 ox.setTransform(DPR,0,0,DPR,0,0);
-if(W3D.renderer){ W3D.renderer.setPixelRatio(Perf.pr); W3D.renderer.setSize(W,H); W3D.buildCrowdLevel(); }
+if(W3D.renderer){ W3D.renderer.setPixelRatio(Perf.pr); W3D.renderer.setSize(W,H); }
 }
 window.addEventListener('resize', fitGame);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGame,150));
@@ -336,7 +336,6 @@ apply(){
 const L=this.level;
 this.pr = L===0?Math.min(window.devicePixelRatio||1,1.5):(L===1?1.25:1.0);
 if(W3D.renderer){ W3D.renderer.setPixelRatio(this.pr); W3D.renderer.setSize(W,H); }
-W3D.buildCrowdLevel();
 if(L>=4 && W3D.renderer) W3D.renderer.shadowMap.enabled=false;
 this.paint();
 },
@@ -379,6 +378,7 @@ g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.06)
 o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.07);
 },
 pistol(){
+try{ if(W3D.stadium) W3D.stadium.crowd.excite(0.4); }catch(e){}
 if(!this.ctx) return;
 const t=this.now(), s=this.ctx.createBufferSource(), g=this.ctx.createGain(), f=this.ctx.createBiquadFilter();
 s.buffer=this.noiseBuf; f.type='highpass'; f.frequency.value=900;
@@ -401,6 +401,7 @@ g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
 o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.25);
 },
 cheer(dur){
+try{ if(W3D.stadium) W3D.stadium.crowd.excite(Math.min(1.25,0.45+(dur||1)*0.45)); }catch(e){}
 if(!this.ctx) return; dur=dur||1.2;
 const t=this.now(), s=this.ctx.createBufferSource(), g=this.ctx.createGain(), f=this.ctx.createBiquadFilter();
 s.buffer=this.noiseBuf; s.loop=true; f.type='bandpass'; f.frequency.value=1100; f.Q.value=0.6;
@@ -1325,7 +1326,7 @@ return {x:p.x+(-p.tz)*laneOff, z:p.z+(p.tx)*laneOff, tx:p.tx, tz:p.tz};
 }
 const W3D={
 ready:false, renderer:null, scene:null, camera:null,
-rigs:[], clips:{}, crowdMesh:null, crowdTotal:0,
+rigs:[], clips:{}, stadium:null, startPhase:'', blocks:[], _blockList:[],
 dirLight:null, spots:[], flameLight:null,
 hurdlesMesh:null, barMeshHJ:null, barMeshPV:null,
 implement:null, ceremony:null, menuT:0,
@@ -1355,18 +1356,11 @@ dir.shadow.bias=-0.0008;
 }
 scene.add(dir); this.dirLight=dir;
 if(!COARSE){const q=new THREE.DirectionalLight(0x7fb2ff,.55);q.position.set(70,24,60);scene.add(q);}
-if(!COARSE){
-for(const [sx,sz] of [[-95,-72],[25,-72],[-95,72],[25,72]]){
-const sp=new THREE.SpotLight(0xdfeaff, 900, 260, 0.5, 0.45, 1.6);
-sp.position.set(sx,32,sz); sp.target.position.set(-40,0,0);
-scene.add(sp); scene.add(sp.target); this.spots.push(sp);
-}
-}
+
 this.buildSky();
 this.buildGround();
 this.buildTrack();
-this.buildStands();
-this.buildFloodlights();
+await this.buildStadiumBowl();
 this.buildBanners();
 this.buildCauldron();
 this.buildVenues();
@@ -1406,140 +1400,143 @@ for(let i=0;i<8;i++){ c.fillStyle=i%2?'#2c7a37':'#359245'; c.fillRect(0,i*32,256
 for(let i=0;i<900;i++){ c.fillStyle='rgba(0,0,0,'+(Math.random()*0.06)+')';
 c.fillRect(Math.random()*256,Math.random()*256,2,2); }
 });
-stripeTex.wrapS=stripeTex.wrapT=THREE.RepeatWrapping; stripeTex.repeat.set(10,7);
-const inf=new THREE.Mesh(new THREE.CircleGeometry(1,56),
-new THREE.MeshStandardMaterial({map:stripeTex,roughness:0.95}));
-inf.rotation.x=-Math.PI/2; inf.scale.set(46,34,1); inf.position.set(-42,-0.02,0);
+stripeTex.wrapS=stripeTex.wrapT=THREE.RepeatWrapping; stripeTex.repeat.set(1,1);
+const infShape=new THREE.Shape();
+infShape.moveTo(0,-36.4);
+infShape.lineTo(-TRK.straight,-36.4);
+infShape.absarc(-TRK.straight,0,36.4,-Math.PI/2,-Math.PI*1.5,true);
+infShape.lineTo(0,36.4);
+infShape.absarc(0,0,36.4,Math.PI/2,-Math.PI/2,true);
+infShape.closePath();
+const infGeo=new THREE.ShapeGeometry(infShape,24);
+{ const uv=infGeo.attributes.uv; for(let k=0;k<uv.count;k++) uv.setXY(k, uv.getX(k)/9, uv.getY(k)/9); }
+const inf=new THREE.Mesh(infGeo,
+new THREE.MeshStandardMaterial({map:stripeTex,roughness:0.95,side:THREE.DoubleSide}));
+inf.rotation.x=-Math.PI/2; inf.position.set(0,-0.02,0);
 inf.receiveShadow=true; this.scene.add(inf);
 },
 buildTrack(){
-const half=7.5, pts=[];
-for(let s=-118;s<=TRK.total;s+=2) pts.push(s);
-const n=pts.length, posA=new Float32Array(n*2*3), uvA=new Float32Array(n*2*2), idx=[];
-pts.forEach((s,i)=>{
-const p=centerline(s), nx=-p.tz, nz=p.tx;
-posA.set([p.x+nx*half,0,p.z+nz*half, p.x-nx*half,0,p.z-nz*half], i*6);
-uvA.set([0,s/12, 1,s/12], i*4);
+const IN=0.45, OUT=-(7*1.22+0.61+0.45); // ribbon offsets from the lane-1 measure line: +0.45 infield margin to -9.60 outer edge
+const RP=[];
+for(let x=-118;x<-TRK.straight;x+=2) RP.push({x:x, z:-TRK.radius, tx:1, tz:0});
+for(let s=0;s<=TRK.total;s+=2) RP.push(centerline(s));
+const n=RP.length, posA=new Float32Array(n*2*3), uvA=new Float32Array(n*2*2), idx=[];
+RP.forEach((p,i)=>{
+const nx=-p.tz, nz=p.tx;
+posA.set([p.x+nx*IN,0,p.z+nz*IN, p.x+nx*OUT,0,p.z+nz*OUT], i*6);
+uvA.set([0,i/6, 1,i/6], i*4);
 if(i<n-1){ const a=i*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
 });
 const g=new THREE.BufferGeometry();
 g.setAttribute('position', new THREE.BufferAttribute(posA,3));
 g.setAttribute('uv', new THREE.BufferAttribute(uvA,2));
 g.setIndex(idx); g.computeVertexNormals();
-const tex=canvasTex(256,256,(c)=>{
-c.fillStyle='#3a7fe0'; c.fillRect(0,0,256,256);
-for(let i=0;i<1400;i++){ c.fillStyle='rgba(0,0,0,'+(Math.random()*0.09)+')';
-c.fillRect(Math.random()*256,Math.random()*256,2,2); }
-for(let i=0;i<600;i++){ c.fillStyle='rgba(255,255,255,'+(Math.random()*0.03)+')';
-c.fillRect(Math.random()*256,Math.random()*256,2,2); }
-c.fillStyle='rgba(246,246,246,0.92)';
-for(let i=0;i<=8;i++){ const x=Math.round(i/8*256); c.fillRect(x-1,0,3,256); }
+const tex=canvasTex(512,512,(c)=>{
+c.fillStyle='#3a7fe0'; c.fillRect(0,0,512,512);
+for(let i=0;i<5200;i++){ c.fillStyle='rgba(0,0,0,'+(Math.random()*0.09)+')';
+c.fillRect(Math.random()*512,Math.random()*512,2,2); }
+for(let i=0;i<2200;i++){ c.fillStyle='rgba(255,255,255,'+(Math.random()*0.03)+')';
+c.fillRect(Math.random()*512,Math.random()*512,2,2); }
+// lane lines at the TRUE boundaries: offset +0.30 - k*1.22 (kerb line first), 5cm wide
+c.fillStyle='rgba(246,246,246,0.95)';
+for(let k=0;k<=8;k++){ const off=0.30-k*1.22, u=(IN-off)/(IN-OUT), x=Math.round(u*512);
+c.fillRect(x-1,0,3,512); }
 });
 tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
 const m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({map:tex,roughness:0.94}));
 m.receiveShadow=true; this.scene.add(m);
-const fl=new THREE.Mesh(new THREE.PlaneGeometry(0.5,11),
+// white kerb on the inside of lane 1 (offsets +0.44..+0.16)
+const kn=RP.length, kPos=new Float32Array(kn*2*3), kIdx=[];
+RP.forEach((p,i)=>{
+const nx=-p.tz, nz=p.tx;
+kPos.set([p.x+nx*0.44,0.006,p.z+nz*0.44, p.x+nx*0.16,0.006,p.z+nz*0.16], i*6);
+if(i<kn-1){ const a=i*2; kIdx.push(a,a+1,a+2, a+1,a+3,a+2); }
+});
+const kg=new THREE.BufferGeometry();
+kg.setAttribute('position', new THREE.BufferAttribute(kPos,3));
+kg.setIndex(kIdx); kg.computeVertexNormals();
+const kerb=new THREE.Mesh(kg, new THREE.MeshStandardMaterial({color:0xf4f6f8,roughness:0.7}));
+this.scene.add(kerb);
+// finish line: spans exactly lanes 1-8 at x=0 on the home straight
+const fl=new THREE.Mesh(new THREE.PlaneGeometry(0.5,9.76),
 new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.8}));
-fl.rotation.x=-Math.PI/2; fl.rotation.z=Math.PI/2; fl.position.set(0,0.012,-TRK.radius);
+fl.rotation.x=-Math.PI/2; fl.rotation.z=Math.PI/2; fl.position.set(0,0.012,-TRK.radius-4.58);
 this.scene.add(fl);
+// photo-finish post + camera at the finish line, outside lane 8
+const pf=new THREE.Group();
+const pfPole=new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.12,5.6,8),
+new THREE.MeshStandardMaterial({color:0x22262e,roughness:0.6,metalness:0.5}));
+pfPole.position.y=2.8; pf.add(pfPole);
+const pfCam=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.3,0.85),
+new THREE.MeshStandardMaterial({color:0x14161c,roughness:0.5,metalness:0.4}));
+pfCam.position.set(0,5.35,0.5); pfCam.rotation.x=0.5; pf.add(pfCam);
+const pfEye=new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8),
+new THREE.MeshBasicMaterial({color:0xff4040}));
+pfEye.position.set(0,5.62,0.18); pf.add(pfEye);
+pf.position.set(0.7,0,-TRK.radius-10.1);
+this.scene.add(pf); this.photoFinish=true;
 this.buildStartGear();
 },
+
 buildStartGear(){
-const blkM=new THREE.MeshStandardMaterial({color:0x2a2f38,roughness:0.7});
-const padM=new THREE.MeshStandardMaterial({color:0xd84a3a,roughness:0.8});
+// painted lane numbers at the 100m start and at the finish (real tracks paint both)
 for(let l=0;l<8;l++){
-const z=-TRK.radius+(l-3.5)*1.22;
-const blk=new THREE.Group();
-const base=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.08,0.4),blkM);
-base.position.y=0.04; blk.add(base);
-for(const s of [-1,1]){
-const pad=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.28,0.34),padM);
-pad.position.set(-0.08+s*0.16,0.22,-s*0.02); pad.rotation.z=-0.5; blk.add(pad);
-}
-blk.position.set(-100.4,0,z); this.scene.add(blk);
+const z=straightZ(l);
 const numTex=canvasTex(128,128,(c)=>{
 c.fillStyle='rgba(0,0,0,0)'; c.fillRect(0,0,128,128);
 c.fillStyle='#ffffff'; c.font='900 84px system-ui,sans-serif';
 c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(l+1),64,68);
 });
+for(const nx of [-97.6, 2.8]){
 const num=new THREE.Mesh(new THREE.PlaneGeometry(1.1,1.1),
 new THREE.MeshBasicMaterial({map:numTex,transparent:true}));
 num.rotation.x=-Math.PI/2; num.rotation.z=Math.PI/2;
-num.position.set(-97.6,0.015,z); this.scene.add(num);
+num.position.set(nx,0.015,z); this.scene.add(num);
+}
+}
+// reusable starting blocks (8) - drivers place them at the REAL start marks of each race
+const blkM=new THREE.MeshStandardMaterial({color:0x2a2f38,roughness:0.7});
+const padM=new THREE.MeshStandardMaterial({color:0xd84a3a,roughness:0.8});
+this.blocks=[];
+for(let l=0;l<8;l++){
+const blk=new THREE.Group();
+const base=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.08,0.55),blkM);
+base.position.y=0.04; blk.add(base);
+for(const s of [-1,1]){
+const pad=new THREE.Mesh(new THREE.BoxGeometry(0.34,0.28,0.3),padM);
+pad.position.set(-s*0.02,0.22,-0.08+s*0.16); pad.rotation.x=0.5; blk.add(pad);
+}
+blk.visible=false; this.scene.add(blk); this.blocks.push(blk);
 }
 },
-buildStands(){
-const standMat=new THREE.MeshStandardMaterial({color:0xd8dde6,roughness:0.9});
-const roofMat=new THREE.MeshStandardMaterial({color:0xf0f2f6,roughness:0.85});
-const mkStand=(x,z,w,rotY)=>{
-const grp=new THREE.Group();
-for(let s=0;s<4;s++){
-const step=new THREE.Mesh(new THREE.BoxGeometry(w,1.6,3.4),standMat);
-step.position.set(0,1.2+s*1.7,-s*3.1); grp.add(step);
-}
-const roof=new THREE.Mesh(new THREE.BoxGeometry(w,0.5,15),roofMat);
-roof.position.set(0,9.5,-8.5); grp.add(roof);
-grp.position.set(x,0,z); grp.rotation.y=rotY; this.scene.add(grp);
-return {x,z,w,rotY};
-};
-this.standDefs=[
-mkStand(-42,-58,150,0), mkStand(-42,58,150,Math.PI),
-mkStand(28,0,86,Math.PI/2), mkStand(-112,0,86,-Math.PI/2),
-mkStand(45,-45,70,Math.PI/4), mkStand(45,45,70,3*Math.PI/4),
-mkStand(-129,-45,70,-Math.PI/4), mkStand(-129,45,70,-3*Math.PI/4),
-];
-const bodyG=new THREE.BoxGeometry(0.42,0.85,0.32);
-const bodyM=new THREE.MeshStandardMaterial({roughness:0.9});
-const cols=[0xff6b5e,0xffd34d,0x5eb2ff,0xf2f5f9,0xc58bff,0x4fe0b0,0xff9d5e,0xff5e8a,0x8affda];
-const M=new THREE.Matrix4(), Q=new THREE.Quaternion(), E=new THREE.Euler(),
-S=new THREE.Vector3(1,1,1), P=new THREE.Vector3(), C=new THREE.Color();
-this.crowdGroups=[]; this.crowdTotal=0;
-for(const st of this.standDefs){
-const rows=4, per=Math.floor(st.w/1.25);
-const sm=new THREE.InstancedMesh(bodyG,bodyM,rows*per);
-let k=0;
-for(let rI=0;rI<rows;rI++) for(let i=0;i<per;i++){
-const lx=-st.w/2+0.8+i*1.25+(rI%2)*0.6;
-P.set(lx,2.35+rI*1.7,-rI*3.1); E.set(0,0,0); Q.setFromEuler(E);
-M.compose(P,Q,S); sm.setMatrixAt(k,M);
-C.setHex(cols[(Math.random()*cols.length)|0]).multiplyScalar(0.75+Math.random()*0.45);
-sm.setColorAt(k,C); k++;
-}
-sm.instanceMatrix.needsUpdate=true; if(sm.instanceColor) sm.instanceColor.needsUpdate=true;
-sm.userData.total=rows*per;
-const grp=new THREE.Group(); grp.position.set(st.x,0,st.z); grp.rotation.y=st.rotY;
-grp.add(sm); this.scene.add(grp); this.crowdGroups.push(sm);
-this.crowdTotal+=rows*per;
-}
-this.crowdMesh=this.crowdGroups[0];
+setBlocks(list){
+this._blockList=list||[];
+this.blocks.forEach((b,i)=>{
+if(i<this._blockList.length){ const p=this._blockList[i];
+b.position.set(p.x,0,p.z); b.rotation.y=p.heading||0; b.visible=true; }
+else b.visible=false;
+});
 },
-buildCrowdLevel(){
-if(!this.crowdGroups) return;
-const frac = Perf.level>=3 ? 0.5 : 1.0;
-for(const g of this.crowdGroups) g.count=Math.floor((g.userData.total||g.instanceMatrix.count)*frac);
+blocksVisible(on){
+this.blocks.forEach((b,i)=>{ b.visible=!!on && i<this._blockList.length; });
 },
-buildFloodlights(){
-const poleM=new THREE.MeshStandardMaterial({color:0x11161f,roughness:0.7,metalness:0.4});
-const lampM=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0xf4f8ff,emissiveIntensity:3.2});
-const coneM=new THREE.MeshBasicMaterial({color:0xcfe4ff,transparent:true,opacity:0.10,
-blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
-for(const [sx,sz] of [[-95,-72],[25,-72],[-95,72],[25,72]]){
-const grp=new THREE.Group();
-const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.7,30,8),poleM);
-pole.position.y=15; grp.add(pole);
-const head=new THREE.Mesh(new THREE.BoxGeometry(7,2.6,0.8),poleM);
-head.position.y=30.5; grp.add(head);
-for(let i=0;i<6;i++){
-const lamp=new THREE.Mesh(new THREE.PlaneGeometry(0.95,1.9),lampM);
-lamp.position.set(-2.6+i*1.05,30.5,0.45); grp.add(lamp);
-}
-const cone=new THREE.Mesh(new THREE.ConeGeometry(16,30,20,1,true),coneM);
-cone.position.y=15; grp.add(cone);
-grp.position.set(sx,0,sz);
-grp.lookAt(-40,0,0); grp.rotateY(Math.PI);
-this.scene.add(grp);
-}
+clearBlocks(){ this.setBlocks([]); },
+
+async buildStadiumBowl(){
+// JOB J7: a real college track stadium - the shared venues/kit bowl wrapped around the oval
+try{
+const sm=await import('./venues/kit/stadium.js');
+const st=sm.buildStadium(THREE, {floor:{a:78.7, b:36.5, r:36.5}, setback:11, preset:'stadium',
+tiers:[{rows:24, depth:.8, rise:.4},{rows:18, depth:.8, rise:.52, gap:3.5, lift:4}],
+home:0x2456a8, away:0xd8dde6, homeShare:0.34, awayShare:0.08,
+fill:(typeof Perf!=='undefined'&&Perf.level>=3)?0.6:0.92});
+st.group.position.set(-TRK.straight/2, 0, 0);
+this.scene.add(st.group);
+this.stadium=st; window.__stadium=st;
+st.setScore({home:'APEX', away:'GAMES', hs:'', as:'', clock:'TRACK & FIELD', period:'COLLEGE STADIUM'});
+}catch(e){ this.stadium=null; }
 },
+
 buildBanners(){
 const tex=canvasTex(1024,64,(c)=>{
 c.fillStyle='#0d1b33'; c.fillRect(0,0,1024,64);
@@ -1555,7 +1552,7 @@ for(let s=-100;s<400;s+=16) spots.push(s);
 const im=new THREE.InstancedMesh(g,m,spots.length);
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 spots.forEach((s,k)=>{
-const p=lanePoint(s,-7.6);
+const p=lanePoint(s,-10.55);
 P.set(p.x,0.75,p.z); E.set(0,Math.atan2(p.tx,p.tz),0); Q.setFromEuler(E);
 M.compose(P,Q,S); im.setMatrixAt(k,M);
 });
@@ -1576,7 +1573,7 @@ new THREE.MeshBasicMaterial({color:0xffe9a3}));
 core.position.y=3.6; grp.add(core); this.cauldronCore=core;
 this.flameLight=new THREE.PointLight(0xff9a3e, 60, 26, 1.8);
 this.flameLight.position.y=4.2; grp.add(this.flameLight);
-grp.position.set(14,0,-50); this.scene.add(grp);
+grp.position.set(-4,0,-18); this.scene.add(grp);
 },
 buildVenues(){
 const V=this.venueMats;
@@ -1723,8 +1720,8 @@ for(const k of keys){ const f=clipNames.find(n=>n.toLowerCase().includes(k)); if
 return null;
 };
 this.clips={
-run:pick('sprint','run'), idle:pick('idle'),
-jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory'),
+run:pick('sprint','run'), jog:pick('jog'), crouch:pick('crouch'), idle:pick('idle'),
+jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory','dance'),
 };
 const KITS=[
 {top:collegeCols.a, bottom:'#14141c', name:athleteName},
@@ -1743,8 +1740,8 @@ for(const k of keys){ const f=clipNames.find(n=>n.toLowerCase().includes(k)); if
 return null;
 };
 this.clips={
-run:pick('sprint','run'), idle:pick('idle'),
-jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory'),
+run:pick('sprint','run'), jog:pick('jog'), crouch:pick('crouch'), idle:pick('idle'),
+jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory','dance'),
 };
 // If no run clip, keep procedural rigs - their leg animation is guaranteed visible
 if(!this.clips.run){ return; }
@@ -1753,7 +1750,7 @@ if(rig.human) continue;
 try{
 rig.group.clear();
 const g=rig.idx%2? 'f':'m';
-const h=HM.make({g, outfit:'soccer_kit',
+const h=HM.make({g, outfit:'track_kit',
 cols:{top:new THREE.Color(rig.kit.top).getHex(), bottom:new THREE.Color(rig.kit.bottom).getHex(), shoes:0xffffff},
 skin:rig.idx%6, hair:['parted','buzzed','ponytail','long'][rig.idx%4]}, 1.78);
 rig.group.add(h.object);
@@ -1771,7 +1768,7 @@ const rig={group, kit, idx, human:false, phase:Math.random()*6, mode:'idle', spe
 if(HM){
 try{
 const g=idx%2? 'f':'m';
-const h=HM.make({g, outfit:'soccer_kit',
+const h=HM.make({g, outfit:'track_kit',
 cols:{top:new THREE.Color(kit.top).getHex(), bottom:new THREE.Color(kit.bottom).getHex(), shoes:0xffffff},
 skin:idx%6, hair:['parted','buzzed','ponytail','long'][idx%4]}, 1.78);
 group.add(h.object);
@@ -1821,18 +1818,34 @@ rigAnim(rig, mode, speedFrac, tired){
 rig.mode=mode; rig.speedFrac=speedFrac||0; rig.tired=tired||0;
 if(rig.human && rig.h){
 const c=this.clips;
-const want = mode==='run' ? (c.run||c.idle) : mode==='idle' ? c.idle
-: mode==='jump' ? (c.jump||c.run||c.idle) : mode==='throw' ? (c.throw||c.idle)
-: mode==='cheer' ? (c.cheer||c.idle) : c.idle;
+let want=null, ts=clamp(0.7+(speedFrac||0)*1.3, 0.7, 2.4);
+if(mode==='run'){
+const sf=speedFrac||0;
+if(c.run||c.jog){
+// JOB J7: real UAL run cycles. Still at the marks = idle; SET = crouch in the blocks;
+// cruising = Jog_Fwd_Loop; top speed = Sprint_Loop (upright, natural arm/leg drive).
+if(sf<0.04){ want=(this.startPhase==='set'&&c.crouch)?c.crouch:c.idle; ts=1; }
+else if(c.run && (sf>0.62||(rig._rc==='run'&&sf>0.5))){ want=c.run; rig._rc='run'; ts=0.97+0.30*sf; }
+else if(c.jog){ want=c.jog; rig._rc='jog'; ts=1.15+0.35*sf; }
+else { want=c.run; rig._rc='run'; ts=0.97+0.30*sf; }
+if(rig.tired) ts*=1-0.12*rig.tired;
+} else want=c.idle; // no run clip in the library: idle + the procedural fallback in rigUpdate
+}
+else if(mode==='idle') want=c.idle;
+else if(mode==='jump') want=c.jump||c.run||c.idle;
+else if(mode==='throw') want=c.throw||c.idle;
+else if(mode==='cheer') want=c.cheer||c.idle;
+else want=c.idle;
 if(want){ try{ rig.h.play(want); }catch(e){} }
-const ts=clamp(0.7+ (speedFrac||0)*1.3, 0.7, 2.4);
-rig.h.ts=ts; if(rig.h.act) rig.h.act.timeScale=ts;
+const t2=clamp(ts,0.5,2.4);
+rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
 },
 rigUpdate(rig, dt){
 if(rig.human && rig.h){
   try{ rig.h.mixer.update(dt); }catch(e){}
-  // Natural run cycle on GLB bones: moderate amplitudes, proper timing
+  if(this.clips.run||this.clips.jog) return; // JOB J7: the real run clips own the skeleton - no hand posing on top
+  // Fallback (no run clip in the library): natural run cycle on GLB bones
   const B=rig.bones;
   if(B && rig.mode==='run'){
     rig.phase += dt*(5+(rig.speedFrac||0)*13);
@@ -1935,7 +1948,7 @@ this.camApply();
 if(this.rigs.length){
 const r0=this.rigs[0], r1=this.rigs[1];
 const s0=(t*9)%160;
-const p0=lanePoint(20+s0, -1.8), p1=lanePoint(20+((s0+40)%160), 1.8);
+const p0=lanePoint(20+s0, -2.4), p1=lanePoint(20+((s0+40)%160), -6.1);
 this.rigPlace(r0,p0.x,0,p0.z,Math.atan2(p0.tx,p0.tz));
 this.rigPlace(r1,p1.x,0,p1.z,Math.atan2(p1.tx,p1.tz));
 this.rigAnim(r0,'run',0.7); this.rigAnim(r1,'run',0.6);
@@ -1983,6 +1996,7 @@ const s=W3D.project(x,y,z);
 if(!s.behind && s.x>-50 && s.x<W+50 && s.y>-50 && s.y<H+50) Parts.spawn(s.x,s.y,n,c);
 }
 function overlayPhaseText(ENG){
+W3D.startPhase=ENG.phase;
 if(ENG.phase==='marks') bannerText('ON YOUR MARKS', H*0.30, 30);
 else if(ENG.phase==='set') bannerText('SET', H*0.30, 34);
 if(ENG.warnT>0) centerText('FALSE START — WARNING', H*0.40, 20, '#ff7b7b');
@@ -1993,7 +2007,11 @@ for(const r of W3D.rigs){ if(r.group.visible){ W3D.rigAnim(r,'idle',0); W3D.rigU
 }
 function straightX(p, dist){ return p-dist; }
 function straightZ(lane){ return -TRK.radius+laneOff(lane); }
-const laneOff=i=>(i-3.5)*1.22;
+const laneOff=i=>-i*1.22; // JOB J7: lane 1 innermost, centred on the 36.8m measure line (400.00m lap); lanes extend outward
+const RIV_LANES=[1,4,6]; // the player races in lane index 3 - every runner gets his OWN lane
+function stagFor(lane, dist){ if(dist>=390) return 2*Math.PI*1.22*lane; if(dist>=190) return Math.PI*1.22*lane; return 0; }
+function startSFor(dist){ return ((TRK.straight-dist)%400+400)%400; } // the shared finish line (x=0) sits at s=TRK.straight
+function visS(lane, pos, dist){ const st=stagFor(lane,dist); return (startSFor(dist)+pos+st*(dist>0?1-pos/dist:1))%400; }
 function placeStraight(rig,p,dist,lane,speed,maxSpd,airM,stam){
 W3D.rigPlace(rig, straightX(p,dist), airM||0, straightZ(lane), Math.PI/2);
 W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==null?0:clamp(1-stam/35,0,1));
@@ -2015,27 +2033,34 @@ styleRigsFor(rivals);
 W3D.hideImplement();
 W3D.hurdlesMesh.count=0;
 W3D.podium.visible=false;
+W3D.startPhase=''; W3D.clearBlocks();
 const R=W3D.rigs;
 const PMAX=ev.eng==='sprint'?(ev.dist<=100?11.0:ev.dist<=200?10.6:10.0)
 : ev.eng==='distance'?10.4 : ev.eng==='hurdles'?(ev.dist<=110?9.2:9.8)
 : ev.eng==='relay'?10.8 : 10.5;
 if(ev.eng==='sprint'){
 const straight = ev.dist<=110;
+{ const lanes=[3,1,4,6];
+if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
+else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
+}
+
 const mapP=p=> straight? p : (400-ev.dist+p)%400;
+const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
 if(straight) W3D.camSnap(-ev.dist-5.2,2.3,straightZ(3)+2.6, -ev.dist+6.5,1.15,straightZ(3));
-else { const lp=lanePoint(mapP(0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*5.2,2.3,lp.z-lp.tz*5.2, lp.x+lp.tx*6.5,1.15,lp.z+lp.tz*6.5); }
+else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*5.2,2.3,lp.z-lp.tz*5.2, lp.x+lp.tx*6.5,1.15,lp.z+lp.tz*6.5); }
 ENG.draw3=dt=>{
 const r=ENG.r;
 if(straight){
 placeStraight(R[0],r.pos,ev.dist,3,r.speed,PMAX,r.airY*0.011,r.stamina);
-ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+30) placeStraight(R[i+1],a.pos,ev.dist,1+i*2,a.speed,PMAX,0,a.stamina); });
+ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+30) placeStraight(R[i+1],a.pos,ev.dist,RIV_LANES[i],a.speed,PMAX,0,a.stamina); });
 if(r.speed>2&&Math.random()<dt*9) dustAt(straightX(r.pos,ev.dist),0.15,straightZ(3),1);
 followCam(straightX(r.pos,ev.dist),straightZ(3),1,0,dt);
 }else{
-const lp=placeOval(R[0],mapP(r.pos),3,r.speed,PMAX,r.airY*0.011,r.stamina);
-ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+40){ const q=placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0,a.stamina); } });
-if(r.speed>2&&Math.random()<dt*9){ const q=lanePoint(mapP(r.pos),laneOff(3)); dustAt(q.x,0.15,q.z,1); }
-const q2=lanePoint(mapP(r.pos),laneOff(3)); followCam(q2.x,q2.z,q2.tx,q2.tz,dt);
+const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,r.airY*0.011,r.stamina);
+ENG.ai.forEach((a,i)=>{ if(a.pos<ev.dist+40){ const q=placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0,a.stamina); } });
+if(r.speed>2&&Math.random()<dt*9){ const q=lanePoint(mapPL(3,r.pos),laneOff(3)); dustAt(q.x,0.15,q.z,1); }
+const q2=lanePoint(mapPL(3,r.pos),laneOff(3)); followCam(q2.x,q2.z,q2.tx,q2.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
 overlayPhaseText(ENG);
@@ -2043,13 +2068,13 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='distance'){
-const mapP=p=>p%400;
-const lp0=lanePoint(0,laneOff(3));
+const mapP=p=>(startSFor(ev.dist)+p)%400;
+const lp0=lanePoint(mapP(0),laneOff(3));
 W3D.camSnap(lp0.x-5.2,2.3,lp0.z+2.6, lp0.x+6.5,1.15,lp0.z);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
-ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0); });
+ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0); });
 if(r.speed>2&&Math.random()<dt*7) dustAt(lp.x,0.15,lp.z,1);
 followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
@@ -2059,21 +2084,27 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='hurdles'){
 const straight=ev.dist<=110;
+{ const lanes=[3,1,4,6];
+if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
+else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
+}
+
 const hWorld=ENG.hurdles.map(h=> straight
 ? {x:h.x-ev.dist, z:straightZ(3), heading:0}
-: (()=>{ const lp=lanePoint(h.x,laneOff(3)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })());
+: (()=>{ const lp=lanePoint(visS(3,h.x,ev.dist),laneOff(3)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })());
 W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
+const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
 ENG.draw3=dt=>{
 const r=ENG.r, airM=r.airY*0.011;
 if(straight){
 placeStraight(R[0],r.pos,ev.dist,3,r.speed,PMAX,airM);
-ENG.ai.forEach((a,i)=>placeStraight(R[i+1],a.pos,ev.dist,1+i*2,a.speed,PMAX,0));
+ENG.ai.forEach((a,i)=>placeStraight(R[i+1],a.pos,ev.dist,RIV_LANES[i],a.speed,PMAX,0));
 followCam(straightX(r.pos,ev.dist),straightZ(3),1,0,dt);
 if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,ev.dist),0.15,straightZ(3),1);
 }else{
-const lp=placeOval(R[0],mapP(r.pos),3,r.speed,PMAX,airM);
-ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapP(a.pos),1+i*2,a.speed,PMAX,0));
+const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,airM);
+ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapP(a.pos),RIV_LANES[i],a.speed,PMAX,0));
 followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
@@ -2085,10 +2116,13 @@ else if(ev.eng==='relay'){
 W3D.camSnap(-100-5.2,2.3,straightZ(3)+2.6, -100+6.5,1.15,straightZ(3));
 const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
 new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
-zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius);
+zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius-4.58);
 W3D.scene.add(zone); ENG._zone=zone; W3D._zoneMesh=zone;
 ENG.draw3=dt=>{
 const r=ENG.r;
+W3D.startPhase=ENG.phase;
+if(!ENG._blocksSet){ ENG._blocksSet=1; W3D.setBlocks([{x:-100.45, z:straightZ(3), heading:Math.PI/2}]); }
+W3D.blocksVisible(ENG.leg===0);
 placeStraight(R[0],r.pos,100,3,r.speed,PMAX,0);
 for(let i=1;i<4;i++) R[i].group.visible=false;
 followCam(straightX(r.pos,100),straightZ(3),1,0,dt);
@@ -2772,6 +2806,7 @@ if(!lastT) lastT=now;
 let dt=(now-lastT)/1000; lastT=now;
 if(dt>0.12)dt=0.12; if(dt<0)dt=0;
 Perf.frame(dt);
+if(W3D.stadium) W3D.stadium.update(dt);
 clearOverlay();
 const playing=document.body.classList.contains('playing');
 if(playing&&ENG){
@@ -2806,6 +2841,23 @@ this.renderer.render(this.scene,this.camera);
 };
 /* Landscape law: first tap requests fullscreen + landscape lock where allowed (Android). iOS ignores the lock; the rotated stage carries it there. */
 addEventListener('pointerdown',function(){try{var el=document.documentElement;if(el.requestFullscreen&&!document.fullscreenElement){var pr=el.requestFullscreen();if(pr&&pr.then)pr.then(function(){try{var q=screen.orientation.lock('landscape');if(q&&q.catch)q.catch(function(){});}catch(e){}}).catch(function(){});}}catch(e){}},{once:true});
+
+/* JOB J7 test hooks (the game-check fix tests read these) */
+window.__tf={
+stadium:()=> W3D.stadium? W3D.stadium.report(): null,
+lanePoint:(s,l)=>lanePoint(s,laneOff(l)),
+laneOff:(l)=>laneOff(l),
+visS:(lane,pos,dist)=>visS(lane,pos,dist),
+eng:()=>ENG,
+rigs:()=>W3D.rigs,
+clips:()=>W3D.clips,
+kit:()=>{ const r=W3D.rigs[0]; return r&&r.h? r.h.spec.outfit : 'fallback'; },
+pose:()=> W3D.rigs.map(r=>{ if(!r.h) return {human:false};
+const B=r.bones||{};
+return { human:true, clip:r.h.clip||'', thighL:B.thigh_l?B.thigh_l.rotation.x:0,
+thighR:B.thigh_r?B.thigh_r.rotation.x:0, pelvis:B.pelvis?B.pelvis.rotation.x:0,
+spine:B.spine_01?B.spine_01.rotation.x:0, sf:r.speedFrac||0, mode:r.mode||'' }; }),
+};
 document.addEventListener('DOMContentLoaded',boot);
 if(document.readyState!=='loading') boot();
 </script>
