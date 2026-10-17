@@ -321,7 +321,7 @@ window.addEventListener('resize', fitGame);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGame,150));
 if(window.visualViewport) visualViewport.addEventListener('resize', fitGame);
 const Perf = {
-ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(window.devicePixelRatio||1,1.5),
+ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(2,Math.max(1.5,window.devicePixelRatio||1)), // apex-gfx sharp: never below 1.5
 calls:0, show:false,
 frame(dt){
 const ms=dt*1000;
@@ -335,7 +335,7 @@ this.level++; this.cool=180; this.apply();
 },
 apply(){
 const L=this.level;
-this.pr = L===0?Math.min(window.devicePixelRatio||1,1.5):(L===1?1.25:1.0);
+this.pr = Math.min(2,Math.max(1.5,window.devicePixelRatio||1)); // sharp1 (apex-gfx): quality steps never drop the pixel ratio - no automatic blur; runners stay sharp
 if(W3D.renderer){ W3D.renderer.setPixelRatio(this.pr); W3D.renderer.setSize(W,H); }
 if(L>=4 && W3D.renderer) W3D.renderer.shadowMap.enabled=false;
 this.paint();
@@ -1355,7 +1355,7 @@ r.toneMapping=THREE.ACESFilmicToneMapping; r.toneMappingExposure=1.15;
 this.renderer=r;
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x8fc7ea);
-scene.fog=new THREE.Fog(0xcfe5f5, 160, 520);
+scene.fog=new THREE.Fog(0xcfe5f5, 300, 900); // fog starts past any runner distance - runners are never fogged
 this.scene=scene;
 const cam=new THREE.PerspectiveCamera(58, W/H, 0.1, 1200);
 this.camera=cam;
@@ -2078,8 +2078,10 @@ W3D.rigAnim(rig,(airM||0)>0.06?'jump':'run', clamp(speed/maxSpd,0,1.2), stam==nu
 return lp;
 }
 function followCam(x,z,tx,tz,dt){
-// JOB J7 owner fix: race camera CENTERED BEHIND the player, 10 back and 15 up (owner's line - NEVER list)
-W3D.camTo(x-tx*10, 15, z-tz*10, x+tx*4, 1.2, z+tz*4, dt, 5);
+// JOB J7 camera (owner's ONE line, looks board): centered right behind the player's
+// runner, pulled back about twice the old distance (20 back), slightly above shoulder
+// height (1.8 up) looking down the track - never off to the side.
+W3D.camTo(x-tx*20, 1.8, z-tz*20, x+tx*6, 1.2, z+tz*6, dt, 5);
 W3D.camApply();
 W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
 }
@@ -2104,8 +2106,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 
 const mapP=p=> straight? p : (400-ev.dist+p)%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
-if(straight) W3D.camSnap(-ev.dist-10,15,straightZ(3), -ev.dist+4,1.2,straightZ(3));
-else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*10,15,lp.z-lp.tz*10, lp.x+lp.tx*4,1.2,lp.z+lp.tz*4); }
+if(straight) W3D.camSnap(-ev.dist-20,1.8,straightZ(3), -ev.dist+6,1.2,straightZ(3));
+else { const lp=lanePoint(mapPL(3,0),laneOff(3)); W3D.camSnap(lp.x-lp.tx*20,1.8,lp.z-lp.tz*20, lp.x+lp.tx*6,1.2,lp.z+lp.tz*6); }
 ENG.draw3=dt=>{
 const r=ENG.r;
 if(straight){
@@ -2127,7 +2129,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 else if(ev.eng==='distance'){
 const mapP=p=>(startSFor(ev.dist)+p)%400;
 const lp0=lanePoint(mapP(0),laneOff(3));
-W3D.camSnap(lp0.x-lp0.tx*10,15,lp0.z-lp0.tz*10, lp0.x+lp0.tx*4,1.2,lp0.z+lp0.tz*4);
+W3D.camSnap(lp0.x-lp0.tx*20,1.8,lp0.z-lp0.tz*20, lp0.x+lp0.tx*6,1.2,lp0.z+lp0.tz*6);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
@@ -2153,8 +2155,8 @@ W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
 // JOB J7 round 2 (owner): the hurdles camera also STARTS right behind the player (10 back, 15 up, centered)
-if(straight) W3D.camSnap(-ev.dist-10,15,straightZ(3), -ev.dist+4,1.2,straightZ(3));
-else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*10,15,lp.z-lp.tz*10, lp.x+lp.tx*4,1.2,lp.z+lp.tz*4); }
+if(straight) W3D.camSnap(-ev.dist-20,1.8,straightZ(3), -ev.dist+6,1.2,straightZ(3));
+else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*20,1.8,lp.z-lp.tz*20, lp.x+lp.tx*6,1.2,lp.z+lp.tz*6); }
 ENG.draw3=dt=>{
 const r=ENG.r, airM=r.airY*0.011;
 if(straight){
@@ -2173,7 +2175,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='relay'){
-W3D.camSnap(-110,15,straightZ(3), -96,1.2,straightZ(3));
+W3D.camSnap(-120,1.8,straightZ(3), -94,1.2,straightZ(3));
 const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
 new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
 zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius-4.58);
@@ -2929,6 +2931,7 @@ visS:(lane,pos,dist)=>visS(lane,pos,dist),
 eng:()=>ENG,
 lanes:()=> W3D.laneLineInfo||null,
 follow:()=> W3D._follow||null,
+sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
 finish:()=> W3D.finishBanner? {banner:true} : null,
 field:()=> ENG? {ai:ENG.ai?ENG.ai.length:0, rivals:(ENG._rivals||[]).length} : null,
 rigs:()=>W3D.rigs,
