@@ -215,4 +215,124 @@ export default [
       });
     },
   },
+  /* ================= PLAY TESTS (owner, JOB J6, 2026-10-17) =================
+     These actually PLAY the game by soccer's rules (rules/soccer.md).
+     They read the read-only window.__test snapshot the game exposes. */
+  {
+    id: 'play-ai-wins-ball-30s',
+    ask: 'computer players win the ball back within 30 s',
+    async test(page, h) {
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing (game too old)';
+        return true; // hook check only; the timed steal is measured below
+      }).then(async (hook) => {
+        if (hook !== true) return hook;
+        // Give the human team the ball at halfway, then watch the AI take it back.
+        await h.eval(() => {
+          const S = window.__sc; if (!S || !S.ball) return;
+          const B = S.ball, G = S.G, comets = S.teams[0];
+          const carrier = comets.players.find(p => p.role === 'MID') || comets.players[4];
+          carrier.pos.set(0, 0, 0); carrier.vel.set(0, 0, 0);
+          B.pos.set(0.8, 0.11, 0); B.vel.set(0, 0, 0); B.owner = carrier; B.intended = null;
+          G.st = 'play'; G.kickoffWait = false;
+        });
+        const t0 = Date.now();
+        while (Date.now() - t0 < 30000) {
+          await h.wait(1000);
+          const r = await h.eval(() => {
+            const T = window.__test; if (!T) return { err: 'window.__test missing' };
+            return { owner: T.ball.owner, state: T.state };
+          });
+          if (r.err) return r.err;
+          if (r.owner === 'SHARKS') return true; // AI (Sharks) won it back
+        }
+        return 'AI did not win the ball back within 30 s';
+      });
+    },
+  },
+  {
+    id: 'play-keep-positions',
+    ask: 'players keep their positions (formation discipline, not everyone chasing)',
+    async test(page, h) {
+      await h.eval(() => {
+        const S = window.__sc; if (!S || !S.ball) return;
+        const B = S.ball, G = S.G, sharks = S.teams[1];
+        const c = sharks.players[4];
+        c.pos.set(20, 0, 0); c.vel.set(0, 0, 0);
+        B.pos.set(20.8, 0.11, 0); B.vel.set(0, 0, 0); B.owner = c; B.intended = null;
+        G.st = 'play'; G.kickoffWait = false;
+      });
+      await h.wait(5000); // let the shape settle for 5 s of play
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const defs = T.players.filter(p => p.team === 'COMETS' && p.role === 'DEF');
+        if (!defs.length) return 'no COMETS defenders found';
+        // Defenders should stay roughly goal-side: average x well behind the ball (ball at x=20).
+        const avgX = defs.reduce((s, p) => s + p.x, 0) / defs.length;
+        if (avgX > 5) return `defenders abandoned shape: avg x=${avgX.toFixed(1)} with ball at x=20 (chasing, not holding line)`;
+        // Spread: defenders should not all be in one spot.
+        const xs = defs.map(p => p.x), zs = defs.map(p => p.z);
+        const spread = Math.max(...xs) - Math.min(...xs) + Math.max(...zs) - Math.min(...zs);
+        if (spread < 8) return `defenders bunched together (spread ${spread.toFixed(1)}m) instead of holding a line`;
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-goal-restarts-centre',
+    ask: 'a goal restarts from the centre spot',
+    async test(page, h) {
+      // Force a goal for the human team, then check the restart puts the ball at centre.
+      await h.eval(() => {
+        const S = window.__sc; if (!S || !S.ball) return;
+        const B = S.ball, G = S.G, comets = S.teams[0];
+        // Put the ball just over the Sharks goal line (Sharks defend x=+52).
+        B.pos.set(52.5, 0.11, 0); B.vel.set(5, 0, 0); B.owner = null;
+        G.st = 'play'; G.kickoffWait = false;
+      });
+      // Wait for the goal to register and the restart to be set up (up to 15 s).
+      for (let i = 0; i < 15; i++) {
+        await h.wait(1000);
+        const r = await h.eval(() => {
+          const T = window.__test; if (!T) return { err: 'window.__test missing' };
+          return { state: T.state, bx: T.ball.x, bz: T.ball.z, score: T.score };
+        });
+        if (r.err) return r.err;
+        if (r.score[0] >= 1 && Math.abs(r.bx) < 3 && Math.abs(r.bz) < 3) return true; // scored, ball back at centre
+      }
+      return 'after a goal the ball did not restart from the centre spot';
+    },
+  },
+  {
+    id: 'play-11v11',
+    ask: '11 v 11 - ten outfield players plus a goalkeeper per team',
+    async test(page, h) {
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const sizes = T.teamSizes;
+        if (sizes[0] !== 11 || sizes[1] !== 11)
+          return `wrong team sizes: ${sizes[0]} v ${sizes[1]} (rules: 11 v 11)`;
+        for (const team of ['COMETS', 'SHARKS']) {
+          const gk = T.players.filter(p => p.team === team && p.role === 'GK').length;
+          if (gk !== 1) return `${team} has ${gk} goalkeepers (rules: 1)`;
+        }
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-kickoff-from-centre',
+    ask: 'kick-off starts from the centre spot',
+    async test(page, h) {
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        // At kickoff ('start' state or right after) the ball should be at the centre spot.
+        if (T.state === 'start' || T.state === 'restart') {
+          if (Math.abs(T.ball.x) > 2 || Math.abs(T.ball.z) > 2)
+            return `ball not at centre for kick-off: (${T.ball.x}, ${T.ball.z})`;
+        }
+        return true;
+      });
+    },
+  },
 ];
