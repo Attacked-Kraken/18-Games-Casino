@@ -652,6 +652,7 @@ export default [
         if (!mark) return label + ': the throw never reached the landing (mark) phase';
         if (!mark.mark || !mark.mark.vis) return label + ': no landing marker shows where the throw landed';
         if (mark.impl == null || Math.abs(mark.impl.x - mark.mark.x) > 2) return label + ': the landing marker is not where the implement landed';
+        if (!(mark.jumpD > 1)) return label + ': no distance was recorded/shown for the landing';
         return true;
       };
       // ---- DISCUS (hold to spin, release to throw)
