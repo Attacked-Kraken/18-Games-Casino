@@ -59,6 +59,12 @@ WAITING OWNER for hero models.
 - **Stay on WebGL (`WebGLRenderer`).** Not WebGPU: many owners' iPhones and the robot's test phone don't run it yet.
 - **Sound from code (Web Audio):** the house method (ASSET-LAW Part II): noise for crowds and engines, short sine/
   square hits for bounces and bats, low thuds for body checks. Zero sound files.
+- **Pictures drawn in code (canvas → `THREE.CanvasTexture`):** court wood grain, seat rows, chalk/ice lines, jersey
+  numbers, score boxes, timers, arrows, pause buttons - drawn once at start-up, sharp on every screen, no files.
+- **Particles (`THREE.Points` + one `BufferGeometry`):** ice spray from skates, dirt from tyres, dust, crowd camera
+  flashes, confetti, sparks - thousands in one draw call. Reuse the array, never make new objects every frame.
+- **Shader math blocks:** distance fields for perfect glowing circles (stadium lights, pucks' glow, UI rings) and a
+  `sin(time)` wave in the vertex shader for flags, nets, grass and banners - no extra CPU, no files.
 - **Physics:** simple maths first. If a game truly needs real physics (ball spin, collisions, ragdolls), vendor
   **cannon-es** (MIT, small) or Rapier into `vendor/` - never load it from the internet.
 
