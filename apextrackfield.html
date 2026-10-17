@@ -285,6 +285,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 import * as THREE from 'three';
 let HM = null;
 const humansReady = import('humans').then(m=>m.loadHumans(THREE, './characters/base-human-v2/')).then(h=>{ HM=h; return h; }).catch(()=>null);
+let hmState='pending'; humansReady.then(h=>{ hmState=h?'ready':'failed'; });
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:(v>b?b:v);
 const lerp = (a,b,t) => a+(b-a)*t;
@@ -583,10 +584,23 @@ const BASE_RIVALS=[
 {name:'M. Reyes',  rating:0.86, kit:'#e6a02e'},
 ];
 const EXTRA_NAMES=['A. Diallo','K. Mensah','R. Silva','T. Novak','J. Park','L. Costa','D. Webb','S. Rossi'];
+const EXTRA_KITS=['#3c78d2','#8e44ad','#16a3a3','#c94f7c','#5b8c2a','#e67e22'];
+function fillField(r){
+// JOB J7 round 2 (owner): a full field - 6 rivals so 7 runners race, one in each of lanes 1-7
+let k=0;
+for(let i=0;r.length<6&&i<EXTRA_NAMES.length;i++){
+if(r.some(x=>x.name===EXTRA_NAMES[i])) continue;
+r.push({name:EXTRA_NAMES[i], rating:rnd(0.83,0.91), kit:EXTRA_KITS[k++%EXTRA_KITS.length]});
+}
+return r;
+}
+function freeRivals(){
+return fillField(BASE_RIVALS.map(x=>({name:x.name, rating:clamp(x.rating+rnd(-0.02,0.03),0.8,0.97), kit:x.kit})));
+}
 function champRivals(){
 const r = BASE_RIVALS.map(x=>({name:x.name, rating:x.rating, kit:x.kit}));
 if(friendRival) r.push({name:friendRival.name, rating:friendRival.rating, kit:'#9b59b6'});
-return r;
+return fillField(r);
 }
 function rivalMark(ev, rating){
 if(ev.timed){
@@ -1492,6 +1506,30 @@ new THREE.MeshBasicMaterial({color:0xff4040}));
 pfEye.position.set(0,5.62,0.18); pf.add(pfEye);
 pf.position.set(0.7,0,-TRK.radius-10.1);
 this.scene.add(pf); this.photoFinish=true;
+// JOB J7 round 2 (owner): a FINISH BANNER to cross - a gantry over the line at x=0
+// spanning lanes 1-8, printed to read correctly from BOTH sides.
+const finG=new THREE.Group();
+const postM2=new THREE.MeshStandardMaterial({color:0x22262e,roughness:0.55,metalness:0.5});
+for(const pz of [-35.4,-46.5]){
+const post=new THREE.Mesh(new THREE.CylinderGeometry(0.14,0.19,5.8,10), postM2);
+post.position.set(0,2.9,pz); finG.add(post);
+}
+const beam2=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.32,11.6), postM2);
+beam2.position.set(0,5.62,-40.95); finG.add(beam2);
+const banTex=canvasTex(1024,176,(c)=>{
+c.fillStyle='#101623'; c.fillRect(0,0,1024,176);
+c.fillStyle='#ffd34d'; c.fillRect(0,0,1024,10);
+c.fillStyle='#ffffff'; c.font='900 104px system-ui,sans-serif';
+c.textAlign='center'; c.textBaseline='middle'; c.fillText('FINISH',512,76);
+for(let i=0;i<32;i++) for(let j=0;j<2;j++){ c.fillStyle=((i+j)%2===0)?'#e8e8e8':'#0a0e18'; c.fillRect(i*32,142+j*17,32,17); }
+});
+const banMat=new THREE.MeshBasicMaterial({map:banTex});
+for(const s of [-1,1]){
+const ban=new THREE.Mesh(new THREE.PlaneGeometry(11.1,1.5), banMat);
+ban.rotation.y=s<0?-Math.PI/2:Math.PI/2;
+ban.position.set(s*0.03,4.72,-40.95); finG.add(ban);
+}
+this.scene.add(finG); this.finishBanner=true;
 this.buildStartGear();
 },
 
@@ -2002,7 +2040,7 @@ W3D.rigs[i]=fresh;
 }
 function styleRigsFor(rivals){
 styleRig(0, collegeCols.a, athleteName);
-for(let i=0;i<3;i++){
+for(let i=0;i<6;i++){ // JOB J7 round 2: style the full field (player + 6 rivals)
 const rv=rivals[i];
 if(rv) styleRig(i+1, rv.kit||'#888888', rv.name);
 else if(W3D.rigs[i+1]) W3D.rigs[i+1].group.visible=false;
@@ -2025,7 +2063,7 @@ for(const r of W3D.rigs){ if(r.group.visible){ W3D.rigAnim(r,'idle',0); W3D.rigU
 function straightX(p, dist){ return p-dist; }
 function straightZ(lane){ return -TRK.radius+laneOff(lane); }
 const laneOff=i=>-i*1.22; // JOB J7: lane 1 innermost, centred on the 36.8m measure line (400.00m lap); lanes extend outward
-const RIV_LANES=[1,4,6]; // the player races in lane index 3 - every runner gets his OWN lane
+const RIV_LANES=[0,1,2,4,5,6]; // JOB J7 round 2: full field - player in lane index 3, six rivals in the other lanes of 1-7
 function stagFor(lane, dist){ if(dist>=390) return 2*Math.PI*1.22*lane; if(dist>=190) return Math.PI*1.22*lane; return 0; }
 function startSFor(dist){ return ((TRK.straight-dist)%400+400)%400; } // the shared finish line (x=0) sits at s=TRK.straight
 function visS(lane, pos, dist){ const st=stagFor(lane,dist); return (startSFor(dist)+pos+st*(dist>0?1-pos/dist:1))%400; }
@@ -2059,7 +2097,7 @@ const PMAX=ev.eng==='sprint'?(ev.dist<=100?11.0:ev.dist<=200?10.6:10.0)
 : ev.eng==='relay'?10.8 : 10.5;
 if(ev.eng==='sprint'){
 const straight = ev.dist<=110;
-{ const lanes=[3,1,4,6];
+{ const lanes=[3,0,1,2,4,5,6]; // JOB J7 round 2: blocks for the full field
 if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
 else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
 }
@@ -2103,7 +2141,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='hurdles'){
 const straight=ev.dist<=110;
-{ const lanes=[3,1,4,6];
+{ const lanes=[3,0,1,2,4,5,6]; // JOB J7 round 2: blocks for the full field
 if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
 else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
 }
@@ -2114,6 +2152,9 @@ const hWorld=ENG.hurdles.map(h=> straight
 W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
+// JOB J7 round 2 (owner): the hurdles camera also STARTS right behind the player (10 back, 15 up, centered)
+if(straight) W3D.camSnap(-ev.dist-10,15,straightZ(3), -ev.dist+4,1.2,straightZ(3));
+else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*10,15,lp.z-lp.tz*10, lp.x+lp.tx*4,1.2,lp.z+lp.tz*4); }
 ENG.draw3=dt=>{
 const r=ENG.r, airM=r.airY*0.011;
 if(straight){
@@ -2143,7 +2184,7 @@ W3D.startPhase=ENG.phase;
 if(!ENG._blocksSet){ ENG._blocksSet=1; W3D.setBlocks([{x:-100.45, z:straightZ(3), heading:Math.PI/2}]); }
 W3D.blocksVisible(ENG.leg===0);
 placeStraight(R[0],r.pos,100,3,r.speed,PMAX,0);
-for(let i=1;i<4;i++) R[i].group.visible=false;
+for(let i=1;i<7;i++) R[i].group.visible=false;
 followCam(straightX(r.pos,100),straightZ(3),1,0,dt);
 if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,100),0.15,straightZ(3),1);
 if(ENG.done) easeRigsToIdle(dt); else W3D.rigUpdate(R[0],dt);
@@ -2166,7 +2207,7 @@ ax=X0+ENG.fx; airM=Math.max(0,ENG.fvy*ENG.ft-4.905*ENG.ft*ENG.ft); mode='jump';
 W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
 W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10,0,1.1));
 if(!R[0].human) R[0].airY=airM;
-for(let i=1;i<4;i++) R[i].group.visible=false;
+for(let i=1;i<7;i++) R[i].group.visible=false;
 W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
 if(ENG.phase==='runup'&&ENG.r.pos>31.5) centerText('TAKEOFF!', H*0.30, 24, '#ffd34d');
@@ -2189,7 +2230,7 @@ if(ENG.phase==='phase'){ airM=0.45+0.3*Math.abs(Math.sin(ENG.sub*2+ENG.marker*3)
 W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
 W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10,0,1.1));
 if(!R[0].human) R[0].airY=airM;
-for(let i=1;i<4;i++) R[i].group.visible=false;
+for(let i=1;i<7;i++) R[i].group.visible=false;
 W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
 if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.38,0.62,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
@@ -2220,7 +2261,7 @@ if(pv&&W3D.venueMats.pole) W3D.venueMats.pole.rotation.z=Math.PI/2-0.06-t*1.1;
 W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
 W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10.5,0,1));
 if(!R[0].human) R[0].airY=airM;
-for(let i=1;i<4;i++) R[i].group.visible=false;
+for(let i=1;i<7;i++) R[i].group.visible=false;
 W3D.rigUpdate(R[0],dt);
 W3D.camTo(BARX-10,3.0,Z+10.5, BARX+1,1.5,Z, dt, 3.5); W3D.camApply();
 if(ENG.phase==='approach'&&ENG.r.pos>11) centerText('TAKEOFF ZONE — TAP ACTION', H*0.30, 18, '#ffd34d');
@@ -2236,7 +2277,7 @@ W3D.camSnap(C.x-9,4.2,C.z+11, C.x+8,1.2,C.z);
 let spinA=0;
 ENG.draw3=dt=>{
 const R0=R[0];
-for(let i=1;i<4;i++) R[i].group.visible=false;
+for(let i=1;i<7;i++) R[i].group.visible=false;
 let ix=C.x, iy=1.1, iz=C.z, show=false;
 if(ENG.phase==='flight'){
 const d=ENG.jumpD, t=ENG.ft/ENG.fT;
@@ -2330,7 +2371,8 @@ rl='<b>RIVALS:</b> '+rs.map(r=>esc(r.name)+' ('+r.rating.toFixed(2)+')').join(' 
 }else if(G.mode==='tourn'){
 rl='<b>HEAD-TO-HEAD:</b> '+esc(G.singleRival.name)+' ('+G.singleRival.rating.toFixed(2)+') — win to advance';
 }else{
-rl='<b>FREE PLAY:</b> no pressure — practice and chase your best.';
+if(!G.freeRivals) G.freeRivals=freeRivals();
+rl='<b>FIELD:</b> '+G.freeRivals.map(r=>esc(r.name)+' ('+r.rating.toFixed(2)+')').join(' · ')+'<br><b>FREE PLAY:</b> full field of 7 — no pressure, chase your best.';
 }
 if(ev.eng==='relay') rl+='<br><b>TEAM:</b> '+RELAY_TEAM.map(esc).join(' · ');
 if(G.mode==='career'&&G.car) rl+='<br><b>'+esc(SEASONS[CAR.season-1]).toUpperCase()+'</b> SEASON · '+(G.car.champ?'CHAMPIONSHIP MEET':'MEET '+(G.car.meet+1)+' OF 4');
@@ -2340,6 +2382,18 @@ G.cardEv=ev;
 showScreen('card');
 }
 function startPlay(ev, rivals){
+// JOB J7 round 2 (owner): a race never starts on stand-in figures - the start waits
+// for the studio 3D humans (they load in the background from boot). A failed load or
+// a 20s timeout still starts the race; the game never bricks.
+if(hmState==='pending' && !startPlay._waited){
+startPlay._waited=true;
+const b=$('bCardStart'); let old='START';
+if(b){ old=b.textContent; b.textContent='LOADING ATHLETES\u2026'; b.disabled=true; }
+Promise.race([humansReady, new Promise(r=>setTimeout(r,20000))])
+.then(()=>new Promise(r=>setTimeout(r,80)))
+.then(()=>{ if(b){ b.textContent=old; b.disabled=false; } startPlay._waited=false; startPlay(ev, rivals); });
+return;
+}
 SIM_MODS = (G.mode==='career') ? careerMods() : {spd:1,stam:1,tech:1};
 ENG=makeEngine(ev,rivals||[]);
 ENG._rivals=rivals||[];
@@ -2444,7 +2498,7 @@ function seasonRivals(){
 const base=0.80+CAR.season*0.035;
 const rs=BASE_RIVALS.map((r,i)=>({name:r.name,rating:clamp(base+rnd(-0.015,0.015),0.8,0.985),kit:r.kit}));
 if(friendRival) rs.push({name:friendRival.name,rating:clamp(friendRival.rating,0.8,0.985),kit:'#9b59b6'});
-return rs.slice(0,3);
+return fillField(rs); // JOB J7 round 2: full field of 7 in career races too
 }
 function careerMeetEvents(){
 const champ=G.car.champ, n=champ?5:3;
@@ -2738,7 +2792,7 @@ wireMenu('bTournPlay',tournPlayRound);
 wireMenu('bFree',()=>{ G.mode='free'; showScreen('grid'); });
 wireMenu('bGridBack',()=>showScreen('menu'));
 wireMenu('bCardBack',()=>showScreen(G.mode==='free'?'grid':(G.mode==='tourn'?'tourney':(G.mode==='career'?'career':'menu'))));
-wireMenu('bCardStart',()=>startPlay(G.cardEv, G.mode==='champ'?G.rivals:(G.mode==='career'?G.carRivals:(G.mode==='tourn'?[G.singleRival]:[]))));
+wireMenu('bCardStart',()=>startPlay(G.cardEv, G.mode==='champ'?G.rivals:(G.mode==='career'?G.carRivals:(G.mode==='tourn'?[G.singleRival]:(G.freeRivals||(G.freeRivals=freeRivals()))))));
 wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; showScreen('menu'); refreshMenuRival(); });
 wireMenu('bResNext',()=>{ if(G.nextFn) G.nextFn(); });
 wireMenu('bHow',()=>showScreen('howto'));
@@ -2870,6 +2924,8 @@ visS:(lane,pos,dist)=>visS(lane,pos,dist),
 eng:()=>ENG,
 lanes:()=> W3D.laneLineInfo||null,
 follow:()=> W3D._follow||null,
+finish:()=> W3D.finishBanner? {banner:true} : null,
+field:()=> ENG? {ai:ENG.ai?ENG.ai.length:0, rivals:(ENG._rivals||[]).length} : null,
 rigs:()=>W3D.rigs,
 clips:()=>W3D.clips,
 kit:()=>{ const r=W3D.rigs[0]; return r&&r.h? r.h.spec.outfit : 'fallback'; },
