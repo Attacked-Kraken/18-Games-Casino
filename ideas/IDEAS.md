@@ -86,3 +86,23 @@ The owner sees every `status: NEW` idea on his phone with 👍 Build it / 👎 N
 - size: big
 - pictures: https://img.1ting.com/warehouse/upload/202105/21/211002476c121SgHC25E7XK8cbd.jpg https://img.apkcafe.it/img:bz1nODhsaG4mbD0xM2hsJmg9anBnJmY9Z2xtJmk9NTg
 - gemini prompt: Cute chibi knight character with a round shield, full body front view AND side view on one sheet, A-pose, shiny silver armor with blue cape and feathered helmet, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
+
+## IDEA: Bounce Brigade
+- id: bounce-brigade
+- status: NEW
+- pitch: Bounce your balls through the monster pit — every ricochet hurts.
+- how it plays: Drag to aim and launch bouncing balls down into monster formations, balls ricochet off walls and enemies; between runs fuse balls and upgrade your base camp.
+- why it sells: Brick-breaker roguelite is Devolver's breakout formula — BALL x PIT hit 1.2M installs at 4.7 stars with a paid expansion (Risen Ballbylon) landing Nov 12, proving players pay for the loop; brick-breaking is instantly readable, one-thumb aiming fits phones perfectly, and fusion/base-building gives the retention tail. Links: https://www.appbrain.com/app/ball-x-pit/com.devolverdigital.ballxpit https://www.lgjyh.com/new/ball-pit-offers-fastpaced-ballbreaking-action-ios-android--launches.html
+- size: big
+- pictures: https://play-lh.googleusercontent.com/9iuHNQtZK_hX1S4KFoqn0F-sD6OzkauHNlULQchyRMyMmTlBv9GUYVV_rZyUm7U1Gzvt https://play-lh.googleusercontent.com/a8g5yohvGiAxyuYOMZHI5s8EDGmCcqYlSybvpWzPGeobvM4M6rRhprZzJX1P2CjWX6BRrnFdQkbmzVBH9Ps19Q
+- gemini prompt: Cheerful round bouncy ball hero with a brave face, full body front view AND side view on one sheet, A-pose style turnarounds, shiny red rubber ball with white star markings, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
+
+## IDEA: Turbo Tacos
+- id: turbo-tacos
+- status: NEW
+- pitch: Tacos are flying out — cook, stack, and serve before the lunch rush ends.
+- how it plays: Tap ingredients to cook them on the grill, drag finished tacos to matching customer orders; faster combos earn tips to unlock new recipes and food trucks.
+- why it sells: Cooking games are an evergreen money-printing genre — Cooking Madness alone has 290M installs and still pulls 1.5M/month, with Cooking City (89M) and Cooking World (19M) right behind it; the tap-cook-serve loop is pure kid-friendly dopamine, offline-friendly, and a perfect one-file arcade fit. Links: https://www.appbrain.com/stats/google-play-rankings/top_grossing/arcade/us https://www.appbrain.com/stats/google-play-rankings/top_grossing/arcade/de
+- size: quick
+- pictures: https://play-lh.googleusercontent.com/GWz1fLmLUCjZlWHX2Yi9wRTC4KGHhVqL3ehy7zAgXcKwsaP4etqOZt2z43VQY_xha0I=w900 https://lh3.googleusercontent.com/S1lkUgSz9MBAWOM2zgRGFKLBH6RkTjPHi-uJKIPSibcgumgngvPX4_R21nKk4teqrYs=h450
+- gemini prompt: Happy little taco chef character wearing a chef hat, full body front view AND side view on one sheet, A-pose, holding a spatula, white chef coat with red scarf, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
