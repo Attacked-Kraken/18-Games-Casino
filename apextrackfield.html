@@ -110,6 +110,7 @@ text-align:center;line-height:1.2}
 #stickKnob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe27a,#d9a419 70%,#8a6408);box-shadow:0 3px 10px rgba(0,0,0,.55),inset 0 0 0 2px rgba(255,255,255,.25)}
 #btnA{right:calc(env(safe-area-inset-right,0px) + 16px);width:120px;height:120px;font-size:16px;
 background:rgba(55,200,113,.20);border-color:#37c871;color:#a9f5c6}
+#btnSkip{position:fixed;top:calc(env(safe-area-inset-top,0px) + 64px);left:50%;transform:translateX(-50%);z-index:70;display:none;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,211,77,.65);background:rgba(6,14,26,.85);color:#ffd34d;font:700 14px system-ui,sans-serif;letter-spacing:.4px;cursor:pointer;touch-action:manipulation}
 #btnTap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);pointer-events:auto;width:110px;height:110px;border-radius:50%;border:3px solid #19e6ff;background:radial-gradient(circle at 35% 30%,#7df3ff,#0aa8c8 70%,#065a70);color:#04222b;font:900 18px/1.1 system-ui;letter-spacing:1px;display:flex;align-items:center;justify-content:center;touch-action:none;box-shadow:0 0 18px #19e6ff88;animation:tapPulse 0.9s ease-in-out infinite}
 #btnTap:active{transform:translateX(-50%) scale(0.92)}
 @keyframes tapPulse{0%,100%{box-shadow:0 0 12px #19e6ff66}50%{box-shadow:0 0 26px #19e6ffcc}}
@@ -140,6 +141,7 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div id="hudPos">1st</div>
 </div>
 </div>
+<button id="btnSkip" style="display:none">⏭ Skip level</button>
 <div id="touch">
 <div id="stick" aria-label="Stride stick: rock left and right"><div id="stickKnob"></div></div>
 <div id="btnTap" aria-label="Tap to run">TAP<br>RUN</div>
@@ -698,6 +700,9 @@ a.speed += (target*(1+0.03*Math.sin(a.el*0.7))-a.speed)*Math.min(1,3*dt);
 a.pos+=a.speed*dt; a.phase+=a.speed*dt*1.9;
 }
 let ENG=null;
+/* JOB J42 (owner) + STORE-READY "Developer skip": the Skip level button exists ONLY when
+   the address carries dev=1 (the Game Development page opens games with ?dev=1). */
+const DEV_SKIP=/[?&]dev=1(?:&|$)/.test(location.search||'');
 function createSprintEngine(ev, rivals){
 const S=8, dist=ev.dist;
 const maxSpd = dist<=100?11.0 : dist<=200?10.6 : 10.0;
@@ -2155,6 +2160,7 @@ const ev=ENG.ev, rivals=ENG._rivals||[];
 if(W3D._zoneMesh){ W3D.scene.remove(W3D._zoneMesh); W3D._zoneMesh=null; }
 styleRigsFor(rivals);
 W3D.hideImplement();
+if(W3D.landMark) W3D.landMark.visible=false;
 W3D.hurdlesMesh.count=0;
 W3D.podium.visible=false;
 W3D.startPhase=''; W3D.clearBlocks();
@@ -2198,7 +2204,11 @@ W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
-ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0); });
+ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapP(a.pos),RIV_LANES[i],a.speed,PMAX,0); });
+// JOB J42 (owner): the line above used to call mapPL, which only exists in the sprint/hurdles
+// branches - so the distance draw3 threw before followCam/render EVERY frame and the camera
+// never followed a long race (frozen view, the runner a speck). mapP is this branch's own map:
+// with it, the ONE camera rule (7m behind, 2.8m up, follows the lane) runs for 800m-5000m too.
 if(r.speed>2&&Math.random()<dt*7) dustAt(lp.x,0.15,lp.z,1);
 followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
@@ -2340,6 +2350,17 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='throw'){
 const T=ENG.T, C=W3D.venueMats.throwC;
+// JOB J42 (owner): a landing marker (flag + ring) that stands where a throw lands
+if(!W3D.landMark){
+const g=new THREE.Group();
+const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.15,8), new THREE.MeshStandardMaterial({color:0xf2f4f6,roughness:0.5}));
+pole.position.y=0.57; g.add(pole);
+const flag=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.36), new THREE.MeshBasicMaterial({color:0xff3b30,side:THREE.DoubleSide}));
+flag.position.set(0.31,0.95,0); g.add(flag);
+const ring=new THREE.Mesh(new THREE.RingGeometry(0.34,0.52,24), new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));
+ring.rotation.x=-Math.PI/2; ring.position.y=0.02; g.add(ring);
+g.visible=false; W3D.scene.add(g); W3D.landMark=g;
+}
 const DISC3 = ev.throwType==='discus';
 // JOB J7 keep-it (owner): the discus camera sits close behind/side of the
 // thrower so he fills the frame - never far away, never behind a meter.
@@ -2358,15 +2379,37 @@ W3D.showImplement(ev.throwType,ix,iy,iz);
 if(ev.throwType==='javelin'&&W3D.implement.cur){
 W3D.implement.cur.rotation.z=-Math.PI/2+0.5-t*0.9;
 }
+}else if(ENG.phase==='mark'){
+// JOB J42 (owner): the implement stays where it LANDED, next to its marker
+ix=C.x+ENG.jumpD; iy=0.15; iz=C.z;
+W3D.showImplement(ev.throwType,ix,iy,iz);
 }else{
 W3D.showImplement(ev.throwType,C.x+0.4,1.0,C.z);
 if(ENG.phase==='spin'||ENG.phase==='spinning'){ spinA+=dt*7; }
+}
+if(W3D.landMark){ W3D.landMark.visible = ENG.phase==='mark'; if(ENG.phase==='mark') W3D.landMark.position.set(C.x+ENG.jumpD, 0, C.z); }
+if(ENG.phase==='mark'){
+// JOB J42 (owner): the distance is SHOWN on screen while the landing marker stands
+ox.save();
+ox.fillStyle='rgba(6,14,26,.78)'; rr(W/2-105, 84, 210, 54, 12); ox.fill();
+ox.fillStyle='#ffd34d'; ox.font='900 30px system-ui,sans-serif'; ox.textAlign='center';
+ox.fillText(fmtMark(ENG.jumpD), W/2, 122);
+ox.restore();
 }
 const heading=Math.PI/2+((ENG.phase==='spin'||ENG.phase==='spinning')?spinA:0);
 W3D.rigPlace(R0,C.x,0,C.z,heading);
 W3D.rigAnim(R0, ENG.phase==='angle'||ENG.phase==='flight'?'throw':((ENG.phase==='spin'||ENG.phase==='spinning')?'throw':'idle'), 0.4);
 W3D.rigUpdate(R0,dt);
-if(DISC3) W3D.camTo(C.x-6,2.4,C.z+7, C.x+3,1.2,C.z, dt, 3.5);
+if(ENG.phase==='flight'){
+// JOB J42 (owner, full text): after the throw the camera RISES over the field and
+// FOLLOWS the implement through the air (discus, shot, javelin, hammer alike)
+const ft2=clamp(ENG.ft/ENG.fT,0,1);
+W3D.camTo(ix-15, 5+7*ft2, iz+12, ix, iy, iz, dt, 4.5);
+}else if(ENG.phase==='mark'){
+// JOB J42 (owner): ...then settles looking at the landing marker and the implement beside it
+W3D.camTo(ix-9, 3.2, iz+9, ix, 0.5, iz, dt, 3.5);
+}
+else if(DISC3) W3D.camTo(C.x-6,2.4,C.z+7, C.x+3,1.2,C.z, dt, 3.5);
 else W3D.camTo(C.x-8.5,4.0,C.z+10.5, C.x+10,1.0,C.z, dt, 3.5);
 W3D.camApply();
 if(DISC3&&(ENG.phase==='hold'||ENG.phase==='spinning')){
@@ -2433,6 +2476,7 @@ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
 if(id) $(id).classList.add('on');
 if(id!=='results') stopCeremony();
 AudioSys.setMusic(id?'menu':null);
+refreshSkip();
 }
 function startChamp(){
 const rivals=champRivals();
@@ -2536,6 +2580,35 @@ function stopCeremony(){
 if(!W3D.ceremony||!W3D.ceremony.active) return;
 W3D.ceremony.active=false; W3D.podium.visible=false;
 for(const r of W3D.rigs){ if(r.medalMesh){ r.group.remove(r.medalMesh); r.medalMesh=null; } }
+}
+function refreshSkip(){
+const b=$('btnSkip'); if(!b) return;
+const cardEl=$('card');
+const show=DEV_SKIP&&(G.mode==='career'||G.mode==='tourn')&&
+ (document.body.classList.contains('playing')||(cardEl&&cardEl.classList.contains('on')));
+const d=show?'block':'none';
+if(b.style.display!==d) b.style.display=d;
+}
+function devSkipLevel(){
+if(!DEV_SKIP) return;
+if(G.mode!=='career'&&G.mode!=='tourn') return;
+const playing=document.body.classList.contains('playing');
+const ev=playing&&ENG?ENG.ev:G.cardEv;
+if(!ev) return;
+// a winning mark on the event's own scale (pointsFor caps it at the 1200 max)
+const val=ev.timed? Math.round(ev.ref*0.90*100)/100 : Math.round(ev.ref*1.10*100)/100;
+const res={value:val, display:ev.timed?fmtTime(val):fmtMark(val), points:pointsFor(ev,val)};
+// stop the live event cleanly so the frame loop cannot finish it a second time
+if(ENG){ ENG.done=true; ENG.finishT=0; }
+G.resShown=true;
+document.body.classList.remove('playing');
+// careerPlace() reads ENG (place / aiBest) - a skip IS a win, so it is judged as one;
+// the meet/tournament bookkeeping (points, totals, saveCareer) is the game's own,
+// so skipping saves exactly like a real win
+const liveENG=ENG; ENG={aiBest:[],place:1};
+try{ if(G.mode==='career') careerEventDone(ev,res,false); else tournMatchDone(ev,res,false); }
+finally{ ENG=liveENG; }
+refreshSkip();
 }
 function finishEvent(){
 document.body.classList.remove('playing');
@@ -2817,6 +2890,7 @@ if(el) el.style.transform='scaleX('+clamp(v==null?0:v,0,1).toFixed(3)+')';
 }
 function updateHUD(){
 if(!ENG) return;
+refreshSkip();
 const h=ENG.hud();
 $('hudEvent').textContent=h.event;
 $('hudMain').textContent=h.main;
@@ -3021,6 +3095,7 @@ this.renderer.render(this.scene,this.camera);
 /* Landscape law: first tap requests fullscreen + landscape lock where allowed (Android). iOS ignores the lock; the rotated stage carries it there. */
 addEventListener('pointerdown',function(){try{var el=document.documentElement;if(el.requestFullscreen&&!document.fullscreenElement){var pr=el.requestFullscreen();if(pr&&pr.then)pr.then(function(){try{var q=screen.orientation.lock('landscape');if(q&&q.catch)q.catch(function(){});}catch(e){}}).catch(function(){});}}catch(e){}},{once:true});
 
+{ const _sk=$('btnSkip'); if(_sk) _sk.addEventListener('click', ()=>devSkipLevel()); }
 /* JOB J7 test hooks (the game-check fix tests read these) */
 window.__tf={
 stadium:()=> W3D.stadium? W3D.stadium.report(): null,
@@ -3031,6 +3106,7 @@ eng:()=>ENG,
 lanes:()=> W3D.laneLineInfo||null,
 follow:()=> W3D._follow||null,
 camPos:()=> W3D.camera? {x:+W3D.camera.position.x.toFixed(1), y:+W3D.camera.position.y.toFixed(1), z:+W3D.camera.position.z.toFixed(1)} : null, // JOB J7 keep-it: lets the discus test prove the camera sits close behind/side of the thrower
+throwView:()=>{ const im=W3D.implement&&W3D.implement.cur; return { phase:ENG?ENG.phase:null, impl:(im&&im.visible)?{x:im.position.x,y:im.position.y,z:im.position.z}:null, cam:{x:W3D.camPos.x,y:W3D.camPos.y,z:W3D.camPos.z}, look:{x:W3D.camLook.x,y:W3D.camLook.y,z:W3D.camLook.z}, mark:W3D.landMark?{x:W3D.landMark.position.x,z:W3D.landMark.position.z,vis:W3D.landMark.visible}:null, jumpD:ENG?ENG.jumpD:null }; }, // JOB J42: read-only - the throw flight camera + landing marker play test reads this
 sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, dpr: window.devicePixelRatio||1, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
 input:()=>({ tap:TFIN.tap, stick:TFIN.stick, act:TFIN.act, stickHeld:STICKHELD }),
 fill:()=>{ const c=document.getElementById('game'); const r=c.getBoundingClientRect(); const iw=window.innerWidth, ih=window.innerHeight; return { cov:(r.width*r.height)/(iw*ih), W, H, iw, ih }; },
