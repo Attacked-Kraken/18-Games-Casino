@@ -18,3 +18,5 @@ Format: `- YYYY-MM-DD · game · mistake → rule`
 - 2026-10-16 · all · Jobs were started without a reference picture or a DONE MEANS list → no job starts until you have both; each DONE MEANS line becomes a fix test first.
 - 2026-10-16 · motorcycle · Owner rejected the bike again: "use a real 3D bike, not shapes" — v1 wore its primitives in plain sight (box frame, sphere tank, cone nose) → if no CC0 .glb exists and you must code-build a hero model, sculpt EVERY visible surface (lathe/extrude/tube); a single raw box/sphere/cone as bodywork is an instant 👎.
 - 2026-10-16 · all · Hero models were code-built from shapes because only CC0 was allowed → CC-BY models are now allowed with credits (ASSET-LAW.md Part III); use a real model and log it in ASSETS.md.
+- 2026-10-16 · monster truck · Owner said objects were too small; a Muse SHRANK THE TRUCK instead → never fix "too small" by shrinking the hero; scale the world around it to real sizes.
+- 2026-10-16 · all · Games scored 100/100 while broken because the robot only checks that they run → passing the robot is not "good"; the art director grade and the owner's verdict decide.
