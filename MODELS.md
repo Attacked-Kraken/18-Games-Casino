@@ -42,8 +42,8 @@ Format (one section per model — keep the keys exactly like this):
 - look: studio
 - view: tools/model-viewer.html?m=models/motorcycle-main.mjs&look=studio&name=Main%20sport%20motorcycle
 - by: algre141@gmail.com
-- version: 2
-- notes: Owner rejected v1 ("use a real 3D bike, not shapes"). v2 rebuilt realistic: sculpted lathe tank/tail, extruded beveled fairings, tube exhaust/frame, 10-spoke wheels with brake discs, articulated rider in racing tuck. No CC0 .glb motorcycle at approved sources (Quaternius/Kenney have none, Poly Pizza is CC-BY) - code-built per rule 7, must not look like shapes.
+- version: 3
+- notes: Owner changes v3: solid extruded aluminum twin-spar frame + swingarm (was hollow tubes); human rider (tapered lathe torso, neck, helmet with chin bar + curved visor, tapered limbs, shaped gloves/boots — was capsule mannequin); crotch-rocket style (clip-on bars, slanted headlights, aggressive upswept tail, full fairing). No CC0 .glb motorcycle at approved sources — code-built per rule 7.
 - status: WAITING OWNER
 
 ## MODEL: Hockey skater (shared athlete kit)
