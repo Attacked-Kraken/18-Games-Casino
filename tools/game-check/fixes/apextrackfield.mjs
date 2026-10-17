@@ -264,18 +264,22 @@ export default [
       const t0 = Date.now();
       const budget = () => Date.now() - t0 < 26000;
       await h.eval(() => { if (!window.__tfdrv2) { window.__tfdrv2 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && !e.finished) { e.stride('L'); e.stride('R'); if (e.action && Math.random() < 0.3) e.action(); } }, 130); } return true; });
+      // REPAIRED navigation (was: #menuScr/#resScr ids that do not exist in this game, so it could
+      // never reach the menu): use the game's real screens (.screen.on) and real results buttons.
       let atMenu = false;
       while (budget() && !atMenu) {
-        atMenu = await h.eval(() => { const m = document.getElementById('menuScr'); return !!(m && !m.classList.contains('hidden')); });
-        if (!atMenu) {
-          await h.eval(() => { const b = [...document.querySelectorAll('#resScr button, #resScr .btn')].find(x => /MENU|CAREER|NEXT/i.test(x.textContent) && x.offsetParent); if (b) b.click(); return true; });
-          await h.wait(500);
-        }
+        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
+        if (!atMenu) await h.wait(500);
       }
       if (!atMenu) return 'could not get back to the menu (a race or results screen is stuck)';
       const careerBtn = await h.eval(() => { const b = document.getElementById('bCareer'); if (b) { b.click(); return true; } return false; });
       if (!careerBtn) return 'no CAREER MODE button on the menu';
       await h.wait(600);
+      // REPAIRED assertion (was: e.mode / e.pos - fields the engines do not have, so it could never
+      // pass): prove we are really in the career flow by the career screen itself, then by the
+      // engine's real phase / runner position advancing.
+      const sawCareer = await h.eval(() => { const on = document.querySelector('.screen.on'); return !!(on && on.id === 'career'); });
+      if (!sawCareer) return 'the CAREER MODE button did not open the career screen - career stalls before the meet';
       const meetBtn = await h.eval(() => { const b = document.getElementById('bCareerMeet'); if (b) { b.click(); return true; } return false; });
       if (!meetBtn) return 'no NEXT MEET button on the career screen - career stalls before the meet';
       await h.wait(600);
@@ -283,8 +287,8 @@ export default [
       if (!cardBtn) return 'the career meet card never offered a start - career stalls at the card';
       let advanced = false; const phases = new Set();
       while (budget() && !advanced) {
-        const st = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return e ? { mode: e.mode || '', phase: e.phase || '', pos: e.pos || 0 } : null; });
-        if (st) { phases.add(st.phase); if (st.mode !== 'career') return 'the meet started a ' + st.mode + ' race, not career'; if (phases.size > 1 || st.pos > 2) advanced = true; }
+        const st = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return e ? { phase: e.phase || '', pos: e.r ? e.r.pos : 0 } : null; });
+        if (st) { phases.add(st.phase); if (phases.size > 1 || st.pos > 2) advanced = true; }
         await h.wait(450);
       }
       if (!advanced) return 'the career race started but never advanced (frozen at the start) - career stalls';
@@ -342,4 +346,201 @@ export default [
       return true;
     },
   },
+  {
+    id: 'keep-locked-look',
+    ask: "KEEP - LOCKED (owner checked JOB J7, 2026-10-17, HE LIKES IT): 'how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera' - no Muse may change it",
+    async test(page, h) {
+      // the run cycles register once the studio humans land - wait for them, then judge
+      const t0 = Date.now();
+      let k = null;
+      while (Date.now() - t0 < 24000) {
+        k = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return null;
+          const st = tf.stadium ? tf.stadium() : null;
+          const sh = tf.sharp ? tf.sharp() : null;
+          const wall = tf.wallCheck ? tf.wallCheck() : null;
+          const lanes = tf.lanes ? tf.lanes() : null;
+          const fin = tf.finish ? tf.finish() : null;
+          const c = tf.clips ? tf.clips() : null;
+          return {
+            seats: st ? st.seats : 0, fans: st ? st.fans : 0,
+            runClip: c ? (c.run || '') : '', jogClip: c ? (c.jog || '') : '',
+            kit: tf.kit ? tf.kit() : '',
+            laneCount: lanes ? lanes.count : 0,
+            banner: !!(fin && fin.banner),
+            pr: sh ? sh.pr : 0, dpr: sh ? sh.dpr : 1,
+            wallStart: wall ? wall.start100 : null, wallCurve: wall ? wall.curve400 : null
+          };
+        });
+        if (k && /sprint/i.test(k.runClip) && /jog/i.test(k.jogClip)) break;
+        await h.wait(1200);
+      }
+      if (!k) return 'no report from the game (the KEEP build is missing)';
+      if (!(k.seats >= 40000 && k.fans >= 30000)) return 'KEEP BROKEN: the locked stadium/crowd changed - ' + k.seats + ' seats / ' + k.fans + ' fans (owner locked ~40.8k seats / ~37.6k fans)';
+      if (!/sprint/i.test(k.runClip) || !/jog/i.test(k.jogClip)) return 'KEEP BROKEN: the runners lost their real run cycles (run=' + k.runClip + ', jog=' + k.jogClip + ')';
+      if (k.kit !== 'track_kit') return 'KEEP BROKEN: the runners are not wearing the locked track singlet kit (' + k.kit + ')';
+      if (k.laneCount !== 9) return 'KEEP BROKEN: the track lane lines changed - ' + k.laneCount + ' lines (locked: 9 lines for 8 lanes)';
+      if (!k.banner) return 'KEEP BROKEN: the FINISH banner is gone';
+      const want = Math.min(k.dpr || 1, 1.5);
+      if (Math.abs(k.pr - want) > 0.06) return 'KEEP BROKEN: the picture is no longer sharp - pixel ratio ' + k.pr + ' (locked: min(devicePixelRatio, 1.5) = ' + want + ')';
+      if (k.wallStart !== true || k.wallCurve !== true) return 'KEEP BROKEN: the locked start camera can see a wall (start100=' + k.wallStart + ', curve400=' + k.wallCurve + ')';
+      return true;
+    },
+  },
+  {
+    id: 'career-levels-load-play-unlock',
+    ask: "CAREER MODE: the levels don't work - every career level must load, play and unlock the next",
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      await h.eval(() => { if (!window.__tfdrv3) { window.__tfdrv3 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (typeof e.best === 'number' && e.phase === 'mark') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (e.phase === 'flight' && typeof e.ft === 'number' && typeof e.fT === 'number' && e.fT > 0) e.ft = Math.max(e.ft, e.fT - 0.05); if (e.phase === 'mark' && typeof e.resT === 'number') e.resT = Math.min(e.resT, 0.05); if (ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault') { if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
+      let start = null, unlocked = false, guard = 0;
+      while (budget() && guard++ < 200) {
+        const s2 = await step();
+        if (s2.car && !start) start = { season: s2.car.season, meet: s2.car.meet };
+        if (start && s2.car && (s2.car.done || s2.car.season > start.season || (s2.car.season === start.season && s2.car.meet > start.meet))) unlocked = true;
+        if (unlocked && !s2.screen && s2.ev) return true; // the NEXT level's first event is loaded and playing
+        await h.wait(250);
+      }
+      if (!start) return 'no career save exists and none was created - career levels do not load';
+      if (!unlocked) return 'played a full career meet but the next level never unlocked (stuck at season ' + start.season + ', meet ' + (start.meet + 1) + ')';
+      return 'the next career level unlocked but its first event never loaded/played';
+    },
+  },
+  {
+    id: 'career-championship-unlocks-next-season',
+    ask: 'Winning the career championship (final) meet must unlock the next season',
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      await h.eval(() => { try { localStorage.setItem('tfapex_career', JSON.stringify({ name: 'YOU', colA: '#2456c8', colB: '#ffd34d', season: 2, meet: 3, tp: 0, up: { spd: 0, stam: 0, tech: 0 }, stats: { meets: 0, wins: 0, tpEarned: 0 }, done: false })); } catch (e) {} return true; });
+      await page.reload({ waitUntil: 'load' });
+      await h.wait(1500);
+      await h.eval(() => { if (!window.__tfdrv4) { window.__tfdrv4 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; const field = ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault'; if (typeof e.best === 'number') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (field) { const seen = window.__tfChampSeen || (window.__tfChampSeen = {}); const k = ev.id || ev.eng; if (!seen[k]) seen[k] = Date.now(); if (Date.now() - seen[k] > 3000) { e.done = true; return; } if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
+      let guard = 0;
+      while (budget() && guard++ < 200) {
+        const s2 = await step();
+        if (s2.car && s2.car.season >= 3) return true; // championship won -> next season unlocked
+        if (s2.car && s2.car.done) return 'the career ended instead of unlocking the next season after the championship';
+        await h.wait(250);
+      }
+      return 'won/played the championship meet but the next season never unlocked (career still at season 2)';
+    },
+  },
+  {
+    id: 'no-button-blocks-tap-run',
+    ask: 'On the long relay / long races around the track a RED button turns on and blocks running - no button may ever block TAP RUN, and holding the stick never blocks it',
+    async test(page, h) {
+      const t0 = Date.now();
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      // if a field event is in progress, finish it instantly so we can get back to the menu
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.ev && !/sprint|distance|hurdles|relay/.test(e.ev.eng || '')) e.done = true; return true; });
+      await h.wait(1500);
+      // make sure a race is running first (an earlier test may have left the game at the menu)
+      for (let i = 0; i < 8; i++) {
+        const st = await h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, racing: !!(e && e.r && document.body.classList.contains('playing') && /sprint|distance|hurdles|relay/.test((e.ev || {}).eng || '')) }; });
+        if (st.racing || !st.screen) break;
+        if (st.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
+        else if (st.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
+        else if (st.screen === 'grid') await h.eval(() => { const b = document.querySelector('#gridEvents button'); if (b) b.click(); return true; });
+        else if (st.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+        else break;
+        await h.wait(600);
+      }
+      let ready = false;
+      const w0 = Date.now();
+      while (Date.now() - w0 < 20000 && !ready) {
+        ready = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return !!(e && e.r && e.phase === 'run' && document.body.classList.contains('playing')); });
+        if (!ready) await h.wait(400);
+      }
+      if (!ready) return 'no race is running to test TAP RUN in';
+      // recreate the exact old failure condition from the long races: stamina empty
+      await h.eval(() => { const e = window.__tf.eng(); if (e && e.r) e.r.stamina = 0; return true; });
+      await h.wait(350);
+      const red = await h.eval(() => { const b = document.getElementById('btnTap'); return b ? b.classList.contains('exhausted') : null; });
+      if (red === null) return 'the TAP RUN button is missing';
+      if (red) return 'the TAP RUN button still turns RED (exhausted) at empty stamina - no button may ever block TAP RUN';
+      const rects = await h.eval(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }; return { stick: r('stick'), tap: r('btnTap') }; });
+      if (!rects.stick || !rects.tap) return 'the touch controls are not on screen';
+      const before = await h.eval(() => { const e = window.__tf.eng(); const i = window.__tf.input(); return { tap: i.tap, pos: e.r.pos, speed: e.r.speed }; });
+      const cdp = await page.target().createCDPSession();
+      const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
+      const P = (id, x, y) => ({ id, x, y, radiusX: 12, radiusY: 12, force: 1 });
+      await touch('touchStart', [P(1, rects.stick.x, rects.stick.y)]);
+      await h.wait(150);
+      await touch('touchMove', [P(1, rects.stick.x + 34, rects.stick.y)]);
+      await h.wait(150);
+      for (let i = 0; i < 6; i++) {
+        await touch('touchStart', [P(1, rects.stick.x + 34, rects.stick.y), P(2, rects.tap.x, rects.tap.y)]);
+        await h.wait(110);
+        await touch('touchEnd', [P(2, rects.tap.x, rects.tap.y)]);
+        await h.wait(110);
+      }
+      await touch('touchEnd', []);
+      const after = await h.eval(() => { const e = window.__tf.eng(); const i = window.__tf.input(); return { tap: i.tap, pos: e.r.pos, speed: e.r.speed }; });
+      if (after.tap - before.tap < 5) return 'only ' + (after.tap - before.tap) + ' of 6 TAP RUN taps even registered at empty stamina with the stick held';
+      if (!(after.pos > before.pos + 0.5 || after.speed > 0.5)) return 'TAP RUN taps landed but the runner did not run (pos ' + before.pos.toFixed(1) + ' -> ' + after.pos.toFixed(1) + ', speed ' + after.speed.toFixed(2) + ') - something still blocks running at empty stamina';
+      return true;
+    },
+  },
+  {
+    id: 'discus-one-action',
+    ask: 'DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, like a real thrower; at most 2 taps) and the camera must show the thrower clearly from behind/side, never hidden behind the power bar',
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const i = window.__tf && window.__tf.input ? window.__tf.input() : null; return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null, attempts: e && e.attempts ? e.attempts.length : 0, done: e ? !!e.done : false, act: i ? i.act : 0 }; });
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      // fast-forward any race already running so we can reach the menu
+      await h.eval(() => { if (!window.__tfdrv5) { window.__tfdrv5 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (ev.eng === 'throw' && (ev.throwType || ev.id) !== 'discus' && ev.id !== 'dt') { if (e.action) e.action(); } else if (ev.eng !== 'throw' && e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); } }, 200); } return true; });
+      const phasesSeen = new Set();
+      let started = false, holding = false, holdAt = 0, actAtHold = 0, maxActPerAttempt = 0, camChecked = false, guard = 0;
+      while (budget() && guard++ < 160) {
+        const s = await state();
+        if (s.phase) phasesSeen.add(s.phase);
+        if (s.screen === 'results' && started) break;
+        if (!started) {
+          if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) { b.click(); return 1; } const n = document.getElementById('bResNext'); if (n) n.click(); return 0; });
+          else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
+          else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /Discus/i.test(x.textContent)); if (b) b.click(); return true; });
+          else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+          else if (!s.screen && s.ev === 'dt') started = true;
+        } else {
+          if (s.done) { await h.wait(600); break; }
+          if (s.phase === 'flight' || s.phase === 'mark') await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) { if (e.phase === 'flight' && typeof e.ft === 'number' && typeof e.fT === 'number' && e.fT > 0) e.ft = Math.max(e.ft, e.fT - 0.05); if (e.phase === 'mark' && typeof e.resT === 'number') e.resT = Math.min(e.resT, 0.05); } return true; });
+          if (s.phase === 'hold' && !holding) {
+            actAtHold = s.act;
+            await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 })); return true; });
+            holding = true; holdAt = Date.now();
+            if (!camChecked) {
+              camChecked = true;
+              const cam = await h.eval(() => { const tf = window.__tf; const c = tf.camPos ? tf.camPos() : null; const rs = tf.rigs ? tf.rigs() : []; const g = rs && rs[0] && rs[0].group ? rs[0].group.position : null; return c && g ? { cx: c.x, cy: c.y, cz: c.z, ax: g.x, az: g.z } : null; });
+              if (!cam) return 'no camera report from the game (camPos hook missing)';
+              const dxz = Math.hypot(cam.cx - cam.ax, cam.cz - cam.az);
+              if (dxz > 11.5) return 'the discus camera is ' + dxz.toFixed(1) + 'm from the thrower - too far to show him clearly (wants close behind/side, ~9m)';
+              if (!(cam.cx < cam.ax - 2)) return 'the discus camera is not behind the thrower (cam x ' + cam.cx + ' vs thrower x ' + cam.ax + ')';
+              if (Math.abs(cam.cz - cam.az) < 3) return 'the discus camera is not to the side of the thrower (cam z ' + cam.cz + ' vs thrower z ' + cam.az + ')';
+            }
+          } else if (s.phase === 'spinning' && holding && Date.now() - holdAt > 1000) {
+            await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 })); return true; });
+            holding = false;
+            const used = s.act - actAtHold;
+            if (used > maxActPerAttempt) maxActPerAttempt = used;
+          }
+        }
+        await h.wait(300);
+      }
+      const bad = ['spin', 'power', 'angle'].filter(p => phasesSeen.has(p));
+      if (!started) return 'the discus event never loaded';
+      if (bad.length) return 'discus still uses the old multi-step phases (' + bad.join(', ') + ') - it must be ONE action: hold to spin, release to throw';
+      if (maxActPerAttempt > 2) return 'a discus attempt took ' + maxActPerAttempt + ' ACTION presses - at most 2 taps allowed (one hold)';
+      const end = await state();
+      if (!(end.screen === 'results' || end.done)) return 'the discus event never finished after 3 one-action throws';
+      return true;
+    },
+  },
 ];
+
