@@ -206,7 +206,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | CLAIMED | Exotic Racer Club mockup-faithful rebuild (apexracer.html): replace CC0 low-poly body with smooth procedural supercar matching the approved fleet mockup (quad round headlights, sculpted bumper, sleek curves); all 8 cars | Muse Cruz.inc | apexracer-mockup | — | 2026-10-15 12:35 CDT |
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
-| CLAIMED | JOB J45 REDO (robot: 0 lines of game code changed) - implement full BIG UPGRADE: clean screen, real-size truck, 70mph+BOOST, cannon-es physics, truck-arena.js stadium | Muse main | j45-redo | - | 2026-10-18 11:50 CDT |
+| DONE | JOB J45 REDO (robot: 0 lines of game code changed) - implement full BIG UPGRADE: clean screen, real-size truck, 70mph+BOOST, cannon-es physics, truck-arena.js stadium | Muse main | j45-redo | PR #530, main 0d032020 | 2026-10-18 12:05 CDT |
 | CLAIMED | JOB J16 Flick Fortress - STEP 1: main 3D model (pebble hero) to MODELS.md WAITING OWNER | Muse main | j16-pebble | - | 2026-10-18 05:10 CDT |
 | CLAIMED | JOB J47 Track&Field: menu fits 844x390 + RED button blocks TAP RUN - Muse Modern Plus | Muse Modern Plus | j47-menu | | 2026-10-18 09:27 CDT |
 | CLAIMED | JOB J22 NEW (daily 65/100): fix 1.5s gameplay freeze - Muse Modern Plus | Muse Modern Plus | j22-freeze | | 2026-10-18 05:45 CDT |
