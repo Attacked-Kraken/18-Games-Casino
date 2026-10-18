@@ -6,6 +6,16 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
+## KEEP (owner, 2026-10-17 — LOCKED: no Muse may change anything under this section)
+"everything that works and looks right now":
+- The batting flow: aim → windup → swing → ball flight → fielding
+- Three outfielders who chase and catch fly balls
+- The batter clearly visible and lit
+- Day lighting on the field (no green tint, no night-dark)
+- Crowd that reacts (cheers on hits, excitement on home runs)
+- Camera options (auto / wide / close views)
+- Music: menu and game modes with working mute
+
 ## MUST
 - A real stadium: grandstands, foul poles, day lighting
 - Three outfielders visible who chase and catch fly balls
