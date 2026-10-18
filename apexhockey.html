@@ -257,17 +257,24 @@ const OLD_ARENA = [];
 {
   const standMat = new THREE.MeshStandardMaterial({ color:0x27334a, roughness:.9 });
   // (these simple stands, the score cube and the old crowd are swapped for the shared stadium kit once it loads - see below)
-  // 6 stepped rows on all four sides, rising behind the boards
-  for(let side=0;side<4;side++){
-    for(let k=0;k<6;k++){
-      // sides sit beyond the boards (HZ=42.5); ends sit beyond the goal lines (HX=100)
-      const off = (side<2 ? HZ+14 : HX+12) + k*3.4, y = 2 + k*2.8; // y = row center; row top = y+1.1
-      const len = (side<2 ? 250 : 150);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(side<2?len:3.2, 2.2, side<2?3.2:len), standMat);
-      if(side===0) b.position.set(0,y,off); else if(side===1) b.position.set(0,y,-off);
-      else if(side===2) b.position.set(off,y,0); else b.position.set(-off,y,0);
-      scene.add(b); OLD_ARENA.push(b);
+  // 6 stepped rows on all four sides, rising behind the boards (JOB J10: merged 24 -> 1 draw call)
+  {
+    const standGeos=[];
+    const _m=new THREE.Matrix4();
+    for(let side=0;side<4;side++){
+      for(let k=0;k<6;k++){
+        const off = (side<2 ? HZ+14 : HX+12) + k*3.4, y = 2 + k*2.8;
+        const len = (side<2 ? 250 : 150);
+        const g = new THREE.BoxGeometry(side<2?len:3.2, 2.2, side<2?3.2:len);
+        if(side===0) _m.makeTranslation(0,y,off);
+        else if(side===1) _m.makeTranslation(0,y,-off);
+        else if(side===2) _m.makeTranslation(off,y,0);
+        else _m.makeTranslation(-off,y,0);
+        g.applyMatrix4(_m); standGeos.push(g);
+      }
     }
+    const standsMesh = new THREE.Mesh(mergeGeometries(standGeos), standMat);
+    scene.add(standsMesh); OLD_ARENA.push(standsMesh);
   }
   // center-hung scoreboard cube with a glowing score face
   const sbCanvas = document.createElement('canvas'); sbCanvas.width=512; sbCanvas.height=256;
@@ -288,18 +295,28 @@ const OLD_ARENA = [];
   const sbDark = new THREE.MeshStandardMaterial({ color:0x0a0e14, roughness:.8 });
   const cube = new THREE.Mesh(new THREE.BoxGeometry(30,16,30), [sbSide,sbSide,sbDark,sbDark,sbSide,sbSide]);
   cube.position.set(0,52,0); scene.add(cube); OLD_ARENA.push(cube);
-  const cable = new THREE.Mesh(new THREE.BoxGeometry(1.6,64,1.6), sbDark);
-  cable.position.set(0,92,0); scene.add(cable); OLD_ARENA.push(cable);
+  // JOB J10: scoreboard cable merged into truss geometry below
   window.__drawScoreboard = function(){ drawScoreboard(scoreH, scoreA); }; drawScoreboard(0,0);
-  // 4 light-rig trusses with fake volumetric cones aimed at the ice
+  // 4 light-rig trusses with fake volumetric cones (JOB J10: merged 8 -> 2 draw calls)
   const coneMat = new THREE.MeshBasicMaterial({ color:0xbfd9ff, transparent:true, opacity:.032,
     blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false, fog:false });
-  [[80,55],[-80,55],[80,-55],[-80,-55]].forEach(([x,z])=>{
-    const truss = new THREE.Mesh(new THREE.BoxGeometry(20,3,3), sbDark);
-    truss.position.set(x,78,z); scene.add(truss);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(15,75,12,1,true), coneMat);
-    cone.position.set(x,40.5,z); scene.add(cone);
-  });
+  {
+    const trussGeos=[], coneGeos=[];
+    const _m=new THREE.Matrix4();
+    for(const [x,z] of [[80,55],[-80,55],[80,-55],[-80,-55]]){
+      const tg = new THREE.BoxGeometry(20,3,3);
+      _m.makeTranslation(x,78,z); tg.applyMatrix4(_m); trussGeos.push(tg);
+      const cg = new THREE.ConeGeometry(15,75,12,1,true);
+      _m.makeTranslation(x,40.5,z); cg.applyMatrix4(_m); coneGeos.push(cg);
+    }
+    // scoreboard cable (was separate mesh)
+    {
+      const cab = new THREE.BoxGeometry(1.6,64,1.6);
+      _m.makeTranslation(0,92,0); cab.applyMatrix4(_m); trussGeos.push(cab);
+    }
+    scene.add(new THREE.Mesh(mergeGeometries(trussGeos), sbDark));
+    scene.add(new THREE.Mesh(mergeGeometries(coneGeos), coneMat));
+  }
 }
 
 /* ================= crowd: two instanced meshes, perf-safe ================= */
@@ -409,24 +426,36 @@ function roundedRectSegs(hw,hh,r){
 }
 
 /* ================= goals ================= */
-function makeGoal(gx){
-  const grp = new THREE.Group(); const s = Math.sign(gx); // net extends toward boards (+s x)
+// JOB J10: goals merged (14 meshes -> 2 draw calls)
+{
   const red = new THREE.MeshStandardMaterial({color:0xd8262f, roughness:.5});
-  const post = new THREE.CylinderGeometry(0.28,0.28,4,10);
-  [-GOAL_HALF,GOAL_HALF].forEach(z=>{ const p=new THREE.Mesh(post,red); p.position.set(gx,2,z); grp.add(p); });
-  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,GOAL_HALF*2+0.5,10), red);
-  bar.rotation.x=Math.PI/2; bar.position.set(gx,4,0); grp.add(bar);
   const netMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.28, side:THREE.DoubleSide, depthWrite:false});
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_HALF*2+1,4.4), netMat);
-  back.position.set(gx+s*3.4,2.2,0); back.rotation.y=Math.PI/2; grp.add(back);
-  [-GOAL_HALF-0.4,GOAL_HALF+0.4].forEach(z=>{
-    const side=new THREE.Mesh(new THREE.PlaneGeometry(3.6,4.4), netMat);
-    side.position.set(gx+s*1.7,2.2,z); side.rotation.y=Math.PI/2; grp.add(side); });
-  const top=new THREE.Mesh(new THREE.PlaneGeometry(3.6,GOAL_HALF*2+1), netMat);
-  top.rotation.x=Math.PI/2; top.rotation.z=Math.PI/2; top.position.set(gx+s*1.7,4.3,0); grp.add(top);
-  scene.add(grp);
+  const redGeos=[], netGeos=[];
+  const _m=new THREE.Matrix4(), _e=new THREE.Euler(), _q=new THREE.Quaternion(), _v=new THREE.Vector3(), _s=new THREE.Vector3(1,1,1);
+  function xform(geo, x,y,z, rx=0,ry=0,rz=0){
+    _e.set(rx,ry,rz); _q.setFromEuler(_e); _v.set(x,y,z);
+    _m.compose(_v,_q,_s); geo.applyMatrix4(_m); return geo;
+  }
+  for(const gx of [GOAL_LINE, -GOAL_LINE]){
+    const s = Math.sign(gx);
+    const post = new THREE.CylinderGeometry(0.28,0.28,4,10);
+    for(const z of [-GOAL_HALF, GOAL_HALF]){
+      redGeos.push(xform(post.clone(), gx,2,z));
+    }
+    const bar = new THREE.CylinderGeometry(0.28,0.28,GOAL_HALF*2+0.5,10);
+    redGeos.push(xform(bar, gx,4,0, Math.PI/2,0,0));
+    const back = new THREE.PlaneGeometry(GOAL_HALF*2+1,4.4);
+    netGeos.push(xform(back, gx+s*3.4,2.2,0, 0,Math.PI/2,0));
+    for(const z of [-GOAL_HALF-0.4, GOAL_HALF+0.4]){
+      const side = new THREE.PlaneGeometry(3.6,4.4);
+      netGeos.push(xform(side, gx+s*1.7,2.2,z, 0,Math.PI/2,0));
+    }
+    const top = new THREE.PlaneGeometry(3.6,GOAL_HALF*2+1);
+    netGeos.push(xform(top, gx+s*1.7,4.3,0, Math.PI/2,0,Math.PI/2));
+  }
+  scene.add(new THREE.Mesh(mergeGeometries(redGeos), red));
+  scene.add(new THREE.Mesh(mergeGeometries(netGeos), netMat));
 }
-makeGoal(GOAL_LINE); makeGoal(-GOAL_LINE);
 
 /* ================= skaters ================= */
 const GEO = {
