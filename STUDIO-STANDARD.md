@@ -96,6 +96,8 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - A wordy play screen (40+ words during play) or keyboard words ("space", "WASD") - see "Clean screen"
 - A "Your name" box. It must say **"Player nickname"**.
 - A broken 3D shader, missing files, a black screen, or a rotate sign
+- **Fits the screen:** a start/PLAY button below the bottom of a sideways phone (844x390). Every menu must fit with NO
+  scrolling - scale the menu panel down or put PLAY at the top, and keep long text behind "How to play" (owner, Oct 17)
 - Any of the owner's fix tests (`tools/game-check/fixes/<game>.mjs`) that this PR breaks
 
 The robot only blocks problems the pull request **adds**. Problems main already has are listed, but they don't trap you.
