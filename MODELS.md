@@ -118,6 +118,6 @@ Format (one section per model — keep the keys exactly like this):
 - look: studio
 - view: tools/model-viewer.html?m=models/pebble-hero.mjs&look=studio
 - by: Muse main (casino)
-- version: 1
-- notes: JOB J16 STEP 1 - cute round pebble hero with determined eyes (angled brows), gray stone body with 3 mossy green patches, stone feet and arms. CODE-BUILT (no CC0 round pebble hero with a face on Kenney/Poly Pizza/Quaternius). Matches the Gemini reference: gray stone, moss patches, determined eyes.
+- version: 2
+- notes: JOB J16 STEP 1 v2 (owner: "make more adorable") - bigger sparkly eyes, rosy cheeks, happy smile, no angry brows; chubbier body. CODE-BUILT (no CC0 round pebble hero with a face on Kenney/Poly Pizza/Quaternius).
 - status: WAITING OWNER
