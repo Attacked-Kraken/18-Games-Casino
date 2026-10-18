@@ -178,6 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | JOB J45 - Monster Truck (owner's latest order): full-size stadium bowl around course (no toy model/black slab), countdown camera dive onto truck, remove BOOST, 90 mph top speed, truck 2x J5 size. PLAN stage only | Muse algre141 | job-j45-plan | - | 2026-10-18 16:20 CDT |
 | CLAIMED | JOB J54 Ice Hockey arena (venues/kit/rink.js ONLY): full NHL bowl, moving crowd, arena lighting, centre-hung scoreboard, glass+boards. Window 2 owns rink.js; lead owns apexhockey.html. | Muse Dash | j54-rink-plan-dash | - | 2026-10-18 15:31 CDT |
 | CLAIMED | JOB J55 - kit/apex-sound.js SOUND PASS: shared WebAudio sound pack (crowd bed murmur/roar/groan/chant, sport hits, menu tune + game music, one mute). One-line use: ApexSound.play(name) | Muse algre141 | job-j55-sound | - | 2026-10-18 14:30 CDT |
 | CLAIMED | EXTRA ORDER for JOB J10 - Apex Ice Hockey gameplay (apexhockey.html): (1) smooth skating motion, (2) move stick LEFT/RIGHT inverted + glitchy, (3) puck in net always counts as goal. Keep everything else. | Muse Dash | j10-hockey-play-dash | - | 2026-10-18 13:55 CDT |
