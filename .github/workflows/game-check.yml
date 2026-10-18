@@ -23,7 +23,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 55   # all 8 games + play tests take ~30-40 min; at 25 every main run was cut off (Oct 17) and PRs were judged against a stale main
     steps:
       - uses: actions/checkout@v4
         with:
