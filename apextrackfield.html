@@ -538,20 +538,42 @@ if(!CAR) return {spd:1,stam:1,tech:1};
 return {spd:1+0.03*CAR.up.spd, stam:1+0.09*CAR.up.stam, tech:1+0.14*CAR.up.tech};
 }
 const EVENTS=[
+{id:'60m', name:'60m Dash', eng:'sprint', timed:true, dist:60, ref:6.34,
+hint:'Indoor dash. Explode out of the blocks and alternate LEFT / RIGHT the whole way - it is over in seconds.'},
 {id:'100m', name:'100m', eng:'sprint', timed:true, dist:100, ref:9.58,
 hint:'Alternate LEFT / RIGHT to sprint. Do not stride during SET — a false start warns you, a second one disqualifies you.'},
 {id:'200m', name:'200m', eng:'sprint', timed:true, dist:200, ref:19.19,
 hint:'Alternate LEFT / RIGHT. Hold top speed — stamina drains fast at full pace.'},
+{id:'300m', name:'300m', eng:'sprint', timed:true, dist:300, ref:30.81,
+hint:'A bend and a straight. Run hard, but save a little stamina for the home straight.'},
 {id:'400m', name:'400m', eng:'sprint', timed:true, dist:400, ref:43.03,
 hint:'One full lap. Pace yourself — empty stamina early and you will crawl home.'},
+{id:'600m', name:'600m', eng:'distance', timed:true, dist:600, ref:72.81, laps:2,
+hint:'A lap and a half. Your runner holds race pace on his own - tap to surge, kick hard down the last straight.'},
 {id:'800m', name:'800m', eng:'distance', timed:true, dist:800, ref:100.91, laps:2,
 hint:'Two laps vs 3 live rivals. Manage stamina and unleash the final kick on the last lap.'},
+{id:'1000m', name:'1000m', eng:'distance', timed:true, dist:1000, ref:131.96, laps:3,
+hint:'You join the race with 700m to go. Hold pace, then kick on the bell lap.'},
 {id:'1500m', name:'1500m', eng:'distance', timed:true, dist:1500, ref:206.00, laps:4,
 hint:'Metric mile. Sit in, stay efficient, kick hard when the bell rings.'},
+{id:'mile', name:'Mile', eng:'distance', timed:true, dist:1609.34, ref:223.13, laps:4,
+hint:'The classic mile. You join with 700m to go - stay with the pack and kick when the bell rings.'},
+{id:'3000m', name:'3000m', eng:'distance', timed:true, dist:3000, ref:440.67, laps:8,
+hint:'You join with 700m to go after the early laps. Stay efficient and kick late.'},
+{id:'steeple', name:'3000m Steeplechase', eng:'distance', timed:true, dist:3000, ref:472.11, laps:8, steeple:true,
+hint:'Barriers every 80m and they do NOT fall - tap JUMP before each one or you stumble. You join with 700m to go.'},
 {id:'5000m', name:'5000m', eng:'distance', timed:true, dist:5000, ref:755.36, laps:13,
 hint:'12.5 laps of attrition. Smooth striding wins — sprinting early will break you.'},
+{id:'10000m', name:'10,000m', eng:'distance', timed:true, dist:10000, ref:1571.0, laps:25,
+hint:'25 laps - you join for the last 700m with the leaders. Whoever kicks best wins.'},
+{id:'60h', name:'60m Hurdles', eng:'hurdles', timed:true, dist:60, ref:7.29, hCount:5, hStart:13.72, hGap:9.14,
+hint:'Five hurdles indoors. Tap HURDLE just before each one - hit it and it goes down and slows you.'},
+{id:'100h', name:'100m Hurdles', eng:'hurdles', timed:true, dist:100, ref:12.12, hCount:10, hStart:13.0, hGap:8.5,
+hint:'Ten hurdles, tighter spacing. Keep the rhythm: stride, stride, HURDLE.'},
 {id:'110h', name:'110m Hurdles', eng:'hurdles', timed:true, dist:110, ref:12.80, hCount:10, hStart:13.72, hGap:9.14,
 hint:'Sprint, then tap ACTION to clear each of the 10 hurdles. Clip one and you lose speed.'},
+{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:8, hStart:45, hGap:35,
+hint:'Eight hurdles around the bend. Jump late and you knock one flat.'},
 {id:'400h', name:'400m Hurdles', eng:'hurdles', timed:true, dist:400, ref:46.29, hCount:10, hStart:45, hGap:35,
 hint:'10 hurdles over a full lap. Rhythm is everything — jump late and you will clip.'},
 {id:'relay', name:'4x100m Relay', eng:'relay', timed:true, ref:36.84,
@@ -570,10 +592,15 @@ hint:'Tap ACTION to lock power, tap ACTION again to release at the best angle. 3
 hint:'ONE action: HOLD ACTION to spin, RELEASE to throw - like a real thrower. 3 attempts.'},
 {id:'ht', name:'Hammer Throw', eng:'throw', throwType:'hammer', timed:false, ref:86.74,
 hint:'Tap ACTION in rhythm with the 3 spin pulses for bonus, then lock power and release angle. 3 attempts.'},
+{id:'wt', name:'Weight Throw', eng:'throw', throwType:'weight', timed:false, ref:25.86,
+hint:'The heavy indoor hammer. Tap ACTION with the 3 spin pulses, then lock power and the release angle. 3 attempts.'},
 {id:'jt', name:'Javelin Throw', eng:'throw', throwType:'javelin', timed:false, ref:98.48,
 hint:'Stride the run-up for speed, tap ACTION to lock power, tap ACTION to release at the best angle. 3 attempts.'},
 ];
 const EV_BY_ID={}; EVENTS.forEach(e=>EV_BY_ID[e.id]=e);
+/* Championship mode keeps its classic 17 events (EVENT x OF 17); the new events play in Free Play and the career. */
+const CHAMP_IDS=['100m','200m','400m','800m','1500m','5000m','110h','400h','relay','lj','tj','hj','pv','sp','dt','ht','jt'];
+const CHAMP_EVENTS=CHAMP_IDS.map(id=>EV_BY_ID[id]);
 function pointsFor(ev, result){
 if(result==null||!isFinite(result)||result<=0) return 0;
 let p = ev.timed ? 1200*Math.pow(ev.ref/result,1.8)
@@ -643,7 +670,7 @@ if(!isFinite(r)||r<=0||r>1) throw new Error('Code rating is out of range.');
 return {name:obj.n.trim().slice(0,14), rating:r};
 }
 function playerRating(){
-const maxTotal=EVENTS.length*1200;
+const maxTotal=CHAMP_EVENTS.length*1200;
 if(champBest>0) return clamp(0.78+(champBest/maxTotal)*0.21, 0.78, 0.99);
 return 0.82;
 }
@@ -765,29 +792,56 @@ return E;
 }
 function createDistanceEngine(ev, rivals){
 const S=8, dist=ev.dist;
-const ts = dist>=5000?6 : dist>=1500?3 : 1.6;
-const maxSpd = 10.4, drain = dist>=5000?9 : dist>=1500?16 : 30;
+/* Owner 2026-10-17: "I'm running super fast" - the old engine ran the 800m at 1.6x and the 1500m
+   at 3x speed. Now every distance race runs at REAL speed. Races longer than 800m start with
+   700m to go (the early laps are run for you at the field's pace and the clock already shows
+   that time), so a 5000m is not a 13-minute tap session. Your runner holds race pace on his
+   own (CRUISE); taps surge above it, and that is what burns stamina. */
+const maxSpd = 10.4, drain = dist>=1500?20 : 30;
+const LIVE=700, liveFrom = dist>800 ? dist-LIVE : 0;
+const ai = rivals.map(rv=>makeLiveRival(rv,ev));
+const pack = ai.reduce((a,b)=>a+b.tTarget,0)/Math.max(1,ai.length);   // the field's average finish time
+const packPace = dist/pack;                                             // m/s
+const t0 = liveFrom>0 ? liveFrom/packPace*1.004 : 0;
+if(liveFrom>0) for(const a of ai){ a.el=99; a.speed=dist/a.tTarget; a.pos=Math.min(dist-60, t0*dist/a.tTarget); }
+const barriers=[];
+if(ev.steeple){ for(let p=liveFrom+40; p<dist-30 && barriers.length<10; p+=80) barriers.push({x:p, clipped:false}); }
 const E={
-ev, done:false, dq:false, S, dist, ts,
+ev, done:false, dq:false, S, dist, ts:1, liveFrom, cruise:packPace*0.985, hurdles:barriers,
 phase:'marks', phaseT:0,
-r:newRunner(), time:0, place:4, lap:1,
-ai: rivals.map(rv=>makeLiveRival(rv,ev)),
-actionLabel(){ return '—'; },
+r:newRunner(), time:t0, place:4, lap:Math.floor(liveFrom/400)+1, msg:'', msgT:0,
+ai,
+actionLabel(){ return ev.steeple?'JUMP':'—'; },
 stride(side){
 if(this.done||this.phase!=='run') return;
-let imp=0.92*this.ts;
-if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.28;
+let imp=0.70;
+if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.25;
 applyStride(this.r, side, imp);
 },
-action(){},
+action(){
+if(!ev.steeple||this.done||this.phase!=='run'||this.r.air) return;
+this.r.air=true; this.r.vy=540; AudioSys.click();
+},
 update(dt){
 if(this.done){ this.finishT=(this.finishT||0)+dt; return; }
-this.phaseT+=dt;
-if(this.phase==='marks'){ if(this.phaseT>1.2){ this.phase='run'; AudioSys.pistol(); } return; }
-const sdt=dt*this.ts;
-this.time+=sdt;
-updateRunner(this.r, sdt, maxSpd, drain);
-for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,sdt,dist,true); }
+this.phaseT+=dt; if(this.msgT>0) this.msgT-=dt;
+if(this.phase==='marks'){
+if(this.phaseT>1.2){ this.phase='run'; AudioSys.pistol();
+if(liveFrom>0){ this.r.speed=this.cruise; this.msg=LIVE+'m TO GO'; this.msgT=2.2; } }
+return; }
+this.time+=dt;
+const prev=this.r.pos;
+updateRunner(this.r, dt, maxSpd, drain);
+// CRUISE: with any stamina left the runner settles back to race pace instead of slowing to a walk
+if(this.r.speed<this.cruise && this.r.stamina>0) this.r.speed+=(this.cruise-this.r.speed)*Math.min(1,dt*1.6);
+if(this.r.air){ this.r.vy-=1500*dt; this.r.airY+=this.r.vy*dt; if(this.r.airY<=0){ this.r.airY=0; this.r.air=false; AudioSys.thud(); } }
+for(const h of barriers){
+if(prev<h.x && this.r.pos>=h.x && !h.clipped && this.r.airY<52){
+h.clipped=true; this.r.speed*=0.62; this.r.stamina=Math.max(0,this.r.stamina-12);
+this.msg='STUMBLED ON THE BARRIER'; this.msgT=1.6; AudioSys.thud();
+}
+}
+for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,dt,dist,true); }
 this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
 this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
@@ -798,7 +852,7 @@ this.place=1+this.ai.filter(a=>a.tTarget<this.time).length;
 hud(){
 const laps=ev.laps||Math.ceil(dist/400);
 return {event:ev.name.toUpperCase(), main:fmtTime(this.time),
-sub:'Lap '+this.lap+'/'+laps+' · '+Math.min(dist,Math.floor(this.r.pos))+'m',
+sub:'Lap '+this.lap+'/'+laps+' · '+Math.min(dist,Math.floor(this.r.pos))+'m'+(ev.steeple?' · '+barriers.filter(h=>h.x>this.r.pos).length+' barriers left':''),
 pos:ordinal(this.place), speed:this.r.speed/maxSpd, stam:this.r.stamina/100};
 },
 getResult(){
@@ -806,6 +860,7 @@ const t=Math.round(this.time*100)/100;
 return {value:t, display:fmtTime(t)+'  ('+ordinal(this.place)+')', points:pointsFor(ev,t)};
 }
 };
+if(liveFrom>0) E.r.pos=liveFrom;   // stand at the 700m-to-go spot from the first frame
 return E;
 }
 function createHurdlesEngine(ev, rivals){
@@ -853,7 +908,7 @@ if(this.r.airY<=0){ this.r.airY=0; this.r.air=false; AudioSys.thud(); }
 for(const h of hurdles){
 if(prev<h.x && this.r.pos>=h.x && !h.clipped){
 if(this.r.airY<52){
-h.clipped=true; this.r.speed*=0.78; this.penalty+=0.12;
+h.clipped=true; h.fallT=0; this.r.speed*=0.78; this.penalty+=0.12;
 AudioSys.thud();            }
 }
 }
@@ -945,18 +1000,21 @@ stride(side){ if(this.done||this.phase!=='runup') return; applyStride(this.r,sid
 action(){
 if(this.done) return;
 if(this.phase==='runup'){
-if(this.r.pos<BOARD0){ this.foul=true; this.res='FOUL — no board'; }
-else if(this.r.pos>BOARD1){ this.foul=true; this.res='FOUL — over the board'; }
-else { this.foul=false; this.phase='angle'; AudioSys.click(); return; }
-this.endAttempt(); AudioSys.whistle();
+/* owner 2026-10-17: "I can't jump" - any press before the board was an instant FOUL, so a jump
+   only counted inside a 2.5m window. Real rule now: take off anywhere up to the foul line (the
+   front of the board); an early takeoff is legal and is measured from the board, so you just
+   lose the gap. Only crossing the line is a foul. A press far from the board is ignored. */
+if(this.r.pos<BOARD0-12){ this.msg='WAIT FOR THE BOARD'; this.msgT=1.0; return; }
+if(this.r.pos>BOARD1){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); return; }
+this.foul=false; this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early counts as on the board; past that you give back part of the gap */ this.phase='angle'; AudioSys.click(); return;
 }else if(this.phase==='angle'){
 this.angSet=this.ang; this.startFlight(); AudioSys.click();
 }
 },
 startFlight(){
 const v=this.r.speed, th=this.angSet*Math.PI/180;
-const d=(v*v*Math.sin(2*th)/9.81)*0.95;
-this.jumpD=Math.max(0,d);
+const d=(v*v*Math.sin(2*th)/9.81)*0.95-(this.lost||0);
+this.jumpD=Math.max(0.5,d);
 this.fx=this.r.pos; this.ft=0;
 this.fvx=v*Math.cos(th); this.fvy=v*Math.sin(th);
 this.fT=2*this.fvy/9.81;
@@ -970,6 +1028,7 @@ if(!this.foul){ AudioSys.cheer(1.0); }
 },
 update(dt){
 if(this.done){ this.finishT=(this.finishT||0)+dt; return; }
+if(this.msgT>0) this.msgT-=dt;
 if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
@@ -983,7 +1042,7 @@ if(this.ft>=this.fT){ this.endAttempt(); }
 this.resT-=dt;
 if(this.resT<=0){
 if(this.attempt>=3){ this.done=true; this.finishT=0; }
-else { this.attempt++; this.r=newRunner(); this.phase='runup'; }
+else { this.attempt++; this.r=newRunner(); this.phase='runup'; this.lost=0; }
 }
 }
 },
@@ -1013,17 +1072,19 @@ stride(side){ if(this.done||this.phase!=='runup') return; applyStride(this.r,sid
 action(){
 if(this.done) return;
 if(this.phase==='runup'){
-if(this.r.pos<BOARD0||this.r.pos>BOARD1){ this.foul=true; this.res=this.r.pos>BOARD1?'FOUL — over the board':'FOUL — no board'; this.endAttempt(); AudioSys.whistle(); }
-else { this.phase='phase'; this.sub=0; this.marker=0; this.mdir=1; this.qs=[]; AudioSys.click(); }
+// owner 2026-10-17: same real rule as the long jump - early takeoff is legal (measured from the board)
+if(this.r.pos<BOARD0-12){ this.msg='WAIT FOR THE BOARD'; this.msgT=1.0; return; }
+if(this.r.pos>BOARD1){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early counts as on the board; past that you give back part of the gap */ this.vT=this.r.speed; this.phase='phase'; this.sub=0; this.marker=0; this.mdir=1; this.qs=[]; AudioSys.click(); }
 }else if(this.phase==='phase'){
 const q=1-Math.abs(this.marker-0.5)/0.5;
 this.qs.push(clamp(q,0,1));
 AudioSys.click(); AudioSys.thud();
 this.sub++;
 if(this.sub>=3){
-const v=this.r.speed;
-const d=v*(0.55*this.qs[0]+0.45*this.qs[1]+0.75*this.qs[2]);
-this.jumpD=Math.max(0,d); this.foul=false;
+const v=this.vT||this.r.speed;
+const d=v*(0.55*this.qs[0]+0.45*this.qs[1]+0.75*this.qs[2])-(this.lost||0);
+this.jumpD=Math.max(0.5,d); this.foul=false;
 this.endAttempt();
 }
 }
@@ -1037,6 +1098,7 @@ else this.res=this.res;
 },
 update(dt){
 if(this.done){ this.finishT=(this.finishT||0)+dt; return; }
+if(this.msgT>0) this.msgT-=dt;
 if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
@@ -1048,7 +1110,7 @@ this.air=Math.abs(Math.sin(this.sub*2+this.marker*3))*40;
 this.resT-=dt;
 if(this.resT<=0){
 if(this.attempt>=3){ this.done=true; this.finishT=0; }
-else { this.attempt++; this.r=newRunner(); this.phase='runup'; this.air=0; }
+else { this.attempt++; this.r=newRunner(); this.phase='runup'; this.air=0; this.lost=0; }
 }
 }
 },
@@ -1138,6 +1200,7 @@ shot:  {name:'SHOT PUT',      max:23.5, spin:false, runup:false, label:'SHOT'},
 discus:{name:'DISCUS THROW',  max:72,   spin:true,  runup:false, label:'DISCUS'},
 hammer:{name:'HAMMER THROW',  max:84,   spin:true,  runup:false, label:'HAMMER'},
 javelin:{name:'JAVELIN THROW',max:96,   spin:false, runup:true,  label:'JAVELIN'},
+weight:{name:'WEIGHT THROW',  max:25.5, spin:true,  runup:false, label:'WEIGHT'},
 };
 function createThrowEngine(ev, rivals){
 const T=THROW_DEF[ev.throwType];
@@ -1759,9 +1822,15 @@ setHurdles(list){
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(10,list.length);
+const QT=new THREE.Quaternion(), AX=new THREE.Vector3(0,0,1), FW=new THREE.Vector3();
 for(let k=0;k<n;k++){
 const h=list[k];
-P.set(h.x,0.535,h.z); E.set(0,h.heading||0,0); Q.setFromEuler(E);
+E.set(0,h.heading||0,0); Q.setFromEuler(E);
+// owner 2026-10-17: a hurdle you hit goes DOWN - it tips forward (away from the runner) and lies on the track
+const f=clamp(h.fall||0,0,1), ang=f*1.42;
+QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
+FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
+P.set(h.x+FW.x*0.5*Math.sin(ang), 0.535*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -1785,7 +1854,7 @@ this.implement={shot,discus,hammer,jav,cur:null};
 showImplement(kind,x,y,z){
 const im=this.implement;
 for(const k of ['shot','discus','hammer','jav']) im[k].visible=false;
-const key={shot:'shot',discus:'discus',hammer:'hammer',javelin:'jav'}[kind]||'shot';
+const key={shot:'shot',discus:'discus',hammer:'hammer',weight:'hammer',javelin:'jav'}[kind]||'shot';
 im.cur=im[key]; im.cur.visible=true; im.cur.position.set(x,y,z);
 },
 hideImplement(){ if(this.implement.cur) this.implement.cur.visible=false; this.implement.cur=null; },
@@ -2198,13 +2267,22 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='distance'){
-const mapP=p=>(startSFor(ev.dist)+p)%400;
-const lp0=lanePoint(mapP(0),laneOff(3));
+/* owner 2026-10-17: "one starts at a finish line" - the 800m lined everyone up under the
+   FINISH banner. Now the 800m (and 600m) start STAGGERED in lanes like the real race: each lane
+   starts a bend-stagger ahead and the field cuts in to lane 1 over the first 110m. Longer races
+   join at 700m to go, which is out on the bend - nowhere near the finish banner. */
+const stag=lane=> ENG.liveFrom>0 ? 0 : Math.PI*1.22*lane;
+const mapPL=(lane,p)=>{ const rel=p-ENG.liveFrom; const k=clamp(1-rel/110,0,1); return ((startSFor(ev.dist)+p+stag(lane)*k)%400+400)%400; };
+const mapP=p=>mapPL(3,p);
+const bW=(ENG.hurdles||[]).map(h=>{ const lp=lanePoint(mapPL(3,h.x),laneOff(3)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; });
+W3D.setHurdles(bW);
+const lp0=lanePoint(mapP(ENG.liveFrom),laneOff(3));
 W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10);
 ENG.draw3=dt=>{
 const r=ENG.r, s=mapP(r.pos);
 const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
-ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapP(a.pos),RIV_LANES[i],a.speed,PMAX,0); });
+ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0); else R[i+1].group.visible=false; });
+if(ENG.msgT>0) centerText(ENG.msg,H*0.30,24,ENG.msg.indexOf('STUMBLED')===0?'#ffb34d':'#ffd34d');
 // JOB J42 (owner): the line above used to call mapPL, which only exists in the sprint/hurdles
 // branches - so the distance draw3 threw before followCam/render EVERY frame and the camera
 // never followed a long race (frozen view, the runner a speck). mapP is this branch's own map:
@@ -2232,8 +2310,12 @@ const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
 // JOB J7 round 2 (owner): the hurdles camera also STARTS right behind the player (10 back, 15 up, centered)
 if(straight) W3D.camSnap(-ev.dist-7,2.8,straightZ(3), -ev.dist+10,1.2,straightZ(3));
 else { const lp=lanePoint(visS(3,0,ev.dist),laneOff(3)); W3D.camSnap(lp.x-lp.tx*7,2.8,lp.z-lp.tz*7, lp.x+lp.tx*10,1.2,lp.z+lp.tz*10); }
+let anyFall=false;
 ENG.draw3=dt=>{
 const r=ENG.r, airM=r.airY*0.011;
+let moved=false;
+ENG.hurdles.forEach((h,k)=>{ if(h.clipped && (hWorld[k].fall||0)<1){ hWorld[k].fall=Math.min(1,(hWorld[k].fall||0)+dt*4.5); moved=true; } });
+if(moved) W3D.setHurdles(hWorld);
 if(straight){
 placeStraight(R[0],r.pos,ev.dist,3,r.speed,PMAX,airM);
 ENG.ai.forEach((a,i)=>placeStraight(R[i+1],a.pos,ev.dist,RIV_LANES[i],a.speed,PMAX,0));
@@ -2241,7 +2323,7 @@ followCam(straightX(r.pos,ev.dist),straightZ(3),1,0,dt);
 if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,ev.dist),0.15,straightZ(3),1);
 }else{
 const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,airM);
-ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapP(a.pos),RIV_LANES[i],a.speed,PMAX,0));
+ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0));
 followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
@@ -2287,7 +2369,8 @@ if(!R[0].human) R[0].airY=airM;
 for(let i=1;i<7;i++) R[i].group.visible=false;
 W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
-if(ENG.phase==='runup'&&ENG.r.pos>31.5) centerText('TAKEOFF!', H*0.30, 24, '#ffd34d');
+if(ENG.phase==='runup'&&ENG.r.pos>27.5) centerText('TAKEOFF - TAP JUMP!', H*0.30, 24, '#ffd34d');
+if(ENG.msgT>0) centerText(ENG.msg, H*0.38, 20, '#ffb34d');
 if(ENG.phase==='angle') drawAngleMeter(ENG.ang,15,65);
 if(ENG.phase==='mark'){
 const last=ENG.attempts[ENG.attempts.length-1];
@@ -2310,6 +2393,8 @@ if(!R[0].human) R[0].airY=airM;
 for(let i=1;i<7;i++) R[i].group.visible=false;
 W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
+if(ENG.phase==='runup'&&ENG.r.pos>27.5) centerText('TAKEOFF - TAP JUMP!', H*0.30, 24, '#ffd34d');
+if(ENG.msgT>0) centerText(ENG.msg, H*0.38, 20, '#ffb34d');
 if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.38,0.62,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
 if(ENG.phase==='mark'){
 const last=ENG.attempts[ENG.attempts.length-1];
@@ -2485,9 +2570,9 @@ G.totals={}; G.totals[athleteName]=0;
 G.rivalPts={};
 rivals.forEach(r=>{
 G.totals[r.name]=0;
-G.rivalPts[r.name]=EVENTS.map(ev=>pointsFor(ev,rivalMark(ev,r.rating)));
+G.rivalPts[r.name]=CHAMP_EVENTS.map(ev=>pointsFor(ev,rivalMark(ev,r.rating)));
 });
-showCard(EVENTS[0]);
+showCard(CHAMP_EVENTS[0]);
 }
 function showCard(ev){
 $('cardTitle').textContent=ev.name.toUpperCase();
@@ -2503,7 +2588,7 @@ if(!G.freeRivals) G.freeRivals=freeRivals();
 rl='<b>FIELD:</b> '+G.freeRivals.map(r=>esc(r.name)+' ('+r.rating.toFixed(2)+')').join(' · ')+'<br><b>FREE PLAY:</b> full field of 7 — no pressure, chase your best.';
 }
 if(ev.eng==='relay') rl+='<br><b>TEAM:</b> '+RELAY_TEAM.map(esc).join(' · ');
-if(G.mode==='career'&&G.car) rl+='<br><b>'+esc(SEASONS[CAR.season-1]).toUpperCase()+'</b> SEASON · '+(G.car.champ?'CHAMPIONSHIP MEET':'MEET '+(G.car.meet+1)+' OF 4');
+if(G.mode==='career'&&G.car) rl+='<br><b>'+esc(SEASONS[CAR.season-1]).toUpperCase()+'</b> SEASON · '+(G.car.champ?'CHAMPIONSHIP MEET':'MEET '+(G.car.meet+1)+' OF '+meetsIn(CAR.season))+'<br>'+esc(meetName(CAR.season,G.car.meet)).toUpperCase()+' · CAREER MEET '+careerMeetNo(CAR.season,G.car.meet)+' / '+CAREER_MEETS;
 $('cardRivals').innerHTML=rl;
 $('cardHint').innerHTML='<b>HOW:</b> '+esc(ev.hint);
 G.cardEv=ev;
@@ -2620,9 +2705,9 @@ if(G.mode==='champ'){
 G.totals[athleteName]+=res.points;
 G.rivals.forEach(r=>{ G.totals[r.name]+=G.rivalPts[r.name][G.evIndex]; });
 const rows=Object.keys(G.totals).map(n=>({n:n,p:G.totals[n]})).sort((a,b)=>b.p-a.p);
-const isLast=G.evIndex>=EVENTS.length-1;
+const isLast=G.evIndex>=CHAMP_EVENTS.length-1;
 if(isLast){ nextLabel='FINAL RESULTS'; nextFn=showFinal; }
-else nextFn=()=>{ G.evIndex++; showCard(EVENTS[G.evIndex]); };
+else nextFn=()=>{ G.evIndex++; showCard(CHAMP_EVENTS[G.evIndex]); };
 $('resTitle').textContent=ev.name.toUpperCase()+' — EVENT '+(G.evIndex+1)+' OF 17';
 finishCommon(ev,res,newBest,rows,nextLabel,nextFn);
 }else if(G.mode==='career'){
@@ -2665,22 +2750,44 @@ startCeremony(rows.slice(0,3).map(r=>({n:r.n,d:r.p+' PTS'})));
 showScreen('results');
 }
 function seasonRivals(){
-const base=0.80+CAR.season*0.035;
+// fields get a little stronger every meet, and a step stronger every season
+const base=0.80+CAR.season*0.035+(CAR.meet||0)*0.0015;
 const rs=BASE_RIVALS.map((r,i)=>({name:r.name,rating:clamp(base+rnd(-0.015,0.015),0.8,0.985),kit:r.kit}));
 if(friendRival) rs.push({name:friendRival.name,rating:clamp(friendRival.rating,0.8,0.985),kit:'#9b59b6'});
 return fillField(rs); // JOB J7 round 2: full field of 7 in career races too
 }
+/* owner 2026-10-17: "the career is only 3 events - we need a lot more, like 50".
+   The career is now a 50-meet college calendar: Freshman 12, Sophomore 12, Junior 12,
+   Senior 14 meets. The last meet of every season is that season's championship. Every meet
+   has its own name and 1-3 events, and the calendar walks through ALL the events (sprints,
+   middle and long distance, hurdles, steeple, relay, jumps, vaults, throws). */
+const SEASON_MEETS=[12,12,12,14];
+const CAREER_MEETS=SEASON_MEETS.reduce((a,b)=>a+b,0);
+function meetsIn(season){ return SEASON_MEETS[(season||1)-1]||12; }
+function isChampMeet(season,meet){ return meet>=meetsIn(season)-1; }
+function careerMeetNo(season,meet){ let n=0; for(let i=1;i<season;i++) n+=meetsIn(i); return n+meet+1; }
+const MEET_NAMES=['Season Opener','Indoor Classic','Dual Meet','Twilight Invitational','Relays Weekend','Border Battle',
+'Distance Carnival','Sprint Showdown','Field Day Invitational','Rivalry Dual','Last Chance Qualifier','Spring Classic',
+'Winter Games','Night of Speed','Hurdles Gala','Throwers Cup','Jumpers Open','Midweek Mile Night'];
+const CHAMP_NAMES=['Freshman Conference Championship','Sophomore Regional Championship','Junior National Championship','Senior Apex Games Final'];
+function meetName(season,meet){ return isChampMeet(season,meet)? CHAMP_NAMES[season-1] : MEET_NAMES[((careerMeetNo(season,meet)-1)*5)%MEET_NAMES.length]; }
+function meetEventCount(season,meet){ const n=careerMeetNo(season,meet); return isChampMeet(season,meet)?5:(n%3===0?3:2); }
 function careerMeetEvents(){
-const champ=G.car.champ, n=champ?5:3;
-const evs=[], start=(CAR.season*41+G.car.meet*13)%EVENTS.length;
-for(let i=0;i<n;i++) evs.push(EVENTS[(start+i*7)%EVENTS.length]);
-return evs;
+// an even rotation through every event: over the 50 meets each event comes up 4-5 times,
+// and stepping by 7 through the list mixes sprints, distance, hurdles, jumps and throws in each meet
+let cur=0;
+for(let se=1;se<=4;se++) for(let m=0;m<meetsIn(se);m++){
+if(se===CAR.season&&m===G.car.meet){ const evs=[]; for(let i=0;i<meetEventCount(se,m);i++) evs.push(EVENTS[((cur+i)*7)%EVENTS.length]); return evs; }
+cur+=meetEventCount(se,m);
+}
+return [EVENTS[0]];
 }
 function startCareerMeet(){
 if(!CAR||CAR.done) newCareer();
 if(CAR.meet==null) CAR.meet=0;
 G.mode='career';
-G.car={meet:CAR.meet, champ:CAR.meet===3, evIdx:0, results:[], totals:null, rivalTotals:null};
+if(CAR.meet>=meetsIn(CAR.season)) CAR.meet=meetsIn(CAR.season)-1;
+G.car={meet:CAR.meet, champ:isChampMeet(CAR.season,CAR.meet), evIdx:0, results:[], totals:null, rivalTotals:null};
 G.car.events=careerMeetEvents();
 G.carRivals=seasonRivals();
 if(G.car.champ){
@@ -2707,7 +2814,7 @@ G.carRivals.forEach((r,i)=>{ C.totals[r.name]+=C.rivalTotals[r.name][C.evIdx]; }
 }
 saveCareer();
 C.evIdx++;
-$('resTitle').textContent=ev.name.toUpperCase()+' — '+SEASONS[CAR.season-1].toUpperCase()+(C.champ?' · FINAL MEET':' · MEET '+(C.meet+1));
+$('resTitle').textContent=ev.name.toUpperCase()+' — '+SEASONS[CAR.season-1].toUpperCase()+(C.champ?' · CHAMPIONSHIP':' · MEET '+(C.meet+1)+' OF '+meetsIn(CAR.season));
 const rows=C.results.map(r=>({n:r.ev+' — '+ordinal(r.place),p:r.pts}));
 const more=C.evIdx<C.events.length;
 finishCommon(ev,res,newBest,rows, more?'NEXT EVENT':(C.champ?'MEET RESULTS':'BACK TO CAREER'),
@@ -2731,7 +2838,7 @@ if(CAR.season>=4){
 CAR.done=true; saveCareer();
 $('resTitle').textContent='APEX GAMES — CAREER COMPLETE';
 $('resMark').textContent=athleteName+' — HALL OF FAME';
-$('resPoints').textContent='4 seasons conquered · '+CAR.stats.tpEarned+' TP earned';
+$('resPoints').textContent='4 seasons · '+CAREER_MEETS+' meets conquered · '+CAR.stats.tpEarned+' TP earned';
 $('resMedals').innerHTML=medalTable([{m:'g',n:athleteName,d:'SENIOR CHAMPION'}]);
 $('resBoard').innerHTML='';
 $('bResNext').textContent='BACK TO MENU';
@@ -2780,7 +2887,8 @@ return '<div class="uprow"><div class="nm">'+u.n+'<small>'+u.d+'</small></div><d
 }).join('');
 el.innerHTML=
 '<div class="hint" style="text-align:center"><b style="font-size:18px">'+esc(CAR.name)+'</b><br>'+
-'Season: <b>'+SEASONS[CAR.season-1]+'</b> ('+CAR.season+'/4) · Meet '+(CAR.meet+1)+'/4 '+(CAR.meet===3?'(FINAL)':'')+'<br>'+
+'Season: <b>'+SEASONS[CAR.season-1]+'</b> ('+CAR.season+'/4) · Meet '+(CAR.meet+1)+'/'+meetsIn(CAR.season)+' '+(isChampMeet(CAR.season,CAR.meet)?'(CHAMPIONSHIP)':'')+'<br>'+
+'Next: <b>'+esc(meetName(CAR.season,CAR.meet))+'</b> · Career meet '+careerMeetNo(CAR.season,CAR.meet)+' of '+CAREER_MEETS+'<br>'+
 'Training points: <b>'+CAR.tp+' TP</b> · Meets: '+CAR.stats.meets+' · Meet wins: '+CAR.stats.wins+'</div>'+
 ups+
 '<div class="hint">Championship best: <b>'+champBest+' PTS</b></div>';
@@ -2788,7 +2896,7 @@ el.querySelectorAll('[data-up]').forEach(b=>b.addEventListener('click',()=>{
 const k=b.getAttribute('data-up'), lv=CAR.up[k], cost=lv+1;
 if(lv<5&&CAR.tp>=cost){ CAR.tp-=cost; CAR.up[k]++; saveCareer(); careerDashboard(); AudioSys.click(); }
 }));
-$('bCareerMeet').textContent='PLAY '+(CAR.meet===3?'FINAL MEET':'MEET '+(CAR.meet+1));
+$('bCareerMeet').textContent='PLAY '+(isChampMeet(CAR.season,CAR.meet)?'CHAMPIONSHIP':'MEET '+(CAR.meet+1));
 }
 const TRN_EVENTS=['100m','lj','400m'];
 const TRN_ROUNDS=['QUARTERFINAL','SEMIFINAL','FINAL'];
@@ -3098,6 +3206,9 @@ addEventListener('pointerdown',function(){try{var el=document.documentElement;if
 { const _sk=$('btnSkip'); if(_sk) _sk.addEventListener('click', ()=>devSkipLevel()); }
 /* JOB J7 test hooks (the game-check fix tests read these) */
 window.__tf={
+hurdleTilt:()=>{ const im=W3D.hurdlesMesh, M=new THREE.Matrix4(), out=[]; for(let k=0;k<im.count;k++){ im.getMatrixAt(k,M); out.push(+M.elements[5].toFixed(2)); } return out; }, // 1 = standing, ~0 = knocked flat
+// owner 2026-10-17: lets the play tests run any event's real engine quickly (no rendering)
+engines:()=>({EV_BY_ID,EVENTS,freeRivals,sprint:createSprintEngine,distance:createDistanceEngine,hurdles:createHurdlesEngine,relay:createRelayEngine,longjump:createLongJumpEngine,triplejump:createTripleJumpEngine,throw:createThrowEngine,career:{SEASON_MEETS,CAREER_MEETS,meetName}}),
 stadium:()=> W3D.stadium? W3D.stadium.report(): null,
 lanePoint:(s,l)=>lanePoint(s,laneOff(l)),
 laneOff:(l)=>laneOff(l),

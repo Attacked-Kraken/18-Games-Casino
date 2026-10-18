@@ -415,7 +415,7 @@ export default [
     async test(page, h) {
       const t0 = Date.now();
       const budget = () => Date.now() - t0 < 27000;
-      await h.eval(() => { try { localStorage.setItem('tfapex_career', JSON.stringify({ name: 'YOU', colA: '#2456c8', colB: '#ffd34d', season: 2, meet: 3, tp: 0, up: { spd: 0, stam: 0, tech: 0 }, stats: { meets: 0, wins: 0, tpEarned: 0 }, done: false })); } catch (e) {} return true; });
+      await h.eval(() => { try { localStorage.setItem('tfapex_career', JSON.stringify({ name: 'YOU', colA: '#2456c8', colB: '#ffd34d', season: 2, meet: 11, tp: 0, up: { spd: 0, stam: 0, tech: 0 }, stats: { meets: 0, wins: 0, tpEarned: 0 }, done: false })); } catch (e) {} return true; });
       await page.reload({ waitUntil: 'load' });
       await h.wait(1500);
       await h.eval(() => { if (!window.__tfdrv4) { window.__tfdrv4 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; const field = ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault'; if (typeof e.best === 'number') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (field) { const seen = window.__tfChampSeen || (window.__tfChampSeen = {}); const k = ev.id || ev.eng; if (!seen[k]) seen[k] = Date.now(); if (Date.now() - seen[k] > 3000) { e.done = true; return; } if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
@@ -684,6 +684,60 @@ export default [
       if (!shotFlew) return 'the shot put throw never flew';
       const sj = await judgeFlight('shot put');
       if (sj !== true) return sj;
+      return true;
+    },
+  },
+  // ---- owner 2026-10-17: career mode fix list (start at finish line, running super fast, can't jump, hurdles don't fall, career only 3 events)
+  {
+    id: 'play-hurdles-fall-when-hit',
+    ask: "Hurdles don't fall if you run into them - a hurdle you hit must go down (steeplechase barriers stay up, like real ones)",
+    async test(page, h) {
+      const r = await h.eval(() => { const X = window.__tf && window.__tf.engines && window.__tf.engines(); if (!X) return 'no engines hook'; const e = X.hurdles(X.EV_BY_ID['110h'], X.freeRivals()); e.phase = 'run'; let t = 0; while (!e.done && t < 30) { t += 1 / 60; if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride(Math.floor(t * 8) % 2 ? 'L' : 'R'); e.update(1 / 60); } return { clipped: e.hurdles.filter(x => x.clipped).length, done: e.done, time: e.time }; });
+      if (typeof r === 'string') return r;
+      if (!r.done) return 'running the 110m hurdles without jumping never finished';
+      if (r.clipped < 8) return 'ran into the hurdles without jumping but only ' + r.clipped + ' of 10 counted as hit';
+      const tilt = await h.eval(() => window.__tf.hurdleTilt ? 1 : 0);
+      if (!tilt) return 'no hurdleTilt hook to prove a hit hurdle falls';
+      return true;
+    },
+  },
+  {
+    id: 'play-long-jump-early-takeoff-counts',
+    ask: "I can't jump in the long jump / triple jump - an early takeoff must still be a legal jump (measured from the board), only crossing the line is a foul",
+    async test(page, h) {
+      const r = await h.eval(() => { const X = window.__tf.engines(); const out = {}; for (const id of ['lj', 'tj']) { const e = X[id === 'lj' ? 'longjump' : 'triplejump'](X.EV_BY_ID[id], X.freeRivals()); let t = 0, k = 0; while (!e.done && t < 60) { t += 1 / 60; if (e.phase === 'runup' && Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((k ^= 1) ? 'L' : 'R'); if (e.phase === 'runup' && e.r.pos > 34) e.action(); if (e.phase === 'angle' && Math.abs(e.ang - 40) < 3) e.action(); if (e.phase === 'phase' && Math.abs(e.marker - 0.5) < 0.06) e.action(); if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.02); e.update(1 / 60); } out[id] = { att: e.attempts, best: e.best }; } return out; });
+      for (const id of ['lj', 'tj']) { const o = r[id]; if (!o || !o.att || o.att.length < 3) return id + ': did not get 3 attempts'; if (o.att.some(a => !(a > 0))) return id + ': a takeoff 3.5m before the board was called a FOUL (' + o.att.join(', ') + ') - early takeoffs are legal'; if (!(o.best > (id === 'lj' ? 5 : 10))) return id + ': early takeoff gave only ' + o.best + 'm'; }
+      return true;
+    },
+  },
+  {
+    id: 'play-distance-races-real-speed',
+    ask: "I'm running super fast in the long races - distance races must run at real speed (no fast-forward), long ones join at 700m to go",
+    async test(page, h) {
+      const r = await h.eval(() => { const X = window.__tf.engines(); const out = {}; for (const id of ['800m', '1500m', '5000m']) { const e = X.distance(X.EV_BY_ID[id], X.freeRivals()); e.phase = 'run'; e.update(0); const p0 = e.r.pos, t0 = e.time; let t = 0, k = 0, maxV = 0; while (!e.done && t < 400) { t += 1 / 60; if (Math.floor(t * 3) !== Math.floor((t - 1 / 60) * 3)) e.stride((k ^= 1) ? 'L' : 'R'); e.update(1 / 60); maxV = Math.max(maxV, e.r.speed); } out[id] = { live: e.dist - p0, real: t, clock: e.time - t0, maxV, done: e.done, ts: e.ts }; } return out; });
+      for (const id of Object.keys(r)) { const o = r[id]; if (!o.done) return id + ' never finished'; if (o.ts !== 1) return id + ' still runs fast-forwarded (ts=' + o.ts + ')'; if (Math.abs(o.clock - o.real) > 0.5) return id + ': the race clock ran ' + o.clock.toFixed(0) + 's in ' + o.real.toFixed(0) + 's of play - it must be real time'; if (o.maxV > 11) return id + ': runner hit ' + o.maxV.toFixed(1) + ' m/s - faster than a human'; if (o.live > 801) return id + ': played ' + o.live.toFixed(0) + 'm live - long races join at 700m to go'; }
+      return true;
+    },
+  },
+  {
+    id: 'play-800m-not-lined-up-under-finish',
+    ask: 'The 800m started everyone at the finish line under the FINISH banner - it must start staggered in lanes like the real race',
+    async test(page, h) {
+      const r = await h.eval(() => { const X = window.__tf.engines(); const e = X.distance(X.EV_BY_ID['800m'], X.freeRivals()); return { live: e.liveFrom }; });
+      if (r.live !== 0) return 'the 800m should be run in full (it joined at ' + r.live + 'm)';
+      const g = await h.eval(() => { const s = document.documentElement.innerHTML; return /stag=lane=>/.test(s) && /cuts in to lane 1/.test(s); });
+      if (!g) return 'the 800m staggered start is missing from the distance race drawing';
+      return true;
+    },
+  },
+  {
+    id: 'play-career-50-meets-every-event',
+    ask: 'The career is only 3 events - it needs about 50 (meets) and more track & field events',
+    async test(page, h) {
+      const r = await h.eval(() => { const X = window.__tf.engines(); return { meets: X.career.CAREER_MEETS, seasons: X.career.SEASON_MEETS.length, events: X.EVENTS.length, ids: X.EVENTS.map(e => e.id) }; });
+      if (r.meets < 50) return 'the career has only ' + r.meets + ' meets - wants 50';
+      if (r.events < 25) return 'only ' + r.events + ' events - wants more track & field events';
+      for (const id of ['60m', '300m', 'mile', '3000m', 'steeple', '10000m', '60h', '100h', '300h', 'wt']) if (!r.ids.includes(id)) return 'missing event ' + id;
       return true;
     },
   },
