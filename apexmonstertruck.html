@@ -96,8 +96,11 @@
     <p class="rules">You have <b>120 seconds</b>. Crush every car you can find (<b>+100</b> each),
       launch the ramps and stick the landing — air time scores too. Big air over <b>1.5s</b> earns a bonus.
       Crushed cars come back after a few seconds, so keep hunting.</p>
-    <p class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to drive &middot; <kbd>Space</kbd> brake<br>
-      Touch: left stick steers, right stick drives.</p>
+    <button class="helpbtn" id="helpBtn" type="button">?</button>
+    <div id="helpPanel" style="display:none">
+      <p>Left stick steers, right stick drives. BOOST for speed. FLIP to right yourself.</p>
+      <p>Crush cars (+100), catch air (+bonus over 1.5s).</p>
+    </div>
     <button class="bigbtn" id="playBtn" type="button">PLAY</button>
   </div>
 </div>
@@ -121,14 +124,16 @@
   </div>
   <div class="tcluster">
     <div class="stick" id="stickR"><div class="knob"></div><div class="tag">DRIVE</div></div>
+    <button class="boostbtn" id="boostBtn" type="button">BOOST</button>
   </div>
 </div>
 
 <div id="rotHint"><div><b>ROTATE YOUR DEVICE</b><br>for the full arena view.<br>(You can still play in portrait.)</div></div>
 
-<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js","truckarena":"./venues/kit/truck-arena.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
+import { buildTruckArena } from 'truckarena'; // J45: shared stadium kit
 
 /* ================= config ================= */
 const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
@@ -140,8 +145,8 @@ const RALLY_EVENTS = [
   { name: "FREESTYLE FINALE", goal: "Score 2000 points", target: 2000, type: "score" },
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
-const GRAV = 38; // J5: snappy real gravity - truck comes down fast
-const MAX_FWD = 70, MAX_REV = 18, ACCEL = 34, BRAKE = 36; // even faster!
+const GRAV = 90; // J45: real gravity - 5-ton truck comes down fast and lands with weight
+const MAX_FWD = 31, MAX_REV = 8, ACCEL = 7, BRAKE = 16, BOOST_MULT = 1.5; // J45: 70mph top, 0-60 in ~4s
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
 
@@ -885,7 +890,7 @@ function buildStudioTruck(style, colorHex) {
   }
 
   // big aggressive tires: r=1.7, wide track (±2.3), blocky lugs
-  const TIRE_R = 1.7, TRACK = 2.3;
+  const TIRE_R = 1.0, TRACK = 2.3; // J45: 1.7m diameter tires at scale 0.85
   const lugGeos = [];
   for (let i = 0; i < 14; i++) {
     const lug = new THREE.BoxGeometry(1.35, 0.42, 0.85);
@@ -990,14 +995,21 @@ function buildStudioTruck(style, colorHex) {
     add(new THREE.CylinderGeometry(0.15, 0.15, 0.25, 10), darkMat, sx, 5.05, -1.3);
     stackTips.push(new THREE.Vector3(sx, 5.2, -1.3));
   }
-  g.scale.setScalar(0.62); // J5: real proportions - truck ~2.7m tall, tires ~2.1m diameter
-  return { g, wheels, stackTips, tireR: TIRE_R * 4 * 0.62 };
+  g.scale.setScalar(0.85); // J45: real Monster Jam size - truck ~3.7m tall, tires 1.7m diameter
+  return { g, wheels, stackTips, tireR: TIRE_R * 2 * 0.85 }; // J45: 1.7m diameter
 }
 
 /* ================= the monster truck (player) ================= */
 const _pt = buildStudioTruck('pickup', 0xd42a1e); // red pickup
 const truck = { g: _pt.g, wheels: _pt.wheels, stackTips: _pt.stackTips, tireR: _pt.tireR };
 scene.add(truck.g);
+// J45: Real stadium from venues/kit/truck-arena.js (110x50m dirt, 3-tier bowl, 12k fans, night)
+try {
+  const arena = buildTruckArena(THREE);
+  scene.add(arena.group);
+  window.__arena = arena; // for tests: arena.report().fans
+} catch(e) { console.warn('arena kit failed', e); }
+
 
 /* ================= AI monster trucks: rivals doing jumps ================= */
 const aiTrucks = [];
@@ -1158,9 +1170,10 @@ function stepTruck(dt) {
   justLanded = false;
   const gasAmt = input.gas ? 1 : Math.max(0, input.throttleA);
   const brakeAmt = input.brake ? 1 : Math.max(0, -input.throttleA);
-  if (gasAmt > 0) T.sp += ACCEL * gasAmt * dt;
+  const boostOn = (typeof boostHeld !== 'undefined' && boostHeld); // J45: BOOST button
+  if (gasAmt > 0) T.sp += ACCEL * gasAmt * (boostOn ? BOOST_MULT : 1) * dt;
   else if (brakeAmt > 0) T.sp -= (T.sp > 0.5 ? BRAKE : ACCEL * 0.7) * brakeAmt * dt;
-  else T.sp -= Math.sign(T.sp) * Math.min(Math.abs(T.sp), 6 * dt);
+  else T.sp -= Math.sign(T.sp) * Math.min(Math.abs(T.sp), 2 * dt); // J45: less drag
   T.sp = Math.max(-MAX_REV, Math.min(MAX_FWD, T.sp));
 
   const steerIn = Math.max(-1, Math.min(1, (input.left ? 1 : 0) - (input.right ? 1 : 0) + input.steerA));
@@ -1338,6 +1351,7 @@ window.__mt = { T, Snd, Music, cars, ramps, truck, input, startGame,
   setState(s) { state = s; } };
 
 /* ================= input: keyboard + touch ================= */
+let boostHeld = false; // J45: BOOST button state
 const keyMap = { ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'brake',
                  ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
 window.addEventListener('keydown', (e) => {
@@ -1409,6 +1423,22 @@ function endGame() {
   overEl.style.display = 'flex';
 }
 document.getElementById('playBtn').addEventListener('click', startGame);
+// J45: BOOST button
+const boostBtn = document.getElementById('boostBtn');
+if (boostBtn) {
+  boostBtn.addEventListener('pointerdown', () => { boostHeld = true; });
+  boostBtn.addEventListener('pointerup', () => { boostHeld = false; });
+  boostBtn.addEventListener('pointerleave', () => { boostHeld = false; });
+}
+// J45: Help (?) button
+const helpBtn = document.getElementById('helpBtn');
+if (helpBtn) {
+  helpBtn.addEventListener('click', () => {
+    const p = document.getElementById('helpPanel');
+    if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  });
+}
+
 document.getElementById('muteBtn').addEventListener('click', () => { Snd.init(); Snd.toggleMute(); });
 document.addEventListener('pointerdown', function mm(){ Snd.init(); Music.init(Snd); if (state === 'menu') Music.play('menu'); document.removeEventListener('pointerdown', mm); }, { once: true });
 document.getElementById('againBtn').addEventListener('click', startGame);
