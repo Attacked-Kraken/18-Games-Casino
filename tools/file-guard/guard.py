@@ -20,7 +20,7 @@ Usage: python3 tools/file-guard/guard.py [--check] [files...]
 import base64, os, re, subprocess, sys
 
 TEXT_EXT = ('.html', '.htm', '.md', '.js', '.mjs', '.json', '.css', '.txt', '.svg', '.yml', '.yaml', '.py', '.csv')
-SKIP_DIRS = ('vendor/', 'node_modules/', '.git/')
+SKIP_DIRS = ('vendor/', 'node_modules/', '.git/', 'tools/file-guard/')   # never edit itself (its notes quote garbled text on purpose)
 SKIP_FILES = ('three.module.min.js',)
 B64_RE = re.compile(r'^[A-Za-z0-9+/=\s]+$')
 CP1252_EXTRA = set('ŒœŠšŸŽžƒˆ˜–—‘’‚“”„†‡•…‰‹›€™')
