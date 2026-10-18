@@ -7,11 +7,11 @@ export default [
     ask: 'Make a baseball stadium',
     async test(page, h) {
       return h.eval(() => {
-        // A real baseball stadium: stands, dugouts, light towers, scoreboard
-        // Check via scene objects or the venue report
-        const T = window.__test; if (!T) return 'window.__test missing';
-        // Stadium must exist: crowd seats indicate stands
-        if (T.crowdCount < 100) return 'no stadium stands (crowd seats < 100)';
+        // A real baseball stadium from the shared kit (venues/kit/stadium.js, 'ballpark' preset)
+        if (!window.__stadium) return 'no stadium kit (window.__stadium missing) - still NO stadium';
+        if (!window.__stadium.report) return 'stadium kit has no report()';
+        const r = window.__stadium.report();
+        if (!r.fans || r.fans < 25000) return `only ${r.fans||0} fans (venue sheet: 25,000+)`;
         return true;
       });
     },
