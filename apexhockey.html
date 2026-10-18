@@ -669,7 +669,8 @@ const joyVec = { x:0, y:0, active:false };
   const joy=document.getElementById('joy'), knob=document.getElementById('knob');
   let tid=null, cx=0, cy=0;
   const setKnob=(dx,dy)=>{ knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
-  joy.addEventListener('touchstart',e=>{ e.preventDefault(); const t=e.changedTouches[0]; tid=t.identifier;
+  joy.addEventListener('touchstart',e=>{ e.preventDefault(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
+    const t=e.changedTouches[0]; tid=t.identifier;
     const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; },{passive:false});
   const move=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
     let dx=t.clientX-cx, dy=t.clientY-cy; const d=Math.hypot(dx,dy), max=44;
@@ -1161,7 +1162,7 @@ function stepSkater(s,dt){
       des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
     }
   }
-  const k=(des.lengthSq()>0.01)?2.8:1.4; // smooth accel, glidey stop
+  const k=(des.lengthSq()>0.01)?2.2:1.0; // JOB J10: smoother accel, longer glide (hockey skates, doesn't run)
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
   s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
   const sp=Math.hypot(s.vel.x,s.vel.z);
@@ -1181,7 +1182,7 @@ function stepSkater(s,dt){
   { const _dA=Math.atan2(Math.sin(s.facing-(s.prevFacing??s.facing)), Math.cos(s.facing-(s.prevFacing??s.facing)));
     s._tr = dt>0 ? _dA/dt : 0; }
   s.phase+=sp*dt*0.55;
-  const swing=clamp(sp/30,0,1)*0.65;
+  const swing=clamp(sp/30,0,1)*0.55; // JOB J10: less choppy, more glide
   if(!s.goalie){ s.legL.rotation.x=Math.sin(s.phase)*swing; s.legR.rotation.x=-Math.sin(s.phase)*swing; }
   const lat=(s.vel.x*Math.sin(s.facing)-s.vel.z*Math.cos(s.facing));
   s.body.rotation.z=clamp(-lat*0.012,-0.3,0.3);
@@ -1248,9 +1249,10 @@ function rules(dt){
   for(const t of ['home','away']){ const bx=skaters.filter(x=>x.team===t&&x.inBox); PEN[t]=bx.length?bx.reduce((a,b)=>a.penT<=b.penT?a:b):null; }
   if(PEN.home||PEN.away) updateHUD();
   if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
-  // GOAL: fully across the goal line between the posts
-  if(px>GOAL_LINE+0.4&&Math.abs(puck.pos.z)<GOAL_HALF){ onGoal('home'); return; }
-  if(px<-(GOAL_LINE+0.4)&&Math.abs(puck.pos.z)<GOAL_HALF){ onGoal('away'); return; }
+  // GOAL: puck crosses the goal line between the posts = ALWAYS a goal (JOB J10)
+  // Crossing-based (not position threshold) so a fast puck can't tunnel past the check
+  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('home'); return; }
+  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('away'); return; }
   // OFFSIDE, the real way: DELAYED — attackers caught deep get a window to TAG UP and clear.
   if(offArm){
     const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
