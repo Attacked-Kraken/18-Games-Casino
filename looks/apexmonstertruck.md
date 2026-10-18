@@ -20,6 +20,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
   Make it bigger only if the owner asks; never swap or rebuild it.
 - Every ramp and jump the J5 version has (jump-to-jump doubles, mega ramp, colored ramps). Add ramps, never remove one.
 - The J5 camera (18 back / 9 up, truck fills the screen) unless the owner gives a new camera spec.
+- Countdown camera (owner Oct 18): each round starts high above the stadium and flies down onto the player's truck during
+  3-2-1 (truck centered and big for every number), ending exactly in the J5 driving camera spot at GO.
 - J45 (Oct 18) changed the truck, lost the ramps and made the camera low - the owner rejected it and the game went
   back to the J5 version. Only change what the owner asked for.
 
