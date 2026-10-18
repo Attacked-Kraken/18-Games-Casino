@@ -300,6 +300,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock');
     f.setAttribute('allowfullscreen', '');
     f.addEventListener('load', function () {
+      try { if (window.ApexFeedback && ApexFeedback.watch) ApexFeedback.watch(row.querySelector('.stage'), f, row._game.name); } catch (e) {}
       try {  /* the game's own Back button goes to sports.html: close the screen instead of nesting the hub */
         var path = f.contentWindow.location.pathname;
         if (/(sports|index)\.html$/.test(path) || /\/$/.test(path)) { stop(row); backTo(row); }
