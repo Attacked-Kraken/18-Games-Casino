@@ -1,0 +1,6 @@
+PATCH DID NOT APPLY: patches/j47.patch
+
+error: patch failed: apextrackfield.html:31
+error: apextrackfield.html: patch does not apply
+
+What to do: pull the latest version of the big file on your branch, make your diff against THAT version (git diff format, with a few unchanged lines of context around each change), and push the .patch again.
