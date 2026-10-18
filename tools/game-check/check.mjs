@@ -196,7 +196,18 @@ for (const g of games) {
   }
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
-  await page.waitForTimeout(8000);
+  // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
+  // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
+  try {
+    const cdir = path.join(out, 'clips', slug); fs.mkdirSync(cdir, { recursive: true });
+    const t0 = Date.now(); let k = 0;
+    while (Date.now() - t0 < 8000 && k < 40) {
+      fs.writeFileSync(path.join(cdir, String(k).padStart(3, '0') + '.jpg'), await page.screenshot({ type: 'jpeg', quality: 55 }));
+      k++; await page.waitForTimeout(250);
+    }
+    if (k >= 6) r.img.clip = 'img/' + slug + '-clip.mp4';
+    const left = 8000 - (Date.now() - t0); if (left > 0) await page.waitForTimeout(left);
+  } catch (e) { await page.waitForTimeout(8000); }
   const playJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
   await page.waitForTimeout(1500);
   const play2Jpg = await page.screenshot({ type: 'jpeg', quality: 62 });
