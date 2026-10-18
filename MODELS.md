@@ -121,3 +121,14 @@ Format (one section per model — keep the keys exactly like this):
 - version: 1
 - notes: JOB J16 STEP 1 - cute round pebble hero with determined eyes (angled brows), gray stone body with 3 mossy green patches, stone feet and arms. CODE-BUILT (no CC0 round pebble hero with a face on Kenney/Poly Pizza/Quaternius). Matches the Gemini reference: gray stone, moss patches, determined eyes.
 - status: WAITING OWNER
+
+---
+
+## MODEL: Ballpark (baseball venue)
+
+**status: WAITING OWNER**
+
+- id: ballpark
+- file: models/ballpark.mjs
+- view: tools/venue-viewer.html?m=models/ballpark.mjs&look=field&name=Ballpark
+- notes: JOB J22. Built from venues/ballpark.md: bases 27.43m, rubber 18.44m, foul poles 99m, wall 99m/122m, stands wrap home plate (3 tiers), 6 light towers, centre-field scoreboard, crowd. report().fans >= 25000.
