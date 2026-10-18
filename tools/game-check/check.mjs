@@ -250,8 +250,8 @@ for (const g of games) {
     if (!page.target) page.target = () => ({ createCDPSession: () => page.context().newCDPSession(page) });
     // a fresh copy of the game after a failed / timed-out test, so one test can't break the next (they share a page)
     const freshGame = async () => {
-      try { await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(4000);
-        for (const step of g.start || []) await pressStep(page, step); await page.waitForTimeout(4000); } catch (e) {}
+      try { await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(2500);
+        for (const step of g.start || []) await pressStep(page, step); await page.waitForTimeout(2500); } catch (e) {}
     };
     for (const fx of list) {
       let ok = false, note = '', dead = false;
