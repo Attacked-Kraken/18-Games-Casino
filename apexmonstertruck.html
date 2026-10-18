@@ -130,10 +130,9 @@
 
 <div id="rotHint"><div><b>ROTATE YOUR DEVICE</b><br>for the full arena view.<br>(You can still play in portrait.)</div></div>
 
-<script type="importmap">{"imports":{"three":"./three.module.min.js","stadiumkit":"./venues/kit/stadium.js"}}</script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
-import { buildStadium } from 'stadiumkit'; // J45 EXTRA: shared stadium kit (Track & Field locked version)
 
 /* ================= config ================= */
 const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
@@ -1003,17 +1002,8 @@ function buildStudioTruck(style, colorHex) {
 const _pt = buildStudioTruck('pickup', 0xd42a1e); // red pickup
 const truck = { g: _pt.g, wheels: _pt.wheels, stackTips: _pt.stackTips, tireR: _pt.tireR };
 scene.add(truck.g);
-// J45 EXTRA (owner 2:09 PM): real stadium bowl from venues/kit/stadium.js 'stadium' preset
-// (same kit as the locked Track & Field stadium) - sloped seats all around, moving crowd, lights
-try {
-  const st = buildStadium(THREE, {
-    floor: { a: 55, b: 25, r: 12 }, setback: 6, preset: 'stadium',
-    home: 0xd42a1e, away: 0x1e3fae, unit: 1.0,
-  });
-  scene.add(st.group);
-  window.__stadium = st; // for tests
-  // Animate crowd every frame (hooked into main loop via window.__stadium)
-} catch(e) { console.warn('stadium kit failed', e); }
+// J45: kit stadium REMOVED (was a tiny 55x25 toy model beside the course with a black slab glitch).
+// The full-size J5 bowl (buildStadium, 4400x4400, 4 sides, 12000 fans) is the stadium.
 
 /* ================= AI monster trucks: rivals doing jumps ================= */
 const aiTrucks = [];
@@ -1323,11 +1313,15 @@ function stepCamera(dt) {
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
   let want;
   if (state === 'count') {
-    // Intro: overhead view of all trucks
-    let cx = T.x, cz = T.z, n = 1;
-    for (const a of aiTrucks) { cx += a.x; cz += a.z; n++; }
-    cx /= n; cz /= n;
-    want = new THREE.Vector3(cx, 120, cz + 80); // high overhead
+    // J45: dive from high above HIS truck down to the driving spot during 3-2-1.
+    // countT goes 0 -> 3.0 (4 steps x 0.75s). k=0 at 3, k=1 at GO.
+    const k = Math.min(1, countT / 3.0);
+    const ease = k * k * (3 - 2 * k); // smoothstep
+    const highY = 120, highBack = 80; // high above the truck inside the bowl
+    const lowY = 12.6, lowBack = 25.2; // J5 driving spot (18 back / 9 up scaled)
+    const y = highY + (lowY - highY) * ease;
+    const back = highBack + (lowBack - highBack) * ease;
+    want = new THREE.Vector3(T.x - fx * back, T.y + y, T.z - fz * back);
   } else {
     want = new THREE.Vector3(T.x - fx * 25.2, T.y + 12.6, T.z - fz * 25.2); // J45 EXTRA: 1.4x back/up for bigger truck - same screen fill
   }
@@ -1339,10 +1333,8 @@ function stepCamera(dt) {
     camShake = Math.max(0, camShake - dt * 1.8);
   }
   if (state === 'count') {
-    // Look at center of all trucks during intro
-    let cx = T.x, cz = T.z, n = 1;
-    for (const a of aiTrucks) { cx += a.x; cz += a.z; n++; }
-    camera.lookAt(cx / n, 0, cz / n);
+    // Look at HIS truck during the dive (truck centered and big for every number)
+    camera.lookAt(T.x, T.y + 2, T.z);
   } else {
     camera.lookAt(T.x + fx * 18, T.y + 4, T.z + fz * 18); // look ahead
   }
@@ -1488,7 +1480,6 @@ function frame() {
   sun.position.set(T.x + 160, 220, T.z + 80); // shadow frustum follows the truck
   sun.target.position.set(T.x, 0, T.z);
   stepCamera(dt);
-  if (window.__stadium) window.__stadium.update(dt); // J45 EXTRA: animate stadium crowd
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);
 }
