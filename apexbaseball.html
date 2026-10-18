@@ -1425,6 +1425,44 @@ function buildGrandstands(){
   scene.add(bodies); scene.add(heads);
   _crowd.bodies = bodies; _crowd.heads = heads;
   window.__seatCount = N;   // debug marker: crowd instance count
+  buildDugouts(); buildLightTowers(); // J22: venue sheet requirements
+}
+/* J22: dugouts sunk below field on 1st/3rd base sides (venues/ballpark.md) */
+function buildDugouts(){
+  const dm = new THREE.MeshStandardMaterial({ color: 0x2a3440, roughness: 0.8 });
+  const rm = new THREE.MeshStandardMaterial({ color: 0x8a2a2a, roughness: 0.7 });
+  for (const s of [1, -1]) {
+    const g = new THREE.Group();
+    // sunken pit
+    const pit = new THREE.Mesh(new THREE.BoxGeometry(14, 2.2, 4), dm);
+    pit.position.set(s*28, -0.8, 12); g.add(pit);
+    // roof
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(15, 0.4, 5), rm);
+    roof.position.set(s*28, 1.6, 12); g.add(roof);
+    // back wall
+    const back = new THREE.Mesh(new THREE.BoxGeometry(15, 2.5, 0.4), dm);
+    back.position.set(s*28, 0.2, 14.2); g.add(back);
+    scene.add(g);
+  }
+}
+/* J22: light towers on the roof of the stands - 6 banks (venues/ballpark.md) */
+function buildLightTowers(){
+  const poleM = new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.6, metalness: 0.4 });
+  const lampM = new THREE.MeshBasicMaterial({ color: 0xfffbe8 });
+  const positions = [[-60, 45], [0, 55], [60, 45], [-70, -20], [70, -20], [0, -60]];
+  for (const [x, z] of positions) {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.7, 28, 8), poleM);
+    pole.position.set(x, 14, z); g.add(pole);
+    // bank of 8 lamps
+    for (let i = 0; i < 8; i++) {
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 0.4), lampM);
+      lamp.position.set(x + (i % 4 - 1.5) * 1.6, 28.5 + Math.floor(i / 4) * 1.2, z);
+      lamp.lookAt(0, 0, 0);
+      g.add(lamp);
+    }
+    scene.add(g);
+  }
 }
 /* cheap life: a rotating window of ~60 seats bounces each frame */
 function crowdTick(t, dt){
@@ -1541,6 +1579,17 @@ const Mus = {
   }
 };
 window.__mus = Mus;
+/* PLAY TESTS (JOB J22): read-only snapshot for the game-check robot. */
+window.__test = {
+  get phase(){ return G.phase; },
+  get score(){ return [G.home, G.away]; },
+  get inning(){ return G.inning; },
+  get outs(){ return G.outs; },
+  get balls(){ return G.balls; },
+  get strikes(){ return G.strikes; },
+  get crowdCount(){ return _crowd.seats.length; },
+  get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
+};
 function musPhase(p){ try{ Mus.setMode((p==='start'||p==='over')?'menu':'game'); }catch(e){} }
 document.addEventListener('pointerdown', ()=>{ Mus.init(); Mus.resume(); }, {passive:true});
 $('muteBtn').addEventListener('click', (e)=>{ e.stopPropagation(); Mus.toggle(); });
