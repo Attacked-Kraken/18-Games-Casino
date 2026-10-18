@@ -72,7 +72,7 @@ Format (one section per model — keep the keys exactly like this):
 
 ---
 
-## MODEL: Monster Truck Arena (stadium kit + crowd)
+## MODEL: Monster Truck Arena (stadium kit + crowd) — DISCARDED BY OWNER 2026-10-18
 - id: monster-truck-arena
 - game: apexmonstertruck.html
 - file: models/monster-truck-arena.mjs
@@ -81,7 +81,7 @@ Format (one section per model — keep the keys exactly like this):
 - by: Muse main (casino)
 - version: 3
 - notes: venues/truck-arena.md at real size - 110x50m dirt floor, 7 ramps (doubles + the 6m mega ramp), 2 car crush lines (10 cars), barriers all around, full bowl 3 tiers on 4 sides, 12,000 fans, big screens at both ends, night. The wrapper builds the EXACT call apexmonstertruck.html makes, so this is the very stadium in the game. CODE-BUILT (venues/kit/truck-arena.js). Pictures: aerial, TV camera, ground level. v3: the owner put the game back to the J5 version (Oct 18, commit 23f4384) - this wrapper matches the kit now in the game. (v2 described the J45 rebuild and imported its layout exports; the reverted kit no longer has them, which crashed the viewer - fixed.)
-- status: WAITING OWNER
+- status: DISCARDED (owner: "horrendous - throw this model away" 2026-10-18)
 
 ## MODEL: Track & field stadium (stadium kit + crowd)
 - id: track-stadium
