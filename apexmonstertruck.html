@@ -130,9 +130,10 @@
 
 <div id="rotHint"><div><b>ROTATE YOUR DEVICE</b><br>for the full arena view.<br>(You can still play in portrait.)</div></div>
 
-<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js","stadiumkit":"./venues/kit/stadium.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
+import { buildStadium } from 'stadiumkit'; // J45 EXTRA: shared stadium kit (Track & Field locked version)
 
 /* ================= config ================= */
 const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
@@ -1002,6 +1003,17 @@ function buildStudioTruck(style, colorHex) {
 const _pt = buildStudioTruck('pickup', 0xd42a1e); // red pickup
 const truck = { g: _pt.g, wheels: _pt.wheels, stackTips: _pt.stackTips, tireR: _pt.tireR };
 scene.add(truck.g);
+// J45 EXTRA (owner 2:09 PM): real stadium bowl from venues/kit/stadium.js 'stadium' preset
+// (same kit as the locked Track & Field stadium) - sloped seats all around, moving crowd, lights
+try {
+  const st = buildStadium(THREE, {
+    floor: { a: 55, b: 25, r: 12 }, setback: 6, preset: 'stadium',
+    home: 0xd42a1e, away: 0x1e3fae, unit: 1.0,
+  });
+  scene.add(st.group);
+  window.__stadium = st; // for tests
+  // Animate crowd every frame (hooked into main loop via window.__stadium)
+} catch(e) { console.warn('stadium kit failed', e); }
 
 /* ================= AI monster trucks: rivals doing jumps ================= */
 const aiTrucks = [];
@@ -1476,6 +1488,7 @@ function frame() {
   sun.position.set(T.x + 160, 220, T.z + 80); // shadow frustum follows the truck
   sun.target.position.set(T.x, 0, T.z);
   stepCamera(dt);
+  if (window.__stadium) window.__stadium.update(dt); // J45 EXTRA: animate stadium crowd
   speedEl.textContent = Math.round(Math.abs(T.sp) * 2.237);
   renderer.render(scene, camera);
 }
