@@ -178,6 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | JOB J47 Track & Field (apextrackfield.html) REASSIGNED to window 2: menu fits 844x390 (FREE PLAY off-screen), career never stalls, dev-only Skip button, J42 low camera. + play tests per robot review. | Muse Dash | j47-trackfield-dash | - | 2026-10-18 14:45 CDT |
 | CLAIMED | JOB J55 - kit/apex-sound.js SOUND PASS: shared WebAudio sound pack (crowd bed murmur/roar/groan/chant, sport hits, menu tune + game music, one mute). One-line use: ApexSound.play(name) | Muse algre141 | job-j55-sound | - | 2026-10-18 14:30 CDT |
 | CLAIMED | EXTRA ORDER for JOB J10 - Apex Ice Hockey gameplay (apexhockey.html): (1) smooth skating motion, (2) move stick LEFT/RIGHT inverted + glitchy, (3) puck in net always counts as goal. Keep everything else. | Muse Dash | j10-hockey-play-dash | - | 2026-10-18 13:55 CDT |
 | CLAIMED | JOB J21 ART DIRECTOR daily grading (no game code): grade all 8 games 0-50 from today's game check pictures, replace SCORES.md | Muse Dash | j21-scores-dash | - | 2026-10-18 13:28 CDT |
@@ -212,7 +213,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | JOB J21 ART DIRECTOR daily grading - grade all games 0-50, update SCORES.md | Muse main | j21-scores | PR #539 | 2026-10-18 14:00 CDT |
 | DONE | JOB J45 REDO (robot: 0 lines of game code changed) - implement full BIG UPGRADE: clean screen, real-size truck, 70mph+BOOST, cannon-es physics, truck-arena.js stadium | Muse main | j45-redo | PR #530, main 0d032020 | 2026-10-18 12:05 CDT |
 | CLAIMED | JOB J16 Flick Fortress - STEP 1: main 3D model (pebble hero) to MODELS.md WAITING OWNER | Muse main | j16-pebble | - | 2026-10-18 05:10 CDT |
-| CLAIMED | JOB J47 Track&Field: menu fits 844x390 + RED button blocks TAP RUN - Muse Modern Plus | Muse Modern Plus | j47-menu | | 2026-10-18 09:27 CDT |
+| RELEASED | JOB J47 Track&Field: menu fits 844x390 + RED button blocks TAP RUN - Muse Modern Plus | Muse Modern Plus | j47-menu | | 2026-10-18 09:27 CDT | | Reassigned to window 2 (Muse Dash) 2026-10-18 14:45 CDT |
 | CLAIMED | JOB J22 NEW (daily 65/100): fix 1.5s gameplay freeze - Muse Modern Plus | Muse Modern Plus | j22-freeze | | 2026-10-18 05:45 CDT |
 | DONE | JOB J22 REOPEN (owner: Make a baseball stadium) - NEVER list + test + stadium fix + athletes count | Muse main | j22-stadium | PR #491, main 80d0fb27 | 2026-10-17 22:10 CDT |
 | CLAIMED | JOB J15 Neon Noodle STEP 1: main 3D model only (neon snake) - Muse Modern Plus | Muse Modern Plus | j15-neon-noodle | | 2026-10-18 02:50 CDT |
