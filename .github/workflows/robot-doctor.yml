@@ -1,0 +1,29 @@
+name: Robot doctor
+# Every hour (free, no AI): if main's Game check hasn't finished for 2 hours (cut off, cancelled by the next merge,
+# or never started), start a fresh one - so pull requests are never judged against stale results (Oct 17 lesson).
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+permissions:
+  actions: write
+  contents: read
+jobs:
+  doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restart a stale main check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          runs=$(gh api "repos/${{ github.repository }}/actions/workflows/game-check.yml/runs?branch=main&per_page=20")
+          busy=$(echo "$runs" | jq '[.workflow_runs[] | select(.status=="in_progress" or .status=="queued")] | length')
+          last=$(echo "$runs" | jq -r '[.workflow_runs[] | select(.conclusion=="success")][0].updated_at // "1970-01-01T00:00:00Z"')
+          age=$(( $(date +%s) - $(date -d "$last" +%s) ))
+          echo "busy=$busy last_success=$last age=${age}s"
+          if [ "$busy" = "0" ] && [ "$age" -gt 7200 ]; then
+            gh api -X POST "repos/${{ github.repository }}/actions/workflows/game-check.yml/dispatches" -f ref=main
+            echo "Started a fresh main Game check."
+          else
+            echo "Main check is fresh or running - nothing to do."
+          fi
