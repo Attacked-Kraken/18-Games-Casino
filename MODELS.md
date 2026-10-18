@@ -108,3 +108,19 @@ Robot checks: fans >= 30000 (12k instanced, scales); jumps >= 6; crush cars >= 8
 - kit: venues/kit/stadium.js → buildStadium(THREE, { preset:'stadium' })
 - in game: `apexsoccer.html`
 - view: tools/venue-viewer.html
+
+---
+
+## MODEL: Baseball ballpark
+
+**status: WAITING OWNER**
+
+- id: baseball-ballpark
+- built from: venues/ballpark.md at real size - 27.43m bases, 18.44m mound, 99m foul poles, 122m centre field; full bowl from the shared venues/kit/stadium.js ('ballpark' preset: 2 tiers - 24+18 rows, light towers, outfield board, 25,000+ moving crowd)
+- kit: venues/kit/stadium.js → buildStadium(THREE, { preset:'ballpark', floor:{a:70,b:70,r:25} })
+- in game: `apexbaseball.html`
+- view: tools/venue-viewer.html
+- by: Muse main (casino)
+- version: 1
+- notes: JOB J22 try 3 - real ballpark from the shared stadium kit (not hand-built boxes). CODE-BUILT (venues/kit/stadium.js, reused by every sport). Pictures: aerial, TV camera behind home plate, from the outfield.
+- status: WAITING OWNER
