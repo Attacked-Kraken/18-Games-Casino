@@ -87,6 +87,17 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
   default, that turns sideways with the game. No keyboard words on phones ("space", "press 1", "WASD", "arrow keys").
   A tip may flash for 2 seconds at most and must never cover the play. The robot FAILS a play screen with 40+ words.
 
+## 4b. Plan first, build in stages (owner, Oct 18 2026)
+
+Every NEW game and every BIG change (stadium, venue, crowd, career, new mode, rebuild, 3D model) starts with a
+one-page plan - `plans/<game>-<job>.md` from `plans/TEMPLATE.md`: the 30-second fun, controls, ONE camera spec,
+3 reference pictures of real games, what stays exactly as now (KEEP), the stages and Done means. Commit it alone
+(message `PLAN JOB Jn`), say `PLAN READY JOB Jn` and STOP - the owner sees it on his board and taps 👍 Build it or
+👎 Change the plan. No game code before his 👍. Then build in stages, one PR per stage, nothing outside the plan:
+1) gray box that proves the fun and the camera, 2) one polished level/match, 3) everything else.
+Why: guessing what the owner wants caused most redo's (Monster Truck J45 rebuilt his truck when he asked for a
+bigger stadium).
+
 ## 5. Hard NOs (the robot FAILS the pull request)
 
 - Players that are not real rigged 3D bodies, in a sports game (`"people": true` in `tools/game-check/games.json`)

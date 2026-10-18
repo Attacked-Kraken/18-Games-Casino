@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-18 · Plan first, build in stages
+Big jobs and new games now start with a ONE-PAGE PLAN (plans/TEMPLATE.md): 30-second fun, controls, one camera spec, 3 reference pictures, KEEP, stages, done means. Commit it alone ('PLAN JOB Jn'), say 'PLAN READY JOB Jn' and STOP until the owner's 👍 on his board. Then build in stages (gray box → one polished level → the rest), one PR each, nothing outside the plan. Small fixes don't need a plan. Rules: STUDIO-STANDARD.md 4b.
+
 ## 2026-10-17 · Tests use GAME time · merges wait for the robot
 1) The robot's phone has no graphics card, so games run in slow motion there: "wait 2 seconds" is only a fraction of a second of game time. Every game must expose `window.__test.step(seconds)` that runs the game forward by that much GAME time at once (fixed 1/60 s steps, no drawing), and play tests use it instead of real waits. 2) Your merge now WAITS until the game-check robot finishes on your PR; if the check FAILS the approver presses Deny - read the robot's comment on your PR, fix it, push, then ask to merge again. 3) The robot now really stops a test after 30 s and reloads the game after any failed test, so one test can't break the next. Test commands are Playwright (`page.setViewportSize`, `page.context().newCDPSession(page)`), not Puppeteer.
 
