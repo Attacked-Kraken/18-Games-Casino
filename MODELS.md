@@ -105,3 +105,14 @@ Format (one section per model — keep the keys exactly like this):
 - kit: venues/kit/stadium.js → buildStadium(THREE, { preset:'stadium' })
 - in game: `apexsoccer.html`
 - view: tools/venue-viewer.html
+
+---
+
+## MODEL: Neon Noodle (main character)
+
+**status: WAITING OWNER**
+
+- id: neon-noodle
+- file: models/neon-noodle.mjs
+- view: tools/model-viewer.html?m=models/neon-noodle.mjs&look=night&name=Neon%20Noodle
+- notes: JOB J15 STEP 1. Glowing neon snake: 12 emissive segments (cyan, tapering), head with eyes + antennae, white glow rings. Built in code (zero file size, no textures). For neon-noodle.html (snake arena: eat dots, grow, trap rivals).
