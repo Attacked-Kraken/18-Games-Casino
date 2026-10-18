@@ -100,15 +100,16 @@ export default [
 ,
   {
     id: 'play-real-sizes',
-    ask: 'J5: truck ~2.7m tall with ~2.1m tires next to 4.4m cars',
+    ask: 'J45: truck 3.7m tall with 1.7m tires next to 4.4m cars (J5 numbers superseded by the J45 note)',
     async test(page, h) {
       return h.eval(() => {
-        const t = window.__mt && window.__mt.truck;
-        if (!t) return 'no truck';
-        const s = t.g.scale.x;
-        const hgt = 4.4 * s, tireD = 3.4 * s;
-        if (Math.abs(hgt - 2.7) > 0.3) return `height ${hgt.toFixed(1)}m, want 2.7m`;
-        if (Math.abs(tireD - 2.1) > 0.3) return `tires ${tireD.toFixed(1)}m, want 2.1m`;
+        const M = window.__mt;
+        if (!M || !M.measure) return 'no __mt.measure';
+        const m = M.measure();
+        if (Math.abs(m.height - 3.7) > 0.3) return `truck height ${m.height.toFixed(2)}m, want 3.7m`;
+        if (Math.abs(m.tireD - 1.7) > 0.15) return `tire diameter ${m.tireD.toFixed(2)}m, want 1.7m (66in)`;
+        const car = M.cars && M.cars[0];
+        if (car && car.len && Math.abs(car.len - 4.4) > 0.3) return `car length ${car.len.toFixed(1)}m, want 4.4m`;
         return true;
       });
     },
