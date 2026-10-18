@@ -130,10 +130,9 @@
 
 <div id="rotHint"><div><b>ROTATE YOUR DEVICE</b><br>for the full arena view.<br>(You can still play in portrait.)</div></div>
 
-<script type="importmap">{"imports":{"three":"./three.module.min.js","truckarena":"./venues/kit/truck-arena.js"}}</script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
 <script type="module">
 import * as THREE from 'three';
-import { buildTruckArena } from 'truckarena'; // J45: shared stadium kit
 
 /* ================= config ================= */
 const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
@@ -1003,13 +1002,6 @@ function buildStudioTruck(style, colorHex) {
 const _pt = buildStudioTruck('pickup', 0xd42a1e); // red pickup
 const truck = { g: _pt.g, wheels: _pt.wheels, stackTips: _pt.stackTips, tireR: _pt.tireR };
 scene.add(truck.g);
-// J45: Real stadium from venues/kit/truck-arena.js (110x50m dirt, 3-tier bowl, 12k fans, night)
-try {
-  const arena = buildTruckArena(THREE);
-  scene.add(arena.group);
-  window.__arena = arena; // for tests: arena.report().fans
-} catch(e) { console.warn('arena kit failed', e); }
-
 
 /* ================= AI monster trucks: rivals doing jumps ================= */
 const aiTrucks = [];
