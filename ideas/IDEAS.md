@@ -106,3 +106,23 @@ The owner sees every `status: NEW` idea on his phone with 👍 Build it / 👎 N
 - size: quick
 - pictures: https://play-lh.googleusercontent.com/GWz1fLmLUCjZlWHX2Yi9wRTC4KGHhVqL3ehy7zAgXcKwsaP4etqOZt2z43VQY_xha0I=w900 https://lh3.googleusercontent.com/S1lkUgSz9MBAWOM2zgRGFKLBH6RkTjPHi-uJKIPSibcgumgngvPX4_R21nKk4teqrYs=h450
 - gemini prompt: Happy little taco chef character wearing a chef hat, full body front view AND side view on one sheet, A-pose, holding a spatula, white chef coat with red scarf, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
+
+## IDEA: Grime Time
+- id: grime-time
+- status: NEW
+- pitch: Blast the filth away — power-wash grimy rooms clean in satisfying ASMR bursts.
+- how it plays: Drag a power-washer over filthy rooms and melt grime away in satisfying foam blasts; earn coins per clean to unlock new messy venues and stronger nozzles.
+- why it sells: ASMR cleaning is trending hard right now — "Makeover ASMR: Home Cleanup" sits on Google Play's top-20 trending free casual chart (updated 2026-10-17, 4.8 stars, 1M+ installs); the satisfaction/cleaning fantasy is a proven evergreen mobile hook, kid-friendly, offline, and a perfect tap-and-drag arcade fit. Links: https://www.appbrain.com/apps/trending/casual/free
+- size: quick
+- pictures: https://play-lh.googleusercontent.com/e13Q9qtu0pgkin7s5YunnHvGsX2zVH8syhBaVP0uubSYE8j4awA_c6S-F1ua-AC2fJDI=h640 https://img.skich.io/games/icons/b95b9a06-af1b-41bb-b9e7-18532e5a55c7.jpg https://play-lh.googleusercontent.com/1m__GpoxogzmUHjElFe3N5we_w5vyxJlPCyOdHA6dUk2VDvjeTqOJ6emy1HtoLravz0=w1024-h500
+- gemini prompt: Cheerful cartoon cleaner character in blue overalls holding a power washer, full body front view AND side view on one sheet, A-pose, foam spray nozzle in hand, plain light gray background, game-ready 3D render style, bright saturated colors, no text, no logos, no real people.
+
+## IDEA: Merge Munchies
+- id: merge-munchies
+- status: NEW
+- pitch: Merge your way to a five-star kitchen — combine ingredients and tools into better gear, then serve the dishes.
+- how it plays: Drag matching ingredients and kitchen tools together on a merge board to create better gear; use the upgraded gear to cook and serve dishes in a cozy little restaurant, unlocking new recipes as you merge higher.
+- why it sells: Merge + cooking is charting right now — "Foodstars: Merge & Cook" is NEW on the Spain App Store Top Free Games chart at 4.8 stars and "We Are Cooking" is also NEW at 4.8 (AppBrain, updated 2026-10-17); the merge mechanic is a proven retention seller with levels and unlocks baked in, kid-friendly and offline-friendly. Links: https://www.appbrain.com/stats/appstore-rankings/top_free/games/es
+- size: quick
+- pictures: https://play-lh.googleusercontent.com/ZKbPlaygmzdHSPDxwAFY6TgBTvJh4-ud09Qf_y29FDeQfanQNv7Om-hmsf6FVelSmQ=h800 https://play-lh.googleusercontent.com/EM7cn6SSQFzXjGIypFyoqUut5m3g-g66wZWMqZtYcUgz_ijviZaEK8e683aja2q2oHwyYwYKyh2Fxb1oVFrV=w640 https://play-lh.googleusercontent.com/TQhxMU10MoPjfoVnNqwnprEsqrSc0lQA86cy-tf3j03kjBf_MvR81ar7vq5WwnHzCDE=w1400-h720
+- gemini prompt: Cute cartoon chef character in a white chef hat and apron, full body front view AND side view on one sheet, A-pose, holding a frying pan, warm inviting colors, plain light gray background, game-ready 3D render style, no text, no logos, no real people.
