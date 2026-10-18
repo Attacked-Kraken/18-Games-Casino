@@ -105,3 +105,19 @@ Format (one section per model — keep the keys exactly like this):
 - kit: venues/kit/stadium.js → buildStadium(THREE, { preset:'stadium' })
 - in game: `apexsoccer.html`
 - view: tools/venue-viewer.html
+
+---
+
+## MODEL: Pebble hero (Flick Fortress)
+
+**status: WAITING OWNER**
+
+- id: pebble-hero
+- game: flick-fortress.html
+- file: models/pebble-hero.mjs
+- look: studio
+- view: tools/model-viewer.html?m=models/pebble-hero.mjs&look=studio
+- by: Muse main (casino)
+- version: 1
+- notes: JOB J16 STEP 1 - cute round pebble hero with determined eyes (angled brows), gray stone body with 3 mossy green patches, stone feet and arms. CODE-BUILT (no CC0 round pebble hero with a face on Kenney/Poly Pizza/Quaternius). Matches the Gemini reference: gray stone, moss patches, determined eyes.
+- status: WAITING OWNER
