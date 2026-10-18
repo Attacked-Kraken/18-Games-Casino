@@ -207,6 +207,7 @@ Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to tak
 | DONE | Exotic Racer Club CC0 car model swap (apexracer.html): box-built bodies replaced with Teh_Bucket 'Sports Car (lowpoly)' CC0 wedge-supercar model (OpenGameArt, CC0 1.0); all 8 cars + traffic, glossy paint, silver 5-spokes, wing/intakes/glasshouse; QA 8+/10 all points, 0 page errors | Muse Cruz.inc | apexracer-cc0car | PR #219, main 70fd504 | 2026-10-15 12:20 CDT |
 | Status | Task | Bot | Branch | PR / sha | Updated |
 | CLAIMED | JOB J16 Flick Fortress - STEP 1: main 3D model (pebble hero) to MODELS.md WAITING OWNER | Muse main | j16-pebble | - | 2026-10-18 05:10 CDT |
+| CLAIMED | JOB J22 NEW (daily 65/100): fix 1.5s gameplay freeze - Muse Modern Plus | Muse Modern Plus | j22-freeze | | 2026-10-18 05:45 CDT |
 | DONE | JOB J22 REOPEN (owner: Make a baseball stadium) - NEVER list + test + stadium fix + athletes count | Muse main | j22-stadium | PR #491, main 80d0fb27 | 2026-10-17 22:10 CDT |
 | CLAIMED | JOB J15 Neon Noodle STEP 1: main 3D model only (neon snake) - Muse Modern Plus | Muse Modern Plus | j15-neon-noodle | | 2026-10-18 02:50 CDT |
 | DONE | JOB J22 Apex Baseball (owner likes it, KEEP): stadium around field, store-reviewer gap list, crash fix (frozen 1.5s), 5+ play tests | Muse main | j22-baseball | PR #482, main a9bdfd00 | 2026-10-17 21:00 CDT |
