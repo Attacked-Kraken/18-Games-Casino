@@ -26,6 +26,9 @@ The owner gives a few words, not the details. Before any code on a job, play EVE
 ## 2026-10-17 · KEEP sections are locked - fix only what the owner names
 When the owner taps "👌 Keep what I like · fix the rest", his likes go under a **KEEP** section at the top of `looks/<game>.md`. Everything under KEEP is LOCKED: never change it, and protect it with a play test. Change ONLY the things he listed to fix. If a fix seems to need a KEEP thing changed, ask him first.
 
+## 2026-10-17 · Apex look: no more green "computer screen" menus
+The owner wants the green film and green typewriter letters gone. NEW HARD NO (STUDIO-STANDARD.md §5 "Apex look"): menus use the house look of F1 and Monster Truck - bold clean letters, white text, Apex red + gold, a dark see-through panel, the venue clear behind (no green tint). The robot FAILS typewriter/green menus. Today: Baseball, Flight, Hockey, Soccer - fix them.
+
 ## 2026-10-17 · Every menu fits a sideways phone - no scrolling to find PLAY
 The owner had to scroll down to press Play. NEW HARD NO (STUDIO-STANDARD.md §5 "Fits the screen"): the robot FAILS a game whose start button sits below the bottom of a sideways phone (844x390). Scale the menu panel to fit or put PLAY at the top; long rules go behind "How to play". Today: Baseball "PLAY BALL" 192px below, Track & Field "FREE PLAY" 87px below - fix them. Hockey, F1, Soccer, Flight, Monster Truck, Racer fit.
 
