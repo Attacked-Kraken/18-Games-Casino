@@ -69,6 +69,17 @@ Arcade" job REMOVES them from the game: the dev=1 skip button and any dev menus,
 cheats and console logs. Keep `window.__test` only if it changes nothing for players. A `play-scrub-...` test opens
 the game WITHOUT dev=1 and proves no testing tool shows.
 
+## Friend codes: play your friends (owner, 2026-10-17)
+Every game has a **👥 Play a friend** button on its menu, with two choices: **My code** (shows a short code + a Share
+button) and **Enter a friend's code**. Games stay fully offline, so friend play works like Apex Ice Hockey's: the code
+carries your player/team, level and best score or time, and your friend plays against it (CPU driven at your
+strength, or a ghost car/runner on the same track and weather). The result goes on both records (wins/losses per
+friend, shown with each player's nickname). Use the shared kit's friend code helper (`ApexKit.friend`) - never invent
+a new format per game. Codes must survive copy/paste from Messages, be under 60 characters, and reject a broken code
+with a friendly line. Live play together over the internet (2-6 players at once) needs the Arcade's server and is
+added when a game moves to the Arcade - don't call any outside server here. Play test: `play-friend-code` (make a
+code, enter it, the friend match starts and its result is saved).
+
 ## The store reviewer (owner, 2026-10-17: "I don't want to write all that")
 The owner only says a few words. The Muse that gets the job is the **store reviewer** first: before any code it plays
 EVERY mode, level and event like an App Store reviewer and writes the full gap list against this file (what's
