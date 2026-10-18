@@ -166,6 +166,26 @@ for (const g of games) {
   r.title = f1.title;
   if (menu.dark > 0.93 || menu.std < 6) r.fail.push('Opening screen is black or blank');
   if (f1.overflow > 24) r.check.push(`Menu runs ${f1.overflow}px off the bottom of a sideways phone`);
+  // APEX LOOK (owner, 2026-10-17: "games that have a green film and green lettering - fix"): menus use the house look of
+  // F1 / Monster Truck - bold clean letters, white with Apex red/gold - never typewriter (monospace) or green terminal text
+  try {
+    const look = await page.evaluate(() => {
+      let tot = 0, mono = 0, green = 0; const W = innerWidth, H = innerHeight;
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let t = tw.nextNode(); t; t = tw.nextNode()) {
+        const x = t.textContent.trim(); if (!x) continue; const el = t.parentElement; if (!el || /SCRIPT|STYLE/.test(el.tagName)) continue;
+        const rr = el.getBoundingClientRect(); if (rr.width < 2 || rr.bottom < 0 || rr.top > H || rr.right < 0 || rr.left > W) continue;
+        let vis = true; for (let a = el; a && a !== document.body; a = a.parentElement) { const q = getComputedStyle(a); if (q.display === 'none' || q.visibility === 'hidden' || +q.opacity < 0.05) { vis = false; break; } }
+        if (!vis) continue; const s = getComputedStyle(el), n = x.length; tot += n;
+        if (/mono|courier|consolas|menlo/i.test(s.fontFamily)) mono += n;
+        const m = (s.color.match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number);
+        if (m[1] > m[0] * 1.3 && m[1] > m[2] * 1.15 && m[1] > 110) green += n;
+      }
+      return { mono: Math.round(100 * mono / (tot || 1)), green: Math.round(100 * green / (tot || 1)) };
+    });
+    r.look = look;
+    if (look.mono > 40 || look.green > 30) r.fail.push(`Menu has the old green "computer screen" look (${look.mono}% typewriter letters, ${look.green}% green letters) - use the Apex look like F1 / Monster Truck: bold clean letters, white text with Apex red/gold, the venue clear behind it (no green film) (STUDIO-STANDARD.md "Apex look")`);
+  } catch (e) {}
 
   // press the start buttons
   let pressed = 0;

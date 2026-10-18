@@ -96,6 +96,9 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - A wordy play screen (40+ words during play) or keyboard words ("space", "WASD") - see "Clean screen"
 - A "Your name" box. It must say **"Player nickname"**.
 - A broken 3D shader, missing files, a black screen, or a rotate sign
+- **Apex look:** menus in typewriter (monospace) letters or green "computer screen" text, or a green film over the venue.
+  Use the house look of F1 / Monster Truck: bold clean letters (system-ui), white text, Apex red + gold accents,
+  dark see-through panel, the venue clear behind it (owner, Oct 17)
 - **Fits the screen:** a start/PLAY button below the bottom of a sideways phone (844x390). Every menu must fit with NO
   scrolling - scale the menu panel down or put PLAY at the top, and keep long text behind "How to play" (owner, Oct 17)
 - Any of the owner's fix tests (`tools/game-check/fixes/<game>.mjs`) that this PR breaks
