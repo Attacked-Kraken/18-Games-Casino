@@ -1,4 +1,4 @@
-// Game-check fix tests for Apex F1 (apexf1.html) â JOB J38
+// Game-check fix tests for Apex F1 (apexf1.html) — JOB J38
 // PLAY TESTS: these actually PLAY the game by its rules.
 // window.__test is exposed by the game (see bottom of apexf1.html).
 

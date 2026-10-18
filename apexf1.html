@@ -74,7 +74,7 @@
   body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
   @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
-  /* landscape phones: compact bottom-corner buttons, HUD stays top â no overlaps */
+  /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
   @media (pointer:coarse) and (orientation:landscape) {
     body.touch #stick { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:110px; height:110px; }
     body.touch #btnPit { left:134px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
@@ -89,7 +89,7 @@
     body.touch #speedo { right:12px; bottom:184px; }
     body.touch #drsTag { bottom:24px; }
   }
-  /* cinematic vignette + subtle grade â free UE5-style finish */
+  /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
   #banner { position:fixed; left:50%; top:34%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
@@ -118,7 +118,7 @@ setTimeout(function(){
   if(!window.__apexBoot && !document.querySelector('#menu .bigbtn')){
     document.body.insertAdjacentHTML('beforeend',
       '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:#04070d;color:#eaf2ff;font-family:sans-serif;text-align:center;padding:24px">'+
-      '<div><div style="font-size:22px;font-weight:800;margin-bottom:10px">â ï¸ Apex F1 could not start</div>'+
+      '<div><div style="font-size:22px;font-weight:800;margin-bottom:10px">⚠️ Apex F1 could not start</div>'+
       '<div style="color:#8fa8c8">The 3D engine failed to load. Check your connection and reload.<br>If it persists, try Chrome or Safari directly (not an in-app browser).</div></div></div>');
   }
 }, 8000);
@@ -126,13 +126,13 @@ setTimeout(function(){
 
 <div id="hud" class="hidden">
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
-  <div id="gapbox">GAP â</div>
+  <div id="gapbox">GAP —</div>
   <div id="tirebox"><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
-  <div id="wxTag">â DRY</div>
+  <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">KM/H</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
   <canvas id="minimap" width="130" height="130"></canvas>
-  <div id="drsTag" class="hidden">DRS â OPEN</div>
+  <div id="drsTag" class="hidden">DRS ● OPEN</div>
   <div id="flagTag" class="hidden"></div>
   <div id="warnTag" class="hidden"></div>
 </div>
@@ -157,15 +157,15 @@ setTimeout(function(){
 <!-- MENU -->
 <div class="overlay" id="menu">
   <h1 class="title">APEX F1<small>CHAMPIONSHIP RACING</small></h1>
-  <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather â and rivals who will do anything to win.<br><span style="color:#ffd76a;letter-spacing:3px;font-size:12px">â PRESENTED BY APEX ARCADE â</span></div>
-  <button class="bigbtn" id="quickBtn">â¡ QUICK RACE</button>
-  <button class="bigbtn alt" id="careerBtn">ð CAREER MODE</button>
-  <button class="bigbtn alt" id="tournBtn">ð TOURNAMENT</button>
-  <button class="bigbtn alt" id="friendBtn">ð¥ RACE A FRIEND (ENTER CODE)</button>
-  <button class="bigbtn alt" id="howBtn">ð RULES &amp; CONTROLS</button>
-  <button class="bigbtn alt" id="backBtn">â¹ APEX ARCADE</button>
+  <div class="menuSub" id="menuSub">Real rules. Real circuits. Real crowds. 20 drivers, DRS, tire strategy, dynamic weather — and rivals who will do anything to win.<br><span style="color:#ffd76a;letter-spacing:3px;font-size:12px">★ PRESENTED BY APEX ARCADE ★</span></div>
+  <button class="bigbtn" id="quickBtn">⚡ QUICK RACE</button>
+  <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
+  <button class="bigbtn alt" id="tournBtn">🏁 TOURNAMENT</button>
+  <button class="bigbtn alt" id="friendBtn">👥 RACE A FRIEND (ENTER CODE)</button>
+  <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
+  <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
   <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 13px ui-monospace,Menlo,monospace;color:#9fd8ff">Finish a race to earn your code</div>
-  <div style="font-size:12px;color:#8fa8c8;margin-top:6px">Share it â friends paste it to race your driver, AI-driven at your rating.</div></div>
+  <div style="font-size:12px;color:#8fa8c8;margin-top:6px">Share it — friends paste it to race your driver, AI-driven at your rating.</div></div>
 </div>
 
 <!-- TRACK SELECT -->
@@ -173,19 +173,19 @@ setTimeout(function(){
   <h1 class="title" style="font-size:34px">SELECT CIRCUIT</h1>
   <div class="card"><div class="row" id="trackRow"></div></div>
   <div class="card"><h3>RACE LAPS</h3><div class="row" id="lapRow"></div></div>
-  <div class="card"><h3>WEATHER FORECAST</h3><div id="wxForecast" style="font-size:14px;color:#9fd8ff">â</div></div>
-  <button class="bigbtn gold" id="toTeamBtn">CONTINUE â</button>
-  <button class="bigbtn alt" id="trackBack">â¹ BACK</button>
+  <div class="card"><h3>WEATHER FORECAST</h3><div id="wxForecast" style="font-size:14px;color:#9fd8ff">—</div></div>
+  <button class="bigbtn gold" id="toTeamBtn">CONTINUE →</button>
+  <button class="bigbtn alt" id="trackBack">‹ BACK</button>
 </div>
 
 <!-- TOURNAMENT SETUP: pick 3 circuits -->
 <div class="overlay hidden" id="tournMenu">
-  <h1 class="title" style="font-size:34px">ð TOURNAMENT</h1>
-  <div class="menuSub">Pick <b style="color:#ffd76a">3 circuits</b> â 3-lap sprint races, championship points across all three. Most points takes the trophy.</div>
+  <h1 class="title" style="font-size:34px">🏁 TOURNAMENT</h1>
+  <div class="menuSub">Pick <b style="color:#ffd76a">3 circuits</b> — 3-lap sprint races, championship points across all three. Most points takes the trophy.</div>
   <div class="card"><div class="row" id="tournRow"></div></div>
   <div class="card"><h3>SELECTED (<span id="tournCount">0</span>/3)</h3><div id="tournList" style="font-size:14px;color:#9fd8ff">Tap circuits above</div></div>
-  <button class="bigbtn gold" id="tournToTeam">CONTINUE â</button>
-  <button class="bigbtn alt" id="tournBack">â¹ BACK</button>
+  <button class="bigbtn gold" id="tournToTeam">CONTINUE →</button>
+  <button class="bigbtn alt" id="tournBack">‹ BACK</button>
 </div>
 
 <!-- TEAM SELECT -->
@@ -194,15 +194,15 @@ setTimeout(function(){
   <div class="card"><div class="row" id="teamRow"></div></div>
   <div class="card"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
   <div class="card"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
-  <button class="bigbtn gold" id="startBtn">ð START WEEKEND</button>
-  <button class="bigbtn alt" id="teamBack">â¹ BACK</button>
+  <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
+  <button class="bigbtn alt" id="teamBack">‹ BACK</button>
 </div>
 
 <!-- QUALI RESULT / GRID -->
 <div class="overlay hidden" id="gridMenu">
   <h1 class="title" style="font-size:30px">STARTING GRID</h1>
   <div class="card"><div id="gridList" style="font-size:14px"></div></div>
-  <button class="bigbtn gold" id="raceBtn">ð LIGHTS OUT</button>
+  <button class="bigbtn gold" id="raceBtn">🏁 LIGHTS OUT</button>
 </div>
 
 <!-- RESULTS -->
@@ -210,7 +210,7 @@ setTimeout(function(){
   <h1 class="title" style="font-size:32px" id="resTitle">RACE COMPLETE</h1>
   <div class="card"><h3>CLASSIFICATION</h3><table class="stand" id="resTable"></table></div>
   <div class="card"><h3>CHAMPIONSHIP</h3><table class="stand" id="champTable"></table></div>
-  <button class="bigbtn gold" id="resNext">CONTINUE â</button>
+  <button class="bigbtn gold" id="resNext">CONTINUE →</button>
   <button class="bigbtn alt" id="resMenu">MAIN MENU</button>
 </div>
 
@@ -218,7 +218,7 @@ setTimeout(function(){
 <div class="overlay hidden" id="hub">
   <h1 class="title" style="font-size:30px">CAREER</h1>
   <div class="card"><div id="hubBody" style="font-size:14px"></div></div>
-  <button class="bigbtn gold" id="hubNext">NEXT RACE â</button>
+  <button class="bigbtn gold" id="hubNext">NEXT RACE →</button>
   <button class="bigbtn alt" id="hubMenu">MAIN MENU</button>
 </div>
 
@@ -234,7 +234,7 @@ setTimeout(function(){
 
 <!-- PIT CHOICE -->
 <div class="overlay hidden" id="pitMenu" style="background:rgba(3,6,12,.55)">
-  <div class="card" style="text-align:center"><h3>PIT STOP â CHOOSE TIRES</h3>
+  <div class="card" style="text-align:center"><h3>PIT STOP — CHOOSE TIRES</h3>
     <div class="pitopt" id="pitTires"></div>
     <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~2.4s + pit-lane time</div>
   </div>
@@ -244,16 +244,16 @@ setTimeout(function(){
 <div class="overlay hidden" id="howMenu">
   <h1 class="title" style="font-size:30px">RULES &amp; CONTROLS</h1>
   <div class="card" style="font-size:13px;line-height:1.65">
-  <b style="color:#ffd76a">DRIVE:</b> left thumbstick to steer Â· GAS / BRK / REV pedals (or W A S D + arrows on desktop).<br>
-  <b style="color:#ffd76a">DRS:</b> enabled after lap 2 â within 1s of the car ahead in a DRS zone, tap DRS (or press <b>D</b>) for a top-speed boost.<br>
+  <b style="color:#ffd76a">DRIVE:</b> left thumbstick to steer · GAS / BRK / REV pedals (or W A S D + arrows on desktop).<br>
+  <b style="color:#ffd76a">DRS:</b> enabled after lap 2 — within 1s of the car ahead in a DRS zone, tap DRS (or press <b>D</b>) for a top-speed boost.<br>
   <b style="color:#ffd76a">DESKTOP KEYS:</b> <b>D</b>=DRS, <b>P</b>=request pit stop, <b>C</b>=cycle camera, <b>Shift</b>=ERS overtake, arrows/WASD to drive.<br>
   <b style="color:#ffd76a">ERS:</b> hold ERS for hybrid boost. It recharges under braking.<br>
-  <b style="color:#ffd76a">TIRES:</b> Soft = fast, wears fast Â· Medium = balanced Â· Hard = slow, lasts. In a dry race you must use 2 compounds â pit at least once. Inters/Wets for rain.<br>
+  <b style="color:#ffd76a">TIRES:</b> Soft = fast, wears fast · Medium = balanced · Hard = slow, lasts. In a dry race you must use 2 compounds — pit at least once. Inters/Wets for rain.<br>
   <b style="color:#ffd76a">PIT:</b> tap PIT near the pit entry; pick tires; the crew does the rest.<br>
-  <b style="color:#ffd76a">FLAGS:</b> 3 track-limit warnings = 5s penalty. Blue flags â backmarkers, don't fight them.<br>
+  <b style="color:#ffd76a">FLAGS:</b> 3 track-limit warnings = 5s penalty. Blue flags — backmarkers, don't fight them.<br>
   <b style="color:#ffd76a">WEATHER:</b> it can rain mid-race. Wrong tires in the wet = ice rink.<br>
   <b style="color:#ffd76a">POINTS:</b> 25-18-15-12-10-8-6-4-2-1, +1 for fastest lap (top 10).<br>
-  <b style="color:#ffd76a">RIVALS:</b> the AI cheats a little â rubber-band pace and hard defending when you're near. That's the game.
+  <b style="color:#ffd76a">RIVALS:</b> the AI cheats a little — rubber-band pace and hard defending when you're near. That's the game.
   </div>
   <button class="bigbtn alt" id="howClose">CLOSE</button>
 </div>
@@ -262,7 +262,7 @@ setTimeout(function(){
 <script type="module">
 import * as THREE from 'three';
 /* ============================================================
-   APEX F1 RACING â realistic F1: rules, tracks, crowds, weather,
+   APEX F1 RACING — realistic F1: rules, tracks, crowds, weather,
    career, friend codes. Single-file Three.js game.
    ============================================================ */
 const $ = id => document.getElementById(id);
@@ -358,7 +358,7 @@ document.addEventListener('pointerdown',()=>Aud.ensure());
    DRS zones as fractions of lap distance. */
 const TRACKS = [
 { id:'monza', name:'MONZA', country:'Italy', lapKm:5.793,
-  tag:'The Temple of Speed â flat out, then brake late.',
+  tag:'The Temple of Speed — flat out, then brake late.',
   drs:[[0.02,0.14],[0.52,0.66]], pitIn:0.90, pitOut:0.06,
   pts:[
    [-140,0,-60],[-70,0,-60],[0,0,-60],[70,0,-60],[120,0,-60],
@@ -368,7 +368,7 @@ const TRACKS = [
    [-44,0,50],[-60,0,34],[-72,0,18],[-80,0,2],[-74,0,-14],
    [-62,0,-28],[-52,0,-44],[-58,0,-62],[-76,0,-76],[-100,0,-84],[-122,0,-78],[-136,0,-68] ] },
 { id:'monaco', name:'MONACO', country:'Monaco', lapKm:3.337,
-  tag:'Jewel of the crown â millimeter precision, no runoff.',
+  tag:'Jewel of the crown — millimeter precision, no runoff.',
   drs:[[0.03,0.12]], pitIn:0.88, pitOut:0.08, narrow:true,
   pts:[
    [-60,0,-50],[-10,0,-50],[40,0,-50],[80,0,-46],[105,0,-32],
@@ -377,7 +377,7 @@ const TRACKS = [
    [58,2,-8],[44,4,6],[30,6,10],[16,6,4],[10,4,-12],
    [16,2,-28],[30,0,-38],[8,0,-44],[-20,0,-48],[-44,0,-50] ] },
 { id:'silverstone', name:'SILVERSTONE', country:'Great Britain', lapKm:5.891,
-  tag:'High-speed sweeps â Copse, Maggotts, Becketts flat.',
+  tag:'High-speed sweeps — Copse, Maggotts, Becketts flat.',
   drs:[[0.02,0.13],[0.44,0.56]], pitIn:0.90, pitOut:0.06,
   pts:[
    [-150,0,-40],[-90,0,-40],[-30,0,-40],[30,0,-40],[80,0,-38],
@@ -388,7 +388,7 @@ const TRACKS = [
    [-112,0,26],[-96,0,48],[-74,0,60],[-48,0,62],[-20,0,56],
    [2,0,44],[10,0,24],[4,0,2],[-8,0,-18],[-40,0,-32],[-80,0,-38],[-115,0,-40] ] },
 { id:'spa', name:'SPA-FRANCORCHAMPS', country:'Belgium', lapKm:7.004,
-  tag:'The rollercoaster â Eau Rouge flat, weather roulette.',
+  tag:'The rollercoaster — Eau Rouge flat, weather roulette.',
   drs:[[0.10,0.24],[0.62,0.74]], pitIn:0.90, pitOut:0.06,
   pts:[
    [-170,0,-30],[-110,0,-30],[-50,0,-30],[10,0,-30],[60,0,-28],
@@ -399,7 +399,7 @@ const TRACKS = [
    [35,8,80],[55,10,62],[80,8,50],[70,4,30],[45,0,18],
    [10,-2,12],[-30,-4,14],[-70,-4,20],[-110,-2,10],[-145,0,-8],[-160,0,-20] ] },
 { id:'suzuka', name:'SUZUKA', country:'Japan', lapKm:5.807,
-  tag:'Figure-8 classic â S-curves, 130R, crossover bridge.',
+  tag:'Figure-8 classic — S-curves, 130R, crossover bridge.',
   drs:[[0.02,0.13]], pitIn:0.90, pitOut:0.06,
   pts:[
    [-120,0,-50],[-60,0,-50],[0,0,-50],[50,0,-48],[90,0,-40],
@@ -444,8 +444,8 @@ function initGL(){
   try{
     renderer = new THREE.WebGLRenderer({ canvas, antialias:!isTouch, powerPreference:'high-performance' });
   }catch(err){
-    glError='3D could not start on this device ('+(err&&err.message||'WebGL unavailable')+'). Menus still work â try a different browser.';
-    const b=$('banner'); if(b){ b.innerHTML='<div class="b1" style="font-size:20px">â ï¸ '+glError+'</div>'; b.classList.add('show'); }
+    glError='3D could not start on this device ('+(err&&err.message||'WebGL unavailable')+'). Menus still work — try a different browser.';
+    const b=$('banner'); if(b){ b.innerHTML='<div class="b1" style="font-size:20px">⚠️ '+glError+'</div>'; b.classList.add('show'); }
     return;
   }
   glOK=true;
@@ -506,7 +506,7 @@ const Particles = {
     }
   }
 };
-// Gradient sky dome with sun disc â cheap, huge cinematic win
+// Gradient sky dome with sun disc — cheap, huge cinematic win
 let skyMat=null;
 function buildSkyDome(){
   const geo = new THREE.SphereGeometry(3200, 24, 16);
@@ -613,7 +613,7 @@ const Track = {
     tg.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
     tg.setAttribute('uv', new THREE.Float32BufferAttribute(uvs,2));
     tg.setIndex(idx); tg.computeVertexNormals();
-    // subtle asphalt grain (canvas noise) â breaks up the flat CG look
+    // subtle asphalt grain (canvas noise) — breaks up the flat CG look
     const acv=document.createElement('canvas'); acv.width=acv.height=128;
     const ac=acv.getContext('2d'); ac.fillStyle='#808080'; ac.fillRect(0,0,128,128);
     for(let i=0;i<900;i++){ const v=110+Math.random()*40|0; ac.fillStyle=`rgb(${v},${v},${v})`; ac.fillRect(Math.random()*128,Math.random()*128,2,2); }
@@ -805,7 +805,7 @@ const Track = {
     }
   },
   buildSponsorBoards(g){
-    // APEX ARCADE â the eternal sponsor. Trackside banner boards + start gantry.
+    // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
     const cv=document.createElement('canvas'); cv.width=512; cv.height=72;
     const c=cv.getContext('2d');
     c.fillStyle='#0a0e16'; c.fillRect(0,0,512,72);
@@ -838,7 +838,7 @@ const Track = {
     gc.fillStyle='#0a0e16'; gc.fillRect(0,0,1024,96);
     gc.fillStyle='#d21f26'; gc.fillRect(0,0,1024,12); gc.fillRect(0,84,1024,12);
     gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
-    gc.fillStyle='#ffd76a'; gc.fillText('â APEX ARCADE â', 512, 50);
+    gc.fillStyle='#ffd76a'; gc.fillText('★ APEX ARCADE ★', 512, 50);
     const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
     const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
       new THREE.MeshBasicMaterial({map:gtex}));
@@ -1306,7 +1306,7 @@ function readInput(car){
   car.brake=(Input.brake||k['ArrowDown']||k['KeyS'])?1:0;
   car.reverse=!!Input.reverse;
   car.ersUse=!!Input.ers||!!k['ShiftLeft']||!!k['ShiftRight'];
-  // auto DRS hint: enable automatically when eligible? No â manual per rules. Keep manual.
+  // auto DRS hint: enable automatically when eligible? No — manual per rules. Keep manual.
 }
 /* ================= AI (rivals that cheat a little) ================= */
 function aiDrive(car, dt){
@@ -1348,7 +1348,7 @@ function aiDrive(car, dt){
   if(car._mistT<0){ car._mistT=rand(25,70)*(Race.weather.wet>0.4?0.5:1);
     if(Math.random()<0.35+Race.weather.wet*0.4){ car._mistD=rand(-1,1)*(W/2-1); car._mistT2=rand(0.8,1.6); } }
   if(car._mistT2>0){ car._mistT2-=dt; dT=car._mistD; }
-  // blue flag: being lapped â move off line, lift
+  // blue flag: being lapped — move off line, lift
   if(car._blue){ dT=Math.sign(dT||1)*(W/2-1.5); vt*=0.94; }
   const dd=dT-car.d;
   car.steer=clamp(dd*0.55,-1,1);
@@ -1397,7 +1397,7 @@ function carContact(cars, dt){
 const Race = {
   mode:'menu', cars:[], player:null, track:null, laps:5, lap:1,
   drsEnabled:false, time:0, stateT:0, qualiT:0, qualiDone:false,
-  weather:{ wet:0, target:0, state:'DRY', changeT:60, label:'â DRY' },
+  weather:{ wet:0, target:0, state:'DRY', changeT:60, label:'☀ DRY' },
   cheatLevel:1, shake:0, camMode:0, PIT_TIME:2.4, results:null,
   forecast:[],
   setup(cfg){
@@ -1497,7 +1497,7 @@ const Race = {
     const sN=((p.s%Track.length)+Track.length)%Track.length;
     const pitInS=Track.cfg.pitIn*Track.length;
     if(sN>pitInS-600&&sN<pitInS){
-      p.pitIntent=true; banner('PIT ARMED','Box this lap â pick tires',900,'#9fd8ff');
+      p.pitIntent=true; banner('PIT ARMED','Box this lap — pick tires',900,'#9fd8ff');
       this.showPitMenu();
     }
     else banner('PIT ENTRY AHEAD','Arm it near the pit entry',1100,'#8fa8c8');
@@ -1507,7 +1507,7 @@ const Race = {
     const box=$('pitTires'); box.innerHTML='';
     for(const t of opts){
       const d=document.createElement('div'); d.className='tirepick'+(t===this.player.pitTireChoice?' sel':'');
-      d.innerHTML=`<span style="color:${TIRES[t].color}">â</span> ${t}`;
+      d.innerHTML=`<span style="color:${TIRES[t].color}">●</span> ${t}`;
       d.onclick=()=>{ this.player.pitTireChoice=t;
         [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
         setTimeout(()=>$('pitMenu').classList.add('hidden'),350); };
@@ -1535,16 +1535,16 @@ const Race = {
       this.forecast.push({lap:startLap, wet:peak, label:peak>0.8?'HEAVY RAIN':'RAIN'});
       if(r()<0.5) this.forecast.push({lap:startLap+2, wet:0.2, label:'DRIZZLE'});
     }
-    this.weather={ wet:0, target:0, state:'DRY', changeT:30+r()*30, label:'â DRY', grip:1,
-      forecastText: willRain? `Dry start â rain ~lap ${this.forecast[0].lap} (${this.forecast[0].label})` : 'Dry all race' };
+    this.weather={ wet:0, target:0, state:'DRY', changeT:30+r()*30, label:'☀ DRY', grip:1,
+      forecastText: willRain? `Dry start — rain ~lap ${this.forecast[0].lap} (${this.forecast[0].label})` : 'Dry all race' };
     this._rng=r;
   },
   updateWeather(dt){
     const w=this.weather;
     // scripted forecast changes by lap
     for(const f of this.forecast){
-      if(!f.hit && this.lap>=f.lap){ f.hit=true; w.target=f.wet; w.label=f.wet>0.8?'ð§ HEAVY RAIN':(f.wet>0.4?'ð§ RAIN':'ð¦ DRIZZLE');
-        banner('WEATHER CHANGE',w.label+' â box for '+(f.wet>0.55?'WETS':(f.wet>0.25?'INTERS':'keep pushing')),2200,'#9fd8ff');
+      if(!f.hit && this.lap>=f.lap){ f.hit=true; w.target=f.wet; w.label=f.wet>0.8?'🌧 HEAVY RAIN':(f.wet>0.4?'🌧 RAIN':'🌦 DRIZZLE');
+        banner('WEATHER CHANGE',w.label+' — box for '+(f.wet>0.55?'WETS':(f.wet>0.25?'INTERS':'keep pushing')),2200,'#9fd8ff');
         Aud.cheer(false); }
     }
     // gentle drift
@@ -1552,8 +1552,8 @@ const Race = {
     if(w.changeT<0){ w.changeT=rand(40,90); w.target=clamp(w.target+rand(-0.25,0.25),0,1); }
     const prev=w.wet;
     w.wet += clamp(w.target-w.wet,-dt*0.02,dt*0.02);
-    if(w.wet<0.12&&w.target<0.12){ w.label='â DRY'; }
-    else if(w.wet<0.35){ w.label='ð¦ DRIZZLE'; } else if(w.wet<0.7){ w.label='ð§ RAIN'; } else w.label='ð§ HEAVY';
+    if(w.wet<0.12&&w.target<0.12){ w.label='☀ DRY'; }
+    else if(w.wet<0.35){ w.label='🌦 DRIZZLE'; } else if(w.wet<0.7){ w.label='🌧 RAIN'; } else w.label='🌧 HEAVY';
     Track.setWeather(w.wet);
     Aud.rainTick(w.wet);
     RainFX.set(w.wet);
@@ -1719,7 +1719,7 @@ const HUD={
     $('lapTxt').textContent=`LAP ${Math.min(p.lap,Race.laps)}/${Race.laps}`;
     document.querySelector('#lapbox .pos').textContent='P'+p.position;
     const ahead=order[p.position-2];
-    $('gapbox').textContent = ahead? `GAP +${p._gapF1.toFixed(1)}s ${ahead.name}` : 'LEADER â clean air';
+    $('gapbox').textContent = ahead? `GAP +${p._gapF1.toFixed(1)}s ${ahead.name}` : 'LEADER — clean air';
     const t=TIRES[p.tire];
     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
@@ -1729,12 +1729,12 @@ const HUD={
     $('ersFill').style.width=p.ers+'%';
     $('wxTag').textContent=Race.weather.label;
     const dEl=$('drsTag');
-    if(p.drsOpen){ dEl.classList.remove('hidden'); dEl.textContent='DRS â OPEN'; dEl.style.background='#37d67a'; }
-    else if(Race.drsEnabled&&Race.drsZoneAt(p.s)&&p._gapToAhead<1.0&&p.lap>1){ dEl.classList.remove('hidden'); dEl.textContent='DRS â READY'; dEl.style.background='#ffd76a'; }
+    if(p.drsOpen){ dEl.classList.remove('hidden'); dEl.textContent='DRS ● OPEN'; dEl.style.background='#37d67a'; }
+    else if(Race.drsEnabled&&Race.drsZoneAt(p.s)&&p._gapToAhead<1.0&&p.lap>1){ dEl.classList.remove('hidden'); dEl.textContent='DRS ● READY'; dEl.style.background='#ffd76a'; }
     else { dEl.classList.add('hidden'); }
     // warnings
     const w=$('warnTag');
-    if(p.penalty>0){ w.classList.remove('hidden'); w.textContent=`â  ${p.penalty}s PENALTY`; }
+    if(p.penalty>0){ w.classList.remove('hidden'); w.textContent=`⚠ ${p.penalty}s PENALTY`; }
     else if(p.warnings>0){ w.classList.remove('hidden'); w.textContent=`TRACK LIMITS ${p.warnings}/3`; }
     else w.classList.add('hidden');
     this.minimap(order);
@@ -1791,11 +1791,11 @@ function parseFriend(txt){
 function showResults(R){
   $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
   const {order,pts,fl}=R.results;
-  $('resTitle').textContent = R.player.position===1?'ð VICTORY!':`P${R.player.position} FINISH`;
+  $('resTitle').textContent = R.player.position===1?'🏆 VICTORY!':`P${R.player.position} FINISH`;
   let html='<tr><th>POS</th><th>DRIVER</th><th>BEST</th><th>PTS</th></tr>';
   order.forEach((c,i)=>{
     const me=c.isPlayer?' class="me"':'';
-    html+=`<tr${me}><td>${i+1}</td><td>${c.name}${c.isPlayer?' (YOU)':''}</td><td>${c.bestLap<Infinity?fmtTime(c.bestLap):'â'}</td><td>${pts[c.name]||0}</td></tr>`;
+    html+=`<tr${me}><td>${i+1}</td><td>${c.name}${c.isPlayer?' (YOU)':''}</td><td>${c.bestLap<Infinity?fmtTime(c.bestLap):'—'}</td><td>${pts[c.name]||0}</td></tr>`;
   });
   $('resTable').innerHTML=html;
   // championship update
@@ -1821,7 +1821,7 @@ function showResults(R){
     if(!career){ newCareer(sessionCfg.driver||'YOU', sessionCfg.team.id); }
     const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc;
   }
-  $('champTable').innerHTML=champHtml+(fl?`<div style="margin-top:6px;font-size:12px;color:#9fd8ff">â¡ Fastest lap: ${fl.name} ${fmtTime(fl.bestLap)}</div>`:'');
+  $('champTable').innerHTML=champHtml+(fl?`<div style="margin-top:6px;font-size:12px;color:#9fd8ff">⚡ Fastest lap: ${fl.name} ${fmtTime(fl.bestLap)}</div>`:'');
   // tournament: accumulate points across the 3 races
   const tourn=sessionCfg&&sessionCfg.tournament;
   if(tourn){
@@ -1834,15 +1834,15 @@ function showResults(R){
     tourn.raceIdx++;
     const rows=Object.entries(tourn.points).sort((a,b)=>b[1]-a[1]).slice(0,10);
     const tName=t=>TRACKS.find(x=>x.id===t).name;
-    champHtml='<div style="color:#ffd76a;font-weight:800;margin-bottom:6px">ð TOURNAMENT â after race '+tourn.raceIdx+' of 3 ('+tourn.tracks.slice(0,tourn.raceIdx).map(tName).join(', ')+')</div>'
+    champHtml='<div style="color:#ffd76a;font-weight:800;margin-bottom:6px">🏁 TOURNAMENT — after race '+tourn.raceIdx+' of 3 ('+tourn.tracks.slice(0,tourn.raceIdx).map(tName).join(', ')+')</div>'
       +'<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map(([k,v])=>`<tr${k===me?' class="me"':''}><td>${k}${k===me?' (YOU)':''}</td><td>${v}</td></tr>`).join('');
     $('champTable').innerHTML=champHtml;
     if(tourn.raceIdx>=3){
       const champ=rows[0];
-      $('resTitle').textContent = champ[0]===me ? 'ð TOURNAMENT CHAMPION!' : 'ð TOURNAMENT COMPLETE';
+      $('resTitle').textContent = champ[0]===me ? '🏆 TOURNAMENT CHAMPION!' : '🏁 TOURNAMENT COMPLETE';
       $('resNext').textContent='MAIN MENU';
     } else {
-      $('resNext').textContent='NEXT RACE â';
+      $('resNext').textContent='NEXT RACE →';
     }
   }
   $('resultMenu').classList.remove('hidden');
@@ -1857,7 +1857,7 @@ function initMenus(){
   const tr=$('trackRow'); tr.innerHTML='';
   for(const t of TRACKS){
     const d=document.createElement('div'); d.className='pick'+(t.id===selTrack?' sel':'');
-    d.innerHTML=`<div class="t">${t.name}</div><div class="s">${t.country} Â· ${t.lapKm.toFixed(2)} km</div><div class="s" style="color:#6f87a8">${t.tag}</div>`;
+    d.innerHTML=`<div class="t">${t.name}</div><div class="s">${t.country} · ${t.lapKm.toFixed(2)} km</div><div class="s" style="color:#6f87a8">${t.tag}</div>`;
     d.onclick=()=>{ selTrack=t.id; [...tr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); updateForecast(); };
     tr.appendChild(d);
   }
@@ -1911,7 +1911,7 @@ function initMenus(){
       tr.appendChild(d);
     }
     $('tournCount').textContent=tournTracks.length;
-    $('tournList').textContent=tournTracks.length? tournTracks.map(id=>TRACKS.find(t=>t.id===id).name).join(' â ') : 'Tap circuits above';
+    $('tournList').textContent=tournTracks.length? tournTracks.map(id=>TRACKS.find(t=>t.id===id).name).join(' → ') : 'Tap circuits above';
     $('tournToTeam').disabled=tournTracks.length!==3;
   }
   $('tournBack').onclick=()=>show('menu');
@@ -1925,7 +1925,7 @@ function initMenus(){
   $('friendClose').onclick=()=>show('menu');
   $('friendGo').onclick=()=>{
     const f=parseFriend($('friendIn').value);
-    if(!f){ $('friendErr').textContent='That code does not check out â paste the whole thing, starting with F1APEX-'; return; }
+    if(!f){ $('friendErr').textContent='That code does not check out — paste the whole thing, starting with F1APEX-'; return; }
     pendingFriend=f; sessionCfg={career:false};
     banner('FRIEND SET',`${f.name} joins your grid`,1400,'#9fd8ff');
     show('trackMenu');
@@ -1946,7 +1946,7 @@ function initMenus(){
       // next tournament race: same driver/team, next circuit
       startWeekend();
     } else if(tourn){
-      sessionCfg.tournament=null; $('resNext').textContent='CONTINUE â'; show('menu'); renderMenuCode();
+      sessionCfg.tournament=null; $('resNext').textContent='CONTINUE →'; show('menu'); renderMenuCode();
     }
     else if(career&&sessionCfg&&sessionCfg.career){ renderHub(); show('hub'); }
     else show('menu');
@@ -1964,7 +1964,7 @@ function updateForecast(){
   const t=TRACKS.find(x=>x.id===selTrack);
   // build a throwaway forecast preview
   const wr=Math.random()<0.45;
-  $('wxForecast').textContent = wr? `ð§ Changeable â rain possible mid-race` : `â Dry expected all race`;
+  $('wxForecast').textContent = wr? `🌧 Changeable — rain possible mid-race` : `☀ Dry expected all race`;
   $('wxForecast').title=t.tag;
 }
 function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc; }
@@ -1972,11 +1972,11 @@ function renderHub(){
   const t=TRACKS[career.round%TRACKS.length];
   const rows=Object.entries(career.table||{}).sort((a,b)=>b[1]-a[1]).slice(0,8)
     .map(([k,v])=>`<tr${k===career.name.toUpperCase().slice(0,14)?' class="me"':''}><td>${k}</td><td>${v}</td></tr>`).join('');
-  $('hubBody').innerHTML=`<b style="color:#ffd76a">${career.name}</b> Â· ${TEAMS.find(x=>x.id===career.team)?.name||''} Â· Rating ${Math.round(career.rating)}<br>
-  Season ${career.season} Â· Round ${career.round+1}/${TRACKS.length} Â· Next: <b>${t.name}</b> (${t.country})<br>
-  Wins: ${career.wins} Â· Titles: ${career.champs} Â· vs friends: ${career.friends.w}â${career.friends.l}
+  $('hubBody').innerHTML=`<b style="color:#ffd76a">${career.name}</b> · ${TEAMS.find(x=>x.id===career.team)?.name||''} · Rating ${Math.round(career.rating)}<br>
+  Season ${career.season} · Round ${career.round+1}/${TRACKS.length} · Next: <b>${t.name}</b> (${t.country})<br>
+  Wins: ${career.wins} · Titles: ${career.champs} · vs friends: ${career.friends.w}–${career.friends.l}
   <table class="stand"><tr><th>DRIVER</th><th>PTS</th></tr>${rows||'<tr><td colspan=2>Season just started</td></tr>'}</table>
-  <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'â'}</div>`;
+  <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'—'}</div>`;
 }
 function startWeekend(){
   const name=($('driverName').value||'YOU').toUpperCase().slice(0,16)||'YOU';
@@ -2002,10 +2002,10 @@ function runQuali(){
   const p=Race.player;
   p.s=Track.length-600; p.d=0; p.v=28; p.lap=1; p._lapT=0; p._qualiFlying=false; p._lastSN=undefined;
   Race.mode='quali';
-  banner('QUALIFYING','One flying lap â cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
+  banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
   sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;';
-  sk.textContent='SKIP QUALI â P12';
+  sk.textContent='SKIP QUALI → P12';
   sk.onclick=()=>{ finishQuali(null); };
   document.body.appendChild(sk);
   Race._skipBtn=sk;
@@ -2056,7 +2056,7 @@ function loop(t){
       Track.updateCrowd(dt,0.15); Aud.crowdTick(dt,0.05);
     }
   }
-  // draw the 3D world (was missing â black screen)
+  // draw the 3D world (was missing — black screen)
   if(glOK&&renderer&&scene&&camera) renderer.render(scene,camera);
 }
 /* test hooks for game-check play tests (JOB J38) */
