@@ -800,7 +800,7 @@ function aiCarrier(p,dt){
   }
   if(p.thinkT<=0){ p.thinkT=0.35; // read the field: pass to the open man, lay it off under pressure, build up
     const mate=bestPass(p);
-    if(mate&&(nd<4.2||p.dribT>2.0||Math.random()<0.5)){
+    if(mate&&(nd<5.0||p.dribT>1.2||Math.random()<0.75)){ // J6r2: pass more
       const tx=mate.pos.x+mate.vel.x*0.35, tz=mate.pos.z+mate.vel.z*0.35;
       kickBall(p,tx-p.pos.x,tz-p.pos.z,clamp(5.5+Math.hypot(tx-p.pos.x,tz-p.pos.z)*0.42,9,19),0.8,mate);
       p.dribT=0; return;
@@ -864,14 +864,14 @@ function updateAI(dt){
             const gx2=-ad*52.5, gd=Math.hypot(gx2-c.pos.x,0-c.pos.z)||1;
             movePlayer(p,c.pos.x+(gx2-c.pos.x)/gd*1.25,c.pos.z+(0-c.pos.z)/gd*1.25,7.5,dt);
             p.jockT=(p.jockT||0)+dt;
-            if(p.tackleCd<=0&&p.jockT>0.15&&d<2.6){ // J6: faster, more aggressive AI tackles
+            if(p.tackleCd<=0&&p.jockT>0.08&&d<3.0){ // J6r2: instant tackles
               p.tackleCd=0.9;
               const fx=Math.cos(p.face), fz=Math.sin(p.face);
               const tx=(c.pos.x-p.pos.x)/(d||1), tz=(c.pos.z-p.pos.z)/(d||1);
               const behindDot=(-tx)*Math.cos(c.face)+(-tz)*Math.sin(c.face);
               if(behindDot>-0.3){ // front/side only - from behind would be a foul
                 const facingDot=fx*tx+fz*tz;
-                if(Math.random()<(facingDot>0.3?0.85:0.65)){ // J6: AI wins more tackles
+                if(Math.random()<(facingDot>0.3?0.95:0.8)){ // J6r2: AI wins almost all tackles
                   B.owner=null; B.lastTouch=p.team; B.intended=p; B.noPickup=0.15;
                   pendingWin={ team:p.team, until:performance.now()+2500 };
                   const lx=p.pos.x+fx*2.2, lz=p.pos.z+fz*2.2;
@@ -893,7 +893,7 @@ function updateAI(dt){
         if(marks&&marks.has(p)){ // MARKER: goal-side of his man, tight, tracking his run
           const man=marks.get(p);
           const gx2=-ad*52.5, gd=Math.hypot(gx2-man.pos.x,0-man.pos.z)||1;
-          let mx=man.pos.x+man.vel.x*0.5+(gx2-man.pos.x)/gd*1.6, mz=man.pos.z+man.vel.z*0.5+(0-man.pos.z)/gd*1.6;
+          let mx=man.pos.x+man.vel.x*0.5+(gx2-man.pos.x)/gd*1.0, mz=man.pos.z+man.vel.z*0.5+(0-man.pos.z)/gd*1.0; // J6r2: tighter marking
           const lim=B.pos.x-ad*3; mx=ad>0?Math.min(mx,lim):Math.max(mx,lim);
           movePlayer(p,mx,clamp(mz,-31,31),Math.hypot(mx-p.pos.x,mz-p.pos.z)>3?8.9:8.4,dt); continue; }
         const st=shapeTarget(p); movePlayer(p,st.x+jx,st.z+jz,7.9,dt); continue;
