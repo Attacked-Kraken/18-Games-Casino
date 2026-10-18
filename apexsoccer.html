@@ -338,9 +338,9 @@ ring.rotation.x=-Math.PI/2; ring.position.y=0.03; ring.visible=false; scene.add(
 
 const FORM=[ // attack +X frame
   {role:'GK', x:-50, z:0},
-  {role:'DEF',x:-34, z:-13},{role:'DEF',x:-34, z:13},
-  {role:'MID',x:-20, z:-17},{role:'MID',x:-16, z:0},{role:'MID',x:-20, z:17},
-  {role:'FWD',x:-5,  z:0},
+  {role:'DEF',x:-36, z:-20},{role:'DEF',x:-38, z:-7},{role:'DEF',x:-38, z:7},{role:'DEF',x:-36, z:20},
+  {role:'MID',x:-22, z:-22},{role:'MID',x:-24, z:-8},{role:'MID',x:-24, z:8},{role:'MID',x:-22, z:22},
+  {role:'FWD',x:-8, z:-8},{role:'FWD',x:-8, z:8},
 ];
 const teams=[
   { name:'COMETS', short:'COM', shirt:0xff7a1a, shorts:0xf2f2f2, gk:0xd7ff3c, ad:1,  score:0, players:[], human:true  },
@@ -858,14 +858,14 @@ function updateAI(dt){
             const gx2=-ad*52.5, gd=Math.hypot(gx2-c.pos.x,0-c.pos.z)||1;
             movePlayer(p,c.pos.x+(gx2-c.pos.x)/gd*1.25,c.pos.z+(0-c.pos.z)/gd*1.25,7.5,dt);
             p.jockT=(p.jockT||0)+dt;
-            if(p.tackleCd<=0&&p.jockT>0.3&&d<2.1){
+            if(p.tackleCd<=0&&p.jockT>0.15&&d<2.6){ // J6: faster, more aggressive AI tackles
               p.tackleCd=0.9;
               const fx=Math.cos(p.face), fz=Math.sin(p.face);
               const tx=(c.pos.x-p.pos.x)/(d||1), tz=(c.pos.z-p.pos.z)/(d||1);
               const behindDot=(-tx)*Math.cos(c.face)+(-tz)*Math.sin(c.face);
               if(behindDot>-0.3){ // front/side only - from behind would be a foul
                 const facingDot=fx*tx+fz*tz;
-                if(Math.random()<(facingDot>0.3?0.7:0.5)){ // WON IT: into the tackler's path, then collect it
+                if(Math.random()<(facingDot>0.3?0.85:0.65)){ // J6: AI wins more tackles
                   B.owner=null; B.lastTouch=p.team; B.intended=p; B.noPickup=0.15;
                   pendingWin={ team:p.team, until:performance.now()+2500 };
                   const lx=p.pos.x+fx*2.2, lz=p.pos.z+fz*2.2;
