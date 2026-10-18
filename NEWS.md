@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-18 · Flagship: Ice Hockey first · one Muse per FILE
+The owner wants ONE game finished all the way to store-ready before spreading out: Ice Hockey is the flagship (his board shows "🏁 How close to the store" for every game). Up to 3 Muses work on it at once, each owning a DIFFERENT file so nobody blocks anybody: the lead owns apexhockey.html (and wires the others in), one owns venues/kit/rink.js (arena, crowd), one owns kit/apex-sound.js (the sound pack). Never edit a file another Muse has claimed on CLAIMS.md - ask for it in your PR instead. Small PRs, pull main before you merge. Every game also needs a great FIRST 60 SECONDS and a SOUND PASS (STORE-READY.md).
+
 ## 2026-10-18 · Plan first, build in stages
 Big jobs and new games now start with a ONE-PAGE PLAN (plans/TEMPLATE.md): 30-second fun, controls, one camera spec, 3 reference pictures, KEEP, stages, done means. Commit it alone ('PLAN JOB Jn'), say 'PLAN READY JOB Jn' and STOP until the owner's 👍 on his board. Then build in stages (gray box → one polished level → the rest), one PR each, nothing outside the plan. Small fixes don't need a plan. Rules: STUDIO-STANDARD.md 4b.
 

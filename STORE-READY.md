@@ -80,6 +80,16 @@ with a friendly line. Live play together over the internet (2-6 players at once)
 added when a game moves to the Arcade - don't call any outside server here. Play test: `play-friend-code` (make a
 code, enter it, the friend match starts and its result is saved).
 
+## The first 60 seconds (owner, 2026-10-18)
+A new player must know what to do with NO reading - at most one short hint on screen that disappears after the first
+try - and get a win or a "wow" moment (a goal, a big jump, a home run) inside 60 seconds of pressing Play. The robot's
+play tests check it: 'play-first-minute' (from Play to the first scored point/win/trick in under 60 s of game time).
+
+## Sound pass (owner, 2026-10-18)
+Sound makes a game feel finished: a real crowd that reacts (murmur, roar on big moments, groans on misses), the hit
+sounds of the sport (puck, bat, engine, skates), a short menu tune and in-game music that stays under the action, and a
+mute that only mutes the game. Use the shared sound pack `kit/apex-sound.js` (being built) - never silent games.
+
 ## The store reviewer (owner, 2026-10-17: "I don't want to write all that")
 The owner only says a few words. The Muse that gets the job is the **store reviewer** first: before any code it plays
 EVERY mode, level and event like an App Store reviewer and writes the full gap list against this file (what's
