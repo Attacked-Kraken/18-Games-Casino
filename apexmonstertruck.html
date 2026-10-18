@@ -134,7 +134,8 @@
 import * as THREE from 'three';
 
 /* ================= config ================= */
-const ARENA = 2000;          // half-size: 4000x4000 stadium (~28x area)
+const ARENA_X = 275, ARENA_Z = 125; // J45 EXTRA: 550x250m dirt floor inside the bowl (arcade size, bigger than real)
+const ARENA = 275;          // half-size for square-based code (uses X)
 const RUN_TIME = 120;        // seconds per freestyle run
 /* Rally Career: 3 events with goals - complete all to win the rally */
 const RALLY_EVENTS = [
@@ -414,7 +415,7 @@ const dirtTex = makeTex(512, 512, (g, w, h) => {
 dirtTex.wrapS = dirtTex.wrapT = THREE.RepeatWrapping; dirtTex.repeat.set(220, 220); // J5 pic: less tiling
 dirtTex.anisotropy = renderer.capabilities.getMaxAnisotropy(); // stop streaky dirt
 const dirt = new THREE.Mesh(
-  new THREE.PlaneGeometry(ARENA * 2 + 20, ARENA * 2 + 20),
+  new THREE.PlaneGeometry(ARENA_X * 2 + 20, ARENA_Z * 2 + 20),
   new THREE.MeshStandardMaterial({ map: dirtTex, roughness: 1 })
 );
 dirt.rotation.x = -Math.PI / 2; dirt.receiveShadow = true; scene.add(dirt);
@@ -427,24 +428,27 @@ outer.rotation.x = -Math.PI / 2; outer.position.y = -3; scene.add(outer); // -3 
 /* walls + Apex Arcade sponsor banners */
 const wallMat = new THREE.MeshStandardMaterial({ color: 0x1a1f28, roughness: 0.9 });
 const bannerMat = new THREE.MeshBasicMaterial({ map: sponsorTex });
-const WALL_H = 9, WALL_D = ARENA + 5;
-function addWall(x, z, ry) {
+const WALL_H = 9;
+function addWall(x, z, ry, len) {
   const wgrp = new THREE.Group();
-  const wall = new THREE.Mesh(new THREE.BoxGeometry(WALL_D * 2, WALL_H, 1.2), wallMat);
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(len, WALL_H, 1.2), wallMat);
   wall.position.y = WALL_H / 2; wall.receiveShadow = true; wgrp.add(wall);
   for (let bi = 0; bi < 8; bi++) {
     const b = new THREE.Mesh(new THREE.PlaneGeometry(44, 5.2), bannerMat);
-    b.position.set(-WALL_D + (bi + 0.5) * (WALL_D * 2 / 8), 5.4, 0.75); wgrp.add(b);
+    b.position.set(-len/2 + (bi + 0.5) * (len / 8), 5.4, 0.75); wgrp.add(b);
   }
   wgrp.position.set(x, 0, z); wgrp.rotation.y = ry; scene.add(wgrp);
 }
-addWall(0, -WALL_D, 0); addWall(0, WALL_D, Math.PI);
-addWall(-WALL_D, 0, Math.PI / 2); addWall(WALL_D, 0, -Math.PI / 2);
+// J45 EXTRA: rectangular walls around 550x250 floor
+addWall(0, -(ARENA_Z + 5), 0, ARENA_X * 2 + 10);
+addWall(0, ARENA_Z + 5, Math.PI, ARENA_X * 2 + 10);
+addWall(-(ARENA_X + 5), 0, Math.PI / 2, ARENA_Z * 2 + 10);
+addWall(ARENA_X + 5, 0, -Math.PI / 2, ARENA_Z * 2 + 10);
 
 /* floodlight poles (fake lights, real emissive) */
 const poleMat = new THREE.MeshStandardMaterial({ color: 0x2a2f38, roughness: 0.8 });
 const lampMat = new THREE.MeshBasicMaterial({ color: 0xfff6d8 });
-for (const [px, pz] of [[-WALL_D, -WALL_D], [WALL_D, -WALL_D], [-WALL_D, WALL_D], [WALL_D, WALL_D]]) {
+for (const [px, pz] of [[-(ARENA_X+5), -(ARENA_Z+5)], [ARENA_X+5, -(ARENA_Z+5)], [-(ARENA_X+5), ARENA_Z+5], [ARENA_X+5, ARENA_Z+5]]) {
   const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.85, 34, 8), poleMat);
   pole.position.set(px, 17, pz); scene.add(pole);
   const lamp = new THREE.Mesh(new THREE.BoxGeometry(7, 2.8, 1.2), lampMat);
@@ -456,16 +460,17 @@ const crowdData = [];
 let crowdMesh = null, crowdTime = 0;
 {
   // stepped grandstand mounds: 8 rows x 4 sides + 4 back walls, one instanced mesh
-  const ROWS = 8, ROWLEN = Math.round(ARENA * 1.85), PER_ROW = 150;
+  // J45 EXTRA: sized for 550x250 floor
+  const ROWS = 8, ROWLEN_X = Math.round(ARENA_X * 1.85), ROWLEN_Z = Math.round(ARENA_Z * 1.85), PER_ROW = 150;
   const stepGeo = new THREE.BoxGeometry(1, 1, 1);
   const stepMat = new THREE.MeshStandardMaterial({ color: 0x232a36, roughness: 0.95 });
   const steps = [];
-  const STAND_OFF = ARENA + 12;
   for (let s = 0; s < 4; s++) {
     const horiz = s < 2; // 0: north(+z) 1: south(-z) 2: east(+x) 3: west(-x)
     const sign = (s === 0 || s === 2) ? 1 : -1;
-    for (let i = 0; i < ROWS; i++) steps.push({ topY: 10 + i * 1.5, off: STAND_OFF + i * 2.6, horiz, sign, back: false });
-    steps.push({ topY: 26, off: STAND_OFF + ROWS * 2.6 + 1, horiz, sign, back: true });
+    const SO = (horiz ? ARENA_Z : ARENA_X) + 12; // J45 EXTRA: rectangular offset
+    for (let i = 0; i < ROWS; i++) steps.push({ topY: 10 + i * 1.5, off: SO + i * 2.6, horiz, sign, back: false });
+    steps.push({ topY: 26, off: SO + ROWS * 2.6 + 1, horiz, sign, back: true });
   }
   const standMesh = new THREE.InstancedMesh(stepGeo, stepMat, steps.length);
   {
@@ -473,8 +478,9 @@ let crowdMesh = null, crowdTime = 0;
           v3 = new THREE.Vector3(), sc = new THREE.Vector3();
     steps.forEach((st, k) => {
       const h = st.back ? 26 : st.topY, depth = st.back ? 1.5 : 2.6;
-      if (st.horiz) { sc.set(ROWLEN, h, depth); v3.set(0, h / 2, st.sign * st.off); }
-      else { sc.set(depth, h, ROWLEN); v3.set(st.sign * st.off, h / 2, 0); }
+      const RL = st.horiz ? ROWLEN_X : ROWLEN_Z;
+      if (st.horiz) { sc.set(RL, h, depth); v3.set(0, h / 2, st.sign * st.off); }
+      else { sc.set(depth, h, RL); v3.set(st.sign * st.off, h / 2, 0); }
       m4.compose(v3, q, sc); standMesh.setMatrixAt(k, m4);
     });
     standMesh.instanceMatrix.needsUpdate = true;
@@ -493,10 +499,12 @@ let crowdMesh = null, crowdTime = 0;
   let idx = 0;
   for (let s = 0; s < 4; s++) {
     const horiz = s < 2, sign = (s === 0 || s === 2) ? 1 : -1;
+    const RL = horiz ? ROWLEN_X : ROWLEN_Z;
+    const SO = (horiz ? ARENA_Z : ARENA_X) + 12; // J45 EXTRA: rectangular offset
     for (let i = 0; i < ROWS; i++) {
-      const topY = 10 + i * 1.5, off = STAND_OFF + i * 2.6;
+      const topY = 10 + i * 1.5, off = SO + i * 2.6;
       for (let p = 0; p < PER_ROW; p++) {
-        const along = -ROWLEN / 2 + 12 + (p / (PER_ROW - 1)) * (ROWLEN - 24);
+        const along = -RL / 2 + 12 + (p / (PER_ROW - 1)) * (RL - 24);
         const x = horiz ? along : sign * off, z = horiz ? sign * off : along;
         crowdData.push({ x, z, y: topY, stand: s, phase: Math.random() * Math.PI * 2, spd: 5 + Math.random() * 3 });
         col.setHex(palette[(Math.random() * palette.length) | 0]);
@@ -543,11 +551,10 @@ let walkerMesh = null;
   walkerMesh.frustumCulled = false;
   const palette = [0xff5a5a, 0xffb200, 0x37c26a, 0x2e7fd9, 0xe8e8e8, 0x9a4fd9, 0xff7ab8, 0x33d6d6];
   const col = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(1, 1, 1);
-  const R = ARENA + 30; // concourse ring
+  const RX = ARENA_X + 30, RZ = ARENA_Z + 30; // J45 EXTRA: elliptical concourse ring
   for (let i = 0; i < N; i++) {
     const a = (i / N) * Math.PI * 2 + Math.random() * 0.1;
-    const r = R + (Math.random() - 0.5) * 20;
-    walkers.push({ a, r, spd: (0.02 + Math.random() * 0.03) * (Math.random() < 0.5 ? 1 : -1), phase: Math.random() * 6.28 });
+    walkers.push({ a, rx: RX + (Math.random() - 0.5) * 20, rz: RZ + (Math.random() - 0.5) * 20, spd: (0.02 + Math.random() * 0.03) * (Math.random() < 0.5 ? 1 : -1), phase: Math.random() * 6.28 });
     col.setHex(palette[(Math.random() * palette.length) | 0]);
     walkerMesh.setColorAt(i, col);
   }
@@ -559,7 +566,7 @@ function stepWalkers(dt) {
   for (let i = 0; i < walkers.length; i++) {
     const w = walkers[i];
     w.a += w.spd * dt;
-    const x = Math.cos(w.a) * w.r, z = Math.sin(w.a) * w.r;
+    const x = Math.cos(w.a) * w.rx, z = Math.sin(w.a) * w.rz; // J45 EXTRA: elliptical
     const bob = Math.abs(Math.sin(w.a * 20 + w.phase)) * 0.15; // walking bob
     e.set(0, -w.a + Math.PI / 2, 0); q.setFromEuler(e);
     v.set(x, bob, z); m4.compose(v, q, s);
@@ -625,17 +632,20 @@ function stepFlags(t) {
 }
 
 /* ================= J5 CHECK: stadium bowl from venues/truck-arena.md ================= */
+/* J45 EXTRA: rectangular bowl around 550x250m floor - stands on all 4 sides */
 (function buildStadium(){
-  const S = 2200;
+  const SX = ARENA_X + 10, SZ = ARENA_Z + 10;
   const standMat = new THREE.MeshStandardMaterial({ color: 0x3a4150, roughness: 0.9 });
   const stepMat = new THREE.MeshStandardMaterial({ color: 0x2c3340, roughness: 0.9 });
   for (let side = 0; side < 4; side++) {
     const rotY = side * Math.PI / 2;
+    const S = (side % 2 === 0) ? SZ : SX; // sides 0,2 span X; sides 1,3 span Z
+    const W = (side % 2 === 0) ? SX : SZ; // width along the side
     for (let tier = 0; tier < 3; tier++) {
-      const w = 2 * S - tier * 120, d = 90, hgt = 18 + tier * 22;
+      const w = 2 * W - tier * 60, d = 45, hgt = 18 + tier * 22;
       const y = hgt / 2 + tier * 8;
       const stand = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, d), tier % 2 ? standMat : stepMat);
-      stand.position.set(Math.sin(rotY) * (S + d/2 + tier * 40), y, Math.cos(rotY) * (S + d/2 + tier * 40));
+      stand.position.set(Math.sin(rotY) * (S + d/2 + tier * 20), y, Math.cos(rotY) * (S + d/2 + tier * 20));
       stand.rotation.y = rotY;
       stand.receiveShadow = true;
       scene.add(stand);
@@ -648,12 +658,14 @@ function stepFlags(t) {
   let fi = 0;
   for (let side = 0; side < 4 && fi < COUNT; side++) {
     const ang = side * Math.PI / 2;
+    const S = (side % 2 === 0) ? SZ : SX;
+    const W = (side % 2 === 0) ? SX : SZ;
     for (let tier = 0; tier < 3 && fi < COUNT; tier++) {
       const y = 18 + tier * 22 + tier * 8 + 1.2;
-      const rad = S + 45 + tier * 40;
+      const rad = S + 22 + tier * 20;
       const per = Math.floor(COUNT / 12);
       for (let i = 0; i < per && fi < COUNT; i++, fi++) {
-        const t = (i / per - 0.5) * (2 * S - tier * 120 - 20);
+        const t = (i / per - 0.5) * (2 * W - tier * 60 - 10);
         dummy.position.set(Math.sin(ang) * rad + Math.cos(ang) * t, y + Math.random() * 0.3, Math.cos(ang) * rad - Math.sin(ang) * t);
         dummy.rotation.y = ang + Math.PI + (Math.random() - 0.5) * 0.4;
         dummy.updateMatrix();
@@ -669,13 +681,13 @@ function stepFlags(t) {
   const screenMat = new THREE.MeshBasicMaterial({ color: 0x0a0f1a });
   for (const sz of [-1, 1]) {
     const scr = new THREE.Mesh(new THREE.BoxGeometry(60, 34, 4), screenMat);
-    scr.position.set(0, 70, sz * (S + 60));
+    scr.position.set(0, 70, sz * (SZ + 30));
     scene.add(scr);
   }
   const barMat = new THREE.MeshStandardMaterial({ color: 0x9aa0aa, roughness: 0.8 });
   const barGeo = new THREE.BoxGeometry(12, 2.5, 1.2);
   for (let i = -8; i <= 8; i++) {
-    for (const [x, z, ry] of [[i * 13, S - 8, 0], [i * 13, -S + 8, 0], [S - 8, i * 13, Math.PI/2], [-S + 8, i * 13, Math.PI/2]]) {
+    for (const [x, z, ry] of [[i * 13, SZ - 4, 0], [i * 13, -SZ + 4, 0], [SX - 4, i * 6, Math.PI/2], [-SX + 4, i * 6, Math.PI/2]]) {
       const b = new THREE.Mesh(barGeo, barMat);
       b.position.set(x, 1.25, z); b.rotation.y = ry;
       scene.add(b);
@@ -719,24 +731,25 @@ function addDouble(x, z, ang, gap) {
   // landing (blue, facing opposite) - big for 4x trucks
   addRamp(x + dx * gap / 2, z + dz * gap / 2, ang + Math.PI, 120, 52, 36, 'blue');
 }
-// RALLY JUMPS: 4 doubles spread apart (each launches you to land on the other)
-addDouble(0, -600, 0, 220);                 // north double (N-S)
-addDouble(0, 600, 0, 220);                  // south double (N-S)
-addDouble(-600, 0, Math.PI / 2, 220);       // west double (E-W)
-addDouble(600, 0, Math.PI / 2, 220);        // east double (E-W)
+// RALLY JUMPS: 4 doubles spread across the 550x250 floor (each launches you to land on the other)
+// J45 EXTRA: long run-ups between ramps for chaining jumps
+addDouble(0, -70, 0, 80);                  // north double (N-S) - launch south toward center
+addDouble(0, 70, 0, 80);                   // south double (N-S) - launch north toward center
+addDouble(-140, 0, Math.PI / 2, 80);       // west double (E-W)
+addDouble(140, 0, Math.PI / 2, 80);        // east double (E-W)
 // Big tabletop in center (black) - standalone feature
 addRamp(0, 0, 0, 160, 80, 44, 'black'); // big tabletop for 4x trucks
-// OUTER FREESTYLE: bigger ramps around the stadium
-addRamp(0, 900, 0, 90, 35, 26, 'red');
-addRamp(0, -900, Math.PI, 90, 35, 26, 'blue');
-// MEGA JUMP: super long ramp for high-speed launches
-addRamp(0, 1200, 0, 200, 60, 55, 'red');
-addRamp(900, 0, Math.PI / 2, 90, 35, 26, 'red');
-addRamp(-900, 0, -Math.PI / 2, 90, 35, 26, 'blue');
-addRamp(700, 700, Math.PI * 0.25, 70, 28, 20, 'black');
-addRamp(-700, 700, -Math.PI * 0.25, 70, 28, 20, 'black');
-addRamp(700, -700, Math.PI * 0.75, 70, 28, 20, 'black');
-addRamp(-700, -700, -Math.PI * 0.75, 70, 28, 20, 'black');
+// OUTER FREESTYLE: ramps spread with long run-ups
+addRamp(0, 110, 0, 90, 35, 26, 'red');
+addRamp(0, -110, Math.PI, 90, 35, 26, 'blue');
+// MEGA JUMP: super long ramp for high-speed launches - west end, launch east toward center
+addRamp(-180, 0, Math.PI / 2, 200, 60, 55, 'red');
+addRamp(220, 0, Math.PI / 2, 90, 35, 26, 'red');
+addRamp(-240, 0, -Math.PI / 2, 90, 35, 26, 'blue');
+addRamp(120, 60, Math.PI * 0.25, 70, 28, 20, 'black');
+addRamp(-120, 60, -Math.PI * 0.25, 70, 28, 20, 'black');
+addRamp(120, -60, Math.PI * 0.75, 70, 28, 20, 'black');
+addRamp(-120, -60, -Math.PI * 0.75, 70, 28, 20, 'black');
 
 function groundHeight(x, z) {
   let h = 0;
@@ -791,8 +804,8 @@ function buildCar(color) {
 }
 function placeCar(c, avoid) {
   for (let tries = 0; tries < 40; tries++) {
-    const x = (Math.random() * 2 - 1) * (ARENA - 20);
-    const z = (Math.random() * 2 - 1) * (ARENA - 20);
+    const x = (Math.random() * 2 - 1) * (ARENA_X - 20);
+    const z = (Math.random() * 2 - 1) * (ARENA_Z - 20);
     if (Math.hypot(x, z) < 14) continue;
     let bad = false;
     for (const r of ramps) if (Math.hypot(x - r.x, z - r.z) < 22) { bad = true; break; }
@@ -801,7 +814,7 @@ function placeCar(c, avoid) {
     for (const o of cars) if (o !== c && !o.crushed && Math.hypot(x - o.x, z - o.z) < 10) { bad = true; break; }
     if (!bad) { c.x = x; c.z = z; return; }
   }
-  c.x = (Math.random() * 2 - 1) * (ARENA - 20); c.z = (Math.random() * 2 - 1) * (ARENA - 20);
+  c.x = (Math.random() * 2 - 1) * (ARENA_X - 20); c.z = (Math.random() * 2 - 1) * (ARENA_Z - 20);
 }
 for (let i = 0; i < 44; i++) {
   const g = buildCar(carColors[i % carColors.length]);
@@ -1027,7 +1040,7 @@ function stepAI(dt) {
     const r = a.target;
     const tx = r.x - r.dx * r.len * 0.2, tz = r.z - r.dz * r.len * 0.2; // aim onto the ramp face, drive through
     let des = Math.atan2(tx - a.x, tz - a.z);
-    if (Math.abs(a.x) > ARENA - 60 || Math.abs(a.z) > ARENA - 60) des = Math.atan2(-a.x, -a.z);
+    if (Math.abs(a.x) > ARENA_X - 20 || Math.abs(a.z) > ARENA_Z - 20) des = Math.atan2(-a.x, -a.z);
     let dh = des - a.hd;
     while (dh > Math.PI) dh -= 2 * Math.PI;
     while (dh < -Math.PI) dh += 2 * Math.PI;
@@ -1035,9 +1048,9 @@ function stepAI(dt) {
     const px = a.x, pz = a.z, ghPrev = groundHeight(px, pz);
     if (a.grounded) a.sp = Math.min(30, a.sp + 22 * dt); else a.sp = Math.max(18, a.sp - 4 * dt);
     a.x += Math.sin(a.hd) * a.sp * dt; a.z += Math.cos(a.hd) * a.sp * dt;
-    const B = ARENA - 3;
-    if (Math.abs(a.x) > B || Math.abs(a.z) > B) {
-      a.x = Math.max(-B, Math.min(B, a.x)); a.z = Math.max(-B, Math.min(B, a.z)); a.sp *= 0.4;
+    const BX = ARENA_X - 3, BZ = ARENA_Z - 3;
+    if (Math.abs(a.x) > BX || Math.abs(a.z) > BZ) {
+      a.x = Math.max(-BX, Math.min(BX, a.x)); a.z = Math.max(-BZ, Math.min(BZ, a.z)); a.sp *= 0.4;
     }
     if (a.grounded && groundHeight(a.x, a.z) - ghPrev > 1.2) { a.x = px; a.z = pz; a.sp *= 0.4; a.target = null; }
     const gh = groundHeight(a.x, a.z);
@@ -1178,9 +1191,9 @@ function stepTruck(dt) {
   T.x += fx * T.sp * dt; T.z += fz * T.sp * dt;
 
   // walls
-  const B = ARENA - 2.2;
-  if (Math.abs(T.x) > B || Math.abs(T.z) > B) {
-    T.x = Math.max(-B, Math.min(B, T.x)); T.z = Math.max(-B, Math.min(B, T.z));
+  const BX = ARENA_X - 2.2, BZ = ARENA_Z - 2.2;
+  if (Math.abs(T.x) > BX || Math.abs(T.z) > BZ) {
+    T.x = Math.max(-BX, Math.min(BX, T.x)); T.z = Math.max(-BZ, Math.min(BZ, T.z));
     if (Math.abs(T.sp) > 6) { Snd.thud(); camShake = Math.max(camShake, 0.3); puff(T.x, 1, T.z, 5, 5); }
     T.sp *= -0.35;
   }
