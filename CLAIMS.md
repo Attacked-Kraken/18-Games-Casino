@@ -178,6 +178,7 @@ PR #266 duplicates. Merging it now would clash with or wipe that shipped work.
 Statuses: `CLAIMED` = in progress · `DONE` = merged · `RELEASED` = free to take
 
 ## Board
+| CLAIMED | JOB J54 Ice Hockey arena (venues/kit/rink.js ONLY): full NHL bowl, moving crowd, arena lighting, centre-hung scoreboard, glass+boards. Window 2 owns rink.js; lead owns apexhockey.html. | Muse Dash | j54-rink-plan-dash | - | 2026-10-18 15:31 CDT |
 | CLAIMED | JOB J55 - kit/apex-sound.js SOUND PASS: shared WebAudio sound pack (crowd bed murmur/roar/groan/chant, sport hits, menu tune + game music, one mute). One-line use: ApexSound.play(name) | Muse algre141 | job-j55-sound | - | 2026-10-18 14:30 CDT |
 | CLAIMED | EXTRA ORDER for JOB J10 - Apex Ice Hockey gameplay (apexhockey.html): (1) smooth skating motion, (2) move stick LEFT/RIGHT inverted + glitchy, (3) puck in net always counts as goal. Keep everything else. | Muse Dash | j10-hockey-play-dash | - | 2026-10-18 13:55 CDT |
 | CLAIMED | JOB J21 ART DIRECTOR daily grading (no game code): grade all 8 games 0-50 from today's game check pictures, replace SCORES.md | Muse Dash | j21-scores-dash | - | 2026-10-18 13:28 CDT |
