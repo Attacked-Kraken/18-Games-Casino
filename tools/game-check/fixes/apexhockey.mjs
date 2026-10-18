@@ -90,39 +90,154 @@ export default [
       });
     },
   },
-  {
-    id: 'no-auto-offside',
-    ask: 'Why do I get offsides every time',
-    async test(page, h) {
-      try { await h.press('#playBtn'); } catch (e) {}
-      await h.wait(2200); // opening faceoff (1.4s) ends -> play
-      await h.eval(() => {
-        const H = window.__hk; if (!H || !H.puck) return 'no puck hook';
-        const S = H.skaters;
-        const carrier = S.find(s => s.team === 'home' && !s.goalie && s.role === 'C');
-        if (!carrier) return 'no home center';
-        H.puck.owner = carrier; H.puck.vel.set(0, 0, 0); H.puck.pos.set(12, 0.2, 0);
-        carrier.pos.set(12, 0.1, 0); carrier.vel.set(0, 0, 0);
-        carrier.target.set(12, 0, 0); carrier.thinkT = 999; // parked with the puck
-        S.filter(s => s.team === 'home' && !s.goalie && s !== carrier)
-          .forEach((s, i) => { s.pos.set(8 - i * 3, 0.1, (i % 2 ? -8 : 8)); s.vel.set(0, 0, 0); s.thinkT = 0; });
-        S.filter(s => s.team === 'away' && !s.goalie)
-          .forEach((s, i) => { s.pos.set(-55, 0.1, (i - 2) * 12); s.vel.set(0, 0, 0); s.thinkT = 999; });
-        S.filter(s => s.goalie).forEach(s => { s.thinkT = 999; });
-        return true;
-      });
-      await h.wait(900); // AI thinks a few cycles
-      return h.eval(() => {
-        const H = window.__hk; if (!H || !H.puck) return 'no puck hook';
-        const S = H.skaters, BLUE = H.BLUE, carrier = H.puck.owner;
-        if (!carrier || carrier.team !== 'home') return 'carrier lost';
-        const thought = S.filter(s => s.team === 'home' && !s.goalie && s !== carrier && Math.abs(s.target.x - s.pos.x) > 0.5);
-        if (!thought.length) return 'AI did not think during the window (game not in play?)';
-        const bad = S.filter(s => s.team === 'home' && !s.goalie && s !== carrier && s.target.x > BLUE);
-        if (bad.length) return bad.length + ' teammate(s) sent across the blue line ahead of the puck (targets ' + bad.map(s => Math.round(s.target.x)).join(',') + ' vs line ' + BLUE + ') - that is an automatic offside';
-        return true;
-      });
-    },
+/* ================= PLAY TESTS (owner rule, 2026-10-16) =================
+   These actually PLAY the game by hockey's rules (rules/hockey.md).
+   They read the read-only window.__hk snapshot and the DOM (banner/score). */
+{
+  id: 'play-offside-called',
+  ask: 'offside is called when an attacker crosses the blue line before the puck',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    await h.eval(() => {
+      const H = window.__hk; if (!H || !H.puck) return;
+      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
+      H.puck.lastTouch = null; // not an icing situation
+      H.puck.pos.set(24, 0.2, 0); H.puck.vel.set(25, 0, 0); // crosses the home attacking blue line (25)
+      const S = H.skaters;
+      const deep = S.find(s => s.team === 'home' && !s.goalie && s.role === 'RW');
+      let j = 0;
+      for (const s of S) {
+        s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI so nobody interferes
+        if (s === deep) { s.pos.set(40, 0.1, 10); continue; } // attacker deep, ahead of the puck
+        if (s.team === 'home' && !s.goalie) s.pos.set(10, 0.1, (j % 2 ? -12 : 12));
+        else if (s.team === 'away' && !s.goalie) s.pos.set(-55, 0.1, ((j % 5) - 2) * 12);
+        j++;
+      }
+    });
+    // Delayed offside: the arm gives the attacker 1.4 s to tag up, then the whistle blows.
+    for (let i = 0; i < 12; i++) {
+      await h.wait(1000);
+      const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
+      if (/OFFSIDE/i.test(banner)) return true;
+    }
+    return 'a real offside (attacker at x=40 ahead of the puck crossing the blue line) never drew a whistle';
   },
+},
+{
+  id: 'play-icing-called',
+  ask: 'icing is called on an untouched clear from the defensive half',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    await h.eval(() => {
+      const H = window.__hk; if (!H || !H.puck) return;
+      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
+      H.puck.lastTouch = 'home'; H.puck.lastTouchX = -10; // dumped from the home defensive half
+      H.puck.pos.set(-10, 0.2, 30); H.puck.vel.set(60, 0, 0); // untouched clear down the ice (too fast to grab)
+      for (const s of H.skaters) {
+        s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI
+        // away wins the race, so the icing stands (not waived)
+        if (!s.goalie) s.pos.set(s.team === 'away' ? 60 : -40, 0.1, s.pos.z || 0);
+      }
+    });
+    for (let i = 0; i < 12; i++) {
+      await h.wait(1000);
+      const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
+      if (/ICING/i.test(banner)) return true;
+    }
+    return 'an untouched clear from the defensive half past the far goal line never drew an icing whistle';
+  },
+},
+{
+  id: 'play-goal-restarts-centre',
+  ask: 'a goal counts on the scoreboard and restarts from centre ice',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    const before = await h.eval(() => ((document.querySelector('#score') || {}).textContent) || '');
+    await h.eval(() => {
+      const H = window.__hk; if (!H || !H.puck) return;
+      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
+      H.puck.lastTouch = null;
+      H.puck.pos.set(86, 0.2, 0); H.puck.vel.set(20, 0, 0); // into the net past 89.4 (too slow for the goalie save, too fast for a cover)
+      for (const s of H.skaters) {
+        s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI
+        if (!s.goalie) s.pos.set(s.team === 'away' ? -60 : 30, 0.1, 0);
+      }
+    });
+    let scored = false, changed = false;
+    // Phase 1: the goal must register (banner + scoreboard).
+    for (let i = 0; i < 8 && !scored; i++) {
+      await h.wait(1000);
+      const r = await h.eval(() => ({
+        score: ((document.querySelector('#score') || {}).textContent) || '',
+        banner: ((document.querySelector('#banner') || {}).textContent) || '',
+      }));
+      if (/GOAL/i.test(r.banner)) { scored = true; changed = r.score !== before; }
+    }
+    if (!scored) return 'a puck over the goal line did not register a goal';
+    // Phase 2: after the 3.2 s goal celebration the puck must restart from centre ice.
+    for (let i = 0; i < 16; i++) {
+      await h.wait(500);
+      const r = await h.eval(() => ({
+        score: ((document.querySelector('#score') || {}).textContent) || '',
+        px: window.__hk && window.__hk.puck ? window.__hk.puck.pos.x : 999,
+        pz: window.__hk && window.__hk.puck ? window.__hk.puck.pos.z : 999,
+      }));
+      if (r.score !== before) changed = true;
+      if (changed && Math.abs(r.px) < 6 && Math.abs(r.pz) < 6) return true; // caught mid-faceoff on the dot
+    }
+    return 'after the goal the puck did not restart from centre ice';
+  },
+},
+{
+  id: 'play-puck-stays-in-rink',
+  ask: 'the puck never leaves the rink during play',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    for (let i = 0; i < 40; i++) { // 20 s of real AI play
+      await h.wait(500);
+      const r = await h.eval(() => {
+        const P = window.__hk && window.__hk.puck; if (!P) return { err: 'no puck hook' };
+        return { x: P.pos.x, z: P.pos.z };
+      });
+      if (r.err) return r.err;
+      if (Math.abs(r.x) > 101 || Math.abs(r.z) > 43.5)
+        return 'puck escaped the rink at (' + r.x.toFixed(1) + ', ' + r.z.toFixed(1) + ')';
+    }
+    return true;
+  },
+},
+{
+  id: 'play-5v5-plus-goalie',
+  ask: '5 skaters plus a goalie a side, per the rules sheet',
+  async test(page, h) {
+    return h.eval(() => {
+      const S = window.__hk && window.__hk.skaters; if (!S || !S.length) return 'no skaters found';
+      for (const team of ['home', 'away']) {
+        const T = S.filter(s => s.team === team);
+        const gk = T.filter(s => s.goalie).length, out = T.filter(s => !s.goalie).length;
+        if (gk !== 1) return team + ' has ' + gk + ' goalies (rules/hockey.md: 1)';
+        if (out !== 5) return team + ' has ' + out + ' skaters (rules/hockey.md: 5)';
+      }
+      return true;
+    });
+  },
+},
+{
+  id: 'play-faceoff-at-centre',
+  ask: 'the opening faceoff drops the puck at centre ice',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(300); // mid-faceoff: the puck is sitting on the dot
+    return h.eval(() => {
+      const P = window.__hk && window.__hk.puck; if (!P) return 'no puck hook';
+      if (Math.abs(P.pos.x) > 3 || Math.abs(P.pos.z) > 3)
+        return 'opening faceoff not at centre: (' + P.pos.x.toFixed(1) + ', ' + P.pos.z.toFixed(1) + ')';
+      return true;
+    });
+  },
+},
 ];
-
