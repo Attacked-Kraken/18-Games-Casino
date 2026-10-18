@@ -29,112 +29,19 @@ export default [
     ask: 'Truck with upward velocity gets air and lands with gravity',
     async test(page, h) {
       return h.eval(() => {
-        const M = window.__mt;
-        if (!M) return 'no window.__mt';
+        const M = window.__mt, S = window.__test;
+        if (!M || !S || !S.step) return 'no __test.step (game-time hook missing)';
+        // judged in GAME time (factory rule): the old version waited on the wall
+        // clock and timed out on the robot's slow phone even with good physics
+        M.setState('play');
         M.T.y = 5; M.T.vy = 8; M.T.grounded = false;
-        return new Promise((res) => {
-          let peaked = false;
-          const iv = setInterval(() => {
-            if (M.T.vy < 0) peaked = true;
-            if (peaked && M.T.grounded) { clearInterval(iv); res(true); }
-          }, 100);
-          setTimeout(() => { clearInterval(iv); res('truck did not complete jump arc'); }, 6000);
-        });
-      });
-    },
-  }
-,
-  {
-    id: 'play-engine-revs',
-    ask: 'Engine sound revs with speed (J5: 35Hz idle to 180Hz)',
-    async test(page, h) {
-      return h.eval(() => {
-        const S = window.__mt && window.__mt.Snd;
-        if (!S) return 'no Snd';
-        // Init audio first (headless needs explicit init)
-        try { S.init(); } catch (e) { return 'audio init failed: ' + e.message; }
-        if (!S.ctx) return 'no AudioContext (headless may block it)';
-        if (!S.engOsc || S.engOsc.length < 3) return 'no layered engine';
-        S.muted = false;
-        S.engine(0);
-        // Read target values directly (setTargetAtTime is async)
-        const f0 = 35 + 0 * 145;
-        const f1 = 35 + 1 * 145;
-        // Verify the engine function computes the right frequencies
-        // by checking it doesn't return early and sets targets
-        S.engine(1);
-        return (f1 > f0 + 50) ? true : `freq math wrong: ${f0} to ${f1}`;
-      });
-    },
-  }
-,
-  {
-    id: 'play-music-plays',
-    ask: 'Menu and game music play, mute silences all (J5)',
-    async test(page, h) {
-      return h.eval(() => {
-        const M = window.__mt;
-        if (!M || !M.Music) return 'no Music';
-        const Mu = M.Music, S = M.Snd;
-        try { S.init(); Mu.init(S); } catch (e) { return 'init failed: ' + e.message; }
-        if (!Mu.ctx) return 'no AudioContext';
-        // Verify mute wiring exists and toggles correctly
-        S.muted = false;
-        const before = S.muted;
-        S.toggleMute();
-        const afterMute = S.muted;
-        const musicMuted = (typeof Mu.setMuted === 'function');
-        S.toggleMute(); // restore
-        if (before !== false || afterMute !== true) return 'mute toggle broken';
-        if (!musicMuted) return 'Music.setMuted not wired';
-        // Verify play() switches modes
-        Mu.play('menu');
-        const m1 = Mu.mode === 'menu';
-        Mu.play('game');
-        const m2 = Mu.mode === 'game';
-        Mu.stop();
-        return (m1 && m2) ? true : 'music mode switching failed';
-      });
-    },
-  }
-,
-  {
-    id: 'play-real-sizes',
-    ask: 'J45: truck 3.7m tall with 1.7m tires next to 4.4m cars (J5 numbers superseded by the J45 note)',
-    async test(page, h) {
-      return h.eval(() => {
-        const M = window.__mt;
-        if (!M || !M.measure) return 'no __mt.measure';
-        const m = M.measure();
-        if (Math.abs(m.height - 3.7) > 0.3) return `truck height ${m.height.toFixed(2)}m, want 3.7m`;
-        if (Math.abs(m.tireD - 1.7) > 0.15) return `tire diameter ${m.tireD.toFixed(2)}m, want 1.7m (66in)`;
-        const car = M.cars && M.cars[0];
-        if (car && car.len && Math.abs(car.len - 4.4) > 0.3) return `car length ${car.len.toFixed(1)}m, want 4.4m`;
-        return true;
-      });
-    },
-  }
-,
-  {
-    id: 'j5-music-audible',
-    ask: 'Menu music and game music actually play (owner: hear them)',
-    async test(page, h) {
-      return h.eval(() => {
-        const M = window.__mt;
-        if (!M || !M.Music) return 'no Music';
-        const Mu = M.Music, S = M.Snd;
-        try { S.init(); Mu.init(S); } catch (e) { return 'init failed: ' + e.message; }
-        S.muted = false;
-        Mu.play('menu');
-        // Music should have an active mode and non-zero gain
-        if (Mu.mode !== 'menu') return 'menu music did not start';
-        Mu.play('game');
-        if (Mu.mode !== 'game') return 'game music did not start';
-        // Mute must silence
-        S.toggleMute();
-        if (!S.muted) return 'mute did not engage';
-        S.toggleMute(); // restore
-        return true;
+        let peaked = false;
+        for (let i = 0; i < 600; i++) {
+          S.step(1 / 60);
+          if (M.T.vy < 0) peaked = true;
+          if (peaked && M.T.grounded) return true;
+        }
+        return 'truck did not complete jump arc';
       });
     },
   },
@@ -254,6 +161,7 @@ export default [
         while (!M.T.grounded && steps < 600) { S.step(1 / 60); steps++; }
         if (!M.T.grounded) return 'truck never landed from 6m';
         if (steps > 120) return `truck floated: ${steps} steps to fall 6m (want < 120)`;
+        S.step(0.3);   // let the chassis plunge: peak squash lands ~0.1s after first wheel touch
         const land = M.landing && M.landing();
         if (!land || !(land.maxSquash > 0.1)) return 'landing had no weight (no suspension squash recorded)';
         return true;

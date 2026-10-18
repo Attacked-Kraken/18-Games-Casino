@@ -72,7 +72,7 @@
   #btnFlip { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(150px + env(safe-area-inset-bottom)); z-index:31;
     display:none; background:#c02020; color:#fff; border:2px solid rgba(255,255,255,.5); border-radius:999px;
     font-weight:900; font-size:17px; padding:13px 26px; letter-spacing:.05em; }
-  #devSkip { position:fixed; top:calc(96px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right)); z-index:41;
+  #btnSkip { position:fixed; top:calc(96px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right)); z-index:41;
     display:none; background:rgba(10,13,18,.7); color:#7ee787; border:1px solid rgba(126,231,135,.5);
     border-radius:999px; font-weight:800; font-size:13px; padding:8px 14px; }
   .overlay { position:fixed; inset:0; z-index:50; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -125,7 +125,7 @@
 <div id="friendPill"></div>
 <button id="helpBtn" aria-label="How to play">?</button>
 <button id="muteBtn" aria-label="Mute">🔊</button>
-<button id="devSkip">⏭ Skip level</button>
+<button id="btnSkip">⏭ Skip level</button>
 
 <div id="countBig"></div>
 <div id="msg"></div>
@@ -461,7 +461,7 @@ scene.add(moon);
 // the stadium light that matters: one shadow-casting spot that follows the truck
 const heroSpot = new THREE.SpotLight(0xfff2cf, 900, 130, 0.62, 0.45, 1.6);
 heroSpot.castShadow = !LOWFX;
-heroSpot.shadow.mapSize.set(LOWFX ? 512 : 2048, LOWFX ? 512 : 2048);
+heroSpot.shadow.mapSize.set(LOWFX ? 512 : 1024, LOWFX ? 512 : 1024);
 heroSpot.shadow.camera.near = 10; heroSpot.shadow.camera.far = 130;
 heroSpot.shadow.bias = -0.0004;
 scene.add(heroSpot); scene.add(heroSpot.target);
@@ -985,7 +985,7 @@ $('muteBtn').addEventListener('click', () => {
 });
 
 /* help: every instruction lives behind the ? button (clean screen) */
-$('helpBtn').addEventListener('click', () => { $('helpPanel').style.display = 'flex'; });
+$('helpBtn').addEventListener('click', () => { const p = $('helpPanel'); p.style.display = (p.style.display === 'flex') ? 'none' : 'flex'; });
 $('helpClose').addEventListener('click', () => { $('helpPanel').style.display = 'none'; });
 
 /* ================= rally career (3 events, unlock + save) ================= */
@@ -994,10 +994,10 @@ const RALLY_EVENTS = [
   { name: 'BIG AIR', icon: '🚀', type: 'jump', target: 5, desc: '5 big jumps (1s+ of air)' },
   { name: 'FREESTYLE', icon: '⭐', type: 'score', target: 2000, desc: 'Score 2000 points' },
 ];
-let rallySave = { done: [false, false, false], unlocked: 0 };
+let rallySave = { done: [false, false, false], unlocked: 1, v: 2 };   // unlocked = how many events are open
 try {
   const raw = localStorage.getItem('apexmt_rally');
-  if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.done)) rallySave = p; }
+  if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.done)) { rallySave = p; if (p.v !== 2) { rallySave.unlocked = Math.min(3, (p.unlocked | 0) + 1); rallySave.v = 2; } } }
 } catch (e) {}
 function saveRally() { try { localStorage.setItem('apexmt_rally', JSON.stringify(rallySave)); } catch (e) {} }
 let mode = 'free';            // 'free' | 'rally'
@@ -1085,7 +1085,7 @@ function renderRallyRows() {
   RALLY_EVENTS.forEach((ev, i) => {
     const row = document.createElement('div');
     row.className = 'row';
-    const locked = i > rallySave.unlocked;
+    const locked = i >= rallySave.unlocked;
     const done = rallySave.done[i];
     row.innerHTML = `<span>${done ? '✅' : (locked ? '🔒' : ev.icon)} ${ev.name}<br><small style="color:#9fb4cc">${ev.desc}</small></span>`;
     const b = document.createElement('button');
@@ -1101,9 +1101,9 @@ $('rallyClose').addEventListener('click', () => { $('rallyPanel').style.display 
 
 /* dev-only skip (Game Development page opens games with ?dev=1) */
 function refreshSkip() {
-  $('devSkip').style.display = (DEV && mode === 'rally' && (state === 'play' || state === 'count')) ? 'block' : 'none';
+  $('btnSkip').style.display = (DEV && mode === 'rally' && (state === 'play' || state === 'count')) ? 'block' : 'none';
 }
-$('devSkip').addEventListener('click', () => {
+$('btnSkip').addEventListener('click', () => {
   if (mode === 'rally' && rallyIdx >= 0 && !rallySave.done[rallyIdx]) completeRallyEvent();
 });
 $('btnFlip').addEventListener('click', () => { flipBackOver(); });
@@ -1149,7 +1149,7 @@ function startGame(m) {
   arena.setScreen(mode === 'rally' ? 'RALLY' : 'FREESTYLE', 'APEX MONSTER TRUCK', '');
 }
 function startRally(i) {
-  if (i > rallySave.unlocked) return false;
+  if (i >= rallySave.unlocked) return false;
   rallyIdx = i; score = 0;
   startGame('rally');
   const ev = RALLY_EVENTS[i];
@@ -1159,7 +1159,7 @@ function startRally(i) {
 function completeRallyEvent() {
   if (rallyIdx < 0) return;
   rallySave.done[rallyIdx] = true;
-  rallySave.unlocked = Math.max(rallySave.unlocked, Math.min(RALLY_EVENTS.length - 1, rallyIdx + 1));
+  rallySave.unlocked = Math.max(rallySave.unlocked, Math.min(RALLY_EVENTS.length, rallyIdx + 2));
   saveRally();
   Snd.cheer(true); arena.firePyro(); crowdExcite(1);
   state = 'done';
@@ -1222,6 +1222,7 @@ function updateGoalPill() {
 
 /* ================= driving: the tuned raycast-vehicle controller ================= */
 let airTime = 0, wasAir = false, lastAirVy = 0, landWindow = 0, landPeak = 0, landInfo = { maxSquash: 0, air: 0 };
+let rightingT = 0;   // flip-back-over: seconds of PD righting left
 let rollTimer = 0, rolledFlag = false;
 const _v1 = new CANNON.Vec3(), _v2 = new CANNON.Vec3();
 function truckAttitude() {
@@ -1287,7 +1288,7 @@ function driveStep(inp) {
     b.torque.x += right.x * tq; b.torque.y += right.y * tq; b.torque.z += right.z * tq;
   }
   /* emergency roll damper past ~17 deg */
-  if (grounded >= 2 && Math.abs(att.roll) > 0.3) {
+  if (grounded >= 2 && Math.abs(att.roll) > 0.3 && rightingT <= 0) {   // never fight a flip-back righting
     const rollRate = b.angularVelocity.dot(fwd);
     let tq = Math.max(-600000, Math.min(600000, -rollRate * 300000));
     b.torque.x += fwd.x * tq; b.torque.y += fwd.y * tq; b.torque.z += fwd.z * tq;
@@ -1326,7 +1327,7 @@ function addScore(pts, atPos, label) {
 }
 function crushCar(c, byAI) {
   if (c.crushed) return;
-  c.crushed = true; c.crushT = 0; c.respawnT = 15;
+  c.crushed = true; c.crushT = 0; c.hNow = 0.27; c.respawnT = 15;   // flat NOW - the truck is resting on it; the mesh folds over the next 0.3s
   if (c.body.world) world.removeBody(c.body);
   const pos = { x: c.spot.x, y: 2.2, z: c.spot.z };
   puff(c.spot.x, 1, c.spot.z, 16, 2.5, 2.4);
@@ -1355,7 +1356,7 @@ function checkCrushes() {
 let crowdLevel = 0.12, crowdHoldUntil = 0;
 function crowdExcite(v) { crowdLevel = Math.max(crowdLevel, v); crowdHoldUntil = gameT + 3; }
 function onLanding(air, impact) {
-  landInfo = { maxSquash: landPeak, air };
+  landInfo.air = air;   // the tracker owns maxSquash (monotonic max)
   const bp = truckBody.position;
   puff(bp.x, 0.4, bp.z, Math.min(26, 8 + impact * 2), 3.2, 2.2);
   if (impact > 6) { Snd.crunch(); shake = Math.min(0.5, impact * 0.03); }
@@ -1376,21 +1377,10 @@ function onLanding(air, impact) {
   }
 }
 function flipBackOver() {
-  const att = truckAttitude();
-  const yawQ = new CANNON.Quaternion();
-  yawQ.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), T.hd);
-  const inv = truckBody.quaternion.conjugate();
-  const err = yawQ.mult(inv);
-  let axis = new CANNON.Vec3(err.x, err.y, err.z);
-  const s = axis.length();
-  if (s < 1e-4) return;
-  axis.scale(1 / s, axis);
-  const angle = 2 * Math.atan2(s, Math.max(-1, Math.min(1, err.w)));
-  const k = Math.min(6, angle * 2.8);
-  truckBody.angularVelocity.set(axis.x * k, axis.y * k, axis.z * k);
   truckBody.velocity.y = Math.max(truckBody.velocity.y, 4.4);
   truckBody.position.y += 0.5;
   truckBody.wakeUp();
+  rightingT = 1.4;   // stepGame PD-steers to upright and settles there (no tumble-past)
   rollTimer = 0; rolledFlag = false;
   $('btnFlip').style.display = 'none';
   Snd.whoosh();
@@ -1421,16 +1411,32 @@ function stepGame(dt) {
     const active = state === 'play' || (inputTest && state !== 'over' && state !== 'done');
     const r = driveStep(active ? inp : { gas: 0, steer: 0 });
     const preVy = truckBody.velocity.y;
+    if (rightingT > 0) {
+      rightingT -= dt;
+      const yawQ = new CANNON.Quaternion(); yawQ.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), T.hd);
+      const err = yawQ.mult(truckBody.quaternion.conjugate());
+      const axv = new CANNON.Vec3(err.x, err.y, err.z); const sl = axv.length();
+      if (sl > 1e-4) {
+        axv.scale(1 / sl, axv);
+        const ang = 2 * Math.atan2(sl, Math.max(-1, Math.min(1, err.w)));
+        const want = Math.min(5.5, ang * 3.4);
+        const cur = truckBody.angularVelocity.dot(axv);
+        const tq = (want - cur) * 5000 * 4.0;
+        truckBody.torque.x += axv.x * tq; truckBody.torque.y += axv.y * tq; truckBody.torque.z += axv.z * tq;
+        if (ang < 0.1) rightingT = 0;
+      } else rightingT = 0;
+    }
     world.step(H);
-    // air + landing tracking
-    const grounded = r.grounded >= 2;
-    if (!grounded && r.grounded === 0) {
+    // air + landing tracking: POST-step wheel flags - the same flags the test
+    // hooks read, so a landing is recorded on the very step the wheels touch
+    const gNow = groundedCount();
+    if (gNow === 0) {
       if (!wasAir) { wasAir = true; airTime = 0; }
       airTime += dt; lastAirVy = preVy;
     }
-    if (wasAir && r.grounded >= 1) {
+    if (wasAir && gNow >= 1) {
       wasAir = false;
-      landWindow = 0.45; landPeak = 0;
+      landWindow = 0.6; landPeak = 0;
       onLanding(airTime, Math.max(0, -lastAirVy));
       airTime = 0;
     }
@@ -1440,7 +1446,7 @@ function stepGame(dt) {
         const comp = 0.95 - w.suspensionLength;
         if (comp > landPeak) landPeak = comp;
       }
-      landInfo.maxSquash = landPeak;
+      if (landPeak > landInfo.maxSquash) landInfo.maxSquash = landPeak;
     }
     if (state === 'play' || inputTest) {
       checkCrushes();
@@ -1465,7 +1471,6 @@ function stepGame(dt) {
         c.crushT = Math.min(1, c.crushT + dt / 0.3);
         const s = 1 - 0.82 * c.crushT;
         c.mesh.scale.set(1 + 0.06 * c.crushT, s, 1 + 0.06 * c.crushT);
-        c.hNow = 1.5 * s;
       }
       c.respawnT -= dt;
       if (c.respawnT <= 0 && state === 'play') resetCar(c);
@@ -1570,7 +1575,7 @@ function frame(ts) {
   arena.stepCrowd(performance.now() / 1000, crowdLevel);
   arena.stepFx(dt);
   screenTick += dt;
-  if (screenTick > 0.4 && (state === 'play' || state === 'count')) {
+  if (screenTick > 1.0 && (state === 'play' || state === 'count')) {
     screenTick = 0;
     arena.setScreen(mode === 'rally' ? 'RALLY' : 'FREESTYLE', 'SCORE ' + score, mode === 'rally' ? RALLY_EVENTS[rallyIdx].name : fmtTime(timeLeft));
   }
@@ -1657,7 +1662,7 @@ window.__mt = {
     truckBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), hd);
     truckBody.velocity.setZero(); truckBody.angularVelocity.setZero();
     truckBody.wakeUp();
-    airTime = 0; wasAir = false; landWindow = 0;
+    airTime = 0; wasAir = false; landWindow = 0; landPeak = 0; landInfo.maxSquash = 0;
     if (heightAboveGround > 0.3) for (const w of vehicle.wheelInfos) w.isInContact = false;
     syncTruckState();
     // park the camera straight behind the truck so screen measures are true
