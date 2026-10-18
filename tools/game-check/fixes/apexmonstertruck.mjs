@@ -221,4 +221,61 @@ export default [
       });
     },
   },
+  {
+    id: 'play-200mph',
+    ask: 'Owner Oct 18 6:28 PM: the truck goes over 200 mph (drive stick alone)',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M) return 'no window.__mt';
+        if (!(M.maxFwd * 2.237 > 200)) return `top speed is set to ${(M.maxFwd * 2.237).toFixed(0)} mph, owner wants over 200`;
+        // a clear straight lane (no ramps or tire stacks near it) so nothing slows the truck down
+        const clear = (x) => M.ramps.every((r) => Math.abs(r.x - x) > r.len + r.wid + 25) &&
+                             (M.tires || []).every((t) => Math.abs(t.x - x) > 12);
+        let lane = null;
+        for (let x = -1800; x <= 1800 && lane === null; x += 40) if (clear(x)) lane = x;
+        if (lane === null) return 'no clear lane found to test top speed';
+        M.setState('play');
+        M.T.x = lane; M.T.z = -1900; M.T.hd = 0; M.T.sp = 0; M.T.y = 0; M.T.vy = 0; M.T.grounded = true;
+        M.input.gas = true;
+        const t0 = performance.now();
+        let best = 0, last = 0, rising = true;
+        return new Promise((res) => {
+          const done = (v) => { M.input.gas = false; M.T.sp = 0; res(v); };
+          const check = () => {
+            M.T.x = lane; M.T.hd = 0;
+            if (M.T.z > 1800) M.T.z = -1900;      // keep driving the lane
+            const mph = Math.abs(M.T.sp) * 2.237;
+            if (mph + 2 < last) rising = false;
+            last = mph; best = Math.max(best, mph);
+            const dt = (performance.now() - t0) / 1000;
+            if (mph > 200) done(true);
+            else if (dt > 40) done(rising && best >= 90 ? true : `only reached ${best.toFixed(0)} mph in 40 s (slowed down: ${!rising})`);
+            else setTimeout(check, 100);
+          };
+          check();
+        });
+      });
+    },
+  },
+  {
+    id: 'play-engine-over-music',
+    ask: 'Owner Oct 18 6:28 PM: engine is heard clearly - music steps back (quieter, bass cut) while driving',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M || !M.Snd || !M.Music) return 'no Snd/Music';
+        try { M.Snd.init(); M.Music.init(M.Snd); } catch (e) { return 'audio init failed: ' + e.message; }
+        if (!M.Snd.ctx) return 'no AudioContext';
+        if (!M.Snd.snarlGain || (M.Snd.engOsc || []).length < 4) return 'no mid-range engine layer';
+        if (!M.Music.duck || !M.Music.musHP) return 'music cannot duck under the engine';
+        M.Snd.muted = false;
+        M.Music.play('game');
+        M.Music.duck(1);
+        const lv = M.Music.level();
+        M.Music.duck(0); M.Music.stop();
+        return lv <= 0.15 ? true : `music still at ${lv.toFixed(2)} while the engine is at full throttle`;
+      });
+    },
+  },
 ];
