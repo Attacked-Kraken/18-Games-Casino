@@ -3,7 +3,7 @@
 
 On 2026-10-17 one helper's GitHub tool saved CLAIMS.md as one long line of base64 (every
 helper then read gibberish), and saved apexf1.html "double-encoded", so every emoji and
-symbol turned into junk (🏆 -> "ð", — -> "â", · -> "Â·").
+symbol turned into junk (🏆 -> "ð", — -> "â", · -> "·").
 
 This robot runs on GitHub after every push (and every hour as a safety net) and REPAIRS
 both kinds of damage by itself, on the same branch:
@@ -67,7 +67,7 @@ def _bytes(run):
     return bytes(out)
 
 def fix_mojibake(s):
-    """Double-encoded UTF-8 ('ð' 'â' 'Â·' ...) -> the real characters. Returns (text, count)."""
+    """Double-encoded UTF-8 ('ð' 'â' '·' ...) -> the real characters. Returns (text, count)."""
     count = 0
     def one(m):
         nonlocal count
