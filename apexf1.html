@@ -2072,7 +2072,18 @@ window.__test = {
     playerFinished: !!(Race.player && Race.player.finished)
   }),
   trackWidth: () => Track.width,
+  trackLength: () => Track.length,
   setInput: (inp) => { Object.assign(Input, inp); },
+  // Test helper: place a car near the finish line to fast-forward lap tests
+  // idx: car index in Race.cars, s: distance along track
+  setCarS: (idx, s) => {
+    const c = Race.cars[idx];
+    if (c) { c.s = s; c._lastSN = undefined; }
+  },
+  setCarLap: (idx, lap) => {
+    const c = Race.cars[idx];
+    if (c) { c.lap = lap; }
+  },
 };
 /* boot */
 window.__apexBoot=true;

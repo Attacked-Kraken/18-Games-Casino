@@ -48,10 +48,15 @@ export default [
     async test(page, h) {
       await h.press('#quickBtn');
       await h.wait(3000);
-      // Give the player full throttle so the race progresses; AI drives itself
-      await h.eval(() => window.__test.setInput({ gas: true }));
-      // Wait up to 90s for any AI car to reach lap 2
-      for (let i = 0; i < 18; i++) {
+      // Fast-forward: place first AI car just before the finish line
+      await h.eval(() => {
+        const t = window.__test;
+        const L = t.trackLength();
+        t.setCarS(1, L - 200); // car index 1 = first AI car
+        t.setInput({ gas: true });
+      });
+      // Wait up to 25s for it to cross the line (lap 1 -> 2)
+      for (let i = 0; i < 5; i++) {
         await h.wait(5000);
         const lap2 = await h.eval(() => {
           const t = window.__test;
@@ -60,7 +65,7 @@ export default [
         if (lap2 === -1) return 'window.__test not exposed';
         if (lap2 > 0) return true;
       }
-      return 'no AI car reached lap 2 within 90s';
+      return 'no AI car reached lap 2 within 25s';
     },
   },
   {
@@ -71,14 +76,20 @@ export default [
       await h.wait(3000);
       const lap0 = await h.eval(() => window.__test && window.__test.race().lap);
       if (lap0 == null) return 'window.__test not exposed';
-      await h.eval(() => window.__test.setInput({ gas: true }));
-      // Wait up to 120s for the player's lap counter to increment
-      for (let i = 0; i < 24; i++) {
+      // Fast-forward: place player just before the finish line
+      await h.eval(() => {
+        const t = window.__test;
+        const L = t.trackLength();
+        t.setCarS(0, L - 200); // car index 0 = player
+        t.setInput({ gas: true });
+      });
+      // Wait up to 25s for the lap counter to increment
+      for (let i = 0; i < 5; i++) {
         await h.wait(5000);
         const lap = await h.eval(() => window.__test.race().lap);
         if (lap > lap0) return true;
       }
-      return `player lap counter stayed at ${lap0} after 120s`;
+      return `player lap counter stayed at ${lap0} after 25s`;
     },
   },
   {
@@ -134,11 +145,19 @@ export default [
     async test(page, h) {
       await h.press('#quickBtn');
       await h.wait(3000);
-      // Player + AI at full pace; a 3-lap sprint takes a few minutes.
-      // Fast-forward check: verify the finish machinery works by watching
-      // for any car to finish, up to 5 minutes.
-      await h.eval(() => window.__test.setInput({ gas: true }));
-      for (let i = 0; i < 60; i++) {
+      // Fast-forward: place all cars on the final lap just before the finish
+      await h.eval(() => {
+        const t = window.__test;
+        const L = t.trackLength();
+        const laps = t.race().laps;
+        const n = t.cars().length;
+        for (let i = 0; i < n; i++) {
+          t.setCarLap(i, laps); // final lap
+          t.setCarS(i, L - 300 - i * 10);
+        }
+        t.setInput({ gas: true });
+      });
+      for (let i = 0; i < 6; i++) {
         await h.wait(5000);
         const st = await h.eval(() => {
           const t = window.__test;
@@ -149,7 +168,7 @@ export default [
         if (!st) return 'window.__test not exposed';
         if (st.hasResults) return true;
       }
-      return 'race did not produce results within 5 minutes';
+      return 'race did not produce results within 30s';
     },
   },
 ];
