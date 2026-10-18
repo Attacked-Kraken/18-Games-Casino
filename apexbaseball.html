@@ -1023,7 +1023,7 @@ function applyHitResult(r){
     const label = runs>1 ? runs+'-RUN HOME RUN!' : 'HOME RUN!';
     banner(label, '', 1900);
     fx.emit('goal', { pos: [0, 3, -40] });
-    fx.slowmo(0.25, 1.4);
+    // J22: no slowmo - on GPU-less phones it looks like a 1.5s freeze
     crowdExcite(4); try{ Mus.riff(); Mus.cheer(3); }catch(e){}
   } else if (r.type==='error'){
     if (b[2]) runs++; if (b[1]) runs++;
@@ -1589,6 +1589,7 @@ window.__test = {
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _crowd.seats.length; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
+  get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
 };
 function musPhase(p){ try{ Mus.setMode((p==='start'||p==='over')?'menu':'game'); }catch(e){} }
 document.addEventListener('pointerdown', ()=>{ Mus.init(); Mus.resume(); }, {passive:true});
