@@ -82,6 +82,10 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - The camera always shows the play. No camera stuck inside a wall or a player. A zoom that hides the action is a defect.
 - Every action has a sound and visual feedback (ASSET-LAW Part II: menu music, game music and sounds, plus a mute button).
 - Sideways play only (LANDSCAPE LAW). Big touch buttons, at least 44 px.
+- **Clean screen** (owner, Oct 17 2026): during play the screen shows only the game, the score line and the buttons
+  you need right now (short labels or icons). All instructions live behind a **"How to play" (?) button**, closed by
+  default, that turns sideways with the game. No keyboard words on phones ("space", "press 1", "WASD", "arrow keys").
+  A tip may flash for 2 seconds at most and must never cover the play. The robot FAILS a play screen with 40+ words.
 
 ## 5. Hard NOs (the robot FAILS the pull request)
 
@@ -89,6 +93,7 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - Any call to the outside internet (fetch, CDNs, fonts, analytics). Games are fully offline.
 - Real brand, league, team or player names on screen
 - Casino or gambling words in a Game Development title
+- A wordy play screen (40+ words during play) or keyboard words ("space", "WASD") - see "Clean screen"
 - A "Your name" box. It must say **"Player nickname"**.
 - A broken 3D shader, missing files, a black screen, or a rotate sign
 - Any of the owner's fix tests (`tools/game-check/fixes/<game>.mjs`) that this PR breaks
