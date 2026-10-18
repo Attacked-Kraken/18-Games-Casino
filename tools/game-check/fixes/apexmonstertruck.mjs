@@ -112,16 +112,112 @@ export default [
   },
   {
     id: 'play-real-sizes',
-    ask: 'J5: truck ~2.7m tall with ~2.1m tires next to 4.4m cars',
+    ask: 'J45: SAME J5 truck at 2x size (~5.4m tall, ~4.2m tires)',
     async test(page, h) {
       return h.eval(() => {
         const t = window.__mt && window.__mt.truck;
         if (!t) return 'no truck';
         const s = t.g.scale.x;
         const hgt = 4.4 * s, tireD = 3.4 * s;
-        if (Math.abs(hgt - 2.7) > 0.3) return `height ${hgt.toFixed(1)}m, want 2.7m`;
-        if (Math.abs(tireD - 2.1) > 0.3) return `tires ${tireD.toFixed(1)}m, want 2.1m`;
+        if (Math.abs(hgt - 5.4) > 0.6) return `height ${hgt.toFixed(1)}m, want ~5.4m (2x J5)`;
+        if (Math.abs(tireD - 4.2) > 0.6) return `tires ${tireD.toFixed(1)}m, want ~4.2m (2x J5)`;
         return true;
+      });
+    },
+  },
+  {
+    id: 'play-j45-stadium-fullsize',
+    ask: 'J45(1): full-size bowl around course - no toy kit stadium, no black slab',
+    async test(page, h) {
+      return h.eval(() => {
+        if (window.__stadium) return 'kit stadium still present (window.__stadium exists)';
+        if (document.querySelector('script[src*=\"stadium\"]')) return 'stadium kit script still loaded';
+        // The J5 bowl: 12000-fan InstancedMesh should exist in the scene
+        const M = window.__mt;
+        if (!M) return 'no window.__mt';
+        // Check via scene traversal - find the instanced crowd
+        let found = false;
+        M.truck.g.parent.traverse((o) => {
+          if (o.isInstancedMesh && o.count >= 10000) found = true;
+        });
+        if (!found) return 'full-size bowl crowd (12000 fans) not found';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-j45-countdown-dive',
+    ask: 'J45(2): 3-2-1 camera starts high above HIS truck and dives to its back by GO',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M) return 'no window.__mt';
+        if (!M.camera) return 'camera not exposed';
+        // Start countdown
+        M.startGame(); // sets state='count', countT=0
+        return new Promise((res) => {
+          setTimeout(() => {
+            // After 0.5s (during '3'), camera should be HIGH above his truck
+            const yHigh = M.camera.position.y;
+            const tx = M.T.x, tz = M.T.z;
+            const dxHigh = M.camera.position.x - tx;
+            const dzHigh = M.camera.position.z - tz;
+            // Wait until GO (3s total), camera should be LOW behind his truck
+            setTimeout(() => {
+              const yLow = M.camera.position.y;
+              const dxLow = M.camera.position.x - tx;
+              const dzLow = M.camera.position.z - tz;
+              M.setState('play'); // restore
+              if (yHigh < 50) return res(`camera not high at countdown start (y=${yHigh.toFixed(0)}, want ~120)`);
+              if (yLow > 30) return res(`camera not dived by GO (y=${yLow.toFixed(0)}, want ~12.6)`);
+              // Camera should be behind HIS truck (not at center of all trucks)
+              const distHigh = Math.hypot(dxHigh, dzHigh);
+              if (distHigh > 150) return res(`camera not above HIS truck (dist=${distHigh.toFixed(0)})`);
+              res(true);
+            }, 2800);
+          }, 500);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-j45-no-boost',
+    ask: 'J45(3): BOOST button is gone',
+    async test(page, h) {
+      return h.eval(() => {
+        if (document.getElementById('boostBtn')) return 'BOOST button still in DOM';
+        if (document.querySelector('.boostbtn')) return 'BOOST button CSS class still in DOM';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-j45-90mph',
+    ask: 'J45(4): drive stick alone reaches ~90mph with quicker pickup',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M) return 'no window.__mt';
+        M.setState('play');
+        M.T.sp = 0; M.T.grounded = true;
+        M.input.gas = true; // drive stick full forward
+        const t0 = performance.now();
+        return new Promise((res) => {
+          const check = () => {
+            const mph = Math.abs(M.T.sp) * 2.237;
+            const dt = (performance.now() - t0) / 1000;
+            if (mph >= 88) {
+              M.input.gas = false; M.T.sp = 0;
+              res(dt < 8 ? true : `reached 90mph but took ${dt.toFixed(1)}s (too slow)`);
+            } else if (dt > 15) {
+              M.input.gas = false; M.T.sp = 0;
+              res(`only reached ${mph.toFixed(0)}mph after 15s, want ~90`);
+            } else {
+              setTimeout(check, 100);
+            }
+          };
+          check();
+        });
       });
     },
   },
