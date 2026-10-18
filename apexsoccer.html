@@ -11,13 +11,13 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04140a; touch-action:none; overscroll-behavior:none;
-    font-family: ui-monospace, Menlo, Consolas, monospace; user-select:none; -webkit-user-select:none; }
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; user-select:none; -webkit-user-select:none; }
   #c3d { position:fixed; inset:0; display:block; width:100%; height:100%; }
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9000;
-    width:44px; height:44px; border-radius:50%; border:1px solid rgba(57,255,90,.6);
-    background:rgba(2,14,6,.82); color:#d8ffe2; font-size:20px; cursor:pointer; }
+    width:44px; height:44px; border-radius:50%; border:1px solid rgba(255,59,48,.6);
+    background:rgba(12,12,14,.82); color:#ffffff; font-size:20px; cursor:pointer; }
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#000;
-    color:#9dffb4; align-items:center; justify-content:center; text-align:center;
+    color:#ffb700; align-items:center; justify-content:center; text-align:center;
     font-size:20px; letter-spacing:.2em; padding:24px; }
   #rotOv { display:none !important; }
   /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
@@ -40,46 +40,46 @@
   }
   #hud { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
     z-index:8000; display:flex; align-items:center; gap:14px; padding:8px 18px;
-    background:rgba(2,14,6,.85); border:1px solid rgba(57,255,90,.5); border-radius:999px;
-    color:#eaffef; font-size:15px; font-weight:700; letter-spacing:.06em; white-space:nowrap; }
-  #hud .clk { color:#9dffb4; font-size:14px; }
+    background:rgba(12,12,14,.85); border:1px solid rgba(255,59,48,.5); border-radius:999px;
+    color:#ffffff; font-size:15px; font-weight:700; letter-spacing:.06em; white-space:nowrap; }
+  #hud .clk { color:#ffb700; font-size:14px; }
   #banner { position:fixed; top:22%; left:50%; transform:translate(-50%,-50%) scale(.9); z-index:8500;
-    padding:14px 30px; background:rgba(2,14,6,.92); border:1px solid rgba(57,255,90,.7); border-radius:14px;
-    color:#eaffef; font-size:22px; font-weight:800; letter-spacing:.18em; opacity:0; pointer-events:none;
+    padding:14px 30px; background:rgba(12,12,14,.92); border:1px solid rgba(255,59,48,.7); border-radius:14px;
+    color:#ffffff; font-size:22px; font-weight:800; letter-spacing:.18em; opacity:0; pointer-events:none;
     transition:opacity .25s, transform .25s; text-align:center; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
-  #banner small { display:block; font-size:12px; font-weight:500; letter-spacing:.24em; color:#7fc98d; margin-top:6px; }
+  #banner small { display:block; font-size:12px; font-weight:500; letter-spacing:.24em; color:#ffb700; margin-top:6px; }
   .overlay { position:fixed; inset:0; z-index:8600; display:flex; align-items:center; justify-content:center;
     background:rgba(0,0,0,.78); padding:20px; }
   .overlay[hidden] { display:none; }
-  .card { width:min(430px,92vw); max-height:88%; overflow-y:auto; background:rgba(2,16,7,.97);
-    border:1px solid rgba(57,255,90,.55); border-radius:18px; padding:26px 24px; color:#d8ffe2;
-    box-shadow:0 0 44px rgba(57,255,90,.16); text-align:center; }
-  .card h1 { font-size:26px; letter-spacing:.28em; color:#9dffb4; margin-bottom:6px; }
-  .card h2 { font-size:13px; letter-spacing:.3em; color:#7fc98d; margin-bottom:16px; font-weight:500; }
-  .card p { font-size:12.5px; line-height:1.65; color:#a9dcb4; text-align:left; margin:8px 0; }
-  .card p b { color:#eaffef; }
+  .card { width:min(430px,92vw); max-height:88%; overflow-y:auto; background:rgba(12,12,14,.97);
+    border:1px solid rgba(255,59,48,.55); border-radius:18px; padding:26px 24px; color:#ffffff;
+    box-shadow:0 0 44px rgba(255,59,48,.16); text-align:center; }
+  .card h1 { font-size:26px; letter-spacing:.28em; color:#ffb700; margin-bottom:6px; }
+  .card h2 { font-size:13px; letter-spacing:.3em; color:#ffb700; margin-bottom:16px; font-weight:500; }
+  .card p { font-size:12.5px; line-height:1.65; color:#e8e8e8; text-align:left; margin:8px 0; }
+  .card p b { color:#ffffff; }
   .bigbtn { margin-top:18px; width:100%; padding:15px; border-radius:999px; cursor:pointer;
-    border:1px solid rgba(57,255,90,.7); background:rgba(3,26,10,.95); color:#eaffef;
-    font:700 16px ui-monospace,Menlo,monospace; letter-spacing:.14em; }
+    border:1px solid rgba(255,59,48,.7); background:rgba(12,12,14,.95); color:#ffffff;
+    font:700 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.14em; }
   .bigbtn:active { transform:scale(.97); }
-  #endScore { font-size:44px; font-weight:800; letter-spacing:.1em; margin:10px 0 4px; color:#eaffef; }
-  #endVerdict { font-size:15px; letter-spacing:.22em; color:#9dffb4; margin-bottom:8px; }
+  #endScore { font-size:44px; font-weight:800; letter-spacing:.1em; margin:10px 0 4px; color:#ffffff; }
+  #endVerdict { font-size:15px; letter-spacing:.22em; color:#ffb700; margin-bottom:8px; }
   /* touch controls */
   #joy { position:fixed; left:26px; bottom:calc(26px + env(safe-area-inset-bottom)); width:128px; height:128px;
-    border-radius:50%; border:2px solid rgba(57,255,90,.45); background:rgba(2,14,6,.4); z-index:8100; display:none; }
+    border-radius:50%; border:2px solid rgba(255,59,48,.45); background:rgba(12,12,14,.4); z-index:8100; display:none; }
   #stick { position:absolute; left:50%; top:50%; width:56px; height:56px; border-radius:50%;
-    background:rgba(57,255,90,.55); transform:translate(-50%,-50%); }
+    background:rgba(255,59,48,.55); transform:translate(-50%,-50%); }
   #btns { position:fixed; right:20px; bottom:calc(22px + env(safe-area-inset-bottom)); z-index:8100; display:none;
     grid-template-columns:repeat(2,76px); gap:12px; }
-  .tbtn { width:76px; height:76px; border-radius:50%; border:2px solid rgba(57,255,90,.55);
-    background:rgba(2,14,6,.62); color:#d8ffe2; font:700 11px ui-monospace,Menlo,monospace; letter-spacing:.05em; }
-  .tbtn:active, .tbtn.on { background:rgba(57,255,90,.4); }
+  .tbtn { width:76px; height:76px; border-radius:50%; border:2px solid rgba(255,59,48,.55);
+    background:rgba(12,12,14,.62); color:#ffffff; font:700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.05em; }
+  .tbtn:active, .tbtn.on { background:rgba(255,59,48,.4); }
   #btnShoot.charge { background:rgba(255,170,40,.55); border-color:#ffb02e; }
   /* camera view + mute buttons (top-right, clear of scoreboard and touch controls) */
   #viewBtn, #muteBtn { position:fixed; top:12px; z-index:8100; width:44px; height:44px; border-radius:50%;
-    border:2px solid rgba(57,255,90,.55); background:rgba(2,14,6,.62); color:#d8ffe2; cursor:pointer;
-    font:700 10px ui-monospace,Menlo,monospace; letter-spacing:.03em; }
+    border:2px solid rgba(255,59,48,.55); background:rgba(12,12,14,.62); color:#ffffff; cursor:pointer;
+    font:700 10px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing:.03em; }
   #viewBtn { right:12px; } #muteBtn { right:64px; font-size:20px; }
   #viewBtn:active, #muteBtn:active { transform:scale(.94); }
   body.touch #joy { display:block; } body.touch #btns { display:grid; }
@@ -438,11 +438,11 @@ function doKickoff(kickIdx){
   G.st='kickoff'; G.restart=null; G.kickoffWait=true; G.kickoffTeam=kickIdx;
   placeFormation(); freeze();
   const kt=teams[kickIdx];
-  const kicker=kt.players.find(p=>p.role==='FWD');
-  kicker.pos.set(-1.2*kt.ad, 0, 0);
-  B.pos.set(0,BALL_R,0); B.vel.set(0,0,0); B.owner=kicker; B.lastTouch=kt; B.intended=null; B.noPickup=0;
-  const mate=kt.players.find(p=>p.role==='MID'&&Math.abs(p.hz)<1);
-  mate.pos.set(-4*kt.ad,0,2.5*kt.ad);
+  const kicker=kt.players.find(p=>p.role==='FWD')||kt.players.find(p=>p.role!=='GK')||kt.players[0];
+  if(kicker){ kicker.pos.set(-1.2*kt.ad, 0, 0); }
+  B.pos.set(0,BALL_R,0); B.vel.set(0,0,0); B.owner=kicker||null; B.lastTouch=kt; B.intended=null; B.noPickup=0;
+  const mate=kt.players.find(p=>p.role==='MID'&&Math.abs(p.hz)<1)||kt.players.find(p=>p.role==='MID'&&p!==kicker)||kt.players.find(p=>p!==kicker&&p.role!=='GK');
+  if(mate) mate.pos.set(-4*kt.ad,0,2.5*kt.ad);
   if(kt.human) giveControl(kt.players.find(p=>p.role==='FWD'));
   else giveControl(teams[0].players.find(p=>p.role==='FWD'));
   banner('KICKOFF', kt.name+' TO START · MOVE OR PASS', 2.5);
@@ -460,7 +460,8 @@ function takeKickoff(p){
   let mate=null, bd=1e9;
   for(const q of kt.players){ if(q===p||q.role!=='MID') continue;
     const d=Math.hypot(q.pos.x-p.pos.x,q.pos.z-p.pos.z); if(d<bd){ bd=d; mate=q; } }
-  mate=mate||kt.players.find(q=>q.role==='MID');
+  mate=mate||kt.players.find(q=>q.role==='MID')||kt.players.find(q=>q!==p&&q.role!=='GK');
+  if(!mate){ beginPlay(); return; } // no teammate to pass to — just start play
   const dx=mate.pos.x-p.pos.x, dz=mate.pos.z-p.pos.z;
   kickBall(p,dx,dz,6,0.6,mate); beginPlay();
 }
@@ -758,9 +759,9 @@ function shapeTarget(p){ // the team's shape: full-size formation anchors, shift
   const t=p.team, ad=t.ad;
   let ax=p.hx*ad*1.15, az=p.hz*1.5;
   const phase=!B.owner?'neu':(B.owner.team===t?'att':'def');
-  const bf=phase==='att'?0.65:phase==='def'?0.45:0.35;
+  const bf=phase==='att'?0.85:phase==='def'?0.55:0.45; // attacking line rides up with the ball
   ax+=B.pos.x*bf; az+=B.pos.z*0.30;
-  if(phase==='att') ax+=7*ad; else if(phase==='def') ax-=4*ad;
+  if(phase==='att') ax+=10*ad; else if(phase==='def') ax-=4*ad;
   if(phase==='def'){ const lim=B.pos.x-ad*3; ax=ad>0?Math.min(ax,lim):Math.max(ax,lim); } // block sits goal-side of the ball
   return { x:clamp(ax,-50,50), z:clamp(az,-31,31) };
 }
@@ -823,7 +824,8 @@ function updateAI(dt){
     if(oppHas){
       if(!t._markT||nowMs-t._markT>400||!t._marks){
         t._markT=nowMs; marks=new Map();
-        const atts=opp(t).players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==B.owner&&(q.pos.x-B.pos.x)*-ad>-8);
+        const defLine=-ad*15; // mark ALL attackers in our defensive half + 10m, not just near the ball
+        const atts=opp(t).players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==B.owner&&((q.pos.x*ad)<(defLine*ad)||(q.pos.x-B.pos.x)*-ad>-8));
         coverP=(atts.length<=4)?chaseOrder[1]:null; // a spare man covers the lane; if every man needs a marker, he marks too
         t._cover=coverP;
         const defs=t.players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==chaseOrder[0]&&q!==coverP);
@@ -871,12 +873,10 @@ function updateAI(dt){
               const behindDot=(-tx)*Math.cos(c.face)+(-tz)*Math.sin(c.face);
               if(behindDot>-0.3){ // front/side only - from behind would be a foul
                 const facingDot=fx*tx+fz*tz;
-                if(Math.random()<(facingDot>0.3?0.95:0.8)){ // J6r2: AI wins almost all tackles
-                  B.owner=null; B.lastTouch=p.team; B.intended=p; B.noPickup=0.15;
-                  pendingWin={ team:p.team, until:performance.now()+2500 };
-                  const lx=p.pos.x+fx*2.2, lz=p.pos.z+fz*2.2;
-                  B.vel.set((lx-B.pos.x)*2.2,1.0,(lz-B.pos.z)*2.2);
-                  SC_STATS.tacklesWon++;
+                if(Math.random()<(facingDot>0.3?0.95:0.8)){ // J6r2: AI wins almost all tackles — takes possession directly
+                  B.owner=p; B.lastTouch=p.team; B.intended=null; B.noPickup=0;
+                  B.pos.set(p.pos.x+fx*0.6, BALL_R, p.pos.z+fz*0.6); B.vel.set(0,0,0);
+                  pendingWin=null; SC_STATS.tacklesWon++; SC_STATS.ballsWon++;
                   if(stadium) stadium.crowd.excite(Math.max(stadium.crowd.level,0.35));
                   try{ if(Mus&&Mus.ac) Mus.noise(Mus.ac.currentTime,0.20,0.09,900); }catch(e){}
                 }

@@ -20,6 +20,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No white stripe on dark shorts
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- "Script error: Cannot read properties of undefined (reading 'pos')" / "undefined is not an object (evaluating 'mate.pos')" (2026-10-17): a `.find()` result must never be dereferenced without a guard — kickoff crashed on iPhone Safari when no MID matched
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

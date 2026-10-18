@@ -335,4 +335,51 @@ export default [
       });
     },
   },
+  {
+    id: 'no-crash-kickoff',
+    ask: 'CRASH FIRST: kickoff never throws (mate.pos / pos undefined)',
+    async test(page, h) {
+      return h.eval(() => {
+        const errs = [];
+        const origErr = window.onerror;
+        window.onerror = (m) => { errs.push(String(m)); };
+        try {
+          for (let i = 0; i < 20; i++) {
+            if (window.__sc && window.__sc.G) {
+              const G = window.__sc.G;
+              G.st = 'kickoff'; G.kickoffWait = true;
+            }
+          }
+        } catch (e) { errs.push('threw: ' + e.message); }
+        window.onerror = origErr;
+        return errs.length ? errs.join('; ') : true;
+      });
+    },
+  },
+  {
+    id: 'menu-apex-look',
+    ask: 'Menu uses the Apex look (bold clean letters, white/red/gold) not the green computer-screen look',
+    async test(page, h) {
+      return h.eval(() => {
+        const out = [];
+        const card = document.querySelector('.card');
+        if (!card) return 'no .card menu found';
+        const cs = getComputedStyle(card);
+        if (/2,\s*14,\s*6|2,\s*16,\s*7|57,\s*255,\s*90/.test(cs.backgroundColor + cs.borderColor))
+          out.push('menu still uses green colors');
+        const h1 = card.querySelector('h1');
+        if (h1) {
+          const hcs = getComputedStyle(h1);
+          if (/monospace/i.test(hcs.fontFamily)) out.push('title still uses monospace/typewriter font');
+          if (/157|255,\s*90/.test(hcs.color)) out.push('title still greenish: ' + hcs.color);
+        }
+        const btn = card.querySelector('.bigbtn');
+        if (btn) {
+          const bcs = getComputedStyle(btn);
+          if (/monospace/i.test(bcs.fontFamily)) out.push('button still uses monospace font');
+        }
+        return out.length ? out.join('; ') : true;
+      });
+    },
+  },
 ];
