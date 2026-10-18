@@ -78,6 +78,37 @@ export function buildRink(THREE, o = {}) {
   return { group, report: () => ({ ...R, units: unit }), dims: K };
 }
 
+/* ---- JOB J54 Stage 1: the full hockey arena in ONE call ----
+   buildHockeyArena(THREE, o) returns the complete store-ready arena:
+   - the rink (ice, boards, glass, goals) from buildRink above
+   - the NHL bowl + moving crowd + scoreboard from the shared stadium kit
+   The lead wires it into apexhockey.html with a single import.
+     import { buildHockeyArena } from './venues/kit/rink.js';
+     const arena = buildHockeyArena(THREE, { home: 0x1f6fd6, away: 0xd8343c });
+     scene.add(arena.group);
+     // every frame: arena.update(dt);   // on goal: arena.cheer();
+*/
+export async function buildHockeyArena(THREE, o = {}) {
+  const { buildStadium } = await import('./stadium.js');
+  const home = o.home ?? 0x1f6fd6, away = o.away ?? 0xd8343c;
+  const rink = buildRink(THREE, { home, away });
+  const st = buildStadium(THREE, {
+    preset: 'arena',
+    floor: { a: RINK.L / 2, b: RINK.W / 2, r: RINK.R },
+    setback: 2.6, home, away,
+  });
+  const group = new THREE.Group();
+  group.name = 'hockey-arena';
+  group.add(st.group, rink.group);
+  return {
+    group, rink, stadium: st,
+    update(dt) { st.update(dt); },
+    cheer() { if (st.crowd) st.crowd.excite(1); },
+    setScore(s) { if (st.setScore) st.setScore(s); },
+    report() { return { rink: rink.report(), stadium: st.report(), drawCalls: 'see st.report()' }; },
+  };
+}
+
 function merge(THREE, list, withColor) { const parts = list.map((g) => (g.index ? g.toNonIndexed() : g)), out = new THREE.BufferGeometry();
   for (const k of ['position', 'normal'].concat(withColor ? ['color'] : [])) { const tot = parts.reduce((s, g) => s + g.attributes[k].array.length, 0), A = new Float32Array(tot); let o = 0; parts.forEach((g) => { A.set(g.attributes[k].array, o); o += g.attributes[k].array.length; }); out.setAttribute(k, new THREE.BufferAttribute(A, 3)); }
   return out; }
