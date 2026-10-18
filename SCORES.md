@@ -10,6 +10,13 @@ How to grade (be HARSH, like a paying player who just downloaded it):
 - Broken, toy-looking, or the owner has complained = under 20/50. 40+/50 only if you'd pay for it.
 - After the dash: the ONE biggest problem, in plain words.
 
-graded: (not graded yet)
+graded: 2026-10-18
 
-- apexsoccer.html: 0/50 - not graded yet
+- apexbaseball.html: 24/50 - green computer-screen menu + PLAY BALL button 192px off-screen
+- apexf1.html: 18/50 - AI can't finish a lap, lap counter and results broken; menu buttons off-screen
+- apexflight.html: 14/50 - green menu (86% green letters), gameplay frozen, zero play tests
+- apexhockey.html: 31/50 - stutter (15 freezes in 6s); icing and goal-restart logic broken
+- apexmonstertruck.html: 19/50 - truck can't drive, crush, or jump; wrong size (3.7m vs 2.7m)
+- apexracer.html: 26/50 - zero play tests, no owner-approved venue
+- apexsoccer.html: 19/50 - Safari script crash (mate.pos); players don't steal, mark, pass, or position
+- apextrackfield.html: 25/50 - career mode stalls; FREE PLAY button 83px off-screen
