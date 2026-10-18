@@ -87,6 +87,18 @@ async function pressStep(page, step) {
   } catch (e) { return false; }
 }
 
+// owner 2026-10-17: "I still see games where you have to scroll down to press play". A start button below the bottom
+// of a sideways phone (844x390) is a FAIL - pressStep's click scrolls to it by itself, so measure BEFORE pressing.
+async function offScreen(page, step) {
+  const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
+  try {
+    if (!(await loc.count()) || !(await loc.isVisible())) return null;
+    const b = await loc.boundingBox(), vh = (page.viewportSize() || { height: 390 }).height;
+    if (b && b.y + b.height > vh + 2) return { label: ((await loc.innerText().catch(() => '')) || step).trim().replace(/\s+/g, ' ').slice(0, 30), px: Math.round(b.y + b.height - vh) };
+  } catch (e) {}
+  return null;
+}
+
 async function pageFacts(page) {
   return page.evaluate(([casinoSrc, brandSrc]) => {
     const re = new RegExp(casinoSrc, 'i');
@@ -157,7 +169,12 @@ for (const g of games) {
 
   // press the start buttons
   let pressed = 0;
-  for (const step of g.start || []) if (await pressStep(page, step)) pressed++;
+  const offSteps = [];
+  for (const step of g.start || []) {
+    const off = await offScreen(page, step); if (off) offSteps.push(off);
+    if (await pressStep(page, step)) pressed++;
+  }
+  for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
   await page.waitForTimeout(8000);
   const playJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
