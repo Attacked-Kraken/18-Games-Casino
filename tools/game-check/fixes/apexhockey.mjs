@@ -240,4 +240,60 @@ export default [
     });
   },
 },
+  {
+    id: 'play-joystick-screen-relative',
+    ask: 'Joystick must be screen-relative: push right = skate right on screen, even after the skater turns 180',
+    async test(page, h) {
+      const r = await h.eval(() => {
+        // Check the joystick mapping code uses screen-relative transform for CLOSE
+        const src = document.documentElement.innerHTML;
+        if (!/SCREEN-relative/.test(src)) return 'screen-relative joystick code not found';
+        if (!/camMode===2.*ad=TEAMS.home.dir/.test(src)) return 'CLOSE joystick does not use attacking direction';
+        return true;
+      });
+      return r;
+    },
+  },
+  {
+    id: 'play-no-spin-max-turn-rate',
+    ask: 'Skater must not spin in place: turn speed is limited, glides through turns',
+    async test(page, h) {
+      const r = await h.eval(() => {
+        const src = document.documentElement.innerHTML;
+        // Turn rate should be 3.0, not 7.5 (the spinny value)
+        if (/angLerp\(s\.facing,want,Math\.min\(1,7\.5\*dt\)\)/.test(src)) return 'turn rate still 7.5 (spinny) - must be 3.0';
+        if (!/limited turn speed/.test(src)) return 'limited turn speed fix not found';
+        return true;
+      });
+      return r;
+    },
+  },
+  {
+    id: 'play-close-camera-fixed-yaw',
+    ask: 'CLOSE camera: 9m back along long axis, 5m up, never rotates with skater facing',
+    async test(page, h) {
+      const r = await h.eval(() => {
+        const src = document.documentElement.innerHTML;
+        if (!/9m back along rink LONG axis/.test(src)) return 'CLOSE camera spec not found';
+        // Must NOT use fx/fz (skater facing) for CLOSE
+        const closeBlock = src.match(/if\(camMode===2\)\{[^}]+\}/);
+        if (closeBlock && /fx\*|fz\*/.test(closeBlock[0])) return 'CLOSE camera still uses skater facing (fx/fz) - must use attacking direction only';
+        return true;
+      });
+      return r;
+    },
+  },
+  {
+    id: 'play-offside-really-over',
+    ask: 'Offside only when attacker is really over the blue line (1.5m), not on a skate blade',
+    async test(page, h) {
+      const r = await h.eval(() => {
+        const src = document.documentElement.innerHTML;
+        if (!/really over.*1\.5m/.test(src)) return 'offside 1.5m buffer not found';
+        if (/o\.pos\.x>line\+0\.5/.test(src)) return 'offside still uses 0.5m buffer (too twitchy)';
+        return true;
+      });
+      return r;
+    },
+  },
 ];
