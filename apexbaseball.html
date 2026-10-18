@@ -488,7 +488,7 @@ function attachAthlete(p, slotIdx){
     a.object.traverse(o => { if (o.isSkinnedMesh && o.material && o.material.userData && o.material.userData.U) u = o.material.userData.U; });
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
     a.play('Idle_Loop', 0.3);
-    if (typeof window !== 'undefined') window.__athletesReady = () => athletes.length;
+    if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
   } catch (e) { p.athlete = null; }
 }
 function fitAthletes(){
