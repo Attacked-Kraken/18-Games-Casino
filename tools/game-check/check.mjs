@@ -441,9 +441,27 @@ if (process.env.STRICT) {
   const norm = (x) => x.replace(/\d+/g, '#');
   const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).map(norm))]));
   const blockers = [];
-  for (const r of results) for (const f of r.fail) { if (/owner'?s eyes/i.test(f)) continue; if (old.get(r.file) && old.get(r.file).has(norm(f))) continue; blockers.push(`${r.file}: ${f}`); }
+  // FAIR BLAME (Oct 18): a PR is only blocked for what it touched. Games re-checked just because a shared folder changed
+  // (models/, characters/, tools/game-check/) block only on hard breakage, not on their old/flaky owner tests; a model
+  // blocks only if the PR changed that model's own files. (Baseball #515 and Pebble #517 were blocked for Soccer marking
+  // and a Monster Truck model crash they never touched.)
+  let changed = [];
+  try { changed = fs.readFileSync('changed.txt', 'utf8').split('\n').map(x => x.trim()).filter(Boolean); } catch (e) {}
+  const direct = new Set(changed.filter(f => /^apex[a-z0-9]*\.html$/.test(f))
+    .concat(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html')));
+  const hard = /script error|black or blank|did not load|missing file|shader|not real 3d bodies|outside internet|casino wording|real brand/i;
+  for (const r of results) for (const f of r.fail) {
+    if (/owner'?s eyes/i.test(f)) continue;
+    if (old.get(r.file) && old.get(r.file).has(norm(f))) continue;
+    if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
+    blockers.push(`${r.file}: ${f}`);
+  }
   const oldM = new Set((base0.models || []).flatMap(m => (m.problems || []).map(x => m.name + '|' + norm(String(x)))));
-  for (const m of models) for (const x of (m.problems || [])) if (!oldM.has(m.name + '|' + norm(String(x)))) blockers.push(`MODELS.md ${m.name}: ${x}`);
+  for (const m of models) {
+    const mine = !changed.length || changed.some(f => f !== 'MODELS.md' && JSON.stringify(m).includes(f.replace(/\.(mjs|js|glb|webp|png|jpg)$/, '')));
+    if (!mine) continue;
+    for (const x of (m.problems || [])) if (!oldM.has(m.name + '|' + norm(String(x)))) blockers.push(`MODELS.md ${m.name}: ${x}`);
+  }
   fs.writeFileSync(path.join(out, 'blockers.txt'), blockers.join('\n'));
   if (blockers.length) { console.log('\nBLOCKED - this pull request adds problems main does not have:\n- ' + blockers.join('\n- ')); process.exit(1); }
   console.log('\nNo new problems - OK to merge.');

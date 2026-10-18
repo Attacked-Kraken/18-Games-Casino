@@ -45,6 +45,7 @@ jobs:
           git show origin/game-checks:results.json > base-results.json 2>/dev/null || echo '{}' > base-results.json
           CH=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
           echo "$CH"
+          echo "$CH" > changed.txt
           G=$(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$' | tr '\n' ',')
           for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
           # shared 3D people / gear / three.js changed -> re-check every game that draws people
