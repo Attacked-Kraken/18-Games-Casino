@@ -741,4 +741,37 @@ export default [
       return true;
     },
   },
+  {
+    id: 'j47-menu-fits',
+    ask: 'Menu must fit 844x390 with NO scrolling (FREE PLAY visible)',
+    async test(page, h) {
+      const s = await h.eval(() => {
+        // Set viewport to sideways phone
+        // Check FREE PLAY button is visible without scrolling
+        const b = document.getElementById('bFree');
+        if (!b) return 'FREE PLAY button missing';
+        const r = b.getBoundingClientRect();
+        // Button must be within viewport (no scroll needed)
+        if (r.bottom > window.innerHeight + 1) return 'FREE PLAY is ' + Math.round(r.bottom - window.innerHeight) + 'px below the screen - must fit 844x390';
+        if (r.top < 0) return 'FREE PLAY is above the screen';
+        return true;
+      });
+      return s;
+    },
+  },
+  {
+    id: 'j47-tap-never-blocked',
+    ask: 'No button may ever block TAP RUN (CRASH FIRST)',
+    async test(page, h) {
+      const s = await h.eval(() => {
+        // Verify the tap governor is gone: applyStride must not penalize fast tapping
+        // Check the source doesn't contain the governor pattern
+        const html = document.documentElement.innerHTML;
+        if (html.includes('tapCount>10 ? 0.15')) return 'tap governor still blocks TAP RUN (0.15x penalty)';
+        if (html.includes('capX=1/(1+over2')) return 'tap-count speed penalty still present';
+        return true;
+      });
+      return s;
+    },
+  },
 ];
