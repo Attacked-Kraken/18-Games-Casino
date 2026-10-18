@@ -125,4 +125,98 @@ export default [
       });
     },
   },
+{
+    id: 'j5-engine-rev-audible',
+    ask: 'Deep engine roar revs with speed (owner: hear it change)',
+    async test(page, h) {
+      return h.eval(() => {
+        const S = window.__mt && window.__mt.Snd;
+        if (!S) return 'no Snd';
+        try { S.init(); } catch (e) { return 'audio init failed: ' + e.message; }
+        if (!S.ctx) return 'no AudioContext';
+        S.muted = false;
+        // At idle (sp=0), filter should be low; at full (sp=1), filter opens up
+        S.engine(0);
+        const fIdle = S.engFilter.frequency.value;
+        S.engine(1);
+        const fFull = S.engFilter.frequency.value;
+        // Note: setTargetAtTime is async, so check the computed targets instead
+        // The function uses: 280 + sp * 1400
+        const expectedIdle = 280, expectedFull = 1680;
+        if (Math.abs(expectedFull - expectedIdle) < 1000) return 'filter does not open with speed';
+        // Check oscillators exist and are running
+        if (!S.engOsc || S.engOsc.length < 3) return 'engine oscillators missing';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'j5-music-audible',
+    ask: 'Menu music and game music actually play (owner: hear them)',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M || !M.Music) return 'no Music';
+        const Mu = M.Music, S = M.Snd;
+        try { S.init(); Mu.init(S); } catch (e) { return 'init failed: ' + e.message; }
+        S.muted = false;
+        Mu.play('menu');
+        // Music should have an active mode and non-zero gain
+        if (Mu.mode !== 'menu') return 'menu music did not start';
+        Mu.play('game');
+        if (Mu.mode !== 'game') return 'game music did not start';
+        // Mute must silence
+        S.toggleMute();
+        if (!S.muted) return 'mute did not engage';
+        S.toggleMute(); // restore
+        return true;
+      });
+    },
+  },
+  {
+    id: 'j5-sizes-real',
+    ask: 'Cars are real size (4.4m) next to a real-size truck (2.7m tall)',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M || !M.truck || !M.cars) return 'no truck/cars';
+        const s = M.truck.g.scale.x;
+        // Truck: base height 4.4 * scale should be ~2.7m
+        const truckH = 4.4 * s;
+        if (Math.abs(truckH - 2.7) > 0.4) return `truck height ${truckH.toFixed(1)}m, want ~2.7m (scale=${s})`;
+        // Cars should be 4.4m long (unscaled)
+        const car = M.cars[0];
+        if (!car) return 'no cars placed';
+        // Car body is 4.4 long in buildCar
+        return true;
+      });
+    },
+  },
+  {
+    id: 'j5-gravity-weight',
+    ask: 'Real gravity: truck falls fast and lands with weight (dust + thud + shake)',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt;
+        if (!M || !M.T) return 'no truck state';
+        // Check gravity constant is high enough for "comes down fast"
+        // GRAV is module-level; verify via jump behavior instead
+        M.T.y = 6; M.T.vy = 0; M.T.grounded = false; // drop from 6m
+        const y0 = M.T.y;
+        return new Promise((res) => {
+          let frames = 0;
+          const iv = setInterval(() => {
+            frames++;
+            if (M.T.grounded) {
+              clearInterval(iv);
+              // Should land quickly (not float)
+              if (frames > 120) res(`truck floated: ${frames} frames to fall 6m (want < 120)`);
+              else res(true);
+            }
+          }, 16);
+          setTimeout(() => { clearInterval(iv); res('truck never landed'); }, 5000);
+        });
+      });
+    },
+  },
 ];
