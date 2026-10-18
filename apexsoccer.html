@@ -105,7 +105,7 @@
 <button id="viewBtn" type="button" aria-label="Camera view">FULL</button>
 <button id="muteBtn" type="button" aria-label="Mute music">&#128266;</button>
 <div id="rotOv">ROTATE YOUR DEVICE</div>
-<div id="hud"><span id="hScore">COMETS 0 - 0 SHARKS</span><span class="clk" id="hClock">1ST 2:30</span></div>
+<div id="hud"><span id="hScore">COMETS 0 - 0 SHARKS</span><span class="clk" id="hClock">1ST 2:30</span><button id="btnHelp" type="button" title="How to play">?</button></div>
 <div id="banner"></div>
 <div id="joy"><div id="stick"></div></div>
 <div id="btns">
@@ -119,11 +119,17 @@
   <div class="card">
     <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX SOCCER</h1>
-    <h2>APEX ARCADE &middot; 7V7 &middot; 2 &times; 2:30</h2>
+    <h2>APEX ARCADE &middot; 11V11 &middot; 2 &times; 2:30</h2>
+    <button class="bigbtn" id="btnStart" type="button">KICK OFF</button>
+  </div>
+</div>
+<div class="overlay" id="helpOv" hidden>
+  <div class="card">
+    <h1>HOW TO PLAY</h1>
     <p><b>Comets</b> (orange, you) vs <b>Sharks</b> (blue). Real rules: kickoffs, throw-ins, corners, goal kicks, free kicks, offside, halftime &mdash; full time ends in a draw if level.</p>
     <p><b>Move:</b> left stick / WASD. <b>Pass:</b> button / J. <b>Shoot:</b> hold to charge, aim with stick / K. <b>Sprint:</b> hold / Shift. <b>Tackle / switch player:</b> button / L.</p>
     <p>Hold <b>SHOOT</b> longer for a rocket &mdash; but the keeper reads slow ones. Time your tackles: from behind is a foul.</p>
-    <button class="bigbtn" id="btnStart" type="button">KICK OFF</button>
+    <button class="bigbtn" id="btnHelpClose" type="button">CLOSE</button>
   </div>
 </div>
 <div class="overlay" id="endOv" hidden>
@@ -1217,6 +1223,12 @@ function doFulltime(){
     a>b?'COMETS WIN THE MATCH':b>a?'SHARKS WIN THE MATCH':'DEAD LEVEL · HONORS SHARED';
   document.getElementById('endOv').hidden=false;
 }
+document.getElementById('btnHelp').addEventListener('click',()=>{
+  document.getElementById('helpOv').hidden=false;
+});
+document.getElementById('btnHelpClose').addEventListener('click',()=>{
+  document.getElementById('helpOv').hidden=true;
+});
 document.getElementById('btnStart').addEventListener('click',()=>{
   document.getElementById('startOv').hidden=true;
   setHalf(1); hud(); doKickoff(0);
