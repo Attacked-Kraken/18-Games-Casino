@@ -2,6 +2,9 @@
 
 **The 30-second fun:** what the player does over and over that feels good (one or two sentences).
 
+**The first 60 seconds:** a new player knows what to do with NO reading (one hint on screen at most, gone after the
+first try) and gets a win or a "wow" moment inside 60 seconds. Say exactly what that moment is.
+
 **Controls:** left thumb = … · right thumb = … · buttons on screen: … (big, two thumbs at once, no keyboard words)
 
 **Camera (ONE spec):** distance … m behind, height … m, looks at …, follows …, never through walls.
