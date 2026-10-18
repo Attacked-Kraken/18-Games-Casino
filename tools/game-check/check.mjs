@@ -171,6 +171,29 @@ for (const g of games) {
   else if (pressed === 0) r.check.push("Couldn't press any start button - add/fix this game's steps in games.json");
   else if (changed(menu, play) < 0.04) r.check.push('Screen barely changed after pressing start - did gameplay begin?');
   if (pressed && changed(play, play2) < 0.003) r.check.push('Gameplay picture frozen for 1.5 seconds');
+  // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
+  const words = await page.evaluate(() => {
+    let n = 0, keys = '', biggest = '', bigN = 0;
+    const W = innerWidth, H = innerHeight;
+    const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let t = tw.nextNode(); t; t = tw.nextNode()) {
+      const txt = t.textContent.trim(); if (!txt) continue;
+      const el = t.parentElement; if (!el || /SCRIPT|STYLE|NOSCRIPT/.test(el.tagName)) continue;
+      const rr = el.getBoundingClientRect(); if (rr.width < 2 || rr.height < 2 || rr.right < 0 || rr.bottom < 0 || rr.left > W || rr.top > H) continue;
+      let vis = true; for (let a = el; a && a !== document.body; a = a.parentElement) { const s = getComputedStyle(a); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity < 0.05) { vis = false; break; } }
+      if (!vis) continue;
+      const c = txt.split(/\s+/).filter(w => /[A-Za-z]{2,}/.test(w)).length; n += c;
+      if (c > bigN) { bigN = c; biggest = txt.slice(0, 70); }
+      const k = txt.match(/\(\s*space\s*\)|\b(press|hit|tap)\s+(space|enter|shift|esc)\b|\bWASD\b|arrow keys|spacebar/i); if (k && !keys) keys = k[0];
+    }
+    return { n, keys, biggest };
+  }).catch(() => null);
+  if (words) {
+    r.words = words.n;
+    if (words.n > 40) r.fail.push(`Wordy play screen: about ${words.n} words showing during play (biggest: "${words.biggest}") - during play show only the buttons you need; put instructions behind a "How to play" (?) button, closed by default (STUDIO-STANDARD.md "Clean screen")`);
+    else if (words.n > 20) r.check.push(`Busy play screen: about ${words.n} words during play (biggest: "${words.biggest}") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md "Clean screen")`);
+    if (words.keys) r.fail.push(`Keyboard words on a phone game: "${words.keys}" - phones have no keyboard; name the on-screen button instead, and only inside How to play (STUDIO-STANDARD.md "Clean screen")`);
+  }
   // ---------- STUDIO-STANDARD.md
   const st = await page.evaluate(() => window.__studio || null).catch(() => null);
   if (st) { r.studio = { skinned: st.skinned, drawsPerFrame: st.frames ? Math.round(st.sum / st.frames) : 0, maxDraws: st.max };

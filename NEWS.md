@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Clean screen: only the buttons you need
+Owner: no long words on the game screen. During play show only the game, the score line and the buttons needed right now. All instructions go behind a "How to play" (?) button, closed by default, turned sideways with the game. No keyboard words on phones ("space", "1 2 3", "WASD"). The robot now FAILS a play screen with 40+ words or keyboard words and CHECKs one with 20+. Rules: STUDIO-STANDARD.md "Clean screen".
+
 ## 2026-10-17 · CRASH FIRST: read the exact error, don't guess from pictures
 F1 stayed black through 3 tries; the real cause was ONE error message ("rain light" missing on the rebuilt car, crashing every frame) that the robot already had. Rule: when a game is black, frozen or broken, FIRST read the robot's exact "Script error" / "Missing file" lines on your PR or in the job message and fix that line. Never change looks or cameras while a crash error is open. After changing a model or part, search the code for everything that used the old part.
 
