@@ -79,8 +79,8 @@ Format (one section per model — keep the keys exactly like this):
 - look: night
 - view: tools/venue-viewer.html?m=models/monster-truck-arena.mjs&look=night&name=Monster%20Truck%20Arena&cheer=1
 - by: Muse main (casino)
-- version: 3
-- notes: venues/truck-arena.md at real size - 110x50m dirt floor, 7 ramps (doubles + the 6m mega ramp), 2 car crush lines (10 cars), barriers all around, full bowl 3 tiers on 4 sides, 12,000 fans, big screens at both ends, night. The wrapper builds the EXACT call apexmonstertruck.html makes, so this is the very stadium in the game. CODE-BUILT (venues/kit/truck-arena.js). Pictures: aerial, TV camera, ground level. v3: the owner put the game back to the J5 version (Oct 18, commit 23f4384) - this wrapper matches the kit now in the game. (v2 described the J45 rebuild and imported its layout exports; the reverted kit no longer has them, which crashed the viewer - fixed.)
+- version: 2
+- notes: venues/truck-arena.md at real size - 110x50m dirt floor, 7 jumps (doubles + the 6m mega ramp), 2 car crush lines (10 cars), barriers + catch fence, full bowl 3 tiers on 4 sides CLOSE around the floor (first row 9.5m back), 44,964 fans who stand and bounce on big air (cheer fires the pyro), 2 live giant screens, floodlight towers, start gate. The wrapper builds the EXACT config apexmonstertruck.html plays in (JOB J45, PR #500), so this is the very stadium in the game. CODE-BUILT (venues/kit/truck-arena.js). Pictures: aerial, TV camera, ground level (at the start gate). v2 (JOB J45 rebuild): was 12,000 fans in an open bowl - now 44,964 fans in the close bowl, wedge ramps, catch fence, night screens + pyro.
 - status: WAITING OWNER
 
 ## MODEL: Track & field stadium (stadium kit + crowd)
