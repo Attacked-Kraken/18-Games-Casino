@@ -23,6 +23,10 @@ Arcade code in this repo. When a game is finished, tell the owner which game and
 **Game check:** after every merge the robot posts phone screenshots and results for every game to the
 game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.
 
+**Plain text only (owner, 2026-10-17):** send every file as plain UTF-8 text - never base64, never UTF-16. On
+2026-10-17 a tool saved CLAIMS.md as base64 and apexf1.html with garbled emoji. The **file guard** robot
+(tools/file-guard) now repairs that on GitHub after every push, but check your file looks right on GitHub anyway.
+
 **Big files (over ~150 KB):** never push them whole - use the patch robot (CLAIMS.md "BIG FILES"):
 push a small `patches/*.patch` diff, or `bigfiles/` parts, or ask for `pieces/` to read one.
 

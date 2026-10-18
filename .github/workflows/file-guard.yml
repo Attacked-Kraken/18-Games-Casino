@@ -1,0 +1,51 @@
+name: File guard
+
+# Owner 2026-10-17: "make sure this doesn't happen again". Repairs text files that a helper's tool
+# saved scrambled - base64 (CLAIMS.md on 2026-10-17), UTF-16, or garbled symbols/emoji
+# ("ð CAREER MODE" in apexf1.html) - on the same branch, by itself. See tools/file-guard/guard.py.
+on:
+  push:
+    paths:
+      - '**.html'
+      - '**.md'
+      - '**.js'
+      - '**.mjs'
+      - '**.json'
+      - '**.css'
+      - '**.txt'
+      - '**.svg'
+  schedule:
+    - cron: '17 * * * *'      # hourly safety net on main
+  workflow_dispatch:
+
+concurrency:
+  group: file-guard-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Repair scrambled text files
+        run: GUARD_SUMMARY=/tmp/guard-summary.txt python3 tools/file-guard/guard.py
+
+      - name: Save the repair on the same branch
+        run: |
+          git config user.name "file guard"
+          git config user.email "file-guard@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "all text files are clean"; exit 0; fi
+          git commit -q -m "File guard: repaired $(cat /tmp/guard-summary.txt | cut -c1-200)"
+          for i in 1 2 3; do
+            git push -q origin HEAD:${GITHUB_REF#refs/heads/} && exit 0
+            git pull -q --rebase origin ${GITHUB_REF#refs/heads/}
+          done
+          exit 1
