@@ -157,12 +157,12 @@
       bar = document.createElement('button');
       bar.style.cssText = 'position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:40;font:700 13px system-ui;color:#fff;' +
         'background:#c81e1e;border:0;border-radius:10px;padding:8px 12px;max-width:92%;box-shadow:0 4px 14px rgba(0,0,0,.5)';
-      bar.textContent = (kind === 'crash' ? '💥 Game error caught' : kind === 'freeze' ? '🧊 Game froze' : '🐢 Game is slow on this phone') + ' - tap to send it to the Muses';
+      bar.textContent = (kind === 'crash' ? '💥 Game error caught' : kind === 'freeze' ? '🧊 Game froze' : kind === 'stutter' ? '⚡ Game stutters on this phone' : '🐢 Game is slow on this phone') + ' - tap to send it to the Muses';
       bar.onclick = function () {
         var pic = '';
         try { var gc = gameCanvas(iframe); if (gc) pic = gc.toDataURL('image/jpeg', 0.7); } catch (e) {}
         var text = 'AUTO REPORT from the owner\'s phone (' + (navigator.userAgent.match(/iPhone OS [\d_]+|Android [\d.]+/) || ['phone'])[0] + '): ' +
-          (kind === 'crash' ? 'script error: ' : kind === 'freeze' ? 'the game froze: ' : 'slow: ') + detail +
+          (kind === 'crash' ? 'script error: ' : kind === 'freeze' ? 'the game froze: ' : kind === 'stutter' ? 'stutter: ' : 'slow: ') + detail +
           '. CRASH FIRST - fix the cause, add a play test that proves it, keep everything else as it is.';
         toController({ type: 'apex-note', game: name, href: iframe.getAttribute('src') || '', text: text, images: pic && pic.length > 2000 ? [pic] : [], video: null },
           function (ok) { if (bar) { bar.textContent = ok ? '✅ Sent to the Muses' : 'Couldn\'t reach your controller (home Wi-Fi?)'; setTimeout(function () { if (bar) { bar.remove(); bar = null; } }, 3000); } });
@@ -172,11 +172,14 @@
     try {
       win.addEventListener('error', function (e) { report('crash', (e.message || 'error') + (e.filename ? ' at ' + e.filename.split('/').pop() + ':' + e.lineno : '')); });
       win.addEventListener('unhandledrejection', function (e) { report('crash', 'unhandled: ' + String(e.reason && (e.reason.message || e.reason)).slice(0, 160)); });
-      (function tick() { frames++; lastFrame = Date.now(); try { win.requestAnimationFrame(tick); } catch (e) {} })();
+      var hitches = 0, prevT = 0;
+      (function tick(now) { frames++; lastFrame = Date.now(); if (prevT && now - prevT > 200) hitches++; prevT = now || 0; try { win.requestAnimationFrame(tick); } catch (e) {} })();
       var iv = setInterval(function () {
         if (!iframe.isConnected) { clearInterval(iv); return; }
         if (document.hidden) { frames = 0; return; }
         var fps = frames / 5; frames = 0;
+        if (hitches >= 3) report('stutter', hitches + ' short freezes (over 0.2 s) in 5 s of play');
+        hitches = 0;
         if (Date.now() - lastFrame > 5000) report('freeze', 'no new picture for ' + Math.round((Date.now() - lastFrame) / 1000) + ' s');
         else if (fps < 20) { if (++slow >= 3) report('slow', Math.round(fps) + ' frames per second for 15 s (target 60)'); }
         else slow = 0;
