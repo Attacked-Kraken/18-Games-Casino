@@ -3,6 +3,20 @@
 // three outfielders, visible batter, day lighting, reacting crowd, camera options, music.
 export default [
   {
+    id: 'no-missing-stadium',
+    ask: 'Make a baseball stadium',
+    async test(page, h) {
+      return h.eval(() => {
+        // A real baseball stadium: stands, dugouts, light towers, scoreboard
+        // Check via scene objects or the venue report
+        const T = window.__test; if (!T) return 'window.__test missing';
+        // Stadium must exist: crowd seats indicate stands
+        if (T.crowdCount < 100) return 'no stadium stands (crowd seats < 100)';
+        return true;
+      });
+    },
+  },
+  {
     id: 'keep-batting-flow',
     ask: 'KEEP: everything that works and looks right now (batting flow)',
     async test(page, h) {
