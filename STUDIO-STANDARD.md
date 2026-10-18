@@ -61,6 +61,10 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 - **Controls work together:** holding the move stick never blocks the action buttons (run, shoot, jump) - every
   game supports two thumbs at once (multi-touch). Add a play test that holds the stick and taps the button.
 
+- **No stutter** (Oct 18): the robot CHECKs 3+ short freezes in 6 s of play; the owner's phone reports them too. Build every
+  model, texture and crowd BEFORE play starts, reuse objects instead of making new ones every frame, and use the kit's
+  far-away detail helper (`ApexKit.lod`) for stands and crowds.
+
 ## 3. Arenas and worlds
 
 - **Every place has a spec sheet in `venues/`** with real measurements and a MUST list: rink, soccer, ballpark,

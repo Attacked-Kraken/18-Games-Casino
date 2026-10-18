@@ -208,6 +208,18 @@ for (const g of games) {
   else if (pressed === 0) r.check.push("Couldn't press any start button - add/fix this game's steps in games.json");
   else if (changed(menu, play) < 0.04) r.check.push('Screen barely changed after pressing start - did gameplay begin?');
   if (pressed && changed(play, play2) < 0.003) r.check.push('Gameplay picture frozen for 1.5 seconds');
+  // ---------- STUTTER (owner, Oct 18): short freezes you feel in your hand, not just a low average. The robot's phone is slow
+  // (no graphics card), so a hitch is a frame 3x longer than this game's normal frame AND over 150 ms.
+  try {
+    const st = await page.evaluate(() => new Promise(res => {
+      const t = []; let last = performance.now(); const end = last + 6000;
+      (function f(now) { t.push(now - last); last = now; if (now < end) requestAnimationFrame(f); else res(t); })(last);
+    }));
+    const sorted = st.slice(1).sort((a, b) => a - b), med = sorted[Math.floor(sorted.length / 2)] || 16;
+    const hitches = st.slice(1).filter(x => x > Math.max(150, med * 3));
+    r.stutter = { frames: st.length, median: Math.round(med), hitches: hitches.length, worst: Math.round(Math.max(0, ...hitches)) };
+    if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
+  } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;
