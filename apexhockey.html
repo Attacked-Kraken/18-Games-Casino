@@ -7,7 +7,7 @@
 <title>Apex Ice Hockey · Apex Arcade</title>
 <style>
   html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
-    font-family: ui-monospace, Menlo, Consolas, monospace; -webkit-user-select:none; user-select:none;
+    font-family: system-ui, -apple-system, sans-serif; -webkit-user-select:none; user-select:none;
     -webkit-tap-highlight-color: transparent; touch-action: none; }
   #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
   #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9999;
@@ -21,13 +21,13 @@
   #hud .dim { color:#fff; font-size:12px; font-weight:800; padding:5px 8px; border-radius:6px; align-self:center; letter-spacing:.08em; }
   #hud .clk { display:flex; flex-direction:column; justify-content:center; align-self:center; padding:0 4px 0 2px; line-height:1.15; }
   #penTag { position:fixed; top:calc(124px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
-    z-index:9300; display:none; font:800 12px ui-monospace, Menlo, monospace; letter-spacing:.08em; color:#ffd34d;
+    z-index:9300; display:none; font:800 12px system-ui, -apple-system, sans-serif; letter-spacing:.08em; color:#ffd34d;
     background:rgba(24,12,0,.55); border:1px solid rgba(255,211,77,.5); padding:5px 10px; border-radius:8px; }
   #hud #period { font-size:11px; color:#9fd8ff; font-weight:800; letter-spacing:.14em; }
   #hud #clock { font-size:16px; font-weight:800; }
   #shotTag { position:fixed; top:calc(120px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left)); z-index:9000;
     background:rgba(4,10,18,.85); border:1px solid rgba(255,211,77,.55); color:#ffd34d; border-radius:8px;
-    font:800 13px ui-monospace, Menlo, monospace; letter-spacing:.1em; padding:6px 10px; opacity:0; transition:opacity .3s; pointer-events:none; }
+    font:800 13px system-ui, -apple-system, sans-serif; letter-spacing:.1em; padding:6px 10px; opacity:0; transition:opacity .3s; pointer-events:none; }
   #shotTag.show { opacity:1; }
   #banner { position:fixed; top:38%; left:50%; transform:translate(-50%,-50%) scale(1); z-index:9500;
     color:#fff; font-size:44px; font-weight:800; letter-spacing:.08em; text-shadow:0 0 24px rgba(80,180,255,.9), 0 3px 0 #000;
@@ -40,7 +40,7 @@
   .overlay h1 { font-size:34px; letter-spacing:.1em; margin:0 0 6px; color:#9fd8ff; }
   .overlay h2 { font-size:15px; font-weight:400; color:#cfe9ff; margin:0 0 18px; line-height:1.7; max-width:520px; }
   .overlay .keys { font-size:12px; color:#8fb8d8; line-height:1.9; margin-bottom:20px; }
-  .bigbtn { font:700 20px ui-monospace, Menlo, monospace; letter-spacing:.1em; color:#04121f;
+  .bigbtn { font:700 20px system-ui, -apple-system, sans-serif; letter-spacing:.1em; color:#04121f;
     background:#9fd8ff; border:0; border-radius:999px; padding:16px 46px; cursor:pointer;
     box-shadow:0 0 26px rgba(159,216,255,.5); }
   #final { display:none; }
@@ -53,7 +53,7 @@
   #btns { position:fixed; right:22px; bottom:calc(26px + env(safe-area-inset-bottom)); z-index:9200;
     display:flex; gap:14px; align-items:flex-end; }
   .tbtn { width:72px; height:72px; border-radius:50%; border:2px solid rgba(255,255,255,.5);
-    background:rgba(255,255,255,.10); color:#fff; font:700 12px ui-monospace, Menlo, monospace;
+    background:rgba(255,255,255,.10); color:#fff; font:700 12px system-ui, -apple-system, sans-serif;
     letter-spacing:.05em; display:flex; align-items:center; justify-content:center; }
   .tbtn:active { background:rgba(159,216,255,.4); }
   #btnShoot { width:84px; height:84px; border-color:#ffb3b3; }
@@ -65,7 +65,7 @@
     font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   #viewBtn { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:64px; z-index:9999; height:44px; min-width:70px;
     padding:0 12px; border-radius:22px; background:rgba(0,0,0,.55); color:#9fd8ff; border:1px solid rgba(159,216,255,.5);
-    font:700 11px ui-monospace, Menlo, monospace; letter-spacing:.08em; cursor:pointer; }
+    font:700 11px system-ui, -apple-system, sans-serif; letter-spacing:.08em; cursor:pointer; }
   #rotOv { display:none; position:fixed; inset:0; z-index:99999; background:#000; color:#fff;
     align-items:center; justify-content:center; font-size:22px; letter-spacing:.1em; text-align:center; padding:30px; }
   #rotOv { display:none !important; }
@@ -82,15 +82,15 @@
     #viewBtn { right:auto; left:76px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
   }
   .bigbtn.alt { background:#1d3a52; color:#cfe9ff; box-shadow:none; font-size:16px; padding:13px 34px; }
-  #starCard { font:600 14px ui-monospace, Menlo, monospace; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
-  #myCode { font:600 12px ui-monospace, Menlo, monospace; color:#8fd8a8; margin:14px 0 4px; letter-spacing:.06em; }
-  #cancelMatch, #hubReset { font:600 12px ui-monospace, Menlo, monospace; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
-  #hubBody { font:400 14px ui-monospace, Menlo, monospace; color:#d7ecff; line-height:1.75; text-align:center; margin-bottom:16px; max-width:92vw; }
+  #starCard { font:600 14px system-ui, -apple-system, sans-serif; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
+  #myCode { font:600 12px system-ui, -apple-system, sans-serif; color:#ffd34d; margin:14px 0 4px; letter-spacing:.06em; }
+  #cancelMatch, #hubReset { font:600 12px system-ui, -apple-system, sans-serif; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
+  #hubBody { font:400 14px system-ui, -apple-system, sans-serif; color:#d7ecff; line-height:1.75; text-align:center; margin-bottom:16px; max-width:92vw; }
   #hubBody table { margin:8px auto; border-collapse:collapse; font-size:13px; }
   #hubBody td, #hubBody th { padding:2px 9px; text-align:left; }
   #hubBody tr.me td { color:#ffe9a8; font-weight:700; }
-  #friendIn { font:600 15px ui-monospace, Menlo, monospace; width:min(430px, 88vw); padding:12px 14px; border-radius:12px; border:1px solid #3f6f9f; background:#08182b; color:#eaffea; margin-bottom:10px; }
-  #friendErr { color:#ff9a9a; font:600 13px ui-monospace, Menlo, monospace; min-height:18px; margin-bottom:8px; }
+  #friendIn { font:600 15px system-ui, -apple-system, sans-serif; width:min(430px, 88vw); padding:12px 14px; border-radius:12px; border:1px solid #3f6f9f; background:#08182b; color:#ffffff; margin-bottom:10px; }
+  #friendErr { color:#ff9a9a; font:600 13px system-ui, -apple-system, sans-serif; min-height:18px; margin-bottom:8px; }
   .overlay .bigbtn { margin-top:10px; }
 </style>
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
@@ -272,11 +272,11 @@ const OLD_ARENA = [];
     const g = sbCanvas.getContext('2d');
     g.fillStyle='#04070d'; g.fillRect(0,0,512,256);
     g.strokeStyle='#2a4a6a'; g.lineWidth=6; g.strokeRect(8,8,496,240);
-    g.fillStyle='#9fd8ff'; g.font='900 64px ui-monospace, Menlo, monospace'; g.textAlign='center';
+    g.fillStyle='#9fd8ff'; g.font='900 64px system-ui, -apple-system, sans-serif'; g.textAlign='center';
     g.fillText('APEX HOCKEY', 256, 84);
-    g.fillStyle='#ffe27d'; g.font='900 96px ui-monospace, Menlo, monospace';
+    g.fillStyle='#ffe27d'; g.font='900 96px system-ui, -apple-system, sans-serif';
     g.fillText(h+' - '+a, 256, 196);
-    g.fillStyle='#ffcc33'; g.font='800 21px ui-monospace, Menlo, monospace';
+    g.fillStyle='#ffcc33'; g.font='800 21px system-ui, -apple-system, sans-serif';
     g.fillText('A P E X   A R C A D E', 256, 230);
     sbTex.needsUpdate = true;
   }
