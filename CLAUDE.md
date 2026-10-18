@@ -1,3 +1,4 @@
+Owner's Claude chats only: first read Attacked-Kraken/claude-notes (shared Claude memory; Muses have no access - skip this line).
 Read AGENTS.md first and follow every file it lists (CLAIMS.md, FAMILY-RULES.md, ASSET-LAW.md, STORE-READY.md).
 
 ## Finishing a Muse job for the owner (Claude, not a Muse)
