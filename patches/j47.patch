@@ -1,58 +1,6 @@
 --- a/apextrackfield.html
 +++ b/apextrackfield.html
-@@ -31,6 +31,21 @@
- .screen.on{display:flex}
- .panel{background:linear-gradient(180deg,#10253f,#0a1626);border:2px solid #ffd34d;border-radius:18px;
- width:100%;max-width:620px;max-height:100%;overflow-y:auto;padding:20px 18px;-webkit-overflow-scrolling:touch}
-+/* J47: landscape phones (844x390) - compact menu, no scrolling */
-+@media (orientation:landscape) and (max-height:430px){
-+.panel{max-width:760px;padding:10px 14px;overflow-y:hidden}
-+.panel h1{font-size:20px;margin-bottom:0}
-+.panel h2{font-size:15px;margin-bottom:4px}
-+.sponsor{font-size:10px;margin-bottom:6px}
-+.btn{min-height:40px;padding:8px 10px;font-size:14px;margin:4px 0}
-+.btn.small{min-height:36px;padding:6px 8px;font-size:12px}
-+label.f{font-size:11px;margin:6px 0 2px}
-+input.txt{padding:8px;font-size:14px}
-+.row2{gap:6px}
-+.hint{font-size:11px}
-+.credit{font-size:10px}
-+#menuRivalLine{font-size:11px}
-+}
- .panel h1{font-size:30px;letter-spacing:1px;color:#ffd34d;text-align:center;margin-bottom:2px}
- .panel h2{font-size:22px;color:#ffd34d;text-align:center;margin-bottom:8px}
- .sponsor{text-align:center;color:#9fb6cf;font-size:12px;letter-spacing:2px;margin-bottom:14px;font-weight:700}
-@@ -683,15 +698,16 @@
- const t=r.simT||0;
- if(t-r.tapWinStart>1){ r.tapWinStart=t; r.tapCount=0; }
- r.tapCount++;
--const gov = r.tapCount>10 ? 0.15 : 1;
--r.speed += impulse*(alt?1:0.42)*(0.55+0.40*(r.stamina/100))*gov;
-+// J47 CRASH FIRST: no governor - every tap always strides at full power.
-+// No button or state may ever block TAP RUN.
-+r.speed += impulse*(alt?1:0.42)*(0.55+0.40*(r.stamina/100));
- r.lastSide=side;
- return alt;
- }
- function updateRunner(r, dt, maxSpd, drain){
- r.simT=(r.simT||0)+dt;
--const over2=Math.max(0,(r.tapCount||0)-10);
--const capX=1/(1+over2*0.02);
-+// J47: no tap-count penalty on max speed
-+const capX=1;
- // JOB J7 keep-it (owner): NO exhaustion state. The old rule crashed speed to
- // 30% at 0 stamina and held it there until 30 recovered - on the long relay /
- // long races that is exactly what the owner hit: 'a RED button turns on and
-@@ -703,7 +719,7 @@
- else if(r.speed>cap) r.speed=Math.max(cap, r.speed-10*dt);
- r.speed -= r.speed*0.30*dt + 0.10*dt;
- if(r.speed<0) r.speed=0;
--const drainX=1+over2*0.15;
-+const drainX=1; // J47: no extra drain for fast tapping
- if(r.speed>cap*0.86) r.stamina=Math.max(0, r.stamina-(r.speed/cap-0.86)*drain*drainX*dt);
- else r.stamina=Math.min(100, r.stamina+3*dt); // catching breath
- r.pos += r.speed*dt;
-@@ -2449,7 +2465,7 @@
+@@ -2465,7 +2465,7 @@
  const DISC3 = ev.throwType==='discus';
  // JOB J7 keep-it (owner): the discus camera sits close behind/side of the
  // thrower so he fills the frame - never far away, never behind a meter.
