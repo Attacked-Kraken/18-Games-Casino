@@ -14,6 +14,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - J5: Jumps arc fast (GRAV 38), land hard with dust burst + camera shake + thud - no floating
 - J5 pic: camera 18 back / 9 up - truck fills the screen, not a tiny dot
 - J5 pic: dirt repeat 220 (not 880) - no obvious tiling/streaking
+- OWNER Oct 18 6:28 PM: top speed OVER 200 mph (drive stick alone, ~5 s to top speed) - test play-200mph
+- OWNER Oct 18 6:28 PM: the engine never gets lost in the music - while you drive the music steps back (quieter, its bass cut) and the engine has a mid-range snarl on top of the low roar - test play-engine-over-music
 
 ## KEEP (owner, Oct 18 - LOCKED: never change these, whatever a job says)
 - The truck exactly as in the J5 version (owner 👍 Oct 17, main 726a1dc): same model, body, tires, colors and style.

@@ -144,7 +144,7 @@ const RALLY_EVENTS = [
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
 const GRAV = 90; // J45: real gravity - 5-ton truck comes down fast and lands with weight
-const MAX_FWD = 40, MAX_REV = 10, ACCEL = 14, BRAKE = 20; // J45: 90mph top (40m/s), 0-60 in ~2s - drive stick alone, no boost
+const MAX_FWD = 95, MAX_REV = 12, ACCEL = 21, BRAKE = 34; // owner Oct 18 6:28 PM: over 200 mph (95 m/s = 212 mph), 0-200 in ~5s - drive stick alone, no boost
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
 
@@ -167,8 +167,14 @@ const Snd = {
     const g1 = C.createGain(); g1.gain.value = 0.5; const g2 = C.createGain(); g2.gain.value = 0.35; const g3 = C.createGain(); g3.gain.value = 0.35;
     sub.connect(g1); saw1.connect(g2); saw2.connect(g3);
     g1.connect(this.engFilter); g2.connect(this.engFilter); g3.connect(this.engFilter);
-    sub.start(); saw1.start(); saw2.start();
-    this.engOsc = [sub, saw1, saw2];
+    // owner Oct 18 6:28 PM "the engine noise is mixing in with the music": a mid-range snarl (octave saw through a
+    // band-pass) so the engine lives ABOVE the music's bass line, and the music ducks + loses its low end while you drive
+    const saw3 = C.createOscillator(); saw3.type = 'sawtooth'; saw3.frequency.value = 110;
+    this.snarl = C.createBiquadFilter(); this.snarl.type = 'bandpass'; this.snarl.frequency.value = 500; this.snarl.Q.value = 1.4;
+    this.snarlGain = C.createGain(); this.snarlGain.gain.value = 0;
+    saw3.connect(this.snarl); this.snarl.connect(this.snarlGain); this.snarlGain.connect(C.destination);
+    sub.start(); saw1.start(); saw2.start(); saw3.start();
+    this.engOsc = [sub, saw1, saw2, saw3];
     // throttle punch noise
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -180,13 +186,21 @@ const Snd = {
     this.lastSp = 0;
   },
   engine(sp){ // sp 0..1 - deep roar 35Hz idle to 180Hz redline
-    if (!this.ctx || this.muted) { if (this.ctx && this.muted && this.engGain) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); return; }
+    if (!this.ctx || this.muted) {
+      if (this.ctx && this.muted && this.engGain) { this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); this.snarlGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); }
+      return;
+    }
     const t = this.ctx.currentTime, f = 35 + sp * 145;
     this.engOsc[0].frequency.setTargetAtTime(f * 0.5, t, 0.05); // sub
     this.engOsc[1].frequency.setTargetAtTime(f, t, 0.05);
     this.engOsc[2].frequency.setTargetAtTime(f * 1.03, t, 0.05); // detune growl
-    this.engFilter.frequency.setTargetAtTime(280 + sp * 1400, t, 0.08);
-    this.engGain.gain.setTargetAtTime(sp < 0.02 ? 0 : 0.06 + sp * 0.1, t, 0.09);
+    this.engOsc[3].frequency.setTargetAtTime(f * 2.01, t, 0.05); // mid snarl, an octave up
+    this.engFilter.frequency.setTargetAtTime(380 + sp * 2200, t, 0.08);
+    this.snarl.frequency.setTargetAtTime(420 + sp * 900, t, 0.08);
+    const on = sp >= 0.02;
+    this.engGain.gain.setTargetAtTime(on ? 0.1 + sp * 0.16 : 0, t, 0.09);
+    this.snarlGain.gain.setTargetAtTime(on ? 0.035 + sp * 0.08 : 0, t, 0.09);
+    if (typeof Music !== 'undefined' && Music.duck) Music.duck(on ? 0.4 + sp * 0.6 : 0);
     // throttle punch: swell noise on hard acceleration
     const punch = Math.max(0, sp - this.lastSp) * 3;
     this.punchGain.gain.setTargetAtTime(Math.min(0.12, punch), t, 0.04);
@@ -229,13 +243,17 @@ const Music = {
     if (this.ctx || !snd.ctx) return;
     this.ctx = snd.ctx;
     this.musGain = this.ctx.createGain(); this.musGain.gain.value = 0.32;
-    this.musGain.connect(this.ctx.destination);
+    // owner Oct 18 6:28 PM: while the truck drives, the music steps back (quieter, no low bass) so the engine is heard
+    this.musHP = this.ctx.createBiquadFilter(); this.musHP.type = 'highpass'; this.musHP.frequency.value = 20;
+    this.musGain.connect(this.musHP); this.musHP.connect(this.ctx.destination);
+    this.duckAmt = 0;
     this.snd = snd;
   },
   // Rock pattern: kick on 0,4,8,12 | hats on odds | bass riff
   play(mode){ // 'menu' (112bpm) or 'game' (132bpm)
     if (!this.ctx || this.mode === mode) return;
     this.stop(); this.mode = mode; this.step = 0;
+    if (this.musGain) { this.duckAmt = 0; this.musGain.gain.setTargetAtTime(this.level(), this.ctx.currentTime, 0.1); this.musHP.frequency.setTargetAtTime(20, this.ctx.currentTime, 0.1); }
     this.bpm = mode === 'menu' ? 112 : 132;
     this.stepDur = 60 / this.bpm / 4; // 16th notes
     this.nextT = this.ctx.currentTime + 0.05;
@@ -263,7 +281,15 @@ const Music = {
     if (s % 16 === 4 || s % 16 === 12) { const len = Math.floor(C.sampleRate * 0.12), b = C.createBuffer(1, len, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = C.createBufferSource(); src.buffer = b; const f = C.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; const gn = C.createGain(); gn.gain.setValueAtTime(0.25, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.12); src.connect(f); f.connect(gn); gn.connect(g); src.start(t); }
   },
   stop(){ this.mode = 'off'; if (this.timer) { clearTimeout(this.timer); this.timer = null; } },
-  setMuted(m){ if (this.musGain) this.musGain.gain.setTargetAtTime(m ? 0 : 0.32, this.ctx.currentTime, 0.05); }
+  level(){ return this.snd && this.snd.muted ? 0 : (this.mode === 'game' ? 0.32 - 0.2 * this.duckAmt : 0.32); },
+  duck(k){ // 0 = full music, 1 = engine at full throttle: music down to ~40% and its bass line cut
+    if (!this.musGain || this.mode !== 'game') return;
+    this.duckAmt = Math.max(0, Math.min(1, k));
+    const t = this.ctx.currentTime;
+    this.musGain.gain.setTargetAtTime(this.level(), t, 0.25);
+    this.musHP.frequency.setTargetAtTime(20 + this.duckAmt * 260, t, 0.25);
+  },
+  setMuted(m){ if (this.musGain) this.musGain.gain.setTargetAtTime(m ? 0 : this.level(), this.ctx.currentTime, 0.05); }
 };
 
 /* ================= canvas texture helpers ================= */
@@ -1195,7 +1221,7 @@ function stepTruck(dt) {
   }
 
   // ramp side faces: a sudden tall step means we hit the side wall, not the slope
-  if (T.grounded && groundHeight(T.x, T.z) - ghPrev > 1.2) {
+  if (T.grounded && groundHeight(T.x, T.z) - ghPrev > Math.max(1.2, Math.abs(T.sp) * dt * 0.9)) {
     T.x = px; T.z = pz;
     if (Math.abs(T.sp) > 5) { Snd.thud(); camShake = Math.max(camShake, 0.3); puff(T.x, 1, T.z, 5, 5); }
     T.sp *= 0.35;
@@ -1307,6 +1333,7 @@ function stepDust(dt) {
 }
 
 const camPos = new THREE.Vector3(0, 8, 42);
+const camOff = new THREE.Vector3(0, 12.6, -25.2);
 function stepCamera(dt) {
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
   let want;
@@ -1323,7 +1350,11 @@ function stepCamera(dt) {
   } else {
     want = new THREE.Vector3(T.x - fx * 25.2, T.y + 12.6, T.z - fz * 25.2); // J45 EXTRA: 1.4x back/up for bigger truck - same screen fill
   }
-  camPos.lerp(want, Math.min(1, dt * 6)); // more responsive follow
+  // owner Oct 18: at 200 mph a plain lerp left the camera ~16 m behind its spot (truck shrank on screen). Ride WITH the
+  // truck and smooth only the offset, so the J5 driving spot holds at any speed.
+  const tp = new THREE.Vector3(T.x, T.y, T.z);
+  camOff.lerp(want.clone().sub(tp), Math.min(1, dt * 6));
+  camPos.copy(tp).add(camOff);
   camera.position.copy(camPos);
   if (camShake > 0.01) {
     camera.position.x += (Math.random() - 0.5) * camShake;
@@ -1339,7 +1370,7 @@ function stepCamera(dt) {
 }
 
 // Expose for game-check play tests
-window.__mt = { T, Snd, Music, cars, ramps, truck, input, startGame, camera,
+window.__mt = { T, Snd, Music, cars, ramps, tires, truck, input, startGame, camera, maxFwd: MAX_FWD,
   get score() { return score; },
   getState() { return state; },
   setState(s) { state = s; },
