@@ -13,9 +13,10 @@
     '.fbk.turned{inset:auto;left:0;top:0;transform-origin:left top;transform:rotate(90deg) translateY(-100%)}' +
     '.fbk canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}' +
     '.fbk.drawing canvas.ink{pointer-events:auto;cursor:crosshair}' +
-    '.fbk .bar{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto;' +
-    'background:rgba(10,12,20,.82);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:6px}' +
-    '.fbk .bar button{font:600 14px system-ui;color:#fff;background:#2a2f3d;border:0;border-radius:11px;padding:9px 11px;min-width:44px}' +
+    /* owner 2026-10-17: small, icons only, so the game is still playable with the tools open */
+    '.fbk .bar{position:absolute;top:6px;left:50%;transform:translateX(-50%);display:flex;gap:3px;pointer-events:auto;' +
+    'background:rgba(10,12,20,.6);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:3px}' +
+    '.fbk .bar button{font:600 13px/1 system-ui;color:#fff;background:rgba(42,47,61,.85);border:0;border-radius:9px;padding:5px 6px;min-width:30px;height:28px}' +
     '.fbk .bar button.on{background:#e8322a}.fbk .bar .send{background:#2563eb}' +
     '.fbk .msg{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;' +
     'font:600 13px system-ui;padding:7px 12px;border-radius:10px;pointer-events:none;opacity:0;transition:opacity .3s}' +
@@ -35,8 +36,8 @@
     var old = stage.querySelector('.fbk'); if (old) { old._close(); return; }
     var box = document.createElement('div'); box.className = 'fbk';
     box.innerHTML = '<canvas class="ink"></canvas><div class="rec"></div><div class="bar">' +
-      '<button data-a="draw">✏️ Draw</button><button data-a="erase">🧽</button><button data-a="rec">🎥 Record</button>' +
-      '<button data-a="snap">📸</button><button data-a="send" class="send">📤 Send</button><button data-a="set">⚙</button><button data-a="close">✕</button></div><div class="msg"></div>';
+      '<button data-a="draw" aria-label="Draw">✏️</button><button data-a="erase" aria-label="Erase">🧽</button><button data-a="rec" aria-label="Record">🎥</button>' +
+      '<button data-a="snap" aria-label="Picture">📸</button><button data-a="send" class="send" aria-label="Send">📤</button><button data-a="set">⚙</button><button data-a="close">✕</button></div><div class="msg"></div>';
     stage.appendChild(box);
     var ink = box.querySelector('.ink'), ix = ink.getContext('2d'), msgEl = box.querySelector('.msg');
     var snaps = [], video = null, rec = null, chunks = [], recTimer = 0, mt;
@@ -88,12 +89,12 @@
       var type = ['video/mp4', 'video/webm;codecs=vp8', 'video/webm'].filter(function (t) { return MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t); })[0] || '';
       chunks = []; rec = new MediaRecorder(comp.captureStream(30), type ? { mimeType: type } : undefined);
       rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      rec.start(500); loop(); box.classList.add('recording'); btn('rec').classList.add('on'); btn('rec').textContent = '⏹ Stop';
+      rec.start(500); loop(); box.classList.add('recording'); btn('rec').classList.add('on'); btn('rec').textContent = '⏹';
       recTimer = setTimeout(stopRec, 60000); say('Recording (up to 60 s) - play and draw');
     }
     function stopRec() {
       if (!rec) return; clearTimeout(recTimer); var r = rec; rec = null; r.stop();
-      box.classList.remove('recording'); btn('rec').classList.remove('on'); btn('rec').textContent = '🎥 Again';
+      box.classList.remove('recording'); btn('rec').classList.remove('on'); btn('rec').textContent = '🎥';
       say('Recorded - tap 📤 Send');
     }
     function btn(a) { return box.querySelector('[data-a="' + a + '"]'); }
