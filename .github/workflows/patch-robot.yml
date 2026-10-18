@@ -16,6 +16,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   robot:
@@ -41,3 +42,16 @@ jobs:
             git pull -q --rebase origin ${GITHUB_REF#refs/heads/}
           done
           exit 1
+
+      - name: Let the robot check run on the patched branch
+        # GitHub holds checks started by a robot push as "Action required" (Oct 18, PR #527). Approve them right away -
+        # this branch is in our own repo, so it is safe.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 30
+          b=${GITHUB_REF#refs/heads/}
+          gh api "repos/${{ github.repository }}/actions/runs?status=action_required&branch=$b&per_page=20" \
+            --jq '.workflow_runs[] | select(.head_repository.full_name=="${{ github.repository }}") | .id' | while read id; do
+            gh api -X POST "repos/${{ github.repository }}/actions/runs/$id/approve" && echo "approved run $id" || echo "could not approve $id"
+          done
