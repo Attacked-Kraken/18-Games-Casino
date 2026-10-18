@@ -854,7 +854,7 @@ function mergeGeos(geos) {
    exhaust stacks, Apex Arcade bed logos. Styles: 'pickup' or 'suv'. */
 function buildStudioTruck(style, colorHex) {
   const g = new THREE.Group();
-  g.scale.set(4, 4, 4); // 4x bigger trucks
+  g.scale.set(4, 4, 4); // temp: overwritten to 0.62 below for J5 real size
   const wheels = [];
   const stackTips = []; // for exhaust smoke
   const add = (geo, m, x, y, z, cast) => {
