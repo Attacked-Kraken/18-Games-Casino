@@ -8,6 +8,9 @@
   var css = document.createElement('style');
   css.textContent =
     '.fbk{position:absolute;inset:0;z-index:30;pointer-events:none}' +
+    /* owner 2026-10-17: phone held upright = the game turns itself sideways, so the pencil, record bar and drawing turn
+       with it (same turn as the games: 90deg clockwise) - the video and circles then line up with the game */
+    '.fbk.turned{inset:auto;left:0;top:0;transform-origin:left top;transform:rotate(90deg) translateY(-100%)}' +
     '.fbk canvas.ink{position:absolute;inset:0;width:100%;height:100%;touch-action:none}' +
     '.fbk.drawing canvas.ink{pointer-events:auto;cursor:crosshair}' +
     '.fbk .bar{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto;' +
@@ -38,17 +41,26 @@
     var ink = box.querySelector('.ink'), ix = ink.getContext('2d'), msgEl = box.querySelector('.msg');
     var snaps = [], video = null, rec = null, chunks = [], recTimer = 0, mt;
     function say(t) { msgEl.textContent = t; msgEl.classList.add('show'); clearTimeout(mt); mt = setTimeout(function () { msgEl.classList.remove('show'); }, 2500); }
+    var turned = false;
     function size() {
       var r = stage.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1);
+      turned = r.height > r.width;   /* upright phone: work sideways, like the game */
+      box.classList.toggle('turned', turned);
+      box.style.width = turned ? r.height + 'px' : ''; box.style.height = turned ? r.width + 'px' : '';
+      var w = turned ? r.height : r.width, h = turned ? r.width : r.height;
+      if (ink.width === Math.round(w * d) && ink.height === Math.round(h * d)) return;   /* same size: keep the drawing as is */
       var keep = ink.width ? ink.toDataURL() : null;
-      ink.width = Math.round(r.width * d); ink.height = Math.round(r.height * d);
+      ink.width = Math.round(w * d); ink.height = Math.round(h * d);
       ix.lineCap = ix.lineJoin = 'round'; ix.strokeStyle = '#ff2a1e'; ix.lineWidth = 6 * d;
       if (keep) { var im = new Image(); im.onload = function () { ix.drawImage(im, 0, 0, ink.width, ink.height); }; im.src = keep; }
     }
     size(); window.addEventListener('resize', size);
+    var ro = null; try { ro = new ResizeObserver(function () { size(); }); ro.observe(stage); } catch (e) {}
     // drawing
     var last = null;
-    function pt(e) { var r = ink.getBoundingClientRect(); return [(e.clientX - r.left) * ink.width / r.width, (e.clientY - r.top) * ink.height / r.height]; }
+    function pt(e) {
+      if (turned) { var s = stage.getBoundingClientRect(); return [(e.clientY - s.top) * ink.width / s.height, (s.right - e.clientX) * ink.height / s.width]; }
+      var r = ink.getBoundingClientRect(); return [(e.clientX - r.left) * ink.width / r.width, (e.clientY - r.top) * ink.height / r.height]; }
     ink.addEventListener('pointerdown', function (e) { last = pt(e); ink.setPointerCapture(e.pointerId); e.preventDefault(); });
     ink.addEventListener('pointermove', function (e) { if (!last) return; var p = pt(e); ix.beginPath(); ix.moveTo(last[0], last[1]); ix.lineTo(p[0], p[1]); ix.stroke(); last = p; e.preventDefault(); });
     ink.addEventListener('pointerup', function () { last = null; });
@@ -121,7 +133,7 @@
       if (a === 'close') close();
       if (a === 'set') { var u = prompt('Your controller address (shown on the approver page, e.g. http://192.168.1.25:8765/):', ctl()); if (u) try { localStorage.setItem(CTL_KEY, u); say('Saved'); } catch (x) {} }
     });
-    function close() { if (rec) stopRec(); window.removeEventListener('resize', size); if (video) { try { video.srcObject.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} } box.remove(); }
+    function close() { if (rec) stopRec(); window.removeEventListener('resize', size); if (ro) try { ro.disconnect(); } catch (e) {} if (video) { try { video.srcObject.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {} } box.remove(); }
     box._close = close;
     say('✏️ Draw · 🎥 Record · 📸 Snap · 📤 Send to the Muses');
   }
