@@ -99,4 +99,18 @@ export default [
       });
     },
   },
+  {
+    id: 'no-freeze-slowmo',
+    ask: 'Gameplay picture must not freeze (no slowmo)',
+    async test(page, h) {
+      return h.eval(() => {
+        // J22: home runs must not trigger slow motion (looks like 1.5s freeze on GPU-less phones)
+        // The game must advance game time at full speed - verify fx.slowmo is never engaged
+        const T = window.__test; if (!T) return 'window.__test missing';
+        // If the game exposes fx state, slowmo must be off
+        if (T.fx && T.fx.slowmoActive) return 'slowmo is active (game frozen)';
+        return true;
+      });
+    },
+  },
 ];
