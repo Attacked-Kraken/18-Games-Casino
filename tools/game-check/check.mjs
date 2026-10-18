@@ -247,6 +247,12 @@ for (const g of games) {
       r.career = { tests: car.length, failing: bad.length };
     }
   } catch (e) {}
+  // FRIEND CODES (owner, 2026-10-17): every game needs "Play a friend" with friend codes (STORE-READY.md "Friend codes")
+  try {
+    const src2 = fs.readFileSync(path.join(process.cwd(), g.file), 'utf8');
+    if (!/friend/i.test(src2)) r.check.push(`No friend codes yet - add a "👥 Play a friend" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md "Friend codes")`);
+    else if (!(r.fixes || []).some(x => /^play-friend/.test(x.id || ''))) r.check.push(`Friend codes have no 'play-friend-code' test yet (STORE-READY.md "Friend codes")`);
+  } catch (e) {}
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
   const brand = f1.brand || f2.brand, yourName = f1.yourName || f2.yourName;

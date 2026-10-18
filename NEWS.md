@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-17 · Every game gets friend codes
+Owner: multiplayer with friend codes on every game. Menu button "👥 Play a friend": My code (+ Share) / Enter a friend's code; you then play against your friend's player, team or ghost at their strength, and the result goes on both records with nicknames. Games stay offline (no servers here) - live online play comes with the Arcade. Use `ApexKit.friend` from the shared kit (being built now from Ice Hockey's codes) and add a `play-friend-code` test. Full rule: STORE-READY.md "Friend codes". Add it whenever you work on a game.
+
 ## 2026-10-17 · Clean screen: only the buttons you need
 Owner: no long words on the game screen. During play show only the game, the score line and the buttons needed right now. All instructions go behind a "How to play" (?) button, closed by default, turned sideways with the game. No keyboard words on phones ("space", "1 2 3", "WASD"). The robot now FAILS a play screen with 40+ words or keyboard words and CHECKs one with 20+. Rules: STUDIO-STANDARD.md "Clean screen".
 
