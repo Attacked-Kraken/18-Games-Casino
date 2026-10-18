@@ -245,24 +245,37 @@ for (const g of games) {
     let list = [];
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
     catch (e) { r.check.push('Fix list file has an error: ' + String(e.message).slice(0, 120)); }
-    const h = {
-      wait: ms => page.waitForTimeout(ms),
-      tap: (x, y) => page.touchscreen.tap(x, y),
-      press: sel => pressStep(page, sel),
-      shot: async () => measure(await page.screenshot({ type: 'jpeg', quality: 62 })),
-      changed,
-      eval: (fn, arg) => page.evaluate(fn, arg),
-      page,
+    // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
+    if (!page.setViewport) page.setViewport = v => page.setViewportSize({ width: v.width, height: v.height });
+    if (!page.target) page.target = () => ({ createCDPSession: () => page.context().newCDPSession(page) });
+    // a fresh copy of the game after a failed / timed-out test, so one test can't break the next (they share a page)
+    const freshGame = async () => {
+      try { await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(4000);
+        for (const step of g.start || []) await pressStep(page, step); await page.waitForTimeout(4000); } catch (e) {}
     };
     for (const fx of list) {
-      let ok = false, note = '';
+      let ok = false, note = '', dead = false;
+      // the time limit really STOPS the test: after 30 s every call it makes on the page throws
+      const live = new Proxy(page, { get(t, k) { if (dead) throw new Error('test stopped (time limit)'); const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
+      const h = {
+        wait: ms => { if (dead) throw new Error('test stopped (time limit)'); return page.waitForTimeout(ms); },
+        tap: (x, y) => { if (dead) throw new Error('test stopped (time limit)'); return page.touchscreen.tap(x, y); },
+        press: sel => { if (dead) throw new Error('test stopped (time limit)'); return pressStep(page, sel); },
+        shot: async () => { if (dead) throw new Error('test stopped (time limit)'); return measure(await page.screenshot({ type: 'jpeg', quality: 62 })); },
+        changed,
+        eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
+        page: live,
+      };
+      let timer;
       try {
-        const res = await Promise.race([fx.test(page, h), new Promise((_, rej) => setTimeout(() => rej(new Error('took over 30 s')), 30000))]);
+        const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
         ok = res === true; note = typeof res === 'string' ? res : '';
       } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+      clearTimeout(timer); dead = true;
       r.fixes.push({ id: fx.id, ask: fx.ask, ok, note });
       if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      if (!ok) await freshGame();
     }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
