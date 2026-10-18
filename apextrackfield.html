@@ -30,7 +30,20 @@ padding:calc(env(safe-area-inset-top,0px) + 56px) 12px calc(env(safe-area-inset-
 background:rgba(4,10,20,.45)}
 .screen.on{display:flex}
 .panel{background:linear-gradient(180deg,#10253f,#0a1626);border:2px solid #ffd34d;border-radius:18px;
-width:100%;max-width:620px;max-height:100%;overflow-y:auto;padding:20px 18px;-webkit-overflow-scrolling:touch}
+width:100%;max-width:620px;max-height:100%;overflow-y:auto;padding:12px 14px;-webkit-overflow-scrolling:touch}
+/* JOB J47: menu fits 844x390 with NO scrolling - compact */
+@media (max-height:430px){
+.panel{padding:8px 12px}
+.panel h1{font-size:20px!important;margin-bottom:1px!important}
+.sponsor{font-size:10px!important;margin-bottom:6px!important}
+label.f{font-size:11px!important;margin:6px 0 2px!important}
+input.txt{padding:8px!important;font-size:14px!important}
+.btn{padding:9px 8px!important;font-size:14px!important;min-height:40px!important;margin:5px 0!important}
+.btn.small{padding:7px 6px!important;font-size:12px!important;min-height:36px!important}
+.row2{gap:6px}
+.hint{font-size:11px!important}
+.credit{font-size:10px!important}
+}
 .panel h1{font-size:30px;letter-spacing:1px;color:#ffd34d;text-align:center;margin-bottom:2px}
 .panel h2{font-size:22px;color:#ffd34d;text-align:center;margin-bottom:8px}
 .sponsor{text-align:center;color:#9fb6cf;font-size:12px;letter-spacing:2px;margin-bottom:14px;font-weight:700}
