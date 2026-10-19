@@ -16,5 +16,10 @@ but only DO the G-job you were sent.
 - [ ] next: hockey commentary from sounds/commentary/hockey (credit the color voice on the Credits screen)
 - [ ] next: career mode play tests
 
+## Apex F1 - window 5
+- [ ] G-03 a full race works: AI cars finish laps, lap counter goes up, the race ends with a results screen
+- [ ] next: Grand Prix commentary from sounds/commentary/grandprix (credit the color voice on the Credits screen)
+- [ ] next: more of the street circuit and the city
+
 ## New games from the owner (on Game Development, not assigned yet)
 - Paper Plane (apexpaperplane.html), Reef Dash (apexreefdash.html)
