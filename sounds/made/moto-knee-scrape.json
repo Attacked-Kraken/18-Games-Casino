@@ -1,0 +1,1 @@
+{"name":"moto-knee-scrape","title":"Knee scrape","game":"moto","tab":"effect","type":"mix","layers":[{"lib":"Scratch fast","at":0,"pitch":7,"gain":0.5},{"lib":"Shaker","at":0,"pitch":0,"gain":0.3}]}

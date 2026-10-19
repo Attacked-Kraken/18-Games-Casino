@@ -1,0 +1,1 @@
+{"name":"hockey-board-hit","title":"Hit the boards","game":"hockey","tab":"effect","type":"mix","layers":[{"lib":"Boom","at":0,"pitch":3,"gain":0.8},{"lib":"Impact","at":0,"pitch":5,"gain":0.6}]}

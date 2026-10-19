@@ -1,0 +1,1 @@
+{"name":"racer-shift","title":"Gear shift","game":"racer","tab":"effect","type":"mix","layers":[{"lib":"Snap","at":0,"pitch":0,"gain":1},{"lib":"Kick Tight","at":0,"pitch":12,"gain":0.6}]}

@@ -113,9 +113,14 @@ font or online API in a game (games are fully offline).
 - **Sound robot**: add a recipe to `sounds/recipes/<anything>.json` and merge. It makes the WAV in `sounds/made/` with the
   owner's Beat Machine (our own sounds, no license worries). Kinds: `beat` (style, bpm, loops, pitch), `sfx` (a Beat Machine
   library sound), `engine` (kind v8 / diesel / inline4 / vtwin / superbike, rpm or rev [from,to], deep, rough, blower,
-  clatter). Every option: `sounds/made/OPTIONS.md`. Listen: `sounds/made/index.html`.
+  clatter), `mix` (a game sound effect: library sounds stacked with at / pitch / gain). Every option: `sounds/made/OPTIONS.md`.
+  Listen: **`sounds/lab.html`** (Sound Lab on Game Development: tabs Newest / Soundtracks / Sound effects / Engines, pick a game).
+  Give every recipe `title` + `game`. **Each game has its OWN menu song + play song (full length ~2.5 min, .m4a) and its own
+  effects** in `sounds/recipes/games.json`, written by `tools/sound-themes.mjs` - change a game's song there (style, bpm,
+  key, chords, seed) and run it. Owner: keep the bass LEAN (808 vol 0.3, kick 0.5, highpass 34). A sound you remove from
+  the recipes is removed from sounds/made by the robot.
   A `beat` recipe can set EVERY Beat Machine control: drum rows per track, bass line, melody, chords, up to 4 patterns,
   a song arrangement (Intro / Verse / Hook / Build / Drop / Outro), synth sound, per-track volume / pan / pitch / reverse,
-  FX (reverb, echo, drive, filters, crush, compressor), sidechain, glide - see `sounds/recipes/examples.json`.
+  FX (reverb, echo, drive, filters, crush, compressor), sidechain, glide - see `sounds/recipes/games.json`.
   For sounds that don't sound made-by-computer, put a REAL recording in `sounds/real/` (owner's recordings, Kenney CC0
   audio) and use it on a track with `"sample": "file:sounds/real/<name>.wav"`.

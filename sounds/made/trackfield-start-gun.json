@@ -1,0 +1,1 @@
+{"name":"trackfield-start-gun","title":"Starting gun","game":"trackfield","tab":"effect","type":"mix","layers":[{"lib":"Snare Crack","at":0,"pitch":7,"gain":1},{"lib":"Impact","at":0,"pitch":12,"gain":0.6},{"lib":"Boom","at":0,"pitch":12,"gain":0.3}]}

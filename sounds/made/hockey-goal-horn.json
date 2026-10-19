@@ -1,0 +1,1 @@
+{"name":"hockey-goal-horn","title":"Goal horn","game":"hockey","tab":"effect","type":"mix","layers":[{"lib":"Airhorn long","at":0,"pitch":-7,"gain":1},{"lib":"Airhorn long","at":0,"pitch":-12,"gain":0.6},{"lib":"Crowd cheer","at":0.1,"pitch":0,"gain":0.9}]}

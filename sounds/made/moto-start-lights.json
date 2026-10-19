@@ -1,0 +1,1 @@
+{"name":"moto-start-lights","title":"Start lights","game":"moto","tab":"effect","type":"mix","layers":[{"lib":"Sine ping","at":0,"pitch":5,"gain":1},{"lib":"Sine ping","at":1,"pitch":5,"gain":1},{"lib":"Sine ping","at":2,"pitch":5,"gain":1},{"lib":"Sine ping","at":3,"pitch":17,"gain":1}]}

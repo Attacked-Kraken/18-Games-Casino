@@ -1,0 +1,1 @@
+{"name":"f1-pit-radio","title":"Pit radio","game":"f1","tab":"effect","type":"mix","layers":[{"lib":"Chip blip","at":0,"pitch":12,"gain":0.6},{"lib":"Room tone","at":0,"pitch":0,"gain":0.3,"seconds":0.6}]}

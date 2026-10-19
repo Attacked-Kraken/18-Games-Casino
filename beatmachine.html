@@ -587,7 +587,7 @@ const TRACKS=[
 const NT=TRACKS.length, NS=16, BASS=7;
 const NN=['A','A#','B','C','C#','D','D#','E','F','F#','G','G#'];
 const noteName=n=>NN[((n%12)+12)%12]+(1+Math.floor((n+9)/12));
-const DEF_VOL=[0.9,0.8,0.7,0.5,0.45,0.7,0.6,0.85];
+const DEF_VOL=[0.75,0.8,0.7,0.5,0.45,0.7,0.6,0.6];   // owner Oct 19 "too much bass - lean it up": kick 0.9->0.75, 808 0.85->0.6
 const KEYN=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const SCALES={'Chromatic':[0,1,2,3,4,5,6,7,8,9,10,11],'Minor':[0,2,3,5,7,8,10],'Major':[0,2,4,5,7,9,11],'Dorian':[0,2,3,5,7,9,10],'Harmonic minor':[0,2,3,5,7,8,11],'Minor pentatonic':[0,3,5,7,10],'Major pentatonic':[0,2,4,7,9],'Blues':[0,3,5,6,7,10]};
 const PROGS={'I–V–vi–IV (pop)':[0,4,5,3],'vi–IV–I–V':[5,3,0,4],'i–VI–III–VII (trap)':[0,5,2,6],'i–iv–v–i':[0,3,4,0],'ii–V–I–vi (jazzy)':[1,4,0,5],'i–VII–VI–VII':[0,6,5,6],'I–vi–IV–V (50s)':[0,5,3,4]};

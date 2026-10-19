@@ -1,0 +1,1 @@
+{"name":"soccer-net","title":"Ball in the net","game":"soccer","tab":"effect","type":"mix","layers":[{"lib":"Shaker","at":0,"pitch":-5,"gain":1},{"lib":"Whoosh","at":0,"pitch":5,"gain":0.5}]}

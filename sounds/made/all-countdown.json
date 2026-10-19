@@ -1,0 +1,1 @@
+{"name":"all-countdown","title":"Countdown 3-2-1-GO","game":"all","tab":"effect","type":"mix","layers":[{"lib":"Sine ping","at":0,"pitch":12,"gain":1},{"lib":"Sine ping","at":1,"pitch":12,"gain":1},{"lib":"Sine ping","at":2,"pitch":12,"gain":1},{"lib":"Sine ping","at":3,"pitch":19,"gain":1},{"lib":"Bell","at":3,"pitch":19,"gain":0.5}]}

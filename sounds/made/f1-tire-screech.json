@@ -1,0 +1,1 @@
+{"name":"f1-tire-screech","title":"Tire screech","game":"f1","tab":"effect","type":"mix","layers":[{"lib":"Scratch","at":0,"pitch":12,"gain":0.7},{"lib":"Noise texture","at":0,"pitch":12,"gain":0.3,"seconds":1}]}

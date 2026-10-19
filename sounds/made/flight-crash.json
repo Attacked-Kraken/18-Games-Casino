@@ -1,0 +1,1 @@
+{"name":"flight-crash","title":"Crash","game":"flight","tab":"effect","type":"mix","layers":[{"lib":"Boom","at":0,"pitch":0,"gain":1},{"lib":"Impact metal","at":0.03,"pitch":-5,"gain":0.6}]}

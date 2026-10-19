@@ -1,0 +1,1 @@
+{"name":"monstertruck-crowd-wow","title":"Crowd WOW","game":"monstertruck","tab":"effect","type":"mix","layers":[{"lib":"Crowd cheer","at":0,"pitch":0,"gain":1},{"lib":"Ooh","at":0,"pitch":0,"gain":0.7}]}

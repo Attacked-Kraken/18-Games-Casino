@@ -1,0 +1,1 @@
+{"name":"monstertruck-crush","title":"Car crush","game":"monstertruck","tab":"effect","type":"mix","layers":[{"lib":"Impact metal","at":0,"pitch":-7,"gain":1},{"lib":"Scratch fast","at":0.05,"pitch":-12,"gain":0.5}]}

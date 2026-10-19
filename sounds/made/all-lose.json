@@ -1,0 +1,1 @@
+{"name":"all-lose","title":"You lose","game":"all","tab":"effect","type":"mix","layers":[{"lib":"Downlifter","at":0,"pitch":0,"gain":0.8},{"lib":"Sweep down","at":0.2,"pitch":-5,"gain":0.5}]}

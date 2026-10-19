@@ -1,0 +1,1 @@
+{"name":"flight-jet-pass","title":"Jet pass","game":"flight","tab":"effect","type":"mix","layers":[{"lib":"Whoosh","at":0,"pitch":-7,"gain":1},{"lib":"Wind","at":0,"pitch":0,"gain":0.5,"seconds":2}]}

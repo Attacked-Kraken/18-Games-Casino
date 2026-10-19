@@ -1,0 +1,1 @@
+{"name":"hockey-puck-hit","title":"Puck slap shot","game":"hockey","tab":"effect","type":"mix","layers":[{"lib":"Woodblock","at":0,"pitch":5,"gain":1},{"lib":"Snare Crack","at":0,"pitch":7,"gain":0.6},{"lib":"Impact metal","at":0,"pitch":12,"gain":0.3}]}

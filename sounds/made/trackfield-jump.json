@@ -1,0 +1,1 @@
+{"name":"trackfield-jump","title":"Long jump sand","game":"trackfield","tab":"effect","type":"mix","layers":[{"lib":"Shaker","at":0,"pitch":-12,"gain":1},{"lib":"Kick Soft","at":0,"pitch":0,"gain":0.6}]}
