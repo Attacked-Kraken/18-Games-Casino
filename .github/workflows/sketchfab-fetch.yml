@@ -11,6 +11,9 @@ on:
       dry:
         description: 'Only check, download nothing (1 = yes)'
         default: ''
+      test:
+        description: 'Token test: a Sketchfab model link or id (checks the download works, saves nothing)'
+        default: ''
 concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
 permissions:
   contents: write
@@ -28,6 +31,7 @@ jobs:
         env:
           SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
           DRY: ${{ github.event.inputs.dry }}
+          TEST_UID: ${{ github.event.inputs.test }}
         run: node tools/sketchfab-fetch.mjs
       - name: Shrink + save
         run: |
