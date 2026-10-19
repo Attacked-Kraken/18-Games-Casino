@@ -102,38 +102,6 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - used in: beatmachine.html (Synth -> Real instruments), sound robot songs
 - changes: one note every 4+ semitones, mono 32 kHz MP3 64k, trimmed to 1.5-4 s, loudness matched
 
-## ASSET: models/fetched/none.glb
-- title: Fictional supercar - V12 Goblin
-- maker: ollitei
-- source: https://sketchfab.com/3d-models/fictional-supercar-v12-goblin-0a20e49ad5774d778567cb5c3f345786
-- license: CC-BY 4.0
-- downloaded: 2026-10-19 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "ollitei" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)
 
-## ASSET: models/fetched/none.glb
-- title: Porsche 911 (930) Turbo 1975
-- maker: Lexyc16
-- source: https://sketchfab.com/3d-models/porsche-911-930-turbo-1975-de1ffd344c41481892511f7fd332c136
-- license: CC-BY 4.0
-- downloaded: 2026-10-19 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "Lexyc16" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)
 
-## ASSET: models/fetched/none.glb
-- title: McLaren Spider
-- maker: SINNIK
-- source: https://sketchfab.com/3d-models/mclaren-spider-10b474f26b2643be82ee26417ca78a0a
-- license: CC-BY 4.0
-- downloaded: 2026-10-19 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "SINNIK" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)
 
-## ASSET: models/fetched/none.glb
-- title: Honda NSX 1990
-- maker: Lexyc16
-- source: https://sketchfab.com/3d-models/honda-nsx-1990-1cc15628a00a4739a6b6c01128927c8d
-- license: CC-BY 4.0
-- downloaded: 2026-10-19 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "Lexyc16" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)

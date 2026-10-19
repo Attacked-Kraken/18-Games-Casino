@@ -33,7 +33,11 @@ const ledger = fs.readFileSync('ASSETS.md', 'utf8');
 let addLedger = '';
 fs.mkdirSync('models/fetched', { recursive: true });
 for (const t of todo) {
-  const uid = t.m[2], slug = (t.m[1] || 'model').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 40) || 'model';
+  // owner Oct 19: 4 cars all landed as none.glb (links like /3d-models/none-<id>) - a name now comes from the model's own
+  // title when the link has none, and always ends with the first 6 letters of its id, so two models never share a file
+  const uid = t.m[2], linkSlug = (t.m[1] || '').toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const titleSlug = ((t.l.split('·').map(x => x.trim()).find(x => / by /i.test(x)) || '').split(/ by /i)[0] || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const slug = ((/^(none|model|undefined|null)?$/.test(linkSlug) ? titleSlug : linkSlug) || 'model').slice(0, 34) + '-' + uid.slice(0, 6);
   try {
     const info = await (await fetch(`${API}/models/${uid}`)).json();
     const lic = info.license || {}, lslug = (lic.slug || lic.label || '').toLowerCase();
