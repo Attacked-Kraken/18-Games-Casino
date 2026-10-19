@@ -25,31 +25,31 @@ const GROOVE = {
 // game: [menu song, play song]. chords = scale degrees (0 = home chord), 4 chords = 2 bars.
 const GAMES = [
   { game: 'hockey', name: 'Ice Hockey',
-    menu: { title: 'Ice Hockey - menu', style: 'House', groove: 'house', bpm: 122, key: 'A', scale: 'Minor', chords: [0, 5, 2, 6], sound: 'keys', seed: 11 },
+    menu: { title: 'Ice Hockey - menu', style: 'House', groove: 'house', bpm: 122, key: 'A', scale: 'Minor', chords: [0, 5, 2, 6], sound: 'piano', seed: 11 },
     play: { title: 'Ice Hockey - game time', style: 'Techno', groove: 'techno', bpm: 132, key: 'A', scale: 'Minor', chords: [0, 0, 5, 6], sound: 'lead', seed: 12 } },
   { game: 'baseball', name: 'Baseball',
     menu: { title: 'Baseball - menu', style: 'Boom Bap', groove: 'boombap', bpm: 92, key: 'D', scale: 'Dorian', chords: [0, 3, 0, 4], sound: 'keys', seed: 21 },
-    play: { title: 'Baseball - at the plate', style: 'Afrobeats', groove: 'afro', bpm: 108, key: 'G', scale: 'Major', chords: [0, 4, 5, 3], sound: 'pluck', seed: 22 } },
+    play: { title: 'Baseball - at the plate', style: 'Afrobeats', groove: 'afro', bpm: 108, key: 'G', scale: 'Major', chords: [0, 4, 5, 3], sound: 'pizz', seed: 22 } },
   { game: 'soccer', name: 'Soccer',
     menu: { title: 'Soccer - menu', style: 'Reggaeton', groove: 'dembow', bpm: 96, key: 'E', scale: 'Minor', chords: [0, 5, 2, 6], sound: 'pluck', seed: 31 },
-    play: { title: 'Soccer - match', style: 'Afrobeats', groove: 'afro', bpm: 114, key: 'C', scale: 'Major', chords: [5, 3, 0, 4], sound: 'bell', seed: 32 } },
+    play: { title: 'Soccer - match', style: 'Afrobeats', groove: 'afro', bpm: 114, key: 'C', scale: 'Major', chords: [5, 3, 0, 4], sound: 'brass', seed: 32 } },
   { game: 'flight', name: 'Flight',
-    menu: { title: 'Flight - menu', style: 'Lo-Fi', groove: 'lofi', bpm: 82, key: 'F', scale: 'Major', chords: [0, 2, 3, 4], sound: 'keys', seed: 41 },
-    play: { title: 'Flight - in the sky', style: 'Vaporwave', groove: 'vapor', bpm: 104, key: 'D', scale: 'Major', chords: [0, 4, 5, 3], sound: 'pad', seed: 42 } },
+    menu: { title: 'Flight - menu', style: 'Lo-Fi', groove: 'lofi', bpm: 82, key: 'F', scale: 'Major', chords: [0, 2, 3, 4], sound: 'harp', seed: 41 },
+    play: { title: 'Flight - in the sky', style: 'Vaporwave', groove: 'vapor', bpm: 104, key: 'D', scale: 'Major', chords: [0, 4, 5, 3], sound: 'strings', seed: 42 } },
   { game: 'monstertruck', name: 'Monster Truck',
     menu: { title: 'Monster Truck - menu', style: 'Phonk', groove: 'phonk', bpm: 130, key: 'C#', scale: 'Minor', chords: [0, 5, 3, 4], sound: 'bell', seed: 51 },
-    play: { title: 'Monster Truck - arena', style: 'Dubstep', groove: 'dubstep', bpm: 140, key: 'E', scale: 'Harmonic minor', chords: [0, 5, 3, 4], sound: 'lead', seed: 52 } },
+    play: { title: 'Monster Truck - arena', style: 'Dubstep', groove: 'dubstep', bpm: 140, key: 'E', scale: 'Harmonic minor', chords: [0, 5, 3, 4], sound: 'horn', seed: 52 } },
   { game: 'f1', name: 'F1',
     menu: { title: 'F1 - menu', style: 'Techno', groove: 'techno', bpm: 126, key: 'B', scale: 'Minor', chords: [0, 6, 5, 6], sound: 'pluck', seed: 61 },
     play: { title: 'F1 - race', style: 'Drum & Bass', groove: 'dnb', bpm: 172, key: 'B', scale: 'Minor', chords: [0, 5, 3, 4], sound: 'lead', seed: 62 } },
   { game: 'trackfield', name: 'Track & Field',
-    menu: { title: 'Track & Field - menu', style: 'House', groove: 'house', bpm: 120, key: 'G', scale: 'Major', chords: [0, 5, 3, 4], sound: 'keys', seed: 71 },
+    menu: { title: 'Track & Field - menu', style: 'House', groove: 'house', bpm: 120, key: 'G', scale: 'Major', chords: [0, 5, 3, 4], sound: 'piano', seed: 71 },
     play: { title: 'Track & Field - race day', style: 'Jersey Club', groove: 'jersey', bpm: 140, key: 'G', scale: 'Minor', chords: [0, 5, 6, 4], sound: 'pluck', seed: 72 } },
   { game: 'racer', name: 'Exotic Racer',
-    menu: { title: 'Exotic Racer - menu', style: 'Phonk', groove: 'phonk', bpm: 128, key: 'F#', scale: 'Minor', chords: [0, 3, 5, 4], sound: 'bell', seed: 81 },
+    menu: { title: 'Exotic Racer - menu', style: 'Phonk', groove: 'phonk', bpm: 128, key: 'F#', scale: 'Minor', chords: [0, 3, 5, 4], sound: 'glock', seed: 81 },
     play: { title: 'Exotic Racer - street race', style: 'Nightcore', groove: 'house', bpm: 150, key: 'F#', scale: 'Minor', chords: [0, 5, 2, 6], sound: 'lead', seed: 82 } },
   { game: 'moto', name: 'Apex Moto',
-    menu: { title: 'Apex Moto - menu', style: 'Trap', groove: 'trap', bpm: 140, key: 'D', scale: 'Minor', chords: [0, 5, 3, 4], sound: 'pluck', seed: 91 },
+    menu: { title: 'Apex Moto - menu', style: 'Trap', groove: 'trap', bpm: 140, key: 'D', scale: 'Minor', chords: [0, 5, 3, 4], sound: 'strings', seed: 91 },
     play: { title: 'Apex Moto - race', style: 'Drum & Bass', groove: 'dnb', bpm: 174, key: 'A', scale: 'Harmonic minor', chords: [0, 3, 5, 4], sound: 'lead', seed: 92 } },
 ];
 
@@ -85,12 +85,15 @@ function song(g, m, which) {
     { drums: lean(gr, true), clear: true, bass: bassOf(ch[0], ch[1]), melody: h1, chords: [ch[0], -1, ch[1], -1] },
     { drums: lean(gr, true), clear: true, bass: bassOf(ch[2], ch[3]), melody: h2, chords: [ch[2], -1, ch[3], -1] },
   ];
-  const songBlocks = [['Intro', 0], ['Intro', 1], ['Verse', 0], ['Verse', 1], ['Verse', 0], ['Verse', 1], ['Verse', 0], ['Build', 1],
-    ['Drop', 2], ['Hook', 3], ['Hook', 2], ['Hook', 3], ['Hook', 2], ['Hook', 3], ['Hook', 2], ['Outro', 3]];
-  const bar = 60 / m.bpm * 4, loops = Math.max(2, Math.min(16, Math.round(150 / (bar * songBlocks.length))));
+  // owner Oct 19 "longer songs with real changes": a 40-bar arrangement - sections switch instruments off and on
+  const V = (n, off) => Array.from({ length: n }, (_, i) => ['Verse', i % 2, off]), H = (n, first) => Array.from({ length: n }, (_, i) => [i === 0 && first ? 'Drop' : 'Hook', 2 + i % 2]);
+  const songBlocks = [['Intro', 0, ['kick', 'bass', 'melody']], ['Intro', 1, ['kick', 'bass', 'melody']], ['Intro', 0, ['melody']], ['Intro', 1, ['melody']],
+    ...V(8), ['Build', 1, ['kick']], ...H(8, true),
+    ...V(4, ['kick', 'bass', 'snare', 'clap']), ...V(4), ['Build', 1, ['kick']], ...H(8, true), ['Outro', 2, ['kick', 'melody']], ['Outro', 3, ['kick', 'bass', 'melody']]];
+  const bar = 60 / m.bpm * 4, loops = Math.max(1, Math.min(16, Math.round(150 / (bar * songBlocks.length))));
   return {
     name: g.game + '-' + which, title: m.title, game: g.game, tab: 'music', type: 'beat', style: m.style, bpm: m.bpm, key: m.key, scale: m.scale,
-    patterns: pats, song: songBlocks, sound: { melody: m.sound, melVol: 0.85, chdVol: 0.55 }, loops,
+    patterns: pats, song: songBlocks, sound: { melody: m.sound, melVol: 0.85, chdVol: 0.55 }, loops, master: 'punchy',
     // owner Oct 19 "too much bass - lean it up": soft 808, lighter kick, low end trimmed
     tracks: { kick: { vol: 0.5 }, bass: { vol: 0.3 }, snare: { vol: 0.7 }, clap: { vol: 0.62 } },
     fx: { highpass: 34, comp: true }   // highpass 34 = cut below ~80 Hz (the mud),

@@ -115,7 +115,9 @@ font or online API in a game (games are fully offline).
   library sound), `engine` (kind v8 / diesel / inline4 / vtwin / superbike, rpm or rev [from,to], deep, rough, blower,
   clatter), `mix` (a game sound effect: library sounds stacked with at / pitch / gain). Every option: `sounds/made/OPTIONS.md`.
   Listen: **`sounds/lab.html`** (Sound Lab on Game Development: tabs Newest / Soundtracks / Sound effects / Engines, pick a game).
-  Give every recipe `title` + `game`. **Each game has its OWN menu song + play song (full length ~2.5 min, .m4a) and its own
+  Give every recipe `title` + `game`. Beat Machine now has 8 patterns (A-H), sections that switch instruments off
+  (song block 3rd item, e.g. ["Verse",0,["kick","bass"]]), REAL recorded instruments (sound.melody: piano, strings, cello,
+  pizz, brass, horn, flute, harp, glock - CC0, sounds/instruments/) and a master stage ("master": clean / punchy / loud). **Each game has its OWN menu song + play song (full length ~2.5 min, .m4a) and its own
   effects** in `sounds/recipes/games.json`, written by `tools/sound-themes.mjs` - change a game's song there (style, bpm,
   key, chords, seed) and run it. Owner: keep the bass LEAN (808 vol 0.3, kick 0.5, highpass 34). A sound you remove from
   the recipes is removed from sounds/made by the robot.

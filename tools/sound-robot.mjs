@@ -37,9 +37,10 @@ fs.writeFileSync(path.join(OUT, 'OPTIONS.md'), '# What the sound robot can make\
   options.styles.map(s => '- ' + s).join('\n') + '\n\nbpm 60-180, pitch -12..12, loops 1-16\n\n## Library sounds ("type": "sfx", "lib": ...)\n' +
   options.lib.map(e => `- ${e.name} (${e.cat})`).join('\n') + '\n\n## Full control of a beat (any of these, all optional - see sounds/recipes/games.json, made by tools/sound-themes.mjs)\n' +
   '- style: start from a style, then change anything below\n- bpm, swing (0-100), pitch (-12..12), key ("C".."B"), scale (Minor, Major, Dorian, Harmonic minor, Minor pentatonic, Major pentatonic, Blues, Chromatic)\n' +
-  '- patterns: up to 4 (A-D), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }\n' +
-  '- song: [["Intro",0],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-3) - Build adds a riser, Drop an impact\n' +
-  '- sound: { melody: lead | pluck | keys | pad | bell, octave, melVol, chdVol }\n' +
+  '- patterns: up to 8 (A-H), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }\n' +
+  '- song: [["Intro",0,["kick","bass"]],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-7, instruments OFF in that section: kick snare clap hat ohat tom rim bass melody chords) - Build adds a riser, Drop an impact\n' +
+  '- master: clean | punchy (default) | loud\n' +
+  '- sound: { melody: lead | pluck | keys | pad | bell | chip, or a REAL instrument: piano | strings | cello | pizz | brass | horn | flute | harp | glock (CC0 recordings), octave, melVol, chdVol }\n' +
   '- tracks: { kick|snare|clap|chat|ohat|tom|rim|bass: { vol 0-1, pan -1..1, pitch, reverse, mute, sample: "lib:<library sound>" or "file:sounds/real/<your recording>.wav" } }\n' +
   '- fx: { reverb 0-100, size, drive, lowpass 0-100, highpass 0-100, resonance, crush (bits 4-16), crushMix, comp true/false, compThreshold, compRatio, echo 0-1, echoBeats, echoFeedback }\n' +
   '- sidechain, glide, crackle: true/false; loops 1-16\n' +
@@ -146,7 +147,7 @@ for (const r of recipes) {
       if (r.key != null) S.key = typeof r.key === 'number' ? ((r.key % 12) + 12) % 12 : Math.max(0, NOTES.indexOf(String(r.key).toUpperCase().replace('B#', 'C')));
       if (r.scale) S.scale = r.scale;
       S.bassPitch = r.bassPitch ?? 0;
-      (r.patterns || []).slice(0, 4).forEach((pt, i) => { const P = S.pats[i]; if (!P) return;
+      (r.patterns || []).slice(0, 8).forEach((pt, i) => { const P = S.pats[i]; if (!P) return;
         if (pt.drums) { let len = 0; for (const [k, row] of Object.entries(pt.drums)) { const t = TR[k.toLowerCase()]; if (t == null) continue;
             const v = String(row).replace(/\s/g, '').split('').slice(0, 16).map(c => c === 'x' ? 1 : c === 'o' ? 0.6 : 0); len = Math.max(len, v.length);
             P.steps[t] = Array.from({ length: 16 }, (_, j) => v[j] || 0); }
@@ -156,7 +157,10 @@ for (const r of recipes) {
         if (pt.melody) P.mel = Array.from({ length: 16 }, (_, j) => pt.melody[j] == null ? -1 : pt.melody[j]);
         if (pt.chords) P.chord = Array.from({ length: 4 }, (_, j) => pt.chords[j] == null ? -1 : pt.chords[j]);
         if (pt.len) P.len = pt.len; });
-      if (Array.isArray(r.song) && r.song.length) { S.song = r.song.map(b => Array.isArray(b) ? { name: b[0], pat: b[1] || 0 } : { name: b.name || 'Verse', pat: b.pat || 0 }); S.songOn = true; }
+      const OFF = { kick: 0, snare: 1, clap: 2, chat: 3, hat: 3, ohat: 4, tom: 5, rim: 6, bass: 7, '808': 7, melody: 8, chords: 9 };
+      const offs = l => (l || []).map(k => OFF[String(k).toLowerCase()]).filter(x => x != null);   // instruments switched off in that section
+      if (Array.isArray(r.song) && r.song.length) { S.song = r.song.map(b => Array.isArray(b) ? { name: b[0], pat: b[1] || 0, off: offs(b[2]) } : { name: b.name || 'Verse', pat: b.pat || 0, off: offs(b.off) }); S.songOn = true; }
+      S.masterMode = r.master || 'punchy';
       const snd = r.sound || {};
       if (snd.melody) S.melWave = snd.melody; if (snd.octave) S.melOct = snd.octave;
       if (snd.melVol != null) S.melVol = snd.melVol; if (snd.chdVol != null) S.chdVol = snd.chdVol;
