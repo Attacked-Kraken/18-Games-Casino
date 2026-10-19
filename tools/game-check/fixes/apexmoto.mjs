@@ -61,6 +61,23 @@ export default [
     },
   },
   {
+    id: 'play-tires-on-asphalt',
+    ask: "Owner Oct 19: the motorcycle tires are going into the asphalt - tires always sit on top of it, not in it",
+    async test(page, h) {
+      return h.eval(async () => {
+        const M = window.__moto, T = M.THREE, bad = [];
+        for (const k of Object.keys(M.MODELS)) { await M.loadModel(k);
+          const b = M.buildBike({ model: k, paint: 'orig' }); b.g.position.set(0, M.ROAD_Y + 0.01, 5000); b.g.updateMatrixWorld(true);
+          const ray = new T.Raycaster(); let lowest = 99;
+          for (const f of [-0.42, -0.36, 0.36, 0.42]) { ray.set(new T.Vector3(0, -5, 5000 + f * M.MODELS[k].len), new T.Vector3(0, 1, 0)); const hit = ray.intersectObject(b.lean, true)[0]; if (hit) lowest = Math.min(lowest, hit.point.y); }
+          M.scene.remove(b.g);
+          if (lowest < M.ROAD_Y - 0.005) bad.push(`${k} tire ${((M.ROAD_Y - lowest) * 100).toFixed(1)} cm into the road`);
+          if (lowest > M.ROAD_Y + 0.06) bad.push(`${k} floats ${((lowest - M.ROAD_Y) * 100).toFixed(1)} cm above the road`); }
+        return bad.length ? bad.join('; ') : true;
+      });
+    },
+  },
+  {
     id: 'play-credits',
     ask: 'Every CC-BY bike maker is credited',
     async test(page, h) {
