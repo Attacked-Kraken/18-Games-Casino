@@ -1,0 +1,38 @@
+name: Announcer robot
+# Owner Oct 19 2026: game announcer lines in his voice (pro broadcast finish) + a free pro stock voice.
+# Lines: sounds/announcer/lines.json. Output: sounds/voice/ (Sound Lab -> Announcer tab). See tools/announcer-robot.py.
+# His voice clip is only ever encrypted (sounds/announcer/owner-voice.enc); the key is the VOICE_KEY secret.
+on:
+  push:
+    branches: [main]
+    paths: ['sounds/announcer/**', 'tools/announcer-robot.py']
+  workflow_dispatch:
+concurrency: { group: announcer-robot, cancel-in-progress: false }
+permissions:
+  contents: write
+jobs:
+  speak:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install the voice models (free, run on the robot's own computer)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q espeak-ng ffmpeg
+          pip install -q torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install -q chatterbox-tts kokoro soundfile --extra-index-url https://download.pytorch.org/whl/cpu
+      - name: Speak the lines
+        env:
+          VOICE_KEY: ${{ secrets.VOICE_KEY }}
+        run: python tools/announcer-robot.py | tee voice-report.txt
+      - name: Save them
+        run: |
+          rm -f /tmp/owner-voice.wav /tmp/owner-voice.wav.m4a
+          git add -A sounds/voice
+          git diff --cached --quiet && { echo "nothing new"; exit 0; }
+          git config user.name "announcer robot"; git config user.email "actions@users.noreply.github.com"
+          git commit -m "Announcer robot: $(grep -c '^MADE' voice-report.txt) lines made"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1

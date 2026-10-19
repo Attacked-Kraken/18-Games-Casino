@@ -30,7 +30,7 @@ h1{font-size:21px;margin:0;flex:1}
 <header><a href="../sports.html">&#8592; Back</a><h1>&#127911; Apex Sound Lab</h1></header>
 <div class="tabs" id="tabs">
   <button data-t="new" class="on">&#10024; Newest</button><button data-t="music">&#127925; Soundtracks</button>
-  <button data-t="effect">&#128165; Sound effects</button><button data-t="engine">&#127949;&#65039; Engines</button>
+  <button data-t="effect">&#128165; Sound effects</button><button data-t="voice">&#127908; Announcer</button><button data-t="engine">&#127949;&#65039; Engines</button>
 </div>
 <div class="games" id="games"></div>
 <div id="list"><div class="empty">Loading…</div></div>
@@ -41,6 +41,7 @@ const GAMES={all:'Menus & UI',hockey:'Ice Hockey',baseball:'Baseball',soccer:'So
 const st={tab:'new',game:'*',playing:null,sounds:[]};
 try{const s=JSON.parse(localStorage.getItem('soundlab')||'{}'); if(s.tab) st.tab=s.tab; if(s.game) st.game=s.game;}catch(e){}
 const au=document.getElementById('au'), $=id=>document.getElementById(id);
+const src=s=>(s.dir||'made')+'/'+encodeURIComponent(s.file);
 const fmt=s=>{s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 const save=()=>{try{localStorage.setItem('soundlab',JSON.stringify({tab:st.tab,game:st.game}));}catch(e){}};
 function draw(){
@@ -49,20 +50,20 @@ function draw(){
   g.innerHTML='<button data-g="*">Every game</button>'+Object.keys(GAMES).filter(k=>have.has(k)).map(k=>'<button data-g="'+k+'">'+GAMES[k]+'</button>').join('');
   g.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.g===st.game));
   const week=Date.now()-3*864e5;
-  let list=st.sounds.filter(s=>st.game==='*'||s.game===st.game||(s.game==='all'&&st.tab==='effect'));
+  let list=st.sounds.filter(s=>st.game==='*'||s.game===st.game||(s.game==='all'&&(st.tab==='effect'||st.tab==='voice')));
   if(st.tab==='new') list=list.slice().sort((a,b)=>(b.made||'').localeCompare(a.made||'')).slice(0,30);
   else list=list.filter(s=>s.tab===st.tab).sort((a,b)=>(a.game+a.title).localeCompare(b.game+b.title));
   const L=$('list'); if(!list.length){L.innerHTML='<div class="empty">Nothing here yet.</div>';return;}
-  L.innerHTML=list.map(s=>{const icon=s.tab==='music'?'&#127925;':s.tab==='engine'?'&#127949;&#65039;':'&#128165;';
+  L.innerHTML=list.map(s=>{const icon=s.tab==='music'?'&#127925;':s.tab==='engine'?'&#127949;&#65039;':s.tab==='voice'?'&#127908;':'&#128165;';
     return '<div class="row'+(st.playing===s.name?' play':'')+'" data-n="'+s.name+'"><button class="pb" type="button">'+(st.playing===s.name&&!au.paused?'&#10074;&#10074;':'&#9654;')+'</button>'+
     '<div class="t"><b></b><span>'+icon+' '+(GAMES[s.game]||s.game)+' · '+(s.secs<10?s.secs+' sec':fmt(s.secs))+(s.tab==='music'&&s.secs>=60?' · full song':'')+'</span></div>'+
-    '<a class="dl" href="made/'+encodeURIComponent(s.file)+'" download title="Download">&#11015;</a></div>';}).join('');
+    '<a class="dl" href="'+src(s)+'" download title="Download">&#11015;</a></div>';}).join('');
   L.querySelectorAll('.row').forEach(r=>{const s=st.sounds.find(x=>x.name===r.dataset.n); const b=r.querySelector('b'); b.textContent=s.title;
     if(s.made&&Date.parse(s.made)>week){const n=document.createElement('span'); n.className='new'; n.textContent='NEW'; b.appendChild(n);} });
 }
 function play(name){const s=st.sounds.find(x=>x.name===name); if(!s) return;
   if(st.playing===name){ if(au.paused) au.play(); else au.pause(); draw(); return; }
-  st.playing=name; au.src='made/'+encodeURIComponent(s.file); au.loop=$('loop').classList.contains('on'); au.play().catch(()=>{});
+  st.playing=name; au.src=src(s); au.loop=$('loop').classList.contains('on'); au.play().catch(()=>{});
   $('bar').style.display='block'; $('now').textContent=s.title+' — '+(GAMES[s.game]||s.game); draw();}
 $('tabs').onclick=e=>{const b=e.target.closest('button'); if(!b) return; st.tab=b.dataset.t; save(); draw();};
 $('games').onclick=e=>{const b=e.target.closest('button'); if(!b) return; st.game=b.dataset.g; save(); draw();};
@@ -71,5 +72,6 @@ $('loop').onclick=()=>{const on=!$('loop').classList.contains('on'); $('loop').c
 au.ontimeupdate=()=>{ if(au.duration) $('seek').value=Math.round(au.currentTime/au.duration*1000); $('time').textContent=fmt(au.currentTime)+' / '+fmt(au.duration); };
 au.onplay=au.onpause=au.onended=()=>draw();
 $('seek').oninput=e=>{ if(au.duration) au.currentTime=e.target.value/1000*au.duration; };
-fetch('made/catalog.json?'+Date.now()).then(r=>r.json()).then(j=>{st.sounds=j.sounds||[]; draw();}).catch(()=>{$('list').innerHTML='<div class="empty">The sound robot hasn\'t made the list yet.</div>';});
+const get=u=>fetch(u+'?'+Date.now()).then(r=>r.ok?r.json():{sounds:[]}).catch(()=>({sounds:[]}));
+Promise.all([get('made/catalog.json'),get('voice/voice.json')]).then(([a,b])=>{st.sounds=(a.sounds||[]).concat((b.sounds||[]).map(v=>Object.assign({dir:'voice'},v))); draw();});
 </script></body></html>
