@@ -1,0 +1,100 @@
+[
+ {
+  "slug": "crowd-stadium-seats",
+  "words": "crowd stadium seats",
+  "for": "crowds in every venue",
+  "date": "2026-10-19",
+  "count": 0
+ },
+ {
+  "slug": "running-track-stadium",
+  "words": "running track stadium",
+  "for": "Track & Field venue",
+  "date": "2026-10-19",
+  "count": 1
+ },
+ {
+  "slug": "airplane",
+  "words": "airplane",
+  "for": "Flight",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "monster-truck",
+  "words": "monster truck",
+  "for": "Monster Truck rivals (his truck stays)",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "motorcycle",
+  "words": "motorcycle",
+  "for": "Apex Moto bikes",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "supercar",
+  "words": "supercar",
+  "for": "Exotic Racer player car + rivals",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "sports-car",
+  "words": "sports car",
+  "for": "Exotic Racer player car + rivals",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "formula-race-car",
+  "words": "formula race car",
+  "for": "F1 cars",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "race-track",
+  "words": "race track",
+  "for": "F1 / Exotic Racer / Apex Moto circuits",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "football-stadium",
+  "words": "football stadium",
+  "for": "any big stadium",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "soccer-stadium",
+  "words": "soccer stadium",
+  "for": "Soccer venue",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "baseball-stadium",
+  "words": "baseball stadium",
+  "for": "Baseball venue",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "ice-rink",
+  "words": "ice rink",
+  "for": "Ice Hockey venue",
+  "date": "2026-10-19",
+  "count": 6
+ },
+ {
+  "slug": "hockey-arena",
+  "words": "hockey arena",
+  "for": "Ice Hockey venue",
+  "date": "2026-10-19",
+  "count": 2
+ }
+]

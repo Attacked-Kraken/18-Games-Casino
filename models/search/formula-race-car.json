@@ -1,0 +1,139 @@
+{
+ "words": "formula race car",
+ "for": "F1 cars",
+ "date": "2026-10-19",
+ "results": [
+  {
+   "uid": "78d5c47ab2554c2592b7e499179a0792",
+   "name": "Porsche 911 GT3",
+   "maker": "ChevroletSS",
+   "license": "CC-BY 4.0",
+   "mb": 8.6,
+   "faces": 239088,
+   "likes": 458,
+   "link": "https://sketchfab.com/3d-models/none-78d5c47ab2554c2592b7e499179a0792",
+   "thumb": "https://media.sketchfab.com/models/78d5c47ab2554c2592b7e499179a0792/thumbnails/3f10c49b7b0746e8ba59c1917f364088/883ed065ed00404cabf7ca0b51b69b25.jpeg"
+  },
+  {
+   "uid": "aeebdfa53e294e0390f3c2e8bbfe31b6",
+   "name": "( FREE ) Formula One LP-830 SDC",
+   "maker": "SDC PERFORMANCE™️",
+   "license": "CC-BY 4.0",
+   "mb": 2.9,
+   "faces": 31176,
+   "likes": 422,
+   "link": "https://sketchfab.com/3d-models/none-aeebdfa53e294e0390f3c2e8bbfe31b6",
+   "thumb": "https://media.sketchfab.com/models/aeebdfa53e294e0390f3c2e8bbfe31b6/thumbnails/b8ddd88e139147d2a488915c90922e80/f1a0df8e6b8b4dad9c565ee9c9c7031a.jpeg"
+  },
+  {
+   "uid": "ba86f97de7184b6b836458815897156f",
+   "name": "Williams FW16 + Ayrton Senna",
+   "maker": "GRIP420",
+   "license": "CC-BY 4.0",
+   "mb": 12.4,
+   "faces": 142322,
+   "likes": 181,
+   "link": "https://sketchfab.com/3d-models/none-ba86f97de7184b6b836458815897156f",
+   "thumb": "https://media.sketchfab.com/models/ba86f97de7184b6b836458815897156f/thumbnails/a2622cb7986045f6b4811ce2ab86f406/44a41450e28541749318580c6c653c05.jpeg"
+  },
+  {
+   "uid": "c722e175f91240a88eec2d777b6d503f",
+   "name": "Formula E  [Jaguar I Type-4]",
+   "maker": "3dblender_1",
+   "license": "CC-BY 4.0",
+   "mb": 18.7,
+   "faces": 295806,
+   "likes": 150,
+   "link": "https://sketchfab.com/3d-models/none-c722e175f91240a88eec2d777b6d503f",
+   "thumb": "https://media.sketchfab.com/models/c722e175f91240a88eec2d777b6d503f/thumbnails/5c3010769c214675a6e590b2fdce3644/67bfa479b34f4ba180cb00d1224a79c1.jpeg"
+  },
+  {
+   "uid": "7536711b006a425ba1125931c3fde75d",
+   "name": "2021 | Aston Martin Vantage F1 Safety Car",
+   "maker": "kevin (ケビン)",
+   "license": "CC-BY 4.0",
+   "mb": 11.5,
+   "faces": 232405,
+   "likes": 108,
+   "link": "https://sketchfab.com/3d-models/none-7536711b006a425ba1125931c3fde75d",
+   "thumb": "https://media.sketchfab.com/models/7536711b006a425ba1125931c3fde75d/thumbnails/ceea850d5377469aa451814b3e573d01/40763465eb794a1aadafee5df4d8b983.jpeg"
+  },
+  {
+   "uid": "827e64acecba4f008759ae30a5bfeecc",
+   "name": "2004 Ferrari F2004",
+   "maker": "Dave Love SketchFab",
+   "license": "CC-BY 4.0",
+   "mb": 15,
+   "faces": 262532,
+   "likes": 89,
+   "link": "https://sketchfab.com/3d-models/none-827e64acecba4f008759ae30a5bfeecc",
+   "thumb": "https://media.sketchfab.com/models/827e64acecba4f008759ae30a5bfeecc/thumbnails/03e00d94365242d5b40bb3a4aeb0cd5a/a3b9007189a242658327b00e088e00b6.jpeg"
+  },
+  {
+   "uid": "105683345dbb441a8b28b71b713f2110",
+   "name": "1967 Ferrari 312",
+   "maker": "Dave Love SketchFab",
+   "license": "CC-BY 4.0",
+   "mb": 7.6,
+   "faces": 78364,
+   "likes": 80,
+   "link": "https://sketchfab.com/3d-models/none-105683345dbb441a8b28b71b713f2110",
+   "thumb": "https://media.sketchfab.com/models/105683345dbb441a8b28b71b713f2110/thumbnails/913c6de4bb2648a29c727f0c443af781/a6ea86c9931844fc8bf1e08a637577b0.jpeg"
+  },
+  {
+   "uid": "7ba1ee5ca7544e46b6a652b4186f11b6",
+   "name": "Red Bull Racing RB6",
+   "maker": "Casacade Models",
+   "license": "CC-BY 4.0",
+   "mb": 3.6,
+   "faces": 52577,
+   "likes": 62,
+   "link": "https://sketchfab.com/3d-models/none-7ba1ee5ca7544e46b6a652b4186f11b6",
+   "thumb": "https://media.sketchfab.com/models/7ba1ee5ca7544e46b6a652b4186f11b6/thumbnails/6be2bbcc8d4e42fa8d44bcbb30b5c4c8/91f363502070412ea01d495ac740a929.jpeg"
+  },
+  {
+   "uid": "3b1fafbc153746aebad4a245f4acdd52",
+   "name": "1972 Lotus 72D",
+   "maker": "Dave Love SketchFab",
+   "license": "CC-BY 4.0",
+   "mb": 3.4,
+   "faces": 32995,
+   "likes": 60,
+   "link": "https://sketchfab.com/3d-models/none-3b1fafbc153746aebad4a245f4acdd52",
+   "thumb": "https://media.sketchfab.com/models/3b1fafbc153746aebad4a245f4acdd52/thumbnails/739346847c164b7db172d2387e0c8f68/010982d4e6f54349b926d65d47bb7019.jpeg"
+  },
+  {
+   "uid": "ea3789cc2b7c46d18864945fc8ec87f1",
+   "name": "Rb16 (PIA 2022 s13)",
+   "maker": "formula models maker",
+   "license": "CC-BY 4.0",
+   "mb": 4.9,
+   "faces": 78784,
+   "likes": 55,
+   "link": "https://sketchfab.com/3d-models/none-ea3789cc2b7c46d18864945fc8ec87f1",
+   "thumb": "https://media.sketchfab.com/models/ea3789cc2b7c46d18864945fc8ec87f1/thumbnails/1dce0222b6f9407493ba6231c95d3c83/56ff2e6b628545b981315e1fe05db0f0.jpeg"
+  },
+  {
+   "uid": "653db48eeaf543f3abec580e5f59fdbc",
+   "name": "Car Nitro Bottle",
+   "maker": "ion.fbx",
+   "license": "CC-BY 4.0",
+   "mb": 13.5,
+   "faces": 38679,
+   "likes": 48,
+   "link": "https://sketchfab.com/3d-models/none-653db48eeaf543f3abec580e5f59fdbc",
+   "thumb": "https://media.sketchfab.com/models/653db48eeaf543f3abec580e5f59fdbc/thumbnails/aa303f7322bc4737bb4f24cdd2874c72/c98c61c355c745b2bd92a520e4463d9d.jpeg"
+  },
+  {
+   "uid": "d3f434c7e72b4d6289e7e50ddcf0905d",
+   "name": "Lightning McQueen (Race-O-Rama)",
+   "maker": "kanaleja87",
+   "license": "CC-BY 4.0",
+   "mb": 2.5,
+   "faces": 8250,
+   "likes": 47,
+   "link": "https://sketchfab.com/3d-models/none-d3f434c7e72b4d6289e7e50ddcf0905d",
+   "thumb": "https://media.sketchfab.com/models/d3f434c7e72b4d6289e7e50ddcf0905d/thumbnails/eea3018b014a4e6ea256d024c1ed60c0/1bfa40ba0d8245aeb2ec457cd918cc46.jpeg"
+  }
+ ]
+}
