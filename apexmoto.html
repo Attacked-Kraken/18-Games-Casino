@@ -202,7 +202,8 @@ const roadTex = makeTex(256, 512, (g, w, h) => { g.fillStyle = '#3a3d42'; g.fill
   g.fillStyle = 'rgba(20,20,22,0.35)'; g.fillRect(w * 0.3, 0, w * 0.08, h); g.fillRect(w * 0.62, 0, w * 0.08, h);   // racing line rubber
   g.fillStyle = '#e9e9e9'; g.fillRect(4, 0, 7, h); g.fillRect(w - 11, 0, 7, h); });
 roadTex.wrapS = roadTex.wrapT = THREE.RepeatWrapping;
-ribbon(-ROAD_W / 2, ROAD_W / 2, 0.1, new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.82, metalness: 0.05 }), 22);
+const ROAD_Y = 0.1;   // the asphalt surface height: bikes ride on top of it
+ribbon(-ROAD_W / 2, ROAD_W / 2, ROAD_Y, new THREE.MeshStandardMaterial({ map: roadTex, roughness: 0.82, metalness: 0.05 }), 22);
 const curbTex = makeTex(64, 128, (g, w, h) => { g.fillStyle = '#d61f1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f4f4f4'; g.fillRect(0, h / 2, w, h / 2); });
 curbTex.wrapS = curbTex.wrapT = THREE.RepeatWrapping;
 const curbMat = new THREE.MeshStandardMaterial({ map: curbTex, roughness: 0.7 });
@@ -295,6 +296,11 @@ function loadModel(key) {
     inner.rotation.y = (M.axis === 'x' ? -Math.PI / 2 : 0) + (M.flip ? Math.PI : 0);
     root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; if (o.material) o.material.envMapIntensity = 1; } });
     const base = new THREE.Group(); base.add(inner); base.updateMatrixWorld(true);
+    // owner Oct 19: "tires are going into the asphalt" - find where each tire really touches (ray from below at both
+    // wheels) and lift the bike so the tires sit ON the road surface, never in it
+    { const up = new THREE.Raycaster(), low = []; for (const f of [-0.42, -0.36, 0.36, 0.42]) { up.set(new THREE.Vector3(0, -5, f * M.len), new THREE.Vector3(0, 1, 0));
+        const h = up.intersectObject(base, true)[0]; if (h) low.push(h.point.y); }
+      const tireY = low.length ? Math.min(...low) : 0; inner.position.y -= tireY; base.updateMatrixWorld(true); }
     // find the seat top: drop a ray straight down onto the bike where the rider sits
     const ray = new THREE.Raycaster(), hit = (z) => { ray.set(new THREE.Vector3(0, 5, z), new THREE.Vector3(0, -1, 0)); const h = ray.intersectObject(base, true)[0]; return h ? h.point.y : size.y * k * 0.6; };
     const seatY = hit(M.seat * M.len), gripY = Math.max(seatY + 0.16, Math.min(hit(M.grip * M.len) + 0.05, seatY + 0.32));
@@ -386,7 +392,7 @@ async function setupRace() {
   placeGrid(); for (const r of racers) syncMesh(r, 0);
 }
 function syncMesh(r, dt) {
-  if (!r.mesh) return; r.mesh.g.position.set(r.x, 0, r.z); r.mesh.g.rotation.y = r.hd;
+  if (!r.mesh) return; r.mesh.g.position.set(r.x, ROAD_Y + 0.01, r.z); r.mesh.g.rotation.y = r.hd;
   r.mesh.lean.rotation.z = r.lean; r.mesh.lean.rotation.x = -Math.min(0.05, r.bump);
 }
 
@@ -468,7 +474,7 @@ async function showGarage() {
   $('loading').style.display = 'none';
   if (garage.show) scene.remove(garage.show.g);
   garage.show = buildBike({ model: b.model, paint: garage.paint });
-  const s = TR[0]; garage.show.g.position.set(s.x - s.tx * 30, 0, s.z - s.tz * 30); garage.show.g.rotation.y = Math.atan2(s.tx, s.tz);
+  const s = TR[0]; garage.show.g.position.set(s.x - s.tx * 30, ROAD_Y + 0.01, s.z - s.tz * 30); garage.show.g.rotation.y = Math.atan2(s.tx, s.tz);
 }
 $('prevBike').onclick = () => { garage.i = (garage.i + BIKES.length - 1) % BIKES.length; garage.paint = BIKES[garage.i].paint; showGarage(); };
 $('nextBike').onclick = () => { garage.i = (garage.i + 1) % BIKES.length; garage.paint = BIKES[garage.i].paint; showGarage(); };
@@ -623,7 +629,7 @@ addEventListener('pointerdown', function () { try { const el = document.document
   if (p && p.then) p.then(() => { try { const q = screen.orientation.lock('landscape'); if (q && q.catch) q.catch(() => {}); } catch (e) {} }).catch(() => {}); } } catch (e) {} }, { once: true });
 
 window.__moto = { racers, BIKES, PAINTS, MODELS, TR, LEN, LAPS, get player() { return player; }, get state() { return state; }, set state(v) { state = v; },
-  startRace, stepRacer, garage, showGarage, input, loaded, loadModel, buildBike, scene, camera, THREE };
+  startRace, stepRacer, garage, ROAD_Y, showGarage, input, loaded, loadModel, buildBike, scene, camera, THREE };
 </script>
 </body>
 </html>
