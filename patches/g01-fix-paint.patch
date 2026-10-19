@@ -1,0 +1,39 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -907,7 +907,23 @@
+   const root = new THREE.Group(), yaw = new THREE.Group(), tilt = new THREE.Group();
+   yaw.rotation.y = -Math.PI / 2; root.add(yaw); yaw.add(tilt);
+   const model = goblinTpl.clone(true);
+-  model.traverse((q) => { if (q.isMesh) { if (/shadow/i.test(q.name)) q.visible = false; else q.castShadow = true; } });
++  /* G-01 FIX: the GLB ships with white default materials - give it the real look:
++     body gets the player's paint+finish, rims get the rim color, tires dark, glass tinted */
++  const bodyMat = paintMat(cfg.paint || '#e8e8ee', cfg.fin || 'metal');
++  const rimMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.9, roughness: 0.28 });
++  const tireMat = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.92, metalness: 0.05 });
++  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x0a0e14, metalness: 0.9, roughness: 0.06, clearcoat: 1, envMapIntensity: 1.6 });
++  const ownMats = [bodyMat, rimMat, tireMat, glassMat];
++  model.traverse((q) => {
++    if (!q.isMesh) return;
++    if (/shadow/i.test(q.name)) { q.visible = false; return; }
++    q.castShadow = true;
++    const mn = ((q.material && q.material.name) || '').toLowerCase();
++    if (mn.includes('clearcoat')) q.material = bodyMat;
++    else if (mn.includes('car_body')) q.material = rimMat;
++    else if (mn.includes('car_tire')) q.material = tireMat;
++    else if (mn.includes('car_glass')) q.material = glassMat;
++  });
+   let box = new THREE.Box3().setFromObject(model);
+   let size = box.getSize(new THREE.Vector3());
+   if (size.z > size.x) { model.rotation.y = Math.PI / 2; box = new THREE.Box3().setFromObject(model); size = box.getSize(new THREE.Vector3()); }
+@@ -918,9 +934,9 @@
+   tilt.add(model);
+   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
+   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
+-  const car = { root, yaw, tilt, wheels: [], paint: null, flames: [], P, glow: null, roll: 0, spinA: 0,
++  const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: null, roll: 0, spinA: 0,
+     setBrake(b) {},
+-    dispose() { root.traverse((q) => { if (q.isMesh && q.geometry) q.geometry.dispose(); }); } };
++    dispose() { root.traverse((q) => { if (q.isMesh && q.geometry) q.geometry.dispose(); }); ownMats.forEach((m) => m.dispose()); } };
+   return car;
+ }
+ function makeCar(id, cfg, o = {}) {
