@@ -1,1 +1,1 @@
-{"name":"all-coin","title":"Coin / points","game":"all","tab":"effect","type":"mix","layers":[{"lib":"Bell","at":0,"pitch":12,"gain":0.7},{"lib":"Bell","at":0.07,"pitch":19,"gain":0.8}]}
+{"name":"all-coin","title":"Coin / points","game":"all","tab":"effect","type":"mix","layers":[{"inst":"glock","note":84,"at":0,"gain":0.8,"seconds":0.4},{"inst":"glock","note":91,"at":0.08,"gain":1,"seconds":0.9}]}

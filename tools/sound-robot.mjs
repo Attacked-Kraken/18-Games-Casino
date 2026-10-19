@@ -119,7 +119,16 @@ for (const r of recipes) {
       if (r.type === 'mix') {   // a game sound effect: library sounds stacked, each with its own start, pitch and level
         const find = w => { w = String(w || '').toLowerCase(); return B.LIBR.find(e => e.name.toLowerCase() === w) || B.LIBR.find(e => e.name.toLowerCase().includes(w)); };
         const lay = [];
-        for (const l of r.layers || []) { const e = find(l.lib); if (!e) return { err: 'no library sound "' + l.lib + '"' };
+        let IM = null;
+        for (const l of r.layers || []) {
+          if (l.inst) {   // a REAL recorded instrument note (sounds/instruments, CC0): { inst: "brass", note: 67 }
+            IM = IM || await (await fetch('/sounds/instruments/instruments.json')).json();
+            const d = IM[l.inst]; if (!d) return { err: 'no instrument "' + l.inst + '"' };
+            const want = +l.note || 60, n = d.notes.reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a);
+            const ab = await (await fetch('/sounds/instruments/' + l.inst + '/' + n + '.mp3')).arrayBuffer();
+            const buf = await new OfflineAudioContext(1, 1, 44100).decodeAudioData(ab);
+            lay.push({ ...l, buf, rate: Math.pow(2, (want - n + (+l.pitch || 0)) / 12) }); continue; }
+          const e = find(l.lib); if (!e) return { err: 'no library sound "' + l.lib + '"' };
           const sm = await B.ensureLib(e.id); lay.push({ ...l, buf: sm.buf, rate: Math.pow(2, (+l.pitch || 0) / 12) }); }
         if (!lay.length) return { err: 'a mix needs layers' };
         const sr = 44100, end = Math.min(12, r.seconds || Math.max(...lay.map(l => (+l.at || 0) + (l.seconds || l.buf.duration / l.rate))) + 0.05);
