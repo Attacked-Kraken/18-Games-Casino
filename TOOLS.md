@@ -110,6 +110,9 @@ font or online API in a game (games are fully offline).
 ## Robots that make things for you (owner, 2026-10-19)
 - **Sketchfab fetch robot**: add an OPEN line with the exact Sketchfab model link to MODEL-REQUESTS.md and merge. It
   downloads CC Attribution / CC0 models with the owner's key into `models/fetched/<name>.glb` and logs ASSETS.md. Never sign in.
+- **Phone budget for 3D models** (owner Oct 19): every fetched model ends at most 6 MB AND at most 100,000 triangles
+  (the robot simplifies it). Check any model: `node tools/glb-tris.mjs <file.glb>`. Many copies of one model (12 racers)
+  = use a lighter version for the far ones.
 - **Model search robot**: add `- SEARCH · <words> · for <game>` to MODEL-SEARCH.md and merge. The robot finds free
   Sketchfab models (CC-BY / CC0, under 20 MB) and shows them on tools/model-search.html (Game Development -> Model Search).
   The OWNER spins them in 3D and taps Get it; the fetch robot downloads + slims his pick. Never pick for him.
