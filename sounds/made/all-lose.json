@@ -1,1 +1,1 @@
-{"name":"all-lose","title":"You lose","game":"all","tab":"effect","type":"mix","layers":[{"lib":"Downlifter","at":0,"pitch":0,"gain":0.8},{"lib":"Sweep down","at":0.2,"pitch":-5,"gain":0.5}]}
+{"name":"all-lose","title":"You lose","game":"all","tab":"effect","type":"mix","layers":[{"inst":"brass","note":67,"at":0,"gain":0.9,"seconds":0.37},{"inst":"brass","note":66,"at":0.32,"gain":0.9,"seconds":0.37},{"inst":"brass","note":65,"at":0.64,"gain":0.9,"seconds":0.37},{"inst":"brass","note":64,"at":0.96,"gain":0.9,"seconds":1.6},{"lib":"Downlifter","at":0,"pitch":0,"gain":0.3}]}

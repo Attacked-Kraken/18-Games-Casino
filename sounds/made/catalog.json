@@ -1,5 +1,5 @@
 {
- "made": "2026-10-19T16:46:21.507Z",
+ "made": "2026-10-19T19:34:44.191Z",
  "sounds": [
   {
    "name": "superbike-high",
@@ -27,9 +27,9 @@
    "game": "hockey",
    "tab": "music",
    "file": "hockey-menu.m4a",
-   "secs": 160,
-   "kb": 2627,
-   "made": "2026-10-19T16:18:14.536Z"
+   "secs": 161.9,
+   "kb": 2633,
+   "made": "2026-10-19T19:30:13.058Z"
   },
   {
    "name": "hockey-play",
@@ -37,9 +37,9 @@
    "game": "hockey",
    "tab": "music",
    "file": "hockey-play.m4a",
-   "secs": 148.1,
-   "kb": 2559,
-   "made": "2026-10-19T16:38:34.916Z"
+   "secs": 139,
+   "kb": 2325,
+   "made": "2026-10-19T19:30:34.930Z"
   },
   {
    "name": "baseball-menu",
@@ -47,9 +47,9 @@
    "game": "baseball",
    "tab": "music",
    "file": "baseball-menu.m4a",
-   "secs": 106.9,
-   "kb": 1776,
-   "made": "2026-10-19T16:39:16.771Z"
+   "secs": 143.5,
+   "kb": 2405,
+   "made": "2026-10-19T19:31:04.094Z"
   },
   {
    "name": "baseball-play",
@@ -57,9 +57,9 @@
    "game": "baseball",
    "tab": "music",
    "file": "baseball-play.m4a",
-   "secs": 180.4,
-   "kb": 3090,
-   "made": "2026-10-19T16:39:47.244Z"
+   "secs": 169.3,
+   "kb": 2858,
+   "made": "2026-10-19T19:31:18.759Z"
   },
   {
    "name": "soccer-menu",
@@ -68,7 +68,7 @@
    "tab": "music",
    "file": "soccer-menu.m4a",
    "secs": 202.6,
-   "kb": 3356,
+   "kb": 2311,
    "made": "2026-10-19T16:40:29.641Z"
   },
   {
@@ -77,9 +77,9 @@
    "game": "soccer",
    "tab": "music",
    "file": "soccer-play.m4a",
-   "secs": 171,
-   "kb": 2926,
-   "made": "2026-10-19T16:40:58.745Z"
+   "secs": 173.1,
+   "kb": 2892,
+   "made": "2026-10-19T19:31:36.016Z"
   },
   {
    "name": "flight-menu",
@@ -87,9 +87,9 @@
    "game": "flight",
    "tab": "music",
    "file": "flight-menu.m4a",
-   "secs": 119.7,
-   "kb": 1966,
-   "made": "2026-10-19T16:41:20.188Z"
+   "secs": 160.6,
+   "kb": 2668,
+   "made": "2026-10-19T19:31:51.409Z"
   },
   {
    "name": "flight-play",
@@ -97,9 +97,9 @@
    "game": "flight",
    "tab": "music",
    "file": "flight-play.m4a",
-   "secs": 187.2,
-   "kb": 3037,
-   "made": "2026-10-19T16:41:38.213Z"
+   "secs": 127.2,
+   "kb": 2080,
+   "made": "2026-10-19T19:32:05.212Z"
   },
   {
    "name": "monstertruck-menu",
@@ -107,9 +107,9 @@
    "game": "monstertruck",
    "tab": "music",
    "file": "monstertruck-menu.m4a",
-   "secs": 150.3,
-   "kb": 2702,
-   "made": "2026-10-19T16:42:20.813Z"
+   "secs": 152.1,
+   "kb": 2726,
+   "made": "2026-10-19T19:32:31.804Z"
   },
   {
    "name": "monstertruck-play",
@@ -117,9 +117,9 @@
    "game": "monstertruck",
    "tab": "music",
    "file": "monstertruck-play.m4a",
-   "secs": 139.7,
-   "kb": 2404,
-   "made": "2026-10-19T16:42:38.044Z"
+   "secs": 141.5,
+   "kb": 2478,
+   "made": "2026-10-19T19:32:45.688Z"
   },
   {
    "name": "f1-menu",
@@ -127,9 +127,9 @@
    "game": "f1",
    "tab": "music",
    "file": "f1-menu.m4a",
-   "secs": 155,
-   "kb": 2691,
-   "made": "2026-10-19T16:43:20.716Z"
+   "secs": 145.5,
+   "kb": 2441,
+   "made": "2026-10-19T19:33:06.830Z"
   },
   {
    "name": "f1-play",
@@ -138,7 +138,7 @@
    "tab": "music",
    "file": "f1-play.m4a",
    "secs": 170,
-   "kb": 2837,
+   "kb": 2573,
    "made": "2026-10-19T16:43:47.309Z"
   },
   {
@@ -147,9 +147,9 @@
    "game": "trackfield",
    "tab": "music",
    "file": "trackfield-menu.m4a",
-   "secs": 162.6,
-   "kb": 2673,
-   "made": "2026-10-19T16:44:07.990Z"
+   "secs": 152.6,
+   "kb": 2523,
+   "made": "2026-10-19T19:33:19.684Z"
   },
   {
    "name": "trackfield-play",
@@ -157,9 +157,9 @@
    "game": "trackfield",
    "tab": "music",
    "file": "trackfield-play.m4a",
-   "secs": 139.7,
-   "kb": 2336,
-   "made": "2026-10-19T16:44:37.224Z"
+   "secs": 141.5,
+   "kb": 2409,
+   "made": "2026-10-19T19:33:37.370Z"
   },
   {
    "name": "racer-menu",
@@ -167,9 +167,9 @@
    "game": "racer",
    "tab": "music",
    "file": "racer-menu.m4a",
-   "secs": 152.6,
-   "kb": 2584,
-   "made": "2026-10-19T16:45:01.750Z"
+   "secs": 143.2,
+   "kb": 2372,
+   "made": "2026-10-19T19:33:50.142Z"
   },
   {
    "name": "racer-play",
@@ -177,9 +177,9 @@
    "game": "racer",
    "tab": "music",
    "file": "racer-play.m4a",
-   "secs": 130.6,
-   "kb": 2154,
-   "made": "2026-10-19T16:45:30.611Z"
+   "secs": 162.6,
+   "kb": 2732,
+   "made": "2026-10-19T19:34:12.170Z"
   },
   {
    "name": "moto-menu",
@@ -187,9 +187,9 @@
    "game": "moto",
    "tab": "music",
    "file": "moto-menu.m4a",
-   "secs": 139.7,
-   "kb": 2403,
-   "made": "2026-10-19T16:45:52.086Z"
+   "secs": 174,
+   "kb": 2962,
+   "made": "2026-10-19T19:34:28.951Z"
   },
   {
    "name": "moto-play",
@@ -197,9 +197,9 @@
    "game": "moto",
    "tab": "music",
    "file": "moto-play.m4a",
-   "secs": 168.1,
-   "kb": 2802,
-   "made": "2026-10-19T16:46:19.111Z"
+   "secs": 140.5,
+   "kb": 2292,
+   "made": "2026-10-19T19:34:43.110Z"
   },
   {
    "name": "all-ui-tap",
@@ -238,7 +238,7 @@
    "tab": "effect",
    "file": "all-win.wav",
    "secs": 4.1,
-   "kb": 706,
+   "kb": 784,
    "made": "2026-10-19T16:46:19.322Z"
   },
   {
@@ -248,8 +248,8 @@
    "tab": "effect",
    "file": "all-lose.wav",
    "secs": 2.6,
-   "kb": 439,
-   "made": "2026-10-19T16:46:19.376Z"
+   "kb": 450,
+   "made": "2026-10-19T19:34:43.284Z"
   },
   {
    "name": "all-coin",
@@ -258,7 +258,7 @@
    "tab": "effect",
    "file": "all-coin.wav",
    "secs": 0.9,
-   "kb": 146,
+   "kb": 177,
    "made": "2026-10-19T16:46:19.431Z"
   },
   {
@@ -343,12 +343,12 @@
   },
   {
    "name": "baseball-organ-charge",
-   "title": "Organ CHARGE!",
+   "title": "CHARGE! fanfare",
    "game": "baseball",
    "tab": "effect",
    "file": "baseball-organ-charge.wav",
    "secs": 3.3,
-   "kb": 574,
+   "kb": 439,
    "made": "2026-10-19T16:46:19.925Z"
   },
   {
@@ -379,7 +379,7 @@
    "file": "soccer-goal.wav",
    "secs": 4.1,
    "kb": 698,
-   "made": "2026-10-19T16:46:20.083Z"
+   "made": "2026-10-19T19:34:43.475Z"
   },
   {
    "name": "soccer-whistle",
@@ -418,7 +418,7 @@
    "tab": "effect",
    "file": "flight-ring.wav",
    "secs": 0.9,
-   "kb": 146,
+   "kb": 310,
    "made": "2026-10-19T16:46:20.303Z"
   },
   {
@@ -549,7 +549,7 @@
    "file": "trackfield-finish.wav",
    "secs": 4.1,
    "kb": 698,
-   "made": "2026-10-19T16:46:21.035Z"
+   "made": "2026-10-19T19:34:43.621Z"
   },
   {
    "name": "trackfield-jump",
@@ -567,9 +567,9 @@
    "game": "trackfield",
    "tab": "effect",
    "file": "trackfield-record.wav",
-   "secs": 1.7,
-   "kb": 284,
-   "made": "2026-10-19T16:46:21.146Z"
+   "secs": 2.3,
+   "kb": 388,
+   "made": "2026-10-19T19:34:44.046Z"
   },
   {
    "name": "racer-nitro",
@@ -607,9 +607,9 @@
    "game": "moto",
    "tab": "effect",
    "file": "moto-lap-bell.wav",
-   "secs": 2.1,
-   "kb": 353,
-   "made": "2026-10-19T16:46:21.361Z"
+   "secs": 2,
+   "kb": 336,
+   "made": "2026-10-19T19:34:44.154Z"
   },
   {
    "name": "moto-wheelie",

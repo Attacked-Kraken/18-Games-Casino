@@ -1,1 +1,1 @@
-{"name":"trackfield-finish","title":"Finish line","game":"trackfield","tab":"effect","type":"mix","layers":[{"lib":"Crowd cheer","at":0,"pitch":0,"gain":1},{"lib":"Bell","at":0,"pitch":12,"gain":0.5}]}
+{"name":"trackfield-finish","title":"Finish line","game":"trackfield","tab":"effect","type":"mix","layers":[{"lib":"Crowd cheer","at":0,"pitch":0,"gain":1},{"inst":"horn","note":55,"at":0,"gain":0.7,"seconds":0.25},{"inst":"horn","note":60,"at":0.2,"gain":0.7,"seconds":0.25},{"inst":"horn","note":64,"at":0.4,"gain":0.7,"seconds":1.6}]}
