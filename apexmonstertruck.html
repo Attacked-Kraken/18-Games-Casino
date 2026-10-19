@@ -189,10 +189,12 @@ const Snd = {
     this.recGain = C.createGain(); this.recGain.gain.value = 0; this.recGain.connect(C.destination);
     this.rec = null;
     const load = (u) => fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => C.decodeAudioData(b, ok, no)));
-    Promise.all([load('sounds/truck-idle.wav'), load('sounds/truck-mid.wav'), load('sounds/truck-high.wav')]).then(([idleB, midB, highB]) => {
+    // owner Oct 18 8:08 PM: + his supercharger (blower) recording mixed into the idle and mid loops, highs turned down on
+    // all of them, and the blower whine as its own layer that only plays while you hold the gas.
+    Promise.all([load('sounds/truck-idle.wav'), load('sounds/truck-mid.wav'), load('sounds/truck-high.wav'), load('sounds/truck-gas.wav')]).then(([idleB, midB, highB, gasB]) => {
       const mk = (buf) => { const src = C.createBufferSource(); src.buffer = buf; src.loop = true;
         const g = C.createGain(); g.gain.value = 0; src.connect(g); g.connect(this.recGain); src.start(); return { src, g }; };
-      this.rec = { idle: mk(idleB), rev: mk(midB), high: mk(highB) };
+      this.rec = { idle: mk(idleB), rev: mk(midB), high: mk(highB), gas: mk(gasB) };
     }).catch(() => { this.rec = null; });
     // throttle punch noise
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), nd = nb.getChannelData(0);
@@ -226,6 +228,7 @@ const Snd = {
       this.rec.idle.src.playbackRate.setTargetAtTime(0.9 + sp * 0.6, t, 0.08);
       this.rec.rev.src.playbackRate.setTargetAtTime(0.8 + sp * 0.6, t, 0.08);
       this.rec.high.src.playbackRate.setTargetAtTime(0.75 + sp * 0.45, t, 0.08);
+      this.rec.gas.src.playbackRate.setTargetAtTime(0.8 + sp * 0.55, t, 0.08);
       this.recGain.gain.setTargetAtTime(on ? 0.34 + sp * 0.2 : 0, t, 0.09);
       this.engGain.gain.setTargetAtTime(0, t, 0.05);
     } else {
@@ -236,6 +239,11 @@ const Snd = {
     const punch = Math.max(0, sp - this.lastSp) * 3;
     this.punchGain.gain.setTargetAtTime(Math.min(0.1, punch), t, 0.04);
     this.lastSp = sp;
+  },
+  gas(amt){ // supercharger whine while the gas is held (0..1)
+    if (!this.ctx || !this.rec || !this.rec.gas) return;
+    const t = this.ctx.currentTime, on = !this.muted && amt > 0.05;
+    this.rec.gas.g.gain.setTargetAtTime(on ? amt * (0.55 + Math.min(1, this.lastSp || 0) * 0.45) : 0, t, on ? 0.06 : 0.25);
   },
   tone(f, dur, type, vol, slide){
     if (!this.ctx || this.muted) return;
@@ -1316,6 +1324,7 @@ function stepTruck(dt) {
     w.pivot.position.y = w.baseY + w.off + (T.grounded ? Math.sin(elapsed * 31 + w.baseY * 7) * 0.03 * Math.min(1, Math.abs(T.sp) / 15) : 0);
   }
   Snd.engine(Math.min(1, Math.abs(T.sp) / MAX_FWD));
+  Snd.gas(state === 'play' ? gasAmt : 0);
 }
 
 function stepCars(dt) {

@@ -8,7 +8,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - Solid dirt floor
-- OWNER Oct 18 7:52 PM: the engine is HIS two recordings, tuned and mixed (sounds/truck-idle/mid/high.wav loops that cross-fade and pitch up with speed) - test play-engine-recording. Backup only: a train of sharp firing pulses (48-harmonic pulse wave) + half-rate cam lope, through distortion and a booming exhaust filter, firing rate 20 Hz idle to 115 Hz, slightly uneven - NEVER a smooth tone or a slow wobble (owner Oct 18 7:43 PM: 'it sounds like a fan')
+- OWNER Oct 18 7:52 + 8:08 PM: the engine is HIS recordings (rev, diesel, supercharger blower), tuned with the high pitch turned DOWN and mixed (sounds/truck-idle/mid/high.wav loops that cross-fade and pitch up with speed) + the blower whine (truck-gas.wav) only while the gas is held - test play-engine-recording. Backup only: a train of sharp firing pulses (48-harmonic pulse wave) + half-rate cam lope, through distortion and a booming exhaust filter, firing rate 20 Hz idle to 115 Hz, slightly uneven - NEVER a smooth tone or a slow wobble (owner Oct 18 7:43 PM: 'it sounds like a fan')
 - J5: Menu music (112 BPM rock) and game music (132 BPM driving riff) play; mute silences everything
 - J5: Truck ~2.7m tall with ~2.1m tires next to 4.4m cars - real Monster Jam proportions
 - J5: Jumps arc fast (GRAV 38), land hard with dust burst + camera shake + thud - no floating
