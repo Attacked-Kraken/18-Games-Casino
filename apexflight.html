@@ -670,7 +670,10 @@ function step(dt) {
 
   if (phase === 'fly') {
     if (!P.ground) {
-      P.pitch = clamp(P.pitch + inp.pitchUp * 1.05 * auth * dt, -0.55, 0.62);
+      // Speed-based pitch limit: prevents steep climbs at low speed that cause instant stalls
+      // At liftoff (~26 m/s), max climb is gentle; full authority comes with speed
+      const maxPitch = clamp((v - 18) / 22, 0.12, 0.62);
+      P.pitch = clamp(P.pitch + inp.pitchUp * 1.05 * auth * dt, -0.55, maxPitch);
       P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
       if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.025 * dt; stallNow = true; }
@@ -699,7 +702,7 @@ function step(dt) {
   // forces
   ACC.set(0, -GRAV, 0);
   ACC.addScaledVector(F, THRUST * P.thr);
-  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00055 * v + 0.006));  // drag (top speed ~117 kt)
+  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00045 * v + 0.005));  // drag - reduced for better climb
   if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
     ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa, LIFTCAP)); }      // lift, capped
   P.vel.addScaledVector(ACC, dt);
