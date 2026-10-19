@@ -2078,7 +2078,7 @@ window.__test = {
   // idx: car index in Race.cars, s: distance along track
   setCarS: (idx, s) => {
     const c = Race.cars[idx];
-    if (c) { c.s = s; c._lastSN = undefined; }
+    if (c) { c.s = s; c._lastSN = undefined; c._gridCross = false; }
   },
   setCarLap: (idx, lap) => {
     const c = Race.cars[idx];
