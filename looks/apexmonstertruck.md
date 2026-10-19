@@ -8,13 +8,13 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - Solid dirt floor
-- Engine is a deep layered V8 roar (sub-bass + detuned saws) with a V8 lope, revs 28Hz idle to 140Hz (owner Oct 18 7:25 PM: deeper)
+- Engine is a real-sounding V8: a train of sharp firing pulses (48-harmonic pulse wave) + half-rate cam lope, through distortion and a booming exhaust filter, firing rate 20 Hz idle to 115 Hz, slightly uneven - NEVER a smooth tone or a slow wobble (owner Oct 18 7:43 PM: 'it sounds like a fan')
 - J5: Menu music (112 BPM rock) and game music (132 BPM driving riff) play; mute silences everything
 - J5: Truck ~2.7m tall with ~2.1m tires next to 4.4m cars - real Monster Jam proportions
 - J5: Jumps arc fast (GRAV 38), land hard with dust burst + camera shake + thud - no floating
 - J5 pic: camera 18 back / 9 up - truck fills the screen, not a tiny dot
 - J5 pic: dirt repeat 220 (not 880) - no obvious tiling/streaking
-- OWNER Oct 18 6:28 PM: top speed OVER 200 mph (drive stick alone, ~5 s to top speed) - test play-200mph
+- OWNER Oct 18 7:43 PM: top speed 300 mph (drive stick alone, ~5 s to top speed) - test play-300mph
 - OWNER Oct 18 6:28 + 7:25 PM: engine SEPARATE from the music and DEEPER - the game music never plays below ~220 Hz (bass line 2 octaves up, high short kick), steps back while you drive, and the engine owns the low rumble - test play-engine-over-music
 - OWNER Oct 18 7:35 PM: still mixing on the phone -> while the truck MOVES the game music drops to a whisper (full again when you stop), and a MUSIC ON/OFF pill next to SOUND turns the music off completely (remembered)
 

@@ -222,13 +222,13 @@ export default [
     },
   },
   {
-    id: 'play-200mph',
-    ask: 'Owner Oct 18 6:28 PM: the truck goes over 200 mph (drive stick alone)',
+    id: 'play-300mph',
+    ask: 'Owner Oct 18 7:43 PM: the truck goes 300 mph (drive stick alone)',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
         if (!M) return 'no window.__mt';
-        if (!(M.maxFwd * 2.237 > 200)) return `top speed is set to ${(M.maxFwd * 2.237).toFixed(0)} mph, owner wants over 200`;
+        if (!(M.maxFwd * 2.237 >= 300)) return `top speed is set to ${(M.maxFwd * 2.237).toFixed(0)} mph, owner wants 300`;
         // a clear straight lane (no ramps or tire stacks near it) so nothing slows the truck down
         const clear = (x) => M.ramps.every((r) => Math.abs(r.x - x) > r.len + r.wid + 25) &&
                              (M.tires || []).every((t) => Math.abs(t.x - x) > 12);
@@ -249,7 +249,7 @@ export default [
             if (mph + 2 < last) rising = false;
             last = mph; best = Math.max(best, mph);
             const dt = (performance.now() - t0) / 1000;
-            if (mph > 200) done(true);
+            if (mph >= 300) done(true);
             else if (dt > 40) done(rising && best >= 90 ? true : `only reached ${best.toFixed(0)} mph in 40 s (slowed down: ${!rising})`);
             else setTimeout(check, 100);
           };
@@ -267,7 +267,7 @@ export default [
         if (!M || !M.Snd || !M.Music) return 'no Snd/Music';
         try { M.Snd.init(); M.Music.init(M.Snd); } catch (e) { return 'audio init failed: ' + e.message; }
         if (!M.Snd.ctx) return 'no AudioContext';
-        if (!M.Snd.lope || (M.Snd.engOsc || []).length < 4) return 'no V8 lope on the engine (owner: engine separate and deeper)';
+        if (!M.Snd.lope || !M.Snd.shaper || (M.Snd.engOsc || []).length < 4) return 'engine is not the firing-pulse V8 (owner: it sounded like a fan)';
         if (!M.Music.duck || !M.Music.musHP) return 'music cannot duck under the engine';
         M.Snd.muted = false;
         M.Music.play('game');
