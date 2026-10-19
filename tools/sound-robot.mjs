@@ -5,19 +5,25 @@
 //   { "name": "rally-v8",   "type": "engine", "kind": "v8", "rpm": 1200, "seconds": 2 }            -> a seamless engine loop
 //       kind: v8 | diesel | inline4 | vtwin | superbike   rpm 500-16000   rev: [from, to] = a rev sweep instead of a loop
 //       deep 0..1 (more chest), rough 0..1 (lumpy idle), blower 0..1 (supercharger whine), clatter 0..1 (diesel knock)
+//   { "name": "hockey-goal-horn", "type": "mix", "layers": [{ "lib": "Airhorn long", "at": 0, "pitch": -7, "gain": 1 }, ...] }
+//       -> a game sound effect made of library sounds stacked together (at = seconds, pitch = semitones, seconds = cut)
+// Every recipe can also have: "title" (what the Sound Lab shows), "game" (hockey, baseball, ... or all), "tab" (music,
+// effect, engine - guessed from the type). Music is saved as .m4a (small, full length), the rest as .wav.
+// Per-game songs + effects come from tools/sound-themes.mjs (writes sounds/recipes/games.json).
 // A recipe file can hold one recipe or a list. Output: sounds/made/<name>.wav (+ the recipe it came from in
 // sounds/made/<name>.json, so an unchanged recipe is not made again). Also writes sounds/made/OPTIONS.md (every style and
-// every library sound name) and sounds/made/index.html (a page to listen to everything). All sounds are our own.
+// every library sound name) and sounds/made/catalog.json (what sounds/lab.html lists). All sounds are our own.
 // Run: node tools/sound-robot.mjs   (needs playwright + a static server on :8899, see .github/workflows/sound-robot.yml)
 import fs from 'fs';
 import path from 'path';
 import { chromium } from 'playwright';
+import { execFileSync } from 'child_process';
 
 const OUT = 'sounds/made';
 fs.mkdirSync(OUT, { recursive: true });
-const recipes = [];
+const recipes = [], ONLY = process.env.ONLY ? new RegExp(process.env.ONLY) : null;   // ONLY=hockey- makes just those (a test)
 for (const f of fs.readdirSync('sounds/recipes').filter(f => f.endsWith('.json'))) {
-  try { const j = JSON.parse(fs.readFileSync(path.join('sounds/recipes', f), 'utf8')); for (const r of [].concat(j)) recipes.push({ ...r, _file: f }); }
+  try { const j = JSON.parse(fs.readFileSync(path.join('sounds/recipes', f), 'utf8')); for (const r of [].concat(j)) if (!ONLY || ONLY.test(r.name || '')) recipes.push({ ...r, _file: f }); }
   catch (e) { console.log(`BAD RECIPE ${f}: ${e.message}`); }
 }
 const exe = process.env.CHROME || undefined;
@@ -29,7 +35,7 @@ await p.waitForFunction(() => window.APB && APB.STY, null, { timeout: 30000 });
 const options = await p.evaluate(() => ({ styles: Object.keys(APB.STY), lib: APB.LIBR.map(e => ({ id: e.id, name: e.name, cat: e.cat })) }));
 fs.writeFileSync(path.join(OUT, 'OPTIONS.md'), '# What the sound robot can make\n\n## Beat styles ("type": "beat", "style": ...)\n' +
   options.styles.map(s => '- ' + s).join('\n') + '\n\nbpm 60-180, pitch -12..12, loops 1-16\n\n## Library sounds ("type": "sfx", "lib": ...)\n' +
-  options.lib.map(e => `- ${e.name} (${e.cat})`).join('\n') + '\n\n## Full control of a beat (any of these, all optional - see sounds/recipes/examples.json)\n' +
+  options.lib.map(e => `- ${e.name} (${e.cat})`).join('\n') + '\n\n## Full control of a beat (any of these, all optional - see sounds/recipes/games.json, made by tools/sound-themes.mjs)\n' +
   '- style: start from a style, then change anything below\n- bpm, swing (0-100), pitch (-12..12), key ("C".."B"), scale (Minor, Major, Dorian, Harmonic minor, Minor pentatonic, Major pentatonic, Blues, Chromatic)\n' +
   '- patterns: up to 4 (A-D), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }\n' +
   '- song: [["Intro",0],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-3) - Build adds a riser, Drop an impact\n' +
@@ -40,11 +46,31 @@ fs.writeFileSync(path.join(OUT, 'OPTIONS.md'), '# What the sound robot can make\
   '- REAL sounds: put recordings (WAV) in sounds/real/ and use them with "file:sounds/real/<name>.wav" on any track\n' +
   '\n\n## Engines ("type": "engine")\n- kind: v8, diesel, inline4, vtwin, superbike\n- rpm, seconds, rev [from,to], deep, rough, blower, clatter (0..1)\n');
 let made = 0;
+// 16-bit stereo WAV -> the same loop played `reps` times, overlapped so every reverb tail rings into the next copy
+function repeatWav(buf, loopSecs, reps) {
+  const nc = buf.readUInt16LE(22), sr = buf.readUInt32LE(24), n = (buf.length - 44) / 2 / nc, step = Math.round(loopSecs * sr);
+  const total = step * (reps - 1) + n, mix = new Float32Array(total * nc);
+  for (let k = 0; k < reps; k++) for (let i = 0; i < n; i++) for (let c = 0; c < nc; c++) mix[(k * step + i) * nc + c] += buf.readInt16LE(44 + (i * nc + c) * 2) / 32768;
+  let m = 0; for (const v of mix) m = Math.max(m, Math.abs(v)); const g = m > 0.98 ? 0.98 / m : 1;
+  const out = Buffer.alloc(44 + total * nc * 2); buf.copy(out, 0, 0, 44); out.writeUInt32LE(36 + total * nc * 2, 4); out.writeUInt32LE(total * nc * 2, 40);
+  for (let i = 0; i < mix.length; i++) out.writeInt16LE(Math.max(-32768, Math.min(32767, Math.round(mix[i] * g * 32767))), 44 + i * 2);
+  return out;
+}
+const tabOf = r => r.tab || (r.type === 'engine' ? 'engine' : (r.type === 'sfx' || r.type === 'mix') ? 'effect' : 'music');
+let ffmpeg = true; try { execFileSync('ffmpeg', ['-version'], { stdio: 'ignore' }); } catch { ffmpeg = false; console.log('NOTE no ffmpeg - music stays .wav'); }
+let oldCat = {}; try { for (const c of JSON.parse(fs.readFileSync(path.join(OUT, 'catalog.json'), 'utf8')).sounds) oldCat[c.name] = c; } catch {}
+const cat = [], keep = new Set(['OPTIONS.md', 'index.html', 'catalog.json']);
+const durOf = f => { try { return +execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString().trim() || 0; } catch { return 0; } };
 for (const r of recipes) {
   const name = String(r.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   if (!name) { console.log('SKIP a recipe with no name in ' + r._file); continue; }
-  const key = JSON.stringify({ ...r, _file: undefined }), meta = path.join(OUT, name + '.json'), wav = path.join(OUT, name + '.wav');
-  if (fs.existsSync(wav) && fs.existsSync(meta) && fs.readFileSync(meta, 'utf8') === key) { console.log('SAME ' + name); continue; }
+  const tab = tabOf(r), ext = tab === 'music' && ffmpeg ? '.m4a' : '.wav';
+  const key = JSON.stringify({ ...r, _file: undefined }), meta = path.join(OUT, name + '.json'), wav = path.join(OUT, name + '.wav'), file = path.join(OUT, name + ext);
+  keep.add(name + '.json'); keep.add(name + ext);
+  const entry = (secs, made) => cat.push({ name, title: r.title || name.replace(/-/g, ' '), game: r.game || 'all', tab, file: name + ext,
+    secs: Math.round(secs * 10) / 10, kb: Math.round(fs.statSync(file).size / 1024), made });
+  if (fs.existsSync(file) && fs.existsSync(meta) && fs.readFileSync(meta, 'utf8') === key) {
+    console.log('SAME ' + name); const o = oldCat[name]; entry(o?.secs || durOf(file), o?.made || new Date().toISOString()); continue; }
   const res = await p.evaluate(async (r) => {
     const toB64 = (ab) => { let s = '', u = new Uint8Array(ab); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
     const wav = (chs, sr) => { const n = chs[0].length, nc = chs.length, ab = new ArrayBuffer(44 + n * nc * 2), v = new DataView(ab); let o = 0;
@@ -89,6 +115,23 @@ for (const r of recipes) {
         let m = 0; for (const v of out) m = Math.max(m, Math.abs(v)); for (let i = 0; i < n; i++) out[i] = out[i] / (m || 1) * 0.9;
         return { b64: toB64(wav([out], sr)), what: (r.kind || 'v8') + ' ' + (rev ? rev.join('-') + ' rpm sweep' : rpm0 + ' rpm loop') };
       }
+      if (r.type === 'mix') {   // a game sound effect: library sounds stacked, each with its own start, pitch and level
+        const find = w => { w = String(w || '').toLowerCase(); return B.LIBR.find(e => e.name.toLowerCase() === w) || B.LIBR.find(e => e.name.toLowerCase().includes(w)); };
+        const lay = [];
+        for (const l of r.layers || []) { const e = find(l.lib); if (!e) return { err: 'no library sound "' + l.lib + '"' };
+          const sm = await B.ensureLib(e.id); lay.push({ ...l, buf: sm.buf, rate: Math.pow(2, (+l.pitch || 0) / 12) }); }
+        if (!lay.length) return { err: 'a mix needs layers' };
+        const sr = 44100, end = Math.min(12, r.seconds || Math.max(...lay.map(l => (+l.at || 0) + (l.seconds || l.buf.duration / l.rate))) + 0.05);
+        const oc = new OfflineAudioContext(2, Math.ceil(sr * end), sr);
+        for (const l of lay) { const src = oc.createBufferSource(); let bf = l.buf;
+          if (l.reverse) { bf = oc.createBuffer(l.buf.numberOfChannels, l.buf.length, l.buf.sampleRate); for (let c = 0; c < bf.numberOfChannels; c++) bf.getChannelData(c).set(l.buf.getChannelData(c).slice().reverse()); }
+          src.buffer = bf; src.playbackRate.value = l.rate; const g = oc.createGain(), t0 = +l.at || 0; g.gain.value = l.gain ?? 1;
+          if (l.seconds) { g.gain.setValueAtTime(l.gain ?? 1, t0 + Math.max(0, l.seconds - 0.05)); g.gain.linearRampToValueAtTime(0, t0 + l.seconds); }
+          src.connect(g).connect(oc.destination); src.start(t0); }
+        const out = await oc.startRendering(), chs = [out.getChannelData(0), out.getChannelData(1)];
+        let m = 0; for (const d of chs) for (const v of d) m = Math.max(m, Math.abs(v)); for (const d of chs) for (let i = 0; i < d.length; i++) d[i] = d[i] / (m || 1) * 0.9;
+        return { b64: toB64(wav(chs, sr)), what: lay.length + ' layers', secs: end };
+      }
       if (r.type === 'sfx') {
         const want = String(r.lib || '').toLowerCase(), e = B.LIBR.find(e => e.id === r.lib || e.name.toLowerCase() === want) || B.LIBR.find(e => e.name.toLowerCase().includes(want));
         if (!e) return { err: 'no library sound called "' + r.lib + '" (see sounds/made/OPTIONS.md)' };
@@ -102,6 +145,7 @@ for (const r of recipes) {
       const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
       if (r.key != null) S.key = typeof r.key === 'number' ? ((r.key % 12) + 12) % 12 : Math.max(0, NOTES.indexOf(String(r.key).toUpperCase().replace('B#', 'C')));
       if (r.scale) S.scale = r.scale;
+      S.bassPitch = r.bassPitch ?? 0;
       (r.patterns || []).slice(0, 4).forEach((pt, i) => { const P = S.pats[i]; if (!P) return;
         if (pt.drums) { let len = 0; for (const [k, row] of Object.entries(pt.drums)) { const t = TR[k.toLowerCase()]; if (t == null) continue;
             const v = String(row).replace(/\s/g, '').split('').slice(0, 16).map(c => c === 'x' ? 1 : c === 'o' ? 0.6 : 0); len = Math.max(len, v.length);
@@ -137,25 +181,31 @@ for (const r of recipes) {
       if (r.pitch != null) B.S.tune = Math.max(-12, Math.min(12, +r.pitch));
       if (r.swing != null) B.S.swing = Math.max(0, Math.min(100, +r.swing));
       if (r.crackle != null) B.S.crackle = !!r.crackle;
-      const sel = document.getElementById('wavLoops'), nl = String(Math.max(1, Math.min(16, +(r.loops || 4))));
+      // the browser slows down a LOT on long renders (1 loop 15 s, 5 loops 7+ min), so it renders ONE loop and Node
+      // lays the copies end to end (each with its own reverb tail, so the joins are seamless)
+      const sel = document.getElementById('wavLoops'), nl = '1';
+      const loopSecs = (S.songOn && S.song.length ? S.song : [{ pat: S.cur }]).reduce((a, b) => a + S.pats[b.pat].len * 60 / S.bpm / 4, 0);
       if (![...sel.options].some(o => o.value === nl)) { const o = document.createElement('option'); o.value = nl; o.textContent = nl + 'x'; sel.appendChild(o); }
       sel.value = nl; B.lastExport.blob = null;
       await B.exportWav();
       if (!B.lastExport.blob) return { err: 'the export made nothing' };
-      return { b64: toB64(await B.lastExport.blob.arrayBuffer()), what: r.style + ' ' + B.S.bpm + ' BPM' };
+      return { b64: toB64(await B.lastExport.blob.arrayBuffer()), what: r.style + ' ' + B.S.bpm + ' BPM', loopSecs };
     } catch (e) { return { err: e.message }; }
   }, r);
   if (res.err) { console.log(`FAILED ${name}: ${res.err}`); continue; }
-  fs.writeFileSync(wav, Buffer.from(res.b64, 'base64')); fs.writeFileSync(meta, key); made++;
-  console.log(`MADE ${name}.wav (${res.what}, ${Math.round(fs.statSync(wav).size / 1024)} KB)`);
+  let buf = Buffer.from(res.b64, 'base64');
+  const reps = r.type === 'beat' || !r.type ? Math.max(1, Math.min(16, +(r.loops || 4))) : 1;
+  if (reps > 1 && res.loopSecs) buf = repeatWav(buf, res.loopSecs, reps);
+  fs.writeFileSync(wav, buf);
+  if (ext === '.m4a') { execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', wav, '-c:a', 'aac', '-b:a', '128k', file]); fs.unlinkSync(wav); }
+  fs.writeFileSync(meta, key); made++;
+  entry(durOf(file), new Date().toISOString());
+  console.log(`MADE ${name}${ext} (${res.what}, ${Math.round(fs.statSync(file).size / 1024)} KB)`);
 }
 await b.close();
-// a page to listen to everything the robot made
-const list = fs.readdirSync(OUT).filter(f => /\.(wav|m4a|mp3)$/.test(f)).sort();
-fs.writeFileSync(path.join(OUT, 'index.html'), `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Apex Sound Lab</title><style>body{font-family:-apple-system,sans-serif;background:#0f1218;color:#f2f4f8;margin:0;padding:18px}h1{font-size:20px;margin:0 0 4px}
-p{color:#9aa6b5;font-size:13px;margin:0 0 14px}.s{background:#171b23;border-radius:12px;padding:10px 12px;margin-bottom:10px}.s b{display:block;margin-bottom:6px}audio{width:100%}</style></head>
-<body><h1>Apex Sound Lab</h1><p>Every sound the robot made from Beat Machine recipes (sounds/recipes). ${list.length} sounds.</p>
-${list.map(f => `<div class="s"><b>${f}</b><audio controls preload="none" src="${f}"></audio></div>`).join('\n')}
-</body></html>`);
+// sounds that no recipe makes any more are removed (owner Oct 19: "I don't like those truck record")
+if (!ONLY) for (const f of fs.readdirSync(OUT)) if (!keep.has(f)) { fs.unlinkSync(path.join(OUT, f)); console.log('REMOVED ' + f); }
+fs.writeFileSync(path.join(OUT, 'catalog.json'), JSON.stringify({ made: new Date().toISOString(), sounds: cat }, null, 1) + '\n');
+// the listening page is sounds/lab.html (tabs: Newest / Soundtracks / Sound effects / Engines); this one just sends you there
+fs.writeFileSync(path.join(OUT, 'index.html'), '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=../lab.html"><a href="../lab.html">Apex Sound Lab</a>\n');
 console.log(`SOUND ROBOT: ${made} new, ${recipes.length} recipes`);

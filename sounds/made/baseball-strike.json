@@ -1,0 +1,1 @@
+{"name":"baseball-strike","title":"Strike call","game":"baseball","tab":"effect","type":"mix","layers":[{"lib":"Hey","at":0,"pitch":-3,"gain":1},{"lib":"Woodblock","at":0,"pitch":0,"gain":0.5}]}

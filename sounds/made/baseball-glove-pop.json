@@ -1,0 +1,1 @@
+{"name":"baseball-glove-pop","title":"Ball in the glove","game":"baseball","tab":"effect","type":"mix","layers":[{"lib":"Kick Tight","at":0,"pitch":12,"gain":0.8},{"lib":"Snap","at":0,"pitch":0,"gain":0.7}]}

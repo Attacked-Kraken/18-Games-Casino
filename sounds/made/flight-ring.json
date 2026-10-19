@@ -1,0 +1,1 @@
+{"name":"flight-ring","title":"Fly through a ring","game":"flight","tab":"effect","type":"mix","layers":[{"lib":"Bell","at":0,"pitch":12,"gain":0.8},{"lib":"Glass","at":0.05,"pitch":19,"gain":0.6}]}

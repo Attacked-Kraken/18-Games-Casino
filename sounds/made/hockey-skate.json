@@ -1,0 +1,1 @@
+{"name":"hockey-skate","title":"Skate swoosh","game":"hockey","tab":"effect","type":"mix","layers":[{"lib":"Whoosh","at":0,"pitch":9,"gain":0.6},{"lib":"Shaker","at":0.05,"pitch":5,"gain":0.4}]}

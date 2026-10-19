@@ -1,7 +1,0 @@
-[
-  { "name": "moto-menu-trap", "type": "beat", "style": "Trap", "bpm": 140, "loops": 4 },
-  { "name": "truck-race-drill", "type": "beat", "style": "Drill", "bpm": 142, "loops": 4 },
-  { "name": "lounge-lofi", "type": "beat", "style": "Lo-Fi", "loops": 4 },
-  { "name": "win-airhorn", "type": "sfx", "lib": "airhorn" },
-  { "name": "start-riser", "type": "sfx", "lib": "riser" }
-]

@@ -1,0 +1,1 @@
+{"name":"hockey-buzzer","title":"Period buzzer","game":"hockey","tab":"effect","type":"mix","layers":[{"lib":"Siren alarm","at":0,"pitch":-12,"gain":0.8,"seconds":1.4}]}

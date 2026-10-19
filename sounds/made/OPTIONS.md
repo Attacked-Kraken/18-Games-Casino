@@ -197,7 +197,7 @@ bpm 60-180, pitch -12..12, loops 1-16
 - Lo-fi piano (loop)
 - Synthwave arp (loop)
 
-## Full control of a beat (any of these, all optional - see sounds/recipes/examples.json)
+## Full control of a beat (any of these, all optional - see sounds/recipes/games.json, made by tools/sound-themes.mjs)
 - style: start from a style, then change anything below
 - bpm, swing (0-100), pitch (-12..12), key ("C".."B"), scale (Minor, Major, Dorian, Harmonic minor, Minor pentatonic, Major pentatonic, Blues, Chromatic)
 - patterns: up to 4 (A-D), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }

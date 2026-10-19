@@ -1,0 +1,1 @@
+{"name":"soccer-ball-kick","title":"Ball kick","game":"soccer","tab":"effect","type":"mix","layers":[{"lib":"Kick Punch","at":0,"pitch":12,"gain":1},{"lib":"Snap","at":0,"pitch":0,"gain":0.6}]}
