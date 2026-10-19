@@ -9,14 +9,15 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const TOKEN = process.env.SKETCHFAB_TOKEN || '', DRY = !!process.env.DRY, API = 'https://api.sketchfab.com/v3';
+const TOKEN = process.env.SKETCHFAB_TOKEN || '', DRY = !!process.env.DRY || !!(process.env.TEST_UID || '').trim(), API = 'https://api.sketchfab.com/v3';
 const today = new Date().toISOString().slice(0, 10);
 const report = [];
 const say = (s) => { console.log(s); report.push(s); };
 const reqFile = 'MODEL-REQUESTS.md';
 let text = fs.readFileSync(reqFile, 'utf8');
 const lines = text.split('\n');
-const todo = lines.map((l, i) => ({ l, i, m: l.match(/sketchfab\.com\/3d-models\/([a-z0-9-]*?)-?([0-9a-f]{32})/i) }))
+const TEST = (process.env.TEST_UID || '').trim();   // a token test: check one model, download its info, save nothing
+const todo = TEST ? [{ l: '- OPEN test', i: -1, m: ['', 'test', TEST.match(/[0-9a-f]{32}/i)?.[0] || TEST] }] : lines.map((l, i) => ({ l, i, m: l.match(/sketchfab\.com\/3d-models\/([a-z0-9-]*?)-?([0-9a-f]{32})/i) }))
   .filter(x => /^\s*-\s*OPEN\b/.test(x.l) && x.m);
 if (!todo.length) { say('No OPEN Sketchfab requests with an exact model link.'); fs.writeFileSync('fetch-report.txt', report.join('\n')); process.exit(0); }
 if (!TOKEN) { say('No SKETCHFAB_TOKEN secret yet - the owner adds it once in GitHub Settings > Secrets and variables > Actions.'); fs.writeFileSync('fetch-report.txt', report.join('\n')); process.exit(0); }
