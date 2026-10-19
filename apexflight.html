@@ -114,7 +114,7 @@
     <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX FLIGHT</h1>
     <h2>SINGLE-PROP SIMULATOR</h2>
-    <p>Line up on runway 36, push the throttle to full, and near 50 kt the nose rises on its own - stick up to climb. Grease the landing back on the centerline.</p>
+    <p>Line up on runway 36, push the throttle to full, and near 45 kt the nose rises on its own - stick up to climb. Grease the landing back on the centerline.</p>
     <button class="bigbtn" id="btnFree" type="button">FREE FLIGHT<small>Start on the runway - explore, practice, land anywhere</small></button>
     <button class="bigbtn" id="btnChal" type="button">LANDING CHALLENGE<small>Start on final approach - scored touchdown on runway 36</small></button>
     <div class="ctl">
@@ -154,8 +154,8 @@ const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 /* ================= constants ================= */
 const VSTALL = 20;          // m/s  (~39 kt) stall warning - more forgiving
-const VROT   = 26.5;        // m/s  (~52 kt) rotate speed
-const VROT_A = 25.7;        // m/s  (~50 kt) auto-rotate assist threshold
+const VROT   = 23;          // m/s  (~45 kt) rotate speed - earlier liftoff
+const VROT_A = 22.5;        // m/s  (~44 kt) auto-rotate assist threshold
 const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
 const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
 const KLIFT  = 0.018;       // lift coefficient - more forgiving
@@ -683,9 +683,9 @@ function step(dt) {
          auto-rotate assist gently raises the nose past 50 kt at full
          throttle, so holding full throttle alone gets you airborne */
       const noseAuth = clamp((v - (VROT - 9)) / 9, 0, 1);
-      let targetPitch = clamp(inp.pitchUp, 0, 1) * 0.16 * noseAuth;
-      if (P.thr > 0.85 && v > VROT_A) targetPitch = Math.max(targetPitch, 0.15);
-      P.pitch += (targetPitch - P.pitch) * 4 * dt;
+      let targetPitch = clamp(inp.pitchUp, 0, 1) * 0.20 * noseAuth;
+      if (P.thr > 0.85 && v > VROT_A) targetPitch = Math.max(targetPitch, 0.22);
+      P.pitch += (targetPitch - P.pitch) * 5 * dt;
       P.roll += (0 - P.roll) * 4 * dt;
       const vh = Math.hypot(P.vel.x, P.vel.z);
       P.yaw -= inp.rollRight * clamp(vh / 14, 0, 1) * 0.9 * dt;
@@ -725,7 +725,7 @@ function step(dt) {
     }
     P.ground = true; P.pos.y = GEAR_H;
     if (P.vel.y < 0) P.vel.y = 0;
-    if (v > VROT && P.pitch > 0.05) { P.ground = false;
+    if (v > VROT && P.pitch > 0.03) { P.ground = false;
       if (phase === 'fly') flashMsg("YOU'RE FLYING - GENTLE INPUTS", 2600); }  // liftoff
   } else if (P.pos.y - GEAR_H > 0.01) {
     P.ground = false;
@@ -776,7 +776,11 @@ function updateCamera(dt) {
     /* chase: ~10% farther back, ~20% higher than before, with a subtle
        velocity look-ahead; the look target is eased too, so no jitter */
     camPos.copy(P.pos).addScaledVector(F, -14.85).addScaledVector(U, 5.28);
+    // Keep camera above ground during liftoff - don't let it dip into the runway
+    if (camPos.y < 3.0) camPos.y = 3.0;
     camera.position.lerp(camPos, Math.min(1, 5 * dt));
+    // Ensure camera itself never goes below ground
+    if (camera.position.y < 2.0) camera.position.y = 2.0;
     camLook.copy(P.pos).addScaledVector(F, 12).addScaledVector(P.vel, 0.18);
     camLookS.lerp(camLook, Math.min(1, 6 * dt));
     camera.lookAt(camLookS);
