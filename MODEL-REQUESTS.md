@@ -13,3 +13,4 @@ Format (one line each, newest at the bottom):
 
 ## Requests
 - OPEN · JOB J11 · window 2 · the motorcycle (real sport bike, CC-BY) · SPY-HYPERSPORT by Amvall is 177 MB - TOO BIG: find the same bike's smaller download (Sketchfab "glTF" / lower texture size) or the best other CC-BY sport bike under 20 MB · https://sketchfab.com (search "sport bike" CC Attribution, downloadable) · CC-BY · <20 MB
+- OPEN · JOB J5 monster truck game · main chat window · hero monster truck vehicle for apexmonstertruck.html (replace code-built truck) · Jeep by Gilang Romadhan (tagged #Monster Truck) · https://poly.pizza/m/etWba3RYzmi · CC-BY · <20 MB
