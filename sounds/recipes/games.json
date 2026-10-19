@@ -220,35 +220,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -279,16 +326,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "keys",
+   "melody": "piano",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -531,35 +695,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -590,8 +801,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -599,7 +926,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -838,35 +1166,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -897,8 +1272,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -906,7 +1397,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 4,
+  "loops": 1,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -1151,35 +1643,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -1210,16 +1749,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "pluck",
+   "melody": "pizz",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 4,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -1458,35 +2114,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -1517,8 +2220,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -1526,7 +2345,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 4,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -1771,35 +2591,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -1830,16 +2697,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "bell",
+   "melody": "brass",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 4,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -2078,35 +3062,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -2137,16 +3168,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "keys",
+   "melody": "harp",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 3,
+  "loops": 1,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -2387,35 +3535,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -2446,16 +3641,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "pad",
+   "melody": "strings",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 4,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -2698,35 +4010,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -2757,8 +4116,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -2766,7 +4241,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -3007,35 +4483,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -3066,16 +4589,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "lead",
+   "melody": "horn",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -3318,35 +4958,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -3377,8 +5064,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -3386,7 +5189,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -3627,35 +5431,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -3686,8 +5537,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -3695,7 +5662,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 7,
+  "loops": 3,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -3936,35 +5904,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -3995,16 +6010,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "keys",
+   "melody": "piano",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -4243,35 +6375,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -4302,8 +6481,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -4311,7 +6606,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -4554,35 +6850,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -4613,16 +6956,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "bell",
+   "melody": "glock",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -4863,35 +7323,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -4922,8 +7429,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -4931,7 +7554,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 6,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -5170,35 +7794,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -5229,16 +7900,133 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
-   "melody": "pluck",
+   "melody": "strings",
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 5,
+  "loops": 2,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5
@@ -5479,35 +8267,82 @@
   "song": [
    [
     "Intro",
-    0
+    0,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ],
    [
     "Intro",
-    1
+    1,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    0,
+    [
+     "melody"
+    ]
+   ],
+   [
+    "Intro",
+    1,
+    [
+     "melody"
+    ]
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
    ],
    [
     "Verse",
-    1
+    1,
+    null
    ],
    [
     "Verse",
-    0
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
    ],
    [
     "Build",
-    1
+    1,
+    [
+     "kick"
+    ]
    ],
    [
     "Drop",
@@ -5538,8 +8373,124 @@
     2
    ],
    [
-    "Outro",
+    "Hook",
     3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "bass",
+     "snare",
+     "clap"
+    ]
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Verse",
+    0,
+    null
+   ],
+   [
+    "Verse",
+    1,
+    null
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    2,
+    [
+     "kick",
+     "melody"
+    ]
+   ],
+   [
+    "Outro",
+    3,
+    [
+     "kick",
+     "bass",
+     "melody"
+    ]
    ]
   ],
   "sound": {
@@ -5547,7 +8498,8 @@
    "melVol": 0.85,
    "chdVol": 0.55
   },
-  "loops": 7,
+  "loops": 3,
+  "master": "punchy",
   "tracks": {
    "kick": {
     "vol": 0.5

@@ -92,3 +92,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-19 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "Naudaff3D" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: sounds/instruments/
+- title: VSCO 2 Community Edition (piano, violin section, cello section, violin pizzicato, trumpet, French horn, flute, harp, glockenspiel)
+- maker: Versilian Studios (Sam Gossner)
+- source: https://github.com/sgossner/VSCO-2-CE
+- license: CC0 1.0
+- downloaded: 2026-10-19 by Claude (owner: "add the beat machine missing parts" - real instruments)
+- used in: beatmachine.html (Synth -> Real instruments), sound robot songs
+- changes: one note every 4+ semitones, mono 32 kHz MP3 64k, trimmed to 1.5-4 s, loudness matched

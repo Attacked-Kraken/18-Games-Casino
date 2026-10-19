@@ -200,9 +200,10 @@ bpm 60-180, pitch -12..12, loops 1-16
 ## Full control of a beat (any of these, all optional - see sounds/recipes/games.json, made by tools/sound-themes.mjs)
 - style: start from a style, then change anything below
 - bpm, swing (0-100), pitch (-12..12), key ("C".."B"), scale (Minor, Major, Dorian, Harmonic minor, Minor pentatonic, Major pentatonic, Blues, Chromatic)
-- patterns: up to 4 (A-D), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }
-- song: [["Intro",0],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-3) - Build adds a riser, Drop an impact
-- sound: { melody: lead | pluck | keys | pad | bell, octave, melVol, chdVol }
+- patterns: up to 8 (A-H), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }
+- song: [["Intro",0,["kick","bass"]],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-7, instruments OFF in that section: kick snare clap hat ohat tom rim bass melody chords) - Build adds a riser, Drop an impact
+- master: clean | punchy (default) | loud
+- sound: { melody: lead | pluck | keys | pad | bell | chip, or a REAL instrument: piano | strings | cello | pizz | brass | horn | flute | harp | glock (CC0 recordings), octave, melVol, chdVol }
 - tracks: { kick|snare|clap|chat|ohat|tom|rim|bass: { vol 0-1, pan -1..1, pitch, reverse, mute, sample: "lib:<library sound>" or "file:sounds/real/<your recording>.wav" } }
 - fx: { reverb 0-100, size, drive, lowpass 0-100, highpass 0-100, resonance, crush (bits 4-16), crushMix, comp true/false, compThreshold, compRatio, echo 0-1, echoBeats, echoFeedback }
 - sidechain, glide, crackle: true/false; loops 1-16
