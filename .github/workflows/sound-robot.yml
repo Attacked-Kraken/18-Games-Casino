@@ -4,7 +4,7 @@ name: Sound robot
 on:
   push:
     branches: [main]
-    paths: ['sounds/recipes/**', 'tools/sound-robot.mjs', 'beatmachine.html']
+    paths: ['sounds/recipes/**', 'sounds/rejects/**', 'tools/sound-robot.mjs', 'tools/sound-themes.mjs', 'beatmachine.html']
   workflow_dispatch:
 concurrency: { group: sound-robot, cancel-in-progress: false }
 permissions:
@@ -26,11 +26,12 @@ jobs:
         run: |
           python3 -m http.server 8899 >/dev/null 2>&1 &
           sleep 2
+          node tools/sound-themes.mjs   # turns 🗑 deletes (sounds/rejects) into totally different remakes
           node tools/sound-robot.mjs | tee sound-report.txt
           cat sound-report.txt >> "$GITHUB_STEP_SUMMARY"
       - name: Save them
         run: |
-          git add -A sounds/made
+          git add -A sounds/made sounds/recipes sounds/rejects sounds/bumps.json
           git diff --cached --quiet && { echo "nothing new"; exit 0; }
           git config user.name "sound robot"; git config user.email "actions@users.noreply.github.com"
           git commit -m "Sound robot: $(grep -E '^(MADE|FAILED)' sound-report.txt | cut -d' ' -f1-2 | paste -sd ' ' | cut -c1-180)"

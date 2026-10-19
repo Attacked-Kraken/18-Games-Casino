@@ -8,13 +8,26 @@
 # Writes sounds/voice/voice.json (the Sound Lab's Announcer tab). Unchanged lines are not made again.
 import json, os, sys, subprocess, hashlib, tempfile
 LINES = 'sounds/announcer/lines.json'; OUT = 'sounds/voice'; os.makedirs(OUT, exist_ok=True)
-PRO_VOICE = os.environ.get('PRO_VOICE', 'am_michael')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
+PRO_VOICE = os.environ.get('PRO_VOICE', 'am_michael')
+HYPE = 1.25    # Chatterbox emotion: 0.5 = calm reading, 1.0+ = a hyped arena announcer (owner: "no enthusiasm")
+PRO_REF_TEXT = ('Ladies and gentlemen, welcome to the arena! Are you ready? Here we go! What a play, unbelievable! '
+                'He shoots, he scores! The crowd is going wild tonight! Three, two, one, go go go!')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
 # the broadcast finish: a touch deeper (keeps speed), warm chest, radio presence, compressor punch - DRY, no echo (owner)
 FINISH = ('aresample=24000,highpass=f=85,asetrate=24000*0.97,aresample=24000,atempo=1.0309,'
           'equalizer=f=150:t=q:w=1:g=3,equalizer=f=3000:t=q:w=1.2:g=5,equalizer=f=7500:t=q:w=1:g=2,lowpass=f=11000,'
           'acompressor=threshold=-22dB:ratio=6:attack=4:release=90:makeup=7,'
           'loudnorm=I=-14:TP=-1.2:LRA=7')
 lines = json.load(open(LINES))
+# owner Oct 19: 🗑 on the Sound Lab = sounds/rejects/voice-<name>.txt -> a new take (Chatterbox reads it differently each time)
+TAKES = 'sounds/announcer/takes.json'
+takes = {}
+try: takes = json.load(open(TAKES))
+except Exception: pass
+if os.path.isdir('sounds/rejects'):
+    for f in os.listdir('sounds/rejects'):
+        if f.startswith('voice-') and f.endswith('.txt'):
+            n = f[6:-4]; takes[n] = takes.get(n, 0) + 1; os.remove(os.path.join('sounds/rejects', f)); print('RETAKE', n)
+json.dump(takes, open(TAKES, 'w'), indent=1)
 old = {}
 try: old = {v['name']: v for v in json.load(open(os.path.join(OUT, 'voice.json')))['sounds']}
 except Exception: pass
@@ -39,21 +52,28 @@ for L in lines:
     base = (L['game'] + '-' + L['name']).lower()
     for who in (['you'] if ref else []) + ['pro']:
         name = base + '-' + who
-        key = hashlib.sha1(json.dumps([L['text'], who, FINISH, PRO_VOICE if who == 'pro' else (os.path.getsize(ref) if ref else 0)]).encode()).hexdigest()[:12]
+        key = hashlib.sha1(json.dumps([L['text'], who, FINISH, HYPE, takes.get(base + '-' + who, 0), PRO_VOICE if who == 'pro' else (os.path.getsize(ref) if ref else 0)]).encode()).hexdigest()[:12]
         dst = os.path.join(OUT, name + '.m4a'); keep.add(name + '.m4a')
         o = old.get(name)
         if o and o.get('key') == key and os.path.exists(dst): out.append(o); print('SAME', name); continue
         try:
             import numpy as np
+            import torch; torch.manual_seed(1000 + 97 * takes.get(name, 0))
+            if chatter is None:
+                from chatterbox.tts import ChatterboxTTS; chatter = ChatterboxTTS.from_pretrained(device='cpu')
             if who == 'pro':
-                if kokoro is None:
-                    from kokoro import KPipeline; kokoro = KPipeline(lang_code='a' if PRO_VOICE[0] == 'a' else 'b')
-                audio = np.concatenate([np.asarray(a) for _, _, a in kokoro(L['text'], voice=PRO_VOICE, speed=0.95)]); sr = 24000
+                # owner Oct 19 "the announcer has no enthusiasm": Kokoro reads flat, so it only gives the pro VOICE (a hype
+                # paragraph, made once); Chatterbox then speaks every line in that voice with the emotion turned way up
+                pro_ref = os.path.join(tempfile.gettempdir(), 'pro-voice.wav')
+                if not os.path.exists(pro_ref):
+                    if kokoro is None:
+                        from kokoro import KPipeline; kokoro = KPipeline(lang_code='a' if PRO_VOICE[0] == 'a' else 'b')
+                    import soundfile as sf
+                    sf.write(pro_ref, np.concatenate([np.asarray(a) for _, _, a in kokoro(PRO_REF_TEXT, voice=PRO_VOICE, speed=1.05)]), 24000)
+                w = chatter.generate(L['text'], audio_prompt_path=pro_ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
             else:
-                if chatter is None:
-                    from chatterbox.tts import ChatterboxTTS; chatter = ChatterboxTTS.from_pretrained(device='cpu')
-                w = chatter.generate(L['text'], audio_prompt_path=ref, exaggeration=0.75, cfg_weight=0.35)
-                audio = w.squeeze(0).numpy(); sr = chatter.sr
+                w = chatter.generate(L['text'], audio_prompt_path=ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
+            audio = w.squeeze(0).numpy(); sr = chatter.sr
             secs = finish(audio, sr, dst)
         except Exception as e:
             print('FAILED', name, e); continue

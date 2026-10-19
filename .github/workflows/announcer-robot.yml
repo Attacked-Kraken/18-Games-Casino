@@ -5,7 +5,7 @@ name: Announcer robot
 on:
   push:
     branches: [main]
-    paths: ['sounds/announcer/**', 'tools/announcer-robot.py']
+    paths: ['sounds/announcer/**', 'sounds/rejects/voice-*', 'tools/announcer-robot.py']
   workflow_dispatch:
 concurrency: { group: announcer-robot, cancel-in-progress: false }
 permissions:
@@ -31,7 +31,7 @@ jobs:
       - name: Save them
         run: |
           rm -f /tmp/owner-voice.wav /tmp/owner-voice.wav.m4a
-          git add -A sounds/voice
+          git add -A sounds/voice sounds/announcer sounds/rejects
           git diff --cached --quiet && { echo "nothing new"; exit 0; }
           git config user.name "announcer robot"; git config user.email "actions@users.noreply.github.com"
           git commit -m "Announcer robot: $(grep -c '^MADE' voice-report.txt) lines made"
