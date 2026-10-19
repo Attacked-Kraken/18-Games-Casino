@@ -854,6 +854,60 @@ addRamp(-700, 700, -Math.PI * 0.25, 70, 28, 20, 'black');
 addRamp(700, -700, Math.PI * 0.75, 70, 28, 20, 'black');
 addRamp(-700, -700, -Math.PI * 0.75, 70, 28, 20, 'black');
 
+/* ================= owner Oct 18 9:09 PM: "a big loop around ramp that launches you into the air + a lot of different
+   looping ramps and ramps to jump high into the sky" =================
+   Loops: a corkscrew-offset vertical loop (enter on the left lane, come out on the right lane) straight into a steep
+   kicker that throws you up. Fast enough (MIN speed, bigger loop = more speed) and you go all the way round; too slow
+   and you slide back down. Sky ramps: tall steep launchers for huge air. */
+const loops = [];
+const loopTrackMat = new THREE.MeshStandardMaterial({ color: 0x24262c, roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide });
+const loopRailMat = new THREE.MeshStandardMaterial({ color: 0xffb200, roughness: 0.4, metalness: 0.5, emissive: 0x3a2400 });
+const loopPostMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.5, metalness: 0.7 });
+function addLoop(x, z, ang, R, color) {
+  const dx = Math.sin(ang), dz = Math.cos(ang), sx = dz, sz = -dx;     // forward + side
+  const TW = 18, W = TW + 8, N = 120;
+  const L = { x, z, ang, dx, dz, sx, sz, R, TW, W, min: Math.sqrt(R) * 7.2 };
+  L.local = (th, off) => { const u = R * Math.sin(th), y = R * (1 - Math.cos(th)) + 0.15, v = -W / 2 + W * th / (Math.PI * 2) + (off || 0);
+    return new THREE.Vector3(x + dx * u + sx * v, y, z + dz * u + sz * v); };
+  const pos = [], idx = [];
+  for (let i = 0; i <= N; i++) { const th = i / N * Math.PI * 2; const a = L.local(th, -TW / 2), b = L.local(th, TW / 2);
+    pos.push(a.x, a.y, a.z, b.x, b.y, b.z); if (i < N) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); } }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  const track = new THREE.Mesh(geo, loopTrackMat); track.receiveShadow = true; track.castShadow = true; scene.add(track);
+  for (const off of [-TW / 2, TW / 2]) {       // glowing side rails
+    const pts = []; for (let i = 0; i <= N; i++) { const th = i / N * Math.PI * 2, p = L.local(th, off);
+      const nx = -Math.sin(th) * dx, ny = Math.cos(th), nz = -Math.sin(th) * dz; pts.push(new THREE.Vector3(p.x + nx * 1.2, p.y + ny * 1.2, p.z + nz * 1.2)); }
+    const rail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), N, 0.7, 6, false), color ? new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.5, emissive: color, emissiveIntensity: 0.25 }) : loopRailMat);
+    rail.castShadow = true; scene.add(rail);
+  }
+  for (let i = 1; i < 8; i++) {                // steel legs holding the loop up
+    const th = i / 8 * Math.PI * 2; if (Math.abs(Math.sin(th)) < 0.6) continue;   // legs on the sides only, never through the loop const p = L.local(th, 0);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.3, p.y, 8), loopPostMat); post.position.set(p.x, p.y / 2, p.z); post.castShadow = true; scene.add(post);
+  }
+  // kicker right after the exit lane: throws you up out of the loop
+  const ku = 26 + 32;
+  addRamp(x + dx * ku + sx * W / 2, z + dz * ku + sz * W / 2, ang, 64, TW + 6, 46, 'red');
+  loops.push(L);
+}
+addLoop(-1400, -520, 0, 55, 0xffb200);             // MEGA LOOP (needs ~120 mph)
+addLoop(1400, 420, Math.PI, 42, 0x19f0ff);         // big loop
+addLoop(-420, 1450, Math.PI / 2, 34, 0xff2fd0);    // medium loop
+addLoop(420, -1450, -Math.PI / 2, 28, 0x37d67a);   // small loop
+addLoop(1250, -1250, Math.PI * 0.25, 22, 0xffffff); // quick loop
+// SKY RAMPS: tall steep launchers - hit them flat out and fly
+addRamp(1700, 1500, Math.PI, 150, 46, 125, 'black');
+addRamp(-1650, 1300, Math.PI * 0.75, 140, 42, 112, 'red');
+addRamp(-800, -1650, Math.PI / 2, 150, 46, 120, 'blue');
+addRamp(1750, -350, 0, 130, 40, 100, 'red');
+addRamp(-1750, 450, Math.PI, 130, 40, 100, 'blue');
+addRamp(250, 1750, -Math.PI / 2, 120, 38, 90, 'black');
+function inFeature(x, z, pad) {     // keep tire stacks out of loops' lanes and off the sky ramps
+  for (const L of loops) { const rx = x - L.x, rz = z - L.z, u = rx * L.dx + rz * L.dz, v = rx * L.sx + rz * L.sz;
+    if (u > -L.R - 140 - pad && u < L.R + 140 + pad && Math.abs(v) < L.W + pad) return true; }
+  for (const r of ramps) if (Math.hypot(x - r.x, z - r.z) < r.len * 0.6 + pad) return true;
+  return false;
+}
+
 function groundHeight(x, z) {
   let h = 0;
   for (const r of ramps) {
@@ -872,6 +926,7 @@ function groundHeight(x, z) {
 const tires = [];
 const tireMat = new THREE.MeshStandardMaterial({ color: 0x16181d, roughness: 0.95 });
 for (const [tx, tz] of [[-500, 500], [500, 500], [-500, -375], [560, -310], [-875, 1250], [-1250, 125], [1250, -1125], [-310, -1250], [875, -750], [-1500, -750], [750, 1500], [-750, -1500], [1500, 750], [0, -1625], [-1625, 0], [375, 750], [1000, 1000], [-1000, -1000], [1200, -400], [-1200, 400]]) {
+  if (inFeature(tx, tz, 10)) continue;
   const g = new THREE.Group();
   for (let i = 0; i < 3; i++) {
     const t = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.42, 10, 20), tireMat);
@@ -1271,12 +1326,50 @@ function resetCars() {
 }
 function resetTruck() {
   T.x = 200; T.z = 200; T.hd = Math.PI; T.sp = 0; T.y = 0; T.vy = 0;
-  T.grounded = true; T.steer = 0; camShake = 0;
+  T.grounded = true; T.steer = 0; camShake = 0; T.loop = null;
 }
 
 /* ================= physics & gameplay ================= */
+function stepLoop(dt) {
+  const Lp = T.loop, L = Lp.L, TAU = Math.PI * 2;
+  if (!Lp.back) {
+    const sp = Lp.full ? Lp.sp0 * (1 - 0.28 * (1 - Math.cos(Lp.th)) / 2) : Lp.sp0 * Math.max(0.12, 1 - Lp.th / Lp.max);
+    Lp.th += sp * dt / L.R; T.sp = sp;
+    if (Lp.full && Lp.th >= TAU) {        // out the bottom, onto the kicker
+      const p = L.local(TAU, 0); T.loop = null; T.x = p.x; T.z = p.z; T.y = 0; T.vy = 0; T.grounded = true; T.hd = L.ang; T.sp = Math.min(MAX_FWD, Lp.sp0 * 1.08);
+      score += 500; scoreEl.textContent = score; floater('+500 LOOP!', T.x, 6, T.z, true); Snd.cheer(true); camShake = Math.max(camShake, 0.3);
+      return;
+    }
+    if (!Lp.full && Lp.th >= Lp.max) { Lp.back = true; floater('MORE SPEED!', T.x, T.y + 6, T.z, false); }
+  } else {
+    const sp = 8 + 45 * Math.max(0, 1 - Lp.th / Lp.max);   // slides back down, faster near the bottom
+    Lp.th -= sp * dt / L.R; T.sp = -sp;
+    if (Lp.th <= 0) { const p = L.local(0, 0); T.loop = null; T.x = p.x; T.z = p.z; T.y = 0; T.vy = 0; T.grounded = true; T.hd = L.ang; T.sp = -Math.min(MAX_REV, sp); return; }
+  }
+  const p = L.local(Lp.th, 0);
+  T.x = p.x; T.z = p.z; T.y = p.y - 0.15; T.hd = L.ang; T.grounded = true;
+  truck.g.position.set(T.x, T.y, T.z); truck.g.rotation.y = T.hd; truck.g.rotation.z = 0; truck.g.rotation.x = -Lp.th;
+  const wSpin = T.sp / truck.tireR; for (const w of truck.wheels) { w.spin.rotation.x += wSpin * dt; w.pivot.rotation.y = 0; }
+  Snd.engine(Math.min(1, Math.abs(T.sp) / MAX_FWD)); Snd.gas(state === 'play' ? 1 : 0);
+}
+function enterLoop(px, pz) {
+  if (!T.grounded || T.y > 1 || T.sp < 5) return false;
+  for (const L of loops) {
+    const pu = (px - L.x) * L.dx + (pz - L.z) * L.dz, nu = (T.x - L.x) * L.dx + (T.z - L.z) * L.dz;
+    if (!(pu < 0 && nu >= 0)) continue;
+    const v = (T.x - L.x) * L.sx + (T.z - L.z) * L.sz;
+    if (Math.abs(v + L.W / 2) > L.TW / 2 || Math.cos(T.hd - L.ang) < 0.75) continue;
+    const full = T.sp >= L.min;
+    T.loop = { L, th: 0, sp0: T.sp, full, back: false, max: full ? 99 : Math.max(0.3, 1.5 * T.sp / L.min) };
+    if (!full) floater('TOO SLOW!', T.x, 6, T.z, false);
+    return true;
+  }
+  return false;
+}
 function stepTruck(dt) {
   justLanded = false;
+  truck.g.rotation.order = 'YXZ';
+  if (T.loop) { stepLoop(dt); return; }
   const gasAmt = input.gas ? 1 : Math.max(0, input.throttleA);
   const brakeAmt = input.brake ? 1 : Math.max(0, -input.throttleA);
   if (gasAmt > 0) T.sp += ACCEL * gasAmt * dt;
@@ -1292,6 +1385,7 @@ function stepTruck(dt) {
   const fx = Math.sin(T.hd), fz = Math.cos(T.hd);
   const px = T.x, pz = T.z, ghPrev = groundHeight(px, pz);
   T.x += fx * T.sp * dt; T.z += fz * T.sp * dt;
+  if (enterLoop(px, pz)) { stepLoop(dt); return; }
 
   // walls
   const B = ARENA - 2.2;
@@ -1438,6 +1532,9 @@ function stepCamera(dt) {
     const y = highY + (lowY - highY) * ease;
     const back = highBack + (lowBack - highBack) * ease;
     want = new THREE.Vector3(T.x - fx * back, T.y + y, T.z - fz * back);
+  } else if (T.loop) {          // in a loop: watch from the side so you see the whole loop
+    const L = T.loop.L, back = L.R * 2.1;
+    want = new THREE.Vector3(L.x - L.sx * (back + L.W / 2) - L.dx * L.R * 0.3, L.R * 0.9, L.z - L.sz * (back + L.W / 2) - L.dz * L.R * 0.3);
   } else {
     want = new THREE.Vector3(T.x - fx * 25.2, T.y + 12.6, T.z - fz * 25.2); // J45 EXTRA: 1.4x back/up for bigger truck - same screen fill
   }
@@ -1452,7 +1549,9 @@ function stepCamera(dt) {
     camera.position.y += (Math.random() - 0.5) * camShake * 0.7;
     camShake = Math.max(0, camShake - dt * 1.8);
   }
-  if (state === 'count') {
+  if (T.loop) {
+    camera.lookAt(T.x, T.y, T.z);
+  } else if (state === 'count') {
     // Look at HIS truck during the dive (truck centered and big for every number)
     camera.lookAt(T.x, T.y + 2, T.z);
   } else {
@@ -1461,7 +1560,7 @@ function stepCamera(dt) {
 }
 
 // Expose for game-check play tests
-window.__mt = { T, Snd, Music, cars, ramps, tires, truck, input, startGame, camera, maxFwd: MAX_FWD,
+window.__mt = { T, Snd, Music, cars, ramps, tires, truck, input, startGame, camera, maxFwd: MAX_FWD, loops, stepTruck,
   get score() { return score; },
   getState() { return state; },
   setState(s) { state = s; },
