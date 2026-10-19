@@ -5,7 +5,7 @@ name: Sketchfab fetch
 on:
   push:
     branches: [main]
-    paths: ['MODEL-REQUESTS.md']
+    paths: ['MODEL-REQUESTS.md', 'MODEL-SEARCH.md', 'models/picks/**']
   workflow_dispatch:
     inputs:
       dry:
@@ -13,6 +13,9 @@ on:
         default: ''
       test:
         description: 'Token test: a Sketchfab model link or id (checks the download works, saves nothing)'
+        default: ''
+      search:
+        description: 'Search Sketchfab (free CC-BY / CC0 only), e.g. hockey arena; race car (results: tools/model-search.html)'
         default: ''
       slim:
         description: 'Slim every model in the repo over 6 MB for phones (1 = yes)'
@@ -30,6 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm i -g @gltf-transform/cli@4 >/dev/null
+      - name: Search
+        env:
+          SEARCH: ${{ github.event.inputs.search }}
+        run: node tools/sketchfab-search.mjs
       - name: Fetch
         env:
           SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
@@ -59,9 +66,9 @@ jobs:
             done
             echo "SLIMMED old models" >> fetch-report.txt
           fi
-          git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models/fetched)" ] && { echo "nothing to save"; exit 0; }
+          git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models MODEL-SEARCH.md)" ] && { echo "nothing to save"; exit 0; }
           node tools/asset-check.mjs
           git config user.name "sketchfab fetch robot"; git config user.email "actions@users.noreply.github.com"
-          git add MODEL-REQUESTS.md ASSETS.md models
+          git add -A MODEL-REQUESTS.md MODEL-SEARCH.md ASSETS.md models
           git commit -m "Sketchfab fetch robot: $(grep -E '^(FETCHING|SKIPPED|FAILED|SLIMMED|shrunk)' fetch-report.txt | paste -sd ' ' | cut -c1-180)"
           for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1

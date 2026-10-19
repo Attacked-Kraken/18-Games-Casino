@@ -16,6 +16,13 @@ const say = (s) => { console.log(s); console.log('::notice title=Sketchfab robot
 const reqFile = 'MODEL-REQUESTS.md';
 let text = fs.readFileSync(reqFile, 'utf8');
 const lines = text.split('\n');
+// owner Oct 19: "Get it" on tools/model-search.html makes models/picks/<id>.txt (a Sketchfab link + what it's for) -
+// each pick becomes an OPEN request line here, then it is fetched like any other
+if (fs.existsSync('models/picks')) for (const f of fs.readdirSync('models/picks').filter(f => f.endsWith('.txt'))) {
+  const t = fs.readFileSync('models/picks/' + f, 'utf8').trim(), link = (t.match(/https:\/\/sketchfab\.com\/[^\s·]+/) || [])[0];
+  if (link) { lines.push(`- OPEN · ${t.replace(link, '').replace(/[·\s]+$/, '').replace(/^[·\s]+/, '') || 'picked by the owner'} · picked by the owner on Model search · ${link}`); }
+  if (!process.env.DRY) fs.unlinkSync('models/picks/' + f);
+}
 const TEST = (process.env.TEST_UID || '').trim();   // a token test: check one model, download its info, save nothing
 const todo = TEST ? [{ l: '- OPEN test', i: -1, m: ['', 'test', TEST.match(/[0-9a-f]{32}/i)?.[0] || TEST] }] : lines.map((l, i) => ({ l, i, m: l.match(/sketchfab\.com\/3d-models\/([a-z0-9-]*?)-?([0-9a-f]{32})/i) }))
   .filter(x => /^\s*-\s*OPEN\b/.test(x.l) && x.m);

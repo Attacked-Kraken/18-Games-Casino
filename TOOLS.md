@@ -110,6 +110,9 @@ font or online API in a game (games are fully offline).
 ## Robots that make things for you (owner, 2026-10-19)
 - **Sketchfab fetch robot**: add an OPEN line with the exact Sketchfab model link to MODEL-REQUESTS.md and merge. It
   downloads CC Attribution / CC0 models with the owner's key into `models/fetched/<name>.glb` and logs ASSETS.md. Never sign in.
+- **Model search robot**: add `- SEARCH · <words> · for <game>` to MODEL-SEARCH.md and merge. The robot finds free
+  Sketchfab models (CC-BY / CC0, under 20 MB) and shows them on tools/model-search.html (Game Development -> Model Search).
+  The OWNER spins them in 3D and taps Get it; the fetch robot downloads + slims his pick. Never pick for him.
 - **Sound robot**: add a recipe to `sounds/recipes/<anything>.json` and merge. It makes the WAV in `sounds/made/` with the
   owner's Beat Machine (our own sounds, no license worries). Kinds: `beat` (style, bpm, loops, pitch), `sfx` (a Beat Machine
   library sound), `engine` (kind v8 / diesel / inline4 / vtwin / superbike, rpm or rev [from,to], deep, rough, blower,
