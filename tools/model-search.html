@@ -38,6 +38,8 @@ h1{font-size:21px;margin:0;flex:1}.sub{color:var(--dim);font-size:13px;margin:0 
 const $=id=>document.getElementById(id), REPO='https://github.com/Attacked-Kraken/18-Games-Casino';
 let idx=[], cur=null, data=null, got={};
 try{ got=JSON.parse(localStorage.getItem('modelpicks')||'{}'); }catch(e){}
+// ASSET-LAW: no real brands - warn on real car/bike makers (the model can still be used with badges/logos painted out)
+const BRAND=/porsche|ferrari|lamborghini|mercedes|bmw|audi|honda|toyota|nissan|ford|chevrolet|chevy|dodge|mclaren|bugatti|koenigsegg|pagani|aston martin|bentley|jaguar|lexus|mazda|subaru|tesla|volkswagen|\bvw\b|ducati|yamaha|kawasaki|suzuki|harley|ktm|red bull|mercedes|boeing|airbus|cessna|nike|adidas|nhl|mlb|nfl|fifa|kia|hyundai/i;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function getLink(r){ const what=(data&&data.for)||(data&&data.words)||'';
   return REPO+'/new/main?filename='+encodeURIComponent('models/picks/'+r.uid+'.txt')+'&value='+encodeURIComponent('for '+what+' · '+r.name+' by '+r.maker+' · '+r.link); }
@@ -51,7 +53,7 @@ function draw(){ if(!data){ $('grid').innerHTML='<div class="empty">Couldn\'t lo
   $('for').textContent=(data.for?'For: '+data.for+' · ':'')+'searched '+data.date;
   if(!data.results.length){ $('grid').innerHTML='<div class="empty">Nothing free and small enough for this search - try other words.</div>'; return; }
   $('grid').innerHTML=data.results.map((r,i)=>'<div class="c'+(got[r.uid]?' got':'')+'"><img loading="lazy" src="'+esc(r.thumb)+'" alt="">'+
-    '<div class="b"><b>'+esc(r.name)+'</b><span>by '+esc(r.maker)+'</span><span>'+esc(r.license)+(r.mb!=null?' · '+r.mb+' MB':'')+(r.faces?' · '+Math.round(r.faces/1000)+'k faces':'')+'</span></div>'+
+    '<div class="b"><b>'+esc(r.name)+'</b><span>by '+esc(r.maker)+'</span>'+(BRAND.test(r.name)?'<span style="color:#ffb020">&#9888;&#65039; real brand - logos must be painted out</span>':'')+'<span>'+esc(r.license)+(r.mb!=null?' · '+r.mb+' MB':'')+(r.faces?' · '+Math.round(r.faces/1000)+'k faces':'')+'</span></div>'+
     '<div class="btns"><button data-spin="'+i+'">&#128260; 3D</button><a class="get" data-get="'+i+'" href="'+esc(getLink(r))+'" target="_blank" rel="noopener">'+(got[r.uid]?'&#10003; Asked':'Get it')+'</a></div></div>').join(''); }
 $('chips').onclick=e=>{ const b=e.target.closest('button'); if(b) openSearch(b.dataset.s); };
 $('grid').onclick=e=>{ const s=e.target.closest('[data-spin]'), g=e.target.closest('[data-get]');
