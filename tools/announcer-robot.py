@@ -3,17 +3,17 @@
 # For every line in sounds/announcer/lines.json it makes TWO versions in sounds/voice/:
 #   <game>-<name>-you.m4a  : the owner's voice (Chatterbox, MIT, learns a voice from one clip) - only when his clip is set
 #   <game>-<name>-pro.m4a  : a free professional stock voice (Kokoro, Apache-2.0)
-# then puts both through the broadcast finish (deeper + fuller, radio presence, punch, arena PA echo).
+# then puts both through the broadcast finish (a touch deeper, radio presence, punch). Owner Oct 19: NO echo/reverb - "too much reverb".
 # His clip is NEVER in this public repo: sounds/announcer/owner-voice.enc is encrypted, the key is the VOICE_KEY secret.
 # Writes sounds/voice/voice.json (the Sound Lab's Announcer tab). Unchanged lines are not made again.
 import json, os, sys, subprocess, hashlib, tempfile
 LINES = 'sounds/announcer/lines.json'; OUT = 'sounds/voice'; os.makedirs(OUT, exist_ok=True)
 PRO_VOICE = os.environ.get('PRO_VOICE', 'am_michael')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
-# the broadcast finish: a touch deeper (keeps speed), warm chest, radio presence, compressor punch, arena PA slap-back
-FINISH = ('aresample=24000,highpass=f=85,asetrate=24000*0.94,aresample=24000,atempo=1.0638,'
+# the broadcast finish: a touch deeper (keeps speed), warm chest, radio presence, compressor punch - DRY, no echo (owner)
+FINISH = ('aresample=24000,highpass=f=85,asetrate=24000*0.97,aresample=24000,atempo=1.0309,'
           'equalizer=f=150:t=q:w=1:g=3,equalizer=f=3000:t=q:w=1.2:g=5,equalizer=f=7500:t=q:w=1:g=2,lowpass=f=11000,'
           'acompressor=threshold=-22dB:ratio=6:attack=4:release=90:makeup=7,'
-          'aecho=0.85:0.55:70|140|260:0.22|0.14|0.08,loudnorm=I=-14:TP=-1.2:LRA=7')
+          'loudnorm=I=-14:TP=-1.2:LRA=7')
 lines = json.load(open(LINES))
 old = {}
 try: old = {v['name']: v for v in json.load(open(os.path.join(OUT, 'voice.json')))['sounds']}
