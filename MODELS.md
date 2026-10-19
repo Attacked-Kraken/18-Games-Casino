@@ -132,3 +132,14 @@ Format (one section per model — keep the keys exactly like this):
 - file: models/ballpark.mjs
 - view: tools/venue-viewer.html?m=models/ballpark.mjs&look=field&name=Ballpark
 - notes: JOB J22. Built from venues/ballpark.md: bases 27.43m, rubber 18.44m, foul poles 99m, wall 99m/122m, stands wrap home plate (3 tiers), 6 light towers, centre-field scoreboard, crowd. report().fans >= 25000.
+
+## MODEL: Apex Moto line-up (4 bikes)
+- id: apexmoto-bikes
+- game: apexmoto.html
+- file: models/bikes/apex-superbike.glb
+- look: studio
+- view: tools/model-viewer.html?m=models/bikes/apex-superbike.glb&look=studio
+- by: Claude (owner's own picks, Oct 18 2026)
+- version: 1
+- notes: the owner sent and picked these himself ("put all these bikes in the motorcycle game"): apex-superbike, street-bike (Silas6), race-bike (Tahseen, logos painted over), phantom-bike (JonnyMANSON)
+- status: LOCKED
