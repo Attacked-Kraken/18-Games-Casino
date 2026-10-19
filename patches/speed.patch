@@ -1,0 +1,11 @@
+--- a/apexflight.html	2026-10-19 15:00:03.515281426 -0500
++++ b/apexflight.html	2026-10-19 14:59:58.952526467 -0500
+@@ -718,7 +718,7 @@
+   // forces
+   ACC.set(0, -GRAV, 0);
+   ACC.addScaledVector(F, THRUST * P.thr);
+-  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00045 * v + 0.005));  // drag - reduced for better climb
++  if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
+   if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
+     // Stall: lift fades as speed drops below VSTALL (plane sinks, user keeps pitch control)
+     const stallFade = v < VSTALL ? Math.max(0.3, v / VSTALL) : 1.0;
