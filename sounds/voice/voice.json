@@ -7,9 +7,9 @@
    "tab": "voice",
    "file": "all-welcome-pro.m4a",
    "dir": "voice",
-   "secs": 4.7,
-   "made": "2026-10-19T16:48:18.432861+00:00",
-   "key": "9821f568d007",
+   "secs": 4.4,
+   "made": "2026-10-19T17:25:45.241355+00:00",
+   "key": "87c44a8032a8",
    "who": "pro"
   },
   {
@@ -19,9 +19,9 @@
    "tab": "voice",
    "file": "all-countdown-pro.m4a",
    "dir": "voice",
-   "secs": 3.1,
-   "made": "2026-10-19T16:48:20.180766+00:00",
-   "key": "4721bfd93933",
+   "secs": 2.8,
+   "made": "2026-10-19T17:25:46.550090+00:00",
+   "key": "bdde00132cf2",
    "who": "pro"
   },
   {
@@ -31,9 +31,9 @@
    "tab": "voice",
    "file": "all-winner-pro.m4a",
    "dir": "voice",
-   "secs": 2.8,
-   "made": "2026-10-19T16:48:21.777372+00:00",
-   "key": "9760c60fd687",
+   "secs": 2.5,
+   "made": "2026-10-19T17:25:47.732725+00:00",
+   "key": "713cebc18f13",
    "who": "pro"
   },
   {
@@ -43,9 +43,9 @@
    "tab": "voice",
    "file": "all-new-record-pro.m4a",
    "dir": "voice",
-   "secs": 2.5,
-   "made": "2026-10-19T16:48:23.196817+00:00",
-   "key": "8d6b79a840b9",
+   "secs": 2.2,
+   "made": "2026-10-19T17:25:48.776852+00:00",
+   "key": "8fc7d1ed2595",
    "who": "pro"
   },
   {
@@ -55,21 +55,21 @@
    "tab": "voice",
    "file": "all-game-over-pro.m4a",
    "dir": "voice",
-   "secs": 3.4,
-   "made": "2026-10-19T16:48:25.090743+00:00",
-   "key": "67589f58a387",
+   "secs": 3.1,
+   "made": "2026-10-19T17:25:50.205558+00:00",
+   "key": "b38714941d23",
    "who": "pro"
   },
   {
    "name": "hockey-goal-pro",
-   "title": "He shoots... he SCORES!  (pro voice)",
+   "title": "GOAL! He shoots, he scores!  (pro voice)",
    "game": "hockey",
    "tab": "voice",
    "file": "hockey-goal-pro.m4a",
    "dir": "voice",
-   "secs": 3.2,
-   "made": "2026-10-19T16:48:26.909850+00:00",
-   "key": "21fede54f58d",
+   "secs": 2.6,
+   "made": "2026-10-19T17:25:51.410699+00:00",
+   "key": "48edadcea203",
    "who": "pro"
   },
   {
@@ -79,9 +79,9 @@
    "tab": "voice",
    "file": "hockey-faceoff-pro.m4a",
    "dir": "voice",
-   "secs": 2.3,
-   "made": "2026-10-19T16:48:28.241976+00:00",
-   "key": "09b40ad6fcc0",
+   "secs": 2.1,
+   "made": "2026-10-19T17:25:52.345922+00:00",
+   "key": "71e2952d3eaa",
    "who": "pro"
   },
   {
@@ -91,9 +91,9 @@
    "tab": "voice",
    "file": "hockey-power-play-pro.m4a",
    "dir": "voice",
-   "secs": 2.0,
-   "made": "2026-10-19T16:48:29.391804+00:00",
-   "key": "1c7d34e7021a",
+   "secs": 1.8,
+   "made": "2026-10-19T17:25:53.299505+00:00",
+   "key": "0f7debc0a9d3",
    "who": "pro"
   },
   {
@@ -103,9 +103,9 @@
    "tab": "voice",
    "file": "hockey-save-pro.m4a",
    "dir": "voice",
-   "secs": 2.0,
-   "made": "2026-10-19T16:48:30.521594+00:00",
-   "key": "ca8a24cff254",
+   "secs": 1.7,
+   "made": "2026-10-19T17:25:54.240143+00:00",
+   "key": "39301810df25",
    "who": "pro"
   },
   {
@@ -115,9 +115,9 @@
    "tab": "voice",
    "file": "hockey-final-period-pro.m4a",
    "dir": "voice",
-   "secs": 3.2,
-   "made": "2026-10-19T16:48:32.341418+00:00",
-   "key": "cf6afa49fc03",
+   "secs": 2.9,
+   "made": "2026-10-19T17:25:55.720185+00:00",
+   "key": "fdc7c81a363c",
    "who": "pro"
   },
   {
@@ -127,9 +127,9 @@
    "tab": "voice",
    "file": "baseball-strike-three-pro.m4a",
    "dir": "voice",
-   "secs": 2.4,
-   "made": "2026-10-19T16:48:33.726151+00:00",
-   "key": "cbaa7af47576",
+   "secs": 2.2,
+   "made": "2026-10-19T17:25:56.687455+00:00",
+   "key": "a0be6269056e",
    "who": "pro"
   },
   {
@@ -139,9 +139,9 @@
    "tab": "voice",
    "file": "baseball-home-run-pro.m4a",
    "dir": "voice",
-   "secs": 3.1,
-   "made": "2026-10-19T16:48:35.276521+00:00",
-   "key": "a28798f2cc11",
+   "secs": 2.8,
+   "made": "2026-10-19T17:25:57.790726+00:00",
+   "key": "cf093b3fd25f",
    "who": "pro"
   },
   {
@@ -151,9 +151,9 @@
    "tab": "voice",
    "file": "baseball-play-ball-pro.m4a",
    "dir": "voice",
-   "secs": 1.8,
-   "made": "2026-10-19T16:48:36.331511+00:00",
-   "key": "fd71b3d1ac3c",
+   "secs": 1.6,
+   "made": "2026-10-19T17:25:58.662494+00:00",
+   "key": "e3cdbcbbae09",
    "who": "pro"
   },
   {
@@ -163,9 +163,9 @@
    "tab": "voice",
    "file": "baseball-batter-up-pro.m4a",
    "dir": "voice",
-   "secs": 2.1,
-   "made": "2026-10-19T16:48:37.521794+00:00",
-   "key": "25c4a91ea5f5",
+   "secs": 1.8,
+   "made": "2026-10-19T17:25:59.677733+00:00",
+   "key": "3ab111d746f2",
    "who": "pro"
   },
   {
@@ -175,21 +175,21 @@
    "tab": "voice",
    "file": "baseball-safe-pro.m4a",
    "dir": "voice",
-   "secs": 1.8,
-   "made": "2026-10-19T16:48:38.473288+00:00",
-   "key": "935255489626",
+   "secs": 1.6,
+   "made": "2026-10-19T17:26:00.380863+00:00",
+   "key": "73f0d402d032",
    "who": "pro"
   },
   {
    "name": "soccer-goal-pro",
-   "title": "GOOOOAL! What a strike!  (pro voice)",
+   "title": "GOAL! What a strike!  (pro voice)",
    "game": "soccer",
    "tab": "voice",
    "file": "soccer-goal-pro.m4a",
    "dir": "voice",
-   "secs": 2.9,
-   "made": "2026-10-19T16:48:40.128194+00:00",
-   "key": "09c8e0b2a7bf",
+   "secs": 2.1,
+   "made": "2026-10-19T17:26:01.438673+00:00",
+   "key": "aafc266ac331",
    "who": "pro"
   },
   {
@@ -199,9 +199,9 @@
    "tab": "voice",
    "file": "soccer-kickoff-pro.m4a",
    "dir": "voice",
-   "secs": 2.2,
-   "made": "2026-10-19T16:48:41.397499+00:00",
-   "key": "684b7c0d4fbe",
+   "secs": 2.0,
+   "made": "2026-10-19T17:26:02.442553+00:00",
+   "key": "0b349757dee9",
    "who": "pro"
   },
   {
@@ -211,9 +211,9 @@
    "tab": "voice",
    "file": "soccer-penalty-pro.m4a",
    "dir": "voice",
-   "secs": 2.1,
-   "made": "2026-10-19T16:48:42.583253+00:00",
-   "key": "852bc455bdf7",
+   "secs": 1.8,
+   "made": "2026-10-19T17:26:03.484057+00:00",
+   "key": "deb699b26ed5",
    "who": "pro"
   },
   {
@@ -223,9 +223,9 @@
    "tab": "voice",
    "file": "soccer-full-time-pro.m4a",
    "dir": "voice",
-   "secs": 2.3,
-   "made": "2026-10-19T16:48:43.882498+00:00",
-   "key": "7cf5ecdbbe8b",
+   "secs": 2.0,
+   "made": "2026-10-19T17:26:04.529410+00:00",
+   "key": "0206a7f25ade",
    "who": "pro"
   },
   {
@@ -235,9 +235,9 @@
    "tab": "voice",
    "file": "flight-takeoff-pro.m4a",
    "dir": "voice",
-   "secs": 2.7,
-   "made": "2026-10-19T16:48:45.422220+00:00",
-   "key": "110a0b7a99f5",
+   "secs": 2.5,
+   "made": "2026-10-19T17:26:05.618770+00:00",
+   "key": "ace211fdaf70",
    "who": "pro"
   },
   {
@@ -247,9 +247,9 @@
    "tab": "voice",
    "file": "flight-checkpoint-pro.m4a",
    "dir": "voice",
-   "secs": 2.6,
-   "made": "2026-10-19T16:48:46.922732+00:00",
-   "key": "fcb809ae8cf1",
+   "secs": 2.4,
+   "made": "2026-10-19T17:26:06.673211+00:00",
+   "key": "10e25f594a59",
    "who": "pro"
   },
   {
@@ -259,9 +259,9 @@
    "tab": "voice",
    "file": "flight-landing-pro.m4a",
    "dir": "voice",
-   "secs": 2.6,
-   "made": "2026-10-19T16:48:48.265902+00:00",
-   "key": "7fe9b07e290b",
+   "secs": 2.4,
+   "made": "2026-10-19T17:26:07.646745+00:00",
+   "key": "53bbcf0bbaac",
    "who": "pro"
   },
   {
@@ -271,9 +271,9 @@
    "tab": "voice",
    "file": "monstertruck-big-air-pro.m4a",
    "dir": "voice",
-   "secs": 2.5,
-   "made": "2026-10-19T16:48:49.709576+00:00",
-   "key": "4b70f6575dd6",
+   "secs": 2.3,
+   "made": "2026-10-19T17:26:08.761247+00:00",
+   "key": "9e117de06a75",
    "who": "pro"
   },
   {
@@ -283,9 +283,9 @@
    "tab": "voice",
    "file": "monstertruck-crush-pro.m4a",
    "dir": "voice",
-   "secs": 2.0,
-   "made": "2026-10-19T16:48:50.777051+00:00",
-   "key": "9a8384e51d90",
+   "secs": 1.8,
+   "made": "2026-10-19T17:26:09.519270+00:00",
+   "key": "7a9c57f42d22",
    "who": "pro"
   },
   {
@@ -295,9 +295,9 @@
    "tab": "voice",
    "file": "monstertruck-loop-pro.m4a",
    "dir": "voice",
-   "secs": 2.7,
-   "made": "2026-10-19T16:48:52.170991+00:00",
-   "key": "f10de2e6456c",
+   "secs": 2.5,
+   "made": "2026-10-19T17:26:10.525175+00:00",
+   "key": "61e770d43c48",
    "who": "pro"
   },
   {
@@ -307,9 +307,9 @@
    "tab": "voice",
    "file": "monstertruck-welcome-pro.m4a",
    "dir": "voice",
-   "secs": 3.4,
-   "made": "2026-10-19T16:48:54.089997+00:00",
-   "key": "0fb65a99cc1d",
+   "secs": 3.2,
+   "made": "2026-10-19T17:26:12.098193+00:00",
+   "key": "55fcfe947102",
    "who": "pro"
   },
   {
@@ -319,9 +319,9 @@
    "tab": "voice",
    "file": "f1-lights-out-pro.m4a",
    "dir": "voice",
-   "secs": 3.1,
-   "made": "2026-10-19T16:48:55.863235+00:00",
-   "key": "b80169ebf549",
+   "secs": 2.8,
+   "made": "2026-10-19T17:26:13.294601+00:00",
+   "key": "c5108dd79dfd",
    "who": "pro"
   },
   {
@@ -331,9 +331,9 @@
    "tab": "voice",
    "file": "f1-fastest-lap-pro.m4a",
    "dir": "voice",
-   "secs": 2.7,
-   "made": "2026-10-19T16:48:57.417633+00:00",
-   "key": "59834475c08b",
+   "secs": 2.5,
+   "made": "2026-10-19T17:26:14.482831+00:00",
+   "key": "79aa6a3c064b",
    "who": "pro"
   },
   {
@@ -343,9 +343,9 @@
    "tab": "voice",
    "file": "f1-pit-stop-pro.m4a",
    "dir": "voice",
-   "secs": 3.0,
-   "made": "2026-10-19T16:48:59.099250+00:00",
-   "key": "323dc1caff19",
+   "secs": 2.7,
+   "made": "2026-10-19T17:26:15.644772+00:00",
+   "key": "b3f8f7566c3e",
    "who": "pro"
   },
   {
@@ -355,9 +355,9 @@
    "tab": "voice",
    "file": "f1-checkered-flag-pro.m4a",
    "dir": "voice",
-   "secs": 2.8,
-   "made": "2026-10-19T16:49:00.673952+00:00",
-   "key": "5c62ab38dbe5",
+   "secs": 2.5,
+   "made": "2026-10-19T17:26:16.957542+00:00",
+   "key": "2eba60118c28",
    "who": "pro"
   },
   {
@@ -367,9 +367,9 @@
    "tab": "voice",
    "file": "trackfield-on-your-marks-pro.m4a",
    "dir": "voice",
-   "secs": 2.8,
-   "made": "2026-10-19T16:49:02.275156+00:00",
-   "key": "2249ec7130bb",
+   "secs": 2.6,
+   "made": "2026-10-19T17:26:18.285432+00:00",
+   "key": "049ed2d4e72a",
    "who": "pro"
   },
   {
@@ -379,9 +379,9 @@
    "tab": "voice",
    "file": "trackfield-photo-finish-pro.m4a",
    "dir": "voice",
-   "secs": 2.5,
-   "made": "2026-10-19T16:49:03.676054+00:00",
-   "key": "4dfa369e67fe",
+   "secs": 2.2,
+   "made": "2026-10-19T17:26:19.368977+00:00",
+   "key": "a4f6aa9fc146",
    "who": "pro"
   },
   {
@@ -391,9 +391,9 @@
    "tab": "voice",
    "file": "trackfield-world-record-pro.m4a",
    "dir": "voice",
-   "secs": 2.5,
-   "made": "2026-10-19T16:49:05.117605+00:00",
-   "key": "29a9b17b7998",
+   "secs": 2.3,
+   "made": "2026-10-19T17:26:20.476371+00:00",
+   "key": "11572370c396",
    "who": "pro"
   },
   {
@@ -403,9 +403,9 @@
    "tab": "voice",
    "file": "racer-nitro-pro.m4a",
    "dir": "voice",
-   "secs": 2.2,
-   "made": "2026-10-19T16:49:06.362510+00:00",
-   "key": "a14944e242bd",
+   "secs": 1.9,
+   "made": "2026-10-19T17:26:21.394663+00:00",
+   "key": "1641b568aa27",
    "who": "pro"
   },
   {
@@ -415,9 +415,9 @@
    "tab": "voice",
    "file": "racer-street-race-pro.m4a",
    "dir": "voice",
-   "secs": 3.4,
-   "made": "2026-10-19T16:49:08.074881+00:00",
-   "key": "7bd4ca4abd9d",
+   "secs": 3.1,
+   "made": "2026-10-19T17:26:22.713043+00:00",
+   "key": "7b259f5db486",
    "who": "pro"
   },
   {
@@ -427,9 +427,9 @@
    "tab": "voice",
    "file": "moto-final-lap-pro.m4a",
    "dir": "voice",
-   "secs": 2.9,
-   "made": "2026-10-19T16:49:09.727768+00:00",
-   "key": "1b557c674297",
+   "secs": 2.7,
+   "made": "2026-10-19T17:26:24.074260+00:00",
+   "key": "372399ef83d0",
    "who": "pro"
   },
   {
@@ -439,9 +439,9 @@
    "tab": "voice",
    "file": "moto-overtake-pro.m4a",
    "dir": "voice",
-   "secs": 2.7,
-   "made": "2026-10-19T16:49:11.113510+00:00",
-   "key": "de854d4dd2e5",
+   "secs": 2.5,
+   "made": "2026-10-19T17:26:25.075725+00:00",
+   "key": "733bc4bf224d",
    "who": "pro"
   },
   {
@@ -451,9 +451,9 @@
    "tab": "voice",
    "file": "moto-wheelie-pro.m4a",
    "dir": "voice",
-   "secs": 2.6,
-   "made": "2026-10-19T16:49:12.592298+00:00",
-   "key": "0bd21126d901",
+   "secs": 2.4,
+   "made": "2026-10-19T17:26:26.217287+00:00",
+   "key": "3cf3763de1d6",
    "who": "pro"
   }
  ]
