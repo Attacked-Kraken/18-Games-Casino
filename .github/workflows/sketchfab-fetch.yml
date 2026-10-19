@@ -15,7 +15,7 @@ on:
         description: 'Token test: a Sketchfab model link or id (checks the download works, saves nothing)'
         default: ''
       slim:
-        description: 'Slim every fetched model over 6 MB for phones (1 = yes)'
+        description: 'Slim every model in the repo over 6 MB for phones (1 = yes)'
         default: ''
 concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
 permissions:
@@ -53,7 +53,7 @@ jobs:
             echo "shrunk $out: $(( $(stat -c %s "$out") / 1024 )) KB" | tee -a fetch-report.txt; }
           for f in $(ls models/fetched/*-raw.glb 2>/dev/null); do slim "$f" "${f%-raw.glb}.glb"; rm -f "$f"; done
           if [ -n "${{ github.event.inputs.slim }}" ]; then
-            for f in $(ls models/fetched/*.glb 2>/dev/null); do
+            for f in $(git ls-files '*.glb' | grep -v '^characters/'); do   # every big model in the repo (rigged people stay as they are)
               [ $(stat -c %s "$f") -le 6000000 ] && continue
               cp "$f" /tmp/orig.glb; slim /tmp/orig.glb "$f"
             done
@@ -62,6 +62,6 @@ jobs:
           git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models/fetched)" ] && { echo "nothing to save"; exit 0; }
           node tools/asset-check.mjs
           git config user.name "sketchfab fetch robot"; git config user.email "actions@users.noreply.github.com"
-          git add MODEL-REQUESTS.md ASSETS.md models/fetched
+          git add MODEL-REQUESTS.md ASSETS.md models
           git commit -m "Sketchfab fetch robot: $(grep -E '^(FETCHING|SKIPPED|FAILED|SLIMMED|shrunk)' fetch-report.txt | paste -sd ' ' | cut -c1-180)"
           for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1

@@ -11,6 +11,13 @@ checks the license (CC Attribution / CC0 only), downloads it with the owner's ke
 `models/fetched/<name>.glb`, adds the ASSETS.md entry and marks your line DONE (or SKIPPED with the reason). Nobody signs in.
 Your game must name the maker on its credits screen when you use a CC Attribution model.
 
+**Checklist for every Muse (do all of it, then stop):**
+1. Search sketchfab.com with the **Downloadable** filter. Never sign in, never download yourself.
+2. Open the model page and check the license box says **CC Attribution** or **CC0** (skip "Free Standard" and anything else).
+3. No real brand names, logos, teams or players on it. Download size (shown under Download) **under 20 MB**.
+4. Add ONE line at the bottom: `- OPEN · what it's for · model name by maker · <exact model page link with the long id> · CC-BY · size`
+5. Own branch, pull request, merge. Then stop - the robot downloads it, slims it for phones (under ~6 MB) and marks it DONE.
+
 Rules for every request: license **CC Attribution** (CC-BY) or CC0 · trusted maker · no brands/logos · download
 **under ~20 MB** (GitHub's limit is 100 MB, phones need a few MB) · the exact Sketchfab link.
 
