@@ -18,7 +18,7 @@ on:
         description: 'Search Sketchfab (free CC-BY / CC0 only), e.g. hockey arena; race car (results: tools/model-search.html)'
         default: ''
       slim:
-        description: 'Slim every model in the repo over 6 MB for phones (1 = yes)'
+        description: 'Slim every model in the repo over 6 MB or 100,000 triangles for phones (1 = yes)'
         default: ''
 concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
 permissions:
@@ -55,13 +55,22 @@ jobs:
               set -- $step; [ $(stat -c %s "$out") -le 6000000 ] && break
               gltf-transform simplify "$f" "$t" --ratio $1 --error 0.01
               gltf-transform optimize "$t" "$out" --compress quantize --texture-compress webp --texture-size $2 --simplify false
+            done
+            # owner Oct 19 (Gemini idea #2): also cap the DETAIL - a small file can still have so many triangles that a
+            # phone stutters. Over 100,000 triangles -> simplify (keeps the shape) until it fits.
+            for k in 1 2 3; do
+              tris=$(node tools/glb-tris.mjs "$out"); [ "$tris" -le 100000 ] && break
+              ratio=$(node -e "console.log(Math.max(0.05, 100000 / $tris * 0.9).toFixed(3))")
+              gltf-transform simplify "$out" "$t" --ratio $ratio --error 0.02
+              gltf-transform optimize "$t" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
             done; rm -f "$t"
+            echo "::notice title=Sketchfab robot::$out: $(node tools/glb-tris.mjs "$out") triangles"
             echo "::notice title=Sketchfab robot::slim $out: $(( $(stat -c %s "$out") / 1024 )) KB"
             echo "shrunk $out: $(( $(stat -c %s "$out") / 1024 )) KB" | tee -a fetch-report.txt; }
           for f in $(ls models/fetched/*-raw.glb 2>/dev/null); do slim "$f" "${f%-raw.glb}.glb"; rm -f "$f"; done
           if [ -n "${{ github.event.inputs.slim }}" ]; then
             for f in $(git ls-files '*.glb' | grep -v '^characters/'); do   # every big model in the repo (rigged people stay as they are)
-              [ $(stat -c %s "$f") -le 6000000 ] && continue
+              [ $(stat -c %s "$f") -le 6000000 ] && [ $(node tools/glb-tris.mjs "$f") -le 100000 ] && continue
               cp "$f" /tmp/orig.glb; slim /tmp/orig.glb "$f"
             done
             echo "SLIMMED old models" >> fetch-report.txt
