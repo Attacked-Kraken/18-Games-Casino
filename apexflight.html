@@ -153,12 +153,12 @@ const $ = id => document.getElementById(id);
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 /* ================= constants ================= */
-const VSTALL = 25;          // m/s  (~49 kt) stall warning
+const VSTALL = 20;          // m/s  (~39 kt) stall warning - more forgiving
 const VROT   = 26.5;        // m/s  (~52 kt) rotate speed
 const VROT_A = 25.7;        // m/s  (~50 kt) auto-rotate assist threshold
 const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
-const THRUST = 2.3;         // m/s^2 at full throttle (~13 s ground roll to rotate)
-const KLIFT  = 0.0155;      // lift coefficient
+const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
+const KLIFT  = 0.018;       // lift coefficient - more forgiving
 const GRAV   = 9.81;
 const GEAR_H = 1.2;         // plane origin height above ground when on wheels
 const RWY_HALF = 700, RWY_W = 12;
@@ -673,7 +673,7 @@ function step(dt) {
       P.pitch = clamp(P.pitch + inp.pitchUp * 1.05 * auth * dt, -0.55, 0.62);
       P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
-      if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.055 * dt; stallNow = true; }
+      if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.025 * dt; stallNow = true; }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
     } else {
       /* ground roll: the nose answers to the stick once fast, and an
