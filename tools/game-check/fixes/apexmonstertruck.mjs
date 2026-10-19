@@ -260,14 +260,14 @@ export default [
   },
   {
     id: 'play-engine-over-music',
-    ask: 'Owner Oct 18 6:28 PM: engine is heard clearly - music steps back (quieter, bass cut) while driving',
+    ask: 'Owner Oct 18 6:28 + 7:25 PM: engine is deep and separate - game music has no bass under it and steps back while driving',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
         if (!M || !M.Snd || !M.Music) return 'no Snd/Music';
         try { M.Snd.init(); M.Music.init(M.Snd); } catch (e) { return 'audio init failed: ' + e.message; }
         if (!M.Snd.ctx) return 'no AudioContext';
-        if (!M.Snd.snarlGain || (M.Snd.engOsc || []).length < 4) return 'no mid-range engine layer';
+        if (!M.Snd.lope || (M.Snd.engOsc || []).length < 4) return 'no V8 lope on the engine (owner: engine separate and deeper)';
         if (!M.Music.duck || !M.Music.musHP) return 'music cannot duck under the engine';
         M.Snd.muted = false;
         M.Music.play('game');
