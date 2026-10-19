@@ -260,7 +260,7 @@ export default [
   },
   {
     id: 'play-engine-over-music',
-    ask: 'Owner Oct 18 6:28 + 7:25 PM: engine is deep and separate - game music has no bass under it and steps back while driving',
+    ask: 'Owner Oct 18 6:28 / 7:25 / 9:08 PM: engine deep and separate, music has no bass under it, a little louder, steps back a bit while driving',
     async test(page, h) {
       return h.eval(() => {
         const M = window.__mt;
@@ -274,7 +274,8 @@ export default [
         M.Music.duck(1);
         const lv = M.Music.level();
         M.Music.duck(0); M.Music.stop();
-        return lv <= 0.15 ? true : `music still at ${lv.toFixed(2)} while the engine is at full throttle`;
+        // owner Oct 18 9:08 PM: engine lower, music a little louder - music steps back a bit while driving, never vanishes
+        return lv > 0.15 && lv < 0.3 && M.Music.gtr ? true : `music at ${lv.toFixed(2)} at full throttle (want 0.15-0.30, with the rock guitar)`;
       });
     },
   },
