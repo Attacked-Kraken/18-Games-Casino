@@ -172,13 +172,19 @@
     try {
       win.addEventListener('error', function (e) { report('crash', (e.message || 'error') + (e.filename ? ' at ' + e.filename.split('/').pop() + ':' + e.lineno : '')); });
       win.addEventListener('unhandledrejection', function (e) { report('crash', 'unhandled: ' + String(e.reason && (e.reason.message || e.reason)).slice(0, 160)); });
-      var hitches = 0, prevT = 0;
+      // owner Oct 19 6:18 PM photo: the red "stutters" bar showed on EVERY card, even on menus nobody was playing (two games
+      // load at once on the page, and loading/scrolling hitches). Now it only measures a game you are really PLAYING:
+      // you touched it in the last 15 s, it has run 10 s, and it must hitch in two 5 s windows in a row.
+      var hitches = 0, prevT = 0, touchedAt = 0, startAt = Date.now(), badRuns = 0;
+      ['pointerdown', 'touchstart', 'keydown'].forEach(function (ev) { try { win.addEventListener(ev, function () { touchedAt = Date.now(); }, { passive: true, capture: true }); } catch (e) {} });
       (function tick(now) { frames++; lastFrame = Date.now(); if (prevT && now - prevT > 200) hitches++; prevT = now || 0; try { win.requestAnimationFrame(tick); } catch (e) {} })();
       var iv = setInterval(function () {
         if (!iframe.isConnected) { clearInterval(iv); return; }
-        if (document.hidden) { frames = 0; return; }
+        var playing = Date.now() - touchedAt < 15000 && Date.now() - startAt > 10000;
+        if (document.hidden || !playing) { frames = 0; hitches = 0; slow = 0; badRuns = 0; lastFrame = Date.now(); return; }
         var fps = frames / 5; frames = 0;
-        if (hitches >= 3) report('stutter', hitches + ' short freezes (over 0.2 s) in 5 s of play');
+        badRuns = hitches >= 3 ? badRuns + 1 : 0;
+        if (badRuns >= 2) report('stutter', hitches + ' short freezes (over 0.2 s) in 5 s of play, twice in a row');
         hitches = 0;
         if (Date.now() - lastFrame > 5000) report('freeze', 'no new picture for ' + Math.round((Date.now() - lastFrame) / 1000) + ' s');
         else if (fps < 20) { if (++slow >= 3) report('slow', Math.round(fps) + ' frames per second for 15 s (target 60)'); }
