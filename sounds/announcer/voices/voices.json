@@ -49,6 +49,136 @@
    "dir": "announcer/voices",
    "secs": 38.5,
    "made": "2026-10-19T21:31:51.026590Z"
+  },
+  {
+   "name": "voice-kokoro-af_bella",
+   "title": "Voice af_bella (woman, US) - Young and energetic",
+   "game": "all",
+   "tab": "voice",
+   "file": "af_bella.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 8.4,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-af_heart",
+   "title": "Voice af_heart (woman, US) - Hype announcer, bright and warm",
+   "game": "all",
+   "tab": "voice",
+   "file": "af_heart.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 8.6,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-af_nicole",
+   "title": "Voice af_nicole (woman, US) - Soft, calm tutorial guide",
+   "game": "all",
+   "tab": "voice",
+   "file": "af_nicole.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 13.8,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-af_sarah",
+   "title": "Voice af_sarah (woman, US) - Friendly coach",
+   "game": "all",
+   "tab": "voice",
+   "file": "af_sarah.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 8.2,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-am_eric",
+   "title": "Voice am_eric (man, US) - Calm coach",
+   "game": "all",
+   "tab": "voice",
+   "file": "am_eric.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 7.7,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-am_fenrir",
+   "title": "Voice am_fenrir (man, US) - Gruff tough guy",
+   "game": "all",
+   "tab": "voice",
+   "file": "am_fenrir.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 8.5,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-am_michael",
+   "title": "Voice am_michael (man, US) - Warm narrator, versatile",
+   "game": "all",
+   "tab": "voice",
+   "file": "am_michael.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 9.4,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-am_onyx",
+   "title": "Voice am_onyx (man, US) - Deep arena MC",
+   "game": "all",
+   "tab": "voice",
+   "file": "am_onyx.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 7.7,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-am_puck",
+   "title": "Voice am_puck (man, US) - Young and energetic",
+   "game": "all",
+   "tab": "voice",
+   "file": "am_puck.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 7.3,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-bf_emma",
+   "title": "Voice bf_emma (woman, UK) - Warm story narrator",
+   "game": "all",
+   "tab": "voice",
+   "file": "bf_emma.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 9.2,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-bf_isabella",
+   "title": "Voice bf_isabella (woman, UK) - Bright presenter / arena host",
+   "game": "all",
+   "tab": "voice",
+   "file": "bf_isabella.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 8.6,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-bm_fable",
+   "title": "Voice bm_fable (man, UK) - Young adventure hero",
+   "game": "all",
+   "tab": "voice",
+   "file": "bm_fable.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 9.2,
+   "made": "2026-10-19T21:48:41.738523+00:00"
+  },
+  {
+   "name": "voice-kokoro-bm_george",
+   "title": "Voice bm_george (man, UK) - Sports caller",
+   "game": "all",
+   "tab": "voice",
+   "file": "bm_george.mp3",
+   "dir": "announcer/voices/kokoro",
+   "secs": 9.1,
+   "made": "2026-10-19T21:48:41.738523+00:00"
   }
  ]
 }

@@ -152,3 +152,36 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - AI voices made for the owner by Grok (xAI terms), no real person's voice; proof in licenses/
 - downloaded: 2026-10-19, sent by the owner
 - used in: Sound Lab -> Announcer; reference voices for the announcer robot
+
+## ASSET: sounds/commentary/
+- title: sports commentary packs - hockey 138, soccer 183, football 143, Grand Prix 106, moto street 97 lines (two commentators)
+- maker: made for the owner in his "Apex Arcade Pass" chat with Piper TTS (proof: licenses/proof/2026-10-19-apex-arcade-pass-zips-*.jpg)
+- source: the owner's zips (untouched originals kept privately in the approver repo, owner-assets/2026-10-19/)
+- license: CC0 + CC-BY-SA 4.0 - announcer voice en_US-joe (CC0); color commentator voice en_GB-northern_english_male (CC BY-SA 4.0, OpenSLR 83)
+- downloaded: 2026-10-19, sent by the owner
+- used in: Sound Lab -> Announcer. A game that plays the color commentator MUST show on its Credits screen: "Color commentator voice: Piper en_GB-northern_english_male, trained on OpenSLR SLR83 (CC BY-SA 4.0)"
+- changes: MP3 only (the OGG copies dropped)
+
+## ASSET: sounds/announcer/voices/kokoro/
+- title: 13 game voices (Kokoro-82M auditions) + voice tools
+- maker: Kokoro-82M v1.0 (hexgrad), made for the owner
+- source: the owner's Game-Voice-Library.zip
+- license: Apache-2.0 - commercial use OK, no credit needed (courtesy: "Voices: Kokoro-82M (Apache-2.0)")
+- downloaded: 2026-10-19, sent by the owner
+- used in: Sound Lab -> Announcer
+
+## ASSET: sounds/real/monster-truck/
+- title: monster truck idle, rev, diesel high speed, blower
+- maker: made for the owner ("Apex Arcade Pass" chat, proof in licenses/proof/)
+- source: the owner's Monster-Truck-Engine-Sounds.zip (WAV masters kept privately)
+- license: OWNER - made for the owner
+- downloaded: 2026-10-19, sent by the owner
+- used in: Sound Lab -> Engines
+
+## ASSET: apexpaperplane.html, apexreefdash.html
+- title: Paper Plane, Reef Dash (one-file canvas games, code-drawn art, WebAudio sounds)
+- maker: made for the owner ("Apex Arcade Pass" chat)
+- source: the owner's Paper-Plane-Game.zip / Reef-Dash-Game.zip
+- license: OWNER - the owner's games
+- downloaded: 2026-10-19, sent by the owner
+- used in: Game Development page

@@ -39,7 +39,7 @@ h1{font-size:21px;margin:0;flex:1}
 <div id="bar"><b id="now"></b><div class="ctl"><button id="loop" type="button">&#128257; Loop</button><input id="seek" type="range" min="0" max="1000" value="0"><small id="time">0:00</small></div></div>
 <audio id="au" preload="none"></audio>
 <script>
-const GAMES={all:'Menus & UI',hockey:'Ice Hockey',baseball:'Baseball',soccer:'Soccer',flight:'Flight',monstertruck:'Monster Truck',f1:'F1',trackfield:'Track & Field',racer:'Exotic Racer',moto:'Apex Moto'};
+const GAMES={all:'Menus & UI',football:'Football',paperplane:'Paper Plane',reefdash:'Reef Dash',hockey:'Ice Hockey',baseball:'Baseball',soccer:'Soccer',flight:'Flight',monstertruck:'Monster Truck',f1:'F1',trackfield:'Track & Field',racer:'Exotic Racer',moto:'Apex Moto'};
 const st={tab:'new',game:'*',playing:null,sounds:[]};
 try{const s=JSON.parse(localStorage.getItem('soundlab')||'{}'); if(s.tab) st.tab=s.tab; if(s.game) st.game=s.game;}catch(e){}
 const au=document.getElementById('au'), $=id=>document.getElementById(id);
@@ -47,7 +47,7 @@ const REPO='https://github.com/Attacked-Kraken/18-Games-Casino';
 // owner Oct 19 "give me a delete button ... he has to replace them and make something totally different"
 const delLink=s=>REPO+'/new/main?filename='+encodeURIComponent('sounds/rejects/'+(s.tab==='voice'?'voice-':'')+s.name+'.txt')+'&value='+encodeURIComponent('owner deleted: '+s.title);
 let gone={}; try{ gone=JSON.parse(localStorage.getItem('soundgone')||'{}'); }catch(e){}
-const src=s=>(s.dir||'made')+'/'+encodeURIComponent(s.file);
+const src=s=>(s.dir||'made')+'/'+s.file.split('/').map(encodeURIComponent).join('/');
 const fmt=s=>{s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');};
 const save=()=>{try{localStorage.setItem('soundlab',JSON.stringify({tab:st.tab,game:st.game}));}catch(e){}};
 function draw(){
@@ -81,5 +81,9 @@ au.ontimeupdate=()=>{ if(au.duration) $('seek').value=Math.round(au.currentTime/
 au.onplay=au.onpause=au.onended=()=>draw();
 $('seek').oninput=e=>{ if(au.duration) au.currentTime=e.target.value/1000*au.duration; };
 const get=u=>fetch(u+'?'+Date.now()).then(r=>r.ok?r.json():{sounds:[]}).catch(()=>({sounds:[]}));
-Promise.all([get('made/catalog.json'),get('voice/voice.json'),get('announcer/voices/voices.json')]).then(([a,b,c])=>{st.sounds=(a.sounds||[]).concat((b.sounds||[]).map(v=>Object.assign({dir:'voice'},v)),(c.sounds||[])); draw();});
+// the commentary packs (two commentators per sport, every line its own clip) - owner Oct 19
+const PACKS={hockey:'hockey',soccer:'soccer',football:'football',grandprix:'f1',moto:'moto'};
+const packRows=(p,m)=>((m&&m.clips)||[]).map(c=>({name:'cm-'+p+'-'+c.id,title:(c.speaker==='color'?'🎧 ':'🎙️ ')+c.text,game:PACKS[p],tab:'voice',file:c.file.replace(/^clips\//,''),dir:'commentary/'+p+'/clips',secs:Math.round((c.duration||0)*10)/10,made:'2026-10-19T21:50:00Z',pack:p,event:c.event}));
+Promise.all([get('made/catalog.json'),get('voice/voice.json'),get('announcer/voices/voices.json'),get('real/real.json')].concat(Object.keys(PACKS).map(p=>get('commentary/'+p+'/manifest.json')))).then(([a,b,c,...packs])=>{
+  st.sounds=(a.sounds||[]).concat((b.sounds||[]).map(v=>Object.assign({dir:'voice'},v)),(c.sounds||[]),...Object.keys(PACKS).map((p,i)=>packRows(p,packs[i]))); draw();});
 </script></body></html>

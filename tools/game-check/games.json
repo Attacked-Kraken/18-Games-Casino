@@ -78,6 +78,20 @@
       "start": [
         "#raceBtn"
       ]
+    },
+    {
+      "file": "apexpaperplane.html",
+      "name": "Paper Plane",
+      "start": [
+        "∞ Endless"
+      ]
+    },
+    {
+      "file": "apexreefdash.html",
+      "name": "Reef Dash",
+      "start": [
+        "∞ Endless"
+      ]
     }
   ]
 }

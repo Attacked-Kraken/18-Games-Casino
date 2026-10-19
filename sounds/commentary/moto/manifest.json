@@ -1,0 +1,865 @@
+{
+ "sport": "moto_street",
+ "voices": {
+  "announcer": "Piper en_US-joe-medium (dataset CC0)",
+  "color": "Piper en_GB-northern_english_male-medium (dataset CC-BY-SA 4.0, OpenSLR 83)"
+ },
+ "clips": [
+  {
+   "id": "launch_01",
+   "event": "launch",
+   "speaker": "announcer",
+   "text": "Three, two, one, go! They launch off the line!",
+   "file": "clips/launch/launch_01.mp3",
+   "duration": 2.691
+  },
+  {
+   "id": "launch_02",
+   "event": "launch",
+   "speaker": "announcer",
+   "text": "Welcome to the midnight street race! Engines screaming!",
+   "file": "clips/launch/launch_02.mp3",
+   "duration": 2.534
+  },
+  {
+   "id": "launch_03",
+   "event": "launch",
+   "speaker": "announcer",
+   "text": "Rockets off the start! What a getaway!",
+   "file": "clips/launch/launch_03.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "launch_04",
+   "event": "launch",
+   "speaker": "color",
+   "text": "Oh, the city is buzzing tonight! Let's ride!",
+   "file": "clips/launch/launch_04.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "launch_05",
+   "event": "launch",
+   "speaker": "announcer",
+   "text": "Holeshot! He takes the early lead!",
+   "file": "clips/launch/launch_05.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "launch_06",
+   "event": "launch",
+   "speaker": "color",
+   "text": "Perfect clutch control on that launch!",
+   "file": "clips/launch/launch_06.mp3",
+   "duration": 1.75
+  },
+  {
+   "id": "wheelie_01",
+   "event": "wheelie",
+   "speaker": "announcer",
+   "text": "Wheelie! Front wheel high in the air!",
+   "file": "clips/wheelie/wheelie_01.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "wheelie_02",
+   "event": "wheelie",
+   "speaker": "announcer",
+   "text": "He pops a wheelie down the straight!",
+   "file": "clips/wheelie/wheelie_02.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "wheelie_03",
+   "event": "wheelie",
+   "speaker": "color",
+   "text": "Look at that balance! Pure showmanship!",
+   "file": "clips/wheelie/wheelie_03.mp3",
+   "duration": 1.698
+  },
+  {
+   "id": "wheelie_04",
+   "event": "wheelie",
+   "speaker": "announcer",
+   "text": "Long wheelie! The crowd loves it!",
+   "file": "clips/wheelie/wheelie_04.mp3",
+   "duration": 1.489
+  },
+  {
+   "id": "lean_01",
+   "event": "lean",
+   "speaker": "announcer",
+   "text": "Leaning hard into the corner! Knee on the ground!",
+   "file": "clips/lean/lean_01.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "lean_02",
+   "event": "lean",
+   "speaker": "announcer",
+   "text": "Tucks in, leans over, and he's through!",
+   "file": "clips/lean/lean_02.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "lean_03",
+   "event": "lean",
+   "speaker": "color",
+   "text": "What a line through that bend! Smooth as silk!",
+   "file": "clips/lean/lean_03.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "lean_04",
+   "event": "lean",
+   "speaker": "announcer",
+   "text": "Deep lean, sparks flying off the pegs!",
+   "file": "clips/lean/lean_04.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "near_miss_01",
+   "event": "near_miss",
+   "speaker": "announcer",
+   "text": "Whoa! Just squeezed between two cars!",
+   "file": "clips/near_miss/near_miss_01.mp3",
+   "duration": 2.142
+  },
+  {
+   "id": "near_miss_02",
+   "event": "near_miss",
+   "speaker": "announcer",
+   "text": "Inches from that truck! Near miss!",
+   "file": "clips/near_miss/near_miss_02.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "near_miss_03",
+   "event": "near_miss",
+   "speaker": "color",
+   "text": "Oh, my heart! That was so close!",
+   "file": "clips/near_miss/near_miss_03.mp3",
+   "duration": 1.855
+  },
+  {
+   "id": "near_miss_04",
+   "event": "near_miss",
+   "speaker": "announcer",
+   "text": "Threads the gap in traffic! Unbelievable!",
+   "file": "clips/near_miss/near_miss_04.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "near_miss_05",
+   "event": "near_miss",
+   "speaker": "color",
+   "text": "Amazing reflexes! He saw it just in time!",
+   "file": "clips/near_miss/near_miss_05.mp3",
+   "duration": 2.717
+  },
+  {
+   "id": "overtake_01",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "He's through! What a pass!",
+   "file": "clips/overtake/overtake_01.mp3",
+   "duration": 1.358
+  },
+  {
+   "id": "overtake_02",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Up the inside! Takes the lead!",
+   "file": "clips/overtake/overtake_02.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "overtake_03",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Blue bike passes Red! What a move!",
+   "file": "clips/overtake/overtake_03.mp3",
+   "duration": 1.802
+  },
+  {
+   "id": "overtake_04",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Red bike strikes back! Back in front!",
+   "file": "clips/overtake/overtake_04.mp3",
+   "duration": 1.802
+  },
+  {
+   "id": "overtake_05",
+   "event": "overtake",
+   "speaker": "color",
+   "text": "Late braking, perfect timing! Textbook pass!",
+   "file": "clips/overtake/overtake_05.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "nitro_01",
+   "event": "nitro",
+   "speaker": "announcer",
+   "text": "Nitro! He hits the boost!",
+   "file": "clips/nitro/nitro_01.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "nitro_02",
+   "event": "nitro",
+   "speaker": "announcer",
+   "text": "Boost engaged! He's rocketing away!",
+   "file": "clips/nitro/nitro_02.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "nitro_03",
+   "event": "nitro",
+   "speaker": "color",
+   "text": "Perfect timing on that boost! Right out of the corner!",
+   "file": "clips/nitro/nitro_03.mp3",
+   "duration": 2.821
+  },
+  {
+   "id": "nitro_04",
+   "event": "nitro",
+   "speaker": "announcer",
+   "text": "Blue flame! Full nitro!",
+   "file": "clips/nitro/nitro_04.mp3",
+   "duration": 1.332
+  },
+  {
+   "id": "wipeout_01",
+   "event": "wipeout",
+   "speaker": "announcer",
+   "text": "Oh! He's down! Slides out on the corner!",
+   "file": "clips/wipeout/wipeout_01.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "wipeout_02",
+   "event": "wipeout",
+   "speaker": "announcer",
+   "text": "Wipeout! But he's up and waving, he's okay!",
+   "file": "clips/wipeout/wipeout_02.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "wipeout_03",
+   "event": "wipeout",
+   "speaker": "color",
+   "text": "Too much throttle on that turn! He'll be fine!",
+   "file": "clips/wipeout/wipeout_03.mp3",
+   "duration": 2.168
+  },
+  {
+   "id": "wipeout_04",
+   "event": "wipeout",
+   "speaker": "announcer",
+   "text": "He's back on the bike! Not giving up!",
+   "file": "clips/wipeout/wipeout_04.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "checkpoint_01",
+   "event": "checkpoint",
+   "speaker": "announcer",
+   "text": "Checkpoint! Time extended!",
+   "file": "clips/checkpoint/checkpoint_01.mp3",
+   "duration": 1.411
+  },
+  {
+   "id": "checkpoint_02",
+   "event": "checkpoint",
+   "speaker": "announcer",
+   "text": "Through the checkpoint! Keep it pinned!",
+   "file": "clips/checkpoint/checkpoint_02.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "checkpoint_03",
+   "event": "checkpoint",
+   "speaker": "color",
+   "text": "Great split time! He's ahead of the pace!",
+   "file": "clips/checkpoint/checkpoint_03.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "checkpoint_04",
+   "event": "checkpoint",
+   "speaker": "announcer",
+   "text": "Checkpoint cleared! Halfway there!",
+   "file": "clips/checkpoint/checkpoint_04.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "final_stretch_01",
+   "event": "final_stretch",
+   "speaker": "announcer",
+   "text": "Final stretch! Here comes the finish line!",
+   "file": "clips/final_stretch/final_stretch_01.mp3",
+   "duration": 2.142
+  },
+  {
+   "id": "final_stretch_02",
+   "event": "final_stretch",
+   "speaker": "announcer",
+   "text": "Last corner! Everything on the line!",
+   "file": "clips/final_stretch/final_stretch_02.mp3",
+   "duration": 1.829
+  },
+  {
+   "id": "final_stretch_03",
+   "event": "final_stretch",
+   "speaker": "color",
+   "text": "Tuck in and hold on! Full throttle!",
+   "file": "clips/final_stretch/final_stretch_03.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "final_stretch_04",
+   "event": "final_stretch",
+   "speaker": "announcer",
+   "text": "Side by side down the final straight!",
+   "file": "clips/final_stretch/final_stretch_04.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "photo_finish_01",
+   "event": "photo_finish",
+   "speaker": "announcer",
+   "text": "It's a photo finish! Who got it?",
+   "file": "clips/photo_finish/photo_finish_01.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "photo_finish_02",
+   "event": "photo_finish",
+   "speaker": "color",
+   "text": "By the width of a tire! Incredible!",
+   "file": "clips/photo_finish/photo_finish_02.mp3",
+   "duration": 1.75
+  },
+  {
+   "id": "win_01",
+   "event": "win",
+   "speaker": "announcer",
+   "text": "He wins it! What a ride!",
+   "file": "clips/win/win_01.mp3",
+   "duration": 1.332
+  },
+  {
+   "id": "win_02",
+   "event": "win",
+   "speaker": "announcer",
+   "text": "Across the line first! Victory!",
+   "file": "clips/win/win_02.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "win_03",
+   "event": "win",
+   "speaker": "announcer",
+   "text": "Champion of the streets tonight!",
+   "file": "clips/win/win_03.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "win_04",
+   "event": "win",
+   "speaker": "color",
+   "text": "He rode like a legend! Flawless!",
+   "file": "clips/win/win_04.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "lose_01",
+   "event": "lose",
+   "speaker": "announcer",
+   "text": "Just beaten at the line!",
+   "file": "clips/lose/lose_01.mp3",
+   "duration": 1.176
+  },
+  {
+   "id": "lose_02",
+   "event": "lose",
+   "speaker": "color",
+   "text": "So close! He'll get them next time!",
+   "file": "clips/lose/lose_02.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "lose_03",
+   "event": "lose",
+   "speaker": "announcer",
+   "text": "Not tonight! But what a fight!",
+   "file": "clips/lose/lose_03.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "crowd_01",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "Listen to the crowd on the sidewalks!",
+   "file": "clips/crowd/crowd_01.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "crowd_02",
+   "event": "crowd",
+   "speaker": "color",
+   "text": "Phones up, everyone's cheering!",
+   "file": "clips/crowd/crowd_02.mp3",
+   "duration": 1.75
+  },
+  {
+   "id": "crowd_03",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "The whole city is watching!",
+   "file": "clips/crowd/crowd_03.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "idle_01",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Weaving through the downtown streets!",
+   "file": "clips/idle/idle_01.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "idle_02",
+   "event": "idle",
+   "speaker": "color",
+   "text": "He's saving the boost for later!",
+   "file": "clips/idle/idle_02.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "idle_03",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Neon lights blur past!",
+   "file": "clips/idle/idle_03.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "idle_04",
+   "event": "idle",
+   "speaker": "color",
+   "text": "You can feel an attack coming!",
+   "file": "clips/idle/idle_04.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "idle_05",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Plenty of road left in this race!",
+   "file": "clips/idle/idle_05.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "dialogue_01_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a launch from Blue!",
+   "dialogue_id": "d01",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_01_1.mp3",
+   "duration": 1.149
+  },
+  {
+   "id": "dialogue_01_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Lightning reflexes! He was gone in a flash!",
+   "dialogue_id": "d01",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_01_2.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "dialogue_02_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Can he catch the leader?",
+   "dialogue_id": "d02",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_02_1.mp3",
+   "duration": 1.202
+  },
+  {
+   "id": "dialogue_02_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's closing every corner! Watch out!",
+   "dialogue_id": "d02",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_02_2.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "dialogue_03_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Traffic up ahead!",
+   "dialogue_id": "d03",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_03_1.mp3",
+   "duration": 0.914
+  },
+  {
+   "id": "dialogue_03_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "This is where nerves count! Pick your gap!",
+   "dialogue_id": "d03",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_03_2.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "dialogue_04_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Did you see that wheelie?",
+   "dialogue_id": "d04",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_04_1.mp3",
+   "duration": 1.228
+  },
+  {
+   "id": "dialogue_04_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "I did! Two whole blocks on one wheel!",
+   "dialogue_id": "d04",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_04_2.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "dialogue_05_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The crowd is going crazy!",
+   "dialogue_id": "d05",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_05_1.mp3",
+   "duration": 1.358
+  },
+  {
+   "id": "dialogue_05_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They love the speed tonight!",
+   "dialogue_id": "d05",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_05_2.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "dialogue_06_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is he saving his nitro?",
+   "dialogue_id": "d06",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_06_1.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "dialogue_06_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Smart rider! He's waiting for the straight!",
+   "dialogue_id": "d06",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_06_2.mp3",
+   "duration": 2.09
+  },
+  {
+   "id": "dialogue_07_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Huge near miss there!",
+   "dialogue_id": "d07",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_07_1.mp3",
+   "duration": 1.019
+  },
+  {
+   "id": "dialogue_07_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "My heart is pounding! What reflexes!",
+   "dialogue_id": "d07",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_07_2.mp3",
+   "duration": 2.429
+  },
+  {
+   "id": "dialogue_08_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "He's right on the back wheel!",
+   "dialogue_id": "d08",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_08_1.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "dialogue_08_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "The pressure is enormous!",
+   "dialogue_id": "d08",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_08_2.mp3",
+   "duration": 1.123
+  },
+  {
+   "id": "dialogue_09_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Checkpoint coming up!",
+   "dialogue_id": "d09",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_09_1.mp3",
+   "duration": 0.862
+  },
+  {
+   "id": "dialogue_09_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He needs a clean run through here!",
+   "dialogue_id": "d09",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_09_2.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_10_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a lean through that corner!",
+   "dialogue_id": "d10",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_10_1.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_10_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Knee down, perfect line! Beautiful!",
+   "dialogue_id": "d10",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_10_2.mp3",
+   "duration": 2.09
+  },
+  {
+   "id": "dialogue_11_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Final stretch, they're side by side!",
+   "dialogue_id": "d11",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_11_1.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "dialogue_11_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "This is going right to the line!",
+   "dialogue_id": "d11",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_11_2.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_12_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "He went down, but he's back up!",
+   "dialogue_id": "d12",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_12_1.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "dialogue_12_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Tough rider! Never quits!",
+   "dialogue_id": "d12",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_12_2.mp3",
+   "duration": 1.489
+  },
+  {
+   "id": "dialogue_13_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The Red bike is fighting back!",
+   "dialogue_id": "d13",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_13_1.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_13_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's not giving up without a battle!",
+   "dialogue_id": "d13",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_13_2.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_14_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Look at those sparks!",
+   "dialogue_id": "d14",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_14_1.mp3",
+   "duration": 1.123
+  },
+  {
+   "id": "dialogue_14_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Leaning so far the pegs are scraping!",
+   "dialogue_id": "d14",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_14_2.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "dialogue_15_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is this the race of the night?",
+   "dialogue_id": "d15",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_15_1.mp3",
+   "duration": 1.332
+  },
+  {
+   "id": "dialogue_15_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Easily! What a show!",
+   "dialogue_id": "d15",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_15_2.mp3",
+   "duration": 1.358
+  },
+  {
+   "id": "dialogue_16_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Another pass!",
+   "dialogue_id": "d16",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_16_1.mp3",
+   "duration": 0.836
+  },
+  {
+   "id": "dialogue_16_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's carving through everybody!",
+   "dialogue_id": "d16",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_16_2.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "dialogue_17_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The lead changed again!",
+   "dialogue_id": "d17",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_17_1.mp3",
+   "duration": 1.097
+  },
+  {
+   "id": "dialogue_17_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Three leaders in one lap! Incredible!",
+   "dialogue_id": "d17",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_17_2.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "dialogue_18_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Nitro on both bikes!",
+   "dialogue_id": "d18",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_18_1.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_18_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "It's a pure drag race now!",
+   "dialogue_id": "d18",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_18_2.mp3",
+   "duration": 1.411
+  },
+  {
+   "id": "dialogue_19_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "That was a tight gap!",
+   "dialogue_id": "d19",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_19_1.mp3",
+   "duration": 0.967
+  },
+  {
+   "id": "dialogue_19_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He threaded the needle! Wow!",
+   "dialogue_id": "d19",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_19_2.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "dialogue_20_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "And that's the finish!",
+   "dialogue_id": "d20",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_20_1.mp3",
+   "duration": 1.097
+  },
+  {
+   "id": "dialogue_20_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "What a race! I loved every second!",
+   "dialogue_id": "d20",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_20_2.mp3",
+   "duration": 2.011
+  }
+ ]
+}
