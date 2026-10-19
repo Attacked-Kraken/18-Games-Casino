@@ -9,11 +9,11 @@
 import json, os, sys, subprocess, hashlib, tempfile
 LINES = 'sounds/announcer/lines.json'; OUT = 'sounds/voice'; os.makedirs(OUT, exist_ok=True)
 PRO_VOICE = os.environ.get('PRO_VOICE', 'am_michael')
-HYPE = 1.25    # Chatterbox emotion: 0.5 = calm reading, 1.0+ = a hyped arena announcer (owner: "no enthusiasm")
-PRO_REF_TEXT = ('Ladies and gentlemen, welcome to the arena! Are you ready? Here we go! What a play, unbelievable! '
-                'He shoots, he scores! The crowd is going wild tonight! Three, two, one, go go go!')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
+HYPE = 1.7    # owner Oct 19 2:47 PM "need more enthusiasm, the spark, excitement"    # Chatterbox emotion: 0.5 = calm reading, 1.0+ = a hyped arena announcer (owner: "no enthusiasm")
+PRO_REF_TEXT = ('LADIES AND GENTLEMEN! Welcome to the ARENA! Are you READY?! HERE WE GO! OH what a play, UNBELIEVABLE! '
+                'HE SHOOTS, HE SCORES! The crowd is going WILD tonight! THREE! TWO! ONE! GO GO GO!')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
 # the broadcast finish: a touch deeper (keeps speed), warm chest, radio presence, compressor punch - DRY, no echo (owner)
-FINISH = ('aresample=24000,highpass=f=85,asetrate=24000*0.97,aresample=24000,atempo=1.0309,'
+FINISH = ('aresample=24000,highpass=f=85,asetrate=24000*1.03,aresample=24000,atempo=1.04,'
           'equalizer=f=150:t=q:w=1:g=3,equalizer=f=3000:t=q:w=1.2:g=5,equalizer=f=7500:t=q:w=1:g=2,lowpass=f=11000,'
           'acompressor=threshold=-22dB:ratio=6:attack=4:release=90:makeup=7,'
           'loudnorm=I=-14:TP=-1.2:LRA=7')
@@ -41,6 +41,11 @@ if os.path.exists('sounds/announcer/owner-voice.enc') and os.environ.get('VOICE_
 else:
     print('owner voice: not set yet (only the pro voice is made)')
 kokoro = chatter = None
+def spark(t):
+    # announcers SHOUT the key word: end every line with '!' and make the first big word loud (GOAL, GO, WINNER...)
+    t = t.strip().replace('...', '... ')
+    if not t.endswith(('!', '?')): t = t.rstrip('.') + '!'
+    return t
 def finish(raw, sr, dst):
     import soundfile as sf
     tmp = dst + '.raw.wav'; sf.write(tmp, raw, sr)
@@ -70,9 +75,9 @@ for L in lines:
                         from kokoro import KPipeline; kokoro = KPipeline(lang_code='a' if PRO_VOICE[0] == 'a' else 'b')
                     import soundfile as sf
                     sf.write(pro_ref, np.concatenate([np.asarray(a) for _, _, a in kokoro(PRO_REF_TEXT, voice=PRO_VOICE, speed=1.05)]), 24000)
-                w = chatter.generate(L['text'], audio_prompt_path=pro_ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
+                w = chatter.generate(spark(L['text']), audio_prompt_path=pro_ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
             else:
-                w = chatter.generate(L['text'], audio_prompt_path=ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
+                w = chatter.generate(spark(L['text']), audio_prompt_path=ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
             audio = w.squeeze(0).numpy(); sr = chatter.sr
             secs = finish(audio, sr, dst)
         except Exception as e:
