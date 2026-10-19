@@ -1,0 +1,41 @@
+108a109
+> <button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Classic</span></button>
+440a442,449
+> let planeMats = {};
+> const JET_STYLES = [
+>   { name: 'Classic', body: 0xf2f2f0, accent: 0xc02028 },
+>   { name: 'Thunder', body: 0x1e3fae, accent: 0xffd700 },
+>   { name: 'Stealth', body: 0x2a2d33, accent: 0x555c66 },
+>   { name: 'Sunburst', body: 0xff6b1a, accent: 0x1a1a1a },
+> ];
+> let jetStyle = 0;
+445a455
+>   planeMats = { body: white, accent: red };
+636a647
+> $('jetBtn').addEventListener('click', () => { applyJetStyle(jetStyle + 1); });
+637a649
+> applyJetStyle(jetStyle);
+676c688
+<       P.pitch = clamp(P.pitch + inp.pitchUp * 1.05 * auth * dt, -0.55, maxPitch);
+---
+>       P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * auth * dt, -0.55, maxPitch);
+754c766
+<   elevator.rotation.x = inp.pitchUp * 0.45;
+---
+>   elevator.rotation.x = inp.pitchUp * 0.7;
+759a772,786
+> 
+> /* ================= jet styles ================= */
+> function applyJetStyle(idx) {
+>   jetStyle = ((idx % JET_STYLES.length) + JET_STYLES.length) % JET_STYLES.length;
+>   const s = JET_STYLES[jetStyle];
+>   if (planeMats.body) planeMats.body.color.setHex(s.body);
+>   if (planeMats.accent) planeMats.accent.color.setHex(s.accent);
+>   const label = document.getElementById('jetStyleLabel');
+>   if (label) label.textContent = s.name;
+>   try { localStorage.setItem('apexflight_jetstyle', String(jetStyle)); } catch(e) {}
+> }
+> try {
+>   const saved = parseInt(localStorage.getItem('apexflight_jetstyle') || '0', 10);
+>   if (!isNaN(saved)) jetStyle = saved;
+> } catch(e) {}
