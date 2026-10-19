@@ -1,0 +1,11 @@
+--- a/apexf1.html	2026-10-19 18:04:48.280828459 -0500
++++ b/apexf1.html	2026-10-19 18:04:24.539828642 -0500
+@@ -2078,7 +2078,7 @@
+   // idx: car index in Race.cars, s: distance along track
+   setCarS: (idx, s) => {
+     const c = Race.cars[idx];
+-    if (c) { c.s = s; c._lastSN = undefined; }
++    if (c) { c.s = s; c._lastSN = undefined; c._gridCross = false; }
+   },
+   setCarLap: (idx, lap) => {
+     const c = Race.cars[idx];
