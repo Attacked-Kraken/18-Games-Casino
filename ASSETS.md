@@ -105,3 +105,39 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 
 
 
+
+## ASSET: models/fetched/fictional-supercar-v12-goblin-0a20e4.glb
+- title: Fictional supercar - V12 Goblin
+- maker: ollitei
+- source: https://sketchfab.com/3d-models/fictional-supercar-v12-goblin-0a20e49ad5774d778567cb5c3f345786
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "ollitei" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/porsche-911-930-turbo-1975-de1ffd.glb
+- title: Porsche 911 (930) Turbo 1975
+- maker: Lexyc16
+- source: https://sketchfab.com/3d-models/porsche-911-930-turbo-1975-de1ffd344c41481892511f7fd332c136
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Lexyc16" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/mclaren-spider-10b474.glb
+- title: McLaren Spider
+- maker: SINNIK
+- source: https://sketchfab.com/3d-models/mclaren-spider-10b474f26b2643be82ee26417ca78a0a
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "SINNIK" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/honda-nsx-1990-1cc156.glb
+- title: Honda NSX 1990
+- maker: Lexyc16
+- source: https://sketchfab.com/3d-models/honda-nsx-1990-1cc15628a00a4739a6b6c01128927c8d
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Lexyc16" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
