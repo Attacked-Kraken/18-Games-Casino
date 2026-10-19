@@ -5,7 +5,9 @@ const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/ja
 const srv = http.createServer((q, r) => { const f = path.join('.', decodeURIComponent(q.url.split('?')[0]));
   fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); } else { r.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' }); r.end(d); } }); }).listen(8899);
 const b = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const p = await b.newPage({ viewport: { width: 600, height: 520 } });
+const ctx = await b.newContext({ viewport: { width: 600, height: 520 }, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
+const p = await ctx.newPage();
+p.on('response', r => { if (/poly\.pizza/.test(r.url())) console.log('model', r.status(), r.url()); });
 p.on('pageerror', e => console.log('ERR', e.message));
 await p.goto('http://localhost:8899/tools/bike-pick.html'); await p.waitForTimeout(2000);
 fs.mkdirSync('previews', { recursive: true });

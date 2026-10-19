@@ -18,10 +18,10 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Can a phone page load the models? (CORS)
         run: |
-          mkdir -p previews
+          mkdir -p previews; rm -f previews/cors.txt
           for u in f7635710-7cfa-4768-ad70-8366ab485358 34db1344-31cc-49ac-bc46-c055f68e39ca 4fa4f21a-c3b8-425f-8e57-9c202b1d6ba6 191eebc7-b1f8-4ec7-8652-9c6c49521b99 6048701b-fa87-426b-9242-c786ca25fa3a; do
             echo "== $u" >> previews/cors.txt
-            curl -sS -I -H "Origin: https://attacked-kraken.github.io" "https://static.poly.pizza/$u.glb" | grep -i -E "^HTTP|access-control|content-length" >> previews/cors.txt || true
+            curl -sS -I -A "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" -e "https://poly.pizza/" -H "Origin: https://attacked-kraken.github.io" "https://static.poly.pizza/$u.glb" | grep -i -E "^HTTP|access-control|content-length" >> previews/cors.txt || true
           done
           cat previews/cors.txt
       - run: node tools/bike-shots.mjs
