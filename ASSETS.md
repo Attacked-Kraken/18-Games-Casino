@@ -83,3 +83,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-18 by the owner (sent to Claude)
 - used in: apexmoto.html (as "Phantom X", credited on the Credits screen)
 - changes: textures made smaller (max 512 px)
+
+## ASSET: models/fetched/le-mans-race-car.glb
+- title: Le Mans Race Car
+- maker: Naudaff3D
+- source: https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Naudaff3D" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
