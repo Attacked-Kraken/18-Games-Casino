@@ -145,7 +145,7 @@ const RALLY_EVENTS = [
 ];
 let rallyEvent = 0, rallyCrushes = 0, rallyJumps = 0;
 const GRAV = 90; // J45: real gravity - 5-ton truck comes down fast and lands with weight
-const MAX_FWD = 95, MAX_REV = 12, ACCEL = 21, BRAKE = 34; // owner Oct 18 6:28 PM: over 200 mph (95 m/s = 212 mph), 0-200 in ~5s - drive stick alone, no boost
+const MAX_FWD = 136, MAX_REV = 14, ACCEL = 27, BRAKE = 44; // owner Oct 18 7:43 PM: 300 mph (136 m/s = 304 mph), 0-300 in ~5s - drive stick alone, no boost
 const CRUSH_PTS = 100, BIGAIR_BONUS = 200, BIGAIR_T = 1.5;
 const ACCENT = 0xffb200;
 
@@ -156,57 +156,60 @@ const Snd = {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     this.ctx = new AC();
-    // J5: layered V8 roar - sub-bass + 2 detuned saws + growl noise
+    // owner Oct 18 7:43 PM "make a different engine sound, it sounds like a fan": a smooth tone with a slow wobble IS a fan.
+    // A real big-block V8 is a train of sharp firing PULSES - buzzy, uneven, gritty - through an exhaust that booms.
+    // So: a pulse wave built from 48 harmonics at the firing rate + a half-rate "cam lope" layer, driven through
+    // distortion, then a resonant exhaust filter. Each frame the firing rate jitters a little, like a real motor.
     const C = this.ctx;
     this.engGain = C.createGain(); this.engGain.gain.value = 0;
-    this.engFilter = C.createBiquadFilter(); this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 380;
-    this.engFilter.connect(this.engGain); this.engGain.connect(C.destination);
-    this.engOsc = [];
-    const sub = C.createOscillator(); sub.type = 'sine'; sub.frequency.value = 35; // sub-bass chest feel
-    const saw1 = C.createOscillator(); saw1.type = 'sawtooth'; saw1.frequency.value = 55;
-    const saw2 = C.createOscillator(); saw2.type = 'sawtooth'; saw2.frequency.value = 57; // detuned growl
-    const g1 = C.createGain(); g1.gain.value = 0.5; const g2 = C.createGain(); g2.gain.value = 0.35; const g3 = C.createGain(); g3.gain.value = 0.35;
-    sub.connect(g1); saw1.connect(g2); saw2.connect(g3);
-    g1.connect(this.engFilter); g2.connect(this.engFilter); g3.connect(this.engFilter);
-    // owner Oct 18 7:25 PM "keep the engine motor sound separate and deeper from the music": the engine owns the LOW end
-    // (the game music lost its bass - see Music) and gets a V8 lope - its loudness pulses at the firing rate, which no
-    // music note does, so the ear hears it as a separate motor. Deeper: 28 Hz idle to 140 Hz redline.
-    this.engFilter.disconnect();
-    this.burble = C.createGain(); this.burble.gain.value = 0.75;
-    const lfo = C.createOscillator(); lfo.type = 'triangle'; lfo.frequency.value = 7;
-    this.lope = C.createGain(); this.lope.gain.value = 0.25;
-    lfo.connect(this.lope); this.lope.connect(this.burble.gain);
-    this.engFilter.connect(this.burble); this.burble.connect(this.engGain);
-    sub.start(); saw1.start(); saw2.start(); lfo.start();
-    this.engOsc = [sub, saw1, saw2, lfo];
+    const re = new Float32Array(49), im = new Float32Array(49);
+    for (let k = 1; k < 49; k++) { re[k] = 0; im[k] = Math.pow(k, -0.55) * (k % 2 ? 1 : 0.8); }   // sharp, buzzy pulse
+    const pulse = C.createPeriodicWave(re, im);
+    const fire = C.createOscillator(); fire.setPeriodicWave(pulse); fire.frequency.value = 20;
+    const fire2 = C.createOscillator(); fire2.setPeriodicWave(pulse); fire2.frequency.value = 20.4;   // second bank, slightly off
+    const cam = C.createOscillator(); cam.setPeriodicWave(pulse); cam.frequency.value = 10;          // the V8 "lope" every 2nd firing
+    const gF = C.createGain(); gF.gain.value = 0.55; const gF2 = C.createGain(); gF2.gain.value = 0.35;
+    this.lope = C.createGain(); this.lope.gain.value = 0.5;
+    fire.connect(gF); fire2.connect(gF2); cam.connect(this.lope);
+    this.shaper = C.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) { const x = i / 511.5 - 1; curve[i] = Math.tanh(x * 3.2); }
+    this.shaper.curve = curve; this.shaper.oversample = '2x';
+    const mix = C.createGain(); mix.gain.value = 0.6;
+    gF.connect(mix); gF2.connect(mix); this.lope.connect(mix); mix.connect(this.shaper);
+    this.engFilter = C.createBiquadFilter(); this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 500; this.engFilter.Q.value = 4;   // exhaust boom
+    const body = C.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 160; body.Q.value = 1.2; body.gain.value = 7;      // chest thump
+    this.shaper.connect(this.engFilter); this.engFilter.connect(body); body.connect(this.engGain); this.engGain.connect(C.destination);
+    fire.start(); fire2.start(); cam.start();
+    this.engOsc = [cam, fire, fire2, cam];
     // throttle punch noise
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     this.noiseBuf = nb;
     this.punchGain = C.createGain(); this.punchGain.gain.value = 0;
-    const pf = C.createBiquadFilter(); pf.type = 'bandpass'; pf.frequency.value = 900; pf.Q.value = 0.8;
+    const pf = C.createBiquadFilter(); pf.type = 'bandpass'; pf.frequency.value = 260; pf.Q.value = 0.9;   // a low bark on the throttle, not a hiss
     const ps = C.createBufferSource(); ps.buffer = nb; ps.loop = true;
     ps.connect(pf); pf.connect(this.punchGain); this.punchGain.connect(C.destination); ps.start();
     this.lastSp = 0;
   },
-  engine(sp){ // sp 0..1 - deep roar 28Hz idle to 140Hz redline (owner Oct 18: deeper)
+  engine(sp){ // sp 0..1 - firing rate 20 Hz idle to 115 Hz at full speed (owner Oct 18: deep, separate, not a fan)
     if (!this.ctx || this.muted) {
       if (this.ctx && this.muted && this.engGain) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
       return;
     }
-    const t = this.ctx.currentTime, f = 28 + sp * 112;
-    this.engOsc[0].frequency.setTargetAtTime(f * 0.5, t, 0.05); // sub
-    this.engOsc[1].frequency.setTargetAtTime(f, t, 0.05);
-    this.engOsc[2].frequency.setTargetAtTime(f * 1.03, t, 0.05); // detune growl
-    this.engOsc[3].frequency.setTargetAtTime(6 + sp * 18, t, 0.1); // V8 lope: lumpy at idle, a fast throb at speed
-    this.lope.gain.setTargetAtTime(0.3 - sp * 0.15, t, 0.1);
-    this.engFilter.frequency.setTargetAtTime(340 + sp * 1000, t, 0.08);   // dark and deep, but a phone speaker can still hear it
+    const t = this.ctx.currentTime, jit = 1 + (Math.random() - 0.5) * (0.05 - sp * 0.03);   // uneven like a real motor
+    const f = (20 + sp * 95) * jit;
+    this.engOsc[1].frequency.setTargetAtTime(f, t, 0.04);
+    this.engOsc[2].frequency.setTargetAtTime(f * 1.02, t, 0.04);
+    this.engOsc[0].frequency.setTargetAtTime(f * 0.5, t, 0.04);
+    this.lope.gain.setTargetAtTime(0.55 - sp * 0.35, t, 0.1);           // lumpy at idle, smoother when it screams
+    this.engFilter.frequency.setTargetAtTime(420 + sp * 1500, t, 0.06);
     const on = sp >= 0.02;
-    this.engGain.gain.setTargetAtTime(on ? 0.14 + sp * 0.18 : 0, t, 0.09);
+    this.engGain.gain.setTargetAtTime(on ? 0.11 + sp * 0.13 : 0, t, 0.09);
     if (typeof Music !== 'undefined' && Music.duck) Music.duck(on ? Math.min(1, 0.8 + sp * 2) : 0);   // moving = music a whisper
     // throttle punch: swell noise on hard acceleration
     const punch = Math.max(0, sp - this.lastSp) * 3;
-    this.punchGain.gain.setTargetAtTime(Math.min(0.12, punch), t, 0.04);
+    this.punchGain.gain.setTargetAtTime(Math.min(0.1, punch), t, 0.04);
     this.lastSp = sp;
   },
   tone(f, dur, type, vol, slide){
