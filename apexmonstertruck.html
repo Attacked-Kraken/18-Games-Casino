@@ -182,6 +182,18 @@ const Snd = {
     this.shaper.connect(this.engFilter); this.engFilter.connect(body); body.connect(this.engGain); this.engGain.connect(C.destination);
     fire.start(); fire2.start(); cam.start();
     this.engOsc = [cam, fire, fire2, cam];
+    // owner Oct 18 7:52 PM: "tune up this sound and use it" + "mix this one with it" - his two real recordings (a monster
+    // truck rev + a diesel monster truck at high speed), tuned (more low end, softer highs, compressed, same loudness) and
+    // cut into three gapless loops: idle (both mixed), mid rev, high speed (diesel + rev). They cross-fade and pitch up
+    // with speed. The made-in-code V8 above stays as a backup until the recording has loaded (or if it can't load).
+    this.recGain = C.createGain(); this.recGain.gain.value = 0; this.recGain.connect(C.destination);
+    this.rec = null;
+    const load = (u) => fetch(u).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => C.decodeAudioData(b, ok, no)));
+    Promise.all([load('sounds/truck-idle.wav'), load('sounds/truck-mid.wav'), load('sounds/truck-high.wav')]).then(([idleB, midB, highB]) => {
+      const mk = (buf) => { const src = C.createBufferSource(); src.buffer = buf; src.loop = true;
+        const g = C.createGain(); g.gain.value = 0; src.connect(g); g.connect(this.recGain); src.start(); return { src, g }; };
+      this.rec = { idle: mk(idleB), rev: mk(midB), high: mk(highB) };
+    }).catch(() => { this.rec = null; });
     // throttle punch noise
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), nd = nb.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -194,7 +206,7 @@ const Snd = {
   },
   engine(sp){ // sp 0..1 - firing rate 20 Hz idle to 115 Hz at full speed (owner Oct 18: deep, separate, not a fan)
     if (!this.ctx || this.muted) {
-      if (this.ctx && this.muted && this.engGain) this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+      if (this.ctx && this.muted && this.engGain) { this.engGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); if (this.recGain) this.recGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); }
       return;
     }
     const t = this.ctx.currentTime, jit = 1 + (Math.random() - 0.5) * (0.05 - sp * 0.03);   // uneven like a real motor
@@ -205,7 +217,20 @@ const Snd = {
     this.lope.gain.setTargetAtTime(0.55 - sp * 0.35, t, 0.1);           // lumpy at idle, smoother when it screams
     this.engFilter.frequency.setTargetAtTime(420 + sp * 1500, t, 0.06);
     const on = sp >= 0.02;
-    this.engGain.gain.setTargetAtTime(on ? 0.11 + sp * 0.13 : 0, t, 0.09);
+    if (this.rec) {   // the owner's recording: idle loop fades into the high-rev loop, both pitch up with speed
+      const ss = (a, b, x) => { const k = Math.max(0, Math.min(1, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+      const toMid = ss(0.05, 0.3, sp), toHigh = ss(0.35, 0.75, sp);
+      this.rec.idle.g.gain.setTargetAtTime(1 - toMid, t, 0.12);
+      this.rec.rev.g.gain.setTargetAtTime(toMid * (1 - toHigh), t, 0.12);
+      this.rec.high.g.gain.setTargetAtTime(toHigh, t, 0.12);
+      this.rec.idle.src.playbackRate.setTargetAtTime(0.9 + sp * 0.6, t, 0.08);
+      this.rec.rev.src.playbackRate.setTargetAtTime(0.8 + sp * 0.6, t, 0.08);
+      this.rec.high.src.playbackRate.setTargetAtTime(0.75 + sp * 0.45, t, 0.08);
+      this.recGain.gain.setTargetAtTime(on ? 0.34 + sp * 0.2 : 0, t, 0.09);
+      this.engGain.gain.setTargetAtTime(0, t, 0.05);
+    } else {
+      this.engGain.gain.setTargetAtTime(on ? 0.11 + sp * 0.13 : 0, t, 0.09);
+    }
     if (typeof Music !== 'undefined' && Music.duck) Music.duck(on ? Math.min(1, 0.8 + sp * 2) : 0);   // moving = music a whisper
     // throttle punch: swell noise on hard acceleration
     const punch = Math.max(0, sp - this.lastSp) * 3;

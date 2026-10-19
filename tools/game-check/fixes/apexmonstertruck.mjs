@@ -278,4 +278,25 @@ export default [
       });
     },
   },
+  {
+    id: 'play-engine-recording',
+    ask: "Owner Oct 18 7:52 PM: the engine is HIS two tuned recordings mixed (idle, mid rev, high speed loops), not the synth",
+    async test(page, h) {
+      return h.eval(() => {
+        const S = window.__mt && window.__mt.Snd;
+        if (!S) return 'no Snd';
+        try { S.init(); } catch (e) { return 'audio init failed: ' + e.message; }
+        if (!S.ctx) return 'no AudioContext';
+        return new Promise((res) => {
+          const t0 = performance.now();
+          const check = () => {
+            if (S.rec && S.rec.idle && S.rec.rev && S.rec.high) res(true);
+            else if (performance.now() - t0 > 8000) res('the engine recordings (sounds/truck-idle/mid/high.wav) did not load');
+            else setTimeout(check, 200);
+          };
+          check();
+        });
+      });
+    },
+  },
 ];
