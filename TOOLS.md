@@ -114,3 +114,8 @@ font or online API in a game (games are fully offline).
   owner's Beat Machine (our own sounds, no license worries). Kinds: `beat` (style, bpm, loops, pitch), `sfx` (a Beat Machine
   library sound), `engine` (kind v8 / diesel / inline4 / vtwin / superbike, rpm or rev [from,to], deep, rough, blower,
   clatter). Every option: `sounds/made/OPTIONS.md`. Listen: `sounds/made/index.html`.
+  A `beat` recipe can set EVERY Beat Machine control: drum rows per track, bass line, melody, chords, up to 4 patterns,
+  a song arrangement (Intro / Verse / Hook / Build / Drop / Outro), synth sound, per-track volume / pan / pitch / reverse,
+  FX (reverb, echo, drive, filters, crush, compressor), sidechain, glide - see `sounds/recipes/examples.json`.
+  For sounds that don't sound made-by-computer, put a REAL recording in `sounds/real/` (owner's recordings, Kenney CC0
+  audio) and use it on a track with `"sample": "file:sounds/real/<name>.wav"`.

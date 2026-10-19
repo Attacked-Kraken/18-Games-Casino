@@ -29,7 +29,16 @@ await p.waitForFunction(() => window.APB && APB.STY, null, { timeout: 30000 });
 const options = await p.evaluate(() => ({ styles: Object.keys(APB.STY), lib: APB.LIBR.map(e => ({ id: e.id, name: e.name, cat: e.cat })) }));
 fs.writeFileSync(path.join(OUT, 'OPTIONS.md'), '# What the sound robot can make\n\n## Beat styles ("type": "beat", "style": ...)\n' +
   options.styles.map(s => '- ' + s).join('\n') + '\n\nbpm 60-180, pitch -12..12, loops 1-16\n\n## Library sounds ("type": "sfx", "lib": ...)\n' +
-  options.lib.map(e => `- ${e.name} (${e.cat})`).join('\n') + '\n\n## Engines ("type": "engine")\n- kind: v8, diesel, inline4, vtwin, superbike\n- rpm, seconds, rev [from,to], deep, rough, blower, clatter (0..1)\n');
+  options.lib.map(e => `- ${e.name} (${e.cat})`).join('\n') + '\n\n## Full control of a beat (any of these, all optional - see sounds/recipes/examples.json)\n' +
+  '- style: start from a style, then change anything below\n- bpm, swing (0-100), pitch (-12..12), key ("C".."B"), scale (Minor, Major, Dorian, Harmonic minor, Minor pentatonic, Major pentatonic, Blues, Chromatic)\n' +
+  '- patterns: up to 4 (A-D), each { drums: { kick, snare, clap, chat, ohat, tom, rim, bass: "x...o..." (x loud, o soft, . rest, 16 steps) }, clear: true (empty the other drums), bass: [16 semitones], melody: [16 scale steps, -1 = rest], chords: [4 chord roots I=0..vii=6, -1 = none], len }\n' +
+  '- song: [["Intro",0],["Verse",0],["Hook",1],["Build",1],["Drop",1],["Outro",0]] (section name, pattern 0-3) - Build adds a riser, Drop an impact\n' +
+  '- sound: { melody: lead | pluck | keys | pad | bell, octave, melVol, chdVol }\n' +
+  '- tracks: { kick|snare|clap|chat|ohat|tom|rim|bass: { vol 0-1, pan -1..1, pitch, reverse, mute, sample: "lib:<library sound>" or "file:sounds/real/<your recording>.wav" } }\n' +
+  '- fx: { reverb 0-100, size, drive, lowpass 0-100, highpass 0-100, resonance, crush (bits 4-16), crushMix, comp true/false, compThreshold, compRatio, echo 0-1, echoBeats, echoFeedback }\n' +
+  '- sidechain, glide, crackle: true/false; loops 1-16\n' +
+  '- REAL sounds: put recordings (WAV) in sounds/real/ and use them with "file:sounds/real/<name>.wav" on any track\n' +
+  '\n\n## Engines ("type": "engine")\n- kind: v8, diesel, inline4, vtwin, superbike\n- rpm, seconds, rev [from,to], deep, rough, blower, clatter (0..1)\n');
 let made = 0;
 for (const r of recipes) {
   const name = String(r.name || '').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
@@ -86,8 +95,44 @@ for (const r of recipes) {
         const sm = await B.ensureLib(e.id), bf = sm.buf, chs = []; for (let c = 0; c < bf.numberOfChannels; c++) chs.push(bf.getChannelData(c));
         return { b64: toB64(wav(chs, bf.sampleRate)), what: e.name };
       }
-      if (!B.STY[r.style]) return { err: 'no style called "' + r.style + '" (see sounds/made/OPTIONS.md)' };
-      B.S.songOn = false; B.applyStyle(r.style);
+      if (r.style && !B.STY[r.style]) return { err: 'no style called "' + r.style + '" (see sounds/made/OPTIONS.md)' };
+      B.S.songOn = false; if (r.style) B.applyStyle(r.style);
+      // owner Oct 19: "teach it to use all the buttons and mixing" - every Beat Machine control a recipe can set
+      const S = B.S, TR = { kick: 0, snare: 1, clap: 2, chat: 3, hat: 3, ohat: 4, tom: 5, rim: 6, bass: 7, '808': 7 };
+      const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+      if (r.key != null) S.key = typeof r.key === 'number' ? ((r.key % 12) + 12) % 12 : Math.max(0, NOTES.indexOf(String(r.key).toUpperCase().replace('B#', 'C')));
+      if (r.scale) S.scale = r.scale;
+      (r.patterns || []).slice(0, 4).forEach((pt, i) => { const P = S.pats[i]; if (!P) return;
+        if (pt.drums) { let len = 0; for (const [k, row] of Object.entries(pt.drums)) { const t = TR[k.toLowerCase()]; if (t == null) continue;
+            const v = String(row).replace(/\s/g, '').split('').slice(0, 16).map(c => c === 'x' ? 1 : c === 'o' ? 0.6 : 0); len = Math.max(len, v.length);
+            P.steps[t] = Array.from({ length: 16 }, (_, j) => v[j] || 0); }
+          if (pt.clear) for (let t = 0; t < 8; t++) if (!Object.keys(pt.drums).some(k => TR[k.toLowerCase()] === t)) P.steps[t] = Array(16).fill(0);
+          P.len = pt.len || len || 16; }
+        if (pt.bass) P.bassNotes = Array.from({ length: 16 }, (_, j) => pt.bass[j] || 0);
+        if (pt.melody) P.mel = Array.from({ length: 16 }, (_, j) => pt.melody[j] == null ? -1 : pt.melody[j]);
+        if (pt.chords) P.chord = Array.from({ length: 4 }, (_, j) => pt.chords[j] == null ? -1 : pt.chords[j]);
+        if (pt.len) P.len = pt.len; });
+      if (Array.isArray(r.song) && r.song.length) { S.song = r.song.map(b => Array.isArray(b) ? { name: b[0], pat: b[1] || 0 } : { name: b.name || 'Verse', pat: b.pat || 0 }); S.songOn = true; }
+      const snd = r.sound || {};
+      if (snd.melody) S.melWave = snd.melody; if (snd.octave) S.melOct = snd.octave;
+      if (snd.melVol != null) S.melVol = snd.melVol; if (snd.chdVol != null) S.chdVol = snd.chdVol;
+      for (const [k, o] of Object.entries(r.tracks || {})) { const t = TR[k.toLowerCase()]; if (t == null) continue;
+        if (o.vol != null) S.vol[t] = o.vol; if (o.mute != null) S.mute[t] = !!o.mute;
+        if (o.pan != null) S.tp[t].pan = o.pan; if (o.pitch != null) S.tp[t].pitch = o.pitch; if (o.reverse != null) S.tp[t].rev = !!o.reverse;
+        if (o.sample) { const sp = String(o.sample);
+          if (sp.startsWith('file:')) {   // a REAL recording from the repo (sounds/real/...) on this drum track
+            const res = await fetch('/' + sp.slice(5)); if (!res.ok) return { err: 'no file ' + sp.slice(5) };
+            const f = new File([await res.blob()], sp.split('/').pop(), { type: 'audio/wav' }); await B.loadFiles([f]);
+            const last = [...B.LIB.values()].pop(); if (last) S.tp[t].sample = last.id;
+          } else { const w = sp.replace(/^lib:/, '').toLowerCase(), e = B.LIBR.find(e => e.name.toLowerCase() === w) || B.LIBR.find(e => e.name.toLowerCase().includes(w));
+            if (!e) return { err: 'no library sound "' + sp + '"' }; await B.ensureLib(e.id); S.tp[t].sample = e.id; } } }
+      const fx = r.fx || {}, F = S.fx;
+      const setn = (k, v) => { if (v != null) F[k] = v; };
+      setn('rev', fx.reverb); setn('size', fx.size); setn('drive', fx.drive); setn('lp', fx.lowpass); setn('hp', fx.highpass); setn('res', fx.resonance);
+      setn('bits', fx.crush); setn('crushMix', fx.crushMix); setn('thr', fx.compThreshold); setn('ratio', fx.compRatio);
+      if (fx.comp != null) F.on.comp = !!fx.comp;
+      if (fx.echo != null) B.M.echo = fx.echo; if (fx.echoBeats != null) B.M.echoBeats = fx.echoBeats; if (fx.echoFeedback != null) B.M.fb = fx.echoFeedback;
+      if (r.sidechain != null) S.sidechain = !!r.sidechain; if (r.glide != null) S.glide = !!r.glide;
       if (r.bpm) B.S.bpm = Math.max(60, Math.min(180, Math.round(r.bpm)));
       if (r.pitch != null) B.S.tune = Math.max(-12, Math.min(12, +r.pitch));
       if (r.swing != null) B.S.swing = Math.max(0, Math.min(100, +r.swing));
