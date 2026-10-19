@@ -301,6 +301,23 @@ export default [
     },
   },
   {
+    id: 'play-dirt-mounds-and-tracks',
+    ask: 'Owner Oct 18 9:42 PM: more individual dirt mounds to jump + dirt tracks everywhere',
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt; if (!M || !M.mounds || !M.dirtTracks) return 'no dirt mounds / tracks';
+        if (M.dirtTracks.length < 3) return `only ${M.dirtTracks.length} dirt tracks`;
+        const single = M.mounds.filter(m => Math.abs(m.a - m.b) < m.a * 0.4);
+        if (single.length < 60) return `only ${single.length} single dirt mounds`;
+        const T = M.T, m = M.mounds.reduce((x, y) => x.H > y.H ? x : y);
+        T.loop = null; T.x = m.x - Math.max(m.a, m.b) - 120; T.z = m.z; T.y = 0; T.vy = 0; T.grounded = true; T.hd = Math.PI / 2; T.sp = 60;
+        let air = 0; for (let k = 0; k < 400; k++) { M.input.gas = true; M.stepTruck(1 / 60); if (!T.grounded) air++; }
+        M.input.gas = false;
+        return air > 20 ? true : 'driving over the biggest mound gave no air';
+      });
+    },
+  },
+  {
     id: 'play-engine-recording',
     ask: "Owner Oct 18 7:52 + 8:08 PM: the engine is HIS tuned recordings mixed (idle, mid, high + supercharger whine on the gas), not the synth",
     async test(page, h) {
