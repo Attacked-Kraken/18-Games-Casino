@@ -106,7 +106,6 @@
 <button class="tbtn" id="thrUp" type="button">THR +</button>
 <button class="tbtn" id="thrDn" type="button">THR &minus;</button>
 <button class="tbtn" id="viewBtn" type="button">VIEW</button>
-<button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Classic</span></button>
 <button class="tbtn" id="resetBtn" type="button">RESET</button>
 <button class="tbtn" id="muteBtn" type="button" aria-label="Mute music">🔊</button>
 
@@ -439,20 +438,11 @@ function crowdTick(t) {
 /* ================= the airplane ================= */
 const plane = new THREE.Group();
 let prop, propDisc, elevator, rudder, canopy;
-let planeMats = {};
-const JET_STYLES = [
-  { name: 'Classic', body: 0xf2f2f0, accent: 0xc02028 },
-  { name: 'Thunder', body: 0x1e3fae, accent: 0xffd700 },
-  { name: 'Stealth', body: 0x2a2d33, accent: 0x555c66 },
-  { name: 'Sunburst', body: 0xff6b1a, accent: 0x1a1a1a },
-];
-let jetStyle = 0;
 (function buildPlane() {
   const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f0, roughness: 0.55, metalness: 0.08 });
   const red = new THREE.MeshStandardMaterial({ color: 0xc02028, roughness: 0.5, metalness: 0.1 });
   const dark = new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.7 });
   const glass = new THREE.MeshStandardMaterial({ color: 0x18242f, roughness: 0.15, metalness: 0.85 });
-  planeMats = { body: white, accent: red };
   const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); plane.add(m); return m; };
   // fuselage: tapered cylinder, nose toward +Z
   const fus = add(new THREE.CylinderGeometry(0.42, 0.16, 5.4, 12), white, 0, 0, 0);
@@ -644,9 +634,7 @@ let thrRamp = 0;
 function toggleView() { cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
 $('back').addEventListener('click', () => { location.href = 'sports.html'; });
 $('viewBtn').addEventListener('click', toggleView);
-$('jetBtn').addEventListener('click', () => { applyJetStyle(jetStyle + 1); });
 $('resetBtn').addEventListener('click', () => { if (phase !== 'menu') respawn(); });
-applyJetStyle(jetStyle);
 $('btnFree').addEventListener('click', () => { Mus.ensure(); mode = 'free'; respawn(); });
 $('btnChal').addEventListener('click', () => { Mus.ensure(); mode = 'challenge'; respawn(); });
 $('btnAgain').addEventListener('click', () => respawn());
@@ -685,7 +673,7 @@ function step(dt) {
       // Speed-based pitch limit: prevents steep climbs at low speed that cause instant stalls
       // At liftoff (~26 m/s), max climb is gentle; full authority comes with speed
       const maxPitch = clamp((v - 18) / 22, 0.12, 0.62);
-      P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * auth * dt, -0.55, maxPitch);
+      P.pitch = clamp(P.pitch + inp.pitchUp * 1.05 * auth * dt, -0.55, maxPitch);
       P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
       if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.025 * dt; stallNow = true; }
@@ -763,27 +751,12 @@ function step(dt) {
   prop.rotation.z += spin * dt;
   propDisc.material.opacity = clamp(P.thr * 0.5, 0, 0.4);
   propDisc.rotation.z -= spin * 0.4 * dt;
-  elevator.rotation.x = inp.pitchUp * 0.7;
+  elevator.rotation.x = inp.pitchUp * 0.45;
   rudder.rotation.y = inp.rollRight * 0.4;
 
   // clouds drift
   for (const c of clouds) { c.position.x += 1.6 * dt; if (c.position.x > 7000) c.position.x = -7000; }
 }
-
-/* ================= jet styles ================= */
-function applyJetStyle(idx) {
-  jetStyle = ((idx % JET_STYLES.length) + JET_STYLES.length) % JET_STYLES.length;
-  const s = JET_STYLES[jetStyle];
-  if (planeMats.body) planeMats.body.color.setHex(s.body);
-  if (planeMats.accent) planeMats.accent.color.setHex(s.accent);
-  const label = document.getElementById('jetStyleLabel');
-  if (label) label.textContent = s.name;
-  try { localStorage.setItem('apexflight_jetstyle', String(jetStyle)); } catch(e) {}
-}
-try {
-  const saved = parseInt(localStorage.getItem('apexflight_jetstyle') || '0', 10);
-  if (!isNaN(saved)) jetStyle = saved;
-} catch(e) {}
 
 /* ================= camera ================= */
 const camPos = new THREE.Vector3(0, 8, -620), camLook = new THREE.Vector3(), camLookS = new THREE.Vector3(0, 4, 0);
