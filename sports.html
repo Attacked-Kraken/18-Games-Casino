@@ -132,6 +132,7 @@
   <button class="tab" data-p="p-trackfield" type="button">&#127939; Track &amp; Field</button>
   <button class="tab" data-p="p-f1" type="button">&#127937; F1 Racing</button>
   <button class="tab" data-p="p-apexracer" type="button">&#127950; Exotic Racer Club</button>
+  <button class="tab" data-p="p-beatmachine" type="button">&#127911; Beat Machine</button>
 </nav>
 
 
@@ -187,6 +188,11 @@
     <img src="apexracer-icon.svg" alt="" data-emoji="&#127950;">
     <h4>Exotic Racer Club</h4><p>Exotic supercars: tuning, garage, 100 circuits.</p>
     <div class="row"><span class="bld">NEW</span><a class="go" href="apexracer.html">PLAY</a></div>
+  </div>
+  <div class="gcard" data-p="p-beatmachine" style="--acc:#ff2fd0">
+    <img src="beatmachine-icon.svg" alt="" data-emoji="&#127911;">
+    <h4>Beat Machine</h4><p>Make beats, pads, keys, vocals, DJ decks.</p>
+    <div class="row"><span class="bld">NEW</span><a class="go" href="beatmachine.html">PLAY</a></div>
   </div>
 
 </div>
@@ -297,7 +303,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     remember(row);
     var f = document.createElement('iframe');
     f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=' + (window.__hubStamp || (window.__hubStamp = Date.now()));   /* dev=1: Game Development tools (career skip) - never in the Arcade */ f.title = row._game.name;
-    f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock');
+    f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock; microphone');
     f.setAttribute('allowfullscreen', '');
     f.addEventListener('load', function () {
       try { if (window.ApexFeedback && ApexFeedback.watch) ApexFeedback.watch(row.querySelector('.stage'), f, row._game.name); } catch (e) {}
