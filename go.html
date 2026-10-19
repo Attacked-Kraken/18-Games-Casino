@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AWAY Approver"><meta name="theme-color" content="#2e63e0">
+<link rel="apple-touch-icon" href="away-icon.png"><link rel="icon" href="away-icon.png">
+<title>AWAY Approver</title>
+<!-- Owner Oct 19 2026: "I want the AWAY icon to show right away, like my home controller". This page holds NO secrets:
+     the secret channel + PIN live only in the owner's own icon link (after the #, never sent to any server). It asks
+     ntfy for the laptop's newest away link (the laptop posts it there) and opens the real controller. -->
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1218;color:#f2f4f8;
+font-family:-apple-system,system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+.b{max-width:420px}h1{font-size:22px;margin:0 0 10px}p{color:#9aa6b5;font-size:15px;line-height:1.45}
+a.btn,button{display:block;width:100%;margin-top:14px;padding:14px;border:0;border-radius:14px;background:#2e63e0;color:#fff;font-size:17px;font-weight:700;text-decoration:none}
+.step{background:#171b23;border-radius:14px;padding:12px 14px;margin-top:12px;text-align:left;font-size:15px}</style></head>
+<body><div class="b" id="b"><h1>🌐 Finding your laptop…</h1><p id="m">One moment.</p></div>
+<script>
+const h = new URLSearchParams(location.hash.slice(1)), T = h.get('t') || '', P = h.get('p') || '', $ = id => document.getElementById(id);
+function show(t, m, extra) { $('b').innerHTML = '<h1>' + t + '</h1><p>' + m + '</p>' + (extra || ''); }
+if (!T) show('⚠️ This icon is missing its channel', 'Open your controller at home and tap <b>📲 Make my AWAY icon</b> again.');
+else if (h.get('setup')) {
+  h.delete('setup'); history.replaceState(null, '', location.pathname + '#' + h.toString());   // the icon saves this clean link
+  show('📲 Add this to your Home Screen', 'This becomes your AWAY icon: it opens the real controller from anywhere.',
+    '<div class="step">1. Tap the <b>Share</b> button (square with the arrow).</div><div class="step">2. Tap <b>Add to Home Screen</b>, then <b>Add</b>.</div>' +
+    '<div class="step">3. Delete your old AWAY icon.</div><button onclick="go()">Open the controller now</button>');
+} else go();
+async function go() {
+  show('🌐 Finding your laptop…', 'One moment.');
+  try {
+    const r = await fetch('https://ntfy.sh/' + encodeURIComponent(T) + '/json?poll=1&since=24h', { cache: 'no-store' });
+    const lines = (await r.text()).trim().split('\n').filter(Boolean).map(l => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
+    const urls = lines.map(x => (x.message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/)).filter(Boolean).map(m => m[0]);
+    const u = urls.pop();
+    if (!u) return show('😴 The laptop hasn\'t sent its link yet', 'It sends it when it starts and every few hours. Is the laptop on and online?', '<button onclick="go()">Try again</button>');
+    location.replace(u + '/' + (P ? '#pin=' + encodeURIComponent(P) : ''));
+  } catch (e) {
+    show('📵 No internet?', 'Couldn\'t reach the link service.', '<button onclick="go()">Try again</button>');
+  }
+}
+</script></body></html>
