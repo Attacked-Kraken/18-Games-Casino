@@ -1,0 +1,36 @@
+name: Sound robot
+# Owner Oct 19 2026: makes our own sounds with Beat Machine. Add or change a recipe in sounds/recipes/*.json and push to
+# main - this robot makes the WAVs in sounds/made/ (listen: sounds/made/index.html). See tools/sound-robot.mjs.
+on:
+  push:
+    branches: [main]
+    paths: ['sounds/recipes/**', 'tools/sound-robot.mjs', 'beatmachine.html']
+  workflow_dispatch:
+concurrency: { group: sound-robot, cancel-in-progress: false }
+permissions:
+  contents: write
+jobs:
+  make:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Make the sounds
+        run: |
+          python3 -m http.server 8899 >/dev/null 2>&1 &
+          sleep 2
+          node tools/sound-robot.mjs | tee sound-report.txt
+          cat sound-report.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Save them
+        run: |
+          git add sounds/made
+          git diff --cached --quiet && { echo "nothing new"; exit 0; }
+          git config user.name "sound robot"; git config user.email "actions@users.noreply.github.com"
+          git commit -m "Sound robot: $(grep -E '^(MADE|FAILED)' sound-report.txt | cut -d' ' -f1-2 | paste -sd ' ' | cut -c1-180)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1

@@ -1,0 +1,46 @@
+name: Sketchfab fetch
+# Owner Oct 19 2026: downloads the Sketchfab models asked for in MODEL-REQUESTS.md (exact model link, OPEN line) with the
+# owner's own Sketchfab API token, so no Muse ever has to sign in. CC Attribution / CC0 only. See tools/sketchfab-fetch.mjs.
+# Needs the repo secret SKETCHFAB_TOKEN (Sketchfab > Settings > Password & API > API token). Never put the token anywhere else.
+on:
+  push:
+    branches: [main]
+    paths: ['MODEL-REQUESTS.md']
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'Only check, download nothing (1 = yes)'
+        default: ''
+concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
+permissions:
+  contents: write
+jobs:
+  fetch:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i -g @gltf-transform/cli@4 >/dev/null
+      - name: Fetch
+        env:
+          SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
+          DRY: ${{ github.event.inputs.dry }}
+        run: node tools/sketchfab-fetch.mjs
+      - name: Shrink + save
+        run: |
+          set -e
+          cat fetch-report.txt >> "$GITHUB_STEP_SUMMARY" || true
+          for f in $(ls models/fetched/*-raw.glb 2>/dev/null); do
+            out="${f%-raw.glb}.glb"
+            gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
+            rm -f "$f"; echo "shrunk $out: $(( $(stat -c %s "$out") / 1024 )) KB" | tee -a fetch-report.txt
+          done
+          git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models/fetched)" ] && { echo "nothing to save"; exit 0; }
+          node tools/asset-check.mjs
+          git config user.name "sketchfab fetch robot"; git config user.email "actions@users.noreply.github.com"
+          git add MODEL-REQUESTS.md ASSETS.md models/fetched
+          git commit -m "Sketchfab fetch robot: $(grep -E '^(FETCHING|SKIPPED|FAILED)' fetch-report.txt | paste -sd ' ' | cut -c1-180)"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1

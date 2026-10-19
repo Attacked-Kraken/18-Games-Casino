@@ -105,3 +105,12 @@ Keep the paper trail in `ASSETS.md` (the robot checks it).
 
 Mixamo, TurboSquid, any NC/ND/SA or "personal use" license, Sketchfab models that aren't "CC Attribution" (ASSET-LAW Part III), brands/logos, anything ripped or "free download, all rights reserved", any CDN or web
 font or online API in a game (games are fully offline).
+
+
+## Robots that make things for you (owner, 2026-10-19)
+- **Sketchfab fetch robot**: add an OPEN line with the exact Sketchfab model link to MODEL-REQUESTS.md and merge. It
+  downloads CC Attribution / CC0 models with the owner's key into `models/fetched/<name>.glb` and logs ASSETS.md. Never sign in.
+- **Sound robot**: add a recipe to `sounds/recipes/<anything>.json` and merge. It makes the WAV in `sounds/made/` with the
+  owner's Beat Machine (our own sounds, no license worries). Kinds: `beat` (style, bpm, loops, pitch), `sfx` (a Beat Machine
+  library sound), `engine` (kind v8 / diesel / inline4 / vtwin / superbike, rpm or rev [from,to], deep, rough, blower,
+  clatter). Every option: `sounds/made/OPTIONS.md`. Listen: `sounds/made/index.html`.
