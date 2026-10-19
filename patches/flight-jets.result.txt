@@ -1,5 +1,0 @@
-PATCH DID NOT APPLY: patches/flight-jets.patch
-
-error: No valid patches in input (allow with "--allow-empty")
-
-What to do: pull the latest version of the big file on your branch, make your diff against THAT version (git diff format, with a few unchanged lines of context around each change), and push the .patch again.
