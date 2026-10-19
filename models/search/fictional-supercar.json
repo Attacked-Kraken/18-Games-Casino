@@ -1,0 +1,62 @@
+{
+ "words": "fictional supercar",
+ "for": "",
+ "date": "2026-10-19",
+ "results": [
+  {
+   "uid": "0a20e49ad5774d778567cb5c3f345786",
+   "name": "Fictional supercar - V12 Goblin",
+   "maker": "ollitei",
+   "license": "CC-BY 4.0",
+   "mb": 9.2,
+   "faces": 86623,
+   "likes": 689,
+   "link": "https://sketchfab.com/3d-models/none-0a20e49ad5774d778567cb5c3f345786",
+   "thumb": "https://media.sketchfab.com/models/0a20e49ad5774d778567cb5c3f345786/thumbnails/c20ff186b33541baa7e57f7024086c9e/40c1b9c6616b409bbb6f3203dd192e57.jpeg"
+  },
+  {
+   "uid": "d87ddc3e30134ff2990d8ee4d2586bdd",
+   "name": "Patriot P10-XR",
+   "maker": "Swiss_Fox",
+   "license": "CC-BY 4.0",
+   "mb": 12.5,
+   "faces": 72454,
+   "likes": 84,
+   "link": "https://sketchfab.com/3d-models/none-d87ddc3e30134ff2990d8ee4d2586bdd",
+   "thumb": "https://media.sketchfab.com/models/d87ddc3e30134ff2990d8ee4d2586bdd/thumbnails/9999709995524130a7cc4c7cee8e9744/59d4c7d991084f058de720680c7ed572.jpeg"
+  },
+  {
+   "uid": "c399568541104e0e903cf138b1e24908",
+   "name": "Tokii Abyss GT.7 V12",
+   "maker": "Glas'kavin",
+   "license": "CC-BY 4.0",
+   "mb": 10.1,
+   "faces": 158238,
+   "likes": 46,
+   "link": "https://sketchfab.com/3d-models/none-c399568541104e0e903cf138b1e24908",
+   "thumb": "https://media.sketchfab.com/models/c399568541104e0e903cf138b1e24908/thumbnails/d0ef8570bf0e44429e1fb20604c48c2f/d24b37eb8b634fc7864dcd590ed81fe7.jpeg"
+  },
+  {
+   "uid": "0a235e554ea94455bafd676c66749882",
+   "name": "Fictional-supercar-v12-goblin",
+   "maker": "ibrahimkhan",
+   "license": "CC-BY 4.0",
+   "mb": 7,
+   "faces": 86623,
+   "likes": 0,
+   "link": "https://sketchfab.com/3d-models/none-0a235e554ea94455bafd676c66749882",
+   "thumb": "https://media.sketchfab.com/models/0a235e554ea94455bafd676c66749882/thumbnails/f9ef557567874218aa7a822e863bf67c/47566757dcbf403a8c7e7dcd59194cb0.jpeg"
+  },
+  {
+   "uid": "7eb0880e094945e386159e7590c4c451",
+   "name": "fictional-supercar-v12-goblin",
+   "maker": "zezo2017",
+   "license": "CC-BY 4.0",
+   "mb": 6.2,
+   "faces": 86623,
+   "likes": 0,
+   "link": "https://sketchfab.com/3d-models/none-7eb0880e094945e386159e7590c4c451",
+   "thumb": "https://media.sketchfab.com/models/7eb0880e094945e386159e7590c4c451/thumbnails/75eff2d48e594470abb1f2429d8975b4/ff9f2b63d4f849f4975d1412e6ab0756.jpeg"
+  }
+ ]
+}
