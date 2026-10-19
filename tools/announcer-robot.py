@@ -6,10 +6,10 @@
 # then puts both through the broadcast finish (a touch deeper, radio presence, punch). Owner Oct 19: NO echo/reverb - "too much reverb".
 # His clip is NEVER in this public repo: sounds/announcer/owner-voice.enc is encrypted, the key is the VOICE_KEY secret.
 # Writes sounds/voice/voice.json (the Sound Lab's Announcer tab). Unchanged lines are not made again.
-import json, os, sys, subprocess, hashlib, tempfile
+import json, os, sys, subprocess, hashlib, tempfile, re
 LINES = 'sounds/announcer/lines.json'; OUT = 'sounds/voice'; os.makedirs(OUT, exist_ok=True)
 PRO_VOICE = os.environ.get('PRO_VOICE', 'am_michael')
-HYPE = 1.7    # owner Oct 19 2:47 PM "need more enthusiasm, the spark, excitement"    # Chatterbox emotion: 0.5 = calm reading, 1.0+ = a hyped arena announcer (owner: "no enthusiasm")
+HYPE = 1.0    # owner 2:47 PM "more spark" -> 1.7 made a mad YELL at the end of lines (3:44 PM); 1.0 + the shouted reference voice    # Chatterbox emotion: 0.5 = calm reading, 1.0+ = a hyped arena announcer (owner: "no enthusiasm")
 PRO_REF_TEXT = ('LADIES AND GENTLEMEN! Welcome to the ARENA! Are you READY?! HERE WE GO! OH what a play, UNBELIEVABLE! '
                 'HE SHOOTS, HE SCORES! The crowd is going WILD tonight! THREE! TWO! ONE! GO GO GO!')   # Kokoro voices: am_michael, am_fenrir, am_onyx, bm_george ...
 # the broadcast finish: a touch deeper (keeps speed), warm chest, radio presence, compressor punch - DRY, no echo (owner)
@@ -43,9 +43,7 @@ else:
 kokoro = chatter = None
 def spark(t):
     # announcers SHOUT the key word: end every line with '!' and make the first big word loud (GOAL, GO, WINNER...)
-    t = t.strip().replace('...', '... ')
-    if not t.endswith(('!', '?')): t = t.rstrip('.') + '!'
-    return t
+    return t.strip().replace('...', '... ')
 def finish(raw, sr, dst):
     import soundfile as sf
     tmp = dst + '.raw.wav'; sf.write(tmp, raw, sr)
@@ -57,7 +55,7 @@ for L in lines:
     base = (L['game'] + '-' + L['name']).lower()
     for who in (['you'] if ref else []) + ['pro']:
         name = base + '-' + who
-        key = hashlib.sha1(json.dumps([L['text'], who, FINISH, HYPE, takes.get(base + '-' + who, 0), PRO_VOICE if who == 'pro' else (os.path.getsize(ref) if ref else 0)]).encode()).hexdigest()[:12]
+        key = hashlib.sha1(json.dumps([L['text'], who, FINISH, HYPE, 'calm-end-3takes', takes.get(base + '-' + who, 0), PRO_VOICE if who == 'pro' else (os.path.getsize(ref) if ref else 0)]).encode()).hexdigest()[:12]
         dst = os.path.join(OUT, name + '.m4a'); keep.add(name + '.m4a')
         o = old.get(name)
         if o and o.get('key') == key and os.path.exists(dst): out.append(o); print('SAME', name); continue
@@ -75,10 +73,20 @@ for L in lines:
                         from kokoro import KPipeline; kokoro = KPipeline(lang_code='a' if PRO_VOICE[0] == 'a' else 'b')
                     import soundfile as sf
                     sf.write(pro_ref, np.concatenate([np.asarray(a) for _, _, a in kokoro(PRO_REF_TEXT, voice=PRO_VOICE, speed=1.05)]), 24000)
-                w = chatter.generate(spark(L['text']), audio_prompt_path=pro_ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
-            else:
-                w = chatter.generate(spark(L['text']), audio_prompt_path=ref, exaggeration=HYPE, cfg_weight=0.3, temperature=0.85)
-            audio = w.squeeze(0).numpy(); sr = chatter.sr
+            # owner Oct 19 3:44 PM "it's like announcement then mad yell": make 3 takes and keep the one that ends clean -
+            # close to the length the words need and NOT louder at the end than in the middle; then cut any tail
+            words = len(re.findall(r"[A-Za-z']+", L['text'])); est = 0.34 * words + 0.5 + 0.45 * L['text'].count('...')
+            best = None
+            for k in range(3):
+                w = chatter.generate(spark(L['text']), audio_prompt_path=pro_ref if who == 'pro' else ref, exaggeration=HYPE, cfg_weight=0.5, temperature=0.8)
+                a = w.squeeze(0).numpy(); n = len(a)
+                q = [float(np.sqrt(np.mean(a[int(n * i / 4):int(n * (i + 1) / 4)] ** 2)) + 1e-6) for i in range(4)]
+                score = abs(n / chatter.sr - est) / est + (2.0 if q[3] > 1.25 * max(q[:3]) else 0) + (1.0 if n / chatter.sr > 1.6 * est else 0)
+                if best is None or score < best[0]: best = (score, a)
+            audio = best[1]; sr = chatter.sr
+            cap = int(sr * max(1.2, 1.5 * est))
+            if len(audio) > cap:                      # anything far past the words is the model babbling/yelling: fade it out
+                audio = audio[:cap].copy(); f = int(sr * 0.15); audio[-f:] *= np.linspace(1, 0, f)
             secs = finish(audio, sr, dst)
         except Exception as e:
             print('FAILED', name, e); continue
