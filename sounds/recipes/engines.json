@@ -1,0 +1,9 @@
+[
+  { "name": "rally-v8-idle", "type": "engine", "kind": "v8", "rpm": 900, "seconds": 2, "deep": 0.8, "rough": 0.6 },
+  { "name": "rally-v8-cruise", "type": "engine", "kind": "v8", "rpm": 3500, "seconds": 2, "deep": 0.6, "rough": 0.3 },
+  { "name": "rally-v8-blower", "type": "engine", "kind": "v8", "rpm": 4500, "seconds": 2, "deep": 0.6, "blower": 0.8 },
+  { "name": "rally-v8-rev", "type": "engine", "kind": "v8", "rev": [900, 6500], "seconds": 3, "deep": 0.7, "blower": 0.4 },
+  { "name": "diesel-truck-idle", "type": "engine", "kind": "diesel", "rpm": 750, "seconds": 2, "deep": 0.9, "clatter": 0.7 },
+  { "name": "superbike-high", "type": "engine", "kind": "superbike", "rpm": 12000, "seconds": 1.5, "deep": 0.2 },
+  { "name": "superbike-rev", "type": "engine", "kind": "superbike", "rev": [2000, 15000], "seconds": 3, "deep": 0.2 }
+]

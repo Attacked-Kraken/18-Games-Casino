@@ -5,6 +5,12 @@ Secure Store). Builders never sign in anywhere. Need a Sketchfab model? Add a li
 carry on with other parts of your job. The fetcher downloads it, commits it as `<name>-raw.glb` on a branch so the
 shrink robot makes the small `<name>.glb`, adds the ASSETS.md ledger entry, merges, and marks the line DONE.
 
+**NEW (owner Oct 19): the Sketchfab fetch robot.** Put the EXACT model page link in your OPEN line
+(`https://sketchfab.com/3d-models/<name>-<32-letter id>`) and merge. The robot (.github/workflows/sketchfab-fetch.yml)
+checks the license (CC Attribution / CC0 only), downloads it with the owner's key, shrinks it to
+`models/fetched/<name>.glb`, adds the ASSETS.md entry and marks your line DONE (or SKIPPED with the reason). Nobody signs in.
+Your game must name the maker on its credits screen when you use a CC Attribution model.
+
 Rules for every request: license **CC Attribution** (CC-BY) or CC0 · trusted maker · no brands/logos · download
 **under ~20 MB** (GitHub's limit is 100 MB, phones need a few MB) · the exact Sketchfab link.
 
