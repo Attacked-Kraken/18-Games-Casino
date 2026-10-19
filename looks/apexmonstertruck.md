@@ -16,7 +16,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - J5 pic: dirt repeat 220 (not 880) - no obvious tiling/streaking
 - OWNER Oct 18 7:43 PM: top speed 300 mph (drive stick alone, ~5 s to top speed) - test play-300mph
 - OWNER Oct 18 6:28 + 7:25 PM: engine SEPARATE from the music and DEEPER - the game music never plays below ~220 Hz (bass line 2 octaves up, high short kick), steps back while you drive, and the engine owns the low rumble - test play-engine-over-music
-- OWNER Oct 18 9:09 PM: LOOPS + SKY RAMPS: 5 loops of different sizes (mega R55 down to R22, each needs enough speed, too slow = slide back), each exits straight onto a red kicker that launches you into the air; 6 sky ramps (90-125 m tall) for huge air - test play-loops-and-sky-ramps
+- OWNER Oct 18 9:09 + 9:19 PM: LOOPS + SKY RAMPS: 5 GIANT loops (mega 300 m tall R150, then R120, R100, R85, R70 - 'not big enough' at R22-55), each needs enough speed (too slow = slide back), the launch is built into the loop (track curves up out of the bottom and throws you) - NO separate ramp next to a loop, loops 250 m+ from any ramp; camera rides the track behind the truck in a loop; 6 sky ramps (90-125 m tall) for huge air - test play-loops-and-sky-ramps
 - OWNER Oct 18 9:08 PM: engine LOWER (quieter) and BETTER music a little LOUDER: arena-rock track (distorted power-chord guitar E-C-G-D, lead hook, big drums), music only steps back a bit while driving (not a whisper), still nothing in it below ~180 Hz - test play-engine-over-music
 - (older) OWNER Oct 18 7:35 PM: still mixing on the phone -> while the truck MOVES the game music drops to a whisper (full again when you stop), and a MUSIC ON/OFF pill next to SOUND turns the music off completely (remembered)
 
