@@ -1236,7 +1236,7 @@ function stepPuck(dt){
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
+    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1430,7 +1430,7 @@ function tick(now){
   if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
   stateT-=dt;
   if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
-  else if(state==='goal'&&stateT<=0){ faceoff(0,0,'FACEOFF'); }
+  else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.2,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
   else if(state==='whistle'&&stateT<=0){
     const p=pendingFaceoff; pendingFaceoff=null;
     if(p) faceoff(p.x,p.z,p.label); else faceoff(0,0,'FACEOFF');
