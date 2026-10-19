@@ -280,7 +280,7 @@ export default [
   },
   {
     id: 'play-engine-recording',
-    ask: "Owner Oct 18 7:52 PM: the engine is HIS two tuned recordings mixed (idle, mid rev, high speed loops), not the synth",
+    ask: "Owner Oct 18 7:52 + 8:08 PM: the engine is HIS tuned recordings mixed (idle, mid, high + supercharger whine on the gas), not the synth",
     async test(page, h) {
       return h.eval(() => {
         const S = window.__mt && window.__mt.Snd;
@@ -290,8 +290,8 @@ export default [
         return new Promise((res) => {
           const t0 = performance.now();
           const check = () => {
-            if (S.rec && S.rec.idle && S.rec.rev && S.rec.high) res(true);
-            else if (performance.now() - t0 > 8000) res('the engine recordings (sounds/truck-idle/mid/high.wav) did not load');
+            if (S.rec && S.rec.idle && S.rec.rev && S.rec.high && S.rec.gas) res(true);
+            else if (performance.now() - t0 > 8000) res('the engine recordings (sounds/truck-idle/mid/high/gas.wav) did not load');
             else setTimeout(check, 200);
           };
           check();
