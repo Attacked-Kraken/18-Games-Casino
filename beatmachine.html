@@ -21,6 +21,8 @@ header.top{display:flex;align-items:center;gap:6px;padding:4px 8px;height:50px;f
 .tabbtn.on{--c:var(--cyan);background:linear-gradient(180deg,#1d2a3a,#111a26)}
 .topbtn{width:46px;padding:0;font-size:18px}
 #recBtn{--c:var(--red);font-size:12px;font-weight:900;width:58px}
+#songBtn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;height:40px;width:84px;flex:0 0 auto;border-radius:12px;border:2px solid var(--lime);color:#0b1405;background:var(--lime);font-size:12px;font-weight:900;letter-spacing:.04em;cursor:pointer;box-shadow:0 0 14px rgba(198,255,58,.45)}
+#songBtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;font-size:200px;cursor:pointer}
 #recBtn.on{background:#3a0c18;animation:pulse 1s infinite}
 @keyframes pulse{50%{box-shadow:0 0 22px var(--red)}}
 main{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;position:relative;min-height:0}
@@ -128,6 +130,7 @@ html.land.short .tname{font-size:10px}
 html.land.short header.top{height:46px}
 html.land.short .tabbtn{height:36px;min-height:36px}
 html.land.short .topbtn{min-height:36px;height:36px}
+html.land.short #songBtn{height:36px}
 
 /* ---- v2 additions ---- */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;display:flex;flex-direction:column;gap:8px}
@@ -168,6 +171,7 @@ html.port .tabs{gap:3px}
 html.port .tabbtn{min-width:0;flex:1;padding:0 2px;font-size:10.5px;letter-spacing:.02em}
 html.port .topbtn{width:40px}
 html.port #recBtn{width:52px;font-size:11px}
+html.port #songBtn{width:66px;font-size:11px}
 html.port .fxgrid{grid-template-columns:1fr}
 
 #meter{position:absolute;left:0;right:0;bottom:0;height:3px;pointer-events:none}
@@ -323,6 +327,7 @@ html.land #tab-beats .bside .ctrl:has(#swing){flex:1 1 100%}
       <button class="tabbtn" data-tab="fx">FX</button>
       <button class="tabbtn" data-tab="dj">DJ</button>
     </nav>
+    <label id="songBtn" title="Upload a song or sound to remix">📂 SONG<input type="file" id="songIn" accept="audio/*,.mp3,.m4a,.wav,.aac,.caf,.ogg,.oga,.aif,.aiff,.flac,.webm"></label>
     <button class="topbtn" id="topPlay" title="Play / stop beat">▶</button>
     <button id="recBtn" title="Record the mix">● REC</button>
     <button class="topbtn" id="rotBtn" title="Forced landscape on/off">⟲</button>
@@ -1821,6 +1826,9 @@ function addClipLane(sm,pos){ const l=newLane(sm.name); const c=mkClip(sm,pos==n
 function findClip(id){ for(const l of S.mix.lanes){ const c=l.clips.find(x=>x.id===id); if(c) return {c,l}; } return null; }
 const laneById=id=>S.mix.lanes.find(l=>l.id===id);
 $('#addLane').addEventListener('click',()=>{ const l=newLane(); selLane=l.id; selClip=null; save(); renderMix(); });
+/* owner Oct 18: one tap from any tab - pick a song, it lands on the Mix timeline with the beat, ready to remix */
+$('#songIn').addEventListener('change',e=>{ const fs=e.target.files; if(!(fs&&fs.length)) return;
+  loadFiles(fs,{toMix:true}).then(()=>{ showTab('mix'); setTimeout(()=>{ toast('Song is on the Mix. Tap ▶ to hear it with the beat, then pick a Remix style on BEATS.'); clearTimeout(toastT); toastT=setTimeout(()=>$('#toast').classList.remove('show'),6000); },300); }).finally(()=>{e.target.value='';}); });
 $('#mixIn').addEventListener('change',e=>{ const fs=e.target.files; if(fs&&fs.length) loadFiles(fs,{toMix:true}).finally(()=>{e.target.value='';}); });
 $('#mixSnap').addEventListener('change',e=>{ S.mix.snap=+e.target.value; save(); });
 $('#zoomIn').addEventListener('click',()=>{ S.mix.ppb=Math.min(120,S.mix.ppb*1.4); renderMix(); }); $('#zoomOut').addEventListener('click',()=>{ S.mix.ppb=Math.max(6,S.mix.ppb/1.4); renderMix(); });
