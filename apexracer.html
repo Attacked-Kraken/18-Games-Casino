@@ -289,19 +289,20 @@ const CARS = [
   { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 82, grip: 1.16, prof: 'wedge', col: '#8a2be2' },
   { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 90, grip: 1.22, prof: 'hyper', col: '#e8e8ee' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#e8e8ee', glb: 1 },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 1 },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 98, grip: 1.2, prof: 'titan', col: '#aeb4bd' },
   { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
-const defCfg = (id) => ({ paint: CAR[id].col, fin: 'metal', rim: 0, rimCol: '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
+const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
 const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
 let S = DEF();
 const skey = () => 'apexracer1_' + (user || 'guest');
 let WELCOME = false;
-function load() { try { const raw = localStorage.getItem(skey()); WELCOME = !raw; S = Object.assign(DEF(), JSON.parse(raw || '{}')); } catch (e) { S = DEF(); } if (!S.cars.goblin) S.cars.goblin = defCfg('goblin'); if (!S.cars[S.cur]) S.cur = Object.keys(S.cars)[0] || 'goblin'; if (!S.cars.vanta && !Object.keys(S.cars).length) S.cars.vanta = defCfg('vanta');
+function load() { try { const raw = localStorage.getItem(skey()); WELCOME = !raw; S = Object.assign(DEF(), JSON.parse(raw || '{}')); } catch (e) { S = DEF(); } if (!S.cars.goblin) { S.cars.goblin = defCfg('goblin'); S.cur = 'goblin'; }
+  else { const g = S.cars.goblin; if (g.paint === '#e8e8ee') { g.paint = '#9d0f1f'; g.fin = 'candy'; } if (g.rimCol === '#c9cdd6') g.rimCol = '#d4142a'; } if (!S.cars[S.cur]) S.cur = Object.keys(S.cars)[0] || 'goblin'; if (!S.cars.vanta && !Object.keys(S.cars).length) S.cars.vanta = defCfg('vanta');
   /* owner: "give me a 200,000 bonus on my Cruz username profile for the racer" - one time only */
   if (isOwner()) for (const q of CARS) if (q.owner && !S.cars[q.id]) { S.cars[q.id] = defCfg(q.id); if (q.id === 'titan') { S.cars.titan.fin = 'chrome'; S.cars.titan.glow = '#19e6ff'; } }
   if (isOwner() && !S.gift3m) { S.gift3m = 1; S.cash += 3000000; GIFT3 = true; save(); } /* owner: "give me another 🪙3million in account to race with" */
@@ -919,9 +920,10 @@ function makeGlbCar(id, cfg, o = {}) {
     if (/shadow/i.test(q.name)) { q.visible = false; return; }
     q.castShadow = true;
     const mn = ((q.material && q.material.name) || '').toLowerCase();
+    const nn = (q.name || '').toLowerCase();
     if (mn.includes('clearcoat')) q.material = bodyMat;
+    else if (mn.includes('car_tire') || nn.includes('tire')) q.material = tireMat;
     else if (mn.includes('car_body')) q.material = rimMat;
-    else if (mn.includes('car_tire')) q.material = tireMat;
     else if (mn.includes('car_glass')) q.material = glassMat;
   });
   let box = new THREE.Box3().setFromObject(model);
