@@ -149,6 +149,6 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - title: announcer voice samples (Grok hockey / Grand Prix / motorcycle packs, woman 40s, man 40s)
 - maker: Grok (xAI) for the owner
 - source: the owner's Grok chat "Apex Arcade Pass" (proof: licenses/proof/2026-10-19-grok-announcer-packs.jpg)
-- license: AI-generated for the owner (xAI terms) - no real person's voice
+- license: OWNER - AI voices made for the owner by Grok (xAI terms), no real person's voice; proof in licenses/
 - downloaded: 2026-10-19, sent by the owner
 - used in: Sound Lab -> Announcer; reference voices for the announcer robot

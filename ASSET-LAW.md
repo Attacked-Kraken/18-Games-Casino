@@ -126,3 +126,8 @@ page shows the "CC Attribution" license AND a Download button from the maker. Ev
 
 Why this is safe: CC-BY is free for paid apps, has no fees or royalties, the maker is not involved, and the license
 cannot be taken back. All it asks is credit — which rules 1–2 make automatic.
+
+# Part IV - the owner's own (owner, 2026-10-19)
+Things the owner made, or had made FOR him (his own designs and recordings, AI voices or art he generated in his own
+accounts), use license `OWNER` in ASSETS.md. Each one needs its proof (screenshot, receipt) in `licenses/proof/` and a
+line in `licenses/README.md`. Real people's voices or other studios' art never count as OWNER.
