@@ -1,3 +1,5 @@
+**FRESH START (owner, Oct 19 2026): all old J-jobs are gone. Work ONLY on G-jobs the owner sends - read jobs/README.md first.**
+
 # Read this first (every AI helper and person working in this repo)
 
 Owner: Mr. Cruz. Read these files, in this order, before any work. They are the law here.
