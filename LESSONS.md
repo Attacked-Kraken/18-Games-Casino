@@ -54,3 +54,4 @@ Format: `- YYYY-MM-DD · game · mistake → rule`
 - Oct 19 (sounds): owner: "every beat sounds the same" - every song opened on the same quiet chord intro and used one melody recipe. Rule: each song gets its own melody/bass/hat/shape and opens on its hook; 🗑 in Sound Lab = remake as something totally different.
 - Oct 19 (fetch robot): Sketchfab search links are /3d-models/none-<id>, so 4 cars all saved as none.glb. Rule: fetched files are named from the model title + first 6 letters of its id - never only from the link.
 - Oct 19 (announcer): Chatterbox emotion 1.7 = a mad yell at the end of lines. Rule: emotion ~1.0, 3 takes, keep the one that ends clean, cut tails past the words.
+- Oct 19 (Monster Truck sound): the owner's new truck recordings replace the 4 engine loops (idle / mid rev / high speed diesel / blower on the gas): steady parts cut into gapless loops, same loudness as before.
