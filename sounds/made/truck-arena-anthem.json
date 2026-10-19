@@ -1,1 +1,0 @@
-{"name":"truck-arena-anthem","type":"beat","style":"Boom Bap","bpm":96,"key":"A","scale":"Minor pentatonic","patterns":[{"melody":[0,-1,0,-1,3,-1,-1,4,-1,-1,3,-1,2,-1,0,-1],"chords":[0,3,4,0]}],"tracks":{"kick":{"sample":"file:sounds/real/truck-idle.wav","vol":0.6,"pitch":-5}},"sound":{"melody":"lead","melVol":0.55},"fx":{"drive":25,"reverb":12},"loops":4}
