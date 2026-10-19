@@ -81,5 +81,5 @@ au.ontimeupdate=()=>{ if(au.duration) $('seek').value=Math.round(au.currentTime/
 au.onplay=au.onpause=au.onended=()=>draw();
 $('seek').oninput=e=>{ if(au.duration) au.currentTime=e.target.value/1000*au.duration; };
 const get=u=>fetch(u+'?'+Date.now()).then(r=>r.ok?r.json():{sounds:[]}).catch(()=>({sounds:[]}));
-Promise.all([get('made/catalog.json'),get('voice/voice.json')]).then(([a,b])=>{st.sounds=(a.sounds||[]).concat((b.sounds||[]).map(v=>Object.assign({dir:'voice'},v))); draw();});
+Promise.all([get('made/catalog.json'),get('voice/voice.json'),get('announcer/voices/voices.json')]).then(([a,b,c])=>{st.sounds=(a.sounds||[]).concat((b.sounds||[]).map(v=>Object.assign({dir:'voice'},v)),(c.sounds||[])); draw();});
 </script></body></html>

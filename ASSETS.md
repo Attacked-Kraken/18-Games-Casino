@@ -144,3 +144,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-19 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "denniswoo1993" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: sounds/announcer/voices/
+- title: announcer voice samples (Grok hockey / Grand Prix / motorcycle packs, woman 40s, man 40s)
+- maker: Grok (xAI) for the owner
+- source: the owner's Grok chat "Apex Arcade Pass" (proof: licenses/proof/2026-10-19-grok-announcer-packs.jpg)
+- license: AI-generated for the owner (xAI terms) - no real person's voice
+- downloaded: 2026-10-19, sent by the owner
+- used in: Sound Lab -> Announcer; reference voices for the announcer robot
