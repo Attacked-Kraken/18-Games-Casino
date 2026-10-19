@@ -1,0 +1,26 @@
+--- a/apexflight.html	2026-10-19 14:53:34.310281579 -0500
++++ b/apexflight.html	2026-10-19 14:53:28.784398605 -0500
+@@ -688,7 +688,11 @@
+       P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * auth * dt, -0.55, maxPitch);
+       P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
+       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
+-      if (v < VSTALL) { P.pitch -= (VSTALL - v) * 0.025 * dt; stallNow = true; }
++      if (v < VSTALL) {
++        // Gentle stall: no forced nose-drop (user keeps control).
++        // Lift is reduced below, so the plane sinks naturally - recover with throttle or gentle nose-down.
++        stallNow = true;
++      }
+       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
+     } else {
+       /* ground roll: the nose answers to the stick once fast, and an
+@@ -716,7 +720,9 @@
+   ACC.addScaledVector(F, THRUST * P.thr);
+   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00045 * v + 0.005));  // drag - reduced for better climb
+   if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
+-    ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa, LIFTCAP)); }      // lift, capped
++    // Stall: lift fades as speed drops below VSTALL (plane sinks, user keeps pitch control)
++    const stallFade = v < VSTALL ? Math.max(0.3, v / VSTALL) : 1.0;
++    ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa * stallFade, LIFTCAP)); }      // lift, capped
+   P.vel.addScaledVector(ACC, dt);
+   P.pos.addScaledVector(P.vel, dt);
+ 
