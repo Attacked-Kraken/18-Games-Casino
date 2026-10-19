@@ -47,3 +47,39 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://codeberg.org/jamesonBradfield/Quaternius_IK_Rigged_with_animations
 - license: CC0
 - used in: casino floor
+
+## ASSET: models/bikes/apex-superbike.glb
+- title: Apex Superbike
+- maker: Apex Arcade (made for the owner, our own design)
+- source: owner's file "viewer.html" (Apex Superbike 3D viewer), sent Oct 18 2026
+- license: CC0
+- downloaded: 2026-10-18 by Claude (owner's upload)
+- used in: apexmoto.html
+- changes: none (taken out of the viewer page as one .glb)
+
+## ASSET: models/bikes/street-bike.glb
+- title: Motorcycle
+- maker: Silas6
+- source: https://sketchfab.com/3d-models/motorcycle-693e83d86e1e4e5b95e4314dbdd95d40
+- license: CC-BY 4.0
+- downloaded: 2026-10-18 by the owner (sent to Claude)
+- used in: apexmoto.html (as "Trailhawk", credited on the Credits screen)
+- changes: textures made smaller (max 1024 px)
+
+## ASSET: models/bikes/race-bike.glb
+- title: Motorcycle
+- maker: Tahseen
+- source: https://sketchfab.com/3d-models/motorcycle-239e4ccb2bd440c995359db7adcbd184
+- license: CC-BY 4.0
+- downloaded: 2026-10-18 by the owner (sent to Claude)
+- used in: apexmoto.html (as "Velocity R", credited on the Credits screen)
+- changes: sponsor logos, brand names and race number painted over in plain white (game paints it), windscreen text removed, textures made smaller
+
+## ASSET: models/bikes/phantom-bike.glb
+- title: Scifi Motorcycle Project_MX
+- maker: JonnyMANSON
+- source: https://sketchfab.com/3d-models/scifi-motorcycle-project-mx-689d42690adf436fa781aee367d533e3
+- license: CC-BY 4.0
+- downloaded: 2026-10-18 by the owner (sent to Claude)
+- used in: apexmoto.html (as "Phantom X", credited on the Credits screen)
+- changes: textures made smaller (max 512 px)
