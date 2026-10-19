@@ -1,0 +1,31 @@
+name: Bike preview pictures
+# owner Oct 18 9:49 PM "I want to see what they look like": photographs the 5 Poly Pizza bikes from tools/bike-pick.html
+on:
+  push:
+    branches: [bike-preview]
+permissions:
+  contents: write
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Can a phone page load the models? (CORS)
+        run: |
+          mkdir -p previews
+          for u in f7635710-7cfa-4768-ad70-8366ab485358 34db1344-31cc-49ac-bc46-c055f68e39ca 4fa4f21a-c3b8-425f-8e57-9c202b1d6ba6 191eebc7-b1f8-4ec7-8652-9c6c49521b99 6048701b-fa87-426b-9242-c786ca25fa3a; do
+            echo "== $u" >> previews/cors.txt
+            curl -sS -I -H "Origin: https://attacked-kraken.github.io" "https://static.poly.pizza/$u.glb" | grep -i -E "^HTTP|access-control|content-length" >> previews/cors.txt || true
+          done
+          cat previews/cors.txt
+      - run: node tools/bike-shots.mjs
+      - name: Save the pictures
+        run: |
+          git config user.name "bike-preview robot"; git config user.email "actions@github.com"
+          git add previews && git commit -m "bike preview pictures" && git push || true
