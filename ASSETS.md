@@ -47,3 +47,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://codeberg.org/jamesonBradfield/Quaternius_IK_Rigged_with_animations
 - license: CC0
 - used in: casino floor
+
+## ASSET: sounds/truck-idle.wav, sounds/truck-mid.wav, sounds/truck-high.wav
+- title: Monster truck engine loops (idle / mid rev / high speed), tuned and mixed
+- maker: two recordings supplied by the owner (Mr. Cruz) on Oct 18 2026: monster-truck-rev.mp3 and diesel-monster-truck-high-speed.mp3
+- source: owner upload (Claude chat, Oct 18 2026) - owner to confirm where they came from before the App Store
+- license: owner-supplied (owner: "tune up this sound and use it", "mix this one with it")
+- used in: apexmonstertruck.html
+- changes: low-end boost, softer highs, compressed, equal loudness, cut into gapless loops (idle = both mixed, mid = rev, high = diesel + rev), 22 kHz mono WAV
