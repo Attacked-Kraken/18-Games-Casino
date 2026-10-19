@@ -84,6 +84,7 @@
   <div class="pill"><small>TIME</small><span id="time">120</span></div>
   <div class="pill"><small>SPEED</small><span id="speed">0</span> mph</div>
   <div class="pill" id="muteBtn" style="cursor:pointer;pointer-events:auto"><small>SOUND</small><span id="muteIcon">🔊</span></div>
+  <div class="pill" id="musicBtn" style="cursor:pointer;pointer-events:auto"><small>MUSIC</small><span id="musicIcon">ON</span></div>
 </div>
 
 <div id="floaters"></div>
@@ -199,10 +200,10 @@ const Snd = {
     this.engOsc[2].frequency.setTargetAtTime(f * 1.03, t, 0.05); // detune growl
     this.engOsc[3].frequency.setTargetAtTime(6 + sp * 18, t, 0.1); // V8 lope: lumpy at idle, a fast throb at speed
     this.lope.gain.setTargetAtTime(0.3 - sp * 0.15, t, 0.1);
-    this.engFilter.frequency.setTargetAtTime(260 + sp * 1100, t, 0.08);   // dark and deep, never bright
+    this.engFilter.frequency.setTargetAtTime(340 + sp * 1000, t, 0.08);   // dark and deep, but a phone speaker can still hear it
     const on = sp >= 0.02;
     this.engGain.gain.setTargetAtTime(on ? 0.14 + sp * 0.18 : 0, t, 0.09);
-    if (typeof Music !== 'undefined' && Music.duck) Music.duck(on ? 0.4 + sp * 0.6 : 0);
+    if (typeof Music !== 'undefined' && Music.duck) Music.duck(on ? Math.min(1, 0.8 + sp * 2) : 0);   // moving = music a whisper
     // throttle punch: swell noise on hard acceleration
     const punch = Math.max(0, sp - this.lastSp) * 3;
     this.punchGain.gain.setTargetAtTime(Math.min(0.12, punch), t, 0.04);
@@ -286,7 +287,14 @@ const Music = {
     if (s % 16 === 4 || s % 16 === 12) { const len = Math.floor(C.sampleRate * 0.12), b = C.createBuffer(1, len, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = C.createBufferSource(); src.buffer = b; const f = C.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1800; const gn = C.createGain(); gn.gain.setValueAtTime(0.25, t); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.12); src.connect(f); f.connect(gn); gn.connect(g); src.start(t); }
   },
   stop(){ this.mode = 'off'; if (this.timer) { clearTimeout(this.timer); this.timer = null; } },
-  level(){ return this.snd && this.snd.muted ? 0 : (this.mode === 'game' ? 0.32 - 0.2 * this.duckAmt : 0.32); },
+  // owner Oct 18 7:35 PM "the engine sound is still mixing with the music": a phone speaker can't play the deep rumble, so
+  // what you hear of the engine sits right where the music is. While the truck is moving the music drops to a whisper
+  // (back to full when you stop), and the new MUSIC button turns it off completely.
+  musicOff: false,
+  level(){ return (this.snd && this.snd.muted) || this.musicOff ? 0 : (this.mode === 'game' ? 0.28 - 0.25 * this.duckAmt : 0.32); },
+  toggleMusic(){ this.musicOff = !this.musicOff; try { localStorage.setItem('mt-music-off', this.musicOff ? '1' : ''); } catch (e) {}
+    const el = document.getElementById('musicIcon'); if (el) el.textContent = this.musicOff ? 'OFF' : 'ON';
+    if (this.musGain) this.musGain.gain.setTargetAtTime(this.level(), this.ctx.currentTime, 0.05); return this.musicOff; },
   duck(k){ // 0 = full music, 1 = engine at full throttle: music down to ~40% and its bass line cut
     if (!this.musGain || this.mode !== 'game') return;
     this.duckAmt = Math.max(0, Math.min(1, k));
@@ -1463,6 +1471,8 @@ if (helpBtn) {
 }
 
 document.getElementById('muteBtn').addEventListener('click', () => { Snd.init(); Snd.toggleMute(); });
+document.getElementById('musicBtn').addEventListener('click', (e) => { e.stopPropagation(); Snd.init(); Music.init(Snd); Music.toggleMusic(); });
+try { if (localStorage.getItem('mt-music-off')) { Music.musicOff = true; document.getElementById('musicIcon').textContent = 'OFF'; } } catch (e) {}
 document.addEventListener('pointerdown', function mm(){ Snd.init(); Music.init(Snd); if (state === 'menu') Music.play('menu'); document.removeEventListener('pointerdown', mm); }, { once: true });
 document.getElementById('againBtn').addEventListener('click', startGame);
 

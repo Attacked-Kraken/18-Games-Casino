@@ -16,6 +16,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - J5 pic: dirt repeat 220 (not 880) - no obvious tiling/streaking
 - OWNER Oct 18 6:28 PM: top speed OVER 200 mph (drive stick alone, ~5 s to top speed) - test play-200mph
 - OWNER Oct 18 6:28 + 7:25 PM: engine SEPARATE from the music and DEEPER - the game music never plays below ~220 Hz (bass line 2 octaves up, high short kick), steps back while you drive, and the engine owns the low rumble - test play-engine-over-music
+- OWNER Oct 18 7:35 PM: still mixing on the phone -> while the truck MOVES the game music drops to a whisper (full again when you stop), and a MUSIC ON/OFF pill next to SOUND turns the music off completely (remembered)
 
 ## KEEP (owner, Oct 18 - LOCKED: never change these, whatever a job says)
 - The truck exactly as in the J5 version (owner 👍 Oct 17, main 726a1dc): same model, body, tires, colors and style.
