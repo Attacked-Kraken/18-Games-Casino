@@ -280,6 +280,27 @@ export default [
     },
   },
   {
+    id: 'play-loops-and-sky-ramps',
+    ask: "Owner Oct 18 9:09 PM: a big loop that launches you into the air + lots of different loops + ramps to jump high into the sky",
+    async test(page, h) {
+      return h.eval(() => {
+        const M = window.__mt; if (!M || !M.loops || !M.stepTruck) return 'no loops in the game';
+        if (M.loops.length < 4) return `only ${M.loops.length} loops (owner: a lot of different loops)`;
+        if (new Set(M.loops.map(l => l.R)).size < 3) return 'loops are all the same size';
+        const T = M.T, L = M.loops.reduce((a, b) => a.R > b.R ? a : b), e = L.local(0, 0);
+        T.x = e.x - L.dx * 20; T.z = e.z - L.dz * 20; T.y = 0; T.vy = 0; T.grounded = true; T.hd = L.ang; T.sp = M.maxFwd * 0.95; T.loop = null;
+        let turned = 0, maxY = 0, air = 0, done = false;
+        for (let k = 0; k < 900; k++) { M.input.gas = true; M.stepTruck(1 / 60); if (T.loop) turned = Math.max(turned, T.loop.th); else if (turned > 6) done = true;
+          if (done) { maxY = Math.max(maxY, T.y); if (!T.grounded) air++; } }
+        M.input.gas = false;
+        if (turned < 6.2) return `big loop: truck only went ${turned.toFixed(1)} of 6.3 rad round`;
+        if (air < 60) return `after the big loop only ${(air / 60).toFixed(1)}s in the air (want a launch)`;
+        const sky = M.ramps.filter(r => r.h >= 90).length;
+        return sky >= 4 ? true : `only ${sky} sky ramps (90 m+ tall)`;
+      });
+    },
+  },
+  {
     id: 'play-engine-recording',
     ask: "Owner Oct 18 7:52 + 8:08 PM: the engine is HIS tuned recordings mixed (idle, mid, high + supercharger whine on the gas), not the synth",
     async test(page, h) {
