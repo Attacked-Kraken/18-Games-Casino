@@ -1,0 +1,54 @@
+{
+ "sounds": [
+  {
+   "name": "voice-grok-hockey-sample",
+   "title": "Grok voices - hockey pack sample",
+   "game": "all",
+   "tab": "voice",
+   "file": "grok-hockey-sample.mp3",
+   "dir": "announcer/voices",
+   "secs": 35.1,
+   "made": "2026-10-19T21:31:50.822621Z"
+  },
+  {
+   "name": "voice-grok-grandprix-sample",
+   "title": "Grok voices - Grand Prix pack sample",
+   "game": "all",
+   "tab": "voice",
+   "file": "grok-grandprix-sample.mp3",
+   "dir": "announcer/voices",
+   "secs": 32.6,
+   "made": "2026-10-19T21:31:50.873595Z"
+  },
+  {
+   "name": "voice-grok-moto-sample",
+   "title": "Grok voices - motorcycle pack sample",
+   "game": "all",
+   "tab": "voice",
+   "file": "grok-moto-sample.mp3",
+   "dir": "announcer/voices",
+   "secs": 33.4,
+   "made": "2026-10-19T21:31:50.927543Z"
+  },
+  {
+   "name": "voice-woman-40s",
+   "title": "Voice: woman, 40s",
+   "game": "all",
+   "tab": "voice",
+   "file": "woman-40s.mp3",
+   "dir": "announcer/voices",
+   "secs": 38.6,
+   "made": "2026-10-19T21:31:50.976405Z"
+  },
+  {
+   "name": "voice-man-40s",
+   "title": "Voice: man, 40s",
+   "game": "all",
+   "tab": "voice",
+   "file": "man-40s.mp3",
+   "dir": "announcer/voices",
+   "secs": 38.5,
+   "made": "2026-10-19T21:31:51.026590Z"
+  }
+ ]
+}

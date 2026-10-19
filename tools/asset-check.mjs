@@ -5,7 +5,7 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
 
-const ALLOWED = /^(CC0|CC-BY (3\.0|4\.0))\b/i;
+const ALLOWED = /^(CC0|CC-BY (3\.0|4\.0)|OWNER\b)/i;   // OWNER = made by or for the owner, proof in licenses/ (Oct 19)
 const files = execSync('git ls-files', { encoding: 'utf8' }).split('\n')
   .filter(f => /\.(glb|gltf|fbx|obj)$/i.test(f) && !f.startsWith('node_modules/'));
 const ledger = [];
@@ -20,7 +20,7 @@ for (const line of fs.readFileSync('ASSETS.md', 'utf8').split('\n')) {
 }
 const problems = [];
 for (const e of ledger) {
-  if (!ALLOWED.test(e.license || '')) problems.push(`ASSETS.md "${e.path}": license "${e.license || 'missing'}" is not allowed (CC0, CC-BY 3.0, CC-BY 4.0 only)`);
+  if (!ALLOWED.test(e.license || '')) problems.push(`ASSETS.md "${e.path}": license "${e.license || 'missing'}" is not allowed (CC0, CC-BY 3.0, CC-BY 4.0, or OWNER with proof in licenses/)`);
   for (const k of ['maker', 'source']) if (!e[k]) problems.push(`ASSETS.md "${e.path}": missing "${k}"`);
 }
 const cover = f => ledger.find(e => e.path === f || (e.path.endsWith('/') && f.startsWith(e.path)));
