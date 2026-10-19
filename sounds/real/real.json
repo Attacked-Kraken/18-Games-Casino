@@ -1,0 +1,44 @@
+{
+ "sounds": [
+  {
+   "name": "real-monster-truck-idle",
+   "title": "Monster truck idle (real)",
+   "game": "monstertruck",
+   "tab": "engine",
+   "file": "monster-truck-idle.mp3",
+   "dir": "real/monster-truck",
+   "secs": 4.0,
+   "made": "2026-10-19T21:49:52.633479+00:00"
+  },
+  {
+   "name": "real-monster-truck-rev",
+   "title": "Monster truck rev (real)",
+   "game": "monstertruck",
+   "tab": "engine",
+   "file": "monster-truck-rev.mp3",
+   "dir": "real/monster-truck",
+   "secs": 11.0,
+   "made": "2026-10-19T21:49:52.633479+00:00"
+  },
+  {
+   "name": "real-diesel-monster-truck-high-speed",
+   "title": "Diesel monster truck high speed (real)",
+   "game": "monstertruck",
+   "tab": "engine",
+   "file": "diesel-monster-truck-high-speed.mp3",
+   "dir": "real/monster-truck",
+   "secs": 14.0,
+   "made": "2026-10-19T21:49:52.633479+00:00"
+  },
+  {
+   "name": "real-blower-monster-truck",
+   "title": "Blower monster truck (real)",
+   "game": "monstertruck",
+   "tab": "engine",
+   "file": "blower-monster-truck.mp3",
+   "dir": "real/monster-truck",
+   "secs": 13.0,
+   "made": "2026-10-19T21:49:52.633479+00:00"
+  }
+ ]
+}

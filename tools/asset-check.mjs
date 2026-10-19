@@ -20,7 +20,9 @@ for (const line of fs.readFileSync('ASSETS.md', 'utf8').split('\n')) {
 }
 const problems = [];
 for (const e of ledger) {
-  if (!ALLOWED.test(e.license || '')) problems.push(`ASSETS.md "${e.path}": license "${e.license || 'missing'}" is not allowed (CC0, CC-BY 3.0, CC-BY 4.0, or OWNER with proof in licenses/)`);
+  // sounds may also be Apache-2.0 (Kokoro voices) or CC-BY-SA 4.0 (one commentary voice, credited) - owner Oct 19
+  const okSound = /^sounds\//.test(e.path || '') && /^(Apache-2\.0|CC-BY-SA 4\.0|CC0 \+ CC-BY-SA 4\.0)\b/i.test(e.license || '');
+  if (!ALLOWED.test(e.license || '') && !okSound) problems.push(`ASSETS.md "${e.path}": license "${e.license || 'missing'}" is not allowed (CC0, CC-BY 3.0, CC-BY 4.0, or OWNER with proof in licenses/)`);
   for (const k of ['maker', 'source']) if (!e[k]) problems.push(`ASSETS.md "${e.path}": missing "${k}"`);
 }
 const cover = f => ledger.find(e => e.path === f || (e.path.endsWith('/') && f.startsWith(e.path)));

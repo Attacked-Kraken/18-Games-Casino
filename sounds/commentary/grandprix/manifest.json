@@ -1,0 +1,937 @@
+{
+ "sport": "grandprix",
+ "voices": {
+  "announcer": "Piper en_US-joe-medium (dataset CC0)",
+  "color": "Piper en_GB-northern_english_male-medium (dataset CC-BY-SA 4.0, OpenSLR 83)"
+ },
+ "clips": [
+  {
+   "id": "start_01",
+   "event": "start",
+   "speaker": "announcer",
+   "text": "Lights out and away we go!",
+   "file": "clips/start/start_01.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "start_02",
+   "event": "start",
+   "speaker": "announcer",
+   "text": "Welcome to the Grand Prix! The grid is set, the engines are roaring!",
+   "file": "clips/start/start_02.mp3",
+   "duration": 3.109
+  },
+  {
+   "id": "start_03",
+   "event": "start",
+   "speaker": "announcer",
+   "text": "Five lights, and they're gone! What a launch!",
+   "file": "clips/start/start_03.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "start_04",
+   "event": "start",
+   "speaker": "color",
+   "text": "Oh, I have been waiting all week for this one! Let's race!",
+   "file": "clips/start/start_04.mp3",
+   "duration": 2.664
+  },
+  {
+   "id": "start_05",
+   "event": "start",
+   "speaker": "announcer",
+   "text": "Into turn one, side by side! Here we go!",
+   "file": "clips/start/start_05.mp3",
+   "duration": 2.534
+  },
+  {
+   "id": "start_06",
+   "event": "start",
+   "speaker": "color",
+   "text": "Brilliant start from the front row!",
+   "file": "clips/start/start_06.mp3",
+   "duration": 1.515
+  },
+  {
+   "id": "overtake_01",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "He's alongside! And he's through! What a move!",
+   "file": "clips/overtake/overtake_01.mp3",
+   "duration": 2.168
+  },
+  {
+   "id": "overtake_02",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Dives up the inside! Overtake complete!",
+   "file": "clips/overtake/overtake_02.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "overtake_03",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Around the outside! Oh, that is brave!",
+   "file": "clips/overtake/overtake_03.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "overtake_04",
+   "event": "overtake",
+   "speaker": "color",
+   "text": "That is a textbook overtake! Late braking, perfect line!",
+   "file": "clips/overtake/overtake_04.mp3",
+   "duration": 2.821
+  },
+  {
+   "id": "overtake_05",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Blue car passes Red! Into the lead!",
+   "file": "clips/overtake/overtake_05.mp3",
+   "duration": 1.855
+  },
+  {
+   "id": "overtake_06",
+   "event": "overtake",
+   "speaker": "announcer",
+   "text": "Red car fights back! Takes the place!",
+   "file": "clips/overtake/overtake_06.mp3",
+   "duration": 1.855
+  },
+  {
+   "id": "overtake_07",
+   "event": "overtake",
+   "speaker": "color",
+   "text": "Wheel to wheel! Absolutely thrilling!",
+   "file": "clips/overtake/overtake_07.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "boost_zone_01",
+   "event": "boost_zone",
+   "speaker": "announcer",
+   "text": "Into the boost zone! Flap is open!",
+   "file": "clips/boost_zone/boost_zone_01.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "boost_zone_02",
+   "event": "boost_zone",
+   "speaker": "announcer",
+   "text": "Boost zone activated! He's closing fast!",
+   "file": "clips/boost_zone/boost_zone_02.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "boost_zone_03",
+   "event": "boost_zone",
+   "speaker": "color",
+   "text": "He's within a second! The boost zone is his friend!",
+   "file": "clips/boost_zone/boost_zone_03.mp3",
+   "duration": 2.508
+  },
+  {
+   "id": "boost_zone_04",
+   "event": "boost_zone",
+   "speaker": "announcer",
+   "text": "Boost zone gets him right on the gearbox!",
+   "file": "clips/boost_zone/boost_zone_04.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "pit_stop_01",
+   "event": "pit_stop",
+   "speaker": "announcer",
+   "text": "He's in for the pit stop!",
+   "file": "clips/pit_stop/pit_stop_01.mp3",
+   "duration": 1.228
+  },
+  {
+   "id": "pit_stop_02",
+   "event": "pit_stop",
+   "speaker": "announcer",
+   "text": "Lightning stop! Two point two seconds!",
+   "file": "clips/pit_stop/pit_stop_02.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "pit_stop_03",
+   "event": "pit_stop",
+   "speaker": "announcer",
+   "text": "Out of the pits, back on track!",
+   "file": "clips/pit_stop/pit_stop_03.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "pit_stop_04",
+   "event": "pit_stop",
+   "speaker": "color",
+   "text": "Fantastic work from the pit crew! Perfect stop!",
+   "file": "clips/pit_stop/pit_stop_04.mp3",
+   "duration": 2.612
+  },
+  {
+   "id": "pit_stop_05",
+   "event": "pit_stop",
+   "speaker": "announcer",
+   "text": "Slow stop! A wheel nut is stuck!",
+   "file": "clips/pit_stop/pit_stop_05.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "tires_01",
+   "event": "tires",
+   "speaker": "announcer",
+   "text": "Fresh soft tires! He's flying now!",
+   "file": "clips/tires/tires_01.mp3",
+   "duration": 2.09
+  },
+  {
+   "id": "tires_02",
+   "event": "tires",
+   "speaker": "color",
+   "text": "Those tires are fading fast! He needs to pit!",
+   "file": "clips/tires/tires_02.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "tires_03",
+   "event": "tires",
+   "speaker": "color",
+   "text": "Smart choice going to the hard tires! They'll last forever!",
+   "file": "clips/tires/tires_03.mp3",
+   "duration": 2.769
+  },
+  {
+   "id": "tires_04",
+   "event": "tires",
+   "speaker": "announcer",
+   "text": "Look at the grip! He's glued to the track!",
+   "file": "clips/tires/tires_04.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "crash_01",
+   "event": "crash",
+   "speaker": "announcer",
+   "text": "Oh! He's spun off! Into the gravel!",
+   "file": "clips/crash/crash_01.mp3",
+   "duration": 2.064
+  },
+  {
+   "id": "crash_02",
+   "event": "crash",
+   "speaker": "announcer",
+   "text": "Contact! Both cars are out!",
+   "file": "clips/crash/crash_02.mp3",
+   "duration": 1.541
+  },
+  {
+   "id": "crash_03",
+   "event": "crash",
+   "speaker": "announcer",
+   "text": "He's into the barrier! The driver is out and waving, he's okay!",
+   "file": "clips/crash/crash_03.mp3",
+   "duration": 3.004
+  },
+  {
+   "id": "crash_04",
+   "event": "crash",
+   "speaker": "color",
+   "text": "Ooh, too much speed into that corner! The car just let go!",
+   "file": "clips/crash/crash_04.mp3",
+   "duration": 2.952
+  },
+  {
+   "id": "safety_car_01",
+   "event": "safety_car",
+   "speaker": "announcer",
+   "text": "Safety car deployed!",
+   "file": "clips/safety_car/safety_car_01.mp3",
+   "duration": 1.176
+  },
+  {
+   "id": "safety_car_02",
+   "event": "safety_car",
+   "speaker": "announcer",
+   "text": "The safety car is out, and the pack bunches up!",
+   "file": "clips/safety_car/safety_car_02.mp3",
+   "duration": 2.534
+  },
+  {
+   "id": "safety_car_03",
+   "event": "safety_car",
+   "speaker": "color",
+   "text": "That changes everything! Strategy time!",
+   "file": "clips/safety_car/safety_car_03.mp3",
+   "duration": 2.064
+  },
+  {
+   "id": "safety_car_04",
+   "event": "safety_car",
+   "speaker": "announcer",
+   "text": "Safety car is in this lap! Get ready for the restart!",
+   "file": "clips/safety_car/safety_car_04.mp3",
+   "duration": 2.586
+  },
+  {
+   "id": "flags_01",
+   "event": "flags",
+   "speaker": "announcer",
+   "text": "Yellow flag! Caution in sector two!",
+   "file": "clips/flags/flags_01.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "flags_02",
+   "event": "flags",
+   "speaker": "announcer",
+   "text": "Red flag! The session is stopped!",
+   "file": "clips/flags/flags_02.mp3",
+   "duration": 1.75
+  },
+  {
+   "id": "flags_03",
+   "event": "flags",
+   "speaker": "color",
+   "text": "Yellow flags mean no overtaking! Careful now!",
+   "file": "clips/flags/flags_03.mp3",
+   "duration": 2.247
+  },
+  {
+   "id": "flags_04",
+   "event": "flags",
+   "speaker": "announcer",
+   "text": "Green flag! We're racing again!",
+   "file": "clips/flags/flags_04.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "flags_05",
+   "event": "flags",
+   "speaker": "announcer",
+   "text": "Blue flags, he has to let the leader through!",
+   "file": "clips/flags/flags_05.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "fastest_lap_01",
+   "event": "fastest_lap",
+   "speaker": "announcer",
+   "text": "Fastest lap! Purple sectors everywhere!",
+   "file": "clips/fastest_lap/fastest_lap_01.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "fastest_lap_02",
+   "event": "fastest_lap",
+   "speaker": "announcer",
+   "text": "He sets the fastest lap of the race!",
+   "file": "clips/fastest_lap/fastest_lap_02.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "fastest_lap_03",
+   "event": "fastest_lap",
+   "speaker": "color",
+   "text": "That is a blistering lap! On the absolute limit!",
+   "file": "clips/fastest_lap/fastest_lap_03.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "last_lap_01",
+   "event": "last_lap",
+   "speaker": "announcer",
+   "text": "Last lap! Here we go!",
+   "file": "clips/last_lap/last_lap_01.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "last_lap_02",
+   "event": "last_lap",
+   "speaker": "announcer",
+   "text": "White flag! One lap to go!",
+   "file": "clips/last_lap/last_lap_02.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "last_lap_03",
+   "event": "last_lap",
+   "speaker": "color",
+   "text": "Everything on the line! Push, push, push!",
+   "file": "clips/last_lap/last_lap_03.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "last_lap_04",
+   "event": "last_lap",
+   "speaker": "announcer",
+   "text": "One more lap, and the gap is shrinking!",
+   "file": "clips/last_lap/last_lap_04.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "checkered_flag_01",
+   "event": "checkered_flag",
+   "speaker": "announcer",
+   "text": "Checkered flag! He wins the Grand Prix!",
+   "file": "clips/checkered_flag/checkered_flag_01.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "checkered_flag_02",
+   "event": "checkered_flag",
+   "speaker": "announcer",
+   "text": "Across the line! Victory! What a drive!",
+   "file": "clips/checkered_flag/checkered_flag_02.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "checkered_flag_03",
+   "event": "checkered_flag",
+   "speaker": "announcer",
+   "text": "He takes the checkered flag! Unbelievable race!",
+   "file": "clips/checkered_flag/checkered_flag_03.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "checkered_flag_04",
+   "event": "checkered_flag",
+   "speaker": "color",
+   "text": "He drove like a champion today! Flawless!",
+   "file": "clips/checkered_flag/checkered_flag_04.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "photo_01",
+   "event": "photo",
+   "speaker": "announcer",
+   "text": "Side by side to the line! It's a photo finish!",
+   "file": "clips/photo/photo_01.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "photo_02",
+   "event": "photo",
+   "speaker": "color",
+   "text": "By a whisker! Hundredths of a second!",
+   "file": "clips/photo/photo_02.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "podium_01",
+   "event": "podium",
+   "speaker": "announcer",
+   "text": "Up on the podium! What a celebration!",
+   "file": "clips/podium/podium_01.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "podium_02",
+   "event": "podium",
+   "speaker": "announcer",
+   "text": "First, second and third! The trophies are out!",
+   "file": "clips/podium/podium_02.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "podium_03",
+   "event": "podium",
+   "speaker": "color",
+   "text": "What a day for the whole team! They deserve this!",
+   "file": "clips/podium/podium_03.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "podium_04",
+   "event": "podium",
+   "speaker": "announcer",
+   "text": "The champagne-free celebration begins! Sparkling juice everywhere!",
+   "file": "clips/podium/podium_04.mp3",
+   "duration": 3.291
+  },
+  {
+   "id": "lose_01",
+   "event": "lose",
+   "speaker": "announcer",
+   "text": "Not his day! He finishes off the podium!",
+   "file": "clips/lose/lose_01.mp3",
+   "duration": 2.247
+  },
+  {
+   "id": "lose_02",
+   "event": "lose",
+   "speaker": "color",
+   "text": "Tough race! He'll come back stronger next time!",
+   "file": "clips/lose/lose_02.mp3",
+   "duration": 2.612
+  },
+  {
+   "id": "crowd_01",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "Listen to the fans in the grandstand!",
+   "file": "clips/crowd/crowd_01.mp3",
+   "duration": 1.698
+  },
+  {
+   "id": "crowd_02",
+   "event": "crowd",
+   "speaker": "color",
+   "text": "The whole crowd is on its feet!",
+   "file": "clips/crowd/crowd_02.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "crowd_03",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "Flags waving everywhere! What a scene!",
+   "file": "clips/crowd/crowd_03.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "idle_01",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Steady gap at the front, about two seconds!",
+   "file": "clips/idle/idle_01.mp3",
+   "duration": 2.299
+  },
+  {
+   "id": "idle_02",
+   "event": "idle",
+   "speaker": "color",
+   "text": "He's managing his tires, waiting to strike!",
+   "file": "clips/idle/idle_02.mp3",
+   "duration": 2.064
+  },
+  {
+   "id": "idle_03",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Through the chicane, nice and clean!",
+   "file": "clips/idle/idle_03.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "idle_04",
+   "event": "idle",
+   "speaker": "color",
+   "text": "You can feel an attack coming!",
+   "file": "clips/idle/idle_04.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "idle_05",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Plenty of laps left in this one!",
+   "file": "clips/idle/idle_05.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "dialogue_01_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a start from the Blue car!",
+   "dialogue_id": "d01",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_01_1.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_01_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Rocket launch! He gained three places!",
+   "dialogue_id": "d01",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_01_2.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "dialogue_02_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Can he catch the leader?",
+   "dialogue_id": "d02",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_02_1.mp3",
+   "duration": 1.149
+  },
+  {
+   "id": "dialogue_02_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's a second a lap faster! It's only a matter of time!",
+   "dialogue_id": "d02",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_02_2.mp3",
+   "duration": 2.821
+  },
+  {
+   "id": "dialogue_03_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Boost zone coming up!",
+   "dialogue_id": "d03",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_03_1.mp3",
+   "duration": 0.967
+  },
+  {
+   "id": "dialogue_03_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "This is his big chance! Get it right on the exit!",
+   "dialogue_id": "d03",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_03_2.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "dialogue_04_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Did you see that pit stop?",
+   "dialogue_id": "d04",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_04_1.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "dialogue_04_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Incredible! That crew is lightning fast!",
+   "dialogue_id": "d04",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_04_2.mp3",
+   "duration": 2.064
+  },
+  {
+   "id": "dialogue_05_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "This crowd is amazing!",
+   "dialogue_id": "d05",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_05_1.mp3",
+   "duration": 1.071
+  },
+  {
+   "id": "dialogue_05_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They've been cheering since the warm-up lap!",
+   "dialogue_id": "d05",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_05_2.mp3",
+   "duration": 1.829
+  },
+  {
+   "id": "dialogue_06_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Will his tires last?",
+   "dialogue_id": "d06",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_06_1.mp3",
+   "duration": 1.176
+  },
+  {
+   "id": "dialogue_06_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "It's going to be very tight! He's nursing them!",
+   "dialogue_id": "d06",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_06_2.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "dialogue_07_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Safety car! What does this mean?",
+   "dialogue_id": "d07",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_07_1.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "dialogue_07_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Free pit stop for some! Strategy chaos!",
+   "dialogue_id": "d07",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_07_2.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "dialogue_08_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "He's all over the gearbox!",
+   "dialogue_id": "d08",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_08_1.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_08_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "The pressure is enormous! Something's got to give!",
+   "dialogue_id": "d08",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_08_2.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "dialogue_09_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is that the fastest lap?",
+   "dialogue_id": "d09",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_09_1.mp3",
+   "duration": 1.202
+  },
+  {
+   "id": "dialogue_09_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Purple everywhere! That is sensational!",
+   "dialogue_id": "d09",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_09_2.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "dialogue_10_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a move around the outside!",
+   "dialogue_id": "d10",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_10_1.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "dialogue_10_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Brave and brilliant! That's the move of the day!",
+   "dialogue_id": "d10",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_10_2.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "dialogue_11_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Two laps left, the gap is under a second!",
+   "dialogue_id": "d11",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_11_1.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "dialogue_11_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Oh, this is going to the wire!",
+   "dialogue_id": "d11",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_11_2.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "dialogue_12_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The rain is starting to fall!",
+   "dialogue_id": "d12",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_12_1.mp3",
+   "duration": 1.332
+  },
+  {
+   "id": "dialogue_12_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Uh oh! Who'll switch to wet tires first?",
+   "dialogue_id": "d12",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_12_2.mp3",
+   "duration": 2.299
+  },
+  {
+   "id": "dialogue_13_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Huge save after that slide!",
+   "dialogue_id": "d13",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_13_1.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "dialogue_13_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Amazing car control! He caught it perfectly!",
+   "dialogue_id": "d13",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_13_2.mp3",
+   "duration": 2.456
+  },
+  {
+   "id": "dialogue_14_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The Red car is fighting back!",
+   "dialogue_id": "d14",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_14_1.mp3",
+   "duration": 1.411
+  },
+  {
+   "id": "dialogue_14_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's not giving up without a battle!",
+   "dialogue_id": "d14",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_14_2.mp3",
+   "duration": 1.515
+  },
+  {
+   "id": "dialogue_15_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Look at the sparks off the floor!",
+   "dialogue_id": "d15",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_15_1.mp3",
+   "duration": 1.593
+  },
+  {
+   "id": "dialogue_15_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Flat out through the fast corners! Beautiful!",
+   "dialogue_id": "d15",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_15_2.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "dialogue_16_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is this the race of the season?",
+   "dialogue_id": "d16",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_16_1.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_16_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "It's right up there! What a show!",
+   "dialogue_id": "d16",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_16_2.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "dialogue_17_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Another overtake!",
+   "dialogue_id": "d17",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_17_1.mp3",
+   "duration": 0.888
+  },
+  {
+   "id": "dialogue_17_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's carving through the field!",
+   "dialogue_id": "d17",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_17_2.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_18_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The lead has changed again!",
+   "dialogue_id": "d18",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_18_1.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "dialogue_18_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Three leaders in five laps! Unbelievable!",
+   "dialogue_id": "d18",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_18_2.mp3",
+   "duration": 2.429
+  },
+  {
+   "id": "dialogue_19_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "He's locked up!",
+   "dialogue_id": "d19",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_19_1.mp3",
+   "duration": 0.705
+  },
+  {
+   "id": "dialogue_19_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Flat spot! That's going to hurt!",
+   "dialogue_id": "d19",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_19_2.mp3",
+   "duration": 1.698
+  },
+  {
+   "id": "dialogue_20_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "And that's the checkered flag!",
+   "dialogue_id": "d20",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_20_1.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_20_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "What a race! I loved every lap!",
+   "dialogue_id": "d20",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_20_2.mp3",
+   "duration": 1.881
+  }
+ ]
+}

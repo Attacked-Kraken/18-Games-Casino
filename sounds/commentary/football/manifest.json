@@ -1,0 +1,1233 @@
+{
+ "sport": "football",
+ "voices": {
+  "announcer": "Piper en_US-joe-medium (dataset CC0)",
+  "color": "Piper en_GB-northern_english_male-medium (dataset CC-BY-SA 4.0, OpenSLR 83)"
+ },
+ "clips": [
+  {
+   "id": "kickoff_01",
+   "event": "kickoff",
+   "speaker": "announcer",
+   "text": "And here's the kickoff! We are underway!",
+   "file": "clips/kickoff/kickoff_01.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "kickoff_02",
+   "event": "kickoff",
+   "speaker": "announcer",
+   "text": "Booming kick, deep into the end zone!",
+   "file": "clips/kickoff/kickoff_02.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "kickoff_03",
+   "event": "kickoff",
+   "speaker": "announcer",
+   "text": "Welcome to a huge night of football! Blue versus Red, let's go!",
+   "file": "clips/kickoff/kickoff_03.mp3",
+   "duration": 3.422
+  },
+  {
+   "id": "kickoff_04",
+   "event": "kickoff",
+   "speaker": "color",
+   "text": "Oh, I can feel the energy in this stadium! It's game time!",
+   "file": "clips/kickoff/kickoff_04.mp3",
+   "duration": 3.056
+  },
+  {
+   "id": "kickoff_05",
+   "event": "kickoff",
+   "speaker": "announcer",
+   "text": "Kick is up, and the return man has it!",
+   "file": "clips/kickoff/kickoff_05.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "kickoff_06",
+   "event": "kickoff",
+   "speaker": "color",
+   "text": "Great coverage on the kick! They swarmed him!",
+   "file": "clips/kickoff/kickoff_06.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "snap_01",
+   "event": "snap",
+   "speaker": "announcer",
+   "text": "Here's the snap!",
+   "file": "clips/snap/snap_01.mp3",
+   "duration": 0.784
+  },
+  {
+   "id": "snap_02",
+   "event": "snap",
+   "speaker": "announcer",
+   "text": "Quarterback under center, and the ball is snapped!",
+   "file": "clips/snap/snap_02.mp3",
+   "duration": 2.403
+  },
+  {
+   "id": "snap_03",
+   "event": "snap",
+   "speaker": "announcer",
+   "text": "Shotgun formation, snap is clean!",
+   "file": "clips/snap/snap_03.mp3",
+   "duration": 1.933
+  },
+  {
+   "id": "snap_04",
+   "event": "snap",
+   "speaker": "color",
+   "text": "Look at that line, they're ready to battle!",
+   "file": "clips/snap/snap_04.mp3",
+   "duration": 1.855
+  },
+  {
+   "id": "snap_05",
+   "event": "snap",
+   "speaker": "announcer",
+   "text": "Hut! Hut! And we're off!",
+   "file": "clips/snap/snap_05.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "run_01",
+   "event": "run",
+   "speaker": "announcer",
+   "text": "Handoff to the running back, he finds a hole!",
+   "file": "clips/run/run_01.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "run_02",
+   "event": "run",
+   "speaker": "announcer",
+   "text": "He breaks a tackle! Still going!",
+   "file": "clips/run/run_02.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "run_03",
+   "event": "run",
+   "speaker": "announcer",
+   "text": "Bounces it outside, turns the corner!",
+   "file": "clips/run/run_03.mp3",
+   "duration": 2.09
+  },
+  {
+   "id": "run_04",
+   "event": "run",
+   "speaker": "color",
+   "text": "What vision from the running back! He saw that lane early!",
+   "file": "clips/run/run_04.mp3",
+   "duration": 2.691
+  },
+  {
+   "id": "run_05",
+   "event": "run",
+   "speaker": "announcer",
+   "text": "Up the middle for a nice gain!",
+   "file": "clips/run/run_05.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "run_06",
+   "event": "run",
+   "speaker": "color",
+   "text": "He runs like a bulldozer! Nobody wants to tackle him!",
+   "file": "clips/run/run_06.mp3",
+   "duration": 3.318
+  },
+  {
+   "id": "pass_complete_01",
+   "event": "pass_complete",
+   "speaker": "announcer",
+   "text": "Pass is caught! Great hands!",
+   "file": "clips/pass_complete/pass_complete_01.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "pass_complete_02",
+   "event": "pass_complete",
+   "speaker": "announcer",
+   "text": "Complete! Right on the numbers!",
+   "file": "clips/pass_complete/pass_complete_02.mp3",
+   "duration": 1.489
+  },
+  {
+   "id": "pass_complete_03",
+   "event": "pass_complete",
+   "speaker": "announcer",
+   "text": "He fires, and it's caught along the sideline!",
+   "file": "clips/pass_complete/pass_complete_03.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "pass_complete_04",
+   "event": "pass_complete",
+   "speaker": "color",
+   "text": "What a throw! He dropped that in a bucket!",
+   "file": "clips/pass_complete/pass_complete_04.mp3",
+   "duration": 2.064
+  },
+  {
+   "id": "pass_complete_05",
+   "event": "pass_complete",
+   "speaker": "announcer",
+   "text": "Over the middle, complete! Moving the chains!",
+   "file": "clips/pass_complete/pass_complete_05.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "pass_complete_06",
+   "event": "pass_complete",
+   "speaker": "color",
+   "text": "The timing between those two is perfect!",
+   "file": "clips/pass_complete/pass_complete_06.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "pass_incomplete_01",
+   "event": "pass_incomplete",
+   "speaker": "announcer",
+   "text": "Pass falls incomplete!",
+   "file": "clips/pass_incomplete/pass_incomplete_01.mp3",
+   "duration": 1.019
+  },
+  {
+   "id": "pass_incomplete_02",
+   "event": "pass_incomplete",
+   "speaker": "announcer",
+   "text": "Overthrown! Just out of reach!",
+   "file": "clips/pass_incomplete/pass_incomplete_02.mp3",
+   "duration": 1.541
+  },
+  {
+   "id": "pass_incomplete_03",
+   "event": "pass_incomplete",
+   "speaker": "color",
+   "text": "Ooh, so close! A little too much on that one!",
+   "file": "clips/pass_incomplete/pass_incomplete_03.mp3",
+   "duration": 2.325
+  },
+  {
+   "id": "pass_incomplete_04",
+   "event": "pass_incomplete",
+   "speaker": "announcer",
+   "text": "Knocked away! Great defense!",
+   "file": "clips/pass_incomplete/pass_incomplete_04.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "big_play_01",
+   "event": "big_play",
+   "speaker": "announcer",
+   "text": "He's got room! He's at the forty, the thirty, the twenty!",
+   "file": "clips/big_play/big_play_01.mp3",
+   "duration": 2.926
+  },
+  {
+   "id": "big_play_02",
+   "event": "big_play",
+   "speaker": "announcer",
+   "text": "Huge gain! What a play!",
+   "file": "clips/big_play/big_play_02.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "big_play_03",
+   "event": "big_play",
+   "speaker": "color",
+   "text": "That's a game-changer right there! Explosive!",
+   "file": "clips/big_play/big_play_03.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "big_play_04",
+   "event": "big_play",
+   "speaker": "announcer",
+   "text": "Nobody's going to catch him! Look at him go!",
+   "file": "clips/big_play/big_play_04.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "sack_01",
+   "event": "sack",
+   "speaker": "announcer",
+   "text": "Sacked! Brought down in the backfield!",
+   "file": "clips/sack/sack_01.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "sack_02",
+   "event": "sack",
+   "speaker": "announcer",
+   "text": "He gets home! Big sack!",
+   "file": "clips/sack/sack_02.mp3",
+   "duration": 1.123
+  },
+  {
+   "id": "sack_03",
+   "event": "sack",
+   "speaker": "color",
+   "text": "Oh, the pass rush is relentless tonight!",
+   "file": "clips/sack/sack_03.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "sack_04",
+   "event": "sack",
+   "speaker": "announcer",
+   "text": "Quarterback is swarmed and goes down!",
+   "file": "clips/sack/sack_04.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "interception_01",
+   "event": "interception",
+   "speaker": "announcer",
+   "text": "Intercepted! Picked off!",
+   "file": "clips/interception/interception_01.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "interception_02",
+   "event": "interception",
+   "speaker": "announcer",
+   "text": "He jumps the route! Interception!",
+   "file": "clips/interception/interception_02.mp3",
+   "duration": 1.593
+  },
+  {
+   "id": "interception_03",
+   "event": "interception",
+   "speaker": "color",
+   "text": "What a read by the defense! He was waiting for it!",
+   "file": "clips/interception/interception_03.mp3",
+   "duration": 2.299
+  },
+  {
+   "id": "interception_04",
+   "event": "interception",
+   "speaker": "announcer",
+   "text": "Picked! And he's got blockers!",
+   "file": "clips/interception/interception_04.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "fumble_01",
+   "event": "fumble",
+   "speaker": "announcer",
+   "text": "Fumble! The ball is loose!",
+   "file": "clips/fumble/fumble_01.mp3",
+   "duration": 1.358
+  },
+  {
+   "id": "fumble_02",
+   "event": "fumble",
+   "speaker": "announcer",
+   "text": "It's on the ground! Who's got it?",
+   "file": "clips/fumble/fumble_02.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "fumble_03",
+   "event": "fumble",
+   "speaker": "color",
+   "text": "Oh, ball security! You have to protect it!",
+   "file": "clips/fumble/fumble_03.mp3",
+   "duration": 2.9
+  },
+  {
+   "id": "fumble_04",
+   "event": "fumble",
+   "speaker": "announcer",
+   "text": "Recovered by the defense! Huge turnover!",
+   "file": "clips/fumble/fumble_04.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "first_down_01",
+   "event": "first_down",
+   "speaker": "announcer",
+   "text": "First down!",
+   "file": "clips/first_down/first_down_01.mp3",
+   "duration": 0.653
+  },
+  {
+   "id": "first_down_02",
+   "event": "first_down",
+   "speaker": "announcer",
+   "text": "That's enough for the first down! Moving the chains!",
+   "file": "clips/first_down/first_down_02.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "first_down_03",
+   "event": "first_down",
+   "speaker": "color",
+   "text": "Gritty run! They got the yardage!",
+   "file": "clips/first_down/first_down_03.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "first_down_04",
+   "event": "first_down",
+   "speaker": "announcer",
+   "text": "Converts on third down! Massive!",
+   "file": "clips/first_down/first_down_04.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "touchdown_01",
+   "event": "touchdown",
+   "speaker": "announcer",
+   "text": "Touchdown! Touchdown!",
+   "file": "clips/touchdown/touchdown_01.mp3",
+   "duration": 1.176
+  },
+  {
+   "id": "touchdown_02",
+   "event": "touchdown",
+   "speaker": "announcer",
+   "text": "He's in! Six points!",
+   "file": "clips/touchdown/touchdown_02.mp3",
+   "duration": 1.202
+  },
+  {
+   "id": "touchdown_03",
+   "event": "touchdown",
+   "speaker": "announcer",
+   "text": "Into the end zone! What a play!",
+   "file": "clips/touchdown/touchdown_03.mp3",
+   "duration": 1.62
+  },
+  {
+   "id": "touchdown_04",
+   "event": "touchdown",
+   "speaker": "announcer",
+   "text": "Touchdown Blue! The crowd goes wild!",
+   "file": "clips/touchdown/touchdown_04.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "touchdown_05",
+   "event": "touchdown",
+   "speaker": "announcer",
+   "text": "Touchdown Red! Red fans are jumping!",
+   "file": "clips/touchdown/touchdown_05.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "touchdown_06",
+   "event": "touchdown",
+   "speaker": "color",
+   "text": "Oh, what a drive! They marched right down the field!",
+   "file": "clips/touchdown/touchdown_06.mp3",
+   "duration": 2.194
+  },
+  {
+   "id": "touchdown_07",
+   "event": "touchdown",
+   "speaker": "color",
+   "text": "Beautiful! That was drawn up perfectly!",
+   "file": "clips/touchdown/touchdown_07.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "touchdown_long_01",
+   "event": "touchdown_long",
+   "speaker": "announcer",
+   "text": "He's at the fifty! The thirty! The ten! Touchdooown!",
+   "file": "clips/touchdown_long/touchdown_long_01.mp3",
+   "duration": 2.586
+  },
+  {
+   "id": "touchdown_long_02",
+   "event": "touchdown_long",
+   "speaker": "announcer",
+   "text": "Nobody can stop him! All the way! Touchdooown!",
+   "file": "clips/touchdown_long/touchdown_long_02.mp3",
+   "duration": 2.508
+  },
+  {
+   "id": "field_goal_01",
+   "event": "field_goal",
+   "speaker": "announcer",
+   "text": "The kick is up, and it's good!",
+   "file": "clips/field_goal/field_goal_01.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "field_goal_02",
+   "event": "field_goal",
+   "speaker": "announcer",
+   "text": "Field goal is good! Three points!",
+   "file": "clips/field_goal/field_goal_02.mp3",
+   "duration": 1.829
+  },
+  {
+   "id": "field_goal_03",
+   "event": "field_goal",
+   "speaker": "announcer",
+   "text": "Kick is up, it's wide! No good!",
+   "file": "clips/field_goal/field_goal_03.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "field_goal_04",
+   "event": "field_goal",
+   "speaker": "color",
+   "text": "Smooth kick, right down the middle!",
+   "file": "clips/field_goal/field_goal_04.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "field_goal_long_01",
+   "event": "field_goal_long",
+   "speaker": "announcer",
+   "text": "Fifty-plus yards! It's long enough, it's good!",
+   "file": "clips/field_goal_long/field_goal_long_01.mp3",
+   "duration": 2.429
+  },
+  {
+   "id": "field_goal_long_02",
+   "event": "field_goal_long",
+   "speaker": "color",
+   "text": "What a leg! That kick had plenty to spare!",
+   "file": "clips/field_goal_long/field_goal_long_02.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "extra_point_01",
+   "event": "extra_point",
+   "speaker": "announcer",
+   "text": "Extra point is good!",
+   "file": "clips/extra_point/extra_point_01.mp3",
+   "duration": 1.071
+  },
+  {
+   "id": "extra_point_02",
+   "event": "extra_point",
+   "speaker": "announcer",
+   "text": "The point after is through!",
+   "file": "clips/extra_point/extra_point_02.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "extra_point_03",
+   "event": "extra_point",
+   "speaker": "color",
+   "text": "Automatic! Never in doubt!",
+   "file": "clips/extra_point/extra_point_03.mp3",
+   "duration": 1.593
+  },
+  {
+   "id": "punt_01",
+   "event": "punt",
+   "speaker": "announcer",
+   "text": "They'll punt it away!",
+   "file": "clips/punt/punt_01.mp3",
+   "duration": 0.967
+  },
+  {
+   "id": "punt_02",
+   "event": "punt",
+   "speaker": "announcer",
+   "text": "Big punt, high and deep!",
+   "file": "clips/punt/punt_02.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "punt_03",
+   "event": "punt",
+   "speaker": "color",
+   "text": "Great hang time! The coverage team is all over it!",
+   "file": "clips/punt/punt_03.mp3",
+   "duration": 2.612
+  },
+  {
+   "id": "punt_04",
+   "event": "punt",
+   "speaker": "announcer",
+   "text": "Fair catch signaled!",
+   "file": "clips/punt/punt_04.mp3",
+   "duration": 0.993
+  },
+  {
+   "id": "penalty_01",
+   "event": "penalty",
+   "speaker": "announcer",
+   "text": "Flag on the play!",
+   "file": "clips/penalty/penalty_01.mp3",
+   "duration": 0.81
+  },
+  {
+   "id": "penalty_02",
+   "event": "penalty",
+   "speaker": "announcer",
+   "text": "There's a yellow flag on the field!",
+   "file": "clips/penalty/penalty_02.mp3",
+   "duration": 1.541
+  },
+  {
+   "id": "penalty_03",
+   "event": "penalty",
+   "speaker": "color",
+   "text": "Hmm, that could be holding! Let's see the call!",
+   "file": "clips/penalty/penalty_03.mp3",
+   "duration": 2.09
+  },
+  {
+   "id": "penalty_04",
+   "event": "penalty",
+   "speaker": "announcer",
+   "text": "False start! Five yard penalty!",
+   "file": "clips/penalty/penalty_04.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "penalty_05",
+   "event": "penalty",
+   "speaker": "announcer",
+   "text": "Pass interference! Big penalty!",
+   "file": "clips/penalty/penalty_05.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "timeout_01",
+   "event": "timeout",
+   "speaker": "announcer",
+   "text": "Timeout on the field!",
+   "file": "clips/timeout/timeout_01.mp3",
+   "duration": 0.993
+  },
+  {
+   "id": "timeout_02",
+   "event": "timeout",
+   "speaker": "color",
+   "text": "Smart timeout! Regroup and plan the next play!",
+   "file": "clips/timeout/timeout_02.mp3",
+   "duration": 2.351
+  },
+  {
+   "id": "timeout_03",
+   "event": "timeout",
+   "speaker": "announcer",
+   "text": "The coach calls a timeout!",
+   "file": "clips/timeout/timeout_03.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "two_minute_warning_01",
+   "event": "two_minute_warning",
+   "speaker": "announcer",
+   "text": "And that's the two-minute warning!",
+   "file": "clips/two_minute_warning/two_minute_warning_01.mp3",
+   "duration": 1.437
+  },
+  {
+   "id": "two_minute_warning_02",
+   "event": "two_minute_warning",
+   "speaker": "color",
+   "text": "Two minutes left! This is where legends are made!",
+   "file": "clips/two_minute_warning/two_minute_warning_02.mp3",
+   "duration": 2.403
+  },
+  {
+   "id": "two_minute_warning_03",
+   "event": "two_minute_warning",
+   "speaker": "announcer",
+   "text": "Two minutes to go, and everything is on the line!",
+   "file": "clips/two_minute_warning/two_minute_warning_03.mp3",
+   "duration": 2.299
+  },
+  {
+   "id": "halftime_01",
+   "event": "halftime",
+   "speaker": "announcer",
+   "text": "That's halftime! What a first half of football!",
+   "file": "clips/halftime/halftime_01.mp3",
+   "duration": 2.273
+  },
+  {
+   "id": "halftime_02",
+   "event": "halftime",
+   "speaker": "color",
+   "text": "Wow! What a battle! Both teams need a breather!",
+   "file": "clips/halftime/halftime_02.mp3",
+   "duration": 2.586
+  },
+  {
+   "id": "halftime_03",
+   "event": "halftime",
+   "speaker": "announcer",
+   "text": "Into the locker room we go!",
+   "file": "clips/halftime/halftime_03.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "second_half_01",
+   "event": "second_half",
+   "speaker": "announcer",
+   "text": "We're back for the second half!",
+   "file": "clips/second_half/second_half_01.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "second_half_02",
+   "event": "second_half",
+   "speaker": "color",
+   "text": "Thirty minutes to decide it! Let's go!",
+   "file": "clips/second_half/second_half_02.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "final_win_01",
+   "event": "final_win",
+   "speaker": "announcer",
+   "text": "That's the game! They win it!",
+   "file": "clips/final_win/final_win_01.mp3",
+   "duration": 1.228
+  },
+  {
+   "id": "final_win_02",
+   "event": "final_win",
+   "speaker": "announcer",
+   "text": "Final whistle! Victory! What a performance!",
+   "file": "clips/final_win/final_win_02.mp3",
+   "duration": 2.22
+  },
+  {
+   "id": "final_win_03",
+   "event": "final_win",
+   "speaker": "color",
+   "text": "They earned every yard of that! Brilliant!",
+   "file": "clips/final_win/final_win_03.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "final_loss_01",
+   "event": "final_loss",
+   "speaker": "announcer",
+   "text": "That's the final, and it's a tough loss!",
+   "file": "clips/final_loss/final_loss_01.mp3",
+   "duration": 2.116
+  },
+  {
+   "id": "final_loss_02",
+   "event": "final_loss",
+   "speaker": "color",
+   "text": "Hard fought! They'll bounce back next week!",
+   "file": "clips/final_loss/final_loss_02.mp3",
+   "duration": 1.959
+  },
+  {
+   "id": "final_tie_01",
+   "event": "final_tie",
+   "speaker": "announcer",
+   "text": "It ends in a tie! Neither side would give in!",
+   "file": "clips/final_tie/final_tie_01.mp3",
+   "duration": 2.299
+  },
+  {
+   "id": "final_tie_02",
+   "event": "final_tie",
+   "speaker": "color",
+   "text": "What a slugfest! Nobody wanted to blink!",
+   "file": "clips/final_tie/final_tie_02.mp3",
+   "duration": 2.926
+  },
+  {
+   "id": "comeback_01",
+   "event": "comeback",
+   "speaker": "announcer",
+   "text": "What a comeback! They were down, and now they're in front!",
+   "file": "clips/comeback/comeback_01.mp3",
+   "duration": 2.429
+  },
+  {
+   "id": "comeback_02",
+   "event": "comeback",
+   "speaker": "color",
+   "text": "Never count them out! That's heart right there!",
+   "file": "clips/comeback/comeback_02.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "crowd_01",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "Listen to this crowd! It is loud!",
+   "file": "clips/crowd/crowd_01.mp3",
+   "duration": 1.75
+  },
+  {
+   "id": "crowd_02",
+   "event": "crowd",
+   "speaker": "color",
+   "text": "The fans are on their feet for every snap!",
+   "file": "clips/crowd/crowd_02.mp3",
+   "duration": 1.985
+  },
+  {
+   "id": "crowd_03",
+   "event": "crowd",
+   "speaker": "announcer",
+   "text": "The whole stadium is shaking!",
+   "file": "clips/crowd/crowd_03.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "crowd_04",
+   "event": "crowd",
+   "speaker": "color",
+   "text": "What an atmosphere tonight!",
+   "file": "clips/crowd/crowd_04.mp3",
+   "duration": 1.019
+  },
+  {
+   "id": "idle_01",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Huddle up, they're calling the next play!",
+   "file": "clips/idle/idle_01.mp3",
+   "duration": 1.881
+  },
+  {
+   "id": "idle_02",
+   "event": "idle",
+   "speaker": "color",
+   "text": "The defense is reading every move right now!",
+   "file": "clips/idle/idle_02.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "idle_03",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Field position battle here, every yard counts!",
+   "file": "clips/idle/idle_03.mp3",
+   "duration": 2.56
+  },
+  {
+   "id": "idle_04",
+   "event": "idle",
+   "speaker": "color",
+   "text": "You can feel a big play coming!",
+   "file": "clips/idle/idle_04.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "idle_05",
+   "event": "idle",
+   "speaker": "announcer",
+   "text": "Plenty of football left!",
+   "file": "clips/idle/idle_05.mp3",
+   "duration": 1.097
+  },
+  {
+   "id": "dialogue_01_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a start from Blue!",
+   "dialogue_id": "d01",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_01_1.mp3",
+   "duration": 1.176
+  },
+  {
+   "id": "dialogue_01_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They came out swinging! That offense is rolling!",
+   "dialogue_id": "d01",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_01_2.mp3",
+   "duration": 2.142
+  },
+  {
+   "id": "dialogue_02_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is this quarterback on fire or what?",
+   "dialogue_id": "d02",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_02_1.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "dialogue_02_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's in a rhythm! Every throw is on target!",
+   "dialogue_id": "d02",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_02_2.mp3",
+   "duration": 3.004
+  },
+  {
+   "id": "dialogue_03_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "That defense is swarming!",
+   "dialogue_id": "d03",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_03_1.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "dialogue_03_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Eleven players flying to the ball! Love it!",
+   "dialogue_id": "d03",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_03_2.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "dialogue_04_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Did you see that juke?",
+   "dialogue_id": "d04",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_04_1.mp3",
+   "duration": 1.123
+  },
+  {
+   "id": "dialogue_04_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "I did! The defender is still looking for him!",
+   "dialogue_id": "d04",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_04_2.mp3",
+   "duration": 2.926
+  },
+  {
+   "id": "dialogue_05_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Fourth down, are they going for it?",
+   "dialogue_id": "d05",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_05_1.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "dialogue_05_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Oh, I love it! Go for it!",
+   "dialogue_id": "d05",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_05_2.mp3",
+   "duration": 1.411
+  },
+  {
+   "id": "dialogue_06_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Big play from the secondary!",
+   "dialogue_id": "d06",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_06_1.mp3",
+   "duration": 1.332
+  },
+  {
+   "id": "dialogue_06_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They read that play the whole way!",
+   "dialogue_id": "d06",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_06_2.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "dialogue_07_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "This crowd is unbelievable!",
+   "dialogue_id": "d07",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_07_1.mp3",
+   "duration": 1.28
+  },
+  {
+   "id": "dialogue_07_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They are the twelfth player tonight!",
+   "dialogue_id": "d07",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_07_2.mp3",
+   "duration": 1.306
+  },
+  {
+   "id": "dialogue_08_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The running back is unstoppable!",
+   "dialogue_id": "d08",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_08_1.mp3",
+   "duration": 1.463
+  },
+  {
+   "id": "dialogue_08_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "He's carrying the whole team on his back!",
+   "dialogue_id": "d08",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_08_2.mp3",
+   "duration": 1.672
+  },
+  {
+   "id": "dialogue_09_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Can they score before the half?",
+   "dialogue_id": "d09",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_09_1.mp3",
+   "duration": 1.411
+  },
+  {
+   "id": "dialogue_09_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "They've got time and timeouts! Let's see!",
+   "dialogue_id": "d09",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_09_2.mp3",
+   "duration": 2.038
+  },
+  {
+   "id": "dialogue_10_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a catch along the sideline!",
+   "dialogue_id": "d10",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_10_1.mp3",
+   "duration": 1.567
+  },
+  {
+   "id": "dialogue_10_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Two feet in! Pure concentration!",
+   "dialogue_id": "d10",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_10_2.mp3",
+   "duration": 1.802
+  },
+  {
+   "id": "dialogue_11_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "They need a touchdown, not a field goal!",
+   "dialogue_id": "d11",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_11_1.mp3",
+   "duration": 2.011
+  },
+  {
+   "id": "dialogue_11_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Exactly! Three points won't be enough!",
+   "dialogue_id": "d11",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_11_2.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "dialogue_12_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The kicker is warming up!",
+   "dialogue_id": "d12",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_12_1.mp3",
+   "duration": 1.149
+  },
+  {
+   "id": "dialogue_12_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Ice in his veins! He's ready!",
+   "dialogue_id": "d12",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_12_2.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "dialogue_13_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Huge hit on that play!",
+   "dialogue_id": "d13",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_13_1.mp3",
+   "duration": 1.097
+  },
+  {
+   "id": "dialogue_13_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Clean and hard! That's football!",
+   "dialogue_id": "d13",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_13_2.mp3",
+   "duration": 1.724
+  },
+  {
+   "id": "dialogue_14_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The momentum just flipped!",
+   "dialogue_id": "d14",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_14_1.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_14_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Totally! You can feel it in the stadium!",
+   "dialogue_id": "d14",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_14_2.mp3",
+   "duration": 2.534
+  },
+  {
+   "id": "dialogue_15_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "What a drive this has been!",
+   "dialogue_id": "d15",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_15_1.mp3",
+   "duration": 1.202
+  },
+  {
+   "id": "dialogue_15_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Twelve plays, all the way down the field!",
+   "dialogue_id": "d15",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_15_2.mp3",
+   "duration": 1.776
+  },
+  {
+   "id": "dialogue_16_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Is that the play of the game?",
+   "dialogue_id": "d16",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_16_1.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_16_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "It might be the play of the season!",
+   "dialogue_id": "d16",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_16_2.mp3",
+   "duration": 1.384
+  },
+  {
+   "id": "dialogue_17_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Red are pinned deep!",
+   "dialogue_id": "d17",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_17_1.mp3",
+   "duration": 0.836
+  },
+  {
+   "id": "dialogue_17_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Big chance for the defense here!",
+   "dialogue_id": "d17",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_17_2.mp3",
+   "duration": 1.254
+  },
+  {
+   "id": "dialogue_18_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "Two minutes left, down by four!",
+   "dialogue_id": "d18",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_18_1.mp3",
+   "duration": 1.829
+  },
+  {
+   "id": "dialogue_18_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "This is what you dream about as a kid!",
+   "dialogue_id": "d18",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_18_2.mp3",
+   "duration": 1.646
+  },
+  {
+   "id": "dialogue_19_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "The flag is picked up! No penalty!",
+   "dialogue_id": "d19",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_19_1.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "dialogue_19_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "Good call! That was clean!",
+   "dialogue_id": "d19",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_19_2.mp3",
+   "duration": 1.907
+  },
+  {
+   "id": "dialogue_20_1",
+   "event": "dialogue",
+   "speaker": "announcer",
+   "text": "And that's the final!",
+   "dialogue_id": "d20",
+   "order": 1,
+   "file": "clips/dialogue/dialogue_20_1.mp3",
+   "duration": 1.019
+  },
+  {
+   "id": "dialogue_20_2",
+   "event": "dialogue",
+   "speaker": "color",
+   "text": "What a game! I loved every snap!",
+   "dialogue_id": "d20",
+   "order": 2,
+   "file": "clips/dialogue/dialogue_20_2.mp3",
+   "duration": 1.724
+  }
+ ]
+}
