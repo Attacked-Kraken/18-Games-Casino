@@ -117,3 +117,30 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 
 
 
+
+## ASSET: models/fetched/patriot-p10-xr-d87ddc.glb
+- title: Patriot P10-XR
+- maker: Swiss_Fox
+- source: https://sketchfab.com/3d-models/patriot-p10-xr-d87ddc3e30134ff2990d8ee4d2586bdd
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Swiss_Fox" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/tokii-abyss-gt-7-v12-c39956.glb
+- title: Tokii Abyss GT.7 V12
+- maker: Glas'kavin
+- source: https://sketchfab.com/3d-models/tokii-abyss-gt7-v12-c399568541104e0e903cf138b1e24908
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Glas'kavin" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/shc-mc-free-promotion-car-cfaabd.glb
+- title: SHC MC Free Promotion Car
+- maker: denniswoo1993
+- source: https://sketchfab.com/3d-models/shc-mc-free-promotion-car-cfaabdec76a74b68a48ba5657b6d9aee
+- license: CC-BY 4.0
+- downloaded: 2026-10-19 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "denniswoo1993" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
