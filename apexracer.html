@@ -929,7 +929,7 @@ function makeGlbCar(id, cfg, o = {}) {
     else if (mn.includes('car_glass')) q.material = glassMat;
   });
   /* G-01: the model's nose points +Z in its own space; the game drives toward +X in tilt space */
-  model.rotation.y = Math.PI / 2;
+  model.rotation.y = -Math.PI / 2;   /* owner Oct 19 8:40 PM photo: +PI/2 put the nose BACKWARDS. Measured: the low nose + windshield are at model -Z, so -PI/2 turns them to +X (forward) */
   let box = new THREE.Box3().setFromObject(model);
   let size = box.getSize(new THREE.Vector3());
   model.scale.setScalar(P.L / size.x);
