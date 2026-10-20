@@ -21,7 +21,9 @@ was already sent. Muses: don't edit this file.
 - [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
+- [ ] Long relay / long races: a RED button turns on and blocks running - no button may ever block TAP RUN. Keep everything else as now.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
+- [ ] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps).
 - [ ] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1.
 - [ ] Add a 'play-friend-code' test for the friend codes.
 
@@ -31,6 +33,6 @@ was already sent. Muses: don't edit this file.
 - [ ] Friend codes: a 'play-friend-code' test (add the 👥 Play a friend button with ApexKit.friend if it's missing).
 
 ## window 6 · apexracer.html
-- [ ] Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
-- [ ] Add a 'play-friend-code' test for Race Friends.
+- [x] (sent 22:35 with the friend-code test as one G-job) Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
+- [x] (sent 22:35) Add a 'play-friend-code' test for Race Friends.
 - [ ] Every computer racer has its own real paint color (no two the same, no white) - check in the garage and race pictures.
