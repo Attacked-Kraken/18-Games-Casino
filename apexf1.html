@@ -1578,7 +1578,7 @@ const Race = {
     }
     $('pitMenu').classList.remove('hidden');
   },
-  cycleCam(){ this.camMode=(this.camMode+1)%3; banner(['CHASE','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
+  cycleCam(){ this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
   noteOffTrack(dt){
     const p=this.player;
     p._offT=(p._offT||0)+dt;
@@ -1733,20 +1733,30 @@ const Race = {
   },
   updateCamera(dt){
     const p=this.player, m=p.mesh;
+    const wantNear = this.camMode===1 ? 0.08 : 0.5; // cockpit: the wheel is ~0.55 m from the eye
+    if(camera.near!==wantNear){ camera.near=wantNear; camera.updateProjectionMatrix(); }
+    if(this.camMode===1){ // G-48: cockpit - the driver's eye in the kit cockpit
+      if(!CK.attachedTo) CKAttach();
+      if(CK.root && CK.attachedTo===p){
+        camera.position.copy(CK.root.localToWorld(new THREE.Vector3(0,0.79,-0.52)));
+        camera.lookAt(CK.root.localToWorld(new THREE.Vector3(0,0.52,0.6)));
+        return;
+      } // cockpit not loaded (yet): fall through to the chase framing below
+    }
     const pp=Track.posAt(p.s,p.d,0);
     const tf=Track.frameAt(p.s);
     const fwd=new THREE.Vector3(tf.tx,0,tf.tz); // track direction, stable
     let cp=new THREE.Vector3(), lk=new THREE.Vector3(pp.x,1.5,pp.z);
-    if(this.camMode===0){ // chase
+    if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
       cp.set(pp.x-fwd.x*11, 5.2, pp.z-fwd.z*11);
-    } else if(this.camMode===1){ // broadcast: high side, follows puck-style
+    } else if(this.camMode===2){ // broadcast: high side, follows puck-style
       const f=Track.frameAt(p.s);
       cp.set(pp.x+f.nx*26-f.tx*18, 17, pp.z+f.nz*26-f.tz*18);
     } else { // onboard
       cp.set(pp.x+fwd.x*1.2, 1.55, pp.z+fwd.z*1.2);
       lk.set(pp.x+fwd.x*40, 1.2, pp.z+fwd.z*40);
     }
-    const k=Math.min(1,dt*(this.camMode===2?22:6));
+    const k=Math.min(1,dt*(this.camMode===3?22:6));
     camera.position.lerp(cp,k);
     // shake
     if(this.shake>0){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
@@ -2073,6 +2083,7 @@ async function startWeekend(){
   initGL._done||(initGL(),RainFX.init(),HUD.initMinimap(),initInput(),initGL._done=true);
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
+  CKAttach(); // G-48: the kit cockpit rides in the player's car
   runQuali();
 }
 /* ---- qualifying: one flying lap ---- */
@@ -2141,6 +2152,16 @@ function loop(t){
       }
     }
   }
+  if(CK.root){ // G-48: cockpit shows only in cockpit cam; its wheel + shift lights stay live
+    CK.root.visible = (Race.camMode===1 && (Race.mode==='race'||Race.mode==='lights'||Race.mode==='quali'));
+    if(Race.player){
+      if(CK.wheel) CK.wheel.rotation.z = Race.player.steer*2.6;
+      if(CK.leds){ const rpm=clamp(Race.player.v/97,0,1), lit=Math.round(rpm*15);
+        const flash = rpm>0.96 && (Math.floor(performance.now()/120)%2===0);
+        for(let li=0; li<CK.leds.length; li++){ const v=(flash||li<lit)?3:0.05;
+          if(CK.leds[li].material.emissiveIntensity!==v) CK.leds[li].material.emissiveIntensity=v; } }
+    }
+  }
   if(GP.ev && Race.cars && Race.cars.length && (Race.mode==='quali'||Race.mode==='grid'||Race.mode==='lights'||Race.mode==='race'||Race.mode==='finished')){
     GP.ev.update(frameSec, Race.cars.map(c=>c.mesh));
     if(Race.mode==='race' && Math.random()<frameSec) GP.ev.order = Race.positions().map(c=>c.name);
@@ -2148,6 +2169,37 @@ function loop(t){
   // draw the 3D world (was missing — black screen)
   if(glOK&&renderer&&scene&&camera) renderer.render(scene,camera);
 }
+/* ================= G-48: the owner's cockpit kit (kit/cockpit) =================
+   Parsed at boot like the track. Rides inside the player's car (hidden unless
+   the COCKPIT camera is on): real halo, dash and wheel - the wheel turns with
+   the player's steering and the 15 shift LEDs climb with the revs. */
+const CK = { root:null, wheel:null, leds:null, _boot:null, attachedTo:null };
+function CKBoot(){
+  if(CK._boot) return CK._boot;
+  CK._boot = (async()=>{
+    try{
+      const buf = await fetch('kit/cockpit/cockpit.glb').then(r=>r.arrayBuffer());
+      const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
+      const gltf = await new GLTFLoader().parseAsync(buf, '');
+      CK.root = gltf.scene;
+      CK.root.rotation.y = Math.PI/2; // the kit faces +Z; our car model faces +X
+      CK.root.position.set(0.17, 0, 0); // driver eye lands on our car's driving spot
+      CK.root.visible = false;
+      CK.root.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
+      CK.wheel = CK.root.getObjectByName('SteeringWheel');
+      CK.leds = [];
+      for(let i=0;i<15;i++){ const l=CK.root.getObjectByName('LED_'+i); if(l) CK.leds.push(l); }
+    }catch(e){ /* no cockpit kit: the COCKPIT cam choice falls back to chase */ }
+    return CK;
+  })();
+  return CK._boot;
+}
+function CKAttach(){
+  if(CK.root && Race.player && CK.attachedTo!==Race.player){
+    Race.player.mesh.add(CK.root); CK.attachedTo = Race.player;
+  }
+}
+CKBoot();
 /* ================= G-45: the owner's Grand Prix track kit =================
    The GLB + data are fetched and parsed at boot (behind the menus), so by the
    time START WEEKEND is pressed the track only has to join the scene. If the
