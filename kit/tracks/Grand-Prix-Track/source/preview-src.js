@@ -1,6 +1,7 @@
 // Source of preview.html (bundled with esbuild by build_preview.py). Shows how the pieces fit together.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Track, loadTrack } from '../track-loader.js';
 import { createEvent } from '../grand-prix-event.js';
 import { RaceCameras } from '../race-cameras.js';
@@ -11,27 +12,48 @@ const H = Object.fromEntries(location.hash.slice(1).split('&').filter(Boolean).m
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: !!H.shot });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight); document.body.prepend(renderer.domElement);
-const scene = new THREE.Scene(); const DAY = new THREE.Color(0x9fc9ee), NIGHT = new THREE.Color(0x070b18);
-scene.background = DAY.clone(); scene.fog = new THREE.Fog(DAY.clone(), 600, 3200);
-const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.3, 9000);
-const hemi = new THREE.HemisphereLight(0xdfefff, 0x4d6b3a, 1.6); scene.add(hemi);
-const sun = new THREE.DirectionalLight(0xfff2dd, 2.2); sun.position.set(800, 1200, 400); scene.add(sun);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); const DAY = new THREE.Color(0xa9c3dc), NIGHT = new THREE.Color(0x05070d);
+scene.fog = new THREE.FogExp2(DAY.clone(), 0.00028);   // light haze for depth
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.4, 9000);
+// HDR-style gradient sky with sun glow (values above 1.0), rendered into a PMREM environment for reflections
+const data = JSON.parse($('trackdata').textContent);
+const SUN = new THREE.Vector3(...data.render.sunDirection);
+function makeSky(top, hor, gnd, sunI) {
+  return new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(top) }, hor: { value: new THREE.Color(hor) }, gnd: { value: new THREE.Color(gnd) }, sunDir: { value: SUN }, sunI: { value: sunI } },
+    vertexShader: 'varying vec3 vD; void main(){ vD = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); gl_Position.z = gl_Position.w; }',
+    fragmentShader: 'uniform vec3 top,hor,gnd,sunDir; uniform float sunI; varying vec3 vD; void main(){ float h=vD.y; vec3 c = h>0.0 ? mix(hor, top, pow(clamp(h,0.0,1.0),0.55)) : mix(hor, gnd, clamp(-h*6.0,0.0,1.0)); float s=max(dot(normalize(vD),normalize(sunDir)),0.0); c += vec3(1.0,0.92,0.8)*(pow(s,800.0)*40.0+pow(s,12.0)*0.35)*sunI; gl_FragColor=vec4(c,1.0);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n }' }));
+}
+const sky = makeSky(0x2a62b8, 0xbcd3e8, 0x6d7a5a, 1.0); sky.renderOrder = -1; sky.frustumCulled = false;
+const skyNight = makeSky(0x02040b, 0x0c1426, 0x050605, 0.0); skyNight.visible = false; skyNight.frustumCulled = false;
+const pmrem = new THREE.PMREMGenerator(renderer);
+const es = new THREE.Scene(); const skyE = makeSky(0x2a62b8, 0xbcd3e8, 0x55603f, 1.0); es.add(skyE); const envDay = pmrem.fromScene(es, 0, 1, 9000).texture;
+const ns = new THREE.Scene(); ns.add(makeSky(0x02040b, 0x101a30, 0x050605, 0.0)); const envNight = pmrem.fromScene(ns, 0, 1, 9000).texture;
+scene.add(sky); scene.add(skyNight); scene.environment = envDay; scene.background = null;
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x4d6b3a, 0.35); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.6); scene.add(sun); scene.add(sun.target);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); const SC = sun.shadow.camera; SC.left = SC.bottom = -45; SC.right = SC.top = 45; SC.near = 1; SC.far = 400;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 4;
 const orbit = new OrbitControls(camera, renderer.domElement); orbit.enabled = false; orbit.maxPolarAngle = Math.PI * .48;
 
-const data = JSON.parse($('trackdata').textContent);
 const track = await loadTrack({ scene, data, glbArrayBuffer: b64($('glb').textContent.trim()) });
 const L = data.lengthMetres;
 // ---------- placeholder cars (replace with real models: see MUSE-GUIDE.txt) ----------
 const COLORS = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0xfb8c00, 0x8e24aa, 0x00acc1, 0xffffff];
+const CAR_MAT = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: .35, roughness: .32 });
 function placeholderCar(color, i) {
-  const g = new THREE.Group(); g.name = 'placeholder_car_' + (i + 1);
-  const m = new THREE.MeshLambertMaterial({ color }), k = new THREE.MeshLambertMaterial({ color: 0x111111 });
-  const add = (geo, mat, x, y, z) => { const o = new THREE.Mesh(geo, mat); o.position.set(x, y, z); g.add(o); return o; };
-  add(new THREE.BoxGeometry(.9, .5, 4.6), m, 0, .45, 0); add(new THREE.BoxGeometry(1.6, .35, 1.8), m, 0, .4, -.4);
-  add(new THREE.BoxGeometry(1.9, .08, .5), m, 0, .3, 2.35); add(new THREE.BoxGeometry(1.4, .08, .6), m, 0, 1.05, -2.2); add(new THREE.BoxGeometry(.1, .5, .3), k, 0, .8, -2.2);
-  add(new THREE.BoxGeometry(.5, .35, .7), k, 0, .85, -.2);
-  const wg = new THREE.CylinderGeometry(.36, .36, .38, 12); wg.rotateZ(Math.PI / 2);
-  for (const [x, z] of [[-.9, 1.6], [.9, 1.6], [-.9, -1.5], [.9, -1.5]]) add(wg, k, x, .36, z);
+  // one merged geometry per car (1 draw call), vertex coloured; casts the real-time sun shadow
+  const parts = [], body = new THREE.Color(color), black = new THREE.Color(0x111111);
+  const add = (geo, c, x, y, z) => { geo = geo.toNonIndexed(); geo.translate(x, y, z); const n = geo.attributes.position.count, a = new Float32Array(n * 3); for (let k = 0; k < n; k++) a.set([c.r, c.g, c.b], k * 3); geo.setAttribute('color', new THREE.BufferAttribute(a, 3)); geo.deleteAttribute('uv'); parts.push(geo); };
+  const cap = (r, l) => { const g = new THREE.CapsuleGeometry(r, l, 4, 10); g.rotateX(Math.PI / 2); return g; };
+  add(cap(.42, 3.6), body, 0, .45, .1); add(new THREE.BoxGeometry(1.5, .32, 1.9), body, 0, .38, -.45);
+  add(new THREE.BoxGeometry(1.9, .06, .5), body, 0, .22, 2.4); add(new THREE.BoxGeometry(1.3, .06, .55), body, 0, 1.0, -2.25); add(new THREE.BoxGeometry(.08, .55, .3), black, 0, .72, -2.2);
+  add(new THREE.SphereGeometry(.27, 12, 8), new THREE.Color(0xf5f5f5), 0, .95, -.25);
+  const wg = new THREE.CylinderGeometry(.36, .36, .38, 16); wg.rotateZ(Math.PI / 2);
+  for (const [x, z] of [[-.9, 1.6], [.9, 1.6], [-.9, -1.5], [.9, -1.5]]) add(wg.clone(), black, x, .36, z);
+  const geo = mergeGeometries(parts); const g = new THREE.Mesh(geo, CAR_MAT); g.castShadow = true; g.receiveShadow = true; g.name = 'placeholder_car_' + (i + 1);
   g.userData.cameraOffsets = { onboard: [0, 1.0, -.25], nose: [0, .75, 2.0], bumper: [0, .32, 2.6], rear: [0, 1.15, -.6] };
   g.name = 'CAR ' + (i + 1); return g;
 }
@@ -56,11 +78,11 @@ cams.onModeChange = m => { mode = m; updateButtons(); };
 const MODES = [...RaceCameras.MODES, 'orbit'];
 $('modes').innerHTML = MODES.map(m => `<button data-m="${m}">${m}</button>`).join('');
 $('modes').onclick = e => { const m = e.target.dataset.m; if (!m) return; setCam(m); };
-function setCam(m) { cams.director(false); $('dir').classList.remove('on'); if (m === 'orbit') { mode = 'orbit'; orbit.enabled = true; camera.position.set(700, 1050, 1350); orbit.target.set(700, 0, 380); scene.fog.far = 9000; camera.fov = 50; camera.updateProjectionMatrix(); orbit.update(); updateButtons(); } else { orbit.enabled = false; scene.fog.far = 3200; cams.setMode(m); } }
+function setCam(m) { cams.director(false); $('dir').classList.remove('on'); if (m === 'orbit') { mode = 'orbit'; orbit.enabled = true; camera.position.set(700, 1050, 1350); orbit.target.set(700, 0, 380); scene.fog.density = 0.00012; camera.fov = 50; camera.updateProjectionMatrix(); orbit.update(); updateButtons(); } else { orbit.enabled = false; scene.fog.density = 0.00028; cams.setMode(m); } }
 function updateButtons() { document.querySelectorAll('#modes button').forEach(b => b.classList.toggle('on', b.dataset.m === mode)); $('mode').textContent = mode + (cams.directorOn ? ' (director)' : ''); }
 $('dir').onclick = () => { const on = !cams.directorOn; orbit.enabled = false; cams.director(on); $('dir').classList.toggle('on', on); if (!on && mode === 'orbit') cams.setMode('chase'); updateButtons(); };
 $('night').onclick = () => setNight(!ev.night);
-function setNight(on) { ev.setNight(on); $('night').classList.toggle('on', on); scene.background.copy(on ? NIGHT : DAY); scene.fog.color.copy(on ? NIGHT : DAY); hemi.intensity = on ? .35 : 1.6; sun.intensity = on ? .15 : 2.2; }
+function setNight(on) { ev.setNight(on); $('night').classList.toggle('on', on); sky.visible = !on; skyNight.visible = on; scene.environment = on ? envNight : envDay; scene.fog.color.copy(on ? NIGHT : DAY); hemi.intensity = on ? .25 : .35; sun.intensity = on ? .25 : 2.6; sun.color.setHex(on ? 0x8899cc : 0xfff2dd); renderer.toneMappingExposure = on ? 1.15 : 1.0; }
 $('snd').onclick = async () => { if ($('snd').classList.contains('on')) { ev.disableAudio(); $('snd').classList.remove('on'); return; } const ok = await ev.enableAudio(); $('snd').classList.add('on'); toast(ok ? 'Sound on (positional crowd)' : 'Sound on (simple mode: put Grand-Prix-Track-Sounds next to this folder)'); };
 $('start').onclick = () => startRace();
 $('fin').onclick = () => finish();
@@ -93,12 +115,16 @@ let last = performance.now();
 function frame(dt) {
   simT += dt * cams.timeScale; drive(dt * cams.timeScale); ev.update(dt, cars);
   if (mode !== 'orbit') cams.update(dt); else { orbit.update(); cams._track(dt); }
+  const tgt = mode === 'orbit' ? orbit.target : cams.target.position; sun.target.position.copy(tgt); sun.position.copy(tgt).addScaledVector(SUN, 200); sun.target.updateMatrixWorld();
   if (fx) { fx.update(dt); fx.draw(); }
   const s = track.surfaceAt(cams.target.position, cams.target.userData);
   $('hud').textContent = `${cams.target.name}  ${(cams.speedOf(cams.target) * 3.6 | 0)} km/h  lap ${Math.max(1, lapCounter.lap)}/2  sector ${lapCounter.sector}  ${s.surface}${s.offTrack ? ' (OFF TRACK)' : ''}`;
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').style.opacity = 0; }
 }
-function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; frame(dt); drawMinimap(); renderer.render(scene, camera); requestAnimationFrame(loop); }
+let dcT = 0;
+function loop(now) { const dt = Math.min(.05, (now - last) / 1000); last = now; frame(dt); drawMinimap(); renderer.render(scene, camera);
+  dcT -= dt; if (dcT < 0) { dcT = .5; const r = renderer.info.render; $('perf').textContent = r.calls + ' draw calls, ' + (r.triangles / 1000 | 0) + 'k tris'; }
+  requestAnimationFrame(loop); }
 addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (fx && fx.resize) fx.resize(); });
 // hash options for testing:  #cam=tv&t=40&night=1&dir=1&finish=1
 if (H.night === '1') setNight(true);
@@ -107,5 +133,5 @@ if (H.cam) setCam(H.cam); else { cams.setMode('intro'); if (!H.t) setTimeout(sta
 if (H.dir === '1') $('dir').click();
 if (H.finish === '1') finish();
 if (H.cam && H.cam !== 'orbit' && H.t) for (let k = 0; k < 40; k++) frame(.05);
-window.__gp = { track, ev, cams, cars, scene, renderer, frame, setCam, info: () => renderer.info.render };
+window.__gp = { track, ev, cams, cars, scene, renderer, frame, setCam, orbit, info: () => renderer.info.render };
 updateButtons(); requestAnimationFrame(loop); $('loading').remove();

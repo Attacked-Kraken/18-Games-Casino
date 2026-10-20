@@ -17,11 +17,11 @@ html,body{{margin:0;height:100%;overflow:hidden;background:#000;font:13px system
 button{{background:#1c2540cc;color:#fff;border:1px solid #fff3;border-radius:8px;padding:6px 9px;font:600 12px system-ui}}button.on{{background:#ffc828;color:#000}}
 #modes{{display:flex;flex-wrap:wrap;gap:4px}}#hud{{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom));right:160px;text-shadow:0 1px 3px #000;font-weight:600}}
 #mode{{position:fixed;right:8px;top:calc(92px + env(safe-area-inset-top));background:#0008;padding:4px 8px;border-radius:6px}}
-#mm{{position:fixed;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:150px;height:150px;background:#0006;border-radius:10px}}
+#perf{{position:fixed;right:8px;top:calc(120px + env(safe-area-inset-top));background:#0008;padding:3px 8px;border-radius:6px;font-size:11px}}#mm{{position:fixed;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));width:150px;height:150px;background:#0006;border-radius:10px}}
 #toast{{position:fixed;left:50%;top:40%;transform:translateX(-50%);background:#000a;padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .4s}}
 #loading{{position:fixed;inset:0;display:grid;place-items:center;background:#0b1020;font-size:18px}}</style></head><body>
 <canvas id="fx"></canvas><div id="ui"><div id="modes"></div><button id="dir">Director</button><button id="tgt">Next car</button><button id="night">Night</button><button id="snd">Sound</button><button id="start">Restart</button><button id="fin">Finish</button></div>
-<div id="mode"></div><div id="hud"></div><canvas id="mm" width="300" height="300"></canvas><div id="toast"></div><div id="loading">Loading track...</div>
+<div id="mode"></div><div id="perf"></div><div id="hud"></div><canvas id="mm" width="300" height="300"></canvas><div id="toast"></div><div id="loading">Loading track...</div>
 <img id="minimap" hidden src="data:image/png;base64,{mm}">
 <script id="trackdata" type="application/json">{data}</script>
 <script id="glb" type="application/octet-stream">{glb}</script>

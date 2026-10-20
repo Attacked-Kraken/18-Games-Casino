@@ -7,9 +7,9 @@
 //   ev.startSequence(() => go());  ev.finish(winnerCar);  ev.setNight(true);  await ev.enableAudio();
 import * as THREE from 'three';
 
-const R = (a, b) => a + Math.random() * (b - a);
+const R = (a, b) => a + Math.random() * (b - a);  // (tip: seed Math.random if you need identical crowds)
 const pick = a => a[(Math.random() * a.length) | 0];
-const SHIRTS = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0xfb8c00, 0x8e24aa, 0xffffff, 0x00acc1, 0xf06292, 0x263238];
+const SHIRTS = [0xb23a3a, 0x2f5f9e, 0xd9c35a, 0x3f7d4a, 0xc8803a, 0x6a4c8c, 0xe8e8e4, 0x3a8a96, 0xc77a8e, 0x2a2f36, 0x1c1f24, 0x8a7a66, 0xd8d0c0];
 const FLAGS = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0xffffff, 0xfb8c00, 0x8e24aa, 0x00e5ff];
 
 function personGeometry() {
@@ -25,15 +25,15 @@ function personGeometry() {
   g.setAttribute('arm', new THREE.BufferAttribute(arm, 1));
   return g;
 }
-function mergeGeoms(list) {
+function mergeGeoms(list, uv = false) {
   let n = 0; list.forEach(g => n += g.attributes.position.count);
-  const P = new Float32Array(n * 3), N = new Float32Array(n * 3), I = []; let o = 0;
-  list.forEach(g => { const g2 = g.index ? g : g; P.set(g.attributes.position.array, o * 3); N.set(g.attributes.normal.array, o * 3); g.index.array.forEach(i => I.push(i + o)); o += g.attributes.position.count; });
-  const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(P, 3)); m.setAttribute('normal', new THREE.BufferAttribute(N, 3)); m.setIndex(I); return m;
+  const P = new Float32Array(n * 3), N = new Float32Array(n * 3), U = new Float32Array(n * 2), I = []; let o = 0;
+  list.forEach(g => { P.set(g.attributes.position.array, o * 3); N.set(g.attributes.normal.array, o * 3); if (uv && g.attributes.uv) U.set(g.attributes.uv.array, o * 2); g.index.array.forEach(i => I.push(i + o)); o += g.attributes.position.count; });
+  const m = new THREE.BufferGeometry(); m.setAttribute('position', new THREE.BufferAttribute(P, 3)); m.setAttribute('normal', new THREE.BufferAttribute(N, 3)); if (uv) m.setAttribute('uv', new THREE.BufferAttribute(U, 2)); m.setIndex(I); return m;
 }
 // animated instanced material: per-instance phase/stand id; uniform excitement per stand
 function crowdMaterial(U) {
-  const m = new THREE.MeshLambertMaterial();
+  const m = new THREE.MeshStandardMaterial({ roughness: .8 });
   m.onBeforeCompile = s => {
     s.uniforms.uTime = U.uTime; s.uniforms.uEx = U.uEx;
     s.vertexShader = s.vertexShader.replace('#include <common>', `#include <common>
@@ -49,7 +49,7 @@ function crowdMaterial(U) {
   return m;
 }
 function flagMaterial(U, map) {
-  const m = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide, map: map || null });
+  const m = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, map: map || null, roughness: .7 });
   m.onBeforeCompile = s => {
     s.uniforms.uTime = U.uTime;
     s.vertexShader = s.vertexShader.replace('#include <common>', `#include <common>
@@ -76,7 +76,7 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
     const t = new THREE.Vector3(...st.tangent), yaw = yawOf(st.facing);
     st.rows.forEach(row => {
       const c = new THREE.Vector3(...row), half = st.length / 2 - .6;
-      for (let s = -half; s <= half; s += .75 / crowdDensity) {
+      for (let s = -half; s <= half; s += .9 / crowdDensity) {
         if (Math.random() < .12) continue;
         const p = c.clone().addScaledVector(t, s + R(-.12, .12));
         seats.push({ p, yaw: yaw + R(-.3, .3), si }); if (Math.random() < .06) flagSeats.push({ p, yaw, si });
@@ -104,10 +104,10 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
   crewSeats.forEach((s, i) => { q.setFromAxisAngle(UPV, s.yaw); m4.compose(s.p, q, sc.setScalar(1)); crew.setMatrixAt(i, m4); crew.setColorAt(i, col.setHex(s.c)); cph[i * 2] = Math.random(); cph[i * 2 + 1] = 15; });
   crew.geometry.setAttribute('iPhase', new THREE.InstancedBufferAttribute(cph, 2)); root.add(crew);
   // ---------- start lights (5 lamps) ----------
-  const lampMat = new THREE.MeshBasicMaterial({ color: 0x220000 }), lamps = [];
-  for (let j = 0; j < 5; j++) { const m = new THREE.Mesh(new THREE.SphereGeometry(.32, 10, 8), lampMat.clone()); m.position.copy(sl).addScaledVector(UPV, 7.65).addScaledVector(sd, -.62).addScaledVector(sr, (j - 2) * 1.4); m.name = 'start_lamp_' + (j + 1); lamps.push(m); root.add(m); }
-  ev.lamps = lamps;
-  ev.setLights = n => lamps.forEach((m, j) => m.material.color.setHex(j < n ? 0xff1a1a : 0x220000));
+  const lamps = new THREE.InstancedMesh(new THREE.SphereGeometry(.3, 12, 8), new THREE.MeshBasicMaterial({ toneMapped: false }), 5); lamps.name = 'start_lamps';
+  for (let j = 0; j < 5; j++) { m4.makeTranslation(v.copy(sl).addScaledVector(UPV, 7.7).addScaledVector(sd, -.75).addScaledVector(sr, (j - 2) * 1.4)); lamps.setMatrixAt(j, m4); lamps.setColorAt(j, col.setHex(0x1a0000)); }
+  root.add(lamps); ev.lamps = lamps;
+  ev.setLights = n => { for (let j = 0; j < 5; j++) lamps.setColorAt(j, col.setHex(j < n ? 0xff1a1a : 0x1a0000)); lamps.instanceColor.needsUpdate = true; };
   ev.startSequence = (onGo, { interval = 1000 } = {}) => {
     ev.setLights(0); ev.setMarshalFlag(0x2ecc40); cf.visible = false;
     for (let k = 1; k <= 5; k++) setTimeout(() => { ev.setLights(k); play('start_light_beep', .8); }, k * interval);
@@ -116,12 +116,13 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
   // ---------- helicopter ----------
   const heli = new THREE.Group(); heli.name = 'tv_helicopter';
   const hm = new THREE.MeshLambertMaterial({ color: 0x1d3557 }), hm2 = new THREE.MeshLambertMaterial({ color: 0x222222 });
-  const body = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 8), hm); body.scale.set(1, .8, 1.7); heli.add(body);
-  const tail = new THREE.Mesh(new THREE.BoxGeometry(.35, .35, 6), hm); tail.position.set(0, .3, -4.5); heli.add(tail);
-  const rotor = new THREE.Mesh(new THREE.BoxGeometry(11, .06, .35), hm2); rotor.position.y = 1.5; heli.add(rotor);
-  const rotor2 = rotor.clone(); rotor2.rotation.y = Math.PI / 2; rotor.add(rotor2); rotor2.position.set(0, 0, 0);
-  const tr = new THREE.Mesh(new THREE.BoxGeometry(.06, 2, .2), hm2); tr.position.set(.3, .5, -7.4); heli.add(tr);
-  const skid = new THREE.Mesh(new THREE.BoxGeometry(2.2, .1, 3.2), hm2); skid.position.y = -1.4; heli.add(skid);
+  const bg = new THREE.SphereGeometry(1.6, 16, 10); bg.scale(1, .8, 1.7);
+  const tg = new THREE.CylinderGeometry(.12, .3, 6, 8); tg.rotateX(Math.PI / 2); tg.translate(0, .3, -4.5);
+  const fin = new THREE.BoxGeometry(.06, 1.6, .5); fin.translate(0, .9, -7.3); const sk = new THREE.BoxGeometry(2.2, .08, 3.2); sk.translate(0, -1.4, 0);
+  const body = new THREE.Mesh(mergeGeoms([bg, tg, fin, sk].map(x => x.index ? x : x)), new THREE.MeshStandardMaterial({ color: 0x1d3557, metalness: .5, roughness: .35 })); heli.add(body);
+  const rg = new THREE.BoxGeometry(11, .05, .3), rg2 = new THREE.BoxGeometry(.3, .05, 11);
+  const rotor = new THREE.Mesh(mergeGeoms([rg, rg2]), hm2); rotor.position.y = 1.5; heli.add(rotor);
+  const tr = { rotation: { x: 0 } };
   root.add(heli); ev.helicopter = heli;
   let heliA = 0;
   // ---------- screens + timing tower (canvas textures) ----------
@@ -130,7 +131,8 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
   const towerCanvas = document.createElement('canvas'); towerCanvas.width = 128; towerCanvas.height = 896; const tx = towerCanvas.getContext('2d');
   const towerTex = new THREE.CanvasTexture(towerCanvas); towerTex.colorSpace = THREE.SRGBColorSpace;
   const panel = (c, w, h, f, t, tex) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); m.position.set(...c); m.lookAt(v.set(c[0] + f[0], c[1], c[2] + f[2])); root.add(m); return m; };
-  EV.bigScreens.forEach(s => panel(s.center, s.width * .98, s.height * .96, s.facing, s.tangent, screenTex).name = 'big_screen');
+  { const gs = EV.bigScreens.map(s => { const g = new THREE.PlaneGeometry(s.width * .98, s.height * .96); const o = new THREE.Object3D(); o.position.set(...s.center); o.lookAt(s.center[0] + s.facing[0], s.center[1], s.center[2] + s.facing[2]); o.updateMatrix(); g.applyMatrix4(o.matrix); return g; });
+    const scr = new THREE.Mesh(mergeGeoms(gs, true), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false })); scr.name = 'big_screens_live'; root.add(scr); }
   panel(EV.timingTower.panelCenter, 2.9, 20.4, EV.timingTower.facing, null, towerTex).name = 'timing_tower_panel';
   ev.screenText = { title: 'APEX ARCADE', line: 'GRAND PRIX', sub: 'RACE DAY' };
   ev.order = [];

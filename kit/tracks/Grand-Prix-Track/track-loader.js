@@ -9,9 +9,10 @@
 // Needs an import map (or bundler) that maps "three" and "three/addons/".
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';   // the GLB uses EXT_meshopt_compression
 
 export async function loadTrack({ scene, glbUrl = 'grand-prix-track.glb', dataUrl = 'track-data.json', data = null, glbArrayBuffer = null } = {}) {
-  const loader = new GLTFLoader();
+  const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf = glbArrayBuffer ? await new Promise((ok, err) => loader.parse(glbArrayBuffer, '', ok, err)) : await loader.loadAsync(glbUrl);
   if (!data) data = await (await fetch(dataUrl)).json();
   const track = new Track(gltf, data);
@@ -23,7 +24,18 @@ export class Track {
   constructor(gltf, data) {
     this.gltf = gltf; this.data = data; this.root = gltf.scene;
     this.meshes = {};
-    this.root.traverse(o => { if (o.isMesh || o.isGroup) { if (o.name) this.meshes[o.name] = o; } if (o.isMesh) o.receiveShadow = true; });
+    this.root.traverse(o => {
+      if (o.name && !this.meshes[o.name]) this.meshes[o.name] = o;
+      if (!o.isMesh) return;
+      o.receiveShadow = true; o.castShadow = false;        // static scenery has baked shadows; only cars cast real-time shadows
+      const m = o.material, n = m.name;
+      if (n === 'marks' || n === 'gravel' || n === 'paint_white') {  // overlays: no z-fighting, no sorting issues
+        m.polygonOffset = true; m.polygonOffsetFactor = n === 'marks' ? -3 : -2; m.polygonOffsetUnits = n === 'marks' ? -3 : -2;
+        if (m.transparent) { m.depthWrite = false; o.renderOrder = n === 'marks' ? 2 : 1; }
+      }
+      if (n === 'fence') { m.alphaTest = 0.5; m.transparent = false; }
+      if (n === 'glass') { m.envMapIntensity = 1.6; }
+    });
     const c = data.centerline; this.n = c.length;
     this.P = c.map(p => new THREE.Vector3(p.x, p.y, p.z));
     this.halfWidth = data.trackWidth / 2;

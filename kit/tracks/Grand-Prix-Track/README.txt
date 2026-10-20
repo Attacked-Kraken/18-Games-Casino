@@ -8,8 +8,11 @@ hairpins (T1, T6, T16), a chicane (T4-T5), an esses section (T7-T11), two fast s
 and 18.5 m of elevation change. The estimated lap is about 95 seconds.
 
 FILES
-  grand-prix-track.glb   The whole circuit in one GLB: 4.5 MB, 46 draw calls, about 111k triangles,
-                         32 named meshes. Textures come from the Ground-Textures kit.
+  grand-prix-track.glb   The whole circuit in one GLB (realistic v2): 6.6 MB, meshopt-compressed, 26 draw
+                         calls, 409k triangles, 21 named nodes. It has PBR asphalt with a rubbered-in racing
+                         line and skid marks, rounded kerbs, mowed grass, gravel with blended edges, W-beam
+                         guardrails, tyre stacks, chain-link fences, tiered stands with curved roofs and
+                         glass-fronted pit buildings. Ambient occlusion and soft shadows are baked in.
   track-data.json        Centerline (x, y, z, distance, banking, curvature, width), corners, sectors,
                          57 checkpoint gates, 20 grid slots, pit lane and 12 pit boxes, racing line,
                          AI speeds, braking boards, surfaces, and event positions (stands, marshal posts,
@@ -23,13 +26,15 @@ FILES
                          tower, the podium, and positional crowd audio.
   race-cameras.js        Broadcast camera system: chase, heli, tv, onboard, nose, bumper, rear, leader,
                          battle, intro and replay views, plus an auto-director.
-  preview.html           Self-contained viewer that opens from Files with no server. It has 8
+  preview.html           Self-contained viewer (9.7 MB) with ACES tone mapping, a sky environment, soft car
+                         shadows and haze. that opens from Files with no server. It has 8
                          placeholder cars racing, every camera mode, an orbit view, a minimap, night
                          mode, sound and a finish celebration.
   minimap.png            1024 px top-down map. The mapping formula is in track-data.json under "minimap".
   MUSE-GUIDE.txt         How to build on the track and swap in real car models.
-  source/                Python generator (build.py, layout.py, glb.py) and the preview source. Run
-                         python build.py to rebuild everything.
+  source/                Python generator: layout.py (centerline), track_core.py (data), textures.py (PBR
+                         textures, in tex/), build.py (realistic meshes + baking + gltfpack), glb.py,
+                         preview-src.js and build_preview.py.
 
 SOUNDS: the separate Grand-Prix-Track-Sounds.zip holds 22 MP3s. Unzip it next to this folder.
 

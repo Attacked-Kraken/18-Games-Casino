@@ -19,9 +19,11 @@ class GLB:
     def image(s,data,mime):
         s.g["images"].append({"bufferView":s._view(data),"mimeType":mime}); s.g["textures"].append({"sampler":0,"source":len(s.g["images"])-1})
         return len(s.g["textures"])-1
-    def material(s,name,color=(1,1,1,1),tex=None,rough=0.9,metal=0.0,double=False,alpha=None,emissive=None):
+    def material(s,name,color=(1,1,1,1),tex=None,rough=0.9,metal=0.0,double=False,alpha=None,emissive=None,normal=None,normal_scale=1.0,orm=None,ao_strength=1.0):
         m={"name":name,"pbrMetallicRoughness":{"baseColorFactor":list(color),"metallicFactor":metal,"roughnessFactor":rough}}
         if tex is not None: m["pbrMetallicRoughness"]["baseColorTexture"]={"index":tex}
+        if normal is not None: m["normalTexture"]={"index":normal,"scale":normal_scale}
+        if orm is not None: m["pbrMetallicRoughness"]["metallicRoughnessTexture"]={"index":orm}; m["occlusionTexture"]={"index":orm,"strength":ao_strength}
         if double: m["doubleSided"]=True
         if alpha=="MASK": m["alphaMode"]="MASK"; m["alphaCutoff"]=0.5
         elif alpha: m["alphaMode"]=alpha
@@ -30,13 +32,16 @@ class GLB:
     def mesh(s,name,prims,extras=None):
         """prims: list of (V[N,3], UV[N,2] or None, I[M,3], material_name, N[N,3] or None)"""
         P=[]
-        for V,UV,I,mat,Nr in prims:
+        for pr in prims:
+            V,UV,I,mat,Nr=pr[:5]; COL=pr[5] if len(pr)>5 else None
             V=np.asarray(V,np.float32); I=np.asarray(I,np.uint32).reshape(-1)
             if len(I)==0: continue
             if Nr is None: Nr=vnormals(V,I.reshape(-1,3))
             at={"POSITION":s._acc(V,"VEC3",5126,34962,True),"NORMAL":s._acc(np.asarray(Nr,np.float32),"VEC3",5126,34962)}
             hasTex="baseColorTexture" in s.g["materials"][s.mat_ids[mat]]["pbrMetallicRoughness"]
             if UV is not None and hasTex: at["TEXCOORD_0"]=s._acc(np.asarray(UV,np.float32),"VEC2",5126,34962)
+            if COL is not None:
+                COL=np.clip(np.asarray(COL,np.float32),0,1); at["COLOR_0"]=s._acc(COL,"VEC4" if COL.shape[1]==4 else "VEC3",5126,34962)
             if V.shape[0]<65536: ia=s._acc(I.astype(np.uint16),"SCALAR",5123,34963)
             else: ia=s._acc(I,"SCALAR",5125,34963)
             P.append({"attributes":at,"indices":ia,"material":s.mat_ids[mat]})
