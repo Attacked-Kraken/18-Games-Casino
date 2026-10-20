@@ -210,12 +210,16 @@ else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSof
   key.shadow.camera.left=-120; key.shadow.camera.right=120; key.shadow.camera.top=90; key.shadow.camera.bottom=-90; }
 
 /* ================= ice ================= */
-function makeIceTexture(){
+let iceCanvasRef=null, iceTexRef=null; // G-47: kept so the kit ice texture can redraw the same canvas
+function makeIceTexture(baseImg){
   const S = 10.24, cw = Math.round(RINK.L*S), ch = Math.round(RINK.W*S);
   const cv = document.createElement('canvas'); cv.width=cw; cv.height=ch;
   const g = cv.getContext('2d');
   const X = x=>(x+HX)*S, Z = z=>(z+HZ)*S;
   g.fillStyle='#eef3f6'; g.fillRect(0,0,cw,ch);
+  if(baseImg){ // G-47: the owner's ice_rink ground texture (kit/ground/512) under the same markings
+    try{ const pat=g.createPattern(baseImg,'repeat'); if(pat){ g.save(); g.globalAlpha=.92; g.fillStyle=pat; g.fillRect(0,0,cw,ch); g.restore(); } }catch(e){}
+  }
   // skate marks
   g.strokeStyle='rgba(170,190,205,.35)'; g.lineWidth=1.2;
   for(let i=0;i<900;i++){ const x=Math.random()*cw, y=Math.random()*ch, a=Math.random()*TAU, l=rand(6,30);
@@ -250,14 +254,24 @@ function makeIceTexture(){
   });
   const tex = new THREE.CanvasTexture(cv);
   tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace;
+  iceCanvasRef = cv;
   return tex;
 }
 {
+  const iceTex = makeIceTexture(); iceTexRef = iceTex;
   const ice = new THREE.Mesh(
     new THREE.PlaneGeometry(RINK.L, RINK.W),
-    new THREE.MeshStandardMaterial({ map: makeIceTexture(), roughness:.3, metalness:.02 })
+    new THREE.MeshStandardMaterial({ map: iceTex, roughness:.3, metalness:.02 })
   );
   ice.rotation.x = -Math.PI/2; ice.receiveShadow = !isTouch; scene.add(ice);
+  // G-47: once the owner's ice_rink texture arrives, redraw the same canvas
+  // with it under the markings and refresh THIS texture object - the swap
+  // lands on the material's map, not on the mesh (LESSONS 2026-10-20).
+  try{
+    const iceImg = new Image();
+    iceImg.onload = ()=>{ try{ makeIceTexture(iceImg); if(iceTexRef && iceCanvasRef){ iceTexRef.image = iceCanvasRef; iceTexRef.needsUpdate = true; } }catch(e){} };
+    iceImg.src = 'kit/ground/512/ice_rink.png';
+  }catch(e){}
   // dark surround
   const apron = new THREE.Mesh(new THREE.PlaneGeometry(900,500), new THREE.MeshBasicMaterial({color:0x0a0e14}));
   apron.rotation.x=-Math.PI/2; apron.position.y=-0.05; scene.add(apron);
@@ -770,16 +784,43 @@ function banner(main, sub, dur=1800, color){
 }
 function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
   requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
-// goal horn (WebAudio, created on first user gesture)
+/* ================= G-47: owner's stadium kit sounds (sounds/stadium/hockey) =================
+   Real recordings take over from the synthesized crowd bed, goal horn and
+   puck/skate effects. Anything that fails to load leaves the synthesized
+   sound in place (the noise crowd bed, the synth horn), so the game is
+   never quieter than before. */
+const SND_DIR = 'sounds/stadium/hockey/';
+function kitSfx(name, vol){
+  try{
+    if(Mus.muted) return false;
+    const a = new Audio(SND_DIR + name); a.volume = vol == null ? 0.8 : vol;
+    const pr = a.play(); if(pr && pr.catch) pr.catch(()=>{});
+    return true;
+  }catch(e){ return false; }
+}
+let puckSfxT = 0;
+function puckSfx(name, vol){ // throttled: the physics can bounce the puck several times a frame
+  const now = performance.now(); if(now - puckSfxT < 130) return; puckSfxT = now; kitSfx(name, vol);
+}
+let skateSfxT = 0;
+function skateSfx(){
+  const now = performance.now(); if(now - skateSfxT < 400) return; skateSfxT = now; kitSfx('hockey_skate_stop.mp3', 0.5);
+}
+// goal horn: the owner's horn (preloaded) - the synth horn stays as fallback
 let AC=null;
-function horn(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+let kitHornEl=null, kitHornOK=false;
+try{ kitHornEl=new Audio(SND_DIR+'hockey_goal_horn.mp3'); kitHornEl.preload='auto';
+  kitHornEl.addEventListener('canplaythrough',()=>{ kitHornOK=true; }); }catch(e){}
+function horn(){
+  if(kitHornOK){ try{ kitHornEl.currentTime=0; const pr=kitHornEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); return; }catch(e){} }
+  try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)();
   const o=AC.createOscillator(), g=AC.createGain(); o.type='sawtooth'; o.frequency.value=164;
   g.gain.setValueAtTime(.25,AC.currentTime); g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+1.4);
   o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+1.4); }catch(e){} }
 
 /* ================= procedural music (WebAudio, no files) ================= */
 const Mus = {
-  ctx:null, master:null, nbuf:null, timer:null,
+  ctx:null, master:null, nbuf:null, timer:null, kitAmb:null, // G-47: kit crowd loop element once it can play
   muted:false, mode:'menu', step:0, nextT:0,
   CH:[[57,60,64],[53,57,60],[55,60,64],[55,59,62]], // Am F C G
   ensure(){
@@ -803,6 +844,12 @@ const Mus = {
       this.crowdGain=this.ctx.createGain(); this.crowdGain.gain.value=0.0;
       cs.connect(this.crowdFilter); this.crowdFilter.connect(this.crowdGain); this.crowdGain.connect(this.master); cs.start();
       this.crowdSwell=0;
+      // G-47: the owner's hockey crowd loop becomes the bed once it can play
+      try{
+        const amb=new Audio(SND_DIR+'hockey_ambience_loop.mp3'); amb.loop=true; amb.volume=0; amb.preload='auto';
+        amb.addEventListener('canplay',()=>{ this.kitAmb=amb; });
+        const ap=amb.play(); if(ap&&ap.catch) ap.catch(()=>{});
+      }catch(e){}
     }catch(e){ /* WebAudio unavailable: game keeps playing silently */ }
   },
   m2f(m){ return 440*Math.pow(2,(m-69)/12); },
@@ -851,15 +898,20 @@ const Mus = {
     const b=document.getElementById('muteBtn'); if(b) b.textContent=m?'🔇':'🔊';
   },
   crowdGoal(home){ // swell the stadium: loud cheer for us, muted boo-ish for them
+    kitSfx(home?'hockey_big_cheer.mp3':'hockey_groan.mp3', home?0.95:0.7); // G-47: kit crowd reaction
     if(!this.ctx||!this.crowdGain) return;
     this.crowdSwell=home?1:0.45;
     try{ this.crowdFilter.frequency.setTargetAtTime(home?1150:420,this.ctx.currentTime,0.12); }catch(e){}
   },
   crowdTick(dt){ // quiet murmur -> loud on big moments, driven every frame
     if(!this.ctx||!this.crowdGain) return;
-    if(this.muted){ this.crowdGain.gain.value=0; return; }
+    if(this.muted){ this.crowdGain.gain.value=0; if(this.kitAmb) this.kitAmb.volume=0; return; }
     this.crowdSwell=Math.max(0,this.crowdSwell-dt*0.45);
     const target=0.045+0.22*crowdExcite+0.5*this.crowdSwell;
+    if(this.kitAmb){ // G-47: kit crowd loop carries the bed; the shaped-noise bed rests at zero
+      try{ this.crowdGain.gain.setTargetAtTime(0,this.ctx.currentTime,0.25); this.kitAmb.volume=Math.min(0.85,target*1.2); }catch(e){}
+      return;
+    }
     try{
       this.crowdGain.gain.setTargetAtTime(Math.min(0.8,target),this.ctx.currentTime,0.25);
       if(this.crowdSwell<=0.01) this.crowdFilter.frequency.setTargetAtTime(850,this.ctx.currentTime,1.5);
@@ -895,6 +947,7 @@ function doPass(){
   puck.passGrace=from; puck.passT=performance.now();
   puck.lastPass=from; puck.lastPassT=performance.now();
   commSay('pass'); // G-44
+  puckSfx('hockey_puck_pass.mp3', 0.45); // G-47
 }
 function doShoot(power){
   if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
@@ -912,6 +965,7 @@ function shootFrom(s, power, aimed){
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
   puck.shot={team:s.team,t:0,by:s};
   commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
+  if(power>=0.8) puckSfx('hockey_puck_slapshot.mp3', 0.75); // G-47
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
   s.phase+=1.2;
 }
@@ -1164,6 +1218,7 @@ function aiPass(s){
   puck.passGrace=s; puck.passT=performance.now();
   puck.lastPass=s; puck.lastPassT=performance.now();
   commSay('pass'); // G-44
+  puckSfx('hockey_puck_pass.mp3', 0.4); // G-47
 }
 function aiGoalie(g,dt){
   const dir=TEAMS[g.team].dir, gl=-dir*GOAL_LINE, sgn=-dir; // defended line; sgn points center->net
@@ -1185,20 +1240,20 @@ function bouncePuck(){
   const r=0.62, rest=0.72;
   const x=puck.pos.x, z=puck.pos.z;
   const ccx=HX-RINK.CR, ccz=HZ-RINK.CR; // 72, 14.5
-  if(Math.abs(z)<=ccz && Math.abs(x)>HX-r){ puck.pos.x=Math.sign(x)*(HX-r); puck.vel.x*=-rest; puck.shot=null; }
-  else if(Math.abs(x)<=ccx && Math.abs(z)>HZ-r){ puck.pos.z=Math.sign(z)*(HZ-r); puck.vel.z*=-rest; puck.shot=null; }
+  if(Math.abs(z)<=ccz && Math.abs(x)>HX-r){ if(Math.abs(puck.vel.x)>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, Math.abs(puck.vel.x)/55)); puck.pos.x=Math.sign(x)*(HX-r); puck.vel.x*=-rest; puck.shot=null; }
+  else if(Math.abs(x)<=ccx && Math.abs(z)>HZ-r){ if(Math.abs(puck.vel.z)>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, Math.abs(puck.vel.z)/55)); puck.pos.z=Math.sign(z)*(HZ-r); puck.vel.z*=-rest; puck.shot=null; }
   else { const dx=Math.abs(x)-ccx, dz=Math.abs(z)-ccz, d=Math.hypot(dx,dz);
     if(d>RINK.CR-r&&d<RINK.CR+3){ const nx=Math.sign(x)*dx/d, nz=Math.sign(z)*dz/d;
       puck.pos.x=Math.sign(x)*(ccx+nx*(RINK.CR-r)); puck.pos.z=Math.sign(z)*(ccz+nz*(RINK.CR-r));
       const vn=puck.vel.x*nx+puck.vel.z*nz;
-      if(vn>0){ puck.vel.x-=2*vn*nx*rest; puck.vel.z-=2*vn*nz*rest; puck.shot=null; } } }
+      if(vn>0){ if(vn>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, vn/55)); puck.vel.x-=2*vn*nx*rest; puck.vel.z-=2*vn*nz*rest; puck.shot=null; } } }
   // goal posts — plain loops (G-35: this ran every physics step and built arrays + closures each time)
   for(let gi=0;gi<2;gi++){ const gx=gi?-GOAL_LINE:GOAL_LINE;
     for(let pi=0;pi<2;pi++){ const pz=pi?GOAL_HALF:-GOAL_HALF;
       const dx=puck.pos.x-gx, dz=puck.pos.z-pz, d=Math.hypot(dx,dz);
       if(d<POST_R+r&&d>0.01){ const nx=dx/d,nz=dz/d, vn=puck.vel.x*nx+puck.vel.z*nz;
         puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
-        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; if(puck.shot) commSay('near_miss'); } } } } // G-44: off the post
+        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; if(-vn>10) puckSfx('hockey_puck_post.mp3', 0.6); if(puck.shot) commSay('near_miss'); } } } } // G-44: off the post
 }
 const _des=new THREE.Vector3(); // reused scratch (was: allocated per skater per frame)
 function stepSkater(s,dt){
@@ -1269,7 +1324,7 @@ function stepSkater(s,dt){
   s.sprayT=(s.sprayT||0)-dt;
   if(s.prevSp!==undefined && s.sprayT<=0 && sp>4){
     const dec=(s.prevSp-sp)/Math.max(dt,0.001), isp=Math.max(sp,1);
-    if(dec>34){ spray(s.pos.x, s.pos.z, -s.vel.x/isp, -s.vel.z/isp, Math.min(14, 4+(dec*0.16|0))); s.sprayT=0.07; }
+    if(dec>34){ spray(s.pos.x, s.pos.z, -s.vel.x/isp, -s.vel.z/isp, Math.min(14, 4+(dec*0.16|0))); s.sprayT=0.07; if(s===controlled) skateSfx(); }
     else if(sp>14 && Math.abs(s._tr||0)>1.5){ spray(s.pos.x, s.pos.z, -s.vel.x/isp, -s.vel.z/isp, 3); s.sprayT=0.09; }
   }
   s.prevSp=sp; s.prevFacing=s.facing;
@@ -1402,6 +1457,7 @@ function goalieSaves(){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
         puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
         commSay(spd>70?'great_save':'save'); // G-44
+        if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
       }
     }
   }
