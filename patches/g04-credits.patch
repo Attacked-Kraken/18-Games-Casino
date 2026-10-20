@@ -1,0 +1,12 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -185,6 +185,9 @@
+     <div style="font:400 14px/1.7 system-ui;text-align:left">
+       <div><b>Exotic Racer Club</b> - made for Apex Arcade. Apex Arcade is the only sponsor.</div>
+       <div style="margin-top:10px"><b>"Fictional supercar - V12 Goblin"</b> by ollitei, CC-BY 4.0, via Sketchfab. Used as the player car.</div>
++      <div style="margin-top:6px"><b>"Patriot P10-XR"</b> by Swiss_Fox, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
++      <div style="margin-top:6px"><b>"Tokii Abyss GT.7 V12"</b> by Glas'kavin, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
++      <div style="margin-top:6px"><b>"SHC MC Free Promotion Car"</b> by denniswoo1993, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
+     </div>
+     <div class="row"><button class="neo alt" id="crBack">Back</button></div>
+   </div>
