@@ -149,3 +149,4 @@ font or online API in a game (games are fully offline).
 - **Weather + racing effects:** `kit/weather-fx/weather.js` with `kit/fx-library/effects.js` (rain, snow, fog, tire smoke, skid marks, sparks); sounds in `sounds/weather-fx/`.
 - **Tutorial hints:** `kit/tutorial/tutorial.js` (tap/swipe/hold hints, guided steps, how-to cards, show once).
 - **Grand Prix track (F1):** `kit/tracks/Grand-Prix-Track/` - read its README.txt + MUSE-GUIDE.txt. `track-loader.js` loads the .glb, puts cars on the grid, counts laps by checkpoints, gives the racing line for AI cars and runs the start lights. Sounds sit next to it in `kit/tracks/Grand-Prix-Track-Sounds/`.
+- **F1 cockpit:** `kit/cockpit/cockpit.glb` (read README.md). The steering wheel is the node `SteeringWheel` - rotate it on its local Z to follow the player's steering; shift lights are `LED_0..14`, paddles `Paddle_Upshift` / `Paddle_Downshift`. Viewer: `kit/cockpit/index.html`.
