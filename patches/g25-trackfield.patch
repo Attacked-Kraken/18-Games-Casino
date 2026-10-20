@@ -1,0 +1,39 @@
+diff --git a/apextrackfield.html b/apextrackfield.html
+index 9ea4b45..7c4ed37 100644
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -607,7 +607,7 @@ hint:'Plant the pole, tap ACTION in the zone, then time the green window to clea
+ {id:'sp', name:'Shot Put', eng:'throw', throwType:'shot', timed:false, ref:23.56,
+ hint:'Tap ACTION to lock power, tap ACTION again to release at the best angle. 3 attempts.'},
+ {id:'dt', name:'Discus Throw', eng:'throw', throwType:'discus', timed:false, ref:74.08,
+-hint:'ONE action: HOLD ACTION to spin, RELEASE to throw - like a real thrower. 3 attempts.'},
++hint:'ONE action: HOLD ACTION to spin, RELEASE to throw - like a real thrower. 1 throw - make it count.'},
+ {id:'ht', name:'Hammer Throw', eng:'throw', throwType:'hammer', timed:false, ref:86.74,
+ hint:'Tap ACTION in rhythm with the 3 spin pulses for bonus, then lock power and release angle. 3 attempts.'},
+ {id:'wt', name:'Weight Throw', eng:'throw', throwType:'weight', timed:false, ref:25.86,
+@@ -1224,6 +1224,7 @@ function createThrowEngine(ev, rivals){
+ const T=THROW_DEF[ev.throwType];
+ const E={
+ ev, T, done:false, dq:false, attempt:1, attempts:[], best:0,
++attMax:(ev.throwType==='discus')?1:3, // JOB G-25 (owner): DISCUS is ONE simple action - one hold-to-spin, release-to-throw, and the event is done. Other throws keep their 3 attempts.
+ phase: (ev.throwType==='discus')?'hold':(T.runup?'runup':(T.spin?'spin':'power')),
+ r:newRunner(), power:0, pdir:1, ang:20, adir:1, locked:0,
+ spinT:0, spinIdx:0, spinQ:[], runSpeed:0,
+@@ -1324,7 +1325,7 @@ if(this.ft>=this.fT) this.endAttempt();
+ }else if(this.phase==='mark'){
+ this.resT-=dt;
+ if(this.resT<=0){
+-if(this.attempt>=3){ this.done=true; this.finishT=0; }
++if(this.attempt>=this.attMax){ this.done=true; this.finishT=0; }
+ else { this.attempt++; this.reset(); }
+ }
+ }
+@@ -1332,7 +1333,7 @@ else { this.attempt++; this.reset(); }
+ hud(){
+ const ph={runup:'RUN-UP',spin:'SPIN RHYTHM',power:'POWER',angle:'ANGLE',flight:'',mark:'',hold:'HOLD ACTION TO SPIN',spinning:'RELEASE TO THROW'}[this.phase];
+ return {event:T.name, main:this.best>0?fmtMark(this.best):'--',
+-sub:'Attempt '+this.attempt+'/3'+(ph?' · '+ph:''),
++sub:'Attempt '+this.attempt+'/'+this.attMax+(ph?' · '+ph:''),
+ pos:'', speed:0, stam:1};
+ },
+ getResult(){
