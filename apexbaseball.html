@@ -291,8 +291,8 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
     gg.fillRect(Math.random()*512, Math.random()*512, 2, 2); }
   const grassT = new THREE.CanvasTexture(grassC); grassT.colorSpace = THREE.SRGBColorSpace;
   grassT.wrapS = grassT.wrapT = THREE.RepeatWrapping; grassT.repeat.set(6,6);
-  const grass = new THREE.Mesh(new THREE.CircleGeometry(155, 28),
-    new THREE.MeshStandardMaterial({ map:grassT, roughness:0.95 }));
+  const grassMat = new THREE.MeshStandardMaterial({ map:grassT, roughness:0.95 });
+  const grass = new THREE.Mesh(new THREE.CircleGeometry(155, 28), grassMat);
   grass.rotation.x = -Math.PI/2; grass.receiveShadow = true; scene.add(grass);
   for(let i=0;i<6;i++){ // mow stripes
     const ring = new THREE.Mesh(new THREE.RingGeometry(24+i*22, 24+(i+1)*22-2, 40), M(i%2?0x2f8c3d:0x2a7f36));
@@ -306,11 +306,18 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
   const dirtT = new THREE.CanvasTexture(dirtC); dirtT.colorSpace = THREE.SRGBColorSpace;
   dirtT.wrapS = dirtT.wrapT = THREE.RepeatWrapping; dirtT.repeat.set(3,3);
   const dirtGeo = new THREE.PlaneGeometry(66,66,32,32);
-  const dirt = new THREE.Mesh(dirtGeo,
-    new THREE.MeshStandardMaterial({ map:dirtT, roughness:1 }));
+  const dirtMat = new THREE.MeshStandardMaterial({ map:dirtT, roughness:1 });
+  const dirt = new THREE.Mesh(dirtGeo, dirtMat);
   dirt.rotation.x = -Math.PI/2; dirt.rotation.z = Math.PI/4; dirt.position.set(0,0.02,-21.21);
   dirt.receiveShadow = true; scene.add(dirt);
   fx.lightMask(dirt, { mode: 'sun', dir: { x: 1, z: -0.5 } });
+  // G-36 (owner's kits): swap in the kit ground textures (kit/ground/512/) when they load -
+  // same repeats, set on the materials; the canvas textures stay as first paint + fallback.
+  try{
+    const tl = new THREE.TextureLoader();
+    tl.load('kit/ground/512/grass_plain.png', t=>{ t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6,6); grassMat.map = t; grassMat.needsUpdate = true; });
+    tl.load('kit/ground/512/baseball_infield.png', t=>{ t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3,3); dirtMat.map = t; dirtMat.needsUpdate = true; });
+  }catch(e){}
   const hc = new THREE.Mesh(new THREE.CircleGeometry(6.5, 20), M(0xb08050));
   hc.rotation.x = -Math.PI/2; hc.position.set(0,0.021,0); scene.add(hc);
   const md = new THREE.Mesh(new THREE.CircleGeometry(5.5, 20), M(0xb08050));
@@ -1567,6 +1574,7 @@ function crowdTick(t, dt){
 /* ---------------- procedural music (WebAudio, no files) ---------------- */
 const Mus = {
   ctx:null, master:null, noiseBuf:null, mode:'menu', step:0, nextT:0,
+  kit:{}, kitTried:false, ambGain:null, ambSrc:null, // G-36 (owner's kits): samples from sounds/stadium/baseball/
   muted: (function(){ try{ return localStorage.getItem('apex_muted')==='1'; }catch(e){ return false; } })(),
   init(){
     if (this.ctx) return;
@@ -1581,10 +1589,11 @@ const Mus = {
       this.noiseBuf = buf;
       this.nextT = this.ctx.currentTime + 0.1;
       setInterval(()=>this.sched(), 40);
+      this.loadKit(); if(this.mode==='game') this.ambStart();
     }catch(e){}
   },
   resume(){ try{ if(this.ctx && this.ctx.state==='suspended') this.ctx.resume(); }catch(e){} },
-  setMode(m){ if(this.mode===m) return; this.mode=m; this.step=0; if(this.ctx) this.nextT=this.ctx.currentTime+0.08; },
+  setMode(m){ if(this.mode===m) return; this.mode=m; this.step=0; if(this.ctx) this.nextT=this.ctx.currentTime+0.08; if(m==='game') this.ambStart(); },
   toggle(){
     this.muted = !this.muted;
     try{ localStorage.setItem('apex_muted', this.muted?'1':'0'); }catch(e){}
@@ -1612,19 +1621,45 @@ const Mus = {
       s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+0.2);
     }catch(e){}
   },
-  crack(){ try{ const c=this.ctx, t=c.currentTime;
+  loadKit(){ // G-36 (owner's kits): the real ballpark recordings; synth voices stay as fallback until they load
+    if(this.kitTried || !this.ctx) return; this.kitTried = true;
+    const F = { crack:'sounds/stadium/baseball/baseball_bat_crack.mp3', glove:'sounds/stadium/baseball/baseball_glove_catch.mp3', cheer:'sounds/stadium/baseball/baseball_big_cheer.mp3', amb:'sounds/stadium/baseball/baseball_ambience_loop.mp3' };
+    for(const k in F){ fetch(F[k]).then(r=>r.arrayBuffer()).then(ab=>this.ctx.decodeAudioData(ab)).then(b=>{ this.kit[k]=b; if(k==='amb') this.ambSwap(); }).catch(()=>{}); }
+  },
+  playKit(buf, vol){
+    if(!this.ctx || !buf) return null;
+    const s=this.ctx.createBufferSource(), g=this.ctx.createGain();
+    s.buffer=buf; g.gain.value = vol||0.8;
+    s.connect(g); g.connect(this.master); s.start(); return s;
+  },
+  ambStart(){ if(!this.ctx || this.ambGain) return;
+    const g=this.ctx.createGain(); g.gain.value=0.08; g.connect(this.master); this.ambGain=g; this._ambPlay(); },
+  ambSwap(){ if(this.ambGain) this._ambPlay(); },
+  _ambPlay(){ if(!this.ctx || !this.ambGain) return;
+    if(this.ambSrc){ try{ this.ambSrc.stop(); }catch(e){} this.ambSrc=null; }
+    const s=this.ctx.createBufferSource(); s.loop=true;
+    if(this.kit.amb){ s.buffer=this.kit.amb; s.connect(this.ambGain); }
+    else { const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=420; s.buffer=this.noiseBuf; s.connect(f); f.connect(this.ambGain); }
+    s.start(); this.ambSrc=s; },
+  crack(){ if(this.kit.crack){ this.playKit(this.kit.crack, 0.9); return; } try{ const c=this.ctx, t=c.currentTime;
       const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
       s.buffer=this.noiseBuf; f.type='bandpass'; f.frequency.value=2800; f.Q.value=0.8;
       g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
       s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+0.12);
       this.tone('triangle', 220, 90, t, 0.12, 0.5); }catch(e){} },
-  pop(){ try{ const c=this.ctx, t=c.currentTime;
+  pop(){ if(this.kit.glove){ this.playKit(this.kit.glove, 0.85); return; } try{ const c=this.ctx, t=c.currentTime;
       const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
       s.buffer=this.noiseBuf; f.type='lowpass'; f.frequency.value=900;
       g.gain.setValueAtTime(0.7,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.07);
       s.connect(f); f.connect(g); g.connect(this.master); s.start(t); s.stop(t+0.1);
       this.tone('sine', 140, 70, t, 0.08, 0.4); }catch(e){} },
-  cheer(d){ try{ const c=this.ctx, t=c.currentTime, dur=d||1.5;
+  cheer(d){ if(this.kit.cheer && this.ctx){ try{ const c=this.ctx, t=c.currentTime, dur=d||1.5;
+      const s=c.createBufferSource(), g=c.createGain();
+      s.buffer=this.kit.cheer; s.loop=true;
+      g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.45,t+Math.min(0.4,dur*0.25));
+      g.gain.setValueAtTime(0.45,t+Math.max(0.3,dur-0.4)); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+      s.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.1); return; }catch(e){} }
+    try{ const c=this.ctx, t=c.currentTime, dur=d||1.5;
       const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
       s.buffer=this.noiseBuf; s.loop=true; f.type='bandpass'; f.frequency.value=1200; f.Q.value=0.4;
       g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.22,t+0.25);
