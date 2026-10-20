@@ -1,0 +1,109 @@
+diff --git a/apextrackfield.html b/game_fixed.html
+index 7c4ed37..d393459 100644
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -379,6 +379,7 @@ this.paint();
+ $('fps').addEventListener('click', ()=>Perf.toggle());
+ const AudioSys = {
+ ctx:null, master:null, noiseBuf:null, crowdOn:false,
++kit:{}, kitTried:false, crowdGain:null, crowdSrc:null, stepsOn:false, stepsSrc:null, // JOB G-34 (owner's kits): samples from sounds/stadium/track/
+ init(){
+ if(this.ctx) return;
+ try{
+@@ -392,6 +393,7 @@ const len = Math.floor(this.ctx.sampleRate*1.5);
+ this.noiseBuf = this.ctx.createBuffer(1,len,this.ctx.sampleRate);
+ const d = this.noiseBuf.getChannelData(0);
+ for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
++this.loadKit();
+ }catch(e){ this.ctx=null; }
+ },
+ resume(){ if(this.ctx && this.ctx.state==='suspended') this.ctx.resume(); },
+@@ -406,6 +408,7 @@ o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.07);
+ pistol(){
+ try{ if(W3D.stadium) W3D.stadium.crowd.excite(0.4); }catch(e){}
+ if(!this.ctx) return;
++if(this.kit.gun){ this.playKit(this.kit.gun,0.9); return; }
+ const t=this.now(), s=this.ctx.createBufferSource(), g=this.ctx.createGain(), f=this.ctx.createBiquadFilter();
+ s.buffer=this.noiseBuf; f.type='highpass'; f.frequency.value=900;
+ g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+@@ -429,6 +432,7 @@ o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.25);
+ cheer(dur){
+ try{ if(W3D.stadium) W3D.stadium.crowd.excite(Math.min(1.25,0.45+(dur||1)*0.45)); }catch(e){}
+ if(!this.ctx) return; dur=dur||1.2;
++if(this.kit.cheer){ const t=this.now(), s=this.ctx.createBufferSource(), g=this.ctx.createGain(); s.buffer=this.kit.cheer; s.loop=true; g.gain.setValueAtTime(0.001,t); g.gain.exponentialRampToValueAtTime(0.5,t+dur*0.25); g.gain.exponentialRampToValueAtTime(0.001,t+dur); s.connect(g); g.connect(this.master); s.start(t); s.stop(t+dur+0.1); return; }
+ const t=this.now(), s=this.ctx.createBufferSource(), g=this.ctx.createGain(), f=this.ctx.createBiquadFilter();
+ s.buffer=this.noiseBuf; s.loop=true; f.type='bandpass'; f.frequency.value=1100; f.Q.value=0.6;
+ g.gain.setValueAtTime(0.001,t);
+@@ -448,12 +452,42 @@ g.gain.exponentialRampToValueAtTime(0.001,t+0.34);
+ o.connect(g); o2.connect(g); g.connect(this.master); o.start(t); o2.start(t); o.stop(t+0.4); o2.stop(t+0.4);
+ });
+ },
++loadKit(){
++if(this.kitTried||!this.ctx) return; this.kitTried=true;
++const F={gun:'sounds/stadium/track/track_starting_gun.mp3', cheer:'sounds/stadium/track/track_big_cheer.mp3', amb:'sounds/stadium/track/track_ambience_loop.mp3', steps:'sounds/stadium/track/track_runner_footsteps.mp3'};
++for(const k in F){ fetch(F[k]).then(r=>r.arrayBuffer()).then(ab=>this.ctx.decodeAudioData(ab)).then(b=>{ this.kit[k]=b; if(k==='amb') this.crowdSwap(); }).catch(()=>{}); }
++},
++playKit(buf,vol){
++if(!this.ctx||!buf) return null;
++const s=this.ctx.createBufferSource(), g=this.ctx.createGain();
++s.buffer=buf; g.gain.value=vol||0.8;
++s.connect(g); g.connect(this.master); s.start(); return s;
++},
++crowdSwap(){ if(this.crowdOn) this._crowdPlay(); },
++_crowdPlay(){
++if(!this.ctx||!this.crowdGain) return;
++if(this.crowdSrc){ try{ this.crowdSrc.stop(); }catch(e){} this.crowdSrc=null; }
++const s=this.ctx.createBufferSource(); s.loop=true;
++if(this.kit.amb){ s.buffer=this.kit.amb; s.connect(this.crowdGain); }
++else { const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=420; s.buffer=this.noiseBuf; s.connect(f); f.connect(this.crowdGain); }
++s.start(); this.crowdSrc=s;
++},
++stepsSet(on,rate){
++if(!this.ctx) return;
++if(on && !this.stepsOn){
++if(!this.kit.steps) return;
++this.stepsOn=true;
++const s=this.ctx.createBufferSource(), g=this.ctx.createGain();
++s.buffer=this.kit.steps; s.loop=true; s.playbackRate.value=rate||1; g.gain.value=0.13;
++s.connect(g); g.connect(this.master); s.start(); this.stepsSrc=s;
++}
++else if(!on && this.stepsOn){ this.stepsOn=false; const s=this.stepsSrc; this.stepsSrc=null; if(s){ try{ s.stop(); }catch(e){} } }
++else if(on && this.stepsSrc){ this.stepsSrc.playbackRate.value=rate||1; }
++},
+ crowdStart(){
+ if(!this.ctx||this.crowdOn) return; this.crowdOn=true;
+-const s=this.ctx.createBufferSource(), g=this.ctx.createGain(), f=this.ctx.createBiquadFilter();
+-s.buffer=this.noiseBuf; s.loop=true; f.type='lowpass'; f.frequency.value=420;
+-g.gain.value=0.035;
+-s.connect(f); f.connect(g); g.connect(this.master); s.start();
++const g=this.ctx.createGain(); g.gain.value=0.04; g.connect(this.master); this.crowdGain=g;
++this._crowdPlay();
+ },
+ muted:false, musicGain:null, musicMode:null, musicTimer:null, mStep:0, mNext:0, _pendMode:null,
+ initMusic(){
+@@ -1586,6 +1620,7 @@ c.fillRect(x-1,0,3,512); }
+ });
+ tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
+ const m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({map:tex,roughness:0.94}));
++try{ new THREE.TextureLoader().load('kit/ground/512/running_track.png', kt=>{ kt.wrapS=kt.wrapT=THREE.RepeatWrapping; kt.colorSpace=THREE.SRGBColorSpace; kt.anisotropy=8; kt.repeat.set(2.0593,2.459); kt.offset.set(-0.0307,0); m.material.map=kt; m.material.needsUpdate=true; W3D.trackKitTex=kt; }); }catch(e){}
+ m.receiveShadow=true; this.scene.add(m);
+ // JOB J7 owner fix: running lanes as REAL GEOMETRY - the texture-painted lines washed out
+ // at race angles and the owner could not see lanes. 9 bright strips on the true boundaries.
+@@ -2590,6 +2625,7 @@ case 'throw':     return createThrowEngine(ev,rivals);
+ return createSprintEngine(ev,rivals);
+ }
+ function showScreen(id){
++AudioSys.stepsSet(false);
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+ if(id) $(id).classList.add('on');
+ if(id!=='results') stopCeremony();
+@@ -3032,6 +3068,9 @@ if(el) el.style.transform='scaleX('+clamp(v==null?0:v,0,1).toFixed(3)+')';
+ function updateHUD(){
+ if(!ENG) return;
+ refreshSkip();
++// JOB G-34 (owner's kits): the footstep loop from sounds/stadium/track/ follows
++// the player's runner - on while he is actually running, rate with his speed
++AudioSys.stepsSet(!!(ENG.r && ENG.r.speed>2.5 && !ENG.done), ENG.r? clamp(ENG.r.speed/10.5,0.75,1.2):1);
+ const h=ENG.hud();
+ $('hudEvent').textContent=h.event;
+ $('hudMain').textContent=h.main;
