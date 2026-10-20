@@ -797,4 +797,65 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-friend-code',
+    ask: "Friend codes: 'play a friend' - my TFAPEX code shows on the friend-code screen, a friend's code adds them as a rival at their rating, and they line up against you in a real race",
+    async test(page, h) {
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 27000;
+      // JOB G-31: known state first (the standing rule for this shared page) -
+      // reload the plain game address so the menu is up whatever an earlier
+      // test left behind, then play the whole friend-code flow through the
+      // game's own screens, like a player sharing codes with a friend.
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(1500);
+      const screen = () => h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; });
+      const click = (id) => h.eval((a) => { const b = document.getElementById(a); if (b) { b.click(); return true; } return false; }, id);
+      let guard = 0;
+      while (budget() && guard++ < 24 && (await screen()) !== 'menu') await h.wait(400);
+      if ((await screen()) !== 'menu') return 'the menu never came up after reloading the game';
+      // 1) MY CODE: menu -> MY FRIEND CODE shows a TFAPEX code
+      await click('bCode');
+      await h.wait(500);
+      const myCode = await h.eval(() => { const el = document.getElementById('fcodeText'); return el ? el.textContent.trim() : ''; });
+      if (!/^TFAPEX-[A-Za-z0-9+/\-]+$/.test(myCode) || myCode.length < 12) return 'my friend code does not show on the friend-code screen (got: ' + myCode + ')';
+      await click('bFcodeBack');
+      await h.wait(400);
+      // 2) ADD A FRIEND: a code built in the game's own TFAPEX format for a
+      // friend named PALOOKA at rating 0.90, pasted into ADD RIVAL
+      const palCode = await h.eval(() => { const b = btoa(JSON.stringify({ n: 'PALOOKA', r: 0.9 })).replace(/=+$/, ''); return 'TFAPEX-' + (b.match(/.{1,4}/g) || [b]).join('-'); });
+      await click('bAddRival');
+      await h.wait(500);
+      await h.eval((a) => { const i = document.getElementById('rivalInput'); if (i) i.value = a; return true; }, palCode);
+      await click('bRivalAdd');
+      let added = null; guard = 0;
+      while (budget() && guard++ < 10 && !added) { added = await h.eval(() => { const m = document.getElementById('rivalMsg'); return (m && m.className === 'okmsg') ? m.textContent : null; }); if (!added) await h.wait(350); }
+      if (!added || !/PALOOKA/.test(added)) return 'adding the friend code did not add the rival (message: ' + added + ')';
+      guard = 0;
+      while (budget() && guard++ < 10 && (await screen()) !== 'menu') await h.wait(350);
+      const stored = await h.eval(() => { let f = null; try { f = JSON.parse(localStorage.getItem('tfapex_friend') || 'null'); } catch (e) {} const line = document.getElementById('menuRivalLine'); return { f, line: line ? line.textContent : '' }; });
+      if (!stored.f || stored.f.name !== 'PALOOKA' || Math.abs(stored.f.rating - 0.9) > 0.001) return 'the friend was not saved on the phone like a real add';
+      if (!/PALOOKA/.test(stored.line)) return 'the menu does not show the added friend rival';
+      // 3) PLAY: championship opens with the 100m - the friend must line up
+      // as a live rival, at the speed their rating gives them
+      await click('bChamp');
+      await h.wait(500);
+      await click('bCardStart');
+      let field = null; guard = 0;
+      while (budget() && guard++ < 16 && !field) { field = await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.ai && document.body.classList.contains('playing')) return e.ai.map(a => ({ name: a.name, t: a.tTarget })); return null; }); if (!field) await h.wait(350); }
+      if (!field) return 'the championship race never started';
+      const pal = field.find(a => a.name === 'PALOOKA');
+      if (!pal) return 'the friend did not line up in the race (field: ' + field.map(a => a.name).join(', ') + ')';
+      if (!(pal.t > 10.2 && pal.t < 11.1)) return 'the friend is not racing at their code rating (100m target ' + pal.t.toFixed(2) + 's, a 0.90 rating means about 10.6s)';
+      // 4) FINISH the race with this test's own stride driver and read the
+      // standings: the friend must be on the results, like any rival
+      await h.eval(() => { window.__tfdrvF = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done || e.phase !== 'run') return; e.stride(window.__tfk ? 'R' : 'L'); window.__tfk = !window.__tfk; e.r.pos = Math.min(e.r.pos + 34, (e.dist || 100) - 0.1); }, 120); return true; });
+      let resultsText = null; guard = 0;
+      while (budget() && guard++ < 40 && !resultsText) { resultsText = await h.eval(() => { const on = document.querySelector('.screen.on'); return (on && on.id === 'results') ? on.textContent : null; }); if (!resultsText) await h.wait(350); }
+      await h.eval(() => { if (window.__tfdrvF) { clearInterval(window.__tfdrvF); window.__tfdrvF = null; } try { localStorage.removeItem('tfapex_friend'); } catch (e) {} return true; });
+      if (!resultsText) return 'the race never reached the results screen';
+      if (!/PALOOKA/.test(resultsText)) return 'the friend is missing from the race results';
+      return true;
+    },
+  },
 ];
