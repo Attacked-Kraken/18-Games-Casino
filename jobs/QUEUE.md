@@ -36,6 +36,7 @@ was already sent. Muses: don't edit this file.
 
 ## window 6 · apexracer.html
 - [ ] The OWNER says all the cars look RED. Every car in the race and the garage must show its OWN paint color (different for each computer racer, never all the same) - find why the paint isn't showing on the real 3D models and fix it. Check it in the robot's garage and race pictures.
+- [ ] An "APEX ARCADE" name wrap on the owner's car (the V12 Goblin): big clean APEX ARCADE letters along both sides of the body (Apex red/gold or white, readable from the chase camera), as a wrap choice in the garage and ON by default for his car. Keep the car's paint, shape and size exactly as now.
 - [ ] The city traffic cars (the slow cars on the road) become real 3D models too, like the racers (use the models in models/fetched/, each its own paint, nose forward, normal size - STUDIO-STANDARD 3b).
 - [ ] Better steering (owner): smoother and more responsive - the car turns where the stick points without sliding wide or snapping; keep the speed, drift and nitro as now.
 - [ ] New sound kit for the whole game (owner): use the owner's own sounds - music from sounds/pack/music/sports_arena/ (menu = menu, race = gameplay_low/mid/high crossfaded by speed or position, victory_sting / gameover_sting at the end) and the UI sounds from sounds/ui-kit/arcade/ (taps, coin_pickup, combo_x2-x5 for near misses, unlock / level_up for garage buys, popup_open/close, star_1-3, win_jingle). Keep the engine and nitro sounds unless they sound worse. Credits: none needed (owner's own pack).
