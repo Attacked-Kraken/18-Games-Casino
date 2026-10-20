@@ -94,7 +94,7 @@
   #lapT { font:900 14px/1.35 system-ui; text-shadow:0 2px 4px #000; }
   #lapT b { color:var(--cyan); }
   #mini { position:absolute; top:calc(8px + var(--sat)); right:calc(8px + var(--sar)); width:128px; height:128px; border-radius:50%; background:#0a0820aa; border:2px solid #19e6ff55; box-shadow:0 0 22px #19e6ff33; }
-  #spd { position:absolute; bottom:calc(10px + var(--sab)); left:50%; transform:translateX(-50%); width:176px; height:176px; }
+  #spd { position:absolute; bottom:calc(10px + var(--sab)); right:calc(108px + var(--sar)); width:176px; height:176px; }
   #pop { position:absolute; top:28%; left:0; right:0; text-align:center; font:italic 900 26px system-ui; color:#fff; text-shadow:0 0 16px #19e6ff, 0 2px 0 #000; opacity:0; transition:opacity .25s, transform .25s; }
   #msg { position:absolute; top:38%; left:0; right:0; text-align:center; font:italic 900 86px system-ui; color:#fff; text-shadow:0 0 30px #ff2bd6, 0 0 60px #19e6ff, 0 4px 0 #000; opacity:0; }
   #wrong { position:absolute; top:22%; left:0; right:0; text-align:center; font:900 22px system-ui; color:#ff5a6a; text-shadow:0 0 12px #f00; display:none; }
@@ -185,6 +185,9 @@
     <div style="font:400 14px/1.7 system-ui;text-align:left">
       <div><b>Exotic Racer Club</b> - made for Apex Arcade. Apex Arcade is the only sponsor.</div>
       <div style="margin-top:10px"><b>"Fictional supercar - V12 Goblin"</b> by ollitei, CC-BY 4.0, via Sketchfab. Used as the player car.</div>
+      <div style="margin-top:6px"><b>"Patriot P10-XR"</b> by Swiss_Fox, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
+      <div style="margin-top:6px"><b>"Tokii Abyss GT.7 V12"</b> by Glas'kavin, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
+      <div style="margin-top:6px"><b>"SHC MC Free Promotion Car"</b> by denniswoo1993, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
     </div>
     <div class="row"><button class="neo alt" id="crBack">Back</button></div>
   </div>
@@ -267,10 +270,18 @@
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 /* G-01: owner's player car - V12 Goblin 3D model, preloaded at boot so it's ready for menu/garage/race */
-const GOBLIN_GLB_URL = 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb';
-let goblinTpl = null;
-try { goblinTpl = (await new GLTFLoader().loadAsync(GOBLIN_GLB_URL)).scene; }
-catch (e) { goblinTpl = null; }
+/* G-04: real 3D cars - registry of fetched models, preloaded at boot */
+const GLB_MODELS = {
+  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat'], tire: ['car_tire'], rim: ['car_body'], glass: ['car_glass'] },
+  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'] },
+  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial001'], tire: ['tiretread'], rim: [], glass: [] },
+  shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [] },
+};
+const glbTpl = {};
+for (const k of Object.keys(GLB_MODELS)) {
+  try { glbTpl[k] = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; }
+  catch (e) { glbTpl[k] = null; }
+}
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -282,17 +293,17 @@ const MPH = 2.237;
 /* ------------------------------------------------------------------ player save */
 let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const CARS = [
-  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a' },
-  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 65, grip: 1.08, prof: 'hatch', col: '#1e8bff' },
-  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 68, grip: 0.96, prof: 'muscle', col: '#ff8a00' },
-  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 74, grip: 1.12, prof: 'roadster', col: '#16d07a' },
-  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 82, grip: 1.16, prof: 'wedge', col: '#8a2be2' },
-  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 90, grip: 1.22, prof: 'hyper', col: '#1e5aa8' },
+  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a', glb: 'patriot' },
+  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 65, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
+  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 68, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
+  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 74, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
+  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 82, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
+  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 90, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 1 },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
-  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 98, grip: 1.2, prof: 'titan', col: '#1f6f6b' },
-  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12' },
+  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 98, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
+  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
@@ -907,9 +918,10 @@ function makeGlbCar(id, cfg, o = {}) {
   const P = PROF[CAR[id].prof];
   const root = new THREE.Group(), yaw = new THREE.Group(), tilt = new THREE.Group();
   yaw.rotation.y = -Math.PI / 2; root.add(yaw); yaw.add(tilt);
-  const model = goblinTpl.clone(true);
-  /* G-01 FIX: the GLB ships with white default materials - give it the real look:
-     body gets the player's paint+finish, rims get the rim color, tires dark, glass tinted */
+  const key = CAR[id].glb, MC = GLB_MODELS[key];
+  const model = glbTpl[key].clone(true);
+  /* G-04: per-model material map - body gets the car's paint+finish, rims the rim color,
+     tires dark, glass tinted; every other part keeps the model's own material */
   const bodyMat = paintMat(cfg.paint || '#e8e8ee', cfg.fin || 'metal');
   const rimMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.9, roughness: 0.28 });
   const tireMat = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.92, metalness: 0.05 });
@@ -923,10 +935,10 @@ function makeGlbCar(id, cfg, o = {}) {
     q.castShadow = true;
     const mn = ((q.material && q.material.name) || '').toLowerCase();
     const nn = (q.name || '').toLowerCase();
-    if (mn.includes('clearcoat')) q.material = bodyMat;
-    else if (mn.includes('car_tire') || nn.includes('tire')) q.material = tireMat;
-    else if (mn.includes('car_body')) q.material = rimMat;
-    else if (mn.includes('car_glass')) q.material = glassMat;
+    if (MC.body.includes(mn)) q.material = bodyMat;
+    else if (MC.tire.includes(mn) || nn.includes('tire')) q.material = tireMat;
+    else if (MC.rim.includes(mn)) q.material = rimMat;
+    else if (MC.glass.includes(mn) || nn.includes('glass')) q.material = glassMat;
   });
   /* G-01: the model's nose points +Z in its own space; the game drives toward +X in tilt space */
   model.rotation.y = -Math.PI / 2;   /* owner Oct 19 8:40 PM photo: +PI/2 put the nose BACKWARDS. Measured: the low nose + windshield are at model -Z, so -PI/2 turns them to +X (forward) */
@@ -945,7 +957,7 @@ function makeGlbCar(id, cfg, o = {}) {
   return car;
 }
 function makeCar(id, cfg, o = {}) {
-  if (CAR[id].glb && goblinTpl && !o.simple) return makeGlbCar(id, cfg, o);
+  if (CAR[id].glb && glbTpl[CAR[id].glb] && !o.simple) return makeGlbCar(id, cfg, o);
   const pk = o.prof || CAR[id].prof, P = PROF[pk], ch = P.ch, L2 = P.L / 2, simple = !!o.simple;
   const root = new THREE.Group(), yaw = new THREE.Group(), tilt = new THREE.Group(); yaw.rotation.y = -Math.PI / 2; root.add(yaw); yaw.add(tilt);
   const paint = paintMat(cfg.paint, cfg.fin);
