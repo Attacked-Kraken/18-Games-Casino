@@ -150,6 +150,40 @@ const sfx={pearl(n){const m=Math.pow(1.06,n||0);tone(1047*m,.08,'sine',.09);tone
  shield(){[784,988,1319].forEach((f,i)=>tone(f,.15,'triangle',.07,0,i*.06))},pop(){tone(900,.12,'square',.05,200);noise(.12,.08)},hit(){noise(.35,.22);tone(160,.35,'sawtooth',.07,50)},
  warn(){tone(220,.12,'square',.05);tone(220,.12,'square',.05,0,.18)},low(){tone(660,.08,'square',.04)},win(){[523,659,784,1046].forEach((f,i)=>tone(f,.2,'triangle',.09,0,i*.1))},click(){tone(620,.05,'sine',.05)}};
 
+/* ---------- owner's own music + sound packs (Oct 19 2026, "Apex Arcade Pass": made for the owner, no credit needed) ----------
+   music loops from sounds/pack/music, effects from sounds/ui-kit + sounds/pack/sfx. The game's own sounds stay as the
+   fallback until a file has loaded (or if a phone can't load it). The look of the game is not touched. */
+const PK=(()=>{const buf={},wait={};let cur=null,curName='',endFor='';
+ let ogg=false;try{ogg=!!document.createElement('audio').canPlayType('audio/ogg; codecs="vorbis"')}catch(e){}
+ function url(p){return 'sounds/'+(/\.mp3$/.test(p)?p:p+(ogg?'.ogg':'.mp3'))}
+ function load(p){if(buf[p])return Promise.resolve(buf[p]);if(wait[p])return wait[p];const a=ac();if(!a)return Promise.resolve(null);
+  wait[p]=fetch(url(p)).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(b=>new Promise((ok,no)=>a.decodeAudioData(b,ok,no))).then(d=>(buf[p]=d)).catch(()=>null);return wait[p]}
+ function play(p,vol){if(muted)return true;const a=ac();if(!a)return false;const b=buf[p];if(!b){load(p);return false}
+  const s=a.createBufferSource(),g=a.createGain();s.buffer=b;g.gain.value=vol||.8;s.connect(g);g.connect(a.destination);s.start();return true}
+ function stop(){if(cur){try{cur.stop()}catch(e){}cur=null}}
+ function music(p,dur){if(muted)p='';if(curName===p&&(cur||!p))return;stop();curName=p;if(!p)return;
+  load(p).then(b=>{if(!b||curName!==p||cur||muted)return;const a=ac();const s=a.createBufferSource(),g=a.createGain();s.buffer=b;s.loop=true;
+   const extra=Math.max(0,b.duration-dur),lead=Math.min(extra,.0251);s.loopStart=lead;s.loopEnd=lead+Math.min(dur,b.duration-lead);   // mp3 adds a tiny gap: loop only the real music
+   g.gain.value=.42;s.connect(g);g.connect(a.destination);s.start(0,lead);cur=s})}
+ // M = {menu:[file,dur], play:[file,dur], win:file, lose:file}, winFallback = the game's own win sound
+ function director(M,winFallback){[M.menu[0],M.play[0],M.win,M.lose].forEach(load);
+  setInterval(()=>{const s=st;
+   if(['play','dead','pause'].includes(s)){endFor='';music(M.play[0],M.play[1])}
+   else if(['menu','levels','color'].includes(s)){endFor='';music(M.menu[0],M.menu[1])}
+   else if(['done','fail','over'].includes(s)&&endFor!==s){endFor=s;music('');if(!play(s==='done'?M.win:M.lose,.8)&&s==='done')winFallback()}},250)}
+ return {load,play,music,director}})();
+{const _s=Object.assign({},sfx),U='ui-kit/soft/',S='pack/sfx/';
+ sfx.pearl=n=>{if(!PK.play(n>=1?U+'combo_x'+Math.min(5,n+1)+'.mp3':U+'coin_pickup.mp3',.7))_s.pearl(n)};
+ sfx.air=()=>{if(!PK.play(S+'extra_life.mp3',.8))_s.air()};
+ sfx.shield=()=>{if(!PK.play(S+'shield_on.mp3',.8))_s.shield()};
+ sfx.pop=()=>{if(!PK.play(S+'powerup_lose.mp3',.8))_s.pop()};
+ sfx.hit=()=>{if(!PK.play(S+'hit_heavy.mp3',.85))_s.hit();else PK.play(S+'splash_small.mp3',.5)};
+ sfx.click=()=>{if(!PK.play(U+'tap.mp3',.6))_s.click()};
+ sfx.win=()=>{};   // the owner's victory music plays instead (director below)
+ [U+'coin_pickup.mp3',U+'combo_x2.mp3',U+'combo_x3.mp3',U+'combo_x4.mp3',U+'combo_x5.mp3',S+'extra_life.mp3',S+'shield_on.mp3',S+'powerup_lose.mp3',S+'hit_heavy.mp3',S+'splash_small.mp3',U+'tap.mp3'].forEach(PK.load);
+ const M='pack/music/puzzle/puzzle_';
+ PK.director({menu:[M+'menu',47.407],play:[M+'gameplay_mid',40.0],win:M+'victory_sting',lose:M+'gameover_sting'},_s.win)}
+
 /* ================= game state ================= */
 let st='menu',mode='level',C=null,cam=0,lt=0,t=0,lives=3,hits=0,got=0,inv=0,deadT=0,shake=0,flash=0,shieldT=0,o2=1,lowT=0,selW=0,introT=0,introA='',introB='';
 let sub={ox:150,f:.5,vy:0,tilt:0},drag=null,keys={},parts=[],flyers=[],rings=[],combo=0,comboT=0,popT=0,coinTo=[300,30],hudKey='',lastO2='';
