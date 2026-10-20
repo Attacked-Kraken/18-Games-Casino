@@ -307,7 +307,7 @@ export default [
       // state - a race really in its 'run' phase - the state a player's two thumbs actually meet.
       // One combined read+click per poll: the robot gives every test 30 s, eval round-trips on its
       // slow page are dear, and the touch sequence still needs its share of the budget.
-      await h.eval(() => { for (const k of ['__tfdrv', '__tfdrv2', '__tfdrv4']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; });
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv4']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }); // JOB G-22: '__drv' added - the touch/sprint tests at the top of this file install it (it strides the live race every 120 ms) and NOBODY cleared it before this test; it sprinted this test's 60 m runner over the finish line mid-sequence, the results screen replaced the HUD, and the remaining taps hit the results panel ('only 2-3 of 5 taps landed')
       {
         const poll = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const playing = document.body.classList.contains('playing'); const run = !!(e && e.r && e.phase === 'run' && playing); if (!run && on) { const click = (id) => { const b = document.getElementById(id); if (b) b.click(); }; if (on.id === 'results') click('bResMenu'); else if (on.id === 'menu') click('bFree'); else if (on.id === 'grid') { const b = document.querySelector('#gridEvents button'); if (b) b.click(); } else if (on.id === 'card') click('bCardStart'); else if (on.id === 'career') click('bCareerBack'); } return run; });
         const t0 = Date.now();
