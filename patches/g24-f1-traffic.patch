@@ -1,0 +1,58 @@
+--- a/apexf1.html	2026-10-20 08:31:13.945806283 -0500
++++ b/apexf1.html	2026-10-20 08:30:50.144557062 -0500
+@@ -1238,10 +1238,10 @@
+     const targetYaw=Math.atan2(f.tz,f.tx) + this.headAngle*1.2 + (this.spin>0? this.spin*6:0);
+     this.yaw += angDiff(this.yaw,targetYaw)*Math.min(1,dt*8);
+     this.mesh.rotation.y=-this.yaw;
+-    // wheels spin + front steer
++    // wheels spin around their axle (local Z) + front steer
++    // (G-24: spinning children on rotation.y tumbled the tires - the swirling rims)
+     const wSpin=this.v*dt*2.4;
+-    for(const w of this.mesh.userData.wheels) w.rotation.y+=0; // spin around x via child
+-    for(const w of this.mesh.userData.wheels){ w.children[0].rotation.y+=wSpin; w.children[1].rotation.y+=wSpin; }
++    for(const w of this.mesh.userData.wheels) w.rotation.z-=wSpin;
+     this.mesh.userData.wheels[0].rotation.y=this.steer*0.4;
+     this.mesh.userData.wheels[1].rotation.y=this.steer*0.4;
+     // DRS flap
+@@ -1396,9 +1396,20 @@
+     if(a.finished&&b.finished) continue;
+     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
+     const dd=a.d-b.d;
+-    if(Math.abs(ds)<5.2 && Math.abs(dd)<2.3){
+-      const push=(2.3-Math.abs(dd))*Math.sign(dd||0.1)*dt*8;
++    if(Math.abs(ds)<5.6 && Math.abs(dd)<2.7){
++      // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
++      // and push fore-aft too so a car cannot sit inside the one ahead
++      const push=(2.7-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
+       a.d+=push; b.d-=push;
++      if(Math.abs(dd)<2.0 && Math.abs(ds)<5.2 && Math.abs(ds)>0.01){
++        const sN=((a.s%Track.length)+Track.length)%Track.length;
++        if(sN>30 && sN<Track.length-30){ // keep clear of the lap line
++          const drift=(5.2-Math.abs(ds))*dt*2*Math.sign(ds);
++          a.s+=drift; b.s-=drift;
++        }
++        const ahead=ds>0?a:b, behind=ds>0?b:a;
++        if(behind.v>ahead.v) behind.v=ahead.v; // no rear-ending into the car ahead
++      }
+       const avg=(a.v+b.v)/2*0.985;
+       if(Math.abs(a.v-b.v)>8){ // harder hit -> possible spin for the one behind
+         const behind=ds>0?b:a;
+@@ -1735,7 +1746,7 @@
+     $('lapTxt').textContent=`LAP ${Math.min(p.lap,Race.laps)}/${Race.laps}`;
+     document.querySelector('#lapbox .pos').textContent='P'+p.position;
+     const ahead=order[p.position-2];
+-    $('gapbox').textContent = ahead? `GAP +${p._gapF1.toFixed(1)}s ${ahead.name}` : 'LEADER — clean air';
++    $('gapbox').textContent = ahead? `GAP +${(p._gapF1||0).toFixed(1)}s ${ahead.name}` : 'LEADER — clean air';
+     const t=TIRES[p.tire];
+     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
+     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
+@@ -2029,6 +2040,9 @@
+ function updateQuali(dt){
+   const p=Race.player;
+   readInput(p); p.update(dt);
++  // G-24: the other cars circulate in qualifying too - the owner is not the only one driving
++  for(const c of Race.cars){ if(!c.isPlayer){ aiDrive(c,dt); c.update(dt); } }
++  carContact(Race.cars,dt);
+   const rpm=clamp(p.v/97,0,1); Aud.engine(rpm,p.throttle);
+   Race.updateCamera(dt); HUD.update(Race.positions());
+   Aud.crowdTick(dt,0.1); Track.updateCrowd(dt,0); RainFX.update(dt);
