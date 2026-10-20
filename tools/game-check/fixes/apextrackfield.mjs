@@ -684,33 +684,22 @@ export default [
       // costs a large slice of a second, and the old poll-per-screen navigation of
       // two full events plus two judged flights overran the runner's 30 s cap. The
       // reload escape for a race left running stays, one level up.
-      const judgeFlight = async (label) => {
-        // samples the flight, then returns the mark-phase view (or an error string)
-        let flight = [], g = 0, mark = null;
-        while (budget() && g++ < 70) {
-          // JOB G-22: phase and view in ONE eval. Reading them in two evals a beat
-          // apart let a slow page land the view AFTER the flight ended (implement
-          // already on the ground) and file it as a flight sample - the check then
-          // swore the throw was never in the air. Same checks, one instant.
-          const s = await h.eval(() => { const e = window.__tf && window.__tf.eng(); const tf = window.__tf; return { phase: e ? e.phase : null, v: tf && tf.throwView ? tf.throwView() : null }; });
-          if (s.phase === 'flight') { const v = s.v; if (v && v.impl) flight.push(v); if (flight.length >= 3) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); return true; }); }
-          else if (s.phase === 'mark') { mark = s.v; break; }
-          await h.wait(90); // JOB G-22: denser polls - a 1.6 s flight on a busy page yields only a handful of samples at 150 ms
-        }
-        if (flight.length < 2) return label + ': no flight could be sampled - the throw was never visible to the camera check';
+      const startRec = () => h.eval(() => { if (window.__tfrecIv) clearInterval(window.__tfrecIv); window.__tfrec = { flight: [], mark: null, lastFt: -1 }; window.__tfrecIv = setInterval(() => { const e = window.__tf && window.__tf.eng(); const tf = window.__tf; if (!e || !tf || !tf.throwView) return; const v = tf.throwView(); if (e.phase === 'flight' && v && v.impl && Math.abs(e.ft - window.__tfrec.lastFt) > 0.001) { window.__tfrec.lastFt = e.ft; window.__tfrec.flight.push({ y: v.impl.y, camD: Math.hypot(v.cam.x - v.impl.x, v.cam.z - v.impl.z), lookD: Math.hypot(v.look.x - v.impl.x, v.look.z - v.impl.z) }); } else if (e.phase === 'mark' && !window.__tfrec.mark) { window.__tfrec.mark = v; } }, 25); return true; });
+      const readRec = () => h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const r = window.__tfrec; if ((r && r.mark) || ++n > 120) { clearInterval(iv); if (window.__tfrecIv) { clearInterval(window.__tfrecIv); window.__tfrecIv = null; } res(r || null); } }, 100); }));
+      const judgeRec = (label, rec) => {
+        // JOB G-22 (v8): the flight is judged from the IN-PAGE recording, one entry
+        // per painted frame. Outside polls kept missing the flight's middle: on
+        // the robot's busy page an eval round-trip costs a big slice of a second,
+        // so two or three polls landed on the flight's first painted frame (or
+        // past its end) and the check swore a good throw was never in the air -
+        // discus one run, shot put the next. Same checks, same bars, real frames.
+        if (!rec || rec.flight.length < 2) return label + ': no flight could be sampled - the throw was never visible to the camera check';
+        const flight = rec.flight, mark = rec.mark;
         const mid = flight[Math.floor(flight.length / 2)];
-        // JOB G-22: the airborne check reads the flight's PEAK height across the
-        // samples, not the single middle one - on the robot's busy page the middle
-        // sample can carry the implement's stale painted position from the flight's
-        // first frame (y ~1.1 m at the circle) while the samples around it track it
-        // through the air. Same 1.2 m bar: a throw that never leaves the ground
-        // keeps every sample at ~1.1 m and still fails.
-        const peak = flight.reduce((a, v) => (v.impl && v.impl.y > a ? v.impl.y : a), 0);
+        const peak = flight.reduce((a, v) => (v.y > a ? v.y : a), 0);
         if (peak < 1.2) return label + ': the implement was never seen in the air during its flight';
-        const camD = Math.hypot(mid.cam.x - mid.impl.x, mid.cam.z - mid.impl.z);
-        if (camD > 22) return label + ': the camera stayed at the circle while the throw flew - ' + camD.toFixed(0) + 'm away at mid-flight (it must follow the throw through the air)';
-        const lookD = Math.hypot(mid.look.x - mid.impl.x, mid.look.z - mid.impl.z);
-        if (lookD > 12) return label + ': the camera was not looking at the flying implement (look point ' + lookD.toFixed(0) + 'm from it)';
+        if (mid.camD > 22) return label + ': the camera stayed at the circle while the throw flew - ' + mid.camD.toFixed(0) + 'm away at mid-flight (it must follow the throw through the air)';
+        if (mid.lookD > 12) return label + ': the camera was not looking at the flying implement (look point ' + mid.lookD.toFixed(0) + 'm from it)';
         if (!mark) return label + ': the throw never reached the landing (mark) phase';
         if (!mark.mark || !mark.mark.vis) return label + ': no landing marker shows where the throw landed';
         if (mark.impl == null || Math.abs(mark.impl.x - mark.mark.x) > 2) return label + ': the landing marker is not where the implement landed';
@@ -722,9 +711,10 @@ export default [
       // JOB G-22 (v7): the hold-and-release happens IN-PAGE on a 50 ms ticker (the
       // same pointer events on the same button, held the same 1100 ms) - polling
       // for the 'hold' phase from outside cost seconds of eval round-trips.
+      await startRec();
       const threw = await h.eval(() => new Promise(res => { let n = 0, downAt = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); const el = document.getElementById('btnA'); if (!e || !el) { if (++n > 160) { clearInterval(iv); res(false); } return; } if (e.phase === 'hold' && !downAt) { downAt = Date.now(); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9 })); } else if (downAt && Date.now() - downAt >= 1100) { el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 })); clearInterval(iv); res(true); return; } if (++n > 160) { clearInterval(iv); res(false); } }, 50); }));
       if (!threw) return 'the discus throw never started (no hold phase)';
-      const dj = await judgeFlight('discus');
+      const dj = judgeRec('discus', await readRec());
       if (dj !== true) return dj;
       // finish the discus event so we can move on
       // JOB G-22 (v7): finish the event IN-PAGE - the same driver actions as the
@@ -743,9 +733,10 @@ export default [
       // arc 34-48 deg for ~0.25 s), so polling them from outside misses them on a
       // slow page - an in-page watcher makes the SAME action() calls the instant
       // the meter is in the window, and reports back when the throw is away.
+      await startRec();
       const shotFlew = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { clearInterval(iv); res(false); return; } if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 250) { clearInterval(iv); res(false); } }, 30); }));
       if (!shotFlew) return 'the shot put throw never flew';
-      const sj = await judgeFlight('shot put');
+      const sj = judgeRec('shot put', await readRec());
       if (sj !== true) return sj;
       return true;
     },
