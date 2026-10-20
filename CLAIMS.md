@@ -166,4 +166,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-06 | window main | apexbaseball.html | g-06-baseball-apex |
 
