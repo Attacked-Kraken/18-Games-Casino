@@ -632,7 +632,7 @@ function attachAthletes(H){
    LED ribbons, tunnels, a closed roof with trusses and a ring of lights, and a centre-hung 4-sided scoreboard. The
    game's own ice, boards and glass stay. Units: this game uses feet (3.2808 per metre). */
 let ARENA = null;
-(async()=>{
+const stadiumPreload=(async()=>{ // G-35: named preload (see preloadsDone) — this build must land before play, never mid-game
   try{
     const { buildStadium } = await import('./venues/kit/stadium.js');
     const st = buildStadium(THREE, { preset:'arena', floor:{ a:30.48, b:12.95, r:8.53 }, setback:2.6, unit:3.2808,
@@ -644,17 +644,26 @@ let ARENA = null;
     window.__drawScoreboard = function(){ if(oldDraw) oldDraw(); st.setScore({ home:TEAMS.home.name, away:TEAMS.away.name, hs:scoreH, as:scoreA, clock:'', period:'' }); };
     window.__drawScoreboard();
     ARENA = st; window.__arena = st;
+    try{ renderer.compile(scene,camera); }catch(e){} // G-35: compile the arena's shaders at load (menu time), not on a play frame
   }catch(e){ /* kit missing: the simple stands and crowd stay */ }
 })();
-(async()=>{
+const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — the GLB parse + attach must land before play, never mid-game
   try{
     const { loadHumans } = await import('./characters/base-human-v2/humans.js');
     const H = await loadHumans(THREE, './characters/base-human-v2/');
     const { hockeyKit } = await import('./characters/base-human-v2/gear.js');
     HK = (o) => hockeyKit(THREE, HK.a, o);
     attachAthletes(H);
+    try{ renderer.compile(scene,camera); }catch(e){} // G-35: compile the athletes' shaders at load (menu time), not on a play frame
   }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
 })();
+/* G-35 preload gate: both heavy loads start at page open; the opening faceoff waits
+   until they have settled so their build/parse/compile never lands mid-game.
+   Capped at 6 s — a slow or missing kit can never block a game from starting. */
+function preloadsDone(){
+  return Promise.race([ Promise.allSettled([stadiumPreload, humansPreload]),
+    new Promise(r=>setTimeout(r,6000)) ]);
+}
 
 /* ================= puck ================= */
 const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), MAT.puck);
@@ -985,6 +994,11 @@ function whistle(text,sub){
 
 /* ================= AI ================= */
 function teamHasPuck(t){ return puck.owner&&puck.owner.team===t; }
+/* G-35: scratch rosters reused by every AI think — the .filter()/.slice() calls here
+   built new arrays several times a second per skater, and the garbage (plus the
+   closures) kept tripping the GC mid-play. Same rosters, same order, zero allocs. */
+const _mates=[], _mates2=[], _fw=[], _pmates=[];
+const _cyc=[[0,0],[0,0],[0,0]]; // O-zone cycle points, refilled per use
 function aiSkater(s,dt){
   const dir=TEAMS[s.team].dir;
   s.thinkT-=dt;
@@ -996,9 +1010,9 @@ function aiSkater(s,dt){
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
   if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
-  const mates=(isHome?homeSkaters:awaySkaters).filter(m=>m!==puck.owner && !(isHome&&m===controlled)); // the user's skater is input-driven — never count him as a chaser
+  const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
+  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled)) mates.push(m); } // the user's skater is input-driven — never count him as a chaser
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
-  const chasers=mates.slice(0,2);
   const carrier=puck.owner;
   if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
     const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
@@ -1019,7 +1033,7 @@ function aiSkater(s,dt){
     return;
   }
   const oppHas=carrier&&carrier.team!==s.team, weHave=carrier&&carrier.team===s.team;
-  let isChaser=chasers.includes(s);
+  let isChaser=(mates[0]===s||mates[1]===s); // G-35: the old chasers list was just mates.slice(0,2)
   if(!carrier && (puck.deadT||0)>1.0){ // DEAD PUCK: it has sat loose too long — the nearest skater on EACH team goes and gets it, no matter the slots
     const mine=(isHome?homeSkaters:awaySkaters); let nd=1e18;
     for(const m of mine){ if(m.goalie) continue; const dd=(m.pos.x-puck.pos.x)**2+(m.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
@@ -1052,9 +1066,11 @@ function aiSkater(s,dt){
   const cx=carrier?carrier.pos.x:puck.pos.x, cz=carrier?carrier.pos.z:puck.pos.z;
   let ax, az;
   if(weHave){ // SUPPORT: give the carrier real options - slot drive, far lane, points step up
-    const mates2=(isHome?homeSkaters:awaySkaters).filter(m=>m!==carrier);
-    const fw=mates2.filter(m=>m.role==='C'||m.role==='LW'||m.role==='RW')
-      .sort((p,q)=>((p.pos.x-cx)**2+(p.pos.z-cz)**2)-((q.pos.x-cx)**2+(q.pos.z-cz)**2));
+    const mates2=_mates2; mates2.length=0; // G-35: scratch rosters (were two .filter() arrays per think)
+    for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==carrier) mates2.push(m); }
+    const fw=_fw; fw.length=0;
+    for(const m of mates2){ if(m.role==='C'||m.role==='LW'||m.role==='RW') fw.push(m); }
+    fw.sort((p,q)=>((p.pos.x-cx)**2+(p.pos.z-cz)**2)-((q.pos.x-cx)**2+(q.pos.z-cz)**2));
     if(s.role==='LD'||s.role==='RD'){ ax=dir*BLUE+dir*3; az=s.role==='LD'?-17:17; } // points at the attacking blue line
     else if(fw[0]===s){ ax=clamp(cx+dir*21,-88,88); az=clamp(-cz*0.35,-15,15); } // nearest forward drives the slot
     else if(fw[1]===s){ ax=clamp(cx+dir*7,-88,88); az=cz>0?-30:30; } // second forward: far-side lane, wide open
@@ -1065,7 +1081,7 @@ function aiSkater(s,dt){
       else if(s.role==='C'){ ax=carrier.pos.x-dir*9; az=carrier.pos.z*0.5; }
       else { ax=dir*-74; az=(s.role==='LD'?-20:20); }
     } else if(cDepth>50 && possT[s.team]>3 && (s.role==='C'||s.role==='LW'||s.role==='RW')){ // O-ZONE CYCLE: rotate corner / behind the net / slot
-      const sg=Math.sign(carrier.pos.z||1), cyc=[[dir*88, sg*34],[dir*95, 0],[dir*72, -sg*10]];
+      const sg=Math.sign(carrier.pos.z||1), cyc=_cyc; cyc[0][0]=dir*88; cyc[0][1]=sg*34; cyc[1][0]=dir*95; cyc[1][1]=0; cyc[2][0]=dir*72; cyc[2][1]=-sg*10; // G-35: refilled scratch (was 4 new arrays per think)
       const step=Math.floor(possT[s.team]/2.5)%3;
       const slot = fw[0]===s ? 2 : fw[1]===s ? 0 : 1; // fw0 takes the slot point of the rotation
       const cp=cyc[(slot+step)%3]; ax=clamp(cp[0],-96,96); az=clamp(cp[1],-38,38);
@@ -1090,7 +1106,8 @@ function aiSkater(s,dt){
   s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
 }
 function aiPass(s){
-  const mates=(s.team==='home'?homeSkaters:awaySkaters).filter(m=>m!==s&&!m.inBox);
+  const mates=_pmates; mates.length=0; // G-35: scratch roster (was a .filter() array per pass)
+  for(const m of (s.team==='home'?homeSkaters:awaySkaters)){ if(m!==s&&!m.inBox) mates.push(m); }
   let best=null,bs=-1e9;
   for(const m of mates){ const dx=m.pos.x-s.pos.x, dz=m.pos.z-s.pos.z, d=Math.hypot(dx,dz)||1;
     if(d>75) continue;
@@ -1133,12 +1150,13 @@ function bouncePuck(){
       puck.pos.x=Math.sign(x)*(ccx+nx*(RINK.CR-r)); puck.pos.z=Math.sign(z)*(ccz+nz*(RINK.CR-r));
       const vn=puck.vel.x*nx+puck.vel.z*nz;
       if(vn>0){ puck.vel.x-=2*vn*nx*rest; puck.vel.z-=2*vn*nz*rest; puck.shot=null; } } }
-  // goal posts
-  [[GOAL_LINE],[-GOAL_LINE]].forEach(([gx])=>{ [-GOAL_HALF,GOAL_HALF].forEach(pz=>{
-    const dx=puck.pos.x-gx, dz=puck.pos.z-pz, d=Math.hypot(dx,dz);
-    if(d<POST_R+r&&d>0.01){ const nx=dx/d,nz=dz/d, vn=puck.vel.x*nx+puck.vel.z*nz;
-      puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
-      if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; } } }); });
+  // goal posts — plain loops (G-35: this ran every physics step and built arrays + closures each time)
+  for(let gi=0;gi<2;gi++){ const gx=gi?-GOAL_LINE:GOAL_LINE;
+    for(let pi=0;pi<2;pi++){ const pz=pi?GOAL_HALF:-GOAL_HALF;
+      const dx=puck.pos.x-gx, dz=puck.pos.z-pz, d=Math.hypot(dx,dz);
+      if(d<POST_R+r&&d>0.01){ const nx=dx/d,nz=dz/d, vn=puck.vel.x*nx+puck.vel.z*nz;
+        puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
+        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; } } } }
 }
 const _des=new THREE.Vector3(); // reused scratch (was: allocated per skater per frame)
 function stepSkater(s,dt){
@@ -1246,11 +1264,12 @@ function stepPuck(dt){
 let prevPuckX=0;
 let offArm=null; // delayed offside: {team, t}
 const possT={home:0,away:0}; // continuous possession clock per team, drives the cycle
+const TEAM_IDS=['home','away']; // G-35: hoisted — rules() built this array every physics step
 function rules(dt){
   if(state!=='play') return;
   const px=puck.pos.x;
   for(const sk of skaters){ if(sk.inBox){ sk.penT-=dt; if(sk.penT<=0) endPenalty(sk); } } // every boxed man serves his own clock (two can sit at once)
-  for(const t of ['home','away']){ const bx=skaters.filter(x=>x.team===t&&x.inBox); PEN[t]=bx.length?bx.reduce((a,b)=>a.penT<=b.penT?a:b):null; }
+  for(const t of TEAM_IDS){ let pen=null; for(const x of skaters){ if(x.team===t&&x.inBox&&(!pen||x.penT<pen.penT)) pen=x; } PEN[t]=pen; } // G-35: one pass, no filter/reduce garbage per step (same pick: earliest lowest penT)
   if(PEN.home||PEN.away) updateHUD();
   if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
   // GOAL: puck crosses the goal line between the posts = ALWAYS a goal (JOB J10)
@@ -1261,7 +1280,8 @@ function rules(dt){
   if(offArm){
     const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
     const inZone=dir>0?px>line:px<line;
-    const stillOff=(t==='home'?homeSkaters:awaySkaters).some(o=>!o.goalie&&!o.inBox&&(dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5)); // JOB J10 NEW: really over (1.5m), not a skate blade
+    let stillOff=false; // G-35: was .some() with a fresh closure every step while the arm was up
+    for(const o of (t==='home'?homeSkaters:awaySkaters)){ if(!o.goalie&&!o.inBox&&(dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5)){ stillOff=true; break; } } // JOB J10 NEW: really over (1.5m), not a skate blade
     if(!inZone||!stillOff){ offArm=null; } // tagged up or the puck came out — play on
     else if((puck.owner&&puck.owner.team===t) || (offArm.t-=dt)<=0){
       const dot=nearestDot(px*0.5,puck.pos.z>0?20:-20), d=DOTS[dot];
@@ -1270,12 +1290,13 @@ function rules(dt){
     }
   }
   if(!offArm){
-    for(const t of ['home','away']){
+    for(const t of TEAM_IDS){
       const dir=TEAMS[t].dir, line=dir*BLUE;
       const crossed=dir>0?(prevPuckX<=line&&px>line):(prevPuckX>=line&&px<line);
       if(!crossed) continue;
-      const ahead=(t==='home'?homeSkaters:awaySkaters).filter(o=>!o.goalie&&!o.inBox&&o!==puck.owner);
-      if(ahead.some(o=>dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5)){ // JOB J10 NEW: really over
+      let anyAhead=false; // G-35: was .filter()+.some() (two passes + garbage) on every blue-line crossing
+      for(const o of (t==='home'?homeSkaters:awaySkaters)){ if(o.goalie||o.inBox||o===puck.owner) continue; if(dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5){ anyAhead=true; break; } }
+      if(anyAhead){ // JOB J10 NEW: really over
         offArm={team:t, t:1.4}; banner('OFFSIDE WATCH', TEAMS[t].name+' · TAG UP!', 1200, '#ffd34d'); break;
       }
     }
@@ -1482,9 +1503,10 @@ function gameOver(){
 
 /* ================= wiring ================= */
 document.getElementById('back').addEventListener('click',()=>{ location.href='sports.html'; });
-document.getElementById('playBtn').addEventListener('click',()=>{
+document.getElementById('playBtn').addEventListener('click',async()=>{
   document.getElementById('menu').style.display='none'; hornResume();
   Mus.ensure(); Mus.setMode('game');
+  await preloadsDone(); // G-35: arena + athletes finish loading BEFORE the faceoff, never mid-game
   faceoff(0,0,'OPENING FACEOFF');
 });
 document.getElementById('viewBtn').addEventListener('click',()=>cycleView());
