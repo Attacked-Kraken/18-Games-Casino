@@ -94,7 +94,8 @@
   #lapT { font:900 14px/1.35 system-ui; text-shadow:0 2px 4px #000; }
   #lapT b { color:var(--cyan); }
   #mini { position:absolute; top:calc(8px + var(--sat)); right:calc(8px + var(--sar)); width:128px; height:128px; border-radius:50%; background:#0a0820aa; border:2px solid #19e6ff55; box-shadow:0 0 22px #19e6ff33; }
-  #spd { position:absolute; bottom:calc(10px + var(--sab)); right:calc(108px + var(--sar)); width:176px; height:176px; }
+  /* owner Oct 19 9:30 PM: "the speedometer is behind buttons" - it sits LEFT of NITRO and ABOVE DRIFT, touching no button */
+  #spd { position:absolute; bottom:calc(100px + var(--sab)); right:calc(104px + var(--sar)); width:150px; height:150px; }
   #pop { position:absolute; top:28%; left:0; right:0; text-align:center; font:italic 900 26px system-ui; color:#fff; text-shadow:0 0 16px #19e6ff, 0 2px 0 #000; opacity:0; transition:opacity .25s, transform .25s; }
   #msg { position:absolute; top:38%; left:0; right:0; text-align:center; font:italic 900 86px system-ui; color:#fff; text-shadow:0 0 30px #ff2bd6, 0 0 60px #19e6ff, 0 4px 0 #000; opacity:0; }
   #wrong { position:absolute; top:22%; left:0; right:0; text-align:center; font:900 22px system-ui; color:#ff5a6a; text-shadow:0 0 12px #f00; display:none; }
@@ -139,7 +140,7 @@
   input.code { font:900 26px ui-monospace,monospace; letter-spacing:.2em; text-transform:uppercase; text-align:center; width:100%; padding:10px; border-radius:14px; border:1px solid #ffffff44; background:#0008; color:#fff; }
   @media (max-height:520px) and (orientation:landscape) { #menu { padding-top:calc(8px + var(--sat)); } #logo { max-height:36vh; } #mbtns { grid-template-columns:repeat(3,1fr); width:min(760px,100%); } #mbtns .wide { grid-column:1/4; } #mbtns .neo { padding:11px 8px; font-size:13px; } #gopts { min-height:62px; } .go { padding:6px 8px; } #gstats { width:150px; padding:7px 9px; } }
   @media (orientation:portrait) { #spd { bottom:calc(196px + var(--sab)); width:138px; height:138px; } }
-  @media (max-height:520px) { #logo { max-height:36vh; } #mbtns .wide { padding:13px; } #spd { width:140px; height:140px; } #pos { font-size:36px; } #mini { width:104px; height:104px; } #bCam,#bPause,#bMute { top:calc(118px + var(--sat)); } }
+  @media (max-height:520px) { #logo { max-height:36vh; } #mbtns .wide { padding:13px; } #spd { width:118px; height:118px; } #pos { font-size:36px; } #mini { width:104px; height:104px; } #bCam,#bPause,#bMute { top:calc(118px + var(--sat)); } }
   /* rec1 2026-10-10 (owner: totals box): short landscape phones keep the totals card in the free top-left corner under Back */
   @media (orientation:landscape) and (max-height:520px) { #recW { position:fixed; left:calc(10px + var(--sal)); top:calc(56px + var(--sat)); margin:0; z-index:21; } }
   /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
@@ -272,10 +273,10 @@ import { GLTFLoader } from './vendor/GLTFLoader.js';
 /* G-01: owner's player car - V12 Goblin 3D model, preloaded at boot so it's ready for menu/garage/race */
 /* G-04: real 3D cars - registry of fetched models, preloaded at boot */
 const GLB_MODELS = {
-  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat'], tire: ['car_tire'], rim: ['car_body'], glass: ['car_glass'] },
-  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'] },
-  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial001'], tire: ['tiretread'], rim: [], glass: [] },
-  shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [] },
+  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat'], tire: ['car_tire'], rim: ['car_body'], glass: ['car_glass'], rot: -Math.PI / 2 },
+  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'], rot: Math.PI / 2 },
+  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial001'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 },
+  shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
 };
 const glbTpl = {};
 for (const k of Object.keys(GLB_MODELS)) {
@@ -941,7 +942,10 @@ function makeGlbCar(id, cfg, o = {}) {
     else if (MC.glass.includes(mn) || nn.includes('glass')) q.material = glassMat;
   });
   /* G-01: the model's nose points +Z in its own space; the game drives toward +X in tilt space */
-  model.rotation.y = -Math.PI / 2;   /* owner Oct 19 8:40 PM photo: +PI/2 put the nose BACKWARDS. Measured: the low nose + windshield are at model -Z, so -PI/2 turns them to +X (forward) */
+  /* owner Oct 19 9:30 PM photos: every model points its own way - one turn for all put the wagons SIDEWAYS (and huge).
+     Measured per model (where the low nose / small front tires are): Goblin nose -Z, Patriot +Z, Tokii +Z, SHC -X.
+     rot turns each nose to +X (forward in the game). */
+  model.rotation.y = MC.rot;
   let box = new THREE.Box3().setFromObject(model);
   let size = box.getSize(new THREE.Vector3());
   model.scale.setScalar(P.L / size.x * 1.2); /* G-01: owner wants the car bigger */

@@ -92,6 +92,11 @@ Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half si
    picture before you say done.
 4. Give every car a real starting color - never white or grey by default.
 5. Before "done": a robot picture of the model in the garage AND in the race, nose pointing down the track.
+6. EVERY model has its OWN turn - never one turn for all (Oct 19: G-04 gave the wagons the Goblin's turn - they drove
+   sideways and came in huge). Find each model's nose (low front, smaller front tires) and give it its own value.
+7. Fix ONLY what the job says. Never rewrite the code around it (how cars sit on the track, steering, computer
+   drivers, cameras) - change the smallest piece that fixes the point (owner Oct 19: "Muses still mess stuff up while
+   trying to fix something else").
 
 ## 4. Feel
 
