@@ -1,0 +1,28 @@
+name: Merge robot
+# Owner Oct 19 2026: green Muse pull requests merge by themselves - no waiting on the laptop to press a card.
+# See tools/merge-robot.py for exactly which pull requests (fresh, not draft/hold, no conflicts, robot check passed).
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  check_suite:
+    types: [completed]
+  workflow_dispatch:
+concurrency:
+  group: merge-robot
+  cancel-in-progress: false
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: read
+jobs:
+  merge:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Merge green pull requests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/merge-robot.py
