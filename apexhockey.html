@@ -1386,8 +1386,14 @@ function stepCamera(dt){
   const s=controlled, fx=Math.cos(s.facing), fz=Math.sin(s.facing);
   if(camMode===2){        // CLOSE (owner Oct 18 ONE spec): 9m back along rink LONG axis (attacking dir), 5m up, look 6m ahead. NEVER rotates with skater.
     const ad=TEAMS.home.dir;
-    camTgt.set(s.pos.x-ad*9, 5, s.pos.z);
-    lookTgt.set(s.pos.x+ad*6, 1, s.pos.z);
+    // G-02 small fix: adjust around better - clamp inside the rink (never through the boards),
+    // rise over the glass when the skater is deep near the end boards, smooth the view.
+    let cx=s.pos.x-ad*9, cz=s.pos.z, cy=5;
+    cx=Math.max(-HX+7, Math.min(HX-7, cx));
+    cz=Math.max(-HZ+6, Math.min(HZ-6, cz));
+    const deepEnd=Math.abs(s.pos.x)/HX; if(deepEnd>0.78) cy=5+(deepEnd-0.78)*14; // rise over the glass deep in the zone
+    camTgt.set(cx, cy, cz);
+    lookTgt.set(s.pos.x+ad*6, 1, s.pos.z*0.92);
   } else if(camMode===3){ // PLAYER: ice-level over the shoulder
     camTgt.set(s.pos.x-fx*4.5, 2.2, s.pos.z-fz*4.5);
     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
@@ -1403,7 +1409,9 @@ function stepCamera(dt){
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
   const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
   camera.position.lerp(camTgt,k);
-  camera.lookAt(lookTgt);
+  if(!window.__lookCur) window.__lookCur=lookTgt.clone();
+  window.__lookCur.lerp(lookTgt, Math.min(1,5*dt)); // G-02: smooth the view direction (no snapping)
+  camera.lookAt(window.__lookCur);
   ring.position.set(controlled.pos.x,0.12,controlled.pos.z);
   ring.visible=(state==='play');
   ring.material.opacity=.62+.3*Math.sin(gameNow*5);
