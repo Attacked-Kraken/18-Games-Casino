@@ -1001,4 +1001,114 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-pole-vault-clears-bar',
+    ask: 'OWNER (2026-10-20): Pole vault - you can\'t see the player, he runs on the grass, has no pole and never goes over the bar. Make it a real vault: run down the runway holding a pole, plant it, swing up and over the bar onto the mat, camera beside him so you see it',
+    async test(page, h) {
+      // JOB G-43: on the LIVE screen the camera must travel BESIDE the
+      // vaulter down the runway (not sit parked at the bar while he runs
+      // unseen), and on the engine the vault must be a real vault - pole in
+      // his hands for the run-up, a plant at the box at the END of the 45 m
+      // runway, a swing that takes his body OVER the bar at the bar, the
+      // opening 4.00 m cleared, and a landing on the mat.
+      const t0 = Date.now();
+      const budget = () => Date.now() - t0 < 45000;
+      const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null, done: e ? !!e.done : false }; });
+      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      let started = false, guard = 0;
+      while (budget() && guard++ < 140 && !started) {
+        const s = await state();
+        if (!s.screen && s.ev === 'pv') started = true;
+        else if (!s.screen && s.ev) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.done = true; return true; });
+        else if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
+        else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
+        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /pole vault/i.test(x.textContent)); if (b) b.click(); return true; });
+        else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+        else if (s.screen === 'career') await h.eval(() => { const b = document.getElementById('bCareerBack'); if (b) b.click(); return true; });
+        await h.wait(200);
+      }
+      if (!started) return 'could not get into the pole vault event';
+      const live = await h.eval(() => new Promise((resolve) => {
+        const out = { rig: false, onRunway: false, deepOk: 0, deep: 0 };
+        let n = 0;
+        const iv = setInterval(() => {
+          const e = window.__tf && window.__tf.eng();
+          n++;
+          if (e && e.r) {
+            // stride him down the runway for the camera samples, then HOLD
+            // him mid-runway: the sim banks time on slow screens, so an
+            // unguarded driver runs him through every attempt before the
+            // measured vault below even starts.
+            if (e.attLeft < 3 || e.r.pos >= 30) { e.r.speed = 0; }
+            else if (e.stride && e.phase === 'approach') { e.stride(n % 2 ? 'R' : 'L'); if (e.r.pos < 40) e.r.speed = Math.max(e.r.speed || 0, 9.0); }
+          }
+          if (n % 3 === 0) {
+            try {
+              const rigs = window.__tf.rigs();
+              const g = rigs && rigs[0] && rigs[0].group;
+              const cam = window.__tf.camPos();
+              const pos = e && e.r ? e.r.pos : -1;
+              if (g && cam) {
+                if (g.visible) out.rig = true;
+                if (Math.abs(g.position.z + 20) < 1.6 && g.position.x > -78 && g.position.x < -55) out.onRunway = true;
+                if (pos >= 20 && pos <= 42.5) {
+                  out.deep++;
+                  if (cam.z + 20 > 4 && Math.abs(cam.x - g.position.x) < 16) out.deepOk++;
+                }
+              }
+            } catch (err) {}
+          }
+          if (n >= 55) { clearInterval(iv); resolve(out); }
+        }, 90);
+      }));
+      if (!live.rig) return 'the vaulter never appears on screen during the pole vault run-up';
+      if (!live.onRunway) return 'the vaulter is not on the pole vault runway during his run-up - he runs on the grass';
+      if (!(live.deep >= 2 && live.deepOk >= 2)) return 'the camera does not travel beside the vaulter down the runway - it leaves him and you cannot see him run (deep-run samples ' + live.deepOk + '/' + live.deep + ')';
+      const res = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e) return { fail: 'no live engine on the pole vault screen' };
+        if (typeof e.vaultState !== 'function') return { fail: 'the vault has no real vault in it - no pole in his hands, no plant at the box, no swing over the bar' };
+        const attStart = e.attLeft;
+        let side = false, poleHeld = false, plantD = -1, maxYatBar = 0, barH = 0, over = false, onMat = false;
+        for (let i = 0; i < 6000; i++) {
+          const vs = e.vaultState();
+          if (!vs) break;
+          barH = vs.barH || barH;
+          if (vs.phase === 'approach') {
+            if (vs.poleHeld) poleHeld = true;
+            e.stride(side ? 'R' : 'L'); side = !side;
+            if (e.r.pos < 40) e.r.speed = Math.max(e.r.speed || 0, 9.0);
+            e.update(0.05);
+            const vs2 = e.vaultState();
+            if (vs2.phase === 'approach' && !e.done && e.clearAnim <= 0 && e.r.pos >= e.zoneLo) { plantD = e.r.pos; e.action(); }
+          } else if (vs.phase === 'bar') {
+            e.update(0.02);
+            const vs2 = e.vaultState();
+            if (Math.abs(vs2.x + 29.5) <= 0.9) maxYatBar = Math.max(maxYatBar, vs2.y);
+            if (Math.abs(e.marker - 0.5) <= e.gw * 0.7) e.action();
+          } else {
+            e.update(0.05);
+          }
+          const vs3 = e.vaultState();
+          if (vs3) {
+            if (Math.abs(vs3.x + 29.5) <= 0.9) maxYatBar = Math.max(maxYatBar, vs3.y);
+            if (vs3.over) over = true;
+            if (vs3.onMat) onMat = true;
+          }
+          if (e.best > 0 && (e.clearAnim <= 0 || e.done)) break;
+          if (e.done) break;
+          if (e.attLeft < attStart && e.best <= 0) return { fail: 'the vault attempt was lost before any clear (msg: ' + (e.msg || '') + ')', poleHeld, plantD };
+        }
+        return { poleHeld, plantD, maxYatBar, barH, over, onMat, best: e.best, dbg: 'attLeft ' + e.attLeft + ' done ' + e.done + ' phase ' + e.phase + ' msg ' + (e.msg || '') };
+      });
+      if (res.fail) return res.fail;
+      if (!res.poleHeld) return 'he runs down the runway with no pole in his hands';
+      if (!(res.plantD >= 40)) return 'he plants the pole at ' + (res.plantD < 0 ? 'never' : res.plantD.toFixed(1) + ' m') + ' - the plant must be at the box at the end of the 45 m runway';
+      if (!(res.maxYatBar > res.barH)) return 'he never goes over the bar - his highest point at the bar was ' + res.maxYatBar.toFixed(2) + ' m against a ' + res.barH.toFixed(2) + ' m bar (' + (res.dbg || '') + ')';
+      if (!res.over) return 'the vault never registers a crossing over the bar';
+      if (!(res.best > 0)) return 'the opening height was not cleared';
+      if (!res.onMat) return 'he does not land on the mat after clearing the bar';
+      return true;
+    },
+  },
 ];
