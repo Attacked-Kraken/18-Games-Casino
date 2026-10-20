@@ -536,4 +536,104 @@ export default [
     return true;
   },
 },
+/* ================= FRIEND CODE PLAY TEST (G-41, owner 2026-10-20) =================
+   My friend code is on the menu, a friend's code sets up their team, and
+   playing the friend match to the end puts the result on my record. */
+{
+  id: 'play-friend-code',
+  ask: 'friend codes: my code is on the menu, a friend code sets up their team, and the friend match result goes on my record',
+  async test(page, h) {
+    if (!await g37Reset(page, h, null)) return 'the game never came back to the menu after a reload';
+    // With no career there is no code yet - the menu says so.
+    const noCode = await h.eval(() => ((document.getElementById('myCode') || {}).textContent || ''));
+    if (!/start a career to get one/.test(noCode)) return 'the menu did not explain that a friend code needs a career first';
+    // A bad code is rejected with the game's own error, and sets up nothing.
+    await h.eval(() => { const b = document.getElementById('friendBtn'); if (b) b.click(); });
+    await h.eval(() => { document.getElementById('friendIn').value = 'APEX-NOT-A-CODE'; const b = document.getElementById('friendGo'); if (b) b.click(); });
+    const bad = await h.eval(() => ({
+      err: ((document.getElementById('friendErr') || {}).textContent || ''),
+      match: localStorage.getItem('apex_hockey_match'),
+    }));
+    if (!/does not check out/.test(bad.err)) return 'a bad friend code was not rejected (error says: ' + bad.err + ')';
+    if (bad.match) return 'a bad friend code still set up a match';
+    await h.eval(() => { const b = document.getElementById('friendClose'); if (b) b.click(); });
+    // Start a career (the game's own hub button) so the menu carries MY code.
+    await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
+    await h.eval(() => { const b = document.getElementById('hubNew'); if (b) b.click(); });
+    await g37HubClose(page, h);
+    const mine = await h.eval(() => {
+      const txt = ((document.getElementById('myCode') || {}).textContent || '');
+      const m = txt.match(/APEX-[A-Za-z0-9+/]+(?:-[A-Za-z0-9+/]+)*/);
+      if (!m) return { err: 'no friend code on the menu (menu says: ' + txt + ')' };
+      try {
+        let s = m[0].replace(/^APEX-?/, '').replace(/[-\s]/g, '');
+        while (s.length % 4) s += '=';
+        const p = JSON.parse(atob(s));
+        const c = JSON.parse(localStorage.getItem('apex_hockey_career_v1') || 'null');
+        if (!c || p.n !== c.star.name) return { err: 'my menu code names ' + p.n + ' but my star is ' + (c ? c.star.name : 'none') };
+        if (typeof p.o !== 'number') return { err: 'my menu code carries no star rating' };
+        return { code: m[0] };
+      } catch (e) { return { err: 'my menu code does not decode: ' + e.message }; }
+    });
+    if (mine.err) return mine.err;
+    // A friend's code, built the same way the game builds mine (APEX- +
+    // base64 JSON in 4-char chunks), for a different star: MIKO REYES, 88.
+    const b64 = Buffer.from(JSON.stringify({ v: 1, n: 'MIKO REYES', o: 88, g: 10, a: 12, w: 3, c: 1 }), 'utf8').toString('base64').replace(/=+$/, '');
+    const friendCode = 'APEX-' + (b64.match(/.{1,4}/g) || [b64]).join('-');
+    // Enter it through the game's own friend overlay - a good code saves
+    // the match and reloads the page with their team in the building.
+    await h.eval(() => { const b = document.getElementById('friendBtn'); if (b) b.click(); });
+    try {
+      await h.eval((code) => { document.getElementById('friendIn').value = code; const b = document.getElementById('friendGo'); if (b) b.click(); }, friendCode);
+    } catch (e) {} // the reload kills that eval - expected
+    let menuBack = false;
+    for (let i = 0; i < 24 && !menuBack; i++) {
+      await h.wait(400);
+      menuBack = await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false);
+    }
+    if (!menuBack) return 'the game never came back to the menu after the friend code was entered';
+    const set = await h.eval(() => ({
+      btn: ((document.getElementById('careerBtn') || {}).textContent || ''),
+      cancel: (document.getElementById('cancelMatch') || {}).style.display || '',
+      match: localStorage.getItem('apex_hockey_match'),
+    }));
+    if (!/PLAY FRIEND MATCH vs REYES ALL-STARS/.test(set.btn)) return 'the friend code did not set up the match on the menu (button says: ' + set.btn + ')';
+    if (set.cancel !== 'block' || !set.match) return 'the friend match was not saved as the pending match';
+    // Play the friend match to the end (the game's own buttons + clock).
+    await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
+    await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
+    let playing = false;
+    for (let i = 0; i < 40 && !playing; i++) {
+      await h.wait(250);
+      const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+      if (st === 'play') playing = true;
+    }
+    if (!playing) return 'the friend match never reached play';
+    const awayName = await h.eval(() => ((document.getElementById('nmA') || {}).textContent || ''));
+    if (awayName !== 'REYES ALL-STARS') return 'the friend\'s team is not the one on the ice (scoreboard away team: ' + awayName + ')';
+    await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
+    let over = false;
+    for (let i = 0; i < 40 && !over; i++) {
+      await h.wait(200);
+      const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+      if (st === 'over') over = true;
+    }
+    if (!over) return 'the friend match did not end';
+    const done = await h.eval(() => {
+      const c = JSON.parse(localStorage.getItem('apex_hockey_career_v1') || 'null');
+      return {
+        sub: ((document.getElementById('finalSub') || {}).textContent || ''),
+        again: ((document.getElementById('againBtn') || {}).textContent || ''),
+        match: localStorage.getItem('apex_hockey_match'),
+        fw: c && c.friends ? c.friends.w : -1,
+        fl: c && c.friends ? c.friends.l : -1,
+      };
+    });
+    if (done.match) return 'the friend match is still pending after it was played';
+    if (done.fw !== 1 || done.fl !== 0) return 'the friend match win did not go on my record (friends: ' + done.fw + '-' + done.fl + ')';
+    if (!/Friend match in the books/.test(done.sub) || !/1–0/.test(done.sub)) return 'the end screen did not put the friend match on my record (says: ' + done.sub + ')';
+    if (!/BACK TO MENU/.test(done.again)) return 'the end screen did not offer the way back after the friend match';
+    return true;
+  },
+},
 ];
