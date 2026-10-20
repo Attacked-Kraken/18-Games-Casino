@@ -215,4 +215,34 @@ export default [
       });
     },
   },
+  {
+    id: 'play-goblin-name-wrap',
+    ask: "APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body",
+    async test(page, h) {
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
+      await h.wait(300);
+      const opened = await h.press('#mGarage');
+      if (!opened) return 'Garage button on the menu could not be pressed';
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        const g = E.S.cars.goblin;
+        if (!g) return 'no goblin in the garage';
+        if (g.wrap !== 'name') return "goblin wrap is '" + g.wrap + "' - APEX ARCADE should be on by default";
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 8);
+          setTimeout(() => {
+            const R = E.R; if (!R || !R.P) return res('no race / player car');
+            const decals = [];
+            R.P.car.root.traverse((q) => { if (q.isMesh && q.name === 'apexname') decals.push(q); });
+            if (decals.length < 2) return res('player Goblin has ' + decals.length + ' APEX ARCADE decals - need both sides');
+            const zs = decals.map((d) => { d.geometry.computeBoundingBox(); const bb = d.geometry.boundingBox; return (bb.min.z + bb.max.z) / 2; });
+            if (!zs.some((z) => z > 0.3) || !zs.some((z) => z < -0.3)) return res('decals are not on opposite sides: ' + zs.map((z) => z.toFixed(2)).join(','));
+            for (const d of decals) { if (!d.material || !d.material.map) return res('a decal has no letter texture'); }
+            res(true);
+          }, 1500);
+        });
+      });
+    },
+  },
 ];
