@@ -9,6 +9,7 @@ was already sent. Muses: don't edit this file.
 ## window 1 · apexbaseball.html
 - [x] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test in tools/game-check/fixes/apexbaseball.mjs. (sent as G-08)
 - [x] The game freezes for about 1.5 seconds right after the start (the robot's gameplay picture is frozen) - find what loads or builds at that moment and make the start smooth. (sent as G-08)
+- [ ] Short freezes during play: the robot sees about 6 stalls in 6 seconds (worst 0.4 s) - stop making new objects every frame and preload what loads mid-game so play is smooth. Keep everything else exactly as now.
 - [ ] Make sure there are at least 5 play tests that play baseball by its rules (pitch, hit, out, run scores, inning ends) in tools/game-check/fixes/apexbaseball.mjs.
 
 ## window 2 · apexhockey.html
@@ -19,7 +20,7 @@ was already sent. Muses: don't edit this file.
 
 ## window 3 · apexflight.html
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
-- [ ] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now.
+- [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
 - [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
