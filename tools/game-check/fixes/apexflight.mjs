@@ -62,16 +62,24 @@ export default [
         F.P.pitch = 0; F.inp.pitchUp = 0;
         return new Promise((res) => {
           setTimeout(() => {
-            const noPullStall = F.stallNow;
-            // now really pull up at the same slow speed
-            F.inp.pitchUp = 1;
-            setTimeout(() => {
-              const pullStall = F.stallNow;
-              F.inp.pitchUp = 0;
-              if (noPullStall) return res('stalled during normal level flying at 18 m/s (too easy)');
-              if (!pullStall) return res('no stall when really pulling up slow (too forgiving)');
-              res(true);
-            }, 700);
+            if (F.stallNow) return res('stalled during normal level flying at 18 m/s (too easy)');
+            // now really pull up at the same slow speed: hold the real key
+            // (pollKeys reads keys[] every frame and resets inp.pitchUp to 0
+            // when nothing is held, so setting inp directly does not stick)
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            const t0 = Date.now();
+            const iv = setInterval(() => {
+              if (F.stallNow) {
+                clearInterval(iv);
+                window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                return res(true);
+              }
+              if (Date.now() - t0 > 3000) {
+                clearInterval(iv);
+                window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                return res('no stall when really pulling up slow (too forgiving)');
+              }
+            }, 200);
           }, 700);
         });
       });
