@@ -686,11 +686,18 @@ export default [
           const s = await h.eval(() => { const e = window.__tf && window.__tf.eng(); const tf = window.__tf; return { phase: e ? e.phase : null, v: tf && tf.throwView ? tf.throwView() : null }; });
           if (s.phase === 'flight') { const v = s.v; if (v && v.impl) flight.push(v); if (flight.length >= 3) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); return true; }); }
           else if (s.phase === 'mark') { mark = s.v; break; }
-          await h.wait(150);
+          await h.wait(90); // JOB G-22: denser polls - a 1.6 s flight on a busy page yields only a handful of samples at 150 ms
         }
         if (flight.length < 2) return label + ': no flight could be sampled - the throw was never visible to the camera check';
         const mid = flight[Math.floor(flight.length / 2)];
-        if (!mid.impl || mid.impl.y < 1.2) return label + ': the implement was never seen in the air during its flight';
+        // JOB G-22: the airborne check reads the flight's PEAK height across the
+        // samples, not the single middle one - on the robot's busy page the middle
+        // sample can carry the implement's stale painted position from the flight's
+        // first frame (y ~1.1 m at the circle) while the samples around it track it
+        // through the air. Same 1.2 m bar: a throw that never leaves the ground
+        // keeps every sample at ~1.1 m and still fails.
+        const peak = flight.reduce((a, v) => (v.impl && v.impl.y > a ? v.impl.y : a), 0);
+        if (peak < 1.2) return label + ': the implement was never seen in the air during its flight';
         const camD = Math.hypot(mid.cam.x - mid.impl.x, mid.cam.z - mid.impl.z);
         if (camD > 22) return label + ': the camera stayed at the circle while the throw flew - ' + camD.toFixed(0) + 'm away at mid-flight (it must follow the throw through the air)';
         const lookD = Math.hypot(mid.look.x - mid.impl.x, mid.look.z - mid.impl.z);
