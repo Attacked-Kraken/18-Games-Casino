@@ -93,38 +93,44 @@ export default [
       // leave the plane flying or crashed - and h.press never clicks a hidden
       // button. Return to the runway with the game's own buttons first:
       // menu FREE FLIGHT, crash-overlay tap, or the HUD RESET button.
+      // Then demand the VERIFIED fresh-spawn state (the exact runway start,
+      // on the ground, barely moving) before crediting a liftoff, so leftover
+      // state from another test can never fake a pass.
       const st = await h.eval(() => ({
         menu: !document.getElementById('startOv').hidden,
         crashed: !document.getElementById('crashOv').hidden,
-        ground: !!(window.__flight && window.__flight.P.ground),
       })).catch(() => null);
       if (!st) return 'no window.__flight hook';
-      if (!st.ground) {
-        try {
-          if (st.menu) await h.press('#btnFree');
-          else if (st.crashed) await h.press('#crashOv');
-          else await h.press('#resetBtn');
-        } catch (e) {}
-      }
+      try {
+        if (st.menu) await h.press('#btnFree');
+        else if (st.crashed) await h.press('#crashOv');
+        else await h.press('#resetBtn');   // flying (or anything else): fresh respawn
+      } catch (e) {}
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // fresh spawn = respawn(): pos (0, GEAR_H, -600), vel 0, thr 1, on ground.
+        // Thresholds fit the roll: the press returns ~1.8 s after the click,
+        // so by the first poll the plane is already doing ~5 m/s near z -595.
+        const atSpawn = () => F.P.ground === true && Math.abs(F.P.pos.x) < 2 &&
+          F.P.pos.z > -615 && F.P.pos.z < -480 && F.P.pos.y < 2 && F.P.vel.length() < 10;
         return new Promise((res) => {
           const t0 = Date.now();
-          let sawGround = F.P.ground === true;
+          let sawSpawn = false;
           const iv = setInterval(() => {
-            if (F.P.ground === true) sawGround = true;
-            if (sawGround && !F.P.ground && F.P.pos.y > 2) {
+            if (atSpawn()) sawSpawn = true;
+            if (sawSpawn && !F.P.ground && F.P.pos.y > 2) {
               clearInterval(iv);
-              res(true);
+              res(true);   // left the runway start, got airborne
             } else if (!document.getElementById('crashOv').hidden) {
               clearInterval(iv);
               res('plane crashed during the takeoff roll');
-            } else if (Date.now() - t0 > 22000) {
+            } else if (Date.now() - t0 > 23000) {
               clearInterval(iv);
-              res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
+              res(sawSpawn ? 'plane sat at the runway start but never lifted off'
+                          : 'plane did not start on the runway');
             }
-          }, 300);
+          }, 200);
         });
       });
     },
