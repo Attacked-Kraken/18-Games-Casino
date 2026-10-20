@@ -904,4 +904,101 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-relay-baton-handoff',
+    ask: 'OWNER (2026-10-20): 4x100 relay - nobody is waiting to take the baton. Show the next teammate standing in the exchange zone, starting to run as you come, and a real baton hand-off; same for the other teams',
+    async test(page, h) {
+      // JOB G-39: play the whole 4x100 on its real engine. For EVERY team and
+      // EVERY exchange the next runner must (a) be standing waiting inside the
+      // exchange zone while the carrier is still on his way, (b) start running
+      // before the hand-off (a flying start, not a standing teleport), and
+      // (c) take the baton with both runners together - the new carrier's race
+      // position must continue from where the receiver actually was.
+      const r = await h.eval(() => {
+        const X = window.__tf.engines();
+        const e = X.relay(X.EV_BY_ID['relay'], X.freeRivals());
+        if (!e || typeof e.relayState !== 'function')
+          return { fail: 'the relay has no waiting teammate at all - nobody stands in the exchange zone to take the baton' };
+        e.phase = 'run';
+        const st0 = e.relayState();
+        const nT = st0.teams.length;
+        if (nT < 2) return { fail: 'only one team in the relay - the other teams have no hand-off either' };
+        const trk = st0.teams.map(() => ({ waited: [false, false, false], moving: [false, false, false], cont: [0, 0, 0], gap: [99, 99, 99], exch: 0 }));
+        let prev = st0, t = 0, k = 0;
+        while (!e.done && t < 240) {
+          t += 1 / 60;
+          if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((k ^= 1) ? 'L' : 'R');
+          const pre = e.relayState();
+          const pt = pre.teams[0];
+          if (e.phase === 'run' && e.leg < 3 && pt.recvPos != null) {
+            const carrierRace = pt.carrierPos, zoneEnd = (e.leg + 1) * 100;
+            if (carrierRace >= zoneEnd - 20 && pt.carrierSpeed > 2) {
+              const gap = pt.recvPos - carrierRace;
+              if (gap <= 6 && gap >= -1) e.action();
+            }
+          }
+          e.update(1 / 60);
+          const st = e.relayState();
+          st.teams.forEach((tm, ti) => {
+            const T = trk[ti], pv = prev.teams[ti];
+            if (tm.leg < 3 && tm.recvPos != null) {
+              const zEnd = (tm.leg + 1) * 100, zStart = zEnd - 20;
+              const carrierFar = tm.carrierPos < zStart - 18;
+              if (carrierFar && tm.recvPos >= zStart - 2 && tm.recvPos <= zEnd + 2 && tm.recvSpeed < 0.5) T.waited[tm.leg] = true;
+              if (tm.recvSpeed > 1.2 && tm.carrierPos < zEnd) T.moving[tm.leg] = true;
+            }
+            if (tm.exchanges > pv.exchanges) {
+              const i = pv.leg;
+              T.exch = tm.exchanges;
+              T.cont[i] = Math.abs(tm.carrierPos - pv.recvPos);
+              T.gap[i] = Math.abs(pv.recvPos - pv.carrierPos);
+            }
+          });
+          prev = st;
+        }
+        return { done: e.done, total: st0 && prev.total, teams: prev.teams, trk, place: e.place };
+      });
+      if (r.fail) return r.fail;
+      if (!r.done) return 'the relay race never finished';
+      const names = ['your team', 'rival team 2', 'rival team 3', 'rival team 4'];
+      for (let ti = 0; ti < r.teams.length; ti++) {
+        const T = r.trk[ti], nm = names[ti] || ('team ' + (ti + 1));
+        if (r.teams[ti].exchanges < 3) return nm + ' made only ' + r.teams[ti].exchanges + ' of 3 baton hand-offs';
+        for (let i = 0; i < 3; i++) {
+          if (!T.waited[i]) return nm + ': nobody was standing waiting in exchange zone ' + (i + 1) + ' to take the baton';
+          if (!T.moving[i]) return nm + ': the next runner never started running before the hand-off in zone ' + (i + 1) + ' - no flying start';
+          if (!(T.gap[i] <= 8)) return nm + ': hand-off ' + (i + 1) + ' happened with the runners ' + T.gap[i].toFixed(1) + 'm apart - not a real baton hand-off';
+          if (!(T.cont[i] <= 2.5)) return nm + ': after hand-off ' + (i + 1) + ' the new carrier teleported ' + T.cont[i].toFixed(1) + 'm from where the receiver was - not a real hand-off';
+        }
+      }
+      return true;
+    },
+  },
+  {
+    id: 'finish-banner-never-covers-timer',
+    ask: 'OWNER (2026-10-20): the FINISH banner covers the timer at the top left',
+    async test(page, h) {
+      // JOB G-39: the HUD timer is DOM above the canvases, but it sat straight
+      // on the 3D picture with no backing - as the FINISH gantry fills the top
+      // of the screen on the run-in, its bright banner washes through the
+      // white timer digits and the owner cannot read his time. The timer block
+      // must sit on its own solid dark plate (like the position box already
+      // does), so the banner can never cover it.
+      const r = await h.eval(() => {
+        const main = document.getElementById('hudMain'), ev = document.getElementById('hudEvent'), hud = document.getElementById('hud'), ovl = document.getElementById('ovl');
+        if (!main || !ev || !hud) return { fail: 'timer elements missing' };
+        const plate = main.parentElement;
+        const cs = getComputedStyle(plate);
+        const m = /rgba?\(([^)]+)\)/.exec(cs.backgroundColor || '');
+        let alpha = 0;
+        if (m) { const parts = m[1].split(',').map(x => parseFloat(x)); alpha = parts.length > 3 ? parts[3] : 1; }
+        const zHud = parseInt(getComputedStyle(hud).zIndex || '0', 10), zOvl = parseInt(getComputedStyle(ovl).zIndex || '0', 10);
+        return { alpha, zHud, zOvl, plateBg: cs.backgroundColor };
+      });
+      if (r.fail) return r.fail;
+      if (!(r.zHud > r.zOvl)) return 'the HUD is not above the overlay canvas';
+      if (!(r.alpha >= 0.6)) return 'the timer at the top left has no solid backing (alpha ' + r.alpha + ') - the FINISH banner still covers it on the run-in';
+      return true;
+    },
+  },
 ];
