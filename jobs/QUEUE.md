@@ -9,8 +9,8 @@ was already sent. Muses: don't edit this file.
 ## window 1 · apexbaseball.html
 - [x] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test in tools/game-check/fixes/apexbaseball.mjs. (sent as G-08)
 - [x] The game freezes for about 1.5 seconds right after the start (the robot's gameplay picture is frozen) - find what loads or builds at that moment and make the start smooth. (sent as G-08)
-- [ ] Short freezes during play: the robot sees about 6 stalls in 6 seconds (worst 0.4 s) - stop making new objects every frame and preload what loads mid-game so play is smooth. Keep everything else exactly as now.
-- [ ] Make sure there are at least 5 play tests that play baseball by its rules (pitch, hit, out, run scores, inning ends) in tools/game-check/fixes/apexbaseball.mjs.
+- [x] Short freezes during play: the robot sees about 6 stalls in 6 seconds (worst 0.4 s) - stop making new objects every frame and preload what loads mid-game so play is smooth. Keep everything else exactly as now. (not needed: robot clean 4:53 AM, only the venue is left)
+- [x] Make sure there are at least 5 play tests that play baseball by its rules (pitch, hit, out, run scores, inning ends) in tools/game-check/fixes/apexbaseball.mjs. (not needed: robot clean 4:53 AM, only the venue is left)
 
 ## window 2 · apexhockey.html
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
