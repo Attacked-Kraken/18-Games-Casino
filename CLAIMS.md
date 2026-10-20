@@ -172,4 +172,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-40 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-40-baseball-ballpark |
 | G-17 | window 3 | apexflight.html (freeze check), jobs/G-17.md | g-17-flight-freeze |
 | G-39 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-39-relay-baton-v2 |
+| G-43 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-43-pole-vault |
 
