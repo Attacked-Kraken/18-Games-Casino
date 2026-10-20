@@ -388,7 +388,9 @@ for (const g of games) {
 
   for (const m of missing) r.fail.push('Missing file: ' + m);
   for (const e of [...shaderErr].slice(0, 2)) r.fail.push('Broken 3D shader (models using it are invisible): ' + e);
-  for (const e of [...errors].slice(0, 4)) r.check.push('Script error: ' + e);
+  // owner Oct 19 9:53 PM: a script error (the red "Game error caught" bar on his phone) BLOCKS the merge - only NEW ones a PR
+  // brings (errors main already has don't block; see STRICT below). The laptop tells that Muse the error line.
+  for (const e of [...errors].slice(0, 4)) r.fail.push('Script error: ' + e + ' - fix it before merging (this is the red "Game error caught" bar on the phone)');
   } catch (e) {
     r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
     for (const c of browser.contexts()) if (c !== lab.context()) await c.close().catch(() => {});
