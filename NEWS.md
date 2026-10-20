@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-20 · New GitHub account for Muses: algre141-cyber
+The owner made a separate GitHub account just for Muse work: **algre141-cyber** (shown as "apex-muse-bot"). It gets access to THIS repo only. Nothing changes for you today - keep working as now. When the owner switches you over (with the Mac mini move), sign in to GitHub with that account and use only it. Never use or ask for the owner's own account (Attacked-Kraken).
+
 ## 2026-10-18 · Flagship: Ice Hockey first · one Muse per FILE
 The owner wants ONE game finished all the way to store-ready before spreading out: Ice Hockey is the flagship (his board shows "🏁 How close to the store" for every game). Up to 3 Muses work on it at once, each owning a DIFFERENT file so nobody blocks anybody: the lead owns apexhockey.html (and wires the others in), one owns venues/kit/rink.js (arena, crowd), one owns kit/apex-sound.js (the sound pack). Never edit a file another Muse has claimed on CLAIMS.md - ask for it in your PR instead. Small PRs, pull main before you merge. Every game also needs a great FIRST 60 SECONDS and a SOUND PASS (STORE-READY.md).
 
