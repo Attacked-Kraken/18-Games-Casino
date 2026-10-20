@@ -178,4 +178,41 @@ export default [
       });
     },
   },
+  {
+    id: 'play-paint-own-colors',
+    ask: 'Every car shows its own paint: each real 3D model body material is replaced by that car paint, and grid paints are not all the same',
+    async test(page, h) {
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        // body material names inside each fetched GLB (from the .glb files themselves):
+        // if one of these names survives on a built car, the paint never reached the body
+        const BODY = { goblin: ['clearcoat'], vanta: ['paintjob'], nova: ['paintjob'], vortex: ['paintjob'], kestrel: ['palettematerial003', 'palettematerial002'], zenith: ['palettematerial003', 'palettematerial002'], titan: ['palettematerial003', 'palettematerial002'], brute: ['palettematerial001'], phantom: ['palettematerial001'] };
+        const check = () => {
+          const R = E.R; if (!R) return 'no race';
+          const paints = new Set();
+          for (const e of R.cars) {
+            if (e.cfg && e.cfg.paint) paints.add(e.cfg.paint.toLowerCase());
+            if (!e.car.paint || !e.cfg) return 'a car has no paint material';
+            if ('#' + e.car.paint.color.getHexString() !== e.cfg.paint.toLowerCase()) return e.carId + ' paint material is not its own paint color';
+            const bad = BODY[e.carId] || [];
+            let hit = '';
+            e.car.root.traverse((q) => { if (!q.isMesh) return; const ms = Array.isArray(q.material) ? q.material : [q.material]; for (const m of ms) { const mn = (m.name || '').toLowerCase(); if (bad.includes(mn)) hit = mn; } });
+            if (hit) return e.carId + ' body still wears the model material ' + hit + ' - paint did not reach the body';
+          }
+          if (paints.size < 2) return 'all grid paints are the same color';
+          return true;
+        };
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 8);
+          setTimeout(() => {
+            const a = check(); if (a !== true) return res(a);
+            const hi = E.PLACES.reduce((p, c) => (c.tier > p.tier ? c : p), E.PLACES[0]);
+            E.startRace(hi, 8);
+            setTimeout(() => res(check()), 3500);
+          }, 1500);
+        });
+      });
+    },
+  },
 ];
