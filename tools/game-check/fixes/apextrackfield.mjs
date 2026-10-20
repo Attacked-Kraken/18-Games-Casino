@@ -678,7 +678,12 @@ export default [
       // test left running (this test always starts inside the long-race test's
       // still-running 1500m). Now: plain data args, one combined read+click poll,
       // career exit, one reload escape.
-      const navTo = async (evId, btnSrc) => { let reloaded = false; const t1 = Date.now(); while (budget() && Date.now() - t1 < 15000) { const step = await h.eval((a) => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null; if (!screen && ev === a.evId) return 'there'; if (!screen && ev) return 'in-event'; const click = id => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; if (screen === 'results') click('bResMenu'); else if (screen === 'career') click('bCareerBack'); else if (screen === 'menu') click('bFree'); else if (screen === 'grid') { const re = new RegExp(a.btnSrc, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent)); if (b) b.click(); } else if (screen === 'card') click('bCardStart'); return screen || 'none'; }, { evId, btnSrc }); if (step === 'there') return true; if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); } await h.wait(350); } return false; };
+      const navTo = async (evId, btnSrc) => { for (let attempt = 0; attempt < 2; attempt++) { const r = await h.eval((a) => new Promise(res => { let n = 0; const iv = setInterval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null; if (!screen && ev === a.evId) { clearInterval(iv); res('there'); return; } if (!screen && ev) { clearInterval(iv); res('in-event'); return; } const click = id => { const b = document.getElementById(id); if (b) b.click(); }; if (screen === 'results') click('bResMenu'); else if (screen === 'career') click('bCareerBack'); else if (screen === 'menu') click('bFree'); else if (screen === 'grid') { const re = new RegExp(a.btnSrc, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent)); if (b) b.click(); } else if (screen === 'card') click('bCardStart'); if (++n > 110) { clearInterval(iv); res('timeout'); } }, 120); }), { evId, btnSrc }); if (r === 'there') return true; if (r === 'in-event' && attempt === 0) { await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); continue; } return false; } return false; };
+      // JOB G-22 (v7): navTo navigates IN-PAGE on a 120 ms ticker (one eval per trip
+      // instead of one per screen) - on the robot's busy page every eval round-trip
+      // costs a large slice of a second, and the old poll-per-screen navigation of
+      // two full events plus two judged flights overran the runner's 30 s cap. The
+      // reload escape for a race left running stays, one level up.
       const judgeFlight = async (label) => {
         // samples the flight, then returns the mark-phase view (or an error string)
         let flight = [], g = 0, mark = null;
@@ -714,20 +719,19 @@ export default [
       };
       // ---- DISCUS (hold to spin, release to throw)
       if (!await navTo('dt', 'Discus')) return 'the discus event never loaded';
-      let threw = false, g2 = 0;
-      while (budget() && g2++ < 30 && !threw) {
-        const s = await state();
-        if (s.phase === 'hold') { await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9 })); return true; }); await h.wait(1100); await h.eval(() => { const el = document.getElementById('btnA'); if (el) el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 })); return true; }); threw = true; }
-        await h.wait(200);
-      }
+      // JOB G-22 (v7): the hold-and-release happens IN-PAGE on a 50 ms ticker (the
+      // same pointer events on the same button, held the same 1100 ms) - polling
+      // for the 'hold' phase from outside cost seconds of eval round-trips.
+      const threw = await h.eval(() => new Promise(res => { let n = 0, downAt = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); const el = document.getElementById('btnA'); if (!e || !el) { if (++n > 160) { clearInterval(iv); res(false); } return; } if (e.phase === 'hold' && !downAt) { downAt = Date.now(); el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 9 })); } else if (downAt && Date.now() - downAt >= 1100) { el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 9 })); clearInterval(iv); res(true); return; } if (++n > 160) { clearInterval(iv); res(false); } }, 50); }));
       if (!threw) return 'the discus throw never started (no hold phase)';
       const dj = await judgeFlight('discus');
       if (dj !== true) return dj;
       // finish the discus event so we can move on
-      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 100); } return true; });
-      let g3 = 0, doneEv = false;
-      while (budget() && g3++ < 60 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(200); }
-      await h.eval(() => { if (window.__tfdrv7) { clearInterval(window.__tfdrv7); window.__tfdrv7 = null; } return true; });
+      // JOB G-22 (v7): finish the event IN-PAGE - the same driver actions as the
+      // old __tfdrv7 (cut resT at the mark, throw the remaining attempts, jump the
+      // flights), watched from inside on a 100 ms ticker with ONE eval, instead of
+      // an install eval + a state poll every 200 ms + a clear eval from outside.
+      const doneEv = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); const on = document.querySelector('.screen.on'); if ((on && on.id === 'results') || (e && e.done)) { clearInterval(iv); res(true); return; } if (e && !e.done) { if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold' && e.actionDown) e.actionDown(); if (e.phase === 'spinning' && e.actionUp) e.actionUp(); if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); } if (++n > 120) { clearInterval(iv); res(false); } }, 100); }));
       if (!doneEv) return 'the discus event never finished after the flight check';
       // ---- SHOT PUT (same shared flight camera: power, angle, release)
       if (!await navTo('sp', 'Shot')) return 'the shot put event never loaded';
