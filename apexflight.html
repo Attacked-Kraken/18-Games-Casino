@@ -13,7 +13,7 @@
     font-family: system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; user-select: none; -webkit-user-select: none; }
   canvas.game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
   #back { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 12px; z-index: 5000;
-    background: rgba(2,14,8,.75); color: #ffb700; border: 1px solid rgba(255,59,48,.5);
+    background: rgba(8,10,14,.75); color: #ffb700; border: 1px solid rgba(255,59,48,.5);
     border-radius: 10px; padding: 9px 14px; font: 600 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; cursor: pointer; }
   #rotOv { position: fixed; inset: 0; z-index: 6000; display: none; align-items: center; justify-content: center;
     background: #000; color: #ffb700; font: 600 20px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .1em; text-align: center; padding: 24px; }
@@ -63,22 +63,22 @@
   .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
     background: rgba(0,0,0,.82); padding: 20px; }
   .ovl[hidden] { display: none; }
-  .panel { width: min(420px, 92vw); max-height: 88vh; overflow-y: auto; background: rgba(2,16,8,.97);
+  .panel { width: min(420px, 92vw); max-height: 88vh; overflow-y: auto; background: rgba(8,10,14,.97);
     border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 26px 22px; text-align: center;
-    box-shadow: 0 0 40px rgba(255,59,48,.15); color: #d8ffe2; }
+    box-shadow: 0 0 40px rgba(255,59,48,.15); color: #eef3f8; }
   .panel h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: .22em; color: #ffb700; }
   .panel h2 { margin: 0 0 14px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
-  .panel p { font-size: 12.5px; line-height: 1.65; color: #a9dcb4; }
+  .panel p { font-size: 12.5px; line-height: 1.65; color: #eef3f8; }
   .bigbtn { display: block; width: 100%; margin: 10px 0; padding: 15px; border-radius: 999px; cursor: pointer;
-    border: 1px solid rgba(255,59,48,.65); background: rgba(3,26,10,.9); color: #eaffef;
+    border: 1px solid rgba(255,59,48,.65); background: rgba(16,20,26,.9); color: #ffffff;
     font: 700 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .08em; }
   .bigbtn small { display: block; font-weight: 400; font-size: 11px; color: #ffe9b0; margin-top: 4px; letter-spacing: .02em; }
-  .ctl { text-align: left; font-size: 12px; line-height: 1.9; color: #a9dcb4; margin: 14px 0 4px; }
-  .ctl b { color: #eaffef; }
+  .ctl { text-align: left; font-size: 12px; line-height: 1.9; color: #eef3f8; margin: 14px 0 4px; }
+  .ctl b { color: #ffffff; }
   #crashOv { cursor: pointer; transition: opacity .45s; }
   #crashOv h1 { color: #ff8b92; }
   .srow { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 2px;
-    border-bottom: 1px dashed rgba(255,59,48,.2); color: #a9dcb4; }
+    border-bottom: 1px dashed rgba(255,59,48,.2); color: #eef3f8; }
   .srow b { color: #fff; }
   #rank { font-size: 34px; letter-spacing: .2em; margin: 12px 0 4px; color: #ffd166; }
 </style>
@@ -121,7 +121,7 @@
     <div class="ctl">
       <b>Touch:</b> left stick = pitch &amp; roll &nbsp;|&nbsp; right slider = throttle<br>
       <b>Keys:</b> &#8592;&#8593;&#8595;&#8594; / WASD = pitch &amp; roll &nbsp;|&nbsp; R / F = throttle &nbsp;|&nbsp; C = view &nbsp;|&nbsp; Space = reset<br>
-      Stick up = climb &nbsp;|&nbsp; keep speed above 49 kt or you stall
+      Stick up = climb &nbsp;|&nbsp; stalls only if you pull up too slow
     </div>
   </div>
 </div>
@@ -130,7 +130,7 @@
   <div class="panel">
     <h1>CRASHED</h1>
     <p id="crashWhy">You crashed.</p>
-    <p style="color:#7fc98d">Tap anywhere to get back on the runway.</p>
+    <p style="color:#ffb700">Tap anywhere to get back on the runway.</p>
   </div>
 </div>
 
@@ -688,9 +688,12 @@ function step(dt) {
       P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * auth * dt, -0.55, maxPitch);
       P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
-      if (v < VSTALL) {
+      // Forgiving stall: only when you really pull up too slow. Normal level flying
+      // (or gentle maneuvers) below VSTALL keeps lift - recover with throttle.
+      const pullUpHard = inp.pitchUp > 0.55;
+      if (v < VSTALL && pullUpHard) {
         // Gentle stall: no forced nose-drop (user keeps control).
-        // Lift is reduced below, so the plane sinks naturally - recover with throttle or gentle nose-down.
+        // Lift is reduced below, so the plane sinks naturally - recover with throttle or ease the stick.
         stallNow = true;
       }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
@@ -720,8 +723,8 @@ function step(dt) {
   ACC.addScaledVector(F, THRUST * P.thr);
   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
   if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
-    // Stall: lift fades as speed drops below VSTALL (plane sinks, user keeps pitch control)
-    const stallFade = v < VSTALL ? Math.max(0.3, v / VSTALL) : 1.0;
+    // Stall: lift fades only when really pulling up too slow (stallNow), and gentler than before
+    const stallFade = stallNow ? Math.max(0.45, v / VSTALL) : 1.0;
     ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa * stallFade, LIFTCAP)); }      // lift, capped
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
@@ -977,6 +980,7 @@ const Mus = (function () {
     get muted() { return M.muted; }, get mode() { return M.mode; }, get ctx() { return M.ctx; } };
 })();
 window.__mus = Mus;
+window.__flight = { P, inp, get stallNow() { return stallNow; } }; // test hook (FIX LIST)
 (function wireMute() {
   const b = document.getElementById('muteBtn');
   if (!b) return;
