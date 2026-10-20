@@ -1,0 +1,232 @@
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -1173,6 +1173,7 @@
+ this.phase='flight';
+ },
+ endAttempt(){
++if(this.phase==='runup'||this.phase==='angle') this.fx=this.r.pos;
+ const val=this.foul?0:Math.round(this.jumpD*100)/100;
+ this.attempts.push(val); if(val>this.best)this.best=val;
+ this.phase='mark'; this.resT=2.0;
+@@ -1187,6 +1188,8 @@
+ }else if(this.phase==='angle'){
+ this.ang+=this.angDir*95*dt;
+ if(this.ang>65){this.ang=65;this.angDir=-1;} if(this.ang<15){this.ang=15;this.angDir=1;}
++updateRunner(this.r,dt,10.0,20);
++if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+ }else if(this.phase==='flight'){
+ this.ft+=dt; this.fx+=this.fvx*dt;
+ if(this.ft>=this.fT){ this.endAttempt(); }
+@@ -1217,6 +1220,7 @@
+ const E={
+ ev, done:false, dq:false, S, attempt:1, attempts:[], best:0,
+ phase:'runup', r:newRunner(), sub:0, marker:0, mdir:1, qs:[], resT:0, res:'', foul:false,
++tjX:0, tjY:0, subT:0, subFrom:0, subTo:0, subDur:0.62, subPeak:0.85, tapped:false,
+ fx:0, air:0,
+ aiBest: rivals.map(rv=>rivalMark(ev,rv.rating)),
+ actionLabel(){ return (this.phase==='runup'||this.phase==='phase')?'JUMP':'—'; },
+@@ -1227,20 +1231,23 @@
+ // owner 2026-10-17: same real rule as the long jump - early takeoff is legal (measured from the board)
+ if(this.r.pos<BOARD0-12){ this.msg='WAIT FOR THE BOARD'; this.msgT=1.0; return; }
+ if(this.r.pos>BOARD1){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+-else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early counts as on the board; past that you give back part of the gap */ this.vT=this.r.speed; this.phase='phase'; this.sub=0; this.marker=0; this.mdir=1; this.qs=[]; AudioSys.click(); }
++else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early counts as on the board; past that you give back part of the gap */ this.vT=this.r.speed; this.phase='phase'; this.sub=0; this.marker=0; this.mdir=1; this.qs=[]; this.tjX=this.r.pos; this.tjY=0; this.beginBound(); AudioSys.click(); }
+ }else if(this.phase==='phase'){
+-const q=1-Math.abs(this.marker-0.5)/0.5;
+-this.qs.push(clamp(q,0,1));
++if(this.tapped) return;
++this.tapped=true;
++const q=clamp(1-Math.abs(this.marker-0.5)/0.5,0,1);
++this.qs.push(q);
++const CO=[0.52,0.44,0.72];
++this.subTo=this.subFrom+(this.vT||this.r.speed)*CO[this.sub]*(0.45+0.55*q);
+ AudioSys.click(); AudioSys.thud();
+-this.sub++;
+-if(this.sub>=3){
+-const v=this.vT||this.r.speed;
+-const d=v*(0.55*this.qs[0]+0.45*this.qs[1]+0.75*this.qs[2])-(this.lost||0);
+-this.jumpD=Math.max(0.5,d); this.foul=false;
+-this.endAttempt();
+-}
+ }
+ },
++beginBound(){
++const CO=[0.52,0.44,0.72], DU=[0.62,0.68,0.90], PK=[0.85,1.0,1.35];
++this.subFrom=this.tjX; this.subT=0; this.tapped=false; this.marker=0; this.mdir=1;
++this.subDur=DU[this.sub]; this.subPeak=PK[this.sub];
++this.subTo=this.subFrom+(this.vT||this.r.speed)*CO[this.sub]*0.45;
++},
+ endAttempt(){
+ const val=this.foul?0:Math.round(this.jumpD*100)/100;
+ this.attempts.push(val); if(val>this.best)this.best=val;
+@@ -1257,7 +1264,18 @@
+ }else if(this.phase==='phase'){
+ this.marker+=this.mdir*1.6*dt;
+ if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
+-this.air=Math.abs(Math.sin(this.sub*2+this.marker*3))*40;
++this.subT+=dt;
++const u=Math.min(1,this.subT/this.subDur);
++this.tjX=this.subFrom+(this.subTo-this.subFrom)*u;
++this.tjY=this.subPeak*Math.sin(Math.PI*u);
++this.air=this.tjY*40;
++if(u>=1){
++this.tjY=0;
++if(this.sub>=2){
++this.jumpD=Math.max(0.5,(this.tjX-this.r.pos)-(this.lost||0)); this.foul=false;
++this.endAttempt();
++}else{ this.sub++; this.beginBound(); }
++}
+ }else if(this.phase==='mark'){
+ this.resT-=dt;
+ if(this.resT<=0){
+@@ -1293,7 +1311,7 @@
+ ev, done:false, dq:false, pv, heights, hi:0, attLeft:3, best:-1,
+ phase:'approach', r:newRunner(), marker:0, mdir:1, gw:0.08, msg:'', msgT:0,
+ clearAnim:0, barY:0,
+-zoneLo:ZONE[0], zoneHi:ZONE[1], runOut:RUNOUT, swingT:0, missAnim:0, flightH:0, plantD:44.8, _wasClear:false, barFell:false, vOver:false, vMat:false,
++zoneLo:ZONE[0], zoneHi:ZONE[1], runOut:RUNOUT, swingT:0, missAnim:0, flightH:0, plantD:44.8, barT:0, _cd:0, _cy:0, _wasClear:false, barFell:false, vOver:false, vMat:false,
+ aiBest: rivals.map(rv=>rivalMark(ev,rv.rating)),
+ curH(){ return this.heights[this.hi]; },
+ actionLabel(){ return this.phase==='approach'?'TAKEOFF':(this.phase==='bar'?'CLEAR!':'—'); },
+@@ -1302,7 +1320,7 @@
+ if(this.done) return;
+ if(this.phase==='approach'){
+ if(this.r.pos>=this.zoneLo&&this.r.pos<=this.zoneHi){
+-this.phase='bar'; this.marker=0; this.mdir=1; this.swingT=0; this.flightH=this.curH(); this.plantD=this.r.pos; this.barFell=false; this.vOver=false; this.vMat=false;
++this.phase='bar'; this.marker=0; this.mdir=1; this.swingT=0; this.barT=0; this.flightH=this.curH(); this.plantD=this.r.pos; this.barFell=false; this.vOver=false; this.vMat=false;
+ this.gw=(0.05+0.06*clamp(this.r.speed/11,0,1))*SIM_MODS.tech;
+ AudioSys.click();
+ }else{ this.miss(this.r.pos>this.zoneHi?'No takeoff — ran through':'Too early'); }
+@@ -1312,21 +1330,22 @@
+ }
+ },
+ clear(){
+-this.best=this.curH(); this.clearAnim=1.4; this._wasClear=true; AudioSys.cheer(1.2);
++this.best=this.curH(); if(!this.pv){ const p=this.hjPose(); this._cd=p.d; this._cy=p.y; } this.clearAnim=1.4; this._wasClear=true; AudioSys.cheer(1.2);
+ this.msg='CLEARED '+this.curH().toFixed(2)+'m'; this.msgT=2.0;
+ this.hi++;
+ if(this.hi>=this.heights.length){ this.done=true; this.finishT=0; }
+ else { this.r=newRunner(); this.attLeft=3; this.phase='approach'; }
+ },
+-miss(why){
++miss(why,bail){
+ if(this.pv&&this.phase==='bar'){ this.missAnim=1.0; this.barFell=true; }
++else if(!this.pv&&this.phase==='bar'){ this.missAnim=1.0; this.barFell=!bail; }
+ this.attLeft--; AudioSys.thud();
+ this.msg=why+' — '+this.attLeft+' left'; this.msgT=1.6;
+ if(this.attLeft<=0){ this.done=true; this.finishT=0; }
+ else { this.r=newRunner(); this.phase='approach'; }
+ },
+ update(dt){
+-if(this.done){ this.finishT=(this.finishT||0)+dt; if(this.clearAnim>0)this.clearAnim-=dt; if(this.pv) this.trackVault(); return; }
++if(this.done){ this.finishT=(this.finishT||0)+dt; if(this.clearAnim>0)this.clearAnim-=dt; if(this.pv) this.trackVault(); if(!this.pv) this.trackJump(); return; }
+ if(this.msgT>0)this.msgT-=dt; if(this.clearAnim>0)this.clearAnim-=dt;
+ if(this.phase==='approach'){
+ updateRunner(this.r,dt,10.5,15);
+@@ -1335,8 +1354,10 @@
+ this.marker+=this.mdir*1.15*dt;
+ if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
+ if(this.pv){ this.swingT+=dt; if(this.swingT>2.6) this.miss('No clear — came back down'); }
++if(!this.pv){ this.barT+=dt; if(this.barT>1.7) this.miss('No clear — came down short', true); }
+ }
+ if(this.pv){ if(this.missAnim>0)this.missAnim-=dt; this.trackVault(); }
++if(!this.pv){ if(this.missAnim>0)this.missAnim-=dt; this.trackJump(); }
+ },
+ hud(){
+ const ch=this.hi<this.heights.length?this.heights[this.hi]:null;
+@@ -1370,6 +1391,28 @@
+ if(this._wasClear&&this.clearAnim<0.35) this.vMat=true;
+ if(this.clearAnim<=0) this._wasClear=false;
+ },
++// JOB G-49: the high jump as geometry - run up the approach to a takeoff in
++// front of the bar (bar at d=17, world x=-45+d, z=-10), arc OVER the bar
++// and land ON the mat (top y=0.7, d 16.9..21.1). The driver draws exactly
++// this and the play test measures it.
++hjPose(){
++if(this.pv) return {d:this.r.pos,y:0};
++const barD=17, H=this.flightH||this.curH();
++if(this.missAnim>0){ const f=1-this.missAnim/1.0; const d=(barD-0.4)+((barD+1.9)-(barD-0.4))*f; const peak=this.barFell?Math.max(0.78,H-0.22):Math.max(0.74,H-0.6); const y=0.7+Math.max(0,peak-0.7)*Math.sin(Math.PI*Math.min(1,f*1.12)); return {d,y}; }
++if(this.clearAnim>0&&this._wasClear){ const f=1-this.clearAnim/1.4; const d0=this._cd||(barD+0.35), y0=this._cy||(H+0.3); const d=d0+(19.2-d0)*f; const y=(1-f)*(1-f)*y0+2*(1-f)*f*(H+0.42)+f*f*0.7; return {d,y}; }
++if(this.phase==='bar'){ const u=Math.min(1,this.barT/1.5); const d=this.plantD+(19.2-this.plantD)*u; const y=0.7+Math.max(0,(H+0.3-0.7))*Math.sin(Math.PI*Math.pow(u,0.92)); return {d,y}; }
++return {d:this.r.pos,y:0};
++},
++trackJump(){
++if(this.pv) return;
++const p=this.hjPose();
++if(Math.abs((-45+p.d)+28)<=0.8&&p.y>(this.flightH||this.curH())) this.vOver=true;
++if(p.d>=16.9&&p.d<=21.1&&p.y<=0.85&&(this.clearAnim>0||this.missAnim>0)) this.vMat=true;
++},
++jumpState(){
++const p=this.hjPose();
++return {phase:this.phase, d:p.d, x:-45+p.d, z:-10, y:p.y, barH:this.flightH||this.curH(), over:this.vOver, onMat:this.vMat, barFell:this.barFell};
++},
+ vaultState(){
+ if(!this.pv) return null;
+ const p=this.pvPose();
+@@ -2426,6 +2469,8 @@
+ if(W3D._pvPole) W3D._pvPole.visible=false;
+ if(W3D._pvBox) W3D._pvBox.visible=false;
+ if(W3D.venueMats&&W3D.venueMats.barPV) W3D.venueMats.barPV.rotation.z=0;
++if(W3D._hjApron) W3D._hjApron.visible=false;
++if(W3D.venueMats&&W3D.venueMats.barHJ) W3D.venueMats.barHJ.rotation.z=0;
+ styleRigsFor(rivals);
+ W3D.hideImplement();
+ if(W3D._batons) W3D._batons.forEach(b=>b.visible=false);
+@@ -2595,7 +2640,8 @@
+ let ax,airM=0,mode='run';
+ if(ENG.phase==='flight'){
+ ax=X0+ENG.fx; airM=Math.max(0,ENG.fvy*ENG.ft-4.905*ENG.ft*ENG.ft); mode='jump';
+-}else ax=X0+ENG.r.pos;
++}else if(ENG.phase==='mark'){ ax=X0+ENG.fx; mode='idle'; }
++else ax=X0+ENG.r.pos;
+ W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
+ W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10,0,1.1));
+ if(!R[0].human) R[0].airY=airM;
+@@ -2619,7 +2665,7 @@
+ W3D.camSnap(X0-2,3.6,Z+13, X0+18,1.2,Z);
+ ENG.draw3=dt=>{
+ let ax=X0+ENG.r.pos, airM=0, mode='run';
+-if(ENG.phase==='phase'){ airM=0.45+0.3*Math.abs(Math.sin(ENG.sub*2+ENG.marker*3)); mode='jump'; ax+=ENG.sub*1.2; }
++if(ENG.phase==='phase'||ENG.phase==='mark'){ ax=X0+ENG.tjX; airM=ENG.tjY||0; mode=ENG.phase==='phase'?'jump':'idle'; }
+ W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
+ W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10,0,1.1));
+ if(!R[0].human) R[0].airY=airM;
+@@ -2704,21 +2750,28 @@
+ W3D.renderer.render(W3D.scene,W3D.camera);
+ return;
+ }
+-let ax=AX+ENG.r.pos, airM=0, mode='run';
+-if(ENG.clearAnim>0){
+-const t=1-ENG.clearAnim/1.4;
+-ax=AX+15.2+(BARX-(AX+15.2))*Math.min(1,t*1.4);
+-airM=chH+0.35-0.9*Math.pow(t-0.55,2)*4;
+-airM=Math.max(0.2,airM); mode='jump';
+-if(pv&&W3D.venueMats.pole) W3D.venueMats.pole.rotation.z=Math.PI/2-0.06-t*1.1;
+-}
++// JOB G-49 (owner): a real high jump picture. He runs up an APRON to the
++// bar (no more running on the grass away from it), takes off in front of
++// the bar, arcs OVER it and lands ON the mat; a miss knocks the bar off,
++// and the camera travels beside him, then settles beside the pit.
++if(!W3D._hjApron){
++const ap=new THREE.Mesh(new THREE.BoxGeometry(24,0.06,8), new THREE.MeshStandardMaterial({color:0x8b93a0,roughness:0.9}));
++ap.position.set(-34,0.03,Z); W3D.scene.add(ap); W3D._hjApron=ap;
++}
++W3D._hjApron.visible=true;
++const pose=ENG.hjPose();
++const ax=AX+pose.d, airM=pose.y;
++const mode=(ENG.phase==='approach'&&ENG.clearAnim<=0&&ENG.missAnim<=0)?'run':'jump';
+ W3D.rigPlace(R[0],ax,airM,Z,Math.PI/2);
+ W3D.rigAnim(R[0],mode,clamp(ENG.r.speed/10.5,0,1));
+ if(!R[0].human) R[0].airY=airM;
+ for(let i=1;i<7;i++) R[i].group.visible=false;
+ W3D.rigUpdate(R[0],dt);
+-W3D.camTo(BARX-10,3.0,Z+10.5, BARX+1,1.5,Z, dt, 3.5); W3D.camApply();
+-if(ENG.phase==='approach'&&ENG.r.pos>11) centerText('TAKEOFF ZONE — TAP ACTION', H*0.30, 18, '#ffd34d');
++if(barMesh){ if(ENG.barFell&&ENG.missAnim>0){ barMesh.position.y=chH-(1-ENG.missAnim)*1.5; barMesh.rotation.z=0.35*(1-ENG.missAnim); } else barMesh.rotation.z=0; }
++if(ENG.phase==='approach'&&ENG.clearAnim<=0&&ENG.missAnim<=0) W3D.camTo(ax-2.0,2.3,Z+10.5, ax+3,1.5,Z, dt, 4.5);
++else W3D.camTo(BARX-3,3.2,Z+11.5, BARX+2,2.2,Z, dt, 3.5);
++W3D.camApply();
++if(ENG.phase==='approach'&&ENG.r.pos>ENG.zoneLo-4) centerText('TAKEOFF ZONE — TAP ACTION', H*0.30, 18, '#ffd34d');
+ if(ENG.phase==='bar') drawTimingBar(ENG.marker,0.5-ENG.gw,0.5+ENG.gw,'TAP ACTION IN THE GREEN');
+ if(ENG.msgT>0) centerText(ENG.msg,H*0.42,22,ENG.msg.indexOf('CLEARED')===0?'#7dff9b':'#ffb34d');
+ if(ENG.clearAnim>0) centerText('CLEARED '+fmtMark(ENG.best),H*0.22,26,'#7dff9b');
