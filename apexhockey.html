@@ -1430,12 +1430,15 @@ function tick(now){
     const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
     if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
   }
-  let dt=Math.min(0.033,(now-lastT)/1000); lastT=now; gameNow+=dt;
+  let frameSec=Math.min(0.25,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time
+  const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
   Mus.setMode(state==='play'?'game':'menu');
-  crowd.update(dt); Mus.crowdTick(dt);
-  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(dt); }
+  crowd.update(frameSec); Mus.crowdTick(frameSec);
+  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
   if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
-  if(charging){ charge=Math.min(1,charge+dt/0.9); chargeFill.style.width=(charge*100)+'%'; }
+  if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
+  for(let si=0;si<steps;si++){
+  if(state==='menu'||state==='over') break;
   stateT-=dt;
   if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
   else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.2,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
@@ -1464,6 +1467,7 @@ function tick(now){
   goalieSaves();
   possessionWatch();
   stepCamera(dt);
+  } // end of catch-up slices
   renderer.render(scene,camera);
 }
 function gameOver(){
