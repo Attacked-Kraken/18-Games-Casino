@@ -89,6 +89,7 @@
   #starCard { font:600 14px system-ui, -apple-system, sans-serif; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
   #myCode { font:600 12px system-ui, -apple-system, sans-serif; color:#ffd34d; margin:14px 0 4px; letter-spacing:.06em; }
   #cancelMatch, #hubReset { font:600 12px system-ui, -apple-system, sans-serif; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
+  #creditsBtn { font:600 12px system-ui, -apple-system, sans-serif; color:#9fd8ff; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
   #hubBody { font:400 14px system-ui, -apple-system, sans-serif; color:#d7ecff; line-height:1.75; text-align:center; margin-bottom:16px; max-width:92vw; }
   #hubBody table { margin:8px auto; border-collapse:collapse; font-size:13px; }
   #hubBody td, #hubBody th { padding:2px 9px; text-align:left; }
@@ -122,6 +123,7 @@
   <button class="bigbtn alt" id="playBtn" type="button">⚡ QUICK GAME</button>
   <button class="bigbtn alt" id="friendBtn" type="button">👥 PLAY A FRIEND (ENTER CODE)</button>
   <button id="cancelMatch" type="button" style="display:none">✕ cancel this match</button>
+  <button id="creditsBtn" type="button">🎙️ CREDITS</button>
   <div id="myCode"></div>
   <div class="keys">Skate with the left stick — hold <b>SHOOT</b> to charge a slap shot, <b>PASS</b> to feed a teammate, <b>CHECK</b> to poke the puck loose and switch skaters.<br>KEYBOARD — move: WASD / arrows · pass: J · shoot (hold): K · check/switch: L</div>
 </div>
@@ -147,7 +149,16 @@
   <button class="bigbtn" id="friendGo" type="button">SET UP THE MATCH</button>
   <button class="bigbtn alt" id="friendClose" type="button">CLOSE</button>
 </div>
+<div class="overlay" id="creditsOv" style="display:none">
+  <h1>🎙️ CREDITS</h1>
+  <h2>APEX ICE HOCKEY · an Apex Arcade game<br>
+  Commentary: the hockey commentary pack — 138 voice clips, called as the game happens.<br>
+  Play-by-play voice: Piper en_US-joe-medium.<br>
+  Color commentator voice: Piper en_GB-northern_english_male, trained on OpenSLR SLR83 (CC BY-SA 4.0).</h2>
+  <button class="bigbtn alt" id="creditsClose" type="button">CLOSE</button>
+</div>
 <div id="rotOv">Rotate your device</div>
+<script src="sounds/commentary/hockey/commentary.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // JOB J10: merge static scenery into single draw calls
@@ -883,6 +894,7 @@ function doPass(){
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=2.2;
   puck.passGrace=from; puck.passT=performance.now();
   puck.lastPass=from; puck.lastPassT=performance.now();
+  commSay('pass'); // G-44
 }
 function doShoot(power){
   if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
@@ -899,6 +911,7 @@ function shootFrom(s, power, aimed){
   const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
   puck.shot={team:s.team,t:0,by:s};
+  commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
   s.phase+=1.2;
 }
@@ -910,6 +923,7 @@ function callPenalty(off, why){
   if(!off || off.inBox || state!=='play') return;
   off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
   banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+  commSay('penalty_box'); // G-44
   if(off===controlled) switchControl();
   updateHUD();
 }
@@ -935,6 +949,7 @@ function doCheck(){
         const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(8,15),0,Math.sin(a)*rand(8,15));
         o.stun=0.5; o.vel.x+=(s.pos.x-o.pos.x)*2; o.vel.z+=(s.pos.z-o.pos.z)*2;
         banner('POKE CHECK','',700,'#9fd8ff');
+        commSay('big_hit'); // G-44
       }
       return;
     }
@@ -992,6 +1007,7 @@ function faceoff(dx,dz,label){
   setupFaceoffPositions(dx,dz);
   state='faceoff'; stateT=1.4; updateHUD();
   if(label) banner(label,'',1400);
+  commSay('faceoff');
 }
 function nearestDot(x,z){
   let best='center',bd=1e9;
@@ -1000,16 +1016,21 @@ function nearestDot(x,z){
 }
 function onGoal(team){
   state='goal'; stateT=3.2;
+  const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
   if(team==='home'){scoreH++;}else{scoreA++;}
   { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
+  if(period>3) commSay('goal_long', true); // G-44: the golden goal gets the long call
+  else if(_deficit>=2 && (team==='home' ? scoreH>=scoreA : scoreA>=scoreH)) commSay('comeback', true);
+  else commSay('goal', true);
   if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
 }
 function whistle(text,sub){
   state='whistle'; stateT=2.2; puck.vel.multiplyScalar(0.1);
   banner('WHISTLE', text+(sub?' · '+sub:''), 2000, '#ffb3b3');
+  if(text==='ICING') commSay('icing'); else if(text==='OFFSIDE') commSay('offside'); // G-44
 }
 
 /* ================= AI ================= */
@@ -1142,6 +1163,7 @@ function aiPass(s){
   puck.vel.set(dx/d*37,0,dz/d*37); puck.owner=null; puck.recv=best; puck.recvT=2.2;
   puck.passGrace=s; puck.passT=performance.now();
   puck.lastPass=s; puck.lastPassT=performance.now();
+  commSay('pass'); // G-44
 }
 function aiGoalie(g,dt){
   const dir=TEAMS[g.team].dir, gl=-dir*GOAL_LINE, sgn=-dir; // defended line; sgn points center->net
@@ -1176,7 +1198,7 @@ function bouncePuck(){
       const dx=puck.pos.x-gx, dz=puck.pos.z-pz, d=Math.hypot(dx,dz);
       if(d<POST_R+r&&d>0.01){ const nx=dx/d,nz=dz/d, vn=puck.vel.x*nx+puck.vel.z*nz;
         puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
-        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; } } } }
+        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; if(puck.shot) commSay('near_miss'); } } } } // G-44: off the post
 }
 const _des=new THREE.Vector3(); // reused scratch (was: allocated per skater per frame)
 function stepSkater(s,dt){
@@ -1379,6 +1401,7 @@ function goalieSaves(){
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
         puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
+        commSay(spd>70?'great_save':'save'); // G-44
       }
     }
   }
@@ -1493,13 +1516,14 @@ function tick(now){
   if(state==='play'){
     clockT-=dt;
     if(clockT<=0){
-      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); state='intermission'; stateT=2.6; }
+      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); state='intermission'; stateT=2.6; }
       else if(period===N_PERIODS){
-        if(scoreH===scoreA){ period=4; clockT=1e9; banner('OVERTIME','GOLDEN GOAL · NEXT GOAL WINS',2600,'#ffe27d'); faceoff(0,0,'OVERTIME'); }
+        if(scoreH===scoreA){ period=4; clockT=1e9; banner('OVERTIME','GOLDEN GOAL · NEXT GOAL WINS',2600,'#ffe27d'); commSay('overtime'); faceoff(0,0,'OVERTIME'); }
         else gameOver();
       } else { gameOver(); } // safety
     }
     updateHUD();
+    if(COMM && performance.now()-commLastSay>26000){ commLastSay=performance.now(); try{ COMM.dialogue(); }catch(e){} } // G-44: color talk in the quiet stretches
   }
   for(const s of skaters){ if(!s.goalie) aiSkater(s,dt); else aiGoalie(s,dt); }
   for(const s of skaters) stepSkater(s,dt);
@@ -1518,6 +1542,7 @@ function gameOver(){
   $('finalScore').textContent=scoreH+' – '+scoreA;
   $('finalSub').textContent=win==='home'?'The Wolves take it. What a game.':win==='away'?'The Sharks steal this one. Run it back.':'Dead even after overtime.';
   $('final').style.display='flex';
+  commSay('final', true); // G-44
   try{ careerAfterGame(); }catch(e){}
 }
 
@@ -1530,9 +1555,25 @@ document.getElementById('playBtn').addEventListener('click',async()=>{
   faceoff(0,0,'OPENING FACEOFF');
 });
 document.getElementById('viewBtn').addEventListener('click',()=>cycleView());
-document.getElementById('muteBtn').addEventListener('click',()=>{ Mus.ensure(); Mus.setMuted(!Mus.muted); });
+document.getElementById('muteBtn').addEventListener('click',()=>{ Mus.ensure(); Mus.setMuted(!Mus.muted); commSyncMute(); });
 document.addEventListener('pointerdown',()=>Mus.ensure());
 Mus.setMuted(Mus.muted || localStorage.getItem('apex_muted')==='1');
+/* ================= G-44: commentary (sounds/commentary/hockey) =================
+   The 138-clip hockey commentary pack: two voices (play-by-play + color),
+   a shuffle bag so lines never repeat back to back, and a cooldown so they
+   never talk over each other (LESSONS: announcer lines stay DRY, goals say
+   the key word first - the pack's own clips do). If the pack is missing
+   the game just plays on without it, like the arena and athlete kits. */
+let COMM=null, commLastSay=performance.now();
+try{
+  COMM=new Commentary({base:'sounds/commentary/hockey/',cooldown:900});
+  COMM.load('manifest.json').catch(()=>{});
+  if(Mus.muted) COMM.mute(true);
+}catch(e){ COMM=null; }
+function commSay(ev,pri){ if(!COMM) return; try{ if(COMM.say(ev,{priority:!!pri})) commLastSay=performance.now(); }catch(e){} }
+function commSyncMute(){ if(COMM){ try{ COMM.mute(!!Mus.muted); }catch(e){} } }
+document.getElementById('creditsBtn').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='flex'; });
+document.getElementById('creditsClose').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='none'; });
 document.getElementById('againBtn').addEventListener('click',()=>location.reload());
 function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
 /* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
