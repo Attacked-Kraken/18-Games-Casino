@@ -45,7 +45,8 @@ but only DO the G-job you were sent.
 - [ ] next: friend codes play test
 
 ## Not on a window yet (waiting for a free Muse)
-- Soccer (players mark/pass/position like real soccer - robot says not yet), Apex Moto, Paper Plane, Reef Dash
+- Soccer (players mark/pass/position like real soccer - robot says not yet), Apex Moto
+- Paper Plane, Reef Dash: LEAVE ALONE for now (owner Oct 19) - no Muse touches them
 - Monster Truck: Claude finishes it himself (owner Oct 18)
 
 ## New games from the owner (on Game Development, not assigned yet)
