@@ -201,3 +201,27 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - made for the owner, free in paid apps, no credit needed
 - downloaded: 2026-10-19, sent by the owner
 - used in: Paper Plane (chill lo-fi music + arcade UI sounds), Reef Dash (puzzle music + soft UI sounds + water/powerup effects), Exotic Racer (sports_arena music)
+
+## ASSET: kit/fx-library/ + sounds/effects/
+- title: Apex Effects Library - 86 canvas effects in one file (effects.js, ApexFX), 84 particle textures, 11 sprite sheets, demo.html; one MP3 per effect in sounds/effects/
+- maker: made for the owner - original, made from scratch
+- source: the owner's Effects-Library.zip + Effects-Sounds.zip (originals kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: any game (explosions, coins, confetti, damage numbers, sparks, screen shake...)
+
+## ASSET: kit/ui-art/ + sounds/ui-art/
+- title: Apex UI Art Kit - buttons, panels, popups, banners, tabs, sliders, toggles, bars, badges, frames, 107 icons in 5 color styles (sky, lime, sunset, grape, cherry) + ui.css; 49 UI sounds in sounds/ui-art/
+- maker: made for the owner - original, made from scratch
+- source: the owner's UI-Art-Kit.zip + UI-Art-Sounds.zip (originals kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: any game's menus and HUD
+
+## ASSET: kit/loading/
+- title: Apex Loading Pages - 39 offline loading screens (race track, coin fill, neon sign, rocket launch...), API setProgress / setTip / done, MUSE-GUIDE.txt
+- maker: made for the owner - original, made from scratch
+- source: the owner's Loading-Pages.zip (original kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: any game's loading screen

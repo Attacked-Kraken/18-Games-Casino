@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Loading</title>
+<script>
+/* =====================================================================
+   CONFIG: EDIT THIS BLOCK TO RESTYLE THE PAGE (see MUSE-GUIDE.txt)
+   Loader style: run_cycle, little character running across the ground
+   ===================================================================== */
+window.LOADER_CONFIG = {
+  title:      "Apex Arcade",           // big title text
+  subtitle:   "Loading...",            // small text under the title
+  logo:       "",                      // logo image path, e.g. "logo.png" ("" = no logo)
+  background: "",                      // background image path ("" = gradient from colors)
+  colors: {
+    bg:      "#7ec8ff",               // background top
+    bg2:     "#d8f0ff",               // background bottom
+    primary: "#ff5a36",               // main color (bars, shapes)
+    accent:  "#4a9d2f",               // highlight color
+    text:    "#1b2233"                 // text color
+  },
+  font:  "system-ui,-apple-system,sans-serif",   // CSS font-family
+  speed: 1,                            // animation speed (2 = twice as fast, 0.5 = half)
+  tips: [                              // tips shown in turn ([] = hide tips)
+    "Tap fast to build combos!",
+    "Collect coins to unlock new items.",
+    "Daily rewards reset every 24 hours.",
+    "Stars unlock harder levels."
+  ],
+  tipInterval: 3500,                   // ms between tips
+  showPercent: true,                   // show the "42%" number
+  demo: true,                          // true = fake progress for preview. Set false in your game
+                                       //   and call LoadingPage.setProgress(0..1) yourself.
+  onDone: null                         // function run after LoadingPage.done(), e.g. function(){ startGame(); }
+};
+/* ===================== END OF CONFIG ===================== */
+</script>
+<style>
+/* CSS VARIABLES: set from CONFIG at startup; you can also edit defaults here */
+:root{--bg:#7ec8ff;--bg2:#d8f0ff;--primary:#ff5a36;--accent:#4a9d2f;--text:#1b2233;--font:system-ui,-apple-system,sans-serif;--t:1;--p:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:linear-gradient(var(--bg),var(--bg2));background-size:cover;background-position:center;color:var(--text);font-family:var(--font);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;transition:opacity .5s;-webkit-user-select:none;user-select:none}
+#lp-logo{max-width:40vw;max-height:18vh;display:none}
+#lp-title{font-size:clamp(26px,7vw,54px);font-weight:800;letter-spacing:.02em}
+#lp-sub{opacity:.75;font-size:15px;margin-top:-14px}
+#lp-pct{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#lp-tip{min-height:2.6em;max-width:86vw;opacity:.85;font-size:15px;transition:opacity .4s;position:absolute;bottom:max(6vh,env(safe-area-inset-bottom));left:0;right:0;padding:0 7vw}
+.lp-stage{position:relative;display:flex;align-items:center;justify-content:center}
+body.lp-done{opacity:0}
+/* ---------- style-specific CSS ---------- */
+.gr{position:relative;width:min(86vw,480px);height:120px;border-bottom:6px solid var(--accent);overflow:hidden}.ru{position:absolute;bottom:0;left:calc(var(--p)*(100% - 60px));transition:left .2s;width:60px;height:100px}.ru .leg,.ru .arm{transform-origin:30px 58px;animation:lg calc(var(--t)*0.4s) ease-in-out infinite alternate}.ru .l2,.ru .a2{animation-direction:alternate-reverse}.ru .arm{transform-origin:30px 34px}.ru .bd{animation:bo calc(var(--t)*0.2s) ease-in-out infinite alternate}@keyframes lg{from{transform:rotate(-35deg)}to{transform:rotate(35deg)}}@keyframes bo{to{transform:translateY(-4px)}}.dust{position:absolute;bottom:4px;left:0;right:0;height:4px;background:repeating-linear-gradient(90deg,#fff3 0 10px,transparent 10px 60px);animation:ds calc(var(--t)*0.6s) linear infinite}@keyframes ds{to{background-position:-60px 0}}
+</style></head><body>
+<img id="lp-logo" alt="">
+<div id="lp-title"></div><div id="lp-sub"></div>
+<!-- ---------- style-specific markup ---------- -->
+<div class="gr"><div class="dust"></div><svg class="ru" viewBox="0 0 60 100"><g class="bd"><line class="leg l1" x1="30" y1="58" x2="30" y2="92" stroke="var(--primary)" stroke-width="8" stroke-linecap="round"/><line class="leg l2" x1="30" y1="58" x2="30" y2="92" stroke="var(--primary)" stroke-width="8" stroke-linecap="round" opacity=".7"/><rect x="18" y="26" width="24" height="36" rx="10" fill="var(--primary)"/><line class="arm a1" x1="30" y1="34" x2="30" y2="58" stroke="var(--text)" stroke-width="6" stroke-linecap="round"/><line class="arm a2" x1="30" y1="34" x2="30" y2="58" stroke="var(--text)" stroke-width="6" stroke-linecap="round" opacity=".6"/><circle cx="30" cy="14" r="12" fill="#ffd7a8"/><circle cx="35" cy="12" r="2" fill="#222"/></g></svg></div>
+<div id="lp-pct"></div>
+<div id="lp-tip"></div>
+<script>
+/* ---------- style-specific code: draw(p) is called with progress 0..1 ---------- */
+
+</script>
+<script>
+/* ---------- SHARED LOADER CORE (normally no need to edit) ----------
+   API:  LoadingPage.setProgress(0..1)  LoadingPage.setTip("text")  LoadingPage.done()
+   Short names also exist: setProgress(), setTip(), done()                       */
+(function(){
+ var C=window.LOADER_CONFIG,R=document.documentElement.style,q=function(i){return document.getElementById(i)};
+ if(/[?&]nodemo/.test(location.search))C.demo=false;
+ for(var k in C.colors)R.setProperty('--'+k,C.colors[k]);
+ R.setProperty('--font',C.font);R.setProperty('--t',1/(C.speed||1));
+ if(C.background)document.body.style.backgroundImage='url("'+C.background+'")';
+ if(C.logo){q('lp-logo').src=C.logo;q('lp-logo').style.display='block'}
+ q('lp-title').textContent=C.title;q('lp-sub').textContent=C.subtitle;
+ var p=0,ti=0,fin=false;
+ function setProgress(v){p=Math.max(0,Math.min(1,+v||0));R.setProperty('--p',p);
+  if(C.showPercent)q('lp-pct').textContent=Math.round(p*100)+'%';if(window.draw)window.draw(p)}
+ function setTip(t){var e=q('lp-tip');e.style.opacity=0;setTimeout(function(){e.textContent=t;e.style.opacity=.85},300)}
+ function done(){if(fin)return;fin=true;setProgress(1);setTimeout(function(){document.body.classList.add('lp-done');
+  setTimeout(function(){if(typeof C.onDone==='function')C.onDone()},500)},400)}
+ if(C.tips&&C.tips.length){q('lp-tip').textContent=C.tips[0];
+  setInterval(function(){if(!fin){ti=(ti+1)%C.tips.length;setTip(C.tips[ti])}},C.tipInterval)}
+ window.LoadingPage={setProgress:setProgress,setTip:setTip,done:done,get progress(){return p}};
+ window.setProgress=setProgress;window.setTip=setTip;window.done=done;
+ setProgress(0);
+ if(C.demo){var v=0;(function f(){v+=Math.random()*0.012*(C.speed||1);if(v>=1){v=0}setProgress(v);setTimeout(f,60)})()}
+})();
+</script>
+</body></html>

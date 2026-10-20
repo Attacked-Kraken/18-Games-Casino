@@ -1,0 +1,1 @@
+Unzip Effects-Sounds.zip next to demo.html so the folder Effects-Sounds/ is beside it. Each MP3 has the same name as its effect, for example explosion_large.mp3. Tap "Sound" in the demo to turn sounds on.

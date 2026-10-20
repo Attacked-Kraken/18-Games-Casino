@@ -1,0 +1,71 @@
+/* Apex UI Art Kit: drop-in CSS. Put ui.css next to the style folders.
+   <body class="apx apx-sky"> ... <button class="apx-btn">Play</button> ... */
+:root{--apx-font:system-ui,-apple-system,'Segoe UI',sans-serif}
+.apx{font-family:var(--apx-font)}
+.apx-sky{--apx-base:#3b9cff;--apx-light:#8fd0ff;--apx-dark:#1d5fc4;--apx-deep:#0c2f6b;--apx-dir:'sky'}
+.apx-sky .apx-btn{background-image:url(sky/buttons/btn_rounded_240x80_normal.png)}.apx-sky .apx-btn:active,.apx-sky .apx-btn.pressed{background-image:url(sky/buttons/btn_rounded_240x80_pressed.png)}
+.apx-sky .apx-btn.pill{background-image:url(sky/buttons/btn_pill_240x80_normal.png)}.apx-sky .apx-btn.pill:active{background-image:url(sky/buttons/btn_pill_240x80_pressed.png)}
+.apx-sky .apx-btn-round{background-image:url(sky/buttons/btn_circle_96x108_normal.png)}.apx-sky .apx-btn-round:active{background-image:url(sky/buttons/btn_circle_96x108_pressed.png)}
+.apx-sky .apx-panel{border-image-source:url(sky/panels/panel_480x360.png)}.apx-sky .apx-popup{border-image-source:url(sky/panels/popup_520x400.png)}
+.apx-sky .apx-toggle{background-image:url(sky/toggles/toggle_off_112x60.png)}.apx-sky .apx-toggle.on{background-image:url(sky/toggles/toggle_on_112x60.png)}
+.apx-sky .apx-check{background-image:url(sky/checkboxes/checkbox_off_60.png)}.apx-sky .apx-check.on{background-image:url(sky/checkboxes/checkbox_on_60.png)}
+.apx-sky .apx-tab{background-image:url(sky/tabs/tab_inactive_180x64.png)}.apx-sky .apx-tab.active{background-image:url(sky/tabs/tab_active_180x64.png)}
+.apx-sky .apx-bar{background-image:url(sky/bars/progress_bg_400x40.png)}.apx-sky .apx-bar>i{background-image:url(sky/bars/progress_fill_400x40.png)}
+.apx-sky .apx-banner{background-image:url(sky/banners/banner_ribbon_520x120.png)}
+.apx-lime{--apx-base:#46c94f;--apx-light:#9cf08a;--apx-dark:#228a32;--apx-deep:#0f4a1b;--apx-dir:'lime'}
+.apx-lime .apx-btn{background-image:url(lime/buttons/btn_rounded_240x80_normal.png)}.apx-lime .apx-btn:active,.apx-lime .apx-btn.pressed{background-image:url(lime/buttons/btn_rounded_240x80_pressed.png)}
+.apx-lime .apx-btn.pill{background-image:url(lime/buttons/btn_pill_240x80_normal.png)}.apx-lime .apx-btn.pill:active{background-image:url(lime/buttons/btn_pill_240x80_pressed.png)}
+.apx-lime .apx-btn-round{background-image:url(lime/buttons/btn_circle_96x108_normal.png)}.apx-lime .apx-btn-round:active{background-image:url(lime/buttons/btn_circle_96x108_pressed.png)}
+.apx-lime .apx-panel{border-image-source:url(lime/panels/panel_480x360.png)}.apx-lime .apx-popup{border-image-source:url(lime/panels/popup_520x400.png)}
+.apx-lime .apx-toggle{background-image:url(lime/toggles/toggle_off_112x60.png)}.apx-lime .apx-toggle.on{background-image:url(lime/toggles/toggle_on_112x60.png)}
+.apx-lime .apx-check{background-image:url(lime/checkboxes/checkbox_off_60.png)}.apx-lime .apx-check.on{background-image:url(lime/checkboxes/checkbox_on_60.png)}
+.apx-lime .apx-tab{background-image:url(lime/tabs/tab_inactive_180x64.png)}.apx-lime .apx-tab.active{background-image:url(lime/tabs/tab_active_180x64.png)}
+.apx-lime .apx-bar{background-image:url(lime/bars/progress_bg_400x40.png)}.apx-lime .apx-bar>i{background-image:url(lime/bars/progress_fill_400x40.png)}
+.apx-lime .apx-banner{background-image:url(lime/banners/banner_ribbon_520x120.png)}
+.apx-sunset{--apx-base:#ff8a1f;--apx-light:#ffc46b;--apx-dark:#d4570a;--apx-deep:#6b2a05;--apx-dir:'sunset'}
+.apx-sunset .apx-btn{background-image:url(sunset/buttons/btn_rounded_240x80_normal.png)}.apx-sunset .apx-btn:active,.apx-sunset .apx-btn.pressed{background-image:url(sunset/buttons/btn_rounded_240x80_pressed.png)}
+.apx-sunset .apx-btn.pill{background-image:url(sunset/buttons/btn_pill_240x80_normal.png)}.apx-sunset .apx-btn.pill:active{background-image:url(sunset/buttons/btn_pill_240x80_pressed.png)}
+.apx-sunset .apx-btn-round{background-image:url(sunset/buttons/btn_circle_96x108_normal.png)}.apx-sunset .apx-btn-round:active{background-image:url(sunset/buttons/btn_circle_96x108_pressed.png)}
+.apx-sunset .apx-panel{border-image-source:url(sunset/panels/panel_480x360.png)}.apx-sunset .apx-popup{border-image-source:url(sunset/panels/popup_520x400.png)}
+.apx-sunset .apx-toggle{background-image:url(sunset/toggles/toggle_off_112x60.png)}.apx-sunset .apx-toggle.on{background-image:url(sunset/toggles/toggle_on_112x60.png)}
+.apx-sunset .apx-check{background-image:url(sunset/checkboxes/checkbox_off_60.png)}.apx-sunset .apx-check.on{background-image:url(sunset/checkboxes/checkbox_on_60.png)}
+.apx-sunset .apx-tab{background-image:url(sunset/tabs/tab_inactive_180x64.png)}.apx-sunset .apx-tab.active{background-image:url(sunset/tabs/tab_active_180x64.png)}
+.apx-sunset .apx-bar{background-image:url(sunset/bars/progress_bg_400x40.png)}.apx-sunset .apx-bar>i{background-image:url(sunset/bars/progress_fill_400x40.png)}
+.apx-sunset .apx-banner{background-image:url(sunset/banners/banner_ribbon_520x120.png)}
+.apx-grape{--apx-base:#9b5cff;--apx-light:#d0afff;--apx-dark:#6a2fd6;--apx-deep:#33136e;--apx-dir:'grape'}
+.apx-grape .apx-btn{background-image:url(grape/buttons/btn_rounded_240x80_normal.png)}.apx-grape .apx-btn:active,.apx-grape .apx-btn.pressed{background-image:url(grape/buttons/btn_rounded_240x80_pressed.png)}
+.apx-grape .apx-btn.pill{background-image:url(grape/buttons/btn_pill_240x80_normal.png)}.apx-grape .apx-btn.pill:active{background-image:url(grape/buttons/btn_pill_240x80_pressed.png)}
+.apx-grape .apx-btn-round{background-image:url(grape/buttons/btn_circle_96x108_normal.png)}.apx-grape .apx-btn-round:active{background-image:url(grape/buttons/btn_circle_96x108_pressed.png)}
+.apx-grape .apx-panel{border-image-source:url(grape/panels/panel_480x360.png)}.apx-grape .apx-popup{border-image-source:url(grape/panels/popup_520x400.png)}
+.apx-grape .apx-toggle{background-image:url(grape/toggles/toggle_off_112x60.png)}.apx-grape .apx-toggle.on{background-image:url(grape/toggles/toggle_on_112x60.png)}
+.apx-grape .apx-check{background-image:url(grape/checkboxes/checkbox_off_60.png)}.apx-grape .apx-check.on{background-image:url(grape/checkboxes/checkbox_on_60.png)}
+.apx-grape .apx-tab{background-image:url(grape/tabs/tab_inactive_180x64.png)}.apx-grape .apx-tab.active{background-image:url(grape/tabs/tab_active_180x64.png)}
+.apx-grape .apx-bar{background-image:url(grape/bars/progress_bg_400x40.png)}.apx-grape .apx-bar>i{background-image:url(grape/bars/progress_fill_400x40.png)}
+.apx-grape .apx-banner{background-image:url(grape/banners/banner_ribbon_520x120.png)}
+.apx-cherry{--apx-base:#ff4b5f;--apx-light:#ff9eaa;--apx-dark:#c81d3a;--apx-deep:#650c1d;--apx-dir:'cherry'}
+.apx-cherry .apx-btn{background-image:url(cherry/buttons/btn_rounded_240x80_normal.png)}.apx-cherry .apx-btn:active,.apx-cherry .apx-btn.pressed{background-image:url(cherry/buttons/btn_rounded_240x80_pressed.png)}
+.apx-cherry .apx-btn.pill{background-image:url(cherry/buttons/btn_pill_240x80_normal.png)}.apx-cherry .apx-btn.pill:active{background-image:url(cherry/buttons/btn_pill_240x80_pressed.png)}
+.apx-cherry .apx-btn-round{background-image:url(cherry/buttons/btn_circle_96x108_normal.png)}.apx-cherry .apx-btn-round:active{background-image:url(cherry/buttons/btn_circle_96x108_pressed.png)}
+.apx-cherry .apx-panel{border-image-source:url(cherry/panels/panel_480x360.png)}.apx-cherry .apx-popup{border-image-source:url(cherry/panels/popup_520x400.png)}
+.apx-cherry .apx-toggle{background-image:url(cherry/toggles/toggle_off_112x60.png)}.apx-cherry .apx-toggle.on{background-image:url(cherry/toggles/toggle_on_112x60.png)}
+.apx-cherry .apx-check{background-image:url(cherry/checkboxes/checkbox_off_60.png)}.apx-cherry .apx-check.on{background-image:url(cherry/checkboxes/checkbox_on_60.png)}
+.apx-cherry .apx-tab{background-image:url(cherry/tabs/tab_inactive_180x64.png)}.apx-cherry .apx-tab.active{background-image:url(cherry/tabs/tab_active_180x64.png)}
+.apx-cherry .apx-bar{background-image:url(cherry/bars/progress_bg_400x40.png)}.apx-cherry .apx-bar>i{background-image:url(cherry/bars/progress_fill_400x40.png)}
+.apx-cherry .apx-banner{background-image:url(cherry/banners/banner_ribbon_520x120.png)}
+
+.apx-btn{appearance:none;border:0;background:transparent center/100% 100% no-repeat;min-width:160px;min-height:56px;padding:0 24px 8px;color:#fff;font:900 20px/1 var(--apx-font);text-shadow:0 2px 0 var(--apx-deep);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.apx-btn:active,.apx-btn.pressed{padding-top:6px;padding-bottom:2px}
+.apx-btn:disabled{filter:grayscale(1) brightness(.9);opacity:.8}
+.apx-btn-round{appearance:none;border:0;background:transparent center/100% 100% no-repeat;width:72px;height:81px;padding:0 0 8px;display:inline-grid;place-items:center}
+.apx-btn-round img{width:46%;height:auto;pointer-events:none}
+.apx-panel,.apx-popup{border:28px solid transparent;border-image-slice:40 fill;border-image-width:28px;border-image-repeat:stretch;padding:8px;color:#3b2a18}
+.apx-popup{border-image-slice:90 40 40 40 fill;border-width:70px 28px 28px;border-image-width:70px 28px 28px}
+.apx-popup h2{margin:-56px 0 24px;color:#fff;text-align:center;text-shadow:0 2px 0 var(--apx-deep);font-size:22px}
+.apx-toggle{appearance:none;border:0;width:74px;height:40px;background:transparent center/100% 100% no-repeat;cursor:pointer}
+.apx-check{display:inline-block;width:36px;height:36px;background:transparent center/100% 100% no-repeat;vertical-align:middle;cursor:pointer}
+.apx-tab{display:inline-grid;place-items:center;width:120px;height:44px;background:transparent center/100% 100% no-repeat;color:#fff;font-weight:800;text-shadow:0 1px 0 var(--apx-deep);cursor:pointer}
+.apx-bar{position:relative;height:24px;background:transparent center/100% 100% no-repeat}
+.apx-bar>i{position:absolute;left:0;top:0;bottom:0;width:var(--v,50%);background:transparent left center/auto 100% no-repeat;border-radius:12px;transition:width .3s}
+.apx-banner{display:grid;place-items:center;width:320px;height:74px;padding-bottom:16px;box-sizing:border-box;background:transparent center/100% 100% no-repeat;color:#fff;font-weight:900;font-size:22px;text-shadow:0 2px 0 var(--apx-deep)}
+.apx-icon{width:48px;height:48px;display:inline-block;vertical-align:middle}
+.apx-badge{position:relative}.apx-badge::after{content:attr(data-count);position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;border-radius:11px;background:#ff3b4e;border:2px solid #fff;color:#fff;font:800 12px/18px var(--apx-font);text-align:center;padding:0 4px;box-sizing:border-box}

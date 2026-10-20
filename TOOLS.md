@@ -132,3 +132,9 @@ font or online API in a game (games are fully offline).
   FX (reverb, echo, drive, filters, crush, compressor), sidechain, glide - see `sounds/recipes/games.json`.
   For sounds that don't sound made-by-computer, put a REAL recording in `sounds/real/` (owner's recordings, Kenney CC0
   audio) and use it on a track with `"sample": "file:sounds/real/<name>.wav"`.
+
+## The owner's art + effects kits (Oct 20) - use these first
+- **Effects:** `kit/fx-library/effects.js` (ApexFX: `fx.play('explosion_medium', x, y)`, 86 effects - see its README.txt, try `kit/fx-library/demo.html`). Sound for each effect: `sounds/effects/<effect name>.mp3`.
+- **Menus / HUD art:** `kit/ui-art/` - buttons, panels, popups, bars, toggles, icons in 5 colors (sky, lime, sunset, grape, cherry) + `ui.css` (see README.txt, `preview.html`). UI sounds: `sounds/ui-art/` (button_confirm, popup_open, coin, level_complete, countdown_321_go...).
+- **Loading screens:** `kit/loading/` - 39 pages, read `MUSE-GUIDE.txt` (CONFIG block, `LoadingPage.setProgress()`, `done()`, set `demo: false`). Preview: `kit/loading/index.html`.
+- All original, made for the owner, free in paid apps. Keep the game's own look; only use these when your job asks for effects, menus, sounds or a loading screen.

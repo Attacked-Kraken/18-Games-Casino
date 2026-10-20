@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Loading</title>
+<script>
+/* =====================================================================
+   CONFIG: EDIT THIS BLOCK TO RESTYLE THE PAGE (see MUSE-GUIDE.txt)
+   Loader style: glitch, glitchy shifting title with scanlines
+   ===================================================================== */
+window.LOADER_CONFIG = {
+  title:      "SYSTEM BOOT",           // big title text
+  subtitle:   "Loading...",            // small text under the title
+  logo:       "",                      // logo image path, e.g. "logo.png" ("" = no logo)
+  background: "",                      // background image path ("" = gradient from colors)
+  colors: {
+    bg:      "#050505",               // background top
+    bg2:     "#101018",               // background bottom
+    primary: "#00ffd5",               // main color (bars, shapes)
+    accent:  "#ff2b6a",               // highlight color
+    text:    "#ffffff"                 // text color
+  },
+  font:  "'Courier New',monospace",   // CSS font-family
+  speed: 1,                            // animation speed (2 = twice as fast, 0.5 = half)
+  tips: [                              // tips shown in turn ([] = hide tips)
+    "Tap fast to build combos!",
+    "Collect coins to unlock new items.",
+    "Daily rewards reset every 24 hours.",
+    "Stars unlock harder levels."
+  ],
+  tipInterval: 3500,                   // ms between tips
+  showPercent: true,                   // show the "42%" number
+  demo: true,                          // true = fake progress for preview. Set false in your game
+                                       //   and call LoadingPage.setProgress(0..1) yourself.
+  onDone: null                         // function run after LoadingPage.done(), e.g. function(){ startGame(); }
+};
+/* ===================== END OF CONFIG ===================== */
+</script>
+<style>
+/* CSS VARIABLES: set from CONFIG at startup; you can also edit defaults here */
+:root{--bg:#050505;--bg2:#101018;--primary:#00ffd5;--accent:#ff2b6a;--text:#fff;--font:'Courier New',monospace;--t:1;--p:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:linear-gradient(var(--bg),var(--bg2));background-size:cover;background-position:center;color:var(--text);font-family:var(--font);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;transition:opacity .5s;-webkit-user-select:none;user-select:none}
+#lp-logo{max-width:40vw;max-height:18vh;display:none}
+#lp-title{font-size:clamp(26px,7vw,54px);font-weight:800;letter-spacing:.02em}
+#lp-sub{opacity:.75;font-size:15px;margin-top:-14px}
+#lp-pct{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#lp-tip{min-height:2.6em;max-width:86vw;opacity:.85;font-size:15px;transition:opacity .4s;position:absolute;bottom:max(6vh,env(safe-area-inset-bottom));left:0;right:0;padding:0 7vw}
+.lp-stage{position:relative;display:flex;align-items:center;justify-content:center}
+body.lp-done{opacity:0}
+/* ---------- style-specific CSS ---------- */
+#lp-title{position:relative;animation:gl calc(var(--t)*2s) infinite}#lp-title:before,#lp-title:after{content:attr(data-t);position:absolute;inset:0}#lp-title:before{color:var(--primary);animation:g1 calc(var(--t)*0.6s) infinite;clip-path:inset(0 0 55% 0)}#lp-title:after{color:var(--accent);animation:g2 calc(var(--t)*0.8s) infinite;clip-path:inset(55% 0 0 0)}@keyframes g1{0%,100%{transform:translate(0)}20%{transform:translate(-4px,1px)}40%{transform:translate(3px,-1px)}}@keyframes g2{0%,100%{transform:translate(0)}30%{transform:translate(4px,1px)}60%{transform:translate(-3px)}}@keyframes gl{0%,92%,100%{transform:none}94%{transform:skewX(12deg)}96%{transform:skewX(-8deg)}}.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(#0000 0 2px,#0004 2px 4px)}.bar{width:min(76vw,400px);height:14px;background:#fff1;border:1px solid var(--primary)}.bar i{display:block;height:100%;width:calc(var(--p)*100%);background:var(--primary)}
+</style></head><body>
+<img id="lp-logo" alt="">
+<div id="lp-title"></div><div id="lp-sub"></div>
+<!-- ---------- style-specific markup ---------- -->
+<div class="bar"><i></i></div><div class="scan"></div>
+<div id="lp-pct"></div>
+<div id="lp-tip"></div>
+<script>
+/* ---------- style-specific code: draw(p) is called with progress 0..1 ---------- */
+addEventListener('DOMContentLoaded',function(){var t=document.getElementById('lp-title');setTimeout(function(){t.dataset.t=t.textContent},0)})
+</script>
+<script>
+/* ---------- SHARED LOADER CORE (normally no need to edit) ----------
+   API:  LoadingPage.setProgress(0..1)  LoadingPage.setTip("text")  LoadingPage.done()
+   Short names also exist: setProgress(), setTip(), done()                       */
+(function(){
+ var C=window.LOADER_CONFIG,R=document.documentElement.style,q=function(i){return document.getElementById(i)};
+ if(/[?&]nodemo/.test(location.search))C.demo=false;
+ for(var k in C.colors)R.setProperty('--'+k,C.colors[k]);
+ R.setProperty('--font',C.font);R.setProperty('--t',1/(C.speed||1));
+ if(C.background)document.body.style.backgroundImage='url("'+C.background+'")';
+ if(C.logo){q('lp-logo').src=C.logo;q('lp-logo').style.display='block'}
+ q('lp-title').textContent=C.title;q('lp-sub').textContent=C.subtitle;
+ var p=0,ti=0,fin=false;
+ function setProgress(v){p=Math.max(0,Math.min(1,+v||0));R.setProperty('--p',p);
+  if(C.showPercent)q('lp-pct').textContent=Math.round(p*100)+'%';if(window.draw)window.draw(p)}
+ function setTip(t){var e=q('lp-tip');e.style.opacity=0;setTimeout(function(){e.textContent=t;e.style.opacity=.85},300)}
+ function done(){if(fin)return;fin=true;setProgress(1);setTimeout(function(){document.body.classList.add('lp-done');
+  setTimeout(function(){if(typeof C.onDone==='function')C.onDone()},500)},400)}
+ if(C.tips&&C.tips.length){q('lp-tip').textContent=C.tips[0];
+  setInterval(function(){if(!fin){ti=(ti+1)%C.tips.length;setTip(C.tips[ti])}},C.tipInterval)}
+ window.LoadingPage={setProgress:setProgress,setTip:setTip,done:done,get progress(){return p}};
+ window.setProgress=setProgress;window.setTip=setTip;window.done=done;
+ setProgress(0);
+ if(C.demo){var v=0;(function f(){v+=Math.random()*0.012*(C.speed||1);if(v>=1){v=0}setProgress(v);setTimeout(f,60)})()}
+})();
+</script>
+</body></html>

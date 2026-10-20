@@ -1,0 +1,158 @@
+[
+ {
+  "file": "progress_bar.html",
+  "desc": "classic rounded progress bar with shine"
+ },
+ {
+  "file": "striped_bar.html",
+  "desc": "candy-striped moving bar"
+ },
+ {
+  "file": "spinner.html",
+  "desc": "simple spinning arc"
+ },
+ {
+  "file": "dots.html",
+  "desc": "three bouncing dots"
+ },
+ {
+  "file": "progress_ring.html",
+  "desc": "circular ring that fills with percent inside"
+ },
+ {
+  "file": "percent_counter.html",
+  "desc": "huge counting percent number"
+ },
+ {
+  "file": "race_track.html",
+  "desc": "car driving along a track as it loads"
+ },
+ {
+  "file": "coin_fill.html",
+  "desc": "big coin that fills up from the bottom"
+ },
+ {
+  "file": "bouncing_ball.html",
+  "desc": "ball bouncing with squash and shadow"
+ },
+ {
+  "file": "neon_sign.html",
+  "desc": "flickering neon tube sign"
+ },
+ {
+  "file": "arcade_marquee.html",
+  "desc": "marquee board with chasing bulbs"
+ },
+ {
+  "file": "tip_carousel.html",
+  "desc": "tip of the day cards that slide in"
+ },
+ {
+  "file": "run_cycle.html",
+  "desc": "little character running across the ground"
+ },
+ {
+  "file": "puzzle_assemble.html",
+  "desc": "puzzle pieces fly in as it loads"
+ },
+ {
+  "file": "ocean_wave.html",
+  "desc": "wave fill rising inside a circle"
+ },
+ {
+  "file": "rocket_launch.html",
+  "desc": "rocket rising up the screen with flame and stars"
+ },
+ {
+  "file": "pixel_retro.html",
+  "desc": "chunky pixel blocks and retro font"
+ },
+ {
+  "file": "minimal.html",
+  "desc": "thin line and quiet text"
+ },
+ {
+  "file": "glitch.html",
+  "desc": "glitchy shifting title with scanlines"
+ },
+ {
+  "file": "card_flip.html",
+  "desc": "picture cards flipping over one by one (stars, hearts, gems)"
+ },
+ {
+  "file": "countdown.html",
+  "desc": "3-2-1 countdown that pops each number"
+ },
+ {
+  "file": "parallax_scene.html",
+  "desc": "layered hills and clouds scrolling past"
+ },
+ {
+  "file": "hourglass.html",
+  "desc": "sand falling in an hourglass"
+ },
+ {
+  "file": "orbit.html",
+  "desc": "planets orbiting a glowing core"
+ },
+ {
+  "file": "heart_fill.html",
+  "desc": "heart that fills up with a beat"
+ },
+ {
+  "file": "battery_charge.html",
+  "desc": "battery charging in segments"
+ },
+ {
+  "file": "gem_grow.html",
+  "desc": "gem that spins and grows bigger"
+ },
+ {
+  "file": "typewriter.html",
+  "desc": "terminal-style text typing out lines"
+ },
+ {
+  "file": "cube_3d.html",
+  "desc": "rotating 3D cube"
+ },
+ {
+  "file": "equalizer.html",
+  "desc": "music equalizer bars bouncing"
+ },
+ {
+  "file": "snake_dots.html",
+  "desc": "ring of dots chasing in a circle"
+ },
+ {
+  "file": "tower_build.html",
+  "desc": "blocks stacking into a tower"
+ },
+ {
+  "file": "star_collect.html",
+  "desc": "five stars lighting up in turn"
+ },
+ {
+  "file": "liquid_tube.html",
+  "desc": "potion flask filling with bubbles"
+ },
+ {
+  "file": "pulse_logo.html",
+  "desc": "glowing pulse rings behind the title"
+ },
+ {
+  "file": "road_trip.html",
+  "desc": "top-down road with lane lines rushing past"
+ },
+ {
+  "file": "bubble_pop.html",
+  "desc": "bubbles floating up and popping"
+ },
+ {
+  "file": "day_night.html",
+  "desc": "sun and moon arc across a changing sky"
+ },
+ {
+  "file": "rainbow_arc.html",
+  "desc": "rainbow arc drawing itself"
+ }
+]
