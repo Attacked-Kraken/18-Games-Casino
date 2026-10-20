@@ -565,7 +565,7 @@ export default [
     async test(page, h) {
       const t0 = Date.now();
       const budget = () => Date.now() - t0 < 27000;
-      const skipState = () => h.eval(() => { const b = document.getElementById('btnSkip'); const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} return { has: !!b, vis: !!(b && b.offsetParent !== null && getComputedStyle(b).display !== 'none'), screen: on ? on.id : null, car: car ? { season: car.season, meet: car.meet, tp: car.tp, done: car.done } : null }; });
+      const skipState = () => h.eval(() => { const b = document.getElementById('btnSkip'); const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} return { has: !!b, vis: !!(b && getComputedStyle(b).display !== 'none' && getComputedStyle(b).visibility !== 'hidden' && b.getBoundingClientRect().width > 0 && b.getBoundingClientRect().height > 0) /* JOB G-30: visibility measured by computed style + rendered box, NOT offsetParent - #btnSkip is position:fixed, and a fixed element's offsetParent is null in Chrome even when it is plainly on screen, so the old probe reported a shown button as 'never showed' forever. The game was right; the ruler was wrong. */, screen: on ? on.id : null, car: car ? { season: car.season, meet: car.meet, tp: car.tp, done: car.done } : null }; });
       // PART 1: the game-check loads the game WITHOUT dev=1 - the button must not show
       let s = await skipState();
       if (s.vis) return 'the Skip level button is showing WITHOUT dev=1 in the address - it must never show for players';
