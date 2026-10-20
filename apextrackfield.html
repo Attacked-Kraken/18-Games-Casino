@@ -29,6 +29,24 @@ body.showfps #muteBtn{top:calc(env(safe-area-inset-top,0px) + 52px)}
 padding:calc(env(safe-area-inset-top,0px) + 56px) 12px calc(env(safe-area-inset-bottom,0px) + 12px);
 background:rgba(4,10,20,.45)}
 .screen.on{display:flex}
+/* JOB G-05 (owner): the menu must fit a sideways phone with NO scrolling (FREE PLAY sat 83px
+below the bottom of a 390px-tall screen). Short landscape screens only: the menu panel goes
+two columns and compacts until every menu button is on screen. Portrait and tall screens
+keep the classic one-column menu; no other screen is touched. */
+@media (orientation:landscape) and (max-height:460px){
+#menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
+#menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
+#menu .panel h1{grid-column:1/-1;font-size:21px}
+#menu .sponsor{grid-column:1/-1;font-size:10px;margin-bottom:5px}
+#menu .credit{grid-column:1/-1;font-size:10px;margin-top:6px}
+#menu label.f{font-size:11px;margin:5px 0 2px}
+#menu input.txt{padding:7px;font-size:14px}
+#menu input[type=color].swatch{height:30px}
+#menu .btn{margin:4px 0;padding:8px 10px;min-height:40px;font-size:14px}
+#menu .btn.small{padding:6px 8px;min-height:34px;font-size:12px}
+#menu .hint{font-size:11px;margin:4px 0}
+#menuRivalLine{grid-column:1/-1}
+}
 .panel{background:linear-gradient(180deg,#10253f,#0a1626);border:2px solid #ffd34d;border-radius:18px;
 width:100%;max-width:620px;max-height:100%;overflow-y:auto;padding:20px 18px;-webkit-overflow-scrolling:touch}
 .panel h1{font-size:30px;letter-spacing:1px;color:#ffd34d;text-align:center;margin-bottom:2px}
@@ -3164,22 +3182,31 @@ let lastT=0, acc=0;
 function frame(now){
 requestAnimationFrame(frame);
 if(!lastT) lastT=now;
-let dt=(now-lastT)/1000; lastT=now;
-if(dt>0.12)dt=0.12; if(dt<0)dt=0;
+let rdt=(now-lastT)/1000; lastT=now; if(rdt<0)rdt=0;
+let dt=rdt>0.12?0.12:rdt;
+/* JOB G-05 (owner): career mode must never get stuck. The race simulation used to take at
+most 5 fixed steps per painted frame and THREW THE REST OF THE TIME AWAY, so on a slow
+phone (the game-check robot paints ~3 frames a second) game time ran at about a quarter of
+real time: a career meet could not finish inside a real session, the career looked stuck
+and the next meet / next season never unlocked. The sim now banks up to a full slow frame
+of real time (30 steps of 1/60) per painted frame, so game time tracks real time at any
+frame rate. On a normal 60fps phone nothing changes: still 1 step per frame. The visual
+dt above stays clamped at 0.12 exactly as before. */
+let simDt=rdt>0.5?0.5:rdt;
 Perf.frame(dt);
 if(W3D.stadium) W3D.stadium.update(dt);
 clearOverlay();
 const playing=document.body.classList.contains('playing');
 if(playing&&ENG){
-acc+=dt;
+acc+=simDt;
 let n=0;
-while(acc>=1/60&&n<5){ ENG.update(1/60); acc-=1/60; n++; }
-if(n===5) acc=0;
+while(acc>=1/60&&n<30){ ENG.update(1/60); acc-=1/60; n++; }
+if(n===30) acc=0;
 try{ if(ENG.draw3) ENG.draw3(dt); }catch(err){}
 updateHUD();
 Confetti.update(dt); Confetti.draw();
 Parts.update(dt); Parts.draw();
-if(ENG.done&&ENG.finishT>1.5&&!G.resShown){ G.resShown=true; finishEvent(); }
+if(ENG.done&&ENG.finishT>0.6&&!G.resShown){ G.resShown=true; finishEvent(); }
 }else if(W3D.ready){
 if(W3D.ceremony&&W3D.ceremony.active) W3D.ceremonyFrame(dt);
 else W3D.menuFrame(now/1000, dt);
