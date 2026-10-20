@@ -1,5 +1,5 @@
 {
- "made": "2026-10-19T19:34:44.191Z",
+ "made": "2026-10-20T02:19:37.344Z",
  "sounds": [
   {
    "name": "superbike-high",
@@ -200,6 +200,46 @@
    "secs": 140.5,
    "kb": 2292,
    "made": "2026-10-19T19:34:43.110Z"
+  },
+  {
+   "name": "paperplane-menu",
+   "title": "Paper Plane - menu",
+   "game": "paperplane",
+   "tab": "music",
+   "file": "paperplane-menu.m4a",
+   "secs": 145.5,
+   "kb": 2353,
+   "made": "2026-10-20T02:18:46.883Z"
+  },
+  {
+   "name": "paperplane-play",
+   "title": "Paper Plane - flying",
+   "game": "paperplane",
+   "tab": "music",
+   "file": "paperplane-play.m4a",
+   "secs": 155.1,
+   "kb": 2571,
+   "made": "2026-10-20T02:19:00.432Z"
+  },
+  {
+   "name": "reefdash-menu",
+   "title": "Reef Dash - menu",
+   "game": "reefdash",
+   "tab": "music",
+   "file": "reefdash-menu.m4a",
+   "secs": 125.2,
+   "kb": 2083,
+   "made": "2026-10-20T02:19:13.731Z"
+  },
+  {
+   "name": "reefdash-play",
+   "title": "Reef Dash - swim",
+   "game": "reefdash",
+   "tab": "music",
+   "file": "reefdash-play.m4a",
+   "secs": 163.3,
+   "kb": 2787,
+   "made": "2026-10-20T02:19:36.615Z"
   },
   {
    "name": "all-ui-tap",
@@ -590,6 +630,66 @@
    "secs": 0.2,
    "kb": 33,
    "made": "2026-10-19T16:46:21.251Z"
+  },
+  {
+   "name": "paperplane-coin",
+   "title": "Coin chime",
+   "game": "paperplane",
+   "tab": "effect",
+   "file": "paperplane-coin.wav",
+   "secs": 0.7,
+   "kb": 124,
+   "made": "2026-10-20T02:19:36.721Z"
+  },
+  {
+   "name": "paperplane-crash",
+   "title": "Paper crash",
+   "game": "paperplane",
+   "tab": "effect",
+   "file": "paperplane-crash.wav",
+   "secs": 0.5,
+   "kb": 86,
+   "made": "2026-10-20T02:19:36.802Z"
+  },
+  {
+   "name": "paperplane-gust",
+   "title": "Wind gust",
+   "game": "paperplane",
+   "tab": "effect",
+   "file": "paperplane-gust.wav",
+   "secs": 1.4,
+   "kb": 239,
+   "made": "2026-10-20T02:19:36.898Z"
+  },
+  {
+   "name": "paperplane-level-done",
+   "title": "Level done",
+   "game": "paperplane",
+   "tab": "effect",
+   "file": "paperplane-level-done.wav",
+   "secs": 2.1,
+   "kb": 353,
+   "made": "2026-10-20T02:19:37.030Z"
+  },
+  {
+   "name": "reefdash-bubble",
+   "title": "Bubble pop",
+   "game": "reefdash",
+   "tab": "effect",
+   "file": "reefdash-bubble.wav",
+   "secs": 0.2,
+   "kb": 26,
+   "made": "2026-10-20T02:19:37.103Z"
+  },
+  {
+   "name": "reefdash-bump",
+   "title": "Bump into the reef",
+   "game": "reefdash",
+   "tab": "effect",
+   "file": "reefdash-bump.wav",
+   "secs": 4.1,
+   "kb": 699,
+   "made": "2026-10-20T02:19:37.303Z"
   },
   {
    "name": "moto-start-lights",

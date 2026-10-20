@@ -1,0 +1,1 @@
+{"name":"reefdash-bubble","title":"Bubble pop","game":"reefdash","tab":"effect","type":"mix","layers":[{"lib":"Chip blip","at":0,"pitch":12,"gain":0.5},{"lib":"Snap","at":0,"pitch":7,"gain":0.4}]}

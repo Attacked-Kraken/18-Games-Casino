@@ -1,0 +1,1 @@
+{"name":"paperplane-crash","title":"Paper crash","game":"paperplane","tab":"effect","type":"mix","layers":[{"lib":"Scratch","at":0,"pitch":5,"gain":0.6},{"lib":"Shaker","at":0,"pitch":-5,"gain":0.5},{"lib":"Kick Soft","at":0,"pitch":0,"gain":0.5}]}
