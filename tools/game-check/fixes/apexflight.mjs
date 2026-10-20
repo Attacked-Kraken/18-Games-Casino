@@ -89,23 +89,42 @@ export default [
     id: 'play-takeoff',
     ask: 'take off: full throttle on the runway lifts the plane into the air',
     async test(page, h) {
-      try { await h.press('#btnFree'); } catch (e) {}
-      await h.wait(500);
+      // The robot runs all tests on ONE shared page, so an earlier test can
+      // leave the plane flying or crashed - and h.press never clicks a hidden
+      // button. Return to the runway with the game's own buttons first:
+      // menu FREE FLIGHT, crash-overlay tap, or the HUD RESET button.
+      const st = await h.eval(() => ({
+        menu: !document.getElementById('startOv').hidden,
+        crashed: !document.getElementById('crashOv').hidden,
+        ground: !!(window.__flight && window.__flight.P.ground),
+      })).catch(() => null);
+      if (!st) return 'no window.__flight hook';
+      if (!st.ground) {
+        try {
+          if (st.menu) await h.press('#btnFree');
+          else if (st.crashed) await h.press('#crashOv');
+          else await h.press('#resetBtn');
+        } catch (e) {}
+      }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        if (F.P.ground !== true) return 'plane did not start on the runway';
         return new Promise((res) => {
           const t0 = Date.now();
+          let sawGround = F.P.ground === true;
           const iv = setInterval(() => {
-            if (!F.P.ground && F.P.pos.y > 2) {
+            if (F.P.ground === true) sawGround = true;
+            if (sawGround && !F.P.ground && F.P.pos.y > 2) {
               clearInterval(iv);
               res(true);
-            } else if (Date.now() - t0 > 30000) {
+            } else if (!document.getElementById('crashOv').hidden) {
               clearInterval(iv);
-              res('plane never left the ground after 30s at full throttle');
+              res('plane crashed during the takeoff roll');
+            } else if (Date.now() - t0 > 22000) {
+              clearInterval(iv);
+              res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
             }
-          }, 500);
+          }, 300);
         });
       });
     },
@@ -170,15 +189,26 @@ export default [
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(400);
+      // the shared page can leave the plane crashed - reset first, then set up
+      const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
+      if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        // gentle final approach: 25m up, 250m short of the runway center, slow descent
-        F.P.pos.set(0, 25, -250); F.P.vel.set(0, -1.2, 26); F.P.ground = false;
-        F.P.pitch = -0.12; F.P.roll = 0; F.P.yaw = 0; F.P.thr = 0.3; F.inp.pitchUp = 0;
+        // short final: 22 m up, 350 m short of the runway centre, flying at it
+        F.P.pos.set(0, 22, -350); F.P.vel.set(0, -1, 30); F.P.ground = false;
+        F.P.pitch = -0.1; F.P.roll = 0; F.P.yaw = 0; F.P.thr = 0.35; F.inp.pitchUp = 0;
         return new Promise((res) => {
           const t0 = Date.now();
           const iv = setInterval(() => {
+            // fly the descent like a pilot: hold ~-1.8 m/s sink with pitch
+            // (pitch is game state, not input - pollKeys never resets it),
+            // easing off near the ground so the touchdown is gentle
+            const low = F.P.pos.y < 8;
+            const target = low ? -1.2 : -1.8;
+            const vs = F.P.vel.y;
+            if (vs < target - 0.5) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+            else if (vs > target + 0.5) F.P.pitch = Math.max(F.P.pitch - 0.03, low ? -0.2 : -0.3);
             if (document.getElementById('crashOv').hidden === false) {
               clearInterval(iv);
               return res('plane crashed instead of landing');
@@ -188,11 +218,11 @@ export default [
               const onRwy = Math.abs(F.P.pos.x) <= 14 && F.P.pos.z > -700 && F.P.pos.z < 700;
               return res(onRwy ? true : `touched down off the runway (x=${F.P.pos.x.toFixed(1)}, z=${F.P.pos.z.toFixed(1)})`);
             }
-            if (Date.now() - t0 > 60000) {
+            if (Date.now() - t0 > 20000) {
               clearInterval(iv);
-              return res('never touched down after 60s of approach');
+              return res('never touched down after 20s of approach');
             }
-          }, 500);
+          }, 200);
         });
       });
     },
