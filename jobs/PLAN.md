@@ -25,5 +25,12 @@ but only DO the G-job you were sent.
 - [ ] next: real 3D F1 cars (10+ on the grid) in team paints, chase camera behind the car
 - [ ] next: career mode - every level plays to the end and unlocks the next (play tests)
 
+## Track & Field - window 4 (a couple of steps at a time; KEEP lock on looks/apextrackfield.md stays)
+- [ ] G-05 the menu fits a sideways phone (FREE PLAY is 83 px below) + career mode never gets stuck: winning a meet
+      unlocks the next one, winning the championship unlocks the next season (robot tests fail today)
+- [ ] next: 1500 m and long races - camera stays LOW behind the runner; discus / shot put / javelin - camera follows the throw
+- [ ] next: dev-only "Skip level" button (only with dev=1 in the address)
+- [ ] next: friend codes play test
+
 ## New games from the owner (on Game Development, not assigned yet)
 - Paper Plane (apexpaperplane.html), Reef Dash (apexreefdash.html)
