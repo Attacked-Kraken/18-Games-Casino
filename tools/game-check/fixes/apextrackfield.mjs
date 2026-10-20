@@ -447,6 +447,8 @@ export default [
         else if (st.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
         else if (st.screen === 'grid') await h.eval(() => { const b = document.querySelector('#gridEvents button'); if (b) b.click(); return true; });
         else if (st.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+        // JOB G-11: since the career could first be finished end-to-end (G-05), the test before this one can leave the game on the CAREER dashboard - leave it by its own BACK button, like a player
+        else if (st.screen === 'career') await h.eval(() => { const b = document.getElementById('bCareerBack'); if (b) b.click(); return true; });
         else break;
         await h.wait(600);
       }
