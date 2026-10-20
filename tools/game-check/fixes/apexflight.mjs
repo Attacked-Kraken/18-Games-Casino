@@ -32,11 +32,48 @@ export default [
           if (total > 200) break;
         }
         if (total > 0 && mono / total > 0.5) out.push(Math.round(mono/total*100) + '% monospace fonts');
-        // check for green-dominant colors
-        const body = getComputedStyle(document.body);
-        if (/57,\s*255,\s*90|157/.test(body.color + document.body.innerHTML.slice(0,5000)))
-          out.push('green colors still present');
+        // check menu text for green-dominant colors (the old "computer screen" look):
+        // any .panel text whose computed color has green > red and green > blue
+        const els = document.querySelectorAll('.panel, .panel *');
+        let green = 0;
+        for (const el of els) {
+          const m = getComputedStyle(el).color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (m) {
+            const r = +m[1], g = +m[2], b = +m[3];
+            if (g > r && g > b) green++;
+          }
+        }
+        if (green > 0) out.push(green + ' menu text elements are green-dominant');
         return out.length ? out.join('; ') : true;
+      });
+    },
+  },
+  {
+    id: 'play-no-easy-stall',
+    ask: 'The plane stalls too easily when flying around - normal flying should be forgiving, stall only when you really pull up too slow',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // put the plane airborne, slow (18 m/s, under the old stall speed), normal level flying
+        F.P.pos.set(0, 60, 0); F.P.vel.set(0, 0, 18); F.P.ground = false;
+        F.P.pitch = 0; F.inp.pitchUp = 0;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const noPullStall = F.stallNow;
+            // now really pull up at the same slow speed
+            F.inp.pitchUp = 1;
+            setTimeout(() => {
+              const pullStall = F.stallNow;
+              F.inp.pitchUp = 0;
+              if (noPullStall) return res('stalled during normal level flying at 18 m/s (too easy)');
+              if (!pullStall) return res('no stall when really pulling up slow (too forgiving)');
+              res(true);
+            }, 700);
+          }, 700);
+        });
       });
     },
   },
