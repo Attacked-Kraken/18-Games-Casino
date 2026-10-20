@@ -305,24 +305,14 @@ export default [
       // the results screen replaces it mid-test, and this test then reports dropped thumbs and
       // lost taps the game never caused. Stop the leftover drivers first, then start from a known
       // state - a race really in its 'run' phase - the state a player's two thumbs actually meet.
+      // One combined read+click per poll: the robot gives every test 30 s, eval round-trips on its
+      // slow page are dear, and the touch sequence still needs its share of the budget.
       await h.eval(() => { for (const k of ['__tfdrv', '__tfdrv2', '__tfdrv4']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; });
       {
-        const inRun = () => h.eval(() => { const e = window.__tf && window.__tf.eng(); return !!(e && e.r && e.phase === 'run' && document.body.classList.contains('playing')); });
-        if (!(await inRun())) {
-          for (let i = 0; i < 8; i++) {
-            const st = await h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const racing = !!(e && e.r && document.body.classList.contains('playing')); return { screen: on ? on.id : null, racing }; });
-            if (st.racing || !st.screen) break;
-            if (st.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
-            else if (st.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
-            else if (st.screen === 'grid') await h.eval(() => { const b = document.querySelector('#gridEvents button'); if (b) b.click(); return true; });
-            else if (st.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
-            else if (st.screen === 'career') await h.eval(() => { const b = document.getElementById('bCareerBack'); if (b) b.click(); return true; });
-            else break;
-            await h.wait(600);
-          }
-          const w0 = Date.now();
-          while (Date.now() - w0 < 20000 && !(await inRun())) await h.wait(400);
-        }
+        const poll = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const playing = document.body.classList.contains('playing'); const run = !!(e && e.r && e.phase === 'run' && playing); if (!run && on) { const click = (id) => { const b = document.getElementById(id); if (b) b.click(); }; if (on.id === 'results') click('bResMenu'); else if (on.id === 'menu') click('bFree'); else if (on.id === 'grid') { const b = document.querySelector('#gridEvents button'); if (b) b.click(); } else if (on.id === 'card') click('bCardStart'); else if (on.id === 'career') click('bCareerBack'); } return run; });
+        const t0 = Date.now();
+        let run = await poll();
+        while (!run && Date.now() - t0 < 17000) { await h.wait(350); run = await poll(); }
       }
       const rects = await h.eval(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }; return { stick: r('stick'), tap: r('btnTap'), act: r('btnA'), playing: document.body.classList.contains('playing') }; });
       if (!rects.stick || !rects.tap) return 'the touch controls are not on screen (no race running?)';
