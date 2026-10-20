@@ -10466,6 +10466,2305 @@
   "_how": "riff melody · octave bass"
  },
  {
+  "name": "paperplane-menu",
+  "title": "Paper Plane - menu",
+  "game": "paperplane",
+  "tab": "music",
+  "type": "beat",
+  "style": "Lo-Fi",
+  "bpm": 84,
+  "key": "C",
+  "scale": "Major",
+  "patterns": [
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "melody": [
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     5,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2
+    ],
+    "melody": [
+     3,
+     -1,
+     -1,
+     -1,
+     4,
+     -1,
+     -1,
+     -1,
+     5,
+     -1,
+     -1,
+     -1,
+     7,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "melody": [
+     9,
+     -1,
+     8,
+     -1,
+     7,
+     -1,
+     6,
+     -1,
+     5,
+     -1,
+     4,
+     -1,
+     3,
+     -1,
+     2,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     5,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2
+    ],
+    "melody": [
+     12,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     11,
+     -1,
+     10,
+     -1,
+     9,
+     -1,
+     8,
+     -1,
+     7,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     -1,
+     null,
+     -1,
+     null,
+     -1,
+     12,
+     -1,
+     -1,
+     -1,
+     null,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "snare": "....x.......x...",
+     "chat": "..x...x...x...x.",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     null,
+     -1,
+     -1,
+     null,
+     -1,
+     -1,
+     -1,
+     9,
+     -1,
+     null,
+     -1,
+     7,
+     -1
+    ],
+    "chords": [
+     5,
+     -1,
+     0,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x.....x...x.....",
+     "chat": "..x...x...x...x.",
+     "rim": "....x.......x...",
+     "bass": "x.....x...x....."
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     -1,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...............",
+     "chat": "..x...x...x...x.",
+     "bass": "x..............."
+    },
+    "clear": true,
+    "bass": [
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2
+    ],
+    "melody": [
+     11,
+     -1,
+     -1,
+     -1,
+     null,
+     -1,
+     13,
+     -1,
+     null,
+     -1,
+     -1,
+     -1,
+     null,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     -1,
+     -1
+    ]
+   }
+  ],
+  "song": [
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    7
+   ]
+  ],
+  "sound": {
+   "melody": "flute",
+   "melVol": 0.85,
+   "chdVol": 0.5,
+   "octave": 4
+  },
+  "loops": 2,
+  "master": "punchy",
+  "swing": 18,
+  "tracks": {
+   "kick": {
+    "vol": 0.5
+   },
+   "bass": {
+    "vol": 0.3
+   },
+   "snare": {
+    "vol": 0.7
+   },
+   "clap": {
+    "vol": 0.62
+   },
+   "chat": {
+    "vol": 0.42
+   }
+  },
+  "fx": {
+   "highpass": 34,
+   "comp": true,
+   "reverb": 17,
+   "echo": 0
+  },
+  "_how": "step melody · root bass"
+ },
+ {
+  "name": "paperplane-play",
+  "title": "Paper Plane - flying",
+  "game": "paperplane",
+  "tab": "music",
+  "type": "beat",
+  "style": "House",
+  "bpm": 118,
+  "key": "G",
+  "scale": "Major",
+  "patterns": [
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1,
+     0,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     5,
+     -1,
+     -1,
+     -1,
+     4,
+     -1,
+     -1,
+     -1,
+     3,
+     -1,
+     -1,
+     -1,
+     1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     5,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "ohat": "..x...x...x...x.",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     9,
+     -1,
+     10,
+     -1,
+     11,
+     -1,
+     12,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     11,
+     -1,
+     9,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "ohat": "..x...x...x...x.",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     13,
+     -1,
+     13,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     10,
+     -1,
+     9,
+     -1,
+     7,
+     -1,
+     6,
+     -1
+    ],
+    "chords": [
+     5,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "ohat": "..x...x...x...x.",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    "melody": [
+     12,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     10,
+     -1,
+     -1,
+     -1,
+     12,
+     -1,
+     13,
+     -1,
+     13,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     5,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "clap": "....x.......x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "ohat": "..x...x...x...x.",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2
+    ],
+    "melody": [
+     13,
+     13,
+     13,
+     11,
+     13,
+     13,
+     13,
+     11,
+     13,
+     11,
+     9,
+     7,
+     13,
+     11,
+     9,
+     7
+    ],
+    "chords": [
+     4,
+     -1,
+     0,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "rim": "....x.......x...",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2,
+     -2
+    ],
+    "melody": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     -1,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...............",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..............."
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     10,
+     -1,
+     -1,
+     -1,
+     10,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     -1,
+     -1,
+     10,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     -1,
+     -1
+    ]
+   }
+  ],
+  "song": [
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    7
+   ]
+  ],
+  "sound": {
+   "melody": "harp",
+   "melVol": 0.85,
+   "chdVol": 0.5,
+   "octave": 4
+  },
+  "loops": 3,
+  "master": "punchy",
+  "swing": 0,
+  "tracks": {
+   "kick": {
+    "vol": 0.5
+   },
+   "bass": {
+    "vol": 0.3
+   },
+   "snare": {
+    "vol": 0.7
+   },
+   "clap": {
+    "vol": 0.62
+   },
+   "chat": {
+    "vol": 0.42
+   }
+  },
+  "fx": {
+   "highpass": 34,
+   "comp": true,
+   "reverb": 18,
+   "echo": 0
+  },
+  "_how": "step melody · synco bass"
+ },
+ {
+  "name": "reefdash-menu",
+  "title": "Reef Dash - menu",
+  "game": "reefdash",
+  "tab": "music",
+  "type": "beat",
+  "style": "Reggaeton",
+  "bpm": 94,
+  "key": "F",
+  "scale": "Major",
+  "patterns": [
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "melody": [
+     0,
+     -1,
+     4,
+     -1,
+     3,
+     -1,
+     -1,
+     -1,
+     2,
+     -1,
+     6,
+     -1,
+     5,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     1,
+     -1,
+     8,
+     -1,
+     7,
+     -1,
+     -1,
+     -1,
+     4,
+     -1,
+     8,
+     -1,
+     7,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     5,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "melody": [
+     4,
+     11,
+     10,
+     -1,
+     10,
+     -1,
+     6,
+     -1,
+     9,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     8,
+     13,
+     13,
+     -1,
+     13,
+     -1,
+     10,
+     -1,
+     11,
+     -1,
+     13,
+     -1,
+     13,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     5,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     3
+    ],
+    "melody": [
+     12,
+     13,
+     13,
+     13,
+     12,
+     13,
+     13,
+     13,
+     11,
+     13,
+     13,
+     13,
+     11,
+     13,
+     13,
+     13
+    ],
+    "chords": [
+     5,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "snare": "...x..x....x..x.",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4
+    ],
+    "melody": [
+     null,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     -1,
+     7,
+     -1,
+     null,
+     -1,
+     null,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     0,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...x...x...x...",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "rim": "....x.......x...",
+     "bass": "x..x..x...x.x..x"
+    },
+    "clear": true,
+    "bass": [
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4,
+     -4
+    ],
+    "melody": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     -1,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...............",
+     "chat": "x.xxx.xxx.xxx.xx",
+     "bass": "x..............."
+    },
+    "clear": true,
+    "bass": [
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     null,
+     -1,
+     -1,
+     -1,
+     12,
+     -1,
+     13,
+     -1,
+     13,
+     -1,
+     -1,
+     -1,
+     null,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     5,
+     -1,
+     -1,
+     -1
+    ]
+   }
+  ],
+  "song": [
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    7
+   ]
+  ],
+  "sound": {
+   "melody": "glock",
+   "melVol": 0.85,
+   "chdVol": 0.5,
+   "octave": 4
+  },
+  "loops": 2,
+  "master": "punchy",
+  "swing": 0,
+  "tracks": {
+   "kick": {
+    "vol": 0.5
+   },
+   "bass": {
+    "vol": 0.3
+   },
+   "snare": {
+    "vol": 0.7
+   },
+   "clap": {
+    "vol": 0.62
+   },
+   "chat": {
+    "vol": 0.42
+   }
+  },
+  "fx": {
+   "highpass": 34,
+   "comp": true,
+   "reverb": 25,
+   "echo": 0
+  },
+  "_how": "call melody · synco bass"
+ },
+ {
+  "name": "reefdash-play",
+  "title": "Reef Dash - swim",
+  "game": "reefdash",
+  "tab": "music",
+  "type": "beat",
+  "style": "Afrobeats",
+  "bpm": 112,
+  "key": "A",
+  "scale": "Dorian",
+  "patterns": [
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     7,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     3,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    "melody": [
+     7,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     4,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "tom": ".......o.....o..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     -1,
+     7,
+     -1,
+     7,
+     -1,
+     10,
+     -1,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     3,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "tom": ".......o.....o..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     -1,
+     7,
+     -1,
+     7,
+     -1,
+     11,
+     -1,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     4,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "tom": ".......o.....o..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     11,
+     -1,
+     -1,
+     -1,
+     7,
+     -1,
+     7,
+     -1,
+     13,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     0,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "clap": "....x.......x...",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "tom": ".......o.....o..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     5,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "melody": [
+     12,
+     -1,
+     13,
+     -1,
+     12,
+     -1,
+     11,
+     -1,
+     9,
+     -1,
+     7,
+     -1,
+     6,
+     -1,
+     4,
+     -1
+    ],
+    "chords": [
+     3,
+     -1,
+     0,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x..x..x...x..x..",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "rim": "..x..x....x..x..",
+     "bass": "xxxxxxxxxxxxxxxx"
+    },
+    "clear": true,
+    "bass": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "melody": [
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     0,
+     -1,
+     -1,
+     -1
+    ]
+   },
+   {
+    "drums": {
+     "kick": "x...............",
+     "chat": "xxxxxxxxxxxxxxxx",
+     "bass": "x..............."
+    },
+    "clear": true,
+    "bass": [
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7,
+     7
+    ],
+    "melody": [
+     13,
+     -1,
+     -1,
+     -1,
+     11,
+     -1,
+     11,
+     -1,
+     11,
+     -1,
+     -1,
+     -1,
+     13,
+     -1,
+     -1,
+     -1
+    ],
+    "chords": [
+     4,
+     -1,
+     -1,
+     -1
+    ]
+   }
+  ],
+  "song": [
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Verse",
+    0
+   ],
+   [
+    "Verse",
+    1
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Verse",
+    0,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Verse",
+    1,
+    [
+     "kick",
+     "snare",
+     "clap",
+     "bass"
+    ]
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Hook",
+    4
+   ],
+   [
+    "Hook",
+    5
+   ],
+   [
+    "Build",
+    1,
+    [
+     "kick"
+    ]
+   ],
+   [
+    "Drop",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Hook",
+    2
+   ],
+   [
+    "Hook",
+    3
+   ],
+   [
+    "Outro",
+    7
+   ]
+  ],
+  "sound": {
+   "melody": "pluck",
+   "melVol": 0.85,
+   "chdVol": 0.5,
+   "octave": 4
+  },
+  "loops": 3,
+  "master": "punchy",
+  "swing": 18,
+  "tracks": {
+   "kick": {
+    "vol": 0.5
+   },
+   "bass": {
+    "vol": 0.3
+   },
+   "snare": {
+    "vol": 0.7
+   },
+   "clap": {
+    "vol": 0.62
+   },
+   "chat": {
+    "vol": 0.42
+   }
+  },
+  "fx": {
+   "highpass": 34,
+   "comp": true,
+   "reverb": 23,
+   "echo": 0.18
+  },
+  "_how": "anthem melody · pump bass"
+ },
+ {
   "name": "all-ui-tap",
   "title": "Menu tap",
   "game": "all",
@@ -11544,6 +13843,229 @@
     "at": 0,
     "pitch": 12,
     "gain": 0.6
+   }
+  ]
+ },
+ {
+  "name": "paperplane-coin",
+  "title": "Coin chime",
+  "game": "paperplane",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "inst": "glock",
+    "note": 88,
+    "at": 0,
+    "gain": 0.9,
+    "seconds": 0.4
+   },
+   {
+    "inst": "glock",
+    "note": 95,
+    "at": 0.07,
+    "gain": 0.7,
+    "seconds": 0.6
+   }
+  ]
+ },
+ {
+  "name": "paperplane-crash",
+  "title": "Paper crash",
+  "game": "paperplane",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "lib": "Scratch",
+    "at": 0,
+    "pitch": 5,
+    "gain": 0.6
+   },
+   {
+    "lib": "Shaker",
+    "at": 0,
+    "pitch": -5,
+    "gain": 0.5
+   },
+   {
+    "lib": "Kick Soft",
+    "at": 0,
+    "pitch": 0,
+    "gain": 0.5
+   }
+  ]
+ },
+ {
+  "name": "paperplane-gust",
+  "title": "Wind gust",
+  "game": "paperplane",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "lib": "Whoosh",
+    "at": 0,
+    "pitch": -5,
+    "gain": 1
+   },
+   {
+    "lib": "Noise texture",
+    "at": 0,
+    "pitch": 0,
+    "gain": 0.25,
+    "seconds": 0.8
+   }
+  ]
+ },
+ {
+  "name": "paperplane-level-done",
+  "title": "Level done",
+  "game": "paperplane",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "inst": "flute",
+    "note": 72,
+    "at": 0,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "flute",
+    "note": 76,
+    "at": 0.12,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "flute",
+    "note": 79,
+    "at": 0.24,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "flute",
+    "note": 84,
+    "at": 0.36,
+    "gain": 1,
+    "seconds": 1.6
+   },
+   {
+    "lib": "Riser short",
+    "at": 0,
+    "pitch": 0,
+    "gain": 0.3
+   }
+  ]
+ },
+ {
+  "name": "reefdash-pearl",
+  "title": "Pearl pickup",
+  "game": "reefdash",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "inst": "bell",
+    "note": 84,
+    "at": 0,
+    "gain": 0.8,
+    "seconds": 0.5
+   },
+   {
+    "inst": "glock",
+    "note": 91,
+    "at": 0.06,
+    "gain": 0.6,
+    "seconds": 0.6
+   }
+  ]
+ },
+ {
+  "name": "reefdash-bubble",
+  "title": "Bubble pop",
+  "game": "reefdash",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "lib": "Chip blip",
+    "at": 0,
+    "pitch": 12,
+    "gain": 0.5
+   },
+   {
+    "lib": "Snap",
+    "at": 0,
+    "pitch": 7,
+    "gain": 0.4
+   }
+  ]
+ },
+ {
+  "name": "reefdash-bump",
+  "title": "Bump into the reef",
+  "game": "reefdash",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "lib": "Boom",
+    "at": 0,
+    "pitch": -5,
+    "gain": 0.6
+   },
+   {
+    "lib": "Shaker",
+    "at": 0,
+    "pitch": -12,
+    "gain": 0.4
+   }
+  ]
+ },
+ {
+  "name": "reefdash-level-done",
+  "title": "Level done",
+  "game": "reefdash",
+  "tab": "effect",
+  "type": "mix",
+  "layers": [
+   {
+    "inst": "pluck",
+    "note": 69,
+    "at": 0,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "pluck",
+    "note": 72,
+    "at": 0.12,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "pluck",
+    "note": 76,
+    "at": 0.24,
+    "gain": 1,
+    "seconds": 0.16999999999999998
+   },
+   {
+    "inst": "pluck",
+    "note": 81,
+    "at": 0.36,
+    "gain": 1,
+    "seconds": 1.6
+   },
+   {
+    "lib": "Ooh",
+    "at": 0.45,
+    "pitch": 0,
+    "gain": 0.4
    }
   ]
  },

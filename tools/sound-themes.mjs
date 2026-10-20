@@ -81,6 +81,13 @@ const GAMES = [
   { game: 'moto', name: 'Apex Moto',
     menu: { title: 'Apex Moto - menu', style: 'Trap', groove: 'trap', bpm: 140, key: 'D', scale: 'Minor', chords: [0, 5, 3, 4], sound: 'strings', seed: 91 },
     play: { title: 'Apex Moto - race', style: 'Drum & Bass', groove: 'dnb', bpm: 174, key: 'A', scale: 'Harmonic minor', chords: [0, 3, 5, 4], sound: 'lead', seed: 92 } },
+  // owner Oct 19: Paper Plane + Reef Dash only need their sounds
+  { game: 'paperplane', name: 'Paper Plane',
+    menu: { title: 'Paper Plane - menu', style: 'Lo-Fi', groove: 'lofi', bpm: 84, key: 'C', scale: 'Major', chords: [0, 5, 3, 4], sound: 'flute', seed: 101 },
+    play: { title: 'Paper Plane - flying', style: 'House', groove: 'house', bpm: 118, key: 'G', scale: 'Major', chords: [0, 4, 5, 3], sound: 'harp', seed: 102 } },
+  { game: 'reefdash', name: 'Reef Dash',
+    menu: { title: 'Reef Dash - menu', style: 'Reggaeton', groove: 'dembow', bpm: 94, key: 'F', scale: 'Major', chords: [0, 3, 4, 5], sound: 'glock', seed: 111 },
+    play: { title: 'Reef Dash - swim', style: 'Afrobeats', groove: 'afro', bpm: 112, key: 'A', scale: 'Dorian', chords: [0, 3, 0, 4], sound: 'pluck', seed: 112 } },
 ];
 
 function rng(seed) { let s = seed * 9301 + 49297; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
@@ -216,6 +223,18 @@ const FX = {
   racer: [
     ['nitro', 'Nitro', [L('Riser short', 0), L('Laser', 0.1, -12, 0.4)]],
     ['shift', 'Gear shift', [L('Snap', 0), L('Kick Tight', 0, 12, 0.6)]],
+  ],
+  paperplane: [
+    ['coin', 'Coin chime', [I('glock', 88, 0, 0.9, 0.4), I('glock', 95, 0.07, 0.7, 0.6)]],
+    ['crash', 'Paper crash', [L('Scratch', 0, 5, 0.6), L('Shaker', 0, -5, 0.5), L('Kick Soft', 0, 0, 0.5)]],
+    ['gust', 'Wind gust', [L('Whoosh', 0, -5), L('Noise texture', 0, 0, 0.25, { seconds: 0.8 })]],
+    ['level-done', 'Level done', [...FAN('flute', [72, 76, 79, 84], 0.12), L('Riser short', 0, 0, 0.3)]],
+  ],
+  reefdash: [
+    ['pearl', 'Pearl pickup', [I('bell', 84, 0, 0.8, 0.5), I('glock', 91, 0.06, 0.6, 0.6)]],
+    ['bubble', 'Bubble pop', [L('Chip blip', 0, 12, 0.5), L('Snap', 0, 7, 0.4)]],
+    ['bump', 'Bump into the reef', [L('Boom', 0, -5, 0.6), L('Shaker', 0, -12, 0.4)]],
+    ['level-done', 'Level done', [...FAN('pluck', [69, 72, 76, 81], 0.12), L('Ooh', 0.45, 0, 0.4)]],
   ],
   moto: [
     ['start-lights', 'Start lights', [L('Sine ping', 0, 5), L('Sine ping', 1, 5), L('Sine ping', 2, 5), L('Sine ping', 3, 17)]],
