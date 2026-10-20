@@ -1,0 +1,35 @@
+--- a/apexf1.html	2026-10-19 22:17:53.457626481 -0500
++++ b/apexf1.html	2026-10-19 22:17:44.256626509 -0500
+@@ -2050,17 +2050,21 @@
+ let lastT=0;
+ function loop(t){
+   requestAnimationFrame(loop);
+-  const dt=Math.min(0.05,(t-lastT)/1000||0.016); lastT=t;
+-  if(Particles.pool.length) Particles.update(dt);
+-  if(Race.mode==='quali'){ updateQuali(dt); }
+-  else if(Race.mode==='race'||Race.mode==='lights'){ Race.update(dt); RainFX.update(dt); }
+-  else if(Race.mode==='menu'||Race.mode==='grid'||Race.mode==='finished'){
+-    // idle showcase: slow orbit around start line
+-    if(scene&&Track.samples.length){
+-      const a=t/9000;
+-      camera.position.set(Math.sin(a)*150, 60, Math.cos(a)*150);
+-      camera.lookAt(0,0,0);
+-      Track.updateCrowd(dt,0.15); Aud.crowdTick(dt,0.05);
++  let frameSec=(t-lastT)/1000||0.016; lastT=t;
++  if(frameSec>0.25) frameSec=0.25; // slow screens: catch up in slices so game time stays real-time
++  const steps=Math.max(1,Math.ceil(frameSec/0.05)), dt=frameSec/steps;
++  for(let si=0;si<steps;si++){
++    if(Particles.pool.length) Particles.update(dt);
++    if(Race.mode==='quali'){ updateQuali(dt); }
++    else if(Race.mode==='race'||Race.mode==='lights'){ Race.update(dt); RainFX.update(dt); }
++    else if(Race.mode==='menu'||Race.mode==='grid'||Race.mode==='finished'){
++      // idle showcase: slow orbit around start line
++      if(scene&&Track.samples.length){
++        const a=t/9000;
++        camera.position.set(Math.sin(a)*150, 60, Math.cos(a)*150);
++        camera.lookAt(0,0,0);
++        Track.updateCrowd(dt,0.15); Aud.crowdTick(dt,0.05);
++      }
+     }
+   }
+   // draw the 3D world (was missing — black screen)
