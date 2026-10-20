@@ -305,3 +305,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - made for the owner, free in paid apps, no credit needed
 - downloaded: 2026-10-20, sent by the owner
 - used in: Apex F1
+
+## ASSET: kit/cockpit/cockpit.glb
+- title: Open-Wheel Cockpit - realistic 3D single-seater interior: carbon tub, halo, seat + harness, pedals, mirrors, front wheels/wing, and a detailed steering wheel (node `SteeringWheel`, 15 shift LEDs, buttons, dials, paddles, display); viewer kit/cockpit/index.html
+- maker: made for the owner (his "lio" chat) - original, modelled in code with three.js, no brands/logos/real team or car names
+- source: the owner's open-wheel-cockpit.zip (original kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: Apex F1 (driver's-eye cockpit view)
