@@ -333,4 +333,26 @@ export default [
       return `the half inning never ended in 29 s of real play (still ${startTag || 'the same half'})`;
     },
   },
+  // G-40 (owner, 2026-10-20): the owner's new ballpark (kit/stadiums/Apex-Arcade-Park/stadium.glb)
+  // replaces the old one - it must actually load, with its crowd.
+  {
+    id: 'play-stadium-loads',
+    ask: "The owner's new ballpark (Apex Arcade Park) loads with its crowd (G-40)",
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const s = await h.eval(() => {
+          const T = window.__test; if (!T || !T.stadium) return null;
+          return { loaded: T.stadium.loaded, fans: T.stadium.fans, crowd: T.crowdCount };
+        });
+        if (s && s.loaded) {
+          if (s.fans < 1000) return `the ballpark loaded but its crowd is missing (fans=${s.fans})`;
+          if (s.crowd < 1000) return `the ballpark loaded but crowdCount reads ${s.crowd}`;
+          return true;
+        }
+        await h.wait(250);
+      }
+      return 'Apex Arcade Park did not load in 25 s';
+    },
+  },
 ];
