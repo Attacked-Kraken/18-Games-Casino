@@ -35,6 +35,10 @@ was already sent. Muses: don't edit this file.
 - [ ] Grand Prix commentary from sounds/commentary/grandprix (name the color voice on the Credits screen).
 
 ## window 6 · apexracer.html
+- [ ] The OWNER says all the cars look RED. Every car in the race and the garage must show its OWN paint color (different for each computer racer, never all the same) - find why the paint isn't showing on the real 3D models and fix it. Check it in the robot's garage and race pictures.
+- [ ] The city traffic cars (the slow cars on the road) become real 3D models too, like the racers (use the models in models/fetched/, each its own paint, nose forward, normal size - STUDIO-STANDARD 3b).
+- [ ] Better steering (owner): smoother and more responsive - the car turns where the stick points without sliding wide or snapping; keep the speed, drift and nitro as now.
+- [ ] More car options (owner): add 6 SEARCH lines to MODEL-SEARCH.md for fictional supercars / sports cars (NO real brands), so the owner can pick new garage cars.
 - [x] (sent 22:35 with the friend-code test as one G-job) Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
 - [x] (sent 22:35) Add a 'play-friend-code' test for Race Friends.
 - [ ] Every computer racer has its own real paint color (no two the same, no white) - check in the garage and race pictures.
