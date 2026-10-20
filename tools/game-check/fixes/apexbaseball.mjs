@@ -333,7 +333,7 @@ export default [
       return `the half inning never ended in 29 s of real play (still ${startTag || 'the same half'})`;
     },
   },
-  // G-40 (owner, 2026-10-20): the owner's new ballpark (kit/stadiums/Apex-Arcade-Park/stadium.glb)
+  // G-40 (owner, 2026-10-20): the owner's new ballpark (kit/stadiums/Night-Ballpark/stadium.glb)
   // replaces the old one - it must actually load, with its crowd.
   {
     id: 'play-stadium-loads',
