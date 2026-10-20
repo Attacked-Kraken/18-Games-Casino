@@ -1,0 +1,41 @@
+MUSE GUIDE: HOW TO RESTYLE A LOADING PAGE
+=========================================
+Every page is ONE standalone .html file with no outside files. Open it in a text editor.
+
+1) CONFIG BLOCK (the very top, between "CONFIG" and "END OF CONFIG")
+   title, subtitle  text on screen
+   logo             image path next to the html, e.g. "logo.png" ("" hides it)
+   background       full-screen image path ("" uses the bg to bg2 gradient)
+   colors.bg/bg2    background gradient top and bottom
+   colors.primary   main shape color (bar, car, coin, ball...)
+   colors.accent    highlight color
+   colors.text      text and outline color
+   font             any CSS font-family. To use a custom font, add an @font-face rule in the <style>.
+   speed            animation speed multiplier (1 normal, 2 fast, 0.5 slow)
+   tips             list of tip strings ([] hides tips); tipInterval = ms between tips
+   showPercent      true/false
+   demo             true = fake looping progress for previews. SET TO false IN THE GAME.
+   onDone           function run after done() finishes fading out
+   Changing these values is enough for most restyles.
+
+2) CSS VARIABLES (:root in <style>)
+   --bg --bg2 --primary --accent --text --font come from CONFIG.
+   --t is the speed factor (all animations use calc(var(--t)*Ns)).
+   --p is the live progress 0..1. Shapes read it (e.g. width:calc(var(--p)*100%)).
+   For deeper changes, edit the "style-specific CSS" section. Leave the SHARED LOADER CORE alone.
+
+3) JS API (call from your game)
+   LoadingPage.setProgress(0.42)   // 0..1 (also setProgress(0.42))
+   LoadingPage.setTip("Any text")  // replace the current tip
+   LoadingPage.done()              // jumps to 100%, fades out, then runs CONFIG.onDone
+   LoadingPage.progress            // read the current value
+   Adding ?nodemo to the URL also turns off demo mode.
+
+4) ELEMENT IDS you can restyle: #lp-logo #lp-title #lp-sub #lp-pct #lp-tip
+   Each page's own art sits in the "style-specific markup" section.
+
+5) USE AS AN OVERLAY: put the page in a full-screen <iframe id="ld" src="race_track.html?nodemo">
+   and call ld.contentWindow.LoadingPage.setProgress(v), then remove the iframe in onDone.
+   You can also copy the <style>, the markup and both <script> blocks into the game page.
+
+KEEP: everything family-friendly, prices in coins only, no brand names.
