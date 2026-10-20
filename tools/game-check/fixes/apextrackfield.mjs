@@ -630,7 +630,7 @@ export default [
           return screen || 'none';
         });
         if (step === 'started') started = true;
-        else if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(2000); }
+        else if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); }
         await h.wait(350);
       }
       if (!started) return 'the 1500m never loaded';
@@ -674,7 +674,7 @@ export default [
       // test left running (this test always starts inside the long-race test's
       // still-running 1500m). Now: plain data args, one combined read+click poll,
       // career exit, one reload escape.
-      const navTo = async (evId, btnSrc) => { let reloaded = false; const t1 = Date.now(); while (budget() && Date.now() - t1 < 15000) { const step = await h.eval((a) => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null; if (!screen && ev === a.evId) return 'there'; if (!screen && ev) return 'in-event'; const click = id => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; if (screen === 'results') click('bResMenu'); else if (screen === 'career') click('bCareerBack'); else if (screen === 'menu') click('bFree'); else if (screen === 'grid') { const re = new RegExp(a.btnSrc, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent)); if (b) b.click(); } else if (screen === 'card') click('bCardStart'); return screen || 'none'; }, { evId, btnSrc }); if (step === 'there') return true; if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(2000); } await h.wait(350); } return false; };
+      const navTo = async (evId, btnSrc) => { let reloaded = false; const t1 = Date.now(); while (budget() && Date.now() - t1 < 15000) { const step = await h.eval((a) => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null; if (!screen && ev === a.evId) return 'there'; if (!screen && ev) return 'in-event'; const click = id => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; if (screen === 'results') click('bResMenu'); else if (screen === 'career') click('bCareerBack'); else if (screen === 'menu') click('bFree'); else if (screen === 'grid') { const re = new RegExp(a.btnSrc, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent)); if (b) b.click(); } else if (screen === 'card') click('bCardStart'); return screen || 'none'; }, { evId, btnSrc }); if (step === 'there') return true; if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); } await h.wait(350); } return false; };
       const judgeFlight = async (label) => {
         // samples the flight, then returns the mark-phase view (or an error string)
         let flight = [], g = 0, mark = null;
@@ -713,9 +713,9 @@ export default [
       const dj = await judgeFlight('discus');
       if (dj !== true) return dj;
       // finish the discus event so we can move on
-      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 200); } return true; });
+      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 100); } return true; });
       let g3 = 0, doneEv = false;
-      while (budget() && g3++ < 40 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(300); }
+      while (budget() && g3++ < 60 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(200); }
       await h.eval(() => { if (window.__tfdrv7) { clearInterval(window.__tfdrv7); window.__tfdrv7 = null; } return true; });
       if (!doneEv) return 'the discus event never finished after the flight check';
       // ---- SHOT PUT (same shared flight camera: power, angle, release)
