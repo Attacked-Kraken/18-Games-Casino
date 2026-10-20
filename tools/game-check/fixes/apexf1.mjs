@@ -2,6 +2,55 @@
 // PLAY TESTS: these actually PLAY the game by its rules.
 // window.__test is exposed by the game (see bottom of apexf1.html).
 
+/* ================= G-33 CAREER HELPERS (runner side only) =================
+   Every function passed to h.eval is fully self-contained (the runner ships
+   the function source, not its closure). The tests share one page, so each
+   career test first puts a known save in place and reloads to the menu. */
+const g33CareerFn = () => {
+  try { return JSON.parse(localStorage.getItem('apexf1_career') || 'null'); } catch (e) { return null; }
+};
+async function g33Reset(page, h, seed) {
+  try {
+    await h.eval((s) => {
+      try {
+        if (s) localStorage.setItem('apexf1_career', JSON.stringify(s));
+        else localStorage.removeItem('apexf1_career');
+      } catch (e) {}
+      location.reload();
+    }, seed || null);
+  } catch (e) {} // the reload kills that eval - expected
+  for (let i = 0; i < 24; i++) {
+    await h.wait(400);
+    let ok = false;
+    try { ok = await h.eval(() => !!(window.__test && window.__test.race().mode === 'menu')); } catch (e) {}
+    if (ok) return true;
+  }
+  return false;
+}
+// From a freshly started career weekend (mode 'quali'): skip qualifying with
+// the game's own button, start the race, fast-forward every car to just
+// before the finish on the final lap (same trick as play-race-ends-with-
+// results) and wait for the results screen.
+async function g33FinishRace(page, h) {
+  await h.press('#qualiSkip');
+  await h.wait(800);
+  await h.press('#raceBtn');
+  await h.wait(1500);
+  await h.eval(() => {
+    const t = window.__test; if (!t) return;
+    const L = t.trackLength(), laps = t.race().laps, n = t.cars().length;
+    for (let i = 0; i < n; i++) { t.setCarLap(i, laps); t.setCarS(i, L - 300 - i * 10); }
+    t.setInput({ gas: true });
+  });
+  for (let i = 0; i < 10; i++) {
+    await h.wait(2000);
+    let done = false;
+    try { done = await h.eval(() => { const t = window.__test; return t ? !!t.race().hasResults : false; }); } catch (e) {}
+    if (done) return true;
+  }
+  return false;
+}
+
 export default [
   {
     id: 'game-starts-not-black',
@@ -169,6 +218,68 @@ export default [
         if (st.hasResults) return true;
       }
       return 'race did not produce results within 30s';
+    },
+  },
+  {
+    id: 'play-career-first-round',
+    ask: 'career mode works end to end',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu after clearing the career save';
+      // New career through the game's own menus: CAREER -> track -> team -> START WEEKEND
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      const inQuali = await h.eval(() => { const t = window.__test; return t ? t.race().mode : ''; }).catch(() => '');
+      if (inQuali !== 'quali') return `career weekend did not start (mode=${inQuali})`;
+      if (!await g33FinishRace(page, h)) return 'career round 1 race never produced results';
+      const c = await h.eval(g33CareerFn).catch(() => null);
+      if (!c) return 'no career was saved after round 1';
+      if (c.round !== 1) return `career round should be 1 after the first race, got ${c.round}`;
+      const pts = Object.values(c.table || {}).reduce((a, b) => a + b, 0);
+      if (!(pts > 0)) return 'no championship points were banked after round 1';
+      // Results NEXT takes a career back to the hub, offering round 2
+      await h.press('#resNext');
+      await h.wait(600);
+      const hub = await h.eval(() => {
+        const el = document.getElementById('hub');
+        return { shown: !!el && !el.classList.contains('hidden'),
+                 body: (document.getElementById('hubBody') || {}).textContent || '' };
+      }).catch(() => ({ shown: false, body: '' }));
+      if (!hub.shown) return 'results NEXT did not open the career hub';
+      if (!/Round 2\/5/.test(hub.body)) return `career hub does not offer round 2 (hub says: ${hub.body.slice(0, 80)})`;
+      return true;
+    },
+  },
+  {
+    id: 'play-career-next-round',
+    ask: 'career mode works end to end',
+    async test(page, h) {
+      // A career already under way: round 1 done at Monza, 25 points banked.
+      const seed = { name: 'YOU', team: 'apex', season: 1, round: 1, rating: 50, wins: 1, champs: 0,
+        friends: { w: 0, l: 0 }, drivers: [], table: { YOU: 25 } };
+      if (!await g33Reset(page, h, seed)) return 'game did not return to the menu with the seeded career';
+      // The hub must offer round 2 (Monaco) - start it with the game's own NEXT RACE button
+      await h.press('#careerBtn');
+      await h.wait(600);
+      const hub = await h.eval(() => {
+        const el = document.getElementById('hub');
+        return { shown: !!el && !el.classList.contains('hidden'),
+                 body: (document.getElementById('hubBody') || {}).textContent || '' };
+      }).catch(() => ({ shown: false, body: '' }));
+      if (!hub.shown) return 'career hub did not open for the saved career';
+      if (!/Round 2\/5/.test(hub.body)) return `hub does not offer round 2 (hub says: ${hub.body.slice(0, 80)})`;
+      await h.press('#hubNext');
+      await h.wait(1200);
+      const inQuali = await h.eval(() => { const t = window.__test; return t ? t.race().mode : ''; }).catch(() => '');
+      if (inQuali !== 'quali') return `career round 2 weekend did not start (mode=${inQuali})`;
+      if (!await g33FinishRace(page, h)) return 'career round 2 race never produced results';
+      const c = await h.eval(g33CareerFn).catch(() => null);
+      if (!c) return 'the career save vanished after round 2';
+      if (c.round !== 2) return `career round should be 2 after the second race, got ${c.round}`;
+      const pts = Object.values(c.table || {}).reduce((a, b) => a + b, 0);
+      if (!(pts > 25)) return `championship points did not grow in round 2 (total ${pts}, seeded 25)`;
+      return true;
     },
   },
 ];
