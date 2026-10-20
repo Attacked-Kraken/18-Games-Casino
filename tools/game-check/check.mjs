@@ -213,6 +213,21 @@ for (const g of games) {
   const play2Jpg = await page.screenshot({ type: 'jpeg', quality: 62 });
   fs.writeFileSync(path.join(out, 'img', slug + '-2-play.jpg'), playJpg); r.img.play = 'img/' + slug + '-2-play.jpg';
   const play = await measure(playJpg), play2 = await measure(play2Jpg);
+  // EXTRA PICTURES (owner Oct 19, Gemini idea): games.json "pictures": [{"name":"garage","steps":["#mGarage"]}] - each one
+  // opens the game fresh, presses its steps and saves img/<game>-pic-<name>.jpg, shown on the owner's job card
+  // (e.g. the car in the garage next to the race picture: color, size and which way it points at a glance)
+  for (const pc of (g.pictures || []).slice(0, 3)) {
+    try {
+      const pp = await ctx.newPage();
+      await pp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await pp.waitForTimeout(7000);
+      for (const st of pc.steps || []) await pressStep(pp, st);
+      await pp.waitForTimeout(pc.wait || 2500);
+      const nm = String(pc.name || 'pic').replace(/[^a-z0-9-]/gi, '');
+      fs.writeFileSync(path.join(out, 'img', slug + '-pic-' + nm + '.jpg'), await pp.screenshot({ type: 'jpeg', quality: 66 }));
+      (r.img.pics = r.img.pics || []).push({ name: pc.name, src: 'img/' + slug + '-pic-' + nm + '.jpg' });
+      await pp.close();
+    } catch (e) { r.check.push('Extra picture "' + pc.name + '" failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
+  }
   const f2 = await pageFacts(page).catch(() => ({ casino: '', rotate: '' }));
   if (play.dark > 0.93 || play.std < 6) r.fail.push('Gameplay screen is black or blank');
   if (!(g.start || []).length) r.check.push('No start steps in games.json yet - only the menu was checked');

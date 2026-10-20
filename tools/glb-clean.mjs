@@ -23,4 +23,7 @@ await io.write(out, doc);
 const nb = getBounds(doc.getRoot().getDefaultScene() || doc.getRoot().listScenes()[0]);
 const sz = nb.max.map((v, i) => +(v - nb.min[i]).toFixed(2));
 const long = ['X (sideways in most games)', 'Y (standing up!)', 'Z (front-back)'][sz.indexOf(Math.max(...sz))];
+// Gemini idea (owner Oct 19): a model whose HEIGHT is its longest side came in standing up / tipped over
+if (sz[1] === Math.max(...sz) && !/person|man|woman|player|character|human|tree|tower|lamp/i.test(out))
+  console.log(`::warning title=Model cleaner::${out} looks STANDING UP (taller than it is long) - turn it flat in the game's wrapper`);
 console.log(`::notice title=Model cleaner::${out}: removed ${removed.length ? removed.join(', ') : 'nothing'}; size ${sz.join(' x ')}; long side = ${long}`);

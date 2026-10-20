@@ -52,6 +52,9 @@
         "#mRace",
         "#plist .pl",
         "#shGo"
+      ],
+      "pictures": [
+        { "name": "garage", "steps": ["#mGarage"] }
       ]
     },
     {
