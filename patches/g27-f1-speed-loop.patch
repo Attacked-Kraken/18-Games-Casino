@@ -1,0 +1,109 @@
+--- a/apexf1.html	2026-10-20 09:50:57.154450192 -0500
++++ b/apexf1.html	2026-10-20 09:48:08.165010623 -0500
+@@ -145,7 +145,7 @@
+   <div id="gapbox">GAP —</div>
+   <div id="tirebox"><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
+   <div id="wxTag">☀ DRY</div>
+-  <div id="speedo"><div class="v">0</div><div class="u">KM/H</div><div class="gear">N</div></div>
++  <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
+   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
+   <canvas id="minimap" width="130" height="130"></canvas>
+   <div id="drsTag" class="hidden">DRS ● OPEN</div>
+@@ -287,7 +287,7 @@
+ const rand = (a,b)=>a+Math.random()*(b-a);
+ const randi = (a,b)=>Math.floor(rand(a,b+1));
+ const TAU = Math.PI*2;
+-const KMH = 3.6;
++const MPH = 2.23694; // G-27: speed shown in MPH
+ function angDiff(a,b){ let d=(b-a)%TAU; if(d>Math.PI)d-=TAU; if(d<-Math.PI)d+=TAU; return d; }
+ 
+ /* ================= AUDIO (all synthesized) ================= */
+@@ -571,7 +571,7 @@
+     for(let i=1;i<=raw.length;i++){ const a=raw[i-1], b=raw[i%raw.length];
+       total+=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]); cum.push(total); }
+     const target=cfg.lapKm*1000, k=target/total;
+-    const scaled=raw.map(p=>[p[0]*k,p[1]*k,p[2]*k]);
++    const scaled=raw.map(p=>[p[0]*k,p[1],p[2]*k]); // G-27: elevation stays in metres (scaling it buried whole sections under the ground plane)
+     total=0; const cum2=[0];
+     for(let i=1;i<=scaled.length;i++){ const a=scaled[i-1], b=scaled[i%scaled.length];
+       total+=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]); cum2.push(total); }
+@@ -612,13 +612,13 @@
+   buildMeshes(){
+     this.clearGroup(); const g=this.group, W=this.width, N=this.samples.length;
+     // grass
+-    let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9;
+-    for(const p of this.samples){ minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z); }
++    let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9,minY=1e9;
++    for(const p of this.samples){ minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z);minY=Math.min(minY,p.y); }
+     this.bounds={minX,maxX,minZ,maxZ};
+     const pad=160;
+     const grass=new THREE.Mesh(new THREE.PlaneGeometry(maxX-minX+pad*2,maxZ-minZ+pad*2),
+       new THREE.MeshLambertMaterial({color:0x3f7a3a}));
+-    grass.rotation.x=-Math.PI/2; grass.position.set((minX+maxX)/2,-0.4,(minZ+maxZ)/2); grass.receiveShadow=true; g.add(grass);
++    grass.rotation.x=-Math.PI/2; grass.position.set((minX+maxX)/2,minY-0.4,(minZ+maxZ)/2); // G-27: ground below the whole loop, never over it grass.receiveShadow=true; g.add(grass);
+     // asphalt ribbon
+     const verts=[], idx=[], uvs=[];
+     for(let i=0;i<=N;i++){ const p=this.samples[i%N];
+@@ -1110,6 +1110,7 @@
+     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
+     this.skill=skill; // 0..1
+     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent);
++    this.mesh.scale.setScalar(1.18); // G-27: a little bigger
+     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
+     this.tire='SOFT'; this.wear=0; this.tireAge=0;
+     this.ers=100; this.drsOpen=false; this.drsCount=0;
+@@ -1172,8 +1173,8 @@
+     let topV=vmax;
+     if(this.drsOpen) topV*=1.10;
+     const throttle=this.throttle, brake=this.brake;
+-    const engineA=26*(1-Math.max(0,this.v-55)/70); // fade at high speed
+-    let acc=throttle*Math.max(6,engineA)-brake*38-0.00042*this.v*this.v*60*(this.slip?0.82:1);
++    const engineA=26*(1-Math.max(0,this.v-60)/80); // fade at high speed (G-27: much faster)
++    let acc=throttle*Math.max(6,engineA)-brake*38-0.00005*this.v*this.v*60*(this.slip?0.82:1);
+     if(this.ersUse && this.ers>0){ acc+=9; this.ers=Math.max(0,this.ers-14*dt); }
+     else { this.ers=Math.min(100,this.ers+(brake>0.3?10:2.2)*dt); }
+     // cornering: if too fast for corner, scrub + push wide
+@@ -1189,13 +1190,8 @@
+     const tireGrip=this.gripNow();
+     const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/95,0,1)*0.45);
+     this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
+-    // tire grip pulls heading back toward track direction (no drift unless sliding)
+-    this.headAngle *= Math.max(0, 1 - tireGrip*4*dt);
+-    // clamp heading to prevent spinning
++    // G-27: steering follows ONLY the driver's stick - no auto-align, no curve push
+     this.headAngle=clamp(this.headAngle,-0.6,0.6);
+-    // curvature pushes car outward (must steer to hold the line)
+-    const curv=Track.frameAt(this.s).curv;
+-    this.headAngle += (-curv)*this.v*dt*0.006;
+     // surface
+     const edge=W/2, absD=Math.abs(this.d);
+     this.offTrack=false;
+@@ -1396,15 +1392,15 @@
+     if(a.finished&&b.finished) continue;
+     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
+     const dd=a.d-b.d;
+-    if(Math.abs(ds)<5.6 && Math.abs(dd)<2.7){
++    if(Math.abs(ds)<6.6 && Math.abs(dd)<3.2){
+       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
+       // and push fore-aft too so a car cannot sit inside the one ahead
+-      const push=(2.7-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
++      const push=(3.2-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
+       a.d+=push; b.d-=push;
+-      if(Math.abs(dd)<2.0 && Math.abs(ds)<5.2 && Math.abs(ds)>0.01){
++      if(Math.abs(dd)<2.4 && Math.abs(ds)<6.1 && Math.abs(ds)>0.01){
+         const sN=((a.s%Track.length)+Track.length)%Track.length;
+         if(sN>30 && sN<Track.length-30){ // keep clear of the lap line
+-          const drift=(5.2-Math.abs(ds))*dt*2*Math.sign(ds);
++          const drift=(6.1-Math.abs(ds))*dt*2*Math.sign(ds);
+           a.s+=drift; b.s-=drift;
+         }
+         const ahead=ds>0?a:b, behind=ds>0?b:a;
+@@ -1751,7 +1747,7 @@
+     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
+     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
+     $('tireAge').textContent=p.tireAge+' laps';
+-    document.querySelector('#speedo .v').textContent=Math.round(p.v*KMH);
++    document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
+     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
+     $('ersFill').style.width=p.ers+'%';
+     $('wxTag').textContent=Race.weather.label;
