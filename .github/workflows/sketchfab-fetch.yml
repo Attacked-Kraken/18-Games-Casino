@@ -35,10 +35,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: npm i -g @gltf-transform/cli@4 >/dev/null && npm i --prefix /tmp/gt @gltf-transform/core@4 @gltf-transform/functions@4 >/dev/null
+      - run: npm i -g @gltf-transform/cli@4 >/dev/null && npm i --prefix /tmp/gt @gltf-transform/core@4 @gltf-transform/functions@4 >/dev/null && cp tools/glb-clean.mjs /tmp/gt/
       - name: Cleaner test
         if: github.event.inputs.clean != ''
-        run: node tools/glb-clean.mjs "${{ github.event.inputs.clean }}" /tmp/clean-test.glb
+        run: node /tmp/gt/glb-clean.mjs "$GITHUB_WORKSPACE/${{ github.event.inputs.clean }}" /tmp/clean-test.glb
       - name: Search
         if: github.event.inputs.clean == ''
         env:
@@ -59,7 +59,7 @@ jobs:
           # owner Oct 19 "remove heaviness, make it usable for phones": every model ends up under ~6 MB -
           # fewer triangles (simplify keeps the shape), smaller WebP textures, quantized - no special loader needed
           slim() { f="$1"; out="$2"; t=/tmp/slim-$$.glb
-            node tools/glb-clean.mjs "$f" "$f" || echo "::warning title=Model cleaner::could not clean $f"   # shadow/ground sheets out
+            node /tmp/gt/glb-clean.mjs "$PWD/$f" "$PWD/$f" || echo "::warning title=Model cleaner::could not clean $f"   # shadow/ground sheets out
             gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
             for step in "0.5 1024" "0.25 1024" "0.12 512" "0.06 512"; do
               set -- $step; [ $(stat -c %s "$out") -le 6000000 ] && break

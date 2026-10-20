@@ -1,11 +1,10 @@
 // Owner Oct 19 (Gemini idea "asset sanitizer"): before a fetched model reaches a game, take out the flat
 // shadow / ground / backdrop pieces. On the V12 Goblin a hidden square shadow made the game size the car
-// at HALF size and turn it SIDEWAYS. Usage: node tools/glb-clean.mjs in.glb out.glb   (needs GT_DIR = where
-// @gltf-transform/core + functions are installed)
-import { createRequire } from 'module';
-const req = createRequire((process.env.GT_DIR || '/tmp/gt') + '/package.json');
-const { NodeIO, getBounds } = req('@gltf-transform/core');
-const { prune } = req('@gltf-transform/functions');
+// at HALF size and turn it SIDEWAYS. Usage: cp tools/glb-clean.mjs /tmp/gt/ && node /tmp/gt/glb-clean.mjs in.glb out.glb
+// The robot copies this file into /tmp/gt (where the libraries are installed) and runs it from there.
+import { NodeIO, getBounds } from '@gltf-transform/core';
+import { prune } from '@gltf-transform/functions';
+process.on('uncaughtException', (e) => { console.log('::error title=Model cleaner::' + e.message); process.exit(1); });
 const [inp, out] = process.argv.slice(2);
 const io = new NodeIO(); const doc = await io.read(inp);
 const scene = doc.getRoot().getDefaultScene() || doc.getRoot().listScenes()[0];
