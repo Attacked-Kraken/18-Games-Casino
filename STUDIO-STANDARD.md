@@ -98,6 +98,15 @@ Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half si
 - The camera always shows the play. No camera stuck inside a wall or a player. A zoom that hides the action is a defect.
 - Every action has a sound and visual feedback (ASSET-LAW Part II: menu music, game music and sounds, plus a mute button).
 - Sideways play only (LANDSCAPE LAW). Big touch buttons, at least 44 px.
+- **Phone polish** (owner, Oct 19 2026, from Gemini):
+  - Touch: the game area has `touch-action: none` and touch handlers call `preventDefault()` - a thumb on the stick
+    never scrolls, zooms or drags the page.
+  - Juice: big moments (goal, crash, landing, coin) get a short screen shake, a sound and a quick "pop" (kit/apex-fx.js
+    has all three).
+  - Sound unlock: start the game's sound on the first tap (the PLAY button), or iPhones stay silent.
+  - Buttons and the score line stay inside the phone's safe edges (`env(safe-area-inset-*)`), never under the notch.
+  - Camera follows smoothly (eases toward the player), never snaps or shakes from being glued to the model.
+  - Game over / finish: a big one-tap "Play again" that restarts at once, no reload. Best scores are saved on the phone.
 - **Clean screen** (owner, Oct 17 2026): during play the screen shows only the game, the score line and the buttons
   you need right now (short labels or icons). All instructions live behind a **"How to play" (?) button**, closed by
   default, that turns sideways with the game. No keyboard words on phones ("space", "press 1", "WASD", "arrow keys").
