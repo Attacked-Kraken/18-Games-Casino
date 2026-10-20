@@ -1,0 +1,129 @@
+MUSE GUIDE - APEX GRAND PRIX TRACK
+==================================
+Read this first. Everything here is plain three.js (tested with r169; any r150+ should work).
+
+1. SCALE AND AXES
+   1 unit = 1 metre. Y is up. The track lies in the XZ plane (right-handed, the glTF and three.js standard).
+   The start/finish line is at world (0,0,0) and the cars start heading +X.
+   The race runs clockwise when seen from above.
+   "Right" means the driver's right: cross(direction, up). In track-data.json, a lateral value of + means right.
+   Track width is 14 m, kerbs are 1.5 m, barriers are 26 m from the track edge, and elevation runs from -5.8 m to +12.7 m.
+   Banking goes up to 3 degrees, with the inside of the corner lower.
+
+2. MESH NAMES (realistic v2: merged by material, at most 4 draw calls per node; get one with track.meshes[name])
+   road               asphalt PBR (base colour + normal + roughness/AO map), 8 columns across so the banking is smooth
+   track_marks        rubbered-in racing line plus braking and exit skid marks. A blended overlay with vertex alpha,
+                      drawn after the road (the loader sets polygonOffset and renderOrder)
+   road_paint         white edge lines, start/finish line, 20 grid boxes, 12 pit boxes, pit lane lines
+   kerbs              rounded, sloped red/white kerbs. Rumble ridges are in the normal map. UVs follow the kerb's
+                      own arc length, so stripes don't stretch on tight corners
+   runoff_asphalt, pit_lane, pit_apron                 driving surfaces off the racing line
+   grass (mowed stripes), gravel_traps (soft blended edges), terrain_grass       off-track surfaces
+   guardrails         steel W-beam rails and posts, plus the catch-fence posts and tubes
+   tyre_walls         tyre stacks (texture + normal map) on the outside of corners
+   concrete_walls     pit wall and main-straight wall, with bevelled tops
+   catch_fence        alpha-tested chain-link mesh
+   grandstands        tiered seating, seat rows, curved cantilever roofs
+   pit_garages_and_buildings   pit garages with doors at each pit box and a glass upper floor, hospitality, timing tower,
+                      podium, marshal huts, braking-marker boards
+   steel_structures   start gantry, banner bridges, TV camera towers, floodlight poles and heads, screen frames, stand
+                      columns, poles
+   floodlight_lamps (material 'lamp'), screens, start_lights (housings), banners_apex_arcade
+   Node "extras" (three.js userData) record the surface type and notes. Nothing sits on the racing surface.
+   Mesh names that changed from v1: pit_wall is now in concrete_walls; start_finish_line, grid_boxes and pit_boxes are in
+   road_paint; boards, podium, marshal_posts, hospitality and timing_tower are in pit_garages_and_buildings; gantry,
+   towers, floodlights, bridges and screen frames are in steel_structures.
+   Positions of everything are still in track-data.json "event".
+
+   COMPRESSION: grand-prix-track.glb uses EXT_meshopt_compression. track-loader.js already calls
+   loader.setMeshoptDecoder(MeshoptDecoder). Your import map must also provide "three/addons/" so it can find
+   libs/meshopt_decoder.module.js. That file contains its own WASM, so it works offline.
+   LIGHTING BAKED INTO THE GLB: ambient occlusion and soft sun shadows are stored as vertex colours (COLOR_0) on the
+   ground meshes, stands and buildings. They use track-data.json render.sunDirection, so put your DirectionalLight
+   along that direction (preview.html does this).
+
+3. QUICK START
+   <script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+   import { loadTrack } from './track-loader.js';
+   import { createEvent } from './grand-prix-event.js';
+   import { RaceCameras } from './race-cameras.js';
+   const track = await loadTrack({ scene, glbUrl:'grand-prix-track.glb', dataUrl:'track-data.json' });
+   const ev    = createEvent({ scene, track, camera, soundBase:'../Grand-Prix-Track-Sounds/' });
+   const cams  = new RaceCameras(camera, { track, cars, forward:'+z' });
+   track.placeOnGrid(cars, { forward:'+z' });  cams.attach(cars[0]);  cams.director(true);
+   ev.startSequence(() => raceStarted = true);           // the 5 red lights, then lights out
+   const laps = track.createLapCounter({ laps:3, onLap:(n,t)=>{}, onFinish:()=>{ ev.finish(winner); cams.setMode('replay'); } });
+   Every frame:
+     laps.update(player.position, timeSeconds);
+     const s = track.surfaceAt(player.position, player.userData);   // s.surface: track|kerb|grass|gravel|runoff|pit
+     if (s.offTrack) applyGrassDrag();   player.position.y = s.height;
+     ev.update(dt, cars);   cams.update(dt);   // for the slow-mo replay, use dt * cams.timeScale for your physics
+   AI: track.racingLineAt(distanceMetres) returns {position, direction, speedMs}. Steer toward a point
+   20-40 m ahead and use speedMs as the target speed. preview.html drives its cars exactly this way.
+
+4. HOW TO SWAP IN REAL CAR MODELS (replacing the placeholder boxes)
+   a) Load each car as a THREE.Object3D. Set castShadow = true on its meshes. Use MeshStandardMaterial so it picks up
+      the environment reflections. The car, for example a GLTF scene. Put its origin at ground level, centred
+      between the wheels.
+   b) Work out which way its nose points in model space. Pass that as forward: '+z' (default), '-z', '+x'
+      or '-x', to BOTH track.placeOnGrid(cars, {forward}) and new RaceCameras(camera, {forward}).
+      If the model is not in metres, scale it to about 5.5 m long and 2 m wide.
+   c) Optional cockpit, nose, bumper and rear camera spots, in car space and metres, with +Z as the nose:
+        car.userData.cameraOffsets = { onboard:[0,1.0,-0.25], nose:[0,0.75,2.0], bumper:[0,0.32,2.6], rear:[0,1.15,-0.6] };
+   d) Give each car a name (car.name = 'RED 1'). The timing tower and the winner text use it.
+   e) Move and rotate the cars however your physics does it. The cameras only read position and quaternion.
+      They measure speed and race order themselves. Then call cams.attach(car) for the car to follow.
+   f) In preview.html, the function placeholderCar() in source/preview-src.js is the only part to replace.
+      Rebuild with: cd source && python build_preview.py (needs node_modules with three and esbuild;
+      set THREE_NODE_MODULES).
+
+5. CAMERA MODES (cams.setMode(name), cams.next(), cams.director(true/false))
+   chase    spring follow; pulls back and widens the field of view as speed rises
+   heli     drone that circles alongside the car and swoops up and down
+   tv       trackside tower cameras; switches to the nearest tower in each sector and zooms to keep the car framed
+   onboard / nose / bumper / rear    fixed views on the car (rear looks backward)
+   leader   follows whichever car is leading
+   battle   frames the two closest cars, within 25 m; falls back to chase when there is no battle
+   intro    flyover of the start grid from the back to pole
+   replay   slow-motion view low at the finish line (sets cams.timeScale = 0.3)
+   The director cycles shots every 5-9 s (cams.shotLength) and prefers battles. Use cams.onModeChange
+   to react to shot changes.
+
+6. RETHEME AND EXTEND
+   - Textures: the PBR textures are made by source/textures.py (asphalt, kerb, mowed grass, gravel, concrete,
+     tyres, chain-link, seats, doors, track marks). Material names: asphalt, asphalt_runoff, pit_lane, marks, kerb,
+     grass, terrain, gravel, concrete, steel_galvanised, steel_dark, tyre, fence, seats, roof, building, glass, door,
+     painted, screen, lamp, light_off, banner. Swap them at runtime (mesh.material.map = newTex) or change the texture names in
+     source/build.py. Ground-Textures has wet asphalt, blue or green kerbs, snow, sand and more.
+   - Banner text: change the "APEX ARCADE" image in build.py, or swap the material map at runtime.
+   - New layout: edit the control points CP in source/layout.py (in metres, driving order), plus the
+     elevation keyframes (kf) in build.py, then run python build.py (track_core.py makes the data, build.py the realistic meshes). Corners, sectors, gates, grid,
+     racing line, AI speeds and minimap are all regenerated. Keep separate parts of the track more than
+     110 m apart.
+   - Night: ev.setNight(true) lights the floodlight lamps and moves 6 point lights to the floodlights
+     nearest the camera. Also darken your sky and hemisphere light, as preview.html does.
+   - Weather: Weather-Racing-FX (2D overlay) works on top of this. Effects-Library is hooked in:
+     pass fx: new ApexFX(canvas) to createEvent and finish() plays 'finish_line' and 'fireworks'.
+   - Crowd size: createEvent({crowdDensity: 0.5}) halves the spectators (about 7,000 at the default of 1).
+     They render as 1 draw call.
+
+7. LOOK AND PERFORMANCE (copy from source/preview-src.js)
+   renderer.toneMapping = ACESFilmicToneMapping; outputColorSpace = SRGBColorSpace; shadowMap.type = PCFSoftShadowMap
+   One DirectionalLight along data.render.sunDirection with castShadow. Its 90 x 90 m shadow frustum follows the
+   camera target every frame (2048 map, bias -0.0004, normalBias 0.03). Only cars cast shadows (castShadow = true on
+   car meshes). The track receives shadows and keeps its baked shadows.
+   Sky: an HDR gradient sky dome with sun glow, rendered once into a PMREM environment (scene.environment), which
+   gives reflections on glass, steel and cars. FogExp2 density 0.00028 adds light haze.
+   Night: ev.setNight(true), then switch to the night sky and night environment, and lower the sun and hemisphere
+   light, as preview.html's setNight() does.
+   Measured in WebKit (renderer.info.render.calls, including the shadow pass, 8 placeholder cars, about 8,800
+   spectators): 26-44 draw calls per frame (corner 26, chase 28, fence 31, night 32, TV 38, pit 40,
+   grandstand 44, overview 44, night with stands 44). Triangles drawn: about 0.94-0.97 million, mostly the
+   crowd. createEvent({crowdDensity:0.5}) roughly halves that on phones.
+   GLB: 6.6 MB, 409k triangles, 26 primitives. The pixel ratio is capped at 2.
+
+8. SOUND (Grand-Prix-Track-Sounds, unzip next to this folder)
+   await ev.enableAudio() must be called from a tap. It adds positional crowd beds and roars on every
+   grandstand that swell as cars pass, plus a helicopter loop. One-shots: start beeps, lights out,
+   finish horn, fireworks, confetti and the podium fanfare.
+   If the browser blocks loading files from file:// URLs, it falls back to simple, non-positional <audio> playback.

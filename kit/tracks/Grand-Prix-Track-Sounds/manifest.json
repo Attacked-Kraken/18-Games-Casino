@@ -1,0 +1,171 @@
+[
+ {
+  "file": "crowd_ambience_loop.mp3",
+  "loop": true,
+  "source": "Stadium-Sounds/soccer/soccer_ambience_loop.mp3",
+  "desc": "stand crowd bed",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_ambience_quiet_loop.mp3",
+  "loop": true,
+  "source": "Stadium-Sounds/soccer/soccer_ambience_quiet_loop.mp3",
+  "desc": "quiet bed",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_cheer_1.mp3",
+  "loop": false,
+  "source": "Stadium-Sounds/soccer/soccer_cheer_1.mp3",
+  "desc": "",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_cheer_2.mp3",
+  "loop": false,
+  "source": "Stadium-Sounds/soccer/soccer_cheer_2.mp3",
+  "desc": "",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_big_cheer.mp3",
+  "loop": false,
+  "source": "Stadium-Sounds/soccer/soccer_big_cheer.mp3",
+  "desc": "winner / overtake",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_applause.mp3",
+  "loop": false,
+  "source": "Stadium-Sounds/soccer/soccer_applause.mp3",
+  "desc": "podium",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_gasp.mp3",
+  "loop": false,
+  "source": "Stadium-Sounds/soccer/soccer_gasp_ooh.mp3",
+  "desc": "crash / off-track",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_roar_loop.mp3",
+  "loop": true,
+  "seconds": 4.0,
+  "source": "new",
+  "desc": "loud excited crowd, seamless; drive gain by car proximity",
+  "group": "crowd"
+ },
+ {
+  "file": "crowd_roar_pass.mp3",
+  "loop": false,
+  "seconds": 5.0,
+  "source": "new",
+  "desc": "crowd swell as a car passes a stand",
+  "group": "crowd"
+ },
+ {
+  "file": "start_light_beep.mp3",
+  "loop": false,
+  "seconds": 0.7,
+  "source": "new",
+  "desc": "one red light on",
+  "group": "race event"
+ },
+ {
+  "file": "lights_out_go.mp3",
+  "loop": false,
+  "seconds": 0.7,
+  "source": "new",
+  "desc": "lights out",
+  "group": "race event"
+ },
+ {
+  "file": "finish_horn.mp3",
+  "loop": false,
+  "seconds": 1.6,
+  "source": "new",
+  "desc": "chequered flag horn",
+  "group": "race event"
+ },
+ {
+  "file": "fireworks_launch.mp3",
+  "loop": false,
+  "seconds": 1.4,
+  "source": "new",
+  "desc": "rocket whistle",
+  "group": "race event"
+ },
+ {
+  "file": "fireworks_bang_1.mp3",
+  "loop": false,
+  "seconds": 2.5,
+  "source": "new",
+  "desc": "burst",
+  "group": "race event"
+ },
+ {
+  "file": "fireworks_bang_2.mp3",
+  "loop": false,
+  "seconds": 2.5,
+  "source": "new",
+  "desc": "burst",
+  "group": "race event"
+ },
+ {
+  "file": "fireworks_crackle.mp3",
+  "loop": false,
+  "seconds": 2.0,
+  "source": "new",
+  "desc": "sparkle crackle",
+  "group": "race event"
+ },
+ {
+  "file": "confetti_pop.mp3",
+  "loop": false,
+  "seconds": 0.7,
+  "source": "new",
+  "desc": "confetti cannon",
+  "group": "race event"
+ },
+ {
+  "file": "helicopter_loop.mp3",
+  "loop": true,
+  "seconds": 2.0,
+  "source": "new",
+  "desc": "TV helicopter hovering, seamless",
+  "group": "race event"
+ },
+ {
+  "file": "flag_flutter_loop.mp3",
+  "loop": true,
+  "seconds": 2.0,
+  "source": "new",
+  "desc": "marshal flag flutter",
+  "group": "race event"
+ },
+ {
+  "file": "pa_chime.mp3",
+  "loop": false,
+  "seconds": 1.7,
+  "source": "new",
+  "desc": "announcement chime, no voice",
+  "group": "race event"
+ },
+ {
+  "file": "podium_fanfare.mp3",
+  "loop": false,
+  "seconds": 2.15,
+  "source": "new",
+  "desc": "short original fanfare",
+  "group": "race event"
+ },
+ {
+  "file": "car_pass_whoosh.mp3",
+  "loop": false,
+  "seconds": 1.2,
+  "source": "new",
+  "desc": "generic pass-by air whoosh for stands",
+  "group": "race event"
+ }
+]
