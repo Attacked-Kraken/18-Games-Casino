@@ -1,0 +1,114 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -146,6 +146,27 @@
+   /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+      In portrait the whole stage presents rotated to landscape from the first frame. */
+   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
++  /* G-46: Forza-style home - slim glass tile column on the left, thin stat bar on top, car center-right */
++  #menu { padding:0; }
++  #mtop { position:absolute; top:0; left:0; right:0; min-height:36px; display:flex; align-items:center; gap:14px; padding:calc(2px + var(--sat)) calc(12px + var(--sar)) 2px calc(64px + var(--sal)); background:linear-gradient(180deg,rgba(5,3,12,.82),rgba(5,3,12,.38)); border-bottom:1px solid rgba(255,255,255,.13); z-index:5; }
++  #menu #mstat { display:flex; gap:14px; flex-wrap:nowrap; justify-content:flex-start; font:800 13px system-ui; }
++  #menu #mstat span { padding:0; border-radius:0; background:none; border:0; white-space:nowrap; }
++  #mtop #recW { font:800 12px system-ui; }
++  #mtop #presented { margin-left:auto; font-size:11px !important; white-space:nowrap; }
++  #menu #logo { position:absolute; left:calc(14px + var(--sal)); top:calc(42px + var(--sat)); width:178px; max-height:56px; z-index:5; }
++  #mcol { position:absolute; left:calc(14px + var(--sal)); top:calc(104px + var(--sat)); width:248px; display:flex; flex-direction:column; gap:7px; z-index:5; }
++  #menu #mbtns { display:flex; flex-direction:column; gap:6px; width:100%; }
++  #menu #mbtns .neo { order:6; text-align:left; padding:9px 13px; font-size:13.5px; border-radius:12px; color:#fff; background:linear-gradient(135deg,rgba(23,25,46,.88),rgba(10,11,24,.85)); border:1px solid rgba(255,255,255,.18); box-shadow:0 4px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.13); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
++  #menu #mbtns .neo:hover, #menu #mbtns .neo:focus-visible { border-color:#19e6ff; box-shadow:0 0 0 1px #19e6ff, 0 0 18px rgba(25,230,255,.35); outline:none; }
++  #menu #mbtns #mRace { order:1; }
++  #menu #mbtns #mGarage { order:2; }
++  #menu #mbtns #mFriends { order:3; }
++  #menu #mbtns #mQ { order:4; }
++  #menu #mbtns #mSnd { order:5; }
++  #menu #mbtns #mCredits { order:6; }
++  #menu #mbtns .wide { grid-column:auto; font-size:19px; padding:14px; background:linear-gradient(135deg,#ff2bd6,#8a5cff 55%,#19e6ff); border-color:transparent; box-shadow:0 6px 22px rgba(255,43,214,.35), 0 0 30px rgba(25,230,255,.2); }
++  #menu #who { text-align:left; font-size:12px; }
++  #menu #who input { width:128px; padding:7px 9px; }
+ </style>
+ </head>
+ <body>
+@@ -163,12 +184,8 @@
+     <g><rect x="8" y="8" width="14" height="14" fill="#f2f2f2"/><rect x="22" y="8" width="14" height="14" fill="#141414"/><rect x="8" y="22" width="14" height="14" fill="#141414"/><rect x="22" y="22" width="14" height="14" fill="#f2f2f2"/></g>
+     <g><rect x="344" y="8" width="14" height="14" fill="#141414"/><rect x="358" y="8" width="14" height="14" fill="#f2f2f2"/><rect x="344" y="22" width="14" height="14" fill="#f2f2f2"/><rect x="358" y="22" width="14" height="14" fill="#141414"/></g>
+   </svg>
+-  <div id="presented" style="font:800 13px system-ui;letter-spacing:.14em;color:#cfd3ff;text-shadow:0 0 12px #19e6ff88">PRESENTED BY <b style="color:#ffd23a">APEX ARCADE</b> 🏁</div>
+-  <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:10px">
+-    <!-- o1 2026-10-09 (owner: "move everything to under the car") stat + car pills now sit below the showroom car -->
+-    <div id="recW"></div><!-- rec1 2026-10-10 (owner: totals box) -->
+-    <div id="mstat"></div>
+-    <div id="who"></div>
++  <div id="mtop"><div id="mstat"></div><div id="recW"></div><div id="presented" style="font:800 13px system-ui;letter-spacing:.14em;color:#cfd3ff;text-shadow:0 0 12px #19e6ff88">PRESENTED BY <b style="color:#ffd23a">APEX ARCADE</b> 🏁</div></div>
++  <div id="mcol">
+     <div id="mbtns">
+       <button class="neo wide" id="mRace">🏁 Race · 100 Places</button>
+       <button class="neo alt" id="mFriends">👥 Race Friends</button>
+@@ -177,6 +194,7 @@
+       <button class="neo alt" id="mSnd">🔊 Sound On</button>
+       <button class="neo alt" id="mCredits">© Credits</button>
+     </div>
++    <div id="who"></div>
+   </div>
+ </div>
+ 
+@@ -1079,6 +1097,7 @@
+ const GS = new THREE.Scene(); GS.background = new THREE.Color(0xa9b0bc); GS.fog = new THREE.Fog(0xa9b0bc, 34, 80);
+ const gcam = new THREE.PerspectiveCamera(38, 1, 0.1, 300);
+ const gOrb = { th: 0.75, ph: 0.26, d: 8.2, auto: 1, drag: null };
++const _gt = new THREE.Vector3(), _gf = new THREE.Vector3(), _gr = new THREE.Vector3(), _UP = new THREE.Vector3(0, 1, 0);
+ let gCar = null, gMir = null;
+ (function buildGarage() {
+   const es = new THREE.Scene(); es.background = new THREE.Color(0x3a404c);
+@@ -1093,6 +1112,9 @@
+   const ring = (a, b, c, k, y) => { const m = new THREE.Mesh(new THREE.RingGeometry(a, b, 128), new THREE.MeshBasicMaterial({ color: hdr(c, k), side: THREE.DoubleSide })); m.rotation.x = -Math.PI / 2; m.position.y = y; GS.add(m); };
+   ring(3.35, 3.47, '#19e6ff', 4, 0.01); ring(3.78, 3.82, '#ff2bd6', 3.5, 0.01);
+   const wall = new THREE.Mesh(new THREE.CylinderGeometry(20, 20, 15, 72, 1, true), new THREE.MeshStandardMaterial({ color: 0xb4bac4, roughness: 0.6, metalness: 0.05, side: THREE.BackSide })); wall.position.y = 7.5; GS.add(wall);
++  const disc = new THREE.Mesh(new THREE.CircleGeometry(2.95, 72), new THREE.MeshPhysicalMaterial({ color: 0x14161f, roughness: 0.22, metalness: 0.35, clearcoat: 1, clearcoatRoughness: 0.08, transparent: true, opacity: 0.55 }));
++  disc.rotation.x = -Math.PI / 2; disc.position.y = 0.006; disc.receiveShadow = true; disc.visible = false; GS.add(disc);
++  GS.userData.disc = disc; GS.userData.floorMat = floor.material; GS.userData.wallMat = wall.material;
+   for (let i = 0; i < 20; i++) { const a = (i / 20) * TAU, c = ['#ffffff', '#19e6ff', '#ffffff', '#ff2bd6'][i % 4]; GS.add(bx(0.2, 10, 0.2, new THREE.MeshBasicMaterial({ color: hdr(c, 4) }), Math.cos(a) * 19.6, 6, Math.sin(a) * 19.6)); }
+   const sb = new THREE.Mesh(new THREE.PlaneGeometry(12, 5), new THREE.MeshBasicMaterial({ color: hdr('#ffffff', 3) })); sb.rotation.x = Math.PI / 2; sb.position.y = 12; GS.add(sb);
+   const halo = new THREE.Mesh(new THREE.TorusGeometry(6.5, 0.06, 8, 128), new THREE.MeshBasicMaterial({ color: hdr('#ffffff', 5) })); halo.rotation.x = Math.PI / 2; halo.position.y = 11; GS.add(halo);
+@@ -1945,7 +1967,7 @@
+   $('mQ').textContent = '✨ Graphics: ' + { ultra: 'Ultra', high: 'High', fast: 'Fast' }[S.q];
+   refreshMute();
+ }
+-function toMenu() { endRace(); G.mode = 'menu'; G.pick = null; G.friend = null; G.gSel = S.cur; setGarageCar(S.cur, S.cars[S.cur]); gOrb.auto = 1; show('menu'); refreshMenu(); MUS.want = 'menu'; musicStart('menu'); }
++function toMenu() { endRace(); G.mode = 'menu'; G.pick = null; G.friend = null; G.gSel = S.cur; setGarageCar(S.cur, S.cars[S.cur]); gOrb.th = 0.75; gOrb.ph = 0.26; gOrb.d = 8.2; gOrb.tt = null; gOrb.auto = 1; show('menu'); refreshMenu(); MUS.want = 'menu'; musicStart('menu'); }
+ 
+ /* ------------------------------------------------------------------ city picker */
+ const BGC = { neon: ['#ff2bd6', '#2a0f4a'], terrace: ['#7ab4ff', '#24346a'], bridge: ['#3ad0ff', '#0a4a6a'], cavern: ['#2fe0ff', '#1a0a3a'], canal: ['#ffb070', '#6a3a2a'], plaza: ['#dfe8f6', '#5a6a8a'],
+@@ -2131,7 +2153,7 @@
+ addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (KM[e.code]) { K[KM[e.code]] = 1; e.preventDefault(); audioInit(); } if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
+ addEventListener('keyup', (e) => { if (KM[e.code]) K[KM[e.code]] = 0; });
+ canvas.addEventListener('pointerdown', (e) => { if (G.mode !== 'garage' && G.mode !== 'menu') return; gOrb.drag = { x: e.clientX, y: e.clientY, th: gOrb.th, ph: gOrb.ph }; gOrb.auto = 0; audioInit(); });
+-addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; gOrb.th = d.th - (e.clientX - d.x) * 0.008; gOrb.ph = clamp(d.ph + (e.clientY - d.y) * 0.004, 0.03, 0.9); gOrb.tt = null; });
++addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; if (G.mode === 'menu') { const dx = e.clientX - d.x; d.x = e.clientX; d.y = e.clientY; G.mSpin = (G.mSpin || 0) + dx * 0.012; G.mSpinV = clamp(dx * 0.9, -9, 9); return; } gOrb.th = d.th - (e.clientX - d.x) * 0.008; gOrb.ph = clamp(d.ph + (e.clientY - d.y) * 0.004, 0.03, 0.9); gOrb.tt = null; });
+ addEventListener('pointerup', () => { gOrb.drag = null; });
+ $('mRace').onclick = () => { audioInit(); sfx('tap'); openWorld(); };
+ $('mFriends').onclick = () => { audioInit(); sfx('tap'); openFriend(); };
+@@ -2150,10 +2172,22 @@
+   cam.aspect = gcam.aspect = _w / _h; cam.updateProjectionMatrix(); gcam.fov = _w < _h ? 50 : 36; gcam.updateProjectionMatrix();
+ }
+ function updateGarage(dt, now) {
+-  if (gOrb.auto && !gOrb.drag) gOrb.th += dt * 0.18;
++  const menu = G.mode === 'menu';
++  if (gOrb.auto && !gOrb.drag && !menu) gOrb.th += dt * 0.18;
++  if (menu && gCar) { /* G-46 turntable: the car itself turns nonstop; a swipe spins it and it settles back to show speed */
++    G.mSpinV = G.mSpinV == null ? 0.5 : G.mSpinV + (0.5 - G.mSpinV) * Math.min(1, dt * 1.2);
++    if (!gOrb.drag) G.mSpin = (G.mSpin || 0) + G.mSpinV * dt;
++    gCar.root.rotation.y = G.mSpin || 0; if (gMir) gMir.rotation.y = G.mSpin || 0;
++  }
++  if (!menu && gCar && gCar.root.rotation.y) { gCar.root.rotation.y = 0; if (gMir) gMir.rotation.y = 0; }
++  const gu = GS.userData; if (gu.disc) { if (gu.disc.visible !== menu) gu.disc.visible = menu;
++    gu.floorMat.color.set(menu ? 0x232733 : 0x8c929c); gu.wallMat.color.set(menu ? 0x11131d : 0xb4bac4);
++    GS.background.set(menu ? 0x07080f : 0xa9b0bc); GS.fog.color.set(menu ? 0x07080f : 0xa9b0bc); }
+   if (gOrb.tt && !gOrb.drag) { const [th, ph, d] = gOrb.tt; let dth = th - (gOrb.th % TAU); if (dth > Math.PI) dth -= TAU; if (dth < -Math.PI) dth += TAU; gOrb.th += dth * Math.min(1, dt * 3); gOrb.ph += (ph - gOrb.ph) * Math.min(1, dt * 3); gOrb.d += (d - gOrb.d) * Math.min(1, dt * 3); }
+   const tall = false, port = innerWidth < innerHeight, d = gOrb.d * (port ? 1.25 : 1) * (tall ? 1.22 : 1), ty = (G.mode === 'menu' ? (port ? 0.2 : 0.2) : (port ? -0.35 : -1.1)) + (tall ? 0.45 : 0);
+-  gcam.position.set(Math.sin(gOrb.th) * Math.cos(gOrb.ph) * d, 0.55 + Math.sin(gOrb.ph) * d, Math.cos(gOrb.th) * Math.cos(gOrb.ph) * d); gcam.lookAt(0, ty, 0);
++  gcam.position.set(Math.sin(gOrb.th) * Math.cos(gOrb.ph) * d, 0.55 + Math.sin(gOrb.ph) * d, Math.cos(gOrb.th) * Math.cos(gOrb.ph) * d);
++  if (menu) { _gt.set(0, ty, 0); _gf.copy(_gt).sub(gcam.position).normalize(); _gr.crossVectors(_gf, _UP).normalize(); _gt.addScaledVector(_gr, -0.30 * d * Math.tan(gcam.fov * Math.PI / 360) * gcam.aspect); gcam.lookAt(_gt); }
++  else gcam.lookAt(0, ty, 0);
+   const du = GS.userData.dust; if (du) du.rotation.y += dt * 0.02;
+   renderer.toneMappingExposure = 0.85; post.bloom = 0.3; post.th = 2.6; post.spd = 0; post.ca = 0; post.vig = 0.3;
+   post.render(GS, gcam, now / 1000);
