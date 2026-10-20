@@ -932,7 +932,7 @@ function makeGlbCar(id, cfg, o = {}) {
   model.rotation.y = -Math.PI / 2;   /* owner Oct 19 8:40 PM photo: +PI/2 put the nose BACKWARDS. Measured: the low nose + windshield are at model -Z, so -PI/2 turns them to +X (forward) */
   let box = new THREE.Box3().setFromObject(model);
   let size = box.getSize(new THREE.Vector3());
-  model.scale.setScalar(P.L / size.x);
+  model.scale.setScalar(P.L / size.x * 1.2); /* G-01: owner wants the car bigger */
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
   model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
