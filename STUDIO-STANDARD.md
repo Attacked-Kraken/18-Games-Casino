@@ -85,6 +85,7 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
 Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half size):
 1. Wrap it: put the loaded model inside its own empty Group. Turn/scale/move ONLY that inner model once, at load,
    to face the way the game drives. All driving, steering and color code works on the outer Group, never the model.
+   A color/paint change only swaps or recolors materials - it never touches any part's rotation or position.
 2. Measure from the VISIBLE meshes only. Hidden parts (shadow planes, collision boxes) make the size and the
    "which way is long" check wrong.
 3. Don't trust material names. On the Goblin "car_body" was the RIMS. Check each part's color in the garage
