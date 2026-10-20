@@ -4,6 +4,120 @@ const kitOf = () => {
   if (!S || !S.length) return 'no skaters found (window.__hk.skaters)';
   return S;
 };
+/* ================= G-37 CAREER HELPERS (runner side only) =================
+   These run in the test runner, never inside the page. Every function that
+   IS passed to h.eval below is fully self-contained (LESSONS 2026-10-16:
+   the runner ships the function source, not its closure). */
+// The career level the game itself would offer next, read back in the page.
+// Mirrors careerPending()/ranked() in apexhockey.html exactly; each career
+// test also cross-checks it against the game's own hub screen before passing.
+const g37PendingFn = () => {
+  try {
+    const c = JSON.parse(localStorage.getItem('apex_hockey_career_v1') || 'null');
+    if (!c) return null;
+    const base = { phase: c.phase, week: c.week, season: c.season, champ: c.champ || 0,
+      w: c.table && c.table.WOLVES ? c.table.WOLVES.w : -1,
+      pts: c.table && c.table.WOLVES ? c.table.WOLVES.pts : -1 };
+    const order = ['SHARKS', 'BEARS', 'EAGLES', 'VIPERS', 'STAMPEDE'];
+    if (c.phase === 'reg' && c.week <= 10) return { ...base, opp: order[(c.week - 1) % 5], label: 'WEEK ' + c.week };
+    if (c.phase === 'semi') {
+      const LG = ['WOLVES', 'SHARKS', 'BEARS', 'EAGLES', 'VIPERS', 'STAMPEDE'];
+      const rk = LG.slice().sort((x, y) => (c.table[y].pts - c.table[x].pts) || ((c.table[y].gf - c.table[y].ga) - (c.table[x].gf - c.table[x].ga)));
+      const seed = rk.indexOf('WOLVES');
+      const opp = seed === 0 ? rk[3] : seed === 1 ? rk[2] : seed === 2 ? rk[1] : rk[0];
+      return { ...base, opp, label: 'SEMIFINAL' };
+    }
+    if (c.phase === 'final' && c.finalOpp) return { ...base, opp: c.finalOpp, label: 'THE FINAL' };
+    return { ...base, opp: null, label: '' };
+  } catch (e) { return null; }
+};
+// Team defs from the game's own league table (defOf() in apexhockey.html) -
+// the match object below is built exactly the way the hub's PLAY button
+// builds it (mSave({ kind:'career', opp, oppDef, label })).
+const g37Defs = {
+  SHARKS: { name: 'SHARKS', jersey: 0x0e7c7b, helmet: 0x123a3a, trim: 0xffffff, str: 84 },
+  BEARS: { name: 'BEARS', jersey: 0x8a4b1f, helmet: 0x5a2f10, trim: 0xffd9a0, str: 82 },
+  EAGLES: { name: 'EAGLES', jersey: 0xd8d8e2, helmet: 0x8a1f2d, trim: 0x1f3a8a, str: 80 },
+  VIPERS: { name: 'VIPERS', jersey: 0x39d353, helmet: 0x0d3a16, trim: 0x111111, str: 78 },
+  STAMPEDE: { name: 'STAMPEDE', jersey: 0xd64545, helmet: 0x6e1420, trim: 0xffffff, str: 76 },
+};
+function g37Seed(over) {
+  const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+  const c = { season: 1, week: 1, phase: 'reg', finalOpp: null,
+    star: { name: 'JAX KOVAC', g: 0, a: 0, cg: 0, ca: 0 }, champ: 0, friends: { w: 0, l: 0 }, lastLine: '',
+    table: { WOLVES: T(0, 0, 0, 0, 0, 0), SHARKS: T(0, 0, 0, 0, 0, 0), BEARS: T(0, 0, 0, 0, 0, 0), EAGLES: T(0, 0, 0, 0, 0, 0), VIPERS: T(0, 0, 0, 0, 0, 0), STAMPEDE: T(0, 0, 0, 0, 0, 0) } };
+  return Object.assign(c, over || {});
+}
+// Put a known career save in place (or clear it) and reload to the menu -
+// the tests share one page, so every career test starts from a known state.
+async function g37Reset(page, h, seed) {
+  try {
+    await h.eval((s) => {
+      try {
+        if (s) localStorage.setItem('apex_hockey_career_v1', JSON.stringify(s));
+        else localStorage.removeItem('apex_hockey_career_v1');
+        localStorage.removeItem('apex_hockey_match');
+      } catch (e) {}
+      location.reload();
+    }, seed || null);
+  } catch (e) {} // the reload kills that eval - expected
+  for (let i = 0; i < 24; i++) {
+    await h.wait(400);
+    let ok = false;
+    try { ok = await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')); } catch (e) {}
+    if (ok) return true;
+  }
+  return false;
+}
+// Play ONE unlocked career level to its end: set the match the way the hub
+// does, start it with the game's own CAREER button (which presses PLAY),
+// wait for real play, then put the game in its last seconds through the
+// __hk.game hook so the game's own clock ends it and careerAfterGame()
+// records the win and unlocks the next level. Returns the level played,
+// or a string saying what went wrong.
+async function g37PlayLevel(page, h) {
+  const pend = await h.eval(g37PendingFn);
+  if (!pend || !pend.opp) return 'no career level is unlocked to start';
+  await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
+  await h.eval((m) => {
+    try { localStorage.setItem('apex_hockey_match', JSON.stringify(m)); } catch (e) {}
+    const b = document.getElementById('careerBtn'); if (b) b.click();
+  }, { kind: 'career', opp: pend.opp, oppDef: g37Defs[pend.opp], label: pend.label });
+  let playing = false;
+  for (let i = 0; i < 40 && !playing; i++) {
+    await h.wait(250);
+    const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if (st === 'play') playing = true;
+  }
+  if (!playing) return 'career match ' + pend.label + ' never reached play';
+  await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
+  let over = false;
+  for (let i = 0; i < 40 && !over; i++) {
+    await h.wait(200);
+    const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if (st === 'over') over = true;
+  }
+  if (!over) return 'career match ' + pend.label + ' did not end';
+  return pend;
+}
+// Open the career hub with the game's own button and read what IT offers.
+async function g37Hub(page, h) {
+  return h.eval(() => {
+    const b = document.getElementById('careerBtn'); if (b) b.click();
+    const play = document.getElementById('hubPlay');
+    const nw = document.getElementById('hubNew');
+    return {
+      body: ((document.getElementById('hubBody') || {}).textContent || ''),
+      playText: play ? play.textContent : '',
+      playShown: play ? play.style.display !== 'none' : false,
+      newText: nw ? nw.textContent : '',
+      newShown: nw ? nw.style.display !== 'none' : false,
+    };
+  });
+}
+async function g37HubClose(page, h) {
+  await h.eval(() => { const b = document.getElementById('hubClose'); if (b) b.click(); }).catch(() => {});
+}
 export default [
   {
     id: 'real-players-not-blobs',
@@ -296,4 +410,130 @@ export default [
       return r;
     },
   },
+/* ================= CAREER MODE PLAY TESTS (G-37, owner 2026-10-20) =================
+   Start every career level, play it to the end, check the next one unlocks.
+   Levels: WEEK 1-10, the SEMIFINAL, THE FINAL, then the next season. */
+{
+  id: 'play-career-weeks-1-4',
+  ask: 'career mode: start a career and play weeks 1-4 to the end - each week unlocks the next',
+  async test(page, h) {
+    if (!await g37Reset(page, h, null)) return 'the game never came back to the menu after a reload';
+    const hub0 = await g37Hub(page, h);
+    if (!/No career yet/.test(hub0.body)) return 'the career hub did not offer to start a career';
+    await h.eval(() => { const b = document.getElementById('hubNew'); if (b) b.click(); });
+    const hub1 = await g37Hub(page, h);
+    if (!hub1.playShown || !/WEEK 1 vs SHARKS/.test(hub1.playText)) return 'starting a career did not unlock WEEK 1 (hub PLAY says: ' + hub1.playText + ')';
+    await g37HubClose(page, h);
+    for (let wk = 1; wk <= 4; wk++) {
+      const before = await h.eval(g37PendingFn);
+      if (!before || before.label !== 'WEEK ' + wk) return 'WEEK ' + wk + ' is not the unlocked level (next is ' + (before ? before.label : 'none') + ')';
+      const played = await g37PlayLevel(page, h);
+      if (typeof played === 'string') return played;
+      const after = await h.eval(g37PendingFn);
+      if (!after || after.label !== 'WEEK ' + (wk + 1)) return 'WEEK ' + wk + ' was played to the end but WEEK ' + (wk + 1) + ' did not unlock';
+      if (after.w !== wk) return 'the career record did not count the WEEK ' + wk + ' win (Wolves wins: ' + after.w + ')';
+    }
+    const hub = await g37Hub(page, h);
+    await g37HubClose(page, h);
+    if (!/NEXT: WEEK 5 vs/.test(hub.body) || !/WEEK 5/.test(hub.playText)) return 'the career hub does not offer WEEK 5 after week 4';
+    return true;
+  },
+},
+{
+  id: 'play-career-weeks-5-7',
+  ask: 'career mode: play weeks 5-7 to the end - each week unlocks the next',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = g37Seed({ week: 5, table: {
+      WOLVES: T(4, 0, 0, 8, 12, 4), SHARKS: T(3, 1, 0, 6, 10, 7), BEARS: T(2, 2, 0, 4, 8, 9),
+      EAGLES: T(2, 2, 0, 4, 7, 10), VIPERS: T(1, 3, 0, 2, 6, 11), STAMPEDE: T(0, 4, 0, 0, 4, 13) } });
+    if (!await g37Reset(page, h, seed)) return 'the game never came back to the menu after a reload';
+    for (let wk = 5; wk <= 7; wk++) {
+      const before = await h.eval(g37PendingFn);
+      if (!before || before.label !== 'WEEK ' + wk) return 'WEEK ' + wk + ' is not the unlocked level (next is ' + (before ? before.label : 'none') + ')';
+      const played = await g37PlayLevel(page, h);
+      if (typeof played === 'string') return played;
+      const after = await h.eval(g37PendingFn);
+      if (!after || after.label !== 'WEEK ' + (wk + 1)) return 'WEEK ' + wk + ' was played to the end but WEEK ' + (wk + 1) + ' did not unlock';
+    }
+    const hub = await g37Hub(page, h);
+    await g37HubClose(page, h);
+    if (!/NEXT: WEEK 8 vs/.test(hub.body) || !/WEEK 8/.test(hub.playText)) return 'the career hub does not offer WEEK 8 after week 7';
+    return true;
+  },
+},
+{
+  id: 'play-career-weeks-8-10',
+  ask: 'career mode: play weeks 8-10 to the end - finishing the season unlocks the semifinal',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = g37Seed({ week: 8, table: {
+      WOLVES: T(7, 0, 0, 14, 21, 7), SHARKS: T(5, 2, 0, 10, 16, 12), BEARS: T(4, 3, 0, 8, 13, 14),
+      EAGLES: T(3, 4, 0, 6, 11, 16), VIPERS: T(2, 5, 0, 4, 9, 19), STAMPEDE: T(1, 6, 0, 2, 7, 22) } });
+    if (!await g37Reset(page, h, seed)) return 'the game never came back to the menu after a reload';
+    for (let wk = 8; wk <= 10; wk++) {
+      const before = await h.eval(g37PendingFn);
+      if (!before || before.label !== 'WEEK ' + wk) return 'WEEK ' + wk + ' is not the unlocked level (next is ' + (before ? before.label : 'none') + ')';
+      const played = await g37PlayLevel(page, h);
+      if (typeof played === 'string') return played;
+      const after = await h.eval(g37PendingFn);
+      if (wk < 10 && (!after || after.label !== 'WEEK ' + (wk + 1))) return 'WEEK ' + wk + ' was played to the end but WEEK ' + (wk + 1) + ' did not unlock';
+      if (wk === 10 && (!after || after.phase !== 'semi' || after.label !== 'SEMIFINAL')) return 'the season was played to the end (10 wins) but the SEMIFINAL did not unlock';
+    }
+    const end = await h.eval(g37PendingFn);
+    if (!end || end.w !== 10) return 'the career record did not count all 10 season wins (Wolves wins: ' + (end ? end.w : '?') + ')';
+    const hub = await g37Hub(page, h);
+    await g37HubClose(page, h);
+    if (!/NEXT: SEMIFINAL vs/.test(hub.body) || !/SEMIFINAL/.test(hub.playText)) return 'the career hub does not offer the SEMIFINAL after week 10';
+    return true;
+  },
+},
+{
+  id: 'play-career-semifinal',
+  ask: 'career mode: play the semifinal to the end - winning it unlocks the final',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = g37Seed({ week: 10, phase: 'semi', table: {
+      WOLVES: T(10, 0, 0, 20, 30, 10), SHARKS: T(8, 2, 0, 16, 26, 14), BEARS: T(7, 3, 0, 14, 22, 16),
+      EAGLES: T(6, 4, 0, 12, 20, 18), VIPERS: T(3, 7, 0, 6, 12, 24), STAMPEDE: T(2, 8, 0, 4, 10, 28) } });
+    if (!await g37Reset(page, h, seed)) return 'the game never came back to the menu after a reload';
+    const before = await h.eval(g37PendingFn);
+    if (!before || before.label !== 'SEMIFINAL' || before.opp !== 'EAGLES') return 'the SEMIFINAL is not the unlocked level (next is ' + (before ? before.label + ' vs ' + before.opp : 'none') + ')';
+    const played = await g37PlayLevel(page, h);
+    if (typeof played === 'string') return played;
+    const after = await h.eval(g37PendingFn);
+    if (!after || after.phase !== 'final' || after.label !== 'THE FINAL') return 'the semifinal was played to the end and won, but THE FINAL did not unlock';
+    if (after.opp !== 'SHARKS' && after.opp !== 'BEARS') return 'the final unlocked against the wrong team (' + after.opp + ' - the other semifinal winner should be SHARKS or BEARS)';
+    const hub = await g37Hub(page, h);
+    await g37HubClose(page, h);
+    if (!/NEXT: THE FINAL vs/.test(hub.body) || !/THE FINAL/.test(hub.playText)) return 'the career hub does not offer THE FINAL after the semifinal';
+    return true;
+  },
+},
+{
+  id: 'play-career-final',
+  ask: 'career mode: play the final to the end - winning it takes the title and unlocks the next season',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = g37Seed({ week: 10, phase: 'final', finalOpp: 'SHARKS', table: {
+      WOLVES: T(10, 0, 0, 20, 30, 10), SHARKS: T(8, 2, 0, 16, 26, 14), BEARS: T(7, 3, 0, 14, 22, 16),
+      EAGLES: T(6, 4, 0, 12, 20, 18), VIPERS: T(3, 7, 0, 6, 12, 24), STAMPEDE: T(2, 8, 0, 4, 10, 28) } });
+    if (!await g37Reset(page, h, seed)) return 'the game never came back to the menu after a reload';
+    const before = await h.eval(g37PendingFn);
+    if (!before || before.label !== 'THE FINAL' || before.opp !== 'SHARKS') return 'THE FINAL is not the unlocked level (next is ' + (before ? before.label + ' vs ' + before.opp : 'none') + ')';
+    const played = await g37PlayLevel(page, h);
+    if (typeof played === 'string') return played;
+    const after = await h.eval(g37PendingFn);
+    if (!after || after.phase !== 'done') return 'the final was played to the end and won, but the season did not complete';
+    if (after.champ !== 1) return 'winning the final did not record the championship (titles: ' + after.champ + ')';
+    const hub = await g37Hub(page, h);
+    if (!hub.newShown || !/START SEASON 2/.test(hub.newText)) return 'the career hub does not offer the next season after the final (button: ' + hub.newText + ')';
+    if (!/Championships: 1/.test(hub.body)) return 'the career hub does not show the title just won';
+    await h.eval(() => { const b = document.getElementById('hubNew'); if (b) b.click(); });
+    const next = await h.eval(g37PendingFn);
+    await g37HubClose(page, h);
+    if (!next || next.season !== 2 || next.phase !== 'reg' || next.label !== 'WEEK 1') return 'starting the next season did not unlock WEEK 1 of season 2';
+    return true;
+  },
+},
 ];

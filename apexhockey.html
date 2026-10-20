@@ -714,6 +714,26 @@ let state='menu', paused=false;
 let period=1, clockT=PERIOD_LEN, scoreH=0, scoreA=0, stateT=0, lastOwnerTeam=null;
 let pendingFaceoff=null;
 let controlled = homeSkaters[0];
+/* G-37: the career play tests read and set the live game through this hook
+   (the same __hk peek the other play tests use for the puck and the skaters).
+   A test starts a career match for real, then puts it in its last seconds
+   here so tick() itself ends the game and careerAfterGame() unlocks the
+   next level - no test writes the career save to fake a result. */
+window.__hk.game = {
+  get state() { return state; },
+  get period() { return period; },
+  get clockT() { return clockT; },
+  get scoreH() { return scoreH; },
+  get scoreA() { return scoreA; },
+  set period(v) { period = v; },
+  set clockT(v) { clockT = v; },
+  set scoreH(v) { scoreH = v; },
+  set scoreA(v) { scoreA = v; },
+  // a fresh match (period 1, 0-0, full clock): a player gets this from the
+  // page reload behind PLAY AGAIN / the hub, a test playing several career
+  // matches on one shared page gets it here instead
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; updateHUD(); },
+};
 const $=id=>document.getElementById(id);
 function fmtClock(){ if(period>3) return 'OT'; const m=(clockT/60)|0, s=('0'+((clockT|0)%60)).slice(-2); return m+':'+s; }
 const PNAME=['','1ST','2ND','3RD','OT'];
