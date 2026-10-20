@@ -1,0 +1,176 @@
+--- a/apexbaseball.html
++++ b/apexbaseball.html
+@@ -91,6 +91,9 @@
+   .card ul { margin:10px 0 10px 18px; }
+   .card .big { text-align:center; margin-top:18px; }
+   #finalScore { text-align:center; font-size:20px; margin:12px 0; color:#ffd23f; letter-spacing:.1em; }
++  #myCode { font:700 15px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#ffd23f; background:#1a1206; border:1px dashed #b57e00; border-radius:12px; padding:12px 14px; text-align:center; word-break:break-all; margin:8px 0 14px; }
++  #friendIn { font:600 15px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; width:100%; padding:12px 14px; border-radius:12px; border:1px solid #ffcc33; background:#0d0a05; color:#ffffff; margin:8px 0 6px; }
++  #friendErr { color:#ff9a9a; font:600 13px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; min-height:18px; margin-bottom:8px; }
+   kbd { background:#1a1206; border:1px solid #b57e00; border-radius:5px; padding:1px 7px; font-size:12px; color:#ffd23f; }
+ </style>
+ <script type="importmap">{"imports":{"three":"./three.module.min.js","humans":"./characters/base-human-v2/humans.js"}}</script>
+@@ -152,6 +155,7 @@
+     <p>You are the home <b>Comets</b> (blue) hosting the <b>Sharks</b> (teal).</p>
+     <div class="big"><button class="btn" id="startBtn" type="button" style="font-size:18px;padding:16px 40px">PLAY BALL</button>
+     <button class="btn" id="helpBtn" type="button" style="font-size:16px;padding:12px 20px;margin-left:10px">?</button></div>
++    <div class="big" style="margin-top:10px"><button class="btn" id="friendBtn" type="button" style="font-size:15px;padding:12px 26px">&#x1F465; PLAY A FRIEND</button></div>
+   </div>
+ </div>
+ 
+@@ -169,6 +173,19 @@
+     <div class="big"><button class="btn" id="helpClose" type="button">CLOSE</button></div>
+   </div>
+ </div>
++<div class="overlay" id="friendOv" style="display:none">
++  <div class="card">
++    <h1>FRIEND MATCH</h1>
++    <h2>APEX ARCADE</h2>
++    <p><b>MY CODE</b> &mdash; share it with a friend. Whoever enters it plays YOUR team, driven by the CPU at your strength.</p>
++    <div id="myCode">BBFC-</div>
++    <p><b>ENTER A FRIEND'S CODE</b></p>
++    <input id="friendIn" type="text" placeholder="BBFC-..." autocomplete="off">
++    <div id="friendErr"></div>
++    <div class="big"><button class="btn" id="friendGo" type="button" style="font-size:16px;padding:14px 30px">START FRIEND GAME</button>
++    <button class="btn" id="friendClose" type="button" style="font-size:15px;padding:12px 22px;margin-left:10px">CLOSE</button></div>
++  </div>
++</div>
+ <div class="overlay" id="endOv" style="display:none">
+   <div class="card">
+     <h1 id="endTitle">FINAL</h1>
+@@ -437,6 +454,31 @@
+   if (p.athleteU){ p.athleteU.uTop.value.set(T.uni); p.athleteU.uBot.value.set(PANT_COL); }
+ }
+ 
++/* ================= FRIEND CODES (G-08) =================
++   The site is static (no server), so friend matches are asynchronous: a code
++   carries a friend's name + strength + record, and you play THEIR team (Sharks)
++   with the CPU driving it at their strength. Same pattern as apexhockey. */
++let friendGame = null;                    // {name, str} while a friend match is set
++const FKEY = 'apex_baseball_friends_v1';
++function fLoad(){ try{ const r = JSON.parse(localStorage.getItem(FKEY)); return r && typeof r==='object' ? r : { w:0, l:0, name:'' }; }catch(e){ return { w:0, l:0, name:'' }; } }
++function fSave(r){ try{ localStorage.setItem(FKEY, JSON.stringify(r)); }catch(e){} }
++function myFriendStr(){ const r = fLoad(); return Math.max(35, Math.min(95, 50 + (r.w|0)*3 - (r.l|0)*2)); }
++function myFriendCode(){
++  const r = fLoad();
++  const p = { v:1, n:String(r.name || 'COMETS FAN').slice(0,16), str:myFriendStr(), w:r.w|0, l:r.l|0 };
++  return 'BBFC-' + btoa(JSON.stringify(p)).replace(/=+$/,'');
++}
++function parseFriendCode(code){
++  try{
++    const s = String(code || '').trim();
++    const m = s.match(/^BBFC-([A-Za-z0-9+\/=\-_]{8,})$/);
++    if (!m) return null;
++    const p = JSON.parse(atob(m[1]));
++    if (!p || p.v !== 1 || typeof p.str !== 'number') return null;
++    return { name:String(p.n || 'FRIEND').slice(0,16), str:Math.max(20, Math.min(99, p.str|0)), w:p.w|0, l:p.l|0 };
++  }catch(e){ return null; }
++}
++
+ /* ---------------- real 3D athletes (Quaternius CC0, base-human-v2) ----------------
+    Athletes ride inside each player's own group (p.g) so every position/rotation
+    the game sets still applies; primitive meshes are hidden. Visuals only. */
+@@ -502,10 +544,19 @@
+     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
+   } catch (e) { p.athlete = null; }
+ }
++/* G-08: attach athletes a few per frame. Creating every rigged human in one
++   synchronous block froze the play picture ~1.5s on slow phones right after
++   game start. The primitives stay visible until each athlete attaches. */
++const athleteQueue = []; let athletePumpOn = false;
+ function fitAthletes(){
+   if (!H) return;
+   const slots = [batterMesh, pitcherMesh, catcherMesh, ...runnerMeshes, ...Object.values(fielders)];
+-  slots.forEach((s, i) => attachAthlete(s, i));
++  slots.forEach((s, i) => { if (s && !s.athlete && !athleteQueue.some(q => q.p === s)) athleteQueue.push({ p:s, i }); });
++  if (!athletePumpOn && athleteQueue.length){ athletePumpOn = true; requestAnimationFrame(fitAthletesPump); }
++}
++function fitAthletesPump(){
++  for (let n = 0; n < 2 && athleteQueue.length; n++){ const q = athleteQueue.shift(); attachAthlete(q.p, q.i); }
++  if (athleteQueue.length) requestAnimationFrame(fitAthletesPump); else athletePumpOn = false;
+ }
+ function athleteTick(f, dt){
+   const a = f.athlete;
+@@ -673,9 +724,10 @@
+     const inZone = Math.abs(ax)<=ZONE.x+0.4 && ay>=ZONE.lo-0.4 && ay<=ZONE.hi+0.4;
+     let p = inZone ? (type==='fast'?0.82:0.68) : (type==='curve'?0.34:0.16);
+     if (G.strikes===2) p *= 0.75;             // protects a bit more
++    if (friendGame) p *= 0.7 + (friendGame.str-50)/100;   // G-08: friend strength scales CPU batting
+     if (Math.random() < p){
+       flight.cpuSwing = true;
+-      const skill = type==='fast' ? 0.085 : 0.105;
++      const skill = (type==='fast' ? 0.085 : 0.105) * (friendGame ? Math.max(0.5, 1.3-(friendGame.str-50)/100) : 1);
+       flight.cpuDt = (Math.random()+Math.random()+Math.random()-1.5)/1.5*skill*2.4;
+       flight.swingAt = flight.T*rnd(0.55,0.75);
+     }
+@@ -704,10 +756,12 @@
+   const type = r<0.55?'fast':(r<0.80?'curve':'change');
+   const ahead = G.strikes>G.balls, behind = G.balls>G.strikes;
+   let tx, ty;
++  // G-08: a friend's strength tightens/loosens CPU command (k=1 when no friend game)
++  const k = friendGame ? Math.max(0.55, Math.min(1.5, 1.25 - (friendGame.str-50)/90)) : 1;
+   if ((ahead && Math.random()<0.45) || Math.random()<0.22){
+-    tx = pick([-1,1])*rnd(1.6,2.8); ty = rnd(0.6,3.8);      // chase pitch
+-  } else { tx = rnd(-1.0,1.0); ty = rnd(1.3,3.1); }          // in the zone
+-  if (behind && Math.random()<0.7){ tx = rnd(-0.9,0.9); ty = rnd(1.4,3.0); }
++    tx = pick([-1,1])*rnd(1.6,2.8)*k; ty = (rnd(0.6,3.8)-2.2)*k+2.2;      // chase pitch
++  } else { tx = rnd(-1.0,1.0)*k; ty = (rnd(1.3,3.1)-2.2)*k+2.2; }          // in the zone
++  if (behind && Math.random()<0.7){ tx = rnd(-0.9,0.9)*k; ty = (rnd(1.4,3.0)-2.2)*k+2.2; }
+   return { type, tx, ty };
+ }
+ function startCpuPitch(){
+@@ -1069,7 +1123,8 @@
+ function endGame(title){
+   G.over = true; setPhase('over');
+   const hs = innScore('home'), as = innScore('away');
+-  $('endTitle').textContent = title || 'FINAL';
++  if (friendGame){ const r = fLoad(); if (hs > as) r.w++; else if (as > hs) r.l++; fSave(r); }  // G-08
++  $('endTitle').textContent = (title || 'FINAL') + (friendGame ? ' · VS ' + friendGame.name.toUpperCase() : '');
+   $('finalScore').textContent = `SHARKS ${as} · COMETS ${hs}`;
+   renderScoreboard();
+   $('endLinescore').innerHTML = $('scoreboard').innerHTML;
+@@ -1288,12 +1343,28 @@
+ $('helpBtn').addEventListener('click', ()=>{ $('helpOv').style.display='flex'; });
+   $('helpHud').addEventListener('click', ()=>{ $('helpOv').style.display='flex'; });
+ $('helpClose').addEventListener('click', ()=>{ $('helpOv').style.display='none'; });
+-$('startBtn').addEventListener('click', ()=>{
++function startGame(){
+   $('startOv').style.display='none';
+   dressDefense('home');
+   renderHUD();
+   setCam('pitch');
+   nextPitch();
++}
++$('startBtn').addEventListener('click', ()=>{ startGame(); });
++/* G-08: friend match UI */
++$('friendBtn').addEventListener('click', ()=>{
++  $('myCode').textContent = myFriendCode();
++  $('friendErr').textContent = ''; $('friendIn').value = '';
++  $('friendOv').style.display = 'flex';
++});
++$('friendClose').addEventListener('click', ()=>{ $('friendOv').style.display = 'none'; });
++$('friendGo').addEventListener('click', ()=>{
++  const f = parseFriendCode($('friendIn').value);
++  if (!f){ $('friendErr').textContent = "That code doesn't look right — it should start with BBFC-."; return; }
++  friendGame = f;
++  $('friendOv').style.display = 'none';
++  startGame();
++  banner('FRIEND MATCH', 'You host ' + f.name + ' · their team plays at strength ' + f.str, 1800);
+ });
+ $('againBtn').addEventListener('click', ()=>{ location.reload(); });
+ // pitch type buttons
+@@ -1604,6 +1675,14 @@
+   get crowdCount(){ return _crowd.seats.length; },
+   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
+   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
++  /* G-08: friend-code hooks for the play-friend-code fix test */
++  friend: {
++    code(){ return myFriendCode(); },
++    set(c){ const f = parseFriendCode(c); if (!f) return false; friendGame = f; return true; },
++    active(){ return !!friendGame; },
++    strength(){ return friendGame ? friendGame.str : null; },
++    clear(){ friendGame = null; }
++  },
+ };
+ function musPhase(p){ try{ Mus.setMode((p==='start'||p==='over')?'menu':'game'); }catch(e){} }
+ document.addEventListener('pointerdown', ()=>{ Mus.init(); Mus.resume(); }, {passive:true});
