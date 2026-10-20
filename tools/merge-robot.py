@@ -14,6 +14,12 @@ import json, os, subprocess, datetime
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
 MAX_AGE_H = 12
 OK = {"success", "skipped", "neutral"}
+# merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
+FOLLOW = [("sound-robot.yml", ("sounds/recipes/", "sounds/rejects/", "tools/sound-robot.mjs", "tools/sound-themes.mjs", "beatmachine.html")),
+          ("announcer-robot.yml", ("sounds/announcer/", "sounds/rejects/voice-", "tools/announcer-robot.py")),
+          ("model-gate.yml", ("MODELS.md",)),
+          ("sketchfab-fetch.yml", ("MODEL-REQUESTS.md", "MODEL-SEARCH.md", "models/picks/")),
+          ("patch-robot.yml", ("patches/", "bigfiles/", "pieces/request-"))]
 
 
 def gh(*args, method="GET", fields=None):
@@ -29,7 +35,7 @@ def gh(*args, method="GET", fields=None):
 
 def main():
     now = datetime.datetime.now(datetime.timezone.utc)
-    merged = []
+    merged, follow = [], set()
     for pr in gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []:
         n, title = pr["number"], pr.get("title", "")
         made = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
@@ -63,10 +69,16 @@ def main():
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if res and res.get("merged"):
             merged.append(n)
+            for wf, starts in FOLLOW:
+                if any(f["filename"].startswith(starts) for f in files):
+                    follow.add(wf)
             print("::notice title=Merge robot::merged #%d %s" % (n, title))
     if merged:
         gh("repos/%s/actions/workflows/game-check.yml/dispatches" % REPO, method="POST", fields={"ref": "main"})
         print("started the Game check on main")
+        for wf in sorted(follow):
+            gh("repos/%s/actions/workflows/%s/dispatches" % (REPO, wf), method="POST", fields={"ref": "main"})
+            print("started %s for what the merge changed" % wf)
     else:
         print("nothing green to merge")
 
