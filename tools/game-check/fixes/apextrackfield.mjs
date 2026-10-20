@@ -736,7 +736,18 @@ export default [
       // (v9: the watcher tolerates a briefly-null engine during the start
       // transition instead of giving up on the first tick.)
       await startRec();
-      const shotFlew = await h.eval(() => new Promise(res => { let n = 0, nulls = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { if (++nulls > 33) { clearInterval(iv); res(false); } return; } nulls = 0; if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 300) { clearInterval(iv); res(false); } }, 30); }));
+      // JOB G-31 fix (owner): the 30 ms wall-clock watcher still flaked on the
+      // robot - under load its samples land between painted frames while the
+      // meters only move on painted frames, so it can step over the power and
+      // angle windows again and again and report a healthy throw as 'never
+      // flew' (it failed the post-merge check that way). The meter phases are
+      // now driven on the engine's own update steps inside one eval - the same
+      // way this suite's data tests drive engines - stepping 1/60 at a time
+      // and making the SAME action() calls in the SAME windows a player aims
+      // for (power locked above 0.72, angle released inside 34-48), so the
+      // release is deterministic. The flight itself still runs on the real
+      // frame loop and is judged from the recording exactly as before.
+      const shotFlew = await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (!e) return false; let steps = 0; while (steps++ < 900) { if (e.phase === 'flight') return true; if (e.phase === 'power') { if (e.power > 0.8) { e.action(); continue; } e.update(1 / 60); continue; } if (e.phase === 'angle') { if (e.ang >= 38 && e.ang <= 46) { e.action(); continue; } e.update(1 / 60); continue; } return false; } return e.phase === 'flight'; });
       if (!shotFlew) return 'the shot put throw never flew';
       const sj = judgeRec('shot put', await readRec());
       if (sj !== true) return sj;
