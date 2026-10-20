@@ -7,8 +7,8 @@ Claudes: keep each list short, one change per step, the owner's words. `- [x]` =
 was already sent. Muses: don't edit this file.
 
 ## window 1 · apexbaseball.html
-- [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test in tools/game-check/fixes/apexbaseball.mjs.
-- [ ] The game freezes for about 1.5 seconds right after the start (the robot's gameplay picture is frozen) - find what loads or builds at that moment and make the start smooth.
+- [x] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test in tools/game-check/fixes/apexbaseball.mjs. (sent as G-08)
+- [x] The game freezes for about 1.5 seconds right after the start (the robot's gameplay picture is frozen) - find what loads or builds at that moment and make the start smooth. (sent as G-08)
 - [ ] Make sure there are at least 5 play tests that play baseball by its rules (pitch, hit, out, run scores, inning ends) in tools/game-check/fixes/apexbaseball.mjs.
 
 ## window 2 · apexhockey.html
@@ -18,7 +18,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Hockey commentary from sounds/commentary/hockey (name the color voice on the Credits screen).
 
 ## window 3 · apexflight.html
-- [ ] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs.
+- [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
 - [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
