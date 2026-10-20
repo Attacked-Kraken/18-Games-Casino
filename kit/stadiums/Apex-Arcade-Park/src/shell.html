@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Apex Arcade Park — 3D Ballpark</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#0c0d10;font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#ui{position:fixed;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px calc(env(safe-area-inset-right) + 8px) calc(env(safe-area-inset-bottom) + 8px) calc(env(safe-area-inset-left) + 8px);pointer-events:none}
+#ui button{pointer-events:auto;min-height:40px;padding:0 12px;border-radius:10px;border:1px solid rgba(255,255,255,.22);background:rgba(16,18,24,.72);color:#fff;font-weight:700;font-size:12px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#ui button.on{border-color:#ffb020;color:#ffcf6a}
+#info{position:fixed;top:calc(env(safe-area-inset-top) + 8px);left:calc(env(safe-area-inset-left) + 10px);font-size:12px;line-height:1.4;background:rgba(16,18,24,.6);padding:6px 10px;border-radius:10px;pointer-events:none;max-width:70vw}
+#info b{font-size:13px}
+#ang{position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 10px);font:700 13px ui-monospace,monospace;background:rgba(16,18,24,.6);padding:6px 10px;border-radius:10px;pointer-events:none}
+#toast{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:rgba(16,18,24,.85);padding:8px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+</style></head><body>
+<div id="info"><b>Apex Arcade Park</b><br>Drag to orbit · pinch/scroll to zoom · two-finger/right-drag to pan</div>
+<div id="ang">Night game · 41,000 fans</div><div id="toast"></div>
+<div id="ui"><button data-cam="home" class="on">Behind home</button><button data-cam="upper">Upper deck</button><button data-cam="bleach">Bleachers</button><button data-cam="aerial">Aerial</button><button data-cam="field">Field level</button><button id="bWave">Wave</button><button id="bGlb">Export GLB</button></div>
+<script>/*THREE*/</script>
+<script>/*APP*/</script>
+</body></html>
