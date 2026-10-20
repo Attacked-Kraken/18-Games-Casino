@@ -145,4 +145,192 @@ export default [
       });
     },
   },
+  // G-13 (owner, 2026-10-20): five play tests that PLAY baseball by its rules — pitch, hit,
+  // out, run scores, inning ends. They drive the real on-screen buttons (THROW / LOCK / SWING)
+  // through h.eval clicks and read the game back through window.__test plus the on-screen
+  // scoreboard (#scoreboard R/H columns) and the inning tag. window.__test.score is NOT used:
+  // it returns [G.home, G.away], which are undefined — the scoreboard table is the true score.
+  // Every h.eval function below is fully self-contained (the runner ships the function
+  // source, not its closure — see the soccer lesson in LESSONS.md). Pitches are taken
+  // down the middle on purpose: on the robot's ~7 fps software rendering a batted ball
+  // costs ~9 s of the 30 s cap, so first-pitch contact is the fastest honest baseball.
+  {
+    id: 'play-rules-pitch',
+    ask: 'Play baseball by its rules: a pitch is thrown toward the plate and the count moves (pitch)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, outs: T.outs, balls: T.balls, strikes: T.strikes, ball: T.ball,
+                 tag, batting: tag.indexOf('BOT') === 0,
+                 msg: (document.getElementById('msg') || {}).textContent || '' };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      let flew = false, bip = false, base = null, minZ = 99, maxZ = -99;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (s.phase === 'over') return 'the game was already over - no pitch could be thrown';
+        if (s.phase === 'select' || s.phase === 'aim') await click('throwBtn');
+        else if (s.phase === 'windup') await click('lockBtn');
+        if (s.phase === 'flight') {
+          if (base === null) base = { c: s.balls + s.strikes, outs: s.outs, tag: s.tag };
+          if (s.ball && s.ball.visible) {
+            if (s.ball.z > -14) flew = true;
+            if (s.ball.z < minZ) minZ = s.ball.z;
+            if (s.ball.z > maxZ) maxZ = s.ball.z;
+          }
+        } else {
+          if (s.phase === 'bip') bip = true;
+          if (flew && base) {
+            const changed = (s.balls + s.strikes !== base.c) || s.outs !== base.outs || s.tag !== base.tag;
+            if (bip || changed) return true;
+            if (s.msg.indexOf('FOUL') === 0) return true; // foul with 2 strikes: count stays, still a thrown pitch
+          }
+        }
+        await h.wait(110);
+      }
+      if (!flew) return 'no pitch was seen in flight toward the plate in 29 s';
+      if (maxZ - minZ < 5) return 'the ball never travelled toward the plate';
+      return 'a pitch flew but never resolved into a ball, strike, foul or batted ball';
+    },
+  },
+  {
+    id: 'play-rules-hit',
+    ask: 'Play baseball by its rules: a batter puts the ball in play and gets a hit (hit)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        const rows = document.querySelectorAll('#scoreboard tr');
+        let hits = null;
+        if (rows.length >= 3) {
+          const a = rows[1].querySelectorAll('td'), b = rows[2].querySelectorAll('td');
+          hits = (parseInt(a[a.length - 1].textContent) || 0) + (parseInt(b[b.length - 1].textContent) || 0);
+        }
+        return { phase: T.phase, tag, batting: tag.indexOf('BOT') === 0, hits,
+                 msg: (document.getElementById('msg') || {}).textContent || '' };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      if (s.hits === null) return 'scoreboard hits column not found';
+      const startHits = s.hits;
+      let flightAt = 0, swung = false, bipSeen = false;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (s.hits !== null && s.hits > startHits) return true;
+        if (s.phase === 'over') return 'the game ended before a hit was seen';
+        if (s.phase === 'select' || s.phase === 'aim') await click('throwBtn');
+        else if (s.phase === 'windup') await click('lockBtn');
+        if (s.phase === 'bip') bipSeen = true;
+        if (bipSeen && /SINGLE|DOUBLE|TRIPLE|HOME RUN/.test(s.msg)) return true;
+        if (s.phase === 'flight' && s.batting) {
+          if (!flightAt) flightAt = Date.now();
+          if (!swung && Date.now() - flightAt >= 900) { await click('swingBtn'); swung = true; }
+        } else { flightAt = 0; swung = false; }
+        await h.wait(90);
+      }
+      return `no hit in 29 s of real play (hits stayed at ${startHits})`;
+    },
+  },
+  {
+    id: 'play-rules-out',
+    ask: 'Play baseball by its rules: an out is recorded on a strikeout, a catch or a ground out (out)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, outs: T.outs, tag, batting: tag.indexOf('BOT') === 0 };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      const startOuts = s.outs, startTag = s.tag;
+      let flightAt = 0, swung = false;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (s.outs > startOuts) return true;
+        if (startTag && s.tag && s.tag !== startTag) return true; // the 3rd out flipped the half inning
+        if (s.phase === 'over') return 'the game ended before an out was seen';
+        if (s.phase === 'select' || s.phase === 'aim') await click('throwBtn');
+        else if (s.phase === 'windup') await click('lockBtn');
+        if (s.phase === 'flight' && s.batting) {
+          // bottom half: swing at once on purpose - a whiff is a quick strike on the way to a strikeout
+          if (!flightAt) { flightAt = Date.now(); }
+          if (!swung) { await click('swingBtn'); swung = true; }
+        } else { flightAt = 0; swung = false; }
+        await h.wait(90);
+      }
+      return `no out was recorded in 29 s of real play (outs stayed at ${startOuts})`;
+    },
+  },
+  {
+    id: 'play-rules-run-scores',
+    ask: 'Play baseball by its rules: a run crosses the plate and the score goes up (run scores)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        const rows = document.querySelectorAll('#scoreboard tr');
+        let runs = null;
+        if (rows.length >= 3) {
+          const a = rows[1].querySelectorAll('td'), b = rows[2].querySelectorAll('td');
+          runs = (parseInt(a[a.length - 2].textContent) || 0) + (parseInt(b[b.length - 2].textContent) || 0);
+        }
+        return { phase: T.phase, tag, batting: tag.indexOf('BOT') === 0, runs };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      if (s.runs === null) return 'scoreboard runs column not found';
+      const startRuns = s.runs;
+      let flightAt = 0, swung = false;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (s.runs !== null && s.runs > startRuns) return true;
+        if (s.phase === 'over') return `the game ended before a run scored (runs stayed at ${startRuns})`;
+        if (s.phase === 'select' || s.phase === 'aim') await click('throwBtn');
+        else if (s.phase === 'windup') await click('lockBtn');
+        if (s.phase === 'flight' && s.batting) {
+          if (!flightAt) flightAt = Date.now();
+          if (!swung && Date.now() - flightAt >= 900) { await click('swingBtn'); swung = true; }
+        } else { flightAt = 0; swung = false; }
+        await h.wait(90);
+      }
+      return `no run scored in 29 s of real play (runs stayed at ${startRuns})`;
+    },
+  },
+  {
+    id: 'play-rules-inning-ends',
+    ask: 'Play baseball by its rules: three outs end the half inning and the other side comes in (inning ends)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, outs: T.outs, tag, batting: tag.indexOf('BOT') === 0 };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      let startTag = s.tag;
+      let flightAt = 0, swung = false;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (!startTag && s.tag) startTag = s.tag;
+        if (startTag && s.tag && s.tag !== startTag) return true;
+        if (s.phase === 'over') return 'the game ended (final) before a half-inning switch was seen';
+        if (s.phase === 'select' || s.phase === 'aim') await click('throwBtn');
+        else if (s.phase === 'windup') await click('lockBtn');
+        if (s.phase === 'flight' && s.batting) {
+          // bottom half: whiff on purpose - three quick strikeouts are the fastest honest route to 3 outs
+          if (!flightAt) { flightAt = Date.now(); }
+          if (!swung) { await click('swingBtn'); swung = true; }
+        } else { flightAt = 0; swung = false; }
+        await h.wait(90);
+      }
+      return `the half inning never ended in 29 s of real play (still ${startTag || 'the same half'})`;
+    },
+  },
 ];
