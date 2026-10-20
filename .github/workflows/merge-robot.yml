@@ -4,7 +4,8 @@ name: Merge robot
 on:
   schedule:
     - cron: '*/5 * * * *'
-  check_suite:
+  workflow_run:                 # the moment a robot check finishes, merge (check_suite events from Actions never fire)
+    workflows: ["Game check", "Asset check", "File guard"]
     types: [completed]
   workflow_dispatch:
 concurrency:
