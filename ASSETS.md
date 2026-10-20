@@ -185,3 +185,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - the owner's games
 - downloaded: 2026-10-19, sent by the owner
 - used in: Game Development page
+
+## ASSET: sounds/ui-kit/
+- title: UI Sound Kit - 23 game sounds in 3 styles (arcade, soft, scifi): taps, toggles, coin, combos, level up, unlock, stars, win/lose, daily reward, chest
+- maker: made for the owner ("Apex Arcade Pass" chat) - synthesized from scratch, no samples
+- source: the owner's UI-Sound-Kit.zip (WAV masters + generator kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-19, sent by the owner
+- used in: any game (MP3s here)
