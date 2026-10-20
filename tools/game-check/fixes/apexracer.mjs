@@ -209,7 +209,7 @@ export default [
             const a = check(); if (a !== true) return res(a);
             const hi = E.PLACES.reduce((p, c) => (c.tier > p.tier ? c : p), E.PLACES[0]);
             E.startRace(hi, 8);
-            setTimeout(() => res(check()), 1500);
+            setTimeout(() => res(check()), 3500);
           }, 1500);
         });
       });
