@@ -1,0 +1,692 @@
+[
+ {
+  "id": "tap",
+  "style": "arcade",
+  "desc": "button tap",
+  "duration": 0.06,
+  "files": [
+   "arcade/tap.wav",
+   "arcade/tap.mp3"
+  ]
+ },
+ {
+  "id": "tap_light",
+  "style": "arcade",
+  "desc": "light tap / hover",
+  "duration": 0.04,
+  "files": [
+   "arcade/tap_light.wav",
+   "arcade/tap_light.mp3"
+  ]
+ },
+ {
+  "id": "toggle_on",
+  "style": "arcade",
+  "desc": "toggle on",
+  "duration": 0.18,
+  "files": [
+   "arcade/toggle_on.wav",
+   "arcade/toggle_on.mp3"
+  ]
+ },
+ {
+  "id": "toggle_off",
+  "style": "arcade",
+  "desc": "toggle off",
+  "duration": 0.18,
+  "files": [
+   "arcade/toggle_off.wav",
+   "arcade/toggle_off.mp3"
+  ]
+ },
+ {
+  "id": "coin_pickup",
+  "style": "arcade",
+  "desc": "coin pickup",
+  "duration": 0.41,
+  "files": [
+   "arcade/coin_pickup.wav",
+   "arcade/coin_pickup.mp3"
+  ]
+ },
+ {
+  "id": "combo_x2",
+  "style": "arcade",
+  "desc": "combo x2 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "arcade/combo_x2.wav",
+   "arcade/combo_x2.mp3"
+  ]
+ },
+ {
+  "id": "combo_x3",
+  "style": "arcade",
+  "desc": "combo x3 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "arcade/combo_x3.wav",
+   "arcade/combo_x3.mp3"
+  ]
+ },
+ {
+  "id": "combo_x4",
+  "style": "arcade",
+  "desc": "combo x4 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "arcade/combo_x4.wav",
+   "arcade/combo_x4.mp3"
+  ]
+ },
+ {
+  "id": "combo_x5",
+  "style": "arcade",
+  "desc": "combo x5 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "arcade/combo_x5.wav",
+   "arcade/combo_x5.mp3"
+  ]
+ },
+ {
+  "id": "level_up",
+  "style": "arcade",
+  "desc": "level up",
+  "duration": 0.85,
+  "files": [
+   "arcade/level_up.wav",
+   "arcade/level_up.mp3"
+  ]
+ },
+ {
+  "id": "unlock",
+  "style": "arcade",
+  "desc": "unlock",
+  "duration": 0.87,
+  "files": [
+   "arcade/unlock.wav",
+   "arcade/unlock.mp3"
+  ]
+ },
+ {
+  "id": "error",
+  "style": "arcade",
+  "desc": "error / not allowed",
+  "duration": 0.47,
+  "files": [
+   "arcade/error.wav",
+   "arcade/error.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_in",
+  "style": "arcade",
+  "desc": "swoosh in",
+  "duration": 0.35,
+  "files": [
+   "arcade/swoosh_in.wav",
+   "arcade/swoosh_in.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_out",
+  "style": "arcade",
+  "desc": "swoosh out",
+  "duration": 0.35,
+  "files": [
+   "arcade/swoosh_out.wav",
+   "arcade/swoosh_out.mp3"
+  ]
+ },
+ {
+  "id": "popup_open",
+  "style": "arcade",
+  "desc": "popup open",
+  "duration": 0.26,
+  "files": [
+   "arcade/popup_open.wav",
+   "arcade/popup_open.mp3"
+  ]
+ },
+ {
+  "id": "popup_close",
+  "style": "arcade",
+  "desc": "popup close",
+  "duration": 0.21,
+  "files": [
+   "arcade/popup_close.wav",
+   "arcade/popup_close.mp3"
+  ]
+ },
+ {
+  "id": "star_1",
+  "style": "arcade",
+  "desc": "star rating 1 of 3",
+  "duration": 0.72,
+  "files": [
+   "arcade/star_1.wav",
+   "arcade/star_1.mp3"
+  ]
+ },
+ {
+  "id": "star_2",
+  "style": "arcade",
+  "desc": "star rating 2 of 3",
+  "duration": 0.94,
+  "files": [
+   "arcade/star_2.wav",
+   "arcade/star_2.mp3"
+  ]
+ },
+ {
+  "id": "star_3",
+  "style": "arcade",
+  "desc": "star rating 3 of 3",
+  "duration": 1.16,
+  "files": [
+   "arcade/star_3.wav",
+   "arcade/star_3.mp3"
+  ]
+ },
+ {
+  "id": "win_jingle",
+  "style": "arcade",
+  "desc": "win jingle",
+  "duration": 1.2,
+  "files": [
+   "arcade/win_jingle.wav",
+   "arcade/win_jingle.mp3"
+  ]
+ },
+ {
+  "id": "lose_jingle",
+  "style": "arcade",
+  "desc": "lose jingle",
+  "duration": 1.4,
+  "files": [
+   "arcade/lose_jingle.wav",
+   "arcade/lose_jingle.mp3"
+  ]
+ },
+ {
+  "id": "daily_reward",
+  "style": "arcade",
+  "desc": "daily reward collected",
+  "duration": 0.82,
+  "files": [
+   "arcade/daily_reward.wav",
+   "arcade/daily_reward.mp3"
+  ]
+ },
+ {
+  "id": "chest_open",
+  "style": "arcade",
+  "desc": "treasure chest open + sparkle",
+  "duration": 1.44,
+  "files": [
+   "arcade/chest_open.wav",
+   "arcade/chest_open.mp3"
+  ]
+ },
+ {
+  "id": "tap",
+  "style": "soft",
+  "desc": "button tap",
+  "duration": 0.06,
+  "files": [
+   "soft/tap.wav",
+   "soft/tap.mp3"
+  ]
+ },
+ {
+  "id": "tap_light",
+  "style": "soft",
+  "desc": "light tap / hover",
+  "duration": 0.04,
+  "files": [
+   "soft/tap_light.wav",
+   "soft/tap_light.mp3"
+  ]
+ },
+ {
+  "id": "toggle_on",
+  "style": "soft",
+  "desc": "toggle on",
+  "duration": 0.18,
+  "files": [
+   "soft/toggle_on.wav",
+   "soft/toggle_on.mp3"
+  ]
+ },
+ {
+  "id": "toggle_off",
+  "style": "soft",
+  "desc": "toggle off",
+  "duration": 0.18,
+  "files": [
+   "soft/toggle_off.wav",
+   "soft/toggle_off.mp3"
+  ]
+ },
+ {
+  "id": "coin_pickup",
+  "style": "soft",
+  "desc": "coin pickup",
+  "duration": 0.41,
+  "files": [
+   "soft/coin_pickup.wav",
+   "soft/coin_pickup.mp3"
+  ]
+ },
+ {
+  "id": "combo_x2",
+  "style": "soft",
+  "desc": "combo x2 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "soft/combo_x2.wav",
+   "soft/combo_x2.mp3"
+  ]
+ },
+ {
+  "id": "combo_x3",
+  "style": "soft",
+  "desc": "combo x3 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "soft/combo_x3.wav",
+   "soft/combo_x3.mp3"
+  ]
+ },
+ {
+  "id": "combo_x4",
+  "style": "soft",
+  "desc": "combo x4 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "soft/combo_x4.wav",
+   "soft/combo_x4.mp3"
+  ]
+ },
+ {
+  "id": "combo_x5",
+  "style": "soft",
+  "desc": "combo x5 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "soft/combo_x5.wav",
+   "soft/combo_x5.mp3"
+  ]
+ },
+ {
+  "id": "level_up",
+  "style": "soft",
+  "desc": "level up",
+  "duration": 0.85,
+  "files": [
+   "soft/level_up.wav",
+   "soft/level_up.mp3"
+  ]
+ },
+ {
+  "id": "unlock",
+  "style": "soft",
+  "desc": "unlock",
+  "duration": 0.87,
+  "files": [
+   "soft/unlock.wav",
+   "soft/unlock.mp3"
+  ]
+ },
+ {
+  "id": "error",
+  "style": "soft",
+  "desc": "error / not allowed",
+  "duration": 0.47,
+  "files": [
+   "soft/error.wav",
+   "soft/error.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_in",
+  "style": "soft",
+  "desc": "swoosh in",
+  "duration": 0.35,
+  "files": [
+   "soft/swoosh_in.wav",
+   "soft/swoosh_in.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_out",
+  "style": "soft",
+  "desc": "swoosh out",
+  "duration": 0.35,
+  "files": [
+   "soft/swoosh_out.wav",
+   "soft/swoosh_out.mp3"
+  ]
+ },
+ {
+  "id": "popup_open",
+  "style": "soft",
+  "desc": "popup open",
+  "duration": 0.26,
+  "files": [
+   "soft/popup_open.wav",
+   "soft/popup_open.mp3"
+  ]
+ },
+ {
+  "id": "popup_close",
+  "style": "soft",
+  "desc": "popup close",
+  "duration": 0.21,
+  "files": [
+   "soft/popup_close.wav",
+   "soft/popup_close.mp3"
+  ]
+ },
+ {
+  "id": "star_1",
+  "style": "soft",
+  "desc": "star rating 1 of 3",
+  "duration": 0.72,
+  "files": [
+   "soft/star_1.wav",
+   "soft/star_1.mp3"
+  ]
+ },
+ {
+  "id": "star_2",
+  "style": "soft",
+  "desc": "star rating 2 of 3",
+  "duration": 0.94,
+  "files": [
+   "soft/star_2.wav",
+   "soft/star_2.mp3"
+  ]
+ },
+ {
+  "id": "star_3",
+  "style": "soft",
+  "desc": "star rating 3 of 3",
+  "duration": 1.16,
+  "files": [
+   "soft/star_3.wav",
+   "soft/star_3.mp3"
+  ]
+ },
+ {
+  "id": "win_jingle",
+  "style": "soft",
+  "desc": "win jingle",
+  "duration": 1.2,
+  "files": [
+   "soft/win_jingle.wav",
+   "soft/win_jingle.mp3"
+  ]
+ },
+ {
+  "id": "lose_jingle",
+  "style": "soft",
+  "desc": "lose jingle",
+  "duration": 1.4,
+  "files": [
+   "soft/lose_jingle.wav",
+   "soft/lose_jingle.mp3"
+  ]
+ },
+ {
+  "id": "daily_reward",
+  "style": "soft",
+  "desc": "daily reward collected",
+  "duration": 0.82,
+  "files": [
+   "soft/daily_reward.wav",
+   "soft/daily_reward.mp3"
+  ]
+ },
+ {
+  "id": "chest_open",
+  "style": "soft",
+  "desc": "treasure chest open + sparkle",
+  "duration": 1.44,
+  "files": [
+   "soft/chest_open.wav",
+   "soft/chest_open.mp3"
+  ]
+ },
+ {
+  "id": "tap",
+  "style": "scifi",
+  "desc": "button tap",
+  "duration": 0.06,
+  "files": [
+   "scifi/tap.wav",
+   "scifi/tap.mp3"
+  ]
+ },
+ {
+  "id": "tap_light",
+  "style": "scifi",
+  "desc": "light tap / hover",
+  "duration": 0.04,
+  "files": [
+   "scifi/tap_light.wav",
+   "scifi/tap_light.mp3"
+  ]
+ },
+ {
+  "id": "toggle_on",
+  "style": "scifi",
+  "desc": "toggle on",
+  "duration": 0.18,
+  "files": [
+   "scifi/toggle_on.wav",
+   "scifi/toggle_on.mp3"
+  ]
+ },
+ {
+  "id": "toggle_off",
+  "style": "scifi",
+  "desc": "toggle off",
+  "duration": 0.18,
+  "files": [
+   "scifi/toggle_off.wav",
+   "scifi/toggle_off.mp3"
+  ]
+ },
+ {
+  "id": "coin_pickup",
+  "style": "scifi",
+  "desc": "coin pickup",
+  "duration": 0.41,
+  "files": [
+   "scifi/coin_pickup.wav",
+   "scifi/coin_pickup.mp3"
+  ]
+ },
+ {
+  "id": "combo_x2",
+  "style": "scifi",
+  "desc": "combo x2 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "scifi/combo_x2.wav",
+   "scifi/combo_x2.mp3"
+  ]
+ },
+ {
+  "id": "combo_x3",
+  "style": "scifi",
+  "desc": "combo x3 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "scifi/combo_x3.wav",
+   "scifi/combo_x3.mp3"
+  ]
+ },
+ {
+  "id": "combo_x4",
+  "style": "scifi",
+  "desc": "combo x4 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "scifi/combo_x4.wav",
+   "scifi/combo_x4.mp3"
+  ]
+ },
+ {
+  "id": "combo_x5",
+  "style": "scifi",
+  "desc": "combo x5 (rises with combo)",
+  "duration": 0.4,
+  "files": [
+   "scifi/combo_x5.wav",
+   "scifi/combo_x5.mp3"
+  ]
+ },
+ {
+  "id": "level_up",
+  "style": "scifi",
+  "desc": "level up",
+  "duration": 0.85,
+  "files": [
+   "scifi/level_up.wav",
+   "scifi/level_up.mp3"
+  ]
+ },
+ {
+  "id": "unlock",
+  "style": "scifi",
+  "desc": "unlock",
+  "duration": 0.87,
+  "files": [
+   "scifi/unlock.wav",
+   "scifi/unlock.mp3"
+  ]
+ },
+ {
+  "id": "error",
+  "style": "scifi",
+  "desc": "error / not allowed",
+  "duration": 0.47,
+  "files": [
+   "scifi/error.wav",
+   "scifi/error.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_in",
+  "style": "scifi",
+  "desc": "swoosh in",
+  "duration": 0.35,
+  "files": [
+   "scifi/swoosh_in.wav",
+   "scifi/swoosh_in.mp3"
+  ]
+ },
+ {
+  "id": "swoosh_out",
+  "style": "scifi",
+  "desc": "swoosh out",
+  "duration": 0.35,
+  "files": [
+   "scifi/swoosh_out.wav",
+   "scifi/swoosh_out.mp3"
+  ]
+ },
+ {
+  "id": "popup_open",
+  "style": "scifi",
+  "desc": "popup open",
+  "duration": 0.26,
+  "files": [
+   "scifi/popup_open.wav",
+   "scifi/popup_open.mp3"
+  ]
+ },
+ {
+  "id": "popup_close",
+  "style": "scifi",
+  "desc": "popup close",
+  "duration": 0.21,
+  "files": [
+   "scifi/popup_close.wav",
+   "scifi/popup_close.mp3"
+  ]
+ },
+ {
+  "id": "star_1",
+  "style": "scifi",
+  "desc": "star rating 1 of 3",
+  "duration": 0.72,
+  "files": [
+   "scifi/star_1.wav",
+   "scifi/star_1.mp3"
+  ]
+ },
+ {
+  "id": "star_2",
+  "style": "scifi",
+  "desc": "star rating 2 of 3",
+  "duration": 0.94,
+  "files": [
+   "scifi/star_2.wav",
+   "scifi/star_2.mp3"
+  ]
+ },
+ {
+  "id": "star_3",
+  "style": "scifi",
+  "desc": "star rating 3 of 3",
+  "duration": 1.16,
+  "files": [
+   "scifi/star_3.wav",
+   "scifi/star_3.mp3"
+  ]
+ },
+ {
+  "id": "win_jingle",
+  "style": "scifi",
+  "desc": "win jingle",
+  "duration": 1.2,
+  "files": [
+   "scifi/win_jingle.wav",
+   "scifi/win_jingle.mp3"
+  ]
+ },
+ {
+  "id": "lose_jingle",
+  "style": "scifi",
+  "desc": "lose jingle",
+  "duration": 1.4,
+  "files": [
+   "scifi/lose_jingle.wav",
+   "scifi/lose_jingle.mp3"
+  ]
+ },
+ {
+  "id": "daily_reward",
+  "style": "scifi",
+  "desc": "daily reward collected",
+  "duration": 0.82,
+  "files": [
+   "scifi/daily_reward.wav",
+   "scifi/daily_reward.mp3"
+  ]
+ },
+ {
+  "id": "chest_open",
+  "style": "scifi",
+  "desc": "treasure chest open + sparkle",
+  "duration": 1.44,
+  "files": [
+   "scifi/chest_open.wav",
+   "scifi/chest_open.mp3"
+  ]
+ }
+]
