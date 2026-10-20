@@ -1,0 +1,146 @@
+[
+ {
+  "file": "rain_light_loop.mp3",
+  "loop": true,
+  "seconds": 10.0,
+  "kind": "weather"
+ },
+ {
+  "file": "rain_medium_loop.mp3",
+  "loop": true,
+  "seconds": 10.0,
+  "kind": "weather"
+ },
+ {
+  "file": "rain_heavy_loop.mp3",
+  "loop": true,
+  "seconds": 10.0,
+  "kind": "weather"
+ },
+ {
+  "file": "rain_on_car_roof_loop.mp3",
+  "loop": true,
+  "seconds": 10.0,
+  "kind": "weather"
+ },
+ {
+  "file": "wind_loop.mp3",
+  "loop": true,
+  "seconds": 12.0,
+  "kind": "weather"
+ },
+ {
+  "file": "wind_strong_loop.mp3",
+  "loop": true,
+  "seconds": 12.0,
+  "kind": "weather"
+ },
+ {
+  "file": "wind_gust.mp3",
+  "loop": false,
+  "seconds": 3.0,
+  "kind": "weather"
+ },
+ {
+  "file": "snow_ambience_loop.mp3",
+  "loop": true,
+  "seconds": 12.0,
+  "kind": "weather"
+ },
+ {
+  "file": "fog_ambience_loop.mp3",
+  "loop": true,
+  "seconds": 12.0,
+  "kind": "weather"
+ },
+ {
+  "file": "thunder_crack.mp3",
+  "loop": false,
+  "seconds": 4.0,
+  "kind": "weather"
+ },
+ {
+  "file": "thunder_rumble_far.mp3",
+  "loop": false,
+  "seconds": 6.0,
+  "kind": "weather"
+ },
+ {
+  "file": "thunder_close.mp3",
+  "loop": false,
+  "seconds": 3.0,
+  "kind": "weather"
+ },
+ {
+  "file": "lightning_zap.mp3",
+  "loop": false,
+  "seconds": 0.7,
+  "kind": "weather"
+ },
+ {
+  "file": "tire_smoke_hiss_loop.mp3",
+  "loop": true,
+  "seconds": 6.0,
+  "kind": "racing"
+ },
+ {
+  "file": "skid_short.mp3",
+  "loop": false,
+  "seconds": 0.8,
+  "kind": "racing"
+ },
+ {
+  "file": "skid_long.mp3",
+  "loop": false,
+  "seconds": 2.0,
+  "kind": "racing"
+ },
+ {
+  "file": "dirt_spray.mp3",
+  "loop": false,
+  "seconds": 1.0,
+  "kind": "racing"
+ },
+ {
+  "file": "gravel_spray.mp3",
+  "loop": false,
+  "seconds": 1.2,
+  "kind": "racing"
+ },
+ {
+  "file": "dirt_spray_loop.mp3",
+  "loop": true,
+  "seconds": 4.0,
+  "kind": "racing"
+ },
+ {
+  "file": "sparks_scrape.mp3",
+  "loop": false,
+  "seconds": 0.8,
+  "kind": "racing"
+ },
+ {
+  "file": "metal_scrape_long.mp3",
+  "loop": false,
+  "seconds": 1.6,
+  "kind": "racing"
+ },
+ {
+  "file": "puddle_splash.mp3",
+  "loop": false,
+  "seconds": 0.7,
+  "kind": "racing"
+ },
+ {
+  "file": "puddle_splash_big.mp3",
+  "loop": false,
+  "seconds": 1.2,
+  "kind": "racing"
+ },
+ {
+  "file": "wet_tires_loop.mp3",
+  "loop": true,
+  "seconds": 6.0,
+  "kind": "racing"
+ }
+]

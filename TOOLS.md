@@ -138,3 +138,13 @@ font or online API in a game (games are fully offline).
 - **Menus / HUD art:** `kit/ui-art/` - buttons, panels, popups, bars, toggles, icons in 5 colors (sky, lime, sunset, grape, cherry) + `ui.css` (see README.txt, `preview.html`). UI sounds: `sounds/ui-art/` (button_confirm, popup_open, coin, level_complete, countdown_321_go...).
 - **Loading screens:** `kit/loading/` - 39 pages, read `MUSE-GUIDE.txt` (CONFIG block, `LoadingPage.setProgress()`, `done()`, set `demo: false`). Preview: `kit/loading/index.html`.
 - All original, made for the owner, free in paid apps. Keep the game's own look; only use these when your job asks for effects, menus, sounds or a loading screen.
+
+## More owner kits (Oct 20, later) - use these first
+- **Level editor:** `kit/level-editor/level-editor.html` + `level-loader.js`, 20 sample levels in `levels/`.
+- **Backgrounds:** `kit/backgrounds/<theme>/` - 45 backgrounds (portrait, landscape, parallax far/mid/near), gallery `preview.html`. Big PNGs - use the landscape one, keep the page fast.
+- **Engine sounds:** `sounds/engines/grand_prix/` (F1), `supercar/` (Exotic Racer), `monster_truck/` - play idle + accel_low/mid/high loops together, crossfade by throttle, playbackRate 0.9-1.25 by speed (README.txt).
+- **Stadium sounds:** `sounds/stadium/<sport>/` - crowd loops, cheers, groans, whistles, horns, bat crack, puck hits, starting gun.
+- **Ground textures:** `kit/ground/512/` (phones) or `1024/`, normal maps in `normal_512/` - asphalt + kerbs, grass, pitch stripes, ice rink, baseball infield, running track... use as a three.js RepeatWrapping texture.
+- **Sports HUD:** `kit/hud/hud.js` (ApexHUD.mount: scoreboard, lap timer, positions, minimap, speedometer, countdown).
+- **Weather + racing effects:** `kit/weather-fx/weather.js` with `kit/fx-library/effects.js` (rain, snow, fog, tire smoke, skid marks, sparks); sounds in `sounds/weather-fx/`.
+- **Tutorial hints:** `kit/tutorial/tutorial.js` (tap/swipe/hold hints, guided steps, how-to cards, show once).

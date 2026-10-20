@@ -1,0 +1,765 @@
+[
+ {
+  "file": "soccer/soccer_ambience_loop.mp3",
+  "sport": "soccer",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "soccer/soccer_ambience_quiet_loop.mp3",
+  "sport": "soccer",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "soccer/soccer_cheer_1.mp3",
+  "sport": "soccer",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "soccer/soccer_cheer_2.mp3",
+  "sport": "soccer",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "soccer/soccer_big_cheer.mp3",
+  "sport": "soccer",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "soccer/soccer_groan.mp3",
+  "sport": "soccer",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "soccer/soccer_gasp_ooh.mp3",
+  "sport": "soccer",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "soccer/soccer_applause.mp3",
+  "sport": "soccer",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "soccer/soccer_chant_1.mp3",
+  "sport": "soccer",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "soccer/soccer_chant_2.mp3",
+  "sport": "soccer",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "soccer/soccer_clap_rhythm.mp3",
+  "sport": "soccer",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "soccer/soccer_whistle_short.mp3",
+  "sport": "soccer",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "soccer/soccer_whistle_long.mp3",
+  "sport": "soccer",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 1.2
+ },
+ {
+  "file": "soccer/soccer_whistle_final.mp3",
+  "sport": "soccer",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 2.16
+ },
+ {
+  "file": "soccer/soccer_ball_kick.mp3",
+  "sport": "soccer",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "soccer/soccer_ball_net.mp3",
+  "sport": "soccer",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.85
+ },
+ {
+  "file": "football/football_ambience_loop.mp3",
+  "sport": "football",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "football/football_ambience_quiet_loop.mp3",
+  "sport": "football",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "football/football_cheer_1.mp3",
+  "sport": "football",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "football/football_cheer_2.mp3",
+  "sport": "football",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "football/football_big_cheer.mp3",
+  "sport": "football",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "football/football_groan.mp3",
+  "sport": "football",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "football/football_gasp_ooh.mp3",
+  "sport": "football",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "football/football_applause.mp3",
+  "sport": "football",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "football/football_chant_1.mp3",
+  "sport": "football",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "football/football_chant_2.mp3",
+  "sport": "football",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "football/football_clap_rhythm.mp3",
+  "sport": "football",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "football/football_whistle_short.mp3",
+  "sport": "football",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "football/football_whistle_long.mp3",
+  "sport": "football",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 1.2
+ },
+ {
+  "file": "football/football_whistle_final.mp3",
+  "sport": "football",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 2.16
+ },
+ {
+  "file": "football/football_tackle_hit.mp3",
+  "sport": "football",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "football/football_ball_kick.mp3",
+  "sport": "football",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "football/football_stadium_horn.mp3",
+  "sport": "football",
+  "kind": "horn",
+  "loop": false,
+  "seconds": 1.6
+ },
+ {
+  "file": "football/football_drum_line_sting.mp3",
+  "sport": "football",
+  "kind": "organ",
+  "loop": false,
+  "seconds": 1.0
+ },
+ {
+  "file": "hockey/hockey_ambience_loop.mp3",
+  "sport": "hockey",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "hockey/hockey_ambience_quiet_loop.mp3",
+  "sport": "hockey",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "hockey/hockey_cheer_1.mp3",
+  "sport": "hockey",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "hockey/hockey_cheer_2.mp3",
+  "sport": "hockey",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "hockey/hockey_big_cheer.mp3",
+  "sport": "hockey",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "hockey/hockey_groan.mp3",
+  "sport": "hockey",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "hockey/hockey_gasp_ooh.mp3",
+  "sport": "hockey",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "hockey/hockey_applause.mp3",
+  "sport": "hockey",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "hockey/hockey_chant_1.mp3",
+  "sport": "hockey",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "hockey/hockey_chant_2.mp3",
+  "sport": "hockey",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "hockey/hockey_clap_rhythm.mp3",
+  "sport": "hockey",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "hockey/hockey_whistle_short.mp3",
+  "sport": "hockey",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_whistle_long.mp3",
+  "sport": "hockey",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 1.2
+ },
+ {
+  "file": "hockey/hockey_whistle_final.mp3",
+  "sport": "hockey",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 2.16
+ },
+ {
+  "file": "hockey/hockey_goal_horn.mp3",
+  "sport": "hockey",
+  "kind": "horn",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "hockey/hockey_goal_horn_short.mp3",
+  "sport": "hockey",
+  "kind": "horn",
+  "loop": false,
+  "seconds": 2.0
+ },
+ {
+  "file": "hockey/hockey_period_buzzer.mp3",
+  "sport": "hockey",
+  "kind": "buzzer",
+  "loop": false,
+  "seconds": 1.8
+ },
+ {
+  "file": "hockey/hockey_puck_slapshot.mp3",
+  "sport": "hockey",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_puck_pass.mp3",
+  "sport": "hockey",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_puck_boards.mp3",
+  "sport": "hockey",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_puck_post.mp3",
+  "sport": "hockey",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_skate_stop.mp3",
+  "sport": "hockey",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "hockey/hockey_organ_sting.mp3",
+  "sport": "hockey",
+  "kind": "organ",
+  "loop": false,
+  "seconds": 0.96
+ },
+ {
+  "file": "baseball/baseball_ambience_loop.mp3",
+  "sport": "baseball",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "baseball/baseball_ambience_quiet_loop.mp3",
+  "sport": "baseball",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "baseball/baseball_cheer_1.mp3",
+  "sport": "baseball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "baseball/baseball_cheer_2.mp3",
+  "sport": "baseball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "baseball/baseball_big_cheer.mp3",
+  "sport": "baseball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "baseball/baseball_groan.mp3",
+  "sport": "baseball",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "baseball/baseball_gasp_ooh.mp3",
+  "sport": "baseball",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "baseball/baseball_applause.mp3",
+  "sport": "baseball",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "baseball/baseball_chant_1.mp3",
+  "sport": "baseball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "baseball/baseball_chant_2.mp3",
+  "sport": "baseball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "baseball/baseball_clap_rhythm.mp3",
+  "sport": "baseball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "baseball/baseball_bat_crack.mp3",
+  "sport": "baseball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "baseball/baseball_bat_foul_tip.mp3",
+  "sport": "baseball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "baseball/baseball_glove_catch.mp3",
+  "sport": "baseball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "baseball/baseball_organ_sting.mp3",
+  "sport": "baseball",
+  "kind": "organ",
+  "loop": false,
+  "seconds": 1.02
+ },
+ {
+  "file": "baseball/baseball_organ_rise.mp3",
+  "sport": "baseball",
+  "kind": "organ",
+  "loop": false,
+  "seconds": 0.96
+ },
+ {
+  "file": "basketball/basketball_ambience_loop.mp3",
+  "sport": "basketball",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "basketball/basketball_ambience_quiet_loop.mp3",
+  "sport": "basketball",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "basketball/basketball_cheer_1.mp3",
+  "sport": "basketball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "basketball/basketball_cheer_2.mp3",
+  "sport": "basketball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "basketball/basketball_big_cheer.mp3",
+  "sport": "basketball",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "basketball/basketball_groan.mp3",
+  "sport": "basketball",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "basketball/basketball_gasp_ooh.mp3",
+  "sport": "basketball",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "basketball/basketball_applause.mp3",
+  "sport": "basketball",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "basketball/basketball_chant_1.mp3",
+  "sport": "basketball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "basketball/basketball_chant_2.mp3",
+  "sport": "basketball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "basketball/basketball_clap_rhythm.mp3",
+  "sport": "basketball",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "basketball/basketball_whistle_short.mp3",
+  "sport": "basketball",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "basketball/basketball_whistle_long.mp3",
+  "sport": "basketball",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 1.2
+ },
+ {
+  "file": "basketball/basketball_whistle_final.mp3",
+  "sport": "basketball",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 2.16
+ },
+ {
+  "file": "basketball/basketball_shot_clock_buzzer.mp3",
+  "sport": "basketball",
+  "kind": "buzzer",
+  "loop": false,
+  "seconds": 1.6
+ },
+ {
+  "file": "basketball/basketball_game_buzzer.mp3",
+  "sport": "basketball",
+  "kind": "buzzer",
+  "loop": false,
+  "seconds": 2.4
+ },
+ {
+  "file": "basketball/basketball_ball_dribble.mp3",
+  "sport": "basketball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 2.2
+ },
+ {
+  "file": "basketball/basketball_net_swish.mp3",
+  "sport": "basketball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "basketball/basketball_sneaker_squeak.mp3",
+  "sport": "basketball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "basketball/basketball_rim_clank.mp3",
+  "sport": "basketball",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 0.8
+ },
+ {
+  "file": "track/track_ambience_loop.mp3",
+  "sport": "track",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "track/track_ambience_quiet_loop.mp3",
+  "sport": "track",
+  "kind": "ambience",
+  "loop": true,
+  "seconds": 12.0
+ },
+ {
+  "file": "track/track_cheer_1.mp3",
+  "sport": "track",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "track/track_cheer_2.mp3",
+  "sport": "track",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "track/track_big_cheer.mp3",
+  "sport": "track",
+  "kind": "cheer",
+  "loop": false,
+  "seconds": 7.0
+ },
+ {
+  "file": "track/track_groan.mp3",
+  "sport": "track",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "track/track_gasp_ooh.mp3",
+  "sport": "track",
+  "kind": "groan",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "track/track_applause.mp3",
+  "sport": "track",
+  "kind": "applause",
+  "loop": false,
+  "seconds": 4.0
+ },
+ {
+  "file": "track/track_chant_1.mp3",
+  "sport": "track",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "track/track_chant_2.mp3",
+  "sport": "track",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "track/track_clap_rhythm.mp3",
+  "sport": "track",
+  "kind": "chant",
+  "loop": false,
+  "seconds": 8.0
+ },
+ {
+  "file": "track/track_starting_gun.mp3",
+  "sport": "track",
+  "kind": "gun",
+  "loop": false,
+  "seconds": 2.5
+ },
+ {
+  "file": "track/track_timer_beep.mp3",
+  "sport": "track",
+  "kind": "beep",
+  "loop": false,
+  "seconds": 0.7
+ },
+ {
+  "file": "track/track_start_beeps.mp3",
+  "sport": "track",
+  "kind": "beep",
+  "loop": false,
+  "seconds": 2.4
+ },
+ {
+  "file": "track/track_runner_footsteps.mp3",
+  "sport": "track",
+  "kind": "sfx",
+  "loop": false,
+  "seconds": 3.0
+ },
+ {
+  "file": "track/track_whistle_short.mp3",
+  "sport": "track",
+  "kind": "whistle",
+  "loop": false,
+  "seconds": 0.7
+ }
+]
