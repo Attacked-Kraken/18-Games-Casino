@@ -4,9 +4,10 @@
 // The robot copies this file into /tmp/gt (where the libraries are installed) and runs it from there.
 import { NodeIO, getBounds } from '@gltf-transform/core';
 import { prune } from '@gltf-transform/functions';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 process.on('uncaughtException', (e) => { console.log('::error title=Model cleaner::' + e.message); process.exit(1); });
 const [inp, out] = process.argv.slice(2);
-const io = new NodeIO(); const doc = await io.read(inp);
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS); const doc = await io.read(inp);
 const scene = doc.getRoot().getDefaultScene() || doc.getRoot().listScenes()[0];
 const whole = getBounds(scene); const span = Math.max(...whole.max.map((v, i) => v - whole.min[i])) || 1;
 const removed = [];

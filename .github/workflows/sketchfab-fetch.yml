@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: npm i -g @gltf-transform/cli@4 >/dev/null && npm i --prefix /tmp/gt @gltf-transform/core@4 @gltf-transform/functions@4 >/dev/null && cp tools/glb-clean.mjs /tmp/gt/
+      - run: npm i -g @gltf-transform/cli@4 >/dev/null && npm i --prefix /tmp/gt @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 >/dev/null && cp tools/glb-clean.mjs /tmp/gt/
       - name: Cleaner test
         if: github.event.inputs.clean != ''
         run: node /tmp/gt/glb-clean.mjs "$GITHUB_WORKSPACE/${{ github.event.inputs.clean }}" /tmp/clean-test.glb
