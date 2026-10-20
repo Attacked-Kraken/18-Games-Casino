@@ -81,6 +81,17 @@ Not cartoon games. Real sports, real proportions, real gear, real arenas, as clo
   only ("APEX ARCADE").
 - Crowds move (instanced, cheap). Nothing should stand perfectly still.
 
+## 3b. Using a fetched 3D model (Sketchfab etc.) (owner, Oct 19 2026)
+Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half size):
+1. Wrap it: put the loaded model inside its own empty Group. Turn/scale/move ONLY that inner model once, at load,
+   to face the way the game drives. All driving, steering and color code works on the outer Group, never the model.
+2. Measure from the VISIBLE meshes only. Hidden parts (shadow planes, collision boxes) make the size and the
+   "which way is long" check wrong.
+3. Don't trust material names. On the Goblin "car_body" was the RIMS. Check each part's color in the garage
+   picture before you say done.
+4. Give every car a real starting color - never white or grey by default.
+5. Before "done": a robot picture of the model in the garage AND in the race, nose pointing down the track.
+
 ## 4. Feel
 
 - The camera always shows the play. No camera stuck inside a wall or a player. A zoom that hides the action is a defect.
