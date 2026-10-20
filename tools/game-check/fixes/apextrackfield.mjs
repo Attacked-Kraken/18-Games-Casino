@@ -1111,4 +1111,138 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-high-jump-runs-to-bar-over-onto-mat',
+    ask: 'OWNER (2026-10-20): High jump - he runs on the grass away from the bar. He must run up to the bar and go over it onto the mat',
+    async test(page, h) {
+      // JOB G-49: play the real High Jump in free play. He must take off a
+      // few metres in front of the bar, his body must be ABOVE the bar
+      // height while he is over the bar, and he must land ON the mat behind
+      // it - not run on the grass and never go over.
+      for (let i = 0; i < 140; i++) {
+        const s = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null };
+        });
+        if (!s.screen && s.ev === 'hj') break;
+        if (s.screen === 'menu') await h.eval(() => { document.getElementById('bFree').click(); return true; });
+        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /high jump/i.test(x.textContent)); if (b) b.click(); return true; });
+        else if (s.screen === 'card') await h.eval(() => { document.getElementById('bCardStart').click(); return true; });
+        await h.wait(200);
+      }
+      const res = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e || typeof e.jumpState !== 'function') return { stage: 'nostate' };
+        let side = false, plantD = -1, maxYatBar = 0, over = false, onMat = false, steps = 0;
+        while (steps++ < 700) {
+          const st = e.jumpState();
+          if (Math.abs(st.x + 28) <= 0.9 && st.y > maxYatBar) maxYatBar = st.y;
+          if (st.over) over = true;
+          if (st.onMat) onMat = true;
+          if (e.best > 0 && e.phase === 'approach' && e.clearAnim <= 0 && e.missAnim <= 0) break;
+          if (e.phase === 'approach') {
+            e.stride(side ? 'R' : 'L'); side = !side;
+            e.update(0.05);
+            if (e.r.pos >= e.zoneLo && plantD < 0) { plantD = e.r.pos; e.action(); }
+          } else if (e.phase === 'bar') {
+            e.update(0.02);
+            if (Math.abs(e.marker - 0.5) <= e.gw * 0.7) e.action();
+          } else e.update(0.05);
+          if (e.done) break;
+        }
+        return { stage: 'ok', plantD, barH: e.flightH || e.curH(), maxYatBar, over, onMat, best: e.best };
+      });
+      if (res.stage === 'nostate') return 'the high jump has no real jump in it - he runs on the grass away from the bar and never goes over it onto the mat';
+      if (!(res.plantD >= 12.8 && res.plantD <= 15.2)) return 'he does not take off in front of the bar - his takeoff was at ' + res.plantD.toFixed(1) + ' m of the approach (the bar is at 17 m)';
+      if (!(res.maxYatBar > res.barH)) return 'he never goes over the bar - his highest point at the bar was ' + res.maxYatBar.toFixed(2) + ' m against a ' + res.barH.toFixed(2) + ' m bar';
+      if (!res.over) return 'he never gets over the bar';
+      if (!(res.best > 0)) return 'the opening height was never cleared (best ' + res.best + ')';
+      if (!res.onMat) return 'he does not land on the mat after going over the bar';
+      return true;
+    },
+  },
+  {
+    id: 'play-long-jump-lands-in-the-pit',
+    ask: 'OWNER (2026-10-20): Long jump - play it start to finish like a real meet and fix what is not real',
+    async test(page, h) {
+      // JOB G-49: play the Long Jump on its real engine. A real jumper does
+      // not stop dead at the board: he takes off ON THE RUN, flies, and
+      // lands IN the sand pit - and he stays in the pit for the mark, he is
+      // not teleported back to the board.
+      const res = await h.eval(() => {
+        const X = window.__tf.engines();
+        const e = X.longjump(X.EV_BY_ID.lj, X.freeRivals());
+        let side = false, t = 0, anglePos = -1, flightPos = -1;
+        while (!e.done && t < 60) {
+          t += 1 / 60;
+          if (e.phase === 'runup') {
+            if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((side = !side) ? 'L' : 'R');
+            e.update(1 / 60);
+            if (e.r.pos >= 34) { e.action(); anglePos = e.r.pos; }
+          } else if (e.phase === 'angle') {
+            e.update(1 / 60);
+            if (e.ang >= 38 && e.ang <= 48) { flightPos = e.r.pos; e.action(); }
+          } else if (e.phase === 'flight') {
+            e.update(1 / 60);
+          } else if (e.phase === 'mark') {
+            break;
+          } else e.update(1 / 60);
+        }
+        const fxLand = e.fx;
+        for (let i = 0; i < 30; i++) e.update(1 / 60);
+        return { anglePos, flightPos, fxLand, fxAfter: e.fx, jumpD: e.jumpD || 0, best: e.best, phase: e.phase };
+      });
+      if (res.anglePos < 0) return 'he never reached the takeoff - the jump never started';
+      if (res.flightPos < 0) return 'the takeoff angle was never set - the jump never flew';
+      if (!(res.flightPos - res.anglePos >= 1.2)) return 'he stops dead at the board while the takeoff angle is set - a real jumper takes off on the run (he moved ' + Math.max(0, res.flightPos - res.anglePos).toFixed(1) + ' m)';
+      const landX = -70 + res.fxLand;
+      if (!(landX >= -29.5 && landX <= -18.5)) return 'he does not land in the sand pit - he came down at x ' + landX.toFixed(1) + ' and the pit runs from -29.5 to -18.5';
+      if (!(res.jumpD >= 5.5)) return 'the jump is not a real long jump - measured ' + res.jumpD.toFixed(2) + ' m';
+      if (Math.abs(res.fxAfter - res.fxLand) > 0.01) return 'he teleports back to the board for the result instead of staying in the pit where he landed';
+      return true;
+    },
+  },
+  {
+    id: 'play-triple-jump-hop-step-jump-into-pit',
+    ask: 'OWNER (2026-10-20): Triple jump - play it start to finish like a real meet and fix what is not real',
+    async test(page, h) {
+      // JOB G-49: play the Triple Jump on its real engine. A real triple
+      // jump TRAVELS: hop lands metres past the board, step lands metres
+      // further, and the jump carries him into the sand pit. He must not
+      // bounce on the spot at the board while the distance is invented.
+      const res = await h.eval(() => {
+        const X = window.__tf.engines();
+        const e = X.triplejump(X.EV_BY_ID.tj, X.freeRivals());
+        if (typeof e.tjX !== 'number') return { stage: 'nostate' };
+        let side = false, t = 0, takeoff = -1, lastSub = 0;
+        const ends = [], peaks = [0, 0, 0];
+        while (!e.done && t < 60) {
+          t += 1 / 60;
+          if (e.phase === 'runup') {
+            if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((side = !side) ? 'L' : 'R');
+            e.update(1 / 60);
+            if (e.r.pos >= 36) { e.action(); takeoff = e.r.pos; }
+          } else if (e.phase === 'phase') {
+            if (e.sub !== lastSub) { ends.push(e.tjX); lastSub = e.sub; }
+            if (e.tjY > peaks[e.sub]) peaks[e.sub] = e.tjY;
+            e.update(1 / 60);
+            if (e.marker >= 0.4 && e.marker <= 0.6 && !e.tapped) e.action();
+          } else e.update(1 / 60);
+          if (e.phase === 'mark') break;
+        }
+        return { stage: 'ok', takeoff, ends, peaks, landX: e.tjX, jumpD: e.jumpD || 0, best: e.best };
+      });
+      if (res.stage === 'nostate') return 'the triple jump has no real hop, step and jump in it - he bounces on the spot at the board and never travels down the runway into the pit';
+      if (res.takeoff < 0) return 'he never took off - the triple jump never started';
+      if (res.ends.length < 2) return 'the hop and step never landed - the phases do not travel (phase ends seen: ' + res.ends.length + ')';
+      if (!(res.ends[0] - res.takeoff >= 3.2)) return 'the hop does not travel - it landed ' + Math.max(0, res.ends[0] - res.takeoff).toFixed(1) + ' m past the takeoff instead of carrying him down the runway';
+      if (!(res.ends[1] - res.ends[0] >= 2.6)) return 'the step does not travel - it landed ' + Math.max(0, res.ends[1] - res.ends[0]).toFixed(1) + ' m past the hop landing';
+      const landWorldX = -70 + res.landX;
+      if (!(landWorldX >= -29.5 && landWorldX <= -18.5)) return 'the jump does not land in the sand pit - he came down at x ' + landWorldX.toFixed(1) + ' and the pit runs from -29.5 to -18.5';
+      if (!(res.jumpD >= 12)) return 'the triple jump is not a real distance - measured ' + res.jumpD.toFixed(2) + ' m';
+      for (let k = 0; k < 3; k++) if (!(res.peaks[k] >= 0.4)) return 'phase ' + (k + 1) + ' never leaves the ground - his highest point was ' + res.peaks[k].toFixed(2) + ' m';
+      return true;
+    },
+  },
 ];
