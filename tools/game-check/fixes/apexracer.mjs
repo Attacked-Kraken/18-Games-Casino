@@ -281,4 +281,43 @@ export default [
       });
     },
   },
+  {
+    id: 'play-menu-turntable',
+    ask: 'Home screen: slim left tile column (RACE, Garage, Race Friends, Graphics, Sound, Credits in that order), thin top stat bar with the coins, everything fits the sideways phone, and the car keeps turning on its turntable',
+    async test(page, h) {
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
+      await h.wait(600);
+      const layout = await h.eval(() => {
+        const ids = ['mRace', 'mGarage', 'mFriends', 'mQ', 'mSnd', 'mCredits'];
+        const W = innerWidth, H = innerHeight;
+        let prevTop = -1;
+        for (const id of ids) { const el = document.getElementById(id); if (!el) return 'missing button #' + id;
+          const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+          if (cs.display === 'none' || r.width < 10 || r.height < 10) return '#' + id + ' is not visible';
+          if (r.left > W * 0.45) return '#' + id + ' is not in the left column (left ' + Math.round(r.left) + ' of ' + W + ')';
+          if (r.top < prevTop) return '#' + id + ' is out of order in the column';
+          prevTop = r.top;
+          if (r.bottom > H + 1 || r.top < 0) return '#' + id + ' does not fit the screen height (' + Math.round(r.bottom) + ' of ' + H + ')';
+        }
+        const bar = document.getElementById('mtop'); if (!bar) return 'no top bar';
+        const br = bar.getBoundingClientRect(); if (br.top > 2 || br.height > 48) return 'top bar is not a thin strip at the top (height ' + Math.round(br.height) + ')';
+        const st = document.getElementById('mstat'); if (!st || !/\u{1FA99}/u.test(st.textContent || '')) return 'top bar does not show the coins';
+        return true;
+      });
+      if (layout !== true) return layout;
+      const spin = await h.eval(() => {
+        const E = window.__erc; if (!E) return 'no window.__erc hook';
+        const a = E.G.mSpin || 0;
+        return new Promise((res) => setTimeout(() => { const b = E.G.mSpin || 0; res(b - a > 0.25 ? true : 'car is not turning on the home screen (spin moved ' + (b - a).toFixed(2) + ' rad in 1.4s)'); }, 1400));
+      });
+      if (spin !== true) return spin;
+      const gar = await h.press('#mGarage');
+      if (!gar) return 'Garage button could not be pressed from the new column';
+      await h.wait(400);
+      const back = await h.press('#gDone');
+      if (!back) return 'no way back from the garage to the home screen';
+      await h.wait(300);
+      return true;
+    },
+  },
 ];
