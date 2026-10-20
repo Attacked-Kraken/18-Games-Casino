@@ -416,7 +416,8 @@ try {
   }
 } catch (e) {}
 fs.mkdirSync(path.join(out, 'img', 'models'), { recursive: true });
-for (const m of models.filter(m => m.file && !/^(LOCKED|NO)/i.test(m.status || ''))) {
+// SKIP_MODELS=1 (main run where no model changed): carry.mjs keeps the last model pictures instead
+for (const m of models.filter(m => !process.env.SKIP_MODELS && m.file && !/^(LOCKED|NO)/i.test(m.status || ''))) {
   m.id = (m.id || m.name).toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
   let view = m.view && /(model|venue)-viewer\.html/.test(m.view) ? m.view.replace(/^.*?tools\//, 'tools/') :
     `tools/model-viewer.html?m=${encodeURIComponent(m.file)}${m.anims ? '&anims=' + encodeURIComponent(m.anims) : ''}&look=${m.look || 'studio'}`;

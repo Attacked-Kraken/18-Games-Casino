@@ -9,7 +9,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: '41 */4 * * *'   # full check of EVERY game every 4 h (main pushes only re-play the games they changed)
   workflow_dispatch:
+    inputs:
+      full:
+        description: 'Play every game (not only the changed ones)'
+        type: boolean
+        default: false
 
 concurrency:
   group: game-check-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
@@ -62,6 +69,40 @@ jobs:
           git fetch -q origin game-checks || true
           git show origin/game-checks:results.json > prev-results.json 2>/dev/null || echo '{}' > prev-results.json
 
+      - name: Pick what main needs re-played (fast check - only games that changed)
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p old-checks
+          git archive origin/game-checks 2>/dev/null | tar -x -C old-checks 2>/dev/null || true
+          P=$(node -e "try{console.log(require('./prev-results.json').sha||'')}catch(e){console.log('')}")
+          FULL=""
+          [ "${{ github.event_name }}" = "schedule" ] && FULL="every 4 h"
+          [ "${{ inputs.full }}" = "true" ] && FULL="asked by hand"
+          [ -n "$P" ] || FULL="no last report"
+          [ -n "$FULL" ] || git merge-base --is-ancestor "$P" HEAD 2>/dev/null || FULL="last report not on main"
+          if [ -z "$FULL" ]; then
+            CH=$(git diff --name-only "$P" HEAD)
+            echo "$CH"
+            G=""
+            for f in $CH; do
+              case "$f" in
+                apex*.html) G="$G$f,";;
+                tools/game-check/fixes/apex*.mjs) G="$G$(basename $f .mjs).html,";;
+                MODELS.md) FULL="MODELS.md changed";;
+                *.md|jobs/*|plans/*|reviews/*|looks/*|ideas/*|team/*|notes/*) ;;
+                .github/workflows/game-check.yml) FULL="robot changed";;
+                .github/*) ;;
+                *) FULL="shared file $f changed";;
+              esac
+              [ -n "$FULL" ] && break
+            done
+          fi
+          if [ -n "$FULL" ]; then echo "FULL check: $FULL"; else
+            echo "ONLY=${G:-none}" >> $GITHUB_ENV
+            echo "SKIP_MODELS=1" >> $GITHUB_ENV
+            echo "FAST check since $P: ${G:-no game changed}"
+          fi
+
       - name: Play the games
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
@@ -76,6 +117,13 @@ jobs:
           python3 -m http.server 8812 >/dev/null 2>&1 &
           sleep 2
           timeout 900 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+
+      - name: Keep the last result for games that didn't change
+        if: always() && github.event_name != 'pull_request'
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          [ -n "$ONLY" ] || exit 0
+          node tools/game-check/carry.mjs prev-results.json game-check-out old-checks
 
       - name: Auto-undo a merge that newly broke a game
         if: always() && github.event_name == 'push'
