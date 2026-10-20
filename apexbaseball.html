@@ -199,6 +199,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { loadHumans } from 'humans';
+import { GLTFLoader } from './vendor/GLTFLoader.js';
 import ApexFX from './kit/apex-fx.js';
 /* ============================================================
    APEX BASEBALL — arcade 3-inning baseball, real rules.
@@ -282,6 +283,9 @@ function M(color){ if(!matCache[color]) matCache[color]=new THREE.MeshLambertMat
 /* ---------------- field ---------------- */
 /* crowd state: declared before the field IIFE so buildGrandstands can use it */
 const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null };
+/* G-40: everything the old park adds to the scene from here on is remembered,
+   so it can step aside the moment the owner's new ballpark (below) has loaded. */
+const VENUE_FROM = scene.children.length;
 (function buildField(){
   const grassC = document.createElement('canvas'); grassC.width = grassC.height = 512;
   const gg = grassC.getContext('2d');
@@ -386,6 +390,7 @@ const _crowd = { bodies:null, heads:null, seats:[], cursor:0, exciteT:0, m:null 
   const boardGlow = new THREE.Mesh(new THREE.PlaneGeometry(30,9), new THREE.MeshBasicMaterial({color:0x0f3d22}));
   boardGlow.position.set(0,17,-144.9); scene.add(boardGlow);
 })();
+const oldParkMeshes = scene.children.slice(VENUE_FROM);
 
 /* ---------------- low-poly players ---------------- */
 function makePlayer(team, opts={}){
@@ -421,7 +426,7 @@ function place(p,x,y,z,ry=0){ p.g.position.set(x,y,z); p.g.rotation.y=ry; p.home
 
 /* defensive positions (fielding team) */
 const FIELD_POS = {
-  P:[0,0.55,-20.17], C:[0,0,2.4], B1:[25,0,-18.5], B2:[13,0,-30.5], SS:[-13,0,-30.5],
+  P:[0,0.3,-20.17], C:[0,0,2.4], B1:[25,0,-18.5], B2:[13,0,-30.5], SS:[-13,0,-30.5],
   B3:[-25,0,-18.5], LF:[-46,0,-62], CF:[0,0,-82], RF:[46,0,-62],
 };
 const fielders = {};
@@ -674,7 +679,7 @@ function setPhase(p){
 function startPlayerPitch(){
   dressDefense('home');
   dress(pitcherMesh,'home'); dress(catcherMesh,'home'); dress(batterMesh,'away');
-  place(pitcherMesh, 0,0.55,-20.17, 0); place(catcherMesh, 0,0,2.4, Math.PI);
+  place(pitcherMesh, 0,0.3,-20.17, 0); place(catcherMesh, 0,0,2.4, Math.PI);
   place(batterMesh, -2.4,0,0.6, Math.PI*0.08);
   runnerMeshes.forEach((r,i)=>{ r.g.visible=G.bases[i]; if(G.bases[i]){ dress(r,'away'); place(r, BASES[i][0]+1.5,0,BASES[i][2]+1.5,0);} });
   aim = { x:0, y:1.9 }; updateAimDot();
@@ -775,7 +780,7 @@ function startCpuPitch(){
   setCam('pitch');
   dressDefense('away');
   dress(pitcherMesh,'away'); dress(catcherMesh,'away'); dress(batterMesh,'home');
-  place(pitcherMesh, 0,0.55,-20.17, 0); place(catcherMesh, 0,0,2.4, Math.PI);
+  place(pitcherMesh, 0,0.3,-20.17, 0); place(catcherMesh, 0,0,2.4, Math.PI);
   place(batterMesh, -2.4,0,0.6, Math.PI*0.08);
   runnerMeshes.forEach((r,i)=>{ r.g.visible=G.bases[i]; if(G.bases[i]){ dress(r,'home'); place(r, BASES[i][0]+1.5,0,BASES[i][2]+1.5,0);} });
   setPhase('cpuWindup');
@@ -1215,6 +1220,7 @@ function loop(){
   requestAnimationFrame(loop);
   const rawDt = Math.min(clock.getDelta(), 0.05);
   const dt = fx.update(rawDt);
+  tickPark(dt);
   if (++fitFrames >= 30){
     fitFrames = 0;
     const cw = document.documentElement.clientWidth || innerWidth;
@@ -1458,7 +1464,7 @@ if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
 fitGame();
 
 /* ---------------- tiered grandstands + instanced crowd ---------------- */
-function crowdExcite(sec){ _crowd.exciteT = Math.max(_crowd.exciteT, sec||3); }
+function crowdExcite(sec){ _crowd.exciteT = Math.max(_crowd.exciteT, sec||3); if ((sec||0) >= 2) parkWave(); }
 function pickCrowdColor(){
   const r = Math.random();
   if (r<0.08) return 0x1e3fae;      // Comets blue
@@ -1699,6 +1705,86 @@ const Mus = {
   }
 };
 window.__mus = Mus;
+
+/* ---------------- G-40: the owner's new ballpark (kit/stadiums/Night-Ballpark) ----------------
+   stadium.glb is modelled in metres on the same layout the game plays on (home plate at the
+   origin, centre field toward -Z, 90 ft bases, 60.5 ft mound). The game runs on 3 ft units,
+   so at scale 1/0.9144 the park's bases, mound and plate land exactly on the game's, and our
+   players, controls, cameras and play stay as they are. The old park stays up until the new
+   one has loaded, then steps aside; if the model cannot load, the old park simply stays. */
+const _park = { loaded:false, fans:0, root:null, uTime:{value:0}, uWave:{value:-99}, waveT:-1, vbT:0, vbCtx:null, vbTex:null, vbMsg:0 };
+const PARK_MSGS = [
+  ['MAKE SOME NOISE!', 'APEX ARCADE PARK', 'PLAY MORE · CHEER LOUDER'],
+  ['WELCOME FANS', 'APEX ARCADE PARK', 'HOME OF THE COMETS'],
+  ['APEX ARCADE', 'APEX ARCADE PARK', 'TONIGHT: COMETS vs SHARKS'],
+];
+function parkWave(){ if (_park.loaded && _park.waveT < 0) _park.waveT = 0; }
+function drawParkVB(){
+  const g = _park.vbCtx; if (!g) return;
+  const m = PARK_MSGS[_park.vbMsg % PARK_MSGS.length]; _park.vbMsg++;
+  const gr = g.createLinearGradient(0, 0, 1024, 512); gr.addColorStop(0, '#0a1340'); gr.addColorStop(1, '#ff6a00');
+  g.fillStyle = gr; g.fillRect(0, 0, 1024, 512);
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 0, 1024, 70);
+  g.font = '900 46px Arial Black, Arial'; g.textAlign = 'center'; g.fillStyle = '#ffb347'; g.fillText('APEX ARCADE', 512, 52);
+  g.fillStyle = '#fff'; g.font = '900 64px Arial Black, Arial'; g.fillText(m[0], 512, 180);
+  g.font = '900 92px Arial Black, Arial'; g.fillStyle = '#ffe25a'; g.fillText(m[1], 512, 300);
+  g.font = '700 48px Arial'; g.fillStyle = '#fff'; g.fillText(m[2], 512, 385);
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(0, 430, 1024, 82);
+  g.font = '800 40px Arial'; g.fillStyle = '#fff';
+  g.fillText(`SHARKS ${innScore('away')}  ·  COMETS ${innScore('home')}  ·  ${G.half === 'top' ? 'TOP' : 'BOT'} ${G.inning}`, 512, 486);
+  g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < 512; y += 4) g.fillRect(0, y, 1024, 1.5);
+  if (_park.vbTex) _park.vbTex.needsUpdate = true;
+}
+function tickPark(dt){
+  if (!_park.loaded) return;
+  _park.uTime.value += dt;
+  if (_park.waveT >= 0){
+    _park.waveT += dt; _park.uWave.value = Math.PI * 0.35 + _park.waveT * 1.1;
+    if (_park.waveT > 5.2){ _park.waveT = -1; _park.uWave.value = -99; }
+  }
+  _park.vbT += dt; if (_park.vbT > 4){ _park.vbT = 0; drawParkVB(); }
+}
+try {
+  new GLTFLoader().load('kit/stadiums/Night-Ballpark/stadium.glb', g => {
+    const root = g.scene;
+    root.scale.setScalar(1 / 0.9144);
+    // the kit's own on-field people step aside - the game's players stay on the field
+    ['Pitcher','FirstBase','SecondBase','Shortstop','ThirdBase','LeftField','CenterField','RightField','Catcher','Umpire','Batter','Runner']
+      .forEach(n => { const o = root.getObjectByName(n); if (o) o.visible = false; });
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => {
+        if (!m) return;
+        if (m.name === 'CrowdLite'){
+          // the kit's crowd bob + Wave (kit README / preview), driven by position:
+          // in the GLB the crowd is one baked mesh, so the phase comes from the vertex itself
+          m.onBeforeCompile = sh => {
+            sh.uniforms.uTime = _park.uTime; sh.uniforms.uWave = _park.uWave;
+            sh.vertexShader = 'uniform float uTime; uniform float uWave;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+              vec3 ip = position; float ph = atan(ip.x, -(ip.z + 52.0));
+              float bob = 0.035*sin(uTime*3.1 + ip.x*1.7 + ip.z*2.3) + 0.025*max(0.0, sin(uTime*1.3 + ip.x*0.37));
+              float dw = mod(ph - uWave + 3.14159, 6.28318) - 3.14159; float wave = 0.55*exp(-dw*dw*60.0);
+              transformed.y += bob + wave*0.9;`);
+          };
+          m.customProgramCacheKey = () => 'parkcrowd';
+          _park.fans = Math.round(o.geometry.attributes.position.count / 3);
+        }
+        if (m.name === 'VideoBoard'){
+          const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
+          _park.vbCtx = c.getContext('2d');
+          const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+          _park.vbTex = t; m.map = t; m.emissiveMap = t; m.needsUpdate = true;
+          drawParkVB();
+        }
+      });
+    });
+    scene.add(root);
+    _park.root = root; _park.loaded = true;
+    oldParkMeshes.forEach(m => { m.visible = false; });
+    segMesh.visible = false;
+  }, undefined, () => { /* the model could not load: the old park stays */ });
+} catch (e) {}
+
 /* PLAY TESTS (JOB J22): read-only snapshot for the game-check robot. */
 window.__test = {
   get phase(){ return G.phase; },
@@ -1707,7 +1793,8 @@ window.__test = {
   get outs(){ return G.outs; },
   get balls(){ return G.balls; },
   get strikes(){ return G.strikes; },
-  get crowdCount(){ return _crowd.seats.length; },
+  get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
+  get stadium(){ return { loaded: _park.loaded, fans: _park.fans }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
