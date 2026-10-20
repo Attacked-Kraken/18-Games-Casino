@@ -720,13 +720,15 @@ export default [
       if (!doneEv) return 'the discus event never finished after the flight check';
       // ---- SHOT PUT (same shared flight camera: power, angle, release)
       if (!await navTo('sp', 'Shot')) return 'the shot put event never loaded';
-      let g4 = 0, shotFlew = false;
-      while (budget() && g4++ < 40 && !shotFlew) {
-        const s = await state();
-        if (s.phase === 'power' || s.phase === 'angle') await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.action) e.action(); return true; });
-        else if (s.phase === 'flight') shotFlew = true;
-        await h.wait(200);
-      }
+      // JOB G-22: throw like a player. The old loop locked the power the moment the
+      // phase appeared - power starts at 0 and needs ~0.6 s to build, so the shot
+      // was locked at ~0 power and dribbled 1.5 m (the engine's floor): its 'flight'
+      // was a drop at the circle and the flight check never saw it in the air. The
+      // windows a player aims for are short (power >0.72 for ~0.37 s, the good angle
+      // arc 34-48 deg for ~0.25 s), so polling them from outside misses them on a
+      // slow page - an in-page watcher makes the SAME action() calls the instant
+      // the meter is in the window, and reports back when the throw is away.
+      const shotFlew = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { clearInterval(iv); res(false); return; } if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 400) { clearInterval(iv); res(false); } }, 30); }));
       if (!shotFlew) return 'the shot put throw never flew';
       const sj = await judgeFlight('shot put');
       if (sj !== true) return sj;
