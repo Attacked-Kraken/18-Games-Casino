@@ -1,0 +1,98 @@
+[
+ {
+  "name": "asphalt_plain",
+  "desc": "fine dark asphalt"
+ },
+ {
+  "name": "asphalt_worn",
+  "desc": "faded asphalt with cracks and patches"
+ },
+ {
+  "name": "asphalt_wet",
+  "desc": "dark wet asphalt with puddles and shine"
+ },
+ {
+  "name": "kerb_red_white",
+  "desc": "racing kerb, red and white blocks (tiles sideways)"
+ },
+ {
+  "name": "kerb_blue_white",
+  "desc": "racing kerb, blue and white blocks"
+ },
+ {
+  "name": "kerb_green_white",
+  "desc": "racing kerb, green and white blocks"
+ },
+ {
+  "name": "grass_plain",
+  "desc": "short green grass"
+ },
+ {
+  "name": "pitch_stripes",
+  "desc": "sports field grass with mowing stripes"
+ },
+ {
+  "name": "pitch_checker",
+  "desc": "sports field grass with checker mowing"
+ },
+ {
+  "name": "grass_rough",
+  "desc": "long rough grass"
+ },
+ {
+  "name": "dirt",
+  "desc": "packed brown dirt"
+ },
+ {
+  "name": "dirt_tracks",
+  "desc": "dirt with tire ruts (ruts run vertically)"
+ },
+ {
+  "name": "gravel",
+  "desc": "loose grey gravel"
+ },
+ {
+  "name": "ice_rink",
+  "desc": "smooth ice with skate scratches"
+ },
+ {
+  "name": "baseball_infield",
+  "desc": "reddish infield clay"
+ },
+ {
+  "name": "baseball_dirt_dragged",
+  "desc": "infield clay with drag marks"
+ },
+ {
+  "name": "running_track",
+  "desc": "red running track, 4 lanes with white lines (lanes run vertically)"
+ },
+ {
+  "name": "running_track_plain",
+  "desc": "red running track surface, no lines"
+ },
+ {
+  "name": "sand",
+  "desc": "fine beach sand with ripples"
+ },
+ {
+  "name": "concrete",
+  "desc": "light concrete with joints"
+ },
+ {
+  "name": "concrete_plain",
+  "desc": "smooth concrete, no joints"
+ },
+ {
+  "name": "snow",
+  "desc": "packed snow"
+ },
+ {
+  "name": "mud",
+  "desc": "wet mud"
+ },
+ {
+  "name": "cobblestone",
+  "desc": "rounded paving stones"
+ }
+]

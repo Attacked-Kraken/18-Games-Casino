@@ -11,12 +11,14 @@ was already sent. Muses: don't edit this file.
 - [x] The game freezes for about 1.5 seconds right after the start (the robot's gameplay picture is frozen) - find what loads or builds at that moment and make the start smooth. (sent as G-08)
 - [x] Short freezes during play: the robot sees about 6 stalls in 6 seconds (worst 0.4 s) - stop making new objects every frame and preload what loads mid-game so play is smooth. Keep everything else exactly as now. (not needed: robot clean 4:53 AM, only the venue is left)
 - [x] Make sure there are at least 5 play tests that play baseball by its rules (pitch, hit, out, run scores, inning ends) in tools/game-check/fixes/apexbaseball.mjs. (not needed: robot clean 4:53 AM, only the venue is left)
+- [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests in tools/game-check/fixes/apexhockey.mjs).
 - [ ] Add a 'play-friend-code' test for the friend codes.
 - [ ] Hockey commentary from sounds/commentary/hockey (name the color voice on the Credits screen).
+- [ ] Use the owner's new kits (TOOLS.md): hockey crowd, goal horn, puck and skate sounds from sounds/stadium/hockey/, and the ice_rink texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 3 · apexflight.html
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
@@ -30,6 +32,7 @@ was already sent. Muses: don't edit this file.
 - [ ] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps).
 - [ ] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1.
 - [ ] Add a 'play-friend-code' test for the friend codes.
+- [ ] Use the owner's new kits (TOOLS.md): starting gun, crowd and footstep sounds from sounds/stadium/track/, and the running_track texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 5 · apexf1.html
 - [ ] Trees, buildings and walls stand ON the F1 track (owner's pictures 9:43 AM) - move every one off the road so the whole track is clear to drive. Keep everything else the same.
@@ -37,6 +40,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests).
 - [ ] Friend codes: a 'play-friend-code' test (add the 👥 Play a friend button with ApexKit.friend if it's missing).
 - [ ] Grand Prix commentary from sounds/commentary/grandprix (name the color voice on the Credits screen).
+- [ ] Use the owner's new kits (TOOLS.md): the grand_prix engine sounds from sounds/engines/grand_prix/ (idle + accel loops crossfaded by throttle, shifts, tire squeal) and asphalt + kerb textures from kit/ground/512/. Keep everything else the same.
 
 ## window 6 · apexracer.html
 - [x] (sent as G-19) Two of your Racer play tests fail on the robot: 'play-garage-buy' ("no garage card for kestrel") and 'play-friend-code' ("no friend code shown on the friends screen"). The garage and Race Friends exist - fix the TESTS so they find the real buttons/cards (open the garage / friends screen the way a player does). Do not change the game.
@@ -51,3 +55,4 @@ was already sent. Muses: don't edit this file.
 - [x] (sent 22:35 with the friend-code test as one G-job) Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
 - [x] (sent 22:35) Add a 'play-friend-code' test for Race Friends.
 - [x] (covered by the first step: own paint on every car) Every computer racer has its own real paint color.
+- [ ] Use the owner's new kits (TOOLS.md): the supercar engine sounds from sounds/engines/supercar/ (idle + accel loops crossfaded by throttle, shifts, backfires, tire squeal). Keep everything else the same.

@@ -1,0 +1,443 @@
+[
+ {
+  "file": "grand_prix/grand_prix_idle_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_accel_low_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_accel_mid_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_accel_high_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_decel_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_cruise_loop.mp3",
+  "car": "grand_prix",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_rev_short.mp3",
+  "car": "grand_prix",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 0.9
+ },
+ {
+  "file": "grand_prix/grand_prix_rev_long.mp3",
+  "car": "grand_prix",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 2.8
+ },
+ {
+  "file": "grand_prix/grand_prix_rev_blips.mp3",
+  "car": "grand_prix",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 1.0
+ },
+ {
+  "file": "grand_prix/grand_prix_shift_up.mp3",
+  "car": "grand_prix",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "grand_prix/grand_prix_shift_down.mp3",
+  "car": "grand_prix",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "grand_prix/grand_prix_start_up.mp3",
+  "car": "grand_prix",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.3
+ },
+ {
+  "file": "grand_prix/grand_prix_shut_down.mp3",
+  "car": "grand_prix",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.1
+ },
+ {
+  "file": "grand_prix/grand_prix_accel_sweep.mp3",
+  "car": "grand_prix",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "grand_prix/grand_prix_decel_sweep.mp3",
+  "car": "grand_prix",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "grand_prix/grand_prix_backfire_1.mp3",
+  "car": "grand_prix",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "grand_prix/grand_prix_backfire_2.mp3",
+  "car": "grand_prix",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "grand_prix/grand_prix_backfire_3.mp3",
+  "car": "grand_prix",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "grand_prix/grand_prix_tire_squeal_loop.mp3",
+  "car": "grand_prix",
+  "kind": "tire",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "grand_prix/grand_prix_tire_squeal_short.mp3",
+  "car": "grand_prix",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "grand_prix/grand_prix_tire_squeal_long.mp3",
+  "car": "grand_prix",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 1.6
+ },
+ {
+  "file": "supercar/supercar_idle_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_accel_low_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_accel_mid_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_accel_high_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_decel_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_cruise_loop.mp3",
+  "car": "supercar",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_rev_short.mp3",
+  "car": "supercar",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 0.9
+ },
+ {
+  "file": "supercar/supercar_rev_long.mp3",
+  "car": "supercar",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 2.8
+ },
+ {
+  "file": "supercar/supercar_rev_blips.mp3",
+  "car": "supercar",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 1.0
+ },
+ {
+  "file": "supercar/supercar_shift_up.mp3",
+  "car": "supercar",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "supercar/supercar_shift_down.mp3",
+  "car": "supercar",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "supercar/supercar_start_up.mp3",
+  "car": "supercar",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.3
+ },
+ {
+  "file": "supercar/supercar_shut_down.mp3",
+  "car": "supercar",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.1
+ },
+ {
+  "file": "supercar/supercar_accel_sweep.mp3",
+  "car": "supercar",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "supercar/supercar_decel_sweep.mp3",
+  "car": "supercar",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "supercar/supercar_backfire_1.mp3",
+  "car": "supercar",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "supercar/supercar_backfire_2.mp3",
+  "car": "supercar",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "supercar/supercar_backfire_3.mp3",
+  "car": "supercar",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "supercar/supercar_tire_squeal_loop.mp3",
+  "car": "supercar",
+  "kind": "tire",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "supercar/supercar_tire_squeal_short.mp3",
+  "car": "supercar",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "supercar/supercar_tire_squeal_long.mp3",
+  "car": "supercar",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 1.6
+ },
+ {
+  "file": "monster_truck/monster_truck_idle_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_accel_low_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_accel_mid_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_accel_high_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_decel_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_cruise_loop.mp3",
+  "car": "monster_truck",
+  "kind": "loop",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_rev_short.mp3",
+  "car": "monster_truck",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 0.9
+ },
+ {
+  "file": "monster_truck/monster_truck_rev_long.mp3",
+  "car": "monster_truck",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 2.8
+ },
+ {
+  "file": "monster_truck/monster_truck_rev_blips.mp3",
+  "car": "monster_truck",
+  "kind": "rev",
+  "loop": false,
+  "seconds": 1.0
+ },
+ {
+  "file": "monster_truck/monster_truck_shift_up.mp3",
+  "car": "monster_truck",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "monster_truck/monster_truck_shift_down.mp3",
+  "car": "monster_truck",
+  "kind": "shift",
+  "loop": false,
+  "seconds": 0.65
+ },
+ {
+  "file": "monster_truck/monster_truck_start_up.mp3",
+  "car": "monster_truck",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.3
+ },
+ {
+  "file": "monster_truck/monster_truck_shut_down.mp3",
+  "car": "monster_truck",
+  "kind": "start",
+  "loop": false,
+  "seconds": 1.1
+ },
+ {
+  "file": "monster_truck/monster_truck_accel_sweep.mp3",
+  "car": "monster_truck",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "monster_truck/monster_truck_decel_sweep.mp3",
+  "car": "monster_truck",
+  "kind": "sweep",
+  "loop": false,
+  "seconds": 3.5
+ },
+ {
+  "file": "monster_truck/monster_truck_backfire_1.mp3",
+  "car": "monster_truck",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "monster_truck/monster_truck_backfire_2.mp3",
+  "car": "monster_truck",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "monster_truck/monster_truck_backfire_3.mp3",
+  "car": "monster_truck",
+  "kind": "backfire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "monster_truck/monster_truck_tire_squeal_loop.mp3",
+  "car": "monster_truck",
+  "kind": "tire",
+  "loop": true,
+  "seconds": 2.0
+ },
+ {
+  "file": "monster_truck/monster_truck_tire_squeal_short.mp3",
+  "car": "monster_truck",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 0.6
+ },
+ {
+  "file": "monster_truck/monster_truck_tire_squeal_long.mp3",
+  "car": "monster_truck",
+  "kind": "tire",
+  "loop": false,
+  "seconds": 1.6
+ }
+]
