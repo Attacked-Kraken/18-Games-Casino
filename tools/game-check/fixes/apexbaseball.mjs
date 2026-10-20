@@ -113,4 +113,36 @@ export default [
       });
     },
   },
+  {
+    id: 'menu-friend-button',
+    ask: 'Menu has a Play a friend button (G-08)',
+    async test(page, h) {
+      return h.eval(() => {
+        const b = document.getElementById('friendBtn');
+        if (!b) return 'no friendBtn on menu';
+        const ov = document.getElementById('friendOv');
+        if (!ov) return 'no friendOv overlay';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-friend-code',
+    ask: 'Play a friend with a friend code (G-08)',
+    async test(page, h) {
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const F = T.friend; if (!F) return 'no friend hooks (friend codes not implemented)';
+        const code = F.code();
+        if (typeof code !== 'string' || !code.startsWith('BBFC-')) return `bad my-code: ${String(code).slice(0, 20)}`;
+        if (!F.set(code)) return 'could not set my own code';
+        if (!F.active()) return 'friend match not active after set';
+        if (typeof F.strength() !== 'number') return 'no friend strength';
+        if (F.set('NOT-A-CODE')) return 'bad code accepted';
+        F.clear();
+        if (F.active()) return 'friend match not cleared';
+        return true;
+      });
+    },
+  },
 ];
