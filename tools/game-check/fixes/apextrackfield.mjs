@@ -647,6 +647,10 @@ export default [
         await h.wait(300);
       }
       await h.eval(() => { if (window.__tfdrv6) { clearInterval(window.__tfdrv6); window.__tfdrv6 = null; } return true; });
+      // JOB G-22: leave the shared page at a clean menu. This test used to walk away
+      // from its still-running 1500m, and the NEXT test (throw-flight) had to burn
+      // several of its 27 seconds on a reload escape before it could even start.
+      try { await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); } catch (e) {}
       if (samples.length < 5) return 'the follow camera never reported during the 1500m run - the long-race camera is not following the player at all';
       const c0 = samples[0], c1 = samples[samples.length - 1];
       if (Math.hypot(c1.cx - c0.cx, c1.cz - c0.cz) < 5) return 'the camera never moved during the 1500m - it froze at the start while the runner went around the track';
@@ -735,7 +739,7 @@ export default [
       // arc 34-48 deg for ~0.25 s), so polling them from outside misses them on a
       // slow page - an in-page watcher makes the SAME action() calls the instant
       // the meter is in the window, and reports back when the throw is away.
-      const shotFlew = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { clearInterval(iv); res(false); return; } if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 400) { clearInterval(iv); res(false); } }, 30); }));
+      const shotFlew = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { clearInterval(iv); res(false); return; } if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 250) { clearInterval(iv); res(false); } }, 30); }));
       if (!shotFlew) return 'the shot put throw never flew';
       const sj = await judgeFlight('shot put');
       if (sj !== true) return sj;
