@@ -109,11 +109,17 @@ export default [
     id: 'play-garage-buy',
     ask: 'Garage buy works: buying a car adds it to the garage and selects it',
     async test(page, h) {
-      try { await h.tap('#mGarage'); } catch (e) {}
+      // open the garage the way a player does: back to the menu, then the Garage button
+      // (h.press takes a selector and really clicks it - h.tap takes screen x/y)
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
       await h.wait(300);
-      const r = await h.eval(() => {
+      const opened = await h.press('#mGarage');
+      if (!opened) return 'Garage button on the menu could not be pressed';
+      return h.eval(() => {
         const E = window.__erc;
         if (!E) return 'no window.__erc hook';
+        const gar = document.getElementById('garage');
+        if (!gar || getComputedStyle(gar).display === 'none') return 'garage screen did not open';
         E.S.cash = 1000000;
         const ids = ['kestrel', 'brute', 'nova', 'zenith', 'phantom', 'vortex'];
         const id = ids.find((x) => !E.S.cars[x]);
@@ -121,26 +127,35 @@ export default [
         window.confirm = () => true; // the game asks before buying
         const card = document.querySelector('[data-car="' + id + '"]');
         if (!card) return 'no garage card for ' + id;
-        card.click(); // select (preview)
-        card.click(); // buy
+        card.click(); // select (preview) - the garage re-renders after this
+        const again = document.querySelector('[data-car="' + id + '"]');
+        (again || card).click(); // buy
         if (!E.S.cars[id]) return 'car ' + id + ' not in the garage after buying';
         if (E.S.cur !== id) return 'bought car was not selected';
         return true;
       });
-      return r;
     },
   },
   {
     id: 'play-friend-code',
     ask: "Friend code: entering a friend's RACE- code puts their car in your race",
     async test(page, h) {
-      try { await h.tap('#mFriends'); } catch (e) {}
+      // a player saves a racer name first (Race Friends asks for one), then taps Race Friends
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
       await h.wait(300);
-      const r = await h.eval(() => {
+      await h.eval(() => {
+        const nm = document.getElementById('nm');
+        if (nm) { nm.value = 'Racer One'; document.getElementById('nmB').click(); }
+        return true;
+      });
+      await h.wait(300);
+      const opened = await h.press('#mFriends');
+      if (!opened) return 'Race Friends button on the menu could not be pressed';
+      return h.eval(() => {
         const E = window.__erc;
         if (!E) return 'no window.__erc hook';
-        const mine = (document.getElementById('fCode') || {}).textContent || '';
-        if (!/^RACE-/.test(mine.trim())) return 'no friend code shown on the friends screen';
+        const mine = ((document.getElementById('fCode') || {}).textContent || '').trim();
+        if (!/^RACE-/.test(mine)) return 'no friend code shown on the friends screen';
         // build a code for a different racer, same format the game makes
         const j = JSON.stringify({ n: 'Test Friend', r: 5, car: 'kestrel', p: '#1e8bff', f: 'metal', ri: 0, g: '' });
         const b = btoa(unescape(encodeURIComponent(j))).replace(/\+/g, '~').replace(/\//g, '_').replace(/=+$/, '');
@@ -161,7 +176,6 @@ export default [
           }, 500);
         });
       });
-      return r;
     },
   },
 ];
