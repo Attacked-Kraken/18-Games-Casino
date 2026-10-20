@@ -4,9 +4,9 @@ A job is sent only after the owner 👍s the one before it on that window. Muses
 but only DO the G-job you were sent.
 
 ## Exotic Racer Club - window 6 (multiplayer must keep working in every step)
-- [ ] G-01 player car = Fictional V12 Goblin, the SAME car in the home menu, the garage and the race
-- [ ] next: computer racers get the fictional cars (Patriot P10-XR, Tokii Abyss GT.7, SHC MC), each in different paints
-- [ ] next: garage option cards - every upgradable car is a real model with its own card, stats and upgrades
+- [x] G-01 player car = Fictional V12 Goblin, the SAME car in the home menu, the garage and the race (owner 👍 Oct 19)
+- [ ] G-04 speedometer next to NITRO + computer racers AND garage cars become the real models (Patriot P10-XR, Tokii Abyss GT.7, SHC MC), each its own paint
+- [ ] next: garage option cards - stats and upgrades for every real car
 - [ ] next: the city and streets (the owner will say what he wants)
 
 ## Ice Hockey - window 2
