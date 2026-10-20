@@ -34,7 +34,7 @@ const measure = (jpg) => lab.evaluate(async (b64) => {
 const changed = (a, b) => a.filter((v, i) => Math.abs(v - b[i]) > 12).length / a.length;
 
 const OVER = /\b(game over|you lose|you win|you crashed|final score|time'?s up|race over|race finished)\b/i;
-const AGAIN = /^(play again|try again|retry|restart|again|race again|rematch|continue|next|next level|↻|⟲)/i;
+const AGAIN = /\b(again|retry|restart|rematch|continue|next)\b|^(↻|⟲)/i;   // 'Dive again', '↻ Retry', 'Race again'...
 
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first()

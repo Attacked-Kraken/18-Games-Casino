@@ -16,6 +16,7 @@
         "#quickBtn",
         "#toTeamBtn",
         "#startBtn",
+        "#qualiSkip",
         "#raceBtn"
       ]
     },
@@ -54,7 +55,12 @@
         "#shGo"
       ],
       "pictures": [
-        { "name": "garage", "steps": ["#mGarage"] }
+        {
+          "name": "garage",
+          "steps": [
+            "#mGarage"
+          ]
+        }
       ]
     },
     {
