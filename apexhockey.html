@@ -502,7 +502,7 @@ function makeSkater(teamKey, goalie){
     mesh(GEO.arm,M.jersey,-0.2,3.4,1.5).rotation.z=0.5;
     mesh(GEO.glove,M.trim,0.5,2.2,-1.7); mesh(GEO.glove,M.trim,0.5,2.2,1.7);
   } else {
-    mesh(GEO.skate,MAT.skate,0,0.18,-0.55); mesh(GEO.skate,MAT.skate,0,0.18,0.55);
+    mesh(GEO.skate,MAT.skate,0,0.175,-0.55); mesh(GEO.skate,MAT.skate,0,0.175,0.55); // G-02 fix: skates sit flat on the ice (blade bottom at y=0)
   }
   const legL = new THREE.Group(), legR = new THREE.Group();
   if(!goalie){
