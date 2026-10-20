@@ -170,4 +170,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-13 | window main | tools/game-check/fixes/apexbaseball.mjs | g-13-baseball-play-tests |
 | G-36 | window main | apexbaseball.html | g-36-baseball-kits |
 | G-17 | window 3 | apexflight.html (freeze check), jobs/G-17.md | g-17-flight-freeze |
+| G-39 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-39-relay-baton |
 
