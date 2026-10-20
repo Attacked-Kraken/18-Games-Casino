@@ -201,3 +201,19 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - made for the owner, free in paid apps, no credit needed
 - downloaded: 2026-10-19, sent by the owner
 - used in: Paper Plane (chill lo-fi music + arcade UI sounds), Reef Dash (puzzle music + soft UI sounds + water/powerup effects), Exotic Racer (sports_arena music)
+
+## ASSET: kit/level-editor/
+- title: Apex Level Editor - touch-friendly 2D platformer level editor in one offline HTML file (37 tiles, layers, undo, Test play, export/import JSON), level-loader.js for games, 20 sample levels
+- maker: made for the owner - original, made from scratch
+- source: the owner's Level-Editor.zip (original kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: any 2D level game
+
+## ASSET: kit/backgrounds/
+- title: Apex Backgrounds Pack - 45 phone backgrounds, 15 themes x 3 variants (city, neon city, space, ocean, underwater, forest, desert, snow, volcano, sky islands, cave, candy, stadium, racetrack), portrait + landscape + parallax layers, preview.html
+- maker: made for the owner - original, generated from scratch, no text/logos/brands
+- source: the owner's Backgrounds-Pack-part1.zip + part2.zip (originals kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-20, sent by the owner
+- used in: any game's menus, loading screens and 2D scenes

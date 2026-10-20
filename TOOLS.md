@@ -132,3 +132,5 @@ font or online API in a game (games are fully offline).
   FX (reverb, echo, drive, filters, crush, compressor), sidechain, glide - see `sounds/recipes/games.json`.
   For sounds that don't sound made-by-computer, put a REAL recording in `sounds/real/` (owner's recordings, Kenney CC0
   audio) and use it on a track with `"sample": "file:sounds/real/<name>.wav"`.
+- **Level editor:** `kit/level-editor/level-editor.html` (make 2D platformer levels, Test, export JSON) + `level-loader.js` to load them in a game; 20 sample levels in `levels/`. See README.txt.
+- **Backgrounds:** `kit/backgrounds/<theme>/` - 45 backgrounds (portrait 1170x2532 + landscape 2532x1170 + parallax layers far/mid/near). Gallery: `kit/backgrounds/preview.html`. They are big PNGs - for a phone game use the landscape one and keep the page fast.
