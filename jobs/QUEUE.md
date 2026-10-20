@@ -15,6 +15,7 @@ was already sent. Muses: don't edit this file.
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests in tools/game-check/fixes/apexhockey.mjs).
 - [ ] Add a 'play-friend-code' test for the friend codes.
+- [ ] Hockey commentary from sounds/commentary/hockey (name the color voice on the Credits screen).
 
 ## window 3 · apexflight.html
 - [ ] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs.
@@ -31,6 +32,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Make it smooth on phones: about 1,800 draw calls per frame now - merge meshes (stands, scenery, barriers) until it is under 450, without changing how it looks.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests).
 - [ ] Friend codes: a 'play-friend-code' test (add the 👥 Play a friend button with ApexKit.friend if it's missing).
+- [ ] Grand Prix commentary from sounds/commentary/grandprix (name the color voice on the Credits screen).
 
 ## window 6 · apexracer.html
 - [x] (sent 22:35 with the friend-code test as one G-job) Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
