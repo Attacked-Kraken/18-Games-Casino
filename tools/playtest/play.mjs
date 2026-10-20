@@ -72,7 +72,8 @@ async function playStyle(page, style, R, slug) {
   const lift = async () => { if (cdp) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }).catch(() => {}); };
   if (style === 'gas') { for (const k of keysGas) await page.keyboard.down(k).catch(() => {}); await hold(); }
   while (Date.now() - t0 < ROUND_S * 1000) {
-    const bs = (await buttons(page).catch(() => [])).filter(b => !b.off);
+    // never press pause / menu / leave / sound buttons - that stops the game and looks like 'controls don't respond'
+    const bs = (await buttons(page).catch(() => [])).filter(b => !b.off && !/pause|menu|back|home|quit|exit|setting|sound|music|mute|game development|⏸|ii$|✕|×/i.test(b.t));
     const W = 844, H = 390;
     try {
       if (style === 'gas') {
@@ -92,7 +93,10 @@ async function playStyle(page, style, R, slug) {
     const lum = await measure(jpg); samples++;
     if (prev) { const c = changed(prev, lum); if (c > 0.02) { moves++; still = 0; } else still++; }
     prev = lum;
-    if (still === 8) R.problems.push({ what: `${style}: screen froze or nothing moved for ~15 s while playing`, img: await pic('still', jpg) });
+    if (still === 8) {   // a calm sky/sea barely changes the picture - only call it frozen when the game loop really stopped
+      const f0 = await fps(page);
+      if (f0 < 5) R.problems.push({ what: `${style}: the game FROZE (screen and game loop stopped ~15 s)`, img: await pic('still', jpg) });
+    }
     const f = samples % 5 === 0 ? await fps(page) : 99; if (f && f < 15) lowFps++;
     const tx = await text(page);
     if (OVER.test(tx)) {
