@@ -57,9 +57,13 @@ export default [
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        // put the plane airborne, slow (18 m/s, under the old stall speed), normal level flying
+        // put the plane airborne, slow (18 m/s, under the stall speed), normal
+        // level flying. Slow flight means THROTTLE BACK (0.1): left at full
+        // throttle the engine (3.2 m/s^2) accelerates the plane past the
+        // 20 m/s stall speed in ~0.65 s, before the pull-up even starts -
+        // that race is why this test failed on main while passing on branches.
         F.P.pos.set(0, 60, 0); F.P.vel.set(0, 0, 18); F.P.ground = false;
-        F.P.pitch = 0; F.inp.pitchUp = 0;
+        F.P.pitch = 0; F.P.thr = 0.1; F.inp.pitchUp = 0;
         return new Promise((res) => {
           setTimeout(() => {
             if (F.stallNow) return res('stalled during normal level flying at 18 m/s (too easy)');
@@ -71,11 +75,13 @@ export default [
             const iv = setInterval(() => {
               if (F.stallNow) {
                 clearInterval(iv);
+                F.P.thr = 1;
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
                 return res(true);
               }
               if (Date.now() - t0 > 3000) {
                 clearInterval(iv);
+                F.P.thr = 1;
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
                 return res('no stall when really pulling up slow (too forgiving)');
               }
@@ -251,6 +257,29 @@ export default [
             }
           }, 300);
         });
+      });
+    },
+  },
+  {
+    id: 'play-friend-code',
+    ask: 'Play a friend with a friend code (My code / Enter code)',
+    async test(page, h) {
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.friend) return 'no friend hooks (friend codes not implemented)';
+        const b = document.getElementById('friendBtn');
+        if (!b) return 'no friendBtn on menu';
+        const ov = document.getElementById('friendOv');
+        if (!ov) return 'no friendOv overlay';
+        const code = F.friend.code();
+        if (typeof code !== 'string' || !code.startsWith('FLAPEX-')) return `bad my-code: ${String(code).slice(0, 20)}`;
+        if (!F.friend.set(code)) return 'could not set my own code';
+        if (!F.friend.active()) return 'friend match not active after set';
+        if (typeof F.friend.strength() !== 'number') return 'no friend strength';
+        if (F.friend.set('NOT-A-CODE')) return 'bad code accepted';
+        F.friend.clear();
+        if (F.friend.active()) return 'friend match not cleared';
+        return true;
       });
     },
   },
