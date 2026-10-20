@@ -245,4 +245,40 @@ export default [
       });
     },
   },
+  {
+    id: 'play-race-start-fast',
+    ask: 'Lap choices show on the race sheet and the race starts promptly - twice in a row (staged start, cached environment)',
+    async test(page, h) {
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
+      await h.wait(300);
+      const opened = await h.press('#mRace');
+      if (!opened) return 'Race button on the menu could not be pressed';
+      await h.wait(400);
+      const picked = await h.press('#plist .pl');
+      if (!picked) return 'no place card could be pressed';
+      await h.wait(400);
+      const laps = await h.eval(() => document.querySelectorAll('#shLaps .chip').length);
+      if (laps !== 5) return 'lap choices missing on the sheet (' + laps + ' chips, expected 5)';
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        return new Promise((res) => {
+          const t0 = performance.now();
+          E.startRace(E.PLACES[0], 8);
+          const iv = setInterval(() => {
+            if (E.R && E.R.P && E.G.mode === 'race') {
+              clearInterval(iv);
+              if (performance.now() - t0 > 20000) return res('first race start took over 20s');
+              E.toMenu();
+              const t1 = performance.now();
+              E.startRace(E.PLACES[0], 8);
+              const iv2 = setInterval(() => {
+                if (E.R && E.R.P && E.G.mode === 'race') { clearInterval(iv2); if (performance.now() - t1 > 20000) return res('second race start took over 20s'); res(true); }
+              }, 100);
+            }
+          }, 100);
+        });
+      });
+    },
+  },
 ];
