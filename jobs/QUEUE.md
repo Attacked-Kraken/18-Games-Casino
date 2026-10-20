@@ -35,7 +35,8 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): starting gun, crowd and footstep sounds from sounds/stadium/track/, and the running_track texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 5 · apexf1.html
-- [ ] Trees, buildings and walls stand ON the F1 track (owner's pictures 9:43 AM) - move every one off the road so the whole track is clear to drive. Keep everything else the same.
+- [ ] Put the owner's new Grand Prix track into F1 (owner said do it, Oct 20 10:14 AM): kit/tracks/Grand-Prix-Track/ (read README.txt + MUSE-GUIDE.txt). Replace the old track with grand-prix-track.glb using track-loader.js: grid, laps by checkpoints, AI cars on its racing line, start lights. Keep OUR F1 car models (not the preview's box cars), MPH, the HUD and controls. Add its race-day sounds from kit/tracks/Grand-Prix-Track-Sounds/.
+- [x] (the new Grand Prix track above replaces the old track) Trees, buildings and walls stand ON the F1 track (owner's pictures 9:43 AM) - move every one off the road so the whole track is clear to drive. Keep everything else the same.
 - [ ] Make it smooth on phones: about 1,800 draw calls per frame now - merge meshes (stands, scenery, barriers) until it is under 450, without changing how it looks.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests).
 - [ ] Friend codes: a 'play-friend-code' test (add the 👥 Play a friend button with ApexKit.friend if it's missing).

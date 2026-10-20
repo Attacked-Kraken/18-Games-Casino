@@ -148,3 +148,4 @@ font or online API in a game (games are fully offline).
 - **Sports HUD:** `kit/hud/hud.js` (ApexHUD.mount: scoreboard, lap timer, positions, minimap, speedometer, countdown).
 - **Weather + racing effects:** `kit/weather-fx/weather.js` with `kit/fx-library/effects.js` (rain, snow, fog, tire smoke, skid marks, sparks); sounds in `sounds/weather-fx/`.
 - **Tutorial hints:** `kit/tutorial/tutorial.js` (tap/swipe/hold hints, guided steps, how-to cards, show once).
+- **Grand Prix track (F1):** `kit/tracks/Grand-Prix-Track/` - read its README.txt + MUSE-GUIDE.txt. `track-loader.js` loads the .glb, puts cars on the grid, counts laps by checkpoints, gives the racing line for AI cars and runs the start lights. Sounds sit next to it in `kit/tracks/Grand-Prix-Track-Sounds/`.
