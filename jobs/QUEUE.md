@@ -23,7 +23,8 @@ was already sent. Muses: don't edit this file.
 - [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
-- [ ] Long relay / long races: a RED button turns on and blocks running - no button may ever block TAP RUN. Keep everything else as now.
+- [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
+- [ ] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
 - [ ] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps).
 - [ ] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1.
@@ -45,4 +46,4 @@ was already sent. Muses: don't edit this file.
 - [ ] More car options (owner): add 6 SEARCH lines to MODEL-SEARCH.md for fictional supercars / sports cars (NO real brands), so the owner can pick new garage cars.
 - [x] (sent 22:35 with the friend-code test as one G-job) Add 5 play tests in tools/game-check/fixes/apexracer.mjs: the race starts, every car drives forward along the track, the lap counter goes up, the race finishes with results, buying a car in the garage works.
 - [x] (sent 22:35) Add a 'play-friend-code' test for Race Friends.
-- [ ] Every computer racer has its own real paint color (no two the same, no white) - check in the garage and race pictures.
+- [x] (covered by the first step: own paint on every car) Every computer racer has its own real paint color.
