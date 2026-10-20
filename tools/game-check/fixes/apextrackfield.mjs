@@ -733,8 +733,10 @@ export default [
       // arc 34-48 deg for ~0.25 s), so polling them from outside misses them on a
       // slow page - an in-page watcher makes the SAME action() calls the instant
       // the meter is in the window, and reports back when the throw is away.
+      // (v9: the watcher tolerates a briefly-null engine during the start
+      // transition instead of giving up on the first tick.)
       await startRec();
-      const shotFlew = await h.eval(() => new Promise(res => { let n = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { clearInterval(iv); res(false); return; } if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 250) { clearInterval(iv); res(false); } }, 30); }));
+      const shotFlew = await h.eval(() => new Promise(res => { let n = 0, nulls = 0; const iv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e) { if (++nulls > 33) { clearInterval(iv); res(false); } return; } nulls = 0; if (e.phase === 'power' && e.power > 0.72) e.action(); else if (e.phase === 'angle' && e.ang >= 34 && e.ang <= 48) e.action(); else if (e.phase === 'flight') { clearInterval(iv); res(true); return; } if (++n > 300) { clearInterval(iv); res(false); } }, 30); }));
       if (!shotFlew) return 'the shot put throw never flew';
       const sj = judgeRec('shot put', await readRec());
       if (sj !== true) return sj;
