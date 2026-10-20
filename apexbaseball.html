@@ -1706,7 +1706,7 @@ const Mus = {
 };
 window.__mus = Mus;
 
-/* ---------------- G-40: the owner's new ballpark (kit/stadiums/Apex-Arcade-Park) ----------------
+/* ---------------- G-40: the owner's new ballpark (kit/stadiums/Night-Ballpark) ----------------
    stadium.glb is modelled in metres on the same layout the game plays on (home plate at the
    origin, centre field toward -Z, 90 ft bases, 60.5 ft mound). The game runs on 3 ft units,
    so at scale 1/0.9144 the park's bases, mound and plate land exactly on the game's, and our
@@ -1745,7 +1745,7 @@ function tickPark(dt){
   _park.vbT += dt; if (_park.vbT > 4){ _park.vbT = 0; drawParkVB(); }
 }
 try {
-  new GLTFLoader().load('kit/stadiums/Apex-Arcade-Park/stadium.glb', g => {
+  new GLTFLoader().load('kit/stadiums/Night-Ballpark/stadium.glb', g => {
     const root = g.scene;
     root.scale.setScalar(1 / 0.9144);
     // the kit's own on-field people step aside - the game's players stay on the field
