@@ -869,4 +869,39 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-hurdles-every-runner-jumps',
+    ask: 'OWNER (2026-10-20): Hurdles (110m and 400m) - only the player jumps the hurdles; the other runners run through them. Every runner must jump every hurdle in his lane',
+    async test(page, h) {
+      // JOB G-38: run each hurdles race on its real engine (the way the
+      // hurdles-fall test does) and watch every rival at every hurdle: near
+      // each hurdle's distance, that runner's leap height must pass the
+      // game's own clear line (52 - below it the game itself calls a hurdle
+      // clipped). The player jumps with action() the way a player taps.
+      const runRace = (id) => h.eval((a) => {
+        const X = window.__tf.engines();
+        const e = X.hurdles(X.EV_BY_ID[a], X.freeRivals());
+        e.phase = 'run';
+        const seen = e.ai.map(() => e.hurdles.map(() => 0));
+        let t = 0, k = 0;
+        while (!e.done && t < 120) {
+          t += 1 / 60;
+          if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((k ^= 1) ? 'L' : 'R');
+          if (!e.r.air) { const nh = e.hurdles.find(hh => hh.x > e.r.pos); if (nh && nh.x - e.r.pos < 3.2) e.action(); }
+          e.update(1 / 60);
+          e.ai.forEach((a2, ai2) => { e.hurdles.forEach((hh, hi) => { if (Math.abs(a2.pos - hh.x) < 1.6 && (a2.airY || 0) > seen[ai2][hi]) seen[ai2][hi] = a2.airY || 0; }); });
+        }
+        return { done: e.done, seen, hCount: e.hurdles.length, aiN: e.ai.length };
+      }, id);
+      for (const id of ['110h', '400h']) {
+        const r = await runRace(id);
+        if (!r.done) return id + ': the race never finished';
+        if (!r.aiN) return id + ': there are no rival runners in the race';
+        if (!r.hCount) return id + ': the race has no hurdles';
+        for (let a = 0; a < r.aiN; a++) for (let hh = 0; hh < r.hCount; hh++)
+          if (!(r.seen[a][hh] > 52)) return id + ': runner ' + (a + 2) + ' ran through hurdle ' + (hh + 1) + ' instead of jumping it (best height near it: ' + Math.round(r.seen[a][hh]) + ') - every runner must jump every hurdle in his lane';
+      }
+      return true;
+    },
+  },
 ];
