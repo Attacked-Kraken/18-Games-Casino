@@ -45,7 +45,9 @@ but only DO the G-job you were sent.
 - [ ] next: friend codes play test
 
 ## Not on a window yet (waiting for a free Muse)
-- Soccer (players mark/pass/position like real soccer - robot says not yet), Apex Moto, Paper Plane, Reef Dash
+- Soccer (players mark/pass/position like real soccer - robot says not yet), Apex Moto
+- Paper Plane, Reef Dash (owner Oct 19): DON'T change the look. They only need: their own sounds (Claude made them - Sound
+  Lab), levels, multiplayer and playability checks (play tests). Waiting for a free Muse.
 - Monster Truck: Claude finishes it himself (owner Oct 18)
 
 ## New games from the owner (on Game Development, not assigned yet)
