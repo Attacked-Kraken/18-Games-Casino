@@ -307,7 +307,7 @@ export default [
       // state - a race really in its 'run' phase - the state a player's two thumbs actually meet.
       // One combined read+click per poll: the robot gives every test 30 s, eval round-trips on its
       // slow page are dear, and the touch sequence still needs its share of the budget.
-      await h.eval(() => { for (const k of ['__tfdrv', '__tfdrv2', '__tfdrv4']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; });
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv4']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }); // JOB G-22: '__drv' added - the touch/sprint tests at the top of this file install it (it strides the live race every 120 ms) and NOBODY cleared it before this test; it sprinted this test's 60 m runner over the finish line mid-sequence, the results screen replaced the HUD, and the remaining taps hit the results panel ('only 2-3 of 5 taps landed')
       {
         const poll = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const playing = document.body.classList.contains('playing'); const run = !!(e && e.r && e.phase === 'run' && playing); if (!run && on) { const click = (id) => { const b = document.getElementById(id); if (b) b.click(); }; if (on.id === 'results') click('bResMenu'); else if (on.id === 'menu') click('bFree'); else if (on.id === 'grid') { const b = document.querySelector('#gridEvents button'); if (b) b.click(); } else if (on.id === 'card') click('bCardStart'); else if (on.id === 'career') click('bCareerBack'); } return run; });
         const t0 = Date.now();
@@ -605,15 +605,33 @@ export default [
       const budget = () => Date.now() - t0 < 27000;
       await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
       const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null }; });
-      let started = false, guard = 0;
-      while (budget() && guard++ < 40 && !started) {
-        const s = await state();
-        if (!s.screen && s.ev === '1500m') started = true;
-        else if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
-        else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
-        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /1500/.test(x.textContent)); if (b) b.click(); return true; });
-        else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
-        await h.wait(400);
+      // JOB G-22: the old step-by-step nav spent two evals per screen and had NO way
+      // out of the career dashboard or a race an earlier test left running (no screen
+      // up, wrong event loaded) - on the robot it burned the whole 27 s budget in
+      // that dead state and reported 'the 1500m never loaded' even though the game
+      // loads the 1500m fine. One combined read+click poll (the G-16 pattern), a
+      // career-screen exit, and ONE reload to the plain game address to escape a
+      // race left running (the dev-skip test's own reload move).
+      let started = false, reloaded = false, guard = 0;
+      const navT0 = Date.now();
+      while (budget() && Date.now() - navT0 < 17000 && !started) {
+        const step = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null;
+          if (!screen && ev === '1500m') return 'started';
+          if (!screen && ev) return 'in-event';
+          const click = id => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; };
+          if (screen === 'results') click('bResMenu');
+          else if (screen === 'career') click('bCareerBack');
+          else if (screen === 'menu') click('bFree');
+          else if (screen === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /1500/.test(x.textContent)); if (b) b.click(); }
+          else if (screen === 'card') click('bCardStart');
+          return screen || 'none';
+        });
+        if (step === 'started') started = true;
+        else if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); }
+        await h.wait(350);
       }
       if (!started) return 'the 1500m never loaded';
       await h.eval(() => { if (!window.__tfdrv6) { window.__tk6 = false; window.__tfdrv6 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase === 'run') { e.stride(window.__tk6 ? 'R' : 'L'); window.__tk6 = !window.__tk6; } }, 110); } return true; });
@@ -649,14 +667,25 @@ export default [
       const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null, done: e ? !!e.done : false }; });
       const view = () => h.eval(() => { const tf = window.__tf; return tf && tf.throwView ? tf.throwView() : null; });
       await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
-      const navTo = async (idRe, btnRe) => { let g = 0; while (budget() && g++ < 40) { const s = await state(); if (!s.screen && s.ev && idRe.test(s.ev)) return true; if (s.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; }); else if (s.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; }); else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => btnRe.test(x.textContent)); if (b) b.click(); return true; }); else if (s.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }); await h.wait(400); } return false; };
+      // JOB G-22: navTo rewritten. The old one's grid click used its idRe/btnRe
+      // CLOSURE variables inside an h.eval callback - h.eval ships function SOURCE
+      // into the page, so the closures die there and the click could never fire;
+      // it also had no exit from the career dashboard or from a race an earlier
+      // test left running (this test always starts inside the long-race test's
+      // still-running 1500m). Now: plain data args, one combined read+click poll,
+      // career exit, one reload escape.
+      const navTo = async (evId, btnSrc) => { let reloaded = false; const t1 = Date.now(); while (budget() && Date.now() - t1 < 15000) { const step = await h.eval((a) => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const screen = on ? on.id : null, ev = e ? (e.ev || {}).id : null; if (!screen && ev === a.evId) return 'there'; if (!screen && ev) return 'in-event'; const click = id => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; if (screen === 'results') click('bResMenu'); else if (screen === 'career') click('bCareerBack'); else if (screen === 'menu') click('bFree'); else if (screen === 'grid') { const re = new RegExp(a.btnSrc, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent)); if (b) b.click(); } else if (screen === 'card') click('bCardStart'); return screen || 'none'; }, { evId, btnSrc }); if (step === 'there') return true; if (step === 'in-event' && !reloaded) { reloaded = true; await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); } await h.wait(350); } return false; };
       const judgeFlight = async (label) => {
         // samples the flight, then returns the mark-phase view (or an error string)
         let flight = [], g = 0, mark = null;
         while (budget() && g++ < 70) {
-          const s = await state();
-          if (s.phase === 'flight') { const v = await view(); if (v && v.impl) flight.push(v); if (flight.length >= 3) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); return true; }); }
-          else if (s.phase === 'mark') { mark = await view(); break; }
+          // JOB G-22: phase and view in ONE eval. Reading them in two evals a beat
+          // apart let a slow page land the view AFTER the flight ended (implement
+          // already on the ground) and file it as a flight sample - the check then
+          // swore the throw was never in the air. Same checks, one instant.
+          const s = await h.eval(() => { const e = window.__tf && window.__tf.eng(); const tf = window.__tf; return { phase: e ? e.phase : null, v: tf && tf.throwView ? tf.throwView() : null }; });
+          if (s.phase === 'flight') { const v = s.v; if (v && v.impl) flight.push(v); if (flight.length >= 3) await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); return true; }); }
+          else if (s.phase === 'mark') { mark = s.v; break; }
           await h.wait(150);
         }
         if (flight.length < 2) return label + ': no flight could be sampled - the throw was never visible to the camera check';
@@ -673,7 +702,7 @@ export default [
         return true;
       };
       // ---- DISCUS (hold to spin, release to throw)
-      if (!await navTo(/^dt$/, /Discus/i)) return 'the discus event never loaded';
+      if (!await navTo('dt', 'Discus')) return 'the discus event never loaded';
       let threw = false, g2 = 0;
       while (budget() && g2++ < 30 && !threw) {
         const s = await state();
@@ -684,13 +713,13 @@ export default [
       const dj = await judgeFlight('discus');
       if (dj !== true) return dj;
       // finish the discus event so we can move on
-      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 200); } return true; });
+      await h.eval(() => { if (!window.__tfdrv7) { window.__tfdrv7 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; if (e.phase === 'mark') e.resT = Math.min(e.resT, 0.05); if (e.phase === 'hold') { e.actionDown && e.actionDown(); } if (e.phase === 'spinning') { e.actionUp && e.actionUp(); } if (e.phase === 'flight') e.ft = Math.max(e.ft, e.fT - 0.05); }, 100); } return true; });
       let g3 = 0, doneEv = false;
-      while (budget() && g3++ < 40 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(300); }
+      while (budget() && g3++ < 60 && !doneEv) { const s = await state(); if (s.screen === 'results' || s.done) doneEv = true; await h.wait(200); }
       await h.eval(() => { if (window.__tfdrv7) { clearInterval(window.__tfdrv7); window.__tfdrv7 = null; } return true; });
       if (!doneEv) return 'the discus event never finished after the flight check';
       // ---- SHOT PUT (same shared flight camera: power, angle, release)
-      if (!await navTo(/^sp$/, /Shot/i)) return 'the shot put event never loaded';
+      if (!await navTo('sp', 'Shot')) return 'the shot put event never loaded';
       let g4 = 0, shotFlew = false;
       while (budget() && g4++ < 40 && !shotFlew) {
         const s = await state();
