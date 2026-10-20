@@ -20,6 +20,9 @@ on:
       slim:
         description: 'Slim every model in the repo over 6 MB or 100,000 triangles for phones (1 = yes)'
         default: ''
+      clean:
+        description: 'Cleaner test: a model path (shows what would be removed, saves nothing)'
+        default: ''
 concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
 permissions:
   contents: write
@@ -32,24 +35,31 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: npm i -g @gltf-transform/cli@4 >/dev/null
+      - run: npm i -g @gltf-transform/cli@4 >/dev/null && npm i --prefix /tmp/gt @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 >/dev/null && cp tools/glb-clean.mjs /tmp/gt/
+      - name: Cleaner test
+        if: github.event.inputs.clean != ''
+        run: node /tmp/gt/glb-clean.mjs "$GITHUB_WORKSPACE/${{ github.event.inputs.clean }}" /tmp/clean-test.glb
       - name: Search
+        if: github.event.inputs.clean == ''
         env:
           SEARCH: ${{ github.event.inputs.search }}
         run: node tools/sketchfab-search.mjs
       - name: Fetch
+        if: github.event.inputs.clean == ''
         env:
           SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
           DRY: ${{ github.event.inputs.dry }}
           TEST_UID: ${{ github.event.inputs.test }}
         run: node tools/sketchfab-fetch.mjs
       - name: Shrink + save
+        if: github.event.inputs.clean == ''
         run: |
           set -e
           cat fetch-report.txt >> "$GITHUB_STEP_SUMMARY" || true
           # owner Oct 19 "remove heaviness, make it usable for phones": every model ends up under ~6 MB -
           # fewer triangles (simplify keeps the shape), smaller WebP textures, quantized - no special loader needed
           slim() { f="$1"; out="$2"; t=/tmp/slim-$$.glb
+            node /tmp/gt/glb-clean.mjs "$PWD/$f" "$PWD/$f" || echo "::warning title=Model cleaner::could not clean $f"   # shadow/ground sheets out
             gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
             for step in "0.5 1024" "0.25 1024" "0.12 512" "0.06 512"; do
               set -- $step; [ $(stat -c %s "$out") -le 6000000 ] && break
