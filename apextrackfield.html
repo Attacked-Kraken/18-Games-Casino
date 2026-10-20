@@ -107,6 +107,7 @@ body.playing #hud{display:block}
 #hudEvent{font-size:13px;font-weight:800;letter-spacing:1px;color:#ffd34d;text-shadow:0 1px 3px #000}
 #hudMain{font-size:30px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;line-height:1}
 #hudSub{font-size:13px;font-weight:700;color:#cfe0f2;text-shadow:0 1px 3px #000;margin-top:2px}
+#hudTop>div:first-child{background:rgba(6,14,26,.78);border:2px solid rgba(255,211,77,.5);border-radius:12px;padding:6px 10px}
 #hudPos{font-size:15px;font-weight:800;color:#fff;background:rgba(8,18,32,.7);border:2px solid #ffd34d;
 border-radius:10px;padding:6px 10px;white-space:nowrap}
 .bars{margin-top:6px;max-width:340px}
@@ -1003,10 +1004,55 @@ return E;
 const RELAY_TEAM=['T. Brooks','S. Adeyemi','K. Tanaka','YOU'];
 function createRelayEngine(ev, rivals){
 const S=8, LEG=100;
+// JOB G-39 (owner): a real baton exchange. The next runner WAITS in the
+// exchange zone (the last 20m of the leg), starts his run-up as the carrier
+// comes, and takes the baton with both runners together - the new carrier
+// keeps running from where the receiver actually is, never a teleport to a
+// fresh start. Every team works the same way, and the race is one lap:
+// legs at race 0-100 / 100-200 / 200-300 / 300-400, finish at the line.
+function mkTeam(rv, isPlayer){
+const carrier=newRunner(); carrier.el=0;
+const receiver=newRunner(); receiver.pos=LEG-18; receiver.el=0;
+return { name: rv?rv.name:'YOU', isPlayer:!!isPlayer,
+leg:0, carrier, receiver, spent:null, spentLeg:0, passFrom:null, passT:0,
+exchanges:0, finished:false, total:0, el:0, legEl:0,
+tTarget: rv? ev.ref/rv.rating*rnd(0.985,1.015) : 0,
+legV:[rnd(0.97,1.03),rnd(0.97,1.03),rnd(0.97,1.03),rnd(0.97,1.03)] };
+}
+const teams=[mkTeam(null,true)];
+(rivals||[]).slice(0,3).forEach(rv=>teams.push(mkTeam(rv,false)));
+function updReceiver(T, dt){
+const rcv=T.receiver; if(!rcv||T.leg>=3) return;
+if(!rcv.auto && T.carrier.pos>=LEG-36) rcv.auto=true;
+if(!rcv.auto) return;
+const inc=T.carrier.speed, gap=rcv.pos-T.carrier.pos;
+let tgt=inc*0.92;
+if(gap>6) tgt=Math.min(tgt, inc*0.55);
+else if(gap<2 && inc>1) tgt=Math.max(tgt, inc);
+rcv.speed+=clamp(tgt-rcv.speed, -7*dt, 5.5*dt);
+if(rcv.speed<0) rcv.speed=0;
+rcv.pos+=rcv.speed*dt; rcv.phase+=rcv.speed*dt*1.9;
+}
+function stepSpent(T, dt){
+const sp=T.spent; if(!sp) return;
+sp.speed=Math.max(0, sp.speed-6*dt); sp.pos+=sp.speed*dt; sp.phase+=sp.speed*dt*1.9;
+const behind=(T.leg*100+T.carrier.pos)-(T.spentLeg*100+sp.pos);
+if(T.leg<3 && !T.receiver && behind>10){
+sp.pos=LEG-18; sp.speed=0; sp.auto=false; sp.stamina=100; T.receiver=sp; T.spent=null;
+} else if(T.leg>=3 && behind>12){ T.spent=null; }
+}
+function passBaton(T, clean){
+const rcv=T.receiver, old=T.carrier;
+if(!clean) rcv.speed=Math.min(rcv.speed, 3.2);
+T.spent=old; T.spentLeg=T.leg; T.passFrom=old; T.passT=0.35; T.exchanges++;
+T.carrier=rcv; rcv.pos-=LEG; rcv.auto=false; T.receiver=null; T.leg++; T.legEl=1;
+return old;
+}
 const E={
 ev, done:false, dq:false, S,
-leg:0, r:newRunner(), legTime:0, total:0, legs:[],
+leg:0, r:teams[0].carrier, legTime:0, total:0, legs:[],
 phase:'marks', phaseT:0, passed:false, passQ:0, place:4, msg:'', msgT:0,
+teams,
 ai: rivals.map(rv=>({name:rv.name, t: ev.ref/rv.rating*rnd(0.985,1.015)})),
 actionLabel(){ return 'PASS'; },
 stride(side){
@@ -1015,33 +1061,72 @@ applyStride(this.r, side, 0.92);
 },
 action(){
 if(this.done||this.phase!=='run'||this.leg>=3) return;
-if(this.r.pos>=LEG-20){
+const T=this.teams[0], rcv=T.receiver;
+if(!rcv||this.r.pos<LEG-20) return;
+const gap=rcv.pos-this.r.pos;
+if(gap>6){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; }
 const q=clamp(1-Math.abs(this.r.pos-(LEG-10))/10, 0, 1);
 this.passed=true; this.passQ=q;
-this.nextLeg(4+q*5, q>=0.6?'CLEAN EXCHANGE':'LATE EXCHANGE');
-}
-},
-nextLeg(startSpeed, msg){
-this.legs.push({time:this.legTime, q:this.passQ});
-this.total+=this.legTime;
-this.leg++; this.r=newRunner(); this.r.speed=startSpeed;
-this.legTime=0; this.passed=false; this.msg=msg; this.msgT=2.0;
+rcv.speed=Math.min(10.6, Math.max(rcv.speed, 4+q*5));
+passBaton(T, true);
+this.legs.push({time:this.legTime, q:q});
+this.total+=this.legTime; this.legTime=0;
+this.leg=T.leg; this.r=T.carrier; this.passed=false;
+this.msg=q>=0.6?'CLEAN EXCHANGE':'LATE EXCHANGE'; this.msgT=2.0;
 AudioSys.cheer(0.7);
+},
+relayState(){
+const st=t=>({ leg:t.leg, exchanges:t.exchanges, finished:t.finished, total:t.finished?t.total:t.el,
+carrierPos:t.leg*100+t.carrier.pos, carrierSpeed:+t.carrier.speed.toFixed(2),
+recvPos:t.receiver? t.leg*100+t.receiver.pos : null,
+recvSpeed:t.receiver? +t.receiver.speed.toFixed(2) : 0 });
+return { leg:this.leg, done:this.done, total:this.total+this.legTime, teams:this.teams.map(st) };
+},
+updateRival(T, dt){
+if(T.passT>0) T.passT-=dt;
+stepSpent(T, dt);
+if(T.finished) return;
+T.el+=dt;
+const c=T.carrier; T.legEl+=dt;
+const vmax=(400/T.tTarget)*T.legV[T.leg]*1.04;
+const target=vmax*Math.min(1, 0.25+T.legEl*1.4);
+c.speed+=(target*(1+0.03*Math.sin(T.el*0.7))-c.speed)*Math.min(1,3*dt);
+c.pos+=c.speed*dt; c.phase+=c.speed*dt*1.9;
+updReceiver(T, dt);
+const rcv=T.receiver;
+if(T.leg<3 && rcv){
+const gap=rcv.pos-c.pos;
+if(c.pos>=LEG-20 && gap<=4.5 && gap>=-1) passBaton(T, true);
+else if(c.pos>=LEG-1) passBaton(T, false);
+}
+if(T.leg>=3 && T.carrier.pos>=LEG){ T.finished=true; T.total=T.el; }
 },
 update(dt){
 if(this.done){ this.finishT=(this.finishT||0)+dt; return; }
 this.phaseT+=dt; if(this.msgT>0) this.msgT-=dt;
 if(this.phase==='marks'){ if(this.phaseT>1.2){ this.phase='run'; AudioSys.pistol(); } return; }
 this.legTime+=dt;
+const T=this.teams[0];
+if(T.passT>0) T.passT-=dt;
 updateRunner(this.r, dt, 10.8, 30);
+updReceiver(T, dt); stepSpent(T, dt);
 if(this.leg<3 && this.r.pos>=LEG && !this.passed){
-this.nextLeg(3.0, 'FUMBLED EXCHANGE');
+this.passQ=0;
+passBaton(T, false);
+this.legs.push({time:this.legTime, q:0});
+this.total+=this.legTime; this.legTime=0;
+this.leg=T.leg; this.r=T.carrier;
+this.msg='FUMBLED EXCHANGE'; this.msgT=2.0;
 }
 if(this.leg>=3 && this.r.pos>=LEG){
 this.legs.push({time:this.legTime, q:this.passQ});
 this.total+=this.legTime; this.done=true; this.finishT=0; AudioSys.cheer(1.6);
-this.place=1+this.ai.filter(a=>a.t<this.total).length;
+this.place=1+this.teams.slice(1).filter(t=>t.finished&&t.total<this.total).length;
+return;
 }
+for(const t of this.teams.slice(1)) this.updateRival(t, dt);
+const myProg=T.leg*100+T.carrier.pos;
+this.place=1+this.teams.slice(1).filter(t=> t.finished || (t.leg*100+t.carrier.pos)>myProg).length;
 },
 hud(){
 return {event:'4x100m RELAY', main:fmtTime(this.total+this.legTime),
@@ -2308,6 +2393,7 @@ const ev=ENG.ev, rivals=ENG._rivals||[];
 if(W3D._zoneMesh){ W3D.scene.remove(W3D._zoneMesh); W3D._zoneMesh=null; }
 styleRigsFor(rivals);
 W3D.hideImplement();
+if(W3D._batons) W3D._batons.forEach(b=>b.visible=false);
 if(W3D.landMark) W3D.landMark.visible=false;
 W3D.hurdlesMesh.count=0;
 W3D.podium.visible=false;
@@ -2411,28 +2497,61 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='relay'){
-W3D.camSnap(-107,2.8,straightZ(3), -90,1.2,straightZ(3));
-const zone=new THREE.Mesh(new THREE.PlaneGeometry(20,9.8),
-new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.22}));
-zone.rotation.x=-Math.PI/2; zone.position.set(-10,0.015,-TRK.radius-4.58);
-W3D.scene.add(zone); ENG._zone=zone; W3D._zoneMesh=zone;
+// JOB G-39 (owner): the relay runs ONE lap of the oval - legs at race
+// 0/100/200/300, exchange zones in the last 20m of legs 1-3, and only the
+// last leg crosses the FINISH gantry. Every team shows its carrier AND the
+// next teammate waiting in the zone; a baton rides in the carrier's hand
+// and bridges the two runners at the hand-off.
+const raceS=rp=>((TRK.straight+rp)%400+400)%400;
+const teamLane=ti=> ti===0?3:RIV_LANES[ti-1];
+styleRig(1, collegeCols.a, RELAY_TEAM[1]);
+ENG.teams.forEach((t,ti)=>{ if(ti>0){ const rv=(ENG._rivals||[])[ti-1]; if(rv){ styleRig(ti*2, rv.kit||'#888888', rv.name); styleRig(ti*2+1, rv.kit||'#888888', rv.name); } } });
+const zoneGrp=new THREE.Group();
+for(let k=1;k<=3;k++){
+const pts=[], s0=raceS(k*100-20), seg=14;
+for(let i2=0;i2<=seg;i2++){ const s=s0+(20*i2/seg); const a=lanePoint(s,0.35), b=lanePoint(s,-9.55); pts.push(a.x,0.02,a.z, b.x,0.02,b.z); }
+const g=new THREE.BufferGeometry();
+g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
+const idx=[]; for(let i2=0;i2<seg;i2++){ const a=i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
+g.setIndex(idx);
+zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
+}
+W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp;
+if(!W3D._batons){ W3D._batons=[]; for(let i2=0;i2<4;i2++){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.32,10), new THREE.MeshStandardMaterial({color:0xe8ecf2,roughness:0.3,metalness:0.75})); b.visible=false; W3D.scene.add(b); W3D._batons.push(b); } }
+W3D.setBlocks(ENG.teams.map((t,ti)=>{ const lp=lanePoint(raceS(0), laneOff(teamLane(ti))); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
+{ const lp0=lanePoint(raceS(0),laneOff(3)); W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10); }
+const BV=new THREE.Vector3(), BVUP=new THREE.Vector3(0,1,0);
 ENG.draw3=dt=>{
-const r=ENG.r;
+const R=W3D.rigs;
 W3D.startPhase=ENG.phase;
-if(!ENG._blocksSet){ ENG._blocksSet=1; W3D.setBlocks([{x:-100.45, z:straightZ(3), heading:Math.PI/2}]); }
 W3D.blocksVisible(ENG.leg===0);
-placeStraight(R[0],r.pos,100,3,r.speed,PMAX,0);
-for(let i=1;i<7;i++) R[i].group.visible=false;
-followCam(straightX(r.pos,100),straightZ(3),1,0,dt);
-if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,100),0.15,straightZ(3),1);
-if(ENG.done) easeRigsToIdle(dt); else W3D.rigUpdate(R[0],dt);
+let camLp=null;
+ENG.teams.forEach((t,ti)=>{
+const lane=teamLane(ti), base=ti*2;
+const clp=placeOval(R[base], raceS(t.leg*100+t.carrier.pos), lane, t.carrier.speed, PMAX, 0, t.isPlayer? t.carrier.stamina : undefined);
+if(ti===0) camLp=clp;
+const mate = t.spent || (t.leg<3 ? t.receiver : null);
+if(mate){
+const mRace = t.spent? t.spentLeg*100+mate.pos : t.leg*100+mate.pos;
+placeOval(R[base+1], raceS(mRace), lane, mate.speed, PMAX, 0);
+} else R[base+1].group.visible=false;
+const b=W3D._batons[ti];
+if(b){ b.visible=true;
+let bx=clp.x+clp.tx*0.30-clp.tz*0.22, bz=clp.z+clp.tz*0.30+clp.tx*0.22;
+if(t.passT>0 && t.passFrom){ const slp=lanePoint(raceS(t.spentLeg*100+t.passFrom.pos), laneOff(lane)); bx=(bx+slp.x)/2+clp.tx*0.1; bz=(bz+slp.z)/2+clp.tz*0.1; }
+b.position.set(bx,1.02,bz); BV.set(clp.tx,0,clp.tz).normalize(); b.quaternion.setFromUnitVectors(BVUP,BV);
+}
+});
+for(let i2=ENG.teams.length*2;i2<8;i2++) R[i2].group.visible=false;
+if(camLp){ followCam(camLp.x,camLp.z,camLp.tx,camLp.tz,dt); if(ENG.r.speed>2&&Math.random()<dt*8) dustAt(camLp.x,0.15,camLp.z,1); }
+if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
 if(ENG.phase==='marks') bannerText('ON YOUR MARKS', H*0.30, 30);
 if(ENG.msgT>0) centerText(ENG.msg,H*0.40,20,ENG.msg.indexOf('CLEAN')>=0?'#7dff9b':'#ffb34d');
 centerText('LEG '+(ENG.leg+1)+' / 4 — '+RELAY_TEAM[ENG.leg], H*0.22, 18, '#fff');
 W3D.renderer.render(W3D.scene,W3D.camera);
 };
 const _fin=ENG.getResult.bind(ENG);
-ENG.getResult=()=>{ if(ENG._zone){W3D.scene.remove(ENG._zone); ENG._zone=null; W3D._zoneMesh=null;} return _fin(); };
+ENG.getResult=()=>{ if(ENG._zone){W3D.scene.remove(ENG._zone); ENG._zone=null; W3D._zoneMesh=null;} if(W3D._batons) W3D._batons.forEach(b=>b.visible=false); return _fin(); };
 }
 else if(ev.eng==='longjump'){
 const X0=-70, Z=8;
