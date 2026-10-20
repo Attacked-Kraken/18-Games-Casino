@@ -159,7 +159,7 @@ for (const g of games) {
     await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 });
   } catch (e) { r.fail.push('Page did not load: ' + String(e.message).split('\n')[0].slice(0, 100)); }
   await page.waitForTimeout(7000);
-  const menuJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
+  const menuJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   fs.writeFileSync(path.join(out, 'img', slug + '-1-menu.jpg'), menuJpg); r.img.menu = 'img/' + slug + '-1-menu.jpg';
   const menu = await measure(menuJpg);
   const f1 = await pageFacts(page).catch(() => ({ title: '', casino: '', rotate: '', overflow: 0 }));
@@ -202,15 +202,15 @@ for (const g of games) {
     const cdir = path.join(out, 'clips', slug); fs.mkdirSync(cdir, { recursive: true });
     const t0 = Date.now(); let k = 0;
     while (Date.now() - t0 < 8000 && k < 40) {
-      fs.writeFileSync(path.join(cdir, String(k).padStart(3, '0') + '.jpg'), await page.screenshot({ type: 'jpeg', quality: 55 }));
+      fs.writeFileSync(path.join(cdir, String(k).padStart(3, '0') + '.jpg'), await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 55 }));
       k++; await page.waitForTimeout(250);
     }
     if (k >= 6) r.img.clip = 'img/' + slug + '-clip.mp4';
     const left = 8000 - (Date.now() - t0); if (left > 0) await page.waitForTimeout(left);
   } catch (e) { await page.waitForTimeout(8000); }
-  const playJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
+  const playJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   await page.waitForTimeout(1500);
-  const play2Jpg = await page.screenshot({ type: 'jpeg', quality: 62 });
+  const play2Jpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   fs.writeFileSync(path.join(out, 'img', slug + '-2-play.jpg'), playJpg); r.img.play = 'img/' + slug + '-2-play.jpg';
   const play = await measure(playJpg), play2 = await measure(play2Jpg);
   // EXTRA PICTURES (owner Oct 19, Gemini idea): games.json "pictures": [{"name":"garage","steps":["#mGarage"]}] - each one
@@ -223,7 +223,7 @@ for (const g of games) {
       for (const st of pc.steps || []) await pressStep(pp, st);
       await pp.waitForTimeout(pc.wait || 2500);
       const nm = String(pc.name || 'pic').replace(/[^a-z0-9-]/gi, '');
-      fs.writeFileSync(path.join(out, 'img', slug + '-pic-' + nm + '.jpg'), await pp.screenshot({ type: 'jpeg', quality: 66 }));
+      fs.writeFileSync(path.join(out, 'img', slug + '-pic-' + nm + '.jpg'), await pp.screenshot({ timeout: 90000, type: 'jpeg', quality: 66 }));
       (r.img.pics = r.img.pics || []).push({ name: pc.name, src: 'img/' + slug + '-pic-' + nm + '.jpg' });
       await pp.close();
     } catch (e) { r.check.push('Extra picture "' + pc.name + '" failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
@@ -299,7 +299,7 @@ for (const g of games) {
         wait: ms => { if (dead) throw new Error('test stopped (time limit)'); return page.waitForTimeout(ms); },
         tap: (x, y) => { if (dead) throw new Error('test stopped (time limit)'); return page.touchscreen.tap(x, y); },
         press: sel => { if (dead) throw new Error('test stopped (time limit)'); return pressStep(page, sel); },
-        shot: async () => { if (dead) throw new Error('test stopped (time limit)'); return measure(await page.screenshot({ type: 'jpeg', quality: 62 })); },
+        shot: async () => { if (dead) throw new Error('test stopped (time limit)'); return measure(await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 })); },
         changed,
         eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
         page: live,
@@ -316,7 +316,7 @@ for (const g of games) {
       if (!ok) await freshGame();
     }
     if (r.fixes.length) {
-      const fixJpg = await page.screenshot({ type: 'jpeg', quality: 62 });
+      const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
       fs.writeFileSync(path.join(out, 'img', slug + '-4-fixes.jpg'), fixJpg); r.img.fixes = 'img/' + slug + '-4-fixes.jpg';
     }
   }
@@ -356,7 +356,7 @@ for (const g of games) {
   const p2 = await ctx2.newPage();
   try { await p2.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); } catch (e) {}
   await p2.waitForTimeout(6000);
-  const upJpg = await p2.screenshot({ type: 'jpeg', quality: 62 });
+  const upJpg = await p2.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   fs.writeFileSync(path.join(out, 'img', slug + '-3-upright.jpg'), upJpg); r.img.upright = 'img/' + slug + '-3-upright.jpg';
   const up = await measure(upJpg);
   const f3 = await pageFacts(p2).catch(() => ({ rotate: '' }));
@@ -429,7 +429,7 @@ for (const m of models.filter(m => m.file && !/^(LOCKED|NO)/i.test(m.status || '
       await page.goto(base + view + (view.includes('?') ? '&' : '?') + 'shot=' + side + '&name=' + encodeURIComponent(m.name), { waitUntil: 'load', timeout: 30000 });
       await page.waitForFunction(() => document.title === 'ready' || document.title === 'error', null, { timeout: 90000 });
       if (await page.title() === 'error') { m.problems.push(await page.textContent('#msg')); break; }
-      const jpg = await page.screenshot({ type: 'jpeg', quality: 70 });
+      const jpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 70 });
       fs.writeFileSync(path.join(out, 'img', 'models', `${m.id}-${side}.jpg`), jpg); m.img[side] = `img/models/${m.id}-${side}.jpg`;
     } catch (e) { m.problems.push('viewer did not finish: ' + String(e.message || e).slice(0, 120)); break; }
   }
