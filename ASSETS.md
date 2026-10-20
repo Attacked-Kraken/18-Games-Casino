@@ -193,3 +193,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - made for the owner, free in paid apps, no credit needed
 - downloaded: 2026-10-19, sent by the owner
 - used in: any game (MP3s here)
+
+## ASSET: sounds/pack/
+- title: the owner's Music Loops Pack (chill_lofi + puzzle: menu, gameplay, victory/game-over stings) and General SFX Pack (hits, water, powerups)
+- maker: made for the owner ("Apex Arcade Pass" chat) - synthesized from scratch, no samples
+- source: the owner's Music-Loops-Pack part1-3 and General-SFX-Pack part1-2 zips (all originals kept privately in muse-approver owner-assets)
+- license: OWNER - made for the owner, free in paid apps, no credit needed
+- downloaded: 2026-10-19, sent by the owner
+- used in: Paper Plane (chill lo-fi music + arcade UI sounds), Reef Dash (puzzle music + soft UI sounds + water/powerup effects)
