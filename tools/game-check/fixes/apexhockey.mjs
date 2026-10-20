@@ -138,7 +138,7 @@ export default [
       for (const s of H.skaters) {
         s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI
         // away wins the race, so the icing stands (not waived)
-        if (!s.goalie) s.pos.set(s.team === 'away' ? 60 : -40, 0.1, s.pos.z || 0);
+        if (!s.goalie) { s.pos.set(s.team === 'away' ? 60 : -40, 0.1, s.pos.z || 0); if (s.target) s.target.copy(s.pos); } // 03: stop them skating to old targets
       }
     });
     for (let i = 0; i < 12; i++) {
