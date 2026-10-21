@@ -33,7 +33,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md")  # needs/window-N.md: one window writes it, no union needed
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
