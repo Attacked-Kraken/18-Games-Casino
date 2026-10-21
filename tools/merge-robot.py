@@ -36,6 +36,30 @@ def gh(*args, method="GET", fields=None):
 NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md")
 
 
+def tidy_queue(path="jobs/QUEUE.md"):
+    """After a both-sides merge a step can appear twice (one side ticked it '- [x]', the other still has '- [ ]'):
+    keep the ticked one. (Oct 21: the hockey REALITY-hook step came back unticked after #883's merge.)"""
+    try:
+        lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
+    except OSError:
+        return
+    import re as _re
+    key = lambda l: _re.sub(r"\s+", " ", _re.sub(r"^\s*-\s*\[.\]\s*(\([^)]*\)\s*)?", "", l)).strip().lower()[:90]
+    done = {key(l) for l in lines if _re.match(r"\s*-\s*\[x\]", l, _re.I)}
+    out, seen = [], set()
+    for l in lines:
+        if _re.match(r"\s*-\s*\[ \]", l) and key(l) in done:
+            continue
+        if _re.match(r"\s*-\s*\[.\]", l):
+            if key(l) in seen:
+                continue
+            seen.add(key(l))
+        out.append(l)
+    if out != lines:
+        open(path, "w", encoding="utf-8").write("\n".join(out))
+        subprocess.run(["git", "add", path])
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -62,6 +86,7 @@ def fix_notes_conflict(pr):
             txt = _re.sub(r"<<<<<<< [^\n]*\n(.*?)=======\n(.*?)>>>>>>> [^\n]*\n", lambda m: m.group(1) + m.group(2), txt, flags=_re.S)
             open(f, "w", encoding="utf-8").write(txt)
             git("add", f)
+        tidy_queue()
         if git("commit", "-q", "-m", "merge robot: merged main, notes kept from both sides").returncode != 0:
             git("merge", "--abort"); return False
     if git("push", "-q", "origin", branch).returncode != 0:
