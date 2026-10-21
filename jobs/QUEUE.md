@@ -14,6 +14,8 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
+- [ ] TESTER: Career shows 1 goal scored before any game is played (career panel says 1 G · 0 A at 0-0 with Week 1 unplayed) - start a career and open the career panel.
+- [ ] TESTER: Pressing PLAY WEEK 1 in career leaves the game for the sports hub and the game reopens at its main menu instead of starting the match - open a career and press PLAY WEEK 1 vs SHARKS.
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests in tools/game-check/fixes/apexhockey.mjs).
 - [ ] Add a 'play-friend-code' test for the friend codes.
