@@ -1658,6 +1658,127 @@ export default [
       return true;
     }
   }
+
+  ,{
+    id: 'tester-hurdle-height-400m',
+    ask: 'TESTER (G-56): real sizes - the 400m hurdles stand 0.914 m high like real ones (REALITY.md: real sizes in metres, within 15%)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '400m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      }));
+      if (nav !== 'racing') return 'could not start the 400m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let found = null;
+          root.traverse(o => {
+            if (found || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
+          });
+          return found;
+        });
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 400m Hurdles race';
+      const real = 0.914;
+      if (Math.abs(m.h - real) / real > 0.15) return 'the 400m hurdles are ' + m.h + ' m tall in the game - real 400m hurdles are 0.914 m, so they are ' + Math.round((m.h / real - 1) * 100) + '% too tall (outside the 15% REALITY band)';
+      return true;
+    }
+  }
+  ,{
+    id: 'tester-hurdle-height-300m',
+    ask: 'TESTER (G-56): real sizes - the 300m hurdles stand 0.914 m high like real ones (REALITY.md: real sizes in metres, within 15%)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      }));
+      if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let found = null;
+          root.traverse(o => {
+            if (found || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
+          });
+          return found;
+        });
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 300m Hurdles race';
+      const real = 0.914;
+      if (Math.abs(m.h - real) / real > 0.15) return 'the 300m hurdles are ' + m.h + ' m tall in the game - real 300m hurdles are 0.914 m, so they are ' + Math.round((m.h / real - 1) * 100) + '% too tall (outside the 15% REALITY band)';
+      return true;
+    }
+  }
+  ,{
+    id: 'tester-hurdle-height-100m',
+    ask: 'TESTER (G-56): real sizes - the 100m hurdles stand 0.838 m high like real ones (REALITY.md: real sizes in metres, within 15%)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      }));
+      if (nav !== 'racing') return 'could not start the 100m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let found = null;
+          root.traverse(o => {
+            if (found || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
+          });
+          return found;
+        });
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 100m Hurdles race';
+      const real = 0.838;
+      if (Math.abs(m.h - real) / real > 0.15) return 'the 100m hurdles are ' + m.h + ' m tall in the game - real 100m hurdles are 0.838 m, so they are ' + Math.round((m.h / real - 1) * 100) + '% too tall (outside the 15% REALITY band)';
+      return true;
+    }
+  }
 ];
 
 

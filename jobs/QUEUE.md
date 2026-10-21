@@ -35,6 +35,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
+- [ ] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.
 - [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
 - [ ] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
