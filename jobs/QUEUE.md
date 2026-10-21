@@ -17,6 +17,9 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
+- [ ] TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
+- [ ] TESTER: The stick never resets when the app loses focus or is hidden mid-hold - the knob stays pushed at +40 px after blur and a hide/show cycle, and only a real touchend centres it. Proof: play test tester-stick-resets-on-blur fails in tools/game-check/fixes/apexhockey.mjs.
+- [ ] TESTER: The puck is about 5x too big: about 40 cm across and 11 cm thick measured in the game - a real puck is 7.6 cm across and 2.5 cm thick (REALITY.md). Proof: play test tester-puck-size fails in tools/game-check/fixes/apexhockey.mjs.
 - [ ] TESTER: Career shows 1 goal scored before any game is played (career panel says 1 G · 0 A at 0-0 with Week 1 unplayed) - start a career and open the career panel.
 - [ ] TESTER: Pressing PLAY WEEK 1 in career leaves the game for the sports hub and the game reopens at its main menu instead of starting the match - open a career and press PLAY WEEK 1 vs SHARKS.
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
