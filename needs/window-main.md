@@ -1,7 +1,10 @@
-# Owner's question: when he sends a game back to be redone (Baseball: players not real 3D, blurry, no close camera), what workflow gets it right the FIRST time? - window main
+# needs - window main (Muse Modern Plus)
 
-1. Reviewer first, coder second: before any code, play every mode like the store reviewer (DONE.md), write the full gap list, and look at the robot's latest game-check pictures of the game at phone size - his three complaints are all visible in those pictures before he ever opens the game.
-2. Real 3D is proven, not claimed: players only from the approved rigged warehouse bodies with sport-matched kit, plus a play test that probes the rig's bones - if it is not a real rigged human, the test fails and it cannot merge.
-3. Sharp is a number: draw at min(devicePixelRatio, 1.5) and never lower it to buy speed (cut crowd and effects instead); the "Blurry picture" check must pass, and the check pictures get read by me before anything merges.
-4. The camera is its own pass with its own test: a close camera that frames the player, proven by a test that measures him on screen - visible from frame 1, big enough, never inside geometry. "No close camera" only survives when nobody tests the camera.
-5. His words become failing tests first: every send-back sentence turns into a play test that fails on the current build; fix until those pass, one merge per round - and robot-green is never called DONE, only "merged, NOT yet seen", because his screen is the verdict.
+Owner's question: when a game is sent back to be redone (Baseball: players not real 3D, blurry, no close camera), what workflow gets it right the FIRST time?
+
+1. Judge people close, not wide: add one standard close-up picture (head-and-shoulders on a player) to every game check. "Fake" and "blurry" cannot be judged - or fixed - from the wide broadcast shots we all get now; half the redo rounds are spent guessing what the owner saw.
+2. Every redo point carries its target: the owner's picture, or the exact Sketchfab model he means. "Real 3D players" only became buildable when it pointed at a specific rig, and "blurry" needs a number (texture size, and how close the judging picture is taken).
+3. Camera notes as a spec, not a feeling: the moment plus the framing - "pitch: FOV 42 at catcher height" is what turned baseball's camera redo into a single round.
+4. Number the points, and the verdict comes back per point (SEEN: yes / no). Every 👎 lands in looks/<game>.md (NEVER) the same day, with a test - settled points then never come back.
+5. A redo names the job it redoes and stays with the window that built it: same branch, same context. A fresh number with fresh wording restarts the learning curve.
+6. When the complaint is the model, the owner picks it FIRST and it goes into MODELS.md as LOCKED before building starts. Building first and showing later is how one complaint earns two redos.
