@@ -969,7 +969,7 @@ function shootFrom(s, power, aimed){
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
   const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
-  puck.shot={team:s.team,t:0,by:s};
+  puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; // G-78: origin, so a defender in the lane near the shooter can block it
   commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
   if(power>=0.8) puckSfx('hockey_puck_slapshot.mp3', 0.75); // G-47
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
@@ -1100,6 +1100,20 @@ function teamHasPuck(t){ return puck.owner&&puck.owner.team===t; }
    closures) kept tripping the GC mid-play. Same rosters, same order, zero allocs. */
 const _mates=[], _mates2=[], _fw=[], _pmates=[];
 const _cyc=[[0,0],[0,0],[0,0]]; // O-zone cycle points, refilled per use
+function pokeCheck(s, carrier){ // G-78: a defender in stick range knocks the puck loose - best odds from the goal side, rare from behind; the stripped carrier cannot instantly re-grab it (passGrace), so the defender can win it
+  const d=Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z);
+  if(d>3.4) return false;
+  const dir=TEAMS[s.team].dir, netX=-dir*GOAL_LINE;
+  const goalSide=Math.hypot(s.pos.x-netX,s.pos.z)<Math.hypot(carrier.pos.x-netX,carrier.pos.z);
+  const cSpd=Math.hypot(carrier.vel.x,carrier.vel.z);
+  const chance=cSpd<3.5?0.32:(goalSide?0.22:0.09);
+  if(Math.random()>=chance) return false;
+  puck.owner=null; const pa=Math.random()*TAU;
+  puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
+  puck.passGrace=carrier; puck.passT=performance.now();
+  carrier.stun=0.35;
+  return true;
+}
 function aiSkater(s,dt){
   const dir=TEAMS[s.team].dir;
   s.thinkT-=dt;
@@ -1120,6 +1134,7 @@ function aiSkater(s,dt){
     let nearestOpp=1e9;
     for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
     s._decide=(s._decide||0)-0.18;
+    if((s.role==='LD'||s.role==='RD') && s.pos.x*dir<-52 && s._decide<=0 && (nearestOpp<11||Math.random()<0.4) && Math.random()<0.55){ clearPuck(s); s._decide=rand(1.4,2.4); return; } // G-78: deep in his own zone under pressure, a D clears it out instead of skating into trouble
     if((s.role==='LD'||s.role==='RD') && dGoal<72 && s._decide<=0 && Math.random()<0.5){ shootFrom(s, rand(0.5,0.85), false); s._decide=rand(1.4,2.4); return; } // point shot through traffic
     if(dGoal<44 && s._decide<=0){ shootFrom(s, rand(0.55,0.95), false); s._decide=rand(1.4,2.4); return; }
     if(nearestOpp<7 && Math.random()<0.55 && s._decide<=0){ aiPass(s); s._decide=rand(1.4,2.4); return; }
@@ -1145,21 +1160,36 @@ function aiSkater(s,dt){
     s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
                  puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
     s._chasing=true;
-    // active pressure: poke it loose when right on the carrier — an IDLE carrier gets stripped
-    if(carrier && !carrier.goalie){
-      const cDist=Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z);
-      const cSpd=Math.hypot(carrier.vel.x,carrier.vel.z);
-      if(cDist<2.7 && Math.random() < (cSpd<3.5 ? 0.30 : 0.06)){
-        puck.owner=null; const pa=Math.random()*TAU;
-        puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
-        carrier.stun=0.35;
-      }
-    }
+    // active pressure: poke it loose when right on the carrier - an IDLE carrier gets stripped
+    if(carrier && !carrier.goalie) pokeCheck(s, carrier);
     if(!carrier && Math.random()<0.010){ // rare: a chaser bumps a man without the puck — interference, to the box
       for(const op of (isHome?awaySkaters:homeSkaters)){ if(op.goalie) continue;
         if(Math.hypot(s.pos.x-op.pos.x,s.pos.z-op.pos.z)<2.1){ callPenalty(s,'INTERFERENCE'); break; } }
     }
     return;
+  }
+  if(oppHas && !carrier.goalie && (s.role==='LD'||s.role==='RD')){
+    // G-78: DEFENSE - the closer D gaps up between the carrier and his own net, and steps
+    // in to pressure (and poke) once the carrier is in range or deep in the zone; the
+    // far D keeps the anchor / net-front job below. Nobody just shades and watches now.
+    const otherD=(isHome?homeSkaters:awaySkaters).find(m=>m!==s&&(m.role==='LD'||m.role==='RD'));
+    const myDist=Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z);
+    const otDist=otherD?Math.hypot(otherD.pos.x-carrier.pos.x,otherD.pos.z-carrier.pos.z):1e9;
+    if(myDist<=otDist){
+      const netX=-dir*GOAL_LINE;
+      const dNet=Math.hypot(carrier.pos.x-netX,carrier.pos.z)||1;
+      if(myDist<6.5 || carrier.pos.x*dir<-52){ // STEP UP: go at the carrier
+        s.target.set(carrier.pos.x+carrier.vel.x*0.22,0,carrier.pos.z+carrier.vel.z*0.22);
+        s._chasing=true; pokeCheck(s, carrier);
+        return;
+      }
+      const gap=clamp(dNet*0.16,4.5,11); // GAP CONTROL: stay goal-side, tighten as he closes on the net
+      let tx=carrier.pos.x+(netX-carrier.pos.x)/dNet*gap, tz=carrier.pos.z+(0-carrier.pos.z)/dNet*gap;
+      tx=clamp(tx,-(GOAL_LINE-5),GOAL_LINE-5); // never back into his own goalie
+      s.target.set(tx,0,clamp(tz,-36,36));
+      s._chasing=false;
+      return;
+    }
   }
   s._chasing=false;
   // formation anchors, shifted toward puck — always drifting so nobody parks and freezes
@@ -1190,6 +1220,7 @@ function aiSkater(s,dt){
     ax+=Math.sin(gameNow*0.6+s.phase)*2.2; az+=Math.cos(gameNow*0.5+s.phase*1.3)*2.2;
   }else{ // defense: shade puck-side and track the play
     ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*1.5;
+    if(oppHas && s.role!=='LD' && s.role!=='RD') ax-=dir*7; // G-78: forwards back-check goal-side when the other team has the puck
     az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*1.5;
   }
   if(!weHave && (s.role==='LD'||s.role==='RD') && puck.pos.x*dir<-55){ // NET-FRONT: the closer D owns the crease
@@ -1205,6 +1236,14 @@ function aiSkater(s,dt){
     ax = dir*(BLUE-1.5);
   }
   s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
+}
+function clearPuck(s){ // G-78: a defenseman fires it up the boards and out - it dies past centre, so no icing
+  const dir=TEAMS[s.team].dir;
+  const tx=dir*6, tz=(puck.pos.z>=0?34:-34);
+  const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1;
+  const sp=clamp(d*0.55*1.28,38,64);
+  puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.shot=null; puck.recv=null;
+  puck.lastTouch=s.team; puck.lastTouchX=s.pos.x;
 }
 function aiPass(s){
   const mates=_pmates; mates.length=0; // G-35: scratch roster (was a .filter() array per pass)
@@ -1355,6 +1394,10 @@ function stepPuck(dt){
     if(s.goalie||s.inBox) continue; // goalies cover (whistle) instead of carrying; boxed men are out
     if(puck.passGrace===s && performance.now()-puck.passT<450) continue; // the passer can't instantly re-grab his own pass
     const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
+    if(puck.shot&&ps>26&&s.team!==puck.shot.team&&puck.shot.ox!==undefined&&d<1.8){ // G-78: BLOCK - a defender square in the shooting lane knocks the shot down
+      const trav=Math.hypot(puck.pos.x-puck.shot.ox,puck.pos.z-puck.shot.oz);
+      if(trav<20&&Math.random()<0.5){ const ba=Math.random()*TAU; puck.vel.set(Math.cos(ba)*rand(4,10),0,Math.sin(ba)*rand(4,10)); puck.passGrace=puck.shot.by; puck.passT=performance.now(); puck.shot=null; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; break; }
+    }
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
     if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
