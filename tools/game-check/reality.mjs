@@ -96,11 +96,36 @@ export async function realityCheck(page, wait) {
   if (moves >= 3 && backwards > moves / 2) out.fail.push(`REALITY: the player moves BACKWARDS - it travels opposite to where its model faces (flip the model or the movement)`);
   if (!moves) out.check.push('REALITY: the player did not move in 5 s with go(true) - add go() to the hook so the robot can drive/run');
   // ---- ground contact: wheels / feet / skates on the ground (gap under 3 cm, never sunk more than 5 cm)
+  // Owner Oct 21 4:10 PM (Baseball G-100: a real sprint has BOTH feet off the ground mid-stride, 4-54 cm up): while the
+  // player moves FAST (running, skating, driving) the rule is: the LOWEST foot/skate/wheel touches down (within 3 cm) at
+  // least once every ~0.5 s, and nothing ever goes under the ground. Standing / walking keep the old rule (every reading).
   const gaps = samples.flatMap(s => s.gaps || []);
   if (gaps.length) {
-    const floating = gaps.filter(g => g > 0.03).length, sunk = gaps.filter(g => g < -0.05).length;
-    if (floating > gaps.length * 0.2) out.fail.push(`REALITY: wheels/feet/skates FLOAT above the ground (${floating} of ${gaps.length} readings over 3 cm, highest ${Math.max(...gaps).toFixed(2)} m)`);
+    const sunk = gaps.filter(g => g < -0.05).length;
     if (sunk > gaps.length * 0.2) out.fail.push(`REALITY: wheels/feet/skates SINK into the ground (${sunk} of ${gaps.length} readings more than 5 cm under)`);
+    const fast = [], slow = [];
+    for (let i = 0; i < samples.length; i++) {
+      const s = samples[i], prev = samples[i - 1];
+      if (!(s.gaps || []).length) continue;
+      const dt = prev ? Math.max(0.05, (s.t - prev.t) / 1000) : 0.4;
+      const v = prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0;
+      (v > 2 ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
+    }
+    const slowGaps = slow.flatMap(s => [s.low]);
+    const floating = slowGaps.filter(g => g > 0.03).length;
+    if (slow.length >= 3 && floating > slow.length * 0.2)
+      out.fail.push(`REALITY: wheels/feet/skates FLOAT above the ground while standing/walking (${floating} of ${slow.length} readings over 3 cm, highest ${Math.max(...slowGaps).toFixed(2)} m)`);
+    if (fast.length >= 2) {
+      let longest = 0, since = null;
+      for (const f of fast) {
+        if (f.low <= 0.03) since = f.t;
+        else if (since != null) longest = Math.max(longest, (f.t - since) / 1000);
+        else longest = Math.max(longest, 0.4);
+      }
+      const ever = fast.some(f => f.low <= 0.03);
+      if (!ever || longest > 0.6)
+        out.fail.push(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
+    }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
   out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length };
   return out;
