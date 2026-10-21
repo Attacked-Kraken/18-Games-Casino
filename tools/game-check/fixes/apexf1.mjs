@@ -282,4 +282,108 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-player-starts-facing-forward',
+    ask: 'the player car starts facing the right way and drives the same way as the AI cars and the checkpoints',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      const piOf = (t) => t.cars().findIndex(c => c.isPlayer);
+      const q = await h.eval(() => { const t = window.__test; if (!t) return null;
+        return t.heading(t.cars().findIndex(c => c.isPlayer)); }).catch(() => null);
+      if (!q) return 'no heading probe in qualifying (window.__test.heading missing)';
+      if (!(q.dot > 0.9)) return `player faces the wrong way in qualifying (alignment ${q.dot.toFixed(2)})`;
+      // find the stick like a player would, then skip qualifying
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: true, steer: 0.7 }); });
+      await h.wait(900);
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: false, steer: 0 }); });
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      // on the grid EVERY car faces the way the track goes, with a clean steering angle
+      const g = await h.eval(() => { const t = window.__test; if (!t) return null;
+        return t.cars().map((c, i) => { const hd = t.heading(i); return hd ? hd.dot : 0; }); }).catch(() => null);
+      if (!g || !g.length) return 'no heading probe on the grid';
+      const worst = Math.min(...g);
+      if (!(worst > 0.9)) return `a car faces the wrong way on the grid (worst alignment ${worst.toFixed(2)})`;
+      const ph = await h.eval(() => { const t = window.__test; return t.heading(t.cars().findIndex(c => c.isPlayer)); }).catch(() => null);
+      if (!ph) return 'no player heading on the grid';
+      if (Math.abs(ph.headAngle) > 0.05) return `player's steering is still wound on at the grid (${ph.headAngle.toFixed(2)}) - the car would crab off the start`;
+      // lights out: the player drives FORWARD, the same way the checkpoints count
+      await h.press('#raceBtn');
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: true, steer: 0 }); });
+      let prev = null, sawRace = false, lastV = 0;
+      for (let i = 0; i < 14; i++) {
+        await h.wait(700);
+        const st = await h.eval(() => { const t = window.__test; if (!t) return null;
+          const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer);
+          return { mode: t.race().mode, s: cs[pi].s, v: cs[pi].v }; }).catch(() => null);
+        if (!st) return 'lost the game while checking the race start';
+        if (st.mode === 'race') {
+          if (prev !== null && st.s < prev - 1 && !(prev > 5000 && st.s < 700)) return `player is going backwards (s ${prev.toFixed(0)} -> ${st.s.toFixed(0)})`;
+          prev = st.s; sawRace = true; lastV = st.v;
+        }
+        if (sawRace && i > 8) break;
+      }
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: false }); });
+      if (!sawRace) return 'race never started';
+      if (!(lastV > 5)) return 'player is not moving after lights out';
+      return true;
+    },
+  },
+  {
+    id: 'play-steering-smooth-and-controllable',
+    ask: 'steering is smooth and controllable with the stick',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 12 && !racing; i++) {
+        await h.wait(600);
+        racing = await h.eval(() => { const t = window.__test; return t ? t.race().mode === 'race' : false; }).catch(() => false);
+      }
+      if (!racing) return 'race never started';
+      const probe = () => h.eval(() => { const t = window.__test; if (!t) return null;
+        const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer);
+        const hd = t.heading(pi); return { d: cs[pi].d, v: cs[pi].v, head: hd ? hd.headAngle : 0 }; }).catch(() => null);
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: true, steer: 0 }); });
+      await h.wait(1500);
+      const p0 = await probe();
+      if (!p0) return 'probe failed at speed';
+      if (!(p0.v > 15)) return `car did not get going (v=${p0.v.toFixed(0)})`;
+      // hold the stick toward the middle of the road: d moves that way smoothly
+      // (never jumps the other way), by a clear but bounded amount
+      const dir = p0.d > 0 ? -1 : 1; // steer toward the centre line from whichever slot side we got
+      await h.eval((sgn) => { const t = window.__test; t.setInput({ gas: true, steer: 0.18 * sgn }); }, dir);
+      const ds = [];
+      for (let i = 0; i < 4; i++) { await h.wait(130); const p = await probe(); if (p) ds.push(p.d); }
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: true, steer: 0 }); });
+      if (ds.length < 3) return 'steering samples missing';
+      for (let i = 1; i < ds.length; i++) if ((ds[i] - ds[i - 1]) * dir < -0.35) return `steering jumped around (d samples: ${ds.map(x => x.toFixed(1)).join(', ')})`;
+      const gain = (ds[ds.length - 1] - p0.d) * dir;
+      if (!(gain > 0.8)) return `holding the stick barely moved the car (d ${p0.d.toFixed(1)} -> ${ds[ds.length - 1].toFixed(1)})`;
+      if (!(Math.abs(ds[ds.length - 1]) < 9)) return `the car speared off under a held stick (d=${ds[ds.length - 1].toFixed(1)})`;
+      // stick centred: the heading stops winding (no oscillation, no self-steer)
+      const h1 = await probe(); await h.wait(450); const h2 = await probe();
+      if (!h1 || !h2) return 'probe failed after centering the stick';
+      if (Math.abs(h2.head - h1.head) > 0.03) return `heading keeps changing with the stick centred (${h1.head.toFixed(2)} -> ${h2.head.toFixed(2)})`;
+      // steer back the other way: the car answers both directions
+      const dBefore = h2.d;
+      await h.eval((sgn) => { const t = window.__test; t.setInput({ gas: true, steer: -0.3 * sgn }); }, dir);
+      await h.wait(1000);
+      const p3 = await probe();
+      await h.eval(() => { const t = window.__test; t.setInput({ gas: false, steer: 0 }); });
+      if (!p3) return 'probe failed on the way back';
+      if (!((dBefore - p3.d) * dir > 0.8)) return `steering back did not move the car (d ${dBefore.toFixed(1)} -> ${p3.d.toFixed(1)})`;
+      return true;
+    },
+  },
 ];
