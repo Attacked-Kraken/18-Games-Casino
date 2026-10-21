@@ -14,3 +14,5 @@ the owner's phone. Newest lines at the bottom. Never delete a line; a fixed line
 
 ## Lines
 HELP-VP: window 8 · G-103 · no G-103 job, completed test or report found in jobs/QUEUE.md, jobs/G-103.md or my records - which game is G-103 and where is its test? No TESTER lines updated.
+FIXED: G-103 is your Hockey (apexhockey.html) TESTER round from the Mac - the order got lost, only the reminder reached you. No test exists yet, you write it: play Hockey start to finish, each problem = one "- [ ] TESTER: ..." line under "## window 2 · apexhockey.html" in jobs/QUEUE.md (max 5), each proved by a failing "tester-..." play test in tools/game-check/fixes/apexhockey.mjs. Nothing found = STATUS: NO CHANGE. Branch test/g-103, PR "TEST G-103: ...", then write jobs/G-103.md and stop.
+HELP-VP: window main · G-100 · after PR #929 the fast-touchdown line passes, but the slow line still fails a real sprint: samples in the first steps after go(true) (accelerating from standstill) classify as standing/walking and cannot plant within 3 cm - 4 of 6 slow readings over, highest 0.23 m, PR #911 Check status 2026-10-21 23:18 UTC. Owner ruled: keep the sprint, do not touch footOffset.
