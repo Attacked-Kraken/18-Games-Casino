@@ -110,7 +110,7 @@
 <button class="tbtn" id="thrUp" type="button">THR +</button>
 <button class="tbtn" id="thrDn" type="button">THR &minus;</button>
 <button class="tbtn" id="viewBtn" type="button">VIEW</button>
-<button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Classic</span></button>
+<button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Neon Strike</span></button>
 <button class="tbtn" id="resetBtn" type="button">RESET</button>
 <button class="tbtn" id="muteBtn" type="button" aria-label="Mute music">🔊</button>
 
@@ -165,6 +165,7 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { createApexJet, createJetControls, JET_STYLE_KEYS, JET_PAINTS, JET_STYLES } from './models/apex-jet/apexJet.js';
 
 /* ================= helpers ================= */
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -179,7 +180,6 @@ const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimma
 const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
 const KLIFT  = 0.018;       // lift coefficient - more forgiving
 const GRAV   = 9.81;
-const GEAR_H = 1.29;        // plane origin height above ground when on wheels (= wheel bottom depth)
 const RWY_HALF = 700, RWY_W = 12;
 const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
 
@@ -455,67 +455,12 @@ function crowdTick(t) {
 }
 
 /* ================= the airplane ================= */
-const plane = new THREE.Group();
-const gearWheels = [];   // the 3 wheel meshes (REALITY robot contact points)
-let prop, propDisc, elevator, rudder, canopy;
-let planeMats = {};
-const JET_STYLES = [
-  { name: 'Classic', body: 0xf2f2f0, accent: 0xc02028 },
-  { name: 'Thunder', body: 0x1e3fae, accent: 0xffd700 },
-  { name: 'Stealth', body: 0x2a2d33, accent: 0x555c66 },
-  { name: 'Sunburst', body: 0xff6b1a, accent: 0x1a1a1a },
-];
-let jetStyle = 0;
-(function buildPlane() {
-  const white = new THREE.MeshStandardMaterial({ color: 0xf2f2f0, roughness: 0.55, metalness: 0.08 });
-  const red = new THREE.MeshStandardMaterial({ color: 0xc02028, roughness: 0.5, metalness: 0.1 });
-  const dark = new THREE.MeshStandardMaterial({ color: 0x22262b, roughness: 0.7 });
-  const glass = new THREE.MeshStandardMaterial({ color: 0x18242f, roughness: 0.15, metalness: 0.85 });
-  planeMats = { body: white, accent: red };
-  const add = (geo, mat, x, y, z) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); plane.add(m); return m; };
-  // fuselage: tapered cylinder, nose toward +Z
-  const fus = add(new THREE.CylinderGeometry(0.42, 0.16, 5.4, 12), white, 0, 0, 0);
-  fus.rotation.x = Math.PI / 2;
-  add(new THREE.CylinderGeometry(0.43, 0.43, 0.5, 12), red, 0, 0, 1.9).rotation.x = Math.PI / 2; // nose band
-  const spinner = add(new THREE.ConeGeometry(0.2, 0.5, 10), red, 0, 0, 3.15);
-  spinner.rotation.x = Math.PI / 2;
-  // canopy
-  canopy = add(new THREE.SphereGeometry(0.5, 14, 10), glass, 0, 0.52, 0.55);
-  canopy.scale.set(0.85, 0.75, 1.5);
-  // main wing + red tips
-  add(new THREE.BoxGeometry(9.6, 0.12, 1.5), white, 0, -0.08, 0.35);
-  add(new THREE.BoxGeometry(0.9, 0.13, 1.5), red, -4.7, -0.08, 0.35);
-  add(new THREE.BoxGeometry(0.9, 0.13, 1.5), red, 4.7, -0.08, 0.35);
-  // tailplane + separate elevator (deflects with pitch input)
-  add(new THREE.BoxGeometry(3.4, 0.1, 0.95), white, 0, 0.18, -2.35);
-  elevator = add(new THREE.BoxGeometry(3.3, 0.08, 0.5), red, 0, 0.18, -2.95);
-  // fin + separate rudder (deflects with roll/steer input)
-  add(new THREE.BoxGeometry(0.1, 1.35, 1.05), white, 0, 0.75, -2.35);
-  add(new THREE.BoxGeometry(0.11, 0.5, 0.5), red, 0, 1.35, -2.5);
-  rudder = add(new THREE.BoxGeometry(0.08, 1.15, 0.42), red, 0, 0.72, -2.95);
-  // propeller: hub + 2 blades + blur disc
-  prop = new THREE.Group(); prop.position.set(0, 0, 3.05); plane.add(prop);
-  const bgeo = new THREE.BoxGeometry(0.16, 2.5, 0.05);
-  const b1 = new THREE.Mesh(bgeo, dark); const b2 = new THREE.Mesh(bgeo, dark); b2.rotation.z = Math.PI / 2;
-  prop.add(b1); prop.add(b2);
-  propDisc = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24),
-    new THREE.MeshBasicMaterial({ color: 0xbbbbbb, transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false }));
-  propDisc.position.set(0, 0, 3.02); plane.add(propDisc);
-  // fixed landing gear - every wheel bottom sits at local y = -1.29 (= GEAR_H),
-  // so all three wheels rest exactly on the ground: no floating, no sinking
-  const strut = (x, z, wR, drop = 0) => {
-    add(new THREE.CylinderGeometry(0.06, 0.06, 0.7 + drop, 6), dark, x, -0.55 - drop / 2, z);
-    const w = add(new THREE.CylinderGeometry(wR, wR, 0.22, 12), dark, x, -0.95 - drop, z);
-    w.rotation.z = Math.PI / 2;
-    gearWheels.push(w);
-  };
-  strut(-1.05, 0.55, 0.34); strut(1.05, 0.55, 0.34); strut(0, 2.25, 0.27, 0.07);
-  // nav lights: red left (+X is left when facing +Z... facing +Z, left = +X), green right
-  const lamp = (c, x) => { const m = add(new THREE.SphereGeometry(0.09, 8, 6),
-    new THREE.MeshBasicMaterial({ color: c }), x, -0.05, 0.35); return m; };
-  lamp(0xff2222, 4.85); lamp(0x22ff44, -4.85); lamp(0xffffff, 0).position.set(0, 0.35, -2.72);
-  scene.add(plane);
-})();
+/* ================= the jet (owner's Apex Jet pack) ================= */
+const jet = createApexJet(THREE, { preset: 'normal', style: 'fighter', paint: 0 });
+const plane = jet.group; scene.add(plane); scene.add(jet.fx); scene.add(jet.worldFx);
+// fx = afterburner flames (kept outside the group so the REALITY size box ignores them); worldFx = wingtip vapour trails
+const gearWheels = jet.wheels;   // the wheel meshes (REALITY robot contact points) - the same array stays valid after setStyle
+plane.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
 /* ================= HUD: artificial horizon ================= */
 const ah = $('ah'), ahx = ah.getContext('2d');
@@ -555,7 +500,7 @@ function respawn() {
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
   $('thrFill').style.height = '100%';
   if (mode === 'free') {
-    P.pos.set(0, GEAR_H, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
+    P.pos.set(0, jet.gearHeight, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
     flashMsg('RUNWAY 36 - THROTTLE UP', 2600);
   } else {
     P.pos.set(0, 366, -5500); P.yaw = 0;
@@ -690,9 +635,9 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) reset
 function toggleView() { cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
 $('back').addEventListener('click', () => { location.href = 'sports.html'; });
 $('viewBtn').addEventListener('click', toggleView);
-$('jetBtn').addEventListener('click', () => { applyJetStyle(jetStyle + 1); });
+$('jetBtn').addEventListener('click', () => { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textContent = JET_PAINTS[jet.paint].name; });
 $('resetBtn').addEventListener('click', () => { if (phase !== 'menu') respawn(); });
-applyJetStyle(jetStyle);
+$('jetStyleLabel').textContent = JET_PAINTS[jet.paint].name;
 $('btnFree').addEventListener('click', () => { Mus.ensure(); mode = 'free'; respawn(); });
 $('btnChal').addEventListener('click', () => { Mus.ensure(); mode = 'challenge'; respawn(); });
 
@@ -827,17 +772,17 @@ function step(dt) {
   }
 
   // ground contact
-  if (P.pos.y - GEAR_H <= 0 && P.pos.y > -2) {
+  if (P.pos.y - jet.gearHeight <= 0 && P.pos.y > -2) {
     if (!P.ground && phase === 'fly') {
       const vs = P.vel.y;
       if (vs < -3.2 || Math.abs(P.roll) > 0.35 || P.pitch < -0.28) { crash('Hard impact - the landing gear collapsed.'); return; }
       onTouchdown(vs);
     }
-    P.ground = true; P.pos.y = GEAR_H;
+    P.ground = true; P.pos.y = jet.gearHeight;
     if (P.vel.y < 0) P.vel.y = 0;
     if (v > VROT && P.pitch > 0.03) { P.ground = false;
       if (phase === 'fly') flashMsg("YOU'RE FLYING - GENTLE INPUTS", 2600); }  // liftoff
-  } else if (P.pos.y - GEAR_H > 0.01) {
+  } else if (P.pos.y - jet.gearHeight > 0.01) {
     P.ground = false;
   }
 
@@ -857,31 +802,10 @@ function step(dt) {
   // plane visuals
   plane.position.copy(P.pos);
   plane.quaternion.copy(quat);
-  const spin = 6 + 46 * P.thr;
-  prop.rotation.z += spin * dt;
-  propDisc.material.opacity = clamp(P.thr * 0.5, 0, 0.4);
-  propDisc.rotation.z -= spin * 0.4 * dt;
-  elevator.rotation.x = inp.pitchUp * 0.7;
-  rudder.rotation.y = inp.rollRight * 0.4;
 
   // clouds drift
   for (const c of clouds) { c.position.x += 1.6 * dt; if (c.position.x > 7000) c.position.x = -7000; }
 }
-
-/* ================= jet styles ================= */
-function applyJetStyle(idx) {
-  jetStyle = ((idx % JET_STYLES.length) + JET_STYLES.length) % JET_STYLES.length;
-  const s = JET_STYLES[jetStyle];
-  if (planeMats.body) planeMats.body.color.setHex(s.body);
-  if (planeMats.accent) planeMats.accent.color.setHex(s.accent);
-  const label = document.getElementById('jetStyleLabel');
-  if (label) label.textContent = s.name;
-  try { localStorage.setItem('apexflight_jetstyle', String(jetStyle)); } catch(e) {}
-}
-try {
-  const saved = parseInt(localStorage.getItem('apexflight_jetstyle') || '0', 10);
-  if (!isNaN(saved)) jetStyle = saved;
-} catch(e) {}
 
 /* ================= camera ================= */
 const camPos = new THREE.Vector3(0, 8, -620), camLook = new THREE.Vector3(), camLookS = new THREE.Vector3(0, 4, 0);
@@ -924,7 +848,7 @@ function updateHUD(dt) {
   hudT = 0;
   const v = P.vel.length();
   $('hSpd').textContent = Math.round(v * MS2KT);
-  $('hAlt').textContent = Math.max(0, Math.round((P.pos.y - GEAR_H) * M2FT));
+  $('hAlt').textContent = Math.max(0, Math.round((P.pos.y - jet.gearHeight) * M2FT));
   let hdg = Math.round(-P.yaw * 180 / Math.PI) % 360; if (hdg <= 0) hdg += 360;
   $('hHdg').textContent = hdg;
   const vs = Math.round(P.vel.y * MS2FPM);
@@ -938,7 +862,7 @@ function updateHUD(dt) {
       rb.style.display = 'block';
       $('hRwy').textContent = 'RWY ' + (dist / 1852).toFixed(1) + ' NM';
       const want = Math.max(0, Math.sqrt(dx * dx + dz * dz) * Math.tan(3.2 * Math.PI / 180));
-      const alt = P.pos.y - GEAR_H;
+      const alt = P.pos.y - jet.gearHeight;
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
@@ -1083,6 +1007,7 @@ window.__test = { friend: window.__flight.friend };
    a race, so there is no track direction; there are no AI aircraft (others). */
 window.__reality = {
   kind: 'plane',
+  expect: { span: [8, 16.5] },   // the jet's longest side is its length (fighter 15.4 m, delta 16.1 m) - INSTRUCTIONS step 7
   player: plane,
   others: [],
   contact: gearWheels,
