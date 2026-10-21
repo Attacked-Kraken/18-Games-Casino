@@ -5,7 +5,7 @@
 
 ## When you get "NEW JOB G-NN"
 0. **Work only in your MAIN chat. Never start a side chat** (owner, Oct 20: side chats get things confused - the laptop can't see or answer them, and work there got stuck for hours).
-1. Do ONLY what it says. Keep everything else in the game exactly as it is now.
+1. Read DONE.md and REALITY.md (the bar), then do ONLY what it says. Keep everything else in the game exactly as it is now.
 2. Own branch (`g-nn-short-name`), PR, wait for the robot check, merge.
 3. Need a 3D model? Add `- SEARCH · <words> · for <game>` lines to MODEL-SEARCH.md and merge - the OWNER picks on
    Model Search. Never pick or guess a model yourself. Picked models arrive in models/fetched/.
