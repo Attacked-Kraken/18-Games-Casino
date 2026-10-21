@@ -534,9 +534,19 @@ export default [
             holding = true; holdAt = Date.now();
             if (!camChecked) {
               camChecked = true;
-              const cam = await h.eval(() => { const tf = window.__tf; const c = tf.camPos ? tf.camPos() : null; const rs = tf.rigs ? tf.rigs() : []; const g = rs && rs[0] && rs[0].group ? rs[0].group.position : null; return c && g ? { cx: c.x, cy: c.y, cz: c.z, ax: g.x, az: g.z } : null; });
+              // Ruler repair (JOB G-83): judge the SETTLED camera. The old single
+              // sample raced the game's start sequence and could read the menu-orbit
+              // camera (22.9m / 33.4m on loaded runners) while the camera that shows
+              // the throw sits ~9.5m away. Same limits as before (11.5m, behind, side).
+              let best = null;
+              for (let ci = 0; ci < 6; ci++) {
+                const c2 = await h.eval(() => { const tf = window.__tf; const c = tf.camPos ? tf.camPos() : null; const rs = tf.rigs ? tf.rigs() : []; const g = rs && rs[0] && rs[0].group ? rs[0].group.position : null; return c && g ? { cx: c.x, cy: c.y, cz: c.z, ax: g.x, az: g.z } : null; });
+                if (c2) { const d2 = Math.hypot(c2.cx - c2.ax, c2.cz - c2.az); if (!best || d2 < best.d) best = { cx: c2.cx, cy: c2.cy, cz: c2.cz, ax: c2.ax, az: c2.az, d: d2 }; if (d2 <= 11.5) break; }
+                await h.wait(350);
+              }
+              const cam = best;
               if (!cam) return 'no camera report from the game (camPos hook missing)';
-              const dxz = Math.hypot(cam.cx - cam.ax, cam.cz - cam.az);
+              const dxz = cam.d;
               if (dxz > 11.5) return 'the discus camera is ' + dxz.toFixed(1) + 'm from the thrower - too far to show him clearly (wants close behind/side, ~9m)';
               if (!(cam.cx < cam.ax - 2)) return 'the discus camera is not behind the thrower (cam x ' + cam.cx + ' vs thrower x ' + cam.ax + ')';
               if (Math.abs(cam.cz - cam.az) < 3) return 'the discus camera is not to the side of the thrower (cam z ' + cam.cz + ' vs thrower z ' + cam.az + ')';
