@@ -62,7 +62,8 @@ jobs:
           fi
           echo "ONLY=${G:-none}" >> $GITHUB_ENV
           echo "STRICT=1" >> $GITHUB_ENV
-          echo "PR_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
+          echo "PR_BRANCH=${{ github.head_ref || github.ref_name }}" >> $GITHUB_ENV
+          echo "PR_TITLE<<EOT" >> $GITHUB_ENV; echo "${{ github.event.pull_request.title }}" >> $GITHUB_ENV; echo "EOT" >> $GITHUB_ENV
           echo "Checking: ${G:-no games (models only)}"
 
       - name: Remember the last report (for auto-undo)

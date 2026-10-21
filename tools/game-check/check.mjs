@@ -524,8 +524,15 @@ if (process.env.STRICT) {
   // (kit/ venues/ models/ characters/ sounds/) change in their OWN PR with no game page in it (STUDIO-STANDARD 9.4).
   // Anything else (another game, the hub, robots, workflows) = FAIL. The owner's Claude branches (vp-, claude-, 03-..)
   // are exempt - they own the robots and the hub.
+  // TESTER vs BUILDER pull requests (owner Oct 21 2026 2:25 PM "separate testers from builders everywhere"):
+  //   tester  = title "TEST G-NN:" or branch test/  - may change only tests + notes; PASSES when its NEW tests FAIL on
+  //             today's game (proof the problem is real); merges by itself at once; never on the owner's board.
+  //   builder = title "BUILD G-NN:" or branch build/ - only the files its job lists; must be fully green.
+  const prTitle = process.env.PR_TITLE || '';
+  const prBranch = process.env.PR_BRANCH || '';
+  const testerPR = /^test\//i.test(prBranch) || /^\s*TEST\s+G-\d+/i.test(prTitle);
   {
-    const branch = process.env.PR_BRANCH || '';
+    const branch = prBranch;
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
     const NOTES = /^(jobs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
@@ -542,12 +549,26 @@ if (process.env.STRICT) {
     if (games.length === 0 && fixGames.length > 1) guard.push(`FILE GUARD: play tests of ${fixGames.length} games changed - one game per PR`);
     if (games.length && sharedF.length) guard.push(`FILE GUARD: shared parts (${sharedF.slice(0, 3).join(', ')}) changed together with a game page - shared folders change in their OWN pull request (STUDIO-STANDARD 9.4)`);
     if (other.length && !claudeBranch) guard.push(`FILE GUARD: not yours to change: ${other.slice(0, 5).join(', ')} - a job may change only its game, its play tests, its looks/ folder, notes, or (alone) a shared folder`);
+    if (testerPR && (games.length || sharedF.length)) guard.push(`FILE GUARD: a TEST pull request changed game code (${games.concat(sharedF).slice(0, 3).join(', ')}) - testers change only tests, notes, jobs/QUEUE.md, jobs/G-NN.md, reviews/ and CLAIMS.md`);
     if (guard.length && !claudeBranch) { blockers.push(...guard); }
     else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
     else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\//.test(f));
-  if (testOnly) console.log('Tester PR (only tests / QUEUE / reports changed): its failing play tests are findings for the builder, not blockers.');
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\/|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
+  if (testOnly || testerPR) {
+    // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
+    const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).map(f => f.id))]));
+    const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
+    for (const r of results) {
+      if (!touchedFix.has(r.file)) continue;
+      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));
+      const passing = fresh.filter(f => f.ok);
+      if (fresh.length && passing.length === fresh.length)
+        blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);
+      else if (fresh.length) console.log(`Tester proof OK: ${fresh.length - passing.length} new test(s) fail on today's ${r.name}.`);
+    }
+  }
   for (const r of results) for (const f of r.fail) {
     if (/owner'?s eyes/i.test(f)) continue;
     if (testOnly && /NOT done yet/i.test(f)) continue;
