@@ -374,4 +374,92 @@ export default [
       return 'the ballpark loaded without the kit grass/dirt field textures';
     },
   },
+  // G-57 TESTER (owner, 2026-10-20): problems found by playing the game on a phone-size
+  // screen like a player. Each test FAILS today as proof; it passes when the problem is fixed.
+  {
+    id: 'tester-overlay-buttons-off-phone',
+    ask: 'TESTER: menu overlay buttons hang off the bottom of a sideways phone - Help CLOSE is fully below the screen (overlay does not scroll, so Help cannot be closed) and the Friend START/CLOSE buttons are cut off',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      const open = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const box = id => h.eval(x => { const e = document.getElementById(x); if (!e) return null; const r = e.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, vh: innerHeight }; }, id);
+      const bad = [];
+      if (!await open('helpBtn')) return 'no Help (?) button on the menu';
+      await h.wait(600);
+      const hc = await box('helpClose');
+      if (!hc) return 'no CLOSE button inside Help';
+      if (hc.bottom > hc.vh + 1 || hc.top >= hc.vh) bad.push(`Help CLOSE sits at y ${Math.round(hc.top)}-${Math.round(hc.bottom)} on a ${hc.vh}px tall screen`);
+      await h.eval(() => { const b = document.getElementById('helpClose'); if (b) b.click(); });
+      await h.wait(400);
+      if (!await open('friendBtn')) return 'no Play a friend button on the menu';
+      await h.wait(600);
+      for (const id of ['friendGo', 'friendClose']) {
+        const bb = await box(id);
+        if (bb && (bb.bottom > bb.vh + 1 || bb.top >= bb.vh)) bad.push(`${id} sits at y ${Math.round(bb.top)}-${Math.round(bb.bottom)} on a ${bb.vh}px tall screen`);
+      }
+      return bad.length ? bad.join('; ') : true;
+    },
+  },
+  {
+    id: 'tester-count-resets-each-batter',
+    ask: 'TESTER: the ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he strikes out on one strike or walks on one ball',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, balls: T.balls, strikes: T.strikes, tag,
+                 msg: (document.getElementById('msg') || {}).textContent || '' };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let s = await snap(); if (!s) return 'window.__test missing';
+      let endedBy = null, endedTag = null, aimed = false;
+      while (Date.now() - t0 < 29000) {
+        s = await snap(); if (!s) return 'window.__test missing mid-test';
+        if (s.phase === 'over') return 'the game ended before a strikeout or walk was seen';
+        if (/^STRIKEOUT/.test(s.msg)) { endedBy = 'strikeout'; endedTag = s.tag; }
+        else if (/^WALK/.test(s.msg)) { endedBy = 'walk'; endedTag = s.tag; }
+        else if (endedBy && (s.phase === 'select' || s.phase === 'cpuWindup')) {
+          // a new at-bat in the SAME half, before its first pitch: the count must be 0-0
+          if (s.tag === endedTag) {
+            if (s.balls !== 0 || s.strikes !== 0) return `after a ${endedBy} the next batter starts at ${s.balls}-${s.strikes}, not 0-0`;
+            return true;
+          }
+          endedBy = null; // the half changed - that path resets the count even today
+        }
+        if (s.phase === 'select') {
+          aimed = false;
+          await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); });
+          await click('throwBtn');
+        } else if (s.phase === 'aim') {
+          if (!aimed) {
+            // pitch around the batter: tap the far corner of the aim pad so the CPU takes ball after ball
+            const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
+            if (r) await h.tap(r.x + r.w - 6, r.y + r.h - 6);
+            aimed = true;
+          }
+          await click('throwBtn');
+        } else if (s.phase === 'windup') await click('lockBtn');
+        // batting halves: take every pitch (never swing) - called strikes and balls end at-bats on their own
+        await h.wait(90);
+      }
+      return 'no strikeout or walk happened in 29 s of real play, so the count reset could not be checked';
+    },
+  },
+  {
+    id: 'tester-help-button-covers-cam',
+    ask: 'TESTER: the ? (help) button at the top right sits on top of the CAM button - the CAM label is partly covered and the covered part cannot be tapped',
+    async test(page, h) {
+      const r = await h.eval(() => {
+        const a = document.getElementById('helpHud'), b = document.getElementById('viewBtn');
+        if (!a || !b) return null;
+        const A = a.getBoundingClientRect(), B = b.getBoundingClientRect();
+        return { ox: Math.min(A.right, B.right) - Math.max(A.left, B.left), oy: Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top) };
+      });
+      if (!r) return 'help or CAM button missing';
+      if (r.ox > 2 && r.oy > 2) return `the ? button overlaps the CAM button by ${Math.round(r.ox)}x${Math.round(r.oy)} px`;
+      return true;
+    },
+  },
 ];
