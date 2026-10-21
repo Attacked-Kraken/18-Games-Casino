@@ -179,7 +179,7 @@ const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimma
 const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
 const KLIFT  = 0.018;       // lift coefficient - more forgiving
 const GRAV   = 9.81;
-const GEAR_H = 1.2;         // plane origin height above ground when on wheels
+const GEAR_H = 1.29;        // plane origin height above ground when on wheels (= wheel bottom depth)
 const RWY_HALF = 700, RWY_W = 12;
 const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
 
@@ -456,6 +456,7 @@ function crowdTick(t) {
 
 /* ================= the airplane ================= */
 const plane = new THREE.Group();
+const gearWheels = [];   // the 3 wheel meshes (REALITY robot contact points)
 let prop, propDisc, elevator, rudder, canopy;
 let planeMats = {};
 const JET_STYLES = [
@@ -500,13 +501,15 @@ let jetStyle = 0;
   propDisc = new THREE.Mesh(new THREE.CircleGeometry(1.3, 24),
     new THREE.MeshBasicMaterial({ color: 0xbbbbbb, transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false }));
   propDisc.position.set(0, 0, 3.02); plane.add(propDisc);
-  // fixed landing gear
-  const strut = (x, z, wR) => {
-    add(new THREE.CylinderGeometry(0.06, 0.06, 0.7, 6), dark, x, -0.55, z);
-    const w = add(new THREE.CylinderGeometry(wR, wR, 0.22, 12), dark, x, -0.95, z);
+  // fixed landing gear - every wheel bottom sits at local y = -1.29 (= GEAR_H),
+  // so all three wheels rest exactly on the ground: no floating, no sinking
+  const strut = (x, z, wR, drop = 0) => {
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.7 + drop, 6), dark, x, -0.55 - drop / 2, z);
+    const w = add(new THREE.CylinderGeometry(wR, wR, 0.22, 12), dark, x, -0.95 - drop, z);
     w.rotation.z = Math.PI / 2;
+    gearWheels.push(w);
   };
-  strut(-1.05, 0.55, 0.34); strut(1.05, 0.55, 0.34); strut(0, 2.25, 0.27);
+  strut(-1.05, 0.55, 0.34); strut(1.05, 0.55, 0.34); strut(0, 2.25, 0.27, 0.07);
   // nav lights: red left (+X is left when facing +Z... facing +Z, left = +X), green right
   const lamp = (c, x) => { const m = add(new THREE.SphereGeometry(0.09, 8, 6),
     new THREE.MeshBasicMaterial({ color: c }), x, -0.05, 0.35); return m; };
@@ -669,6 +672,19 @@ let thrRamp = 0;
   };
   bind('thrUp', 1); bind('thrDn', -1);
 })();
+/* A phone call, notification or app switch must never leave the plane
+   steering itself: on window blur / tab hidden, every held input - keys,
+   stick, throttle-hold buttons - goes straight back to 0 (DONE.md stick
+   rule; the phone robot checks these handlers exist). */
+function resetInputs() {
+  for (const k in keys) keys[k] = false;
+  stickActive = false;
+  thrRamp = 0;
+  inp.pitchUp = 0; inp.rollRight = 0;
+  const knob = $('knob'); if (knob) knob.style.transform = 'translate(-50%,-50%)';
+}
+window.addEventListener('blur', resetInputs);
+document.addEventListener('visibilitychange', () => { if (document.hidden) resetInputs(); });
 
 /* ================= buttons ================= */
 function toggleView() { cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
@@ -1062,6 +1078,28 @@ window.__flight = { P, inp, get stallNow() { return stallNow; },
     clear: () => { friendGame = null; },
   } }; // test hook (FIX LIST)
 window.__test = { friend: window.__flight.friend };
+/* REALITY robot hook (REALITY.md "Robot hook"): the robot measures the plane's
+   size, facing vs travel, and that the wheels touch the ground. Flight is not
+   a race, so there is no track direction; there are no AI aircraft (others). */
+window.__reality = {
+  kind: 'plane',
+  player: plane,
+  others: [],
+  contact: gearWheels,
+  ground: (x, z) => 0,
+  go: (on) => {
+    if (on) {
+      // A plane at full throttle takes off, and then its wheels are metres
+      // off the ground while the robot measures contact - so "go" for a
+      // plane is a ground roll: if it already left the ground, put it back
+      // on the runway first, then taxi power (never enough to rotate).
+      if (phase !== 'fly' || mode !== 'free' || !P.ground) { mode = 'free'; respawn(); }
+      P.thr = 0.5;
+    } else {
+      P.thr = 0;
+    }
+  },
+};
 (function wireMute() {
   const b = document.getElementById('muteBtn');
   if (!b) return;
