@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="icon" href="apextrackfield-icon.svg" type="image/svg+xml">
 <title>Apex Track &amp; Field 3D</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -36,15 +37,15 @@ keep the classic one-column menu; no other screen is touched. */
 @media (orientation:landscape) and (max-height:460px){
 #menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
 #menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
-#menu .panel h1{grid-column:1/-1;font-size:21px}
-#menu .sponsor{grid-column:1/-1;font-size:10px;margin-bottom:5px}
-#menu .credit{grid-column:1/-1;font-size:10px;margin-top:6px}
-#menu label.f{font-size:11px;margin:5px 0 2px}
-#menu input.txt{padding:7px;font-size:14px}
-#menu input[type=color].swatch{height:30px}
-#menu .btn{margin:4px 0;padding:8px 10px;min-height:40px;font-size:14px}
-#menu .btn.small{padding:6px 8px;min-height:34px;font-size:12px}
-#menu .hint{font-size:11px;margin:4px 0}
+#menu .panel h1{grid-column:1/-1;font-size:19px}
+#menu .sponsor{grid-column:1/-1;font-size:10px;margin-bottom:3px}
+#menu .credit{grid-column:1/-1;font-size:10px;margin-top:3px}
+#menu label.f{font-size:10px;margin:3px 0 1px}
+#menu input.txt{padding:5px;font-size:14px}
+#menu input[type=color].swatch{height:26px}
+#menu .btn{margin:3px 0;padding:6px 10px;min-height:36px;font-size:14px}
+#menu .btn.small{padding:4px 8px;min-height:30px;font-size:12px}
+#menu .hint{font-size:11px;margin:2px 0}
 #menuRivalLine{grid-column:1/-1}
 }
 .panel{background:linear-gradient(180deg,#10253f,#0a1626);border:2px solid #ffd34d;border-radius:18px;
@@ -346,8 +347,10 @@ if(W3D.camera){ W3D.camera.aspect = W/H; W3D.camera.updateProjectionMatrix(); }
 window.addEventListener('resize', fitGame);
 window.addEventListener('orientationchange', ()=>setTimeout(fitGame,150));
 if(window.visualViewport) visualViewport.addEventListener('resize', fitGame);
+// JOB G-75 (owner): touch devices START on the STORE-READY light path
+// (level 2 below), not after seconds of low fps.
 const Perf = {
-ema:16.7, fps:60, frames:0, acc:0, level:0, cool:0, pr:Math.min(window.devicePixelRatio||1,1.5), // STUDIO-STANDARD sharp rule: min(dpr, 1.5), never lowered to save speed
+ema:16.7, fps:60, frames:0, acc:0, level:(COARSE?2:0), cool:0, pr:Math.min(window.devicePixelRatio||1,1.5), // STUDIO-STANDARD sharp rule: min(dpr, 1.5), never lowered to save speed
 calls:0, show:false,
 frame(dt){
 const ms=dt*1000;
@@ -1801,7 +1804,7 @@ c.fillRect(x-1,0,3,512); }
 });
 tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
 const m=new THREE.Mesh(g, new THREE.MeshStandardMaterial({map:tex,roughness:0.94}));
-try{ new THREE.TextureLoader().load('kit/ground/512/running_track.png', kt=>{ kt.wrapS=kt.wrapT=THREE.RepeatWrapping; kt.colorSpace=THREE.SRGBColorSpace; kt.anisotropy=8; kt.repeat.set(2.0593,2.459); kt.offset.set(-0.0307,0); m.material.map=kt; m.material.needsUpdate=true; W3D.trackKitTex=kt; }); }catch(e){}
+try{ new THREE.TextureLoader().load('kit/ground/512/running_track.png', kt=>{ kt.wrapS=kt.wrapT=THREE.RepeatWrapping; kt.colorSpace=THREE.SRGBColorSpace; kt.anisotropy=COARSE?4:8;/*JOB G-75: lighter filtering on the touch light path*/ kt.repeat.set(2.0593,2.459); kt.offset.set(-0.0307,0); m.material.map=kt; m.material.needsUpdate=true; W3D.trackKitTex=kt; }); }catch(e){}
 m.receiveShadow=true; this.scene.add(m);
 // JOB J7 owner fix: running lanes as REAL GEOMETRY - the texture-painted lines washed out
 // at race angles and the owner could not see lanes. 9 bright strips on the true boundaries.
@@ -2261,6 +2264,10 @@ rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
 },
 rigUpdate(rig, dt){
+// JOB G-75 (owner): STORE-READY light path - at the top shed level the RIVAL
+// rigs animate at half rate; their dt accumulates, so their motion stays true.
+// The player's rig (rigs[0]) always updates every frame.
+if(Perf.level>=3 && W3D.rigs && W3D.rigs[0] && rig!==W3D.rigs[0]){ rig._acc=(rig._acc||0)+dt; if(rig._acc<0.032) return; dt=rig._acc; rig._acc=0; }
 if(rig.human && rig.h){
   try{ rig.h.mixer.update(dt); }catch(e){}
   if(this.clips.run||this.clips.jog) return; // JOB J7: the real run clips own the skeleton - no hand posing on top
@@ -3474,6 +3481,9 @@ el.addEventListener('pointerdown',e=>{ e.preventDefault(); TFIN.act++; if(ENG&&d
 // blur / hiding the page releases a held ACTION button too, so nothing stays held.
 window.addEventListener('blur',()=>{ if(ENG&&ENG.actionUp) ENG.actionUp(); });
 document.addEventListener('visibilitychange',()=>{ if(document.hidden&&ENG&&ENG.actionUp) ENG.actionUp(); });
+// JOB G-75 (owner): touchcancel releases the hold too (DONE.md: pointercancel /
+// touchcancel / blur / visibilitychange - every interruption path lets go).
+el.addEventListener('touchcancel',()=>{ if(ENG&&ENG.actionUp) ENG.actionUp(); },{passive:true});
 })();
 /* TAP TO RUN: mash the button to stride. Alternates L/R automatically for rhythm bonus.
    JOB J7 keep-it (owner): a tap ALWAYS strides - no state (stamina, exhaustion,
@@ -3527,6 +3537,7 @@ knob.style.transform='translate(0,0)';
 }
 window.addEventListener('blur',resetStick);
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) resetStick(); });
+stick.addEventListener('touchcancel',resetStick);
 })();
 window.addEventListener('keydown',e=>{
 if(!document.body.classList.contains('playing')||!ENG) return;
@@ -3628,6 +3639,7 @@ follow:()=> W3D._follow||null,
 camPos:()=> W3D.camera? {x:+W3D.camera.position.x.toFixed(1), y:+W3D.camera.position.y.toFixed(1), z:+W3D.camera.position.z.toFixed(1)} : null, // JOB J7 keep-it: lets the discus test prove the camera sits close behind/side of the thrower
 throwView:()=>{ const im=W3D.implement&&W3D.implement.cur; return { phase:ENG?ENG.phase:null, impl:(im&&im.visible)?{x:im.position.x,y:im.position.y,z:im.position.z}:null, cam:{x:W3D.camPos.x,y:W3D.camPos.y,z:W3D.camPos.z}, look:{x:W3D.camLook.x,y:W3D.camLook.y,z:W3D.camLook.z}, mark:W3D.landMark?{x:W3D.landMark.position.x,z:W3D.landMark.position.z,vis:W3D.landMark.visible}:null, jumpD:ENG?ENG.jumpD:null }; }, // JOB J42: read-only - the throw flight camera + landing marker play test reads this
 sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, dpr: window.devicePixelRatio||1, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
+light:()=>({ coarse: COARSE, level: Perf.level, shadows: W3D.renderer?W3D.renderer.shadowMap.enabled:null, aa: W3D.renderer?W3D.renderer.getContext().getContextAttributes().antialias:null }),
 input:()=>({ tap:TFIN.tap, stick:TFIN.stick, act:TFIN.act, stickHeld:STICKHELD }),
 fill:()=>{ const c=document.getElementById('game'); const r=c.getBoundingClientRect(); const iw=window.innerWidth, ih=window.innerHeight; return { cov:(r.width*r.height)/(iw*ih), W, H, iw, ih }; },
 camClear:()=>{ try{ if(!W3D.camera||!ENG||!ENG.r) return null; const from=W3D.camera.position; const to=new THREE.Vector3(ENG.r.ox,1.3,ENG.r.oz); const dir=to.clone().sub(from); const dist=dir.length(); const rc=new THREE.Raycaster(from, dir.normalize(), 0, Math.max(0.1,dist-1.2)); const hits=rc.intersectObjects(W3D._blockers||[], true); return { clear: hits.length===0, dist:+dist.toFixed(1) }; }catch(e){ return null; } },
