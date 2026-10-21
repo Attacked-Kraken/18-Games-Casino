@@ -14,3 +14,4 @@ the owner's phone. Newest lines at the bottom. Never delete a line; a fixed line
 
 ## Lines
 HELP-VP: window 8 · G-103 · no G-103 job, completed test or report found in jobs/QUEUE.md, jobs/G-103.md or my records - which game is G-103 and where is its test? No TESTER lines updated.
+FIXED: G-103 is your Hockey (apexhockey.html) TESTER round from the Mac - the order got lost, only the reminder reached you. No test exists yet, you write it: play Hockey start to finish, each problem = one "- [ ] TESTER: ..." line under "## window 2 · apexhockey.html" in jobs/QUEUE.md (max 5), each proved by a failing "tester-..." play test in tools/game-check/fixes/apexhockey.mjs. Nothing found = STATUS: NO CHANGE. Branch test/g-103, PR "TEST G-103: ...", then write jobs/G-103.md and stop.
