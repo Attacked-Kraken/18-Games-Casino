@@ -1,0 +1,86 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1455,13 +1455,13 @@
+   // lookahead target speed
+   const lookS=car.s+car.v*0.5+18;
+   let vt=Track.maxSpeedAt(lookS,grip)*cheat; // corner speeds stay on the game's own physics (the kit's speed table is tuned for its preview cars and would leave our AI far behind the player)
+-  vt*= (0.90+car.skill*0.12);
+-  vt+=car.paceNow()*2.5;
++  vt*= (1.005+car.skill*0.02); // G-66: target the game's real corner speeds - the old 0.90 base cruised the AI well under the player's pace
++  vt+=car.paceNow()*0.7; // G-66: tire/team/skill pace still counts, but at 0.7 weight - at 2.5 it alone cost the field ~1.5 m/s everywhere
+   vt=Math.min(vt,97);
+   // rain mistakes: lift a touch more
+   if(Race.weather.wet>0.3) vt*= (1-0.05*Race.weather.wet);
+-  car.throttle = car.v<vt?1:0;
+-  car.brake = car.v>vt*1.05?1:0;
++  car.throttle = car.v<vt*1.18?1:0; // G-66: stay on the throttle into the corner like the player does - cutting it at vt coasted away the entry speed
++  car.brake = car.v>vt*1.18?1:0; // G-66: brake later - at 1.05 the AI braked for corners far too early and the player just drove away
+   // ERS: AI uses on straights
+   const curvNow=Math.abs(Track.frameAt(car.s).curv);
+   car.ersUse = curvNow<0.004 && car.ers>15 && car.throttle>0;
+@@ -1478,9 +1478,9 @@
+   if(car.weave) { dT+=clamp(car.weave,-1.5,1.5); car.weave*= (1-dt*2); }
+   // mistakes
+   car._mistT=(car._mistT||rand(20,60))-dt;
+-  if(car._mistT<0){ car._mistT=rand(25,70)*(Race.weather.wet>0.4?0.5:1);
+-    if(Math.random()<0.35+Race.weather.wet*0.4){ car._mistD=rand(-1,1)*(W/2-1); car._mistT2=rand(0.8,1.6); } }
+-  if(car._mistT2>0){ car._mistT2-=dt; dT=car._mistD; }
++  if(car._mistT<0){ car._mistT=rand(35,85)*(Race.weather.wet>0.4?0.5:1); // G-66: mistakes a little rarer too - each one was costing seconds the field could not spare
++    if(Math.random()<0.24+Race.weather.wet*0.4){ car._mistD=rand(-1,1)*1.2; car._mistT2=rand(0.4,0.9); } } // G-66: a mistake wobbles the car briefly around its own line - the old +-(W/2-1) absolute target threw it across the road at the wall and cost seconds
++  if(car._mistT2>0){ car._mistT2-=dt; dT=clamp(dT+car._mistD, -W/2+1.2, W/2-1.2); } // G-66: offset from the line, not an absolute swerve
+   // blue flag: being lapped — move off line, lift
+   if(car._blue){ dT=Math.sign(dT||1)*(W/2-1.5); vt*=0.94; }
+   const dd=dT-car.d;
+@@ -1562,9 +1562,9 @@
+     for(let i=0;i<19;i++){
+       const nm = cfg.friend&&i===0 ? cfg.friend.tag : names[i%names.length]+(i>=names.length?' '+(Math.floor(i/names.length)+1):'');
+       const tm=TEAMS[i%TEAMS.length];
+-      const skill = cfg.friend&&i===0 ? cfg.friend.str/100 : clamp(rand(0.62,0.93)+cfg.aiDelta,0.4,0.99);
++      const skill = cfg.friend&&i===0 ? cfg.friend.str/100 : clamp(rand(0.86,0.97)+cfg.aiDelta,0.4,0.99); // G-66: the whole field is quick now - the old 0.62 floor left the back cars 20%+ off the player's pace
+       const c=new Car(nm, tm, false, skill);
+-      c.tire='MEDIUM'; c.lineBias=rand(-2.5,2.5);
++      c.tire='MEDIUM'; c.lineBias=rand(-0.05,0.05); // G-66: stay on the racing line - a constant offset costs ~10% of a lap per metre (the + side rides the outside of every corner), so the bias is a whisper
+       this.cars.push(c);
+     }
+     this.mode='quali'; this.qualiT=0; this.qualiDone=false;
+@@ -2361,7 +2361,7 @@
+       }
+       // Test helper robustness: put the car on the racing line at speed,
+       // clear pit/finish states that would stop it from driving.
+-      c.d = 0; c.headAngle = 0;
++      c.d = 0; c.headAngle = 0; c.spin = 0; // G-66: a teleported test car must start clean - a leftover spin from the launch pack would fake a slow car in the pace test
+       if (c.v < 30) c.v = 45;
+       c.inPits = false; c.pitIntent = false; c.pitHold = false;
+       c.throttle = 1; c.brake = 0;
+@@ -2371,6 +2371,31 @@
+     const c = Race.cars[idx];
+     if (c) { c.lap = lap; if (c._lc) c._lc.lap = lap; }
+   },
++  // G-66 probes: what is actually drawn for a car, and the pace state the tests drive/compare with
++  carMesh: (idx) => { const c = Race.cars[idx]; if(!c || !c.mesh) return null;
++    let meshes = 0, vis = 0; const mats = new Set();
++    const drawn = new THREE.Box3(); let drawnN = 0;
++    c.mesh.updateMatrixWorld(true);
++    c.mesh.traverse(o=>{ if(o.isMesh){ meshes++; mats.add(o.material);
++      if(o.visible){ vis++; o.geometry.computeBoundingBox();
++        const b = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
++        if(isFinite(b.min.x) && isFinite(b.max.x)){ drawn.union(b); drawnN++; } } } });
++    let chain = true, n = c.mesh; while(n){ if(n.visible === false){ chain = false; break; } n = n.parent; }
++    const sz = drawnN ? drawn.getSize(new THREE.Vector3()) : new THREE.Vector3();
++    const ce = drawnN ? drawn.getCenter(new THREE.Vector3()) : new THREE.Vector3();
++    const tp = Track.posAt(c.s, c.d, 0);
++    return { meshes, vis, mats: mats.size, chain, attached: c.mesh.parent === scene, drawnN,
++      size: [+sz.x.toFixed(2), +sz.y.toFixed(2), +sz.z.toFixed(2)],
++      center: [+ce.x.toFixed(1), +ce.y.toFixed(1), +ce.z.toFixed(1)],
++      trackPos: [+tp.x.toFixed(1), +tp.y.toFixed(1), +tp.z.toFixed(1)] };
++  },
++  paceCars: () => Race.cars.map(c => ({
++    name: c.name, isPlayer: c.isPlayer, skill: +c.skill.toFixed(3),
++    s: c.s, d: +c.d.toFixed(2), v: +c.v.toFixed(1), raceDist: Math.round(c.raceDist),
++    headAngle: +c.headAngle.toFixed(3), ers: Math.round(c.ers)
++  })),
++  lineAt: (s) => ({ rlD: +Track.rlDAt(s).toFixed(2), maxV: +Track.maxSpeedAt(s, 1).toFixed(1),
++    curv: +Math.abs(Track.frameAt(s).curv).toFixed(4) }),
+ };
+ /* boot */
+ window.__apexBoot=true;
