@@ -49,3 +49,7 @@ window.__reality = {
 ```
 The robot then FAILS the game with a "REALITY:" line for: wrong size, wrong way round the track, moving backwards,
 floating or sunk wheels/feet/skates. No hook = a CHECK line asking for it.
+
+
+## Ground contact while moving fast (owner Oct 21 2026)
+A real sprint has both feet off the ground mid-stride, so the robot does NOT fail a running player for a foot in the air. While the player moves fast (over 2 m/s - running, skating, driving) the rule is: the LOWEST foot / skate / wheel touches down (within 3 cm of the ground) at least once every ~0.5 s, and nothing ever goes under the ground. Standing and walking keep the strict rule (every reading within 3 cm). Running and skating games (Baseball, Track & Field, Hockey) are judged this way.

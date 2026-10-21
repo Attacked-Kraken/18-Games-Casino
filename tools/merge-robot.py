@@ -33,7 +33,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md")
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
@@ -123,6 +123,21 @@ def main():
             continue
         if full.get("mergeable") is not True:
             print("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
+        # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
+        # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
+        try:
+            cmp = gh("repos/%s/compare/%s...%s" % (REPO, full["base"]["sha"], pr["head"]["sha"])) or {}
+            behind = int(cmp.get("behind_by") or 0)
+        except Exception:
+            behind = 0
+        if behind > 0:
+            res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
+            if res is not None:
+                gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": pr["head"]["ref"]})
+                print("::notice title=Merge robot::#%d was %d commit(s) behind main - merged main into %s and restarted its check; merges next round if green" % (n, behind, pr["head"]["ref"]))
+            else:
+                print("#%d: behind main by %d but could not update the branch" % (n, behind))
+            continue
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
         for r in runs:                       # a re-run leaves the old run behind: only the newest of each check counts

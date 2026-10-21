@@ -29,6 +29,11 @@ Arcade code in this repo. When a game is finished, tell the owner which game and
 **Game check:** after every merge the robot posts phone screenshots and results for every game to the
 game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.
 
+**HELP keyword (owner, 2026-10-21, locked):** stuck? Add ONE line to `jobs/HELP.md`:
+`HELP-VP: window N · G-NN · what's wrong / what's missing` (`HELP-OWNER:` when only the owner can answer), on branch
+`help/window-N`, pull request `NOTES window N help`. Then keep working on anything you can. The answer comes back into
+your chat as "ANSWER to your HELP line". Never wait silently.
+
 **TESTER or BUILDER (owner, 2026-10-21, locked):** windows 7-10 TEST: pull request title `TEST G-NN: ...`, branch
 `test/...`, only tests + `jobs/QUEUE.md` + `jobs/G-NN.md` + `reviews/` + `CLAIMS.md`, never game code; the robot
 passes it when your NEW `tester-` tests FAIL on today's game (that is the proof) and it merges by itself. Windows 1-6

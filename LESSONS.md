@@ -86,3 +86,14 @@ Format: `- YYYY-MM-DD · game · mistake → rule`
 - 2026-10-21 · apextrackfield · A menu that fits by ~35px on one machine's fonts is off-screen on another's (the Grok audit's Chrome pushed the last menu rows past 390px) → rule: tight screens get real headroom, and the fit is proven by a play test that measures every control's box at the phone size.
 - 2026-10-21: one giant file per game + its own copy of the controls = every fix breaks something and is done 11 times. RULE: one fix per job, shared controls in kit/controls.js, new games split into small files (STUDIO-STANDARD §9).
 - 2026-10-21 · apextrackfield · Rivals were seeded AHEAD of the start line by pace and already at speed, and the relay lined up on the finish line → rule: every field starts ON its start line together (distance fields on the live-start line at speed 0), and a staggered race is drawn with the ONE staggered mapping for runners, zones and blocks alike.
+
+## 2026-10-21 - the jet job that never arrived (window 3)
+- A job pointed at `models/apex-jet/` and `createJetControls` while they sat on an unmerged branch (PR #873). The Muse
+  searched main, the board, QUEUE, NEWS, CLAIMS - nothing - and lost the day. RULE: a job names every file as a path +
+  branch/PR, the Mac checks it exists on GitHub before sending, and a job whose files cannot be found is not sent.
+- A job is one self-contained message. A robot send-back names the commit it checked; ignore it when your newest merge
+  is newer. "RE-SEND, same job, nothing new" means exactly that - never redo verified work.
+- The merge robot merges only a branch that is up to date with main and green after the update (PR #902 wiped G-88's
+  tests by merging from an old main).
+- 2026-10-21 · apextrackfield · Three play tests called Puppeteer APIs (page.target, page.setViewport) that are not functions on the robot's Playwright page → rule: play tests use the Playwright calls directly - page.context().newCDPSession(page) and page.setViewportSize() - never the Puppeteer names, shim or no shim.
+- 2026-10-21 · apextrackfield · Hurdle frames stood only in the player's lane while the rivals leapt over empty air in theirs → rule: what a runner must jump must be DRAWN in his own lane - the visual list and the physics list are the same hurdles, in every lane.

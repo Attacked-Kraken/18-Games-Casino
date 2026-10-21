@@ -1353,4 +1353,72 @@ export default [
     return true;
     }
   },
+{
+  id: 'tester-puck-size',
+  ask: 'TESTER (G-88): the puck is a real puck size - 7.6 cm across and 2.5 cm thick (REALITY.md), within 15%',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if ((await state()) !== 'play') {
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      for (let i = 0; i < 30 && (await state()) !== 'play'; i++) await h.wait(500);
+    }
+    if ((await state()) !== 'play') return 'could not start a quick game to measure the puck';
+    const m = await h.eval(() => {
+      const puck = window.__hk && window.__hk.puck;
+      if (!puck || !puck.mesh) return null;
+      let min = [1e9, 1e9, 1e9], max = [-1e9, -1e9, -1e9];
+      puck.mesh.updateWorldMatrix(true, true);
+      puck.mesh.traverse((o) => {
+        if (!o.geometry || !o.geometry.attributes || !o.geometry.attributes.position) return;
+        const pos = o.geometry.attributes.position, e = o.matrixWorld.elements;
+        for (let i = 0; i < pos.count; i++) {
+          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+          const wx = e[0] * x + e[4] * y + e[8] * z + e[12];
+          const wy = e[1] * x + e[5] * y + e[9] * z + e[13];
+          const wz = e[2] * x + e[6] * y + e[10] * z + e[14];
+          if (wx < min[0]) min[0] = wx; if (wy < min[1]) min[1] = wy; if (wz < min[2]) min[2] = wz;
+          if (wx > max[0]) max[0] = wx; if (wy > max[1]) max[1] = wy; if (wz > max[2]) max[2] = wz;
+        }
+      });
+      return { w: max[0] - min[0], h: max[1] - min[1], d: max[2] - min[2] };
+    });
+    if (!m) return 'no puck mesh in the running game';
+    const acrossCm = (Math.max(m.w, m.d) / 3.26) * 100; // the game builds at 3.26 units per metre (its own __reality note)
+    const thickCm = (m.h / 3.26) * 100;
+    if (Math.abs(acrossCm - 7.6) > 7.6 * 0.15 || Math.abs(thickCm - 2.54) > 2.54 * 0.15) {
+      return 'the puck is ' + acrossCm.toFixed(1) + ' cm across (real: 7.6 cm) and ' + thickCm.toFixed(1) + ' cm thick (real: 2.5 cm)';
+    }
+    return true;
+  },
+},
+{
+  id: 'tester-career-play-starts-match',
+  ask: 'TESTER (G-88): pressing PLAY in the career hub (PLAY NEXT MATCH) starts the career match',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    let menu = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 9000, polling: 'raf' });
+      menu = true;
+    } catch (e) { menu = (await state()) === 'menu'; }
+    if (!menu) return 'the game did not come back to its menu for the career test';
+    await clickId('careerBtn');
+    await h.wait(800);
+    await clickId('hubNew');
+    await h.wait(800);
+    await clickId('hubPlay'); // the game reloads itself here by design - then the match should be on
+    try {
+      await page.waitForFunction(() => {
+        const s = window.__hk && window.__hk.game && window.__hk.game.state;
+        return s === 'play' || s === 'faceoff';
+      }, null, { timeout: 11000, polling: 'raf' });
+      return true;
+    } catch (e) {
+      return 'pressing PLAY in the career hub reloaded to the main menu and no career match started (state stayed "' + (await state()) + '")';
+    }
+  },
+},
 ];

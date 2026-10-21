@@ -317,7 +317,7 @@ export default [
       const rects = await h.eval(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }; return { stick: r('stick'), tap: r('btnTap'), act: r('btnA'), playing: document.body.classList.contains('playing') }; });
       if (!rects.stick || !rects.tap) return 'the touch controls are not on screen (no race running?)';
       if (!rects.playing) return 'the game is not in a race';
-      const cdp = await page.target().createCDPSession();
+      const cdp = await page.context().newCDPSession(page);
       const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
       const P = (id, x, y) => ({ id, x, y, radiusX: 12, radiusY: 12, force: 1 });
       await touch('touchStart', [P(1, rects.stick.x, rects.stick.y)]);
@@ -350,10 +350,10 @@ export default [
     id: 'portrait-fills-screen',
     ask: 'Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)',
     async test(page, h) {
-      await page.setViewport({ width: 390, height: 844, hasTouch: true, isMobile: true });
+      await page.setViewportSize({ width: 390, height: 844 });
       await h.wait(900);
       const f = await h.eval(() => (window.__tf && window.__tf.fill) ? window.__tf.fill() : null);
-      await page.setViewport({ width: 844, height: 390, hasTouch: true, isMobile: true });
+      await page.setViewportSize({ width: 844, height: 390 });
       await h.wait(400);
       if (!f) return 'no fill report from the game (JOB J39 build missing)';
       if (f.cov < 0.9) return 'held upright the game fills only ' + Math.round(f.cov * 100) + '% of the screen - wants the WHOLE screen (90%+)';
@@ -483,7 +483,7 @@ export default [
       const rects = await h.eval(() => { const r = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }; return { stick: r('stick'), tap: r('btnTap') }; });
       if (!rects.stick || !rects.tap) return 'the touch controls are not on screen';
       const before = await h.eval(() => { const e = window.__tf.eng(); const i = window.__tf.input(); return { tap: i.tap, pos: e.r.pos, speed: e.r.speed }; });
-      const cdp = await page.target().createCDPSession();
+      const cdp = await page.context().newCDPSession(page);
       const touch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
       const P = (id, x, y) => ({ id, x, y, radiusX: 12, radiusY: 12, force: 1 });
       await touch('touchStart', [P(1, rects.stick.x, rects.stick.y)]);
@@ -1657,7 +1657,37 @@ export default [
       if (Math.abs(shown - out.clock) > 0.06) return 'the results screen shows ' + tok + ' but the race clock at the finish read ' + out.clock.toFixed(2) + ' - they must be the same time';
       return true;
     }
-  }
+  },
+  {
+    id: 'play-hurdles-set-in-every-lane',
+    ask: 'G-39/G-43 fix (owner): hurdle races need hurdles in EVERY lane - a hurdle stands in front of every runner, not only in the player\'s lane',
+    async test(page, h) {
+      // Clear driver intervals earlier tests installed (suite hygiene).
+      await h.eval(() => { ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv'].forEach(k => { try { clearInterval(window[k]); } catch (e) {} try { delete window[k]; } catch (e) {} }); return true; });
+      // Reach the 110m hurdles through the game's own buttons.
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          n++;
+          const tf = window.__tf;
+          const e = tf && tf.eng && tf.eng();
+          if (e && e.ev && e.ev.id === '110h') { clearInterval(iv); res('in'); return; }
+          if (n > 130) { clearInterval(iv); res('stuck'); return; }
+          const click = id => { const b = document.getElementById(id); if (b && b.offsetParent !== null) { b.click(); return true; } return false; };
+          const on = document.querySelector('.screen.on'); const scr = on ? on.id : '';
+          if (scr === 'results') { if (!click('bResMenu')) click('bResNext'); return; }
+          if (scr === 'career') { click('bCareerBack'); return; }
+          if (scr === 'card') { click('bCardStart'); return; }
+          if (scr === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /110m Hurdles/i.test(x.textContent)); if (b) b.click(); return; }
+          if (scr === 'menu') { click('bFree'); return; }
+        }, 120);
+      }));
+      if (nav !== 'in') return 'the 110m hurdles never loaded (nav: ' + nav + ')';
+      const hv = await h.eval(() => (window.__tf.hurdles ? window.__tf.hurdles() : null));
+      if (!hv) return 'the game exposes no hurdle count - the every-lane hurdles are not in this build';
+      if (hv.count !== 80 || hv.placed !== 80) return 'only ' + hv.placed + ' hurdles are set for the race (mesh shows ' + hv.count + ') - 10 hurdles in each of the 8 lanes = 80; the other lanes are empty';
+      if (hv.distinct !== 80) return 'the 80 hurdles are not at 80 different spots (' + hv.distinct + ' distinct) - they must stand one per lane per hurdle, not stacked in one lane';
+      return true;
+    },
+  },
 ];
-
-
