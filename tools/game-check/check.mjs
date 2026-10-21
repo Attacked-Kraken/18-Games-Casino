@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { realityCheck } from './reality.mjs';
+import { realityCheck, playerScreenBox } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
@@ -364,6 +364,14 @@ for (const g of games) {
     await page.waitForTimeout(2500);
     const rl = await realityCheck(page, ms => page.waitForTimeout(ms));
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
+    // CLOSE-UP (owner Oct 21 5:54 PM): head and shoulders of the main player, shown on his card next to the play picture
+    try {
+      const fb = await playerScreenBox(page);
+      if (fb && fb.width) {
+        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 80, clip: fb }));
+        r.img.face = 'img/' + slug + '-face.jpg';
+      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player + camera)');
+    } catch (e) { r.check.push('Close-up picture failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
     // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
     try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
     catch (e) { r.check.push('Phone layout check could not run: ' + String(e.message).split('\n')[0].slice(0, 80)); }
@@ -491,7 +499,7 @@ for (const r of results.slice().sort((a, b) => order[a.status] - order[b.status]
     md += `\n**Owner's fix list** (${r.fixes.filter(f => f.ok).length} of ${r.fixes.length} done):\n`;
     for (const f of r.fixes) md += `- ${f.ok ? '✅' : '❌'} ${f.ask}${!f.ok && f.note ? ' — ' + f.note : ''}\n`;
   }
-  md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">\n\n`;
+  md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">${r.img.face ? ' <img src="' + r.img.face + '" width="120">' : ''}\n\n`;
 }
 const shown = models.filter(m => m.img);
 if (shown.length) {
