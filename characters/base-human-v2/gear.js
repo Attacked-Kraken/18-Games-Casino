@@ -293,7 +293,7 @@ export function hockeyKit(THREE, a, o = {}) {
   const bx = new THREE.Vector3(), by = new THREE.Vector3(), bz = new THREE.Vector3(), fw = new THREE.Vector3(), bm = new THREE.Matrix4(), tgt = new THREE.Vector3(), gTop = new THREE.Vector3(), gBot = new THREE.Vector3();
 
   /* --- the skating stance (owner's sheet: lean 15-20, knees 25-30, hips back, wide); hands on the stick --- */
-  const stance = makeStance(THREE, R, { lean: C.goalie ? 22 : 19, knee: C.goalie ? 34 : 28, wide: C.goalie ? 9 : 6, lift: .085 * s, cadence: 5.2,
+  const stance = makeStance(THREE, R, { lean: C.goalie ? 22 : 19, knee: C.goalie ? 34 : 28, wide: C.goalie ? 9 : 6, lift: .165 * s, cadence: 5.2, // G-67 measured: blade bottom reaches the ice at lift .165 (was .085 - blades sat 8 cm under the ice, boots hovered)
     arms: hold ? (turn, c, sp, ph, X) => { turn('spine_02', Y1, TWIST * .4); turn('spine_03', Y1, TWIST * .6); turn('spine_03', X, .12);   // shoulders turn toward the stick, upper back rounds
       turn('neck_01', Y1, -TWIST * .7); } : null,
     after: hold ? (objPos, c, sp, ph, reach, op) => {

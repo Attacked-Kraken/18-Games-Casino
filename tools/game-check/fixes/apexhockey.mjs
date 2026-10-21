@@ -636,4 +636,114 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-skates-touch-ice',
+  ask: 'skates touch the ice the whole time while skating (gap under 3 cm - never floating above it, never sunk under it)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    // The blade drop (foot bone -> blade bottom) is a fixed property of the kit:
+    // calibrate it per skater from one still moment (menu / faceoff), where the
+    // stance has every skater standing flat - foot bone and blade box agree there.
+    const calibFn = () => {
+      const out = [];
+      for (const s of window.__hk.skaters) {
+        if (!s.ath) { out.push(null); continue; }
+        let steel = null, fl = null, fr = null;
+        s.ath.object.traverse((o) => {
+          if (!steel && o.name === 'gear-steel') steel = o;
+          if (o.isBone && o.name === 'foot_l') fl = o;
+          if (o.isBone && o.name === 'foot_r') fr = o;
+        });
+        if (!steel || !fl || !fr) { out.push(null); continue; }
+        if (steel.computeBoundingBox) steel.computeBoundingBox();
+        const bb = steel.boundingBox || (steel.geometry && steel.geometry.boundingBox);
+        if (!bb) { out.push(null); continue; }
+        const e = steel.matrixWorld.elements;
+        let min = Infinity;
+        for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+          const wy = e[1] * x + e[5] * y + e[9] * z + e[13];
+          if (wy < min) min = wy;
+        }
+        const v = new fl.position.constructor();
+        const lowFoot = Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y);
+        out.push(+(lowFoot - min).toFixed(3));
+      }
+      return out;
+    };
+    // During play only the foot bones are read (scene-graph truth, fresh every
+    // frame); blade clearance = lower foot bone - the calibrated drop.
+    const feetFn = () => window.__hk.skaters.map((s) => {
+      if (!s.ath) return null;
+      let fl = null, fr = null;
+      s.ath.object.traverse((o) => {
+        if (o.isBone && o.name === 'foot_l') fl = o;
+        if (o.isBone && o.name === 'foot_r') fr = o;
+      });
+      if (!fl || !fr) return null;
+      const v = new fl.position.constructor();
+      return +Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y).toFixed(3);
+    });
+    // Get to a still, grounded moment first if the page sits on a screen:
+    // close the career hub / leave the end screen back to the menu.
+    let st = await state();
+    if (st === 'over' || st === 'menu') {
+      await h.eval(() => {
+        const hub = document.getElementById('hub');
+        if (hub && getComputedStyle(hub).display !== 'none') { const c = document.getElementById('hubClose'); if (c) c.click(); }
+      }).catch(() => {});
+      if (st === 'over') await clickId('againBtn');
+      for (let i = 0; i < 8 && (await state()) !== 'menu'; i++) await h.wait(400);
+      st = await state();
+    }
+    // Athletes in (their kit carries the blades and the foot bones).
+    let ready = false;
+    for (let i = 0; i < 24 && !ready; i++) {
+      ready = await h.eval(() => (window.__hk.skaters || []).filter((s) => !!s.ath).length >= 10).catch(() => false);
+      if (!ready) await h.wait(500);
+    }
+    if (!ready) return 'the real athletes never attached, so there are no skates to measure';
+    // Calibrate the drop (median across skaters - one shared kit constant).
+    let drop = null;
+    for (let i = 0; i < 3 && drop === null; i++) {
+      const cal = await h.eval(calibFn).catch(() => null);
+      const vals = (cal || []).filter((x) => x !== null && isFinite(x)).sort((a, b) => a - b);
+      if (vals.length >= 8) drop = vals[Math.floor(vals.length / 2)];
+      else await h.wait(400);
+    }
+    if (drop === null) return 'could not calibrate the skate drop (no clean read of the blades)';
+    // Start a match if one is not already running, using the game's own buttons.
+    for (let i = 0; i < 18; i++) {
+      st = await state();
+      if (st === 'play') break;
+      if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(700); continue; }
+      await h.eval(() => {
+        const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
+        const hub = document.getElementById('hub');
+        const g = window.__hk.game;
+        if (hub && getComputedStyle(hub).display !== 'none') click('hubClose');
+        else if (g.state === 'over') click('againBtn');
+        else if (g.state === 'menu') click('playBtn');
+      }).catch(() => {});
+      await h.wait(700);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to measure the skates';
+    // Sample the lower foot bone of every skater while they skate.
+    const per = new Map();
+    for (let k = 0; k < 14; k++) {
+      const snap = await h.eval(feetFn).catch(() => null);
+      if (snap) snap.forEach((v, idx) => { if (v !== null && isFinite(v)) { if (!per.has(idx)) per.set(idx, []); per.get(idx).push(v - drop); } });
+      await h.wait(160);
+    }
+    if (per.size < 8) return 'only ' + per.size + ' skaters could be measured';
+    const bad = [];
+    for (const [idx, arr] of per) {
+      const sorted = [...arr].sort((a, b) => a - b);
+      const med = sorted[Math.floor(sorted.length / 2)];
+      if (med > 0.098) bad.push('skater ' + idx + ' floats ' + Math.round(med * 30.7) + ' cm above the ice');
+      else if (med < -0.098) bad.push('skater ' + idx + ' is sunk ' + Math.round(-med * 30.7) + ' cm under the ice (blades buried, boots hover)');
+    }
+    return bad.length ? bad.join('; ') : true;
+  },
+},
 ];
