@@ -96,7 +96,7 @@ export default [
   },
   // G-82 (owner / Grok audit, 2026-10-21): the stick must never stay stuck - on
   // pointercancel / touchcancel / window blur / visibilitychange, all input zeroes.
-  // Driven with real touch drags (CDP): a phone player's finger is the input that
+  // Driven with real touch drags over CDP: a phone player's finger is the input that
   // matters, and a held touch interrupted mid-drag is exactly the stuck case.
   {
     id: 'play-input-never-stuck',
