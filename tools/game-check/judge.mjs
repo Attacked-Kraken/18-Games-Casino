@@ -106,6 +106,7 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
   for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));
+  try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY || '/dev/null', blockers.length ? '## 🔴 Game check blocked this merge\n' + blockers.map(b => '- ' + b).join('\n') + '\n' : '## ✅ Game check: no new problems\n'); } catch (e) {}
   if (blockers.length) { console.log('\nBLOCKED - this pull request adds problems main does not have:\n- ' + blockers.join('\n- ')); process.exit(1); }
   console.log('\nNo new problems - OK to merge.');
 }
