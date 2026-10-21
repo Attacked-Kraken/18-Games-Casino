@@ -7,7 +7,7 @@ Claudes: keep each list short, one change per step, the owner's words. `- [x]` =
 was already sent. Muses: don't edit this file.
 
 ## window 1 · apexbaseball.html
-- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs.
+- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs. (sent as G-100)
 - [x] TESTER: The ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he can strike out on one strike or walk on one ball. See it: finish an at-bat with a strikeout or a walk, then watch the next batter's count. (fixed in the G-57 redo)
 - [x] TESTER: Help cannot be closed on a sideways phone - the CLOSE button sits fully below the screen and the overlay does not scroll; the Play a friend START and CLOSE buttons are cut off at the bottom too. See it: open ? Help or Play a friend with the phone held sideways. (fixed in the G-57 redo)
 - [x] TESTER: The ? help button sits on top of the CAM button at the top right and covers half of it (CAM reads 'M-AUTO'), so the covered part of the CAM button cannot be tapped. See it: look at the top right corner on any screen. (fixed in the G-57 redo)
@@ -20,10 +20,10 @@ was already sent. Muses: don't edit this file.
 ## window 2 · apexhockey.html
 - [ ] TESTER: Career PLAY NEXT MATCH never starts the match - it saves the fixture, reloads to the main menu, and the match only starts if you press CAREER again on the menu. Proof: play test tester-career-play-starts-match fails in tools/game-check/fixes/apexhockey.mjs.
 - [x] (already on main since G-86 - G-92/G-93 confirmed) TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
-- [ ] TESTER: The stick never resets when the app loses focus or is hidden mid-hold - the knob stays pushed at +40 px after blur and a hide/show cycle, and only a real touchend centres it. Proof: play test tester-stick-resets-on-blur fails in tools/game-check/fixes/apexhockey.mjs.
-- [ ] TESTER: The puck is about 5x too big: about 40 cm across and 11 cm thick measured in the game - a real puck is 7.6 cm across and 2.5 cm thick (REALITY.md). Proof: play test tester-puck-size fails in tools/game-check/fixes/apexhockey.mjs.
-- [ ] TESTER: Career shows 1 goal scored before any game is played (career panel says 1 G · 0 A at 0-0 with Week 1 unplayed) - start a career and open the career panel.
-- [ ] TESTER: Pressing PLAY WEEK 1 in career leaves the game for the sports hub and the game reopens at its main menu instead of starting the match - open a career and press PLAY WEEK 1 vs SHARKS.
+- [x] TESTER: The stick never resets when the app loses focus or is hidden mid-hold - the knob stays pushed at +40 px after blur and a hide/show cycle, and only a real touchend centres it. Proof: play test tester-stick-resets-on-blur fails in tools/game-check/fixes/apexhockey.mjs. (fixed - G-103 confirmed in the running game: knob held at -40 px centres to 0 after blur + hide/show, and play-stick-resets-on-blur passes)
+- [x] TESTER: The puck is about 5x too big: about 40 cm across and 11 cm thick measured in the game - a real puck is 7.6 cm across and 2.5 cm thick (REALITY.md). Proof: play test tester-puck-size fails in tools/game-check/fixes/apexhockey.mjs. (fixed in G-102 - G-103 confirmed in the running game: 7.6 cm across, 2.5 cm thick, tester-puck-size passes)
+- [x] TESTER: Career shows 1 goal scored before any game is played (career panel says 1 G · 0 A at 0-0 with Week 1 unplayed) - start a career and open the career panel. (fixed - G-103 confirmed: fresh career hub reads 0 G · 0 A, Week 1 vs SHARKS)
+- [ ] TESTER: Pressing PLAY WEEK 1 in career leaves the game for the sports hub and the game reopens at its main menu instead of starting the match - open a career and press PLAY WEEK 1 vs SHARKS. (the sports-hub detour is gone - the button now reloads to the main menu without starting the match; that is the career PLAY line at the top of this window, still open - G-103)
 - [ ] The short freezes during play (the robot sees about 10 stalls in 6 seconds, worst 2.3 s) - stop making new objects every frame and preload what loads mid-game, so play is smooth.
 - [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests in tools/game-check/fixes/apexhockey.mjs).
 - [ ] Add a 'play-friend-code' test for the friend codes.
@@ -31,10 +31,14 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): hockey crowd, goal horn, puck and skate sounds from sounds/stadium/hockey/, and the ice_rink texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 3 · apexflight.html
+- [ ] TESTER: Landing challenge: touching down off the runway (grass, or past the threshold) shows no message and no score - the plane just rolls, so you never know why it didn't count. See it: land beside the runway or past z=700 in the landing challenge.
+- [ ] TESTER: After a scored landing, flying into the ocean or a hangar does not crash - crash() only fires when phase is 'fly'. See it: score a landing, then fly west past x=-9950.
+- [ ] TESTER: Landing challenge never shows the 55-88 kt touchdown speed band during the approach - you only learn it by getting downgraded. See it: land at 95 kt and watch a good touchdown drop a rank with no prior warning.
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
 
 ## window 4 · apextrackfield.html
+- [ ] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.
 - [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
 - [ ] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.

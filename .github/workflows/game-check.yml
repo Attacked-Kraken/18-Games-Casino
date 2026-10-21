@@ -6,6 +6,8 @@ name: Game check
 # adds a problem main doesn't already have - blob/box people, outside internet, real brands, casino words,
 # "Your name" boxes, broken shaders, missing files, owner's fix tests. See STUDIO-STANDARD.md.
 # Pull requests are checked SIDE BY SIDE by game-check-pr.yml (owner Oct 21 2026) - this file is main only.
+# Owner Oct 21 2026 6:23 PM "needs to be faster": main is played side by side too - one robot per game (plan -> play
+# matrix -> finish). A full check of all 11 games ~10-12 min instead of ~50; a merge that changed one game ~6-8 min.
 on:
   push:
     branches: [main]
@@ -28,51 +30,39 @@ permissions:
   actions: write
 
 jobs:
-  check:
+  plan:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 55   # all 8 games + play tests take ~30-40 min; at 25 every main run was cut off (Oct 17) and PRs were judged against a stale main
+    timeout-minutes: 5
+    outputs:
+      games: ${{ steps.pick.outputs.games }}
+      list: ${{ steps.pick.outputs.list }}
+      full: ${{ steps.pick.outputs.full }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install the test browser
-        run: |
-          npm install --no-save --no-package-lock playwright@1.48.2
-          npx playwright install --with-deps chromium webkit
-
-      - name: Remember the last report (for auto-undo)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+      - name: Pick what main needs re-played (only the games that changed, or every game)
+        id: pick
         run: |
           git fetch -q origin game-checks || true
           git show origin/game-checks:results.json > prev-results.json 2>/dev/null || echo '{}' > prev-results.json
-
-      - name: Pick what main needs re-played (fast check - only games that changed)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p old-checks
-          git archive origin/game-checks 2>/dev/null | tar -x -C old-checks 2>/dev/null || true
           P=$(node -e "try{console.log(require('./prev-results.json').sha||'')}catch(e){console.log('')}")
           FULL=""
           [ "${{ github.event_name }}" = "schedule" ] && FULL="every 4 h"
           [ "${{ inputs.full }}" = "true" ] && FULL="asked by hand"
           [ -n "$P" ] || FULL="no last report"
           [ -n "$FULL" ] || git merge-base --is-ancestor "$P" HEAD 2>/dev/null || FULL="last report not on main"
+          G=""
           if [ -z "$FULL" ]; then
             CH=$(git diff --name-only "$P" HEAD)
             echo "$CH"
-            G=""
             for f in $CH; do
               case "$f" in
                 apex*.html) G="$G$f,";;
                 tools/game-check/fixes/apex*.mjs) G="$G$(basename $f .mjs).html,";;
                 MODELS.md) FULL="MODELS.md changed";;
-                *.md|jobs/*|plans/*|reviews/*|looks/*|ideas/*|team/*|notes/*) ;;
+                *.md|jobs/*|plans/*|reviews/*|looks/*|ideas/*|team/*|notes/*|needs/*) ;;
                 .github/workflows/game-check.yml) FULL="robot changed";;
                 .github/*) ;;
                 *) FULL="shared file $f changed";;
@@ -80,33 +70,88 @@ jobs:
               [ -n "$FULL" ] && break
             done
           fi
-          if [ -n "$FULL" ]; then echo "FULL check: $FULL"; else
-            echo "ONLY=${G:-none}" >> $GITHUB_ENV
-            echo "SKIP_MODELS=1" >> $GITHUB_ENV
+          if [ -n "$FULL" ]; then
+            echo "FULL check: $FULL"
+            G="$(node -e "console.log(require('./tools/game-check/games.json').games.map(g=>g.file).join(','))"),models,"
+            echo "full=1" >> $GITHUB_OUTPUT
+          else
             echo "FAST check since $P: ${G:-no game changed}"
+            echo "full=" >> $GITHUB_OUTPUT
           fi
+          LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
+          JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
+          echo "games=$JSON" >> $GITHUB_OUTPUT
+          echo "list=$LIST" >> $GITHUB_OUTPUT
 
-      - name: Play the games
+  play:
+    needs: plan
+    if: needs.plan.outputs.games != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix:
+        game: ${{ fromJson(needs.plan.outputs.games) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the test browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium webkit
+      - name: Play ${{ matrix.game }}
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
           sleep 2
-          BASELINE=base-results.json node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
-
+          if [ "${{ matrix.game }}" = "models" ]; then
+            ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+          else
+            ONLY="${{ matrix.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+          fi
       - name: iPhone Safari pass
-        if: always()
+        if: always() && matrix.game != 'models'
         continue-on-error: true
         run: |
           [ -f game-check-out/results.json ] || exit 0
           python3 -m http.server 8812 >/dev/null 2>&1 &
           sleep 2
-          timeout 900 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+          ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: main-play-${{ strategy.job-index }}
+          path: game-check-out
+          if-no-files-found: ignore
 
-      - name: Keep the last result for games that didn't change
-        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+  check:
+    needs: [plan, play]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: main-play-*
+          path: parts
+      - name: Put the games back together + keep the last result for games that didn't change
         run: |
-          [ -f game-check-out/results.json ] || exit 0
-          [ -n "$ONLY" ] || exit 0
-          node tools/game-check/carry.mjs prev-results.json game-check-out old-checks
+          git fetch -q origin game-checks || true
+          git show origin/game-checks:results.json > prev-results.json 2>/dev/null || echo '{}' > prev-results.json
+          mkdir -p old-checks
+          git archive origin/game-checks 2>/dev/null | tar -x -C old-checks 2>/dev/null || true
+          node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
+          node tools/game-check/report.mjs game-check-out
+          if [ -z "${{ needs.plan.outputs.full }}" ]; then SKIP_MODELS=1 node tools/game-check/carry.mjs prev-results.json game-check-out old-checks;
+          else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
 
       - name: Auto-undo a merge that newly broke a game
         if: always() && github.event_name == 'push'
@@ -120,6 +165,7 @@ jobs:
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           [ -n "$GAMES" ] || { echo "nothing newly broken"; exit 0; }
           echo "Newly broken: $GAMES - checking once more to be sure it isn't a fluke"
+          npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 8813 >/dev/null 2>&1 &
           sleep 2
           ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
