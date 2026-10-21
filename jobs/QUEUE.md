@@ -7,7 +7,7 @@ Claudes: keep each list short, one change per step, the owner's words. `- [x]` =
 was already sent. Muses: don't edit this file.
 
 ## window 1 · apexbaseball.html
-- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs.
+- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs. (sent as G-100)
 - [x] TESTER: The ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he can strike out on one strike or walk on one ball. See it: finish an at-bat with a strikeout or a walk, then watch the next batter's count. (fixed in the G-57 redo)
 - [x] TESTER: Help cannot be closed on a sideways phone - the CLOSE button sits fully below the screen and the overlay does not scroll; the Play a friend START and CLOSE buttons are cut off at the bottom too. See it: open ? Help or Play a friend with the phone held sideways. (fixed in the G-57 redo)
 - [x] TESTER: The ? help button sits on top of the CAM button at the top right and covers half of it (CAM reads 'M-AUTO'), so the covered part of the CAM button cannot be tapped. See it: look at the top right corner on any screen. (fixed in the G-57 redo)
@@ -31,10 +31,14 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): hockey crowd, goal horn, puck and skate sounds from sounds/stadium/hockey/, and the ice_rink texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 3 · apexflight.html
+- [ ] TESTER: Landing challenge: touching down off the runway (grass, or past the threshold) shows no message and no score - the plane just rolls, so you never know why it didn't count. See it: land beside the runway or past z=700 in the landing challenge.
+- [ ] TESTER: After a scored landing, flying into the ocean or a hangar does not crash - crash() only fires when phase is 'fly'. See it: score a landing, then fly west past x=-9950.
+- [ ] TESTER: Landing challenge never shows the 55-88 kt touchdown speed band during the approach - you only learn it by getting downgraded. See it: land at 95 kt and watch a good touchdown drop a rank with no prior warning.
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
 
 ## window 4 · apextrackfield.html
+- [ ] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.
 - [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
 - [ ] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
