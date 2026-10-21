@@ -97,3 +97,7 @@ Format: `- YYYY-MM-DD · game · mistake → rule`
   tests by merging from an old main).
 - 2026-10-21 · apextrackfield · Three play tests called Puppeteer APIs (page.target, page.setViewport) that are not functions on the robot's Playwright page → rule: play tests use the Playwright calls directly - page.context().newCDPSession(page) and page.setViewportSize() - never the Puppeteer names, shim or no shim.
 - 2026-10-21 · apextrackfield · Hurdle frames stood only in the player's lane while the rivals leapt over empty air in theirs → rule: what a runner must jump must be DRAWN in his own lane - the visual list and the physics list are the same hurdles, in every lane.
+
+## 2026-10-21 help desk (5:40 PM)
+- A tester got a "Still on G-NN?" reminder but never the order (window 8, G-103) and searched the repo for a job that lives only on the Mac. Rule: a G-NN order is the message the Mac typed to YOUR window, never a file; if you only have the reminder, write a HELP-VP line and the order is re-sent. Tester rounds always mean: play your game, TESTER lines in jobs/QUEUE.md + failing tester- tests, then jobs/G-NN.md.
+- A builder waited for "an owner job" for an intermittent robot test (window 2, play-icing-called). Rule: red robot lines come to the builder by themselves (ROBOT RED LINES step); a flaky proof test is a robot bug - make the test deterministic in your next BUILD PR, don't wait.
