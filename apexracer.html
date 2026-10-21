@@ -292,9 +292,9 @@ import { GLTFLoader } from './vendor/GLTFLoader.js';
 /* G-01: owner's player car - V12 Goblin 3D model, preloaded at boot so it's ready for menu/garage/race */
 /* G-04: real 3D cars - registry of fetched models, preloaded at boot */
 const GLB_MODELS = {
-  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat'], tire: ['car_tire'], rim: ['car_body'], glass: ['car_glass'], rot: -Math.PI / 2 },
-  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'], rot: Math.PI / 2 },
-  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial003', 'palettematerial002'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 },
+  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat', 'car_body'], tire: ['car_tire'], rim: [], glass: ['car_glass'], rot: -Math.PI / 2 }, /* G-46 fix: car_body is the body shell (45k of 60k verts) - as 'rim' it wore grey metal and the car was a patchwork */
+  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob', 'misc', 'carbon', 'chrome', 'darkgray', 'board', 'darkalu', 'klotz', 'grille', 'aluminummatte', 'gray', 'material', 'material_13', 'd2fence'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'], rot: Math.PI / 2 }, /* G-46 fix: the shell panels join the paint - only paintjob (11% of verts) took the color before, the rest stayed dark factory metal and the car all but vanished at night */
+  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial003', 'palettematerial002', 'palettematerial009', 'palettematerial010'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 }, /* G-46 fix: 009/010 are the big body panels (12k verts) - they kept their dark factory material */
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
 };
@@ -640,7 +640,7 @@ function tireGeo(r, rr, tw) {
 }
 const FIN = { gloss: { n: 'Gloss', p: 0 }, metal: { n: 'Metallic', p: 1500 }, pearl: { n: 'Pearl Shift', p: 6000 }, candy: { n: 'Candy', p: 4000 }, matte: { n: 'Matte', p: 3000 }, chrome: { n: 'Chrome', p: 12000 } };
 function paintMat(hex, fin) {
-  const m = new THREE.MeshPhysicalMaterial({ color: hex, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.3 });
+  const m = new THREE.MeshPhysicalMaterial({ color: hex, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.55 }); /* G-46 fix: proper shiny paint - stronger clearcoat reflections on every car */
   if (fin === 'gloss') { m.metalness = 0.05; m.roughness = 0.3; }
   else if (fin === 'metal') { m.metalness = 0.72; m.roughness = 0.33; }
   else if (fin === 'pearl') { m.metalness = 0.35; m.roughness = 0.26; m.iridescence = 1; m.iridescenceIOR = 1.75; m.iridescenceThicknessRange = [250, 900]; }
