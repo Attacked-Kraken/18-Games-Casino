@@ -242,10 +242,10 @@ export function hockeyKit(THREE, a, o = {}) {
       [{ t: 0, a: .062, b: .08 }, { t: .6, a: .058, b: .068 }, { t: 1, a: .062, b: .07, b2: .074 }].map((r) => ({ ...r, a: r.a * s, b: r.b * s, b2: (r.b2 ?? r.b) * s })), 22), boot, bone);
     const box = (w, h, d, x, y, z, rx = 0) => { const g = new THREE.BoxGeometry(w * s, h * s, d * s); g.rotateX(rx); g.translate(x, y * s, z * s); return g; };
     mb.add(box(.06, .1, .02, cx, .2, ft.z / s + .05, -.25), trim, bone); mb.add(box(.05, .06, .02, cx, .19, ft.z / s - .115, .2), trim, bone);
-    gb.add(box(.03, .03, .29, cx, -.022, .005), 0xe9ecef, bone);
+    gb.add(box(.032, .05, .29, cx, -.032, .005), 0xf2f4f6, bone); // JOB-04: taller white holder so the blade reads from the TV camera
     for (const z of [-.105, .11]) { const tw = new THREE.CylinderGeometry(.02 * s, .028 * s, .035 * s, 10); tw.translate(cx, -.005 * s, z * s); gb.add(tw, 0xe9ecef, bone); }
     const bl = new THREE.Shape(), L = .3 * s, H = .028 * s; bl.moveTo(-L / 2, H); bl.lineTo(L / 2, H); bl.quadraticCurveTo(L / 2 + .02 * s, 0, L / 2 - .03 * s, -.004 * s); bl.quadraticCurveTo(0, -.012 * s, -L / 2 + .03 * s, -.004 * s); bl.quadraticCurveTo(-L / 2 - .015 * s, H * .4, -L / 2, H);
-    const bg = new THREE.ExtrudeGeometry(bl, { depth: .006 * s, bevelEnabled: false }); bg.translate(0, 0, -.003 * s); bg.rotateY(-Math.PI / 2); bg.translate(cx, -.065 * s, .005 * s);
+    const bg = new THREE.ExtrudeGeometry(bl, { depth: .006 * s, bevelEnabled: false }); bg.translate(0, 0, -.003 * s); bg.scale(1, 1.6, 1); bg.rotateY(-Math.PI / 2); bg.translate(cx, -.1 * s, .005 * s); // JOB-04: blade 4.5 cm tall (was 2.8 cm - invisible on a phone)
     sb.add(bg, 0xc8d2da, bone); }
 
   /* --- oversized gloves: padded cuff, finger rolls, thumb, dark palm --- */
@@ -277,7 +277,7 @@ export function hockeyKit(THREE, a, o = {}) {
       const ed = new THREE.TorusGeometry(.142 * s, .0028 * s, 4, 28, 2.5); ed.rotateZ(Math.PI / 2 - 1.25); ed.rotateX(Math.PI / 2); ed.translate(0, 1.669 * s, -.009 * s); mb.add(ed, dark, 'Head'); } }
   parts.gear = mb.build(M({ vertexColors: true, roughness: .7, metalness: .02 }), 'gear-matte');
   parts.shell = gb.build(M({ vertexColors: true, roughness: .26, metalness: .12, side: THREE.DoubleSide }), 'gear-gloss');
-  parts.steel = sb.build(M({ vertexColors: true, roughness: .34, metalness: .25 }), 'gear-steel'); // G-72: silver that reads silver - metalness .9 with no env map rendered the blades near-black, so the boots looked sunk into the ice
+  parts.steel = sb.build(M({ vertexColors: true, roughness: .3, metalness: .45, emissive: 0x3a4248 }), 'gear-steel'); // JOB-04: metalness .9 with no env map rendered near-black
   if (U && U.uScalp) U.uScalp.value = 0;
 
   /* --- stick: in both hands, blade flat on the ice (one mesh) --- */
