@@ -14,7 +14,11 @@ Owner: Mr. Cruz. Read these files, in this order, before any work. They are the 
 5. **README.md** — how the repo is laid out (sealed casino vs. Game Development / sports.html).
 
 6. **NEWS.md** — the owner's latest decisions (newest first). The approver also tells you each new one.
-7. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
+7. **DONE.md** — the bar every game must pass (controls, phone layout, REALITY sizes/direction/ground, camera, sound,
+   speed, game loop). The robot FAILs what it can measure; you prove the rest with a play test. Read it before EVERY job.
+8. **REALITY.md** — real sizes, which way things face and move, feet/wheels/skates on the ground, and the
+   `window.__reality` robot hook every sports game must set.
+9. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
    owner 👎 or failed check, add one line to it.
 
 Short version: no gambling, casino or real-money content in Game Development titles; no real brands,

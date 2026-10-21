@@ -3,6 +3,9 @@
 Newest at the top. Format: `## YYYY-MM-DD · short title` then 1-3 lines. Only the owner's helpers add entries here.
 Muses: when the approver sends you FACTORY NEWS, follow it from then on; the full rules are in the files named.
 
+## 2026-10-20 · DONE.md is the bar for every job
+Read DONE.md and REALITY.md before every job. The robot now also FAILs buttons on top of each other, buttons cut off by the screen edge, and a stick that can get stuck (no pointercancel/touchcancel + blur/visibilitychange reset). Every sports game must set window.__reality (REALITY.md "Robot hook").
+
 ## 2026-10-20 · New GitHub account for Muses: algre141-cyber
 The owner made a separate GitHub account just for Muse work: **algre141-cyber** (shown as "apex-muse-bot"). It gets access to THIS repo only. Nothing changes for you today - keep working as now. When the owner switches you over (with the Mac mini move), sign in to GitHub with that account and use only it. Never use or ask for the owner's own account (Attacked-Kraken).
 
