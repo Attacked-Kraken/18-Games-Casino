@@ -512,6 +512,34 @@ if (process.env.STRICT) {
   // TESTER PRs (owner Oct 20 10:10 PM, Claude 03's catch): a tester (windows 7-10) only adds play tests that FAIL today +
   // QUEUE lines - the red test IS the finding, the builder fixes the game next. A PR that changes ONLY test files, QUEUE.md,
   // job reports or reviews is never blocked by its own failing tests. Any game/kit/model change = normal rules.
+  // FILE GUARD (owner Oct 21 2026 2:06 PM "make the file guard universal ... inside the game check robot itself, so it
+  // runs on every pull request for every game, now and future"): a Muse's PR may change ONE game (its page, its play
+  // tests, its looks/ folder) plus notes (job reports, QUEUE, reviews, CLAIMS, LESSONS, model lists). Shared parts
+  // (kit/ venues/ models/ characters/ sounds/) change in their OWN PR with no game page in it (STUDIO-STANDARD 9.4).
+  // Anything else (another game, the hub, robots, workflows) = FAIL. The owner's Claude branches (vp-, claude-, 03-..)
+  // are exempt - they own the robots and the hub.
+  {
+    const branch = process.env.PR_BRANCH || '';
+    const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
+    const NOTES = /^(jobs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
+    const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
+    const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
+    const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
+    const games = [...new Set(changed.filter(isGame))];
+    const fixes = changed.filter(isFix);
+    const sharedF = changed.filter(isShared);
+    const other = changed.filter(f => !NOTES.test(f) && !isGame(f) && !isFix(f) && !isShared(f));
+    const guard = [];
+    if (games.length > 1) guard.push(`FILE GUARD: this PR changes ${games.length} games (${games.join(', ')}) - ONE game per PR`);
+    const fixGames = [...new Set(fixes.map(f => path.basename(f, '.mjs') + '.html'))];
+    if (games.length === 1 && fixGames.some(g => g !== games[0])) guard.push(`FILE GUARD: play tests of another game changed (${fixGames.filter(g => g !== games[0]).join(', ')}) - only your game's tests`);
+    if (games.length === 0 && fixGames.length > 1) guard.push(`FILE GUARD: play tests of ${fixGames.length} games changed - one game per PR`);
+    if (games.length && sharedF.length) guard.push(`FILE GUARD: shared parts (${sharedF.slice(0, 3).join(', ')}) changed together with a game page - shared folders change in their OWN pull request (STUDIO-STANDARD 9.4)`);
+    if (other.length && !claudeBranch) guard.push(`FILE GUARD: not yours to change: ${other.slice(0, 5).join(', ')} - a job may change only its game, its play tests, its looks/ folder, notes, or (alone) a shared folder`);
+    if (guard.length && !claudeBranch) { blockers.push(...guard); }
+    else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
+    else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
+  }
   const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\//.test(f));
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports changed): its failing play tests are findings for the builder, not blockers.');
   for (const r of results) for (const f of r.fail) {
