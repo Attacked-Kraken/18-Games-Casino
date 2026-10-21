@@ -1330,4 +1330,78 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-stick-resets-on-interruption',
+    ask: 'A call or notification must never leave the player steering by itself: the held stick resets to centre on window blur and when the page hides',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; });
+      await h.wait(2500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.phase === 'run') { clearInterval(iv); res('running'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = document.querySelector('#gridEvents button'); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 90) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 150);
+      }));
+      if (nav !== 'running') return 'could not reach a running race: ' + nav;
+      const grab = (id) => {
+        const stick = document.getElementById('stick'), knob = document.getElementById('stickKnob');
+        stick.dispatchEvent(new PointerEvent('pointerdown', { pointerId: id, clientX: 200, clientY: 200, bubbles: true }));
+        stick.dispatchEvent(new PointerEvent('pointermove', { pointerId: id, clientX: 260, clientY: 200, bubbles: true }));
+        const inp = window.__tf.input();
+        return { held: inp.stickHeld, knob: knob.style.transform };
+      };
+      const state = () => { const inp = window.__tf.input(); return { held: inp.stickHeld, knob: document.getElementById('stickKnob').style.transform }; };
+      const g1 = await h.eval(grab, 77);
+      if (!g1.held || !/translate\(44px/.test(g1.knob)) return 'the stick did not engage for the test (held=' + g1.held + ', knob=' + g1.knob + ')';
+      await h.eval(() => { window.dispatchEvent(new Event('blur')); return true; });
+      const afterBlur = await h.eval(state);
+      if (afterBlur.held || !((k) => { const m = /translate\((-?[\d.]+)/.exec(k || ''); return !m || Math.abs(parseFloat(m[1])) < 1; })(afterBlur.knob)) return 'after a window blur the stick stays held (held=' + afterBlur.held + ', knob=' + afterBlur.knob + ') - an interruption leaves the player steering by itself';
+      const g2 = await h.eval(grab, 78);
+      if (!g2.held) return 'the stick did not re-engage for the visibility check';
+      await h.eval(() => { Object.defineProperty(document, 'hidden', { value: true, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); return true; });
+      const afterHide = await h.eval(state);
+      await h.eval(() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); return true; });
+      if (afterHide.held || !((k) => { const m = /translate\((-?[\d.]+)/.exec(k || ''); return !m || Math.abs(parseFloat(m[1])) < 1; })(afterHide.knob)) return 'when the page hides the stick stays held (held=' + afterHide.held + ', knob=' + afterHide.knob + ') - an interruption leaves the player steering by itself';
+      return true;
+    },
+  },
+  {
+    id: 'play-button-releases-on-interruption',
+    ask: 'A held ACTION button (the discus hold-to-spin) must release when a call or notification interrupts - blur releases it like a finger lift',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; });
+      await h.wait(2500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.phase === 'hold') { clearInterval(iv); res('holding'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /discus/i.test(x.textContent)); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 90) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 150);
+      }));
+      if (nav !== 'holding') return 'could not reach the discus hold: ' + nav;
+      await h.eval(() => { document.getElementById('btnA').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); return true; });
+      let phase = '';
+      for (let i = 0; i < 20; i++) { await h.wait(150); phase = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return e ? e.phase : ''; }); if (phase === 'spinning') break; }
+      if (phase !== 'spinning') return 'pressing ACTION did not start the discus spin (phase: ' + phase + ')';
+      await h.eval(() => { window.dispatchEvent(new Event('blur')); return true; });
+      for (let i = 0; i < 20; i++) { await h.wait(150); phase = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return e ? e.phase : ''; }); if (phase !== 'spinning') break; }
+      if (phase === 'spinning') return 'a window blur did not release the held ACTION button - the discus is still spinning on a hold nobody is making';
+      return true;
+    },
+  },
 ];
