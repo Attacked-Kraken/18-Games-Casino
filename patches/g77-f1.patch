@@ -1,0 +1,69 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -112,10 +112,11 @@
+   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+   #banner .b1 { font-size:clamp(26px,6vw,52px); font-weight:900; letter-spacing:3px; text-shadow:0 3px 18px #000; }
+   #banner .b2 { font-size:15px; color:#cfe0ff; margin-top:6px; }
+-  #lights { position:fixed; left:50%; top:26%; transform:translateX(-50%); z-index:36; display:flex; gap:14px; }
+-  .light { width:34px; height:34px; border-radius:50%; background:#2a1214; border:2px solid #000; }
++  #lights { position:fixed; left:50%; top:15%; transform:translateX(-50%); z-index:36; display:flex; gap:16px; background:#060b14d9; padding:14px 20px; border-radius:18px; border:1px solid #ffffff2a; }
++  .light { width:56px; height:56px; border-radius:50%; background:#2a1214; border:2px solid #000; }
+   .light.red { background:#ff2222; box-shadow:0 0 22px #ff2222; }
+   .light.out { background:#111; }
++  .light.green { background:#22dd55; box-shadow:0 0 26px #22dd55; }
+   table.stand { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+   table.stand td, table.stand th { padding:4px 6px; border-bottom:1px solid #1c2b44; text-align:left; }
+   table.stand th { color:#8fa8c8; font-size:11px; letter-spacing:1px; }
+@@ -1610,14 +1611,14 @@
+     this.gridOrder=order;
+   },
+   startLights(){
+-    this.mode='lights'; this.stateT=0; this.lightsOn=0;
++    this.mode='lights'; this.stateT=0; this.lightsOn=0; this._lampN=0; clearTimeout(this._ltT); // G-77: a restart within 600 ms of the last lights-out must not let the old hide timer kill the new lights
+     $('lights').classList.remove('hidden'); $('lights').innerHTML='';
+     for(let i=0;i<5;i++){ const d=document.createElement('div'); d.className='light'; $('lights').appendChild(d); }
+     this.jumpStart=false;
+   },
+   updateLights(dt){
+     this.stateT+=dt;
+-    const n=Math.min(5,Math.floor(this.stateT/0.8)+1);
++    const n=Math.min(5,Math.floor(this.stateT/0.8)); // G-77: reds come on one by one - a beat before lamp 1 (was lit from t=0)
+     if(n!==this._lampN){ this._lampN=n; GPSetLights(n); if(n>0) GPPlay('start_light_beep',0.8); }
+     const lights=$('lights').children;
+     for(let i=0;i<5;i++) lights[i].className='light'+(i<n?' red':'');
+@@ -1627,8 +1628,8 @@
+       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
+     }
+     if(this.stateT>4.2+this._holdT){
+-      for(let i=0;i<5;i++) lights[i].className='light out';
+-      setTimeout(()=>$('lights').classList.add('hidden'),600);
++      for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
++      this._ltT=setTimeout(()=>$('lights').classList.add('hidden'),600);
+       this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
+       this._lampN=0; GPSetLights(0); GPPlay('lights_out_go',1);
+       banner('LIGHTS OUT!','',900,'#37d67a'); Aud.beep(880,0.25,0.3);
+@@ -2236,7 +2237,15 @@
+     if(Particles.pool.length) Particles.update(dt);
+     if(Race.mode==='quali'){ updateQuali(dt); }
+     else if(Race.mode==='race'||Race.mode==='lights'){ Race.update(dt); RainFX.update(dt); }
+-    else if(Race.mode==='menu'||Race.mode==='grid'||Race.mode==='finished'){
++    else if(Race.mode==='grid'){
++      // G-77: the race start opens ON the player car on the grid. The grid screen
++      // used to run the 150 m showcase orbit below (only grass) until the
++      // LIGHTS OUT tap; now the normal race camera frames the car from the
++      // first grid frame - no tap needed, and no fly-in when the race starts.
++      if(Race.player) Race.updateCamera(1);
++      Track.updateCrowd(dt,0.15); Aud.crowdTick(dt,0.05);
++    }
++    else if(Race.mode==='menu'||Race.mode==='finished'){
+       // idle showcase: slow orbit around start line
+       if(scene&&Track.samples.length){
+         const a=t/9000;
+@@ -2341,6 +2350,7 @@
+     hasResults: !!Race.results,
+     playerFinished: !!(Race.player && Race.player.finished)
+   }),
++  camAt: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }), // G-77: camera probe (start framing)
+   heading: (idx) => { const c=Race.cars[idx||0]; if(!c) return null;
+     const f=Track.frameAt(c.s);
+     return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
