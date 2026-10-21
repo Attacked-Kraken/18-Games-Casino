@@ -482,4 +482,49 @@ export default [
       });
     },
   },
+  {
+    id: 'play-steering-feel',
+    ask: 'G-76: better steering - the car answers the stick quickly, turns where it points without sliding wide, and never snaps',
+    async test(page, h) {
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 3);
+          setTimeout(() => {
+            if (!E.R) return res('no race');
+            const R = E.R, P = R.P, T = R.T;
+            R.t = 0; // skip the countdown
+            // clear stretch: player 150 segments ahead of the grid, traffic parked 400 m up the road, AI left behind
+            P.prog += 150; P.s = P.prog;
+            const at = {}; T.at(P.prog, 0, at);
+            P.x = at.x; P.z = at.z; P.h = at.h; P.idx = ((Math.floor(P.prog) % T.N) + T.N) % T.N;
+            P.vx = Math.sin(P.h) * 22; P.vz = Math.cos(P.h) * 22;
+            for (const e of R.cars) if (e.ai) { e.s = P.prog - 60; e.prog = e.s; }
+            for (const tr of R.traffic) tr.s = P.prog + 400 / T.ds;
+            const unwrap = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
+            E.K.gas = 1;
+            let n = 0; while (P.spd < 24 && n++ < 900) E.step(3, 1 / 60);
+            if (P.spd < 20) { E.K.gas = 0; return res('the car never got up to speed (' + P.spd.toFixed(0) + ' m/s)'); }
+            // full lock for 0.5 s: measure the turn-in, the smoothness and the slide at the end
+            const h0 = P.h; let prev = P.h, maxJump = 0;
+            E.K.sx = 1;
+            for (let i = 0; i < 10; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
+            const dhA = Math.abs(unwrap(P.h, h0));
+            const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
+            const vF = P.vx * fx + P.vz * fz, vL = P.vx * rx + P.vz * rz;
+            const slide = Math.atan2(Math.abs(vL), Math.abs(vF));
+            // let go: the wheel must unwind just as smoothly, no snap back
+            E.K.sx = 0; prev = P.h;
+            for (let i = 0; i < 8; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
+            E.K.gas = 0;
+            if (dhA < 0.30) return res('the car barely answered the stick: only ' + dhA.toFixed(2) + ' rad of turn in 0.5 s at ' + P.spd.toFixed(0) + ' m/s - steering still lags');
+            if (slide > 0.20) return res('the car slides wide: its travel points ' + (slide * 57.3).toFixed(0) + ' degrees away from its nose in a steady turn');
+            if (maxJump > 0.16) return res('the steering snaps: the nose jumped ' + maxJump.toFixed(2) + ' rad in one 0.05 s sample');
+            res(true);
+          }, 400);
+        });
+      });
+    },
+  },
 ];
