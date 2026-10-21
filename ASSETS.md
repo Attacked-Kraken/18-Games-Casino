@@ -330,3 +330,11 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-20, sent by the owner
 - used in: Apex Baseball
 
+
+## ASSET: models/apex-jet/
+- title: Apex Jet pack - 6 original jet styles x 8 paints (code-built model, controls, flight physics, GLB exports, demo)
+- maker: made for the owner by Claude (code-built from scratch, no downloaded models)
+- source: the owner's Claude chat, Oct 21 2026 (PR #873)
+- license: OWNER - made for the owner
+- downloaded: 2026-10-21, sent by the owner
+- used in: apexflight.html (to replace the old plane, jobs G-89 + G-90)

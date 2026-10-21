@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { realityCheck } from './reality.mjs';
+import { realityCheck, playerScreenBox } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
@@ -155,12 +155,15 @@ for (const g of games) {
   page.on('pageerror', e => errors.add(String(e.message).split('\n')[0].slice(0, 140)));
   const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
   page.on('console', m => { const t = m.text(); if (m.type() === 'error' && /Shader Error|shader is not compiled|Program Info Log/i.test(t)) shaderErr.add(t.replace(/\s+/g, ' ').slice(0, 120)); });
+  const aborted = new Set();
   page.on('response', res => { if (res.status() >= 400) missing.add(res.url().replace(base, '').slice(0, 100)); });
   page.on('requestfailed', q => { const u = q.url(); if (!u.startsWith(base)) return;
     // Oct 21 (VP): a sound the game starts loading and the page then drops (reload / leaving the page) is ABORTED, not missing -
     // G-80's 20 real mp3 files (present on main and on its branch) were reported 'Missing file'. Only a real 404 above counts.
     const why = (q.failure() && q.failure().errorText) || '';
-    if (/ERR_ABORTED/.test(why) && q.resourceType() === 'media') return;
+    // owner Oct 21 5:26 PM (window 1, G-100): ANY aborted download (a page reload / leaving the page) is never 'missing
+    // file' - it is retried once at the end and counts only if the file really isn't there.
+    if (/ERR_ABORTED|aborted|cancel/i.test(why)) { aborted.add(u); return; }
     missing.add(u.replace(base, '').slice(0, 100)); });
   try {
     await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 });
@@ -295,7 +298,7 @@ for (const g of games) {
   if (fs.existsSync(fixFile)) {
     let list = [];
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
-    catch (e) { r.check.push('Fix list file has an error: ' + String(e.message).slice(0, 120)); }
+    catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '.mjs - it does not load, so NONE of its tests ran: ' + String(e.message).split('\n')[0].slice(0, 140)); }
     // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
     if (!page.setViewport) page.setViewport = v => page.setViewportSize({ width: v.width, height: v.height });
     if (!page.target) page.target = () => ({ createCDPSession: () => page.context().newCDPSession(page) });
@@ -361,6 +364,14 @@ for (const g of games) {
     await page.waitForTimeout(2500);
     const rl = await realityCheck(page, ms => page.waitForTimeout(ms));
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
+    // CLOSE-UP (owner Oct 21 5:54 PM): head and shoulders of the main player, shown on his card next to the play picture
+    try {
+      const fb = await playerScreenBox(page);
+      if (fb && fb.width) {
+        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 80, clip: fb }));
+        r.img.face = 'img/' + slug + '-face.jpg';
+      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player + camera)');
+    } catch (e) { r.check.push('Close-up picture failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
     // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
     try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
     catch (e) { r.check.push('Phone layout check could not run: ' + String(e.message).split('\n')[0].slice(0, 80)); }
@@ -407,6 +418,10 @@ for (const g of games) {
   if (sharp) {
     r.sharpness = +sharp.ratio.toFixed(2);
     if (sharp.ratio < 1.4) r.check.push(`Blurry picture: the 3D game is drawn at ${sharp.ratio.toFixed(2)}x on a 2x phone screen - players and lines look soft. Draw at 1.5x (renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)) or the kit/apex-gfx "sharp" setting) - STUDIO-STANDARD.md "Sharp picture"`);
+  }
+  for (const u of aborted) {          // retry each aborted download once - only a real 404 is 'missing'
+    try { const res = await ctx2.request.get(u, { timeout: 20000 }); if (res.status() >= 400) missing.add(u.replace(base, '').slice(0, 100)); }
+    catch (e) { /* network hiccup on the retry: not counted */ }
   }
   await ctx2.close();
 
@@ -484,7 +499,7 @@ for (const r of results.slice().sort((a, b) => order[a.status] - order[b.status]
     md += `\n**Owner's fix list** (${r.fixes.filter(f => f.ok).length} of ${r.fixes.length} done):\n`;
     for (const f of r.fixes) md += `- ${f.ok ? '✅' : '❌'} ${f.ask}${!f.ok && f.note ? ' — ' + f.note : ''}\n`;
   }
-  md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">\n\n`;
+  md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300"> <img src="${r.img.upright}" width="90">${r.img.face ? ' <img src="' + r.img.face + '" width="120">' : ''}\n\n`;
 }
 const shown = models.filter(m => m.img);
 if (shown.length) {

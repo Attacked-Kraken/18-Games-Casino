@@ -696,10 +696,10 @@ function preloadsDone(){
 }
 
 /* ================= puck ================= */
-const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), MAT.puck);
+const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.124,0.124,0.083,14), MAT.puck);
 puckMesh.castShadow=!isTouch; scene.add(puckMesh);
 const puck = { mesh:puckMesh, pos:puckMesh.position, vel:new THREE.Vector3(), owner:null, recv:null, recvT:0, shot:null };
-puck.pos.set(0,0.2,0);
+puck.pos.set(0,0.06,0);
 window.__hk.puck = puck; window.__hk.BLUE = BLUE; window.__hk.camera = camera; // read-only peek for the offside fix test
 
 /* ================= input ================= */
@@ -954,7 +954,7 @@ function doPass(){
   if(!best) return;
   const lead=0.30, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
   const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=40;
-  puck.pos.set(from.pos.x+fx*STICK_REACH, 0.2, from.pos.z+fz*STICK_REACH); // release from the stick, not the skates
+  puck.pos.set(from.pos.x+fx*STICK_REACH, 0.06, from.pos.z+fz*STICK_REACH); // release from the stick, not the skates
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=2.2;
   puck.passGrace=from; puck.passT=performance.now();
   puck.lastPass=from; puck.lastPassT=performance.now();
@@ -1043,7 +1043,7 @@ function setupFaceoffPositions(dx,dz){
   placeSkater(ald,dx+17,dz-10,Math.PI); placeSkater(ard,dx+17,dz+10,Math.PI);
   homeGoalie.pos.set(-GOAL_LINE+2.2,0.1,0); homeGoalie.facing=0; homeGoalie.vel.set(0,0,0);
   awayGoalie.pos.set(GOAL_LINE-2.2,0.1,0); awayGoalie.facing=Math.PI; awayGoalie.vel.set(0,0,0);
-  puck.pos.set(dx,0.2,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null; puck.lastTouch=null;
+  puck.pos.set(dx,0.06,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null; puck.lastTouch=null;
   puck.recvT=0; prevPuckX=dx;
   for(const bs of skaters){ if(bs.inBox){ const bp=BOXSPOT[bs.team]; placeSkater(bs, bp[0], bp[1], bs.team==='home'?0:Math.PI); } } // boxed men stay in the box for the drop
   controlled = nearestSkater('home',puck.pos);
@@ -1383,7 +1383,7 @@ function stepSkater(s,dt){
 function stepPuck(dt){
   if(puck.owner){
     const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
-    puck.pos.set(o.pos.x+fx*STICK_REACH, 0.2, o.pos.z+fz*STICK_REACH);
+    puck.pos.set(o.pos.x+fx*STICK_REACH, 0.06, o.pos.z+fz*STICK_REACH);
     puck.vel.set(o.vel.x,0,o.vel.z);
     return;
   }
@@ -1654,7 +1654,7 @@ function tick(now){
   if(state==='menu'||state==='over') break;
   stateT-=dt;
   if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
-  else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.2,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
+  else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.06,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
   else if(state==='whistle'&&stateT<=0){
     const p=pendingFaceoff; pendingFaceoff=null;
     if(p) faceoff(p.x,p.z,p.label); else faceoff(0,0,'FACEOFF');
@@ -1928,6 +1928,13 @@ $('friendGo').addEventListener('click', () => {
   const s = starSkater(); const c = cLoad();
   if (s) { s.star = true; if (c) { const o = starOVR(c); window.__starBoost = 1 + (o - 76) * 0.004; window.__starShot = 1 + (o - 76) * 0.003; } }
   renderMenu();
+  // The career hub's PLAY button saves the fixture and reloads (so the boot
+  // patch above can dress the away team) - the reload must START that match,
+  // not strand the player on the menu to press CAREER a second time. Only a
+  // career fixture auto-starts: a friend fixture still waits on the menu,
+  // where its PLAY label and cancel live.
+  const pm2 = mLoad();
+  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) pb.click(); }
 })();
 
 requestAnimationFrame(tick);

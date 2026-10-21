@@ -33,7 +33,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md")
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
@@ -96,6 +96,26 @@ def fix_notes_conflict(pr):
     return True
 
 
+SUMMARY = []
+
+
+def say(line):
+    print(line)
+    SUMMARY.append(line)
+
+
+def tell_pr(n, sha, text):
+    """Owner Oct 21 2026 'every robot writes its fail reason as a PR comment': once per head commit."""
+    try:
+        cs = gh("repos/%s/issues/%d/comments?per_page=50" % (REPO, n)) or []
+        if any(sha[:7] in (c.get("body") or "") and "Merge robot" in (c.get("body") or "") for c in cs):
+            return
+        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
+           fields={"body": "🤖 Merge robot (commit %s): %s" % (sha[:7], text)})
+    except Exception:
+        pass
+
+
 def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
@@ -107,12 +127,12 @@ def main():
         low = title.lower()
         if pr.get("draft") or any(w in low for w in ("hold", "wip", "draft", "do not merge")) or \
                 any(l.get("name", "").lower() == "hold" for l in pr.get("labels", [])):
-            print("#%d skipped: draft/hold" % n); continue
+            say("#%d skipped: draft/hold" % n); continue
         if pr["head"]["repo"] is None or pr["head"]["repo"]["full_name"] != REPO:
-            print("#%d skipped: from another repo" % n); continue
+            say("#%d skipped: from another repo" % n); continue
         files = gh("repos/%s/pulls/%d/files?per_page=100" % (REPO, n)) or []
         if any(f["filename"].startswith(".github/") for f in files):
-            print("#%d skipped: changes the robots (.github/) - owner/Claude merges those" % n); continue
+            say("#%d skipped: changes the robots (.github/) - owner/Claude merges those" % n); continue
         full = gh("repos/%s/pulls/%d" % (REPO, n)) or {}
         if full.get("mergeable") is False and full.get("mergeable_state") == "dirty":
             # owner Oct 21 2026 2:24 PM (PR #883, window 8: green but a conflict in jobs/QUEUE.md): the robot fixes
@@ -122,7 +142,7 @@ def main():
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
             continue
         if full.get("mergeable") is not True:
-            print("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
+            say("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
         # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
         # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
         try:
@@ -145,11 +165,14 @@ def main():
             if k not in newest or (r.get("started_at") or "") > (newest[k].get("started_at") or ""):
                 newest[k] = r
         if "check" not in newest:
-            print("#%d skipped: the robot's game check hasn't run yet" % n); continue
+            say("#%d skipped: the robot's game check hasn't run yet" % n); continue
         busy = [k for k, r in newest.items() if r.get("status") != "completed"]
         bad = [k for k, r in newest.items() if r.get("status") == "completed" and r.get("conclusion") not in OK]
         if busy or bad:
-            print("#%d skipped: checks %s" % (n, ("running: " + ", ".join(busy)) if busy else ("FAILED: " + ", ".join(bad)))); continue
+            say("#%d skipped: checks %s" % (n, ("running: " + ", ".join(busy)) if busy else ("FAILED: " + ", ".join(bad))))
+            if bad:
+                tell_pr(n, pr["head"]["sha"], "not merged - these checks FAILED: %s. Their own comment above says what to fix; push a fix and the check re-runs." % ", ".join(bad))
+            continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if res and res.get("merged"):
@@ -166,6 +189,12 @@ def main():
             print("started %s for what the merge changed" % wf)
     else:
         print("nothing green to merge")
+    try:   # the run summary says why each open pull request was or wasn't merged (owner Oct 21 2026: never only in the log)
+        with open(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"), "a") as f:
+            f.write("## Merge robot\n" + ("\n".join("- " + x for x in SUMMARY) if SUMMARY else "- nothing to report") +
+                    ("\n- merged: " + ", ".join("#%d" % m for m in merged) if merged else "") + "\n")
+    except Exception:
+        pass
 
 
 if __name__ == "__main__":

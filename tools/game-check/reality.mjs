@@ -11,6 +11,9 @@
 //     ground: (x, z) => y,                      // ground / ice height under a point (optional, default 0)
 //     track: (x, z) => ({ x, z }),              // the right racing direction at a point, unit vector (optional)
 //     go: (on) => {},                           // make the player move forward like a held GAS / RUN (optional)
+//     time: () => seconds,                      // the GAME's clock (optional; owner Oct 21 5:26 PM - a busy robot computer
+//                                               //   stretches wall time and would call a sprint "walking"; game time can't)
+//     speed: () => metresPerSecond,             // the game's own player speed (optional; wins over the robot's estimate)
 //     expect: { length: [min, max], height: [min, max] }   // metres, overrides the kind defaults (optional)
 //   }
 // Missing hook = one CHECK line. Each broken rule = one FAIL line starting "REALITY:".
@@ -61,11 +64,22 @@ export async function realityCheck(page, wait) {
         let tr = null;
         try { tr = R.track ? R.track(p.x, p.z) : null; } catch (e) {}
         const gaps = [];
-        for (const c of (R.contact || [])) {
-          try { const b = box(c); const q = wp(c); gaps.push(+((b ? b.minY : q.y - (+R.footOffset || 0)) - g(q.x, q.z)).toFixed(3)); } catch (e) {}
+        for (const c of (R.contact || [])) {   // the LOWEST point of the whole foot (toe/sole), never the ankle bone itself
+          try {
+            const b = box(c); const q = wp(c); let low = b ? b.minY : Infinity;
+            if (!b) {                           // bones only (no mesh): lowest bone under this node (toe) minus the sole offset
+              let lowest = q.y;
+              c.traverse && c.traverse(n => { try { const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
+              low = lowest - (+R.footOffset || 0);
+            }
+            gaps.push(+(low - g(q.x, q.z)).toFixed(3));
+          } catch (e) {}
         }
+        let gt = null; try { if (R.time) gt = +R.time(); } catch (e) {}
+        let gs = null; try { if (R.speed) gs = +R.speed(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
-        return { t: performance.now(), x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null,
+          x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -107,8 +121,9 @@ export async function realityCheck(page, wait) {
     for (let i = 0; i < samples.length; i++) {
       const s = samples[i], prev = samples[i - 1];
       if (!(s.gaps || []).length) continue;
-      const dt = prev ? Math.max(0.05, (s.t - prev.t) / 1000) : 0.4;
-      const v = prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0;
+      // seconds of GAME time when the hook gives a clock (a slow robot can't stretch it); the game's own speed wins
+      const dt = prev ? Math.max(0.05, s.t - prev.t) : 0.4;
+      const v = s.speed != null ? s.speed : (prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0);
       (v > 2 ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
     }
     const slowGaps = slow.flatMap(s => [s.low]);
@@ -119,7 +134,7 @@ export async function realityCheck(page, wait) {
       let longest = 0, since = null;
       for (const f of fast) {
         if (f.low <= 0.03) since = f.t;
-        else if (since != null) longest = Math.max(longest, (f.t - since) / 1000);
+        else if (since != null) longest = Math.max(longest, f.t - since);
         else longest = Math.max(longest, 0.4);
       }
       const ever = fast.some(f => f.low <= 0.03);
@@ -127,6 +142,46 @@ export async function realityCheck(page, wait) {
         out.fail.push(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
-  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length };
+  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
+}
+
+// CLOSE-UP of the main player (owner Oct 21 5:54 PM, window 1's redo workflow, rule 1): where the player's head and
+// shoulders are ON SCREEN, so check.mjs can take a close-up picture for the owner's card. Uses the hook's `camera`, else
+// any THREE camera it can find. Returns {x, y, width, height} in page pixels, or null (+ why).
+export async function playerScreenBox(page) {
+  try {
+    return await page.evaluate(() => {
+      const R = window.__reality, P = R && R.player;
+      if (!P) return { why: 'no player in the hook' };
+      let cam = R.camera || null;
+      if (!cam) for (const k of Object.keys(window)) { try { const v = window[k]; if (v && v.isCamera && v.projectionMatrix) { cam = v; break; } } catch (e) {} }
+      if (!cam) { let root = P; while (root.parent) root = root.parent; root.traverse && root.traverse(o => { if (!cam && o.isCamera) cam = o; }); }
+      if (!cam) return { why: 'no camera found - add camera: <THREE.Camera> to window.__reality' };
+      const canvas = document.querySelector('canvas'); if (!canvas) return { why: 'no canvas' };
+      const cr = canvas.getBoundingClientRect();
+      P.updateMatrixWorld(true); cam.updateMatrixWorld(true); cam.updateProjectionMatrix && cam.updateProjectionMatrix();
+      let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], n = 0;
+      P.traverse(m => { if (!m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+        mn = [Math.min(mn[0], b.min.x), Math.min(mn[1], b.min.y), Math.min(mn[2], b.min.z)]; mx = [Math.max(mx[0], b.max.x), Math.max(mx[1], b.max.y), Math.max(mx[2], b.max.z)]; n++; });
+      if (!n) return { why: 'player has no meshes' };
+      const V = cam.position.constructor;            // THREE.Vector3 without a global THREE
+      const pts = [];
+      for (const x of [mn[0], mx[0]]) for (const y of [mn[1], mx[1]]) for (const z of [mn[2], mx[2]]) {
+        const v = new V(x, y, z).project(cam);
+        pts.push({ x: cr.left + (v.x + 1) / 2 * cr.width, y: cr.top + (1 - v.y) / 2 * cr.height, z: v.z });
+      }
+      if (pts.every(p => p.z > 1)) return { why: 'player is behind the camera' };
+      const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+      const top = Math.min(...ys), bottom = Math.max(...ys), left = Math.min(...xs), right = Math.max(...xs);
+      const h = bottom - top, w = right - left;
+      // head and shoulders = the top 38% of the player, a little room around it, never smaller than 160 px
+      const size = Math.max(160, h * 0.38 * 1.3, w * 0.9);
+      const cx = (left + right) / 2, cy = top + h * 0.19;
+      const x = Math.max(0, Math.min(innerWidth - size, cx - size / 2)), y = Math.max(0, Math.min(innerHeight - size, cy - size / 2));
+      return { x: Math.round(x), y: Math.round(y), width: Math.round(Math.min(size, innerWidth)), height: Math.round(Math.min(size, innerHeight)), playerH: Math.round(h) };
+    });
+  } catch (e) { return { why: String(e.message).slice(0, 80) }; }
 }

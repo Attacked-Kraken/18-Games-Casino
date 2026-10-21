@@ -617,5 +617,82 @@ export default [
       if (lampW < 48) return h.fail('start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car');
       return h.pass('grid opened with the camera ' + frame.d.toFixed(1) + ' m from the player car (no tap), lamps ' + Math.round(lampW) + ' px wide, reds climbed to 5, green flash, race started');
     }
+  },
+  /* ================= G-101 FRIEND CODE PLAY TEST =================
+     Friend codes, played the way a player plays them: my career hub shows
+     MY code, a bad code is rejected with the game's own error on the
+     friend screen, and pasting a good code (here: my own, which names
+     MIKO REYES at rating 90) puts that driver on my race grid as an AI
+     car carrying the coded rating. Driven with the game's own buttons;
+     the grid is read back through window.__test. */
+  {
+    id: 'play-friend-code',
+    ask: 'friend codes: my code is shown in my career hub, a bad code is rejected, and a friend code puts that driver on my grid at their coded rating (G-101)',
+    async test(page, h) {
+      const seed = { name: 'MIKO REYES', team: 'apex', season: 1, round: 0, rating: 50, wins: 0, champs: 0, friends: { w: 0, l: 0 }, drivers: [] };
+      if (!await g33Reset(page, h, seed)) return 'the game never came back to the menu after a reload';
+      // My code: opening my career hub shows the code the game made for me.
+      await h.press('#careerBtn');
+      await h.wait(400);
+      const mine = await h.eval(() => {
+        const txt = ((document.getElementById('hubBody') || {}).textContent || '');
+        const m = txt.match(/F1APEX-[A-Za-z0-9+/]+(?:-[A-Za-z0-9+/]+)*/);
+        if (!m) return { err: 'no friend code in the career hub (hub says: ' + txt.slice(0, 80) + ')' };
+        try {
+          let s = m[0].replace(/^F1APEX-?/i, '').replace(/[-\s]/g, '');
+          while (s.length % 4) s += '=';
+          const p = JSON.parse(atob(s));
+          if (p.n !== 'MIKO REYES') return { err: 'my code names ' + p.n + ', not MIKO REYES' };
+          if (typeof p.o !== 'number') return { err: 'my code carries no rating' };
+          return { code: m[0], rating: p.o };
+        } catch (e) { return { err: 'my code does not decode: ' + e.message }; }
+      });
+      if (!mine || mine.err) return (mine && mine.err) || 'could not read my friend code';
+      await h.press('#hubMenu');
+      // A bad code is rejected with the game's own error and sets up nothing.
+      await h.press('#friendBtn');
+      await h.eval(() => { document.getElementById('friendIn').value = 'F1APEX-NOT-A-CODE'; });
+      await h.press('#friendGo');
+      const bad = await h.eval(() => ({
+        err: ((document.getElementById('friendErr') || {}).textContent || ''),
+        ovOpen: !document.getElementById('friendOv').classList.contains('hidden'),
+        trackOpen: !document.getElementById('trackMenu').classList.contains('hidden'),
+      }));
+      if (!/does not check out/.test(bad.err)) return 'a bad friend code was not rejected (error says: ' + bad.err + ')';
+      if (!bad.ovOpen || bad.trackOpen) return 'a bad friend code still left the friend screen';
+      // A good code moves on to picking the circuit.
+      await h.eval((code) => { document.getElementById('friendIn').value = code; }, mine.code);
+      await h.press('#friendGo');
+      const set = await h.eval(() => ({
+        trackOpen: !document.getElementById('trackMenu').classList.contains('hidden'),
+        ovOpen: !document.getElementById('friendOv').classList.contains('hidden'),
+      }));
+      if (!set.trackOpen || set.ovOpen) return 'a good friend code did not move on to picking the circuit';
+      // Start the weekend and skip through qualifying to the grid.
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      let quali = false;
+      for (let i = 0; i < 16; i++) { await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => ''); if (md === 'quali') { quali = true; break; } }
+      if (!quali) return 'the friend weekend never reached qualifying';
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      await h.press('#raceBtn');
+      let onGrid = false;
+      for (let i = 0; i < 16; i++) { await h.wait(500); const md = await h.eval(() => window.__test.race().mode).catch(() => ''); if (md === 'race' || md === 'lights' || md === 'grid') { onGrid = true; break; } }
+      if (!onGrid) return 'the friend race never reached the grid';
+      const grid = await h.eval(() => {
+        const t = window.__test; if (!t) return null;
+        const cs = t.cars(); const pc = t.paceCars();
+        const i = cs.findIndex(c => c.name === 'MIK');
+        if (i < 0) return { err: 'no MIK car on the grid (grid: ' + cs.map(c => c.name).join(',') + ')' };
+        if (cs[i].isPlayer) return { err: 'the MIK car is the player, not the friend' };
+        return { skill: pc[i] ? pc[i].skill : null };
+      });
+      if (!grid) return 'window.__test missing at the grid';
+      if (grid.err) return grid.err;
+      if (typeof grid.skill !== 'number' || Math.abs(grid.skill - mine.rating / 100) > 0.02) return 'the friend is on the grid but at skill ' + grid.skill + ', not the coded ' + (mine.rating / 100);
+      return true;
+    },
   }
+
 ];
