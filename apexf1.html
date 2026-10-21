@@ -1231,7 +1231,7 @@ class Car {
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent);
-    this.mesh.scale.setScalar(1.18); // G-27: a little bigger
+    this.mesh.scale.setScalar(1.416); // G-73: the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
     this.ers=100; this.drsOpen=false; this.drsCount=0;
@@ -1309,10 +1309,10 @@ class Car {
     }
     // steering -> car heading (proper turning, tires grip, no sideways slide)
     const tireGrip=this.gripNow();
-    const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/95,0,1)*0.45);
+    const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/90,0,1)*0.62); // G-73: steering winds the heading much more gently at speed - a twitch at 80 m/s used to point the car at the grass before the player could catch it
     this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
     // G-27: steering follows ONLY the driver's stick - no auto-align, no curve push
-    this.headAngle=clamp(this.headAngle,-0.6,0.6);
+    const maxHead=0.6-0.24*clamp(this.v/90,0,1); this.headAngle=clamp(this.headAngle,-maxHead,maxHead); // G-73: the nose cannot point as far off the track at speed (full +-0.6 stays for slow corners and recovery); heading still changes ONLY from the stick (G-27)
     // surface
     const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
@@ -1513,15 +1513,15 @@ function carContact(cars, dt){
     if(a.finished&&b.finished) continue;
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
-    if(Math.abs(ds)<6.6 && Math.abs(dd)<3.2){
+    if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
-      const push=(3.2-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
+      const push=(3.8-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
       a.d+=push; b.d-=push;
-      if(Math.abs(dd)<2.4 && Math.abs(ds)<6.1 && Math.abs(ds)>0.01){
+      if(Math.abs(dd)<2.9 && Math.abs(ds)<7.3 && Math.abs(ds)>0.01){
         const sN=((a.s%Track.length)+Track.length)%Track.length;
         if(sN>30 && sN<Track.length-30){ // keep clear of the lap line
-          const drift=(6.1-Math.abs(ds))*dt*2*Math.sign(ds);
+          const drift=(7.3-Math.abs(ds))*dt*2*Math.sign(ds);
           a.s+=drift; b.s-=drift;
         }
         const ahead=ds>0?a:b, behind=ds>0?b:a;
