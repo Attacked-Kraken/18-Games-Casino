@@ -196,3 +196,22 @@ The art director makes nothing new. For every pull request that changes how a ga
 - [ ] Every "done means" line is a fix test, and every one is ✅
 - [ ] The game check on your pull request is green
 - [ ] Say "merged, NOT yet seen" until the owner has looked
+
+## 9. How every game is built - from now on (owner, Oct 21 2026: "make it stick for the future games")
+
+Why: each game was one giant file with its own copy of the controls, so one fix broke something else, the same fix had
+to be made 11 times, and shared parts (characters/) broke other games.
+
+1. **One fix per job.** A job asks for ONE change. The owner's list of 5 points = 5 jobs, sent one after another.
+2. **Shared controls.** Thumbstick, buttons, button layout and "let go = stop" (pointerup / pointercancel / blur /
+   hidden tab) live in ONE shared kit file (`kit/controls.js`, built first by one builder for its own game). Every
+   game uses it. A game never writes its own stick again; a stick bug is fixed once, in the kit.
+3. **NEW games are split into small files** from day one: `games/<slug>/` with `controls`, `camera`, `world`,
+   `players`/`cars`, `ai`, `menus`, `rules` - each one job's worth. The page itself only loads them. No game file
+   over ~800 lines.
+4. **Shared folders (characters/, kit/, venues/, models/) change only in their own job**, and that pull request must
+   show the robot pictures of EVERY game that uses the part, not just yours.
+5. Every job still ends with a play test that proves it (`tools/game-check/fixes/<game>.mjs`) - see DONE.md.
+
+The 6 games being finished now (Baseball, Hockey, Flight, Track & Field, F1, Exotic Racer) follow rules 1, 2, 4 and 5
+now. Rule 3 (splitting their big files) waits - see LATER.md.

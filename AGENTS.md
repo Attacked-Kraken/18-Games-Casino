@@ -105,3 +105,5 @@ is wrong — every game gets better at once. Never break the kit's self-test.
 **No double work (owner, 2026-10-17):** one game or 3D model = one Muse at a time. Before starting, check CLAIMS.md and
 the job board; if another window has it, stop and say so. The approver hands every job for the same game/model to the
 window already working on it. New owner decisions arrive as FACTORY NEWS and are listed in NEWS.md.
+
+**Oct 21 2026 (owner): read STUDIO-STANDARD.md §9 - one fix per job, shared controls (kit/controls.js), new games split into small files, shared folders change only in their own job. LATER.md = what waits until the 6 games are done.**
