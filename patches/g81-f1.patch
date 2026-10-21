@@ -1,1 +1,53 @@
-LS0tIGEvYXBleGYxLmh0bWwKKysrIGIvYXBleGYxLmh0bWwKQEAgLTEzNjYsNiArMTM2NiwxNyBAQAogICAgIGlmKHRoaXMubWVzaC51c2VyRGF0YS5kcnNGbGFwKSB0aGlzLm1lc2gudXNlckRhdGEuZHJzRmxhcC5yb3RhdGlvbi56PXRoaXMuZHJzT3Blbj8tMC41OjA7CiAgICAgLy8gcmFpbiBsaWdodCBpbiB3ZXQKICAgICBpZih0aGlzLm1lc2gudXNlckRhdGEucmFpbkxpZ2h0KSB0aGlzLm1lc2gudXNlckRhdGEucmFpbkxpZ2h0LnZpc2libGU9UmFjZS53ZWF0aGVyLndldD4wLjQ7CisgICAgLy8gRy04MTogdGhlIFJFQUxJVFkgcm9ib3QncyBjb250YWN0IG1hcmtlcnMgcmlkZSBvbiB0aGUgcm9hZCBzdXJmYWNlIHVuZGVyIHRoaXMgY2FyJ3Mgd2hlZWxzIChwbGF5ZXIgY2FyIG9ubHkpCisgICAgaWYodGhpcy5pc1BsYXllcil7CisgICAgICBpZighX3JlYWxpdHlBbmNob3JzWzBdLnBhcmVudCkgZm9yKGNvbnN0IGEgb2YgX3JlYWxpdHlBbmNob3JzKSBzY2VuZS5hZGQoYSk7IC8vIHNjZW5lIGV4aXN0cyBieSB0aGUgdGltZSBhIGNhciBpcyBwbGFjZWQKKyAgICAgIGZvcihsZXQgaT0wO2k8NDtpKyspeworICAgICAgICBjb25zdCB3PXRoaXMubWVzaC51c2VyRGF0YS53aGVlbHNbaV07IGlmKCF3KSBicmVhazsKKyAgICAgICAgdy5nZXRXb3JsZFBvc2l0aW9uKF9yZWFsaXR5Vik7CisgICAgICAgIGNvbnN0IGR4PV9yZWFsaXR5Vi54LXAueCwgZHo9X3JlYWxpdHlWLnotcC56OworICAgICAgICBjb25zdCBzcD1UcmFjay5wb3NBdCh0aGlzLnMrZHgqZi50eCtkeipmLnR6LCB0aGlzLmQrZHgqZi5ueCtkeipmLm56LCAwKTsKKyAgICAgICAgX3JlYWxpdHlBbmNob3JzW2ldLnBvc2l0aW9uLnNldChzcC54LCBzcC55KzAuMDEsIHNwLnopOworICAgICAgfQorICAgIH0KICAgfQogICBsYXBDcm9zc2VkKCl7CiAgICAgdGhpcy5sYXBUaW1lcy5wdXNoKHRoaXMuX2xhcFR8fDApOyB0aGlzLl9sYXBUPTA7CkBAIC0yNDA3LDYgKzI0MTgsMzIgQEAKICAgbGluZUF0OiAocykgPT4gKHsgcmxEOiArVHJhY2sucmxEQXQocykudG9GaXhlZCgyKSwgbWF4VjogK1RyYWNrLm1heFNwZWVkQXQocywgMSkudG9GaXhlZCgxKSwKICAgICBjdXJ2OiArTWF0aC5hYnMoVHJhY2suZnJhbWVBdChzKS5jdXJ2KS50b0ZpeGVkKDQpIH0pLAogfTsKKy8qIEctODE6IFJFQUxJVFkgcm9ib3QgaG9vayAoUkVBTElUWS5tZCAiUm9ib3QgaG9vayIpIC0gdGhlIHJvYm90IG1lYXN1cmVzIHNpemUsIHJhY2luZyBkaXJlY3Rpb24gYW5kCisgICBncm91bmQgY29udGFjdCBpbiB0aGUgcnVubmluZyBnYW1lLiBHZXR0ZXJzIGtlZXAgaXQgcG9pbnRlZCBhdCB0aGUgbGl2ZSB3ZWVrZW5kJ3MgY2Fycy4gKi8KK2NvbnN0IF9yZWFsaXR5QW5jaG9ycz1bbmV3IFRIUkVFLk9iamVjdDNEKCksIG5ldyBUSFJFRS5PYmplY3QzRCgpLCBuZXcgVEhSRUUuT2JqZWN0M0QoKSwgbmV3IFRIUkVFLk9iamVjdDNEKCldOworY29uc3QgX3JlYWxpdHlWPW5ldyBUSFJFRS5WZWN0b3IzKCk7CitmdW5jdGlvbiBfcmVhbGl0eVNEKHgsIHopeyAvLyBuZWFyZXN0IHRyYWNrIHBvaW50IC0+IGFyY2xlbmd0aCBzICsgbGF0ZXJhbCBkIG9mIGEgd29ybGQgcG9pbnQKKyAgY29uc3Qgc209VHJhY2suc2FtcGxlczsgbGV0IGJpPTAsIGJkPTFlMTg7CisgIGZvcihsZXQgaT0wO2k8c20ubGVuZ3RoO2krKyl7IGNvbnN0IGR4PXNtW2ldLngteCwgZHo9c21baV0uei16LCBxPWR4KmR4K2R6KmR6OyBpZihxPGJkKXsgYmQ9cTsgYmk9aTsgfSB9CisgIGNvbnN0IHA9c21bYmldLCBkeD14LXAueCwgZHo9ei1wLno7CisgIHJldHVybiB7IHM6IHAucytkeCpwLnR4K2R6KnAudHosIGQ6IGR4KnAubngrZHoqcC5ueiB9OworfQord2luZG93Ll9fcmVhbGl0eT17CisgIGtpbmQ6ICdmMScsCisgIGdldCBwbGF5ZXIoKXsgcmV0dXJuIChSYWNlLnBsYXllciAmJiBSYWNlLnBsYXllci5tZXNoKSB8fCBudWxsOyB9LAorICBnZXQgb3RoZXJzKCl7IHJldHVybiBSYWNlLmNhcnMgPyBSYWNlLmNhcnMuZmlsdGVyKGM9PiFjLmlzUGxheWVyICYmIGMubWVzaCkubWFwKGM9PmMubWVzaCkgOiBbXTsgfSwKKyAgZ2V0IGNvbnRhY3QoKXsgcmV0dXJuIFJhY2UucGxheWVyID8gX3JlYWxpdHlBbmNob3JzIDogW107IH0sCisgIGdyb3VuZDogKHgsIHopPT57IGlmKCFUcmFjay5zYW1wbGVzIHx8ICFUcmFjay5zYW1wbGVzLmxlbmd0aCkgcmV0dXJuIDA7IGNvbnN0IHNkPV9yZWFsaXR5U0QoeCwgeik7IHJldHVybiBUcmFjay5wb3NBdChzZC5zLCBzZC5kLCAwKS55OyB9LAorICB0cmFjazogKHgsIHopPT57IGlmKCFUcmFjay5zYW1wbGVzIHx8ICFUcmFjay5zYW1wbGVzLmxlbmd0aCkgcmV0dXJuIHsgeDowLCB6OjEgfTsgY29uc3Qgc2Q9X3JlYWxpdHlTRCh4LCB6KTsgY29uc3QgZj1UcmFjay5mcmFtZUF0KHNkLnMpOyByZXR1cm4geyB4OmYudHgsIHo6Zi50eiB9OyB9LAorICBnbzogKG9uKT0+eyB0cnl7CisgICAgaWYoIW9uKXsgSW5wdXQuZ2FzPWZhbHNlOyByZXR1cm47IH0KKyAgICBpZihSYWNlLm1vZGU9PT0nZ3JpZCcpeyB0cnl7IFJhY2UuYmVnaW5SYWNlKCk7IH1jYXRjaChlKXt9IH0KKyAgICBpZihSYWNlLm1vZGU9PT0nbGlnaHRzJyAmJiBSYWNlLnN0YXRlVDw0LjIrKFJhY2UuX2hvbGRUfHwwKSkgUmFjZS5zdGF0ZVQ9NC4yKyhSYWNlLl9ob2xkVHx8MCkrMC4wNTsgLy8gdGhlIHJvYm90IG1lYXN1cmVzIGRyaXZpbmcsIG5vdCB0aGUgY291bnRkb3duCisgICAgSW5wdXQuZ2FzPXRydWU7CisgIH1jYXRjaChlKXt9IH0sCisgIC8vIG5vIGV4cGVjdCBvdmVycmlkZTogdGhlIHJvYm90J3Mgb3duLWF4ZXMgYm94IHJlYWRzIHRoaXMgY2FyIGF0IDUuNDcgbSBsb25nICh0aGUgRy03MyBtZXNoIHNjYWxlIGNhbmNlbHMKKyAgLy8gaW4gaXRzIGludmVyc2UtbWF0cml4IG1hdGgpIC0gaW5zaWRlIHRoZSBSRUFMSVRZIHRhYmxlJ3MgNC44LTYuNCBtIGZvciBraW5kICdmMScsIHNvIG5vIGRlY2xhcmF0aW9uIGlzIG1hZGUKK307CiAvKiBib290ICovCiB3aW5kb3cuX19hcGV4Qm9vdD10cnVlOwogaW5pdE1lbnVzKCk7Cg==
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1366,6 +1366,17 @@
+     if(this.mesh.userData.drsFlap) this.mesh.userData.drsFlap.rotation.z=this.drsOpen?-0.5:0;
+     // rain light in wet
+     if(this.mesh.userData.rainLight) this.mesh.userData.rainLight.visible=Race.weather.wet>0.4;
++    // G-81: the REALITY robot's contact markers ride on the road surface under this car's wheels (player car only)
++    if(this.isPlayer){
++      if(!_realityAnchors[0].parent) for(const a of _realityAnchors) scene.add(a); // scene exists by the time a car is placed
++      for(let i=0;i<4;i++){
++        const w=this.mesh.userData.wheels[i]; if(!w) break;
++        w.getWorldPosition(_realityV);
++        const dx=_realityV.x-p.x, dz=_realityV.z-p.z;
++        const sp=Track.posAt(this.s+dx*f.tx+dz*f.tz, this.d+dx*f.nx+dz*f.nz, 0);
++        _realityAnchors[i].position.set(sp.x, sp.y+0.01, sp.z);
++      }
++    }
+   }
+   lapCrossed(){
+     this.lapTimes.push(this._lapT||0); this._lapT=0;
+@@ -2407,6 +2418,32 @@
+   lineAt: (s) => ({ rlD: +Track.rlDAt(s).toFixed(2), maxV: +Track.maxSpeedAt(s, 1).toFixed(1),
+     curv: +Math.abs(Track.frameAt(s).curv).toFixed(4) }),
+ };
++/* G-81: REALITY robot hook (REALITY.md "Robot hook") - the robot measures size, racing direction and
++   ground contact in the running game. Getters keep it pointed at the live weekend's cars. */
++const _realityAnchors=[new THREE.Object3D(), new THREE.Object3D(), new THREE.Object3D(), new THREE.Object3D()];
++const _realityV=new THREE.Vector3();
++function _realitySD(x, z){ // nearest track point -> arclength s + lateral d of a world point
++  const sm=Track.samples; let bi=0, bd=1e18;
++  for(let i=0;i<sm.length;i++){ const dx=sm[i].x-x, dz=sm[i].z-z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bi=i; } }
++  const p=sm[bi], dx=x-p.x, dz=z-p.z;
++  return { s: p.s+dx*p.tx+dz*p.tz, d: dx*p.nx+dz*p.nz };
++}
++window.__reality={
++  kind: 'f1',
++  get player(){ return (Race.player && Race.player.mesh) || null; },
++  get others(){ return Race.cars ? Race.cars.filter(c=>!c.isPlayer && c.mesh).map(c=>c.mesh) : []; },
++  get contact(){ return Race.player ? _realityAnchors : []; },
++  ground: (x, z)=>{ if(!Track.samples || !Track.samples.length) return 0; const sd=_realitySD(x, z); return Track.posAt(sd.s, sd.d, 0).y; },
++  track: (x, z)=>{ if(!Track.samples || !Track.samples.length) return { x:0, z:1 }; const sd=_realitySD(x, z); const f=Track.frameAt(sd.s); return { x:f.tx, z:f.tz }; },
++  go: (on)=>{ try{
++    if(!on){ Input.gas=false; return; }
++    if(Race.mode==='grid'){ try{ Race.beginRace(); }catch(e){} }
++    if(Race.mode==='lights' && Race.stateT<4.2+(Race._holdT||0)) Race.stateT=4.2+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
++    Input.gas=true;
++  }catch(e){} },
++  // no expect override: the robot's own-axes box reads this car at 5.47 m long (the G-73 mesh scale cancels
++  // in its inverse-matrix math) - inside the REALITY table's 4.8-6.4 m for kind 'f1', so no declaration is made
++};
+ /* boot */
+ window.__apexBoot=true;
+ initMenus();
