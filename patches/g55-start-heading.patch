@@ -1,0 +1,32 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1512,6 +1512,11 @@
+       c.position=i+1; // grid slot = starting position (fixes P1 HUD during lights)
+       c.throttle=0; c.brake=0; c.steer=0; c.finished=false; c.lapTimes=[]; c.bestLap=Infinity;
+       c.wear=0; c.tireAge=0; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
++      // G-55: a placed car starts with a clean heading - no leftover steering angle
++      // from its last lap, and its nose snapped onto the track direction (a single
++      // placeMesh step used to leave it most of the way toward wherever it last faced)
++      c.headAngle=0;
++      const gf=Track.frameAt(c.s); c.yaw=Math.atan2(gf.tz,gf.tx);
+       c.placeMesh(0.016);
+     });
+     this.gridOrder=order;
+@@ -2090,6 +2095,7 @@
+ function runQuali(){
+   const p=Race.player;
+   p.s=Track.length-600; p.d=0; p.v=28; p.lap=1; p._lapT=0; p._qualiFlying=false; p._lastSN=undefined;
++  p.headAngle=0; const qf=Track.frameAt(p.s); p.yaw=Math.atan2(qf.tz,qf.tx); // G-55: spawn facing the way the track goes
+   Race.mode='quali';
+   banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
+   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
+@@ -2247,6 +2253,9 @@
+     hasResults: !!Race.results,
+     playerFinished: !!(Race.player && Race.player.finished)
+   }),
++  heading: (idx) => { const c=Race.cars[idx||0]; if(!c) return null;
++    const f=Track.frameAt(c.s);
++    return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
+   trackWidth: () => Track.width,
+   trackLength: () => Track.length,
+   setInput: (inp) => { Object.assign(Input, inp); },
