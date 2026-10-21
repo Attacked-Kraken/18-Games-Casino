@@ -1,0 +1,1834 @@
+{
+ "apexbaseball.html": {
+  "game": "apexbaseball.html",
+  "views": {
+   "land": {
+    "fps": 5.1,
+    "blank": false,
+    "luma": 71,
+    "offscreen": [],
+    "overlaps": [
+     "viewBtn x helpHud"
+    ],
+    "nButtons": 4,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)",
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 4.3,
+    "blank": false,
+    "luma": 36,
+    "offscreen": [
+     "helpClose"
+    ],
+    "overlaps": [
+     "viewBtn x helpHud"
+    ],
+    "nButtons": 5,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "3/10"
+ },
+ "apexf1.html": {
+  "game": "apexf1.html",
+  "views": {
+   "land": {
+    "fps": 60.2,
+    "blank": false,
+    "luma": 26,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 2,
+    "small": 2,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 60.2,
+    "blank": false,
+    "luma": 28,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 6,
+    "small": 0,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": true,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "8/10"
+ },
+ "apexflight.html": {
+  "game": "apexflight.html",
+  "views": {
+   "land": {
+    "fps": 16.2,
+    "blank": false,
+    "luma": 16,
+    "offscreen": [
+     "btnFree",
+     "friendGo",
+     "friendClose"
+    ],
+    "overlaps": [
+     "back x jetBtn",
+     "stick x stickZone",
+     "stickZone x friendBtn",
+     "stickZone x friendGo"
+    ],
+    "nButtons": 14,
+    "small": 0,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 24.8,
+    "blank": false,
+    "luma": 153,
+    "offscreen": [
+     "stickZone"
+    ],
+    "overlaps": [
+     "back x stickZone",
+     "back x jetBtn",
+     "stick x stickZone",
+     "stickZone x jetBtn"
+    ],
+    "nButtons": 9,
+    "small": 0,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "3/10"
+ },
+ "apexhockey.html": {
+  "game": "apexhockey.html",
+  "views": {
+   "land": {
+    "fps": 1.1,
+    "blank": false,
+    "luma": 194,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 7,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 1.0,
+    "blank": false,
+    "luma": 125,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 7,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "apexmonstertruck.html": {
+  "game": "apexmonstertruck.html",
+  "views": {
+   "land": {
+    "fps": 2.5,
+    "blank": false,
+    "luma": 30,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 4,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 2.5,
+    "blank": false,
+    "luma": 100,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 2,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "apexmoto.html": {
+  "game": "apexmoto.html",
+  "views": {
+   "land": {
+    "fps": 4.1,
+    "blank": false,
+    "luma": 80,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 13,
+    "small": 10,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 1.6,
+    "blank": false,
+    "luma": 129,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 2,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "apexpaperplane.html": {
+  "game": "apexpaperplane.html",
+  "views": {
+   "land": {
+    "fps": 28.7,
+    "blank": false,
+    "luma": 192,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 3,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 26.3,
+    "blank": false,
+    "luma": 197,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 3,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "apexracer.html": {
+  "game": "apexracer.html",
+  "views": {
+   "land": {
+    "fps": 0.5,
+    "blank": false,
+    "luma": 103,
+    "offscreen": [
+     "nmB"
+    ],
+    "overlaps": [],
+    "nButtons": 8,
+    "small": 6,
+    "canvas": 3,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 1.2,
+    "blank": false,
+    "luma": 98,
+    "offscreen": [
+     "nmB"
+    ],
+    "overlaps": [],
+    "nButtons": 8,
+    "small": 6,
+    "canvas": 3,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "apexreefdash.html": {
+  "game": "apexreefdash.html",
+  "views": {
+   "land": {
+    "fps": 11.9,
+    "blank": false,
+    "luma": 140,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 1,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 26.8,
+    "blank": false,
+    "luma": 137,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 1,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "dicepalace.html": {
+  "game": "dicepalace.html",
+  "views": {
+   "land": {
+    "fps": 5.7,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "BUTTON x ckDailyGo",
+     "BUTTON x ckDailyGo",
+     "BUTTON x ckDailyGo",
+     "BUTTON x ckDailyGo",
+     "BUTTON x ckDailyGo"
+    ],
+    "nButtons": 20,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 4.6,
+    "blank": false,
+    "luma": 24,
+    "offscreen": [],
+    "overlaps": [
+     "BUTTON x htX",
+     "BUTTON x htX"
+    ],
+    "nButtons": 21,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "dragonjackpot.html": {
+  "game": "dragonjackpot.html",
+  "views": {
+   "land": {
+    "fps": 4.1,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 3.0,
+    "blank": false,
+    "luma": 23,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "gemburst.html": {
+  "game": "gemburst.html",
+  "views": {
+   "land": {
+    "fps": 3.7,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 3.1,
+    "blank": false,
+    "luma": 23,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "gildedreels.html": {
+  "game": "gildedreels.html",
+  "views": {
+   "land": {
+    "fps": 2.9,
+    "blank": false,
+    "luma": 30,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 13,
+    "small": 6,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 3.2,
+    "blank": false,
+    "luma": 24,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 14,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "holdemroyale.html": {
+  "game": "holdemroyale.html",
+  "views": {
+   "land": {
+    "fps": 5.7,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 10,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 4.9,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 10,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "luckykeno.html": {
+  "game": "luckykeno.html",
+  "views": {
+   "land": {
+    "fps": 4.6,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 16,
+    "small": 9,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 5.3,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 16,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "pharaohsgold.html": {
+  "game": "pharaohsgold.html",
+  "views": {
+   "land": {
+    "fps": 3.2,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 2.7,
+    "blank": false,
+    "luma": 22,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "plinkodrop.html": {
+  "game": "plinkodrop.html",
+  "views": {
+   "land": {
+    "fps": 5.2,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 18,
+    "small": 11,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 4.2,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 18,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "poseidonsfortune.html": {
+  "game": "poseidonsfortune.html",
+  "views": {
+   "land": {
+    "fps": 3.8,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 2.6,
+    "blank": false,
+    "luma": 23,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "rocketcrash.html": {
+  "game": "rocketcrash.html",
+  "views": {
+   "land": {
+    "fps": 6.4,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 14,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 6.1,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 14,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "rubyroulette.html": {
+  "game": "rubyroulette.html",
+  "views": {
+   "land": {
+    "fps": 3.6,
+    "blank": false,
+    "luma": 20,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 19,
+    "small": 12,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 4.0,
+    "blank": false,
+    "luma": 24,
+    "offscreen": [],
+    "overlaps": [
+     "rClr x htX",
+     "rRe x htX"
+    ],
+    "nButtons": 20,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "sports.html": {
+  "game": "sports.html",
+  "views": {
+   "land": {
+    "fps": 2.4,
+    "blank": false,
+    "luma": 39,
+    "offscreen": [
+     "tab",
+     "tab",
+     "tab",
+     "tab",
+     "lbtns",
+     "fbb",
+     "stopb",
+     "mv"
+    ],
+    "overlaps": [],
+    "nButtons": 96,
+    "small": 0,
+    "canvas": 0,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 8.1,
+    "blank": false,
+    "luma": 78,
+    "offscreen": [
+     "tab",
+     "tab",
+     "tab",
+     "tab",
+     "tab",
+     "tab",
+     "tab",
+     "tab"
+    ],
+    "overlaps": [
+     "refresh x tab",
+     "refresh x poster",
+     "tab x poster",
+     "tab on x poster",
+     "tab x poster"
+    ],
+    "nButtons": 95,
+    "small": 0,
+    "canvas": 0,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": false,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": false,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "steelfront.html": {
+  "game": "steelfront.html",
+  "views": {
+   "land": {
+    "fps": 5.3,
+    "blank": false,
+    "luma": 66,
+    "offscreen": [
+     "btn pri"
+    ],
+    "overlaps": [],
+    "nButtons": 6,
+    "small": 5,
+    "canvas": 2,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 6.0,
+    "blank": false,
+    "luma": 65,
+    "offscreen": [
+     "btn pri"
+    ],
+    "overlaps": [],
+    "nButtons": 6,
+    "small": 5,
+    "canvas": 2,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": true,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": true,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "truckstudio.html": {
+  "game": "truckstudio.html",
+  "views": {
+   "land": {
+    "fps": 13.0,
+    "blank": false,
+    "luma": 66,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 0,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 8.1,
+    "blank": false,
+    "luma": 47,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 0,
+    "small": 0,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": false,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "velvet21.html": {
+  "game": "velvet21.html",
+  "views": {
+   "land": {
+    "fps": 7.9,
+    "blank": false,
+    "luma": 30,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 14,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 10.0,
+    "blank": false,
+    "luma": 24,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 14,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "7/10"
+ },
+ "apexsoccer.html": {
+  "game": "apexsoccer.html",
+  "views": {
+   "land": {
+    "fps": 0.5,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 11,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)",
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 0.6,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 11,
+    "small": 1,
+    "canvas": 1,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "apextrackfield.html": {
+  "game": "apextrackfield.html",
+  "views": {
+   "land": {
+    "fps": 0.6,
+    "blank": false,
+    "luma": 66,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 10,
+    "small": 8,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 1.1,
+    "blank": false,
+    "luma": 70,
+    "offscreen": [
+     "bCareer",
+     "bTourn",
+     "bFree",
+     "bCode",
+     "bAddRival",
+     "bHow",
+     "bBests",
+     "bFps"
+    ],
+    "overlaps": [],
+    "nButtons": 10,
+    "small": 1,
+    "canvas": 2,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": true,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "baccaratnoir.html": {
+  "game": "baccaratnoir.html",
+  "views": {
+   "land": {
+    "fps": 4.2,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "xP x ckDailyGo",
+     "xT x ckDailyGo",
+     "xB x ckDailyGo"
+    ],
+    "nButtons": 19,
+    "small": 9,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 4.2,
+    "blank": false,
+    "luma": 17,
+    "offscreen": [],
+    "overlaps": [],
+    "nButtons": 19,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "6/10"
+ },
+ "beatmachine.html": {
+  "game": "beatmachine.html",
+  "views": {
+   "land": {
+    "fps": 45.1,
+    "blank": false,
+    "luma": 41,
+    "offscreen": [
+     "BUTTON",
+     "BUTTON",
+     "BUTTON",
+     "BUTTON",
+     "BUTTON",
+     "BUTTON",
+     "BUTTON",
+     "BUTTON"
+    ],
+    "overlaps": [
+     "tabbtn on x seqPlay"
+    ],
+    "nButtons": 220,
+    "small": 138,
+    "canvas": 5,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   },
+   "port": {
+    "fps": 57.7,
+    "blank": false,
+    "luma": 28,
+    "offscreen": [
+     "fxbtns",
+     "beatsToA",
+     "beatsToB"
+    ],
+    "overlaps": [],
+    "nButtons": 38,
+    "small": 0,
+    "canvas": 5,
+    "reality": false,
+    "errors": [
+     "Failed to load resource: the server responded with a status of 404 (File not found)"
+    ]
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": true,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": false,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": true,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "bigwheel.html": {
+  "game": "bigwheel.html",
+  "views": {
+   "land": {
+    "fps": 4.2,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "bwS1 x ckDailyGo",
+     "bwS3 x ckDailyGo",
+     "bwS5 x ckDailyGo",
+     "bwS11 x ckDailyGo"
+    ],
+    "nButtons": 22,
+    "small": 9,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 2.9,
+    "blank": false,
+    "luma": 21,
+    "offscreen": [],
+    "overlaps": [
+     "bwS5 x htX",
+     "bwS11 x htX",
+     "bwSJOKER x htX"
+    ],
+    "nButtons": 23,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "candyrush.html": {
+  "game": "candyrush.html",
+  "views": {
+   "land": {
+    "fps": 3.3,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 9,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 2.6,
+    "blank": false,
+    "luma": 20,
+    "offscreen": [],
+    "overlaps": [
+     "crTurbo x htX"
+    ],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "classic777.html": {
+  "game": "classic777.html",
+  "views": {
+   "land": {
+    "fps": 3.5,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 2.4,
+    "blank": false,
+    "luma": 22,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "diamondclub.html": {
+  "game": "diamondclub.html",
+  "views": {
+   "land": {
+    "fps": 3.6,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 8,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 3.6,
+    "blank": false,
+    "luma": 23,
+    "offscreen": [
+     "htX"
+    ],
+    "overlaps": [],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": true,
+   "no_offscreen": false,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ },
+ "diamondpoker.html": {
+  "game": "diamondpoker.html",
+  "views": {
+   "land": {
+    "fps": 9.2,
+    "blank": false,
+    "luma": 18,
+    "offscreen": [],
+    "overlaps": [
+     "ck-chip on x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo",
+     "ck-chip x ckDailyGo"
+    ],
+    "nButtons": 16,
+    "small": 9,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   },
+   "port": {
+    "fps": 6.9,
+    "blank": false,
+    "luma": 23,
+    "offscreen": [],
+    "overlaps": [
+     "pHint x htX",
+     "pGo x htX"
+    ],
+    "nButtons": 17,
+    "small": 7,
+    "canvas": 1,
+    "reality": false,
+    "errors": []
+   }
+  },
+  "audio_unlock": true,
+  "has_audio": true,
+  "cancel_handled": false,
+  "blur_handled": false,
+  "reality_hook_src": false,
+  "external_urls": [],
+  "checks": {
+   "no_console_errors": true,
+   "canvas_not_blank": true,
+   "no_overlap_land": false,
+   "no_overlap_port": false,
+   "no_offscreen": true,
+   "fps_ge_30_swiftshader_hint": false,
+   "audio_unlock": true,
+   "stick_release_safe": false,
+   "reality_hook": false,
+   "offline_no_cdn": true
+  },
+  "score": "5/10"
+ }
+}
