@@ -6,6 +6,8 @@ name: Game check
 # adds a problem main doesn't already have - blob/box people, outside internet, real brands, casino words,
 # "Your name" boxes, broken shaders, missing files, owner's fix tests. See STUDIO-STANDARD.md.
 # Pull requests are checked SIDE BY SIDE by game-check-pr.yml (owner Oct 21 2026) - this file is main only.
+# LOCKED by the owner Oct 21 2026 6:55 PM ("lock it in!") - never go back to playing the games one after another.
+# PROVEN: first run played all 11 games + models in 10 min 45 s (old way ~50 min).
 # Owner Oct 21 2026 6:23 PM "needs to be faster": main is played side by side too - one robot per game (plan -> play
 # matrix -> finish). A full check of all 11 games ~10-12 min instead of ~50; a merge that changed one game ~6-8 min.
 on:
