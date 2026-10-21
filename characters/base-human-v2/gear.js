@@ -277,7 +277,7 @@ export function hockeyKit(THREE, a, o = {}) {
       const ed = new THREE.TorusGeometry(.142 * s, .0028 * s, 4, 28, 2.5); ed.rotateZ(Math.PI / 2 - 1.25); ed.rotateX(Math.PI / 2); ed.translate(0, 1.669 * s, -.009 * s); mb.add(ed, dark, 'Head'); } }
   parts.gear = mb.build(M({ vertexColors: true, roughness: .7, metalness: .02 }), 'gear-matte');
   parts.shell = gb.build(M({ vertexColors: true, roughness: .26, metalness: .12, side: THREE.DoubleSide }), 'gear-gloss');
-  parts.steel = sb.build(M({ vertexColors: true, roughness: .2, metalness: .9 }), 'gear-steel');
+  parts.steel = sb.build(M({ vertexColors: true, roughness: .34, metalness: .25 }), 'gear-steel'); // G-72: silver that reads silver - metalness .9 with no env map rendered the blades near-black, so the boots looked sunk into the ice
   if (U && U.uScalp) U.uScalp.value = 0;
 
   /* --- stick: in both hands, blade flat on the ice (one mesh) --- */

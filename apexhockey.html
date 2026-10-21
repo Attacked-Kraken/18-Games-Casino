@@ -699,7 +699,7 @@ const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), M
 puckMesh.castShadow=!isTouch; scene.add(puckMesh);
 const puck = { mesh:puckMesh, pos:puckMesh.position, vel:new THREE.Vector3(), owner:null, recv:null, recvT:0, shot:null };
 puck.pos.set(0,0.2,0);
-window.__hk.puck = puck; window.__hk.BLUE = BLUE; // read-only peek for the offside fix test
+window.__hk.puck = puck; window.__hk.BLUE = BLUE; window.__hk.camera = camera; // read-only peek for the offside fix test
 
 /* ================= input ================= */
 const joyVec = { x:0, y:0, active:false };
@@ -762,6 +762,7 @@ window.__hk.game = {
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
   newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; updateHUD(); },
+  get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
 function fmtClock(){ if(period>3) return 'OT'; const m=(clockT/60)|0, s=('0'+((clockT|0)%60)).slice(-2); return m+':'+s; }
@@ -781,6 +782,7 @@ let shotTagTO=null;
 function showShotTag(mph){ const el=$('shotTag'); if(!el) return; el.textContent='SHOT · '+mph+' MPH'; el.classList.add('show');
   clearTimeout(shotTagTO); shotTagTO=setTimeout(()=>el.classList.remove('show'),2200); }
 let bannerTO=null;
+let lastSaveBannerT=-1e9; // G-72: SAVED! shows once per save scramble, not on every rebound re-save
 function banner(main, sub, dur=1800, color){
   const b=$('banner'); b.innerHTML=main+(sub?`<small>${sub}</small>`:'');
   b.style.color=color||'#fff'; b.classList.add('show');
@@ -1322,7 +1324,7 @@ function stepSkater(s,dt){
     // the kit's stance sets lean, knees, hips and skates-on-the-ice every frame (owner's model sheet); the wrap only banks into turns
     if(s.kit) s.kit.stance.apply({ crouch: 1, stride: sf, phase: s.phase/5.2, handle: puck.owner===s ? 1 : 0 });
     s.athWrap.rotation.x=(s.bank||0);
-    if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
+    if(s.goalie){ s.athWrap.scale.y=s.body.scale.y; s.athWrap.position.y=(1-s.body.scale.y)*0.82; } // mirror the butterfly; G-72: lift the wrap by what the squash pulls down, so the blades stay on the ice
   }
   // ice spray: hard stops and carving turns throw snow off the blades
   s.sprayT=(s.sprayT||0)-dt;
@@ -1459,7 +1461,7 @@ function goalieSaves(){
       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
-        puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
+        puck.shot=null; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble
         commSay(spd>70?'great_save':'save'); // G-44
         if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
       }
@@ -1501,6 +1503,7 @@ const camTgt=new THREE.Vector3(0,44,74), lookTgt=new THREE.Vector3();
 const CAMNAMES=['BROADCAST','HIGH','CLOSE','PLAYER','END'];
 const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','BEHIND THE NET'];
 let camMode=0, lastControlledRef=null, camEase=0;
+let leadCur=0; // G-72: broadcast lead, eased toward the puck-velocity lead so a save never snaps the camera back
 function cycleView(){
   camMode=(camMode+1)%CAMNAMES.length;
   $('viewBtn').textContent='VIEW · '+CAMNAMES[camMode];
@@ -1518,14 +1521,15 @@ function stepCamera(dt){
     const deepEnd=Math.abs(s.pos.x)/HX; if(deepEnd>0.78) cy=5+(deepEnd-0.78)*14; // rise over the glass deep in the zone
     camTgt.set(cx, cy, cz);
     lookTgt.set(s.pos.x+ad*6, 1, s.pos.z*0.92);
-  } else if(camMode===3){ // PLAYER: ice-level over the shoulder
-    camTgt.set(s.pos.x-fx*4.5, 2.2, s.pos.z-fz*4.5);
+  } else if(camMode===3){ // PLAYER: over the shoulder (G-72: 5 = 1.5 m up, never down at ice level)
+    camTgt.set(s.pos.x-fx*4.5, 5, s.pos.z-fz*4.5);
     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
   } else if(camMode===4){ // END: behind the net you attack
     camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
   } else {                // BROADCAST / HIGH: TV follow of the puck
-    const lead=clamp(puck.vel.x*0.35,-14,14);
-    const px=clamp((puck.pos.x+lead)*0.55,-64,64), pz=puck.pos.z*0.30;
+    const leadWant=clamp(puck.vel.x*0.35,-14,14);
+    leadCur+=clamp(leadWant-leadCur,-38*dt,38*dt); // G-72: the lead swings at a capped rate - on a save the puck reverses, the camera must not rewind with it
+    const px=clamp((puck.pos.x+leadCur)*0.55,-64,64), pz=puck.pos.z*0.30;
     const deep=Math.min(1,Math.abs(puck.pos.x)/95);
     const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
@@ -1533,6 +1537,7 @@ function stepCamera(dt){
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
   const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
   camera.position.lerp(camTgt,k);
+  if(camera.position.y<4.89) camera.position.y=4.89; // G-72: the camera never falls through the ice - at least 1.5 m up in every view
   if(!window.__lookCur) window.__lookCur=lookTgt.clone();
   window.__lookCur.lerp(lookTgt, Math.min(1,5*dt)); // G-02: smooth the view direction (no snapping)
   camera.lookAt(window.__lookCur);

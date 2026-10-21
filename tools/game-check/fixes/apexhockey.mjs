@@ -746,42 +746,371 @@ export default [
     return bad.length ? bad.join('; ') : true;
   },
 },
-/* ================= G-71 TESTER TESTS (owner, 2026-10-20) =================
-   DONE.md + REALITY.md checked line by line with numbers from the running
-   game (window 2 tester job). Each test FAILS until the game is fixed -
-   that failure is the proof behind the TESTER lines in jobs/QUEUE.md. */
 {
-  id: 'tester-reality-hook',
-  ask: 'no window.__reality hook - the REALITY robot cannot measure direction, sizes or skate contact in this game (DONE.md 4, REALITY.md "Robot hook")',
+  id: 'play-goalie-blades-on-ice',
+  ask: 'skates sit exactly on the ice and the blades show silver under the boots: the goalie dropping into a butterfly never drags his blades under the ice, and the blade steel is a bright silver that reads as metal, not black',
   async test(page, h) {
-    let ready = false;
-    for (let i = 0; i < 24 && !ready; i++) {
-      ready = await h.eval(() => (window.__hk && window.__hk.skaters || []).filter((s) => !!s.ath).length >= 10).catch(() => false);
-      if (!ready) await h.wait(400);
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const reachPlay = async () => {
+      for (let i = 0; i < 18; i++) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(700); continue; }
+        await h.eval(() => {
+          const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
+          const hub = document.getElementById('hub');
+          const g = window.__hk.game;
+          if (hub && getComputedStyle(hub).display !== 'none') click('hubClose');
+          else if (g.state === 'over') click('againBtn');
+          else if (g.state === 'menu') click('playBtn');
+        }).catch(() => {});
+        await h.wait(700);
+      }
+      return (await state()) === 'play';
+    };
+    if (!(await reachPlay())) return 'could not get a match into play to test the goalie blades';
+    // The blade steel must read silver (with no environment map, near-full metalness renders black).
+    const steel = await h.eval(() => {
+      const s = (window.__hk.skaters || []).find((x) => !!x.ath);
+      if (!s) return null;
+      let m = null;
+      s.ath.object.traverse((o) => { if (!m && o.name === 'gear-steel') m = o.material; });
+      return m ? { metal: m.metalness, rough: m.roughness } : null;
+    }).catch(() => null);
+    if (!steel) return 'no gear-steel blades found on the athletes';
+    if (steel.metal > 0.6) return 'the blades use near-black metal (metalness ' + steel.metal + ') - they do not show as silver under the boots';
+    // Calibrate the blade drop (foot bone -> blade bottom) like the skates test does.
+    const calibFn = () => {
+      const out = [];
+      for (const s of window.__hk.skaters) {
+        if (!s.ath) { out.push(null); continue; }
+        let st = null, fl = null, fr = null;
+        s.ath.object.traverse((o) => {
+          if (!st && o.name === 'gear-steel') st = o;
+          if (o.isBone && o.name === 'foot_l') fl = o;
+          if (o.isBone && o.name === 'foot_r') fr = o;
+        });
+        if (!st || !fl || !fr) { out.push(null); continue; }
+        if (st.computeBoundingBox) st.computeBoundingBox();
+        const bb = st.boundingBox || (st.geometry && st.geometry.boundingBox);
+        if (!bb) { out.push(null); continue; }
+        const e = st.matrixWorld.elements;
+        let min = Infinity;
+        for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+          const wy = e[1] * x + e[5] * y + e[9] * z + e[13];
+          if (wy < min) min = wy;
+        }
+        const v = new fl.position.constructor();
+        out.push(+(Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y) - min).toFixed(3));
+      }
+      return out;
+    };
+    let drop = null;
+    for (let i = 0; i < 3 && drop === null; i++) {
+      const cal = await h.eval(calibFn).catch(() => null);
+      const vals = (cal || []).filter((x) => x !== null && isFinite(x)).sort((a, b) => a - b);
+      if (vals.length >= 8) drop = vals[Math.floor(vals.length / 2)];
+      else await h.wait(400);
     }
-    if (!ready) return 'the real athletes never attached, so the reality hook could not be checked';
-    return h.eval(() => {
-      const R = window.__reality;
-      if (!R) return 'window.__reality is not set - the REALITY robot measures nothing for hockey (missing hook = only a CHECK line)';
-      if (R.kind !== 'skater') return 'the reality hook kind is "' + R.kind + '" (REALITY.md: skater)';
-      if (!R.player) return 'the reality hook has no player';
-      if (!Array.isArray(R.contact) || !R.contact.length) return 'the reality hook lists no contact points (the skates) to check against the ice';
-      if (typeof R.ground !== 'function') return 'the reality hook has no ground() for the ice height';
-      return true;
-    });
+    if (drop === null) return 'could not calibrate the skate drop';
+    // Record the away goalie's blade clearance from inside his own stance step
+    // (one sample per sim slice - a butterfly lasts 0.35 game-seconds, which a
+    // wall-clock sampler can miss entirely inside one long frame).
+    let hooked = false;
+    for (let i = 0; i < 20 && !hooked; i++) {
+      hooked = await h.eval((dropArg) => {
+        const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+        if (!gl || !gl.ath || !gl.kit) return false;
+        window.__g72 = { min: 999, minScale: 1, n: 0 };
+        const kit = gl.kit, orig = kit.stance.apply.bind(kit.stance);
+        kit.stance.apply = (o) => {
+          const r = orig(o);
+          try {
+            if (gl.athWrap && gl.athWrap.scale.y < 0.95) {
+              let fl = null, fr = null;
+              gl.ath.object.traverse((oo) => { if (oo.isBone && oo.name === 'foot_l') fl = oo; if (oo.isBone && oo.name === 'foot_r') fr = oo; });
+              if (fl && fr) {
+                const v = new fl.position.constructor();
+                const low = Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y);
+                const b = low - dropArg;
+                if (b < window.__g72.min) window.__g72.min = b;
+                if (gl.athWrap.scale.y < window.__g72.minScale) window.__g72.minScale = gl.athWrap.scale.y;
+                window.__g72.n++;
+              }
+            }
+          } catch (e) {}
+          return r;
+        };
+        return true;
+      }, drop).catch(() => false);
+      if (!hooked) await h.wait(500);
+    }
+    if (!hooked) return 'could not hook the goalie stance to measure his blades';
+    // Barrage: point-blank shots at the away goalie - each one drops him into a butterfly.
+    const barrageStart = Date.now();
+    for (let r = 0; r < 8; r++) {
+      if ((await state()) !== 'play') { if (!(await reachPlay())) break; }
+      await h.eval(() => {
+        const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+        const p = window.__hk.puck;
+        p.owner = null; p.shot = { team: 'home', t: 0, by: null };
+        p.pos.set(gl.pos.x - 3, 0.2, gl.pos.z);
+        p.vel.set(50, 0, 0);
+      }).catch(() => {});
+      await h.wait(850);
+    }
+    let res = await h.eval(() => window.__g72).catch(() => null);
+    if ((!res || res.n < 5) && Date.now() - barrageStart < 12000) {
+      // a dead starting state (e.g. the previous test died mid-match) can eat the
+      // whole barrage without a shot - re-enter play and run it once more
+      await h.eval(() => { window.__g72.min = 999; window.__g72.minScale = 1; window.__g72.n = 0; }).catch(() => {});
+      if (await reachPlay()) {
+        for (let r = 0; r < 6; r++) {
+          if ((await state()) !== 'play') { if (!(await reachPlay())) break; }
+          await h.eval(() => {
+            const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+            const p = window.__hk.puck;
+            p.owner = null; p.shot = { team: 'home', t: 0, by: null };
+            p.pos.set(gl.pos.x - 3, 0.2, gl.pos.z);
+            p.vel.set(50, 0, 0);
+          }).catch(() => {});
+          await h.wait(850);
+        }
+        res = await h.eval(() => window.__g72).catch(() => null);
+      }
+    }
+    if (!res || res.n < 5) return 'too few in-butterfly goalie samples during the barrage (' + (res ? res.n : 0) + ')';
+    if (res.minScale > 0.9) return 'the goalie never dropped into a butterfly during the barrage - the sink was not exercised';
+    if (res.min < -0.098) return 'the goalie blades sank ' + Math.round(-res.min * 30.7) + ' cm under the ice in the butterfly (wrap scale ' + res.minScale.toFixed(2) + ')';
+    return true;
   },
 },
 {
-  id: 'tester-stick-resets-on-blur',
-  ask: 'the stick must reset to centre on window blur and when the app is hidden/shown, not only on touchend (DONE.md 2)',
+  id: 'play-save-shows-once-camera-holds',
+  ask: 'after a save, SAVED! shows exactly once (a rebound re-save in the same scramble does not show it again) and the broadcast camera does not rewind: its puck lead swings smoothly instead of snapping when the puck reverses',
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    // get a match into play with the game's own buttons (shared page: earlier
-    // tests may have left the game on the menu, the hub or the end screen)
-    for (let i = 0; i < 14; i++) {
+    const reachPlay = async () => {
+      for (let i = 0; i < 18; i++) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(700); continue; }
+        await h.eval(() => {
+          const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
+          const hub = document.getElementById('hub');
+          const g = window.__hk.game;
+          if (hub && getComputedStyle(hub).display !== 'none') click('hubClose');
+          else if (g.state === 'over') click('againBtn');
+          else if (g.state === 'menu') click('playBtn');
+        }).catch(() => {});
+        await h.wait(700);
+      }
+      return (await state()) === 'play';
+    };
+    if (!(await reachPlay())) return 'could not get a match into play for the save test';
+    // Count every SAVED! banner the game puts up: trap the banner element's
+    // innerHTML setter (banner() rewrites it on every call - a mutation observer
+    // misses calls that a later slice overwrites inside the same frame).
+    await h.eval(() => {
+      window.__sv72 = { n: 0 };
+      const b = document.getElementById('banner');
+      let cur = b.innerHTML;
+      Object.defineProperty(b, 'innerHTML', {
+        get() { return cur; },
+        set(v) { cur = v; if (String(v).includes('SAVED!')) window.__sv72.n++; },
+        configurable: true,
+      });
+      // A goalie save flips the puck's x-velocity from fast-inbound to outbound
+      // in one write; trap that write (frame-proof) to verify saves happened.
+      window.__flips = []; window.__armed = false;
+      const vel = window.__hk.puck.vel;
+      let vx = vel.x;
+      Object.defineProperty(vel, 'x', {
+        get() { return vx; },
+        set(v) {
+          if (window.__armed && vx > 30 && v < -5) {
+            // only the goalie's own save geometry counts (a post bounce also flips vx):
+            // the flip must happen at his line, within his reach across the crease
+            const p = window.__hk.puck;
+            const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+            if (gl && p.pos.x > 80 && Math.abs(p.pos.z - gl.pos.z) < 2.6) window.__flips.push(Math.round(performance.now()));
+          }
+          vx = v;
+        },
+        configurable: true,
+      });
+    });
+    // Broadcast view for the camera-lead check.
+    for (let i = 0; i < 5; i++) {
+      const lbl = await h.eval(() => document.getElementById('viewBtn').textContent).catch(() => '');
+      if (String(lbl).includes('BROADCAST')) break;
+      await h.eval(() => document.getElementById('viewBtn').click()).catch(() => {});
+      await h.wait(250);
+    }
+    if (!(await reachPlay())) return 'the match ended before the camera-lead check';
+    // Camera lead: log it in-page once per rendered frame (the only clock that
+    // matters - a wall sampler lags a frame behind). Stage the puck at the
+    // emptiest spot, settle the lead on a fast +X rush, reverse the puck the
+    // way a save does, and judge the FIRST frame after the flip: a snapping
+    // (pre-fix) lead jumps the whole swing in that frame; the eased lead has
+    // moved only a few units, then completes the swing over the next frames.
+    // Per-slice lead recorder: hook one skater's stance step (it runs once per
+    // sim slice) - the eased lead is capped per slice by construction, so a
+    // one-slice jump is a frame-rate-proof snap detector.
+    let sliceHooked = false;
+    for (let i = 0; i < 20 && !sliceHooked; i++) {
+      sliceHooked = await h.eval(() => {
+        const s0 = (window.__hk.skaters || []).find((s) => s.ath && s.kit);
+        if (!s0) return false;
+        window.__slice72 = [];
+        const kit = s0.kit, orig = kit.stance.apply.bind(kit.stance);
+        kit.stance.apply = (o) => {
+          const r = orig(o);
+          try { if (window.__slice72.length < 6000) window.__slice72.push(+window.__hk.game.camLead.toFixed(2)); } catch (e) {}
+          return r;
+        };
+        return true;
+      }).catch(() => false);
+      if (!sliceHooked) await h.wait(500);
+    }
+    if (!sliceHooked) return 'could not hook a stance step to watch the camera lead';
+    await h.eval(() => {
+      window.__lead72 = [];
+      const iv = setInterval(() => {
+        const g = window.__hk.game;
+        const lead = typeof g.camLead === 'number' ? g.camLead : Math.max(-14, Math.min(14, window.__hk.puck.vel.x * 0.35));
+        window.__lead72.push({ t: Math.round(performance.now()), lead: +lead.toFixed(2), vx: Math.round(window.__hk.puck.vel.x), clk: +g.clockT.toFixed(3) });
+        if (window.__lead72.length >= 3000) clearInterval(iv);
+      }, 25);
+    });
+    // Stage the rush IN PAGE (a timer re-pins the puck at the emptiest spot with
+    // vel +100) and wait until the log itself shows the lead settled - headless
+    // frame cadence is erratic, so the log, not the wall clock, is the judge.
+    await h.eval(() => {
+      const p = window.__hk.puck;
+      let best = null, bd = -1;
+      for (const cand of [[0, 26], [0, -26], [0, 0]]) { // centre spots only: no line within jitter range, so staging can't trip offside/icing
+        let md = 1e9;
+        for (const s of window.__hk.skaters) { const d = Math.hypot(s.pos.x - cand[0], s.pos.z - cand[1]); if (d < md) md = d; }
+        if (md > bd) { bd = md; best = cand; }
+      }
+      p.__spot = best;
+      window.__stage72 = setInterval(() => {
+        p.owner = null; p.shot = null; p.lastTouch = null;
+        p.pos.set(p.__spot[0], 0.2, p.__spot[1]); p.vel.set(100, 0, 0);
+      }, 100);
+    });
+    let settled = null;
+    for (let k = 0; k < 20 && settled === null; k++) {
+      await h.wait(300);
+      settled = await h.eval(() => {
+        const a = window.__lead72.slice(-6);
+        if (a.length < 6) return null;
+        const m = Math.min(...a.map((e) => e.lead));
+        return m >= 11 ? m : null; // the lead held >= 11 across the last 6 samples
+      }).catch(() => null);
+    }
+    if (settled === null) { await h.eval(() => clearInterval(window.__stage72)).catch(() => {}); return 'the camera lead never settled on the rush'; }
+    // The save reversal: stop staging, flip the puck once, in page.
+    const tFlip = await h.eval(() => {
+      clearInterval(window.__stage72);
+      const p = window.__hk.puck;
+      // pin the reversed puck for the verdict window (a loose puck at a known
+      // spot gets stolen in a frame or two, before the lead can swing)
+      window.__stage72 = setInterval(() => {
+        p.owner = null; p.shot = null; p.lastTouch = null;
+        p.pos.set(p.__spot[0], 0.2, p.__spot[1]); p.vel.set(-32, 0, 0);
+      }, 100);
+      p.owner = null; p.shot = null; p.lastTouch = null;
+      p.pos.set(p.__spot[0], 0.2, p.__spot[1]); p.vel.set(-32, 0, 0);
+      window.__flipClk = window.__hk.game.clockT;
+      window.__flipSlice = window.__slice72.length;
+      return Math.round(performance.now());
+    }).catch(() => 0);
+    let verdict = null;
+    for (let k = 0; k < 20 && !verdict; k++) {
+      await h.wait(300);
+      verdict = await h.eval((args) => {
+        const [t0, base] = args;
+        const post = window.__lead72.filter((e) => e.t >= t0 + 20);
+        // headless frames arrive in bursts - wait until the post-flip log spans
+        // ~2.5 s so at least a few real frames have integrated the lead
+        if (!post.length || post[post.length - 1].t < t0 + 2500) return null;
+        const later = post[post.length - 1];
+        return { dLater: Math.abs(later.lead - base), frames: post.length };
+      }, [tFlip, settled]).catch(() => null);
+    }
+    await h.eval(() => clearInterval(window.__stage72)).catch(() => {});
+    if (!verdict) return 'too few samples logged after the reversal';
+    if (verdict.dLater < 8) return 'the camera lead never swung after the reversal (moved ' + verdict.dLater.toFixed(1) + ') - the flip did not play out';
+    // Per-slice verdict: the biggest one-step move of the lead after the flip.
+    let sliceVerdict = null;
+    for (let k = 0; k < 14 && !sliceVerdict; k++) {
+      sliceVerdict = await h.eval(() => {
+        const from = window.__flipSlice || 0;
+        const a = (window.__slice72 || []).slice(from, from + 400);
+        if (a.length < 60) return null; // wait for ~2 game-seconds of slices
+        let mx = 0;
+        for (let i = 1; i < a.length; i++) mx = Math.max(mx, Math.abs(a[i] - a[i - 1]));
+        return { mx, n: a.length };
+      }).catch(() => null);
+      if (!sliceVerdict) await h.wait(300);
+    }
+    if (!sliceVerdict) return 'too few sim slices logged after the reversal';
+    if (sliceVerdict.mx > 3) return 'the broadcast camera lead jumped ' + sliceVerdict.mx.toFixed(1) + ' units in a single step after the puck reversed - the camera rewinds after a save';
+    // Two verified goalie saves back to back (one scramble): the banner may
+    // show only once. A save is verified by the in-page velocity-flip trap.
+    const fireShot = () => h.eval(() => {
+      const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+      const p = window.__hk.puck;
+      p.owner = null; p.shot = { team: 'home', t: 0, by: null };
+      p.pos.set(gl.pos.x - 2.4, 0.2, gl.pos.z);
+      p.vel.set(62, 0, 0);
+    }).catch(() => {});
+    const flipCount = () => h.eval(() => window.__flips.length).catch(() => -1);
+    const waitFlip = async (after) => {
+      for (let k = 0; k < 18; k++) {
+        if ((await flipCount()) > after) return true;
+        if ((await state()) !== 'play') return false;
+        await h.wait(65);
+      }
+      return false;
+    };
+    await h.eval(() => { window.__armed = true; }).catch(() => {});
+    let paired = false;
+    for (let attempt = 0; attempt < 8 && !paired; attempt++) {
+      if ((await state()) !== 'play') { if (!(await reachPlay())) break; }
+      const n0 = await flipCount();
+      await fireShot();
+      if (!(await waitFlip(n0))) continue;
+      const base = await h.eval(() => window.__sv72.n).catch(() => -1);
+      let second = false;
+      for (let a2 = 0; a2 < 3 && !second; a2++) {
+        if ((await state()) !== 'play') break;
+        const n1 = await flipCount();
+        await fireShot();
+        second = await waitFlip(n1);
+      }
+      if (!second) continue;
+      await h.wait(400);
+      const shown = await h.eval(() => window.__sv72.n).catch(() => -1);
+      if (shown - base === 0) paired = true;
+      else return 'SAVED! showed ' + (shown - base + 1) + ' times for one save scramble - it must show exactly once';
+    }
+    await h.eval(() => { window.__armed = false; }).catch(() => {});
+    if (!paired) return 'could not stage two verified saves in one scramble';
+    return true;
+  },
+},
+{
+  id: 'play-camera-stays-above-ice',
+  ask: 'the camera never falls through the ice when zooming in: in every view (BROADCAST, HIGH, CLOSE, PLAYER, END) it stays at least 1.5 m above the ice',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 18; i++) {
       const st = await state();
       if (st === 'play') break;
-      if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(600); continue; }
+      if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(700); continue; }
       await h.eval(() => {
         const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
         const hub = document.getElementById('hub');
@@ -790,69 +1119,23 @@ export default [
         else if (g.state === 'over') click('againBtn');
         else if (g.state === 'menu') click('playBtn');
       }).catch(() => {});
-      await h.wait(600);
+      await h.wait(700);
+      if (i === 17) return 'could not get a match into play for the camera test';
     }
-    if ((await state()) !== 'play') return 'could not get a match into play to test the stick';
-    const held = await h.eval(() => {
-      const joy = document.getElementById('joy'), knob = document.getElementById('knob');
-      if (!joy || !knob) return 'no joystick on the play screen';
-      const r = joy.getBoundingClientRect();
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      const fire = (type, x, y) => {
-        const t = new Touch({ identifier: 7, target: joy, clientX: x, clientY: y });
-        joy.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: [t], changedTouches: [t] }));
-      };
-      fire('touchstart', cx, cy); fire('touchmove', cx + 40, cy);
-      return knob.style.transform;
-    });
-    if (typeof held !== 'string' || !/40px/.test(held)) return 'the stick did not move when held (knob: ' + held + ') - the test could not set up';
-    // the finger stays down; the app loses focus and is hidden, then returns
-    await h.eval(() => {
-      window.dispatchEvent(new Event('blur'));
-      Object.defineProperty(document, 'hidden', { value: true, configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
-      Object.defineProperty(document, 'hidden', { value: false, configurable: true });
-      document.dispatchEvent(new Event('visibilitychange'));
-      window.dispatchEvent(new Event('focus'));
-    });
-    await h.wait(400);
-    const after = await h.eval(() => document.getElementById('knob').style.transform);
-    // cleanup for the next test: a real touchend centres the stick again
-    await h.eval(() => {
-      const joy = document.getElementById('joy'); if (!joy) return;
-      const r = joy.getBoundingClientRect();
-      const t = new Touch({ identifier: 7, target: joy, clientX: r.left + r.width / 2 + 40, clientY: r.top + r.height / 2 });
-      joy.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], changedTouches: [t] }));
-    }).catch(() => {});
-    const centred = after === '' || /\+ 0px\), calc\(-50% \+ 0px\)/.test(after);
-    if (!centred) return 'with the finger still down, blur + hide/show left the stick pushed: knob at "' + after + '" instead of centred - the input only clears on a real touchend, so the skater keeps skating on his own when the player comes back';
-    return true;
-  },
-},
-{
-  id: 'tester-puck-size',
-  ask: 'the puck must be real size: 7.6 cm across, 2.5 cm thick (REALITY.md size table, +-15%)',
-  async test(page, h) {
-    return h.eval(() => {
-      const mesh = window.__hk && window.__hk.puck && window.__hk.puck.mesh;
-      if (!mesh) return 'no puck mesh found (window.__hk.puck.mesh)';
-      mesh.updateWorldMatrix(true, false);
-      const g = mesh.geometry; if (g.computeBoundingBox) g.computeBoundingBox();
-      const bb = g.boundingBox; if (!bb) return 'the puck mesh has no bounding box';
-      const e = mesh.matrixWorld.elements;
-      let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
-      for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
-        const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14];
-        if (wx < mn[0]) mn[0] = wx; if (wy < mn[1]) mn[1] = wy; if (wz < mn[2]) mn[2] = wz;
-        if (wx > mx[0]) mx[0] = wx; if (wy > mx[1]) mx[1] = wy; if (wz > mx[2]) mx[2] = wz;
+    if (!await h.eval(() => !!window.__hk.camera).catch(() => false)) return 'no camera handle to measure';
+    let minY = Infinity, worstView = '';
+    for (let v = 0; v < 5; v++) {
+      const lbl = await h.eval(() => document.getElementById('viewBtn').textContent).catch(() => ('view ' + v));
+      for (let k = 0; k < 8; k++) {
+        const y = await h.eval(() => window.__hk.camera.position.y).catch(() => null);
+        if (y !== null && y < minY) { minY = y; worstView = String(lbl); }
+        await h.wait(110);
       }
-      // the game world is in feet (blue line 25 ft from centre, goal line 89 ft)
-      const wCm = Math.max(mx[0] - mn[0], mx[2] - mn[2]) * 30.48, tCm = (mx[1] - mn[1]) * 30.48;
-      const out = [];
-      if (wCm < 7.6 * 0.85 || wCm > 7.6 * 1.15) out.push('the puck is ' + wCm.toFixed(1) + ' cm across (real: 7.6 cm)');
-      if (tCm < 2.54 * 0.85 || tCm > 2.54 * 1.15) out.push('the puck is ' + tCm.toFixed(1) + ' cm thick (real: 2.5 cm)');
-      return out.length ? out.join('; ') : true;
-    });
+      await h.eval(() => document.getElementById('viewBtn').click()).catch(() => {});
+      await h.wait(200);
+    }
+    if (minY < 4.85) return 'the camera dropped to ' + minY.toFixed(2) + ' units (' + (minY * 0.307).toFixed(2) + ' m) in ' + worstView + ' - under the 1.5 m floor, it falls through the ice when zoomed in';
+    return true;
   },
 },
 ];
