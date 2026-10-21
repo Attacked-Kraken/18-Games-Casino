@@ -1,0 +1,110 @@
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -12,7 +12,7 @@
+ #game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#060b16}
+ #ovl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:25;pointer-events:none}
+ .back{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:calc(env(safe-area-inset-left,0px) + 10px);
+-z-index:70;display:inline-block;padding:10px 14px;background:rgba(6,12,24,.78);color:#ffd34d;
++z-index:70;display:inline-block;padding:10px 14px;background:rgba(6,12,24,.93);color:#ffd34d;
+ border:2px solid #ffd34d;border-radius:10px;font-weight:800;font-size:14px;letter-spacing:.5px;text-decoration:none}
+ .back:active{transform:scale(.95)}
+ /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+@@ -107,8 +107,8 @@
+ #hudEvent{font-size:13px;font-weight:800;letter-spacing:1px;color:#ffd34d;text-shadow:0 1px 3px #000}
+ #hudMain{font-size:30px;font-weight:900;color:#fff;text-shadow:0 2px 4px #000;line-height:1}
+ #hudSub{font-size:13px;font-weight:700;color:#cfe0f2;text-shadow:0 1px 3px #000;margin-top:2px}
+-#hudTop>div:first-child{background:rgba(6,14,26,.78);border:2px solid rgba(255,211,77,.5);border-radius:12px;padding:6px 10px}
+-#hudPos{font-size:15px;font-weight:800;color:#fff;background:rgba(8,18,32,.7);border:2px solid #ffd34d;
++#hudTop>div:first-child{background:rgba(6,14,26,.93);border:2px solid rgba(255,211,77,.5);border-radius:12px;padding:6px 10px}
++#hudPos{font-size:15px;font-weight:800;color:#fff;background:rgba(8,18,32,.93);border:2px solid #ffd34d;
+ border-radius:10px;padding:6px 10px;white-space:nowrap}
+ .bars{margin-top:6px;max-width:340px}
+ .bar{height:10px;background:rgba(8,18,32,.7);border:1px solid #4a6a8f;border-radius:6px;overflow:hidden;margin-top:4px}
+@@ -736,14 +736,14 @@
+ const t=r.simT||0;
+ if(t-r.tapWinStart>1){ r.tapWinStart=t; r.tapCount=0; }
+ r.tapCount++;
+-const gov = r.tapCount>10 ? 0.15 : 1;
++const gov = r.tapCount>12 ? 0.45 : 1;
+ r.speed += impulse*(alt?1:0.42)*(0.55+0.40*(r.stamina/100))*gov;
+ r.lastSide=side;
+ return alt;
+ }
+ function updateRunner(r, dt, maxSpd, drain){
+ r.simT=(r.simT||0)+dt;
+-const over2=Math.max(0,(r.tapCount||0)-10);
++const over2=Math.max(0,(r.tapCount||0)-12);
+ const capX=1/(1+over2*0.02);
+ // JOB J7 keep-it (owner): NO exhaustion state. The old rule crashed speed to
+ // 30% at 0 stamina and held it there until 30 recovered - on the long relay /
+@@ -754,7 +754,7 @@
+ const hardCap = maxSpd*1.02;
+ if(r.speed>hardCap) r.speed=hardCap;
+ else if(r.speed>cap) r.speed=Math.max(cap, r.speed-10*dt);
+-r.speed -= r.speed*0.30*dt + 0.10*dt;
++r.speed -= r.speed*0.26*dt + 0.10*dt;
+ if(r.speed<0) r.speed=0;
+ const drainX=1+over2*0.15;
+ if(r.speed>cap*0.86) r.stamina=Math.max(0, r.stamina-(r.speed/cap-0.86)*drain*drainX*dt);
+@@ -786,7 +786,7 @@
+ function createSprintEngine(ev, rivals){
+ const S=8, dist=ev.dist;
+ const maxSpd = dist<=100?11.0 : dist<=200?10.6 : 10.0;
+-const drain  = dist<=200?24 : 58;
++const drain  = dist<=200?24 : 26;
+ const E={
+ ev, done:false, dq:false, S, dist,
+ phase:'marks', phaseT:0, setDur:rnd(0.9,1.8),
+@@ -808,7 +808,7 @@
+ return;
+ }
+ if(this.phase!=='run') return;
+-applyStride(this.r, side, 0.92);
++applyStride(this.r, side, 1.05);
+ },
+ action(){},
+ px(){ return W*0.35; },
+@@ -919,7 +919,7 @@
+ function createHurdlesEngine(ev, rivals){
+ const S=8, dist=ev.dist;
+ const maxSpd = dist<=110?9.2 : 9.8;
+-const drain  = dist<=110?26 : 55;
++const drain  = dist<=110?26 : 26;
+ const hurdles=[];
+ for(let i=0;i<ev.hCount;i++) hurdles.push({x:ev.hStart+i*ev.hGap, clipped:false});
+ const E={
+@@ -937,7 +937,7 @@
+ return;
+ }
+ if(this.phase!=='run') return;
+-applyStride(this.r, side, 0.92);
++applyStride(this.r, side, 1.05);
+ },
+ action(){
+ if(this.done||this.phase!=='run'||this.r.air) return;
+@@ -1057,7 +1057,7 @@
+ actionLabel(){ return 'PASS'; },
+ stride(side){
+ if(this.done||this.phase!=='run') return;
+-applyStride(this.r, side, 0.92);
++applyStride(this.r, side, 1.05);
+ },
+ action(){
+ if(this.done||this.phase!=='run'||this.leg>=3) return;
+@@ -2917,6 +2917,7 @@
+ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+ if(id) $(id).classList.add('on');
+ if(id!=='results') stopCeremony();
++if(id==='results'){ const nx=$('bResNext'); $('bResMenu').style.display=(nx&&nx.textContent==='BACK TO MENU')?'none':'block'; } // JOB G-68 (owner): MENU and BACK TO MENU are the same button twice - show one
+ AudioSys.setMusic(id?'menu':null);
+ refreshSkip();
+ }
+@@ -3096,7 +3097,7 @@
+ $('resTitle').textContent='APEX GAMES — CHAMPIONSHIP FINAL STANDINGS';
+ $('resMark').textContent=champ.n+' WINS THE APEX GAMES';
+ $('resPoints').textContent='Your total: '+myTotal+' PTS · Best: '+champBest+' PTS';
+-$('resMedals').innerHTML=medalTable(rows.slice(0,3).map((r,i)=>({m:['g','s','b'][i],n:r.n,d:r.p+' PTS'})));
++$('resMedals').innerHTML=''; // JOB G-68 (owner): ONE table on the final screen - the medal table repeated the standings below it
+ $('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>ATHLETE</th><th>PTS</th></tr>'+
+ rows.map((r,i)=>'<tr'+(r.n===athleteName?' class="me"':'')+'><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+r.p+'</td></tr>').join('')+
+ '</table><div class="credit">PRESENTED BY APEX ARCADE</div>';
