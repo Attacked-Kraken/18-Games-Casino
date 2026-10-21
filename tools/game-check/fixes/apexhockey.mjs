@@ -1137,7 +1137,7 @@ export default [
     if (minY < 4.85) return 'the camera dropped to ' + minY.toFixed(2) + ' units (' + (minY * 0.307).toFixed(2) + ' m) in ' + worstView + ' - under the 1.5 m floor, it falls through the ice when zoomed in';
     return true;
   },
-},,
+},
   // G-78: the other team plays defense now - AI defenders chase the carrier, poke-check,
   // block shots and clear the puck. Staged rush: the away centre carries in on the home
   // net from just inside the blue line with the human parked in the corner. PASS = a home DEFENSEMAN
