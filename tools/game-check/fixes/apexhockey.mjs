@@ -1252,5 +1252,51 @@ export default [
     return lastFail;
     }
   },
+  {
+    id: 'play-stick-resets-on-blur',
+    ask: 'the stick lets go when the app loses focus or is hidden mid-hold - hold it pushed, blur or hide the app, and the knob is back at centre (0 px) with no real touchend needed',
+    async test(page, h) {
+    async function reachPlay(tries) {
+      for (let i = 0; i < tries; i++) {
+        const st = await h.eval(() => ({ state: window.__hk && window.__hk.game && window.__hk.game.state, hub: !!(document.querySelector('#careerHub') && document.querySelector('#careerHub').open) }));
+        if (st.state === 'play' || st.state === 'faceoff') return true;
+        await h.eval(() => {
+          const vis = (el) => !!el && !!(el.offsetWidth || el.offsetHeight);
+          const again = document.querySelector('#againBtn'); if (vis(again)) { again.click(); return; }
+          if (document.querySelector('#careerHub') && document.querySelector('#careerHub').open) { const p = document.querySelector('#hubPlay'); if (p) { p.click(); return; } const c = document.querySelector('#hubClose'); if (c) c.click(); return; }
+          const play = document.querySelector('#playBtn'); if (vis(play)) { play.click(); return; }
+          const face = document.querySelector('#faceBtn'); if (vis(face)) { face.click(); return; }
+          const cont = document.querySelector('#contBtn'); if (vis(cont)) cont.click();
+        });
+        await new Promise((r) => setTimeout(r, 650));
+      }
+      return false;
+    }
+    if (!(await reachPlay(14))) return 'could not reach live play to test the stick reset';
+    const out = await h.eval(`(async () => {
+      const joy = document.getElementById('joy'), knob = document.getElementById('knob');
+      const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const hold = (id) => { const mk = (type, x) => { const t = new Touch({ identifier: id, target: joy, clientX: x, clientY: cy });
+        joy.dispatchEvent(new TouchEvent(type, { touches: [t], changedTouches: [t], bubbles: true, cancelable: true })); };
+        mk('touchstart', cx); mk('touchmove', cx + 40); };
+      const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+      hold(7); await wait(150);
+      const held = knob.style.transform;
+      window.dispatchEvent(new Event('blur')); await wait(120);
+      const afterBlur = knob.style.transform;
+      hold(9); await wait(150);
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange')); await wait(120);
+      const afterHide = knob.style.transform;
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+      document.dispatchEvent(new Event('visibilitychange')); await wait(60);
+      return { held, afterBlur, afterHide };
+    })()`);
+    const xOf = (tr) => { const m = /translate\(calc\(-50% \+ (-?[\d.]+)px\)/.exec(tr || ''); return m ? parseFloat(m[1]) : null; };
+    if (!out || xOf(out.held) === null || Math.abs(xOf(out.held)) < 30) return 'could not hold the stick at +40 px to stage the test (held: ' + (out && out.held) + ')';
+    if (xOf(out.afterBlur) !== 0) return 'the knob stayed pushed after window blur (' + out.afterBlur + ') - the stick only centres on a real touchend';
+    if (xOf(out.afterHide) !== 0) return 'the knob stayed pushed after the app was hidden mid-hold (' + out.afterHide + ')';
+    return true;
+    }
+  },
 ];
-
