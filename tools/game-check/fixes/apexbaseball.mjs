@@ -337,17 +337,18 @@ export default [
   // replaces the old one - it must actually load, with its crowd.
   {
     id: 'play-stadium-loads',
-    ask: "The owner's new ballpark (Apex Arcade Park) loads with its crowd (G-40)",
+    ask: "The owner's new ballpark (Apex Arcade Park) loads with its crowd, presented as the night park it is (G-40)",
     async test(page, h) {
       const t0 = Date.now();
       while (Date.now() - t0 < 25000) {
         const s = await h.eval(() => {
           const T = window.__test; if (!T || !T.stadium) return null;
-          return { loaded: T.stadium.loaded, fans: T.stadium.fans, crowd: T.crowdCount };
+          return { loaded: T.stadium.loaded, fans: T.stadium.fans, crowd: T.crowdCount, night: T.stadium.night };
         });
         if (s && s.loaded) {
           if (s.fans < 1000) return `the ballpark loaded but its crowd is missing (fans=${s.fans})`;
           if (s.crowd < 1000) return `the ballpark loaded but crowdCount reads ${s.crowd}`;
+          if (!s.night) return 'the ballpark loaded but the game still shows the old daytime look - his park is a night park (floodlights, dark sky)';
           return true;
         }
         await h.wait(250);
