@@ -37,5 +37,9 @@ for (const e of ledger.filter(e => /^CC-BY/i.test(e.license || ''))) {
     if (uses && !t.includes(e.maker)) problems.push(`${g} uses CC-BY "${e.title || e.path}" but its credits don't name the maker "${e.maker}"`);
   }
 }
+// owner Oct 21 2026: every robot says WHY where it can be seen - run annotations + the run summary + a PR comment (yml)
+for (const x of problems) console.log('::error title=Asset check::' + x.replace(/\n/g, ' ').slice(0, 300));
+try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY || '/dev/null', problems.length ? '## 🔴 Asset check\n' + problems.map(x => '- ' + x).join('\n') + '\n' : '## ✅ Asset check: ok\n'); } catch (e) {}
+try { fs.writeFileSync('asset-problems.txt', problems.join('\n')); } catch (e) {}
 if (problems.length) { console.log('ASSET CHECK - problems:\n- ' + problems.join('\n- ')); process.exit(1); }
 console.log(`ASSET CHECK - ok: ${files.length} 3D files, ${ledger.length} ledger entries, every one allowed and credited.`);

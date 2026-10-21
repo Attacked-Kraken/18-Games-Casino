@@ -12,7 +12,7 @@ import { execSync } from 'child_process';
 const TOKEN = process.env.SKETCHFAB_TOKEN || '', DRY = !!process.env.DRY || !!(process.env.TEST_UID || '').trim(), API = 'https://api.sketchfab.com/v3';
 const today = new Date().toISOString().slice(0, 10);
 const report = [];
-const say = (s) => { console.log(s); console.log('::notice title=Sketchfab robot::' + s.replace(/[\r\n]+/g, ' ')); report.push(s); };   // notices show on the run page
+const say = (s) => { console.log(s); console.log((/^(FAILED|SKIPPED)/.test(s) ? '::error' : '::notice') + ' title=Sketchfab robot::' + s.replace(/[\r\n]+/g, ' ')); report.push(s); };   // notices show on the run page
 const reqFile = 'MODEL-REQUESTS.md';
 let text = fs.readFileSync(reqFile, 'utf8');
 const lines = text.split('\n');
