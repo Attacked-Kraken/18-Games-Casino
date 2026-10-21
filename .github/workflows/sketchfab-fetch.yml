@@ -107,5 +107,5 @@ jobs:
           B="robot/sketchfab-${{ github.run_number }}"
           git checkout -q -b "$B" && git push -q origin "$B"
           N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
-          gh workflow run game-check.yml --ref "$B" || true
+          gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::notice title=Sketchfab robot::opened pull request #$N - the merge robot merges it when the game check is green"

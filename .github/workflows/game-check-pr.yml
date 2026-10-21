@@ -1,0 +1,150 @@
+name: Game check (PR)
+# Owner Oct 21 2026 "split the good from repairs so it doesn't take 50 min - do both": the robot on a PULL REQUEST plays
+# the games SIDE BY SIDE (one robot per game, up to 8 at once) and one small step ("check") gives the verdict - about
+# 8-10 minutes instead of 50. A Claude change to the robot's own files plays only 2 reference games here; main's full
+# check after the merge (game-check.yml, auto-undo) covers the rest. The 55-minute limit stays as the safety net.
+# The verdict job is NAMED "check" so the owner's GitHub rule ("check" must pass) and the merge robot keep working.
+on:
+  pull_request:
+  workflow_dispatch:        # robots start it on their own branch (robot/*) - a PR opened by a robot gets no PR event
+concurrency:
+  group: game-check-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      games: ${{ steps.pick.outputs.games }}
+      list: ${{ steps.pick.outputs.list }}
+      mode: ${{ steps.pick.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick what this pull request needs played
+        id: pick
+        run: |
+          BASE=${{ github.base_ref || 'main' }}
+          git fetch -q origin $BASE game-checks || true
+          git show origin/game-checks:results.json > base-results.json 2>/dev/null || echo '{}' > base-results.json
+          CH=$(git diff --name-only origin/$BASE...HEAD)
+          echo "$CH" > changed.txt
+          echo "$CH"
+          G=""
+          for f in $(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$'); do G="$G$f,"; done
+          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
+          MODE="touched"
+          NOTES='\.md$|^(jobs|reviews|plans|looks|ideas|team|notes)/'
+          if echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|look-presets\.js)'; then
+            MODE="shared"
+            # shared 3D people / gear / three.js changed -> every game that draws people (fair blame: hard breakage only)
+            G="$G$(node -e "console.log(require('./tools/game-check/games.json').games.filter(g=>g.people).map(g=>g.file).join(','))"),"
+          elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
+            # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
+            # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
+            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
+          fi
+          if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
+          LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
+          JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
+          echo "games=$JSON" >> $GITHUB_OUTPUT
+          echo "list=$LIST" >> $GITHUB_OUTPUT
+          echo "mode=$MODE" >> $GITHUB_OUTPUT
+          echo "Mode: $MODE - playing: ${LIST:-nothing (notes only)}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plan
+          path: |
+            base-results.json
+            changed.txt
+          if-no-files-found: ignore
+
+  play:
+    needs: plan
+    if: needs.plan.outputs.games != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix:
+        game: ${{ fromJson(needs.plan.outputs.games) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the test browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium webkit
+      - name: Play ${{ matrix.game }}
+        run: |
+          python3 -m http.server 8811 >/dev/null 2>&1 &
+          sleep 2
+          if [ "${{ matrix.game }}" = "models" ]; then
+            ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+          else
+            ONLY="${{ matrix.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+          fi
+      - name: iPhone Safari pass
+        if: always() && matrix.game != 'models'
+        continue-on-error: true
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          python3 -m http.server 8812 >/dev/null 2>&1 &
+          sleep 2
+          ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: play-${{ matrix.game }}
+          path: game-check-out
+          if-no-files-found: ignore
+
+  check:
+    name: check
+    needs: [plan, play]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@v4
+        with:
+          name: plan
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: play-*
+          path: parts
+      - name: Put the results together and judge
+        env:
+          PR_BRANCH: ${{ github.head_ref || github.ref_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
+          echo "Mode: ${{ needs.plan.outputs.mode }} (played side by side)"
+          node tools/game-check/judge.mjs game-check-out/results.json base-results.json changed.txt game-check-out
+      - name: Tell the pull request what to fix
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s game-check-out/blockers.txt ] || exit 0
+          { echo "### 🔴 Game check blocked this merge"; echo; echo "These problems are NEW in this pull request (main doesn't have them). Fix them and push again:"; echo;
+            sed 's/^/- /' game-check-out/blockers.txt; echo; echo "Rules: STUDIO-STANDARD.md · CLAIMS.md · FAMILY-RULES.md"; } > comment.md
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -F body=@comment.md >/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: game-check-out
+          path: game-check-out
+          if-no-files-found: ignore
