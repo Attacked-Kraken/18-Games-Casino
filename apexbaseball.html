@@ -541,6 +541,16 @@ function parseFriendCode(code){
 let H = null;
 const athletes = [];
 const PANT_COL = 0xe8e8e8;
+/* G-82 fix (owner): the six hair GLBs are the loader's SECOND wave - they start only
+   after the big base bodies arrive, so on a busy phone their downloads can still be
+   running when the game check reloads the page, and an aborted download is counted
+   as a missing file (hair_buzzedfemale.glb and hair_long.glb flagged after the
+   G-82 merge, their siblings in earlier checks). Warm all six into the browser
+   cache in parallel from the very start, so the loader serves them instantly and
+   no hair download is ever left running. */
+for (const hn of ['simpleparted', 'buzzed', 'buzzedfemale', 'beard', 'long', 'buns']) {
+  try { fetch('./characters/base-human-v2/hair/hair_' + hn + '.glb').then(r => r.arrayBuffer()).catch(() => {}); } catch (e) {}
+}
 try {
   loadHumans(THREE, './characters/base-human-v2/').then(h => { H = h; fitAthletes(); }).catch(() => { H = null; });
 } catch (e) { H = null; }
