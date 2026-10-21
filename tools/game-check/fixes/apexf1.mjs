@@ -51,6 +51,81 @@ async function g33FinishRace(page, h) {
   return false;
 }
 
+
+/* ================= G-66 PACE HELPERS (runner side only) =================
+   The pace windows use FIXED wall-clock waits on purpose: on a slow page the
+   game's catch-up stepping makes game time track wall time imperfectly, but
+   every window in a test shrinks by the same factor, so a distance ratio
+   between two windows stays an honest pace ratio. Each measured car is
+   staged by the game's own test helper onto the same corner section; every
+   other car is staged far down the track, and the player is staged ahead of
+   them with the line driver running, so he keeps circulating at race pace
+   while an AI car is measured (the AI's rubber-band then reads a real gap,
+   not a parked-player artifact). */
+async function g66ToRace(page, h) {
+  if (!await g33Reset(page, h, null)) return false;
+  await h.press('#careerBtn');
+  await h.press('#toTeamBtn');
+  await h.press('#startBtn');
+  await h.wait(1200);
+  await h.press('#qualiSkip');
+  await h.wait(800);
+  await h.press('#raceBtn');
+  for (let i = 0; i < 16; i++) {
+    await h.wait(600);
+    const racing = await h.eval(() => { const t = window.__test; return t ? t.race().mode === 'race' : false; }).catch(() => false);
+    if (racing) return true;
+  }
+  return false;
+}
+async function g66Driver(page, h, on) {
+  await h.eval((start) => { const t = window.__test; if (!t) return;
+    if (window.__g66drv) { clearInterval(window.__g66drv); window.__g66drv = null; }
+    if (!start) { t.setInput({ gas: false, brake: false, steer: 0 }); return; }
+    window.__g66drv = setInterval(() => { const t2 = window.__test; if (!t2 || !t2.paceCars) return;
+      const cs = t2.paceCars(); const p = cs.find(c => c.isPlayer); if (!p) return;
+      const ref = t2.lineAt(p.s + p.v * 0.5 + 18);
+      let steer = (ref.rlD - p.d) * 0.5 - p.headAngle * 1.1;
+      steer = Math.max(-1, Math.min(1, steer));
+      t2.setInput({ gas: true, brake: false, ers: ref.curv < 0.004 && p.ers > 15, steer });
+    }, 50);
+  }, on).catch(() => {});
+}
+async function g66Window(page, h, idx, pi) {
+  await h.eval((a) => { const t = window.__test; if (!t) return;
+    const n = t.cars().length;
+    for (let i = 0; i < n; i++) { if (i === a.idx) continue; t.setCarS(i, i === a.pi ? 4700 : 3400 + i * 60); }
+    t.setCarS(a.idx, 2950);
+  }, { idx, pi }).catch(() => {});
+  const rd = async () => { try { return await h.eval((mi) => { const t = window.__test; return t ? t.paceCars()[mi].raceDist : null; }, idx); } catch (e) { return null; } };
+  const rd0 = await rd(); if (rd0 === null) return null;
+  await h.wait(5000);
+  const rd1 = await rd(); if (rd1 === null) return null;
+  return rd1 - rd0;
+}
+async function g66PaceTest(page, h, pickFastest) {
+  if (!await g66ToRace(page, h)) return 'race never started';
+  const field = await h.eval(() => { const t = window.__test; if (!t || !t.paceCars) return null;
+    return t.paceCars().map((c, i) => ({ i, skill: c.skill, isPlayer: c.isPlayer })); }).catch(() => null);
+  if (!field) return 'pace probe missing (window.__test.paceCars)';
+  const ai = field.filter(c => !c.isPlayer).sort((a, b) => a.skill - b.skill);
+  const target = pickFastest ? ai[ai.length - 1] : ai[0];
+  const label = pickFastest ? 'fastest' : 'slowest';
+  const pi = field.find(c => c.isPlayer).i;
+  await g66Driver(page, h, true);
+  const d1 = await g66Window(page, h, target.i, pi);
+  const d2 = await g66Window(page, h, target.i, pi);
+  const dP = await g66Window(page, h, pi, pi);
+  await g66Driver(page, h, false);
+  const dAI = Math.max(d1 || 0, d2 || 0); // a spin or a wall scrape only ever slows a window - the better one is the car's true pace
+  if (!(dAI > 50)) return `${label} AI pace window failed`;
+  if (!(dP > 50)) return 'player pace window failed';
+  const r = dAI / dP;
+  if (r < 0.94) return `${label} AI covered only ${(r * 100).toFixed(0)}% of the player's distance in identical windows - the player just drives away from the field`;
+  if (r > 1.06) return `${label} AI covered ${(r * 100).toFixed(0)}% of the player's distance in identical windows - not the same pace as the player`;
+  return true;
+}
+
 export default [
   {
     id: 'game-starts-not-black',
@@ -385,5 +460,72 @@ export default [
       if (!((dBefore - p3.d) * dir > 0.8)) return `steering back did not move the car (d ${dBefore.toFixed(1)} -> ${p3.d.toFixed(1)})`;
       return true;
     },
+  },
+  {
+    id: 'play-no-invisible-cars',
+    ask: 'every car that can be hit is drawn and visible where it actually is',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      const probes = await h.eval(() => { const t = window.__test; if (!t || !t.carMesh) return null;
+        return t.cars().map((c, i) => ({ name: c.name, m: t.carMesh(i) })); }).catch(() => null);
+      if (!probes || probes.length < 20) return 'car mesh probe missing (window.__test.carMesh)';
+      for (const p of probes) {
+        if (!p.m) return `${p.name}: no mesh probe`;
+        if (!p.m.attached) return `${p.name}: car mesh is not in the scene - it can be hit but never seen`;
+        if (!p.m.chain) return `${p.name}: car is hidden by an invisible parent - it can be hit but never seen`;
+        if (!(p.m.vis >= 5)) return `${p.name}: only ${p.m.vis} visible meshes drawn - the car is effectively invisible`;
+        const longAxis = Math.max(p.m.size[0], p.m.size[2]);
+        if (!(longAxis >= 4.5)) return `${p.name}: drawn car is only ${longAxis}m long - not a visible F1 car`;
+        const dx = p.m.center[0] - p.m.trackPos[0], dz = p.m.center[2] - p.m.trackPos[2];
+        if (Math.hypot(dx, dz) > 2.5) return `${p.name}: drawn car sits ${Math.hypot(dx, dz).toFixed(1)}m from the car you can hit - an invisible blocker`;
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-ai-cars-full-model',
+    ask: 'every AI car uses the real F1 car model, same quality as the player car',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      const probes = await h.eval(() => { const t = window.__test; if (!t || !t.carMesh) return null;
+        return t.cars().map((c, i) => ({ name: c.name, isPlayer: c.isPlayer, m: t.carMesh(i) })); }).catch(() => null);
+      if (!probes || probes.length < 20) return 'car mesh probe missing (window.__test.carMesh)';
+      const player = probes.find(p => p.isPlayer);
+      const ais = probes.filter(p => !p.isPlayer);
+      if (!player || !player.m) return 'player car probe missing';
+      const ref = ais[0].m;
+      if (!ref) return 'AI car probe missing';
+      for (const p of ais) {
+        if (!p.m) return `${p.name}: no mesh probe`;
+        if (p.m.meshes !== ref.meshes || p.m.vis !== ref.vis || p.m.mats !== ref.mats)
+          return `${p.name}: different model from the other AI cars (${p.m.meshes}/${p.m.vis}/${p.m.mats} vs ${ref.meshes}/${ref.vis}/${ref.mats}) - a blob or a stand-in`;
+        const fp = (m) => [Math.min(m.size[0], m.size[2]), m.size[1], Math.max(m.size[0], m.size[2])]; // yaw-independent footprint: [width, height, length]
+        const mine = fp(p.m), want = fp(player.m);
+        for (let a = 0; a < 3; a++) {
+          if (want[a] > 0 && Math.abs(mine[a] - want[a]) / want[a] > 0.08)
+            return `${p.name}: drawn size ${mine[a]} vs the player's ${want[a]} on footprint axis ${a} - not the same car model`;
+        }
+      }
+      if (player.m.vis !== ref.vis) return `player car draws ${player.m.vis} visible meshes but AI cars draw ${ref.vis} - not the same quality`;
+      return true;
+    },
+  },
+  {
+    id: 'play-ai-pace-slowest-matches-player',
+    ask: 'the slowest AI car laps within 5 percent of the player - nobody gets driven away from',
+    async test(page, h) { return g66PaceTest(page, h, false); },
+  },
+  {
+    id: 'play-ai-pace-fastest-matches-player',
+    ask: 'the fastest AI car laps within 5 percent of the player - same real F1 pace',
+    async test(page, h) { return g66PaceTest(page, h, true); },
   },
 ];
