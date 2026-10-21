@@ -156,7 +156,12 @@ for (const g of games) {
   const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
   page.on('console', m => { const t = m.text(); if (m.type() === 'error' && /Shader Error|shader is not compiled|Program Info Log/i.test(t)) shaderErr.add(t.replace(/\s+/g, ' ').slice(0, 120)); });
   page.on('response', res => { if (res.status() >= 400) missing.add(res.url().replace(base, '').slice(0, 100)); });
-  page.on('requestfailed', q => { const u = q.url(); if (u.startsWith(base)) missing.add(u.replace(base, '').slice(0, 100)); });
+  page.on('requestfailed', q => { const u = q.url(); if (!u.startsWith(base)) return;
+    // Oct 21 (VP): a sound the game starts loading and the page then drops (reload / leaving the page) is ABORTED, not missing -
+    // G-80's 20 real mp3 files (present on main and on its branch) were reported 'Missing file'. Only a real 404 above counts.
+    const why = (q.failure() && q.failure().errorText) || '';
+    if (/ERR_ABORTED/.test(why) && q.resourceType() === 'media') return;
+    missing.add(u.replace(base, '').slice(0, 100)); });
   try {
     await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 });
   } catch (e) { r.fail.push('Page did not load: ' + String(e.message).split('\n')[0].slice(0, 100)); }

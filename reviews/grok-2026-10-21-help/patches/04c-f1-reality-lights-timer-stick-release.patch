@@ -1,0 +1,52 @@
+diff --git a/apexf1.html b/apexf1.html
+index c7f387e..1105134 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1407,6 +1407,10 @@ function initInput(){
+   stick.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===stickId) stickMove(t); },{passive:false});
+   const stickEnd=e=>{ for(const t of e.changedTouches) if(t.identifier===stickId){ stickId=null; Input.steer=0; setKnob(0); } };
+   stick.addEventListener('touchend',stickEnd); stick.addEventListener('touchcancel',stickEnd);
++  // JOB-04: let go of EVERYTHING when iOS steals the touch (notification, app switch) - the stick used to stay pushed
++  const releaseAll=()=>{ stickId=null; Input.steer=0; setKnob(0); Input.gas=Input.brake=Input.reverse=Input.ers=Input.left=Input.right=false; document.querySelectorAll('.on').forEach(el=>el.classList.remove('on')); };
++  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
++  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
+   // mouse fallback for desktop testing
+   let mouseDown=false;
+   stick.addEventListener('mousedown',e=>{ mouseDown=true; stickMove(e); });
+@@ -1610,6 +1614,7 @@ const Race = {
+     this.gridOrder=order;
+   },
+   startLights(){
++    clearTimeout(this._lightsHideT); this._lightsHideT=null; // JOB-04: a quick restart used to let the OLD 600 ms timer hide the NEW lights
+     this.mode='lights'; this.stateT=0; this.lightsOn=0;
+     $('lights').classList.remove('hidden'); $('lights').innerHTML='';
+     for(let i=0;i<5;i++){ const d=document.createElement('div'); d.className='light'; $('lights').appendChild(d); }
+@@ -1628,7 +1633,7 @@ const Race = {
+     }
+     if(this.stateT>4.2+this._holdT){
+       for(let i=0;i<5;i++) lights[i].className='light out';
+-      setTimeout(()=>$('lights').classList.add('hidden'),600);
++      clearTimeout(this._lightsHideT); this._lightsHideT=setTimeout(()=>{ this._lightsHideT=null; if(this.mode!=='lights') $('lights').classList.add('hidden'); },600); // JOB-04: one timer, cancelled on restart
+       this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
+       this._lampN=0; GPSetLights(0); GPPlay('lights_out_go',1);
+       banner('LIGHTS OUT!','',900,'#37d67a'); Aud.beep(880,0.25,0.3);
+@@ -2401,6 +2406,19 @@ window.__test = {
+ window.__apexBoot=true;
+ initMenus();
+ renderMenuCode();
++/* JOB-04: REALITY robot hook (REALITY.md "Robot hook") */
++window.__reality={
++  kind:'f1',
++  get player(){ return Race.player? Race.player.mesh : null; },
++  get others(){ return (Race.cars||[]).filter(c=>c!==Race.player).map(c=>c.mesh); },
++  get contact(){ return Race.player? Race.player.mesh.userData.wheels||[] : []; },
++  // the wheel nodes are axle pivots (the tyre meshes are drawn instanced), so tell the robot the tyre radius: measured, not guessed
++  get footOffset(){ try{ const w=Race.player.mesh.userData.wheels[0]; let r=0; w.updateMatrixWorld(true); const sc=w.getWorldScale(w.position.clone());
++    w.traverse(m=>{ if(!m.geometry) return; m.geometry.computeBoundingBox(); const b=m.geometry.boundingBox, d=[b.max.x-b.min.x,b.max.y-b.min.y,b.max.z-b.min.z].sort((a,c)=>c-a); r=Math.max(r,d[0]/2*sc.y); }); return r; }catch(e){ return 0; } },
++  ground:()=>{ try{ return Race.player? Track.frameAt(Race.player.s).y : 0; }catch(e){ return 0; } },
++  track:()=>{ try{ const f=Track.frameAt(Race.player.s); const l=Math.hypot(f.tx,f.tz)||1; return {x:f.tx/l, z:f.tz/l}; }catch(e){ return {x:0,z:1}; } },
++  go:(on)=>{ Input.gas=!!on; }
++};
+ requestAnimationFrame(loop);
+ </script>
+ </body>

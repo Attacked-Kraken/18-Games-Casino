@@ -1,0 +1,70 @@
+name: Visual play-test
+
+# JOB-01. Watches the 6 sports games like a person: films each one, takes a close-up of the feet/skates/wheels,
+# reads the camera height, and compares with the last good build. A PR that makes the picture WORSE goes red
+# (sunk skates, camera through the ice, invisible cars, black screen, frozen game). On main it saves the new
+# good build as the baseline on the "visual-baselines" branch.
+on:
+  pull_request:
+    paths: ['apex*.html', 'characters/**', 'models/**', 'vendor/**', 'three.module*.js', 'tools/visual-check/**']
+  push:
+    branches: [main]
+    paths: ['apex*.html', 'characters/**', 'models/**', 'vendor/**', 'three.module*.js', 'tools/visual-check/**']
+  workflow_dispatch:
+
+concurrency:
+  group: visual-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'main' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install the test browser + picture tools
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2 pngjs@7 pixelmatch@5
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y -qq ffmpeg >/dev/null || true
+      - name: Get the last good pictures
+        run: |
+          git fetch -q origin visual-baselines || true
+          mkdir -p visual-baseline
+          git archive origin/visual-baselines 2>/dev/null | tar -x -C visual-baseline || echo "no baseline yet"
+      - name: Pick games (PR = only the games it touches; shared people/models = all 6)
+        id: pick
+        run: |
+          SIX="apexbaseball.html apexhockey.html apexflight.html apextrackfield.html apexf1.html apexracer.html"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CH=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+            if echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|tools/visual-check/)'; then G="$SIX"
+            else G=$(for g in $SIX; do echo "$CH" | grep -qx "$g" && echo -n "$g "; done); fi
+          else G="$SIX"; fi
+          echo "games=$G" >> $GITHUB_OUTPUT
+      - name: Film and compare
+        if: steps.pick.outputs.games != ''
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then U=--update; fi
+          node tools/visual-check/visual.mjs --out visual-out --baseline visual-baseline $U ${{ steps.pick.outputs.games }}
+      - name: Pictures for the owner (download from the run page)
+        if: always() && steps.pick.outputs.games != ''
+        uses: actions/upload-artifact@v4
+        with: { name: visual-play-test, path: visual-out, retention-days: 14 }
+      - name: Summary
+        if: always() && steps.pick.outputs.games != ''
+        run: cat visual-out/README.md >> $GITHUB_STEP_SUMMARY || true
+      - name: Save the new good build as baseline (main only)
+        if: github.event_name == 'push' && success()
+        run: |
+          cd visual-baseline
+          git init -q && git checkout -q -b visual-baselines
+          git config user.name "visual-robot" && git config user.email "visual-robot@users.noreply.github.com"
+          git add -A && git commit -qm "baseline from ${GITHUB_SHA::7}" || exit 0
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" visual-baselines
