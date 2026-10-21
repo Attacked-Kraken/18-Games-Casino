@@ -1137,5 +1137,120 @@ export default [
     if (minY < 4.85) return 'the camera dropped to ' + minY.toFixed(2) + ' units (' + (minY * 0.307).toFixed(2) + ' m) in ' + worstView + ' - under the 1.5 m floor, it falls through the ice when zoomed in';
     return true;
   },
-},
+},,
+  // G-78: the other team plays defense now - AI defenders chase the carrier, poke-check,
+  // block shots and clear the puck. Staged rush: the away centre carries in on the home
+  // net from just inside the blue line with the human parked in the corner. PASS = a home DEFENSEMAN
+  // (LD/RD) takes the puck off the attack within 20 game-seconds. A takeaway only counts
+  // in a clean sequence: if the goalie had to make a save first (SAVED! banner), the
+  // scramble that follows is the goalie's play, not the defenders' - a whistle/faceoff
+  // starts a fresh sequence. An away goal ends it as a failure.
+  {
+    id: 'play-defender-takes-puck',
+    area: 'play',
+    async test(page, h) {
+    const reachPlay = async () => {
+      const state = () => h.eval(() => window.__hk.game.state).catch(() => 'err');
+      for (let i = 0; i < 18; i++) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'goal' || st === 'over') { await h.press('#againBtn').catch(() => {}); }
+        const hub = await h.eval(() => { const e = document.querySelector('#careerHub'); return !!(e && e.classList.contains('open')); }).catch(() => false);
+        if (hub) { await h.press('#hubPlay').catch(() => {}); await h.wait(900); if ((await state()) === 'play') return true; await h.press('#hubClose').catch(() => {}); }
+        if (st === 'menu') { await h.press('#playBtn').catch(() => {}); }
+        else if (st === 'faceoff') { await h.press('#faceBtn').catch(() => {}); }
+        else if (st === 'whistle') { await h.press('#contBtn').catch(() => {}); }
+        else { await h.press('#playBtn').catch(() => {}); }
+        await h.wait(500);
+      }
+      return (await state()) === 'play';
+    };
+    if (!(await reachPlay())) return 'could not get a match into play';
+    // stage the rush + in-page recorder (100 ms): game-clock accumulation, the SAVED!
+    // gate via the banner element's innerHTML setter, first clean D takeaway.
+    // The two home D start at their real defensive anchors (in a live game they are
+    // already back when a rush crosses centre - the faceoff dots are not defense).
+    const staged = await h.eval(() => {
+      const hk = window.__hk;
+      const away = hk.skaters.filter((s) => s.team === 'away' && !s.goalie);
+      const carrier = away.find((s) => s.role === 'C') || away[0];
+      const ctrl = hk.skaters.find((s) => s.team === 'home' && s === hk.controlled);
+      const ld = hk.skaters.find((s) => s.team === 'home' && s.role === 'LD');
+      const rd = hk.skaters.find((s) => s.team === 'home' && s.role === 'RD');
+      if (ld) { ld.pos.set(-74, 0.1, -13); ld.vel.set(0, 0, 0); }
+      if (rd) { rd.pos.set(-74, 0.1, 13); rd.vel.set(0, 0, 0); }
+      carrier.pos.set(-44, 0.1, 6); carrier.vel.set(-14, 0, 0); carrier.facing = Math.PI;
+      hk.puck.owner = carrier; hk.puck.shot = null; hk.puck.recv = null;
+      hk.puck.pos.set(carrier.pos.x - 2, 0.2, 6);
+      if (ctrl) { ctrl.pos.set(88, 0.1, -38); ctrl.vel.set(0, 0, 0); }
+      window.__dt78 = { elapsed: 0, lastClk: hk.game.clockT, tookAt: -1, tookBy: '', goalAgainst: false, savedGate: false, prevState: 'play' };
+      const bn = document.querySelector('#banner');
+      if (bn && !window.__dt78Trap) {
+        window.__dt78Trap = true;
+        let cur = bn.innerHTML;
+        Object.defineProperty(bn, 'innerHTML', {
+          configurable: true,
+          get() { return cur; },
+          set(v) { cur = v; if (String(v).indexOf('SAVED!') >= 0 && window.__dt78) window.__dt78.savedGate = true; },
+        });
+      }
+      if (window.__dt78Int) clearInterval(window.__dt78Int);
+      window.__dt78Int = setInterval(() => {
+        const R = window.__dt78; if (!R || R.tookAt >= 0) return;
+        const g = hk.game, st = g.state, clk = g.clockT;
+        const d = Math.abs(clk - R.lastClk); R.lastClk = clk;
+        if (st === 'play' && d < 1.5) R.elapsed += d;
+        if ((st === 'whistle' || st === 'faceoff') && R.prevState === 'play') R.savedGate = false; // a whistle starts a fresh sequence
+        if (st === 'goal') { R.goalAgainst = true; return; }
+        R.prevState = st;
+        if (st !== 'play' || R.savedGate) return;
+        const o = hk.puck.owner;
+        if (o && o.team === 'home' && (o.role === 'LD' || o.role === 'RD')) { R.tookAt = R.elapsed; R.tookBy = o.role; }
+      }, 100);
+      return true;
+    }).catch(() => false);
+    if (!staged) return 'could not stage the rush';
+    // up to two rushes: one rush can end in a goal against even honest defense -
+    // the defense passes if it takes the puck cleanly in either, inside 20 game-seconds
+    let lastFail = 'no defender took the puck within 20 game-seconds of the rush';
+    for (let rush = 0; rush < 2; rush++) {
+      if (rush > 0) {
+        if (!(await reachPlay())) break;
+        const re = await h.eval(() => {
+          const hk = window.__hk;
+          const away = hk.skaters.filter((s) => s.team === 'away' && !s.goalie);
+          const carrier = away.find((s) => s.role === 'C') || away[0];
+          const ctrl = hk.skaters.find((s) => s.team === 'home' && s === hk.controlled);
+          const ld = hk.skaters.find((s) => s.team === 'home' && s.role === 'LD');
+          const rd = hk.skaters.find((s) => s.team === 'home' && s.role === 'RD');
+          if (ld) { ld.pos.set(-74, 0.1, -13); ld.vel.set(0, 0, 0); }
+          if (rd) { rd.pos.set(-74, 0.1, 13); rd.vel.set(0, 0, 0); }
+          carrier.pos.set(-44, 0.1, 6); carrier.vel.set(-14, 0, 0); carrier.facing = Math.PI;
+          hk.puck.owner = carrier; hk.puck.shot = null; hk.puck.recv = null;
+          hk.puck.pos.set(carrier.pos.x - 2, 0.2, 6);
+          if (ctrl) { ctrl.pos.set(88, 0.1, -38); ctrl.vel.set(0, 0, 0); }
+          const R = window.__dt78; R.elapsed = 0; R.tookAt = -1; R.goalAgainst = false; R.savedGate = false; R.lastClk = hk.game.clockT;
+          return true;
+        }).catch(() => false);
+        if (!re) break;
+      }
+      let verdict = null;
+      for (let k = 0; k < (rush === 0 ? 40 : 22) && !verdict; k++) {
+        await h.wait(400);
+        const R = await h.eval(() => window.__dt78).catch(() => null);
+        if (!R) continue;
+        if (R.goalAgainst) verdict = 'goal';
+        else if (R.tookAt >= 0) verdict = R.tookAt <= 20 ? 'took' : 'late';
+        else if (R.elapsed > 21) verdict = 'none';
+      }
+      if (verdict === 'took') { await h.eval(() => { if (window.__dt78Int) clearInterval(window.__dt78Int); }).catch(() => {}); return true; }
+      if (verdict === 'late') lastFail = 'a defender took the puck, but after the 20 game-second mark';
+      else if (verdict === 'goal') lastFail = 'the away rush scored - no defender took the puck';
+      else if (verdict === 'none') lastFail = 'no defender took the puck within 20 game-seconds of the rush';
+    }
+    await h.eval(() => { if (window.__dt78Int) clearInterval(window.__dt78Int); }).catch(() => {});
+    return lastFail;
+    }
+  },
 ];
+
