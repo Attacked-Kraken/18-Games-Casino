@@ -62,6 +62,38 @@ export default [
       return 'the game never left the menu, so the play cameras could not be checked';
     },
   },
+  // G-79 (owner, 2026-10-21): the first menu picture must already show HIS ballpark -
+  // a loading screen with a moving bar covers the game until the model has loaded,
+  // and only then does the menu open, over the new park. The old stadium may only
+  // ever appear if the model really cannot load.
+  {
+    id: 'play-menu-over-new-ballpark',
+    ask: "The first menu picture already shows the new ballpark: a loading screen covers the game until Apex Arcade Park has loaded, and only then does the menu open (G-79)",
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      const t0 = Date.now();
+      let sawLoading = false;
+      while (Date.now() - t0 < 28000) {
+        const s = await h.eval(() => {
+          const vis = e => !!e && getComputedStyle(e).display !== 'none';
+          return {
+            menu: vis(document.getElementById('startOv')),
+            loading: vis(document.getElementById('loadOv')),
+            bar: !!document.getElementById('loadBar'),
+            loaded: !!(window.__test && window.__test.stadium && window.__test.stadium.loaded),
+          };
+        });
+        if (s.loading && s.bar) sawLoading = true;
+        if (s.menu) {
+          if (!s.loaded) return 'the menu opened before the ballpark loaded - the first menu picture shows the old stadium';
+          if (!sawLoading) return 'the menu opened without the loading screen ever showing';
+          return true;
+        }
+        await h.wait(200);
+      }
+      return 'the menu never opened (the ballpark gate stayed shut for 28 s)';
+    },
+  },
   {
     id: 'keep-batting-flow',
     ask: 'KEEP: everything that works and looks right now (batting flow)',
