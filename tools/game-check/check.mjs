@@ -15,6 +15,7 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { realityCheck } from './reality.mjs';
+import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
@@ -349,6 +350,9 @@ for (const g of games) {
     await page.waitForTimeout(2500);
     const rl = await realityCheck(page, ms => page.waitForTimeout(ms));
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
+    // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
+    try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
+    catch (e) { r.check.push('Phone layout check could not run: ' + String(e.message).split('\n')[0].slice(0, 80)); }
   } catch (e) { r.check.push('REALITY robot could not run: ' + String(e.message).split('\n')[0].slice(0, 100)); }
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
