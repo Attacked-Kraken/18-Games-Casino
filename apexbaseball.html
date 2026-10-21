@@ -1712,7 +1712,7 @@ window.__mus = Mus;
    so at scale 1/0.9144 the park's bases, mound and plate land exactly on the game's, and our
    players, controls, cameras and play stay as they are. The old park stays up until the new
    one has loaded, then steps aside; if the model cannot load, the old park simply stays. */
-const _park = { loaded:false, fans:0, root:null, uTime:{value:0}, uWave:{value:-99}, waveT:-1, vbT:0, vbCtx:null, vbTex:null, vbMsg:0 };
+const _park = { loaded:false, fans:0, root:null, uTime:{value:0}, uWave:{value:-99}, waveT:-1, vbT:0, vbCtx:null, vbTex:null, vbMsg:0, kitField:false };
 const PARK_MSGS = [
   ['MAKE SOME NOISE!', 'APEX ARCADE PARK', 'PLAY MORE · CHEER LOUDER'],
   ['WELCOME FANS', 'APEX ARCADE PARK', 'HOME OF THE COMETS'],
@@ -1734,6 +1734,57 @@ function drawParkVB(){
   g.fillText(`SHARKS ${innScore('away')}  ·  COMETS ${innScore('home')}  ·  ${G.half === 'top' ? 'TOP' : 'BOT'} ${G.inning}`, 512, 486);
   g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < 512; y += 4) g.fillRect(0, y, 1024, 1.5);
   if (_park.vbTex) _park.vbTex.needsUpdate = true;
+}
+/* G-51: the owner's kit grass + infield dirt on the park field. The park paints its whole
+   field into one baked picture (grass, dirt and lines together), so the kit textures are laid
+   UNDER that same painting: grass areas are re-skinned with kit/ground/512/grass_plain.png,
+   dirt areas with kit/ground/512/baseball_infield.png, and the painting's own lines, markings
+   and surround stay on top - the look is the same, the surfaces are the owner's kit. */
+function kitFieldOnPark(fieldMat){
+  const paint = fieldMat.map && fieldMat.map.image;
+  if (!paint || _park.kitField) return;
+  const grass = new Image(), dirt = new Image();
+  let got = 0;
+  const step = () => {
+    if (++got < 2) return;
+    try {
+      const W = 1024, H = 1024;
+      const tile = (img, s) => { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); for (let y = 0; y < H; y += s) for (let x = 0; x < W; x += s) g.drawImage(img, x, y, s, s); return c; };
+      const pc = document.createElement('canvas'); pc.width = W; pc.height = H;
+      const pg = pc.getContext('2d', { willReadFrequently: true });
+      pg.drawImage(paint, 0, 0, W, H);
+      const im = pg.getImageData(0, 0, W, H), px = im.data;
+      const dm = new Uint8ClampedArray(px.length);
+      for (let i = 0; i < px.length; i += 4){
+        const r = px[i], g = px[i+1], b = px[i+2];
+        const isGrass = g > r + 12 && g > b + 8;
+        const isDirt = r > g + 18 && g >= b - 6 && r > 70;
+        if (isDirt){ dm[i] = dm[i+1] = dm[i+2] = 255; dm[i+3] = 255; }
+        if (isGrass || isDirt) px[i+3] = 0;
+      }
+      const out = document.createElement('canvas'); out.width = W; out.height = H;
+      const og = out.getContext('2d');
+      og.drawImage(tile(grass, 160), 0, 0);
+      const dc = document.createElement('canvas'); dc.width = W; dc.height = H;
+      const dg = dc.getContext('2d');
+      dg.drawImage(tile(dirt, 64), 0, 0);
+      dg.globalCompositeOperation = 'destination-in';
+      const mc = document.createElement('canvas'); mc.width = W; mc.height = H;
+      mc.getContext('2d').putImageData(new ImageData(dm, W, H), 0, 0);
+      dg.drawImage(mc, 0, 0);
+      og.drawImage(dc, 0, 0);
+      pg.putImageData(im, 0, 0);
+      og.drawImage(pc, 0, 0);
+      const t = new THREE.CanvasTexture(out);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.flipY = false;
+      fieldMat.map = t; fieldMat.needsUpdate = true;
+      _park.kitField = true;
+    } catch (e) { /* if anything fails the park keeps its own painting */ }
+  };
+  grass.onload = step; dirt.onload = step;
+  grass.src = 'kit/ground/512/grass_plain.png';
+  dirt.src = 'kit/ground/512/baseball_infield.png';
 }
 function tickPark(dt){
   if (!_park.loaded) return;
@@ -1776,6 +1827,13 @@ try {
           _park.vbTex = t; m.map = t; m.emissiveMap = t; m.needsUpdate = true;
           drawParkVB();
         }
+        if (m.name === 'Field') kitFieldOnPark(m);
+        if (m.name === 'Clay'){
+          new THREE.TextureLoader().load('kit/ground/512/baseball_infield.png', t => {
+            t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = false;
+            m.color.set(0xffffff); m.map = t; m.needsUpdate = true;
+          });
+        }
       });
     });
     scene.add(root);
@@ -1794,7 +1852,7 @@ window.__test = {
   get balls(){ return G.balls; },
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
-  get stadium(){ return { loaded: _park.loaded, fans: _park.fans }; },
+  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
