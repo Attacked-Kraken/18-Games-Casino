@@ -320,4 +320,50 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-traffic-glb',
+    ask: 'G-50: city traffic cars are real fetched 3D models, each in its own paint',
+    async test(page, h) {
+      const setup = await h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        if (E.R && E.endRace) E.endRace();
+        if (!document.getElementById('nm').value) document.getElementById('nm').value = 'T50';
+        return true;
+      });
+      if (setup !== true) return setup;
+      const out = await h.eval(() => {
+        const E = window.__erc;
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 8);
+          let n = 0;
+          const iv = setInterval(() => {
+            n++;
+            if (E.R && E.R.traffic && E.R.traffic.length >= 9) {
+              clearInterval(iv);
+              const keys = ['patriot', 'tokii', 'shc', 'lemans'];
+              const seen = new Set(), paints = new Set();
+              for (const t of E.R.traffic) {
+                const c = t.car;
+                if (!c.glbKey) return res('a traffic car is not a real 3D model (no glbKey)');
+                if (!keys.includes(c.glbKey)) return res('traffic car uses unknown model ' + c.glbKey);
+                seen.add(c.glbKey);
+                let verts = 0;
+                c.root.traverse((q) => { if (q.isMesh && !q.userData.blob && q.geometry && q.geometry.attributes && q.geometry.attributes.position) verts += q.geometry.attributes.position.count; });
+                if (verts < 15000) return res('traffic ' + c.glbKey + ' has only ' + verts + ' vertices - not the real fetched model');
+                if (c.paint && c.paint.color) paints.add(c.paint.color.getHexString());
+              }
+              if (seen.size < 2) return res('traffic all use one model (' + [...seen][0] + ') - the fetched models should rotate');
+              if (paints.size < 4) return res('traffic paints are not individual - only ' + paints.size + ' distinct colors');
+              res(true);
+            } else if (n > 75) { clearInterval(iv); res('traffic never appeared in the race'); }
+          }, 200);
+        });
+      });
+      if (out !== true) return out;
+      if (h.shot) await h.shot('traffic-glb');
+      await h.eval(() => { const E = window.__erc; if (E.R && E.endRace) E.endRace(); if (E.toMenu) E.toMenu(); return true; });
+      return true;
+    },
+  },
 ];
