@@ -1574,122 +1574,6 @@ export default [
       return true;
     }
   }
-  ,{
-    id: 'play-10000m-field-breaks-to-lane-1',
-    ask: "JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane",
-    async test(page, h) {
-      const navTo = (matchText) => h.eval((mt) => new Promise(res => {
-        let n = 0;
-        const iv = setInterval(() => {
-          const on = document.querySelector('.screen.on');
-          const e = window.__tf && window.__tf.eng();
-          if (document.body.classList.contains('playing') && e) { clearInterval(iv); res('in'); return; }
-          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
-          if (on && on.id === 'menu') click('bFree');
-          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.toLowerCase().includes(mt)); if (b) b.click(); }
-          else if (on && on.id === 'card') click('bCardStart');
-          else if (on && on.id === 'results') click('bResMenu');
-          else if (on && on.id === 'career') click('bCareerBack');
-          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
-        }, 140);
-      }), matchText);
-      const nav = await navTo('10,000');
-      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
-      let lanes = null;
-      const t0 = Date.now();
-      while (Date.now() - t0 < 9000) {
-        lanes = await h.eval(() => { const e = window.__tf.eng(); return (e && e._lanes) ? { player: e._lanes.player, ai: e._lanes.ai.slice(), phase: e.phase } : null; });
-        if (lanes && lanes.phase === 'run') break;
-        await h.wait(300);
-      }
-      if (!lanes) return 'the 10,000m draw never reported the field lanes';
-      if (Math.abs(lanes.player - 3) > 0.35) return 'at the start the player should be in his own lane (3), drawn lane is ' + lanes.player.toFixed(2);
-      await h.eval(() => { const e = window.__tf.eng(); e.r.pos = e.liveFrom + 160; e.ai.forEach(a => { a.pos = Math.max(a.pos, e.liveFrom + 160); }); return true; });
-      let after = null;
-      const t1 = Date.now();
-      while (Date.now() - t1 < 9000) {
-        after = await h.eval(() => { const e = window.__tf.eng(); return e._lanes ? { player: e._lanes.player, ai: e._lanes.ai.slice() } : null; });
-        if (after && after.player <= 0.05 && after.ai.every(x => x <= 0.05)) break;
-        await h.wait(300);
-      }
-      if (!after) return 'the lanes report vanished after the start';
-      if (!(after.player <= 0.05)) return '160m after the start the player is still drawn in lane ' + after.player.toFixed(2) + ' - the field must break to lane 1';
-      for (let i = 0; i < after.ai.length; i++) if (!(after.ai[i] <= 0.05)) return '160m after the start rival ' + (i + 2) + ' is still drawn in lane ' + after.ai[i].toFixed(2) + ' - everyone moves to lane 1';
-      return true;
-    }
-  }
-  ,{
-    id: 'play-career-results-event-column-and-clock',
-    ask: "JOB G-83 (owner 1.png): the career meet results table lists the meet's EVENTS so its column must say EVENT (not ATHLETE), and the big time on the results screen must be the same time the race clock showed at the finish",
-    async test(page, h) {
-      try { await page.reload({ waitUntil: 'load' }); } catch (e) {}
-      await h.wait(2500);
-      const out = await h.eval(() => new Promise(res => {
-        let n = 0, clockAtFinish = null;
-        const iv = setInterval(() => {
-          const on = document.querySelector('.screen.on');
-          const e = window.__tf && window.__tf.eng();
-          if (clockAtFinish === null && e && e.done) clockAtFinish = e.time;
-          if (on && on.id === 'results' && clockAtFinish !== null) {
-            clearInterval(iv);
-            const th = document.querySelector('#resBoard table tr th:nth-child(2)');
-            const mark = (document.getElementById('resMark') || {}).textContent || '';
-            res({ header: th ? th.textContent.trim() : '', mark, clock: clockAtFinish });
-            return;
-          }
-          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
-          if (document.body.classList.contains('playing') && e && !e.done && e.phase === 'run') {
-            if (e.stride) { e.stride('L'); e.stride('R'); }
-            if (e.r && e.dist) e.r.pos = Math.min(e.dist - 0.2, e.r.pos + e.dist * 0.06);
-          }
-          else if (on && on.id === 'menu') click('bCareer');
-          else if (on && on.id === 'career') click('bCareerMeet');
-          else if (on && on.id === 'card') click('bCardStart');
-          if (++n > 160) { clearInterval(iv); res({ stuck: on ? on.id : 'none', clock: clockAtFinish }); }
-        }, 150);
-      }));
-      if (out.stuck) return 'the career results proof stalled at ' + out.stuck;
-      if (out.header !== 'EVENT') return 'the career meet results column says "' + out.header + '" but the rows are the meet events - it must say EVENT';
-      const tok = (out.mark || '').trim().split(/\s+/)[0];
-      const parts = tok.split(':');
-      const shown = parts.length === 2 ? (parseFloat(parts[0]) * 60 + parseFloat(parts[1])) : parseFloat(parts[0]);
-      if (!isFinite(shown)) return 'could not read a time on the results screen ("' + out.mark + '")';
-      if (Math.abs(shown - out.clock) > 0.06) return 'the results screen shows ' + tok + ' but the race clock at the finish read ' + out.clock.toFixed(2) + ' - they must be the same time';
-      return true;
-    }
-  },
-  {
-    id: 'play-hurdles-set-in-every-lane',
-    ask: 'G-39/G-43 fix (owner): hurdle races need hurdles in EVERY lane - a hurdle stands in front of every runner, not only in the player\'s lane',
-    async test(page, h) {
-      // Clear driver intervals earlier tests installed (suite hygiene).
-      await h.eval(() => { ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv'].forEach(k => { try { clearInterval(window[k]); } catch (e) {} try { delete window[k]; } catch (e) {} }); return true; });
-      // Reach the 110m hurdles through the game's own buttons.
-      const nav = await h.eval(() => new Promise(res => {
-        let n = 0;
-        const iv = setInterval(() => {
-          n++;
-          const tf = window.__tf;
-          const e = tf && tf.eng && tf.eng();
-          if (e && e.ev && e.ev.id === '110h') { clearInterval(iv); res('in'); return; }
-          if (n > 130) { clearInterval(iv); res('stuck'); return; }
-          const click = id => { const b = document.getElementById(id); if (b && b.offsetParent !== null) { b.click(); return true; } return false; };
-          const on = document.querySelector('.screen.on'); const scr = on ? on.id : '';
-          if (scr === 'results') { if (!click('bResMenu')) click('bResNext'); return; }
-          if (scr === 'career') { click('bCareerBack'); return; }
-          if (scr === 'card') { click('bCardStart'); return; }
-          if (scr === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /110m Hurdles/i.test(x.textContent)); if (b) b.click(); return; }
-          if (scr === 'menu') { click('bFree'); return; }
-        }, 120);
-      }));
-      if (nav !== 'in') return 'the 110m hurdles never loaded (nav: ' + nav + ')';
-      const hv = await h.eval(() => (window.__tf.hurdles ? window.__tf.hurdles() : null));
-      if (!hv) return 'the game exposes no hurdle count - the every-lane hurdles are not in this build';
-      if (hv.count !== 80 || hv.placed !== 80) return 'only ' + hv.placed + ' hurdles are set for the race (mesh shows ' + hv.count + ') - 10 hurdles in each of the 8 lanes = 80; the other lanes are empty';
-      if (hv.distinct !== 80) return 'the 80 hurdles are not at 80 different spots (' + hv.distinct + ' distinct) - they must stand one per lane per hurdle, not stacked in one lane';
-      return true;
-    },
-  }
 
   ,{
     id: 'tester-hurdle-height-400m',
@@ -1811,4 +1695,90 @@ export default [
       return true;
     }
   }
+  ,{
+    id: 'play-10000m-field-breaks-to-lane-1',
+    ask: "JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane",
+    async test(page, h) {
+      const navTo = (matchText) => h.eval((mt) => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e) { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.toLowerCase().includes(mt)); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          else if (on && on.id === 'career') click('bCareerBack');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      }), matchText);
+      const nav = await navTo('10,000');
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      let lanes = null;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 9000) {
+        lanes = await h.eval(() => { const e = window.__tf.eng(); return (e && e._lanes) ? { player: e._lanes.player, ai: e._lanes.ai.slice(), phase: e.phase } : null; });
+        if (lanes && lanes.phase === 'run') break;
+        await h.wait(300);
+      }
+      if (!lanes) return 'the 10,000m draw never reported the field lanes';
+      if (Math.abs(lanes.player - 3) > 0.35) return 'at the start the player should be in his own lane (3), drawn lane is ' + lanes.player.toFixed(2);
+      await h.eval(() => { const e = window.__tf.eng(); e.r.pos = e.liveFrom + 160; e.ai.forEach(a => { a.pos = Math.max(a.pos, e.liveFrom + 160); }); return true; });
+      let after = null;
+      const t1 = Date.now();
+      while (Date.now() - t1 < 9000) {
+        after = await h.eval(() => { const e = window.__tf.eng(); return e._lanes ? { player: e._lanes.player, ai: e._lanes.ai.slice() } : null; });
+        if (after && after.player <= 0.05 && after.ai.every(x => x <= 0.05)) break;
+        await h.wait(300);
+      }
+      if (!after) return 'the lanes report vanished after the start';
+      if (!(after.player <= 0.05)) return '160m after the start the player is still drawn in lane ' + after.player.toFixed(2) + ' - the field must break to lane 1';
+      for (let i = 0; i < after.ai.length; i++) if (!(after.ai[i] <= 0.05)) return '160m after the start rival ' + (i + 2) + ' is still drawn in lane ' + after.ai[i].toFixed(2) + ' - everyone moves to lane 1';
+      return true;
+    }
+  }
+  ,{
+    id: 'play-career-results-event-column-and-clock',
+    ask: "JOB G-83 (owner 1.png): the career meet results table lists the meet's EVENTS so its column must say EVENT (not ATHLETE), and the big time on the results screen must be the same time the race clock showed at the finish",
+    async test(page, h) {
+      try { await page.reload({ waitUntil: 'load' }); } catch (e) {}
+      await h.wait(2500);
+      const out = await h.eval(() => new Promise(res => {
+        let n = 0, clockAtFinish = null;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (clockAtFinish === null && e && e.done) clockAtFinish = e.time;
+          if (on && on.id === 'results' && clockAtFinish !== null) {
+            clearInterval(iv);
+            const th = document.querySelector('#resBoard table tr th:nth-child(2)');
+            const mark = (document.getElementById('resMark') || {}).textContent || '';
+            res({ header: th ? th.textContent.trim() : '', mark, clock: clockAtFinish });
+            return;
+          }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (document.body.classList.contains('playing') && e && !e.done && e.phase === 'run') {
+            if (e.stride) { e.stride('L'); e.stride('R'); }
+            if (e.r && e.dist) e.r.pos = Math.min(e.dist - 0.2, e.r.pos + e.dist * 0.06);
+          }
+          else if (on && on.id === 'menu') click('bCareer');
+          else if (on && on.id === 'career') click('bCareerMeet');
+          else if (on && on.id === 'card') click('bCardStart');
+          if (++n > 160) { clearInterval(iv); res({ stuck: on ? on.id : 'none', clock: clockAtFinish }); }
+        }, 150);
+      }));
+      if (out.stuck) return 'the career results proof stalled at ' + out.stuck;
+      if (out.header !== 'EVENT') return 'the career meet results column says "' + out.header + '" but the rows are the meet events - it must say EVENT';
+      const tok = (out.mark || '').trim().split(/\s+/)[0];
+      const parts = tok.split(':');
+      const shown = parts.length === 2 ? (parseFloat(parts[0]) * 60 + parseFloat(parts[1])) : parseFloat(parts[0]);
+      if (!isFinite(shown)) return 'could not read a time on the results screen ("' + out.mark + '")';
+      if (Math.abs(shown - out.clock) > 0.06) return 'the results screen shows ' + tok + ' but the race clock at the finish read ' + out.clock.toFixed(2) + ' - they must be the same time';
+      return true;
+    }
+  }
 ];
+
+
