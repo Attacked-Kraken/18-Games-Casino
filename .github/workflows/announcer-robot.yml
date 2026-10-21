@@ -42,5 +42,5 @@ jobs:
           B="robot/announcer-${{ github.run_number }}"
           git checkout -q -b "$B" && git push -q origin "$B"
           N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Announcer robot: run ${{ github.run_number }}" -f body="Made by the announcer robot. Merged by the merge robot when the game check is green." --jq .number)
-          gh workflow run game-check.yml --ref "$B" || true
+          gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::notice title=Announcer robot::opened pull request #$N"

@@ -91,7 +91,7 @@ def fix_notes_conflict(pr):
             git("merge", "--abort"); return False
     if git("push", "-q", "origin", branch).returncode != 0:
         print("#%d: could not push the merge to %s" % (n, branch)); return False
-    gh("repos/%s/actions/workflows/game-check.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
     print("::notice title=Merge robot::#%d: merged main into %s (notes kept from both sides), check restarted" % (n, branch))
     return True
 
