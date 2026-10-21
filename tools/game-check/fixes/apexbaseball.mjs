@@ -16,6 +16,52 @@ export default [
       });
     },
   },
+  // G-65 (owner, 2026-10-20): players must be real-proportioned people (~1.85 m,
+  // never stretched or squashed) and the cameras the one TV broadcast spec.
+  {
+    id: 'play-player-height',
+    ask: "Players are real-proportioned people, about 1.85 m tall (G-65)",
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const s = await h.eval(() => {
+          const T = window.__test; if (!T) return null;
+          if (T.phase === 'start'){ const b = document.getElementById('startBtn'); if (b) b.click(); }
+          return T.playerSize || null;
+        });
+        if (s && s.h) {
+          if (s.h < 1.75 || s.h > 1.95) return `player height reads ${s.h} m - real players are 1.75-1.95 m tall`;
+          if (s.sw < 0.3 || s.sw > 0.7) return `shoulder width reads ${s.sw} m - the figure is stretched or squashed`;
+          return true;
+        }
+        await h.wait(250);
+      }
+      return 'player size never became readable (the athletes did not load)';
+    },
+  },
+  {
+    id: 'play-camera-broadcast',
+    ask: "Cameras are the TV broadcast spec: field of view 40-45 degrees, and the pitching view sits high on the centre-field side behind the pitcher (G-65)",
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const s = await h.eval(() => {
+          const T = window.__test; if (!T || !T.cam) return null;
+          if (T.phase === 'start'){ const b = document.getElementById('startBtn'); if (b) b.click(); }
+          return { fov: T.cam.fov, pos: T.cam.pos, phase: T.phase };
+        });
+        if (s && s.phase !== 'start') {
+          if (s.fov < 40 || s.fov > 45) return `camera field of view is ${s.fov} degrees - the broadcast spec is 40-45`;
+          if (['select', 'aim', 'windup'].includes(s.phase)) {
+            if (!(s.pos[2] < -25 && s.pos[1] > 10)) return `pitching camera sits at ${s.pos} - the spec is high on the centre-field side, behind and above the pitcher`;
+          }
+          return true;
+        }
+        await h.wait(250);
+      }
+      return 'the game never left the menu, so the play cameras could not be checked';
+    },
+  },
   {
     id: 'keep-batting-flow',
     ask: 'KEEP: everything that works and looks right now (batting flow)',
