@@ -179,4 +179,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-69 | window 3 | apexflight.html, jobs/G-69.md | g-69-reality-hook |
 | G-39 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-39-relay-baton-v2 |
 | G-43 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-43-pole-vault |
+| G-87 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-87.md | g-87-baseball-tester |
 
