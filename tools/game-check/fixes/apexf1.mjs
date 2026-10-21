@@ -693,6 +693,44 @@ export default [
       if (typeof grid.skill !== 'number' || Math.abs(grid.skill - mine.rating / 100) > 0.02) return 'the friend is on the grid but at skill ' + grid.skill + ', not the coded ' + (mine.rating / 100);
       return true;
     },
+  },
+  {
+    id: 'play-grand-prix-kits',
+    ask: 'The circuit wears the owner ground kit (asphalt + kerb textures from kit/ground/512) and the engine is the owner grand_prix sound kit: idle/accel loops crossfaded by throttle, shift sounds, tire squeal',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      if (!await h.poll(() => h.eval(`window.__test.race().mode`), m => m === 'quali', 15000)) return 'weekend never reached qualifying';
+      const gk = await h.eval(`window.__test.groundKit()`);
+      if (!gk || gk.asphalt !== 'kit-ground-asphalt') return 'the road is not wearing the kit asphalt texture: ' + JSON.stringify(gk);
+      if (gk.kerb !== 'kit-ground-kerb') return 'the kerbs are not wearing the kit kerb texture: ' + JSON.stringify(gk);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) return 'the race never started';
+      if (!await h.poll(() => h.eval(`window.__test.kitAudio().ready`), r => r === true, 8000)) return 'the engine sound kit never became ready';
+      await h.eval(`window.__test.setInput({ gas:true })`);
+      let hot = null;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 9000) {
+        const st = await h.eval(`window.__test.kitAudio()`);
+        if (st && st.band >= 2 && st.rate > 1.0) { hot = st; break; }
+        await h.wait(400);
+      }
+      if (!hot) return 'the engine kit never sang under throttle: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
+      if (!(hot.shifts >= 1)) return 'no gear-shift sound fired while accelerating: ' + JSON.stringify(hot);
+      await h.eval(`window.__test.setInput({ gas:true, steer:1 })`);
+      let squeal = 0;
+      const t1 = Date.now();
+      while (Date.now() - t1 < 7000) {
+        const st = await h.eval(`window.__test.kitAudio()`);
+        if (st && st.squeal > 0.02) { squeal = st.squeal; break; }
+        await h.wait(300);
+      }
+      await h.eval(`window.__test.setInput({ gas:false, steer:0 })`);
+      if (!squeal) return 'the tire squeal never sounded off track: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
+      return true;
+    },
   }
 
 ];
