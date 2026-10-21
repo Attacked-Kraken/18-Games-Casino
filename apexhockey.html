@@ -719,6 +719,11 @@ const joyVec = { x:0, y:0, active:false };
   const end=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
     tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); } };
   joy.addEventListener('touchend',end); joy.addEventListener('touchcancel',end);
+  // JOB-04: the stick must let go when iOS steals the touch (notification, app switch, Control Centre)
+  const releaseAll=()=>{ tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); for(const k in keys) keys[k]=false; };
+  window.__hkStickRelease=releaseAll;
+  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
 }
 const keys={};
 addEventListener('keydown',e=>{ if(e.repeat) return; keys[e.code]=true;
@@ -1499,12 +1504,12 @@ function goalieSaves(){
     if(Math.abs(puck.pos.z)>GOAL_HALF+2.5) continue;
     const dz=Math.abs(puck.pos.z-gl.pos.z);
     const saveR=2.6;
-    if(dz<saveR){
+    if(dz<saveR && gameNow>=(gl._saveUntil||0)){ // JOB-04: one save per shot (rebounds inside 1.2 s are part of the same save)
       const spd=puck.vel.length();
       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
-        puck.shot=null; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble
+        gl._saveUntil=gameNow+1.2; puck.shot=null; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble
         commSay(spd>70?'great_save':'save'); // G-44
         if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
       }
@@ -1542,6 +1547,7 @@ function stepSpray(dt){
 }
 
 /* ================= camera ================= */
+const CAM_MIN_Y = 1.5*3.26; // JOB-04: 1.5 m above the ice (rink units are 3.26 per metre)
 const camTgt=new THREE.Vector3(0,44,74), lookTgt=new THREE.Vector3();
 const CAMNAMES=['BROADCAST','HIGH','CLOSE','PLAYER','END'];
 const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','BEHIND THE NET'];
@@ -1564,8 +1570,8 @@ function stepCamera(dt){
     const deepEnd=Math.abs(s.pos.x)/HX; if(deepEnd>0.78) cy=5+(deepEnd-0.78)*14; // rise over the glass deep in the zone
     camTgt.set(cx, cy, cz);
     lookTgt.set(s.pos.x+ad*6, 1, s.pos.z*0.92);
-  } else if(camMode===3){ // PLAYER: over the shoulder (G-72: 5 = 1.5 m up, never down at ice level)
-    camTgt.set(s.pos.x-fx*4.5, 5, s.pos.z-fz*4.5);
+  } else if(camMode===3){ // PLAYER: ice-level over the shoulder
+    camTgt.set(s.pos.x-fx*5.5, CAM_MIN_Y, s.pos.z-fz*5.5);
     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
   } else if(camMode===4){ // END: behind the net you attack
     camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
@@ -1578,11 +1584,13 @@ function stepCamera(dt){
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
+  // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
+  if(camTgt.distanceTo(camera.position)>60 || (window.__lookCur && lookTgt.distanceTo(window.__lookCur)>60)){ camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
   const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
   camera.position.lerp(camTgt,k);
-  if(camera.position.y<4.89) camera.position.y=4.89; // G-72: the camera never falls through the ice - at least 1.5 m up in every view
   if(!window.__lookCur) window.__lookCur=lookTgt.clone();
   window.__lookCur.lerp(lookTgt, Math.min(1,5*dt)); // G-02: smooth the view direction (no snapping)
+  if(camera.position.y<CAM_MIN_Y) camera.position.y=CAM_MIN_Y; // JOB-04: never through the ice (1.5 m = 4.9 units)
   camera.lookAt(window.__lookCur);
   ring.position.set(controlled.pos.x,0.12,controlled.pos.z);
   ring.visible=(state==='play');
@@ -1590,6 +1598,38 @@ function stepCamera(dt){
   tag.position.set(controlled.pos.x,7.9,controlled.pos.z);
   tag.visible=(state==='play');
   if(controlled!==tagFor){ tagFor=controlled; drawTag(); }
+}
+
+/* ================= JOB-04: skates on the ice (measured, every frame) =================
+   The stance pins the foot BONE, but what the eye sees is the steel. Each frame we read the real
+   skinned position of the lowest blade vertices and lift/lower the rig so the lowest blade edge sits at y=0.
+   Contact markers (one per skate) are left at that edge for the REALITY robot. */
+const _bv=new THREE.Vector3();
+function bladeIdx(steel){ // every steel (blade) vertex, split left/right skate (posed feet tilt, so the lowest point moves along the blade)
+  const P=steel.geometry.attributes.position, L=[], R=[];
+  for(let i=0;i<P.count;i++) (P.getX(i)>=0?L:R).push(i); // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test)
+  return [L,R]; }
+function snapSkatesToIce(){
+  for(const s of skaters){
+    const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
+    if(!st.geometry.attributes.position.count) continue;
+    if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
+    s.g.updateMatrixWorld(true);
+    let low=1e9;
+    s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
+      if(m<1e9){ const wy=m+s.athWrap.position.y; s._contact[k].position.set(s.pos.x+mx,wy,s.pos.z+mz); low=Math.min(low,wy); } }); // G-86 measure fix: getVertexPosition already reads in the rig frame (applying matrixWorld again double-transforms - it buried blades up to 16 cm in the G-67 test); the wrap lift is the offset this snap controls
+    if(low<1e9 && Math.abs(low)>0.004){ s.athWrap.position.y-=low; s._contact.forEach(o=>o.position.y-=low); }
+  }
+}
+window.__reality={
+  kind:'skater',
+  get player(){ return controlled? controlled.g : null; },
+  get others(){ return skaters.filter(s=>s!==controlled).map(s=>s.g); },
+  get contact(){ const c=controlled&&controlled._contact; if(!c) return []; return [c[0].position.y<=c[1].position.y? c[0] : c[1]]; }, // the skate carrying the weight, marked at its real lowest blade edge (the other one lifts on each stride)
+  footOffset:0,
+  ground:(x,z)=>0,
+  go:(on)=>{ joyVec.x=on?1:0; joyVec.y=0; joyVec.active=!!on; },
+  expect:{ height:[1.55*3.26, 2.2*3.26] } // rink is built at 3.26 units per metre; gaps are in the same units (3 cm = 0.1)
 }
 
 /* ================= main loop ================= */
@@ -1607,7 +1647,7 @@ function tick(now){
   Mus.setMode(state==='play'?'game':'menu');
   crowd.update(frameSec); Mus.crowdTick(frameSec);
   if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
-  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
+  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
   if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
   for(let si=0;si<steps;si++){
   if(state==='menu'||state==='over') break;
@@ -1641,6 +1681,7 @@ function tick(now){
   possessionWatch();
   stepCamera(dt);
   } // end of catch-up slices
+  snapSkatesToIce();
   renderer.render(scene,camera);
 }
 function gameOver(){
