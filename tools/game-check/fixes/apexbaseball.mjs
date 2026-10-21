@@ -660,6 +660,7 @@ export default [
       while (Date.now() - t0 < 29000) {
         s = await snap(); if (!s) return 'window.__test missing mid-test';
         if (s.phase === 'over') return 'the game ended before a strikeout or walk was seen';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(400); continue; }
         if (/^STRIKEOUT/.test(s.msg)) { endedBy = 'strikeout'; endedTag = s.tag; }
         else if (/^WALK/.test(s.msg)) { endedBy = 'walk'; endedTag = s.tag; }
         else if (endedBy && (s.phase === 'select' || s.phase === 'cpuWindup')) {
