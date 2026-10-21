@@ -2,6 +2,10 @@
 // Owner's list: race starts, cars drive forward, lap counter goes up, race finishes with
 // results, garage buy works, play-friend-code. Tests drive the game through window.__erc;
 // each h.eval function is self-contained.
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export default [
   {
     id: 'play-race-starts',
@@ -447,38 +451,38 @@ export default [
     id: 'play-ai-pace',
     ask: 'G-70: AI lap times within 5 percent of the player - the field is as fast as the player, nobody just drives away',
     async test(page, h) {
+      // start the race from here and wait until the build has fully finished before stepping it:
+      // R.skids is created at the end of setupRace, and stepping a half-built race crashes it
+      await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       return h.eval(() => {
         const E = window.__erc;
-        if (!E) return 'no window.__erc hook';
-        return new Promise((res) => {
-          E.startRace(E.PLACES[0], 3);
-          setTimeout(() => {
-            if (!E.R) return res('no race');
-            const R = E.R, P = R.P, T = R.T;
-            E.K.gas = 1;
-            let guard = 0;
-            while (guard++ < 4800) {
-              const idx = ((P.idx + 10) % T.N + T.N) % T.N;
-              let dh = Math.atan2(T.tx[idx], T.tz[idx]) - P.h;
-              while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
-              E.K.sx = Math.max(-1, Math.min(1, dh * 1.6));
-              E.step(6, 1 / 60);
-              if ((P.lapT || []).length >= 2 && R.cars.every((e) => !e.ai || (e.lapT || []).length >= 2)) break;
-            }
-            E.K.gas = 0; E.K.sx = 0;
-            if ((P.lapT || []).length < 1) return res('the player set no lap time in 8 sim-minutes');
-            const pBest = Math.min.apply(null, P.lapT);
-            const ais = R.cars.filter((e) => e.ai);
-            if (!ais.length) return res('no AI cars in the race');
-            const times = [];
-            for (const e of ais) { if (!(e.lapT || []).length) return res('AI car ' + e.name + ' set no lap time'); times.push(Math.min.apply(null, e.lapT)); }
-            times.sort((a, b) => a - b);
-            const med = times[Math.floor(times.length / 2)];
-            for (const t of times) if (t > pBest * 1.05) return res('an AI best lap of ' + t.toFixed(1) + 's is more than 5% slower than the player best ' + pBest.toFixed(1) + 's - the player can just drive away');
-            if (med < pBest * 0.95) return res('the AI field median best lap ' + med.toFixed(1) + 's is more than 5% faster than the player best ' + pBest.toFixed(1) + 's');
-            res(true);
-          }, 400);
-        });
+        if (!E || !E.R) return 'no race';
+        const R = E.R, P = R.P, T = R.T;
+        E.K.gas = 1;
+        let guard = 0;
+        while (guard++ < 4800) {
+          const idx = ((P.idx + 10) % T.N + T.N) % T.N;
+          let dh = Math.atan2(T.tx[idx], T.tz[idx]) - P.h;
+          while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
+          E.K.sx = Math.max(-1, Math.min(1, dh * 1.6));
+          E.step(6, 1 / 60);
+          if ((P.lapT || []).length >= 2 && R.cars.every((e2) => !e2.ai || (e2.lapT || []).length >= 2)) break;
+        }
+        E.K.gas = 0; E.K.sx = 0;
+        if ((P.lapT || []).length < 1) return 'the player set no lap time in 8 sim-minutes';
+        const pBest = Math.min.apply(null, P.lapT);
+        const ais = R.cars.filter((e2) => e2.ai);
+        if (!ais.length) return 'no AI cars in the race';
+        const times = [];
+        for (const e2 of ais) { if (!(e2.lapT || []).length) return 'AI car ' + e2.name + ' set no lap time'; times.push(Math.min.apply(null, e2.lapT)); }
+        times.sort((a, b) => a - b);
+        const med = times[Math.floor(times.length / 2)];
+        for (const tt of times) if (tt > pBest * 1.05) return 'an AI best lap of ' + tt.toFixed(1) + 's is more than 5% slower than the player best ' + pBest.toFixed(1) + 's - the player can just drive away';
+        if (med < pBest * 0.95) return 'the AI field median best lap ' + med.toFixed(1) + 's is more than 5% faster than the player best ' + pBest.toFixed(1) + 's';
+        return true;
       });
     },
   },
@@ -486,45 +490,79 @@ export default [
     id: 'play-steering-feel',
     ask: 'G-76: better steering - the car answers the stick quickly, turns where it points without sliding wide, and never snaps',
     async test(page, h) {
+      // start the race from here and wait until the build has fully finished before stepping it:
+      // R.skids is created at the end of setupRace, and stepping a half-built race crashes it
+      await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       return h.eval(() => {
         const E = window.__erc;
-        if (!E) return 'no window.__erc hook';
-        return new Promise((res) => {
-          E.startRace(E.PLACES[0], 3);
-          setTimeout(() => {
-            if (!E.R) return res('no race');
-            const R = E.R, P = R.P, T = R.T;
-            R.t = 0; // skip the countdown
-            // clear stretch: player 150 segments ahead of the grid, traffic parked 400 m up the road, AI left behind
-            P.prog += 150; P.s = P.prog;
-            const at = {}; T.at(P.prog, 0, at);
-            P.x = at.x; P.z = at.z; P.h = at.h; P.idx = ((Math.floor(P.prog) % T.N) + T.N) % T.N;
-            P.vx = Math.sin(P.h) * 22; P.vz = Math.cos(P.h) * 22;
-            for (const e of R.cars) if (e.ai) { e.s = P.prog - 60; e.prog = e.s; }
-            for (const tr of R.traffic) tr.s = P.prog + 400 / T.ds;
-            const unwrap = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
-            E.K.gas = 1;
-            let n = 0; while (P.spd < 24 && n++ < 900) E.step(3, 1 / 60);
-            if (P.spd < 20) { E.K.gas = 0; return res('the car never got up to speed (' + P.spd.toFixed(0) + ' m/s)'); }
-            // full lock for 0.5 s: measure the turn-in, the smoothness and the slide at the end
-            const h0 = P.h; let prev = P.h, maxJump = 0;
-            E.K.sx = 1;
-            for (let i = 0; i < 10; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
-            const dhA = Math.abs(unwrap(P.h, h0));
-            const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
-            const vF = P.vx * fx + P.vz * fz, vL = P.vx * rx + P.vz * rz;
-            const slide = Math.atan2(Math.abs(vL), Math.abs(vF));
-            // let go: the wheel must unwind just as smoothly, no snap back
-            E.K.sx = 0; prev = P.h;
-            for (let i = 0; i < 8; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
-            E.K.gas = 0;
-            if (dhA < 0.30) return res('the car barely answered the stick: only ' + dhA.toFixed(2) + ' rad of turn in 0.5 s at ' + P.spd.toFixed(0) + ' m/s - steering still lags');
-            if (slide > 0.20) return res('the car slides wide: its travel points ' + (slide * 57.3).toFixed(0) + ' degrees away from its nose in a steady turn');
-            if (maxJump > 0.16) return res('the steering snaps: the nose jumped ' + maxJump.toFixed(2) + ' rad in one 0.05 s sample');
-            res(true);
-          }, 400);
-        });
+        if (!E || !E.R) return 'no race';
+        const R = E.R, P = R.P, T = R.T;
+        R.t = 0; // skip the countdown
+        // clear stretch: player 150 segments ahead of the grid, traffic parked 400 m up the road, AI left behind
+        P.prog += 150; P.s = P.prog;
+        const at = {}; T.at(P.prog, 0, at);
+        P.x = at.x; P.z = at.z; P.h = at.h; P.idx = ((Math.floor(P.prog) % T.N) + T.N) % T.N;
+        P.vx = Math.sin(P.h) * 22; P.vz = Math.cos(P.h) * 22;
+        for (const e2 of R.cars) if (e2.ai) { e2.s = P.prog - 60; e2.prog = e2.s; }
+        for (const tr of R.traffic) tr.s = P.prog + 400 / T.ds;
+        const unwrap = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
+        E.K.gas = 1;
+        let n = 0; while (P.spd < 24 && n++ < 900) E.step(3, 1 / 60);
+        if (P.spd < 20) { E.K.gas = 0; return 'the car never got up to speed (' + P.spd.toFixed(0) + ' m/s)'; }
+        // full lock for 0.5 s: measure the turn-in, the smoothness and the slide at the end
+        const h0 = P.h; let prev = P.h, maxJump = 0;
+        E.K.sx = 1;
+        for (let i = 0; i < 10; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
+        const dhA = Math.abs(unwrap(P.h, h0));
+        const fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx;
+        const vF = P.vx * fx + P.vz * fz, vL = P.vx * rx + P.vz * rz;
+        const slide = Math.atan2(Math.abs(vL), Math.abs(vF));
+        // let go: the wheel must unwind just as smoothly, no snap back
+        E.K.sx = 0; prev = P.h;
+        for (let i = 0; i < 8; i++) { E.step(3, 1 / 60); const dh = Math.abs(unwrap(P.h, prev)); if (dh > maxJump) maxJump = dh; prev = P.h; }
+        E.K.gas = 0;
+        if (dhA < 0.30) return 'the car barely answered the stick: only ' + dhA.toFixed(2) + ' rad of turn in 0.5 s at ' + P.spd.toFixed(0) + ' m/s - steering still lags';
+        if (slide > 0.20) return 'the car slides wide: its travel points ' + (slide * 57.3).toFixed(0) + ' degrees away from its nose in a steady turn';
+        if (maxJump > 0.16) return 'the steering snaps: the nose jumped ' + maxJump.toFixed(2) + ' rad in one 0.05 s sample';
+        return true;
       });
+    },
+  },
+  {
+    id: 'play-sound-kit',
+    ask: 'G-80: the game uses the owner sound packs - every music and UI file it plays is in the repo at the path the code asks for',
+    async test(page, h) {
+      const files = [
+        'sounds/pack/music/sports_arena/sports_arena_menu.mp3',
+        'sounds/pack/music/sports_arena/sports_arena_gameplay_low.mp3',
+        'sounds/pack/music/sports_arena/sports_arena_gameplay_mid.mp3',
+        'sounds/pack/music/sports_arena/sports_arena_gameplay_high.mp3',
+        'sounds/pack/music/sports_arena/sports_arena_victory_sting.mp3',
+        'sounds/pack/music/sports_arena/sports_arena_gameover_sting.mp3',
+        'sounds/ui-kit/arcade/tap.mp3',
+        'sounds/ui-kit/arcade/coin_pickup.mp3',
+        'sounds/ui-kit/arcade/combo_x2.mp3',
+        'sounds/ui-kit/arcade/combo_x3.mp3',
+        'sounds/ui-kit/arcade/combo_x4.mp3',
+        'sounds/ui-kit/arcade/combo_x5.mp3',
+        'sounds/ui-kit/arcade/unlock.mp3',
+        'sounds/ui-kit/arcade/level_up.mp3',
+        'sounds/ui-kit/arcade/popup_open.mp3',
+        'sounds/ui-kit/arcade/popup_close.mp3',
+        'sounds/ui-kit/arcade/star_1.mp3',
+        'sounds/ui-kit/arcade/star_2.mp3',
+        'sounds/ui-kit/arcade/star_3.mp3',
+        'sounds/ui-kit/arcade/win_jingle.mp3',
+      ];
+      for (const f of files) if (!fs.existsSync(path.join(repoRoot, f))) return 'sound file missing from the repo: ' + f;
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the game code does not use the sound pack (missing ' + n + ')';
+        return true;
+      }, ['sports_arena_', 'gameplay_low', 'gameplay_mid', 'gameplay_high', 'combo_x', 'coin_pickup', 'win_jingle', 'popup_open']);
     },
   },
 ];
