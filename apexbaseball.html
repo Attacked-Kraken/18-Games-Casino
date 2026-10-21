@@ -21,7 +21,7 @@
     font:700 11px ui-monospace,Menlo,monospace; letter-spacing:.06em; }
   #muteBtn { right:10px; font-size:19px; }
   #viewBtn { right:62px; }
-  #helpHud { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:114px; z-index:9060; background:rgba(20,12,4,.9); border:1px solid #ffcc33; color:#ffffff; min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer; font:700 16px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  #helpHud { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:150px; z-index:9060; background:rgba(20,12,4,.9); border:1px solid #ffcc33; color:#ffffff; min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer; font:700 16px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
   /* portrait rotate overlay */
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#020b05;
     align-items:center; justify-content:center; text-align:center; padding:24px;
@@ -94,6 +94,16 @@
   #myCode { font:700 15px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#ffd23f; background:#1a1206; border:1px dashed #b57e00; border-radius:12px; padding:12px 14px; text-align:center; word-break:break-all; margin:8px 0 14px; }
   #friendIn { font:600 15px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; width:100%; padding:12px 14px; border-radius:12px; border:1px solid #ffcc33; background:#0d0a05; color:#ffffff; margin:8px 0 6px; }
   #friendErr { color:#ff9a9a; font:600 13px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; min-height:18px; margin-bottom:8px; }
+  @media (max-height: 500px) {
+    #helpOv .card, #friendOv .card { padding:12px 18px; }
+    #helpOv .card h1, #friendOv .card h1 { font-size:23px; margin-bottom:2px; }
+    #helpOv .card h2, #friendOv .card h2 { margin-bottom:6px; }
+    #helpOv .card p, #helpOv .card li, #friendOv .card p, #friendOv .card li { font-size:12px; line-height:1.42; }
+    #helpOv .card ul, #friendOv .card ul { margin:5px 0 5px 16px; }
+    #helpOv .card .big, #friendOv .card .big { margin-top:8px; }
+    #friendOv #myCode { padding:7px 10px; margin:5px 0 8px; }
+    #friendOv #friendIn { padding:8px 12px; margin:5px 0 4px; }
+  }
   kbd { background:#1a1206; border:1px solid #b57e00; border-radius:5px; padding:1px 7px; font-size:12px; color:#ffd23f; }
 </style>
 <script type="importmap">{"imports":{"three":"./three.module.min.js","humans":"./characters/base-human-v2/humans.js"}}</script>
@@ -854,11 +864,13 @@ function onWalk(){
   const n3 = (b[0]&&b[1]) ? true : b[2];          // runner on 2nd forced only if 1st was occupied
   G.bases=[true, n2, n3];
   if (scored) addRuns(battingTeam(),1);
+  resetCount();
   afterPlay(0, scored, false);
 }
 function onStrikeout(){
   ball.visible=false;
   banner('STRIKEOUT!','',1300);
+  resetCount();
   afterPlay(1, 0, false);
 }
 
