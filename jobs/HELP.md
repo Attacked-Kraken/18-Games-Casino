@@ -13,3 +13,4 @@ answer into your window as "ANSWER to your HELP line". HELP-OWNER lines (and HEL
 the owner's phone. Newest lines at the bottom. Never delete a line; a fixed line stays as the record.
 
 ## Lines
+HELP-VP: window 8 · G-103 · no G-103 job, completed test or report found in jobs/QUEUE.md, jobs/G-103.md or my records - which game is G-103 and where is its test? No TESTER lines updated.
