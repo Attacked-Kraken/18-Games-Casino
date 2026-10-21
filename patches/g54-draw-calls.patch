@@ -1,0 +1,139 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -277,6 +277,7 @@
+ <script type="importmap">{"imports":{"three":"./three.module.min.js","three/addons/loaders/GLTFLoader.js":"./vendor/GLTFLoader.js","three/addons/libs/meshopt_decoder.module.js":"./vendor/meshopt_decoder.module.js"}}</script>
+ <script type="module">
+ import * as THREE from 'three';
++import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // G-54: car mesh merging
+ /* ============================================================
+    APEX F1 RACING — realistic F1: rules, tracks, crowds, weather,
+    career, friend codes. Single-file Three.js game.
+@@ -1123,21 +1124,107 @@
+   for(const [wx,wz,wr] of [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]]){
+     const w=new THREE.Group();
+     const tg=new THREE.CylinderGeometry(wr,wr,0.5,20);
+-    const tire=new THREE.Mesh(tg,tireMat); tire.rotation.x=Math.PI/2; w.add(tire);
++    const tire=new THREE.Mesh(tg,tireMat); tire.rotation.x=Math.PI/2; tire.userData.instType='tire'; w.add(tire);
+     for(const sz of [0.255,-0.255]){
+-      const stripe=new THREE.Mesh(stripeGeo,stripeMat); stripe.position.z=sz; w.add(stripe);
++      const stripe=new THREE.Mesh(stripeGeo,stripeMat); stripe.position.z=sz; stripe.userData.instType='stripe'; w.add(stripe);
+     }
+-    const cover=new THREE.Mesh(coverGeo,coverMat); cover.rotation.x=Math.PI/2; w.add(cover);
++    const cover=new THREE.Mesh(coverGeo,coverMat); cover.rotation.x=Math.PI/2; cover.userData.instType='cover'; w.add(cover);
+     const cap=new THREE.Mesh(new THREE.CircleGeometry(0.13,18),
+       new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.2,metalness:0.7}));
+-    cap.position.z=0.261; w.add(cap);
++    cap.userData.instType='cap'; cap.position.z=0.261; w.add(cap);
+     const cap2=cap.clone(); cap2.position.z=-0.261; cap2.rotation.y=Math.PI; w.add(cap2);
+     w.position.set(wx,0.44,wz); g.add(w); g.userData.wheels.push(w);
+   }
++  mergeCarBody(g); // G-54: ~60 body parts become one mesh per material
++  wheelInstRegister(g); // G-54: wheel parts render through 4 shared instanced meshes
+   scene.add(g); // put the car on the track (lost in the car rebuild)
+   return g;
+ }
+ 
++/* ================= G-54: draw-call diet (identical picture, far fewer meshes) =================
++   A built car was ~84 meshes; 20 cars were ~1,680 of the ~1,800 draw calls.
++   Body parts never move relative to the car, so per car they merge into one
++   mesh per material (same geometries, same materials, same transforms).
++   Wheel parts must keep spinning/steering with their wheel groups, so the
++   originals stay in the graph (hidden) and four InstancedMeshes draw every
++   wheel of every car, copying each part's world matrix every frame. */
++const WHEEL_INST = { parts:{tire:[],stripe:[],cover:[],cap:[]}, extra:{tire:[],stripe:[],cover:[],cap:[]}, meshes:{}, tireR:0 };
++const _wm4 = new THREE.Matrix4();
++function wheelInstMesh(type, part){
++  let im = WHEEL_INST.meshes[type];
++  if(!im){
++    const mat = part.material.clone();
++    if(type!=='tire') mat.color.setRGB(1,1,1); // the tint comes from the per-instance colour
++    im = new THREE.InstancedMesh(part.geometry, mat, (type==='stripe'||type==='cap')?192:96);
++    im.frustumCulled=false; im.castShadow=false; im.count=0;
++    im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
++    scene.add(im); WHEEL_INST.meshes[type]=im;
++  }
++  return im;
++}
++function wheelInstRegister(g){
++  for(const w of g.userData.wheels||[]){
++    for(const part of w.children){
++      const type = part.userData.instType; if(!type) continue;
++      const list = WHEEL_INST.parts[type];
++      if(list.length >= ((type==='stripe'||type==='cap')?192:96)) continue; // overflow: leave the part visible as-is
++      const im = wheelInstMesh(type, part);
++      const slot = list.length; list.push(part);
++      if(type==='tire'){
++        const r = part.geometry.parameters.radiusTop;
++        if(!WHEEL_INST.tireR) WHEEL_INST.tireR = r;
++        WHEEL_INST.extra.tire[slot] = (r!==WHEEL_INST.tireR) ? new THREE.Matrix4().makeScale(r/WHEEL_INST.tireR, 1, r/WHEEL_INST.tireR) : null; // (cylinder radius is local X/Z; the axle Y keeps its width)
++      }
++      if(type!=='tire') im.setColorAt(slot, part.material.color);
++      part.visible = false;
++    }
++  }
++  for(const t in WHEEL_INST.meshes){ const im=WHEEL_INST.meshes[t]; if(im.instanceColor) im.instanceColor.needsUpdate=true; }
++}
++function wheelInstReset(){
++  WHEEL_INST.parts={tire:[],stripe:[],cover:[],cap:[]};
++  WHEEL_INST.extra={tire:[],stripe:[],cover:[],cap:[]};
++}
++function wheelInstUpdate(){
++  if(!WHEEL_INST.meshes.tire) return;
++  scene.updateMatrixWorld();
++  for(const type in WHEEL_INST.meshes){
++    const im = WHEEL_INST.meshes[type], list = WHEEL_INST.parts[type];
++    im.count = list.length;
++    for(let i=0;i<list.length;i++){
++      const ex = WHEEL_INST.extra[type][i];
++      if(ex){ _wm4.multiplyMatrices(list[i].matrixWorld, ex); im.setMatrixAt(i, _wm4); }
++      else im.setMatrixAt(i, list[i].matrixWorld);
++    }
++    im.instanceMatrix.needsUpdate = true;
++  }
++}
++function mergeCarBody(g){
++  const skip = new Set();
++  const skipTree = (o)=>{ if(o) o.traverse(x=>skip.add(x)); };
++  for(const w of g.userData.wheels||[]) skipTree(w);
++  skipTree(g.userData.drsFlap); skipTree(g.userData.rainLight);
++  g.updateMatrixWorld(true);
++  const parts = [];
++  g.traverse(o=>{ if(o.isMesh && !skip.has(o)) parts.push(o); });
++  const buckets = new Map();
++  for(const m of parts){
++    const geo = m.geometry.index ? m.geometry.toNonIndexed() : m.geometry.clone();
++    geo.applyMatrix4(m.matrixWorld); // g sits at the origin while building: world == car-local
++    if(!buckets.has(m.material)) buckets.set(m.material, { geos:[], shadow:false, parts:[] });
++    const b = buckets.get(m.material);
++    b.geos.push(geo); b.parts.push(m); b.shadow = b.shadow || !!m.castShadow;
++  }
++  for(const [mat, b] of buckets){
++    const mergedGeo = mergeGeometries(b.geos, false);
++    if(!mergedGeo) continue; // could not merge this bucket: leave its parts as they were
++    for(const m of b.parts) m.parent.remove(m);
++    const merged = new THREE.Mesh(mergedGeo, mat);
++    merged.castShadow = b.shadow;
++    g.add(merged);
++  }
++}
++
+ 
+ class Car {
+   constructor(name, team, isPlayer, skill){
+@@ -1465,6 +1552,7 @@
+     // clear old cars
+     for(const c of this.cars) scene.remove(c.mesh);
+     this.cars=[]; this.results=null; this.lap=1; this.time=0;
++    wheelInstReset(); // G-54: the new cars re-register their wheel parts
+     // player
+     const p=new Car(cfg.driver, cfg.team, true, cfg.skill);
+     p.tire='SOFT'; this.player=p; this.cars.push(p);
+@@ -2173,7 +2261,7 @@
+     if(Race.mode==='race' && Math.random()<frameSec) GP.ev.order = Race.positions().map(c=>c.name);
+   }
+   // draw the 3D world (was missing — black screen)
+-  if(glOK&&renderer&&scene&&camera) renderer.render(scene,camera);
++  if(glOK&&renderer&&scene&&camera){ wheelInstUpdate(); renderer.render(scene,camera); }
+ }
+ /* ================= G-48: the owner's cockpit kit (kit/cockpit) =================
+    Parsed at boot like the track. Rides inside the player's car (hidden unless
