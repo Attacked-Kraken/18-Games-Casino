@@ -283,6 +283,12 @@ for (const g of games) {
     const dpf = r.studio.drawsPerFrame;
     if (dpf > (g.maxDraws || 450)) r.check.push(`Heavy for phones: about ${dpf} draw calls per frame (aim under ${g.maxDraws || 450}; merge meshes - see STUDIO-STANDARD.md "Phone budget")`); }
   if (bytes > 60e6) r.check.push(`Big download: about ${Math.round(bytes / 1e6)} MB before play (aim under 60 MB)`);
+  // WHERE THINGS ARE (owner Oct 21 2026 "faster builders"): every game's look board starts with a short map of the
+  // game file (what lives where, with line numbers) so a builder finds the spot in seconds. Missing = a yellow line.
+  try {
+    const lb = fs.readFileSync(path.join(here, '..', '..', 'looks', slug + '.md'), 'utf8');
+    if (!/WHERE THINGS ARE/i.test(lb.slice(0, 4000))) r.check.push('looks/' + slug + '.md has no "WHERE THINGS ARE" map at the top (STUDIO-STANDARD 9.7) - add one with line numbers and keep it current');
+  } catch (e) {}
   // ---------- the owner's FIX LIST for this game (tested while the game is running, sideways)
   r.fixes = [];
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
