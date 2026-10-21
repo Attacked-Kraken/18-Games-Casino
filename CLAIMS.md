@@ -167,13 +167,12 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-65 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-65-players-cameras |
-| G-51 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-51-baseball-kit-field |
 | G-08 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-08-baseball-friend |
 | G-13 | window main | tools/game-check/fixes/apexbaseball.mjs | g-13-baseball-play-tests |
 | G-36 | window main | apexbaseball.html | g-36-baseball-kits |
 | G-40 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-40-baseball-ballpark |
 | G-17 | window 3 | apexflight.html (freeze check), jobs/G-17.md | g-17-flight-freeze |
+| G-53 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-53.md | g-53-flight-modes |
 | G-39 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-39-relay-baton-v2 |
 | G-43 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-43-pole-vault |
-| G-49 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-49-jumps |
 
