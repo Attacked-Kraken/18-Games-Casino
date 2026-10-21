@@ -355,4 +355,23 @@ export default [
       return 'Apex Arcade Park did not load in 25 s';
     },
   },
+  // G-51 (owner, 2026-10-20): the park field must wear the owner's kit textures -
+  // grass_plain grass and baseball_infield dirt from kit/ground/512/ (the G-36 wiring
+  // only reaches the hidden fallback field since the G-40 park swap).
+  {
+    id: 'play-kit-field-textures',
+    ask: "The park field wears the owner's kit grass + infield dirt textures (G-51)",
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const s = await h.eval(() => {
+          const T = window.__test; if (!T || !T.stadium) return null;
+          return { loaded: T.stadium.loaded, kit: T.stadium.kitField };
+        });
+        if (s && s.loaded && s.kit) return true;
+        await h.wait(250);
+      }
+      return 'the ballpark loaded without the kit grass/dirt field textures';
+    },
+  },
 ];

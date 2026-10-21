@@ -166,6 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-51 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-51-baseball-kit-field |
 | G-08 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-08-baseball-friend |
 | G-13 | window main | tools/game-check/fixes/apexbaseball.mjs | g-13-baseball-play-tests |
 | G-36 | window main | apexbaseball.html | g-36-baseball-kits |
