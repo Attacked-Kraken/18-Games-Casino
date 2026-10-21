@@ -1657,6 +1657,38 @@ export default [
       if (Math.abs(shown - out.clock) > 0.06) return 'the results screen shows ' + tok + ' but the race clock at the finish read ' + out.clock.toFixed(2) + ' - they must be the same time';
       return true;
     }
+  },
+  {
+    id: 'play-hurdles-set-in-every-lane',
+    ask: 'G-39/G-43 fix (owner): hurdle races need hurdles in EVERY lane - a hurdle stands in front of every runner, not only in the player\'s lane',
+    async test(page, h) {
+      // Clear driver intervals earlier tests installed (suite hygiene).
+      await h.eval(() => { ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv'].forEach(k => { try { clearInterval(window[k]); } catch (e) {} try { delete window[k]; } catch (e) {} }); return true; });
+      // Reach the 110m hurdles through the game's own buttons.
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          n++;
+          const tf = window.__tf;
+          const e = tf && tf.eng && tf.eng();
+          if (e && e.ev && e.ev.id === '110h') { clearInterval(iv); res('in'); return; }
+          if (n > 130) { clearInterval(iv); res('stuck'); return; }
+          const click = id => { const b = document.getElementById(id); if (b && b.offsetParent !== null) { b.click(); return true; } return false; };
+          const on = document.querySelector('.screen.on'); const scr = on ? on.id : '';
+          if (scr === 'results') { if (!click('bResMenu')) click('bResNext'); return; }
+          if (scr === 'career') { click('bCareerBack'); return; }
+          if (scr === 'card') { click('bCardStart'); return; }
+          if (scr === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /110m Hurdles/i.test(x.textContent)); if (b) b.click(); return; }
+          if (scr === 'menu') { click('bFree'); return; }
+        }, 120);
+      }));
+      if (nav !== 'in') return 'the 110m hurdles never loaded (nav: ' + nav + ')';
+      const hv = await h.eval(() => (window.__tf.hurdles ? window.__tf.hurdles() : null));
+      if (!hv) return 'the game exposes no hurdle count - the every-lane hurdles are not in this build';
+      if (hv.count !== 80 || hv.placed !== 80) return 'only ' + hv.placed + ' hurdles are set for the race (mesh shows ' + hv.count + ') - 10 hurdles in each of the 8 lanes = 80; the other lanes are empty';
+      if (hv.distinct !== 80) return 'the 80 hurdles are not at 80 different spots (' + hv.distinct + ' distinct) - they must stand one per lane per hurdle, not stacked in one lane';
+      return true;
+    },
   }
 
   ,{
@@ -1780,5 +1812,3 @@ export default [
     }
   }
 ];
-
-
