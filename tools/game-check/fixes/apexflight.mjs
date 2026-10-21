@@ -283,4 +283,57 @@ export default [
       });
     },
   },
+  {
+    id: 'play-descend-at-speed',
+    ask: 'Play every Flight mode start to finish like a real pilot: at cruise speed, full nose-down must make the plane DESCEND - it climbed instead, so you could not come down to land',
+    async test(page, h) {
+      // Same shared-page reset as play-takeoff: menu FREE FLIGHT, crash tap, or HUD RESET.
+      const st = await h.eval(() => ({
+        menu: !document.getElementById('startOv').hidden,
+        crashed: !document.getElementById('crashOv').hidden,
+        ground: !!(window.__flight && window.__flight.P.ground),
+      })).catch(() => null);
+      if (!st) return 'no window.__flight hook';
+      if (!st.ground) {
+        try {
+          if (st.menu) await h.press('#btnFree');
+          else if (st.crashed) await h.press('#crashOv');
+          else await h.press('#resetBtn');
+        } catch (e) {}
+      }
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // Put the plane in a fast cruise: 800 m up, 80 m/s, half throttle.
+        F.P.pos.set(0, 800, 0); F.P.vel.set(0, 0, 80);
+        F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0; F.P.ground = false; F.P.thr = 0.4;
+        const y0 = F.P.pos.y;
+        let minVy = 0;
+        // Hold FULL nose-down with the real key, like a pilot pushing the stick.
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+        return new Promise((res) => {
+          const t0 = Date.now();
+          const iv = setInterval(() => {
+            minVy = Math.min(minVy, F.P.vel.y);
+            const dropped = y0 - F.P.pos.y;
+            if (!document.getElementById('crashOv').hidden) {
+              clearInterval(iv);
+              window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
+              res('plane crashed during a cruise descent');
+            } else if (minVy < -2.5 && dropped > 30) {
+              clearInterval(iv);
+              window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
+              res(true);
+            } else if (Date.now() - t0 > 12000) {
+              clearInterval(iv);
+              window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
+              res('full nose-down at cruise speed did not descend: min vertical speed ' +
+                minVy.toFixed(1) + ' m/s, altitude change ' + (-dropped).toFixed(0) + ' m in 12 s');
+            }
+          }, 250);
+        });
+      });
+    },
+  },
 ];
