@@ -618,7 +618,7 @@ const KIT = {
 };
 const ATH_H = 5.9, ATH_K = ATH_H/1.81; // match the primitive figure's ~5.9-unit height
 let HK = null;
-function attachAthletes(H){
+async function attachAthletes(H){
   let i = 0;
   for(const s of skaters){
     try{
@@ -650,6 +650,9 @@ function attachAthletes(H){
       s.ath = a; s.athWrap = wrap;
     }catch(e){ /* that player stays primitive */ }
     i++;
+    // G-52: yield every 2 skaters — building all 12 rigs in one unbroken task froze the
+    // main thread for seconds on slow screens, stalling the start of a career level
+    if(i % 2 === 0 && i < skaters.length) await new Promise(r=>setTimeout(r,0));
   }
 }
 /* ============ the real arena: shared stadium kit (venues/kit/stadium.js, venues/rink.md) ============
@@ -669,25 +672,26 @@ const stadiumPreload=(async()=>{ // G-35: named preload (see preloadsDone) — t
     window.__drawScoreboard = function(){ if(oldDraw) oldDraw(); st.setScore({ home:TEAMS.home.name, away:TEAMS.away.name, hs:scoreH, as:scoreA, clock:'', period:'' }); };
     window.__drawScoreboard();
     ARENA = st; window.__arena = st;
-    try{ renderer.compile(scene,camera); }catch(e){} // G-35: compile the arena's shaders at load (menu time), not on a play frame
   }catch(e){ /* kit missing: the simple stands and crowd stay */ }
 })();
 const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — the GLB parse + attach must land before play, never mid-game
   try{
     const { loadHumans } = await import('./characters/base-human-v2/humans.js');
+    const gearP = import('./characters/base-human-v2/gear.js'); // G-52: fetch the gear module in parallel with the GLBs (was serialized after them, delaying the attach)
     const H = await loadHumans(THREE, './characters/base-human-v2/');
-    const { hockeyKit } = await import('./characters/base-human-v2/gear.js');
+    const { hockeyKit } = await gearP;
     HK = (o) => hockeyKit(THREE, HK.a, o);
-    attachAthletes(H);
-    try{ renderer.compile(scene,camera); }catch(e){} // G-35: compile the athletes' shaders at load (menu time), not on a play frame
+    await attachAthletes(H); // G-52: the preload settles only when every athlete is in
   }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
 })();
 /* G-35 preload gate: both heavy loads start at page open; the opening faceoff waits
-   until they have settled so their build/parse/compile never lands mid-game.
-   Capped at 6 s — a slow or missing kit can never block a game from starting. */
+   until they have settled so their build/parse never lands mid-game.
+   Capped (G-52: 2.5 s, was 6 s) — the wait cannot make a slow load faster, it only
+   delays the start; past a short grace the faceoff goes ahead and the last pieces
+   land during the countdown, not in open play. A missing kit never blocks a game. */
 function preloadsDone(){
   return Promise.race([ Promise.allSettled([stadiumPreload, humansPreload]),
-    new Promise(r=>setTimeout(r,6000)) ]);
+    new Promise(r=>setTimeout(r,2500)) ]);
 }
 
 /* ================= puck ================= */
