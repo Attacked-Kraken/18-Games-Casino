@@ -117,7 +117,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }
@@ -166,7 +166,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }
@@ -212,7 +212,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }

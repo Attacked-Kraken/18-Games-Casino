@@ -202,7 +202,7 @@
     <h2>APEX ARCADE</h2>
     <p>You play <b>BOTH sides</b>: you <b>BAT</b> in the bottom of each inning and you <b>PITCH</b> in the top of each inning, against the CPU.</p>
     <ul>
-      <li><b>PITCHING:</b> pick FASTBALL / CURVEBALL / CHANGEUP (<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>), tap the zone pad to aim, press THROW, then tap LOCK when the needle is in the green (or do nothing &mdash; it throws itself after a moment). Miss the green and the pitch sails.</li>
+      <li><b>PITCHING:</b> pick FASTBALL / CURVEBALL / CHANGEUP (<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>), press THROW to open the zone pad, tap the pad to aim, press THROW again, then tap LOCK when the needle is in the green (or do nothing &mdash; it throws itself after a moment). Miss the green and the pitch sails.</li>
       <li><b>BATTING:</b> watch the CPU windup, press <b>SWING</b> (<kbd>space</kbd>) as the ball reaches the glowing ring. Don't swing at bad pitches — 4 balls is a walk, 3 strikes and you're out. Fouls count as strikes (but can't strike you out).</li>
       <li>Fielding and base running are automatic, with real force-out and double-play rules. Extra innings if tied after 3. Walk-off wins end it on the spot.</li>
     </ul>
@@ -1477,10 +1477,9 @@ document.querySelectorAll('.ptype').forEach(b=>{
     pitchSel = b.dataset.p;
     lastPitchAct = performance.now();
     document.querySelectorAll('.ptype').forEach(x=>x.classList.toggle('sel', x===b));
-    if (G.phase==='select') beginAim();
   });
 });
-$('throwBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); if (G.phase==='select') beginAim(); if (G.phase==='aim') beginWindup(); });
+$('throwBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); if (G.phase==='select') beginAim(); else if (G.phase==='aim') beginWindup(); });
 $('lockBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); lockAccuracy(); });
 $('swingBtn').addEventListener('click', ()=>{ playerSwing(); });
 function playerSwing(){
@@ -1536,7 +1535,6 @@ window.addEventListener('keydown', e=>{
     const p = ['fast','curve','change'][+e.code.slice(-1)-1];
     pitchSel = p;
     document.querySelectorAll('.ptype').forEach(x=>x.classList.toggle('sel', x.dataset.p===p));
-    if (G.phase==='select') beginAim();
   }
   else if (e.code==='ArrowLeft'){ aim.x=clamp(aim.x-0.25,-3,3); updateAimDot(); e.preventDefault(); }
   else if (e.code==='ArrowRight'){ aim.x=clamp(aim.x+0.25,-3,3); updateAimDot(); e.preventDefault(); }
