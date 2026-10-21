@@ -1,0 +1,143 @@
+diff --git a/apexhockey.html b/apexhockey.html
+index c3040d7..b53a6d8 100644
+--- a/apexhockey.html
++++ b/apexhockey.html
+@@ -719,6 +719,11 @@ const joyVec = { x:0, y:0, active:false };
+   const end=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
+     tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); } };
+   joy.addEventListener('touchend',end); joy.addEventListener('touchcancel',end);
++  // JOB-04: the stick must let go when iOS steals the touch (notification, app switch, Control Centre)
++  const releaseAll=()=>{ tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); for(const k in keys) keys[k]=false; };
++  window.__hkStickRelease=releaseAll;
++  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
++  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
+ }
+ const keys={};
+ addEventListener('keydown',e=>{ if(e.repeat) return; keys[e.code]=true;
+@@ -1454,12 +1459,12 @@ function goalieSaves(){
+     if(Math.abs(puck.pos.z)>GOAL_HALF+2.5) continue;
+     const dz=Math.abs(puck.pos.z-gl.pos.z);
+     const saveR=2.6;
+-    if(dz<saveR){
++    if(dz<saveR && gameNow>=(gl._saveUntil||0)){ // JOB-04: one save per shot (rebounds inside 1.2 s are part of the same save)
+       const spd=puck.vel.length();
+       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
+       if(Math.random()<pSave){
+         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
+-        puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
++        gl._saveUntil=gameNow+1.2; puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
+         commSay(spd>70?'great_save':'save'); // G-44
+         if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
+       }
+@@ -1497,6 +1502,7 @@ function stepSpray(dt){
+ }
+ 
+ /* ================= camera ================= */
++const CAM_MIN_Y = 1.5*3.26; // JOB-04: 1.5 m above the ice (rink units are 3.26 per metre)
+ const camTgt=new THREE.Vector3(0,44,74), lookTgt=new THREE.Vector3();
+ const CAMNAMES=['BROADCAST','HIGH','CLOSE','PLAYER','END'];
+ const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','BEHIND THE NET'];
+@@ -1519,7 +1525,7 @@ function stepCamera(dt){
+     camTgt.set(cx, cy, cz);
+     lookTgt.set(s.pos.x+ad*6, 1, s.pos.z*0.92);
+   } else if(camMode===3){ // PLAYER: ice-level over the shoulder
+-    camTgt.set(s.pos.x-fx*4.5, 2.2, s.pos.z-fz*4.5);
++    camTgt.set(s.pos.x-fx*5.5, CAM_MIN_Y, s.pos.z-fz*5.5);
+     lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
+   } else if(camMode===4){ // END: behind the net you attack
+     camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
+@@ -1531,10 +1537,13 @@ function stepCamera(dt){
+     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
+   }
+   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
++  // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
++  if(camTgt.distanceTo(camera.position)>60 || (window.__lookCur && lookTgt.distanceTo(window.__lookCur)>60)){ camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
+   const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
+   camera.position.lerp(camTgt,k);
+   if(!window.__lookCur) window.__lookCur=lookTgt.clone();
+   window.__lookCur.lerp(lookTgt, Math.min(1,5*dt)); // G-02: smooth the view direction (no snapping)
++  if(camera.position.y<CAM_MIN_Y) camera.position.y=CAM_MIN_Y; // JOB-04: never through the ice (1.5 m = 4.9 units)
+   camera.lookAt(window.__lookCur);
+   ring.position.set(controlled.pos.x,0.12,controlled.pos.z);
+   ring.visible=(state==='play');
+@@ -1544,6 +1553,37 @@ function stepCamera(dt){
+   if(controlled!==tagFor){ tagFor=controlled; drawTag(); }
+ }
+ 
++/* ================= JOB-04: skates on the ice (measured, every frame) =================
++   The stance pins the foot BONE, but what the eye sees is the steel. Each frame we read the real
++   skinned position of the lowest blade vertices and lift/lower the rig so the lowest blade edge sits at y=0.
++   Contact markers (one per skate) are left at that edge for the REALITY robot. */
++const _bv=new THREE.Vector3();
++function bladeIdx(steel){ // every 3rd steel (blade) vertex, split left/right skate (posed feet tilt, so the lowest point moves along the blade)
++  const P=steel.geometry.attributes.position, L=[], R=[];
++  for(let i=0;i<P.count;i+=3) (P.getX(i)>=0?L:R).push(i);
++  return [L,R]; }
++function snapSkatesToIce(){
++  for(const s of skaters){
++    const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
++    if(!st.geometry.attributes.position.count) continue;
++    if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
++    s.g.updateMatrixWorld(true);
++    let low=1e9;
++    s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); _bv.applyMatrix4(st.matrixWorld); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
++      if(m<1e9){ s._contact[k].position.set(mx,m,mz); low=Math.min(low,m); } });
++    if(low<1e9 && Math.abs(low)>0.004){ s.athWrap.position.y-=low; s._contact.forEach(o=>o.position.y-=low); }
++  }
++}
++window.__reality={
++  kind:'skater',
++  get player(){ return controlled? controlled.g : null; },
++  get others(){ return skaters.filter(s=>s!==controlled).map(s=>s.g); },
++  get contact(){ const c=controlled&&controlled._contact; if(!c) return []; return [c[0].position.y<=c[1].position.y? c[0] : c[1]]; }, // the skate carrying the weight, marked at its real lowest blade edge (the other one lifts on each stride)
++  footOffset:0,
++  ground:(x,z)=>0,
++  go:(on)=>{ joyVec.x=on?1:0; joyVec.y=0; joyVec.active=!!on; },
++  expect:{ height:[1.55*3.26, 2.2*3.26] } // rink is built at 3.26 units per metre; gaps are in the same units (3 cm = 0.1)
++};
+ /* ================= main loop ================= */
+ let lastT=performance.now();
+ let gameNow=0; // wall clock for AI drift/idle motion (advances every frame)
+@@ -1559,7 +1599,7 @@ function tick(now){
+   Mus.setMode(state==='play'?'game':'menu');
+   crowd.update(frameSec); Mus.crowdTick(frameSec);
+   if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
+-  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } renderer.render(scene,camera); return; }
++  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
+   if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
+   for(let si=0;si<steps;si++){
+   if(state==='menu'||state==='over') break;
+@@ -1593,6 +1633,7 @@ function tick(now){
+   possessionWatch();
+   stepCamera(dt);
+   } // end of catch-up slices
++  snapSkatesToIce();
+   renderer.render(scene,camera);
+ }
+ function gameOver(){
+diff --git a/characters/base-human-v2/gear.js b/characters/base-human-v2/gear.js
+index 802a4ad..2053bcd 100644
+--- a/characters/base-human-v2/gear.js
++++ b/characters/base-human-v2/gear.js
+@@ -242,10 +242,10 @@ export function hockeyKit(THREE, a, o = {}) {
+       [{ t: 0, a: .062, b: .08 }, { t: .6, a: .058, b: .068 }, { t: 1, a: .062, b: .07, b2: .074 }].map((r) => ({ ...r, a: r.a * s, b: r.b * s, b2: (r.b2 ?? r.b) * s })), 22), boot, bone);
+     const box = (w, h, d, x, y, z, rx = 0) => { const g = new THREE.BoxGeometry(w * s, h * s, d * s); g.rotateX(rx); g.translate(x, y * s, z * s); return g; };
+     mb.add(box(.06, .1, .02, cx, .2, ft.z / s + .05, -.25), trim, bone); mb.add(box(.05, .06, .02, cx, .19, ft.z / s - .115, .2), trim, bone);
+-    gb.add(box(.03, .03, .29, cx, -.022, .005), 0xe9ecef, bone);
++    gb.add(box(.032, .05, .29, cx, -.032, .005), 0xf2f4f6, bone); // JOB-04: taller white holder so the blade reads from the TV camera
+     for (const z of [-.105, .11]) { const tw = new THREE.CylinderGeometry(.02 * s, .028 * s, .035 * s, 10); tw.translate(cx, -.005 * s, z * s); gb.add(tw, 0xe9ecef, bone); }
+     const bl = new THREE.Shape(), L = .3 * s, H = .028 * s; bl.moveTo(-L / 2, H); bl.lineTo(L / 2, H); bl.quadraticCurveTo(L / 2 + .02 * s, 0, L / 2 - .03 * s, -.004 * s); bl.quadraticCurveTo(0, -.012 * s, -L / 2 + .03 * s, -.004 * s); bl.quadraticCurveTo(-L / 2 - .015 * s, H * .4, -L / 2, H);
+-    const bg = new THREE.ExtrudeGeometry(bl, { depth: .006 * s, bevelEnabled: false }); bg.translate(0, 0, -.003 * s); bg.rotateY(-Math.PI / 2); bg.translate(cx, -.065 * s, .005 * s);
++    const bg = new THREE.ExtrudeGeometry(bl, { depth: .006 * s, bevelEnabled: false }); bg.translate(0, 0, -.003 * s); bg.scale(1, 1.6, 1); bg.rotateY(-Math.PI / 2); bg.translate(cx, -.1 * s, .005 * s); // JOB-04: blade 4.5 cm tall (was 2.8 cm - invisible on a phone)
+     sb.add(bg, 0xc8d2da, bone); }
+ 
+   /* --- oversized gloves: padded cuff, finger rolls, thumb, dark palm --- */
+@@ -277,7 +277,7 @@ export function hockeyKit(THREE, a, o = {}) {
+       const ed = new THREE.TorusGeometry(.142 * s, .0028 * s, 4, 28, 2.5); ed.rotateZ(Math.PI / 2 - 1.25); ed.rotateX(Math.PI / 2); ed.translate(0, 1.669 * s, -.009 * s); mb.add(ed, dark, 'Head'); } }
+   parts.gear = mb.build(M({ vertexColors: true, roughness: .7, metalness: .02 }), 'gear-matte');
+   parts.shell = gb.build(M({ vertexColors: true, roughness: .26, metalness: .12, side: THREE.DoubleSide }), 'gear-gloss');
+-  parts.steel = sb.build(M({ vertexColors: true, roughness: .2, metalness: .9 }), 'gear-steel');
++  parts.steel = sb.build(M({ vertexColors: true, roughness: .3, metalness: .45, emissive: 0x3a4248 }), 'gear-steel'); // JOB-04: metalness .9 with no env map rendered near-black
+   if (U && U.uScalp) U.uScalp.value = 0;
+ 
+   /* --- stick: in both hands, blade flat on the ice (one mesh) --- */

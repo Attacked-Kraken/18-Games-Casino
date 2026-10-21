@@ -1,0 +1,32 @@
+name: Complaints check
+
+# JOB-02. Nobody can mark the owner's complaint closed without a screenshot or clip that proves it.
+# Red X (merge blocked) if COMPLAINTS.md has a closed entry with no real proof file, or a complaint was deleted.
+on:
+  pull_request:
+    paths: ['COMPLAINTS.md', 'proof/**', 'tools/complaints/**']
+  push:
+    branches: [main]
+    paths: ['COMPLAINTS.md', 'proof/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  complaints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Check every closed complaint has proof
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch -q origin ${{ github.base_ref }}
+            node tools/complaints/check.mjs --base origin/${{ github.base_ref }} > out.txt; S=$?; cat out.txt; cat out.txt >> $GITHUB_STEP_SUMMARY; exit $S
+          else
+            node tools/complaints/check.mjs > out.txt; S=$?; cat out.txt; cat out.txt >> $GITHUB_STEP_SUMMARY; exit $S
+          fi

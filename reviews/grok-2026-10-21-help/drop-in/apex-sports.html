@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. -->
+<link rel="manifest" href="sports.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apex Sports">
+<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
+<!-- /JOB-03 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07101f">
+<title>Apex Sports</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#07101f;color:#fff;font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+  body{padding:calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+    background:radial-gradient(ellipse at 50% 0%,#1d3a6b 0%,#07101f 70%)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  header img{width:44px;height:44px;border-radius:10px}
+  h1{font-size:22px;letter-spacing:.08em;font-weight:900}
+  h1 span{color:#ffcc33}
+  #st{margin-left:auto;font-size:12px;color:#9fb3d1;text-align:right}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  a.g{display:flex;flex-direction:column;justify-content:flex-end;min-height:96px;padding:12px;border-radius:14px;text-decoration:none;color:#fff;
+    border:2px solid rgba(255,204,51,.5);background:linear-gradient(160deg,var(--c),#0b1426 80%);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  a.g:active{transform:scale(.97)}
+  a.g b{font-size:18px;font-weight:900}
+  a.g small{font-size:12px;color:#cfe0ff;margin-top:2px}
+  .e{font-size:30px;margin-bottom:auto}
+  .bar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+  button{font:700 14px -apple-system,system-ui,sans-serif;padding:10px 14px;border-radius:10px;border:2px solid #ffcc33;background:#1a1206;color:#fff}
+  #how{font-size:12px;color:#9fb3d1;line-height:1.45}
+</style>
+</head>
+<body>
+<header><img src="icons/apex-sports-192.png" alt=""><h1>APEX <span>SPORTS</span></h1><div id="st">checking offline…</div></header>
+<div class="grid" id="grid"></div>
+<div class="bar"><button id="save" type="button">Save all 6 for offline</button><div id="how"></div></div>
+<script>
+const GAMES = [
+  ['apexbaseball.html', 'Baseball', '⚾', '#1f6b3a', 'Pitch, hit, run the bases'],
+  ['apexhockey.html', 'Ice Hockey', '🏒', '#1f4f8f', 'Wolves vs Sharks'],
+  ['apexflight.html', 'Flight', '✈️', '#2a5a8a', 'Take off and land'],
+  ['apextrackfield.html', 'Track & Field', '🏃', '#8a3a1f', 'Sprints, hurdles, jumps'],
+  ['apexf1.html', 'F1 Racing', '🏎️', '#8a1f2a', 'Lights out and away'],
+  ['apexracer.html', 'Exotic Racer', '🚗', '#5a1f8a', 'Supercars, city tracks'],
+];
+document.getElementById('grid').innerHTML = GAMES.map(([f, n, e, c, s]) => `<a class="g" href="${f}" style="--c:${c}"><span class="e">${e}</span><b>${n}</b><small>${s}</small></a>`).join('');
+const st = document.getElementById('st'), how = document.getElementById('how');
+const standalone = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || navigator.standalone;
+how.textContent = standalone ? 'Installed. Play each game once online and it works with no signal.'
+  : (/iPhone|iPad/.test(navigator.userAgent) ? 'iPhone: tap Share  then "Add to Home Screen".' : 'Android: tap ⋮ then "Install app" / "Add to Home screen".');
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(() => { st.textContent = navigator.onLine ? 'offline ready ✓' : 'offline mode'; }).catch(() => { st.textContent = 'offline not available'; });
+} else st.textContent = 'offline not available';
+// "Save all 6": open each game hidden for a few seconds so it pulls its models and sounds into the cache
+document.getElementById('save').onclick = async (ev) => {
+  const b = ev.currentTarget; b.disabled = true;
+  for (let i = 0; i < GAMES.length; i++) {
+    b.textContent = `Saving ${GAMES[i][1]}… (${i + 1}/6)`;
+    await new Promise((res) => { const fr = document.createElement('iframe'); fr.style.cssText = 'position:fixed;left:-9999px;width:844px;height:390px';
+      fr.src = GAMES[i][0]; document.body.appendChild(fr); setTimeout(() => { fr.remove(); res(); }, 12000); });
+  }
+  b.textContent = 'Saved ✓ - works with no signal'; b.disabled = false;
+};
+</script>
+</body>
+</html>

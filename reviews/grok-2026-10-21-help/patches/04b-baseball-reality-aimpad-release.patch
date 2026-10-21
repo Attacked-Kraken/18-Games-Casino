@@ -1,0 +1,38 @@
+diff --git a/apexbaseball.html b/apexbaseball.html
+index c3699f3..4b5f06f 100644
+--- a/apexbaseball.html
++++ b/apexbaseball.html
+@@ -1216,6 +1216,16 @@ function resetFigure(p){ p.armL.rotation.set(0,0,0); p.armR.rotation.set(0,0,0);
+ /* ---------------- main loop ---------------- */
+ const clock = new THREE.Clock();
+ let fitFrames = 0;
++/* JOB-04: REALITY robot hook (REALITY.md "Robot hook"). Field units are ~1.1 per metre (mound 20.17 = 18.4 m). */
++const BB_UPM = 20.17/18.4;
++window.__reality={
++  kind:'person',
++  get player(){ return playerBatting()? batterMesh.g : pitcherMesh.g; },
++  get others(){ return [catcherMesh.g, ...Object.values(fielders).map(f=>f&&f.g).filter(Boolean)]; },
++  get contact(){ const p=playerBatting()? batterMesh : pitcherMesh; return [p.g]; }, // lowest visible mesh = the shoes
++  ground:(x,z)=> (Math.hypot(x-MOUND[0], z-MOUND[2])<2.9 ? 0.3 : 0), // mound top vs the field
++  expect:{ height:[1.55*BB_UPM, 2.15*BB_UPM] }
++};
+ function loop(){
+   requestAnimationFrame(loop);
+   const rawDt = Math.min(clock.getDelta(), 0.05);
+@@ -1421,8 +1431,14 @@ function aimFromEvent(e){
+   aim.y = clamp((1-fyr)*4.5, 0.2, 4.4);
+   updateAimDot();
+ }
+-aimPad.addEventListener('pointerdown', e=>{ aimFromEvent(e); aimPad.setPointerCapture(e.pointerId); });
+-aimPad.addEventListener('pointermove', e=>{ if(e.buttons) aimFromEvent(e); });
++// JOB-04: the aim pad follows ONE finger and lets go on lift / cancel / app switch (it used to stay "held" after iOS stole the touch)
++let aimId=null;
++aimPad.addEventListener('pointerdown', e=>{ aimId=e.pointerId; aimFromEvent(e); try{ aimPad.setPointerCapture(e.pointerId); }catch(x){} });
++aimPad.addEventListener('pointermove', e=>{ if(e.pointerId===aimId && e.buttons) aimFromEvent(e); });
++const aimRelease=e=>{ if(!e || e.pointerId===undefined || e.pointerId===aimId){ if(aimId!==null){ try{ aimPad.releasePointerCapture(aimId); }catch(x){} } aimId=null; } };
++for(const ev of ['pointerup','pointercancel','lostpointercapture']) aimPad.addEventListener(ev, aimRelease);
++addEventListener('blur', ()=>aimRelease()); addEventListener('pagehide', ()=>aimRelease());
++document.addEventListener('visibilitychange', ()=>{ if(document.hidden) aimRelease(); });
+ // keyboard
+ window.addEventListener('keydown', e=>{
+   lastPitchAct = performance.now();

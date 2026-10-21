@@ -1,0 +1,28 @@
+diff --git a/apexracer.html b/apexracer.html
+index 9de9906..a14b868 100644
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -2230,6 +2230,23 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { if
+ addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
+ resize(); toMenu();
+ { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
++/* JOB-04: the stick lets go when the app loses the touch (iOS notification, app switch, Control Centre) */
++function releaseAllInput() { stickReset(); for (const k of ['gas', 'brake', 'l', 'r', 'nos', 'drift']) K[k] = 0; document.querySelectorAll('.dn').forEach((el) => el.classList.remove('dn')); }
++addEventListener('blur', releaseAllInput); addEventListener('pagehide', releaseAllInput); addEventListener('pointercancel', releaseAllInput);
++document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAllInput(); });
++/* JOB-04: REALITY robot hook (REALITY.md "Robot hook") - live getters, null until a race exists */
++const _rtA = { x: 0, z: 0, h: 0, i: 0 }, _rtB = { x: 0, z: 0, h: 0, i: 0 };
++window.__reality = {
++  kind: 'car',
++  get player() { return R && R.P ? R.P.car.root : null; },
++  get others() { return R ? R.cars.filter((e) => e !== R.P).map((e) => e.car.root) : []; },
++  get contact() { if (!R || !R.P) return []; const c = R.P.car; if (c.wheels.length) return c.wheels.map((w) => w.spin || w.piv).filter(Boolean);
++    if (!c._tyres) { c._tyres = []; c.root.traverse((m) => { if (m.isMesh && m.visible && /tire|tyre|wheel/i.test((m.material && m.material.name) || m.name)) c._tyres.push(m); }); } return c._tyres; }, // real fetched models: the tyre meshes
++  expect: { length: [3.8, 5.6 * 1.2] }, // G-01: the owner asked for the cars 1.2x bigger than real - remove this line if he wants real size back
++  ground: () => (R && R.T ? R.T.y : 0),
++  track: () => { if (!R || !R.P) return { x: 0, z: 1 }; const s = R.P.s; R.T.at(s, 0, _rtA); R.T.at(s + 2 / R.T.ds, 0, _rtB); const dx = _rtB.x - _rtA.x, dz = _rtB.z - _rtA.z, l = Math.hypot(dx, dz) || 1; return { x: dx / l, z: dz / l }; },
++  go: (on) => { K.gas = on ? 1 : 0; }
++};
+ requestAnimationFrame(frame);
+ window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
+ /* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
