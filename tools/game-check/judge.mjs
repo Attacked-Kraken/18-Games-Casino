@@ -36,7 +36,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   {
     const branch = prBranch;
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
-    const NOTES = /^(jobs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
+    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
     const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
@@ -56,7 +56,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
     else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\/|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
