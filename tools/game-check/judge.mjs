@@ -93,11 +93,19 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
   let data = {}; try { data = JSON.parse(fs.readFileSync(resFile || 'game-check-out/results.json', 'utf8')); } catch (e) {}
   let base0 = {}; try { base0 = JSON.parse(fs.readFileSync(baseFile || 'base-results.json', 'utf8')); } catch (e) {}
   let changed = []; try { changed = fs.readFileSync(changedFile || 'changed.txt', 'utf8').split('\n').map(x => x.trim()).filter(Boolean); } catch (e) {}
-  const blockers = judge({ results: data.results || [], models: data.models || [], base0, changed,
-                           branch: process.env.PR_BRANCH || '', title: process.env.PR_TITLE || '' });
+  let blockers = [];
+  try {
+    blockers = judge({ results: data.results || [], models: data.models || [], base0, changed,
+                       branch: process.env.PR_BRANCH || '', title: process.env.PR_TITLE || '' });
+  } catch (e) {
+    console.log('::error title=Game check judge crashed::' + String(e && e.stack || e).slice(0, 400).replace(/\n/g, ' '));
+    blockers = ['the robot\'s judge crashed: ' + String(e && e.message || e).slice(0, 200) + ' - tell the VP'];
+  }
+  console.log(`::notice title=Game check::played ${(data.results || []).length} game(s), ${(data.models || []).length} model(s); ${changed.length} changed file(s); ${(data.missing || []).length} missing`);
   for (const m of (data.missing || [])) blockers.push(`${m}: the robot could not play it (its run failed or timed out) - look at the run`);
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
+  for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));
   if (blockers.length) { console.log('\nBLOCKED - this pull request adds problems main does not have:\n- ' + blockers.join('\n- ')); process.exit(1); }
   console.log('\nNo new problems - OK to merge.');
 }
