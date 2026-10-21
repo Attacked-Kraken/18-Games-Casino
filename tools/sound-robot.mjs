@@ -205,7 +205,7 @@ for (const r of recipes) {
       return { b64: toB64(await B.lastExport.blob.arrayBuffer()), what: r.style + ' ' + B.S.bpm + ' BPM', loopSecs };
     } catch (e) { return { err: e.message }; }
   }, r);
-  if (res.err) { console.log(`FAILED ${name}: ${res.err}`); continue; }
+  if (res.err) { console.log(`FAILED ${name}: ${res.err}`); console.log(`::error title=Sound robot::FAILED ${name}: ${String(res.err).slice(0, 200)}`); continue; }
   let buf = Buffer.from(res.b64, 'base64');
   const reps = r.type === 'beat' || !r.type ? Math.max(1, Math.min(16, +(r.loops || 4))) : 1;
   if (reps > 1 && res.loopSecs) buf = repeatWav(buf, res.loopSecs, reps);

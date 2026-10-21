@@ -96,3 +96,4 @@ Format: `- YYYY-MM-DD · game · mistake → rule`
 - The merge robot merges only a branch that is up to date with main and green after the update (PR #902 wiped G-88's
   tests by merging from an old main).
 - 2026-10-21 · apextrackfield · Three play tests called Puppeteer APIs (page.target, page.setViewport) that are not functions on the robot's Playwright page → rule: play tests use the Playwright calls directly - page.context().newCDPSession(page) and page.setViewportSize() - never the Puppeteer names, shim or no shim.
+- 2026-10-21 · apextrackfield · Hurdle frames stood only in the player's lane while the rivals leapt over empty air in theirs → rule: what a runner must jump must be DRAWN in his own lane - the visual list and the physics list are the same hurdles, in every lane.

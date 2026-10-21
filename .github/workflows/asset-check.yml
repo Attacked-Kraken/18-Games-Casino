@@ -7,6 +7,10 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
 jobs:
   assets:
     runs-on: ubuntu-latest
@@ -17,3 +21,11 @@ jobs:
         with:
           node-version: 20
       - run: node tools/asset-check.mjs
+      - name: Tell the pull request why
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          [ -s asset-problems.txt ] || exit 0
+          { echo "### 🔴 Asset check blocked this merge"; echo; sed 's/^/- /' asset-problems.txt; echo; echo "Rule: ASSET-LAW.md - every 3D file in ASSETS.md with CC0 / CC-BY and the maker credited."; } > comment.md
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -F body=@comment.md >/dev/null || true
