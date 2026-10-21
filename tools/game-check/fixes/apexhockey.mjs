@@ -746,4 +746,113 @@ export default [
     return bad.length ? bad.join('; ') : true;
   },
 },
+/* ================= G-71 TESTER TESTS (owner, 2026-10-20) =================
+   DONE.md + REALITY.md checked line by line with numbers from the running
+   game (window 2 tester job). Each test FAILS until the game is fixed -
+   that failure is the proof behind the TESTER lines in jobs/QUEUE.md. */
+{
+  id: 'tester-reality-hook',
+  ask: 'no window.__reality hook - the REALITY robot cannot measure direction, sizes or skate contact in this game (DONE.md 4, REALITY.md "Robot hook")',
+  async test(page, h) {
+    let ready = false;
+    for (let i = 0; i < 24 && !ready; i++) {
+      ready = await h.eval(() => (window.__hk && window.__hk.skaters || []).filter((s) => !!s.ath).length >= 10).catch(() => false);
+      if (!ready) await h.wait(400);
+    }
+    if (!ready) return 'the real athletes never attached, so the reality hook could not be checked';
+    return h.eval(() => {
+      const R = window.__reality;
+      if (!R) return 'window.__reality is not set - the REALITY robot measures nothing for hockey (missing hook = only a CHECK line)';
+      if (R.kind !== 'skater') return 'the reality hook kind is "' + R.kind + '" (REALITY.md: skater)';
+      if (!R.player) return 'the reality hook has no player';
+      if (!Array.isArray(R.contact) || !R.contact.length) return 'the reality hook lists no contact points (the skates) to check against the ice';
+      if (typeof R.ground !== 'function') return 'the reality hook has no ground() for the ice height';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-stick-resets-on-blur',
+  ask: 'the stick must reset to centre on window blur and when the app is hidden/shown, not only on touchend (DONE.md 2)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // get a match into play with the game's own buttons (shared page: earlier
+    // tests may have left the game on the menu, the hub or the end screen)
+    for (let i = 0; i < 14; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(600); continue; }
+      await h.eval(() => {
+        const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
+        const hub = document.getElementById('hub');
+        const g = window.__hk.game;
+        if (hub && getComputedStyle(hub).display !== 'none') click('hubClose');
+        else if (g.state === 'over') click('againBtn');
+        else if (g.state === 'menu') click('playBtn');
+      }).catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to test the stick';
+    const held = await h.eval(() => {
+      const joy = document.getElementById('joy'), knob = document.getElementById('knob');
+      if (!joy || !knob) return 'no joystick on the play screen';
+      const r = joy.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const fire = (type, x, y) => {
+        const t = new Touch({ identifier: 7, target: joy, clientX: x, clientY: y });
+        joy.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: [t], changedTouches: [t] }));
+      };
+      fire('touchstart', cx, cy); fire('touchmove', cx + 40, cy);
+      return knob.style.transform;
+    });
+    if (typeof held !== 'string' || !/40px/.test(held)) return 'the stick did not move when held (knob: ' + held + ') - the test could not set up';
+    // the finger stays down; the app loses focus and is hidden, then returns
+    await h.eval(() => {
+      window.dispatchEvent(new Event('blur'));
+      Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+    await h.wait(400);
+    const after = await h.eval(() => document.getElementById('knob').style.transform);
+    // cleanup for the next test: a real touchend centres the stick again
+    await h.eval(() => {
+      const joy = document.getElementById('joy'); if (!joy) return;
+      const r = joy.getBoundingClientRect();
+      const t = new Touch({ identifier: 7, target: joy, clientX: r.left + r.width / 2 + 40, clientY: r.top + r.height / 2 });
+      joy.dispatchEvent(new TouchEvent('touchend', { bubbles: true, cancelable: true, touches: [], changedTouches: [t] }));
+    }).catch(() => {});
+    const centred = after === '' || /\+ 0px\), calc\(-50% \+ 0px\)/.test(after);
+    if (!centred) return 'with the finger still down, blur + hide/show left the stick pushed: knob at "' + after + '" instead of centred - the input only clears on a real touchend, so the skater keeps skating on his own when the player comes back';
+    return true;
+  },
+},
+{
+  id: 'tester-puck-size',
+  ask: 'the puck must be real size: 7.6 cm across, 2.5 cm thick (REALITY.md size table, +-15%)',
+  async test(page, h) {
+    return h.eval(() => {
+      const mesh = window.__hk && window.__hk.puck && window.__hk.puck.mesh;
+      if (!mesh) return 'no puck mesh found (window.__hk.puck.mesh)';
+      mesh.updateWorldMatrix(true, false);
+      const g = mesh.geometry; if (g.computeBoundingBox) g.computeBoundingBox();
+      const bb = g.boundingBox; if (!bb) return 'the puck mesh has no bounding box';
+      const e = mesh.matrixWorld.elements;
+      let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+      for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+        const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14];
+        if (wx < mn[0]) mn[0] = wx; if (wy < mn[1]) mn[1] = wy; if (wz < mn[2]) mn[2] = wz;
+        if (wx > mx[0]) mx[0] = wx; if (wy > mx[1]) mx[1] = wy; if (wz > mx[2]) mx[2] = wz;
+      }
+      // the game world is in feet (blue line 25 ft from centre, goal line 89 ft)
+      const wCm = Math.max(mx[0] - mn[0], mx[2] - mn[2]) * 30.48, tCm = (mx[1] - mn[1]) * 30.48;
+      const out = [];
+      if (wCm < 7.6 * 0.85 || wCm > 7.6 * 1.15) out.push('the puck is ' + wCm.toFixed(1) + ' cm across (real: 7.6 cm)');
+      if (tCm < 2.54 * 0.85 || tCm > 2.54 * 1.15) out.push('the puck is ' + tCm.toFixed(1) + ' cm thick (real: 2.5 cm)');
+      return out.length ? out.join('; ') : true;
+    });
+  },
+},
 ];
