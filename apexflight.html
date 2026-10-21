@@ -789,10 +789,16 @@ function step(dt) {
   ACC.set(0, -GRAV, 0);
   ACC.addScaledVector(F, THRUST * P.thr);
   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
-  if (!P.ground) { const aoa = clamp(1 + P.pitch * 2.5, 0.25, 1.5);
+  if (!P.ground) {
+    // Angle of attack = pitch vs the FLIGHT PATH, not pitch alone. With pitch
+    // alone, capped lift beat gravity at ANY attitude once fast: full nose-down
+    // at cruise still climbed, so the plane could not descend or land from
+    // altitude. Nose-down at speed now bleeds lift and the plane comes down.
+    const fpa = v > 1 ? Math.asin(clamp(P.vel.y / v, -1, 1)) : 0;
+    const aoa = clamp(1 + (P.pitch - fpa) * 2.5, 0, 1.5);
     // Stall: lift fades only when really pulling up too slow (stallNow), and gentler than before
     const stallFade = stallNow ? Math.max(0.45, v / VSTALL) : 1.0;
-    ACC.addScaledVector(U, Math.min(KLIFT * v * v * aoa * stallFade, LIFTCAP)); }      // lift, capped
+    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade); }      // lift, capped
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
 
