@@ -59,6 +59,8 @@ for (const t of todo) {
     const buf = Buffer.from(await (await fetch(pick.url)).arrayBuffer());
     const raw = `models/fetched/${slug}-raw.glb`;
     if (d.glb) fs.writeFileSync(raw, buf);
+    const sizeAsk = /\b(length|height|width)\s*:?\s*([\d.]+)\s*m\b/i.exec(t.l);     // owner Oct 21: "length 4.6 m" on the line = scale to it
+    if (sizeAsk) fs.writeFileSync(raw.replace('-raw.glb', '.size'), sizeAsk[1].toLowerCase() + ' ' + sizeAsk[2]);
     else { const tmp = fs.mkdtempSync('/tmp/sf-'); fs.writeFileSync(tmp + '/m.zip', buf); execSync(`unzip -q -o m.zip`, { cwd: tmp });
       const g = execSync(`find ${tmp} -name '*.gltf' | head -1`, { encoding: 'utf8' }).trim();
       execSync(`gltf-transform copy "${g}" "${raw}"`, { stdio: 'inherit' }); }
