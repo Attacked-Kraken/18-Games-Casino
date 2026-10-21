@@ -328,7 +328,7 @@ export default [
         const E = window.__erc;
         if (!E) return 'no window.__erc hook';
         if (E.R && E.endRace) E.endRace();
-        if (!document.getElementById('nm').value) document.getElementById('nm').value = 'T50';
+        const nmEl = document.getElementById('nm'); if (nmEl && !nmEl.value) nmEl.value = 'T50'; /* #nm is gone once a name is saved (refreshMenu swaps it for static text) - the race does not need it */
         return true;
       });
       if (setup !== true) return setup;
