@@ -212,6 +212,13 @@ to be made 11 times, and shared parts (characters/) broke other games.
 4. **Shared folders (characters/, kit/, venues/, models/) change only in their own job**, and that pull request must
    show the robot pictures of EVERY game that uses the part, not just yours.
 5. Every job still ends with a play test that proves it (`tools/game-check/fixes/<game>.mjs`) - see DONE.md.
+6. **FILE GUARD (owner, Oct 21 2026).** Every job order says `FILES YOU MAY CHANGE: ...`. A pull request may change ONE
+   game (its page `apex<game>.html`, its play tests `tools/game-check/fixes/apex<game>.mjs`, its `looks/<game>/` folder)
+   plus notes (your `jobs/G-NN.md` report, `jobs/QUEUE.md`, `reviews/`, `CLAIMS.md`, `LESSONS.md`, `MODEL-SEARCH.md`,
+   `MODEL-REQUESTS.md`). The report and test files are ALWAYS allowed. A shared part (`kit/`, `venues/`, `models/`,
+   `characters/`, `sounds/`) changes in its OWN pull request with no game page in it. Anything else (another game, the
+   hub `sports.html`, `games.json`, robots, workflows) is not yours: the game check robot FAILS the pull request with a
+   `FILE GUARD:` line and it cannot merge. This runs on every pull request, for every game, now and in the future.
 
 The 6 games being finished now (Baseball, Hockey, Flight, Track & Field, F1, Exotic Racer) follow rules 1, 2, 4 and 5
 now. Rule 3 (splitting their big files) waits - see LATER.md.

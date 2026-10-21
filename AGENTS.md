@@ -29,6 +29,13 @@ Arcade code in this repo. When a game is finished, tell the owner which game and
 **Game check:** after every merge the robot posts phone screenshots and results for every game to the
 game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.
 
+**FILE GUARD (owner, 2026-10-21):** your job order says `FILES YOU MAY CHANGE: ...`. A pull request may change ONE
+game (its page, its play tests `tools/game-check/fixes/<game>.mjs`, its `looks/<game>/`) plus notes (`jobs/G-NN.md`,
+`jobs/QUEUE.md`, `reviews/`, `CLAIMS.md`, `LESSONS.md`, model lists). Report and test files are always allowed. Shared
+parts (`kit/`, `venues/`, `models/`, `characters/`, `sounds/`) go in their OWN pull request with no game page in it.
+Touch anything else and the game check robot FAILS your pull request (`FILE GUARD:` line) - it cannot merge.
+Full rule: STUDIO-STANDARD.md section 9.6.
+
 **Plain text only (owner, 2026-10-17):** send every file as plain UTF-8 text - never base64, never UTF-16. On
 2026-10-17 a tool saved CLAIMS.md as base64 and apexf1.html with garbled emoji. The **file guard** robot
 (tools/file-guard) now repairs that on GitHub after every push, but check your file looks right on GitHub anyway.
