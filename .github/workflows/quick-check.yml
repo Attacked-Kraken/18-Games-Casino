@@ -1,0 +1,43 @@
+name: Quick check
+# Owner Oct 21 2026 (faster builders): the robot on ONE game, on your branch, before a pull request. 1-3 minutes.
+# Run it on GitHub: Actions > Quick check > Run workflow > your branch + the game page. Red lines show in the summary,
+# pictures in the run's artifact. Same as: tools/quick-check.sh apex<game>.html
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Game page, e.g. apexhockey.html'
+        required: true
+permissions:
+  contents: read
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the test browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          npx playwright install --with-deps chromium
+      - name: Play the game
+        run: |
+          python3 -m http.server 8812 >/dev/null 2>&1 &
+          sleep 2
+          ONLY="${{ inputs.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8812/ quick-out || true
+          node -e '
+          const r = JSON.parse(require("fs").readFileSync("quick-out/results.json","utf8")).results.find(x => x.file === process.argv[1]);
+          let md = "## Quick check - " + (r ? r.name + " - " + r.status : "game not played") + "\n\n";
+          if (r) { for (const f of r.fail) md += "- 🔴 " + f + "\n"; for (const f of (r.fixes||[]).filter(f=>!f.ok)) md += "- ❌ " + f.id + " - " + (f.note||f.ask) + "\n"; for (const c of r.check) md += "- 🟡 " + c + "\n"; }
+          md += "\nPictures: the run artifact quick-check-pictures.\n";
+          require("fs").appendFileSync(process.env.GITHUB_STEP_SUMMARY, md); console.log(md);
+          ' "${{ inputs.game }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quick-check-pictures
+          path: quick-out/img
+          if-no-files-found: ignore

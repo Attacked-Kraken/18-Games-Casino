@@ -23,7 +23,7 @@
    (look-presets.js). Drag to turn, pinch to zoom, tap a move to play it.
    ?m=path/to/model.glb  (from the site root)   &anims=path/to/anims.glb (same skeleton, optional)
    &look=rink|field|track|night|studio   &h=1.85 (height in meters, optional)   &name=Hockey player
-   Robot pictures: &shot=front|side|back|q (freezes, sets document.title = 'ready')  &clip=Name  &t=0.4 */
+   Robot pictures: &shot=front|side|back|top|q (freezes, sets document.title = 'ready')  &clip=Name  &t=0.4 */
 import * as THREE from '../three.module.min.js';
 import { GLTFLoader } from '../vendor/GLTFLoader.js';
 import { applyLook } from '../look-presets.js';
@@ -87,7 +87,7 @@ try {
   clips.forEach(cl => { actions[cl.name] = mixer.clipAction(cl); const b = btn('▶ ' + cl.name.replace(/_/g, ' '), bb => play(cl.name, bb)); b.classList.add('clip'); });
   const first = q.get('clip') && actions[q.get('clip')] ? q.get('clip') : (clips.find(c => /idle/i.test(c.name)) || clips[0] || {}).name;
   if (first) play(first, [...bar.querySelectorAll('.clip')].find(b => b.textContent.includes(first.replace(/_/g, ' '))));
-  if (shot) { yaw = { front: 0, side: Math.PI / 2, back: Math.PI, q: 0.6 }[shot] ?? 0; if (mixer) mixer.setTime(+(q.get('t') || 0.4)); bar.style.display = 'none'; }
+  if (shot) { yaw = { front: 0, side: Math.PI / 2, back: Math.PI, q: 0.6, top: 0 }[shot] ?? 0; if (shot === 'top') pitch = 1.2; if (mixer) mixer.setTime(+(q.get('t') || 0.4)); bar.style.display = 'none'; }
 } catch (e) { fail("Couldn't load that model: " + (e && e.message || e)); throw e; }
 // touch: drag to turn, pinch / wheel to zoom
 const pts = new Map(); let pinch0 = 0, dist0 = dist;
