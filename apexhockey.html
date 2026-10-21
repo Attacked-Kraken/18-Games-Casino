@@ -1928,6 +1928,13 @@ $('friendGo').addEventListener('click', () => {
   const s = starSkater(); const c = cLoad();
   if (s) { s.star = true; if (c) { const o = starOVR(c); window.__starBoost = 1 + (o - 76) * 0.004; window.__starShot = 1 + (o - 76) * 0.003; } }
   renderMenu();
+  // The career hub's PLAY button saves the fixture and reloads (so the boot
+  // patch above can dress the away team) - the reload must START that match,
+  // not strand the player on the menu to press CAREER a second time. Only a
+  // career fixture auto-starts: a friend fixture still waits on the menu,
+  // where its PLAY label and cancel live.
+  const pm2 = mLoad();
+  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) pb.click(); }
 })();
 
 requestAnimationFrame(tick);
