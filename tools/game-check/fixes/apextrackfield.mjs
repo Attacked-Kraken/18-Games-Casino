@@ -1370,6 +1370,18 @@ export default [
       const afterHide = await h.eval(state);
       await h.eval(() => { Object.defineProperty(document, 'hidden', { value: false, configurable: true }); document.dispatchEvent(new Event('visibilitychange')); return true; });
       if (afterHide.held || !((k) => { const m = /translate\((-?[\d.]+)/.exec(k || ''); return !m || Math.abs(parseFloat(m[1])) < 1; })(afterHide.knob)) return 'when the page hides the stick stays held (held=' + afterHide.held + ', knob=' + afterHide.knob + ') - an interruption leaves the player steering by itself';
+            // JOB G-75: pointercancel lets go too (the OS steals the gesture mid-hold)
+      const g3 = await h.eval(grab, 79);
+      if (!g3.held) return 'the stick did not re-engage for the pointercancel check';
+      await h.eval(() => { document.getElementById('stick').dispatchEvent(new PointerEvent('pointercancel', { pointerId: 79, bubbles: true })); return true; });
+      const afterPC = await h.eval(state);
+      if (afterPC.held || !((k) => { const m = /translate\((-?[\d.]+)/.exec(k || ''); return !m || Math.abs(parseFloat(m[1])) < 1; })(afterPC.knob)) return 'after a pointercancel the stick stays held (held=' + afterPC.held + ', knob=' + afterPC.knob + ') - a gesture steal leaves the player steering by itself';
+      // JOB G-75: touchcancel lets go too (DONE.md names all four reset paths)
+      const g4 = await h.eval(grab, 80);
+      if (!g4.held) return 'the stick did not re-engage for the touchcancel check';
+      await h.eval(() => { document.getElementById('stick').dispatchEvent(new Event('touchcancel', { bubbles: true })); return true; });
+      const afterTC = await h.eval(state);
+      if (afterTC.held || !((k) => { const m = /translate\((-?[\d.]+)/.exec(k || ''); return !m || Math.abs(parseFloat(m[1])) < 1; })(afterTC.knob)) return 'after a touchcancel the stick stays held (held=' + afterTC.held + ', knob=' + afterTC.knob + ')';
       return true;
     },
   },
@@ -1404,4 +1416,51 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-menu-fits-sideways-phone',
+    ask: "JOB G-75 (owner + Grok audit): the main menu buttons (Career / Tournament / Free play / Code / Add rival / How to play) fall off-screen on a sideways phone - every menu control must fit inside the 844x390 screen with the panel fully shown (no scrolling)",
+    async test(page, h) {
+      try { await page.reload({ waitUntil: 'load' }); } catch (e) {}
+      await h.wait(2500);
+      const m = await h.eval(() => {
+        const tf = window.__tf; if (!tf) return null;
+        const ids = ['athName','bChamp','bCareer','bTourn','bFree','bCode','bAddRival','bHow','bBests','bFps'];
+        const out = { iw: window.innerWidth, ih: window.innerHeight, bad: [] };
+        const panel = document.querySelector('#menu .panel');
+        out.scrolls = panel ? (panel.scrollHeight > panel.clientHeight + 1) : null;
+        for (const id of ids) {
+          const el = document.getElementById(id); if (!el) { out.bad.push(id + ' missing'); continue; }
+          const r = el.getBoundingClientRect();
+          if (r.width < 4 || r.height < 4) { out.bad.push(id + ' has no size'); continue; }
+          if (r.left < -1 || r.top < -1 || r.right > out.iw + 1 || r.bottom > out.ih + 1) out.bad.push(id + ' off-screen (' + Math.round(r.left) + ',' + Math.round(r.top) + ' -> ' + Math.round(r.right) + ',' + Math.round(r.bottom) + ' of ' + out.iw + 'x' + out.ih + ')');
+        }
+        return out;
+      });
+      if (!m) return 'the game did not load for the menu fit test';
+      if (m.scrolls) return 'the menu panel SCROLLS on a sideways phone - the lower buttons start off-screen (Grok audit)';
+      if (m.bad.length) return 'menu does not fit at ' + m.iw + 'x' + m.ih + ': ' + m.bad.join('; ');
+      return true;
+    }
+  }
+  ,{
+    id: 'play-light-path-on-touch',
+    ask: "JOB G-75 (owner): too slow on phones - a touch device must START on the STORE-READY light path (quality level already light from the first frame, shadows and anti-aliasing off), not reach it only after seconds of low fps",
+    async test(page, h) {
+      try { await page.reload({ waitUntil: 'load' }); } catch (e) {}
+      let L = null;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 6000) {
+        L = await h.eval(() => { const tf = window.__tf; return (tf && tf.light) ? tf.light() : null; });
+        if (L) break;
+        await h.wait(300);
+      }
+      if (!L) return 'no light-path report from the game (__tf.light is missing)';
+      if (!L.coarse) return 'this touch viewport is not detected as a touch device - the light path never engages';
+      if (!(L.level >= 2)) return 'a touch device boots at quality level ' + L.level + ' - it must START on the light path (level 2), not earn it after seconds of struggle';
+      if (L.shadows !== false) return 'shadows are ON for a touch device - the STORE-READY light path has them off';
+      if (L.aa !== false) return 'anti-aliasing is ON for a touch device - the STORE-READY light path has it off';
+      return true;
+    }
+  }
 ];
+
