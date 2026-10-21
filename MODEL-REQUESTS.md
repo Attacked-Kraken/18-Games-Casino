@@ -21,8 +21,14 @@ Your game must name the maker on its credits screen when you use a CC Attributio
 Rules for every request: license **CC Attribution** (CC-BY) or CC0 · trusted maker · no brands/logos · download
 **under ~20 MB** (GitHub's limit is 100 MB, phones need a few MB) · the exact Sketchfab link.
 
+**Owner Oct 21 2026 (robot upgrade):** (a) put the REAL SIZE on your line - `length 4.6 m` (or `height 1.8 m` /
+`width 2 m`) - and the robot scales the model to it, so no game guesses; (b) the robot takes front, side, back and top
+pictures (`<name>-front.jpg` ...) and the owner approves the model from his job card BEFORE any game uses it;
+(c) fetch models with NO logos, brand names, team marks or number plates - if the best model has one, a logo cleanup
+is its OWN small job afterwards (never part of a game job).
+
 Format (one line each, newest at the bottom):
-`- OPEN · JOB J? · window ? · what it's for · model name by maker · link · license · size`
+`- OPEN · JOB G? · window ? · what it's for · model name by maker · link · license · file size · length 4.6 m`
 
 ## Requests
 - DRAFT · JOB J11 · window 2 · the motorcycle (real sport bike, CC-BY) · SPY-HYPERSPORT by Amvall is 177 MB - TOO BIG: find the same bike's smaller download (Sketchfab "glTF" / lower texture size) or the best other CC-BY sport bike under 20 MB · https://sketchfab.com (search "sport bike" CC Attribution, downloadable) · CC-BY · <20 MB

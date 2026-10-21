@@ -26,6 +26,8 @@ on:
 concurrency: { group: sketchfab-fetch, cancel-in-progress: false }
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 jobs:
   fetch:
     if: github.repository == 'Attacked-Kraken/18-Games-Casino'
@@ -59,7 +61,8 @@ jobs:
           # owner Oct 19 "remove heaviness, make it usable for phones": every model ends up under ~6 MB -
           # fewer triangles (simplify keeps the shape), smaller WebP textures, quantized - no special loader needed
           slim() { f="$1"; out="$2"; t=/tmp/slim-$$.glb
-            node /tmp/gt/glb-clean.mjs "$PWD/$f" "$PWD/$f" || echo "::warning title=Model cleaner::could not clean $f"   # shadow/ground sheets out
+            SIZE="$(cat "${out%.glb}.size" 2>/dev/null || true)" node /tmp/gt/glb-clean.mjs "$PWD/$f" "$PWD/$f" || echo "::warning title=Model cleaner::could not clean $f"   # shadow/ground sheets out + real size
+            rm -f "${out%.glb}.size"
             gltf-transform optimize "$f" "$out" --compress quantize --texture-compress webp --texture-size 1024 --simplify false
             for step in "0.5 1024" "0.25 1024" "0.12 512" "0.06 512"; do
               set -- $step; [ $(stat -c %s "$out") -le 6000000 ] && break
@@ -85,9 +88,24 @@ jobs:
             done
             echo "SLIMMED old models" >> fetch-report.txt
           fi
+          # owner Oct 21 2026 (upgrade b): front, side, back and top pictures of every new model, next to it
+          # (models/fetched/<name>-front.jpg ...) - the job card shows them for the owner's approval before any game uses it
+          NEW=$(git ls-files --others --exclude-standard models/fetched | grep '\.glb$' || true)
+          if [ -n "$NEW" ]; then
+            npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1 || true
+            python3 -m http.server 8814 >/dev/null 2>&1 &
+            sleep 2
+            for f in $NEW; do node tools/model-shots.mjs http://127.0.0.1:8814/ "$f" || echo "::warning title=Sketchfab robot::no pictures for $f"; done
+          fi
           git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models MODEL-SEARCH.md)" ] && { echo "nothing to save"; exit 0; }
           node tools/asset-check.mjs
           git config user.name "sketchfab fetch robot"; git config user.email "actions@users.noreply.github.com"
           git add -A MODEL-REQUESTS.md MODEL-SEARCH.md ASSETS.md models
           git commit -m "Sketchfab fetch robot: $(grep -E '^(FETCHING|SKIPPED|FAILED|SLIMMED|shrunk)' fetch-report.txt | paste -sd ' ' | cut -c1-180)"
-          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1
+          # owner Oct 21 2026: main is protected (PR + green check) - the robot saves on its own branch, opens a pull
+          # request and starts the game check on it; the merge robot merges it when green. No direct push to main.
+          B="robot/sketchfab-${{ github.run_number }}"
+          git checkout -q -b "$B" && git push -q origin "$B"
+          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
+          gh workflow run game-check.yml --ref "$B" || true
+          echo "::notice title=Sketchfab robot::opened pull request #$N - the merge robot merges it when the game check is green"
