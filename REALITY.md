@@ -44,6 +44,7 @@ window.__reality = {
   ground: (x, z) => 0,        // ground / ice height under a point
   track: (x, z) => ({ x: 0, z: 1 }),   // the right racing direction there (unit vector) - racing games
   go: (on) => {},             // hold GAS / RUN so the player moves (the robot calls go(true) for 5 s)
+  camera: camera,             // the game's THREE camera - the robot takes a close-up of the player's head and shoulders
   time: () => gameSeconds,    // the GAME's clock - the robot measures speed in game time, never the computer's clock
   speed: () => metresPerSec,  // the game's own player speed (wins over the robot's estimate)
   expect: { length: [4.8, 6.4] }        // only if this game's real size differs from the table
