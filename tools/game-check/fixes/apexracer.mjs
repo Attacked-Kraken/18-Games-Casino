@@ -220,6 +220,35 @@ export default [
     },
   },
   {
+    id: 'play-paint-covers-car',
+    ask: 'G-46 fix: proper shiny paint covers every racer car - the clearcoat paint is on the whole body shell, not a small slice, so no car can vanish into dark factory materials',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      return h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R) return 'no race';
+        const MIN = { goblin: 0.75, patriot: 0.55, tokii: 0.18, shc: 0.8 };
+        let sawPlayer = false;
+        for (const e of R.cars) {
+          if (!e.car || !e.car.paint) return (e.carId || 'a car') + ' has no paint material';
+          if (e === R.P || e.carId === 'goblin') sawPlayer = true;
+          const p = e.car.paint;
+          if (p.clearcoat !== 1 || !(p.envMapIntensity >= 1.5)) return e.carId + ' paint is not the shiny clearcoat paint';
+          let tot = 0, painted = 0;
+          e.car.root.traverse((q) => { if (!q.isMesh || q.userData.lamp || q.userData.blob) return; const n = q.geometry && q.geometry.attributes && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0; tot += n; if (q.material === p) painted += n; });
+          if (!tot) return e.carId + ' has no geometry';
+          const share = painted / tot, key = e.car.glbKey || '?', min = MIN[key];
+          if (min !== undefined && share < min) return e.carId + ' (' + key + ') wears its paint on only ' + Math.round(share * 100) + '% of the car - the rest is dark factory material and the car vanishes at night';
+        }
+        if (!sawPlayer) return 'the player car is not in the grid';
+        return true;
+      });
+    },
+  },
+  {
     id: 'play-goblin-name-wrap',
     ask: "APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body",
     async test(page, h) {
