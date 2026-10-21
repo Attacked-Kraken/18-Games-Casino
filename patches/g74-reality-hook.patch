@@ -1,0 +1,46 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -2232,6 +2232,43 @@
+ { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
+ requestAnimationFrame(frame);
+ window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
++/* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
++   running game - its size, that it faces the way it travels along the track direction, and that
++   its wheels touch the ground. Everything resolves LIVE on every read: the garage car and the
++   race car are different objects, so the getters follow whichever player car exists right now.
++   This rig faces +Z at the root (the yaw group turns the model's nose onto the root's +Z), so
++   the root's world direction IS the car's nose direction. Contact: the real 3D cars carry their
++   wheels inside the body mesh, so four small markers ride at the wheel corners of the player's
++   car at tyre-bottom height. Sizes: every car wears the owner's +20% (G-01), so the biggest
++   real model (hyper profile, 4.85 m) measures 5.82 m long - expect declares this game's range. */
++let _rcGoTimer = null;
++window.__reality = {
++  kind: 'car',
++  get player() { const c = (R && R.P && R.P.car) || gCar; return c ? c.root : null; },
++  get others() { return R && R.cars ? R.cars.filter((e) => e.ai && e.car).map((e) => e.car.root) : []; },
++  get contact() {
++    const c = (R && R.P && R.P.car) || gCar; if (!c) return [];
++    if (!c._rc) { c._rc = []; const P = c.P || PROF.wedge, ax = Math.max(0.5, P.W / 2 - 0.3), az = P.L * 0.31;
++      for (const [px, pz] of [[-ax, az], [ax, az], [-ax, -az], [ax, -az]]) { const a = new THREE.Object3D(); a.position.set(px, 0, pz); c.root.add(a); c._rc.push(a); } }
++    return c._rc;
++  },
++  ground: (x, z) => (R && R.T ? R.T.y : 0),
++  track: (x, z) => { if (!R || !R.T) return null; const T = R.T; let bi = 0, bd = Infinity;
++    for (let i = 0; i < T.N; i++) { const dx = T.px[i] - x, dz = T.pz[i] - z, d = dx * dx + dz * dz; if (d < bd) { bd = d; bi = i; } }
++    return { x: T.tx[bi], z: T.tz[bi] }; },
++  go: (on) => {
++    if (_rcGoTimer) { clearInterval(_rcGoTimer); _rcGoTimer = null; }
++    if (!on) { K.gas = 0; return; }
++    let lastTry = 0;
++    const kick = () => { try {
++      if (!R || !R.P || R.P.fin) { const now = Date.now(); if (now - lastTry > 6000) { lastTry = now; startRace(PLACES[0], 3); } return; }
++      if (R.t < 0) R.t = 0; /* skip the countdown so the robot measures real driving, not a standing car */
++      K.gas = 1;
++    } catch (e) {} };
++    kick(); _rcGoTimer = setInterval(kick, 150);
++  },
++  expect: { length: [3.8, 5.9] }
++};
+ /* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
+ addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
+ </script>
