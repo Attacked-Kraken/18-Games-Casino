@@ -29,6 +29,12 @@ Arcade code in this repo. When a game is finished, tell the owner which game and
 **Game check:** after every merge the robot posts phone screenshots and results for every game to the
 game-checks branch (see CLAIMS.md "GAME CHECK"). Look at your game there before you call it done.
 
+**TESTER or BUILDER (owner, 2026-10-21, locked):** windows 7-10 TEST: pull request title `TEST G-NN: ...`, branch
+`test/...`, only tests + `jobs/QUEUE.md` + `jobs/G-NN.md` + `reviews/` + `CLAIMS.md`, never game code; the robot
+passes it when your NEW `tester-` tests FAIL on today's game (that is the proof) and it merges by itself. Windows 1-6
+BUILD: title `BUILD G-NN: ...`, branch `build/...`, only the files your job lists, fully green before it merges.
+Before every PR: `tools/quick-check.sh apex<game>.html`. Table: STUDIO-STANDARD.md 9.7-9.12.
+
 **FILE GUARD (owner, 2026-10-21):** your job order says `FILES YOU MAY CHANGE: ...`. A pull request may change ONE
 game (its page, its play tests `tools/game-check/fixes/<game>.mjs`, its `looks/<game>/`) plus notes (`jobs/G-NN.md`,
 `jobs/QUEUE.md`, `reviews/`, `CLAIMS.md`, `LESSONS.md`, model lists). Report and test files are always allowed. Shared
