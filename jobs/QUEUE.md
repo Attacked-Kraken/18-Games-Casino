@@ -33,7 +33,6 @@ was already sent. Muses: don't edit this file.
 ## window 3 · apexflight.html
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
-- [ ] Friend codes: add a "👥 Play a friend" button (My code / Enter a friend's code) using ApexKit.friend, plus a 'play-friend-code' test.
 
 ## window 4 · apextrackfield.html
 - [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
@@ -41,7 +40,6 @@ was already sent. Muses: don't edit this file.
 - [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
 - [ ] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps).
 - [ ] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1.
-- [ ] Add a 'play-friend-code' test for the friend codes.
 - [ ] Use the owner's new kits (TOOLS.md): starting gun, crowd and footstep sounds from sounds/stadium/track/, and the running_track texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 5 · apexf1.html
@@ -49,7 +47,6 @@ was already sent. Muses: don't edit this file.
 - [ ] Cockpit view for the player's car (owner, Oct 20 12:27 PM): add a driver's-eye camera from kit/cockpit/cockpit.glb (read its README.md) - the player sees the real cockpit, halo and steering wheel, and the SteeringWheel turns with his steering (and the shift lights follow the revs). Make it a CAM choice next to the chase camera. Keep everything else the same.
 - [x] (the new Grand Prix track above replaces the old track) Trees, buildings and walls stand ON the F1 track (owner's pictures 9:43 AM) - move every one off the road so the whole track is clear to drive. Keep everything else the same.
 - [ ] Make it smooth on phones: about 1,800 draw calls per frame now - merge meshes (stands, scenery, barriers) until it is under 450, without changing how it looks.
-- [ ] Career mode play tests: start every career level, play it to the end and check the next one unlocks ('play-career-...' tests).
 - [ ] Friend codes: a 'play-friend-code' test (add the 👥 Play a friend button with ApexKit.friend if it's missing).
 - [ ] Grand Prix commentary from sounds/commentary/grandprix (name the color voice on the Credits screen).
 - [ ] Use the owner's new kits (TOOLS.md): the grand_prix engine sounds from sounds/engines/grand_prix/ (idle + accel loops crossfaded by throttle, shifts, tire squeal) and asphalt + kerb textures from kit/ground/512/. Keep everything else the same.
