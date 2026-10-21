@@ -238,6 +238,16 @@ to be made 11 times, and shared parts (characters/) broke other games.
     | Robot passes it when | its NEW `tester-` tests FAIL on today's game (proof the problem is real); a new test that passes is a blocker | everything is green, no new red lines |
     | Merges | by itself, at once (the builder gets the problem as its next step) | after the robot is green |
     | Reaches the owner | never - it isn't a finished job | only once it is proven (0 red lines) |
+13. **Lessons from the lost jet job (owner, Oct 21 2026 - LOCKED).** (a) Anything a job refers to - a model, a file,
+    code, a design - is given as a path + branch or PR number, or pasted in; the Mac checks it exists on GitHub before
+    sending, says which branch when it is not merged yet, and does NOT send a job whose files cannot be found (the VP
+    gets it). (b) One job = one self-contained message: what to do, the files/links it needs, the game, and what is out
+    of scope. (c) Every robot send-back names the commit the robot checked and links the report; ignore it if your
+    newest merge is newer than that commit. (d) A re-send starts "RE-SEND, same job, nothing new" - never redo verified
+    work; the owner's 👍 arrives as "G-NN 👍 closed." (e) The owner's picture for the game rides on the job.
+14. **The merge robot brings a branch up to date first (window 2, Oct 21 2026).** A pull request made from an older
+    main is never merged as it is: the robot merges main into the branch, re-runs its check, and merges only when the
+    check is green on the updated branch (PR #902 merged from an old main and wiped G-88's two tests).
 12. **Sketchfab robot (owner, Oct 21 2026).** Put the real size on the MODEL-REQUESTS line (`length 4.6 m`) and the
     robot scales the model to it; it takes front/side/back/top pictures (`<model>-front.jpg`...) that the owner approves
     on his job card BEFORE any game uses the model; fetch models with NO logos - a logo cleanup is its own small job.
