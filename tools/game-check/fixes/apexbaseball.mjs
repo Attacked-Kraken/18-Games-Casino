@@ -94,6 +94,70 @@ export default [
       return 'the menu never opened (the ballpark gate stayed shut for 28 s)';
     },
   },
+  // G-82 (owner / Grok audit, 2026-10-21): the stick must never stay stuck - on
+  // pointercancel / touchcancel / window blur / visibilitychange, all input zeroes.
+  // Driven with real touch drags (CDP): a phone player's finger is the input that
+  // matters, and a held touch interrupted mid-drag is exactly the stuck case.
+  {
+    id: 'play-input-never-stuck',
+    ask: "The stick never stays stuck: a touch drag interrupted by touchcancel, window blur or visibilitychange leaves the aim input at zero every time (G-82)",
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T || !T.input) return null;
+        const so = document.getElementById('startOv');
+        if (so && getComputedStyle(so).display !== 'none' && T.phase === 'start'){ const b = document.getElementById('startBtn'); if (b) b.click(); }
+        return { phase: T.phase, x: T.input.aimX, drag: T.input.dragging };
+      });
+      let cdp = null;
+      try { cdp = await page.context().newCDPSession(page); } catch (e) { return 'CDP touch not available in this browser'; }
+      const touch = (type, points) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+      // enter the aim phase (picking a pitch type enters it) and drag the pad
+      // off-centre with a real touch; leaves the touch held open on success
+      const dragOffCentre = async (fx, fy) => {
+        const t0 = Date.now();
+        while (Date.now() - t0 < 12000) {
+          const s = await snap(); if (!s) return 'window.__test.input missing';
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          else if (s.phase === 'aim') {
+            const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
+            if (!r || !r.w) { await h.wait(200); continue; }
+            const cx = r.x + r.w / 2, cy = r.y + r.h / 2, tx = r.x + r.w * fx, ty = r.y + r.h * fy;
+            await touch('touchStart', [{ x: cx, y: cy, id: 1 }]);
+            for (let i = 1; i <= 5; i++) { await touch('touchMove', [{ x: cx + (tx - cx) * i / 5, y: cy + (ty - cy) * i / 5, id: 1 }]); await h.wait(30); }
+            const d = await snap();
+            if (d && Math.abs(d.x) > 0.5 && d.drag) return true;
+            await touch('touchEnd', []);
+            return `a touch drag on the aim pad did not register (x=${d && d.x}, drag=${d && d.drag})`;
+          }
+          await h.wait(200);
+        }
+        return 'never reached the aim phase';
+      };
+      const zeroed = async what => {
+        const s = await snap();
+        if (!s) return 'input hook vanished';
+        if (s.x !== 0 || s.drag) return `after ${what} the input reads x=${s.x} drag=${s.drag} - the stick stayed stuck`;
+        return null;
+      };
+      let r;
+      // 1) a real touchCancel mid-drag zeroes everything
+      r = await dragOffCentre(0.95, 0.05); if (r !== true) return r;
+      await touch('touchCancel', []);
+      r = await zeroed('touchcancel'); if (r) return r;
+      // 2) window blur mid-drag zeroes everything
+      r = await dragOffCentre(0.05, 0.95); if (r !== true) return r;
+      await h.eval(() => window.dispatchEvent(new Event('blur')));
+      r = await zeroed('window blur'); if (r) return r;
+      await touch('touchEnd', []);
+      // 3) visibilitychange mid-drag zeroes everything
+      r = await dragOffCentre(0.95, 0.95); if (r !== true) return r;
+      await h.eval(() => document.dispatchEvent(new Event('visibilitychange')));
+      r = await zeroed('visibilitychange'); if (r) return r;
+      await touch('touchEnd', []);
+      return true;
+    },
+  },
   {
     id: 'keep-batting-flow',
     ask: 'KEEP: everything that works and looks right now (batting flow)',
