@@ -117,7 +117,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }
@@ -166,7 +166,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }
@@ -212,7 +212,7 @@ export default [
         const t0 = Date.now();
         while (Date.now() - t0 < 12000) {
           const s = await snap(); if (!s) return 'window.__test.input missing';
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); }
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); const t = document.getElementById('throwBtn'); if (t) t.click(); }); }
           else if (s.phase === 'aim') {
             const r = await h.eval(() => { const e = document.getElementById('aimPad'); if (!e) return null; const b = e.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; });
             if (!r || !r.w) { await h.wait(200); continue; }
@@ -236,6 +236,25 @@ export default [
       if (!s) return 'input hook vanished';
       if (s.x !== 0 || s.drag) return `after window blur the input reads x=${s.x} drag=${s.drag} - the stick stayed stuck`;
       return true;
+    },
+  },
+  {
+    id: 'play-umpire-behind-batter',
+    ask: "The umpire stands behind the batter (behind the catcher) - never a second man stacked on the pitcher (owner G-85 fix)",
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await page.waitForFunction(() => window.__test && window.__test.stadium && window.__test.stadium.loaded, null, { timeout: 20000 });
+      await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+      const ok = await page.waitForFunction(() => { const u = window.__test.umpire; return u && u.visible; }, null, { timeout: 10000 }).then(() => true).catch(() => false);
+      if (!ok) return 'the umpire never took his spot behind the batter';
+      return h.eval(() => {
+        const u = window.__test.umpire;
+        if (!u.dedup) return 'a second man is still stacked on the pitcher or the catcher';
+        if (!(u.z > u.catcherZ + 0.8)) return 'umpire is not behind the catcher: z=' + u.z + ' catcher z=' + u.catcherZ;
+        if (Math.abs(u.x) > 1.6) return 'umpire is too far off the plate: x=' + u.x;
+        if (Math.hypot(u.x, u.z + 20.17) < 15) return 'the umpire is up by the pitcher, not behind the batter';
+        return true;
+      });
     },
   },
   {
@@ -685,4 +704,16 @@ export default [
       return true;
     },
   },
+  {
+    id: 'tester-reality-hook-no-go',
+    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      let keys = null;
+      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
+      if (!keys) return 'window.__reality never appeared';
+      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
+      return hasGo ? true : '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
+    },
 ];

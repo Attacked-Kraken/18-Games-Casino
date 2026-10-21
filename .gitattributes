@@ -1,0 +1,3 @@
+jobs/QUEUE.md merge=union
+CLAIMS.md merge=union
+jobs/G-*.md merge=union

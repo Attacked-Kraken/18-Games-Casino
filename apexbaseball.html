@@ -202,7 +202,7 @@
     <h2>APEX ARCADE</h2>
     <p>You play <b>BOTH sides</b>: you <b>BAT</b> in the bottom of each inning and you <b>PITCH</b> in the top of each inning, against the CPU.</p>
     <ul>
-      <li><b>PITCHING:</b> pick FASTBALL / CURVEBALL / CHANGEUP (<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>), tap the zone pad to aim, press THROW, then tap LOCK when the needle is in the green (or do nothing &mdash; it throws itself after a moment). Miss the green and the pitch sails.</li>
+      <li><b>PITCHING:</b> pick FASTBALL / CURVEBALL / CHANGEUP (<kbd>1</kbd><kbd>2</kbd><kbd>3</kbd>), press THROW to open the zone pad, tap the pad to aim, press THROW again, then tap LOCK when the needle is in the green (or do nothing &mdash; it throws itself after a moment). Miss the green and the pitch sails.</li>
       <li><b>BATTING:</b> watch the CPU windup, press <b>SWING</b> (<kbd>space</kbd>) as the ball reaches the glowing ring. Don't swing at bad pitches — 4 balls is a walk, 3 strikes and you're out. Fouls count as strikes (but can't strike you out).</li>
       <li>Fielding and base running are automatic, with real force-out and double-play rules. Extra innings if tied after 3. Walk-off wins end it on the spot.</li>
     </ul>
@@ -259,6 +259,7 @@ const BASES=[B1,B2,B3];
 const TEAMS = {
   home:{ name:'Comets', short:'COM', uni:0x1e3fae, trim:0xffffff, cap:0x16307a, skin:[0xd9a066,0xb57748,0x8c5a2b] },
   away:{ name:'Sharks', short:'SHK', uni:0x0e7c7b, trim:0x111111, cap:0x083f3e, skin:[0xe8b07e,0xc98a5a,0x9c6633] },
+  ump:{ name:'Umpire', short:'UMP', uni:0x191b21, trim:0x26272c, cap:0x0b0b0e, skin:[0xd9a066,0xb57748,0x8c5a2b] },
 };
 
 /* ---------------- game state ---------------- */
@@ -481,9 +482,13 @@ const runnerMeshes = [makePlayer('away'), makePlayer('away'), makePlayer('away')
 runnerMeshes.forEach(r=>{ r.g.visible=false; });
 place(catcherMesh, 0,0,2.4, Math.PI);
 place(batterMesh, -2.4,0,0.6, Math.PI*0.08);
+const umpireMesh = makePlayer('ump');        // the umpire - he belongs behind the batter, never up on the mound
+place(umpireMesh, -1.0, 0, 3.8, Math.PI);
 
 function dressDefense(team){
   runnerAnims.length = 0;
+  fielders.P = pitcherMesh; fielders.C = catcherMesh;   // P and C are the pitcher and catcher themselves - no second men stacked on their spots
+  place(umpireMesh, -1.0, 0, 3.8, Math.PI); umpireMesh.g.visible = true;   // the umpire stands behind the catcher, set for every pitch
   for (const k of Object.keys(fielders)) if (fielders[k]){ fielders[k].runTo = null; fielders[k]._running = false; }
   if (batterMesh.batProp) batterMesh.batProp.visible = true;
   else if (batterMesh.bat) batterMesh.bat.visible = true;
@@ -632,7 +637,7 @@ function attachAthlete(p, slotIdx){
 const athleteQueue = []; let athletePumpOn = false;
 function fitAthletes(){
   if (!H) return;
-  const slots = [batterMesh, pitcherMesh, catcherMesh, ...runnerMeshes, ...Object.values(fielders)];
+  const slots = [batterMesh, pitcherMesh, catcherMesh, umpireMesh, ...runnerMeshes, ...Object.values(fielders)];
   slots.forEach((s, i) => { if (s && !s.athlete && !athleteQueue.some(q => q.p === s)) athleteQueue.push({ p:s, i }); });
   if (!athletePumpOn && athleteQueue.length){ athletePumpOn = true; requestAnimationFrame(fitAthletesPump); }
 }
@@ -1472,10 +1477,9 @@ document.querySelectorAll('.ptype').forEach(b=>{
     pitchSel = b.dataset.p;
     lastPitchAct = performance.now();
     document.querySelectorAll('.ptype').forEach(x=>x.classList.toggle('sel', x===b));
-    if (G.phase==='select') beginAim();
   });
 });
-$('throwBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); if (G.phase==='select') beginAim(); if (G.phase==='aim') beginWindup(); });
+$('throwBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); if (G.phase==='select') beginAim(); else if (G.phase==='aim') beginWindup(); });
 $('lockBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); lockAccuracy(); });
 $('swingBtn').addEventListener('click', ()=>{ playerSwing(); });
 function playerSwing(){
@@ -1531,7 +1535,6 @@ window.addEventListener('keydown', e=>{
     const p = ['fast','curve','change'][+e.code.slice(-1)-1];
     pitchSel = p;
     document.querySelectorAll('.ptype').forEach(x=>x.classList.toggle('sel', x.dataset.p===p));
-    if (G.phase==='select') beginAim();
   }
   else if (e.code==='ArrowLeft'){ aim.x=clamp(aim.x-0.25,-3,3); updateAimDot(); e.preventDefault(); }
   else if (e.code==='ArrowRight'){ aim.x=clamp(aim.x+0.25,-3,3); updateAimDot(); e.preventDefault(); }
@@ -2014,6 +2017,7 @@ window.__test = {
   get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, night: _park.night }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get input(){ return { aimX: aim.x, aimY: aim.y, dragging: aimPid !== null }; },
+  get umpire(){ const a = umpireMesh.g.position, c = catcherMesh.g.position; return { x:a.x, z:a.z, visible:umpireMesh.g.visible, catcherZ:c.z, dedup: fielders.P === pitcherMesh && fielders.C === catcherMesh }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
   friend: {

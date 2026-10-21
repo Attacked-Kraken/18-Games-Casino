@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Apex F1 Racing</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏁</text></svg>"> <!-- G-95: declare an icon so the browser never 404s on /favicon.ico (the Grok audit's one console error) -->
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#04070d; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; color:#eaf2ff; }
@@ -1366,6 +1367,17 @@ class Car {
     if(this.mesh.userData.drsFlap) this.mesh.userData.drsFlap.rotation.z=this.drsOpen?-0.5:0;
     // rain light in wet
     if(this.mesh.userData.rainLight) this.mesh.userData.rainLight.visible=Race.weather.wet>0.4;
+    // G-81: the REALITY robot's contact markers ride on the road surface under this car's wheels (player car only)
+    if(this.isPlayer){
+      if(!_realityAnchors[0].parent) for(const a of _realityAnchors) scene.add(a); // scene exists by the time a car is placed
+      for(let i=0;i<4;i++){
+        const w=this.mesh.userData.wheels[i]; if(!w) break;
+        w.getWorldPosition(_realityV);
+        const dx=_realityV.x-p.x, dz=_realityV.z-p.z;
+        const sp=Track.posAt(this.s+dx*f.tx+dz*f.tz, this.d+dx*f.nx+dz*f.nz, 0);
+        _realityAnchors[i].position.set(sp.x, sp.y+0.01, sp.z);
+      }
+    }
   }
   lapCrossed(){
     this.lapTimes.push(this._lapT||0); this._lapT=0;
@@ -1408,6 +1420,10 @@ function initInput(){
   stick.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===stickId) stickMove(t); },{passive:false});
   const stickEnd=e=>{ for(const t of e.changedTouches) if(t.identifier===stickId){ stickId=null; Input.steer=0; setKnob(0); } };
   stick.addEventListener('touchend',stickEnd); stick.addEventListener('touchcancel',stickEnd);
+  // G-91 (owner patch 04c): let go of EVERYTHING when iOS steals the touch (notification, app switch) - the stick used to stay pushed
+  const releaseAll=()=>{ stickId=null; Input.steer=0; setKnob(0); Input.gas=Input.brake=Input.reverse=Input.ers=Input.left=Input.right=false; document.querySelectorAll('.on').forEach(el=>el.classList.remove('on')); };
+  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
   // mouse fallback for desktop testing
   let mouseDown=false;
   stick.addEventListener('mousedown',e=>{ mouseDown=true; stickMove(e); });
@@ -2406,6 +2422,32 @@ window.__test = {
   })),
   lineAt: (s) => ({ rlD: +Track.rlDAt(s).toFixed(2), maxV: +Track.maxSpeedAt(s, 1).toFixed(1),
     curv: +Math.abs(Track.frameAt(s).curv).toFixed(4) }),
+};
+/* G-81: REALITY robot hook (REALITY.md "Robot hook") - the robot measures size, racing direction and
+   ground contact in the running game. Getters keep it pointed at the live weekend's cars. */
+const _realityAnchors=[new THREE.Object3D(), new THREE.Object3D(), new THREE.Object3D(), new THREE.Object3D()];
+const _realityV=new THREE.Vector3();
+function _realitySD(x, z){ // nearest track point -> arclength s + lateral d of a world point
+  const sm=Track.samples; let bi=0, bd=1e18;
+  for(let i=0;i<sm.length;i++){ const dx=sm[i].x-x, dz=sm[i].z-z, q=dx*dx+dz*dz; if(q<bd){ bd=q; bi=i; } }
+  const p=sm[bi], dx=x-p.x, dz=z-p.z;
+  return { s: p.s+dx*p.tx+dz*p.tz, d: dx*p.nx+dz*p.nz };
+}
+window.__reality={
+  kind: 'f1',
+  get player(){ return (Race.player && Race.player.mesh) || null; },
+  get others(){ return Race.cars ? Race.cars.filter(c=>!c.isPlayer && c.mesh).map(c=>c.mesh) : []; },
+  get contact(){ return Race.player ? _realityAnchors : []; },
+  ground: (x, z)=>{ if(!Track.samples || !Track.samples.length) return 0; const sd=_realitySD(x, z); return Track.posAt(sd.s, sd.d, 0).y; },
+  track: (x, z)=>{ if(!Track.samples || !Track.samples.length) return { x:0, z:1 }; const sd=_realitySD(x, z); const f=Track.frameAt(sd.s); return { x:f.tx, z:f.tz }; },
+  go: (on)=>{ try{
+    if(!on){ Input.gas=false; return; }
+    if(Race.mode==='grid'){ try{ Race.beginRace(); }catch(e){} }
+    if(Race.mode==='lights' && Race.stateT<4.2+(Race._holdT||0)) Race.stateT=4.2+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
+    Input.gas=true;
+  }catch(e){} },
+  // no expect override: the robot's own-axes box reads this car at 5.47 m long (the G-73 mesh scale cancels
+  // in its inverse-matrix math) - inside the REALITY table's 4.8-6.4 m for kind 'f1', so no declaration is made
 };
 /* boot */
 window.__apexBoot=true;

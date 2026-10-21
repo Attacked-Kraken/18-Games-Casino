@@ -7,6 +7,7 @@ Claudes: keep each list short, one change per step, the owner's words. `- [x]` =
 was already sent. Muses: don't edit this file.
 
 ## window 1 · apexbaseball.html
+- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs.
 - [x] TESTER: The ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he can strike out on one strike or walk on one ball. See it: finish an at-bat with a strikeout or a walk, then watch the next batter's count. (fixed in the G-57 redo)
 - [x] TESTER: Help cannot be closed on a sideways phone - the CLOSE button sits fully below the screen and the overlay does not scroll; the Play a friend START and CLOSE buttons are cut off at the bottom too. See it: open ? Help or Play a friend with the phone held sideways. (fixed in the G-57 redo)
 - [x] TESTER: The ? help button sits on top of the CAM button at the top right and covers half of it (CAM reads 'M-AUTO'), so the covered part of the CAM button cannot be tapped. See it: look at the top right corner on any screen. (fixed in the G-57 redo)
@@ -17,7 +18,8 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
-- [ ] TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
+- [ ] TESTER: Career PLAY NEXT MATCH never starts the match - it saves the fixture, reloads to the main menu, and the match only starts if you press CAREER again on the menu. Proof: play test tester-career-play-starts-match fails in tools/game-check/fixes/apexhockey.mjs.
+- [x] (already on main since G-86 - G-92/G-93 confirmed) TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
 - [ ] TESTER: The stick never resets when the app loses focus or is hidden mid-hold - the knob stays pushed at +40 px after blur and a hide/show cycle, and only a real touchend centres it. Proof: play test tester-stick-resets-on-blur fails in tools/game-check/fixes/apexhockey.mjs.
 - [ ] TESTER: The puck is about 5x too big: about 40 cm across and 11 cm thick measured in the game - a real puck is 7.6 cm across and 2.5 cm thick (REALITY.md). Proof: play test tester-puck-size fails in tools/game-check/fixes/apexhockey.mjs.
 - [ ] TESTER: Career shows 1 goal scored before any game is played (career panel says 1 G · 0 A at 0-0 with Week 1 unplayed) - start a career and open the career panel.

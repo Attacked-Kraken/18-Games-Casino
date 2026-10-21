@@ -19,6 +19,20 @@ for (const node of doc.getRoot().listNodes()) {
   if (flat || named) { removed.push(node.getName() || '(no name)'); node.dispose(); }
 }
 await doc.transform(prune());
+// owner Oct 21 2026 (Sketchfab robot upgrade a): the MODEL-REQUESTS line may say a real size - "length 4.6 m", "height 1.8 m"
+// or "width 2 m" - and the model is scaled to it here, so no game guesses. length = the longest flat side (X or Z),
+// height = Y, width = the shorter flat side.
+const want = /^(length|height|width)\s+([\d.]+)/i.exec(process.env.SIZE || '');
+if (want) {
+  const sc = doc.getRoot().getDefaultScene() || doc.getRoot().listScenes()[0];
+  const bb = getBounds(sc); const d = bb.max.map((v, i) => v - bb.min[i]);
+  const have = want[1].toLowerCase() === 'height' ? d[1] : want[1].toLowerCase() === 'width' ? Math.min(d[0], d[2]) : Math.max(d[0], d[2]);
+  const f = +want[2] / (have || 1);
+  if (f > 0 && isFinite(f) && Math.abs(f - 1) > 0.01) {
+    for (const n of sc.listChildren()) { const s0 = n.getScale(); n.setScale([s0[0] * f, s0[1] * f, s0[2] * f]); const t0 = n.getTranslation(); n.setTranslation([t0[0] * f, t0[1] * f, t0[2] * f]); }
+    console.log(`::notice title=Model cleaner::${out}: scaled x${f.toFixed(3)} so its ${want[1].toLowerCase()} is ${want[2]} m (was ${have.toFixed(2)} m)`);
+  }
+}
 await io.write(out, doc);
 const nb = getBounds(doc.getRoot().getDefaultScene() || doc.getRoot().listScenes()[0]);
 const sz = nb.max.map((v, i) => +(v - nb.min[i]).toFixed(2));

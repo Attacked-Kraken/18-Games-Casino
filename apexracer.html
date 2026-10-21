@@ -292,9 +292,9 @@ import { GLTFLoader } from './vendor/GLTFLoader.js';
 /* G-01: owner's player car - V12 Goblin 3D model, preloaded at boot so it's ready for menu/garage/race */
 /* G-04: real 3D cars - registry of fetched models, preloaded at boot */
 const GLB_MODELS = {
-  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat'], tire: ['car_tire'], rim: ['car_body'], glass: ['car_glass'], rot: -Math.PI / 2 },
-  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'], rot: Math.PI / 2 },
-  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial003', 'palettematerial002'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 },
+  goblin: { url: 'models/fetched/fictional-supercar-v12-goblin-0a20e4.glb', body: ['clearcoat', 'car_body'], tire: ['car_tire'], rim: [], glass: ['car_glass'], rot: -Math.PI / 2 }, /* G-46 fix: car_body is the body shell (45k of 60k verts) - as 'rim' it wore grey metal and the car was a patchwork */
+  patriot: { url: 'models/fetched/patriot-p10-xr-d87ddc.glb', body: ['paintjob', 'misc', 'carbon', 'chrome', 'darkgray', 'board', 'darkalu', 'klotz', 'grille', 'aluminummatte', 'gray', 'material', 'material_13', 'd2fence'], tire: ['tire'], rim: ['rims'], glass: ['windscreen', 'plexiglass'], rot: Math.PI / 2 }, /* G-46 fix: the shell panels join the paint - only paintjob (11% of verts) took the color before, the rest stayed dark factory metal and the car all but vanished at night */
+  tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial003', 'palettematerial002', 'palettematerial009', 'palettematerial010'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 }, /* G-46 fix: 009/010 are the big body panels (12k verts) - they kept their dark factory material */
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
 };
@@ -640,7 +640,7 @@ function tireGeo(r, rr, tw) {
 }
 const FIN = { gloss: { n: 'Gloss', p: 0 }, metal: { n: 'Metallic', p: 1500 }, pearl: { n: 'Pearl Shift', p: 6000 }, candy: { n: 'Candy', p: 4000 }, matte: { n: 'Matte', p: 3000 }, chrome: { n: 'Chrome', p: 12000 } };
 function paintMat(hex, fin) {
-  const m = new THREE.MeshPhysicalMaterial({ color: hex, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.3 });
+  const m = new THREE.MeshPhysicalMaterial({ color: hex, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 1.55 }); /* G-46 fix: proper shiny paint - stronger clearcoat reflections on every car */
   if (fin === 'gloss') { m.metalness = 0.05; m.roughness = 0.3; }
   else if (fin === 'metal') { m.metalness = 0.72; m.roughness = 0.33; }
   else if (fin === 'pearl') { m.metalness = 0.35; m.roughness = 0.26; m.iridescence = 1; m.iridescenceIOR = 1.75; m.iridescenceThicknessRange = [250, 900]; }
@@ -1681,6 +1681,10 @@ function audioInit() {
   o1.connect(f); o2.connect(g2); g2.connect(f); o3.connect(f); f.connect(g); g.connect(AU.master); o1.start(); o2.start(); o3.start(); AU.eng = { o1, o2, o3, f, g };
   const loop = (type, fr, q) => { const s = c.createBufferSource(); s.buffer = nb; s.loop = true; const fl = c.createBiquadFilter(); fl.type = type; fl.frequency.value = fr; fl.Q.value = q; const gg = c.createGain(); gg.gain.value = 0; s.connect(fl); fl.connect(gg); gg.connect(AU.master); s.start(); return gg; };
   AU.scr = loop('bandpass', 1500, 5); AU.nos = loop('highpass', 2600, 0.7); AU.wind = loop('lowpass', 420, 0.6);
+  /* G-80: the owner's sounds, decoded once into buffers - sfx() plays these when they are loaded, the old synth stays as fallback */
+  AU.buf = {}; const UIK = { tap: 'tap', coin: 'coin_pickup', win: 'win_jingle', unlock: 'unlock', levelup: 'level_up', popen: 'popup_open', pclose: 'popup_close', star1: 'star_1', star2: 'star_2', star3: 'star_3', near2: 'combo_x2', near3: 'combo_x3', near4: 'combo_x4', near5: 'combo_x5' };
+  for (const k in UIK) fetch('sounds/ui-kit/arcade/' + UIK[k] + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { AU.buf[k] = b; }).catch(() => {});
+  for (const [k, f] of [['stingW', 'sports_arena_victory_sting'], ['stingL', 'sports_arena_gameover_sting']]) fetch('sounds/pack/music/sports_arena/' + f + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { AU.buf[k] = b; }).catch(() => {});
   musicStart(MUS.want || 'menu');
 }
 function setSnd(on) { S.snd = on ? 1 : 0; save(); if (AU.master) AU.master.gain.value = on ? 0.75 : 0; }
@@ -1689,7 +1693,9 @@ function refreshMute() { const t = S.snd ? '🔊 Sound On' : '🔈 Sound Off', i
   for (const id of ['bMute', 'gMute']) { const e = $(id); if (e) e.textContent = i; } }
 function toggleMute() { audioInit(); setSnd(!S.snd); refreshMute(); }
 function sfx(k) {
-  const c = AU.ctx; if (!c || !S.snd) return; const t = c.currentTime, g = c.createGain(); g.connect(AU.master);
+  const c = AU.ctx; if (!c || !S.snd) return;
+  const B = AU.buf && AU.buf[k]; if (B) { const s = c.createBufferSource(); s.buffer = B; const g2 = c.createGain(); g2.gain.value = k === 'tap' ? 0.55 : 0.9; s.connect(g2); g2.connect(AU.master); s.start(); return; }
+  const t = c.currentTime, g = c.createGain(); g.connect(AU.master);
   const tone = (f0, f1, dur, type, vol) => { const o = c.createOscillator(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(g); o.start(t); o.stop(t + dur + 0.02); };
   const noise = (dur, type, fr, vol) => { const s = c.createBufferSource(); s.buffer = AU.nb; const f = c.createBiquadFilter(); f.type = type; f.frequency.value = fr; s.connect(f); f.connect(g); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur); s.start(t); s.stop(t + dur + 0.02); };
   if (k === 'beep') tone(660, 660, 0.18, 'square', 0.12); else if (k === 'go') tone(990, 1320, 0.4, 'square', 0.14);
@@ -1706,40 +1712,34 @@ function engineSnd(rpm, load, on, nos, scr, spd) {
   AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.scr.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.2 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
 }
 
-/* ------------------------------------------------------------------ music: synthesized menu + race loops (no audio files) */
-const MUS = { want: 'menu', mode: null, timer: null, step: 0, next: 0 };
-function musicStart(mode) {
-  MUS.want = mode; const c = AU.ctx; if (!c) return; if (MUS.mode === mode && MUS.timer) return; musicStop();
-  MUS.mode = mode; MUS.step = 0; MUS.next = c.currentTime + 0.15;
-  if (!AU.music) { AU.music = c.createGain(); AU.music.gain.value = 0.9; AU.music.connect(AU.master); }
-  const spb = mode === 'race' ? 60 / 138 / 2 : 60 / 92 / 2;
-  MUS.timer = setInterval(() => { const cc = AU.ctx; if (!cc || cc.state !== 'running') return;
-    while (MUS.next < cc.currentTime + 0.4) { if (S.snd) playStep(mode, MUS.step, MUS.next, spb); MUS.step = (MUS.step + 1) % 64; MUS.next += spb; } }, 110);
+/* ------------------------------------------------------------------ music: the owner's pack - sounds/pack/music/sports_arena/ (G-80)
+   menu track on the menus; a race plays the same track in three layers (low/mid/high)
+   crossfaded by the car's speed; a win or a loss ends the race with its sting. */
+const MUS = { want: 'menu', mode: null, els: null, mix: { low: -1, mid: -1, high: -1 } };
+function musBuild() {
+  const c = AU.ctx;
+  const mk = (name) => { const a = new Audio(); a.src = 'sounds/pack/music/sports_arena/sports_arena_' + name + '.mp3'; a.loop = true; a.preload = 'auto'; const g = c.createGain(); g.gain.value = 0; c.createMediaElementSource(a).connect(g); g.connect(AU.music); const p = a.play(); if (p && p.catch) p.catch(() => {}); return { a, g }; };
+  MUS.els = { menu: mk('menu'), low: mk('gameplay_low'), mid: mk('gameplay_mid'), high: mk('gameplay_high') };
 }
-function musicStop() { if (MUS.timer) clearInterval(MUS.timer); MUS.timer = null; MUS.mode = null; }
-function mNote(f, t, dur, type, vol) { const c = AU.ctx, o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.value = f;
-  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(AU.music); o.start(t); o.stop(t + dur + 0.05); }
-function mNoise(t, dur, type, fr, vol) { const c = AU.ctx, s = c.createBufferSource(); s.buffer = AU.nb; const f = c.createBiquadFilter(); f.type = type; f.frequency.value = fr;
-  const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(AU.music); s.start(t); s.stop(t + dur + 0.02); }
-const N2F = (n) => 440 * Math.pow(2, (n - 69) / 12);
-function playStep(mode, s, t, spb) {
-  if (mode === 'menu') { /* calm looped pads: Am - F - C - G + sparse plucks */
-    const prog = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]], ch = prog[Math.floor(s / 16) % 4];
-    if (s % 16 === 0) ch.forEach((n) => { mNote(N2F(n), t, spb * 14, 'triangle', 0.05); mNote(N2F(n) * 1.003, t, spb * 14, 'sine', 0.04); });
-    if (s % 16 === 8) mNote(N2F(ch[0] + 12), t, spb * 6, 'sine', 0.05);
-    const mel = [69, 72, 76, 74, 72, 69, 67, 69];
-    if (s % 4 === 2 && ((s >> 2) % 3) !== 2) mNote(N2F(mel[(s >> 2) % 8]), t, spb * 3, 'triangle', 0.028);
-  } else { /* driving race track: bass, kick, hats, arp */
-    const bar = Math.floor(s / 16) % 4, roots = [40, 36, 43, 38];
-    if (s % 2 === 0) mNote(N2F(roots[bar] - 12), t, spb * 1.8, 'sawtooth', 0.055);
-    if (s % 4 === 0) { const c = AU.ctx, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(120, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.12);
-      g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16); o.connect(g); g.connect(AU.music); o.start(t); o.stop(t + 0.2); }
-    if (s % 2 === 1) mNoise(t, 0.05, 'highpass', 7000, 0.028);
-    if (s % 8 === 6) mNoise(t, 0.18, 'bandpass', 1800, 0.045);
-    const arp = [64, 67, 71, 74, 71, 67];
-    if (s % 2 === 0 && (s % 16) > 3) mNote(N2F(arp[(s >> 1) % 6] + (bar === 3 ? -2 : 0)), t, spb * 1.5, 'square', 0.016);
-  }
+function musicStart(mode) {
+  MUS.want = mode; const c = AU.ctx; if (!c) return;
+  if (!AU.music) { AU.music = c.createGain(); AU.music.gain.value = 0.9; AU.music.connect(AU.master); }
+  if (!MUS.els) musBuild();
+  MUS.mode = mode; const t = c.currentTime, E = MUS.els;
+  if (mode === 'menu') { for (const k of ['low', 'mid', 'high']) { E[k].g.gain.setTargetAtTime(0, t, 0.3); E[k].a.pause(); } const p = E.menu.a.play(); if (p && p.catch) p.catch(() => {}); E.menu.g.gain.setTargetAtTime(0.85, t, 0.4); }
+  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); E.menu.a.pause(); for (const k of ['low', 'mid', 'high']) { const p = E[k].a.play(); if (p && p.catch) p.catch(() => {}); } MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
+}
+function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); MUS.els[k].a.pause(); } }
+function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
+  if (MUS.mode !== 'race' || !MUS.els) return; const c = AU.ctx; if (!c) return;
+  const band = (x, a, b, d, e) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < d ? 1 : x < e ? 1 - (x - d) / (e - d) : 0;
+  const tg = { low: 0.85 * (1 - band(sp, 16, 34, 1e9, 1e9)), mid: 0.85 * band(sp, 16, 34, 52, 70), high: 0.85 * band(sp, 52, 70, 1e9, 1e9) };
+  const t = c.currentTime;
+  for (const k of ['low', 'mid', 'high']) if (Math.abs(tg[k] - MUS.mix[k]) > 0.03) { MUS.mix[k] = tg[k]; MUS.els[k].g.gain.setTargetAtTime(tg[k], t, 0.25); }
+}
+function musSting(win) { /* race over: stop the layers and play the win or game-over sting once, over the music bus */
+  musicStop(); const c = AU.ctx; if (!c || !AU.music || !S.snd) return; const b = AU.buf && AU.buf[win ? 'stingW' : 'stingL']; if (!b) return;
+  const s = c.createBufferSource(); s.buffer = b; s.connect(AU.music); s.start();
 }
 
 /* ------------------------------------------------------------------ race */
@@ -1890,7 +1890,7 @@ function stepTraffic(t, dt) {
   else t.v += clamp(t.v0 - t.v, -6 * dt, 3 * dt);
   t.s += (t.v * dt) / T.ds; T.at(t.s, t.d, tmpA); t.x = tmpA.x; t.z = tmpA.z; t.h = tmpA.h + (t.spin || 0);
   const g = (t.s - P.prog) * T.ds;
-  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.07); pop('NEAR MISS!  +NITRO'); sfx('coin'); }
+  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.07); pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); /* G-80: near misses chain into the kit's combo sounds */ }
   t.ahead = g > 0;
   if (g < -70 || g > 900) { t.s = P.prog + (220 + Math.random() * 360) / T.ds; t.d = LANES[Math.floor(Math.random() * 4)]; t.v = t.v0; t.hit = 0; t.spin = 0; t.ahead = true; }
 }
@@ -1943,14 +1943,14 @@ function updateRace(dt) {
   /* sound */
   const st = P.st, frac = clamp(Math.abs(P.spd) / st.top, 0, 1.3), G2 = [0, 0.14, 0.28, 0.43, 0.58, 0.74, 0.9, 9]; let gear = 1; while (gear < 7 && frac > G2[gear]) gear++;
   if (gear > R.gear && R.t > 0) sfx('shift'); R.gear = gear; const rpm = R.t < 0 ? 0.25 + Math.random() * 0.1 + (K.gas || K.sy > 0.2 ? 0.3 : 0) : clamp((frac - G2[gear - 1]) / (G2[gear] - G2[gear - 1]), 0, 1) * 0.75 + 0.25;
-  engineSnd(rpm, R.t < 0 ? 0.3 : (K.gas || K.sy > 0.15) ? 1 : 0.2, true, P.nosOn, P.slide / 9, Math.abs(P.spd));
+  engineSnd(rpm, R.t < 0 ? 0.3 : (K.gas || K.sy > 0.15) ? 1 : 0.2, true, P.nosOn, P.slide / 9, Math.abs(P.spd)); musRaceMix(Math.abs(P.spd));
   if (R.popT > 0) { R.popT -= dt; if (R.popT <= 0) $('pop').style.opacity = 0; }
   $('wrong').style.display = R.wrongT > 1 ? 'block' : 'none';
 }
 function playerFinished() {
   const place = standings().findIndex((e) => e.isP) + 1; R.myPlace = place;
   bigMsg(place === 1 ? '🏆 1ST!' : ord(place)); setTimeout(() => { $('msg').style.opacity = 0; }, 2500);
-  if (place === 1) { R.fwOn = 6; sfx('win'); }
+  if (place === 1) { R.fwOn = 6; } musSting(place === 1); /* G-80: victory sting on a win, game-over sting on a loss */
   $('ctl').style.display = 'none';
   setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200);
 }
@@ -2055,14 +2055,14 @@ function renderPlaces() {
 }
 let SH = null;
 function openSheet(p) {
-  SH = { p, laps: Math.max(8, S.laps || 8) }; show('sheet'); G.mode = 'sheet';
+  SH = { p, laps: Math.max(8, S.laps || 8) }; show('sheet'); G.mode = 'sheet'; sfx('popen');
   $('shT').textContent = `${p.flag} ${p.city}`; $('shS').textContent = `${BNAME[p.biome]} · ${BIO[p.biome].hall ? 'Indoors' : BIO[p.biome].cave ? 'Underground' : TODN[p.tod]} · ${'★'.repeat(p.tier)} · 8 racers`;
   const draw = () => { $('shLaps').innerHTML = [8, 10, 12, 15, 20].map((l) => `<button class="chip ${l === SH.laps ? 'on' : ''}" data-l="${l}">${l} laps</button>`).join('');
     $('shLaps').querySelectorAll('.chip').forEach((b) => { b.onclick = () => { SH.laps = +b.dataset.l; S.laps = SH.laps; save(); draw(); }; });
     const tr = BIO[p.biome].traffic ? 'City traffic on the road. ' : ''; $('shP').textContent = `${tr}1st place pays ${fmt$(Math.round(p.prize * SH.laps / 8))}. Your car: ${CAR[S.cur].name}.`; };
   draw();
 }
-$('shX').onclick = () => openWorld(G.pick === 'friend' ? 'friend' : null); $('shGo').onclick = () => startRace(SH.p, SH.laps);
+$('shX').onclick = () => { sfx('pclose'); openWorld(G.pick === 'friend' ? 'friend' : null); }; $('shGo').onclick = () => { sfx('pclose'); startRace(SH.p, SH.laps); };
 function startRace(place, laps) {
   S.lastPlace = place.i; save(); show('loading'); G.mode = 'loading'; $('ldT').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]}`; audioInit(); ldBar(8);
   setTimeout(async () => { try { await setupRace(place, laps, G.friend); } catch (e) { console.error(e); toMenu(); } }, 60);
@@ -2088,12 +2088,13 @@ function showResults() {
   // rec1 2026-10-10 (owner: totals box): 1st place is a win, anything else a loss; once per race (R is new for every race)
 
   show('result'); G.mode = 'result';
+  if (!R.sndDone) { R.sndDone = 1; musicStart('menu'); if (pos === 0) sfx('win'); setTimeout(() => sfx(pos === 0 ? 'star3' : pos < 3 ? 'star2' : pos < 6 ? 'star1' : 'none'), 700); } /* G-80: win jingle + a star for the finish */
 }
 $('rGar').onclick = () => { endRace(); openGarage(); };
 $('rAgain').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
 $('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length]; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); openSheet(p); };
-function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); }
-$('pRes').onclick = () => { if (!R) return; R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
+function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
+$('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
 $('pRe').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
 $('pQuit').onclick = () => toMenu();
 
@@ -2116,7 +2117,7 @@ function clearPrev(redraw) { if (!G.prev) return; G.prev = null; G.prevCfg = nul
 function buy(cost, fn) {
   if (cost > 0 && G.prev !== G.tapKey) { G.prev = G.tapKey; G.prevCfg = JSON.parse(JSON.stringify(S.cars[G.gSel])); fn(G.prevCfg); setGarageCar(G.gSel, G.prevCfg); renderGarage(); sfx('tap'); return; }
   G.prev = null; G.prevCfg = null;
-if (cost > S.cash) { flashG('Not enough coins, win some races!'); sfx('crash'); return; } S.cash -= cost; fn(S.cars[G.gSel]); save(); setGarageCar(G.gSel, S.cars[G.gSel]); renderGarage(); if (cost) sfx('coin'); else sfx('tap'); }
+if (cost > S.cash) { flashG('Not enough coins, win some races!'); sfx('crash'); return; } S.cash -= cost; fn(S.cars[G.gSel]); save(); setGarageCar(G.gSel, S.cars[G.gSel]); renderGarage(); if (cost) sfx('levelup'); else sfx('tap'); /* G-80: a bought part levels the car up */ }
 function flashG(t) { const e = $('gname'); const o = e.textContent; e.textContent = t; e.style.color = '#ff8a9a'; setTimeout(() => { e.style.color = ''; renderGarage(); }, 1400); }
 function renderGarage() {
   const id = G.gSel, owned = !!S.cars[id], c = gCfg(), s = stats(id, G.prevCfg || c), k = CAR[id];
@@ -2145,7 +2146,7 @@ function renderGarage() {
   Q('[data-car]', (b) => { clearPrev(); const q = CAR[b.dataset.car]; if (S.cars[q.id]) { G.gSel = q.id; S.cur = q.id; save(); setGarageCar(q.id, S.cars[q.id]); renderGarage(); sfx('tap'); return; }
     if (G.gSel !== q.id) { G.gSel = q.id; setGarageCar(q.id, defCfg(q.id)); renderGarage(); sfx('tap'); return; }
     if (q.price > S.cash) { flashG(`Need ${fmt$(q.price - S.cash)} more`); return; }
-    if (!confirm(`Buy the ${q.name} for ${fmt$(q.price)}?`)) return; S.cash -= q.price; S.cars[q.id] = defCfg(q.id); S.cur = q.id; save(); setGarageCar(q.id, S.cars[q.id]); renderGarage(); sfx('win'); });
+    if (!confirm(`Buy the ${q.name} for ${fmt$(q.price)}?`)) return; S.cash -= q.price; S.cars[q.id] = defCfg(q.id); S.cur = q.id; save(); setGarageCar(q.id, S.cars[q.id]); renderGarage(); sfx('unlock'); }); /* G-80: a bought car unlocks */
   Q('[data-paint]', (b) => { if (b.dataset.paint !== c.paint) buy(500, (x) => { x.paint = b.dataset.paint; }); });
   const pc = $('pc'); if (pc) pc.onchange = () => buy(500, (x) => { x.paint = pc.value; });
   Q('[data-wrap]', (b) => { const k = b.dataset.wrap; if (k !== (c.wrap || 'none')) buy(WRAPS[k][1], (x) => { x.wrap = k; }); });

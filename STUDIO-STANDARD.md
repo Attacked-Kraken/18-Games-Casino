@@ -212,6 +212,35 @@ to be made 11 times, and shared parts (characters/) broke other games.
 4. **Shared folders (characters/, kit/, venues/, models/) change only in their own job**, and that pull request must
    show the robot pictures of EVERY game that uses the part, not just yours.
 5. Every job still ends with a play test that proves it (`tools/game-check/fixes/<game>.mjs`) - see DONE.md.
+6. **FILE GUARD (owner, Oct 21 2026).** Every job order says `FILES YOU MAY CHANGE: ...`. A pull request may change ONE
+   game (its page `apex<game>.html`, its play tests `tools/game-check/fixes/apex<game>.mjs`, its `looks/<game>/` folder)
+   plus notes (your `jobs/G-NN.md` report, `jobs/QUEUE.md`, `reviews/`, `CLAIMS.md`, `LESSONS.md`, `MODEL-SEARCH.md`,
+   `MODEL-REQUESTS.md`). The report and test files are ALWAYS allowed. A shared part (`kit/`, `venues/`, `models/`,
+   `characters/`, `sounds/`) changes in its OWN pull request with no game page in it. Anything else (another game, the
+   hub `sports.html`, `games.json`, robots, workflows) is not yours: the game check robot FAILS the pull request with a
+   `FILE GUARD:` line and it cannot merge. This runs on every pull request, for every game, now and in the future.
+7. **WHERE THINGS ARE (owner, Oct 21 2026 - faster builders).** The top of `looks/<game>.md` holds a short map of the
+   game file: each part (menus, controls, camera, players/cars, AI, rules, HUD, sounds, venue) with its line numbers.
+   The builder updates it in every pull request that moves things. The robot posts a yellow line when it is missing.
+8. **QUICK CHECK before every pull request.** `tools/quick-check.sh apex<game>.html` runs the robot on ONE game
+   (1-3 min) and prints every red line and where the pictures are. Fix the red lines first, then open the PR. (Or run
+   the "Quick check" workflow on GitHub with your branch and game.)
+9. **Red line = exact line + picture.** When the robot fails a job, the Mac sends the Muse the exact failing line in
+   plain words and the robot's picture link, never "fix the failures".
+10. **Every job carries the owner's picture and a number for done.** The order links the owner's reference picture
+    for the game (`looks/<game>/target.jpg` or his newest `looks/<game>/owner-*/`) when there is one, and says what
+    DONE is in numbers: one CHANGED line per point asked, the job's new play test passing, and 0 red lines for the game.
+11. **TESTERS and BUILDERS are separate everywhere (owner, Oct 21 2026 - LOCKED).**
+    | | Tester (windows 7-10) | Builder (windows 1-6) |
+    |---|---|---|
+    | Name | PR title starts `TEST G-NN:`, branch `test/...` | PR title starts `BUILD G-NN:`, branch `build/...` |
+    | May change | only tests (`tools/game-check/fixes/`), `jobs/QUEUE.md`, `jobs/G-NN.md`, `reviews/`, `CLAIMS.md`. Never game code. | only the files its job lists (FILES YOU MAY CHANGE) |
+    | Robot passes it when | its NEW `tester-` tests FAIL on today's game (proof the problem is real); a new test that passes is a blocker | everything is green, no new red lines |
+    | Merges | by itself, at once (the builder gets the problem as its next step) | after the robot is green |
+    | Reaches the owner | never - it isn't a finished job | only once it is proven (0 red lines) |
+12. **Sketchfab robot (owner, Oct 21 2026).** Put the real size on the MODEL-REQUESTS line (`length 4.6 m`) and the
+    robot scales the model to it; it takes front/side/back/top pictures (`<model>-front.jpg`...) that the owner approves
+    on his job card BEFORE any game uses the model; fetch models with NO logos - a logo cleanup is its own small job.
 
 The 6 games being finished now (Baseball, Hockey, Flight, Track & Field, F1, Exotic Racer) follow rules 1, 2, 4 and 5
 now. Rule 3 (splitting their big files) waits - see LATER.md.

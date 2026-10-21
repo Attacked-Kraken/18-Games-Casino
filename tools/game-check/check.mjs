@@ -283,6 +283,12 @@ for (const g of games) {
     const dpf = r.studio.drawsPerFrame;
     if (dpf > (g.maxDraws || 450)) r.check.push(`Heavy for phones: about ${dpf} draw calls per frame (aim under ${g.maxDraws || 450}; merge meshes - see STUDIO-STANDARD.md "Phone budget")`); }
   if (bytes > 60e6) r.check.push(`Big download: about ${Math.round(bytes / 1e6)} MB before play (aim under 60 MB)`);
+  // WHERE THINGS ARE (owner Oct 21 2026 "faster builders"): every game's look board starts with a short map of the
+  // game file (what lives where, with line numbers) so a builder finds the spot in seconds. Missing = a yellow line.
+  try {
+    const lb = fs.readFileSync(path.join(here, '..', '..', 'looks', slug + '.md'), 'utf8');
+    if (!/WHERE THINGS ARE/i.test(lb.slice(0, 4000))) r.check.push('looks/' + slug + '.md has no "WHERE THINGS ARE" map at the top (STUDIO-STANDARD 9.7) - add one with line numbers and keep it current');
+  } catch (e) {}
   // ---------- the owner's FIX LIST for this game (tested while the game is running, sideways)
   r.fixes = [];
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
@@ -496,37 +502,12 @@ fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify({ when, sha, res
 console.log(`\n${count('PASS')} pass, ${count('CHECK')} check, ${count('FAIL')} fail`);
 // ---------- pull requests: block only NEW problems (main's own report is the baseline, so old issues don't trap a Muse)
 if (process.env.STRICT) {
+  // the verdict lives in judge.mjs (shared with the side-by-side PR check, game-check-pr.yml)
+  const { judge } = await import('./judge.mjs');
   let base0 = {}; try { base0 = JSON.parse(fs.readFileSync(process.env.BASELINE || 'base-results.json', 'utf8')); } catch (e) {}
-  const norm = (x) => x.replace(/\d+/g, '#');
-  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).map(norm))]));
-  const blockers = [];
-  // FAIR BLAME (Oct 18): a PR is only blocked for what it touched. Games re-checked just because a shared folder changed
-  // (models/, characters/, tools/game-check/) block only on hard breakage, not on their old/flaky owner tests; a model
-  // blocks only if the PR changed that model's own files. (Baseball #515 and Pebble #517 were blocked for Soccer marking
-  // and a Monster Truck model crash they never touched.)
   let changed = [];
   try { changed = fs.readFileSync('changed.txt', 'utf8').split('\n').map(x => x.trim()).filter(Boolean); } catch (e) {}
-  const direct = new Set(changed.filter(f => /^apex[a-z0-9]*\.html$/.test(f))
-    .concat(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html')));
-  const hard = /script error|black or blank|did not load|missing file|shader|not real 3d bodies|outside internet|casino wording|real brand/i;
-  // TESTER PRs (owner Oct 20 10:10 PM, Claude 03's catch): a tester (windows 7-10) only adds play tests that FAIL today +
-  // QUEUE lines - the red test IS the finding, the builder fixes the game next. A PR that changes ONLY test files, QUEUE.md,
-  // job reports or reviews is never blocked by its own failing tests. Any game/kit/model change = normal rules.
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\//.test(f));
-  if (testOnly) console.log('Tester PR (only tests / QUEUE / reports changed): its failing play tests are findings for the builder, not blockers.');
-  for (const r of results) for (const f of r.fail) {
-    if (/owner'?s eyes/i.test(f)) continue;
-    if (testOnly && /NOT done yet/i.test(f)) continue;
-    if (old.get(r.file) && old.get(r.file).has(norm(f))) continue;
-    if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
-    blockers.push(`${r.file}: ${f}`);
-  }
-  const oldM = new Set((base0.models || []).flatMap(m => (m.problems || []).map(x => m.name + '|' + norm(String(x)))));
-  for (const m of models) {
-    const mine = !changed.length || changed.some(f => f !== 'MODELS.md' && JSON.stringify(m).includes(f.replace(/\.(mjs|js|glb|webp|png|jpg)$/, '')));
-    if (!mine) continue;
-    for (const x of (m.problems || [])) if (!oldM.has(m.name + '|' + norm(String(x)))) blockers.push(`MODELS.md ${m.name}: ${x}`);
-  }
+  const blockers = judge({ results, models, base0, changed, branch: process.env.PR_BRANCH || '', title: process.env.PR_TITLE || '' });
   fs.writeFileSync(path.join(out, 'blockers.txt'), blockers.join('\n'));
   if (blockers.length) { console.log('\nBLOCKED - this pull request adds problems main does not have:\n- ' + blockers.join('\n- ')); process.exit(1); }
   console.log('\nNo new problems - OK to merge.');
