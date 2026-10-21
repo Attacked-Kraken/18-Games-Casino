@@ -46,11 +46,12 @@ jobs:
           npx playwright install --with-deps chromium webkit
 
       - name: Pick the games this pull request touches
-        if: github.event_name == 'pull_request'
+        # also a branch run started by a robot (workflow_dispatch on robot/* - main is protected, robots merge by PR)
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
         run: |
-          git fetch -q origin ${{ github.base_ref }} game-checks || true
+          git fetch -q origin ${{ github.base_ref || 'main' }} game-checks || true
           git show origin/game-checks:results.json > base-results.json 2>/dev/null || echo '{}' > base-results.json
-          CH=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          CH=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD)
           echo "$CH"
           echo "$CH" > changed.txt
           G=$(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$' | tr '\n' ',')
@@ -64,13 +65,13 @@ jobs:
           echo "Checking: ${G:-no games (models only)}"
 
       - name: Remember the last report (for auto-undo)
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           git fetch -q origin game-checks || true
           git show origin/game-checks:results.json > prev-results.json 2>/dev/null || echo '{}' > prev-results.json
 
       - name: Pick what main needs re-played (fast check - only games that changed)
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p old-checks
           git archive origin/game-checks 2>/dev/null | tar -x -C old-checks 2>/dev/null || true
@@ -119,7 +120,7 @@ jobs:
           timeout 900 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
 
       - name: Keep the last result for games that didn't change
-        if: always() && github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           [ -f game-check-out/results.json ] || exit 0
           [ -n "$ONLY" ] || exit 0
@@ -162,8 +163,9 @@ jobs:
           git commit --amend -q -m "AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
           git push -q origin "$B"
           N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
-          gh api -X PUT repos/${{ github.repository }}/pulls/$N/merge -f merge_method=squash >/dev/null
-          gh api -X DELETE repos/${{ github.repository }}/git/refs/heads/$B >/dev/null || true
+          # owner Oct 21 2026: main is protected - the undo merges through the merge robot once its own check is green
+          gh workflow run game-check.yml --ref "$B" || true
+          echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${GITHUB_SHA::7} - merges when its check is green"
           { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${GITHUB_SHA::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
           gh workflow run game-check.yml --ref main || true
 
@@ -178,7 +180,7 @@ jobs:
           gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -F body=@comment.md >/dev/null || true
 
       - name: Turn the gameplay flip-books into phone videos
-        if: always() && github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           [ -d game-check-out/clips ] || exit 0
           command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
@@ -191,7 +193,7 @@ jobs:
           rm -rf game-check-out/clips
 
       - name: Post the report to the game-checks branch
-        if: always() && github.event_name != 'pull_request'
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           [ -f game-check-out/README.md ] || exit 0
           cd game-check-out

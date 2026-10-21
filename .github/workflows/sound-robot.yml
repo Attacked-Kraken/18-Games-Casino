@@ -9,6 +9,8 @@ on:
 concurrency: { group: sound-robot, cancel-in-progress: false }
 permissions:
   contents: write
+  pull-requests: write
+  actions: write
 jobs:
   make:
     if: github.repository == 'Attacked-Kraken/18-Games-Casino'
@@ -35,4 +37,10 @@ jobs:
           git diff --cached --quiet && { echo "nothing new"; exit 0; }
           git config user.name "sound robot"; git config user.email "actions@users.noreply.github.com"
           git commit -m "Sound robot: $(grep -E '^(MADE|FAILED)' sound-report.txt | cut -d' ' -f1-2 | paste -sd ' ' | cut -c1-180)"
-          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep 5; done; exit 1
+          # owner Oct 21 2026: main is protected (PR + green check) - save on a branch, open a pull request, start the
+          # game check on it; the merge robot merges it when green. No direct push to main.
+          B="robot/sound-${{ github.run_number }}"
+          git checkout -q -b "$B" && git push -q origin "$B"
+          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sound robot: run ${{ github.run_number }}" -f body="Made by the sound robot. Merged by the merge robot when the game check is green." --jq .number)
+          gh workflow run game-check.yml --ref "$B" || true
+          echo "::notice title=Sound robot::opened pull request #$N"
