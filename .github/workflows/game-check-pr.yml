@@ -38,13 +38,15 @@ jobs:
           for f in $(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$'); do G="$G$f,"; done
           for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
           MODE="touched"
-          if [ -n "$CH" ] && ! echo "$CH" | grep -qvE '^(tools/game-check/|\.github/|tools/quick-check\.sh)' && ! echo "$CH" | grep -qE '^tools/game-check/fixes/'; then
-            # robot-only change (a Claude's): 2 reference games here, the full run happens on main after the merge
-            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
-          elif echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|look-presets\.js)'; then
-            # shared 3D people / gear / three.js changed -> every game that draws people (fair blame: hard breakage only)
+          NOTES='\.md$|^(jobs|reviews|plans|looks|ideas|team|notes)/'
+          if echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|look-presets\.js)'; then
             MODE="shared"
+            # shared 3D people / gear / three.js changed -> every game that draws people (fair blame: hard breakage only)
             G="$G$(node -e "console.log(require('./tools/game-check/games.json').games.filter(g=>g.people).map(g=>g.file).join(','))"),"
+          elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
+            # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
+            # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
+            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
           fi
           if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
