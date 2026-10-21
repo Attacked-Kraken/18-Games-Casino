@@ -31,3 +31,21 @@ Measure with numbers from the running game (positions, bounding boxes, speeds) -
 - Facing vs direction: compare the player's forward vector with the track's tangent at its position for 5 s of driving.
 - Floating: lowest point of the feet/skates/wheels minus the ground height under it, every frame for 3 s.
 - Size: `new THREE.Box3().setFromObject(model).getSize(v)` and compare with the table (allow +-15%).
+
+## Robot hook (the REALITY robot measures all of this by itself on every game check)
+Every game sets this once the player exists (tools/game-check/reality.mjs reads it):
+```js
+window.__reality = {
+  kind: 'f1',                 // 'f1' | 'car' | 'truck' | 'person' | 'skater' | 'plane'
+  player: playerObject3D,     // the player's car / athlete / plane
+  others: aiObjects,          // AI cars / opponents (array, optional)
+  contact: [wheelFL, wheelFR, wheelRL, wheelRR],   // what must touch the ground: wheels, feet, skates
+  footOffset: 0.08,           // only if contact are bones: how far the bone sits above the sole
+  ground: (x, z) => 0,        // ground / ice height under a point
+  track: (x, z) => ({ x: 0, z: 1 }),   // the right racing direction there (unit vector) - racing games
+  go: (on) => {},             // hold GAS / RUN so the player moves (the robot calls go(true) for 5 s)
+  expect: { length: [4.8, 6.4] }        // only if this game's real size differs from the table
+};
+```
+The robot then FAILS the game with a "REALITY:" line for: wrong size, wrong way round the track, moving backwards,
+floating or sunk wheels/feet/skates. No hook = a CHECK line asking for it.
