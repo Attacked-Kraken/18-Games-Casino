@@ -1076,8 +1076,12 @@ window.__reality = {
   ground: (x, z) => 0,
   go: (on) => {
     if (on) {
-      if (phase === 'menu') { mode = 'free'; respawn(); }
-      P.thr = 1;
+      // A plane at full throttle takes off, and then its wheels are metres
+      // off the ground while the robot measures contact - so "go" for a
+      // plane is a ground roll: if it already left the ground, put it back
+      // on the runway first, then taxi power (never enough to rotate).
+      if (phase !== 'fly' || mode !== 'free' || !P.ground) { mode = 'free'; respawn(); }
+      P.thr = 0.5;
     } else {
       P.thr = 0;
     }
