@@ -1,0 +1,31 @@
+diff --git a/apextrackfield.html b/apextrackfield.html
+index 4d77205..82a24fa 100644
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -3580,6 +3580,26 @@ addEventListener('pointerdown',function(){try{var el=document.documentElement;if
+ 
+ { const _sk=$('btnSkip'); if(_sk) _sk.addEventListener('click', ()=>devSkipLevel()); }
+ /* JOB J7 test hooks (the game-check fix tests read these) */
++// REALITY robot hook (REALITY.md "Robot hook", JOB G-63): the robot measures the
++// REAL player in the running game - his size, that he faces the way he travels
++// along the track's racing direction, and that his feet touch the ground.
++// Everything resolves LIVE on every read: styleRig() swaps a rig when it is
++// reskinned and a bone map cached at build time can point at a pre-reskin
++// skeleton (the pose() lesson), so player / others / contact are getters over
++// W3D.rigs as it stands NOW, and the feet are found fresh in the live human.
++// The player is the real human athlete: until the humans have loaded, rig 0 is
++// a placeholder body, and there is no player to measure yet.
++let _realGoTimer=null;
++window.__reality={
++kind:'person',
++get player(){ const r=W3D.rigs&&W3D.rigs[0]; return (r&&r.h&&r.h.object)? r.group : null; },
++get others(){ return (W3D.rigs||[]).slice(1).map(r=>r.group); },
++get contact(){ const r=W3D.rigs&&W3D.rigs[0]; if(!r||!r.h||!r.h.object) return []; const B={}; r.h.object.traverse(o=>{ if(o.isBone) B[o.name]=o; }); return [B.foot_l, B.foot_r].filter(Boolean); },
++footOffset:0.07,
++ground:(x,z)=>0,
++track:(x,z)=>{ let bx=1, bz=0, bd=Infinity; for(let s=0;s<400;s+=2){ const c=centerline(s); const dx=c.x-x, dz=c.z-z, d=dx*dx+dz*dz; if(d<bd){ bd=d; bx=c.tx; bz=c.tz; } } return {x:bx, z:bz}; },
++go:(on)=>{ if(_realGoTimer){ clearInterval(_realGoTimer); _realGoTimer=null; } if(on) _realGoTimer=setInterval(()=>{ try{ if(ENG&&!ENG.done&&ENG.stride) ENG.stride(); }catch(e){} }, 110); }
++};
+ window.__tf={
+ hurdleTilt:()=>{ const im=W3D.hurdlesMesh, M=new THREE.Matrix4(), out=[]; for(let k=0;k<im.count;k++){ im.getMatrixAt(k,M); out.push(+M.elements[5].toFixed(2)); } return out; }, // 1 = standing, ~0 = knocked flat
+ // owner 2026-10-17: lets the play tests run any event's real engine quickly (no rendering)
