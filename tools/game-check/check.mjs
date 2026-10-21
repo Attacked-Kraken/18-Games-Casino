@@ -320,13 +320,26 @@ for (const g of games) {
         eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
         page: live,
       };
-      let timer;
-      try {
-        const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
-        ok = res === true; note = typeof res === 'string' ? res : '';
-      } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
-      clearTimeout(timer); dead = true;
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note });
+      let timer, inc = false;
+      // owner Oct 21 6:38 PM (window 1, G-100): a test that WAITS for a random game event ("no strikeout or walk happened
+      // in 29 s, so the reset could not be checked") did not find a bug - it found nothing. Such an answer is
+      // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
+      // A test says it by returning { inconclusive: 'why' }, or a sentence with "could not be checked" / "never happened".
+      const INCON = /could not be checked|couldn'?t be checked|could not be tested|never happened|did not happen in|no .{0,40} happened in \d+ ?s/i;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        dead = false; inc = false;
+        try {
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
+          ok = res === true;
+          if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
+          else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+        clearTimeout(timer); dead = true;
+        if (!inc || attempt === 2) break;
+        await freshGame();
+      }
+      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined });
+      if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
       if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();

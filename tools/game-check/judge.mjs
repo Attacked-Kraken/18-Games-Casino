@@ -65,7 +65,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
       const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));
-      const passing = fresh.filter(f => f.ok);
+      const passing = fresh.filter(f => f.ok || f.inconclusive);   // an undecided test proves nothing either
       if (fresh.length && passing.length === fresh.length)
         blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);
       else if (fresh.length) console.log(`Tester proof OK: ${fresh.length - passing.length} new test(s) fail on today's ${r.name}.`);
