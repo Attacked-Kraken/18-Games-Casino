@@ -482,7 +482,7 @@ const runnerMeshes = [makePlayer('away'), makePlayer('away'), makePlayer('away')
 runnerMeshes.forEach(r=>{ r.g.visible=false; });
 place(catcherMesh, 0,0,2.4, Math.PI);
 place(batterMesh, -2.4,0,0.6, Math.PI*0.08);
-const umpireMesh = makePlayer('ump');        // the umpire - he belongs behind the batter, never on the mound
+const umpireMesh = makePlayer('ump');        // the umpire - he belongs behind the batter, never up on the mound
 place(umpireMesh, -1.0, 0, 3.8, Math.PI);
 
 function dressDefense(team){
