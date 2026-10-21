@@ -1916,9 +1916,6 @@ window.__test = {
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
   get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, night: _park.night }; },
-  /* G-65: measured player size (metres) + the live broadcast camera, for the reality checks */
-  get playerSize(){ const p = batterMesh.athlete ? batterMesh : (pitcherMesh.athlete ? pitcherMesh : null); if (!p || !p.bones || !p.bones['Head']) return null; const v = new THREE.Vector3(); const wp = n => { p.bones[n].getWorldPosition(v); return [v.x, v.y, v.z]; }; const hd = wp('Head'), ft = wp('foot_l'), sl = wp('upperarm_l'), sr = wp('upperarm_r'); const h = (hd[1] - ft[1]) * 1.237 * 0.9144; const sw = Math.hypot(sl[0]-sr[0], sl[1]-sr[1], sl[2]-sr[2]) * 0.9144; return { h: +h.toFixed(2), sw: +sw.toFixed(2) }; },
-  get cam(){ return { fov: camera.fov, pos: camera.position.toArray().map(v => +v.toFixed(1)), mode: camMode, view: viewMode }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
@@ -1929,6 +1926,8 @@ window.__test = {
     strength(){ return friendGame ? friendGame.str : null; },
     clear(){ friendGame = null; }
   },
+  get playerSize(){ const p = batterMesh.athlete ? batterMesh : (pitcherMesh.athlete ? pitcherMesh : null); if (!p || !p.bones || !p.bones['Head']) return null; const v = new THREE.Vector3(); const wp = n => { p.bones[n].getWorldPosition(v); return [v.x, v.y, v.z]; }; const hd = wp('Head'), ft = wp('foot_l'), sl = wp('upperarm_l'), sr = wp('upperarm_r'); const h = (hd[1] - ft[1]) * 1.237 * 0.9144; const sw = Math.hypot(sl[0]-sr[0], sl[1]-sr[1], sl[2]-sr[2]) * 0.9144; return { h: +h.toFixed(2), sw: +sw.toFixed(2) }; },
+  get cam(){ return { fov: camera.fov, pos: camera.position.toArray().map(v => +v.toFixed(1)), mode: camMode, view: viewMode }; },
 };
 function musPhase(p){ try{ Mus.setMode((p==='start'||p==='over')?'menu':'game'); }catch(e){} }
 document.addEventListener('pointerdown', ()=>{ Mus.init(); Mus.resume(); }, {passive:true});
