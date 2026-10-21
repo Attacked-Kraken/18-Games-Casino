@@ -534,9 +534,19 @@ export default [
             holding = true; holdAt = Date.now();
             if (!camChecked) {
               camChecked = true;
-              const cam = await h.eval(() => { const tf = window.__tf; const c = tf.camPos ? tf.camPos() : null; const rs = tf.rigs ? tf.rigs() : []; const g = rs && rs[0] && rs[0].group ? rs[0].group.position : null; return c && g ? { cx: c.x, cy: c.y, cz: c.z, ax: g.x, az: g.z } : null; });
+              // Ruler repair (JOB G-83): judge the SETTLED camera. The old single
+              // sample raced the game's start sequence and could read the menu-orbit
+              // camera (22.9m / 33.4m on loaded runners) while the camera that shows
+              // the throw sits ~9.5m away. Same limits as before (11.5m, behind, side).
+              let best = null;
+              for (let ci = 0; ci < 6; ci++) {
+                const c2 = await h.eval(() => { const tf = window.__tf; const c = tf.camPos ? tf.camPos() : null; const rs = tf.rigs ? tf.rigs() : []; const g = rs && rs[0] && rs[0].group ? rs[0].group.position : null; return c && g ? { cx: c.x, cy: c.y, cz: c.z, ax: g.x, az: g.z } : null; });
+                if (c2) { const d2 = Math.hypot(c2.cx - c2.ax, c2.cz - c2.az); if (!best || d2 < best.d) best = { cx: c2.cx, cy: c2.cy, cz: c2.cz, ax: c2.ax, az: c2.az, d: d2 }; if (d2 <= 11.5) break; }
+                await h.wait(350);
+              }
+              const cam = best;
               if (!cam) return 'no camera report from the game (camPos hook missing)';
-              const dxz = Math.hypot(cam.cx - cam.ax, cam.cz - cam.az);
+              const dxz = cam.d;
               if (dxz > 11.5) return 'the discus camera is ' + dxz.toFixed(1) + 'm from the thrower - too far to show him clearly (wants close behind/side, ~9m)';
               if (!(cam.cx < cam.ax - 2)) return 'the discus camera is not behind the thrower (cam x ' + cam.cx + ' vs thrower x ' + cam.ax + ')';
               if (Math.abs(cam.cz - cam.az) < 3) return 'the discus camera is not to the side of the thrower (cam z ' + cam.cz + ' vs thrower z ' + cam.az + ')';
@@ -1462,5 +1472,192 @@ export default [
       return true;
     }
   }
+  ,{
+    id: 'play-relay-staggered-start-and-blocks',
+    ask: "JOB G-83 (owner 3.png): the 4x100 relay must start at the REAL staggered relay start - never a line-up under the FINISH banner - and every lane has starting blocks",
+    async test(page, h) {
+      const navTo = (matchText) => h.eval((mt) => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e) { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.toLowerCase().includes(mt)); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          else if (on && on.id === 'career') click('bCareerBack');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      }), matchText);
+      const nav = await navTo('relay');
+      if (nav !== 'in') return 'could not start the relay: ' + nav;
+      await h.wait(700);
+      const s = await h.eval(() => window.__tf.relayStart ? window.__tf.relayStart() : null);
+      if (!s) return 'no relay start report from the game (__tf.relayStart is missing)';
+      if (s.blocks !== 8) return 'the relay start shows ' + s.blocks + ' starting blocks - every one of the 8 lanes must have blocks';
+      if (!s.placed) return 'the blocks are not sitting on the staggered start marks of their lanes';
+      if (!(s.playerArc >= 15)) return "the player's relay start is only " + s.playerArc + 'm of arc from the finish line - the staggered start must move the field off the finish line (the player starts ~23m around the bend), never under the FINISH banner';
+      return true;
+    }
+  }
+  ,{
+    id: 'play-races-start-on-the-line-together',
+    ask: "JOB G-83 (owner 2.png): EVERY race starts with ALL runners on the start line together - nobody ahead of the line and nobody already running when the gun goes",
+    async test(page, h) {
+      const check = (id) => h.eval((a) => {
+        const X = window.__tf.engines();
+        const e = a === '1500m' ? X.distance(X.EV_BY_ID[a], X.freeRivals()) : X.sprint(X.EV_BY_ID[a], X.freeRivals());
+        const line = e.r.pos;
+        let bad = '';
+        e.ai.forEach((r, i) => { if (r.pos !== line) bad = 'rival ' + (i + 2) + ' starts at ' + r.pos + 'm but the line is ' + line + 'm - the field must start together'; if (r.speed !== 0) bad = 'rival ' + (i + 2) + ' is already moving at ' + r.speed + ' m/s before the gun'; });
+        if (bad) return bad;
+        let steps = 0, moved = '';
+        while (e.phase !== 'run' && steps < 400) { e.update(1 / 60); steps++; e.ai.forEach((r, i) => { if (r.pos !== line && !moved) moved = 'rival ' + (i + 2) + ' moved to ' + r.pos + 'm before GO (phase ' + e.phase + ')'; }); }
+        if (moved) return moved;
+        if (e.phase !== 'run') return a + ': the race never reached GO';
+        const spread = Math.max(...e.ai.map(r => Math.abs(r.pos - e.r.pos)));
+        if (spread > 0.001) return 'at GO the field is already spread by ' + spread.toFixed(2) + 'm in the ' + a + ' - everyone must be on the line together';
+        return true;
+      }, id);
+      for (const id of ['1500m', '100m']) { const r = await check(id); if (r !== true) return r; }
+      return true;
+    }
+  }
+  ,{
+    id: 'play-steeplechase-barriers-span-track-ai-jump',
+    ask: "JOB G-83 (owner 5.png): steeplechase - every barrier is ONE barrier across the whole track (not a hurdle in the player's lane only), and the AI runners jump them too",
+    async test(page, h) {
+      const navTo = (matchText) => h.eval((mt) => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e) { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.toLowerCase().includes(mt)); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          else if (on && on.id === 'career') click('bCareerBack');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      }), matchText);
+      const nav = await navTo('steeplechase');
+      if (nav !== 'in') return 'could not start the steeplechase: ' + nav;
+      await h.wait(700);
+      const b = await h.eval(() => { const tf = window.__tf; const e = tf.eng(); return { probe: tf.barriers ? tf.barriers() : null, want: e && e.hurdles ? e.hurdles.length : 0 }; });
+      if (!b.probe) return 'no barrier report from the game (__tf.barriers is missing)';
+      if (!(b.want >= 5)) return 'the steeplechase engine has only ' + b.want + ' barriers';
+      if (b.probe.count !== b.want) return 'the track shows ' + b.probe.count + ' barriers but the race has ' + b.want + ' - every barrier must be on the track';
+      if (!(b.probe.width >= 9.5)) return 'the barriers are only ' + b.probe.width + 'm wide - a steeplechase barrier spans the whole track (~10.6m), not one lane';
+      if (!(b.probe.height > 0.85 && b.probe.height < 0.96)) return 'the barrier beam tops out at ' + b.probe.height + 'm - a steeplechase barrier is 0.914m high';
+      const sim = await h.eval(() => {
+        const X = window.__tf.engines();
+        const e = X.distance(X.EV_BY_ID['steeple'], X.freeRivals());
+        const seen = e.ai.map(() => e.hurdles.map(() => 0));
+        let t = 0, k = 0;
+        while (!e.done && t < 260) {
+          t += 1 / 60;
+          if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride((k ^= 1) ? 'L' : 'R');
+          if (!e.r.air) { const nh = e.hurdles.find(hh => hh.x > e.r.pos); if (nh && nh.x - e.r.pos < 3.2) e.action(); }
+          e.update(1 / 60);
+          e.ai.forEach((a2, ai2) => { e.hurdles.forEach((hh, hi) => { if (Math.abs(a2.pos - hh.x) < 1.6 && (a2.airY || 0) > seen[ai2][hi]) seen[ai2][hi] = a2.airY || 0; }); });
+        }
+        return { done: e.done, seen, aiPos: e.ai.map(a => a.pos), hs: e.hurdles.map(hh => hh.x) };
+      });
+      if (!sim.done) return 'the steeplechase never finished in the proof run';
+      for (let a = 0; a < sim.seen.length; a++) for (let hh = 0; hh < sim.hs.length; hh++) {
+        if (sim.aiPos[a] > sim.hs[hh] + 2 && !(sim.seen[a][hh] > 52)) return 'steeplechase: runner ' + (a + 2) + ' ran through the barrier at ' + Math.round(sim.hs[hh]) + 'm instead of jumping it (best height near it: ' + Math.round(sim.seen[a][hh]) + ') - the AI must jump the barriers too';
+      }
+      return true;
+    }
+  }
+  ,{
+    id: 'play-10000m-field-breaks-to-lane-1',
+    ask: "JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane",
+    async test(page, h) {
+      const navTo = (matchText) => h.eval((mt) => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e) { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.toLowerCase().includes(mt)); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          else if (on && on.id === 'career') click('bCareerBack');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      }), matchText);
+      const nav = await navTo('10,000');
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      let lanes = null;
+      const t0 = Date.now();
+      while (Date.now() - t0 < 9000) {
+        lanes = await h.eval(() => { const e = window.__tf.eng(); return (e && e._lanes) ? { player: e._lanes.player, ai: e._lanes.ai.slice(), phase: e.phase } : null; });
+        if (lanes && lanes.phase === 'run') break;
+        await h.wait(300);
+      }
+      if (!lanes) return 'the 10,000m draw never reported the field lanes';
+      if (Math.abs(lanes.player - 3) > 0.35) return 'at the start the player should be in his own lane (3), drawn lane is ' + lanes.player.toFixed(2);
+      await h.eval(() => { const e = window.__tf.eng(); e.r.pos = e.liveFrom + 160; e.ai.forEach(a => { a.pos = Math.max(a.pos, e.liveFrom + 160); }); return true; });
+      let after = null;
+      const t1 = Date.now();
+      while (Date.now() - t1 < 9000) {
+        after = await h.eval(() => { const e = window.__tf.eng(); return e._lanes ? { player: e._lanes.player, ai: e._lanes.ai.slice() } : null; });
+        if (after && after.player <= 0.05 && after.ai.every(x => x <= 0.05)) break;
+        await h.wait(300);
+      }
+      if (!after) return 'the lanes report vanished after the start';
+      if (!(after.player <= 0.05)) return '160m after the start the player is still drawn in lane ' + after.player.toFixed(2) + ' - the field must break to lane 1';
+      for (let i = 0; i < after.ai.length; i++) if (!(after.ai[i] <= 0.05)) return '160m after the start rival ' + (i + 2) + ' is still drawn in lane ' + after.ai[i].toFixed(2) + ' - everyone moves to lane 1';
+      return true;
+    }
+  }
+  ,{
+    id: 'play-career-results-event-column-and-clock',
+    ask: "JOB G-83 (owner 1.png): the career meet results table lists the meet's EVENTS so its column must say EVENT (not ATHLETE), and the big time on the results screen must be the same time the race clock showed at the finish",
+    async test(page, h) {
+      try { await page.reload({ waitUntil: 'load' }); } catch (e) {}
+      await h.wait(2500);
+      const out = await h.eval(() => new Promise(res => {
+        let n = 0, clockAtFinish = null;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (clockAtFinish === null && e && e.done) clockAtFinish = e.time;
+          if (on && on.id === 'results' && clockAtFinish !== null) {
+            clearInterval(iv);
+            const th = document.querySelector('#resBoard table tr th:nth-child(2)');
+            const mark = (document.getElementById('resMark') || {}).textContent || '';
+            res({ header: th ? th.textContent.trim() : '', mark, clock: clockAtFinish });
+            return;
+          }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (document.body.classList.contains('playing') && e && !e.done && e.phase === 'run') {
+            if (e.stride) { e.stride('L'); e.stride('R'); }
+            if (e.r && e.dist) e.r.pos = Math.min(e.dist - 0.2, e.r.pos + e.dist * 0.06);
+          }
+          else if (on && on.id === 'menu') click('bCareer');
+          else if (on && on.id === 'career') click('bCareerMeet');
+          else if (on && on.id === 'card') click('bCardStart');
+          if (++n > 160) { clearInterval(iv); res({ stuck: on ? on.id : 'none', clock: clockAtFinish }); }
+        }, 150);
+      }));
+      if (out.stuck) return 'the career results proof stalled at ' + out.stuck;
+      if (out.header !== 'EVENT') return 'the career meet results column says "' + out.header + '" but the rows are the meet events - it must say EVENT';
+      const tok = (out.mark || '').trim().split(/\s+/)[0];
+      const parts = tok.split(':');
+      const shown = parts.length === 2 ? (parseFloat(parts[0]) * 60 + parseFloat(parts[1])) : parseFloat(parts[0]);
+      if (!isFinite(shown)) return 'could not read a time on the results screen ("' + out.mark + '")';
+      if (Math.abs(shown - out.clock) > 0.06) return 'the results screen shows ' + tok + ' but the race clock at the finish read ' + out.clock.toFixed(2) + ' - they must be the same time';
+      return true;
+    }
+  }
 ];
+
 
