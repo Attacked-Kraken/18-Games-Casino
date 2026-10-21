@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
+<link rel="manifest" href="sports.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Apex Sports">
+<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
+<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+<!-- /JOB-03 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Apex Ice Hockey · Apex Arcade</title>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000;
+    font-family: system-ui, -apple-system, sans-serif; -webkit-user-select:none; user-select:none;
+    -webkit-tap-highlight-color: transparent; touch-action: none; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #back { position:fixed; top:calc(10px + env(safe-area-inset-top)); left:12px; z-index:9999;
+    background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.4); border-radius:10px;
+    font-size:15px; padding:9px 14px; cursor:pointer; }
+  #hud { position:fixed; top:calc(64px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
+    z-index:9000; display:flex; gap:8px; align-items:stretch; background:rgba(4,10,18,.78);
+    border:1px solid rgba(160,210,255,.35); border-radius:10px; padding:6px 8px; color:#fff;
+    font-size:15px; letter-spacing:.05em; white-space:nowrap; box-shadow:0 6px 22px rgba(0,0,0,.5); }
+  #hud .sc { font-weight:800; font-size:21px; align-self:center; padding:0 4px; }
+  #hud .dim { color:#fff; font-size:12px; font-weight:800; padding:5px 8px; border-radius:6px; align-self:center; letter-spacing:.08em; }
+  #hud .clk { display:flex; flex-direction:column; justify-content:center; align-self:center; padding:0 4px 0 2px; line-height:1.15; }
+  #penTag { position:fixed; top:calc(124px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left));
+    z-index:9300; display:none; font:800 12px system-ui, -apple-system, sans-serif; letter-spacing:.08em; color:#ffd34d;
+    background:rgba(24,12,0,.55); border:1px solid rgba(255,211,77,.5); padding:5px 10px; border-radius:8px; }
+  #hud #period { font-size:11px; color:#9fd8ff; font-weight:800; letter-spacing:.14em; }
+  #hud #clock { font-size:16px; font-weight:800; }
+  #shotTag { position:fixed; top:calc(120px + env(safe-area-inset-top)); left:calc(10px + env(safe-area-inset-left)); z-index:9000;
+    background:rgba(4,10,18,.85); border:1px solid rgba(255,211,77,.55); color:#ffd34d; border-radius:8px;
+    font:800 13px system-ui, -apple-system, sans-serif; letter-spacing:.1em; padding:6px 10px; opacity:0; transition:opacity .3s; pointer-events:none; }
+  #shotTag.show { opacity:1; }
+  #banner { position:fixed; top:38%; left:50%; transform:translate(-50%,-50%) scale(1); z-index:9500;
+    color:#fff; font-size:44px; font-weight:800; letter-spacing:.08em; text-shadow:0 0 24px rgba(80,180,255,.9), 0 3px 0 #000;
+    opacity:0; transition:opacity .25s; pointer-events:none; text-align:center; white-space:nowrap; }
+  #banner.show { opacity:1; }
+  #banner small { display:block; font-size:16px; letter-spacing:.2em; color:#cfe9ff; margin-top:8px; }
+  #flash { position:fixed; inset:0; z-index:9400; background:#fff; opacity:0; pointer-events:none; transition:opacity .5s; }
+  .overlay { position:fixed; inset:0; z-index:9600; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; background:rgba(2,8,16,.82); color:#fff; text-align:center; padding:20px; }
+  .overlay h1 { font-size:34px; font-weight:800; letter-spacing:1px; margin:0 0 6px; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.6); }
+  .overlay h2 { font-size:15px; font-weight:400; color:#cfe9ff; margin:0 0 18px; line-height:1.7; max-width:520px; }
+  .overlay .keys { font-size:12px; color:#8fb8d8; line-height:1.9; margin-bottom:20px; }
+  .bigbtn { font:800 20px system-ui, -apple-system, sans-serif; letter-spacing:1px; color:#fff;
+    background:linear-gradient(180deg,#d21f26,#8f1015); border:1px solid #ff6b6b55; border-radius:12px;
+    padding:14px 18px; cursor:pointer; box-shadow:0 4px 18px #d21f2644; display:block;
+    width:min(420px,88vw); margin:7px auto; }
+  .bigbtn.alt { background:linear-gradient(180deg,#1c2b44,#0e1626); border-color:#3f6f9f66; box-shadow:none; }
+  .bigbtn.gold { background:linear-gradient(180deg,#e8a91c,#9a6a08); border-color:#ffd76a88; }
+  .bigbtn:active { transform:scale(.97); }
+  #final { display:none; }
+  #finalScore { font-size:52px; font-weight:800; margin:6px 0 18px; letter-spacing:.06em; }
+  /* touch controls */
+  #joy { position:fixed; left:26px; bottom:calc(30px + env(safe-area-inset-bottom)); width:128px; height:128px;
+    z-index:9200; border-radius:50%; background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.35); }
+  #knob { position:absolute; left:50%; top:50%; width:56px; height:56px; border-radius:50%;
+    background:rgba(159,216,255,.55); border:2px solid rgba(255,255,255,.7); transform:translate(-50%,-50%); }
+  #btns { position:fixed; right:22px; bottom:calc(26px + env(safe-area-inset-bottom)); z-index:9200;
+    display:flex; gap:14px; align-items:flex-end; }
+  .tbtn { width:72px; height:72px; border-radius:50%; border:2px solid rgba(255,255,255,.5);
+    background:rgba(255,255,255,.10); color:#fff; font:700 12px system-ui, -apple-system, sans-serif;
+    letter-spacing:.05em; display:flex; align-items:center; justify-content:center; }
+  .tbtn:active { background:rgba(159,216,255,.4); }
+  #btnShoot { width:84px; height:84px; border-color:#ffb3b3; }
+  #charge { position:fixed; right:22px; bottom:calc(124px + env(safe-area-inset-bottom)); width:170px; height:10px;
+    z-index:9200; background:rgba(255,255,255,.12); border-radius:6px; overflow:hidden; opacity:0; }
+  #chargeFill { height:100%; width:0%; background:linear-gradient(90deg,#7dff9a,#ffe27d,#ff7d7d); }
+  #muteBtn { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:9999; width:44px; height:44px;
+    border-radius:50%; background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.4);
+    font-size:19px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  #viewBtn { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:64px; z-index:9999; height:44px; min-width:70px;
+    padding:0 12px; border-radius:22px; background:rgba(0,0,0,.55); color:#9fd8ff; border:1px solid rgba(159,216,255,.5);
+    font:700 11px system-ui, -apple-system, sans-serif; letter-spacing:.08em; cursor:pointer; }
+  #rotOv { display:none; position:fixed; inset:0; z-index:99999; background:#000; color:#fff;
+    align-items:center; justify-content:center; font-size:22px; letter-spacing:.1em; text-align:center; padding:30px; }
+  #rotOv { display:none !important; }
+  /* LANDSCAPE LAW (owner): start in landscape, locked, already loaded - no rotate sign.
+     In portrait the whole stage presents rotated to landscape from the first frame. */
+  @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
+  /* PORTRAIT GRIP: the stage is rotated, so place controls where the player's thumbs actually are:
+     stick at the visual bottom-left, action buttons at the visual bottom-right */
+  @media (orientation: portrait) {
+    #joy { left:auto; right:18px; }
+    #btns { left:auto; right:18px; top:calc(16px + env(safe-area-inset-top)); bottom:auto; }
+    #charge { left:auto; right:18px; top:calc(108px + env(safe-area-inset-top)); bottom:auto; }
+    #muteBtn { right:auto; left:12px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
+    #viewBtn { right:auto; left:76px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
+  }
+
+  #starCard { font:600 14px system-ui, -apple-system, sans-serif; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
+  #myCode { font:600 12px system-ui, -apple-system, sans-serif; color:#ffd34d; margin:14px 0 4px; letter-spacing:.06em; }
+  #cancelMatch, #hubReset { font:600 12px system-ui, -apple-system, sans-serif; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
+  #creditsBtn { font:600 12px system-ui, -apple-system, sans-serif; color:#9fd8ff; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
+  #hubBody { font:400 14px system-ui, -apple-system, sans-serif; color:#d7ecff; line-height:1.75; text-align:center; margin-bottom:16px; max-width:92vw; }
+  #hubBody table { margin:8px auto; border-collapse:collapse; font-size:13px; }
+  #hubBody td, #hubBody th { padding:2px 9px; text-align:left; }
+  #hubBody tr.me td { color:#ffe9a8; font-weight:700; }
+  #friendIn { font:600 15px system-ui, -apple-system, sans-serif; width:min(430px, 88vw); padding:12px 14px; border-radius:12px; border:1px solid #3f6f9f; background:#08182b; color:#ffffff; margin-bottom:10px; }
+  #friendErr { color:#ff9a9a; font:600 13px system-ui, -apple-system, sans-serif; min-height:18px; margin-bottom:8px; }
+  .overlay .bigbtn { margin-top:10px; }
+</style>
+<script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+<button id="back" type="button">‹ Back</button>
+<div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div><div id="penTag"></div>
+<button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
+<div id="banner"></div>
+<div id="flash"></div>
+<div id="joy"><div id="knob"></div></div>
+<div id="btns">
+  <div class="tbtn" id="btnCheck">CHECK</div>
+  <div class="tbtn" id="btnPass">PASS</div>
+  <div class="tbtn" id="btnShoot">SHOOT</div>
+</div>
+<div id="charge"><div id="chargeFill"></div></div>
+<div class="overlay" id="menu">
+  <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
+  <h1>APEX ICE HOCKEY</h1>
+  <h2 id="menuSub">3 periods · real rules: offsides, faceoffs, golden-goal overtime.</h2>
+  <div id="starCard"></div>
+  <button class="bigbtn" id="careerBtn" type="button">🏆 START A CAREER</button>
+  <button class="bigbtn alt" id="playBtn" type="button">⚡ QUICK GAME</button>
+  <button class="bigbtn alt" id="friendBtn" type="button">👥 PLAY A FRIEND (ENTER CODE)</button>
+  <button id="cancelMatch" type="button" style="display:none">✕ cancel this match</button>
+  <button id="creditsBtn" type="button">🎙️ CREDITS</button>
+  <div id="myCode"></div>
+  <div class="keys">Skate with the left stick — hold <b>SHOOT</b> to charge a slap shot, <b>PASS</b> to feed a teammate, <b>CHECK</b> to poke the puck loose and switch skaters.<br>KEYBOARD — move: WASD / arrows · pass: J · shoot (hold): K · check/switch: L</div>
+</div>
+<div class="overlay" id="final">
+  <h1 id="finalTitle">FINAL</h1>
+  <div id="finalScore">0 – 0</div>
+  <h2 id="finalSub"></h2>
+  <button class="bigbtn" id="againBtn" type="button">PLAY AGAIN</button>
+</div>
+<div class="overlay" id="hub" style="display:none">
+  <h1>🏆 CAREER</h1>
+  <div id="hubBody"></div>
+  <button class="bigbtn" id="hubPlay" type="button">▶ PLAY NEXT MATCH</button>
+  <button class="bigbtn alt" id="hubNew" type="button" style="display:none">START NEW SEASON</button>
+  <button class="bigbtn alt" id="hubClose" type="button">CLOSE</button>
+  <button id="hubReset" type="button">reset career</button>
+</div>
+<div class="overlay" id="friendOv" style="display:none">
+  <h1>👥 FRIEND MATCH</h1>
+  <h2>Paste a friend's code. Their star and record ride inside it — you play their team, driven at their strength. Win, and it goes on your record.</h2>
+  <input id="friendIn" type="text" placeholder="APEX-XXXX-XXXX-..." autocomplete="off">
+  <div id="friendErr"></div>
+  <button class="bigbtn" id="friendGo" type="button">SET UP THE MATCH</button>
+  <button class="bigbtn alt" id="friendClose" type="button">CLOSE</button>
+</div>
+<div class="overlay" id="creditsOv" style="display:none">
+  <h1>🎙️ CREDITS</h1>
+  <h2>APEX ICE HOCKEY · an Apex Arcade game<br>
+  Commentary: the hockey commentary pack — 138 voice clips, called as the game happens.<br>
+  Play-by-play voice: Piper en_US-joe-medium.<br>
+  Color commentator voice: Piper en_GB-northern_english_male, trained on OpenSLR SLR83 (CC BY-SA 4.0).</h2>
+  <button class="bigbtn alt" id="creditsClose" type="button">CLOSE</button>
+</div>
+<div id="rotOv">Rotate your device</div>
+<script src="sounds/commentary/hockey/commentary.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // JOB J10: merge static scenery into single draw calls
+
+/* ================= helpers ================= */
+const clamp = (v,a,b)=>v<a?a:(v>b?b:v);
+const lerp = (a,b,t)=>a+(b-a)*t;
+const rand = (a,b)=>a+Math.random()*(b-a);
+const TAU = Math.PI*2;
+function angLerp(a,b,t){ let d=(b-a)%TAU; if(d>Math.PI)d-=TAU; if(d<-Math.PI)d+=TAU; return a+d*t; }
+
+/* ================= constants ================= */
+const RINK = { L:200, W:85, CR:28 };            // x: -100..100, z: -42.5..42.5, corner radius
+const HX = RINK.L/2, HZ = RINK.W/2;
+const GOAL_LINE = 89, GOAL_HALF = 3, BLUE = 25, POST_R = 0.9;
+const PERIOD_LEN = 120, N_PERIODS = 3;
+const DOTS = { center:[0,0],
+  n1:[40,20], n2:[40,-20], n3:[-40,20], n4:[-40,-20],
+  e1:[69,20], e2:[69,-20], e3:[-69,20], e4:[-69,-20] };
+const TEAMS = {
+  home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
+  away: { name:'SHARKS', dir:-1, jersey:0x0e7c7b, trim:0xffffff, helmet:0x123a3a, pads:0x0e7c7b },
+};
+/* career / friend match override: a pending match (set from the career hub)
+   re-skins the visitors BEFORE any skater or material is built from TEAMS. */
+window.__awayBoost = 1; window.__starBoost = 1; window.__starShot = 1;
+try { const pm = JSON.parse(localStorage.getItem('apex_hockey_match'));
+  if (pm && pm.oppDef) { TEAMS.away.name = pm.oppDef.name; TEAMS.away.jersey = pm.oppDef.jersey; TEAMS.away.helmet = pm.oppDef.helmet; TEAMS.away.pads = pm.oppDef.jersey; TEAMS.away.trim = pm.oppDef.trim; window.__awayBoost = Math.max(.9, Math.min(1.12, pm.oppDef.str / 84)); }
+} catch (e) {}
+const isTouch = matchMedia('(pointer: coarse)').matches;
+const COARSE = isTouch; // phones: cheaper renderer settings (owner reported lag)
+
+/* ================= renderer / scene ================= */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:!COARSE });
+renderer.setPixelRatio(Math.min(devicePixelRatio||1, COARSE?1.5:2));
+renderer.setSize(innerWidth, innerHeight, false);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a1220);
+scene.fog = new THREE.Fog(0x0a1220, 200, 460);
+const camera = new THREE.PerspectiveCamera(57, innerWidth/innerHeight, 1, 1200);
+camera.position.set(0, 66, 106);
+const hemi = new THREE.HemisphereLight(0xdfefff, 0x2a3c55, 1.3); scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(40, 120, 60); scene.add(key);
+const fill = new THREE.DirectionalLight(0xbcd6ff, 0.35); fill.position.set(-60, 80, -40); scene.add(fill);
+if (COARSE) { renderer.shadowMap.enabled = false; } // phones: shadows fully off
+else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  key.castShadow = true; key.shadow.mapSize.set(1024,1024);
+  key.shadow.camera.left=-120; key.shadow.camera.right=120; key.shadow.camera.top=90; key.shadow.camera.bottom=-90; }
+
+/* ================= ice ================= */
+let iceCanvasRef=null, iceTexRef=null; // G-47: kept so the kit ice texture can redraw the same canvas
+function makeIceTexture(baseImg){
+  const S = 10.24, cw = Math.round(RINK.L*S), ch = Math.round(RINK.W*S);
+  const cv = document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  const g = cv.getContext('2d');
+  const X = x=>(x+HX)*S, Z = z=>(z+HZ)*S;
+  g.fillStyle='#eef3f6'; g.fillRect(0,0,cw,ch);
+  if(baseImg){ // G-47: the owner's ice_rink ground texture (kit/ground/512) under the same markings
+    try{ const pat=g.createPattern(baseImg,'repeat'); if(pat){ g.save(); g.globalAlpha=.92; g.fillStyle=pat; g.fillRect(0,0,cw,ch); g.restore(); } }catch(e){}
+  }
+  // skate marks
+  g.strokeStyle='rgba(170,190,205,.35)'; g.lineWidth=1.2;
+  for(let i=0;i<900;i++){ const x=Math.random()*cw, y=Math.random()*ch, a=Math.random()*TAU, l=rand(6,30);
+    g.beginPath(); g.moveTo(x,y); g.quadraticCurveTo(x+Math.cos(a)*l*.5, y+Math.sin(a)*l*.5+rand(-4,4), x+Math.cos(a)*l, y+Math.sin(a)*l); g.stroke(); }
+  // subtle zone tint
+  const zone = g.createLinearGradient(0,0,cw,0);
+  zone.addColorStop(0,'rgba(200,225,245,.25)'); zone.addColorStop(.5,'rgba(255,255,255,0)'); zone.addColorStop(1,'rgba(200,225,245,.25)');
+  g.fillStyle=zone; g.fillRect(0,0,cw,ch);
+  // lines
+  g.fillStyle='#c8323c'; g.fillRect(X(-0.5),0,S,ch);                    // center red line
+  g.fillStyle='#2b5fd9'; g.fillRect(X(-BLUE-0.5),0,S,ch); g.fillRect(X(BLUE-0.5),0,S,ch); // blue lines
+  g.fillStyle='#c8323c';
+  g.fillRect(X(-GOAL_LINE)-1.5,0,3,ch); g.fillRect(X(GOAL_LINE)-1.5,0,3,ch); // goal lines
+  // center circle + dot
+  g.strokeStyle='#2b5fd9'; g.lineWidth=5; g.beginPath(); g.arc(X(0),Z(0),15*S,0,TAU); g.stroke();
+  g.fillStyle='#2b5fd9'; g.beginPath(); g.arc(X(0),Z(0),1.1*S,0,TAU); g.fill();
+  // center-ice logo, under the ice like a real arena: ring + bold APEX ARCADE wordmark
+  g.strokeStyle='rgba(31,111,214,.5)'; g.lineWidth=3.4*S; g.beginPath(); g.arc(X(0),Z(0),10.6*S,0,TAU); g.stroke();
+  g.fillStyle='rgba(31,111,214,.6)'; g.font='900 ' + Math.round(5.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
+  g.fillText('APEX', X(0), Z(0)-1.1*S); g.fillText('ARCADE', X(0), Z(0)+5.9*S);
+  // faceoff dots + end-zone circles
+  const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,20],[69,-20],[-69,20],[-69,-20]];
+  g.fillStyle='#c8323c';
+  dots.forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),1.1*S,0,TAU); g.fill(); });
+  g.strokeStyle='#c8323c'; g.lineWidth=5;
+  [[69,20],[69,-20],[-69,20],[-69,-20]].forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),15*S,0,TAU); g.stroke(); });
+  // goal creases (light blue)
+  g.fillStyle='rgba(140,200,250,.85)';
+  [[GOAL_LINE,1],[-GOAL_LINE,-1]].forEach(([gx,s])=>{
+    g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.fill();
+    g.strokeStyle='#c8323c'; g.lineWidth=3; g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.stroke();
+  });
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace;
+  iceCanvasRef = cv;
+  return tex;
+}
+{
+  const iceTex = makeIceTexture(); iceTexRef = iceTex;
+  const ice = new THREE.Mesh(
+    new THREE.PlaneGeometry(RINK.L, RINK.W),
+    new THREE.MeshStandardMaterial({ map: iceTex, roughness:.3, metalness:.02 })
+  );
+  ice.rotation.x = -Math.PI/2; ice.receiveShadow = !isTouch; scene.add(ice);
+  // G-47: once the owner's ice_rink texture arrives, redraw the same canvas
+  // with it under the markings and refresh THIS texture object - the swap
+  // lands on the material's map, not on the mesh (LESSONS 2026-10-20).
+  try{
+    const iceImg = new Image();
+    iceImg.onload = ()=>{ try{ makeIceTexture(iceImg); if(iceTexRef && iceCanvasRef){ iceTexRef.image = iceCanvasRef; iceTexRef.needsUpdate = true; } }catch(e){} };
+    iceImg.src = 'kit/ground/512/ice_rink.png';
+  }catch(e){}
+  // dark surround
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(900,500), new THREE.MeshBasicMaterial({color:0x0a0e14}));
+  apron.rotation.x=-Math.PI/2; apron.position.y=-0.05; scene.add(apron);
+}
+
+/* ================= arena: tiered stands, scoreboard, light rigs ================= */
+const OLD_ARENA = [];
+{
+  const standMat = new THREE.MeshStandardMaterial({ color:0x27334a, roughness:.9 });
+  // (these simple stands, the score cube and the old crowd are swapped for the shared stadium kit once it loads - see below)
+  // 6 stepped rows on all four sides, rising behind the boards (JOB J10: merged 24 -> 1 draw call)
+  {
+    const standGeos=[];
+    const _m=new THREE.Matrix4();
+    for(let side=0;side<4;side++){
+      for(let k=0;k<6;k++){
+        const off = (side<2 ? HZ+14 : HX+12) + k*3.4, y = 2 + k*2.8;
+        const len = (side<2 ? 250 : 150);
+        const g = new THREE.BoxGeometry(side<2?len:3.2, 2.2, side<2?3.2:len);
+        if(side===0) _m.makeTranslation(0,y,off);
+        else if(side===1) _m.makeTranslation(0,y,-off);
+        else if(side===2) _m.makeTranslation(off,y,0);
+        else _m.makeTranslation(-off,y,0);
+        g.applyMatrix4(_m); standGeos.push(g);
+      }
+    }
+    const standsMesh = new THREE.Mesh(mergeGeometries(standGeos), standMat);
+    scene.add(standsMesh); OLD_ARENA.push(standsMesh);
+  }
+  // center-hung scoreboard cube with a glowing score face
+  const sbCanvas = document.createElement('canvas'); sbCanvas.width=512; sbCanvas.height=256;
+  const sbTex = new THREE.CanvasTexture(sbCanvas); sbTex.colorSpace = THREE.SRGBColorSpace;
+  function drawScoreboard(h,a){
+    const g = sbCanvas.getContext('2d');
+    g.fillStyle='#04070d'; g.fillRect(0,0,512,256);
+    g.strokeStyle='#2a4a6a'; g.lineWidth=6; g.strokeRect(8,8,496,240);
+    g.fillStyle='#9fd8ff'; g.font='900 64px system-ui, -apple-system, sans-serif'; g.textAlign='center';
+    g.fillText('APEX HOCKEY', 256, 84);
+    g.fillStyle='#ffe27d'; g.font='900 96px system-ui, -apple-system, sans-serif';
+    g.fillText(h+' - '+a, 256, 196);
+    g.fillStyle='#ffcc33'; g.font='800 21px system-ui, -apple-system, sans-serif';
+    g.fillText('A P E X   A R C A D E', 256, 230);
+    sbTex.needsUpdate = true;
+  }
+  const sbSide = new THREE.MeshBasicMaterial({ map:sbTex });
+  const sbDark = new THREE.MeshStandardMaterial({ color:0x0a0e14, roughness:.8 });
+  const cube = new THREE.Mesh(new THREE.BoxGeometry(30,16,30), [sbSide,sbSide,sbDark,sbDark,sbSide,sbSide]);
+  cube.position.set(0,52,0); scene.add(cube); OLD_ARENA.push(cube);
+  // JOB J10: scoreboard cable merged into truss geometry below
+  window.__drawScoreboard = function(){ drawScoreboard(scoreH, scoreA); }; drawScoreboard(0,0);
+  // 4 light-rig trusses with fake volumetric cones (JOB J10: merged 8 -> 2 draw calls)
+  const coneMat = new THREE.MeshBasicMaterial({ color:0xbfd9ff, transparent:true, opacity:.032,
+    blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false, fog:false });
+  {
+    const trussGeos=[], coneGeos=[];
+    const _m=new THREE.Matrix4();
+    for(const [x,z] of [[80,55],[-80,55],[80,-55],[-80,-55]]){
+      const tg = new THREE.BoxGeometry(20,3,3);
+      _m.makeTranslation(x,78,z); tg.applyMatrix4(_m); trussGeos.push(tg);
+      const cg = new THREE.ConeGeometry(15,75,12,1,true);
+      _m.makeTranslation(x,40.5,z); cg.applyMatrix4(_m); coneGeos.push(cg);
+    }
+    // scoreboard cable (was separate mesh)
+    {
+      const cab = new THREE.BoxGeometry(1.6,64,1.6);
+      _m.makeTranslation(0,92,0); cab.applyMatrix4(_m); trussGeos.push(cab);
+    }
+    scene.add(new THREE.Mesh(mergeGeometries(trussGeos), sbDark));
+    scene.add(new THREE.Mesh(mergeGeometries(coneGeos), coneMat));
+  }
+}
+
+/* ================= crowd: two instanced meshes, perf-safe ================= */
+let crowdExcite = 0, crowdT = 0, crowdFrame = 0;
+const crowd = (function(){
+  const seats = [];
+  // long sides: 6 rows x 100 seats each; ends: 6 rows x 35 each
+  for(let side=0;side<4;side++){
+    const per = side<2 ? 100 : 35;
+    for(let k=0;k<6;k++){
+      const off = (side<2 ? HZ+14 : HX+12) + k*3.4, top = 2 + k*2.8 + 1.1; // row top surface
+      for(let i=0;i<per;i++){
+        let x, z;
+        if(side<2){ x = -120 + (i+Math.random()*0.8)/per*240 + rand(-0.5,0.5); z = (side===0?1:-1)*off + rand(-0.6,0.6); }
+        else { z = -50 + (i+Math.random()*0.8)/per*100 + rand(-0.5,0.5); x = (side===2?1:-1)*off + rand(-0.6,0.6); }
+        seats.push({ x, z, base: top + 0.05, rotY: rand(0,TAU), phase: rand(0,TAU) });
+      }
+    }
+  }
+  const N = seats.length;
+  const bodyGeo = new THREE.CylinderGeometry(0.34,0.48,1.5,6);
+  const headGeo = new THREE.SphereGeometry(0.29,7,6);
+  const bodyMat = new THREE.MeshLambertMaterial({ color:0xffffff });
+  const headMat = new THREE.MeshLambertMaterial({ color:0xffffff });
+  const bodies = new THREE.InstancedMesh(bodyGeo, bodyMat, N);
+  const heads = new THREE.InstancedMesh(headGeo, headMat, N);
+  bodies.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  heads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  bodies.castShadow = heads.castShadow = false; bodies.frustumCulled = heads.frustumCulled = false;
+  const bodyCols = [0x8a97a8,0xc8ccd4,0xb84a3a,0x3a6bc8,0xd8b84a,0x4a8a5a,0xe8e4da,0x7a4a8a,0xd97b2f,0x9fb6c9];
+  const skinCols = [0xd9a066,0x8d5524,0xf1c27d,0x5c3a1e];
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), Sv = new THREE.Vector3(1,1,1), EA = new THREE.Euler();
+  const C = new THREE.Color();
+  seats.forEach((s,i)=>{
+    const r = Math.random();
+    C.set(r<0.10?0x1f6fd6 : r<0.20?0x0e7c7b : bodyCols[(Math.random()*bodyCols.length)|0]);
+    bodies.setColorAt(i,C);
+    C.set(skinCols[(Math.random()*skinCols.length)|0]);
+    heads.setColorAt(i,C);
+    EA.set(0,s.rotY,0); Q.setFromEuler(EA);
+    V.set(s.x, s.base+0.75, s.z); M.compose(V,Q,Sv); bodies.setMatrixAt(i,M);
+    V.set(s.x, s.base+1.95, s.z); M.compose(V,Q,Sv); heads.setMatrixAt(i,M);
+  });
+  bodies.instanceColor.needsUpdate = true; heads.instanceColor.needsUpdate = true;
+  scene.add(bodies); scene.add(heads);
+  const _M = new THREE.Matrix4(), _Q = new THREE.Quaternion(), _V = new THREE.Vector3(), _S = new THREE.Vector3(1,1,1), _E = new THREE.Euler();
+  function update(dt){
+    crowdT += dt; crowdFrame++;
+    crowdExcite *= Math.max(0, 1 - dt*0.35);
+    const amp = 0.05 + 0.45*crowdExcite;
+    for(let j=0;j<50;j++){
+      const i = (crowdFrame*50 + j) % N, s = seats[i];
+      const bob = Math.sin(crowdT*3 + s.phase) * amp;
+      _E.set(0,s.rotY,0); _Q.setFromEuler(_E);
+      _V.set(s.x, s.base+0.75+bob, s.z); _M.compose(_V,_Q,_S); bodies.setMatrixAt(i,_M);
+      _V.set(s.x, s.base+1.95+bob, s.z); _M.compose(_V,_Q,_S); heads.setMatrixAt(i,_M);
+    }
+    bodies.instanceMatrix.needsUpdate = true; heads.instanceMatrix.needsUpdate = true;
+  }
+  return { update, count: N, meshes: [bodies, heads] };
+})();
+
+/* ================= boards + glass ================= */
+function roundedRectSegs(hw,hh,r){
+  const segs=[]; const push=(a,b,c,d)=>segs.push([a,b,c,d]);
+  push(-(hw-r), hh, hw-r, hh); push(hw-r, -hh, -(hw-r), -hh);
+  push(hw, -(hh-r), hw, hh-r); push(-hw, hh-r, -hw, -(hh-r));
+  const cs=[[hw-r,hh-r,0],[-(hw-r),hh-r,Math.PI/2],[-(hw-r),-(hh-r),Math.PI],[(hw-r),-(hh-r),Math.PI*1.5]];
+  cs.forEach(([cx,cz,a0])=>{ const n=6; let px=cx+Math.cos(a0)*r, pz=cz+Math.sin(a0)*r;
+    for(let i=1;i<=n;i++){ const a=a0+(i/n)*(Math.PI/2); const x=cx+Math.cos(a)*r, z=cz+Math.sin(a)*r;
+      push(px,pz,x,z); px=x; pz=z; } });
+  return segs;
+}
+{
+  const kickMat = new THREE.MeshStandardMaterial({color:0xd8b400, roughness:.8});
+  const boardMat = new THREE.MeshStandardMaterial({color:0xf5f8fa, roughness:.7});
+  const glassMat = new THREE.MeshBasicMaterial({color:0xbfe0ff, transparent:true, opacity:.10, side:THREE.DoubleSide, depthWrite:false});
+  const adCv = document.createElement('canvas'); adCv.width=1024; adCv.height=64;
+  { const ag = adCv.getContext('2d'); ag.fillStyle='#0e2a4a'; ag.fillRect(0,0,1024,64);
+    ag.fillStyle='#ffcc33'; ag.font='900 34px system-ui, sans-serif'; ag.textAlign='center';
+    ag.fillText('APEX ARCADE', 256, 43); ag.fillText('APEX ARCADE', 768, 43); }
+  const adTex = new THREE.CanvasTexture(adCv); adTex.colorSpace = THREE.SRGBColorSpace; adTex.wrapS = THREE.RepeatWrapping;
+  const adMat = new THREE.MeshBasicMaterial({ map: adTex });
+  // JOB J10: 28 board segments x 4 meshes (kick/board/ad/glass) = 112 draw calls -> 4 merged meshes.
+  // Same look: ad texture repeat is baked into the merged UVs (was a per-segment texture clone).
+  const kickGeos=[], boardGeos=[], adGeos=[], glassGeos=[];
+  const _e=new THREE.Euler(), _q=new THREE.Quaternion(), _1=new THREE.Vector3(1,1,1);
+  roundedRectSegs(HX, HZ, RINK.CR).forEach(([x1,z1,x2,z2])=>{
+    const len = Math.hypot(x2-x1, z2-z1); if(len<0.5) return;
+    const mx=(x1+x2)/2, mz=(z1+z2)/2, ang=Math.atan2(z2-z1, x2-x1);
+    _e.set(0,-ang,0); _q.setFromEuler(_e);
+    const M = new THREE.Matrix4().compose(new THREE.Vector3(mx,0,mz), _q.clone(), _1);
+    const kick = new THREE.BoxGeometry(len,1,0.7); kick.translate(0,0.5,0); kick.applyMatrix4(M); kickGeos.push(kick);
+    const bd = new THREE.BoxGeometry(len,2.7,0.7); bd.translate(0,2.35,0); bd.applyMatrix4(M); boardGeos.push(bd);
+    const rep = Math.max(1, Math.round(len/30));
+    const ad = new THREE.PlaneGeometry(len*0.92,1.6);
+    { const uv=ad.attributes.uv; for(let i=0;i<uv.count;i++) uv.setX(i, uv.getX(i)*rep); } // bake the old per-seg repeat
+    _e.set(0,Math.PI,0); _q.setFromEuler(_e);
+    const adM = M.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,2.3,-0.36), _q.clone(), _1));
+    ad.applyMatrix4(adM); adGeos.push(ad);
+    const gl = new THREE.PlaneGeometry(len,5.2); gl.translate(0,6.3,0); gl.applyMatrix4(M); glassGeos.push(gl);
+  });
+  scene.add(new THREE.Mesh(mergeGeometries(kickGeos), kickMat));
+  scene.add(new THREE.Mesh(mergeGeometries(boardGeos), boardMat));
+  scene.add(new THREE.Mesh(mergeGeometries(adGeos), adMat));
+  scene.add(new THREE.Mesh(mergeGeometries(glassGeos), glassMat));
+}
+
+/* ================= goals ================= */
+// JOB J10: goals merged (14 meshes -> 2 draw calls)
+{
+  const red = new THREE.MeshStandardMaterial({color:0xd8262f, roughness:.5});
+  const netMat = new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:.28, side:THREE.DoubleSide, depthWrite:false});
+  const redGeos=[], netGeos=[];
+  const _m=new THREE.Matrix4(), _e=new THREE.Euler(), _q=new THREE.Quaternion(), _v=new THREE.Vector3(), _s=new THREE.Vector3(1,1,1);
+  function xform(geo, x,y,z, rx=0,ry=0,rz=0){
+    _e.set(rx,ry,rz); _q.setFromEuler(_e); _v.set(x,y,z);
+    _m.compose(_v,_q,_s); geo.applyMatrix4(_m); return geo;
+  }
+  for(const gx of [GOAL_LINE, -GOAL_LINE]){
+    const s = Math.sign(gx);
+    const post = new THREE.CylinderGeometry(0.28,0.28,4,10);
+    for(const z of [-GOAL_HALF, GOAL_HALF]){
+      redGeos.push(xform(post.clone(), gx,2,z));
+    }
+    const bar = new THREE.CylinderGeometry(0.28,0.28,GOAL_HALF*2+0.5,10);
+    redGeos.push(xform(bar, gx,4,0, Math.PI/2,0,0));
+    const back = new THREE.PlaneGeometry(GOAL_HALF*2+1,4.4);
+    netGeos.push(xform(back, gx+s*3.4,2.2,0, 0,Math.PI/2,0));
+    for(const z of [-GOAL_HALF-0.4, GOAL_HALF+0.4]){
+      const side = new THREE.PlaneGeometry(3.6,4.4);
+      netGeos.push(xform(side, gx+s*1.7,2.2,z, 0,Math.PI/2,0));
+    }
+    const top = new THREE.PlaneGeometry(3.6,GOAL_HALF*2+1);
+    netGeos.push(xform(top, gx+s*1.7,4.3,0, Math.PI/2,0,Math.PI/2));
+  }
+  scene.add(new THREE.Mesh(mergeGeometries(redGeos), red));
+  scene.add(new THREE.Mesh(mergeGeometries(netGeos), netMat));
+}
+
+/* ================= skaters ================= */
+const GEO = {
+  skate: new THREE.BoxGeometry(0.55,0.35,1.15),
+  leg: new THREE.CylinderGeometry(0.5,0.42,2.1,8),
+  torso: new THREE.CylinderGeometry(1.05,0.88,2.4,10),
+  arm: new THREE.CylinderGeometry(0.34,0.3,1.9,8),
+  head: new THREE.SphereGeometry(0.55,12,10),
+  helmet: new THREE.SphereGeometry(0.64,12,10),
+  shaft: new THREE.CylinderGeometry(0.09,0.09,3.6,6),
+  blade: new THREE.BoxGeometry(1.1,0.11,0.24),
+  pad: new THREE.BoxGeometry(1.0,2.7,1.25),
+  glove: new THREE.BoxGeometry(0.8,0.8,0.9),
+};
+const MAT = {
+  pants: new THREE.MeshStandardMaterial({color:0x14181f, roughness:.8}),
+  skin: [0xd9a066,0x8d5524,0xf1c27d,0x5c3a1e].map(c=>new THREE.MeshStandardMaterial({color:c, roughness:.7})),
+  skate: new THREE.MeshStandardMaterial({color:0x222226, roughness:.6}),
+  stick: new THREE.MeshStandardMaterial({color:0x6b4a2a, roughness:.7}),
+  tape: new THREE.MeshStandardMaterial({color:0x111111, roughness:.7}),
+  puck: new THREE.MeshStandardMaterial({color:0x0a0a0a, roughness:.4}),
+  white: new THREE.MeshStandardMaterial({color:0xf2f4f6, roughness:.6}),
+};
+function teamMats(t){
+  return {
+    jersey: new THREE.MeshStandardMaterial({color:t.jersey, roughness:.75}),
+    helmet: new THREE.MeshStandardMaterial({color:t.helmet, roughness:.5}),
+    trim: new THREE.MeshStandardMaterial({color:t.trim, roughness:.75}),
+    pads: new THREE.MeshStandardMaterial({color:t.pads, roughness:.7}),
+  };
+}
+const HOME_M = teamMats(TEAMS.home), AWAY_M = teamMats(TEAMS.away);
+
+function makeSkater(teamKey, goalie){
+  const t = TEAMS[teamKey], M = teamKey==='home'?HOME_M:AWAY_M;
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
+  const skin = MAT.skin[(Math.random()*MAT.skin.length)|0];
+  const cast = !isTouch;
+  function mesh(geo,mat,x,y,z){ const m=new THREE.Mesh(geo,mat); m.position.set(x,y,z); m.castShadow=cast; body.add(m); return m; }
+  if(goalie){
+    mesh(GEO.pad,M.pads,0,1.45,-0.85); mesh(GEO.pad,M.pads,0,1.45,0.85);
+    const to=mesh(GEO.torso,M.jersey,0,3.6,0); to.scale.set(1.25,1,1.35);
+    mesh(GEO.arm,M.jersey,-0.2,3.4,-1.5).rotation.z=0.5;
+    mesh(GEO.arm,M.jersey,-0.2,3.4,1.5).rotation.z=0.5;
+    mesh(GEO.glove,M.trim,0.5,2.2,-1.7); mesh(GEO.glove,M.trim,0.5,2.2,1.7);
+  } else {
+    mesh(GEO.skate,MAT.skate,0,0.175,-0.55); mesh(GEO.skate,MAT.skate,0,0.175,0.55); // G-02 fix: skates sit flat on the ice (blade bottom at y=0)
+  }
+  const legL = new THREE.Group(), legR = new THREE.Group();
+  if(!goalie){
+    legL.position.set(0,2.4,-0.55); legR.position.set(0,2.4,0.55);
+    const ll=new THREE.Mesh(GEO.leg,MAT.pants); ll.position.y=-1.05; ll.castShadow=cast; legL.add(ll);
+    const lr=new THREE.Mesh(GEO.leg,MAT.pants); lr.position.y=-1.05; lr.castShadow=cast; legR.add(lr);
+    body.add(legL,legR);
+    const stripe=new THREE.Mesh(new THREE.CylinderGeometry(1.06,1.06,0.4,10),M.trim);
+    stripe.position.y=2.9; stripe.castShadow=cast; body.add(stripe);
+  }
+  if(!goalie) mesh(GEO.torso,M.jersey,0,3.6,0);
+  const armL=new THREE.Group(), armR=new THREE.Group();
+  armL.position.set(0,4.5,-1.25); armR.position.set(0,4.5,1.25);
+  const a1=new THREE.Mesh(GEO.arm,M.jersey); a1.position.y=-0.9; a1.castShadow=cast; armL.add(a1);
+  const a2=new THREE.Mesh(GEO.arm,M.jersey); a2.position.y=-0.9; a2.castShadow=cast; armR.add(a2);
+  armL.rotation.z=0.35; armR.rotation.z=0.35; body.add(armL,armR);
+  mesh(GEO.head,skin,0,5.35,0);
+  const hm=mesh(GEO.helmet,M.helmet,0,5.5,0); hm.scale.set(1,0.85,1);
+  // stick (right side)
+  const stick=new THREE.Group(); stick.position.set(0.5,0,1.55);
+  const sh=new THREE.Mesh(GEO.shaft,MAT.stick); sh.position.set(0.55,1.9,0); sh.rotation.z=-0.42; sh.castShadow=cast; stick.add(sh);
+  const bl=new THREE.Mesh(GEO.blade,MAT.tape); bl.position.set(1.35,0.1,0); stick.add(bl);
+  body.add(stick);
+  body.rotation.x = 0.08; // slight crouch
+  scene.add(g);
+  return { g, body, legL, legR, armL, armR, stick,
+    pos:g.position, vel:new THREE.Vector3(), facing: teamKey==='home'?0:Math.PI,
+    team:teamKey, goalie:!!goalie, role:'', phase:Math.random()*TAU, stun:0, thinkT:Math.random()*0.3,
+    target:new THREE.Vector3(), anchor:new THREE.Vector3(), skin };
+}
+
+const BASE_ANCHOR = { // home attacking +x; away mirrors x
+  C:[30,0], LW:[46,-22], RW:[46,22], LD:[4,-16], RD:[4,16]
+};
+const STICK_REACH = 2.9; // puck rides mid-blade, a real stick-length ahead (kit blade [-.1,.8] m x 3.26 units/m)
+const skaters = []; window.__hk = { skaters }; // read-only peek for the game check fix tests
+function buildTeam(teamKey){
+  const t = TEAMS[teamKey];
+  const NUMS = teamKey==='home' ? {C:27,LW:13,RW:88,LD:4,RD:44,G:30} : {C:19,LW:91,RW:86,LD:8,RD:77,G:35};
+  const SURN = teamKey==='home' ? {C:'RYDER',LW:'FROST',RW:'VOLT',LD:'BRICK',RD:'HAVOC',G:'WALL'} : {C:'MARLIN',LW:'REEF',RW:'JAWS',LD:'CORAL',RD:'ANCHOR',G:'HARBOR'};
+  ['C','LW','RW','LD','RD'].forEach((role,i)=>{
+    const s = makeSkater(teamKey,false); s.role=role; s.num=NUMS[role]; s.surname=SURN[role];
+    const b = BASE_ANCHOR[role]; s.anchor.set(b[0]*t.dir, 0, b[1]);
+    skaters.push(s);
+  });
+  const gl = makeSkater(teamKey,true); gl.role='G'; gl.num=NUMS.G;
+  gl.pos.set(-GOAL_LINE*t.dir + t.dir*2.2, 0, 0);
+  gl.facing = t.dir>0?0:Math.PI;
+  skaters.push(gl);
+}
+buildTeam('home'); buildTeam('away');
+const homeSkaters = skaters.filter(s=>s.team==='home'&&!s.goalie);
+const awaySkaters = skaters.filter(s=>s.team==='away'&&!s.goalie);
+const homeGoalie = skaters.find(s=>s.team==='home'&&s.goalie);
+const awayGoalie = skaters.find(s=>s.team==='away'&&s.goalie);
+// control ring
+const ring = new THREE.Mesh(new THREE.RingGeometry(1.9,2.35,28),
+  new THREE.MeshBasicMaterial({color:0xffd34d, transparent:true, opacity:.9, side:THREE.DoubleSide}));
+ring.rotation.x=-Math.PI/2; ring.position.y=0.12; scene.add(ring);
+// broadcast name tag over your skater (TV-style graphic: name + number + role)
+const tagCv=document.createElement('canvas'); tagCv.width=320; tagCv.height=72;
+const tagTex=new THREE.CanvasTexture(tagCv); tagTex.colorSpace=THREE.SRGBColorSpace;
+const tag=new THREE.Sprite(new THREE.SpriteMaterial({map:tagTex, transparent:true, depthTest:false}));
+tag.scale.set(9.5,2.15,1); tag.renderOrder=20; tag.visible=false; scene.add(tag);
+let tagFor=null;
+function drawTag(){
+  try{
+    const s=controlled, g=tagCv.getContext('2d'); g.clearRect(0,0,320,72);
+    let nm='YOU';
+    if(s.star){ const c=cLoad(); if(c&&c.star&&c.star.name) nm=c.star.name.split(' ').slice(-1)[0].toUpperCase(); }
+    const label=nm+(s.num?' · '+s.num:'')+' · '+s.role;
+    g.fillStyle='rgba(3,8,14,.85)'; g.beginPath(); g.roundRect(6,8,308,56,14); g.fill();
+    g.strokeStyle=s.star?'#ffd34d':'rgba(160,210,255,.7)'; g.lineWidth=3; g.beginPath(); g.roundRect(6,8,308,56,14); g.stroke();
+    g.fillStyle='#fff'; g.font='800 29px system-ui, sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+    g.fillText(label,160,39);
+    tagTex.needsUpdate=true;
+  }catch(e){}
+}
+
+/* ============ real 3D athletes (base-human-v2, async; primitives stay as fallback) ============
+   The rig model faces +z in its bind pose; this game's forward is group-local +x
+   (facing=0 moves +x, g.rotation.y=-facing), so the athlete is yawed +PI/2. */
+const HAIR_STYLES = ['parted','buzzed','curly','quiff','long','parted_beard','buzzed_beard','bald_beard'];
+const HAIR_COLS = [0x1a1210,0x2e1c12,0x5a3a1e,0x8a5a2e,0xc8a060,0xe8d0a0,0x7a2a14,0x9a9a9a];
+const KIT = {
+  home: { top:0x1f6fd6, bottom:0x123c73, goalieTop:0xffd34d },
+  away: { top:0x0e7c7b, bottom:0x0a4443, goalieTop:0xff7a59 },
+};
+const ATH_H = 5.9, ATH_K = ATH_H/1.81; // match the primitive figure's ~5.9-unit height
+let HK = null;
+async function attachAthletes(H){
+  let i = 0;
+  for(const s of skaters){
+    try{
+      const kit = KIT[s.team];
+      const a = H.make({
+        g:'m',
+        skin: i % 6,
+        hair: HAIR_STYLES[i % HAIR_STYLES.length],
+        hairCol: HAIR_COLS[(i*3) % HAIR_COLS.length],
+        outfit:'hoodie',
+        cols:{ top: s.goalie ? kit.goalieTop : kit.top, bottom: kit.bottom, shoes: 0x14161a },
+      }, ATH_H);
+      HK.a = a;
+      // THE SHARED HOCKEY KIT (characters/base-human-v2/gear.js): real jersey over shoulder + elbow pads, padded
+      // breezers, team socks over shin guards, oversized gloves, helmet + clear visor, skates with steel blades,
+      // the stick in both hands, and the owner's skating stance (lean 15-20, knees 25-30, hips back, wide).
+      const T = TEAMS[s.team];
+      const kitG = HK({ jersey: s.goalie ? kit.goalieTop : kit.top, yoke: kit.bottom, trim: T.trim, pants: new THREE.Color(kit.bottom).multiplyScalar(.55).getHex(),
+        helmet: T.helmet, gloves: kit.bottom, socks: s.goalie ? kit.goalieTop : kit.top, num: s.num, name: s.surname || '', crest: T.name[0], goalie: !!s.goalie,
+        blade: s.goalie ? [0, .55] : [-.1, .8] });
+      s._redrawPrints = () => kitG.setPrints({ num: s.num, name: s.surname || '' });
+      const wrap = new THREE.Group(); s.g.add(wrap);
+      a.object.rotation.y = Math.PI/2;
+      wrap.add(a.object);
+      if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
+      s.kit = kitG; s.athStick = kitG.stick;
+      a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
+      s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
+      s.ath = a; s.athWrap = wrap;
+    }catch(e){ /* that player stays primitive */ }
+    i++;
+    // G-52: yield every 2 skaters — building all 12 rigs in one unbroken task froze the
+    // main thread for seconds on slow screens, stalling the start of a career level
+    if(i % 2 === 0 && i < skaters.length) await new Promise(r=>setTimeout(r,0));
+  }
+}
+/* ============ the real arena: shared stadium kit (venues/kit/stadium.js, venues/rink.md) ============
+   An 18,000-seat, 2-level bowl around the boards, with 16,000 moving fans in team colours who stand and cheer on goals,
+   LED ribbons, tunnels, a closed roof with trusses and a ring of lights, and a centre-hung 4-sided scoreboard. The
+   game's own ice, boards and glass stay. Units: this game uses feet (3.2808 per metre). */
+let ARENA = null;
+const stadiumPreload=(async()=>{ // G-35: named preload (see preloadsDone) — this build must land before play, never mid-game
+  try{
+    const { buildStadium } = await import('./venues/kit/stadium.js');
+    const st = buildStadium(THREE, { preset:'arena', floor:{ a:30.48, b:12.95, r:8.53 }, setback:2.6, unit:3.2808,
+      home:TEAMS.home.jersey, away:TEAMS.away.jersey });
+    scene.add(st.group);
+    OLD_ARENA.forEach(m=>{ m.visible=false; }); (crowd.meshes||[]).forEach(m=>{ m.visible=false; });
+    if(scene.fog) scene.fog.far = Math.max(scene.fog.far, 900);
+    const oldDraw = window.__drawScoreboard;
+    window.__drawScoreboard = function(){ if(oldDraw) oldDraw(); st.setScore({ home:TEAMS.home.name, away:TEAMS.away.name, hs:scoreH, as:scoreA, clock:'', period:'' }); };
+    window.__drawScoreboard();
+    ARENA = st; window.__arena = st;
+  }catch(e){ /* kit missing: the simple stands and crowd stay */ }
+})();
+const humansPreload=(async()=>{ // G-35: named preload (see preloadsDone) — the GLB parse + attach must land before play, never mid-game
+  try{
+    const { loadHumans } = await import('./characters/base-human-v2/humans.js');
+    const gearP = import('./characters/base-human-v2/gear.js'); // G-52: fetch the gear module in parallel with the GLBs (was serialized after them, delaying the attach)
+    const H = await loadHumans(THREE, './characters/base-human-v2/');
+    const { hockeyKit } = await gearP;
+    HK = (o) => hockeyKit(THREE, HK.a, o);
+    await attachAthletes(H); // G-52: the preload settles only when every athlete is in
+  }catch(e){ /* GLB/vendor missing or slow — game plays on with the primitives */ }
+})();
+/* G-35 preload gate: both heavy loads start at page open; the opening faceoff waits
+   until they have settled so their build/parse never lands mid-game.
+   Capped (G-52: 2.5 s, was 6 s) — the wait cannot make a slow load faster, it only
+   delays the start; past a short grace the faceoff goes ahead and the last pieces
+   land during the countdown, not in open play. A missing kit never blocks a game. */
+function preloadsDone(){
+  return Promise.race([ Promise.allSettled([stadiumPreload, humansPreload]),
+    new Promise(r=>setTimeout(r,2500)) ]);
+}
+
+/* ================= puck ================= */
+const puckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.36,14), MAT.puck);
+puckMesh.castShadow=!isTouch; scene.add(puckMesh);
+const puck = { mesh:puckMesh, pos:puckMesh.position, vel:new THREE.Vector3(), owner:null, recv:null, recvT:0, shot:null };
+puck.pos.set(0,0.2,0);
+window.__hk.puck = puck; window.__hk.BLUE = BLUE; // read-only peek for the offside fix test
+
+/* ================= input ================= */
+const joyVec = { x:0, y:0, active:false };
+{
+  const joy=document.getElementById('joy'), knob=document.getElementById('knob');
+  let tid=null, cx=0, cy=0;
+  const setKnob=(dx,dy)=>{ knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
+  joy.addEventListener('touchstart',e=>{ e.preventDefault(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
+    const t=e.changedTouches[0]; tid=t.identifier;
+    const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; },{passive:false});
+  const move=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
+    let dx=t.clientX-cx, dy=t.clientY-cy; const d=Math.hypot(dx,dy), max=44;
+    if(d>max){ dx=dx/d*max; dy=dy/d*max; }
+    if(innerHeight>innerWidth){ const _dx=dx; dx=dy; dy=-_dx; } // rotated stage: remap touch to the landscape frame
+    setKnob(dx,dy); joyVec.x=dx/max; joyVec.y=dy/max; joyVec.active=true; } };
+  joy.addEventListener('touchmove',e=>{e.preventDefault();move(e);},{passive:false});
+  const end=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
+    tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); } };
+  joy.addEventListener('touchend',end); joy.addEventListener('touchcancel',end);
+  // JOB-04: the stick must let go when iOS steals the touch (notification, app switch, Control Centre)
+  const releaseAll=()=>{ tid=null; joyVec.x=joyVec.y=0; joyVec.active=false; setKnob(0,0); for(const k in keys) keys[k]=false; };
+  window.__hkStickRelease=releaseAll;
+  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
+}
+const keys={};
+addEventListener('keydown',e=>{ if(e.repeat) return; keys[e.code]=true;
+  if(e.code==='KeyJ') doPass(); if(e.code==='KeyK') startCharge(); if(e.code==='KeyL') doCheck();
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
+addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='KeyK') releaseShot(); });
+function bindBtn(id,down,up){ const el=document.getElementById(id);
+  el.addEventListener('touchstart',e=>{e.preventDefault();down();},{passive:false});
+  el.addEventListener('touchend',e=>{e.preventDefault();if(up)up();},{passive:false});
+  el.addEventListener('mousedown',e=>{e.preventDefault();down();});
+  el.addEventListener('mouseup',()=>{if(up)up();}); }
+bindBtn('btnPass',()=>doPass());
+bindBtn('btnCheck',()=>doCheck());
+bindBtn('btnShoot',()=>startCharge(),()=>releaseShot());
+let charge=0, charging=false;
+const chargeEl=document.getElementById('charge'), chargeFill=document.getElementById('chargeFill');
+function startCharge(){ if(state!=='play') return; charging=true; charge=0; chargeEl.style.opacity=1; }
+function releaseShot(){ if(!charging) return; charging=false; chargeEl.style.opacity=0; doShoot(charge); charge=0; }
+
+/* ================= game state / HUD ================= */
+let state='menu', paused=false;
+let period=1, clockT=PERIOD_LEN, scoreH=0, scoreA=0, stateT=0, lastOwnerTeam=null;
+let pendingFaceoff=null;
+let controlled = homeSkaters[0];
+/* G-37: the career play tests read and set the live game through this hook
+   (the same __hk peek the other play tests use for the puck and the skaters).
+   A test starts a career match for real, then puts it in its last seconds
+   here so tick() itself ends the game and careerAfterGame() unlocks the
+   next level - no test writes the career save to fake a result. */
+window.__hk.game = {
+  get state() { return state; },
+  get period() { return period; },
+  get clockT() { return clockT; },
+  get scoreH() { return scoreH; },
+  get scoreA() { return scoreA; },
+  set period(v) { period = v; },
+  set clockT(v) { clockT = v; },
+  set scoreH(v) { scoreH = v; },
+  set scoreA(v) { scoreA = v; },
+  // a fresh match (period 1, 0-0, full clock): a player gets this from the
+  // page reload behind PLAY AGAIN / the hub, a test playing several career
+  // matches on one shared page gets it here instead
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; updateHUD(); },
+};
+const $=id=>document.getElementById(id);
+function fmtClock(){ if(period>3) return 'OT'; const m=(clockT/60)|0, s=('0'+((clockT|0)%60)).slice(-2); return m+':'+s; }
+const PNAME=['','1ST','2ND','3RD','OT'];
+let lastSB='';
+function updateHUD(){ $('score').textContent=scoreH+' – '+scoreA; $('period').textContent=PNAME[period]; $('clock').textContent=fmtClock();
+  const _sbk=scoreH+'-'+scoreA+'-'+period+'-'+TEAMS.away.name; if(_sbk!==lastSB){ lastSB=_sbk;
+    $('nmH').textContent=TEAMS.home.name; $('nmA').textContent=TEAMS.away.name;
+    $('nmH').style.background='#'+TEAMS.home.jersey.toString(16).padStart(6,'0');
+    $('nmA').style.background='#'+TEAMS.away.jersey.toString(16).padStart(6,'0');
+    if(window.__drawScoreboard) window.__drawScoreboard(); }
+  { const pt=$('penTag'); if(pt){ let txt=''; if(PEN.away) txt=TEAMS.home.name+' PP · '+fmtPen(PEN.away.penT);
+    if(PEN.home) txt=(txt?txt+'  ·  ':'')+TEAMS.away.name+' PP · '+fmtPen(PEN.home.penT);
+    pt.textContent=txt; pt.style.display=txt?'block':'none'; } }
+}
+let shotTagTO=null;
+function showShotTag(mph){ const el=$('shotTag'); if(!el) return; el.textContent='SHOT · '+mph+' MPH'; el.classList.add('show');
+  clearTimeout(shotTagTO); shotTagTO=setTimeout(()=>el.classList.remove('show'),2200); }
+let bannerTO=null;
+function banner(main, sub, dur=1800, color){
+  const b=$('banner'); b.innerHTML=main+(sub?`<small>${sub}</small>`:'');
+  b.style.color=color||'#fff'; b.classList.add('show');
+  clearTimeout(bannerTO); bannerTO=setTimeout(()=>b.classList.remove('show'), dur);
+}
+function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
+  requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
+/* ================= G-47: owner's stadium kit sounds (sounds/stadium/hockey) =================
+   Real recordings take over from the synthesized crowd bed, goal horn and
+   puck/skate effects. Anything that fails to load leaves the synthesized
+   sound in place (the noise crowd bed, the synth horn), so the game is
+   never quieter than before. */
+const SND_DIR = 'sounds/stadium/hockey/';
+function kitSfx(name, vol){
+  try{
+    if(Mus.muted) return false;
+    const a = new Audio(SND_DIR + name); a.volume = vol == null ? 0.8 : vol;
+    const pr = a.play(); if(pr && pr.catch) pr.catch(()=>{});
+    return true;
+  }catch(e){ return false; }
+}
+let puckSfxT = 0;
+function puckSfx(name, vol){ // throttled: the physics can bounce the puck several times a frame
+  const now = performance.now(); if(now - puckSfxT < 130) return; puckSfxT = now; kitSfx(name, vol);
+}
+let skateSfxT = 0;
+function skateSfx(){
+  const now = performance.now(); if(now - skateSfxT < 400) return; skateSfxT = now; kitSfx('hockey_skate_stop.mp3', 0.5);
+}
+// goal horn: the owner's horn (preloaded) - the synth horn stays as fallback
+let AC=null;
+let kitHornEl=null, kitHornOK=false;
+try{ kitHornEl=new Audio(SND_DIR+'hockey_goal_horn.mp3'); kitHornEl.preload='auto';
+  kitHornEl.addEventListener('canplaythrough',()=>{ kitHornOK=true; }); }catch(e){}
+function horn(){
+  if(kitHornOK){ try{ kitHornEl.currentTime=0; const pr=kitHornEl.play(); if(pr&&pr.catch) pr.catch(()=>{}); return; }catch(e){} }
+  try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  const o=AC.createOscillator(), g=AC.createGain(); o.type='sawtooth'; o.frequency.value=164;
+  g.gain.setValueAtTime(.25,AC.currentTime); g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+1.4);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+1.4); }catch(e){} }
+
+/* ================= procedural music (WebAudio, no files) ================= */
+const Mus = {
+  ctx:null, master:null, nbuf:null, timer:null, kitAmb:null, // G-47: kit crowd loop element once it can play
+  muted:false, mode:'menu', step:0, nextT:0,
+  CH:[[57,60,64],[53,57,60],[55,60,64],[55,59,62]], // Am F C G
+  ensure(){
+    if(this.ctx){ if(this.ctx.state==='suspended'){ try{this.ctx.resume();}catch(e){} } return; }
+    try{
+      this.ctx = new (window.AudioContext||window.webkitAudioContext)();
+      this.muted = localStorage.getItem('apex_muted')==='1';
+      this.master = this.ctx.createGain();
+      this.master.gain.value = this.muted?0:0.35;
+      this.master.connect(this.ctx.destination);
+      const len = this.ctx.sampleRate*0.3, b = this.ctx.createBuffer(1,len,this.ctx.sampleRate), d = b.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+      this.nbuf = b;
+      this.nextT = this.ctx.currentTime+0.06; this.step = 0;
+      this.timer = setInterval(()=>this.sched(),30);
+      // stadium crowd ambience: looped shaped noise -> bandpass -> crowdGain
+      const clen=this.ctx.sampleRate*2, cb=this.ctx.createBuffer(1,clen,this.ctx.sampleRate), cd=cb.getChannelData(0);
+      let lv=0; for(let i=0;i<clen;i++){ const w=Math.random()*2-1; lv=(lv+0.02*w)/1.02; cd[i]=lv*3.4; }
+      const cs=this.ctx.createBufferSource(); cs.buffer=cb; cs.loop=true;
+      this.crowdFilter=this.ctx.createBiquadFilter(); this.crowdFilter.type='bandpass'; this.crowdFilter.frequency.value=850; this.crowdFilter.Q.value=0.5;
+      this.crowdGain=this.ctx.createGain(); this.crowdGain.gain.value=0.0;
+      cs.connect(this.crowdFilter); this.crowdFilter.connect(this.crowdGain); this.crowdGain.connect(this.master); cs.start();
+      this.crowdSwell=0;
+      // G-47: the owner's hockey crowd loop becomes the bed once it can play
+      try{
+        const amb=new Audio(SND_DIR+'hockey_ambience_loop.mp3'); amb.loop=true; amb.volume=0; amb.preload='auto';
+        amb.addEventListener('canplay',()=>{ this.kitAmb=amb; });
+        const ap=amb.play(); if(ap&&ap.catch) ap.catch(()=>{});
+      }catch(e){}
+    }catch(e){ /* WebAudio unavailable: game keeps playing silently */ }
+  },
+  m2f(m){ return 440*Math.pow(2,(m-69)/12); },
+  tone(f,t,dur,type,vol,atk){
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+(atk||0.005));
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.05);
+  },
+  noise(t,dur,vol){
+    const src=this.ctx.createBufferSource(); src.buffer=this.nbuf;
+    const f=this.ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=6000;
+    const g=this.ctx.createGain();
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(f); f.connect(g); g.connect(this.master); src.start(t); src.stop(t+dur+0.02);
+  },
+  playStep(s,t){
+    const bar=(s>>4)&3, ch=this.CH[bar];
+    if(this.mode==='menu'){ // calm 92 BPM: slow pads + soft bass + sparse pluck
+      if(s%16===0){ ch.forEach(n=>this.tone(this.m2f(n),t,3.4,'triangle',0.045,1.1)); this.tone(this.m2f(ch[0]-12),t,1.6,'sine',0.10,0.02); }
+      if(s%16===6||(bar===2&&s%16===11)) this.tone(this.m2f(ch[(s>>2)%3]+12),t,0.5,'triangle',0.07,0.01);
+    } else { // driving 132 BPM: four-on-floor kick, offbeat hats, 8th bass, 16th arp
+      if(s%4===0){
+        const o=this.ctx.createOscillator(), g=this.ctx.createGain(); o.type='sine';
+        o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(42,t+0.11);
+        g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+        o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.16);
+      }
+      if(s%4===2) this.noise(t,0.05,0.10);
+      if(s%2===0){ const pat=[0,0,7,0,12,0,7,10]; this.tone(this.m2f(ch[0]-12+pat[(s>>1)%8]),t,0.20,'triangle',0.14,0.01); }
+      this.tone(this.m2f(ch[s%3]+12),t,0.09,'triangle',0.05,0.005);
+    }
+  },
+  sched(){
+    if(!this.ctx) return;
+    const ahead=this.ctx.currentTime+0.15, bpm=this.mode==='game'?132:92, spb=60/bpm/4;
+    while(this.nextT<ahead){ try{ this.playStep(this.step,this.nextT); }catch(e){}
+      this.nextT+=spb; this.step=(this.step+1)%64; }
+  },
+  setMode(m){ if(this.mode!==m){ this.mode=m; this.step=0; } },
+  setMuted(m){
+    this.muted=m;
+    try{ localStorage.setItem('apex_muted',m?'1':'0'); }catch(e){}
+    if(this.master) this.master.gain.value=m?0:0.35;
+    const b=document.getElementById('muteBtn'); if(b) b.textContent=m?'🔇':'🔊';
+  },
+  crowdGoal(home){ // swell the stadium: loud cheer for us, muted boo-ish for them
+    kitSfx(home?'hockey_big_cheer.mp3':'hockey_groan.mp3', home?0.95:0.7); // G-47: kit crowd reaction
+    if(!this.ctx||!this.crowdGain) return;
+    this.crowdSwell=home?1:0.45;
+    try{ this.crowdFilter.frequency.setTargetAtTime(home?1150:420,this.ctx.currentTime,0.12); }catch(e){}
+  },
+  crowdTick(dt){ // quiet murmur -> loud on big moments, driven every frame
+    if(!this.ctx||!this.crowdGain) return;
+    if(this.muted){ this.crowdGain.gain.value=0; if(this.kitAmb) this.kitAmb.volume=0; return; }
+    this.crowdSwell=Math.max(0,this.crowdSwell-dt*0.45);
+    const target=0.045+0.22*crowdExcite+0.5*this.crowdSwell;
+    if(this.kitAmb){ // G-47: kit crowd loop carries the bed; the shaped-noise bed rests at zero
+      try{ this.crowdGain.gain.setTargetAtTime(0,this.ctx.currentTime,0.25); this.kitAmb.volume=Math.min(0.85,target*1.2); }catch(e){}
+      return;
+    }
+    try{
+      this.crowdGain.gain.setTargetAtTime(Math.min(0.8,target),this.ctx.currentTime,0.25);
+      if(this.crowdSwell<=0.01) this.crowdFilter.frequency.setTargetAtTime(850,this.ctx.currentTime,1.5);
+    }catch(e){}
+  }
+};
+window.__mus = Mus;
+
+/* ================= actions ================= */
+function nearestSkater(team,pos,skipGoalie=true){
+  let best=null,bd=1e9;
+  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue;
+    const d=(s.pos.x-pos.x)**2+(s.pos.z-pos.z)**2; if(d<bd){bd=d;best=s;} }
+  return best;
+}
+function switchControl(){ const s=nearestSkater('home',puck.pos); if(s) controlled=s; }
+function doPass(){
+  if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
+  const from=puck.owner, fx=Math.cos(from.facing), fz=Math.sin(from.facing);
+  let best=null,bs=-1e9;
+  for(const s of homeSkaters){ if(s===from||s.inBox) continue;
+    const dx=s.pos.x-from.pos.x, dz=s.pos.z-from.pos.z, d=Math.hypot(dx,dz)||1;
+    if(d>70) continue;
+    const align=(dx*fx+dz*fz)/d;
+    let open=1e9; for(const o of awaySkaters){ const od=Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z); if(od<open)open=od; }
+    const sc=align*2+Math.min(open,30)/15-d/90;
+    if(sc>bs){bs=sc;best=s;} }
+  if(!best) return;
+  const lead=0.30, tx=best.pos.x+best.vel.x*lead, tz=best.pos.z+best.vel.z*lead;
+  const dx=tx-puck.pos.x, dz=tz-puck.pos.z, d=Math.hypot(dx,dz)||1, sp=40;
+  puck.pos.set(from.pos.x+fx*STICK_REACH, 0.2, from.pos.z+fz*STICK_REACH); // release from the stick, not the skates
+  puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null; puck.recv=best; puck.recvT=2.2;
+  puck.passGrace=from; puck.passT=performance.now();
+  puck.lastPass=from; puck.lastPassT=performance.now();
+  commSay('pass'); // G-44
+  puckSfx('hockey_puck_pass.mp3', 0.45); // G-47
+}
+function doShoot(power){
+  if(state!=='play'||!puck.owner||puck.owner.team!=='home') return;
+  shootFrom(puck.owner, power, true);
+}
+function shootFrom(s, power, aimed){
+  const dir=TEAMS[s.team].dir, gx=dir*GOAL_LINE;
+  let aimZ=(Math.random()<0.5?-1:1)*(1.1+Math.random()*1.4);
+  if(aimed && joyVec.active){ // blend joystick aim
+    const jx=joyVec.x, jz=joyVec.y;
+    if(Math.sign(jx)===dir||Math.abs(jx)>0.7) aimZ=clamp(jz*8,-2.6,2.6);
+  }
+  const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
+  const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
+  puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
+  puck.shot={team:s.team,t:0,by:s};
+  commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
+  if(power>=0.8) puckSfx('hockey_puck_slapshot.mp3', 0.75); // G-47
+  if(s.team==='home') showShotTag(Math.round(sp*1.22));
+  s.phase+=1.2;
+}
+/* ================= penalties ================= */
+const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
+const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
+function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
+function callPenalty(off, why){
+  if(!off || off.inBox || state!=='play') return;
+  off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
+  banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+  commSay('penalty_box'); // G-44
+  if(off===controlled) switchControl();
+  updateHUD();
+}
+function endPenalty(off, quiet){
+  if(!off) return;
+  off.inBox=false; off.penT=0; if(PEN[off.team]===off) PEN[off.team]=null;
+  if(!quiet) banner('FULL STRENGTH', TEAMS[off.team].name, 1400, '#9fe8a9');
+  updateHUD();
+}
+function doCheck(){
+  if(state!=='play') return;
+  switchControl();
+  const s=controlled, o=puck.owner;
+  const dPuck=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
+  if(dPuck<5.2 && o && o.team==='away' && !o.goalie){
+    const dO=Math.hypot(s.pos.x-o.pos.x,s.pos.z-o.pos.z);
+    if(dO<3.4){ // contact ON the carrier: from behind is a penalty; front or side is a clean poke
+      const behind=(Math.cos(o.facing)*(s.pos.x-o.pos.x)+Math.sin(o.facing)*(s.pos.z-o.pos.z)) < -0.9;
+      if(behind){ callPenalty(s,'CHECK FROM BEHIND'); return; }
+      const chance=dO<3?0.8:0.45;
+      if(Math.random()<chance){ // poke it loose
+        puck.owner=null;
+        const a=Math.random()*TAU; puck.vel.set(Math.cos(a)*rand(8,15),0,Math.sin(a)*rand(8,15));
+        o.stun=0.5; o.vel.x+=(s.pos.x-o.pos.x)*2; o.vel.z+=(s.pos.z-o.pos.z)*2;
+        banner('POKE CHECK','',700,'#9fd8ff');
+        commSay('big_hit'); // G-44
+      }
+      return;
+    }
+  }
+  // hitting a man who does NOT have the puck is interference
+  let oppNear=null, dOpp=1e9;
+  for(const op of awaySkaters){ if(op.goalie||op===puck.owner) continue;
+    const dd=Math.hypot(s.pos.x-op.pos.x,s.pos.z-op.pos.z); if(dd<dOpp){ dOpp=dd; oppNear=op; } }
+  if(oppNear && dOpp<2.6) callPenalty(s,'INTERFERENCE');
+}
+
+/* ================= faceoffs / whistles ================= */
+function placeSkater(s,x,z,face){ s.pos.set(x,0.1,z); s.vel.set(0,0,0); s.facing=face; s.stun=0; }
+function setupFaceoffPositions(dx,dz){
+  const hd=1; // home attacks +x
+  const H=homeSkaters, A=awaySkaters;
+  const hc=H.find(s=>s.role==='C'), ac=A.find(s=>s.role==='C');
+  placeSkater(hc,dx-2.6,dz,0); placeSkater(ac,dx+2.6,dz,Math.PI);
+  const wings=[['LW',-1],['RW',1]];
+  wings.forEach(([r,sgn])=>{ const h=H.find(s=>s.role===r), a=A.find(s=>s.role===r);
+    placeSkater(h,dx-11*hd,dz+sgn*13,0); placeSkater(a,dx+11,dz+sgn*13,Math.PI); });
+  const hld=H.find(s=>s.role==='LD'), hrd=H.find(s=>s.role==='RD');
+  const ald=A.find(s=>s.role==='LD'), ard=A.find(s=>s.role==='RD');
+  placeSkater(hld,dx-17,dz-10,0); placeSkater(hrd,dx-17,dz+10,0);
+  placeSkater(ald,dx+17,dz-10,Math.PI); placeSkater(ard,dx+17,dz+10,Math.PI);
+  homeGoalie.pos.set(-GOAL_LINE+2.2,0.1,0); homeGoalie.facing=0; homeGoalie.vel.set(0,0,0);
+  awayGoalie.pos.set(GOAL_LINE-2.2,0.1,0); awayGoalie.facing=Math.PI; awayGoalie.vel.set(0,0,0);
+  puck.pos.set(dx,0.2,dz); puck.vel.set(0,0,0); puck.owner=null; puck.recv=null; puck.shot=null; puck.lastTouch=null;
+  puck.recvT=0; prevPuckX=dx;
+  for(const bs of skaters){ if(bs.inBox){ const bp=BOXSPOT[bs.team]; placeSkater(bs, bp[0], bp[1], bs.team==='home'?0:Math.PI); } } // boxed men stay in the box for the drop
+  controlled = nearestSkater('home',puck.pos);
+}
+const LINE1R = { home:{ LW:[13,'FROST'], RW:[88,'VOLT'], LD:[4,'BRICK'], RD:[44,'HAVOC'] },
+                 away:{ C:[19,'MARLIN'], LW:[91,'REEF'], RW:[86,'JAWS'], LD:[8,'CORAL'], RD:[77,'ANCHOR'] } };
+const LINE2R = { home:{ LW:[71,'COMET'], RW:[17,'DASH'], LD:[6,'STONE'], RD:[55,'PILLAR'] },
+                 away:{ C:[14,'FINN'], LW:[63,'SURGE'], RW:[21,'RIP'], LD:[5,'COAST'], RD:[74,'BREAK'] } };
+const lineOn = { home:1, away:1 };
+function maybeSwapLines(){
+  for(const t of ['home','away']){
+    const act=(t==='home'?homeSkaters:awaySkaters).filter(x=>!x.inBox);
+    const avg=act.reduce((a,x)=>a+(x.stam??1),0)/Math.max(1,act.length);
+    if(avg>0.66 && Math.random()>0.30) continue; // fresh enough — the coach holds this line
+    lineOn[t]=lineOn[t]===1?2:1;
+    const roster=(lineOn[t]===1?LINE1R:LINE2R)[t];
+    for(const x of act){ if(t==='home'&&x.star){ x.stam=0.97; continue; } // the star stays out
+      const r=roster[x.role]; if(!r) continue;
+      x.num=r[0]; x.surname=r[1]; x.stam=0.97; if(x._redrawPrints) x._redrawPrints(); }
+    banner('LINE CHANGE', TEAMS[t].name+' · LINE '+lineOn[t]+' OVER THE BOARDS', 1300, '#9fd8ff');
+  }
+  tagFor=null; // the name tag redraws for whoever is controlled now
+}
+function faceoff(dx,dz,label){
+  maybeSwapLines();
+  offArm=null;
+  setupFaceoffPositions(dx,dz);
+  state='faceoff'; stateT=1.4; updateHUD();
+  if(label) banner(label,'',1400);
+  commSay('faceoff');
+}
+function nearestDot(x,z){
+  let best='center',bd=1e9;
+  for(const k in DOTS){ const d=(DOTS[k][0]-x)**2+(DOTS[k][1]-z)**2; if(d<bd){bd=d;best=k;} }
+  return best;
+}
+function onGoal(team){
+  state='goal'; stateT=3.2;
+  const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
+  if(team==='home'){scoreH++;}else{scoreA++;}
+  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
+  try{ careerOnGoal(team); }catch(e){}
+  updateHUD(); flash(); horn();
+  banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
+  if(period>3) commSay('goal_long', true); // G-44: the golden goal gets the long call
+  else if(_deficit>=2 && (team==='home' ? scoreH>=scoreA : scoreA>=scoreH)) commSay('comeback', true);
+  else commSay('goal', true);
+  if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
+}
+function whistle(text,sub){
+  state='whistle'; stateT=2.2; puck.vel.multiplyScalar(0.1);
+  banner('WHISTLE', text+(sub?' · '+sub:''), 2000, '#ffb3b3');
+  if(text==='ICING') commSay('icing'); else if(text==='OFFSIDE') commSay('offside'); // G-44
+}
+
+/* ================= AI ================= */
+function teamHasPuck(t){ return puck.owner&&puck.owner.team===t; }
+/* G-35: scratch rosters reused by every AI think — the .filter()/.slice() calls here
+   built new arrays several times a second per skater, and the garbage (plus the
+   closures) kept tripping the GC mid-play. Same rosters, same order, zero allocs. */
+const _mates=[], _mates2=[], _fw=[], _pmates=[];
+const _cyc=[[0,0],[0,0],[0,0]]; // O-zone cycle points, refilled per use
+function aiSkater(s,dt){
+  const dir=TEAMS[s.team].dir;
+  s.thinkT-=dt;
+  if(s.thinkT>0) return;
+  s.thinkT=0.25+Math.random()*0.15;
+  const isHome=s.team==='home';
+  const isControlled=isHome&&s===controlled&&state==='play';
+  if(isControlled){ s._chasing=false; return; } // input-driven
+  if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
+  if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
+  // closest-two chase logic
+  const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
+  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled)) mates.push(m); } // the user's skater is input-driven — never count him as a chaser
+  mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
+  const carrier=puck.owner;
+  if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
+    const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
+    let nearestOpp=1e9;
+    for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
+    s._decide=(s._decide||0)-0.18;
+    if((s.role==='LD'||s.role==='RD') && dGoal<72 && s._decide<=0 && Math.random()<0.5){ shootFrom(s, rand(0.5,0.85), false); s._decide=rand(1.4,2.4); return; } // point shot through traffic
+    if(dGoal<44 && s._decide<=0){ shootFrom(s, rand(0.55,0.95), false); s._decide=rand(1.4,2.4); return; }
+    if(nearestOpp<7 && Math.random()<0.55 && s._decide<=0){ aiPass(s); s._decide=rand(1.4,2.4); return; }
+    s.target.set(dir*rand(70,82), 0, clamp(s.pos.z*0.4+rand(-14,14),-28,28));
+    return;
+  }
+  if(!carrier && puck.recv===s && puck.recvT>0){ // a pass is coming to ME: skate to meet it
+    const pv=Math.hypot(puck.vel.x,puck.vel.z)||1, pd=Math.hypot(puck.pos.x-s.pos.x,puck.pos.z-s.pos.z);
+    const tt=Math.min(0.6, pd/(pv+22));
+    s.target.set(puck.pos.x+puck.vel.x*tt, 0, puck.pos.z+puck.vel.z*tt);
+    s._chasing=true;
+    return;
+  }
+  const oppHas=carrier&&carrier.team!==s.team, weHave=carrier&&carrier.team===s.team;
+  let isChaser=(mates[0]===s||mates[1]===s); // G-35: the old chasers list was just mates.slice(0,2)
+  if(!carrier && (puck.deadT||0)>1.0){ // DEAD PUCK: it has sat loose too long — the nearest skater on EACH team goes and gets it, no matter the slots
+    const mine=(isHome?homeSkaters:awaySkaters); let nd=1e18;
+    for(const m of mine){ if(m.goalie) continue; const dd=(m.pos.x-puck.pos.x)**2+(m.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
+    if((s.pos.x-puck.pos.x)**2+(s.pos.z-puck.pos.z)**2<=nd+0.01) isChaser=true;
+  }
+  if(!weHave && isChaser){
+    const lead=oppHas?0.25:0;
+    s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
+                 puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
+    s._chasing=true;
+    // active pressure: poke it loose when right on the carrier — an IDLE carrier gets stripped
+    if(carrier && !carrier.goalie){
+      const cDist=Math.hypot(s.pos.x-carrier.pos.x,s.pos.z-carrier.pos.z);
+      const cSpd=Math.hypot(carrier.vel.x,carrier.vel.z);
+      if(cDist<2.7 && Math.random() < (cSpd<3.5 ? 0.30 : 0.06)){
+        puck.owner=null; const pa=Math.random()*TAU;
+        puck.vel.set(Math.cos(pa)*rand(7,14),0,Math.sin(pa)*rand(7,14));
+        carrier.stun=0.35;
+      }
+    }
+    if(!carrier && Math.random()<0.010){ // rare: a chaser bumps a man without the puck — interference, to the box
+      for(const op of (isHome?awaySkaters:homeSkaters)){ if(op.goalie) continue;
+        if(Math.hypot(s.pos.x-op.pos.x,s.pos.z-op.pos.z)<2.1){ callPenalty(s,'INTERFERENCE'); break; } }
+    }
+    return;
+  }
+  s._chasing=false;
+  // formation anchors, shifted toward puck — always drifting so nobody parks and freezes
+  const b=BASE_ANCHOR[s.role];
+  const cx=carrier?carrier.pos.x:puck.pos.x, cz=carrier?carrier.pos.z:puck.pos.z;
+  let ax, az;
+  if(weHave){ // SUPPORT: give the carrier real options - slot drive, far lane, points step up
+    const mates2=_mates2; mates2.length=0; // G-35: scratch rosters (were two .filter() arrays per think)
+    for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==carrier) mates2.push(m); }
+    const fw=_fw; fw.length=0;
+    for(const m of mates2){ if(m.role==='C'||m.role==='LW'||m.role==='RW') fw.push(m); }
+    fw.sort((p,q)=>((p.pos.x-cx)**2+(p.pos.z-cz)**2)-((q.pos.x-cx)**2+(q.pos.z-cz)**2));
+    if(s.role==='LD'||s.role==='RD'){ ax=dir*BLUE+dir*3; az=s.role==='LD'?-17:17; } // points at the attacking blue line
+    else if(fw[0]===s){ ax=clamp(cx+dir*21,-88,88); az=clamp(-cz*0.35,-15,15); } // nearest forward drives the slot
+    else if(fw[1]===s){ ax=clamp(cx+dir*7,-88,88); az=cz>0?-30:30; } // second forward: far-side lane, wide open
+    else { ax=clamp(cx-dir*8,-88,88); az=clamp(cz*0.4,-20,20); } // trailer: the safe outlet behind the play
+    const cDepth=carrier.pos.x*dir;
+    if(cDepth<-35){ // BREAKOUT: wings wide to the boards at the hash marks, D partner low, C curls under
+      if(s.role==='LW'){ ax=dir*-52; az=-33; } else if(s.role==='RW'){ ax=dir*-52; az=33; }
+      else if(s.role==='C'){ ax=carrier.pos.x-dir*9; az=carrier.pos.z*0.5; }
+      else { ax=dir*-74; az=(s.role==='LD'?-20:20); }
+    } else if(cDepth>50 && possT[s.team]>3 && (s.role==='C'||s.role==='LW'||s.role==='RW')){ // O-ZONE CYCLE: rotate corner / behind the net / slot
+      const sg=Math.sign(carrier.pos.z||1), cyc=_cyc; cyc[0][0]=dir*88; cyc[0][1]=sg*34; cyc[1][0]=dir*95; cyc[1][1]=0; cyc[2][0]=dir*72; cyc[2][1]=-sg*10; // G-35: refilled scratch (was 4 new arrays per think)
+      const step=Math.floor(possT[s.team]/2.5)%3;
+      const slot = fw[0]===s ? 2 : fw[1]===s ? 0 : 1; // fw0 takes the slot point of the rotation
+      const cp=cyc[(slot+step)%3]; ax=clamp(cp[0],-96,96); az=clamp(cp[1],-38,38);
+    }
+    ax+=Math.sin(gameNow*0.6+s.phase)*2.2; az+=Math.cos(gameNow*0.5+s.phase*1.3)*2.2;
+  }else{ // defense: shade puck-side and track the play
+    ax=b[0]*dir*0.5+puck.pos.x*0.5+Math.sin(gameNow*0.8+s.phase)*1.5;
+    az=(b[1]*0.5+puck.pos.z*0.5)*0.7+puck.pos.z*0.3+Math.cos(gameNow*0.65+s.phase)*1.5;
+  }
+  if(!weHave && (s.role==='LD'||s.role==='RD') && puck.pos.x*dir<-55){ // NET-FRONT: the closer D owns the crease
+    const otherD=(isHome?homeSkaters:awaySkaters).find(m=>m!==s&&(m.role==='LD'||m.role==='RD'));
+    const myD=Math.abs(s.pos.x+dir*GOAL_LINE), otD=otherD?Math.abs(otherD.pos.x+dir*GOAL_LINE):1e9;
+    if(myD<=otD){ ax=dir*-(GOAL_LINE-4); az=clamp(puck.pos.z*0.35,-8,8); }
+  }
+  if(weHave && s!==carrier && puck.pos.x*dir < BLUE && ax*dir > BLUE-1.5){
+    // OFFSIDE DISCIPLINE (owner: "Why do I get offsides every time") — the support runs
+    // used to send wingers 21 ft ahead of the carrier, so they beat the puck across the
+    // line and every entry was whistled. Nobody crosses the attacking blue line before
+    // the puck does: hold at the line until it is in.
+    ax = dir*(BLUE-1.5);
+  }
+  s.target.set(clamp(ax,-80,80),0,clamp(az,-36,36));
+}
+function aiPass(s){
+  const mates=_pmates; mates.length=0; // G-35: scratch roster (was a .filter() array per pass)
+  for(const m of (s.team==='home'?homeSkaters:awaySkaters)){ if(m!==s&&!m.inBox) mates.push(m); }
+  let best=null,bs=-1e9;
+  for(const m of mates){ const dx=m.pos.x-s.pos.x, dz=m.pos.z-s.pos.z, d=Math.hypot(dx,dz)||1;
+    if(d>75) continue;
+    const fwd=(dx*Math.cos(s.facing)+dz*Math.sin(s.facing))/d;
+    let open=1e9; const opps=s.team==='home'?awaySkaters:homeSkaters;
+    for(const o of opps) open=Math.min(open,Math.hypot(o.pos.x-m.pos.x,o.pos.z-m.pos.z));
+    const sc=fwd*1.5+Math.min(open,30)/15-d/100; if(sc>bs){bs=sc;best=m;} }
+  if(!best) return;
+  const tx=best.pos.x+best.vel.x*0.3, tz=best.pos.z+best.vel.z*0.3;
+  const dx=tx-puck.pos.x,dz=tz-puck.pos.z,d=Math.hypot(dx,dz)||1;
+  puck.pos.set(s.pos.x+Math.cos(s.facing)*STICK_REACH, 0.2, s.pos.z+Math.sin(s.facing)*STICK_REACH);
+  puck.vel.set(dx/d*37,0,dz/d*37); puck.owner=null; puck.recv=best; puck.recvT=2.2;
+  puck.passGrace=s; puck.passT=performance.now();
+  puck.lastPass=s; puck.lastPassT=performance.now();
+  commSay('pass'); // G-44
+  puckSfx('hockey_puck_pass.mp3', 0.4); // G-47
+}
+function aiGoalie(g,dt){
+  const dir=TEAMS[g.team].dir, gl=-dir*GOAL_LINE, sgn=-dir; // defended line; sgn points center->net
+  let tz=clamp(puck.pos.z*0.92,-9,9);
+  let sp=26;
+  const distLine=(gl-puck.pos.x)*sgn;
+  if(puck.shot&&puck.shot.team!==g.team&&(puck.vel.x*sgn)>30&&distLine>0&&distLine<40){
+    tz=clamp(puck.pos.z+puck.vel.z*0.12,-9,9); sp=44; g._fly=0.35; // track the shot
+  }
+  tz+=Math.sin(gameNow*1.3+(g.team==='home'?0:2.1))*0.6; // never stand statue-still
+  g.pos.z+=(clamp(tz,-9,9)-g.pos.z)*Math.min(1,sp*dt/8);
+  g.pos.x=gl+dir*2.2;
+  g._fly=Math.max(0,(g._fly||0)-dt);
+  g.body.scale.y=g._fly>0?0.82:1; // butterfly
+}
+
+/* ================= physics ================= */
+function bouncePuck(){
+  const r=0.62, rest=0.72;
+  const x=puck.pos.x, z=puck.pos.z;
+  const ccx=HX-RINK.CR, ccz=HZ-RINK.CR; // 72, 14.5
+  if(Math.abs(z)<=ccz && Math.abs(x)>HX-r){ if(Math.abs(puck.vel.x)>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, Math.abs(puck.vel.x)/55)); puck.pos.x=Math.sign(x)*(HX-r); puck.vel.x*=-rest; puck.shot=null; }
+  else if(Math.abs(x)<=ccx && Math.abs(z)>HZ-r){ if(Math.abs(puck.vel.z)>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, Math.abs(puck.vel.z)/55)); puck.pos.z=Math.sign(z)*(HZ-r); puck.vel.z*=-rest; puck.shot=null; }
+  else { const dx=Math.abs(x)-ccx, dz=Math.abs(z)-ccz, d=Math.hypot(dx,dz);
+    if(d>RINK.CR-r&&d<RINK.CR+3){ const nx=Math.sign(x)*dx/d, nz=Math.sign(z)*dz/d;
+      puck.pos.x=Math.sign(x)*(ccx+nx*(RINK.CR-r)); puck.pos.z=Math.sign(z)*(ccz+nz*(RINK.CR-r));
+      const vn=puck.vel.x*nx+puck.vel.z*nz;
+      if(vn>0){ if(vn>12) puckSfx('hockey_puck_boards.mp3', Math.min(.9, vn/55)); puck.vel.x-=2*vn*nx*rest; puck.vel.z-=2*vn*nz*rest; puck.shot=null; } } }
+  // goal posts — plain loops (G-35: this ran every physics step and built arrays + closures each time)
+  for(let gi=0;gi<2;gi++){ const gx=gi?-GOAL_LINE:GOAL_LINE;
+    for(let pi=0;pi<2;pi++){ const pz=pi?GOAL_HALF:-GOAL_HALF;
+      const dx=puck.pos.x-gx, dz=puck.pos.z-pz, d=Math.hypot(dx,dz);
+      if(d<POST_R+r&&d>0.01){ const nx=dx/d,nz=dz/d, vn=puck.vel.x*nx+puck.vel.z*nz;
+        puck.pos.x=gx+nx*(POST_R+r); puck.pos.z=pz+nz*(POST_R+r);
+        if(vn<0){ puck.vel.x-=2*vn*nx; puck.vel.z-=2*vn*nz; if(-vn>10) puckSfx('hockey_puck_post.mp3', 0.6); if(puck.shot) commSay('near_miss'); } } } } // G-44: off the post
+}
+const _des=new THREE.Vector3(); // reused scratch (was: allocated per skater per frame)
+function stepSkater(s,dt){
+  // desired velocity
+  const des=_des; des.set(0,0,0);
+  if(s.goalie){ des.set(0,0,0); }
+  else if(s.stun>0){ s.stun-=dt; des.set(0,0,0); }
+  else if(s.inBox){ const bp=BOXSPOT[s.team]; const dx=bp[0]-s.pos.x, dz=bp[1]-s.pos.z, d=Math.hypot(dx,dz);
+    if(d>0.8) des.set(dx/d*Math.min(18,d*2),0,dz/d*Math.min(18,d*2)); }
+  else if(s.team==='home'&&s===controlled&&state==='play'){
+    let ix=joyVec.x, iy=joyVec.y;
+    if(keys.KeyW||keys.ArrowUp)iy-=1; if(keys.KeyS||keys.ArrowDown)iy+=1;
+    if(keys.KeyA||keys.ArrowLeft)ix-=1; if(keys.KeyD||keys.ArrowRight)ix+=1;
+    const m=Math.hypot(ix,iy);
+    if(m>0.12){ const sp=Math.min(m,1)*24;
+      // JOB J10 NEW (owner Oct 18): joystick is SCREEN-relative, never flips.
+      // CLOSE camera looks along the attacking X axis: screen-right = +Z, screen-up = attacking direction.
+      if(camMode===2){ const ad=TEAMS.home.dir; des.set(-iy/m*sp*ad,0,ix/m*sp); }
+      else des.set(ix/m*sp,0,iy/m*sp); }
+  } else if(state==='play'){
+    const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
+    const arr=s._chasing?1.0:2.5;
+    if(d>arr){ const sp=s.goalie?0:Math.min(22.5,8.5+d*0.5); des.set(dx/d*sp,0,dz/d*sp); }
+    else if(!s.goalie){ // on station: keep the skates shuffling, never freeze mid-play
+      des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
+    }
+  }
+  const k=(des.lengthSq()>0.01)?2.2:1.0; // JOB J10: smoother accel, longer glide (hockey skates, doesn't run)
+  s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
+  s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
+  const sp=Math.hypot(s.vel.x,s.vel.z);
+  const cap = (s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24)) * (0.8+0.2*(s.stam??1)); // tired legs are slower legs
+  if(sp>cap){ s.vel.x*=cap/sp; s.vel.z*=cap/sp; }
+  if(state==='play' && !s.inBox && !s.goalie){ s.stam=Math.max(0.45,(s.stam??1)-dt*(sp>16?0.020:0.010)); }
+  s.pos.x+=s.vel.x*dt; s.pos.z+=s.vel.z*dt;
+  // stay in rink (rounded)
+  const ccx=HX-RINK.CR-1.2, ccz=HZ-RINK.CR-1.2;
+  s.pos.x=clamp(s.pos.x,-HX+1.2,HX-1.2); s.pos.z=clamp(s.pos.z,-HZ+1.2,HZ-1.2);
+  if(Math.abs(s.pos.x)>ccx&&Math.abs(s.pos.z)>ccz){
+    const dx=Math.abs(s.pos.x)-ccx, dz=Math.abs(s.pos.z)-ccz, d=Math.hypot(dx,dz), max=RINK.CR-1.2;
+    if(d>max){ s.pos.x=Math.sign(s.pos.x)*(ccx+dx/d*max); s.pos.z=Math.sign(s.pos.z)*(ccz+dz/d*max); } }
+  // facing + animation
+  if(sp>2){ const want=Math.atan2(s.vel.z,s.vel.x); s.facing=angLerp(s.facing,want,Math.min(1,3.0*dt)); } // JOB J10 NEW: limited turn speed, glide like real skating, no spin
+  s.g.rotation.y=-s.facing;
+  { const _dA=Math.atan2(Math.sin(s.facing-(s.prevFacing??s.facing)), Math.cos(s.facing-(s.prevFacing??s.facing)));
+    s._tr = dt>0 ? _dA/dt : 0; }
+  s.phase+=sp*dt*0.55;
+  const swing=clamp(sp/30,0,1)*0.55; // JOB J10: less choppy, more glide
+  if(!s.goalie){ s.legL.rotation.x=Math.sin(s.phase)*swing; s.legR.rotation.x=-Math.sin(s.phase)*swing; }
+  const lat=(s.vel.x*Math.sin(s.facing)-s.vel.z*Math.cos(s.facing));
+  s.body.rotation.z=clamp(-lat*0.012,-0.3,0.3);
+  s.body.position.y=s.goalie?0:Math.abs(Math.sin(s.phase))*0.12*clamp(sp/30,0,1);
+  // real-athlete locomotion (primitive parts above are hidden once an athlete is attached)
+  if(s.ath){
+    const a=s.ath;
+    if(sp>0.4){ a.play('Walk_Loop'); a.ts=clamp(sp/2.4,0.6,1.8); }
+    else a.play('Idle_Loop');
+    if(a.act) a.act.timeScale=a.ts;
+    a.mixer.update(dt);
+    const sf=clamp(sp/30,0,1); // hockey stance: crouched, leaning in, weight rocking stride to stride
+    s.bank=(s.bank||0)+(clamp((s._tr||0)*0.055,-0.24,0.24)*sf-(s.bank||0))*Math.min(1,9*dt); // bank into the turn
+    // the kit's stance sets lean, knees, hips and skates-on-the-ice every frame (owner's model sheet); the wrap only banks into turns
+    if(s.kit) s.kit.stance.apply({ crouch: 1, stride: sf, phase: s.phase/5.2, handle: puck.owner===s ? 1 : 0 });
+    s.athWrap.rotation.x=(s.bank||0);
+    if(s.goalie) s.athWrap.scale.y=s.body.scale.y; // mirror the butterfly
+  }
+  // ice spray: hard stops and carving turns throw snow off the blades
+  s.sprayT=(s.sprayT||0)-dt;
+  if(s.prevSp!==undefined && s.sprayT<=0 && sp>4){
+    const dec=(s.prevSp-sp)/Math.max(dt,0.001), isp=Math.max(sp,1);
+    if(dec>34){ spray(s.pos.x, s.pos.z, -s.vel.x/isp, -s.vel.z/isp, Math.min(14, 4+(dec*0.16|0))); s.sprayT=0.07; if(s===controlled) skateSfx(); }
+    else if(sp>14 && Math.abs(s._tr||0)>1.5){ spray(s.pos.x, s.pos.z, -s.vel.x/isp, -s.vel.z/isp, 3); s.sprayT=0.09; }
+  }
+  s.prevSp=sp; s.prevFacing=s.facing;
+}
+function stepPuck(dt){
+  if(puck.owner){
+    const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
+    puck.pos.set(o.pos.x+fx*STICK_REACH, 0.2, o.pos.z+fz*STICK_REACH);
+    puck.vel.set(o.vel.x,0,o.vel.z);
+    return;
+  }
+  puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
+  puck.deadT = puck.vel.lengthSq()<9 ? (puck.deadT||0)+dt : 0; // a nearly-stopped loose puck starts the dead-puck clock
+  const _ps0=puck.vel.length();
+  puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
+  if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
+  bouncePuck();
+  puckMesh.rotation.y+=puck.vel.length()*dt*0.4;
+  // possession pickup
+  const ps=puck.vel.length();
+  for(const s of skaters){
+    if(s.goalie||s.inBox) continue; // goalies cover (whistle) instead of carrying; boxed men are out
+    if(puck.passGrace===s && performance.now()-puck.passT<450) continue; // the passer can't instantly re-grab his own pass
+    const d=Math.hypot(s.pos.x-puck.pos.x,s.pos.z-puck.pos.z);
+    const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
+    const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
+    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
+  }
+  puck.recvT=Math.max(0,puck.recvT-dt);
+  if(puck.shot) puck.shot.t+=dt;
+}
+
+/* ================= rules ================= */
+let prevPuckX=0;
+let offArm=null; // delayed offside: {team, t}
+const possT={home:0,away:0}; // continuous possession clock per team, drives the cycle
+const TEAM_IDS=['home','away']; // G-35: hoisted — rules() built this array every physics step
+function rules(dt){
+  if(state!=='play') return;
+  const px=puck.pos.x;
+  for(const sk of skaters){ if(sk.inBox){ sk.penT-=dt; if(sk.penT<=0) endPenalty(sk); } } // every boxed man serves his own clock (two can sit at once)
+  for(const t of TEAM_IDS){ let pen=null; for(const x of skaters){ if(x.team===t&&x.inBox&&(!pen||x.penT<pen.penT)) pen=x; } PEN[t]=pen; } // G-35: one pass, no filter/reduce garbage per step (same pick: earliest lowest penT)
+  if(PEN.home||PEN.away) updateHUD();
+  if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
+  // GOAL: puck crosses the goal line between the posts = ALWAYS a goal (JOB J10)
+  // Crossing-based (not position threshold) so a fast puck can't tunnel past the check
+  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('home'); return; }
+  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('away'); return; }
+  // OFFSIDE, the real way: DELAYED — attackers caught deep get a window to TAG UP and clear.
+  if(offArm){
+    const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
+    const inZone=dir>0?px>line:px<line;
+    let stillOff=false; // G-35: was .some() with a fresh closure every step while the arm was up
+    for(const o of (t==='home'?homeSkaters:awaySkaters)){ if(!o.goalie&&!o.inBox&&(dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5)){ stillOff=true; break; } } // JOB J10 NEW: really over (1.5m), not a skate blade
+    if(!inZone||!stillOff){ offArm=null; } // tagged up or the puck came out — play on
+    else if((puck.owner&&puck.owner.team===t) || (offArm.t-=dt)<=0){
+      const dot=nearestDot(px*0.5,puck.pos.z>0?20:-20), d=DOTS[dot];
+      pendingFaceoff={x:d[0],z:d[1],label:'OFFSIDE · FACEOFF'};
+      whistle('OFFSIDE',TEAMS[t].name); offArm=null; prevPuckX=px; return;
+    }
+  }
+  if(!offArm){
+    for(const t of TEAM_IDS){
+      const dir=TEAMS[t].dir, line=dir*BLUE;
+      const crossed=dir>0?(prevPuckX<=line&&px>line):(prevPuckX>=line&&px<line);
+      if(!crossed) continue;
+      let anyAhead=false; // G-35: was .filter()+.some() (two passes + garbage) on every blue-line crossing
+      for(const o of (t==='home'?homeSkaters:awaySkaters)){ if(o.goalie||o.inBox||o===puck.owner) continue; if(dir>0?o.pos.x>line+1.5:o.pos.x<line-1.5){ anyAhead=true; break; } }
+      if(anyAhead){ // JOB J10 NEW: really over
+        offArm={team:t, t:1.4}; banner('OFFSIDE WATCH', TEAMS[t].name+' · TAG UP!', 1200, '#ffd34d'); break;
+      }
+    }
+  }
+  // ICING (hybrid): dumped from the defensive half — the RACE to the puck decides, like the NHL.
+  // If the dumping team's man wins the race, it's waived and play goes on.
+  if(!puck.owner&&puck.lastTouch){
+    const t=puck.lastTouch, dir=TEAMS[t].dir;
+    const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
+    const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
+    if(fromDeep&&crossedFar){
+      let aD=1e9, dD=1e9;
+      for(const o of skaters){ if(o.goalie||o.inBox) continue;
+        const dd=Math.hypot(o.pos.x-px,o.pos.z-puck.pos.z);
+        if(o.team===t) aD=Math.min(aD,dd); else dD=Math.min(dD,dd); }
+      puck.lastTouch=null;
+      if(aD<dD-2){ banner('ICING WAIVED', TEAMS[t].name+' WINS THE RACE', 1600, '#9fe8a9'); prevPuckX=px; }
+      else { const key='e'+(dir>0?(puck.pos.z>0?3:4):(puck.pos.z>0?1:2));
+        const d=DOTS[key]||DOTS.center;
+        pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
+        whistle('ICING',TEAMS[t].name); prevPuckX=px; return; }
+    }
+  }
+  // goalie covers a slow loose puck
+  for(const gl of [homeGoalie,awayGoalie]){
+    if(!puck.owner&&puck.vel.length()<14&&Math.hypot(gl.pos.x-puck.pos.x,gl.pos.z-puck.pos.z)<3.6){
+      const key=(gl===homeGoalie?'e3':'e1'); const d=DOTS[key];
+      pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'};
+      whistle('GOALIE COVERS','FACEOFF');
+      prevPuckX=px; return;
+    }
+  }
+  // DEAD PUCK: loose and nearly stopped for seconds with nobody able to take it — whistle it dead, faceoff
+  if(!puck.owner && (puck.deadT||0)>3.5){
+    const dot=nearestDot(puck.pos.x,puck.pos.z), d=DOTS[dot];
+    pendingFaceoff={x:d[0],z:d[1],label:'DEAD PUCK · FACEOFF'};
+    whistle('DEAD PUCK','FACEOFF');
+    puck.deadT=0; prevPuckX=px; return;
+  }
+  // safety: puck escaped somehow
+  if(Math.abs(px)>HX+6||Math.abs(puck.pos.z)>HZ+6){
+    pendingFaceoff={x:0,z:0,label:'FACEOFF'};
+    whistle('PUCK OUT OF PLAY','FACEOFF');
+  }
+  prevPuckX=px;
+}
+function goalieSaves(){
+  if(state!=='play') return;
+  for(const gl of [homeGoalie,awayGoalie]){
+    const dir=TEAMS[gl.team].dir, glx=-dir*GOAL_LINE, sgn=-dir; // line they defend
+    const distLine=(glx-puck.pos.x)*sgn; // >0 means puck on their side, approaching
+    const toward=(puck.vel.x*sgn)>42;
+    if(puck.owner||!toward||distLine>7||distLine<-2) continue;
+    if(Math.abs(puck.pos.z)>GOAL_HALF+2.5) continue;
+    const dz=Math.abs(puck.pos.z-gl.pos.z);
+    const saveR=2.6;
+    if(dz<saveR && gameNow>=(gl._saveUntil||0)){ // JOB-04: one save per shot (rebounds inside 1.2 s are part of the same save)
+      const spd=puck.vel.length();
+      const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
+      if(Math.random()<pSave){
+        puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
+        gl._saveUntil=gameNow+1.2; puck.shot=null; banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff');
+        commSay(spd>70?'great_save':'save'); // G-44
+        if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
+      }
+    }
+  }
+}
+function possessionWatch(){
+  const t=puck.owner?puck.owner.team:'loose';
+  if(t!==lastOwnerTeam){
+    if(t!=='home') switchControl(); // auto-switch on defense / loose puck
+    lastOwnerTeam=t;
+  }
+}
+
+/* ================= ice spray ================= */
+const SPRAY_N=260, sprayDat=[], sprayPos=new Float32Array(SPRAY_N*3);
+for(let i=0;i<SPRAY_N;i++){ sprayDat.push({life:0,x:0,y:-50,z:0,vx:0,vy:0,vz:0}); sprayPos[i*3+1]=-50; }
+const sprayGeo=new THREE.BufferGeometry();
+sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayPos,3));
+const sprayPts=new THREE.Points(sprayGeo, new THREE.PointsMaterial({color:0xffffff, size:0.55, transparent:true, opacity:0.85, depthWrite:false}));
+sprayPts.frustumCulled=false; scene.add(sprayPts);
+let sprayIdx=0;
+function spray(x,z,bx,bz,n){
+  for(let k=0;k<n;k++){ const p=sprayDat[sprayIdx]; sprayIdx=(sprayIdx+1)%SPRAY_N;
+    p.life=0.3+Math.random()*0.3; p.x=x+(Math.random()-0.5)*0.8; p.y=0.25; p.z=z+(Math.random()-0.5)*0.8;
+    const sp=1.5+Math.random()*3.2, a=(Math.random()-0.5)*1.1;
+    p.vx=bx*sp+Math.cos(a)*0.8; p.vz=bz*sp+Math.sin(a)*0.8; p.vy=1.4+Math.random()*2.6; }
+}
+function stepSpray(dt){
+  for(let i=0;i<SPRAY_N;i++){ const p=sprayDat[i];
+    if(p.life>0){ p.life-=dt; p.x+=p.vx*dt; p.z+=p.vz*dt; p.y+=p.vy*dt; p.vy-=11*dt; if(p.y<0.05){p.y=0.05; p.vy=0;}
+      if(p.life<=0) p.y=-50; }
+    sprayPos[i*3]=p.x; sprayPos[i*3+1]=p.y; sprayPos[i*3+2]=p.z; }
+  sprayGeo.attributes.position.needsUpdate=true;
+}
+
+/* ================= camera ================= */
+const CAM_MIN_Y = 1.5*3.26; // JOB-04: 1.5 m above the ice (rink units are 3.26 per metre)
+const camTgt=new THREE.Vector3(0,44,74), lookTgt=new THREE.Vector3();
+const CAMNAMES=['BROADCAST','HIGH','CLOSE','PLAYER','END'];
+const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','BEHIND THE NET'];
+let camMode=0, lastControlledRef=null, camEase=0;
+function cycleView(){
+  camMode=(camMode+1)%CAMNAMES.length;
+  $('viewBtn').textContent='VIEW · '+CAMNAMES[camMode];
+  banner('VIEW: '+CAMNAMES[camMode], CAMSUB[camMode], 700);
+}
+function stepCamera(dt){
+  const s=controlled, fx=Math.cos(s.facing), fz=Math.sin(s.facing);
+  if(camMode===2){        // CLOSE (owner Oct 18 ONE spec): 9m back along rink LONG axis (attacking dir), 5m up, look 6m ahead. NEVER rotates with skater.
+    const ad=TEAMS.home.dir;
+    // G-02 small fix: adjust around better - clamp inside the rink (never through the boards),
+    // rise over the glass when the skater is deep near the end boards, smooth the view.
+    let cx=s.pos.x-ad*9, cz=s.pos.z, cy=5;
+    cx=Math.max(-HX+7, Math.min(HX-7, cx));
+    cz=Math.max(-HZ+6, Math.min(HZ-6, cz));
+    const deepEnd=Math.abs(s.pos.x)/HX; if(deepEnd>0.78) cy=5+(deepEnd-0.78)*14; // rise over the glass deep in the zone
+    camTgt.set(cx, cy, cz);
+    lookTgt.set(s.pos.x+ad*6, 1, s.pos.z*0.92);
+  } else if(camMode===3){ // PLAYER: ice-level over the shoulder
+    camTgt.set(s.pos.x-fx*5.5, CAM_MIN_Y, s.pos.z-fz*5.5);
+    lookTgt.set(s.pos.x+fx*12, 1.5, s.pos.z+fz*12);
+  } else if(camMode===4){ // END: behind the net you attack
+    camTgt.set(TEAMS.home.dir*122,24,0); lookTgt.set(TEAMS.home.dir*30,2,0);
+  } else {                // BROADCAST / HIGH: TV follow of the puck
+    const lead=clamp(puck.vel.x*0.35,-14,14);
+    const px=clamp((puck.pos.x+lead)*0.55,-64,64), pz=puck.pos.z*0.30;
+    const deep=Math.min(1,Math.abs(puck.pos.x)/95);
+    const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
+    camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
+  }
+  if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
+  // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
+  if(camTgt.distanceTo(camera.position)>60 || (window.__lookCur && lookTgt.distanceTo(window.__lookCur)>60)){ camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
+  const k=Math.min(1,(camEase>0?6.5:(camMode<=1?2.0:3.2))*dt); camEase=Math.max(0,camEase-dt*2);
+  camera.position.lerp(camTgt,k);
+  if(!window.__lookCur) window.__lookCur=lookTgt.clone();
+  window.__lookCur.lerp(lookTgt, Math.min(1,5*dt)); // G-02: smooth the view direction (no snapping)
+  if(camera.position.y<CAM_MIN_Y) camera.position.y=CAM_MIN_Y; // JOB-04: never through the ice (1.5 m = 4.9 units)
+  camera.lookAt(window.__lookCur);
+  ring.position.set(controlled.pos.x,0.12,controlled.pos.z);
+  ring.visible=(state==='play');
+  ring.material.opacity=.62+.3*Math.sin(gameNow*5);
+  tag.position.set(controlled.pos.x,7.9,controlled.pos.z);
+  tag.visible=(state==='play');
+  if(controlled!==tagFor){ tagFor=controlled; drawTag(); }
+}
+
+/* ================= JOB-04: skates on the ice (measured, every frame) =================
+   The stance pins the foot BONE, but what the eye sees is the steel. Each frame we read the real
+   skinned position of the lowest blade vertices and lift/lower the rig so the lowest blade edge sits at y=0.
+   Contact markers (one per skate) are left at that edge for the REALITY robot. */
+const _bv=new THREE.Vector3();
+function bladeIdx(steel){ // every 3rd steel (blade) vertex, split left/right skate (posed feet tilt, so the lowest point moves along the blade)
+  const P=steel.geometry.attributes.position, L=[], R=[];
+  for(let i=0;i<P.count;i+=3) (P.getX(i)>=0?L:R).push(i);
+  return [L,R]; }
+function snapSkatesToIce(){
+  for(const s of skaters){
+    const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
+    if(!st.geometry.attributes.position.count) continue;
+    if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
+    s.g.updateMatrixWorld(true);
+    let low=1e9;
+    s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); _bv.applyMatrix4(st.matrixWorld); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
+      if(m<1e9){ s._contact[k].position.set(mx,m,mz); low=Math.min(low,m); } });
+    if(low<1e9 && Math.abs(low)>0.004){ s.athWrap.position.y-=low; s._contact.forEach(o=>o.position.y-=low); }
+  }
+}
+window.__reality={
+  kind:'skater',
+  get player(){ return controlled? controlled.g : null; },
+  get others(){ return skaters.filter(s=>s!==controlled).map(s=>s.g); },
+  get contact(){ const c=controlled&&controlled._contact; if(!c) return []; return [c[0].position.y<=c[1].position.y? c[0] : c[1]]; }, // the skate carrying the weight, marked at its real lowest blade edge (the other one lifts on each stride)
+  footOffset:0,
+  ground:(x,z)=>0,
+  go:(on)=>{ joyVec.x=on?1:0; joyVec.y=0; joyVec.active=!!on; },
+  expect:{ height:[1.55*3.26, 2.2*3.26] } // rink is built at 3.26 units per metre; gaps are in the same units (3 cm = 0.1)
+};
+/* ================= main loop ================= */
+let lastT=performance.now();
+let gameNow=0; // wall clock for AI drift/idle motion (advances every frame)
+let fitTickN = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  if (++fitTickN >= 30) { fitTickN = 0;
+    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
+    if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
+  }
+  let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time
+  const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
+  Mus.setMode(state==='play'?'game':'menu');
+  crowd.update(frameSec); Mus.crowdTick(frameSec);
+  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
+  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
+  if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
+  for(let si=0;si<steps;si++){
+  if(state==='menu'||state==='over') break;
+  stateT-=dt;
+  if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
+  else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.2,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
+  else if(state==='whistle'&&stateT<=0){
+    const p=pendingFaceoff; pendingFaceoff=null;
+    if(p) faceoff(p.x,p.z,p.label); else faceoff(0,0,'FACEOFF');
+  }
+  else if(state==='intermission'&&stateT<=0){
+    period++; clockT=PERIOD_LEN; faceoff(0,0,period>3?'OVERTIME':'PERIOD '+period);
+  }
+  if(state==='play'){
+    clockT-=dt;
+    if(clockT<=0){
+      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); state='intermission'; stateT=2.6; }
+      else if(period===N_PERIODS){
+        if(scoreH===scoreA){ period=4; clockT=1e9; banner('OVERTIME','GOLDEN GOAL · NEXT GOAL WINS',2600,'#ffe27d'); commSay('overtime'); faceoff(0,0,'OVERTIME'); }
+        else gameOver();
+      } else { gameOver(); } // safety
+    }
+    updateHUD();
+    if(COMM && performance.now()-commLastSay>26000){ commLastSay=performance.now(); try{ COMM.dialogue(); }catch(e){} } // G-44: color talk in the quiet stretches
+  }
+  for(const s of skaters){ if(!s.goalie) aiSkater(s,dt); else aiGoalie(s,dt); }
+  for(const s of skaters) stepSkater(s,dt);
+  stepPuck(dt); stepSpray(dt);
+  rules(dt);
+  goalieSaves();
+  possessionWatch();
+  stepCamera(dt);
+  } // end of catch-up slices
+  snapSkatesToIce();
+  renderer.render(scene,camera);
+}
+function gameOver(){
+  state='over';
+  const win=scoreH>scoreA?'home':(scoreA>scoreH?'away':'tie');
+  $('finalTitle').textContent=win==='tie'?'DRAW':(win==='home'?'WOLVES WIN!':'SHARKS WIN');
+  $('finalScore').textContent=scoreH+' – '+scoreA;
+  $('finalSub').textContent=win==='home'?'The Wolves take it. What a game.':win==='away'?'The Sharks steal this one. Run it back.':'Dead even after overtime.';
+  $('final').style.display='flex';
+  commSay('final', true); // G-44
+  try{ careerAfterGame(); }catch(e){}
+}
+
+/* ================= wiring ================= */
+document.getElementById('back').addEventListener('click',()=>{ location.href='sports.html'; });
+document.getElementById('playBtn').addEventListener('click',async()=>{
+  document.getElementById('menu').style.display='none'; hornResume();
+  Mus.ensure(); Mus.setMode('game');
+  await preloadsDone(); // G-35: arena + athletes finish loading BEFORE the faceoff, never mid-game
+  faceoff(0,0,'OPENING FACEOFF');
+});
+document.getElementById('viewBtn').addEventListener('click',()=>cycleView());
+document.getElementById('muteBtn').addEventListener('click',()=>{ Mus.ensure(); Mus.setMuted(!Mus.muted); commSyncMute(); });
+document.addEventListener('pointerdown',()=>Mus.ensure());
+Mus.setMuted(Mus.muted || localStorage.getItem('apex_muted')==='1');
+/* ================= G-44: commentary (sounds/commentary/hockey) =================
+   The 138-clip hockey commentary pack: two voices (play-by-play + color),
+   a shuffle bag so lines never repeat back to back, and a cooldown so they
+   never talk over each other (LESSONS: announcer lines stay DRY, goals say
+   the key word first - the pack's own clips do). If the pack is missing
+   the game just plays on without it, like the arena and athlete kits. */
+let COMM=null, commLastSay=performance.now();
+try{
+  COMM=new Commentary({base:'sounds/commentary/hockey/',cooldown:900});
+  COMM.load('manifest.json').catch(()=>{});
+  if(Mus.muted) COMM.mute(true);
+}catch(e){ COMM=null; }
+function commSay(ev,pri){ if(!COMM) return; try{ if(COMM.say(ev,{priority:!!pri})) commLastSay=performance.now(); }catch(e){} }
+function commSyncMute(){ if(COMM){ try{ COMM.mute(!!Mus.muted); }catch(e){} } }
+document.getElementById('creditsBtn').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='flex'; });
+document.getElementById('creditsClose').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='none'; });
+document.getElementById('againBtn').addEventListener('click',()=>location.reload());
+function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
+/* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
+     rotation and the rink rendered into half the screen). CSS now owns the display
+     size; fitGame() keeps the buffer + camera matched, is called on every signal
+     iOS offers, settles late rotations, and a watchdog in tick() self-heals misses. */
+let fitW = 0, fitH = 0;
+function fitGame(){
+  let w = document.documentElement.clientWidth || innerWidth;
+  let h = document.documentElement.clientHeight || innerHeight;
+  if (h > w) { const _t = w; w = h; h = _t; } // LANDSCAPE LAW: always size to the landscape box
+  if (!w || !h) return;
+  fitW = w; fitH = h;
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+addEventListener('resize', () => { fitGame(); setTimeout(fitGame, 150); setTimeout(fitGame, 450); });
+addEventListener('orientationchange', () => { setTimeout(fitGame, 60); setTimeout(fitGame, 300); setTimeout(fitGame, 700); });
+if (window.visualViewport) visualViewport.addEventListener('resize', fitGame);
+fitGame();
+/* first-load warmup (owner ask 2026-10-14): compile shaders + settle size before
+   the menu reveals, so landscape entry isn't laggy or oversized */
+try{
+  renderer.compile(scene,camera);
+  requestAnimationFrame(()=>{ fitGame(); try{renderer.render(scene,camera);}catch(e){} requestAnimationFrame(()=>fitGame()); });
+}catch(e){}
+addEventListener('load',()=>{ fitGame(); setTimeout(fitGame,300); });
+document.addEventListener('visibilitychange',()=>{ paused=document.hidden;
+  if(Mus.ctx){ try{ if(document.hidden) Mus.ctx.suspend(); else Mus.ctx.resume(); }catch(e){} } });
+setupFaceoffPositions(0,0); // spread skaters for the menu backdrop
+camera.lookAt(0,0,0);
+updateHUD();
+
+/* ================= CAREER MODE + STAR + FRIEND CODES =================
+   Owner ask (2026-10-14): career options on the menu, a star player
+   featured on the menu, more options, and friend codes "to play
+   multiplayers". The site is static (no server), so friend matches are
+   asynchronous: a code carries a friend's star + record, and you play
+   their team with the CPU driving it at their strength. Real-time online
+   play would need a server (the owner's droplet could host it later). */
+const LG = [
+  { id:'WOLVES', jersey:0x1f6fd6, helmet:0x1f6fd6, trim:0xffffff, str:86 },
+  { id:'SHARKS', jersey:0x0e7c7b, helmet:0x123a3a, trim:0xffffff, str:84 },
+  { id:'BEARS', jersey:0x8a4b1f, helmet:0x5a2f10, trim:0xffd9a0, str:82 },
+  { id:'EAGLES', jersey:0xd8d8e2, helmet:0x8a1f2d, trim:0x1f3a8a, str:80 },
+  { id:'VIPERS', jersey:0x39d353, helmet:0x0d3a16, trim:0x111111, str:78 },
+  { id:'STAMPEDE', jersey:0xd64545, helmet:0x6e1420, trim:0xffffff, str:76 } ];
+const lgById = id => LG.find(t => t.id === id);
+const CKEY = 'apex_hockey_career_v1', MKEY = 'apex_hockey_match';
+function cLoad() { try { return JSON.parse(localStorage.getItem(CKEY)); } catch (e) { return null; } }
+function cSave(c) { try { localStorage.setItem(CKEY, JSON.stringify(c)); } catch (e) {} }
+function mLoad() { try { return JSON.parse(localStorage.getItem(MKEY)); } catch (e) { return null; } }
+function mSave(m) { try { if (m) localStorage.setItem(MKEY, JSON.stringify(m)); else localStorage.removeItem(MKEY); } catch (e) {} }
+const STAR_F = ['JAX','MIKO','DANTE','RYKER','COLE','NIKOLAI','EZRA','TITUS'];
+const STAR_L = ['KOVAC','REYES','LINDQVIST','MOREAU','PETROV','KANE','HALLORAN','VOSS'];
+function newCareer() {
+  const c = { season: 1, week: 1, phase: 'reg', table: {}, finalOpp: null,
+    star: { name: STAR_F[(Math.random()*STAR_F.length)|0] + ' ' + STAR_L[(Math.random()*STAR_L.length)|0], g: 0, a: 0, cg: 0, ca: 0 },
+    champ: 0, friends: { w: 0, l: 0 }, lastLine: '' };
+  for (const t of LG) c.table[t.id] = { w: 0, l: 0, t: 0, pts: 0, gf: 0, ga: 0 };
+  cSave(c); return c;
+}
+function starOVR(c) { return Math.min(96, 76 + Math.floor((c.star.cg + c.star.ca) * 0.6) + (c.season - 1)); }
+function starSkater() { return homeSkaters.find(s => s.role === 'C'); }
+function userOpp(c) { const order = ['SHARKS','BEARS','EAGLES','VIPERS','STAMPEDE']; return order[(c.week - 1) % 5]; }
+function applyResult(c, hId, hg, aId, ag) {
+  const H = c.table[hId], A = c.table[aId]; if (!H || !A) return;
+  H.gf += hg; H.ga += ag; A.gf += ag; A.ga += hg;
+  if (hg > ag) { H.w++; H.pts += 2; A.l++; } else if (ag > hg) { A.w++; A.pts += 2; H.l++; } else { H.t++; A.t++; H.pts++; A.pts++; }
+}
+function simScore(a, b) { return Math.max(0, Math.round(3.1 + (a.str - b.str) * 0.07 + (Math.random() + Math.random() + Math.random() - 1.5) * 1.9)); }
+function simGame(c, hId, aId, noTie) {
+  const hg0 = simScore(lgById(hId), lgById(aId)); let hg = hg0; const ag = simScore(lgById(aId), lgById(hId));
+  if (noTie && hg === ag) hg++;
+  applyResult(c, hId, hg, aId, ag); return [hg, ag];
+}
+function ranked(c) { return LG.map(t => t.id).sort((x, y) => (c.table[y].pts - c.table[x].pts) || ((c.table[y].gf - c.table[y].ga) - (c.table[x].gf - c.table[x].ga))); }
+function simWeekOthers(c) {
+  const opp = userOpp(c); const rest = LG.map(t => t.id).filter(id => id !== 'WOLVES' && id !== opp);
+  const r = ((c.week + c.season) % 2) ? [rest[1], rest[2], rest[3], rest[0]] : rest;
+  simGame(c, r[0], r[1]); simGame(c, r[2], r[3]);
+}
+function careerPending(c) {
+  if (!c) return null;
+  if (c.phase === 'reg' && c.week <= 10) return { opp: userOpp(c), label: 'WEEK ' + c.week };
+  if (c.phase === 'semi') { const rk = ranked(c); const seed = rk.indexOf('WOLVES'); const opp = seed === 0 ? rk[3] : seed === 1 ? rk[2] : seed === 2 ? rk[1] : rk[0]; return { opp, label: 'SEMIFINAL' }; }
+  if (c.phase === 'final' && c.finalOpp) return { opp: c.finalOpp, label: 'THE FINAL' };
+  return null;
+}
+function defOf(id) { const t = lgById(id); return { name: t.id, jersey: t.jersey, helmet: t.helmet, trim: t.trim, str: t.str }; }
+function careerOnGoal(team) {
+  if (team !== 'home') return; const c = cLoad(); if (!c) return; const star = starSkater(); if (!star) return;
+  if (puck.shot && puck.shot.by === star) { c.star.g++; c.star.cg++; cSave(c); }
+  else if (puck.lastPass === star && performance.now() - (puck.lastPassT || 0) < 6000) { c.star.a++; c.star.ca++; cSave(c); }
+}
+function careerAfterGame() {
+  const m = mLoad(); if (!m) return; mSave(null);
+  if (m.kind === 'friend') {
+    const c = cLoad() || newCareer();
+    if (scoreH > scoreA) c.friends.w++; else if (scoreA > scoreH) c.friends.l++;
+    cSave(c);
+    $('finalSub').textContent = 'Friend match in the books — you are ' + c.friends.w + '–' + c.friends.l + ' against friends all-time.';
+    $('againBtn').textContent = 'BACK TO MENU'; return;
+  }
+  const c = cLoad(); if (!c) return;
+  let line = '';
+  if (c.phase === 'reg') {
+    applyResult(c, 'WOLVES', scoreH, m.opp, scoreA);
+    simWeekOthers(c);
+    if (c.week >= 10) { const rk = ranked(c); const seed = rk.indexOf('WOLVES') + 1;
+      if (seed <= 4) { c.phase = 'semi'; line = 'Regular season done — you finish #' + seed + '. PLAYOFFS: the semifinal is set.'; }
+      else { c.phase = 'done'; line = 'Regular season done — you finish #' + seed + ' and miss the playoffs. A new season waits in the career hub.'; } }
+    else { c.week++; line = 'Season ' + c.season + ' · Wolves are ' + c.table.WOLVES.w + '–' + c.table.WOLVES.l + (c.table.WOLVES.t ? '–' + c.table.WOLVES.t : '') + '. Next: WEEK ' + c.week + ' vs ' + userOpp(c) + '.'; }
+  } else if (c.phase === 'semi') {
+    const top4 = ranked(c).slice(0, 4); const others = top4.filter(id => id !== 'WOLVES' && id !== m.opp);
+    let otherWinner = others[0];
+    if (others.length === 2) { const r = simGame(c, others[0], others[1], true); otherWinner = r[0] > r[1] ? others[0] : others[1]; }
+    if (scoreH > scoreA) { c.phase = 'final'; c.finalOpp = otherWinner; line = 'You are through to THE FINAL vs ' + otherWinner + '.'; }
+    else { c.phase = 'done'; line = 'Out in the semifinal — ' + otherWinner + ' takes the other final spot. A new season waits in the hub.'; }
+  } else if (c.phase === 'final') {
+    c.phase = 'done';
+    if (scoreH > scoreA) { c.champ++; line = '🏆 CHAMPIONS! Season ' + c.season + ' belongs to the Wolves — and to ' + c.star.name + '. The next season waits in the hub.'; }
+    else line = 'Beaten in the final. So close — run it back with a new season from the hub.';
+  }
+  c.lastLine = line; cSave(c);
+  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →';
+}
+/* ---- friend codes ---- */
+function friendCode(c) {
+  const p = { v: 1, n: c.star.name, o: starOVR(c), g: c.star.cg, a: c.star.ca, w: c.table.WOLVES.w + c.friends.w, c: c.champ };
+  const s = btoa(JSON.stringify(p)).replace(/=+$/, '');
+  return 'APEX-' + (s.match(/.{1,4}/g) || [s]).join('-');
+}
+function parseFriendCode(txt) {
+  try { let s = String(txt || '').trim().replace(/^APEX-?/i, '').replace(/[-\s]/g, '');
+    while (s.length % 4) s += '=';
+    const p = JSON.parse(atob(s));
+    if (!p || typeof p.n !== 'string' || typeof p.o !== 'number') return null; return p; } catch (e) { return null; }
+}
+function friendDef(p) {
+  let h = 0; for (const ch of p.n) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const jersey = new THREE.Color().setHSL((h % 360) / 360, 0.62, 0.42).getHex();
+  const last = (p.n.split(' ')[1] || 'FRIEND').toUpperCase();
+  return { name: last + ' ALL-STARS', jersey, helmet: jersey, trim: 0xffffff, str: Math.max(74, Math.min(95, Math.round(70 + (p.o - 70) * 0.9))) };
+}
+/* ---- menu showcase: your star, alone at center ice under a gold ring ---- */
+let starRing = null; const _cv = new THREE.Vector3();
+function careerShowcase(now) {
+  const s = starSkater(); if (!s) return;
+  if (!starRing) { starRing = new THREE.Mesh(new THREE.RingGeometry(2.3, 2.85, 40), new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: .8, side: THREE.DoubleSide })); starRing.rotation.x = -Math.PI / 2; starRing.position.y = 0.06; scene.add(starRing); }
+  s.pos.set(0, 0.1, 0); s.facing = Math.PI / 2 + Math.sin(now / 2400) * .3;
+  starRing.position.x = 0; starRing.position.z = 0;
+  starRing.material.opacity = .55 + .3 * Math.sin(now / 420);
+  const t = now / 1000;
+  _cv.set(Math.sin(t * .11) * 6, 6.8, 17 + Math.cos(t * .07) * 2);
+  camera.position.lerp(_cv, 0.04); camera.lookAt(0, 2.6, 0);
+}
+/* ---- menu + hub wiring ---- */
+function fmtRecord(c) { const t = c.table.WOLVES; return t.w + '–' + t.l + (t.t ? '–' + t.t : ''); }
+function renderMenu() {
+  const c = cLoad(), m = mLoad(), sc = $('starCard');
+  if (c) { sc.innerHTML = '⭐ <b>' + c.star.name + '</b> · OVR ' + starOVR(c) + '<br>Season ' + c.season + ': ' + c.star.g + ' G · ' + c.star.a + ' A &nbsp;·&nbsp; Career: ' + c.star.cg + ' G · ' + c.star.ca + ' A' + (c.champ ? ' · 🏆×' + c.champ : ''); $('myCode').textContent = 'MY FRIEND CODE: ' + friendCode(c); }
+  else { sc.innerHTML = '⭐ No star yet — start a CAREER and your center becomes the face of the Wolves.'; $('myCode').textContent = 'MY FRIEND CODE: start a career to get one'; }
+  const cb = $('careerBtn');
+  if (m) { cb.textContent = '▶ PLAY ' + m.label + ' vs ' + m.oppDef.name; $('playBtn').style.display = 'none'; $('friendBtn').style.display = 'none'; $('cancelMatch').style.display = 'block'; $('menuSub').textContent = m.kind === 'friend' ? 'Friend match is set — their star is already in the building.' : 'Career match is set — the visitors are already in the building.'; }
+  else { cb.textContent = c ? '🏆 CAREER · ' + fmtRecord(c) + ' · SEASON ' + c.season : '🏆 START A CAREER'; $('playBtn').style.display = ''; $('friendBtn').style.display = ''; $('cancelMatch').style.display = 'none'; }
+}
+function renderHub() {
+  const c = cLoad(), body = $('hubBody');
+  if (!c) { body.innerHTML = 'No career yet. Start one: a 10-game season, playoffs, and a star center who is yours to build.<br>Your friend code lives on the main menu.'; $('hubPlay').style.display = 'none'; $('hubNew').textContent = 'START MY CAREER'; $('hubNew').style.display = ''; return; }
+  const rk = ranked(c);
+  const rows = rk.map((id, i) => { const t = c.table[id]; return '<tr' + (id === 'WOLVES' ? ' class="me"' : '') + '><td>' + (i + 1) + '. ' + id + '</td><td>' + t.w + 'W</td><td>' + t.l + 'L</td><td>' + (t.t ? t.t + 'T' : '–') + '</td><td>' + t.pts + ' PTS</td></tr>'; }).join('');
+  const p = careerPending(c);
+  body.innerHTML = 'SEASON ' + c.season + (c.phase === 'reg' ? ' · WEEK ' + Math.min(c.week, 10) : ' · ' + c.phase.toUpperCase()) + '<br>⭐ ' + c.star.name + ' · OVR ' + starOVR(c) + ' · ' + c.star.g + ' G · ' + c.star.a + ' A this season' + (c.champ ? '<br>🏆 Championships: ' + c.champ : '') + '<table>' + rows + '</table>' + (c.lastLine ? '<div>' + c.lastLine + '</div>' : '') + (p ? '<div>NEXT: ' + p.label + ' vs ' + p.opp + '</div>' : '<div>Season complete.</div>') + '<div style="margin-top:6px">vs friends all-time: ' + c.friends.w + '–' + c.friends.l + '</div>';
+  $('hubPlay').style.display = p ? '' : 'none'; if (p) $('hubPlay').textContent = '▶ PLAY ' + p.label + ' vs ' + p.opp;
+  $('hubNew').style.display = c.phase === 'done' ? '' : 'none'; if (c.phase === 'done') $('hubNew').textContent = 'START SEASON ' + (c.season + 1);
+}
+$('careerBtn').addEventListener('click', () => { if (mLoad()) { $('playBtn').click(); return; } renderHub(); $('hub').style.display = 'flex'; });
+$('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''; $('friendOv').style.display = 'flex'; });
+$('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
+$('hubClose').addEventListener('click', () => { $('hub').style.display = 'none'; });
+$('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
+$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
+$('hubNew').addEventListener('click', () => {
+  let c = cLoad();
+  if (!c) { c = newCareer(); }
+  else if (c.phase === 'done') { c.season++; c.week = 1; c.phase = 'reg'; c.finalOpp = null; c.lastLine = ''; c.star.g = 0; c.star.a = 0; for (const t of LG) c.table[t.id] = { w: 0, l: 0, t: 0, pts: 0, gf: 0, ga: 0 }; cSave(c); }
+  renderHub(); renderMenu();
+});
+$('hubReset').addEventListener('click', (ev) => {
+  if (!ev.target.dataset.arm) { ev.target.dataset.arm = '1'; ev.target.textContent = 'tap again to erase the career'; return; }
+  try { localStorage.removeItem(CKEY); localStorage.removeItem(MKEY); } catch (e) {}
+  location.reload();
+});
+$('friendGo').addEventListener('click', () => {
+  const p = parseFriendCode($('friendIn').value);
+  if (!p) { $('friendErr').textContent = 'That code does not check out — paste the whole thing, starting with APEX-'; return; }
+  mSave({ kind: 'friend', oppDef: friendDef(p), label: 'FRIEND MATCH' });
+  location.reload();
+});
+(function careerBoot() {
+  const s = starSkater(); const c = cLoad();
+  if (s) { s.star = true; if (c) { const o = starOVR(c); window.__starBoost = 1 + (o - 76) * 0.004; window.__starShot = 1 + (o - 76) * 0.003; } }
+  renderMenu();
+})();
+
+requestAnimationFrame(tick);
+
+</script>
+
+<script>
+/* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform
+   allows it (Android). iOS ignores the lock; the rotated stage carries it there. */
+addEventListener('pointerdown', function(){ try{ var el=document.documentElement; if(el.requestFullscreen && !document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then) p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch) q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} }, { once:true });
+</script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+diff --git a/apexbaseball.html b/apexbaseball.html
+index c3699f3..eaeaa20 100644
+--- a/apexbaseball.html
++++ b/apexbaseball.html
+@@ -1,8 +1,16 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-<link rel="manifest" href="manifest.webmanifest">
+ <meta charset="utf-8">
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+ <title>Apex Baseball · Apex Arcade</title>
+ <style>
+diff --git a/apexf1.html b/apexf1.html
+index c7f387e..8dc6d05 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -2,6 +2,15 @@
+ <html lang="en">
+ <head>
+ <meta charset="UTF-8">
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+ <title>Apex F1 Racing</title>
+ <style>
+diff --git a/apexflight.html b/apexflight.html
+index 4b6e2b7..2a10f2d 100644
+--- a/apexflight.html
++++ b/apexflight.html
+@@ -2,8 +2,16 @@
+ <html lang="en">
+ <head>
+ <meta charset="utf-8">
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+-<link rel="manifest" href="manifest.webmanifest">
+ <title>Apex Flight · Apex Arcade</title>
+ <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+ <style>
+diff --git a/apexhockey.html b/apexhockey.html
+index c3040d7..7890897 100644
+--- a/apexhockey.html
++++ b/apexhockey.html
+@@ -1,8 +1,16 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+-<link rel="manifest" href="manifest.webmanifest">
+ <meta charset="utf-8">
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+ <title>Apex Ice Hockey · Apex Arcade</title>
+ <style>
+diff --git a/apexracer.html b/apexracer.html
+index 9de9906..052b854 100644
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -2,10 +2,17 @@
+ <html lang="en">
+ <head>
+ <meta charset="utf-8" />
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+ <meta name="mobile-web-app-capable" content="yes" />
+-<meta name="apple-mobile-web-app-capable" content="yes" />
+-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="theme-color" content="#07040f" />
+ <title>Exotic Racer Club · Apex Arcade</title>
+ <!-- erc1 2026-10-03 (owner: "Make into next game ultra hd shiny cars real looking race car garages to change car paint engine tires etc.
+diff --git a/apextrackfield.html b/apextrackfield.html
+index 86f54c9..86f030e 100644
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -2,6 +2,15 @@
+ <html lang="en">
+ <head>
+ <meta charset="UTF-8">
++<!-- JOB-03 phone install: Add to Home Screen on iPhone/Android + offline. Paste right after <meta charset>. -->
++<link rel="manifest" href="sports.webmanifest">
++<meta name="apple-mobile-web-app-capable" content="yes">
++<meta name="mobile-web-app-capable" content="yes">
++<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++<meta name="apple-mobile-web-app-title" content="Apex Sports">
++<link rel="apple-touch-icon" href="icons/apex-sports-180.png">
++<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
++<!-- /JOB-03 -->
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+ <title>Apex Track &amp; Field 3D</title>
+ <style>
