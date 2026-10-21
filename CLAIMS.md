@@ -173,6 +173,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-36 | window main | apexbaseball.html | g-36-baseball-kits |
 | G-40 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-40-night-park |
 | G-17 | window 3 | apexflight.html (freeze check), jobs/G-17.md | g-17-flight-freeze |
+| owner-direct Vanta GT build (owner greenlit 2026-10-21) | window 1 | apexracer.html | vanta-gt-build |
 | G-53 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-53.md | g-53-flight-modes |
 | G-69 | window 3 | apexflight.html, jobs/G-69.md | g-69-reality-hook |
 | G-39 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-39-relay-baton-v2 |
