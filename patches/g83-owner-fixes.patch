@@ -1,0 +1,200 @@
+--- a/apextrackfield.html
++++ b/apextrackfield.html
+@@ -859,7 +859,9 @@
+ const pack = ai.reduce((a,b)=>a+b.tTarget,0)/Math.max(1,ai.length);   // the field's average finish time
+ const packPace = dist/pack;                                             // m/s
+ const t0 = liveFrom>0 ? liveFrom/packPace*1.004 : 0;
+-if(liveFrom>0) for(const a of ai){ a.el=99; a.speed=dist/a.tTarget; a.pos=Math.min(dist-60, t0*dist/a.tTarget); }
++if(liveFrom>0) for(const a of ai){ a.el=0; a.speed=0; a.pos=liveFrom; }
++// JOB G-83 (owner): at GO the whole field stands ON the live start line together -
++// nobody seeded ahead by pace and nobody already running at full speed (2.png).
+ const barriers=[];
+ if(ev.steeple){ for(let p=liveFrom+40; p<dist-30 && barriers.length<10; p+=80) barriers.push({x:p, clipped:false}); }
+ const E={
+@@ -897,7 +899,14 @@
+ this.msg='STUMBLED ON THE BARRIER'; this.msgT=1.6; AudioSys.thud();
+ }
+ }
+-for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,dt,dist,true); }
++for(const a of this.ai){ if(a.pos<dist){ const pa=a.pos; updateLiveRival(a,dt,dist,true);
++if(ev.steeple){
++// JOB G-83 (owner): the AI jump the barriers too - the same leap (vy 540, gravity
++// 1500, clear line 52) and the same stumble the player gets.
++if(a.air){ a.vy-=1500*dt; a.airY=(a.airY||0)+a.vy*dt; if(a.airY<=0){ a.airY=0; a.air=false; } }
++else { const nh=barriers.find(b=>b.x>a.pos); if(nh && nh.x-a.pos<=Math.max(1.4,a.speed*0.36)){ a.air=true; a.vy=540; a.airY=0; } }
++for(const h of barriers){ if(pa<h.x && a.pos>=h.x && (a.airY||0)<52) a.speed*=0.62; }
++} } }
+ this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
+ this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
+ if(this.r.pos>=dist){
+@@ -1725,6 +1734,7 @@
+ this.buildCauldron();
+ this.buildVenues();
+ this.buildHurdles();
++this.buildBarriers();
+ this.buildImplements();
+ this.buildPodium();
+ await this.buildAthletes();
+@@ -2056,6 +2066,37 @@
+ im.count=0; im.frustumCulled=false;
+ this.scene.add(im); this.hurdlesMesh=im;
+ },
++buildBarriers(){
++// JOB G-83 (owner): a steeplechase barrier is ONE beam across the whole track
++// (0.914m high, posts under it) - not a hurdle frame in the player's lane only.
++const parts=[];
++const beam=new THREE.BoxGeometry(0.14,0.13,10.6).toNonIndexed(); beam.translate(0,0.85,0); parts.push(beam);
++for(const pz of [-4.8,-1.6,1.6,4.8]){ const post=new THREE.BoxGeometry(0.14,0.79,0.14).toNonIndexed(); post.translate(0,0.395,pz); parts.push(post); }
++let vC=0; for(const p of parts) vC+=p.attributes.position.count;
++const pos=new Float32Array(vC*3), nor=new Float32Array(vC*3), uv=new Float32Array(vC*2);
++let o=0;
++for(const p of parts){ pos.set(p.attributes.position.array,o*3); nor.set(p.attributes.normal.array,o*3); if(p.attributes.uv) uv.set(p.attributes.uv.array,o*2); o+=p.attributes.position.count; }
++const g=new THREE.BufferGeometry();
++g.setAttribute('position',new THREE.BufferAttribute(pos,3));
++g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
++g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
++const im=new THREE.InstancedMesh(g,new THREE.MeshStandardMaterial({color:0xe9e5da,roughness:0.85}),10);
++im.count=0; im.frustumCulled=false;
++this.scene.add(im); this.barriersMesh=im;
++},
++setBarriers(list){
++if(!this.barriersMesh) return;
++const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
++S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
++const n=Math.min(10,list.length);
++for(let k=0;k<n;k++){
++const h=list[k];
++E.set(0,h.heading||0,0); Q.setFromEuler(E);
++P.set(h.x,0,h.z);
++M.compose(P,Q,S); this.barriersMesh.setMatrixAt(k,M);
++}
++this.barriersMesh.count=n; this.barriersMesh.instanceMatrix.needsUpdate=true;
++},
+ setHurdles(list){
+ const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
+ S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
+@@ -2478,6 +2519,7 @@
+ }
+ function attachDriver3D(ENG){
+ const ev=ENG.ev, rivals=ENG._rivals||[];
++if(W3D.setBarriers && !ev.steeple) W3D.setBarriers([]); // JOB G-83: steeple barriers belong to the steeplechase only
+ if(W3D._zoneMesh){ W3D.scene.remove(W3D._zoneMesh); W3D._zoneMesh=null; }
+ if(W3D.venueMats&&W3D.venueMats.pole) W3D.venueMats.pole.visible=true;
+ if(W3D._pvPole) W3D._pvPole.visible=false;
+@@ -2534,13 +2576,20 @@
+ const mapPL=(lane,p)=>{ const rel=p-ENG.liveFrom; const k=clamp(1-rel/110,0,1); return ((startSFor(ev.dist)+p+stag(lane)*k)%400+400)%400; };
+ const mapP=p=>mapPL(3,p);
+ const bW=(ENG.hurdles||[]).map(h=>{ const lp=lanePoint(mapPL(3,h.x),laneOff(3)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; });
+-W3D.setHurdles(bW);
++if(ev.steeple){ W3D.setBarriers(bW); W3D.setHurdles([]); } // JOB G-83: one barrier across the whole track
++else { W3D.setHurdles(bW); if(W3D.setBarriers) W3D.setBarriers([]); }
+ const lp0=lanePoint(mapP(ENG.liveFrom),laneOff(3));
+ W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10);
+ ENG.draw3=dt=>{
+ const r=ENG.r, s=mapP(r.pos);
+-const lp=placeOval(R[0],s,3,r.speed,PMAX,r.airY*0.011,r.stamina);
+-ENG.ai.forEach((a,i)=>{ if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,0); else R[i+1].group.visible=false; });
++// JOB G-83 (owner): in the 10,000m the whole field breaks to lane 1 after the
++// start, like a real distance race - each runner's lane eases to lane 1 (index 0)
++// over the first 110m he covers from the live start.
++const cutL=(lane,p)=> ev.id==='10000m' ? lane*(1-clamp((p-ENG.liveFrom)/110,0,1)) : lane;
++const lp=placeOval(R[0],s,cutL(3,r.pos),r.speed,PMAX,r.airY*0.011,r.stamina);
++const lanesNow={player:cutL(3,r.pos), ai:[]};
++ENG.ai.forEach((a,i)=>{ lanesNow.ai.push(cutL(RIV_LANES[i],a.pos)); if(Math.abs(a.pos-r.pos)<220) placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),cutL(RIV_LANES[i],a.pos),a.speed,PMAX,(a.airY||0)*0.011); else R[i+1].group.visible=false; });
++ENG._lanes=lanesNow;
+ if(ENG.msgT>0) centerText(ENG.msg,H*0.30,24,ENG.msg.indexOf('STUMBLED')===0?'#ffb34d':'#ffd34d');
+ // JOB J42 (owner): the line above used to call mapPL, which only exists in the sprint/hurdles
+ // branches - so the distance draw3 threw before followCam/render EVERY frame and the camera
+@@ -2602,18 +2651,22 @@
+ ENG.teams.forEach((t,ti)=>{ if(ti>0){ const rv=(ENG._rivals||[])[ti-1]; if(rv){ styleRig(ti*2, rv.kit||'#888888', rv.name); styleRig(ti*2+1, rv.kit||'#888888', rv.name); } } });
+ const zoneGrp=new THREE.Group();
+ for(let k=1;k<=3;k++){
+-const pts=[], s0=raceS(k*100-20), seg=14;
+-for(let i2=0;i2<=seg;i2++){ const s=s0+(20*i2/seg); const a=lanePoint(s,0.35), b=lanePoint(s,-9.55); pts.push(a.x,0.02,a.z, b.x,0.02,b.z); }
++// JOB G-83 (owner): with the staggered start each lane's exchange zone sits at
++// that lane's own staggered marks, so the ribbons are painted lane by lane.
++const pts=[], seg=4;
++for(let l=0;l<8;l++){ for(let i2=0;i2<=seg;i2++){ const s=visS(l,k*100-20+(20*i2/seg),400); const a=lanePoint(s,laneOff(l)+0.61), b=lanePoint(s,laneOff(l)-0.61); pts.push(a.x,0.02,a.z, b.x,0.02,b.z); } }
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
+-const idx=[]; for(let i2=0;i2<seg;i2++){ const a=i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); }
++const idx=[]; for(let s2=0;s2<8;s2++){ const base=s2*(seg+1)*2; for(let i2=0;i2<seg;i2++){ const a=base+i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } } // JOB G-83: one strip per lane
+ g.setIndex(idx);
+ zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
+ }
+ W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp;
+ if(!W3D._batons){ W3D._batons=[]; for(let i2=0;i2<4;i2++){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.32,10), new THREE.MeshStandardMaterial({color:0xe8ecf2,roughness:0.3,metalness:0.75})); b.visible=false; W3D.scene.add(b); W3D._batons.push(b); } }
+-W3D.setBlocks(ENG.teams.map((t,ti)=>{ const lp=lanePoint(raceS(0), laneOff(teamLane(ti))); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
+-{ const lp0=lanePoint(raceS(0),laneOff(3)); W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10); }
++// JOB G-83 (owner): the relay starts at the REAL staggered start - every lane
++// has blocks at its own staggered mark (never a line-up under the FINISH banner).
++W3D.setBlocks([0,1,2,3,4,5,6,7].map(l=>{ const lp=lanePoint(visS(l,0,400), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
++{ const lp0=lanePoint(visS(3,0,400),laneOff(3)); W3D.camSnap(lp0.x-lp0.tx*7,2.8,lp0.z-lp0.tz*7, lp0.x+lp0.tx*10,1.2,lp0.z+lp0.tz*10); }
+ const BV=new THREE.Vector3(), BVUP=new THREE.Vector3(0,1,0);
+ ENG.draw3=dt=>{
+ const R=W3D.rigs;
+@@ -2622,17 +2675,17 @@
+ let camLp=null;
+ ENG.teams.forEach((t,ti)=>{
+ const lane=teamLane(ti), base=ti*2;
+-const clp=placeOval(R[base], raceS(t.leg*100+t.carrier.pos), lane, t.carrier.speed, PMAX, 0, t.isPlayer? t.carrier.stamina : undefined);
++const clp=placeOval(R[base], visS(lane, t.leg*100+t.carrier.pos, 400), lane, t.carrier.speed, PMAX, 0, t.isPlayer? t.carrier.stamina : undefined); // JOB G-83: staggered mapping (visS decays the stagger to the shared finish)
+ if(ti===0) camLp=clp;
+ const mate = t.spent || (t.leg<3 ? t.receiver : null);
+ if(mate){
+ const mRace = t.spent? t.spentLeg*100+mate.pos : t.leg*100+mate.pos;
+-placeOval(R[base+1], raceS(mRace), lane, mate.speed, PMAX, 0);
++placeOval(R[base+1], visS(lane, mRace, 400), lane, mate.speed, PMAX, 0);
+ } else R[base+1].group.visible=false;
+ const b=W3D._batons[ti];
+ if(b){ b.visible=true;
+ let bx=clp.x+clp.tx*0.30-clp.tz*0.22, bz=clp.z+clp.tz*0.30+clp.tx*0.22;
+-if(t.passT>0 && t.passFrom){ const slp=lanePoint(raceS(t.spentLeg*100+t.passFrom.pos), laneOff(lane)); bx=(bx+slp.x)/2+clp.tx*0.1; bz=(bz+slp.z)/2+clp.tz*0.1; }
++if(t.passT>0 && t.passFrom){ const slp=lanePoint(visS(lane, t.spentLeg*100+t.passFrom.pos, 400), laneOff(lane)); bx=(bx+slp.x)/2+clp.tx*0.1; bz=(bz+slp.z)/2+clp.tz*0.1; }
+ b.position.set(bx,1.02,bz); BV.set(clp.tx,0,clp.tz).normalize(); b.quaternion.setFromUnitVectors(BVUP,BV);
+ }
+ });
+@@ -3046,7 +3099,10 @@
+ const ev=playing&&ENG?ENG.ev:G.cardEv;
+ if(!ev) return;
+ // a winning mark on the event's own scale (pointsFor caps it at the 1200 max)
+-const val=ev.timed? Math.round(ev.ref*0.90*100)/100 : Math.round(ev.ref*1.10*100)/100;
++// JOB G-83 (owner): a skip during a race reports the RACE CLOCK at that moment -
++// the results time must be the same as the clock at the finish, never a made-up
++// mark (his 10,000m results showed ref x 0.90 = 23:33.90 against a 29:12 clock).
++const val=(ev.timed && playing && ENG && typeof ENG.time==='number')? Math.round(ENG.time*100)/100 : (ev.timed? Math.round(ev.ref*0.90*100)/100 : Math.round(ev.ref*1.10*100)/100);
+ const res={value:val, display:ev.timed?fmtTime(val):fmtMark(val), points:pointsFor(ev,val)};
+ // stop the live event cleanly so the frame loop cannot finish it a second time
+ if(ENG){ ENG.done=true; ENG.finishT=0; }
+@@ -3084,11 +3140,11 @@
+ finishCommon(ev,res,newBest,[{n:athleteName+' — '+res.display,p:res.points}],'RETRY EVENT',()=>showCard(G.singleEv));
+ }
+ }
+-function finishCommon(ev,res,newBest,rows,nextLabel,nextFn){
++function finishCommon(ev,res,newBest,rows,nextLabel,nextFn,colHead){
+ $('resMark').textContent=res.display+(newBest?'  — NEW BEST!':'');
+ if(newBest) Confetti.burst(110);
+ $('resPoints').textContent=res.points+' PTS';
+-$('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>ATHLETE</th><th>PTS</th></tr>'+
++$('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>'+(colHead||'ATHLETE')+'</th><th>PTS</th></tr>'+
+ rows.map((r,i)=>'<tr'+(r.n===athleteName||String(r.n).indexOf(athleteName+' —')===0?' class="me"':'')+
+ '><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+r.p+'</td></tr>').join('')+'</table>';
+ G.nextFn=nextFn;
+@@ -3183,7 +3239,7 @@
+ const rows=C.results.map(r=>({n:r.ev+' — '+ordinal(r.place),p:r.pts}));
+ const more=C.evIdx<C.events.length;
+ finishCommon(ev,res,newBest,rows, more?'NEXT EVENT':(C.champ?'MEET RESULTS':'BACK TO CAREER'),
+-more?()=>showCard(C.events[C.evIdx]):()=>careerMeetEnd());
++more?()=>showCard(C.events[C.evIdx]):()=>careerMeetEnd(),'EVENT'); // JOB G-83 (owner): these rows are the meet's EVENTS, not athletes (1.png)
+ }
+ function careerMeetEnd(){
+ const C=G.car;
+@@ -3640,6 +3696,8 @@
+ throwView:()=>{ const im=W3D.implement&&W3D.implement.cur; return { phase:ENG?ENG.phase:null, impl:(im&&im.visible)?{x:im.position.x,y:im.position.y,z:im.position.z}:null, cam:{x:W3D.camPos.x,y:W3D.camPos.y,z:W3D.camPos.z}, look:{x:W3D.camLook.x,y:W3D.camLook.y,z:W3D.camLook.z}, mark:W3D.landMark?{x:W3D.landMark.position.x,z:W3D.landMark.position.z,vis:W3D.landMark.visible}:null, jumpD:ENG?ENG.jumpD:null }; }, // JOB J42: read-only - the throw flight camera + landing marker play test reads this
+ sharp:()=>({ pr: W3D.renderer?W3D.renderer.getPixelRatio():0, dpr: window.devicePixelRatio||1, fog: (W3D.scene&&W3D.scene.fog)?W3D.scene.fog.near:0 }),
+ light:()=>({ coarse: COARSE, level: Perf.level, shadows: W3D.renderer?W3D.renderer.shadowMap.enabled:null, aa: W3D.renderer?W3D.renderer.getContext().getContextAttributes().antialias:null }),
++barriers:()=>{ const m=W3D.barriersMesh; if(!m) return null; m.geometry.computeBoundingBox(); const bb=m.geometry.boundingBox; return { count:m.count, width:Math.round((bb.max.z-bb.min.z)*10)/10, height:Math.round(bb.max.y*1000)/1000 }; },
++relayStart:()=>{ const bs=(W3D.blocks||[]).filter(b=>b.visible); const starts=[0,1,2,3,4,5,6,7].map(l=>lanePoint(visS(l,0,400),laneOff(l))); let placed=bs.length===8; if(placed){ for(let l=0;l<8;l++){ if(Math.hypot(bs[l].position.x-starts[l].x, bs[l].position.z-starts[l].z)>0.7){ placed=false; break; } } } return { blocks:bs.length, placed, playerArc:Math.round(stagFor(3,400)*10)/10 }; },
+ input:()=>({ tap:TFIN.tap, stick:TFIN.stick, act:TFIN.act, stickHeld:STICKHELD }),
+ fill:()=>{ const c=document.getElementById('game'); const r=c.getBoundingClientRect(); const iw=window.innerWidth, ih=window.innerHeight; return { cov:(r.width*r.height)/(iw*ih), W, H, iw, ih }; },
+ camClear:()=>{ try{ if(!W3D.camera||!ENG||!ENG.r) return null; const from=W3D.camera.position; const to=new THREE.Vector3(ENG.r.ox,1.3,ENG.r.oz); const dir=to.clone().sub(from); const dist=dir.length(); const rc=new THREE.Raycaster(from, dir.normalize(), 0, Math.max(0.1,dist-1.2)); const hits=rc.intersectObjects(W3D._blockers||[], true); return { clear: hits.length===0, dist:+dist.toFixed(1) }; }catch(e){ return null; } },
