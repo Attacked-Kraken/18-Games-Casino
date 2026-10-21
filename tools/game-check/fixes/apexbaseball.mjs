@@ -239,6 +239,25 @@ export default [
     },
   },
   {
+    id: 'play-umpire-behind-batter',
+    ask: "The umpire stands behind the batter (behind the catcher) - never a second man stacked on the pitcher (owner G-85 fix)",
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await page.waitForFunction(() => window.__test && window.__test.stadium && window.__test.stadium.loaded, null, { timeout: 20000 });
+      await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+      const ok = await page.waitForFunction(() => { const u = window.__test.umpire; return u && u.visible; }, null, { timeout: 10000 }).then(() => true).catch(() => false);
+      if (!ok) return 'the umpire never took his spot behind the batter';
+      return h.eval(() => {
+        const u = window.__test.umpire;
+        if (!u.dedup) return 'a second man is still stacked on the pitcher or the catcher';
+        if (!(u.z > u.catcherZ + 0.8)) return 'umpire is not behind the catcher: z=' + u.z + ' catcher z=' + u.catcherZ;
+        if (Math.abs(u.x) > 1.6) return 'umpire is too far off the plate: x=' + u.x;
+        if (Math.hypot(u.x, u.z + 20.17) < 15) return 'the umpire is up by the pitcher, not behind the batter';
+        return true;
+      });
+    },
+  },
+  {
     id: 'keep-batting-flow',
     ask: 'KEEP: everything that works and looks right now (batting flow)',
     async test(page, h) {
