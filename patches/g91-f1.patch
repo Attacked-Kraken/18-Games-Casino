@@ -1,0 +1,13 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1419,6 +1419,10 @@
+   stick.addEventListener('touchmove',e=>{ e.preventDefault(); for(const t of e.changedTouches) if(t.identifier===stickId) stickMove(t); },{passive:false});
+   const stickEnd=e=>{ for(const t of e.changedTouches) if(t.identifier===stickId){ stickId=null; Input.steer=0; setKnob(0); } };
+   stick.addEventListener('touchend',stickEnd); stick.addEventListener('touchcancel',stickEnd);
++  // G-91 (owner patch 04c): let go of EVERYTHING when iOS steals the touch (notification, app switch) - the stick used to stay pushed
++  const releaseAll=()=>{ stickId=null; Input.steer=0; setKnob(0); Input.gas=Input.brake=Input.reverse=Input.ers=Input.left=Input.right=false; document.querySelectorAll('.on').forEach(el=>el.classList.remove('on')); };
++  addEventListener('blur',releaseAll); addEventListener('pagehide',releaseAll); addEventListener('pointercancel',releaseAll);
++  document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
+   // mouse fallback for desktop testing
+   let mouseDown=false;
+   stick.addEventListener('mousedown',e=>{ mouseDown=true; stickMove(e); });
