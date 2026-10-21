@@ -62,3 +62,12 @@ The robot computer is often busy, so wall-clock time between its readings stretc
 "walking". Now: `time()` from the hook gives GAME seconds and `speed()` the game's own speed; running vs walking is decided
 by those, never by the robot's clock. A hook without `time()` gets a CHECK line asking for it. Ground contact is measured at
 the LOWEST point of the whole foot (the toe/sole mesh, or the lowest toe bone minus `footOffset`) - never at the ankle bone.
+
+## First steps of a sprint + tests that wait for luck (owner Oct 21 2026, Baseball G-100)
+- The first steps from a standstill are under 2 m/s but are RUNNING steps (both feet leave the ground). A reading is judged
+  as standing/walking (every reading within 3 cm) only when the player is not speeding up and no fast reading follows
+  within 1 s - or when the hook's `gait()` says 'walk' / 'stand'. Add `gait: () => 'stand'|'walk'|'run'` to be exact.
+- A play test that waits for a random event and never sees it ("no strikeout happened in 29 s, so it could not be
+  checked") is INCONCLUSIVE, not a failure: the robot tries it twice, then writes a yellow line. Return
+  `{ inconclusive: 'why' }` from such a test - and better, make the test CREATE the situation it checks.
+

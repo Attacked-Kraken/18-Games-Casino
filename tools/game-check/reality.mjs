@@ -14,6 +14,7 @@
 //     time: () => seconds,                      // the GAME's clock (optional; owner Oct 21 5:26 PM - a busy robot computer
 //                                               //   stretches wall time and would call a sprint "walking"; game time can't)
 //     speed: () => metresPerSecond,             // the game's own player speed (optional; wins over the robot's estimate)
+//     gait: () => 'stand'|'walk'|'run',         // what the player is doing now (optional; wins over speed - owner Oct 21)
 //     expect: { length: [min, max], height: [min, max] }   // metres, overrides the kind defaults (optional)
 //   }
 // Missing hook = one CHECK line. Each broken rule = one FAIL line starting "REALITY:".
@@ -77,9 +78,10 @@ export async function realityCheck(page, wait) {
         }
         let gt = null; try { if (R.time) gt = +R.time(); } catch (e) {}
         let gs = null; try { if (R.speed) gs = +R.speed(); } catch (e) {}
+        let ga = ''; try { if (R.gait) ga = String(R.gait() || '').toLowerCase(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
         return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null,
-          x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -124,7 +126,15 @@ export async function realityCheck(page, wait) {
       // seconds of GAME time when the hook gives a clock (a slow robot can't stretch it); the game's own speed wins
       const dt = prev ? Math.max(0.05, s.t - prev.t) : 0.4;
       const v = s.speed != null ? s.speed : (prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0);
-      (v > 2 ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
+      // owner Oct 21 6:38 PM (window 1, G-100): the first steps of a sprint from a standstill are still under 2 m/s, but
+      // they are RUNNING steps (both feet leave the ground). A reading counts as standing/walking only when the hook's
+      // gait() says so, or - without gait() - when the player is NOT speeding up and no fast reading follows within 1 s.
+      const next = samples.slice(i + 1).find(x => x.t - s.t <= 1.0 && x.t > s.t);
+      const nv = next ? (next.speed != null ? next.speed : Math.hypot(next.x - s.x, next.z - s.z) / Math.max(0.05, next.t - s.t)) : v;
+      const speeding = next && nv > v * 1.15 + 0.2;
+      let isFast = v > 2 || speeding || nv > 2;
+      if (s.gait === 'run') isFast = true; else if (s.gait === 'walk' || s.gait === 'stand') isFast = false;
+      (isFast ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
     }
     const slowGaps = slow.flatMap(s => [s.low]);
     const floating = slowGaps.filter(g => g > 0.03).length;

@@ -182,3 +182,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-43 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-43-pole-vault |
 | G-56 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-56.md | test/g-56-trackfield-tester |
 
+| G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
