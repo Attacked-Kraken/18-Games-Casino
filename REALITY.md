@@ -44,6 +44,8 @@ window.__reality = {
   ground: (x, z) => 0,        // ground / ice height under a point
   track: (x, z) => ({ x: 0, z: 1 }),   // the right racing direction there (unit vector) - racing games
   go: (on) => {},             // hold GAS / RUN so the player moves (the robot calls go(true) for 5 s)
+  time: () => gameSeconds,    // the GAME's clock - the robot measures speed in game time, never the computer's clock
+  speed: () => metresPerSec,  // the game's own player speed (wins over the robot's estimate)
   expect: { length: [4.8, 6.4] }        // only if this game's real size differs from the table
 };
 ```
@@ -53,3 +55,9 @@ floating or sunk wheels/feet/skates. No hook = a CHECK line asking for it.
 
 ## Ground contact while moving fast (owner Oct 21 2026)
 A real sprint has both feet off the ground mid-stride, so the robot does NOT fail a running player for a foot in the air. While the player moves fast (over 2 m/s - running, skating, driving) the rule is: the LOWEST foot / skate / wheel touches down (within 3 cm of the ground) at least once every ~0.5 s, and nothing ever goes under the ground. Standing and walking keep the strict rule (every reading within 3 cm). Running and skating games (Baseball, Track & Field, Hockey) are judged this way.
+
+## Game time + the lowest point of the foot (owner Oct 21 2026, Baseball G-100)
+The robot computer is often busy, so wall-clock time between its readings stretches and a real sprint looked like 1-2 m/s
+"walking". Now: `time()` from the hook gives GAME seconds and `speed()` the game's own speed; running vs walking is decided
+by those, never by the robot's clock. A hook without `time()` gets a CHECK line asking for it. Ground contact is measured at
+the LOWEST point of the whole foot (the toe/sole mesh, or the lowest toe bone minus `footOffset`) - never at the ankle bone.

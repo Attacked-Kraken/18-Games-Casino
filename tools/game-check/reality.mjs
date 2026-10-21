@@ -11,6 +11,9 @@
 //     ground: (x, z) => y,                      // ground / ice height under a point (optional, default 0)
 //     track: (x, z) => ({ x, z }),              // the right racing direction at a point, unit vector (optional)
 //     go: (on) => {},                           // make the player move forward like a held GAS / RUN (optional)
+//     time: () => seconds,                      // the GAME's clock (optional; owner Oct 21 5:26 PM - a busy robot computer
+//                                               //   stretches wall time and would call a sprint "walking"; game time can't)
+//     speed: () => metresPerSecond,             // the game's own player speed (optional; wins over the robot's estimate)
 //     expect: { length: [min, max], height: [min, max] }   // metres, overrides the kind defaults (optional)
 //   }
 // Missing hook = one CHECK line. Each broken rule = one FAIL line starting "REALITY:".
@@ -61,11 +64,22 @@ export async function realityCheck(page, wait) {
         let tr = null;
         try { tr = R.track ? R.track(p.x, p.z) : null; } catch (e) {}
         const gaps = [];
-        for (const c of (R.contact || [])) {
-          try { const b = box(c); const q = wp(c); gaps.push(+((b ? b.minY : q.y - (+R.footOffset || 0)) - g(q.x, q.z)).toFixed(3)); } catch (e) {}
+        for (const c of (R.contact || [])) {   // the LOWEST point of the whole foot (toe/sole), never the ankle bone itself
+          try {
+            const b = box(c); const q = wp(c); let low = b ? b.minY : Infinity;
+            if (!b) {                           // bones only (no mesh): lowest bone under this node (toe) minus the sole offset
+              let lowest = q.y;
+              c.traverse && c.traverse(n => { try { const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
+              low = lowest - (+R.footOffset || 0);
+            }
+            gaps.push(+(low - g(q.x, q.z)).toFixed(3));
+          } catch (e) {}
         }
+        let gt = null; try { if (R.time) gt = +R.time(); } catch (e) {}
+        let gs = null; try { if (R.speed) gs = +R.speed(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
-        return { t: performance.now(), x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null,
+          x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -107,8 +121,9 @@ export async function realityCheck(page, wait) {
     for (let i = 0; i < samples.length; i++) {
       const s = samples[i], prev = samples[i - 1];
       if (!(s.gaps || []).length) continue;
-      const dt = prev ? Math.max(0.05, (s.t - prev.t) / 1000) : 0.4;
-      const v = prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0;
+      // seconds of GAME time when the hook gives a clock (a slow robot can't stretch it); the game's own speed wins
+      const dt = prev ? Math.max(0.05, s.t - prev.t) : 0.4;
+      const v = s.speed != null ? s.speed : (prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0);
       (v > 2 ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
     }
     const slowGaps = slow.flatMap(s => [s.low]);
@@ -119,7 +134,7 @@ export async function realityCheck(page, wait) {
       let longest = 0, since = null;
       for (const f of fast) {
         if (f.low <= 0.03) since = f.t;
-        else if (since != null) longest = Math.max(longest, (f.t - since) / 1000);
+        else if (since != null) longest = Math.max(longest, f.t - since);
         else longest = Math.max(longest, 0.4);
       }
       const ever = fast.some(f => f.low <= 0.03);
@@ -127,6 +142,7 @@ export async function realityCheck(page, wait) {
         out.fail.push(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
-  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length };
+  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
 }
