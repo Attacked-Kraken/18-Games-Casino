@@ -1,0 +1,97 @@
+diff --git a/apexracer.html b/apexracer.html
+index a1105bd..ff1bf7e 100644
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -314,7 +314,7 @@ const MPH = 2.237;
+ /* ------------------------------------------------------------------ player save */
+ let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
+ const CARS = [
+-  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a', glb: 'patriot' },
++  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
+   { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 65, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
+   { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 68, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
+   { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 74, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
+@@ -327,7 +327,7 @@ const CARS = [
+   { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
+ ];
+ const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
+-const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : 'none', wrapCol: '#ffffff' });
++const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
+ /* owner: "give a bonus start of 🪙200,000 to new usernames" */
+ const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
+ let S = DEF();
+@@ -337,6 +337,8 @@ function load() { try { const raw = localStorage.getItem(skey()); WELCOME = !raw
+   else { const g = S.cars.goblin; if (g.paint === '#e8e8ee') { g.paint = '#9d0f1f'; g.fin = 'candy'; } if (g.rimCol === '#c9cdd6') g.rimCol = '#d4142a'; } if (!S.cars[S.cur]) S.cur = Object.keys(S.cars)[0] || 'goblin'; if (!S.cars.vanta && !Object.keys(S.cars).length) S.cars.vanta = defCfg('vanta');
+   /* G-23: APEX ARCADE name wrap ON by default for the owner's Goblin - one time only, later choices stick */
+   if (!S.nameWrap1) { S.nameWrap1 = 1; const g23 = S.cars.goblin; if (g23 && (!g23.wrap || g23.wrap === 'none')) { g23.wrap = 'name'; save(); } }
++  /* Vanta GT S7 look (owner, 2026-10-21): a Vanta still on the old factory spec gets white rims + racing stripes once; anything the player changed stays */
++  if (!S.vantaS7) { S.vantaS7 = 1; const v7 = S.cars.vanta; if (v7) { if (v7.rimCol === '#c9cdd6') v7.rimCol = '#f4f6f8'; if (!v7.wrap || v7.wrap === 'none') v7.wrap = 'stripes'; save(); } }
+   /* owner: "give me a 200,000 bonus on my Cruz username profile for the racer" - one time only */
+   if (isOwner()) for (const q of CARS) if (q.owner && !S.cars[q.id]) { S.cars[q.id] = defCfg(q.id); if (q.id === 'titan') { S.cars.titan.fin = 'chrome'; S.cars.titan.glow = '#19e6ff'; } }
+   if (isOwner() && !S.gift3m) { S.gift3m = 1; S.cash += 3000000; GIFT3 = true; save(); } /* owner: "give me another 🪙3million in account to race with" */
+@@ -998,6 +1000,57 @@ function addNameWrap(tilt, bodyMat, col) {
+   }
+   return made ? mat : null;
+ }
++/* Racing Stripes on a real 3D model: ribbons that follow the body's own top
++   surface (sampled in tilt space, like addNameWrap) plus a band along each
++   side, so the sold stripes wrap shows on GLB cars too - it is the Vanta GT's
++   factory look. */
++function addStripeWrap(tilt, bodyMat, glassMat, col) {
++  tilt.updateWorldMatrix(false, true);
++  const inv = new THREE.Matrix4().copy(tilt.matrixWorld).invert();
++  const NB = 48, raw = [], prof = [[], []];
++  const v = new THREE.Vector3();
++  let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9, bz0 = 1e9, bz1 = -1e9;
++  tilt.traverse((q) => {
++    if (!q.isMesh || (q.material !== bodyMat && q.material !== glassMat)) return;
++    const p = q.geometry && q.geometry.attributes && q.geometry.attributes.position; if (!p) return;
++    for (let i = 0; i < p.count; i += 2) {
++      v.fromBufferAttribute(p, i).applyMatrix4(q.matrixWorld).applyMatrix4(inv);
++      raw.push(v.x, v.y, v.z, q.material === bodyMat ? 1 : 0);
++      if (v.x < bx0) bx0 = v.x; if (v.x > bx1) bx1 = v.x;
++      if (v.y < by0) by0 = v.y; if (v.y > by1) by1 = v.y;
++      if (v.z < bz0) bz0 = v.z; if (v.z > bz1) bz1 = v.z;
++    }
++  });
++  const H = by1 - by0, L = bx1 - bx0, W = bz1 - bz0;
++  if (!(H > 0.5 && L > 2)) return [];
++  const top = new Array(NB).fill(-1), y0 = by0 + H * 0.30, y1 = by0 + H * 0.62;
++  for (let i = 0; i < raw.length; i += 4) {
++    const x = raw[i], y = raw[i + 1], z = raw[i + 2], isB = raw[i + 3];
++    const b = Math.min(NB - 1, Math.max(0, Math.floor((x - bx0) / L * NB)));
++    if (y > top[b]) top[b] = y;
++    if (isB && y >= y0 && y <= y1) { const sd = z >= 0 ? 0 : 1, a = Math.abs(z); if (prof[sd][b] === undefined || a > prof[sd][b]) prof[sd][b] = a; }
++  }
++  /* fill gaps, drop spikes (mirrors, pods), trim end steps (the rear wing top
++     sits well above the deck - stripes end at the deck, not on the wing) */
++  let last = -1; for (let b = 0; b < NB; b++) { if (top[b] < 0) top[b] = last; else last = top[b]; }
++  last = -1; for (let b = NB - 1; b >= 0; b--) { if (top[b] < 0) top[b] = last; else last = top[b]; }
++  if (last < 0) return [];
++  for (let b = 1; b < NB - 1; b++) if (top[b] > top[b - 1] + H * 0.08 && top[b] > top[b + 1] + H * 0.08) top[b] = Math.max(top[b - 1], top[b + 1]);
++  let b0 = 0, b1 = NB - 1;
++  const ahead = (b, d) => { let m = 1e9; for (let k = 1; k <= 6; k++) { const j = b + d * k; if (j < 0 || j >= NB) break; m = Math.min(m, top[j]); } return m; };
++  while (b0 < b1 && top[b0] - ahead(b0, 1) > H * 0.15) b0++;
++  while (b1 > b0 && top[b1] - ahead(b1, -1) > H * 0.15) b1--;
++  const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.35, metalness: 0.1, polygonOffset: true, polygonOffsetFactor: -2 });
++  const out = [], zc = W * 0.105, zw = W * 0.038;
++  for (const sgn of [-1, 1]) {
++    const pos = [], idx = [];
++    for (let b = b0; b <= b1; b++) { const x = bx0 + (b + 0.5) / NB * L, y = top[b] + 0.008, z = sgn * zc; pos.push(x, y, z - zw, x, y, z + zw); if (b > b0) { const a = (b - b0) * 2; idx.push(a - 2, a - 1, a, a - 1, a + 1, a); } }
++    const geo = new THREE.BufferGeometry();
++    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
++    const m = new THREE.Mesh(geo, mat); m.name = 'apexstripes'; m.renderOrder = 3; tilt.add(m); out.push(m);
++  }
++  return out;
++}
+ /* G-01: owner's player car as a real 3D model. Same car interface as makeCar
+    (root/yaw/tilt, wheels, P, setBrake, dispose) so menu, garage, race and
+    multiplayer all work unchanged. Model: Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0. */
+@@ -1048,6 +1101,7 @@ function makeGlbCar(id, cfg, o = {}) {
+   tilt.add(model);
+   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
+   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
++  if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
+   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
+   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
+   const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: null, roll: 0, spinA: 0, glbKey: key,
