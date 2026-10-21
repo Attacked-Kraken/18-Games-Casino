@@ -510,7 +510,7 @@ function respawn() {
   $('thrFill').style.height = (P.thr * 100) + '%';
 }
 function crash(why) {
-  if (phase !== 'fly') return;
+  if (phase !== 'fly' && phase !== 'scored') return;
   phase = 'crashed';
   $('crashWhy').textContent = why;
   const ov = $('crashOv'); ov.hidden = false; ov.style.opacity = 0;
@@ -546,6 +546,9 @@ function onTouchdown(vs) {
     $('scoreOv').hidden = false;
   } else if (onRwy) {
     flashMsg('TOUCHDOWN!', 1800);
+  } else if (mode === 'challenge' && !scoredThisAttempt) {
+    // owner's fix: an off-runway touchdown in the challenge must say why there is no score
+    flashMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', 3400);
   }
 }
 
