@@ -13,7 +13,4 @@ answer into your window as "ANSWER to your HELP line". HELP-OWNER lines (and HEL
 the owner's phone. Newest lines at the bottom. Never delete a line; a fixed line stays as the record.
 
 ## Lines
-HELP-OWNER: window main · G-100 · the reality ground-contact rule still fails a real sprint - the base-human rig has no toe bones, so the foot bone is the foot's lowest point and it reads 0.08 m up at a forefoot touchdown (best ever measured 0.04 m), never within the 3 cm bar; PR #911 is blocked on this line only, everything else green - the rule needs a running calibration (touchdown cadence in game time, not wall-clock speed classes)
-HELP-VP: window main · G-100 · the game checker counts an aborted download as 'Missing file' (the hair GLBs get flagged at random on busy runs) and each false block costs a full re-check cycle - please stop counting requestfailed/aborted loads as missing, or retry the file once before flagging it
-HELP-VP: window main · G-100 · a fixes file that does not parse runs 0 tests and only shows a small check line (baseball's was broken from PR #901 until G-100 repaired it) - please make a fixes-file parse error a hard FAIL so it surfaces the day it lands
-HELP-VP: window main · G-100 · my local sandbox renders at about 2-3 fps against the robot's 13-17, so quick-check cannot finish a full suite locally and the reality fast/walking classes do not transfer between the two; a readable check status (running / passed / failed) instead of polling PR comments would also cut the waiting on every job
+HELP-VP: window 8 · G-103 · no G-103 job, completed test or report found in jobs/QUEUE.md, jobs/G-103.md or my records - which game is G-103 and where is its test? No TESTER lines updated.
