@@ -14,6 +14,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
+import { realityCheck } from './reality.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
@@ -341,6 +342,14 @@ for (const g of games) {
     if (!/friend/i.test(src2)) r.check.push(`No friend codes yet - add a "👥 Play a friend" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md "Friend codes")`);
     else if (!(r.fixes || []).some(x => /^play-friend/.test(x.id || ''))) r.check.push(`Friend codes have no 'play-friend-code' test yet (STORE-READY.md "Friend codes")`);
   } catch (e) {}
+  // REALITY robot (owner Oct 20): direction, real sizes, ground contact - measured in the running game (reality.mjs)
+  try {
+    await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(2500);
+    for (const step of g.start || []) await pressStep(page, step);
+    await page.waitForTimeout(2500);
+    const rl = await realityCheck(page, ms => page.waitForTimeout(ms));
+    r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
+  } catch (e) { r.check.push('REALITY robot could not run: ' + String(e.message).split('\n')[0].slice(0, 100)); }
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
   const brand = f1.brand || f2.brand, yourName = f1.yourName || f2.yourName;
