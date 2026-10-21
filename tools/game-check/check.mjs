@@ -15,6 +15,7 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
 import { realityCheck } from './reality.mjs';
+import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
@@ -349,6 +350,9 @@ for (const g of games) {
     await page.waitForTimeout(2500);
     const rl = await realityCheck(page, ms => page.waitForTimeout(ms));
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
+    // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
+    try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
+    catch (e) { r.check.push('Phone layout check could not run: ' + String(e.message).split('\n')[0].slice(0, 80)); }
   } catch (e) { r.check.push('REALITY robot could not run: ' + String(e.message).split('\n')[0].slice(0, 100)); }
   const casino = f1.casino || f2.casino;
   if (casino) r.fail.push(`Casino wording found: "${casino}" (title: ${f1.title})`);
@@ -500,8 +504,14 @@ if (process.env.STRICT) {
   const direct = new Set(changed.filter(f => /^apex[a-z0-9]*\.html$/.test(f))
     .concat(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html')));
   const hard = /script error|black or blank|did not load|missing file|shader|not real 3d bodies|outside internet|casino wording|real brand/i;
+  // TESTER PRs (owner Oct 20 10:10 PM, Claude 03's catch): a tester (windows 7-10) only adds play tests that FAIL today +
+  // QUEUE lines - the red test IS the finding, the builder fixes the game next. A PR that changes ONLY test files, QUEUE.md,
+  // job reports or reviews is never blocked by its own failing tests. Any game/kit/model change = normal rules.
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|G-\d+)\.md$|^reviews\//.test(f));
+  if (testOnly) console.log('Tester PR (only tests / QUEUE / reports changed): its failing play tests are findings for the builder, not blockers.');
   for (const r of results) for (const f of r.fail) {
     if (/owner'?s eyes/i.test(f)) continue;
+    if (testOnly && /NOT done yet/i.test(f)) continue;
     if (old.get(r.file) && old.get(r.file).has(norm(f))) continue;
     if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
     blockers.push(`${r.file}: ${f}`);
