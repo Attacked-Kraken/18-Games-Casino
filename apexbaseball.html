@@ -1724,7 +1724,7 @@ window.__mus = Mus;
    so at scale 1/0.9144 the park's bases, mound and plate land exactly on the game's, and our
    players, controls, cameras and play stay as they are. The old park stays up until the new
    one has loaded, then steps aside; if the model cannot load, the old park simply stays. */
-const _park = { loaded:false, fans:0, root:null, uTime:{value:0}, uWave:{value:-99}, waveT:-1, vbT:0, vbCtx:null, vbTex:null, vbMsg:0, kitField:false };
+const _park = { loaded:false, fans:0, root:null, uTime:{value:0}, uWave:{value:-99}, waveT:-1, vbT:0, vbCtx:null, vbTex:null, vbMsg:0, kitField:false, night:false };
 const PARK_MSGS = [
   ['MAKE SOME NOISE!', 'APEX ARCADE PARK', 'PLAY MORE · CHEER LOUDER'],
   ['WELCOME FANS', 'APEX ARCADE PARK', 'HOME OF THE COMETS'],
@@ -1852,6 +1852,20 @@ try {
     _park.root = root; _park.loaded = true;
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
+    // G-40 redo (owner: 'nothing has changed'): the owner's park is a NIGHT park, and
+    // under the game's bright day sky it read as the old daytime park - the floodlights,
+    // the lit board and the dark bowl never showed. When his park loads, the game takes
+    // on the park's own night presentation: near-black sky, dim blue ambient, and one
+    // strong cool floodlight so the field stays lit like his preview pictures. If the
+    // model cannot load, the old park keeps its day look, untouched.
+    scene.background = new THREE.Color(0x060a18);
+    if (scene.fog) scene.fog.color.set(0x060a18);
+    scene.traverse(o => {
+      if (o.isHemisphereLight){ o.color.set(0x35507e); o.groundColor.set(0x24351f); o.intensity = 0.95; }
+      else if (o.isDirectionalLight){ o.color.set(0xdfeaff); o.intensity = 1.5; }
+      else if (o.isSpotLight){ o.intensity = 0.85; }
+    });
+    _park.night = true;
   }, undefined, () => { /* the model could not load: the old park stays */ });
 } catch (e) {}
 
@@ -1864,7 +1878,7 @@ window.__test = {
   get balls(){ return G.balls; },
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
-  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField }; },
+  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, night: _park.night }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
