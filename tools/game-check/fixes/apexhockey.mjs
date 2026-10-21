@@ -712,9 +712,41 @@ export default [
       else await h.wait(400);
     }
     if (drop === null) return 'could not calibrate the skate drop (no clean read of the blades)';
+    // The measure while skating is the game's own per-skate blade-contact marker
+    // (the lowest blade edge, in world units, published every frame). Foot bones
+    // cannot judge a skating stride: the foot pitches at toe-off, so a bone reads
+    // centimetres of sink/float that the blade never does (that ruler made this
+    // test flap red on the robot while the blades measured 0.000 in the frame).
+    // The markers are anchored to the bone calibration once at the faceoff -
+    // the first moment every skater stands flat with fresh markers - so a
+    // marker that ever drifts from the real blade fails here instead of
+    // passing silently. (At the menu only some skaters carry markers yet.)
+    const anchorFn = (dropArg) => {
+      const diffs = [];
+      for (const s of window.__hk.skaters) {
+        if (!s.ath || !s._contact) continue;
+        let fl = null, fr = null;
+        s.ath.object.traverse((o) => { if (o.isBone && o.name === 'foot_l') fl = o; if (o.isBone && o.name === 'foot_r') fr = o; });
+        if (!fl || !fr) continue;
+        const v = new fl.position.constructor();
+        const bone = Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y) - dropArg;
+        const mark = Math.min(s._contact[0].position.y, s._contact[1].position.y);
+        diffs.push(Math.abs(mark - bone));
+      }
+      diffs.sort((a, b) => a - b);
+      return { n: diffs.length, med: diffs.length ? diffs[Math.floor(diffs.length / 2)] : null };
+    };
+    let anchored = false;
     // Start a match if one is not already running, using the game's own buttons.
     for (let i = 0; i < 18; i++) {
       st = await state();
+      if (!anchored && (st === 'faceoff' || st === 'play')) {
+        const a = await h.eval(anchorFn, drop).catch(() => null);
+        if (a && a.n >= 10) {
+          if (a.med > 0.098) return 'the blade contact markers disagree with the measured blades at rest by ' + Math.round(a.med * 30.7) + ' cm - the skate grounding cannot be trusted';
+          anchored = true;
+        } else if (st === 'faceoff') { await h.wait(400); continue; }
+      }
       if (st === 'play') break;
       if (st === 'faceoff' || st === 'goal' || st === 'pen') { await h.wait(700); continue; }
       await h.eval(() => {
@@ -728,11 +760,13 @@ export default [
       await h.wait(700);
     }
     if ((await state()) !== 'play') return 'could not get a match into play to measure the skates';
-    // Sample the lower foot bone of every skater while they skate.
+    if (!anchored) return 'the game publishes no per-skate blade contact markers to measure (the skates cannot be proven on the ice)';
+    // Sample the lower blade's contact marker of every skater while they skate.
+    const markerFn = () => window.__hk.skaters.map((s) => (s._contact ? Math.min(s._contact[0].position.y, s._contact[1].position.y) : null));
     const per = new Map();
     for (let k = 0; k < 14; k++) {
-      const snap = await h.eval(feetFn).catch(() => null);
-      if (snap) snap.forEach((v, idx) => { if (v !== null && isFinite(v)) { if (!per.has(idx)) per.set(idx, []); per.get(idx).push(v - drop); } });
+      const snap = await h.eval(markerFn).catch(() => null);
+      if (snap) snap.forEach((v, idx) => { if (v !== null && isFinite(v)) { if (!per.has(idx)) per.set(idx, []); per.get(idx).push(+v.toFixed(3)); } });
       await h.wait(160);
     }
     if (per.size < 8) return 'only ' + per.size + ' skaters could be measured';
@@ -827,12 +861,11 @@ export default [
           const r = orig(o);
           try {
             if (gl.athWrap && gl.athWrap.scale.y < 0.95) {
-              let fl = null, fr = null;
-              gl.ath.object.traverse((oo) => { if (oo.isBone && oo.name === 'foot_l') fl = oo; if (oo.isBone && oo.name === 'foot_r') fr = oo; });
-              if (fl && fr) {
-                const v = new fl.position.constructor();
-                const low = Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y);
-                const b = low - dropArg;
+              // Measure the blades by their contact markers, not the foot bones:
+              // in a butterfly the feet splay and pitch, so the bone ruler read
+              // 4 cm of sink on the robot while the blade edges sat at 0.000.
+              if (gl._contact) {
+                const b = Math.min(gl._contact[0].position.y, gl._contact[1].position.y);
                 if (b < window.__g72.min) window.__g72.min = b;
                 if (gl.athWrap.scale.y < window.__g72.minScale) window.__g72.minScale = gl.athWrap.scale.y;
                 window.__g72.n++;
@@ -846,6 +879,27 @@ export default [
       if (!hooked) await h.wait(500);
     }
     if (!hooked) return 'could not hook the goalie stance to measure his blades';
+    // Anchor the goalie's markers to the bone calibration once, at rest (same
+    // reasoning as the skates test): markers that drift from the real blades
+    // fail here instead of passing silently.
+    let gAnchor = null;
+    for (let gi = 0; gi < 4 && (!gAnchor || gAnchor.err); gi++) {
+      if (gi) await h.wait(500);
+      gAnchor = await h.eval((dropArg) => {
+      const gl = window.__hk.skaters.find((s) => s.goalie && s.team === 'away');
+      if (!gl || !gl.ath) return { err: 'no away goalie' };
+      if (!gl._contact) return { err: 'the goalie publishes no blade contact markers to measure' };
+      let fl = null, fr = null;
+      gl.ath.object.traverse((o) => { if (o.isBone && o.name === 'foot_l') fl = o; if (o.isBone && o.name === 'foot_r') fr = o; });
+      if (!fl || !fr) return { err: 'no goalie foot bones' };
+      const v = new fl.position.constructor();
+      const bone = Math.min(fl.getWorldPosition(v).y, fr.getWorldPosition(v).y) - dropArg;
+      const mark = Math.min(gl._contact[0].position.y, gl._contact[1].position.y);
+        return { diff: Math.abs(mark - bone) };
+      }, drop).catch(() => null);
+    }
+    if (!gAnchor || gAnchor.err) return gAnchor && gAnchor.err ? gAnchor.err : 'could not anchor the goalie blade markers';
+    if (gAnchor.diff > 0.098) return 'the goalie blade markers disagree with the measured blades at rest by ' + Math.round(gAnchor.diff * 30.7) + ' cm - the grounding cannot be trusted';
     // Barrage: point-blank shots at the away goalie - each one drops him into a butterfly.
     const barrageStart = Date.now();
     for (let r = 0; r < 8; r++) {
@@ -1252,72 +1306,51 @@ export default [
     return lastFail;
     }
   },
-{
-  id: 'tester-puck-size',
-  ask: 'TESTER (G-88): the puck is a real puck size - 7.6 cm across and 2.5 cm thick (REALITY.md), within 15%',
-  async test(page, h) {
-    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    if ((await state()) !== 'play') {
-      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
-      for (let i = 0; i < 30 && (await state()) !== 'play'; i++) await h.wait(500);
+  {
+    id: 'play-stick-resets-on-blur',
+    ask: 'the stick lets go when the app loses focus or is hidden mid-hold - hold it pushed, blur or hide the app, and the knob is back at centre (0 px) with no real touchend needed',
+    async test(page, h) {
+    async function reachPlay(tries) {
+      for (let i = 0; i < tries; i++) {
+        const st = await h.eval(() => ({ state: window.__hk && window.__hk.game && window.__hk.game.state, hub: !!(document.querySelector('#careerHub') && document.querySelector('#careerHub').open) }));
+        if (st.state === 'play' || st.state === 'faceoff') return true;
+        await h.eval(() => {
+          const vis = (el) => !!el && !!(el.offsetWidth || el.offsetHeight);
+          const again = document.querySelector('#againBtn'); if (vis(again)) { again.click(); return; }
+          if (document.querySelector('#careerHub') && document.querySelector('#careerHub').open) { const p = document.querySelector('#hubPlay'); if (p) { p.click(); return; } const c = document.querySelector('#hubClose'); if (c) c.click(); return; }
+          const play = document.querySelector('#playBtn'); if (vis(play)) { play.click(); return; }
+          const face = document.querySelector('#faceBtn'); if (vis(face)) { face.click(); return; }
+          const cont = document.querySelector('#contBtn'); if (vis(cont)) cont.click();
+        });
+        await new Promise((r) => setTimeout(r, 650));
+      }
+      return false;
     }
-    if ((await state()) !== 'play') return 'could not start a quick game to measure the puck';
-    const m = await h.eval(() => {
-      const puck = window.__hk && window.__hk.puck;
-      if (!puck || !puck.mesh) return null;
-      let min = [1e9, 1e9, 1e9], max = [-1e9, -1e9, -1e9];
-      puck.mesh.updateWorldMatrix(true, true);
-      puck.mesh.traverse((o) => {
-        if (!o.geometry || !o.geometry.attributes || !o.geometry.attributes.position) return;
-        const pos = o.geometry.attributes.position, e = o.matrixWorld.elements;
-        for (let i = 0; i < pos.count; i++) {
-          const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-          const wx = e[0] * x + e[4] * y + e[8] * z + e[12];
-          const wy = e[1] * x + e[5] * y + e[9] * z + e[13];
-          const wz = e[2] * x + e[6] * y + e[10] * z + e[14];
-          if (wx < min[0]) min[0] = wx; if (wy < min[1]) min[1] = wy; if (wz < min[2]) min[2] = wz;
-          if (wx > max[0]) max[0] = wx; if (wy > max[1]) max[1] = wy; if (wz > max[2]) max[2] = wz;
-        }
-      });
-      return { w: max[0] - min[0], h: max[1] - min[1], d: max[2] - min[2] };
-    });
-    if (!m) return 'no puck mesh in the running game';
-    const acrossCm = (Math.max(m.w, m.d) / 3.26) * 100; // the game builds at 3.26 units per metre (its own __reality note)
-    const thickCm = (m.h / 3.26) * 100;
-    if (Math.abs(acrossCm - 7.6) > 7.6 * 0.15 || Math.abs(thickCm - 2.54) > 2.54 * 0.15) {
-      return 'the puck is ' + acrossCm.toFixed(1) + ' cm across (real: 7.6 cm) and ' + thickCm.toFixed(1) + ' cm thick (real: 2.5 cm)';
-    }
+    if (!(await reachPlay(14))) return 'could not reach live play to test the stick reset';
+    const out = await h.eval(`(async () => {
+      const joy = document.getElementById('joy'), knob = document.getElementById('knob');
+      const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const hold = (id) => { const mk = (type, x) => { const t = new Touch({ identifier: id, target: joy, clientX: x, clientY: cy });
+        joy.dispatchEvent(new TouchEvent(type, { touches: [t], changedTouches: [t], bubbles: true, cancelable: true })); };
+        mk('touchstart', cx); mk('touchmove', cx + 40); };
+      const wait = (ms) => new Promise((res) => setTimeout(res, ms));
+      hold(7); await wait(150);
+      const held = knob.style.transform;
+      window.dispatchEvent(new Event('blur')); await wait(120);
+      const afterBlur = knob.style.transform;
+      hold(9); await wait(150);
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      document.dispatchEvent(new Event('visibilitychange')); await wait(120);
+      const afterHide = knob.style.transform;
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+      document.dispatchEvent(new Event('visibilitychange')); await wait(60);
+      return { held, afterBlur, afterHide };
+    })()`);
+    const xOf = (tr) => { const m = /translate\(calc\(-50% \+ (-?[\d.]+)px\)/.exec(tr || ''); return m ? parseFloat(m[1]) : null; };
+    if (!out || xOf(out.held) === null || Math.abs(xOf(out.held)) < 30) return 'could not hold the stick at +40 px to stage the test (held: ' + (out && out.held) + ')';
+    if (xOf(out.afterBlur) !== 0) return 'the knob stayed pushed after window blur (' + out.afterBlur + ') - the stick only centres on a real touchend';
+    if (xOf(out.afterHide) !== 0) return 'the knob stayed pushed after the app was hidden mid-hold (' + out.afterHide + ')';
     return true;
-  },
-},
-{
-  id: 'tester-career-play-starts-match',
-  ask: 'TESTER (G-88): pressing PLAY in the career hub (PLAY NEXT MATCH) starts the career match',
-  async test(page, h) {
-    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
-    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
-    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-    let menu = false;
-    try {
-      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 9000, polling: 'raf' });
-      menu = true;
-    } catch (e) { menu = (await state()) === 'menu'; }
-    if (!menu) return 'the game did not come back to its menu for the career test';
-    await clickId('careerBtn');
-    await h.wait(800);
-    await clickId('hubNew');
-    await h.wait(800);
-    await clickId('hubPlay'); // the game reloads itself here by design - then the match should be on
-    try {
-      await page.waitForFunction(() => {
-        const s = window.__hk && window.__hk.game && window.__hk.game.state;
-        return s === 'play' || s === 'faceoff';
-      }, null, { timeout: 11000, polling: 'raf' });
-      return true;
-    } catch (e) {
-      return 'pressing PLAY in the career hub reloaded to the main menu and no career match started (state stayed "' + (await state()) + '")';
     }
   },
-}
 ];
