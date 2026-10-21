@@ -1245,4 +1245,89 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-good-play-can-win',
+    ask: 'Good play can win: striding at a strong human cadence (8 taps/s, alternating) the player wins the 200m outright, matches the best rival over 100m, and podiums in the 400m - he is not locked to last place',
+    async test(page, h) {
+      const res = await h.eval(() => {
+        const X = window.__tf && window.__tf.engines && window.__tf.engines();
+        if (!X) return { stage: 'nohook' };
+        const field = [
+          { name: 'D. Carter', rating: 0.93, kit: '#d23c3c' }, { name: 'J. Osei', rating: 0.89, kit: '#2e9e5b' },
+          { name: 'M. Reyes', rating: 0.86, kit: '#e6a02e' }, { name: 'A. Diallo', rating: 0.90, kit: '#3c78d2' },
+          { name: 'K. Mensah', rating: 0.87, kit: '#8e44ad' }, { name: 'R. Silva', rating: 0.84, kit: '#16a3a3' }];
+        const run = (id) => {
+          const e = X.sprint(X.EV_BY_ID[id], field.map(r => ({ ...r })));
+          e.phase = 'run';
+          let t = 0;
+          while (!e.done && t < 120) { t += 1 / 60; if (Math.floor(t * 8) !== Math.floor((t - 1 / 60) * 8)) e.stride(Math.floor(t * 8) % 2 ? 'L' : 'R'); e.update(1 / 60); }
+          return { time: +e.time.toFixed(2), place: e.place, done: e.done };
+        };
+        return { stage: 'ok', m100: run('100m'), m200: run('200m'), m400: run('400m') };
+      });
+      if (!res || res.stage !== 'ok') return 'the engines hook is missing - cannot prove whether good play can win';
+      if (!res.m200.done || res.m200.place !== 1) return 'good play cannot win the 200m - he placed ' + res.m200.place + ' in ' + res.m200.time + 's at a strong cadence';
+      if (!res.m100.done || res.m100.time > 10.30 || res.m100.place > 2) return 'good play is locked out of the 100m - ' + res.m100.time + 's, place ' + res.m100.place + ' (the best rival runs 10.30)';
+      if (!res.m400.done || res.m400.time > 47.5 || res.m400.place > 2) return 'good play is locked out of the 400m - ' + res.m400.time + 's, place ' + res.m400.place + ' (he used to finish last at any cadence)';
+      return true;
+    },
+  },
+  {
+    id: 'play-results-one-table-one-menu-button',
+    ask: 'Final results show ONE table and ONE menu button (not the standings twice, not MENU and BACK TO MENU together), and the top-left words sit on a dark backing',
+    async test(page, h) {
+      // known state: reload to the menu (the suite's shared page may sit anywhere)
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; });
+      await h.wait(2500);
+      // navigate: menu -> TOURNAMENT -> PLAY QUARTERFINAL (the 100m) -> card -> start
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const playing = document.body.classList.contains('playing');
+          if (playing) { clearInterval(iv); res('racing'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bTourn');
+          else if (on && on.id === 'tourney') click('bTournPlay');
+          else if (on && on.id === 'card') click('bCardStart');
+          if (++n > 90) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 150);
+      }));
+      if (nav !== 'racing') return 'could not reach the tournament quarterfinal: ' + nav;
+      // run it SLOWLY on purpose (about 3.8 taps/s) - the player must lose and be eliminated
+      const plate = await h.eval(() => {
+        window.__tk68 = false;
+        window.__g68drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase === 'run') { e.stride(window.__tk68 ? 'R' : 'L'); window.__tk68 = !window.__tk68; } }, 320);
+        const d = document.querySelector('#hudTop > div:first-child');
+        const bg = d ? getComputedStyle(d).backgroundColor : '';
+        const m = /rgba?\(([^)]+)\)/.exec(bg);
+        return m ? parseFloat(m[1].split(',')[3] || '1') : 0;
+      });
+      // wait for the results screen
+      let screen = '';
+      for (let i = 0; i < 60; i++) {
+        await h.wait(350);
+        screen = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : ''; });
+        if (screen === 'results') break;
+      }
+      const end = await h.eval(() => {
+        if (window.__g68drv) { clearInterval(window.__g68drv); window.__g68drv = null; }
+        const vis = el => { if (!el) return false; const cs = getComputedStyle(el); return cs.display !== 'none' && cs.visibility !== 'hidden'; };
+        const bm = document.getElementById('bResMenu'), bn = document.getElementById('bResNext');
+        return {
+          label: bn ? bn.textContent : '',
+          menuButtons: [bm, bn].filter(vis).length,
+          tables: document.querySelectorAll('#resBoard table, #resMedals table').length,
+          mark: (document.getElementById('resMark') || {}).textContent || '',
+        };
+      });
+      if (screen !== 'results') return 'the lost quarterfinal never reached a results screen (last screen: ' + screen + ')';
+      if (!/ELIMINATED/.test(end.mark)) return 'the slow run was supposed to lose the quarterfinal - the results say: ' + end.mark;
+      if (end.label !== 'BACK TO MENU') return 'this results screen was expected to end the run (BACK TO MENU) - it says: ' + end.label;
+      if (end.menuButtons !== 1) return 'the results screen shows ' + end.menuButtons + ' menu buttons - MENU and BACK TO MENU are the same button twice';
+      if (end.tables !== 1) return 'the results screen shows ' + end.tables + ' tables - the standings must show once';
+      if (!(plate >= 0.9)) return 'the top-left words sit on a translucent backing (alpha ' + plate + ') - unreadable over the APEX ARCADE banners';
+      return true;
+    },
+  },
 ];
