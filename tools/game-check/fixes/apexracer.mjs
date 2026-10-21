@@ -366,4 +366,120 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-colliders-visible',
+    ask: 'G-70: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with light bars',
+    async test(page, h) {
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 8);
+          setTimeout(() => {
+            if (!E.R) return res('no race');
+            E.step(420, 1 / 60); // past the countdown, the whole field is on the road
+            const R = E.R;
+            const check = (o, kind, i) => {
+              const c = o.car; if (!c || !c.root) return kind + ' ' + i + ' has no car to draw';
+              let top = c.root, inScene = false;
+              while (top) { if (top.visible === false) return kind + ' ' + i + ' is under an invisible parent'; if (top === R.W.scene) { inScene = true; break; } top = top.parent; }
+              if (!inScene) return kind + ' ' + i + ' car is not in the world scene';
+              let meshes = 0, lamps = 0;
+              let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9, mnz = 1e9, mxz = -1e9;
+              c.root.updateMatrixWorld(true);
+              c.root.traverse((q) => {
+                if (!q.isMesh || !q.visible || q.userData.blob || !q.geometry || !q.geometry.attributes || !q.geometry.attributes.position) return;
+                meshes++; if (q.userData.lamp) lamps++;
+                const p = q.geometry.attributes.position, m = q.matrixWorld.elements, stride = Math.max(1, Math.floor(p.count / 400));
+                for (let vi = 0; vi < p.count; vi += stride) { const x = p.getX(vi), y = p.getY(vi), z = p.getZ(vi);
+                  const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14];
+                  if (wx < mnx) mnx = wx; if (wx > mxx) mxx = wx; if (wy < mny) mny = wy; if (wy > mxy) mxy = wy; if (wz < mnz) mnz = wz; if (wz > mxz) mxz = wz; }
+              });
+              if (meshes < 3) return kind + ' ' + i + ' has only ' + meshes + ' visible meshes - nothing to see';
+              if (lamps < 2) return kind + ' ' + i + ' has no light bars - invisible in the dark';
+              const len = Math.max(mxx - mnx, mxz - mnz), hgt = mxy - mny;
+              if (len < 3.2 || len > 6.8) return kind + ' ' + i + ' is ' + len.toFixed(1) + ' m long - not a real car size';
+              if (hgt < 0.5 || hgt > 2.2) return kind + ' ' + i + ' is ' + hgt.toFixed(1) + ' m tall - not a real car shape';
+              const cx = (mnx + mxx) / 2, cz = (mnz + mxz) / 2;
+              if (Math.abs(cx - o.x) > 1.6 || Math.abs(cz - o.z) > 1.6) return kind + ' ' + i + ' is drawn at (' + cx.toFixed(0) + ',' + cz.toFixed(0) + ') but collides at (' + o.x.toFixed(0) + ',' + o.z.toFixed(0) + ') - an invisible blocker';
+              return true;
+            };
+            for (let i = 0; i < R.cars.length; i++) { const r = check(R.cars[i], 'racer', i); if (r !== true) return res(r); }
+            for (let i = 0; i < R.traffic.length; i++) { const r = check(R.traffic[i], 'traffic', i); if (r !== true) return res(r); }
+            res(true);
+          }, 400);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-ai-models',
+    ask: 'G-70: every AI racer and traffic car is a real fetched 3D model, never the blob mockup',
+    async test(page, h) {
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 8);
+          setTimeout(() => {
+            if (!E.R) return res('no race');
+            E.step(300, 1 / 60);
+            const keys = ['goblin', 'patriot', 'tokii', 'shc', 'lemans'];
+            const check = (o, kind, i) => {
+              const c = o.car; if (!c) return kind + ' ' + i + ' has no car';
+              if (!c.glbKey) return kind + ' ' + i + ' is the blob mockup (no glbKey)';
+              if (!keys.includes(c.glbKey)) return kind + ' ' + i + ' uses unknown model ' + c.glbKey;
+              let verts = 0;
+              c.root.traverse((q) => { if (q.isMesh && !q.userData.blob && q.geometry && q.geometry.attributes && q.geometry.attributes.position) verts += q.geometry.attributes.position.count; });
+              if (verts < 15000) return kind + ' ' + i + ' (' + c.glbKey + ') has only ' + verts + ' vertices - not the real fetched model';
+              return true;
+            };
+            const R = E.R;
+            for (let i = 0; i < R.cars.length; i++) { if (!R.cars[i].ai) continue; const r = check(R.cars[i], 'AI racer', i); if (r !== true) return res(r); }
+            for (let i = 0; i < R.traffic.length; i++) { const r = check(R.traffic[i], 'traffic', i); if (r !== true) return res(r); }
+            res(true);
+          }, 400);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-ai-pace',
+    ask: 'G-70: AI lap times within 5 percent of the player - the field is as fast as the player, nobody just drives away',
+    async test(page, h) {
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E) return 'no window.__erc hook';
+        return new Promise((res) => {
+          E.startRace(E.PLACES[0], 3);
+          setTimeout(() => {
+            if (!E.R) return res('no race');
+            const R = E.R, P = R.P, T = R.T;
+            E.K.gas = 1;
+            let guard = 0;
+            while (guard++ < 4800) {
+              const idx = ((P.idx + 10) % T.N + T.N) % T.N;
+              let dh = Math.atan2(T.tx[idx], T.tz[idx]) - P.h;
+              while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
+              E.K.sx = Math.max(-1, Math.min(1, dh * 1.6));
+              E.step(6, 1 / 60);
+              if ((P.lapT || []).length >= 2 && R.cars.every((e) => !e.ai || (e.lapT || []).length >= 2)) break;
+            }
+            E.K.gas = 0; E.K.sx = 0;
+            if ((P.lapT || []).length < 1) return res('the player set no lap time in 8 sim-minutes');
+            const pBest = Math.min.apply(null, P.lapT);
+            const ais = R.cars.filter((e) => e.ai);
+            if (!ais.length) return res('no AI cars in the race');
+            const times = [];
+            for (const e of ais) { if (!(e.lapT || []).length) return res('AI car ' + e.name + ' set no lap time'); times.push(Math.min.apply(null, e.lapT)); }
+            times.sort((a, b) => a - b);
+            const med = times[Math.floor(times.length / 2)];
+            for (const t of times) if (t > pBest * 1.05) return res('an AI best lap of ' + t.toFixed(1) + 's is more than 5% slower than the player best ' + pBest.toFixed(1) + 's - the player can just drive away');
+            if (med < pBest * 0.95) return res('the AI field median best lap ' + med.toFixed(1) + 's is more than 5% faster than the player best ' + pBest.toFixed(1) + 's');
+            res(true);
+          }, 400);
+        });
+      });
+    },
+  },
 ];
