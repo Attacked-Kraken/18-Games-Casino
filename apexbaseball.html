@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="apexbaseball-icon.svg" type="image/svg+xml">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Apex Baseball · Apex Arcade</title>
@@ -19,9 +20,9 @@
     background:rgba(2,20,10,.78); border:1px solid rgba(90,255,130,.5); color:#d8ffe2;
     min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer;
     font:700 11px ui-monospace,Menlo,monospace; letter-spacing:.06em; }
-  #muteBtn { right:10px; font-size:19px; }
-  #viewBtn { right:62px; }
-  #helpHud { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:150px; z-index:9060; background:rgba(20,12,4,.9); border:1px solid #ffcc33; color:#ffffff; min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer; font:700 16px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  #muteBtn { right:10px; width:52px; text-align:center; font-size:19px; }
+  #viewBtn { right:70px; width:96px; text-align:center; white-space:nowrap; overflow:hidden; }
+  #helpHud { position:fixed; top:calc(10px + env(safe-area-inset-top)); right:174px; z-index:9060; background:rgba(20,12,4,.9); border:1px solid #ffcc33; color:#ffffff; min-width:44px; min-height:44px; padding:8px 10px; border-radius:12px; cursor:pointer; font:700 16px -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
   /* portrait rotate overlay */
   #rotOv { display:none; position:fixed; inset:0; z-index:9500; background:#020b05;
     align-items:center; justify-content:center; text-align:center; padding:24px;
@@ -94,6 +95,17 @@
   .card h1 { font-size:clamp(26px,6vw,38px); letter-spacing:.14em; text-align:center; margin-bottom:4px; font-weight:900; color:#ffffff; background:linear-gradient(180deg,#ffffff 30%,#ff5a5a 70%,#cc0000); -webkit-background-clip:text; background-clip:text; }
   .card h2 { font-size:13px; letter-spacing:.3em; color:#ffcc33; text-align:center; margin-bottom:12px; font-weight:700; }
   .card p, .card li { font-size:13.5px; line-height:1.65; color:#ffffff; }
+  /* G-82: on a sideways phone the cards must FIT the 390 px height - help must be
+     closable without scrolling: tighter type, help list in two columns. */
+  @media (max-height: 500px) {
+    .card { padding:12px 16px; max-height:94vh; }
+    .card h1 { font-size:22px; margin-bottom:2px; }
+    .card h2 { font-size:11px; margin-bottom:6px; }
+    .card p, .card li { font-size:12px; line-height:1.38; }
+    #helpOv .card ul { columns:2; column-gap:24px; }
+    #helpOv .card li { break-inside:avoid; }
+    #helpOv .btn, #friendOv .btn { padding:8px 20px; }
+  }
   .card ul { margin:10px 0 10px 18px; }
   .card .big { text-align:center; margin-top:18px; }
   #finalScore { text-align:center; font-size:20px; margin:12px 0; color:#ffd23f; letter-spacing:.1em; }
@@ -1485,8 +1497,22 @@ function aimFromEvent(e){
   aim.y = clamp((1-fyr)*4.5, 0.2, 4.4);
   updateAimDot();
 }
-aimPad.addEventListener('pointerdown', e=>{ aimFromEvent(e); aimPad.setPointerCapture(e.pointerId); });
-aimPad.addEventListener('pointermove', e=>{ if(e.buttons) aimFromEvent(e); });
+let aimPid = null;
+aimPad.addEventListener('pointerdown', e=>{ aimPid = e.pointerId; aimFromEvent(e); try{ aimPad.setPointerCapture(e.pointerId); }catch(_){} });
+aimPad.addEventListener('pointermove', e=>{ if (aimPid !== null && e.pointerId === aimPid) aimFromEvent(e); });
+function aimRelease(e){ if (e && aimPid !== null && e.pointerId !== aimPid) return; aimPid = null; }
+aimPad.addEventListener('pointerup', aimRelease);
+aimPad.addEventListener('pointercancel', e=>{ aimRelease(e); resetInput(); });
+aimPad.addEventListener('lostpointercapture', aimRelease);
+/* G-82 (Grok audit): the stick must never stay stuck - a call, a notification, a
+   palm touch or an app switch zeroes ALL input on the spot. */
+function resetInput(){
+  aimPid = null;
+  aim.x = 0; aim.y = 2.2; updateAimDot();
+}
+aimPad.addEventListener('touchcancel', resetInput, { passive:true });
+window.addEventListener('blur', resetInput);
+document.addEventListener('visibilitychange', resetInput);
 // keyboard
 window.addEventListener('keydown', e=>{
   lastPitchAct = performance.now();
@@ -1949,6 +1975,7 @@ window.__test = {
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
   get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, night: _park.night }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
+  get input(){ return { aimX: aim.x, aimY: aim.y, dragging: aimPid !== null }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },
   /* G-08: friend-code hooks for the play-friend-code fix test */
   friend: {
