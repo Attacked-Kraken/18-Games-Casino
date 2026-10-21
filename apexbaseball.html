@@ -1964,6 +1964,34 @@ try {
       else if (o.isDirectionalLight){ o.color.set(0xdfeaff); o.intensity = 1.5; }
       else if (o.isSpotLight){ o.intensity = 0.85; }
     });
+    // G-85 (owner: the game runs 13-17 fps): measured on the phone path, the park's
+    // MeshStandardMaterial lighting is the biggest per-frame cost by far - swapping
+    // the park to an unlit material nearly doubled the frame rate, while its
+    // textures, geometry and matrix updates were all cheap in comparison. On touch,
+    // convert the park's standard materials to MeshLambertMaterial (same maps,
+    // colours and emissives - the park's look is baked into its textures - at a
+    // fraction of the per-fragment lighting cost) and draw the big opaque
+    // architecture single-sided. The crowd's patched shader material, the live
+    // video board and the clay discs (their dirt texture arrives async) keep
+    // their materials, and desktop keeps the full standard materials.
+    if (isTouch){
+      const BIG_FLAT = { Concrete:1, ConcreteFascia:1, Roof:1, FacadeArches:1, OutfieldWallPadding:1, BackstopPadding:1, RibbonBoard:1, SuiteWindows:1 };
+      root.traverse(o => {
+        if (!o.isMesh) return;
+        const m = o.material;
+        if (!m || Array.isArray(m) || m.type !== 'MeshStandardMaterial') return;
+        if (m.name === 'CrowdLite' || m.name === 'VideoBoard' || m.name === 'Clay') return;
+        const L = new THREE.MeshLambertMaterial({
+          map: m.map || null, color: m.color ? m.color.clone() : new THREE.Color(0xffffff),
+          vertexColors: !!m.vertexColors, transparent: !!m.transparent, opacity: m.opacity,
+          alphaTest: m.alphaTest || 0, side: m.side,
+          emissive: m.emissive ? m.emissive.clone() : new THREE.Color(0x000000),
+          emissiveMap: m.emissiveMap || null, emissiveIntensity: m.emissiveIntensity
+        });
+        if (BIG_FLAT[m.name] && !L.transparent && !L.alphaTest) L.side = THREE.FrontSide;
+        o.material = L;
+      });
+    }
     _park.night = true;
     revealMenu();
   }, ev => {
