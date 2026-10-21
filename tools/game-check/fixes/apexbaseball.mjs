@@ -704,4 +704,16 @@ export default [
       return true;
     },
   },
+  {
+    id: 'tester-reality-hook-no-go',
+    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      let keys = null;
+      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
+      if (!keys) return 'window.__reality never appeared';
+      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
+      return hasGo ? true : '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
+    },
 ];
