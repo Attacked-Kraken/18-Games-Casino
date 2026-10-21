@@ -166,6 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-100 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, CLAIMS.md | build/g-100-apexbaseball |
 | G-85 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-85-perf-sticktests |
 | G-82 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-82-input-ui-404 |
 | G-79 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-79-loading-screen |

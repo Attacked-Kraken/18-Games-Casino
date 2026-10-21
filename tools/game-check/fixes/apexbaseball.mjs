@@ -716,4 +716,5 @@ export default [
       const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
       return hasGo ? true : '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
     },
+  },
 ];
