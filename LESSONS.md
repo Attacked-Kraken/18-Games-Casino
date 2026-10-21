@@ -4,6 +4,8 @@ Owner: Mr. Cruz. This is the factory's memory. Every time the owner gives a 👎
 the Muse doing that job adds ONE line here: **the mistake → the rule that stops any Muse repeating it.**
 Never delete a line. Never repeat a mistake that is listed here. Newest at the bottom.
 
+Also read **TASTE.md** — what the owner likes, in his words. Every 👍 / 👎 adds a line there too.
+
 Format: `- YYYY-MM-DD · game · mistake → rule`
 
 ## Lessons so far
