@@ -641,6 +641,7 @@ export default [
       while (Date.now() - t0 < 29000) {
         s = await snap(); if (!s) return 'window.__test missing mid-test';
         if (s.phase === 'over') return 'the game ended before a strikeout or walk was seen';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(400); continue; }
         if (/^STRIKEOUT/.test(s.msg)) { endedBy = 'strikeout'; endedTag = s.tag; }
         else if (/^WALK/.test(s.msg)) { endedBy = 'walk'; endedTag = s.tag; }
         else if (endedBy && (s.phase === 'select' || s.phase === 'cpuWindup')) {
@@ -683,6 +684,42 @@ export default [
       if (!r) return 'help or CAM button missing';
       if (r.ox > 2 && r.oy > 2) return `the ? button overlaps the CAM button by ${Math.round(r.ox)}x${Math.round(r.oy)} px`;
       return true;
+    },
+  },
+  {
+    id: 'tester-reality-hook-no-go',
+    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      let keys = null;
+      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
+      if (!keys) return 'window.__reality never appeared';
+      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
+      return hasGo ? true : '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
+    },
+  },
+  {
+    id: 'tester-throw-skips-aim',
+    ask: 'TESTER: tapping THROW before picking a pitch skips the aim step completely - the pitch goes straight to windup and the aim pad never appears, so that pitch cannot be aimed (the Help flow is: pick a pitch, tap the zone pad to aim, then THROW)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      if (!await click('startBtn')) return 'no PLAY BALL button on the menu';
+      let ok = false;
+      for (let i = 0; i < 40; i++) { const ph = await h.eval(() => window.__test && window.__test.phase); if (ph === 'select') { ok = true; break; } await h.wait(400); }
+      if (!ok) return 'never reached the pitch select phase';
+      const seen = await h.eval(async () => {
+        const T = window.__test; const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const phases = [T.phase];
+        document.getElementById('throwBtn').click();
+        const t0 = Date.now();
+        while (Date.now() - t0 < 2500) { await sleep(60); if (T.phase !== phases[phases.length - 1]) phases.push(T.phase); if (T.phase === 'windup' || T.phase === 'flight') break; }
+        return phases;
+      });
+      if (seen.includes('aim')) return true;
+      return 'one THROW tap went ' + seen.join(' -> ') + ' - the aim phase (and the aim pad) never appeared';
     },
   },
 ];

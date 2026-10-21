@@ -7,6 +7,8 @@ Claudes: keep each list short, one change per step, the owner's words. `- [x]` =
 was already sent. Muses: don't edit this file.
 
 ## window 1 · apexbaseball.html
+- [ ] TESTER: Tapping THROW before picking a pitch skips the aim step completely - the pitch goes straight to windup and the aim pad never appears, so that pitch cannot be aimed (the Help flow is pick a pitch, aim, then THROW). See it: start a game and tap THROW first. Proof: play test tester-throw-skips-aim fails in tools/game-check/fixes/apexbaseball.mjs.
+- [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs.
 - [x] TESTER: The ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he can strike out on one strike or walk on one ball. See it: finish an at-bat with a strikeout or a walk, then watch the next batter's count. (fixed in the G-57 redo)
 - [x] TESTER: Help cannot be closed on a sideways phone - the CLOSE button sits fully below the screen and the overlay does not scroll; the Play a friend START and CLOSE buttons are cut off at the bottom too. See it: open ? Help or Play a friend with the phone held sideways. (fixed in the G-57 redo)
 - [x] TESTER: The ? help button sits on top of the CAM button at the top right and covers half of it (CAM reads 'M-AUTO'), so the covered part of the CAM button cannot be tapped. See it: look at the top right corner on any screen. (fixed in the G-57 redo)
