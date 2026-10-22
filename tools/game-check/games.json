@@ -33,6 +33,7 @@
     },
     {
       "file": "apexhockey.html",
+      "idleGoalWarn": true,
       "name": "Apex Ice Hockey",
       "start": [
         "#playBtn"
