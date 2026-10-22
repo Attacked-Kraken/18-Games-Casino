@@ -705,11 +705,14 @@ window.__hk.puck = puck; window.__hk.BLUE = BLUE; window.__hk.camera = camera; /
 
 /* ================= input ================= */
 const joyVec = { x:0, y:0, active:false };
+let sawInput = false, gateNoteAt = -1e9, bootAutoClick = false; // the game must not play by itself: until the player has really touched this page (a real press, key or stick touch - never a scripted click), a staged faceoff waits for him instead of dropping on its own
+function noteInput(){ sawInput = true; }
+function playerReady(){ return sawInput || joyVec.active; }
 {
   const joy=document.getElementById('joy'), knob=document.getElementById('knob');
   let tid=null, cx=0, cy=0;
   const setKnob=(dx,dy)=>{ knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
-  joy.addEventListener('touchstart',e=>{ e.preventDefault(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
+  joy.addEventListener('touchstart',e=>{ e.preventDefault(); noteInput(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
     const t=e.changedTouches[0]; tid=t.identifier;
     const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; },{passive:false});
   const move=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
@@ -728,7 +731,7 @@ const joyVec = { x:0, y:0, active:false };
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
 }
 const keys={};
-addEventListener('keydown',e=>{ if(e.repeat) return; keys[e.code]=true;
+addEventListener('keydown',e=>{ if(e.repeat) return; noteInput(); keys[e.code]=true;
   if(e.code==='KeyJ') doPass(); if(e.code==='KeyK') startCharge(); if(e.code==='KeyL') doCheck();
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='KeyK') releaseShot(); });
@@ -1654,7 +1657,10 @@ function tick(now){
   for(let si=0;si<steps;si++){
   if(state==='menu'||state==='over') break;
   stateT-=dt;
-  if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
+  if(state==='faceoff'&&stateT<=0){
+    if(playerReady()){ state='play'; banner('PLAY','','800'); }
+    else if(gameNow-gateNoteAt>3){ gateNoteAt=gameNow; banner('YOUR MOVE','TOUCH THE STICK TO DROP THE PUCK',900,'#ffd34d'); }
+  }
   else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.06,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
   else if(state==='whistle'&&stateT<=0){
     const p=pendingFaceoff; pendingFaceoff=null;
@@ -1699,7 +1705,8 @@ function gameOver(){
 
 /* ================= wiring ================= */
 document.getElementById('back').addEventListener('click',()=>{ location.href='sports.html'; });
-document.getElementById('playBtn').addEventListener('click',async()=>{
+document.getElementById('playBtn').addEventListener('click',async(e)=>{
+  if(!bootAutoClick) noteInput(); // any press of PLAY is the player arriving - except the career boot auto-start's own scripted click, which is exactly the self-play being fixed
   document.getElementById('menu').style.display='none'; hornResume();
   Mus.ensure(); Mus.setMode('game');
   await preloadsDone(); // G-35: arena + athletes finish loading BEFORE the faceoff, never mid-game
@@ -1707,7 +1714,7 @@ document.getElementById('playBtn').addEventListener('click',async()=>{
 });
 document.getElementById('viewBtn').addEventListener('click',()=>cycleView());
 document.getElementById('muteBtn').addEventListener('click',()=>{ Mus.ensure(); Mus.setMuted(!Mus.muted); commSyncMute(); });
-document.addEventListener('pointerdown',()=>Mus.ensure());
+document.addEventListener('pointerdown',()=>{ Mus.ensure(); noteInput(); });
 Mus.setMuted(Mus.muted || localStorage.getItem('apex_muted')==='1');
 /* ================= G-44: commentary (sounds/commentary/hockey) =================
    The 138-clip hockey commentary pack: two voices (play-by-play + color),
@@ -1935,7 +1942,7 @@ $('friendGo').addEventListener('click', () => {
   // career fixture auto-starts: a friend fixture still waits on the menu,
   // where its PLAY label and cancel live.
   const pm2 = mLoad();
-  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) pb.click(); }
+  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
 
 requestAnimationFrame(tick);

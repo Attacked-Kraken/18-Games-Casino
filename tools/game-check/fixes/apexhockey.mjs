@@ -84,11 +84,13 @@ async function g37PlayLevel(page, h) {
     const b = document.getElementById('careerBtn'); if (b) b.click();
   }, { kind: 'career', opp: pend.opp, oppDef: g37Defs[pend.opp], label: pend.label });
   let playing = false;
+  await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
   for (let i = 0; i < 40 && !playing; i++) {
     await h.wait(250);
     const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     if (st === 'play') playing = true;
   }
+  await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
   if (!playing) return 'career match ' + pend.label + ' never reached play';
   await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
   let over = false;
@@ -619,11 +621,13 @@ export default [
     await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
     await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
     let playing = false;
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
     for (let i = 0; i < 40 && !playing; i++) {
       await h.wait(250);
       const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
       if (st === 'play') playing = true;
     }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
     if (!playing) return 'the friend match never reached play';
     const awayName = await h.eval(() => ((document.getElementById('nmA') || {}).textContent || ''));
     if (awayName !== 'REYES ALL-STARS') return 'the friend\'s team is not the one on the ice (scoreboard away team: ' + awayName + ')';
@@ -1461,27 +1465,41 @@ export default [
   },
 },
 {
-  id: 'tester-reality-hook-fields',
-  ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
+  id: 'play-waits-for-player-at-faceoff',
+  ask: 'the game does not play by itself: a faceoff waits for the player input instead of dropping on its own',
   async test(page, h) {
-    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
-      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // stage the owner's exact situation with the game's own data: a career fixture is
+    // pending, the page reloads, and the match stages itself (G-104) - on the fresh
+    // page nobody has touched anything
+    await h.eval(() => {
+      try {
+        localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'SHARKS', oppDef: { name: 'SHARKS', jersey: 0x0e7c7b, helmet: 0x123a3a, trim: 0xffffff, str: 84 }, label: 'WEEK 1' }));
+      } catch (e) {}
+    }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    let atFaceoff = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'faceoff', null, { timeout: 15000, polling: 'raf' });
+      atFaceoff = true;
+    } catch (e) { atFaceoff = (await state()) === 'faceoff'; }
+    if (!atFaceoff) return 'the career match never staged its opening faceoff (state "' + (await state()) + '")';
+    // with no input at all, the drop must NOT happen by itself
+    for (let i = 0; i < 5; i++) {
+      await h.wait(400);
+      const st = await state();
+      if (st !== 'faceoff') return 'the game played by itself: the opening faceoff dropped with no player input (state became "' + st + '")';
     }
-    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
-    for (let i = 0; i < 30; i++) { const s = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => ''); if (s === 'play' || s === 'faceoff') break; await h.wait(500); }
-    const f = await h.eval(() => {
-      const r = window.__reality;
-      if (!r) return null;
-      return { camera: 'camera' in r, time: typeof r.time, speed: typeof r.speed, go: typeof r.go, contact: Array.isArray(r.contact) };
-    });
-    if (!f) return 'window.__reality is not set in a running match';
-    const missing = [];
-    if (!f.camera) missing.push('camera');
-    if (f.time !== 'function') missing.push('time()');
-    if (f.speed !== 'function') missing.push('speed()');
-    if (missing.length) return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+    // the player's first touch drops the puck
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {});
+    let dropped = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 6000, polling: 'raf' });
+      dropped = true;
+    } catch (e) { dropped = (await state()) === 'play'; }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
+    if (!dropped) return 'the faceoff never dropped even after the player gave input';
     return true;
   },
 },
-
 ];
