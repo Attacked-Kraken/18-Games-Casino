@@ -19,6 +19,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Main loop (throttle/brake/boost/yaw latches ~1142–1150): 1132–1180
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
+**Jet pack camera + look (G-141, INSTRUCTIONS steps 5-6):** chase offset is the pack's -17 - speed*0.012 back, +4.5 up; cockpit eye = U*(jet.canopyY + 0.42) + F*(JET_STYLES[style].canopy.z); camera ground clamp 0.6. Look = ACES tone mapping, the demo's shadow sun (SUN_DIR, 2048 PCFSoft, +-22 m box) following the jet, hemi 0.55, and the demo's PMREM environment so the paint reflects. LOW option (start-menu QUALITY toggle): pixel ratio 1.25, shadow sun off.
 
 ## MUST
 - (owner adds these)
