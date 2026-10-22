@@ -2248,8 +2248,9 @@ function updateGarage(dt, now) {
   const menu = G.mode === 'menu';
   if (gOrb.auto && !gOrb.drag && !menu) gOrb.th += dt * 0.18;
   if (menu && gCar) { /* G-46 turntable: the car itself turns nonstop; a swipe spins it and it settles back to show speed */
-    G.mSpinV = G.mSpinV == null ? 0.5 : G.mSpinV + (0.5 - G.mSpinV) * Math.min(1, dt * 1.2);
-    if (!gOrb.drag) G.mSpin = (G.mSpin || 0) + G.mSpinV * dt;
+    const el = Math.min(1, Math.max(0, (now - (G.mSpinT == null ? now : G.mSpinT)) / 1000)); G.mSpinT = now; /* G-130: the turntable turns by the wall clock, not by summed frame dt - on a slow page the 0.05 s frame clamp starved it (robot measured 0.02 rad in 1.4 s); at a steady frame rate this changes nothing */
+    G.mSpinV = G.mSpinV == null ? 0.5 : G.mSpinV + (0.5 - G.mSpinV) * Math.min(1, el * 1.2);
+    if (!gOrb.drag) G.mSpin = (G.mSpin || 0) + G.mSpinV * el;
     gCar.root.rotation.y = G.mSpin || 0; if (gMir) gMir.rotation.y = G.mSpin || 0;
   }
   if (!menu && gCar && gCar.root.rotation.y) { gCar.root.rotation.y = 0; if (gMir) gMir.rotation.y = 0; }
