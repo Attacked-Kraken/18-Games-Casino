@@ -60,3 +60,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - A queue line whose proof test passes on main is done: tick it [x] with the job/PR number.
 - A tester report always starts WINDOW: N / PLAYED: N min (every round kind); a duplicate job = one-line NO CHANGE naming the earlier job/PR.
 - Two builds of the same change (G-100 PR #911 + G-125): keep one live PR, the second to merge takes main's version of the shared line.
+
+## 2026-10-22 help desk (9:45 AM)
+- A job step that names a feature but no place for it (a LOW quality option, "parked"): choose the smallest reading, keep everything else as is, write the choice in the report's NOTE line - and any new menu control must fit inside 844x390.
