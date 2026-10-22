@@ -23,6 +23,11 @@ CHANGED:
 MODELS:
 - models/fetched/<file>.glb   (only when the owner must choose between models)
 ```
+TESTERS (windows 7-10) add two lines right under the title (owner Oct 21 2026, advisor audit 5 - the scoreboard checks them):
+```
+WINDOW: <your window number, 7-10>
+PLAYED: <minutes you really played the game this round> min
+```
 
 ## Answers from the owner
 - `G-NN APPROVED 👍` - done. Change nothing more for it.
