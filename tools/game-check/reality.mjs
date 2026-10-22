@@ -44,12 +44,16 @@ export async function realityCheck(page, wait) {
       samples.push(await page.evaluate(() => {
         const R = window.__reality, P = R.player;
         const wp = o => { o.updateMatrixWorld && o.updateMatrixWorld(true); const v = o.position.clone(); return o.parent ? o.parent.localToWorld(v) : v; };
-        const box = (o, own) => {        // bounding box of every mesh under o (no global THREE needed); own = in o's own
+        const box = (o, own, bodyOnly) => {   // bounding box of every mesh under o (no global THREE needed); own = in o's own
           let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], n = 0;   // axes (true size even when turned), else world
           o.updateMatrixWorld && o.updateMatrixWorld(true);
           const inv = own ? o.matrixWorld.clone().invert() : null;
+          // art director Oct 22 2026 (Hockey "skater 4.78 x 6.54 x 6.30"): a person's SIZE is the body, not the stick or bat
+          // they hold out - when the player has a skinned (rigged) body, only skinned meshes count
+          let skinned = false; if (bodyOnly) o.traverse(m => { if (m.isSkinnedMesh && m.visible) skinned = true; });
           o.traverse(m => {
             if (!m.geometry || !m.visible) return;
+            if (skinned && !m.isSkinnedMesh) return;
             if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
             const mw = own ? inv.clone().multiply(m.matrixWorld) : m.matrixWorld;
             const b = m.geometry.boundingBox.clone().applyMatrix4(mw);
@@ -122,7 +126,7 @@ export async function realityCheck(page, wait) {
         let ga = ''; try { if (R.gait) ga = String(R.gait() || '').toLowerCase(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
         return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null, assumed,
-          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true, /person|skater|player|athlete/i.test(String(R.kind || ''))), unitsPerMetre: +(R.unitsPerMetre || 1), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -131,6 +135,7 @@ export async function realityCheck(page, wait) {
   const exp = Object.assign({}, SIZES[kind] || {}, s0.expect || {});
   // ---- size: the longest side for cars/planes, the height for people/trucks
   const sz = s0.size;
+  const upm = s0.unitsPerMetre && s0.unitsPerMetre > 0 ? s0.unitsPerMetre : 1;   // e.g. Hockey's rink is 3.26 units per metre
   if (sz) {
     const len = Math.max(sz.x, sz.z), ht = sz.y;
     const chk = (name, v, r) => { if (r && (v < r[0] || v > r[1])) out.fail.push(`REALITY: the player is the wrong size - ${name} ${v.toFixed(2)} m, real is ${r[0]}-${r[1]} m (REALITY.md sizes)`); };
@@ -198,7 +203,7 @@ export async function realityCheck(page, wait) {
         gaitLine(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
-  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  out.data = { kind, size: sz, sizeMetres: sz ? { x: +(sz.x / upm).toFixed(2), y: +(sz.y / upm).toFixed(2), z: +(sz.z / upm).toFixed(2) } : null, unitsPerMetre: upm, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
   if (gaps.length && samples.some(s => s.assumed)) out.check.push('REALITY: the contact nodes are ankle bones with no footOffset - the robot assumed the studio rig sole offset 0.08 m; set footOffset in the hook to be exact');
   if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
@@ -286,7 +291,15 @@ export async function playerCloseUp(page) {
       cam.fov = 35; cam.aspect = 1; cam.near = 0.02; cam.far = Math.max(base.far || 1000, 200); cam.zoom = 1;
       const span = tall ? h * 0.42 : Math.max(mx[0] - mn[0], mx[2] - mn[2]) * 0.9;   // head and shoulders / the whole car
       const dist = (span / 2) / Math.tan(35 * Math.PI / 360) * 1.25;
-      cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08;
+      if (tall) { cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08; }
+      else {    // art director Oct 22 2026: Racer's close-up was shot from INSIDE the car parked in front on the grid -
+                // a car is shot from a 3/4 front-side angle, raised, so the camera never sits in the car ahead
+        const side = new V(fwd.z, 0, -fwd.x);
+        cam.position.copy(look).addScaledVector(fwd, dist * 0.7).addScaledVector(side, dist * 0.7); cam.position.y += dist * 0.45;
+      }
+      // anything between the camera and the player (another car, a skater, a wall) is cut away by the near plane
+      const rad = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2;
+      cam.near = Math.max(0.02, cam.position.distanceTo(look) - rad * 1.1);
       cam.lookAt(look); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
       const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
       const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;
