@@ -1,5 +1,14 @@
 # Look board — Baseball (`apexbaseball.html`)
 
+## WHERE THINGS ARE (apexbaseball.html, main + G-120)
+- Teams/kits: TEAMS line 259 · Camera (THREE.PerspectiveCamera, FOV 42): line 300; presets + ball-follow in the camera section around it
+- Field positions: FIELD_POS line 473 · Defense dressing (pitcher/catcher/umpire/fielders): dressDefense line 488
+- Athletes: attachAthlete line 565 · REALITY hook (window.__reality, incl. camera: since G-120) line 629 · athleteTick (clip by own speed) line 648
+- Pitching: PITCHES line 742 · ZONE line 747 · beginAim line 777 · deliverPitch line 810 · aim pad input + resetInput around lines 1490-1540
+- Main loop: line 1308 · stepMovers (fielders chase, runners run) line 1393
+- Venue: Night Ballpark GLB loader line 1913 (night look applied on load; #loadOv gate until ready)
+- Test hooks: window.__test line 2009
+
 Read this before every job on Baseball. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexbaseball.mjs`.
