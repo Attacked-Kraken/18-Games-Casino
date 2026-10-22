@@ -580,6 +580,27 @@ function realityTrotTick(dt){
   g.position.x += dx / d * sp * dt; g.position.z += dz / d * sp * dt;
   g.rotation.y = Math.atan2(dx, dz); p._running = true;
 }
+/* G-146: the foot vertex sets the ground trim reads - the same skinned-sole
+   selection the reality robot uses (vertices weighted to the foot bone). */
+function buildSoleSets(obj, bones){
+  const sets = [];
+  for (const bn of ['foot_l', 'foot_r']){
+    const c = bones && bones[bn]; if (!c) continue;
+    const ids = new Set(); c.traverse(n => { if (n.isBone) ids.add(n.uuid); });
+    obj.traverse(m => {
+      if (!m.isSkinnedMesh || !m.skeleton || !m.geometry || !m.geometry.attributes.skinIndex) return;
+      const bi = m.skeleton.bones.map((b, i) => ids.has(b.uuid) ? i : -1).filter(i => i >= 0);
+      if (!bi.length) return;
+      const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight; let vs = [];
+      for (let v = 0; v < si.count; v++){ let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(v, k))) w += sw.getComponent(v, k); if (w > 0.5) vs.push(v); }
+      if (!vs.length) return;
+      const stride = Math.max(1, Math.ceil(vs.length / 240));
+      if (stride > 1) vs = vs.filter((_, i) => i % stride === 0);
+      sets.push({ m, vs });
+    });
+  }
+  return sets;
+}
 function attachAthlete(p, slotIdx){
   if (!H || p.athlete) return;
   try {
@@ -655,6 +676,9 @@ function attachAthlete(p, slotIdx){
       try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
     }
     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
+    p.athleteBaseY = a.object.position.y;
+    p.trimPar = slotIdx % 2;
+    p.soleSets = buildSoleSets(a.object, bones);
   } catch (e) { p.athlete = null; }
 }
 /* G-08: attach athletes a few per frame. Creating every rigged human in one
@@ -687,6 +711,36 @@ function athleteTick(f, dt){
   if (a.clip !== want) a.play(want, 0.18);
   if (a.act) a.act.timeScale = a.ts;
   a.mixer.update(dt);
+}
+/* G-146 (art director: feet sink, 24 of 24 robot readings): the G-125 lift is
+   exact only for the pose it measured - in motion a clip blend can drag a toe
+   under the line. Every frame, read the athlete's real lowest sole
+   vertex (the robot's method) and hold the model inside its group so that
+   sole rests on the ground line (+4 mm), never below the G-125 lift and
+   never more than 9 cm over it. Standing readings do not move. */
+const _soleV = new THREE.Vector3();
+function soleTrim(f){
+  const a = f.athlete; if (!a || !f.soleSets || !f.soleSets.length || f.athleteBaseY == null) return;
+  a.object.updateWorldMatrix(true, true);   // fresh bone worlds for THIS pose - the renderer's own update runs after the trim, so without this the trim reads last frame's pose and lags every stride
+  // cheap skip: with both foot bones high, no foot pitch can put a sole under the
+  // line (the deepest toe-point on this rig drops the sole ~0.26 under its bone)
+  const gy = Math.hypot(f.g.position.x, f.g.position.z + 20.17) < 3 ? 0.3 : 0;
+  if (f.bones && f.bones.foot_l && f.bones.foot_r){
+    f.bones.foot_l.getWorldPosition(_soleV); const ly = _soleV.y;
+    f.bones.foot_r.getWorldPosition(_soleV);
+    if (Math.min(ly, _soleV.y) - 0.26 > gy + 0.004) return;
+  }
+  let low = Infinity;
+  for (const s of f.soleSets){
+    if (!s.m.visible) continue;
+    s.m.updateMatrixWorld(true); if (s.m.skeleton && s.m.skeleton.update) s.m.skeleton.update();
+    for (let i = 0; i < s.vs.length; i++){ s.m.getVertexPosition(s.vs[i], _soleV); s.m.localToWorld(_soleV); if (_soleV.y < low) low = _soleV.y; }
+  }
+  if (!isFinite(low)) return;
+  let y = a.object.position.y + (gy + 0.004 - low);
+  if (y < f.athleteBaseY - 0.002) y = f.athleteBaseY - 0.002;
+  if (y > f.athleteBaseY + 0.09) y = f.athleteBaseY + 0.09;
+  a.object.position.y = y;
 }
 function athletePose(f, kind, dt){
   const a = f.athlete, b = f.bones;
@@ -1446,7 +1500,7 @@ function loop(){
     if (!f.g.visible) continue;
     const running = f._running; f._running = false;
     const busy = (windupAnim.active && windupAnim.who===f) || (swingAnim.active && swingAnim.who===f);
-    if (f.athlete){ if (!busy) athleteTick(f, dt); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
+    if (f.athlete){ if (!busy) athleteTick(f, dt); soleTrim(f); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
     if (!busy) animFigure(f, dt, running ? 'run' : 'idle');
   }
   // camera tracking (not in wide stadium view): G-65 - the high camera follows

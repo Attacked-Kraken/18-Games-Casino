@@ -4,16 +4,16 @@ Read this before every job on Baseball. The owner says each thing ONCE; it lives
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexbaseball.mjs`.
 
-## WHERE THINGS ARE (`apexbaseball.html`, line numbers as of G-144)
+## WHERE THINGS ARE (`apexbaseball.html`, line numbers as of G-146)
 
-- **Menus:** overlays in the HTML — `#loadOv` 179, `#startOv` 188, `#helpOv` 199, `#friendOv` 213, `#endOv` 226; `startGame()` 1477; the start menu opens only after the ballpark has loaded (loading gate).
-- **Controls:** pitch UI + `#aimPad` in the HTML (~150–170); aim-pad input ~1520–1558 (drag tracked by pointer id, `resetInput()` 1550); flow is pick a pitch → THROW → aim on the pad → THROW → LOCK (`beginAim()` 803, `beginWindup()` 804).
-- **Camera:** `PITCHER_VIEW` / `BATTER_VIEW` 304–305 (one TV broadcast camera, FOV 42); view pick `setCam()` 1288; `#viewBtn` 132 cycles auto/wide/close.
-- **Players:** `TEAMS` 259; `FIELD_POS` 473; `dressDefense()` 488; `attachAthlete()` 583 (the `window.__reality` hook is set there, 655; the G-100 trot driver sits just above it, 565–582); `fitAthletes()` 664; `athleteTick()` 674 (Idle/Walk/Jog/Sprint picked from measured speed).
-- **AI / rules:** `PITCHES` 768, `ZONE` 773; `deliverPitch()` 836; count — `resetCount()` 934, `onWalk()` 959, `onStrikeout()` 972; `stepMovers()` 1420 (fielders chase, runners run); main `loop()` 1333.
+- **Menus:** overlays in the HTML — `#loadOv` 179, `#startOv` 188, `#helpOv` 199, `#friendOv` 213, `#endOv` 226; `startGame()` 1531; the start menu opens only after the ballpark has loaded (loading gate).
+- **Controls:** pitch UI + `#aimPad` in the HTML (~150–170); aim-pad input ~1567–1605 (drag tracked by pointer id, `resetInput()` 1597); flow is pick a pitch → THROW → aim on the pad → THROW → LOCK (`beginAim()` 850, `beginWindup()` 851).
+- **Camera:** `PITCHER_VIEW` / `BATTER_VIEW` 304–305 (one TV broadcast camera, FOV 42); view pick `setCam()` 1335; `#viewBtn` 132 cycles auto/wide/close.
+- **Players:** `TEAMS` 259; `FIELD_POS` 473; `dressDefense()` 488; `attachAthlete()` 604 (the `window.__reality` hook is set there, 676; the G-100 trot driver sits just above it, ~589–606); `fitAthletes()` 688; `athleteTick()` 698 (Idle/Walk/Jog/Sprint picked from measured speed); ground contact — the G-125 sole lift inside `attachAthlete()` plus the G-146 per-frame sole trim: `buildSoleSets()` 585 (foot vertex sets, the robot's skinned-sole selection), `soleTrim()` 722 (holds each athlete's lowest sole on the ground line, called for every athlete in the mover loop ~1496).
+- **AI / rules:** `PITCHES` 815, `ZONE` 820; `deliverPitch()` 883; count — `resetCount()` 988, `onWalk()` 1013, `onStrikeout()` 1026; `stepMovers()` 1474 (fielders chase, runners run); main `loop()` 1387.
 - **HUD:** `#scoreboard` 138; top-right cluster `#viewBtn` / `#muteBtn` / `#helpHud` 132–134 (fixed widths, 8 px gaps).
-- **Sounds:** owner's kit samples via `Mus.loadKit()` 1760 (called from `Mus.init()` 1728) — bat crack / glove / big cheer / ambience from `sounds/stadium/baseball/`, synth voices as fallback; played at contact and results (917, 1199–1226: crack, pop, cheer, riff); crowd excitement via `crowdExcite()`; kit state exposed as `__test.kitAudio` 2053.
-- **Venue:** old park built in `buildField()` 327 (`VENUE_FROM` 326, `oldParkMeshes` 431, hidden once the model loads); Night Ballpark loader 1948 (`kit/stadiums/Night-Ballpark/stadium.glb` — night look, kit field re-skin and touch material lightening all happen there); kit field re-skin `kitFieldOnPark()` 1873 (G-144: the composed kit texture also lands on the field mesh's LIVE material — on touch the G-85 Lambert pass replaces the original before the async swap; live state is `__test.stadium.kitFieldLive`); `window.__test` 2044.
+- **Sounds:** owner's kit samples via `Mus.loadKit()` 1807 (called from `Mus.init()` ~1775) — bat crack / glove / big cheer / ambience from `sounds/stadium/baseball/`, synth voices as fallback; played at contact and results (971, ~1253–1280: crack, pop, cheer, riff); crowd excitement via `crowdExcite()`; kit state exposed as `__test.kitAudio` 2107.
+- **Venue:** old park built in `buildField()` 327 (`VENUE_FROM` 326, `oldParkMeshes` 431, hidden once the model loads); Night Ballpark loader 2002 (`kit/stadiums/Night-Ballpark/stadium.glb` — night look, kit field re-skin and touch material lightening all happen there); kit field re-skin `kitFieldOnPark()` 1927 (G-144: the composed kit texture also lands on the field mesh's LIVE material — on touch the G-85 Lambert pass replaces the original before the async swap; live state is `__test.stadium.kitFieldLive`); `window.__test` 2098.
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
