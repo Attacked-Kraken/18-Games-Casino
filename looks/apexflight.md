@@ -22,10 +22,13 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - (owner adds these)
+- Runway numbers and markings read the correct way round from the pilot's view (never mirrored)
+- The menus and HUD name the aircraft the game actually flies - the jet
 
 ## NEVER
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- No control overlapping another control - the throttle is a slim button in the button row
 - 2026-10-22: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-121)
 - 2026-10-22: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-121)
 
