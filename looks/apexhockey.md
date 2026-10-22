@@ -26,6 +26,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - "They gave me this": blob players, upright floating sticks, scattered bits (2026-10-16)
 - "Why do I get offsides every time" (2026-10-17): AI teammates must hold the attacking blue line until the puck crosses it — never skate ahead of the puck into the zone
 - No menu text clipped or overlapping at 844x390 - every line inside the frame
+- 2026-10-22: skate blades pitched toe-down off the ice (owner screenshot) - blades must stay down flat on the ice (G-170)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
