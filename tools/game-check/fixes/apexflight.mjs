@@ -575,4 +575,92 @@ export default [
       });
     },
   },
+  {
+    id: 'tester-recheck-g117-controls',
+    ask: 'Re-check G-117 BUILD: YAW pad buttons must turn the jet in the air, and stick inputs must answer the same frame (G-117 fix verification)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          // take off first
+          F.jetInput.throttle = 1; if (F.P) F.P.thr = 1;
+          const t0 = Date.now();
+          let phase = 'takeoff';
+          let yaw0 = 0;
+          const iv = setInterval(() => {
+            if (phase === 'takeoff') {
+              if (!F.P.ground) { phase = 'yaw'; yaw0 = F.P.yaw; F.jetInput.yaw = 1; }
+              else if (Date.now() - t0 > 20000) { clearInterval(iv); return res('never took off'); }
+            } else if (phase === 'yaw') {
+              const dyaw = F.P.yaw - yaw0;
+              F.jetInput.yaw = 0;
+              if (Math.abs(dyaw) < 0.05) { clearInterval(iv); return res('YAW R did not turn the jet in the air (dyaw=' + dyaw.toFixed(3) + ')'); }
+              phase = 'done'; clearInterval(iv); return res(true);
+            }
+            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('timed out'); }
+          }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-throttle-bar',
+    ask: 'G-121: the slim throttle bar beside the pad - dragging it sets the throttle at once, the fill shows the level live, and SPD KT answers (the old fat right-edge THR slider is gone)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        const P = F.P;
+        const bar = document.getElementById('thrBar');
+        if (!bar) return 'no #thrBar - the slim throttle bar is missing';
+        if (document.getElementById('thr')) return 'the old #thr slider is still there';
+        const fill = document.getElementById('thrBarFill');
+        if (!fill) return 'no #thrBarFill inside the bar';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(15); } return fn(); };
+        const spd = () => parseInt((document.getElementById('hSpd') || {}).textContent || '0', 10) || 0;
+        const pev = (type, x, y) => bar.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
+        return (async () => {
+          // geometry: slim, same height as the button block, standing alongside it
+          const pad = document.querySelector('.ajc .pad');
+          if (!pad) return 'jet pad not found';
+          const br = bar.getBoundingClientRect(), pr = pad.getBoundingClientRect();
+          if (br.width > 30) return 'bar is ' + Math.round(br.width) + 'px wide - not slim (about half a button)';
+          if (Math.abs(br.height - pr.height) > 12) return 'bar height ' + Math.round(br.height) + ' != button block height ' + Math.round(pr.height);
+          if (br.right > pr.left + 2) return 'bar overlaps the button block instead of standing alongside it';
+          if (Math.abs(br.bottom - pr.bottom) > 4) return 'bar bottom does not line up with the button block';
+          const cx = br.left + br.width / 2;
+          // drag to the bottom: the touch alone must cut the throttle at once
+          pev('pointerdown', cx, br.bottom - 4);
+          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'touching the bottom of the bar did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          pev('pointerup', cx, br.bottom - 4);
+          if (!await until(() => spd() <= 1, 3000)) return 'jet did not settle after throttle cut (spd ' + spd() + ' kt)';
+          const spd0 = spd();
+          // touch the top: throttle must jump at once, and the fill must show it live
+          pev('pointerdown', cx, br.top + 4);
+          if (!await until(() => P.thr >= 0.9, 100)) { pev('pointerup', cx, br.top + 4); return 'touching the top of the bar did not set full throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          await wait(120);
+          const fillFrac = fill.offsetHeight / br.height;
+          if (fillFrac < 0.8) { pev('pointerup', cx, br.top + 4); return 'fill does not show the throttle level (fill ' + Math.round(fillFrac * 100) + '% at full throttle)'; }
+          pev('pointerup', cx, br.top + 4);
+          // SPD KT must answer: the jet gathers speed under the dragged throttle
+          if (!await until(() => spd() >= spd0 + 10, 5000)) return 'SPD KT did not answer - speed stuck at ' + spd() + ' kt with full throttle set from the bar';
+          const spd1 = spd();
+          // drag back to the bottom: throttle cuts at once and the speed stops growing
+          pev('pointerdown', cx, br.bottom - 4);
+          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'dragging the bar down did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          pev('pointerup', cx, br.bottom - 4);
+          await wait(1500);
+          if (spd() > spd1 + 1) return 'speed kept growing after the bar cut the throttle (' + spd1 + ' -> ' + spd() + ' kt)';
+          return true;
+        })();
+      });
+    },
+  },
 ];

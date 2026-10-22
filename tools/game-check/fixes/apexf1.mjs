@@ -731,6 +731,66 @@ export default [
       if (!squeal) return 'the tire squeal never sounded off track: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
       return true;
     },
+  },
+  {
+    id: 'play-cameras-above-ground',
+    ask: 'Every CAM view (chase, cockpit, broadcast helicopter, onboard) stays above the road with the car and the track ahead in view, sideways and upright - the owner saw the helicopter cam under the ground',
+    async test(page, h) {
+      const stopDriving = async () => { await h.eval(`(() => { if (window.__g119drv) { clearInterval(window.__g119drv); window.__g119drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      if (!await h.poll(() => h.eval(`window.__test.race().mode`), m => m === 'quali', 15000)) return 'weekend never reached qualifying';
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) return 'the race never started';
+      // a robot driver keeps the car circulating while the views cycle
+      await h.eval(`(() => {
+        if (window.__g119drv) { clearInterval(window.__g119drv); window.__g119drv = null; }
+        window.__g119drv = setInterval(() => {
+          const t = window.__test; if (!t || !t.paceCars) return;
+          const cs = t.paceCars(); const p = cs.find(c => c.isPlayer); if (!p) return;
+          const ref = t.lineAt(p.s + p.v * 0.5 + 18);
+          let steer = (ref.rlD - p.d) * 0.5 - p.headAngle * 1.1;
+          steer = Math.max(-1, Math.min(1, steer));
+          t.setInput({ gas: true, brake: false, steer });
+        }, 50);
+      })()`);
+      const NAMES = ['CHASE', 'COCKPIT', 'BROADCAST', 'ONBOARD'];
+      const sampleMode = async (mode, dwellMs) => {
+        for (let i = 0; i < 5; i++) {
+          const pr = await h.eval(`window.__test.camProbe()`);
+          if (pr && pr.mode === mode) break;
+          await h.press('#btnCam'); await h.wait(200);
+        }
+        const pr0 = await h.eval(`window.__test.camProbe()`);
+        if (!pr0 || pr0.mode !== mode) return 'CAM button never reached ' + NAMES[mode];
+        let worst = 1e9, judged = 0, inFrame = 0;
+        const t0 = Date.now();
+        while (Date.now() - t0 < dwellMs) {
+          const pr = await h.eval(`window.__test.camProbe()`);
+          if (pr) {
+            const clear = pr.camY - pr.groundY;
+            if (clear < worst) worst = clear;
+            if (Date.now() - t0 > dwellMs / 2) { // framing judged on the settled half
+              judged++;
+              const v = (mode === 0 || mode === 2) ? pr.car : pr.ahead;
+              if (v && Math.abs(v.x) <= 1.02 && Math.abs(v.y) <= 1.02 && v.z < 1 && v.z > -1) inFrame++;
+            }
+          }
+          await h.wait(220);
+        }
+        if (worst < 0.25) return NAMES[mode] + ' camera went under the road (clearance ' + worst.toFixed(2) + ' m)';
+        if (judged && inFrame / judged < 0.8) return NAMES[mode] + ' lost the car / track ahead (' + inFrame + '/' + judged + ' settled frames in view)';
+        return null;
+      };
+      for (const m of [0, 1, 2, 3]) { const bad = await sampleMode(m, 2000); if (bad) { await stopDriving(); return bad; } }
+      await page.setViewportSize({ width: 390, height: 844 }); await h.wait(500); // upright phone
+      for (const m of [0, 1, 2, 3]) { const bad = await sampleMode(m, 1100); if (bad) { await stopDriving(); return 'upright phone: ' + bad; } }
+      await page.setViewportSize({ width: 844, height: 390 });
+      await stopDriving();
+      return true;
+    },
   }
 
 ];
