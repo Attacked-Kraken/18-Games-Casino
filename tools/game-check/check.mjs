@@ -92,6 +92,39 @@ async function measure(jpg) {
 }
 const changed = (a, b) => a.lum.filter((v, i) => Math.abs(v - b.lum[i]) > 12).length / a.lum.length;
 
+
+// ---------- IDLE RUN (owner Oct 22, Hockey played itself with a 6-7x clock): after start, nobody touches the game for ~15 s.
+// FAIL when a clock on the screen runs faster than real time, or a two-sided score (3 - 1) changes. Read the HUD text only,
+// so it works for every game. games.json "idleOk": true switches the score half off for a game whose AI may score by design.
+async function idleRead(page) {
+  return page.evaluate(() => {
+    const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+    const clocks = [], scores = [];
+    for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i],[id*="score" i],[class*="score" i]')) {
+      if (!vis(e) || e.children.length > 6) continue;
+      const t = (e.textContent || '').replace(/\s+/g, ' ').trim(); if (!t || t.length > 40) continue;
+      const key = (e.id || e.className || e.tagName) + '';
+      const m = t.match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/);
+      if (m) { clocks.push({ key, sec: +m[1] * 60 + +m[2] }); continue; }
+      if (/^\d{1,3}\s*[\u2013\u2014-]\s*\d{1,3}$/.test(t)) scores.push({ key, text: t });
+    }
+    return { clocks, scores, at: performance.now() };
+  }).catch(() => null);
+}
+function idleJudge(a, b, g, wallSec) {
+  const out = [];
+  if (!a || !b) return out;
+  for (const c of b.clocks) {
+    const c0 = a.clocks.find(x => x.key === c.key); if (!c0) continue;
+    const d = Math.abs(c.sec - c0.sec);
+    if (d > wallSec * 1.5 + 3) out.push(`IDLE RUN: the clock "${c.key}" moved ${d} s in ${wallSec.toFixed(0)} s of real time with nobody touching the game - it runs faster than real time (a 1.0 s frame step, a time-speed setting left on, or a lost lastT=now)`);
+  }
+  if (!g.idleOk) for (const s of b.scores) {
+    const s0 = a.scores.find(x => x.key === s.key);
+    if (s0 && s0.text !== s.text) out.push(`IDLE RUN: the score "${s.key}" went ${s0.text} -> ${s.text} with nobody touching the game - a goal/point was scored by itself`);
+  }
+  return out;
+}
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
   try {
@@ -221,6 +254,7 @@ for (const g of games) {
   }
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
+  const idleA = await idleRead(page); const idleT0 = Date.now();
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
   try {
@@ -271,6 +305,7 @@ for (const g of games) {
     r.stutter = { frames: st.length, median: Math.round(med), hitches: hitches.length, worst: Math.round(Math.max(0, ...hitches)) };
     if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
   } catch (e) {}
+  try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) r.fail.push(m); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;

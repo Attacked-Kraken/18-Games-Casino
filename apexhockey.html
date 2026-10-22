@@ -1647,7 +1647,8 @@ function tick(now){
     const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
     if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
   }
-  let frameSec=Math.min(1.0,(now-lastT)/1000); // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time
+  let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time. (Notes go on their OWN line: on Oct 21 a note pasted onto this line commented out lastT=now, so every frame was 1 s of game time - the clock ran 6-7x fast and the game played itself.)
+  // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays
   const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
   Mus.setMode(state==='play'?'game':'menu');
   if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
