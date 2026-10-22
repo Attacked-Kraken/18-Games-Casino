@@ -2331,6 +2331,8 @@ window.__reality = {
     } catch (e) {} };
     kick(); _rcGoTimer = setInterval(kick, 150);
   },
+  time: () => (R ? R.t : 0), /* G-143: the race clock - game seconds, never the robot's wall clock */
+  speed: () => (R && R.P ? Math.abs(R.P.spd) : 0), /* G-143: the player car's own speed in m/s */
   expect: { length: [3.8, 5.9] }
 };
 /* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
