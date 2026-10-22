@@ -642,15 +642,24 @@ function attachAthlete(p, slotIdx){
     if (bones['Head']){ // cap (fielders) / batting helmet — the old primitives had them, the athletes lost them
       const capGrp = new THREE.Group();
       if (p.bat){
-        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.125,14,10,0,Math.PI*2,0,1.9), M(T.cap));
-        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.1,0.11), M(T.cap));
-        flap.position.set(-0.115,-0.03,0.02); capGrp.add(shell, flap);
+        // G-167: a batting helmet that keeps the face clear. The old shell was
+        // centred on the face (rim 1.9 rad down from the crown) - in the robot's
+        // close-up it read as a big dark blob hiding the eyes. The shell now
+        // crowns the head (rim 1.25 rad, above the brow), the group sits higher
+        // on the head, a short bill shades the brow and the flap covers the ear only.
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.132,14,10,0,Math.PI*2,0,1.25), M(T.cap));
+        const bill = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.016,0.075), M(T.cap));
+        bill.position.set(0,0.05,0.135);
+        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.09,0.1), M(T.cap));
+        flap.position.set(-0.128,-0.085,0.01); capGrp.add(shell, bill, flap);
+        capGrp.position.set(0,0.135,0.005);
       } else {
         const crown = new THREE.Mesh(new THREE.SphereGeometry(0.12,14,10,0,Math.PI*2,0,1.45), M(T.cap));
         const brim = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.02,0.13), M(T.cap));
         brim.position.set(0,0.015,0.155); capGrp.add(crown, brim);
+        capGrp.position.set(0,0.045,0);
       }
-      capGrp.position.set(0,0.045,0); bones['Head'].add(capGrp);
+      bones['Head'].add(capGrp);
     }
     const kS = a.object.scale.x || 1;           // G-65: hand props are sized in world units via the rig's real scale
     if (p.bat){                                 // batter: real bat in the right hand
@@ -671,6 +680,10 @@ function attachAthlete(p, slotIdx){
     let u = null;
     a.object.traverse(o => { if (o.isSkinnedMesh && o.material && o.material.userData && o.material.userData.U) u = o.material.userData.U; });
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
+    // G-167: the batter wears the full uniform - the kit shader's button-front
+    // cut (a jersey with a placket) in the team colour over the white trousers,
+    // not the graphic tee with its printed chest logo the baseball_kit preset uses.
+    if (p.bat && u && u.uCfg) u.uCfg.value.set(5, 1, 0, 0);
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
       try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}

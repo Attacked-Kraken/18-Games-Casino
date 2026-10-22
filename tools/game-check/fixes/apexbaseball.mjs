@@ -907,4 +907,98 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-face-closeup-uniform',
+    ask: 'the batter close-up shows his face and eyes (no helmet blob over them) and a full baseball uniform - button-front jersey in the team colour, no printed tee logo',
+    test: async (page, h) => {
+      // start from a fresh state: tap through the start overlay until it hides,
+      // then wait for the batter's reality hook and the rigged athletes
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) {
+        const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.hook) { ready = true; break; }
+        if (st.menu) await page.touchscreen.tap(422, 195);
+        await h.wait(700);
+      }
+      if (!ready) return 'no reality hook player (the batter) to take the close-up of';
+      for (let i = 0; i < 40; i++) { const n = await h.eval(() => (window.__athletesReady ? window.__athletesReady() : 0)); if (n >= 3) break; await h.wait(500); }
+      await h.wait(1200);
+      // render the robot's own head-and-shoulders close-up (the framing in
+      // tools/game-check/reality.mjs playerCloseUp) and measure the picture:
+      // discs anchored on the projected look point, so any batter/skin/helmet
+      // colour is measured the same way.
+      const stats = await h.eval(async () => {
+        const R = window.__reality, P = R.player;
+        const rend = (window.__renderers || []).find(x => x && x.domElement && x.domElement.isConnected) || (window.__renderers || [])[0];
+        const base = (window.__cams || []).find(c => c && c.isPerspectiveCamera) || R.camera;
+        if (!rend || !base) return null;
+        let scene = P; while (scene.parent) scene = scene.parent;
+        P.updateMatrixWorld(true);
+        let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+        P.traverse(m => { if (!m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+          const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+          mn = [Math.min(mn[0], b.min.x), Math.min(mn[1], b.min.y), Math.min(mn[2], b.min.z)]; mx = [Math.max(mx[0], b.max.x), Math.max(mx[1], b.max.y), Math.max(mx[2], b.max.z)]; });
+        const V = base.position.constructor;
+        const hgt = mx[1] - mn[1];
+        const wp = new V(); P.getWorldPosition(wp);
+        const look = new V(wp.x, mx[1] - hgt * 0.16, wp.z);
+        const fwd = new V(0, 0, 1); try { P.getWorldDirection(fwd); } catch (e) {}
+        fwd.y = 0; if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, 1); fwd.normalize();
+        const cam = base.clone();
+        cam.fov = 35; cam.aspect = 1; cam.near = 0.02; cam.far = Math.max(base.far || 1000, 200); cam.zoom = 1;
+        const span = hgt * 0.42;
+        const dist = (span / 2) / Math.tan(35 * Math.PI / 360) * 1.25;
+        cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08;
+        const rad = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2;
+        cam.near = Math.max(0.02, cam.position.distanceTo(look) - rad * 1.1);
+        cam.lookAt(look); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+        const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
+        const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;
+        const side = Math.round(Math.min(size.x, size.y));
+        const lp = look.clone(); lp.project(cam);
+        const out = { lx: lp.x * 0.5 + 0.5, ly: 0.5 - lp.y * 0.5 };
+        try {
+          rend.setScissorTest && rend.setScissorTest(false);
+          rend.setViewport(0, 0, side, side);
+          rend.render(scene, cam);
+          const c2 = document.createElement('canvas'); c2.width = c2.height = Math.min(480, side * pr);
+          const ctx = c2.getContext('2d');
+          ctx.drawImage(el, 0, el.height - side * pr, side * pr, side * pr, 0, 0, c2.width, c2.height);
+          const W = c2.width, Hh = c2.height;
+          const img = ctx.getImageData(0, 0, W, Hh).data;
+          const disc = (cx, cy, r) => {
+            let skin = 0, dark = 0, tot = 0, dL = 0, tL = 0, dR = 0, tR = 0;
+            const Rr = Math.floor(W * r);
+            for (let y = Math.floor(Hh * cy) - Rr; y < Math.floor(Hh * cy) + Rr; y++) for (let x = Math.floor(W * cx) - Rr; x < Math.floor(W * cx) + Rr; x++) {
+              if (x < 0 || y < 0 || x >= W || y >= Hh) continue;
+              const dx = x - W * cx, dy = y - Hh * cy; if (dx * dx + dy * dy > Rr * Rr) continue;
+              const i = (y * W + x) * 4, rr = img[i], gg = img[i + 1], bb = img[i + 2]; tot++;
+              const isSkin = rr > 115 && rr > gg + 16 && gg > bb + 5, isDark = rr < 75 && gg < 85 && bb < 115;
+              if (isSkin) skin++; if (isDark) dark++;
+              if (x < W * cx) { tL++; if (isDark) dL++; } else { tR++; if (isDark) dR++; }
+            }
+            return { skin: 100 * skin / tot, dark: 100 * dark / tot, darkL: 100 * dL / Math.max(1, tL), darkR: 100 * dR / Math.max(1, tR) };
+          };
+          out.eye = disc(out.lx, out.ly - 0.03, 0.055);
+          out.face = disc(out.lx, out.ly + 0.045, 0.10);
+          let yel = 0, sat = 0, tot = 0;
+          for (let y = Math.floor(Hh * 0.62); y < Hh * 0.95; y++) for (let x = Math.floor(W * 0.30); x < W * 0.70; x++) {
+            const i = (y * W + x) * 4, rr = img[i], gg = img[i + 1], bb = img[i + 2]; tot++;
+            if (rr > 180 && gg > 140 && bb < 90) yel++;
+            if (Math.max(rr, gg, bb) - Math.min(rr, gg, bb) > 40) sat++;
+          }
+          out.chestYellow = 100 * yel / tot; out.chestSat = 100 * sat / tot;
+        } finally { rend.setViewport(0, 0, size.x, size.y); }
+        return out;
+      });
+      if (!stats || !stats.eye) return 'the close-up could not be rendered/measured';
+      if (stats.eye.dark > 45) return 'a dark blob still covers the eyes: ' + stats.eye.dark.toFixed(0) + '% of the eye area is dark (the old face-covering helmet measured 94%)';
+      if (stats.eye.skin < 25) return 'the face is not visible around the eyes: only ' + stats.eye.skin.toFixed(0) + '% skin in the eye area (the old build measured 5%)';
+      if (stats.eye.darkL < 3 || stats.eye.darkR < 3 || stats.eye.darkL > 60 || stats.eye.darkR > 60) return 'the two eyes do not read in the close-up (dark left ' + stats.eye.darkL.toFixed(0) + '%, right ' + stats.eye.darkR.toFixed(0) + '% of their halves - eyes/brows on skin expected)';
+      if (stats.face.skin < 36) return 'the face does not read in the close-up: only ' + stats.face.skin.toFixed(0) + '% skin in the face area';
+      if (stats.chestYellow > 0.4) return 'the shirt still carries the printed tee logo (yellow crown pixels ' + stats.chestYellow.toFixed(1) + '% of the chest) - a plain button-front jersey is expected';
+      if (stats.chestSat < 25) return 'the chest does not read as a team-colour jersey (only ' + stats.chestSat.toFixed(0) + '% saturated colour)';
+      return true;
+    },
+  },
 ];
