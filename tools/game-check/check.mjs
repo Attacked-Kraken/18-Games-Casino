@@ -480,7 +480,10 @@ for (const g of games) {
   if (up.dark > 0.93 || up.std < 6) r.fail.push('Upright screen is black or blank');
   // SHARPNESS (owner: "get them to not make blurry players"): the 3D picture must be drawn at 1.5x or more on a 2x phone
   const sharp = await p2.evaluate(() => {
-    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100);
+    // art director Oct 22 2026 (F1 "drawn at 0.18x"): a canvas still at the browser's default 300x150 has never been
+    // drawn by the game (F1 starts its 3D only when a race starts) - that is a menu over an empty canvas, not a blurry
+    // game, so it is skipped; the sharpness of the real 3D picture is measured on a canvas the game has sized.
+    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100 && !(c.width === 300 && c.height === 150));
     cs.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
     const c = cs[0]; if (!c) return null;
     let gl = false; try { gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}

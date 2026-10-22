@@ -21,3 +21,4 @@ Format: `- SEARCH · <words to search> · for <game / what it is>`
 - DONE (robot 2026-10-19: 12 found - tools/model-search.html) · airplane · for Flight
 - DONE (robot 2026-10-19: 1 found - tools/model-search.html) · running track stadium · for Track & Field venue
 - DONE (robot 2026-10-19: 0 found - tools/model-search.html) · crowd stadium seats · for crowds in every venue
+- SEARCH · rigged baseball batter player character · for apexbaseball.html (the batter - must be rigged/animated, CC-BY or CC0; owner picks)
