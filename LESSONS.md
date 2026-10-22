@@ -45,7 +45,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a report may say the wrong window number → the Mac reads jobs/G-NN.md by job id; write your own window number, nothing else changes.
 - all · a redo can pass on the robot but change nothing on the owner's phone because his old save hides it → check the pictures with an OLD save loaded too (window 7).
 
-- 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the THR+ 100 ms miss was the runner's clock variance, the same coin flip as the yaw recheck).
 ## 2026-10-21 help desk (9:12 PM)
 - advisor · a report left without an ANSWERED line shows as open on every run → every advisor report ends with one ANSWERED line per numbered item (FIXED / PART DONE / WON'T FIX).
 ## 2026-10-21 help desk (9:40 PM)
@@ -54,3 +53,17 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - apextrackfield · the sprint/hurdles start used a straight-line model that runs past the west end of the painted track, so the 100m and 110m hurdles fields started in the stands → rule: every start is placed on the painted oval (visS) - one model the camera, the blocks and the runners all share.
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
 - apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
+
+## 2026-10-22 help desk
+- A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
+- Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
+- A queue line whose proof test passes on main is done: tick it [x] with the job/PR number.
+- A tester report always starts WINDOW: N / PLAYED: N min (every round kind); a duplicate job = one-line NO CHANGE naming the earlier job/PR.
+- Two builds of the same change (G-100 PR #911 + G-125): keep one live PR, the second to merge takes main's version of the shared line.
+
+## 2026-10-22 help desk (9:45 AM)
+- A job step that names a feature but no place for it (a LOW quality option, "parked"): choose the smallest reading, keep everything else as is, write the choice in the report's NOTE line - and any new menu control must fit inside 844x390.
+
+## 2026-10-22 help desk
+- Tests that wait on WALL-clock seconds fail on slow runner days (Flight G-141). Rule: a play test judges time in GAME time (or retries once on a fresh page); a wall-clock budget is a robot fault - file "HELP-VP: robot", never fight it in the game.
+- 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the misses were the runner's clock, later filed as known robot faults).
