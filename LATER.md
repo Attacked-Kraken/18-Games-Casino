@@ -11,4 +11,5 @@ before the owner says those 6 are done. Then do these in order, one job each:
 2d. A real phone plugged into the Mac mini for the checks (the robot plays on the device itself, not only in a browser).
 3. Grok's parked help pack (reviews/grok-2026-10-21-help/): visual play-tester robot (looks at pictures, catches sunk
    skates etc.), FPS floor robot, complaints list with proof pictures, phone home-screen install.
-4. New games - built split from day one (§9).
+4. New games - built split from day one (§9) and by GAME-DESIGN.md, the rulebook for every NEW game (grey-box fun in
+   30 s, small scope, teach by playing, steal the shape + invent one thing, content as data, kill early).
