@@ -190,3 +190,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-116 | window 3 | apexflight.html, jobs/G-116.md | build/g-116-apexflight |
 | G-117 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-117.md | build/g-117-apexflight |
 | G-121 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-121.md | build/g-121-apexflight |
+| G-125 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-125.md | test/g-125-apextrackfield |
