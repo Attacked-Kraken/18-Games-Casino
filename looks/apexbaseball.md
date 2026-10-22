@@ -1,17 +1,19 @@
 # Look board — Baseball (`apexbaseball.html`)
 
-## WHERE THINGS ARE (apexbaseball.html, main + G-125)
-- Teams/kits: TEAMS line 259 · Camera (THREE.PerspectiveCamera, FOV 42): line 300; presets + ball-follow in the camera section around it
-- Field positions: FIELD_POS line 473 · Defense dressing (pitcher/catcher/umpire/fielders): dressDefense line 488
-- REALITY trot driver (go() base-path sprint): lines 565-582 · Athletes: attachAthlete line 583 (incl. the per-athlete sole lift after the scale fit) · REALITY hook (window.__reality, incl. go: since G-125) line 655 · athleteTick (clip by own speed) line 674
-- Pitching: PITCHES line 768 · ZONE line 773 · beginAim line 803 · deliverPitch line 836 · aim pad input + resetInput around lines 1518-1568
-- Main loop: realityTrotTick call line 1418 · stepMovers (fielders chase, runners run) line 1420
-- Venue: Night Ballpark GLB loader line 1940 (night look applied on load; #loadOv gate until ready)
-- Test hooks: window.__test line 2036
-
 Read this before every job on Baseball. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexbaseball.mjs`.
+
+## WHERE THINGS ARE (`apexbaseball.html`, line numbers as of G-100)
+
+- **Menus:** overlays in the HTML — `#loadOv` 179, `#startOv` 188, `#helpOv` 199, `#friendOv` 213, `#endOv` 226; `startGame()` 1469; the start menu opens only after the ballpark has loaded (loading gate).
+- **Controls:** pitch UI + `#aimPad` in the HTML (~150–170); aim-pad input 1519–1557 (drag tracked by pointer id, `resetInput()` 1550); flow is pick a pitch → THROW → aim on the pad → THROW → LOCK (`beginAim()` 803, `beginWindup()` 804).
+- **Camera:** `PITCHER_VIEW` / `BATTER_VIEW` 304–305 (one TV broadcast camera, FOV 42); view pick `setCam()` 1288; `#viewBtn` 132 cycles auto/wide/close.
+- **Players:** `TEAMS` 259; `FIELD_POS` 473; `dressDefense()` 488; `attachAthlete()` 583 (the `window.__reality` hook is set there, ~655; the G-100 trot driver sits just above it, 565–582; the per-athlete sole lift sits right after the scale fit inside attachAthlete); `fitAthletes()` 664; `athleteTick()` 674 (Idle/Walk/Jog/Sprint picked from measured speed).
+- **AI / rules:** `PITCHES` 768, `ZONE` 773; `deliverPitch()` 836; count — `resetCount()` 934, `onWalk()` 959, `onStrikeout()` 972; `stepMovers()` 1420 (fielders chase, runners run); main `loop()` 1333.
+- **HUD:** `#scoreboard` 138; top-right cluster `#viewBtn` / `#muteBtn` / `#helpHud` 132–134 (fixed widths, 8 px gaps).
+- **Sounds:** kit sounds via `Mus.*` at contact and results (917, 1199–1218: crack, pop, cheer, riff); crowd excitement via `crowdExcite()`.
+- **Venue:** old park built in `buildField()` 327 (`VENUE_FROM` 326, `oldParkMeshes` 431, hidden once the model loads); Night Ballpark loader 1940 (`kit/stadiums/Night-Ballpark/stadium.glb` — night look, kit field re-skin and touch material lightening all happen there); `window.__test` 2036.
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
