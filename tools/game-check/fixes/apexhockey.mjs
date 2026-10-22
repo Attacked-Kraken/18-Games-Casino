@@ -1502,4 +1502,25 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-clock-real-time',
+  ask: 'the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score',
+  async test(page, h) {
+    const read = () => h.eval(() => { const c = (document.getElementById('clock') || {}).textContent || ''; const m = c.match(/(\d+):(\d+)/); return { sec: m ? (+m[1]) * 60 + (+m[2]) : -1, score: (document.getElementById('score') || {}).textContent || '' }; }).catch(() => ({ sec: -1, score: '' }));
+    // 1. untouched 10 s from the opening screen: nothing moves
+    const a = await read();
+    await h.wait(10000);
+    const b = await read();
+    if (b.sec !== a.sec || b.score !== a.score) return 'the game moved with nobody touching it: clock ' + a.sec + 's -> ' + b.sec + 's, score ' + a.score + ' -> ' + b.score;
+    // 2. a real PLAY press, then play 6 s: the clock may not lose much more than 6 s
+    await h.eval(() => { const pb = document.getElementById('playBtn'); if (pb) pb.click(); }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 15000, polling: 'raf' }); } catch (e) { return 'the match never reached play after PLAY was pressed'; }
+    const t0 = Date.now(); const c0 = await read();
+    await h.wait(6000);
+    const c1 = await read(); const wall = (Date.now() - t0) / 1000;
+    const used = c0.sec - c1.sec;
+    if (used > wall * 1.5 + 2) return 'the clock runs too fast: ' + used + 's came off the clock in ' + wall.toFixed(1) + 's of real time';
+    return true;
+  },
+},
 ];
