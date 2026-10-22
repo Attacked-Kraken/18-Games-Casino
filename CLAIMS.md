@@ -166,7 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
-| G-146 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-146.md, CLAIMS.md | build/g-146-apexbaseball |
+| G-147 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-146.md, CLAIMS.md | build/g-146-apexbaseball |
 | G-144 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-144.md, CLAIMS.md | build/g-144-apexbaseball |
 | G-134 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/G-134.md, CLAIMS.md | build/g-134-apexbaseball |
 | G-119 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1 |
