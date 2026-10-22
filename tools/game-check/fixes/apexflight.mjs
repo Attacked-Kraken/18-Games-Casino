@@ -667,7 +667,14 @@ export default [
     id: 'never-g-121-p1',
     ask: 'NEVER (G-121): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
         const F = window.__flight;
@@ -676,8 +683,8 @@ export default [
         let gt = 0, last = performance.now();
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
-        // the tester's own gentle approach profile
-        F.P.pos.set(1, 8, -300); F.P.vel.set(0, -0.6, 30);
+        // the tester's own gentle approach profile (started lower - same profile, less dead time)
+        F.P.pos.set(1, 5, -300); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
           let phase2 = false, gtScore = 0; const w0 = Date.now();
@@ -712,7 +719,14 @@ export default [
     id: 'never-g-121-p2',
     ask: 'NEVER (G-121): touching down OFF the runway in the challenge must keep telling the player why there is no score for as long as the jet sits in the grass - not just one 3.4s flash',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
         const F = window.__flight;
