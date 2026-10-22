@@ -8,7 +8,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (on main after G-107):
+Feature → line numbers in apexf1.html (on main after G-119):
 - Page head + inline tab icon: lines 1-7 (icon declared G-95)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 176-278 (friend overlay #friendOv at 244)
 - Import map (three + vendor loaders): line 279
@@ -17,12 +17,12 @@ Feature → line numbers in apexf1.html (on main after G-107):
 - Track (samples, buildGP for the kit circuit at 619): line 576
 - Car mesh builder buildCarMesh: line 1014; Car class: line 1291
 - Input object: line 1452; initInput (stick, buttons, releaseAll on blur): line 1461
-- Race object: line 1618 (setup 1624, placeGrid 1649, startLights 1689, beginRace 1715)
-- Career + friends: line 2017 (Save 2018, friendCode 2031, parseFriend 2037, showResults 2047)
-- Menu wiring (show 2110, friendBtn 2149, friendGo 2183): lines 2110-2227
-- startWeekend: line 2238; runQuali: line 2260; main loop: line 2307
-- Cockpit attach CKAttach: line 2376; Grand Prix kit GPBoot 2387, GPAttach 2403; applyGroundKit at 2417 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
-- Test hooks window.__test: line 2437 (kitAudio + groundKit probes at 2453); REALITY hook window.__reality: line 2519; boot calls: 2538
+- Race object: line 1624 (setup 1630, placeGrid ~1655, startLights 1695, beginRace 1721); trackGroundY at 1619 and updateCamera at 1910 (G-119: every view rides the road + a hard floor at the road nearest the camera)
+- Career + friends: line 2030 (Save ~2031, friendCode 2044, parseFriend ~2050, showResults ~2060)
+- Menu wiring (show 2123, friendBtn ~2162, friendGo ~2196): lines 2123-2240
+- startWeekend: line 2251; runQuali: line ~2273; main loop: line 2320
+- Cockpit attach CKAttach: line 2389; Grand Prix kit GPBoot ~2400, GPAttach 2416; applyGroundKit at 2430 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
+- Test hooks window.__test: line 2450 (camProbe at 2462, kitAudio + groundKit probes ~2466); REALITY hook window.__reality: line 2541; boot calls: ~2560
 
 ## MUST
 - Own fictional teams and drivers

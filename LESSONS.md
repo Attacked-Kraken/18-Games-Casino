@@ -25,6 +25,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a play-test file with a syntax error silently ran zero tests → it is now a hard FAIL naming the file; run node --check before the PR.
 - all · the REALITY robot read the ankle bone and the robot's clock → contact is the foot's LOWEST point, speed/gait from the game (hook time(), speed(), gait()); a sprint's first steps are running steps.
 - all · the game loop capped every frame at 0.033 s, so game time crawled on the robot → the simulation banks real time; the visual dt stays clamped; cameras ease by the simulation dt.
+- all · Baseball's feet sat 5 cm in the dirt and the fix tried was editing footOffset → a red SINK / FLOAT line means the BODY is in the wrong place: move the player's height on the field until the ground line is clean. Never change the hook's measuring numbers (footOffset, contact, ground) to clear a red line - the robot measures the real sole on the body and ignores footOffset (PR #1027).
 
 ## Look and build
 - all · hero things built from boxes / capsules → the player's car, bike, jet, athlete is a real model (CC0 / CC-BY with credit), picked through the model gate; people are the rigged studio humans.
@@ -45,3 +46,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-21 help desk (9:12 PM)
 - advisor · a report left without an ANSWERED line shows as open on every run → every advisor report ends with one ANSWERED line per numbered item (FIXED / PART DONE / WON'T FIX).
+## 2026-10-21 help desk (9:40 PM)
+- A PR robot verdict "nothing new is broken" is not the finish line: the job's own proof test must also pass in the main game-check on the merged commit. Read both before you write "done".
+- apextrackfield · the compact menu keyed on the viewport's own orientation, so an upright phone kept the tall one-column menu inside the rotated sideways box and 8 of 9 menu buttons landed off-screen → rule: in portrait the stage IS the landscape box - any layout keyed to the short box must include (orientation:portrait) too.
+- apextrackfield · the sprint/hurdles start used a straight-line model that runs past the west end of the painted track, so the 100m and 110m hurdles fields started in the stands → rule: every start is placed on the painted oval (visS) - one model the camera, the blocks and the runners all share.

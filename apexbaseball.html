@@ -562,6 +562,24 @@ try {
 
 const HAIR_M = ['parted','buzzed','parted_beard','long','curly','quiff','bald_beard','buzzed_beard'];
 const HAIR_C = [0x1a1210,0x2e1c12,0x5a3a2e,0xc8a060,0x3a1a4a];
+/* REALITY robot drive (G-100; re-run after the robot's game-time ground-contact fix, PR #929): go(true) sends the batter on a home-run trot
+   around the bases until go(false) - the robot measures that he really moves,
+   faces the way he travels and keeps his feet on the ground. He runs the real
+   base path (HOME -> B1 -> B2 -> B3 -> HOME) at a sprint the animation system
+   reads off his own displacement, so his legs match his speed. */
+const realityTrot = { on: false, wp: 0 };
+const TROT_PATH = [B1, B2, B3, HOME];
+const TROT_SPEED = 6.5;
+function realityTrotTick(dt){
+  if (!realityTrot.on) return;
+  const p = batterMesh, g = p.g;
+  const t = TROT_PATH[realityTrot.wp];
+  const dx = t[0] - g.position.x, dz = t[2] - g.position.z, d = Math.hypot(dx, dz);
+  if (d < 0.6){ realityTrot.wp = (realityTrot.wp + 1) % TROT_PATH.length; return; }
+  const sp = Math.min(TROT_SPEED, d / Math.max(dt, 1e-4));
+  g.position.x += dx / d * sp * dt; g.position.z += dz / d * sp * dt;
+  g.rotation.y = Math.atan2(dx, dz); p._running = true;
+}
 function attachAthlete(p, slotIdx){
   if (!H || p.athlete) return;
   try {
@@ -626,7 +644,7 @@ function attachAthlete(p, slotIdx){
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
-      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0) }; } catch (e) {}
+      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; } }; } catch (e) {}
     }
     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
   } catch (e) { p.athlete = null; }
@@ -1389,6 +1407,7 @@ function loop(){
       if (A.t>=1){ A.i++; A.t=0; }
     }
   }
+  realityTrotTick(dt);
   stepMovers(dt);
   function stepMovers(dt){   // fielders chase the ball; baserunners run the bases (no more statues/teleports)
   for (const k of Object.keys(fielders)){

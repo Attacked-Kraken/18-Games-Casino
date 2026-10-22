@@ -1,4 +1,4 @@
-# Owner's question: when he sends a game back to be redone (Baseball: players not real 3D, blurry, no close camera), what workflow gets it right the FIRST time? - window main
+# Owner's question: when he sends a game back to be redone (Baseball: players not real 3D, blurry, no close camera), what workflow gets it right the FIRST time? - window 4
 
 1. Reviewer first, coder second: before any code, play every mode like the store reviewer (DONE.md), write the full gap list, and look at the robot's latest game-check pictures of the game at phone size - his three complaints are all visible in those pictures before he ever opens the game.
 2. Real 3D is proven, not claimed: players only from the approved rigged warehouse bodies with sport-matched kit, plus a play test that probes the rig's bones - if it is not a real rigged human, the test fails and it cannot merge.

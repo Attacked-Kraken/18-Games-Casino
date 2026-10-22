@@ -71,3 +71,10 @@ the LOWEST point of the whole foot (the toe/sole mesh, or the lowest toe bone mi
   checked") is INCONCLUSIVE, not a failure: the robot tries it twice, then writes a yellow line. Return
   `{ inconclusive: 'why' }` from such a test - and better, make the test CREATE the situation it checks.
 
+
+## Ground contact is measured, not assumed (Oct 21 2026, advisor: ONE robot job)
+- A plain marker node in `contact` (not a bone, nothing under it - e.g. Exotic Racer's 4 tyre points) IS the contact point: no offset.
+- A bone (foot/ankle) is measured on the skinned body: the lowest posed vertex skinned to that bone (or the bones under it)
+  is the real sole. `footOffset` is only used when no skinned body is found.
+- FLOAT-while-walking and no-touchdown-while-fast need the game's clock: without `time()`/`speed()` (or `gait()`) in the hook
+  they are YELLOW lines (robot side), never red. SINK is red at any speed.
