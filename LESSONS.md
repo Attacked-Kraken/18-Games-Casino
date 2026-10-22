@@ -21,6 +21,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
 - all · tests drove input state directly / sampled meters on a wall clock → drive the game through its real controls; measure in game time, not the robot's clock.
 - all · Puppeteer calls (page.target, page.setViewport) in play tests → the robot is Playwright; use its calls.
+- apexracer · the REALITY robot read moves 0 while go(true) only set a gas flag → a hook that must MOVE the game steps the simulation itself in game time; never trust the frame loop on a robot page (its dt is clamped and its frames are starved).
 - all · a test that waits for a random event (a strikeout in 29 s) failed the game → such a test is INCONCLUSIVE (yellow), make the test CREATE the situation it checks.
 - all · a play-test file with a syntax error silently ran zero tests → it is now a hard FAIL naming the file; run node --check before the PR.
 - all · the REALITY robot read the ankle bone and the robot's clock → contact is the foot's LOWEST point, speed/gait from the game (hook time(), speed(), gait()); a sprint's first steps are running steps.
