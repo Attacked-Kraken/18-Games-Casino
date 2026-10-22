@@ -1,0 +1,28 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -1103,18 +1103,21 @@
+   const ls = box.getSize(new THREE.Vector3());
+   const lampMatF = new THREE.MeshBasicMaterial({ color: hdr('#eaf4ff', 3.4) }), lampMatR = new THREE.MeshBasicMaterial({ color: hdr('#ff2418', 3.2) });
+   ownMats.push(lampMatF, lampMatR);
+-  for (const q of lampCand) { const qc = new THREE.Box3().setFromObject(q).getCenter(new THREE.Vector3()); const front = qc.x >= 0; q.material = front ? lampMatF : lampMatR; q.userData.hlight = front ? 1 : 2; }
++  const lampSpot = {};
++  for (const q of lampCand) { const qb = new THREE.Box3().setFromObject(q); const qc = qb.getCenter(new THREE.Vector3()); const front = qc.x >= 0; q.material = front ? lampMatF : lampMatR; q.userData.hlight = front ? 1 : 2;
++    const key = (front ? 'f' : 'r') + (qc.z >= 0 ? 'p' : 'n'), fx = front ? qb.max.x : qb.min.x;
++    if (!lampSpot[key] || Math.abs(fx) > Math.abs(lampSpot[key].x)) lampSpot[key] = { x: fx, y: qc.y, z: Math.abs(qc.z) > 0.15 ? qc.z : null }; } /* the lamp's own face, for the glow to sit on */
+   /* G-163 (owner): no solid light blocks anywhere - the shine is a soft glow quad at each
+      lamp corner (nothing solid to see), a pool of headlight on the road ahead at night,
+      and rear lamps + glows that flare while braking (setBrake below). */
+   const glowMatF = new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#dfeeff', 2.6), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.85 });
+   const glowMatR = new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#ff2a18', 2.4), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.6 });
+   ownMats.push(glowMatF, glowMatR);
+-  const glowGeoF = new THREE.PlaneGeometry(0.95, 0.5), glowGeoR = new THREE.PlaneGeometry(0.85, 0.45);
++  const glowGeoF = new THREE.PlaneGeometry(0.55, 0.24), glowGeoR = new THREE.PlaneGeometry(0.52, 0.22); /* owner fix: lamp-sized, not a billboard */
+   const glowR = [];
+   for (const sd of [-1, 1]) {
+-    const gf = new THREE.Mesh(glowGeoF, glowMatF); gf.position.set(ls.x / 2 + 0.03, ls.y * 0.52, sd * ls.z * 0.30); gf.rotation.y = Math.PI / 2; gf.userData.glow = 1; tilt.add(gf);
+-    const gr = new THREE.Mesh(glowGeoR, glowMatR); gr.position.set(-ls.x / 2 - 0.03, ls.y * 0.58, sd * ls.z * 0.30); gr.rotation.y = -Math.PI / 2; gr.userData.glow = 2; tilt.add(gr); glowR.push(gr);
++    const sf = lampSpot['f' + (sd > 0 ? 'p' : 'n')], gf = new THREE.Mesh(glowGeoF, glowMatF); gf.position.set(sf ? sf.x + 0.005 : ls.x / 2 - 0.10, sf ? sf.y : ls.y * 0.52, sf && sf.z !== null ? sf.z : sd * ls.z * 0.30); gf.rotation.y = Math.PI / 2; gf.userData.glow = 1; tilt.add(gf);
++    const sr = lampSpot['r' + (sd > 0 ? 'p' : 'n')], gr = new THREE.Mesh(glowGeoR, glowMatR); gr.position.set(sr ? sr.x - 0.005 : -ls.x / 2 + 0.10, sr ? sr.y : ls.y * 0.58, sr && sr.z !== null ? sr.z : sd * ls.z * 0.30); gr.rotation.y = -Math.PI / 2; gr.userData.glow = 2; tilt.add(gr); glowR.push(gr); /* owner fix: the glow starts ON the lens (the lamp's own face where the model names one, deep in the nose recess where it does not) - nothing floats in front of the car */
+   }
+   const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 1.1), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
+   pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */
