@@ -361,7 +361,7 @@ export default [
         const E = window.__erc;
         if (!E) return 'no window.__erc hook';
         if (E.R && E.endRace) E.endRace();
-        if (!document.getElementById('nm').value) document.getElementById('nm').value = 'T50';
+        const nm = document.getElementById('nm'); if (nm && !nm.value) nm.value = 'T50'; /* G-130: the name box only exists before a name is saved - once an earlier test saves one, #nm is gone and reading it crashed this test */
         return true;
       });
       if (setup !== true) return setup;
