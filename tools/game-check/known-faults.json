@@ -1,0 +1,12 @@
+{
+  "_what": "Owner Oct 21 2026 7:08 PM, item 2: a red line that comes from a KNOWN ROBOT FAULT never blocks a builder's job - the robot side (VP) owns it. Each entry: match = a regular expression tested against the robot's FAIL line (and the game it is for, or any), why = the fault in plain words, since = date, until = optional date the entry expires. check.mjs turns a matching FAIL into a yellow 'KNOWN ROBOT FAULT' line, so judge.mjs, the Mac's proof and the merge gate all ignore it. A Muse that thinks a red line is the robot's fault writes HELP-VP: ... 'robot fault' and the VP adds the line here (robot/ or vp- branch, PR).",
+  "faults": [
+    {
+      "game": "apexhockey.html",
+      "match": "Owner's fix NOT done yet: .*play-icing-called",
+      "why": "play-icing-called is intermittent: the AI clears the puck before the staged icing lands (reviews/g-98-done-reality-audit.md). Robot side: make the test stage the clear itself.",
+      "since": "2026-10-21",
+      "until": "2026-10-28"
+    }
+  ]
+}

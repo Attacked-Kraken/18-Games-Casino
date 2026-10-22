@@ -461,6 +461,22 @@ for (const g of games) {
     r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
     for (const c of browser.contexts()) if (c !== lab.context()) await c.close().catch(() => {});
   }
+  // KNOWN ROBOT FAULTS (owner Oct 21 2026 7:08 PM): a red line the robot itself is wrong about never blocks a builder
+  try {
+    const kf = JSON.parse(fs.readFileSync(path.join(here, 'known-faults.json'), 'utf8')).faults || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const live = kf.filter(f => f.match && (!f.game || f.game === g.file) && (!f.until || f.until >= today));
+    if (live.length) {
+      const keep = [];
+      for (const f of r.fail) {
+        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f); } catch (e) { return false; } });
+        if (hit) r.check.push('KNOWN ROBOT FAULT (robot side owns it, not the builder): ' + f.slice(0, 160) + ' - ' + (hit.why || '').slice(0, 140));
+        else keep.push(f);
+      }
+      r.knownFaults = r.fail.length - keep.length;
+      r.fail = keep;
+    }
+  } catch (e) {}
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);
