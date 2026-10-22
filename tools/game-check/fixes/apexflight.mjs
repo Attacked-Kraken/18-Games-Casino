@@ -79,7 +79,7 @@ export default [
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
                 return res(true);
               }
-              if (Date.now() - t0 > 3000) {
+              if (Date.now() - t0 > 3000 * (window.__slow || 1)) {
                 clearInterval(iv);
                 F.P.thr = 1;
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
@@ -126,7 +126,7 @@ export default [
             } else if (!document.getElementById('crashOv').hidden) {
               clearInterval(iv);
               res('plane crashed during the takeoff roll');
-            } else if (Date.now() - t0 > 22000) {
+            } else if (Date.now() - t0 > 22000 * (window.__slow || 1)) {
               clearInterval(iv);
               res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
             }
@@ -224,7 +224,7 @@ export default [
               const onRwy = Math.abs(F.P.pos.x) <= 14 && F.P.pos.z > -700 && F.P.pos.z < 700;
               return res(onRwy ? true : `touched down off the runway (x=${F.P.pos.x.toFixed(1)}, z=${F.P.pos.z.toFixed(1)})`);
             }
-            if (Date.now() - t0 > 20000) {
+            if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
               clearInterval(iv);
               return res('never touched down after 20s of approach');
             }
@@ -251,7 +251,7 @@ export default [
               clearInterval(iv);
               return res(true);
             }
-            if (Date.now() - t0 > 15000) {
+            if (Date.now() - t0 > 15000 * (window.__slow || 1)) {
               clearInterval(iv);
               return res('hard impact did not crash the plane');
             }
@@ -325,7 +325,7 @@ export default [
               clearInterval(iv);
               window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
               res(true);
-            } else if (Date.now() - t0 > 12000) {
+            } else if (Date.now() - t0 > 12000 * (window.__slow || 1)) {
               clearInterval(iv);
               window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
               res('full nose-down at cruise speed did not descend: min vertical speed ' +
@@ -367,7 +367,7 @@ export default [
               if (/off|runway|grass|no score/i.test(msg)) return res(true);
               return res('off-runway touchdown shows no message explaining why there is no score');
             }
-            if (Date.now() - t0 > 25000) { clearInterval(iv); return res('never touched down after 25s'); }
+            if (Date.now() - t0 > 25000 * (window.__slow || 1)) { clearInterval(iv); return res('never touched down after 25s'); }
           }, 200);
         });
       });
@@ -403,7 +403,7 @@ export default [
               } else if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 return res('plane crashed before the scored landing');
-              } else if (Date.now() - t0 > 20000) {
+              } else if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
                 clearInterval(iv);
                 return res('never scored a landing after 20s');
               }
@@ -413,7 +413,7 @@ export default [
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (Date.now() - t0 > 30000) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
+              if (Date.now() - t0 > 30000 * (window.__slow || 1)) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
             }
           }, 200);
         });
@@ -491,7 +491,7 @@ export default [
               if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
               return res(true);
             }
-            if (Date.now() - t0 > 30000) {
+            if (Date.now() - t0 > 30000 * (window.__slow || 1)) {
               clearInterval(iv);
               return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
             }
@@ -600,7 +600,7 @@ export default [
             const vs = F.P.vel.y;
             if (vs < -3.0) F.P.pitch = Math.min(F.P.pitch + 0.02, 0.1);
             else if (vs > -1.0) F.P.pitch = Math.max(F.P.pitch - 0.02, -0.2);
-            if (Date.now() - t0 > 20000) {
+            if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
               clearInterval(iv);
               const pct = Math.round(inBand / total * 100);
               if (pct >= 60) return res(true);
