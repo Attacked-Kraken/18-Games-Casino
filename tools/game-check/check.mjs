@@ -152,7 +152,8 @@ try {
 } catch (e) {}
 const results = [];
 for (const g of games) {
-  const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {} };
+  const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
+  const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -334,7 +335,7 @@ for (const g of games) {
         eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
         page: live,
       };
-      let timer, inc = false;
+      let timer, inc = false; const tFx = Date.now();
       // owner Oct 21 6:38 PM (window 1, G-100): a test that WAITS for a random game event ("no strikeout or walk happened
       // in 29 s, so the reset could not be checked") did not find a bug - it found nothing. Such an answer is
       // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
@@ -352,7 +353,10 @@ for (const g of games) {
         if (!inc || attempt === 2) break;
         await freshGame();
       }
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined });
+      // owner Oct 21 7:49 PM (tester scoreboard "the Muse never reports its own time"): every test records the robot's
+      // own play time (ms) and the mode/event it plays (fx.mode, or the first word of its id after the prefix)
+      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
+                     mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
       if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
       if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
@@ -492,6 +496,7 @@ for (const g of games) {
       r.fail = keep;
     }
   } catch (e) {}
+  r.playMs = Date.now() - tGame0; r.endedAt = new Date().toISOString();
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);
