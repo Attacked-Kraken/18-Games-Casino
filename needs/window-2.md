@@ -1,6 +1,6 @@
-BLOCKED BY: The robot verdict on PR #1102 (the hub-ERASE play test) - its first run was orphaned by an auto-update and the check comment stuck at RUNNING; close/reopen retriggered it and the fresh run is in progress - merging it and filing jobs/G-159.md wait on that verdict
-UNCLEAR: This job keeps being renumbered (G-140, G-148, G-153, now G-159) - I am filing one report under the newest number, jobs/G-159.md; also still open from before: whether the owner saw a visual skate problem in G-47 (no picture ever arrived)
-MISSING: An owner job for the frameSec timing bug found in G-129 (the sim advances 1 s per rendered frame and the goalie save cooldown never re-arms) - the tester test play-clock-real-time is aimed at it; everything else assigned to this window is shipped or in PR #1102
+BLOCKED BY: The robot queue - PR #1158 (G-170 round 1) has had only its guard check for ~50 minutes and no verdict; G-178 is verified locally and ships independently of it
+UNCLEAR: NONE
+MISSING: NONE
 
 OWNER QUESTION - a game sent back to be redone (Baseball: players not real 3D, blurry, no close camera): what workflow gets it right the FIRST time?
 - Failures become tests before code: every owner complaint is written as a play test in tools/game-check/fixes/<game>.mjs first - the redo is done when those tests pass, not when the builder thinks it looks better.
