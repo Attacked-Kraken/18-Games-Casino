@@ -4,19 +4,19 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1119 lines)
+## WHERE THINGS ARE — `apexflight.html` (1139 lines)
 - Menus / HTML / CSS (menu + friend overlays, HUD DOM, slim throttle bar CSS ~39): 1–152
 - Imports, helpers, constants, state (offRwyMsg flag ~177): 153–182
-- Renderer, scene, venue (runway, ocean, sky, crowd; crowdTick ~427): 183–443
-- The jet (owner's Apex Jet pack, created external): 444–451
-- HUD artificial horizon: 452–477 · Messages: 478–481
-- Game flow (respawn ~486, crash ~503, touchdown/scoring ~510): 484–546
-- Input — keyboard (pollKeys ~556): 547–565 · Jet controls pad + tricks + throttle bar (~583): 566–658
-- Buttons / view toggle: 659–668 · Play a Friend codes: 669–708 · fitGame: 709–722
-- Physics (step ~730; lift/stall, airbrake in the forces block ~780): 723–839
-- Camera: 840–868 · HUD update (off-runway reason re-assert ~907): 869–912 · Music (procedural WebAudio): 913–1031
-- Test hooks (`__flight` 1032, `__reality` 1044): 1032–1070
-- Main loop (throttle/brake/boost/yaw latches ~1081–1089): 1071–1119
+- Renderer, scene, venue (runway block 263-312 - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick ~449): 183–469
+- The jet (owner's Apex Jet pack, created external): 470–477
+- HUD artificial horizon: 478–503 · Messages: 504–507
+- Game flow (respawn ~512, crash ~524, touchdown/scoring ~531): 510–572
+- Input — keyboard (pollKeys ~582): 573–591 · Jet controls pad + tricks + throttle bar (~609): 592–684
+- Buttons / view toggle: 685–694 · Play a Friend codes: 695–734 · fitGame: 735–748
+- Physics (step ~752; lift/stall, airbrake in the forces block ~806): 749–865
+- Camera: 866–892 · HUD update (off-runway reason re-assert ~902): 893–938 · Music (procedural WebAudio): 939–1051
+- Test hooks (`__flight` 1052, `__reality` 1064): 1052–1096
+- Main loop (throttle/brake/boost/yaw latches ~1107–1115): 1097–1139
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 

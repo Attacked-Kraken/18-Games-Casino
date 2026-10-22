@@ -761,4 +761,47 @@ export default [
       });
     },
   },
+  {
+    id: 'play-runway-paint-clean-steady',
+    ask: 'G-132: the runway paint and numbers are clean and steady - sharp paint resolution, max filtering, a real depth ladder under the runway and grass strip, big numbers at BOTH thresholds (today: one 128x1024 smear at anisotropy 4, 0.015m gaps, no depth offsets, numbers at one end only)',
+    async test(page, h) {
+      await h.wait(300);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jet) return 'no window.__flight hook';
+        const scene = F.jet.group.parent;
+        if (!scene) return 'no scene reachable from the jet';
+        let rwy = null, strip = null; const decals = [];
+        scene.traverse((o) => {
+          if (!o.isMesh || !o.geometry || o.geometry.type !== 'PlaneGeometry') return;
+          const p = o.geometry.parameters;
+          if (p.width === 24 && p.height === 1400) rwy = o;
+          else if (p.width === 60 && p.height === 1460) strip = o;
+          else if (p.width >= 20 && p.height >= 30 && p.height <= 120 && o.material && o.material.map) decals.push(o);
+        });
+        if (!rwy) return 'runway plane not found';
+        if (!strip) return 'grass strip plane not found';
+        if (!rwy.material.map) return 'runway has no paint texture';
+        const img = rwy.material.map.image, rep = rwy.material.map.repeat;
+        const mAlong = 1400 / (img.height * rep.y), mAcross = 24 / (img.width * rep.x);
+        if (mAlong > 0.35 || mAcross > 0.35) return 'runway paint is a smear: ' + mAlong.toFixed(2) + ' m/px along, ' + mAcross.toFixed(2) + ' m/px across (need <= 0.35 both)';
+        if (rwy.material.map.anisotropy < 8) return 'runway paint anisotropy is ' + rwy.material.map.anisotropy + ' - it shimmers at grazing angles (need >= 8)';
+        if (!rwy.material.polygonOffset || !strip.material.polygonOffset) return 'no polygonOffset depth ladder - the runway and grass strip still fight the ground';
+        if (rwy.material.polygonOffsetFactor === strip.material.polygonOffsetFactor) return 'runway and grass strip share one depth offset - no ladder';
+        const near = decals.filter(d => d.position.z < -580), far = decals.filter(d => d.position.z > 580);
+        if (!near.length || !far.length) return 'runway numbers missing at a threshold (decals near ' + near.length + ', far ' + far.length + ' - need one at each end)';
+        for (const d of near.concat(far)) {
+          if (d.material.map.anisotropy < 8) return 'a threshold decal has anisotropy ' + d.material.map.anisotropy + ' (need >= 8)';
+          try {
+            const cv = d.material.map.image, ctx = cv.getContext('2d');
+            const px = ctx.getImageData(0, 0, cv.width, cv.height).data;
+            let bright = 0;
+            for (let i = 0; i < px.length; i += 16) if (px[i] > 200 && px[i + 1] > 200 && px[i + 2] > 200) bright++;
+            if (bright < 800) return 'a threshold decal is nearly blank (bright paint samples: ' + bright + ')';
+          } catch (e) {}
+        }
+        return true;
+      });
+    },
+  },
 ];
