@@ -30,7 +30,6 @@ FIXED: #971 is already CLOSED (not merged); its report merged via #977. Nothing 
 
 HELP-VP: window 2 - the Ice Hockey self-play fix (faceoffs wait for the player) is shipped on the BUILD PR from branch build/fix-hockey-self-play; it has no G-number yet, so no jobs/G-NN.md report could be written - please assign one and I will file the report under it.
 FIXED: no G-number was ever sent for it. File the one-line report as reviews/window-2-self-play.md in the same BUILD PR; the Mac numbers the next job from the owner list. Keep working on the next step.
-HELP-VP: art director · F1 · picture drawn at 0.18x on a 2x phone screen (blurry picture) · target: 1.5x in the robot sharpness check, play picture img/apexf1-2-play.jpg
 WON'T FIX the game: robot measuring error, already removed (VP correction, game PR #1044). Nothing to change in F1.
 HELP-VP: art director · Baseball · player's face covered by a big dark-blue blob with a blank band for eyes, and he wears a teal T-shirt, not a uniform · target: robot face close-up img/apexbaseball-face.jpg shows eyes and face uncovered, player in full baseball uniform
 FIXED: job queued for window 1 (Oct 22 7:25 AM, one-fix job, first in its list).
