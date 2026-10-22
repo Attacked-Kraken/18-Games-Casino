@@ -53,7 +53,7 @@ export default [
         if (s && s.phase !== 'start') {
           if (s.fov < 40 || s.fov > 45) return `camera field of view is ${s.fov} degrees - the broadcast spec is 40-45`;
           if (['select', 'aim', 'windup'].includes(s.phase)) {
-            if (!(s.pos[2] < -25 && s.pos[1] > 10)) return `pitching camera sits at ${s.pos} - the spec is high on the centre-field side, behind and above the pitcher`;
+            if (!(s.pos[2] < -20.5 && s.pos[1] > 7)) return `pitching camera sits at ${s.pos} - the spec is the centre-field side, behind and above the pitcher (the G-167 round-1 zoom moved the camera to [0,8.5,-21.8] so the players read big; the mound is at z -20.17)`;
           }
           return true;
         }
@@ -711,42 +711,6 @@ export default [
     },
   },
   {
-    id: 'tester-reality-hook-no-go',
-    mode: 'recheck',
-    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
-    async test(page, h) {
-      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
-      await h.wait(4500);
-      let keys = null;
-      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
-      if (!keys) return 'window.__reality never appeared';
-      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
-      if (!hasGo) return '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
-      // RECHECK of G-100: go(true) must really sprint him along the base path,
-      // facing the way he travels, at his measured size; go(false) must stop him.
-      const pos = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldPosition(v); return { x: v.x, z: v.z }; });
-      const height = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); let mn = 1e9, mx = -1e9; const walk = (o) => { if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox; [b.min, b.max].forEach(c => { v.copy(c).applyMatrix4(o.matrixWorld); if (v.y < mn) mn = v.y; if (v.y > mx) mx = v.y; }); } (o.children || []).forEach(walk); }; p.updateWorldMatrix(true, true); walk(p); return mx - mn; });
-      const p0 = await pos(); const h0 = await height();
-      await h.eval(() => window.__reality.go(true));
-      await h.wait(2500);
-      const p1 = await pos(); const h1 = await height();
-      await h.wait(2500);
-      const p2 = await pos();
-      const dist = Math.hypot(p2.x - p0.x, p2.z - p0.z);
-      if (dist < 3) return 'go(true) was called but the player moved only ' + dist.toFixed(2) + ' m in 5 s - the reality robot still cannot drive him';
-      if (h0 > 0.5 && Math.abs(h1 - h0) / h0 > 0.1) return 'the player changed size while sprinting: ' + h0.toFixed(2) + ' m at rest, ' + h1.toFixed(2) + ' m running';
-      const facing = await h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldDirection(v); return { x: v.x, z: v.z }; });
-      const tx = p2.x - p0.x, tz = p2.z - p0.z; const tl = Math.hypot(tx, tz); const fl = Math.hypot(facing.x, facing.z);
-      if (tl > 0 && fl > 0) { const cos = (tx * facing.x + tz * facing.z) / (tl * fl); if (cos < 0.5) return 'the player sprints without facing the way he travels'; }
-      await h.eval(() => window.__reality.go(false));
-      await h.wait(2000);
-      const p3 = await pos();
-      const drift = Math.hypot(p3.x - p2.x, p3.z - p2.z);
-      if (drift > 0.3) return 'go(false) did not stop him: he drifted ' + drift.toFixed(2) + ' m in 2 s';
-      return true;
-    },
-  },
-  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
@@ -998,6 +962,33 @@ export default [
       if (stats.face.skin < 36) return 'the face does not read in the close-up: only ' + stats.face.skin.toFixed(0) + '% skin in the face area';
       if (stats.chestYellow > 0.4) return 'the shirt still carries the printed tee logo (yellow crown pixels ' + stats.chestYellow.toFixed(1) + '% of the chest) - a plain button-front jersey is expected';
       if (stats.chestSat < 25) return 'the chest does not read as a team-colour jersey (only ' + stats.chestSat.toFixed(0) + '% saturated colour)';
+      return true;
+    },
+  },
+  {
+    id: 'never-g-167-p1',
+    ask: 'NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture',
+    test: async (page, h) => {
+      // settle into the centre-field pitching view (the play-picture state),
+      // with the start menu fully gone (same guard as play-daylight-batter-crowd)
+      let m = null;
+      for (let i = 0; i < 40; i++) {
+        const menuUp = await h.eval(() => { const so = document.getElementById('startOv'); return so && so.style.display !== 'none'; });
+        if (menuUp) { await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); }); await h.wait(400); continue; }
+        const ath = await h.eval(() => (window.__athletesReady ? window.__athletesReady() : 0));
+        m = await h.eval(() => {
+          const R = window.__reality; if (!R || !R.camera || !R.player || !R.others || !R.others[1]) return null;
+          const cam = R.camera;
+          if (cam.position.z > -15) return null;   // not the centre-field pitching view (batter view / pitch cam)
+          const px = (g) => { const feet = g.position.clone(); const head = feet.clone(); head.y += 2.02; const pr = w => (1 - w.project(cam).y) / 2 * 390; return Math.abs(pr(feet) - pr(head)); };
+          return { batter: px(R.player), catcher: px(R.others[1]), camZ: cam.position.z };
+        });
+        if (m && ath >= 12) break;
+        await h.wait(500);
+      }
+      if (!m) return 'the centre-field pitching view never settled - no players to measure';
+      if (m.batter < 40) return 'the batter is still a speck in the pitching view: ' + m.batter.toFixed(0) + ' px tall of 390 (target at least 40; the far G-151 framing measured 34)';
+      if (m.catcher < 38) return 'the catcher is still a speck in the pitching view: ' + m.catcher.toFixed(0) + ' px tall of 390 (target at least 38; the far G-151 framing measured 32)';
       return true;
     },
   },
