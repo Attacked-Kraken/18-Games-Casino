@@ -196,6 +196,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-156 | window 4 | jobs/G-156.md | build/g-156-apextrackfield - NO CHANGE, duplicate of G-83 (PR #879) |
 | G-160 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-160-apextrackfield - DONE, PR #1109 merged 94c67f94 |
 | G-165 | window 4 | jobs/G-165.md | build/g-165-apextrackfield - NO CHANGE, duplicate of G-160 (PR #1109) |
+| G-168 | window 4 | jobs/G-168.md | build/g-168-apextrackfield - NO CHANGE, duplicate of G-160 (PR #1109) |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
 | G-90 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-90.md | build/g-90-jet-controls |
