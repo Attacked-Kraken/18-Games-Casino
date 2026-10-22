@@ -1895,4 +1895,54 @@ export default [
       return true;
     }
   }
+  ,{
+    id: 'play-racers-start-on-the-track',
+    ask: 'owner 2026-10-21: "Why are the racers so far back into the wall stands" - at the start of a straight race (110m hurdles) every racer stands ON the painted track in his own lane, never out past the end of the straight in the stands',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }).catch(() => {});
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let started = false;
+      for (let i = 0; i < 40 && !started; i++) {
+        started = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return false;
+          const e = tf.eng && tf.eng();
+          if (e && e.ev) return e.ev.id === '110h';
+          const vis = id => { const el = document.getElementById(id); return el && el.offsetParent !== null; };
+          if (vis('bCardStart')) { document.getElementById('bCardStart').click(); return false; }
+          const gb = [...document.querySelectorAll('#gridEvents button')].find(x => /110m Hurdles/i.test(x.textContent));
+          if (gb) { gb.click(); return false; }
+          if (vis('bFree')) { document.getElementById('bFree').click(); return false; }
+          return false;
+        }).catch(() => false);
+        if (!started) await h.wait(500);
+      }
+      if (!started) return 'the 110m hurdles never started';
+      let meas = null;
+      for (let i = 0; i < 20 && !meas; i++) {
+        meas = await h.eval(() => {
+          const R = window.__reality, tf = window.__tf;
+          if (!R || !tf || !tf.lanePoint) return null;
+          const groups = [];
+          if (R.player && R.player.visible) groups.push(R.player);
+          (R.others || []).forEach(g => { if (g.visible) groups.push(g); });
+          if (groups.length < 6) return null;
+          return groups.map(g => {
+            const p = g.position; let best = 1e9;
+            for (let l = 0; l < 8; l++) for (let s = 0; s < 400; s += 1) {
+              const q = tf.lanePoint(s, l);
+              const d = Math.hypot(q.x - p.x, q.z - p.z);
+              if (d < best) best = d;
+            }
+            return Math.round(best * 100) / 100;
+          });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the racers never loaded at the 110m hurdles start';
+      const off = meas.filter(d => d > 1.3);
+      if (off.length) return off.length + ' of ' + meas.length + ' racers stand off the painted track at the start (worst ' + Math.max.apply(null, meas) + ' m from the nearest lane) - the field starts out past the end of the straight, in the stands';
+      return true;
+    }
+  }
 ];
