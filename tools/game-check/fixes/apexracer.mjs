@@ -862,4 +862,16 @@ export default [
       return out === true ? true : out;
     },
   },
+  {
+    id: 'never-g-176-p1',
+    ask: 'NEVER (G-176): the job report carries an OWNER CHECK IN 30 SECONDS line with the target picture link and what to look at',
+    async test(page, h) {
+      const rep = fs.readFileSync(path.join(repoRoot, 'jobs/G-176.md'), 'utf8');
+      const line = rep.split('\n').find((l) => l.startsWith('OWNER CHECK IN 30 SECONDS:'));
+      if (!line) return 'jobs/G-176.md has no OWNER CHECK IN 30 SECONDS line';
+      if (!line.includes('https://raw.githubusercontent.com/Attacked-Kraken/18-Games-Casino/game-checks/img/apexracer-2-play.jpg')) return 'the OWNER CHECK line does not carry the target picture link';
+      if (!/ - \S/.test(line.split('apexracer-2-play.jpg')[1] || '')) return 'the OWNER CHECK line says nothing about what to look at';
+      return true;
+    },
+  },
 ];
