@@ -55,3 +55,9 @@ Fix: every tester report writes its minutes played and its real window number (7
 ## What this audit could not verify
 
 Exact branch total (lower bound given), the Mac's own wait-time logs, and true played minutes per tester — none of these live in the repo. Each becomes checkable the day the fixes above land.
+
+ANSWERED: PRs open over 1 hour: PART DONE - G-100 PR #911 was brought up to date with main and re-checked (Oct 21 8:49 PM); naming old PRs on the board is not built yet, left for the VP (Mac work).
+ANSWERED: Branch pile: FIXED - daily branch sweeper deletes every branch whose PR merged/closed with no newer work (game PR #989).
+ANSWERED: Flaky robot tests: FIXED - known-faults.json (PR #963, #990) owns play-icing-called, play-goal-restarts-centre, play-defender-takes-puck on the robot side (yellow, expire Oct 28); aborted downloads fixed in #929; luck-based tests are INCONCLUSIVE (#953).
+ANSWERED: Job waits / stale orders: FIXED - the Mac closes QUEUE lines whose tests already pass on main (queue_close_pass) and skips steps already in today's file (Mac versions 2026.10.21-63, -72).
+ANSWERED: Tester real play time: FIXED - tester orders end with "WINDOW: <7-10> and PLAYED: <minutes> min" and the scoreboard compares it to the robot's measured minutes (v72); daily grades back in SCORES.md via window 7's first round after 9 AM (v73).
