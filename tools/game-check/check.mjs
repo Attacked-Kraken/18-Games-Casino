@@ -119,11 +119,40 @@ function idleJudge(a, b, g, wallSec) {
     const d = Math.abs(c.sec - c0.sec);
     if (d > wallSec * 1.5 + 3) out.push(`IDLE RUN: the clock "${c.key}" moved ${d} s in ${wallSec.toFixed(0)} s of real time with nobody touching the game - it runs faster than real time (a 1.0 s frame step, a time-speed setting left on, or a lost lastT=now)`);
   }
-  if (!g.idleOk) for (const s of b.scores) {
+  if (!g.idleOk) for (const s of b.scores) {   // idleGoalWarn: yellow instead of red until that game's AI defends an untouched team (Hockey, Oct 22)
     const s0 = a.scores.find(x => x.key === s.key);
-    if (s0 && s0.text !== s.text) out.push(`IDLE RUN: the score "${s.key}" went ${s0.text} -> ${s.text} with nobody touching the game - a goal/point was scored by itself`);
+    if (s0 && s0.text !== s.text) out.push(`${g.idleGoalWarn ? 'WARN|' : ''}IDLE RUN: the score "${s.key}" went ${s0.text} -> ${s.text} with nobody touching the game - a goal/point was scored by itself`);
   }
   return out;
+}
+
+// VIRTUAL CLOCK (owner Oct 22): on a slow robot a game that steps a whole second per frame (lost `lastT=now`) looks normal, because
+// real frames are slow too. So run the page on a FAKE clock: requestAnimationFrame hands out 16.7 ms per frame and performance.now
+// follows it. A healthy game then moves its HUD clock about 1 s per 60 frames; a broken one moves it many seconds per frame.
+async function virtualClockFail(ctx, base, g) {
+  const vp = await ctx.newPage();
+  try {
+    await vp.addInitScript(() => {
+      let v = 0; window.__vf = 0;
+      window.requestAnimationFrame = cb => setTimeout(() => { v += 16.667; window.__vf++; cb(v); }, 0);
+      performance.now = () => v;
+    });
+    await vp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await vp.waitForTimeout(4000);
+    for (const step of g.start || []) await pressStep(vp, step);
+    const hud = () => vp.evaluate(() => {
+      for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i]')) {
+        const r = e.getBoundingClientRect(); if (!r.width || !r.height) continue;
+        const m = (e.textContent || '').trim().match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/); if (m) return { key: (e.id || e.className) + '', sec: +m[1] * 60 + +m[2], vf: window.__vf };
+      } return null; });
+    const f0 = await vp.evaluate(() => window.__vf);
+    await vp.waitForFunction(n => window.__vf >= n, f0 + 30, { timeout: 90000, polling: 100 });
+    const a = await hud(); if (!a) return null;
+    await vp.waitForFunction(n => window.__vf >= n, a.vf + 60, { timeout: 120000, polling: 100 });
+    const b = await hud(); if (!b || b.key !== a.key) return null;
+    const vsec = (b.vf - a.vf) * 0.016667, d = Math.abs(b.sec - a.sec);
+    if (d > vsec * 1.5 + 3) return `IDLE RUN: the clock "${b.key}" moved ${d} s while the game was given only ${vsec.toFixed(1)} s of frames (${b.vf - a.vf} frames at 60/s) - the game steps far more than one frame of time per frame (a lost lastT=now, or a time-speed setting left on)`;
+    return null;
+  } catch (e) { return null; } finally { try { await vp.close(); } catch (e) {} }
 }
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
@@ -305,7 +334,8 @@ for (const g of games) {
     r.stutter = { frames: st.length, median: Math.round(med), hitches: hitches.length, worst: Math.round(Math.max(0, ...hitches)) };
     if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
   } catch (e) {}
-  try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) r.fail.push(m); } catch (e) {}
+  try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) { if (m.startsWith('WARN|')) r.check.push(m.slice(5) + ' (yellow for now: this game is on the warning list until its AI defends an untouched team)'); else r.fail.push(m); } } catch (e) {}
+  try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;
