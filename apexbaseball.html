@@ -610,6 +610,14 @@ function attachAthlete(p, slotIdx){
     a.object.traverse(o => { if (o.isSkinnedMesh){ bt.setFromObject(o); bb.union(bt); } });
     const hb = bb.getSize(new THREE.Vector3()).y;
     if (hb > 0.5) a.object.scale.multiplyScalar(2.02/hb);
+    // VP sole fix (robot PR #1027 measures the real soles from the body): the
+    // posed soles sit ~5 cm under the ground. Measure this athlete's lowest
+    // point and lift the model inside its group until the soles touch the
+    // ground it stands on (the hook's own ground rule: mound top 0.3).
+    a.object.updateMatrixWorld(true);
+    const gb = new THREE.Box3(), gt = new THREE.Box3();
+    a.object.traverse(o => { if (o.isSkinnedMesh){ gt.setFromObject(o); gb.union(gt); } });
+    if (isFinite(gb.min.y)) a.object.position.y += ((Math.hypot(p.g.position.x, p.g.position.z + 20.17) < 3 ? 0.3 : 0) - gb.min.y);
     if (bones['Head']){ // cap (fielders) / batting helmet — the old primitives had them, the athletes lost them
       const capGrp = new THREE.Group();
       if (p.bat){
@@ -644,7 +652,7 @@ function attachAthlete(p, slotIdx){
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
-      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; } }; } catch (e) {}
+      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
     }
     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
   } catch (e) { p.athlete = null; }

@@ -44,7 +44,10 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a report may say the wrong window number → the Mac reads jobs/G-NN.md by job id; write your own window number, nothing else changes.
 - all · a redo can pass on the robot but change nothing on the owner's phone because his old save hides it → check the pictures with an OLD save loaded too (window 7).
 
+## 2026-10-21 help desk (9:12 PM)
+- advisor · a report left without an ANSWERED line shows as open on every run → every advisor report ends with one ANSWERED line per numbered item (FIXED / PART DONE / WON'T FIX).
 ## 2026-10-21 help desk (9:40 PM)
 - A PR robot verdict "nothing new is broken" is not the finish line: the job's own proof test must also pass in the main game-check on the merged commit. Read both before you write "done".
 - apextrackfield · the compact menu keyed on the viewport's own orientation, so an upright phone kept the tall one-column menu inside the rotated sideways box and 8 of 9 menu buttons landed off-screen → rule: in portrait the stage IS the landscape box - any layout keyed to the short box must include (orientation:portrait) too.
 - apextrackfield · the sprint/hurdles start used a straight-line model that runs past the west end of the painted track, so the 100m and 110m hurdles fields started in the stands → rule: every start is placed on the painted oval (visS) - one model the camera, the blocks and the runners all share.
+- 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.

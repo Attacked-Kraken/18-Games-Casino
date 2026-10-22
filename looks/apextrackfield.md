@@ -9,7 +9,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
 - Touch layer (stick / TAP RUN / ACTION): line 169 - menu markup: line 175 - event grid: line 206 - career screen: line 241
 - fitGame (sizes renderer + camera to the turned box): line 337 - audio (AudioSys): line 388
-- Live engine pointer ENG: line 789 - race frame loop frame(): line 3621 - REALITY hook: line 3686 - test hooks (__tf): line 3696
+- Live engine pointer ENG: line 789 - race frame loop frame(): line 3639 - REALITY hook: line 3704 - test hooks (__tf): line 3714
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
@@ -40,6 +40,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 
 ## NEVER
 - Owner 2026-10-21: "racers so far back into the wall stands" - the field always starts ON the painted track; sprint/hurdles starts sit on the oval (visS), never on a straight-line extension past the track's end (guarded by play-racers-start-on-the-track).
+- 2026-10-22: the 300m and 400m hurdles stand 1.07 m - hurdles stand at their REAL heights: 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m (G-122)
 - No capsule / stick figures
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters
