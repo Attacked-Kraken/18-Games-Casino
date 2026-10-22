@@ -8,7 +8,13 @@ import path from 'path';
 
 export function judge({ results = [], models = [], base0 = {}, changed = [], branch = '', title = '' }) {
   const norm = (x) => x.replace(/\d+/g, '#');
-  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).map(norm))]));
+  // Owner Oct 22 2026 12:30 AM (window 2: builders blocked by testers' proof tests): a failing play test is the SAME open
+  // bug whatever its detail says this run ("still TOP 1" vs "BOT 1", "drifted 0.33 m" vs "0.41 m"), so a test line is
+  // matched to main's baseline by WHICH test it is (its quoted name), never by its changing detail. A tester- test that
+  // already fails on main is a known open bug, not something this PR broke.
+  const key = (x) => { const m = String(x).match(/^(Owner'?s fix NOT done yet|Play test failing):\s*"(.*?)"/i); return m ? 'TEST|' + norm(m[2]) : norm(String(x)); };
+  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).concat(r.check || []).map(key)
+    .concat((r.fixes || []).filter(f => !f.ok).map(f => 'TEST|' + norm(String(f.ask || f.id)))))]));
   const blockers = [];
   // FAIR BLAME (Oct 18): a PR is only blocked for what it touched. Games re-checked just because a shared folder changed
   // (models/, characters/, tools/game-check/) block only on hard breakage, not on their old/flaky owner tests; a model
@@ -64,7 +70,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
-      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));
+      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
       const passing = fresh.filter(f => f.ok || f.inconclusive);   // an undecided test proves nothing either
       if (fresh.length && passing.length === fresh.length)
         blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);
@@ -74,7 +80,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   for (const r of results) for (const f of r.fail) {
     if (/owner'?s eyes/i.test(f)) continue;
     if (testOnly && /NOT done yet/i.test(f)) continue;
-    if (old.get(r.file) && old.get(r.file).has(norm(f))) continue;
+    if (old.get(r.file) && old.get(r.file).has(key(f))) continue;
     if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
     blockers.push(`${r.file}: ${f}`);
   }

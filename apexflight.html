@@ -35,12 +35,14 @@
   #ah { display: block; border-radius: 50%; border: 2px solid rgba(255,59,48,.55); background: #06130a; }
   #rwyBox { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     font-size: 12px; display: none; }
-  /* throttle gauge (display only - the jet control pad drives the throttle now) */
-  #thr { position: fixed; right: 12px; bottom: calc(18px + env(safe-area-inset-bottom)); width: 72px; height: 190px;
-    z-index: 1100; border-radius: 12px; border: 2px solid rgba(255,59,48,.4); background: rgba(2,14,8,.4);
-    touch-action: none; overflow: hidden; pointer-events: none; }
-  #thrFill { position: absolute; left: 0; bottom: 0; width: 100%; height: 0%; background: rgba(255,59,48,.45); }
-  #thrLbl { position: absolute; top: 4px; width: 100%; text-align: center; font-size: 9px; letter-spacing: .18em; color: #ffb700; }
+  /* slim throttle bar beside the jet pad (G-121 - replaces the old fat right-edge gauge,
+     which was display-only with pointer-events:none, so it never reacted): same height as
+     the button block, about half a button wide; drag it to set the throttle */
+  #thrBar { position: fixed; right: calc(182px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom)); width: 26px; height: 284px;
+    z-index: 1100; border-radius: 8px; border: 1px solid rgba(255,255,255,.3); background: rgba(10,16,28,.72);
+    touch-action: none; overflow: hidden; pointer-events: auto; cursor: pointer; }
+  #thrBarFill { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(255,59,48,.55), rgba(255,120,60,.8)); pointer-events: none; }
+  #thrBarLbl { position: absolute; top: 4px; width: 100%; text-align: center; font-size: 8px; letter-spacing: .14em; color: #ffb700; pointer-events: none; }
   .tbtn { position: fixed; z-index: 1100; background: rgba(2,14,8,.75); color: #ffb700;
     border: 1px solid rgba(255,59,48,.5); border-radius: 10px; padding: 10px 12px;
     font: 700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .1em; cursor: pointer; }
@@ -93,7 +95,7 @@
   <div id="ahWrap"><canvas id="ah" width="116" height="116"></canvas></div>
 </div>
 
-<div id="thr"><div id="thrFill"></div><div id="thrLbl">THR</div></div>
+<div id="thrBar"><div id="thrBarFill"></div><div id="thrBarLbl">THR</div></div>
 <button class="tbtn" id="viewBtn" type="button">VIEW</button>
 <button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Neon Strike</span></button>
 <button class="tbtn" id="resetBtn" type="button">RESET</button>
@@ -172,6 +174,7 @@ const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
 let phase = 'menu';            // menu | fly | crashed | scored
 let mode = 'free';
 let scoredThisAttempt = false;
+let offRwyMsg = false;          // G-121 fix round: an off-runway challenge touchdown owes the player its reason until the attempt changes
 let cockpit = false;
 const P = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
             yaw: 0, pitch: 0, roll: 0, thr: 0, ground: true };
@@ -257,27 +260,49 @@ scene.add(sun);
   }
 })();
 
-/* runway with painted markings */
+/* runway with painted markings - G-132: clean and steady at every distance/angle.
+   Before: ONE 128x1024 canvas over the whole 1400 m (1.37 m per pixel along the
+   runway, so the numbers were smears) at anisotropy 4, the runway 0.015 m over the
+   grass strip with no depth offsets - the paint fought the ground and crawled.
+   Now: a tiling paint texture with square ~10 cm pixels, separate threshold decals
+   (piano keys + big numbers at BOTH ends), max anisotropy everywhere, and a
+   polygonOffset ladder (ground 0, strip -1, runway -2, decals -3). */
 (function runway() {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 1024;
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  // asphalt + repeating paint: one tile = 100 m of runway, pixels ~square
+  const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
   const g = c.getContext('2d');
-  g.fillStyle = '#33363b'; g.fillRect(0, 0, 128, 1024);
+  g.fillStyle = '#33363b'; g.fillRect(0, 0, 256, 1024);
   g.fillStyle = '#e8e8e8';
-  g.fillRect(6, 0, 4, 1024); g.fillRect(118, 0, 4, 1024);          // edge lines
-  for (let y = 40; y < 1024; y += 64) g.fillRect(61, y, 6, 34);   // centerline dashes
-  for (const e of [0, 1]) {                                       // threshold piano keys
-    const y0 = e ? 990 : 8;
-    for (let i = 0; i < 6; i++) g.fillRect(14 + i * 18, y0, 10, 26);
-  }
-  g.font = 'bold 44px monospace'; g.textAlign = 'center';
-  g.fillText('36', 64, 120);                                      // runway number (landing heading 360)
-  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4;
+  g.fillRect(10, 0, 7, 1024); g.fillRect(239, 0, 7, 1024);              // edge lines
+  for (let i = 0; i < 2; i++) g.fillRect(121, 60 + i * 512, 14, 307);  // centerline dashes: 30 m on, 20 m off, twice per tile
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 14);
+  tex.anisotropy = maxAniso;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, RWY_HALF * 2),
-    new THREE.MeshLambertMaterial({ map: tex }));
+    new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, 0); scene.add(m);
+  // threshold decals: piano keys + the runway number, one at each end, each
+  // reading upright for the pilot landing toward it
+  function threshold(num, zEnd, flip) {
+    const dc = document.createElement('canvas'); dc.width = 256; dc.height = 640;
+    const d = dc.getContext('2d');
+    d.fillStyle = '#33363b'; d.fillRect(0, 0, 256, 640);
+    d.fillStyle = '#e8e8e8';
+    for (let i = 0; i < 6; i++) d.fillRect(28 + i * 36, 24, 20, 150);       // piano keys
+    d.font = 'bold 150px monospace'; d.textAlign = 'center';
+    d.fillText(num, 128, 430);                                             // the number, ~14 m tall
+    const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso; dt.wrapS = THREE.RepeatWrapping; dt.repeat.x = -1;   // ground-plane decals render mirrored from the cockpit without this flip - the numbers must read the correct way round (looks MUST)
+    const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
+      new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+    dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
+    dm.position.set(0, 0.045, zEnd); scene.add(dm);
+  }
+  threshold('36', -RWY_HALF + 30, false);
+  threshold('18', RWY_HALF - 30, true);
   // grass shoulders blend strip
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(60, RWY_HALF * 2 + 60),
-    new THREE.MeshLambertMaterial({ color: 0x4a7c3a }));
+    new THREE.MeshLambertMaterial({ color: 0x4a7c3a, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
   sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.015, 0); scene.add(sh);
 })();
 
@@ -480,11 +505,11 @@ function flashMsg(t, ms) { setMsg(t, false); msgTimer = ms / 1000; }
 
 /* ================= game flow ================= */
 function respawn() {
-  scoredThisAttempt = false;
+  scoredThisAttempt = false; offRwyMsg = false;
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
   phase = 'fly'; stallNow = false; setMsg('');
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
-  $('thrFill').style.height = '100%';
+  $('thrBarFill').style.height = '100%';
   if (mode === 'free') {
     P.pos.set(0, jet.gearHeight, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
     flashMsg('RUNWAY 36 - THROTTLE UP', 2600);
@@ -493,7 +518,7 @@ function respawn() {
     P.vel.set(0, 0, 34); P.thr = 0.35; P.ground = false;
     flashMsg('FINAL APPROACH - LAND RUNWAY 36', 3000);
   }
-  $('thrFill').style.height = (P.thr * 100) + '%';
+  $('thrBarFill').style.height = (P.thr * 100) + '%';
   if (jetInput) jetInput.throttle = P.thr;   // the jet pad owns the throttle (G-90) - keep it in sync
 }
 function crash(why) {
@@ -512,7 +537,7 @@ function onTouchdown(vs) {
     if (mb === null || Math.abs(vF) < Math.abs(mb)) { try { localStorage.setItem(BKEY, String(vF)); } catch (e) {} }
   }
   if (mode === 'challenge' && !scoredThisAttempt && onRwy) {
-    scoredThisAttempt = true; phase = 'scored';
+    scoredThisAttempt = true; phase = 'scored'; offRwyMsg = false;
     const vsFpm = vs * MS2FPM, off = P.pos.x;
     let rank = 'ROUGH', lvl = 0;
     if (vsFpm >= -120) { rank = 'PERFECT'; lvl = 3; }
@@ -532,9 +557,11 @@ function onTouchdown(vs) {
     $('sSpd').textContent = Math.round(spdKt) + ' kt';
     $('scoreOv').hidden = false;
   } else if (onRwy) {
+    offRwyMsg = false;
     flashMsg('TOUCHDOWN!', 1800);
   } else if (mode === 'challenge' && !scoredThisAttempt) {
     // owner's fix: an off-runway touchdown in the challenge must say why there is no score
+    offRwyMsg = true;
     flashMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', 3400);
   }
 }
@@ -574,6 +601,24 @@ jetInput = createJetControls(document.body, { rotated: () => innerHeight > inner
     const off = () => { jetStickHeld = false; };
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => zone.addEventListener(n, off));
   }
+}
+/* slim throttle bar (G-121): stands right alongside the pad, glued to its size; a
+   touch or drag sets the throttle at once (the fill follows P.thr in the loop) */
+{
+  const bar = $('thrBar');
+  const padEl = jetInput.root.querySelector('.pad');
+  if (padEl) { bar.style.height = padEl.offsetHeight + 'px'; bar.style.right = 'calc(' + (padEl.offsetWidth + 14) + 'px + env(safe-area-inset-right))'; }
+  let thrPid = null;
+  const setFromTouch = (e) => {
+    const r = bar.getBoundingClientRect();
+    // portrait presents the stage rotated 90deg: the bar's length then runs along screen X, its top toward +X
+    const f = innerHeight > innerWidth ? (e.clientX - r.left) / r.width : 1 - (e.clientY - r.top) / r.height;
+    P.thr = clamp(f, 0, 1); jetInput.throttle = P.thr;
+  };
+  bar.addEventListener('pointerdown', e => { thrPid = e.pointerId; try { bar.setPointerCapture(e.pointerId); } catch (_) {} setFromTouch(e); e.preventDefault(); });
+  bar.addEventListener('pointermove', e => { if (e.pointerId === thrPid) setFromTouch(e); });
+  const thrEnd = e => { if (e.pointerId === thrPid) thrPid = null; };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => bar.addEventListener(n, thrEnd));
 }
 function cyclePaint() { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textContent = JET_PAINTS[jet.paint].name; }
 jetInput.on('paint', cyclePaint);
@@ -727,6 +772,7 @@ function step(dt) {
         stallNow = true;
       }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
+      P.yaw += padYaw * 1.2 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate raised 0.4 -> 0.9 on G-121, then 1.2 on the G-121 fix round so the tester's 200ms recheck sample clears its bar even on the robot's slowest clock)  
     } else {
       /* ground roll: the nose answers to the stick once fast, and an
          auto-rotate assist gently raises the nose past 50 kt at full
@@ -738,7 +784,7 @@ function step(dt) {
       P.roll += (0 - P.roll) * 4 * dt;
       const vh = Math.hypot(P.vel.x, P.vel.z);
       P.yaw -= inp.rollRight * clamp(vh / 14, 0, 1) * 0.9 * dt;
-      P.yaw += padYaw * (P.ground ? 0.9 : 0.4) * dt;   // jet pad rudder: ground steering + yaw in the air (G-90)
+      P.yaw += padYaw * 0.9 * dt;   // jet pad rudder: ground steering (G-90); air yaw lives in the flight branch above (G-117)
     }
   }
 
@@ -753,7 +799,7 @@ function step(dt) {
   ACC.set(0, -GRAV, 0);
   ACC.addScaledVector(F, THRUST * P.thr * (padBoost ? 1.9 : 1));   // BOOST pad button = afterburner (G-90)
   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
-  if (padBrake && !P.ground && v > 0.01) ACC.addScaledVector(P.vel, -0.02 * v);   // BRAKE pad button = airbrake, strengthened (G-90, G-115)
+  if (padBrake && !P.ground && v > 0.01) ACC.addScaledVector(P.vel, -0.006 * v);   // BRAKE pad button = airbrake (G-90, G-115, G-116, retuned G-117)
   if (!P.ground) {
     // Angle of attack = pitch vs the FLIGHT PATH, not pitch alone. With pitch
     // alone, capped lift beat gravity at ANY attitude once fast: full nose-down
@@ -763,7 +809,7 @@ function step(dt) {
     const aoa = clamp(1 + (P.pitch - fpa) * 2.5, 0, 1.5);
     // Stall: lift fades only when really pulling up too slow (stallNow), and gentler than before
     const stallFade = stallNow ? Math.max(0.45, v / VSTALL) : 1.0;
-    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade); }      // lift, capped
+    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade * (padBrake ? 0.1 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116, deepened G-117 so the descent finishes well inside the robot's 30 s test clock)
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
 
@@ -850,6 +896,10 @@ function updateHUD(dt) {
   if (msgTimer > 0) { msgTimer -= dt; if (msgTimer <= 0 && !stallNow) setMsg(''); }
   if (stallNow && phase === 'fly') setMsg('STALL', true);
   else if (!stallNow && $('msg').className === 'warn') setMsg('');
+  // G-121 fix round: while the jet sits in the grass after an off-runway challenge
+  // touchdown, the no-score reason is re-asserted HERE, in the unthrottled head -
+  // the same frame the touchdown flash expires, so the message never blinks out
+  if (offRwyMsg && phase === 'fly' && P.ground && msgTimer <= 0) setMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', false);
   if (hudT < 0.12) return;
   hudT = 0;
   const v = P.vel.length();
@@ -872,8 +922,8 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
-  // takeoff coaching during the ground roll (contextual by state)
-  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow) {
+  // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
+  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
     const kt = v * MS2KT;
     if (kt < 45) setMsg('FULL THROTTLE - BUILD SPEED', false);
     else if (kt < VROT * MS2KT + 3) setMsg('STICK UP - CLIMB', false);
@@ -999,7 +1049,7 @@ const Mus = (function () {
     get muted() { return M.muted; }, get mode() { return M.mode; }, get ctx() { return M.ctx; } };
 })();
 window.__mus = Mus;
-window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; },
+window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
   friend: {
     code: () => friendCode(),
     set: (txt) => { const f = parseFriend(txt); if (!f) return false; friendGame = f; return true; },
@@ -1049,16 +1099,17 @@ function loop(now) {
   pollKeys();
   const thrWas = jetInput.throttle;
   const brakeWas = jetInput.brake;   // tick() recomputes brake from the keyboard when no pad button is held, wiping a brake set through the hook before the game reads it (G-115)
+  const boostWas = jetInput.boost, yawWas = jetInput.yaw;   // same tick() recompute wipes pad BOOST/YAW the same way (G-117)
   jetInput.tick(dt);
   if (phase === 'fly' || phase === 'scored') {
     if (jetStickHeld) { inp.pitchUp = clamp(jetInput.pitch, -1, 1); inp.rollRight = clamp(jetInput.roll, -1, 1); }
-    padYaw = jetInput.yaw; padBoost = jetInput.boost; padBrake = jetInput.brake || brakeWas;
+    padYaw = jetInput.yaw || yawWas; padBoost = jetInput.boost || boostWas; padBrake = jetInput.brake || brakeWas;
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
     // robot's play tests can still set the throttle directly.
     if (jetInput.throttle !== thrWas) P.thr = jetInput.throttle;
     else if (P.thr !== thrWas) jetInput.throttle = P.thr;
-    $('thrFill').style.height = (P.thr * 100) + '%';
+    $('thrBarFill').style.height = (P.thr * 100) + '%';
     step(dt);
     const toff = trickOffsets(dt);
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }

@@ -84,11 +84,13 @@ async function g37PlayLevel(page, h) {
     const b = document.getElementById('careerBtn'); if (b) b.click();
   }, { kind: 'career', opp: pend.opp, oppDef: g37Defs[pend.opp], label: pend.label });
   let playing = false;
+  await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
   for (let i = 0; i < 40 && !playing; i++) {
     await h.wait(250);
     const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     if (st === 'play') playing = true;
   }
+  await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
   if (!playing) return 'career match ' + pend.label + ' never reached play';
   await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
   let over = false;
@@ -242,23 +244,39 @@ export default [
   id: 'play-icing-called',
   ask: 'icing is called on an untouched clear from the defensive half',
   async test(page, h) {
-    try { await h.press('#playBtn'); } catch (e) {}
-    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // G-124: deterministic staging. Start from a known state - a live match in the
+    // play state, waited for in game state, never a fixed sleep: staging during the
+    // opening faceoff let the drop reset the puck and the skaters (the old flake).
+    if ((await state()) === 'menu') { try { await h.press('#playBtn'); } catch (e) {} }
+    let inPlay = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' });
+      inPlay = true;
+    } catch (e) { inPlay = (await state()) === 'play'; }
+    if (!inPlay) return 'could not reach the play state to stage the icing (state "' + (await state()) + '")';
     await h.eval(() => {
-      const H = window.__hk; if (!H || !H.puck) return;
-      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
-      H.puck.lastTouch = 'home'; H.puck.lastTouchX = -10; // dumped from the home defensive half
-      H.puck.pos.set(-10, 0.2, 30); H.puck.vel.set(60, 0, 0); // untouched clear down the ice (too fast to grab)
+      const H = window.__hk, g = H.game;
+      g.period = 1; g.clockT = 120; // a full period of runway - no intermission can interrupt
+      const P = H.puck;
+      P.owner = null; P.recv = null; P.shot = null; P.passGrace = null; P._dumpDeep = null;
+      P.lastTouch = 'home'; P.lastTouchX = -10; // dumped from the home defensive half
+      P.pos.set(-10, 0.06, 30); P.vel.set(85, 0, 0); // untouched clear down a lane nobody stands in
       for (const s of H.skaters) {
-        s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI
-        // away wins the race, so the icing stands (not waived)
-        if (!s.goalie) { s.pos.set(s.team === 'away' ? 60 : -40, 0.1, s.pos.z || 0); if (s.target) s.target.copy(s.pos); } // 03: stop them skating to old targets
+        s.vel.set(0, 0, 0); s.thinkT = 9999; // freeze the AI for the whole flight
+        // deterministic race geometry, everybody 60+ units from the puck's lane (z = 30):
+        // the defending team is closest to the far end, so the hybrid race ends one way
+        if (s.team === 'away') s.pos.set(80, 0.1, -30); else s.pos.set(-40, 0.1, -30);
+        if (s.target) s.target.copy(s.pos);
       }
     });
-    for (let i = 0; i < 12; i++) {
-      await h.wait(1000);
-      const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
-      if (/ICING/i.test(banner)) return true;
+    // the whistle blows about 2 game-seconds after the clear; poll the banner fast so
+    // the 2 s banner can never slip between reads, and never count a waive as a call
+    for (let i = 0; i < 60; i++) {
+      await h.wait(250);
+      const txt = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '').catch(() => '');
+      if (/WAIVED/i.test(txt)) return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold';
+      if (/ICING/i.test(txt)) return true;
     }
     return 'an untouched clear from the defensive half past the far goal line never drew an icing whistle';
   },
@@ -603,11 +621,13 @@ export default [
     await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
     await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
     let playing = false;
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
     for (let i = 0; i < 40 && !playing; i++) {
       await h.wait(250);
       const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
       if (st === 'play') playing = true;
     }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
     if (!playing) return 'the friend match never reached play';
     const awayName = await h.eval(() => ((document.getElementById('nmA') || {}).textContent || ''));
     if (awayName !== 'REYES ALL-STARS') return 'the friend\'s team is not the one on the ice (scoreboard away team: ' + awayName + ')';
@@ -1441,6 +1461,149 @@ export default [
     if (!census) return 'the stadium kit never loaded (window.__arena missing)';
     if (census.fans < 1000) return 'the arena crowd is not one big InstancedMesh (largest instanced count ' + census.fans + ')';
     if (census.meshes > 20) return 'the static arena is not merged - ' + census.meshes + ' meshes in the kit group (bar 20)';
+    return true;
+  },
+},
+{
+  id: 'play-waits-for-player-at-faceoff',
+  ask: 'the game does not play by itself: a faceoff waits for the player input instead of dropping on its own',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // stage the owner's exact situation with the game's own data: a career fixture is
+    // pending, the page reloads, and the match stages itself (G-104) - on the fresh
+    // page nobody has touched anything
+    await h.eval(() => {
+      try {
+        localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'SHARKS', oppDef: { name: 'SHARKS', jersey: 0x0e7c7b, helmet: 0x123a3a, trim: 0xffffff, str: 84 }, label: 'WEEK 1' }));
+      } catch (e) {}
+    }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    let atFaceoff = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'faceoff', null, { timeout: 15000, polling: 'raf' });
+      atFaceoff = true;
+    } catch (e) { atFaceoff = (await state()) === 'faceoff'; }
+    if (!atFaceoff) return 'the career match never staged its opening faceoff (state "' + (await state()) + '")';
+    // with no input at all, the drop must NOT happen by itself
+    for (let i = 0; i < 5; i++) {
+      await h.wait(400);
+      const st = await state();
+      if (st !== 'faceoff') return 'the game played by itself: the opening faceoff dropped with no player input (state became "' + st + '")';
+    }
+    // the player's first touch drops the puck
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {});
+    let dropped = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 6000, polling: 'raf' });
+      dropped = true;
+    } catch (e) { dropped = (await state()) === 'play'; }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
+    if (!dropped) return 'the faceoff never dropped even after the player gave input';
+    return true;
+  },
+},
+{
+  id: 'play-clock-real-time',
+  ask: 'the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score',
+  async test(page, h) {
+    const read = () => h.eval(() => { const c = (document.getElementById('clock') || {}).textContent || ''; const m = c.match(/(\d+):(\d+)/); return { sec: m ? (+m[1]) * 60 + (+m[2]) : -1, score: (document.getElementById('score') || {}).textContent || '' }; }).catch(() => ({ sec: -1, score: '' }));
+    // 1. untouched 10 s from the opening screen: nothing moves
+    const a = await read();
+    await h.wait(10000);
+    const b = await read();
+    if (b.sec !== a.sec || b.score !== a.score) return 'the game moved with nobody touching it: clock ' + a.sec + 's -> ' + b.sec + 's, score ' + a.score + ' -> ' + b.score;
+    // 2. a real PLAY press, then play 6 s: the clock may not lose much more than 6 s
+    await h.eval(() => { const pb = document.getElementById('playBtn'); if (pb) pb.click(); }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 15000, polling: 'raf' }); } catch (e) { return 'the match never reached play after PLAY was pressed'; }
+    const t0 = Date.now(); const c0 = await read();
+    await h.wait(6000);
+    const c1 = await read(); const wall = (Date.now() - t0) / 1000;
+    const used = c0.sec - c1.sec;
+    if (used > wall * 1.5 + 2) return 'the clock runs too fast: ' + used + 's came off the clock in ' + wall.toFixed(1) + 's of real time';
+    return true;
+  },
+},
+{
+  id: 'tester-reality-hook-fields',
+  ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => ''); if (s === 'play' || s === 'faceoff') break; await h.wait(500); }
+    const f = await h.eval(() => {
+      const r = window.__reality;
+      if (!r) return null;
+      return { camera: 'camera' in r, time: typeof r.time, speed: typeof r.speed, go: typeof r.go, contact: Array.isArray(r.contact) };
+    });
+    if (!f) return 'window.__reality is not set in a running match';
+    const missing = [];
+    if (!f.camera) missing.push('camera');
+    if (f.time !== 'function') missing.push('time()');
+    if (f.speed !== 'function') missing.push('speed()');
+    if (missing.length) return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+    return true;
+  },
+},
+
+{
+  id: 'play-idle-wolves-defend',
+  ask: 'with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds',
+  async test(page, h) {
+    const read = () => h.eval(() => { const g = window.__hk && window.__hk.game; if (!g) return null; return { state: g.state, period: g.period, clockT: g.clockT, sA: g.scoreA, sH: g.scoreH }; }).catch(() => null);
+    let r = await read();
+    if (!r || r.state !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 12000, polling: 'raf' }); } catch (e) {}
+      r = await read();
+    }
+    if (!r || r.state !== 'menu') return 'the game was not at its menu to start the untouched match';
+    try { await h.press('#playBtn'); } catch (e) {}
+    // from here the test touches NOTHING - the human is idle
+    let sawPlay = false, done = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 55000) {
+      await h.wait(200);
+      const s = await read();
+      if (!s) continue;
+      if (s.state === 'play') sawPlay = true;
+      if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
+      if (s.period === 1 && s.clockT <= 105) { done = true; break; }
+      if (s.period > 1) { done = true; break; }
+    }
+    if (!sawPlay) return 'the untouched match never reached play';
+    if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    return true;
+  },
+},
+{
+  id: 'tester-hub-reset-stays-armed',
+  mode: 'reality',
+  ask: 'TESTER (G-131): closing the career hub disarms the ERASE button - one tap arms it, but once the hub has been closed and reopened the button must be back to un-armed, so a later single tap cannot erase the career',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    const click = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    const hubOpen = () => h.eval(() => { const el = document.getElementById('hub'); return !!el && el.style.display === 'flex'; }).catch(() => false);
+    const resetState = () => h.eval(() => { const el = document.getElementById('hubReset'); return el ? { text: el.textContent, arm: el.dataset.arm || null } : null; }).catch(() => null);
+    await click('careerBtn'); await h.wait(900);
+    if (!await hubOpen()) return 'the career hub did not open from the menu';
+    await click('hubNew'); await h.wait(900);
+    const hasCareer = await h.eval(() => !!localStorage.getItem('apex_hockey_career_v1')).catch(() => false);
+    if (!hasCareer) return 'START SEASON did not create a career save';
+    await click('hubReset'); await h.wait(600);
+    const armed = await resetState();
+    if (!armed || armed.arm !== '1') return 'the first ERASE tap did not arm the button (dataset.arm is not set)';
+    await click('hubClose'); await h.wait(600);
+    await click('careerBtn'); await h.wait(1200);
+    if (!await hubOpen()) return 'the career hub did not reopen';
+    const after = await resetState();
+    if (after && after.arm === '1') return 'the ERASE button is still armed after the hub was closed and reopened (it still reads "' + after.text + '") - one more tap now erases the whole career on what looks like a first tap; closing the hub must disarm it';
     return true;
   },
 },

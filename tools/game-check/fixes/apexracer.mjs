@@ -361,7 +361,7 @@ export default [
         const E = window.__erc;
         if (!E) return 'no window.__erc hook';
         if (E.R && E.endRace) E.endRace();
-        if (!document.getElementById('nm').value) document.getElementById('nm').value = 'T50';
+        const nm = document.getElementById('nm'); if (nm && !nm.value) nm.value = 'T50'; /* G-130: the name box only exists before a name is saved - once an earlier test saves one, #nm is gone and reading it crashed this test */
         return true;
       });
       if (setup !== true) return setup;
@@ -592,6 +592,57 @@ export default [
         for (const n of needles) if (!src.includes(n)) return 'the game code does not use the sound pack (missing ' + n + ')';
         return true;
       }, ['sports_arena_', 'gameplay_low', 'gameplay_mid', 'gameplay_high', 'combo_x', 'coin_pickup', 'win_jingle', 'popup_open']);
+    },
+  },
+  {
+    id: 'play-reality-go',
+    ask: 'G-137: the REALITY robot can drive the car - go(true) really moves the player (over 0.3 m between samples)',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const H = window.__reality, E = window.__erc;
+        if (!H || typeof H.go !== 'function') return 'no __reality.go';
+        return new Promise((res) => {
+          let last = null, best = 0, path = 0, n = 0;
+          H.go(true);
+          const iv = setInterval(() => {
+            n++;
+            const inRace = E && E.R && E.R.P && E.R.P.car && H.player === E.R.P.car.root;
+            const p = inRace && H.player.position ? [H.player.position.x, H.player.position.z] : null;
+            if (p && last) { const d = Math.hypot(p[0] - last[0], p[1] - last[1]); if (d < 60) { best = Math.max(best, d); path += d; } }
+            last = p;
+            if ((best > 0.3 && path > 2) || n >= 55) { clearInterval(iv); H.go(false); if (E) E.toMenu(); res(best > 0.3 && path > 2 ? true : 'go(true) did not move the player (biggest step ' + best.toFixed(2) + ' m, path ' + path.toFixed(1) + ' m in ' + (n * 0.4).toFixed(1) + ' s)'); }
+          }, 400);
+        });
+      });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-reality-time-speed',
+    ask: 'G-143: the REALITY hook reports game time and player speed - time() advances in race seconds and speed() reads the car in m/s',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const H = window.__reality, E = window.__erc;
+        if (!H) return 'no __reality hook';
+        if (typeof H.time !== 'function') return 'the hook has no time()';
+        if (typeof H.speed !== 'function') return 'the hook has no speed()';
+        const s0 = H.speed(); if (typeof s0 !== 'number' || !(s0 >= 0)) return 'speed() is not a non-negative number before a race (' + s0 + ')';
+        return new Promise((res) => {
+          let n = 0, t1 = null;
+          H.go(true);
+          const iv = setInterval(() => {
+            n++;
+            const R = E && E.R;
+            if (R && R.P && H.time() > 0.2) {
+              if (t1 === null) { t1 = H.time(); return; }
+              const dtg = H.time() - t1, sp = H.speed();
+              if (dtg > 0.3 && sp > 2) { clearInterval(iv); H.go(false); E.toMenu(); res(true); }
+              else if (n > 50) { clearInterval(iv); H.go(false); E.toMenu(); res('time advanced ' + dtg.toFixed(2) + ' s but speed() read ' + sp.toFixed(1) + ' m/s while go(true) was driving'); }
+            } else if (n > 55) { clearInterval(iv); H.go(false); if (E) E.toMenu(); res('the race clock never started under go(true)'); }
+          }, 300);
+        });
+      });
+      return out === true ? true : out;
     },
   },
 ];

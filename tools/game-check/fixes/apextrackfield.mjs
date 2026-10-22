@@ -1581,7 +1581,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1591,7 +1593,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 400m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1606,7 +1609,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 400m Hurdles race';
@@ -1621,7 +1624,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1631,7 +1636,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1646,7 +1652,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 300m Hurdles race';
@@ -1661,7 +1667,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1671,7 +1679,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 100m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1686,7 +1695,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 100m Hurdles race';
@@ -1860,5 +1869,269 @@ export default [
       if (hv.distinct !== 80) return 'the 80 hurdles are not at 80 different spots (' + hv.distinct + ' distinct) - they must stand one per lane per hurdle, not stacked in one lane';
       return true;
     },
-  },
+  }
+  ,{
+    id: 'play-portrait-menu-buttons-on-screen',
+    ask: 'G-122: on an upright phone (390x844) every main-menu button is on the screen and the far buttons can really be tapped',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }).catch(() => {});
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (bs.length < 9) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { id: b.id, t: b.textContent.trim().slice(0, 16), x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) { await page.setViewportSize({ width: 844, height: 390 }); return 'the main menu never appeared on an upright phone (390x844)'; }
+      const off = meas.filter(b => b.x < -1 || b.y < -1 || b.x + b.w > 391 || b.y + b.h > 845);
+      if (off.length) { await page.setViewportSize({ width: 844, height: 390 }); return 'G-122: ' + off.length + ' of ' + meas.length + ' main-menu buttons are off-screen on an upright phone (' + off.slice(0, 3).map(b => b.t + ' at x ' + b.x + ', y ' + b.y).join(', ') + ')'; }
+      const bests = meas.find(b => b.id === 'bBests');
+      if (!bests) { await page.setViewportSize({ width: 844, height: 390 }); return 'G-122: the BESTS button was not found on the menu'; }
+      await page.touchscreen.tap(Math.round(bests.x + bests.w / 2), Math.round(bests.y + bests.h / 2));
+      await h.wait(900);
+      const opened = await h.eval(() => { const s = document.querySelector('#bests.screen.on'); return !!s; }).catch(() => false);
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1200);
+      if (!opened) return 'G-122: BESTS is on the screen in portrait but tapping it did not open the bests screen';
+      return true;
+    }
+  }
+  ,{
+    id: 'play-racers-start-on-the-track',
+    ask: 'owner 2026-10-21: "Why are the racers so far back into the wall stands" - at the start of a straight race (110m hurdles) every racer stands ON the painted track in his own lane, never out past the end of the straight in the stands',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }).catch(() => {});
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let started = false;
+      for (let i = 0; i < 40 && !started; i++) {
+        started = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return false;
+          const e = tf.eng && tf.eng();
+          if (e && e.ev) return e.ev.id === '110h';
+          const vis = id => { const el = document.getElementById(id); return el && el.offsetParent !== null; };
+          if (vis('bCardStart')) { document.getElementById('bCardStart').click(); return false; }
+          const gb = [...document.querySelectorAll('#gridEvents button')].find(x => /110m Hurdles/i.test(x.textContent));
+          if (gb) { gb.click(); return false; }
+          if (vis('bFree')) { document.getElementById('bFree').click(); return false; }
+          return false;
+        }).catch(() => false);
+        if (!started) await h.wait(500);
+      }
+      if (!started) return 'the 110m hurdles never started';
+      let meas = null;
+      for (let i = 0; i < 20 && !meas; i++) {
+        meas = await h.eval(() => {
+          const R = window.__reality, tf = window.__tf;
+          if (!R || !tf || !tf.lanePoint) return null;
+          const groups = [];
+          if (R.player && R.player.visible) groups.push(R.player);
+          (R.others || []).forEach(g => { if (g.visible) groups.push(g); });
+          if (groups.length < 6) return null;
+          return groups.map(g => {
+            const p = g.position; let best = 1e9;
+            for (let l = 0; l < 8; l++) for (let s = 0; s < 400; s += 1) {
+              const q = tf.lanePoint(s, l);
+              const d = Math.hypot(q.x - p.x, q.z - p.z);
+              if (d < best) best = d;
+            }
+            return Math.round(best * 100) / 100;
+          });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the racers never loaded at the 110m hurdles start';
+      const off = meas.filter(d => d > 1.3);
+      if (off.length) return off.length + ' of ' + meas.length + ' racers stand off the painted track at the start (worst ' + Math.max.apply(null, meas) + ' m from the nearest lane) - the field starts out past the end of the straight, in the stands';
+      return true;
+    }
+  }
+,{
+    id: 'never-g-122-p1',
+    ask: 'NEVER (G-122): the 400m and 300m hurdles stand 0.914 m high like real ones (the robot FAIL lines of G-122 round 1)',
+    async test(page, h) {
+      const measure = async (evName) => {
+        await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        // h.eval ships function SOURCE: the event name is baked into the source string below, never closed over
+        const navFn = eval(`() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '${evName}'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })`);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(navFn); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return { err: 'could not start ' + evName + ': ' + nav };
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          m = await h.eval(() => {
+            const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+            let root = rigs[0].group; while (root.parent) root = root.parent;
+            let found = null;
+            root.traverse(o => {
+              if (found || !o.isInstancedMesh || !o.count) return;
+              if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+              const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+              if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, h: +hh.toFixed(3) };
+            });
+            return found;
+          }).catch(() => null);
+          if (!m) await h.wait(500);
+        }
+        if (!m) return { err: 'no hurdle mesh found in the ' + evName + ' race' };
+        return m;
+      };
+      const a = await measure('400m Hurdles');
+      if (a.err) return a.err;
+      if (Math.abs(a.h - 0.914) / 0.914 > 0.15) return 'the 400m hurdles are ' + a.h + ' m tall - real 400m hurdles are 0.914 m (G-122 round 1)';
+      const b = await measure('300m Hurdles');
+      if (b.err) return b.err;
+      if (Math.abs(b.h - 0.914) / 0.914 > 0.15) return 'the 300m hurdles are ' + b.h + ' m tall - real 300m hurdles are 0.914 m (G-122 round 1)';
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p1',
+    ask: 'NEVER (G-139): every main-menu button is at least the 44x44 CSS px touch target (DONE.md section 2)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (!bs.length) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the main menu never appeared';
+      const small = meas.filter(b => b.w < 44 || b.h < 44);
+      if (small.length) return 'menu buttons under the 44x44 touch target: ' + small.map(b => b.t + ' is ' + b.w + 'x' + b.h).join(', ');
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p2',
+    ask: 'NEVER (G-139): feet do not sink into the ground - REALITY sampling at the menu (12 samples, go(true)) finds no more than 20% of foot readings more than 5 cm under',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      let ready = false;
+      for (let i = 0; i < 30 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player)).catch(() => false); if (!ready) await h.wait(1000); }
+      if (!ready) return 'the REALITY player never loaded';
+      const gaps = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        try { R.go && R.go(true); } catch (e) {}
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (const i2 of e.vs) { e.m.getVertexPosition(i2, v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 12) { clearInterval(iv); try { R.go && R.go(false); } catch (e) {} res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps || gaps.length < 12) return 'too few foot readings to judge the sink (' + (gaps ? gaps.length : 0) + ')';
+      // G-139 round 1: the robot also samples the player STANDING (idle clip at the marks,
+      // the SET crouch) - those clips ground low too, so sample a standing 100m start as well.
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no event'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+      if (nav !== 'racing') return 'could not start the 100m to sample the standing start: ' + nav;
+      const gaps2 = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                // the race start rebuilds the player rig, so the menu-cached index is gone:
+                // build the sole index on THESE bones when missing (same scan as above).
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (let i2 = 0; i2 < e.vs.length; i2++) { e.m.getVertexPosition(e.vs[i2], v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 8) { clearInterval(iv); res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps2 || gaps2.length < 6) return 'too few standing readings to judge the start-line sink (' + (gaps2 ? gaps2.length : 0) + ') - the test must sample the marks and SET, not pass blind (G-139)';
+      gaps.push(...gaps2);
+      // The standing readings are judged on their own pool too: on the round-0 build they
+      // hide inside the clean running pool (idle stands -0.05, the SET crouch reaches -0.115).
+      if (gaps2 && gaps2.length >= 8) {
+        const sunk2 = gaps2.filter(g => g < -0.05).length;
+        if (sunk2 > gaps2.length * 0.2) return 'feet SINK into the ground at the start line: ' + sunk2 + ' of ' + gaps2.length + ' standing readings more than 5 cm under - the idle and SET clips must ground on the track too (G-139)';
+        if (Math.min(...gaps2) < -0.08) return 'a foot buries ' + Math.abs(Math.min(...gaps2)).toFixed(2) + ' m under the track at the start - the SET crouch must sit on the ground line (G-139)';
+      }
+      const sunk = gaps.filter(g => g < -0.05).length;
+      if (sunk > gaps.length * 0.2) return 'feet SINK into the ground: ' + sunk + ' of ' + gaps.length + ' readings more than 5 cm under (worst ' + Math.min(...gaps).toFixed(2) + ' m) - G-139';
+      if (Math.min(...gaps) < -0.12) return 'a foot buries ' + Math.abs(Math.min(...gaps)).toFixed(2) + ' m under the track - the stance foot must stay on the ground line (G-139)';
+      return true;
+    }
+  }
+
 ];
