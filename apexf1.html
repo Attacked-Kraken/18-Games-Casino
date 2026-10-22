@@ -1374,9 +1374,10 @@ class Car {
     // steering -> car heading (proper turning, tires grip, no sideways slide)
     const tireGrip=this.gripNow();
     const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/90,0,1)*0.62); // G-73: steering winds the heading much more gently at speed - a twitch at 80 m/s used to point the car at the grass before the player could catch it
-    this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
+    if(!this.isPlayer) this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
     // G-27: steering follows ONLY the driver's stick - no auto-align, no curve push
     const maxHead=0.6-0.24*clamp(this.v/90,0,1); this.headAngle=clamp(this.headAngle,-maxHead,maxHead); // G-73: the nose cannot point as far off the track at speed (full +-0.6 stays for slow corners and recovery); heading still changes ONLY from the stick (G-27)
+    if(this.isPlayer){ const target=this.steer*maxHead*(this.understeer?0.6:1); this.headAngle+=(target-this.headAngle)*(1-Math.exp(-dt/0.13)); } // G-136: for the player the stick IS the heading - deflection sets the nose angle directly: turns in fast, holds while held, and a centered stick straightens the car at once. The old integrator wound the heading up and never unwound it, so every touch drifted the car off the road (release drift 10.4 m in sim)
     // surface
     const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
@@ -2463,6 +2464,7 @@ window.__test = {
     playerFinished: !!(Race.player && Race.player.finished)
   }),
   camAt: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }), // G-77: camera probe (start framing)
+  steerProbe: () => { const p = Race.player; if(!p) return null; const look = p.s + p.v * 0.5 + 18; return { s: p.s, d: p.d, v: p.v, headAngle: p.headAngle, line: Track.rlDAt ? Track.rlDAt(look) : 0, maxV: Track.maxSpeedAt(look, p.gripNow()) }; }, // G-136: steering proof for the play test
   camProbe: () => { if(!Race.player || !camera) return null; // G-119: camera proof for the play test
     camera.updateMatrixWorld();
     const mp=Race.player.mesh.position;
