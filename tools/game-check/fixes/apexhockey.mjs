@@ -1649,6 +1649,69 @@ export default [
     return true;
   },
 },
+
+{
+  id: 'never-g-170-p1',
+  ask: 'G-170 point 1 (owner screenshot 2026-10-22): skate blades stay DOWN flat on the ice - never pitched toe-down with the heel kicked up; the planted blade of a standing player lies flat, never kicked up at one end like the screenshot (end-to-end pitch under 5.5 cm; the shipped game read up to 8.5 cm)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    // Stage the owner's scene: a live match with every skater standing still
+    // (the faceoff picture) - reach play, then freeze the AI like the icing
+    // test does and let the stance settle into idle.
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'menu') await clickId('playBtn');
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
+    const freezeFn = () => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 1; g.clockT = 120;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+      if (!window.__standSpots) window.__standSpots = hk.skaters.map((s) => [s.pos.x, s.pos.z]);
+      hk.skaters.forEach((s, i) => { const sp = window.__standSpots[i]; s.pos.set(sp[0], 0.1, sp[1]); s.vel.set(0, 0, 0); s.thinkT = 9999; if (s.target) s.target.set(sp[0], 0, sp[1]); }); // target pinned too: thinkT alone leaves the last steering target live and the skater lunges at it between samples
+    };
+    await h.eval(freezeFn).catch(() => {});
+    await h.wait(1600);
+    const sampleFn = () => {
+      const hk = window.__hk; const out = [];
+      for (const s of hk.skaters) {
+        if (!s.kit || !s._blade || s.goalie) { out.push(null); continue; } // goalies stand splayed by design and have their own blade test - this one judges the skaters in the owner screenshot
+        const stl = s.kit.parts.steel; const v = new (hk.puck.mesh.position.constructor)();
+        const per = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of s._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + s.athWrap.position.y, v.z]); } // rig frame, like snapSkatesToIce: getVertexPosition is already world-aligned - matrixWorld would double-transform
+          let cx = 0, cz = 0; pts.forEach(p => { cx += p[0]; cz += p[2]; }); cx /= pts.length; cz /= pts.length;
+          let sxx = 0, szz = 0, sxz = 0; pts.forEach(p => { const dx = p[0] - cx, dz = p[2] - cz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; });
+          const th = 0.5 * Math.atan2(2 * sxz, sxx - szz); const ax = Math.cos(th), az = Math.sin(th);
+          const F = [], B = []; let minAll = 1e9;
+          pts.forEach(p => { const t = (p[0] - cx) * ax + (p[2] - cz) * az; if (p[1] < minAll) minAll = p[1]; (t >= 0 ? F : B).push(p[1]); });
+          const p15 = (arr) => { const a = arr.slice().sort((x, y) => x - y); return a[Math.floor(a.length * 0.15)]; };
+          per.push({ pitch: Math.abs(p15(F) - p15(B)) * 100 / 3.26, lift: minAll * 100 / 3.26 });
+        }
+        const planted = per[0].lift <= per[1].lift ? per[0] : per[1];
+        out.push(+planted.pitch.toFixed(1));
+      }
+      return out;
+    };
+    const samples = [];
+    for (let i = 0; i < 10; i++) { await h.eval(freezeFn).catch(() => {}); const r = await h.eval(sampleFn).catch(() => null); if (r) samples.push(r); await h.wait(300); }
+    if (samples.length < 6) return 'could not sample the standing skaters';
+    const worst = [];
+    for (let si = 0; si < 12; si++) {
+      const vals = samples.map((r) => r[si]).filter((x) => typeof x === 'number').sort((a, b) => a - b);
+      if (!vals.length) continue;
+      worst.push(vals[Math.floor(vals.length / 2)]);
+    }
+    if (!worst.length) return 'no skater could be measured';
+    const bad = worst.filter((x) => x > 5.5);
+    if (bad.length) return 'a standing blade is pitched, not flat on the ice: median end-to-end pitch ' + bad.map((x) => x.toFixed(1) + ' cm').join(', ') + ' on ' + bad.length + ' skater(s) - blades must stay down flat like the owner screenshot demands (pitched blades read up to 8.5 cm on the shipped game)';
+    return true;
+  }},
+,
 {
   id: 'tester-career-quit-banks-goal',
   mode: 'reality',
