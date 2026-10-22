@@ -25,7 +25,7 @@
     {
       "game": "apexhockey.html",
       "match": "play-offside-called",
-      "why": "play-offside-called flapped in the G-110 robot sample on an unchanged rules sim (jobs/G-110.md). Robot side: stage the offside play with the AI frozen.",
+      "why": "play-offside-called flapped in the G-110 robot sample on an unchanged rules sim (jobs/G-110.md). Robot side: stage the offside play with the AI frozen. OWNER: the robot side (VP) fixes the staging; if it still flaps after the staging fix it is a real Hockey rules bug and goes to window 2 (builder) - this entry never hides a real bug, it expires 2026-10-28.",
       "since": "2026-10-22",
       "until": "2026-10-28"
     }
