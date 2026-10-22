@@ -500,4 +500,38 @@ export default [
       });
     },
   },
+  {
+    id: 'tester-recheck-g116-airbrake',
+    ask: 'Re-check G-111: the jet must be able to slow below 88kt in a descent with the BRAKE airbrake (G-116 fix verification)',
+    async test(page, h) {
+      try { await h.press('#btnChal'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          const t0 = Date.now();
+          let minSpd = 999;
+          const iv = setInterval(() => {
+            F.jetInput.throttle = 0;
+            if (F.P) F.P.thr = 0;
+            F.jetInput.brake = 1;
+            const vs = F.P.vel.y;
+            if (vs < -3.5) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+            else if (vs > -1.5) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.25);
+            const spdKt = F.P.vel.length() * 1.94384;
+            if (spdKt < minSpd) minSpd = spdKt;
+            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
+              clearInterval(iv);
+              // G-116 fix: the jet CAN slow below 88kt now (was stuck at 130kt+)
+              if (minSpd <= 88) return res(true);
+              return res('G-116 regression: jet cannot slow below 88kt (min ' + Math.round(minSpd) + 'kt)');
+            }
+            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('never touched down after 30s'); }
+          }, 200);
+        });
+      });
+    },
+  },
 ];
