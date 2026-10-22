@@ -799,4 +799,33 @@ export default [
       return out === true ? true : out;
     },
   },
+  {
+    id: 'play-wrap-both-doors',
+    ask: 'G-176: the APEX ARCADE name wrap is on BOTH doors of the Goblin - a strip on each side, each inside the door span between the axles',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, car = R.P.car, tilt = car.tilt;
+        const M4 = car.root.matrixWorld.constructor, V3 = car.root.position.constructor;
+        const inv = new M4().copy(tilt.matrixWorld).invert();
+        const box = (o) => { const g = o.geometry; g.computeBoundingBox(); const bb = g.boundingBox, m = new M4().multiplyMatrices(inv, o.matrixWorld), r = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const v = new V3(cx, cy, cz).applyMatrix4(m); r.x0 = Math.min(r.x0, v.x); r.x1 = Math.max(r.x1, v.x); r.z0 = Math.min(r.z0, v.z); r.z1 = Math.max(r.z1, v.z); } return r; };
+        let fb = null; const strips = [];
+        tilt.traverse((q) => { if (!q.isMesh || !q.geometry) return; if (q.name === 'apexname') { strips.push(box(q)); return; } if (q.material === car.paint) { const b = box(q); fb = fb ? { x0: Math.min(fb.x0, b.x0), x1: Math.max(fb.x1, b.x1) } : b; } });
+        E.toMenu();
+        if (!fb) return 'no painted body found on the player car';
+        if (!strips.length) return 'the player goblin wears no APEX ARCADE wrap at all';
+        const L = fb.x1 - fb.x0, cx = (fb.x0 + fb.x1) / 2, rearAx = cx - L * 0.31, frontAx = cx + L * 0.31;
+        const pos = strips.filter((b) => (b.z0 + b.z1) / 2 > 0), neg = strips.filter((b) => (b.z0 + b.z1) / 2 < 0);
+        if (!pos.length) return 'no wrap strip on the +z door';
+        if (!neg.length) return 'no wrap strip on the -z door';
+        for (const b of strips) { if (b.x0 < rearAx + 0.3 || b.x1 > frontAx - 0.3) return 'a wrap strip spills out of the door span (x ' + b.x0.toFixed(2) + '..' + b.x1.toFixed(2) + ', doors ' + (rearAx + 0.3).toFixed(2) + '..' + (frontAx - 0.3).toFixed(2) + ')'; }
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
 ];
