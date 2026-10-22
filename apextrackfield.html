@@ -2056,14 +2056,11 @@ c.fillRect(18,30,10,98); c.fillRect(100,30,10,98);
 c.fillStyle='#f2f2f2'; c.fillRect(10,18,108,26);
 c.fillStyle='#c0392b'; c.fillRect(10,18,16,26); c.fillRect(102,18,16,26);
 });
+// G-160 (owner): ONE board per hurdle, facing the runner - the old build crossed a
+// second full-size board at 90 degrees through the middle of every hurdle, which
+// showed as cross/plus shapes and extra hurdles between the real ones.
 const p1=new THREE.PlaneGeometry(1.18,1.07).toNonIndexed();
-const p2=new THREE.PlaneGeometry(1.18,1.07); p2.rotateY(Math.PI/2);
-const p2n=p2.toNonIndexed();
-const vC=p1.attributes.position.count+p2n.attributes.position.count;
-const pos=new Float32Array(vC*3), nor=new Float32Array(vC*3), uv=new Float32Array(vC*2);
-pos.set(p1.attributes.position.array,0); nor.set(p1.attributes.normal.array,0); uv.set(p1.attributes.uv.array,0);
-const o=p1.attributes.position.count;
-pos.set(p2n.attributes.position.array,o*3); nor.set(p2n.attributes.normal.array,o*3); uv.set(p2n.attributes.uv.array,o*2);
+const pos=new Float32Array(p1.attributes.position.array), nor=new Float32Array(p1.attributes.normal.array), uv=new Float32Array(p1.attributes.uv.array);
 const g=new THREE.BufferGeometry();
 g.setAttribute('position',new THREE.BufferAttribute(pos,3));
 g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
@@ -2075,7 +2072,7 @@ this.scene.add(im); this.hurdlesMesh=im; this._hurdleBasePos=pos.slice(); this._
 },
 hurdleHeight(h){
 // G-122 round 1 (owner): a hurdles race stands at its REAL height (REALITY.md) -
-// the same cross-plane hurdle, its geometry re-scaled in Y per event.
+// the same single-board hurdle, its geometry re-scaled in Y per event.
 if(!this.hurdlesMesh||!this._hurdleBasePos) return;
 if(Math.abs(h-(this._hurdleH||1.07))<0.001) return;
 this._hurdleH=h;

@@ -2140,7 +2140,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -2150,7 +2152,9 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
       if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -2180,11 +2184,69 @@ export default [
           if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
           const bb = mesh.geometry.boundingBox;
           return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
       if (m.sideShare > 20) return 'each hurdle is two full-size boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways (geometry depth ' + m.depth + ' m, as deep as the hurdle is wide) - the sideways board sticks through the middle of every hurdle and shows as cross/plus shapes and extra hurdles between the real ones; a hurdle should be one board facing the runner';
+      return true;
+    }
+  },{
+    id: 'never-g-160-p1',
+    ask: 'NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '110m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => {
+            if (mesh || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) mesh = o;
+          });
+          if (!mesh) return null;
+          const p = mesh.geometry.attributes.position.array;
+          let side = 0, total = 0;
+          for (let t2 = 0; t2 + 8 < p.length; t2 += 9) {
+            const ax = p[t2], ay = p[t2 + 1], az = p[t2 + 2], bx = p[t2 + 3], by = p[t2 + 4], bz = p[t2 + 5], cx = p[t2 + 6], cy = p[t2 + 7], cz = p[t2 + 8];
+            const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            const area = 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (area === 0) continue;
+            total += area;
+            if (Math.abs(nx) / (2 * area) > 0.9) side += area;
+          }
+          if (!total) return null;
+          if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox;
+          return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
+      if (m.sideShare > 20) return 'each hurdle is two boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways - one board per hurdle, facing the runner (G-160)';
+      if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
       return true;
     }
   }
