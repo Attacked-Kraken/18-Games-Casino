@@ -747,7 +747,7 @@ function step(dt) {
         stallNow = true;
       }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
-      P.yaw += padYaw * 0.4 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight)
+      P.yaw += padYaw * 0.9 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate matched to ground steering G-121 so the turn reads at once on the robot's slower clock too)
     } else {
       /* ground roll: the nose answers to the stick once fast, and an
          auto-rotate assist gently raises the nose past 50 kt at full
