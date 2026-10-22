@@ -739,7 +739,9 @@ export default [
       const stopDriving = async () => { await h.eval(`(() => { if (window.__g119drv) { clearInterval(window.__g119drv); window.__g119drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
       if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
       await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
-      if (!await h.poll(() => h.eval(`window.__test.race().mode`), m => m === 'quali', 15000)) return 'weekend never reached qualifying';
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
       await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
       let racing = false;
       for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
@@ -789,6 +791,80 @@ export default [
       for (const m of [0, 1, 2, 3]) { const bad = await sampleMode(m, 1100); if (bad) { await stopDriving(); return 'upright phone: ' + bad; } }
       await page.setViewportSize({ width: 844, height: 390 });
       await stopDriving();
+      return true;
+    },
+  },
+  {
+    id: 'never-g-119-p1',
+    ask: 'Start button on the screen: LIGHTS OUT and every menu fits 844x390 with no scrolling (the owner had to scroll to start the race)',
+    async test(page, h) {
+      const fits = async (label) => {
+        const r = await h.eval(`(() => {
+          const vis = [...document.querySelectorAll('.overlay')].find(o => !o.classList.contains('hidden'));
+          if (!vis) return { err: 'no menu visible' };
+          return { id: vis.id, sh: vis.scrollHeight, ch: vis.clientHeight };
+        })()`);
+        if (!r || r.err) return label + ': ' + (r ? r.err : 'probe failed');
+        if (r.sh > r.ch + 1) return label + ' (' + r.id + ') needs scrolling: content is ' + r.sh + 'px tall on a ' + r.ch + 'px screen';
+        return null;
+      };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      let bad = await fits('main menu'); if (bad) return bad;
+      await h.press('#careerBtn'); await h.wait(400);
+      bad = await fits('track menu'); if (bad) return bad;
+      await h.press('#toTeamBtn'); await h.wait(400);
+      bad = await fits('team menu'); if (bad) return bad;
+      await h.press('#startBtn');
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
+      await h.press('#qualiSkip'); await h.wait(800);
+      bad = await fits('starting grid menu'); if (bad) return bad;
+      const btn = await h.eval(`(() => { const b = document.getElementById('raceBtn').getBoundingClientRect(); return { top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+      if (!btn || btn.top < -1 || btn.bottom > btn.ih + 1) return 'LIGHTS OUT is off the screen (button ' + (btn ? Math.round(btn.top) + '..' + Math.round(btn.bottom) : '?') + ' on a ' + (btn ? btn.ih : '?') + 'px tall phone)';
+      return true;
+    },
+  },
+  {
+    id: 'play-steering-holds-the-line',
+    ask: 'Steering gives real control: the car turns in with the stick, holds the racing line, and straightens the moment the stick is released (owner: steering is bad, he cannot stay on the track)',
+    async test(page, h) {
+      const stopDriving = async () => { await h.eval(`(() => { if (window.__g136drv) { clearInterval(window.__g136drv); window.__g136drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) return 'the race never started';
+      // drive alone: jump the player ahead of the pack so no contact can shove him
+      await h.eval(`window.__test.setCarS(0, 400)`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      for (let i = 0; i < 10; i++) { await h.wait(300); const v = await h.eval(`window.__test.steerProbe().v`).catch(() => 0); if (v > 40) break; }
+      // PART 1 - the release: wind the nose over with a held push, then let go.
+      // A wheel that stays wound drifts the car off the road (today: ~10 m in 2.5 s).
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      await h.wait(350);
+      const d0 = await h.eval(`window.__test.steerProbe().d`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      await h.wait(2500);
+      const rel = await h.eval(`window.__test.steerProbe()`);
+      if (!rel) return 'steer probe lost the player';
+      if (Math.abs(rel.headAngle) > 0.06) { await stopDriving(); return 'the car did not straighten on release: heading still ' + rel.headAngle.toFixed(2) + ' rad with the stick centered'; }
+      if (Math.abs(rel.d - d0) > 3.5) { await stopDriving(); return 'letting go of the stick drifted the car ' + Math.abs(rel.d - d0).toFixed(1) + ' m sideways in 2.5 s - it must straighten at once'; }
+      // PART 2 - hold the line: a stick driver (the game's own damped line law,
+      // corner braking from its own speed table) drives a sector; the car must
+      // never leave the road and kerb (|d| <= width/2 + 1.6).
+      await h.eval(`(() => { const t = window.__test; window.__g136drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const steer = Math.max(-1, Math.min(1, (q.line - q.d) * 0.5 - q.headAngle * 1.1)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
+      const s0 = rel.s;
+      let worst = 0, last = rel;
+      for (let i = 0; i < 24; i++) { await h.wait(500); last = await h.eval(`window.__test.steerProbe()`).catch(() => null); if (!last) break; if (Math.abs(last.d) > worst) worst = Math.abs(last.d); }
+      await stopDriving();
+      if (!last) return 'steer probe lost the player while driving';
+      if (worst > 8.6) return 'the car left the track under stick driving: |d| reached ' + worst.toFixed(1) + ' m (road + kerb ends at 8.6)';
+      if (last.s - s0 < 700) return 'the driven sector was too short: ' + Math.round(last.s - s0) + ' m in 12 s';
       return true;
     },
   }
