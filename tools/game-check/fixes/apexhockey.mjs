@@ -1201,6 +1201,7 @@ export default [
   // starts a fresh sequence. An away goal ends it as a failure.
   {
     id: 'play-defender-takes-puck',
+    ask: 'a defender takes the puck off an away rush (the rush does not score untouched)',
     area: 'play',
     async test(page, h) {
     const reachPlay = async () => {
