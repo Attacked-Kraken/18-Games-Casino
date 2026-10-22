@@ -53,3 +53,8 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - apextrackfield · the sprint/hurdles start used a straight-line model that runs past the west end of the painted track, so the 100m and 110m hurdles fields started in the stands → rule: every start is placed on the painted oval (visS) - one model the camera, the blocks and the runners all share.
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
 - apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
+
+## 2026-10-22 help desk
+- A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
+- Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
+- A queue line whose proof test passes on main is done: tick it [x] with the job/PR number.
