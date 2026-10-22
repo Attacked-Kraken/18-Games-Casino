@@ -762,4 +762,28 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-kit-assets-live',
+    ask: 'BUILD G-144: the owner kits are really used - crowd, bat crack and glove samples from sounds/stadium/baseball/ decoded and ready, and the kit infield/grass textures from kit/ground/512/ on the park field LIVE material (touch path included)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      for (let i = 0; i < 24; i++) {
+        const ph = await h.eval(() => window.__test ? window.__test.phase : null);
+        if (ph && ph !== 'start') break;
+        await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        await h.wait(500);
+      }
+      let audio = null;
+      for (let i = 0; i < 24; i++) { audio = await h.eval(() => window.__test && window.__test.kitAudio ? window.__test.kitAudio : null); if (audio && audio.crack && audio.glove && audio.cheer && audio.amb) break; await h.wait(500); }
+      if (!audio) return '__test.kitAudio missing - the kit sound state is not exposed';
+      const missing = ['crack', 'glove', 'cheer', 'amb'].filter(k => !audio[k]);
+      if (missing.length) return 'kit sounds not decoded: ' + missing.join(', ') + ' (sounds/stadium/baseball/)';
+      let st = null;
+      for (let i = 0; i < 30; i++) { st = await h.eval(() => window.__test && window.__test.stadium ? window.__test.stadium : null); if (st && st.loaded && st.kitField) break; await h.wait(500); }
+      if (!st || !st.loaded) return 'the ballpark never loaded';
+      if (!st.kitField) return 'the kit field was never applied (kitField flag false)';
+      if (!st.kitFieldLive) return 'kitField flag is set but the LIVE field material does not carry the kit texture - the swap landed on an orphaned material';
+      return true;
+    },
+  },
 ];
