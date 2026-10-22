@@ -81,7 +81,6 @@
   /* PORTRAIT GRIP: the stage is rotated, so place controls where the player's thumbs actually are:
      stick at the visual bottom-left, action buttons at the visual bottom-right */
   @media (orientation: portrait) {
-    #joy { left:auto; right:18px; }
     #btns { left:auto; right:18px; top:calc(16px + env(safe-area-inset-top)); bottom:auto; }
     #charge { left:auto; right:18px; top:calc(108px + env(safe-area-inset-top)); bottom:auto; }
     #muteBtn { right:auto; left:12px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
@@ -1975,6 +1974,10 @@ $('friendGo').addEventListener('click', () => {
   const pm2 = mLoad();
   if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
+
+// G-178: owner check link - apexhockey.html?test=match opens straight into a
+// match (skips the menu) so a change can be eyeballed in 30 seconds.
+try { if (new URLSearchParams(location.search).get('test') === 'match') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } } } catch (e) {}
 
 requestAnimationFrame(tick);
 

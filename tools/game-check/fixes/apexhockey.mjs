@@ -1711,4 +1711,30 @@ export default [
     if (bad.length) return 'a standing blade is pitched, not flat on the ice: median end-to-end pitch ' + bad.map((x) => x.toFixed(1) + ' cm').join(', ') + ' on ' + bad.length + ' skater(s) - blades must stay down flat like the owner screenshot demands (pitched blades read up to 8.5 cm on the shipped game)';
     return true;
   }},
+{
+  id: 'play-joystick-starts-left',
+  ask: 'G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play' || st === 'faceoff') break;
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      await h.wait(600);
+    }
+    const st = await state();
+    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the joystick (state ' + st + ')';
+    try {
+      const land = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cx: r.x + r.width / 2, w: innerWidth }; });
+      if (!(land.cx < land.w / 2)) return 'in landscape the joystick centre sits at ' + Math.round(land.cx) + ' of ' + land.w + ' across - it must be in the left half of the screen';
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const port = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cy: r.y + r.height / 2, h: innerHeight }; });
+      if (!(port.cy < port.h / 2)) return 'on a portrait-held phone the joystick lands on the player right side when a match opens (its centre ' + Math.round(port.cy) + ' of ' + port.h + ' down the portrait screen becomes the right half once the stage rotates for play) - it must start and stay on the left';
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  },
+},
 ];
