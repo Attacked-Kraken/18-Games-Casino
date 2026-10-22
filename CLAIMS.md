@@ -166,6 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-144 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-144.md, CLAIMS.md | build/g-144-apexbaseball |
 | G-134 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/G-134.md, CLAIMS.md | build/g-134-apexbaseball |
 | G-119 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1 |
 | G-116 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-116.md, CLAIMS.md | test/g-111-apexbaseball |
@@ -186,7 +187,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-105 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-105.md | test/g-105-apextrackfield |
 | G-122 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-122.md, CLAIMS.md, LESSONS.md | build/g-122-apextrackfield - DONE, PR #1010 merged 15af2212 |
 | G-122 ROUND 1 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-122-apextrackfield - DONE, PR #1058 merged 70a92359 |
-| G-139 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-139-apextrackfield - DONE, PR #1078 merged fa2600ba |
+| G-139 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-139-apextrackfield - DONE round 1, PR #1085 merged 27f8f56b (round 0: PR #1078 fa2600ba) |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
 | G-90 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-90.md | build/g-90-jet-controls |
