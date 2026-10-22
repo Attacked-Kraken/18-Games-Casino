@@ -94,6 +94,7 @@ screen naming each maker. The asset check robot blocks anything else. Prefer a r
 **Art director (owner, 2026-10-16):** once a day one Muse gets an "ART DIRECTOR" job: grade every game harshly in
 `SCORES.md` (looks, play, fun, sound, phone feel, /50). It is half of each game's daily score. The robot only proves a
 game RUNS; the art director and the owner decide if it is GOOD. An open owner complaint caps a game at 50/100.
+**Art director - standing picture review (owner Oct 22 2026):** window 12 reviews the robot's play + close-up pictures of every game once a day AND every open `- [ ] LOOK:` line in jobs/QUEUE.md (testers cannot see pictures, so they ask). It writes reviews/look-<date>.md (`LOOK: <line> -> PASS` / `FAIL: <why>`); a FAIL goes in jobs/HELP.md as `HELP-VP: art director · <game> · <what>` (max 3 open per game).
 
 **The owner's pipeline (owner, 2026-10-16) — this is how games get made here:**
 1. The idea scout puts ideas on the owner's vision board. The owner 👍s the ones to build.
