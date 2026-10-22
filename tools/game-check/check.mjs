@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { realityCheck, playerScreenBox } from './reality.mjs';
+import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
@@ -47,6 +47,20 @@ const BRANDS = /\b(NHL|NBA|NFL|MLB|MLS|WNBA|FIFA|UEFA|NASCAR|IndyCar|Monster Jam
 // injected into every game page: counts skinned (rigged) shaders and draw calls per frame - works with any three.js build
 const STUDIO_PROBE = () => {
   const S = window.__studio = { skinned: 0, draws: 0, frames: 0, sum: 0, max: 0, t: -1 };
+  // owner Oct 21 2026 (close-up of the player): every THREE camera a game makes is remembered here, so the robot can take
+  // the close-up without the game exposing its camera (three.js sets this.isCamera = true in the Camera constructor)
+  try {
+    window.__cams = [];
+    Object.defineProperty(Object.prototype, 'isCamera', { configurable: true, set(v) {
+      Object.defineProperty(this, 'isCamera', { value: v, writable: true, enumerable: true, configurable: true });
+      try { if (v && window.__cams.length < 40) window.__cams.push(this); } catch (e) {}
+    } });
+    window.__renderers = [];
+    Object.defineProperty(Object.prototype, 'isWebGLRenderer', { configurable: true, set(v) {
+      Object.defineProperty(this, 'isWebGLRenderer', { value: v, writable: true, enumerable: true, configurable: true });
+      try { if (v && window.__renderers.length < 8) window.__renderers.push(this); } catch (e) {}
+    } });
+  } catch (e) {}
   const patch = (P) => { if (!P) return; const ss = P.shaderSource;
     P.shaderSource = function (sh, src) { if (/#define USE_SKINNING/.test(src)) S.skinned++; return ss.call(this, sh, src); };
     for (const k of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) { const f = P[k]; if (f) P[k] = function (...a) { S.draws++; return f.apply(this, a); }; } };
@@ -379,11 +393,11 @@ for (const g of games) {
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
     // CLOSE-UP (owner Oct 21 5:54 PM): head and shoulders of the main player, shown on his card next to the play picture
     try {
-      const fb = await playerScreenBox(page);
-      if (fb && fb.width) {
-        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 80, clip: fb }));
+      const fb = await playerCloseUp(page);
+      if (fb && fb.jpg) {
+        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), Buffer.from(fb.jpg.split(',')[1], 'base64'));
         r.img.face = 'img/' + slug + '-face.jpg';
-      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player + camera)');
+      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player)');
     } catch (e) { r.check.push('Close-up picture failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
     // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
     try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
