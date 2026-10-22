@@ -84,11 +84,13 @@ async function g37PlayLevel(page, h) {
     const b = document.getElementById('careerBtn'); if (b) b.click();
   }, { kind: 'career', opp: pend.opp, oppDef: g37Defs[pend.opp], label: pend.label });
   let playing = false;
+  await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
   for (let i = 0; i < 40 && !playing; i++) {
     await h.wait(250);
     const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     if (st === 'play') playing = true;
   }
+  await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
   if (!playing) return 'career match ' + pend.label + ' never reached play';
   await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
   let over = false;
@@ -619,11 +621,13 @@ export default [
     await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
     await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
     let playing = false;
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
     for (let i = 0; i < 40 && !playing; i++) {
       await h.wait(250);
       const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
       if (st === 'play') playing = true;
     }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
     if (!playing) return 'the friend match never reached play';
     const awayName = await h.eval(() => ((document.getElementById('nmA') || {}).textContent || ''));
     if (awayName !== 'REYES ALL-STARS') return 'the friend\'s team is not the one on the ice (scoreboard away team: ' + awayName + ')';
@@ -1483,5 +1487,42 @@ export default [
     return true;
   },
 },
-
+{
+  id: 'play-waits-for-player-at-faceoff',
+  ask: 'the game does not play by itself: a faceoff waits for the player input instead of dropping on its own',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // stage the owner's exact situation with the game's own data: a career fixture is
+    // pending, the page reloads, and the match stages itself (G-104) - on the fresh
+    // page nobody has touched anything
+    await h.eval(() => {
+      try {
+        localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'SHARKS', oppDef: { name: 'SHARKS', jersey: 0x0e7c7b, helmet: 0x123a3a, trim: 0xffffff, str: 84 }, label: 'WEEK 1' }));
+      } catch (e) {}
+    }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    let atFaceoff = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'faceoff', null, { timeout: 15000, polling: 'raf' });
+      atFaceoff = true;
+    } catch (e) { atFaceoff = (await state()) === 'faceoff'; }
+    if (!atFaceoff) return 'the career match never staged its opening faceoff (state "' + (await state()) + '")';
+    // with no input at all, the drop must NOT happen by itself
+    for (let i = 0; i < 5; i++) {
+      await h.wait(400);
+      const st = await state();
+      if (st !== 'faceoff') return 'the game played by itself: the opening faceoff dropped with no player input (state became "' + st + '")';
+    }
+    // the player's first touch drops the puck
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {});
+    let dropped = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 6000, polling: 'raf' });
+      dropped = true;
+    } catch (e) { dropped = (await state()) === 'play'; }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
+    if (!dropped) return 'the faceoff never dropped even after the player gave input';
+    return true;
+  },
+},
 ];
