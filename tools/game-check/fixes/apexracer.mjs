@@ -722,7 +722,7 @@ export default [
   },
   {
     id: 'play-lights-no-solids',
-    ask: 'G-163 point 1: no solid light blocks on any car - the shine is soft glow quads at the lamp corners, front and rear',
+    ask: 'G-163 point 1 + owner glow fix: no solid light blocks, and the glow sits ON the lens - no glow quad reaches past the nose or the tail, nothing floats in front of the car',
     async test(page, h) {
       await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
       let ready = false;
@@ -735,7 +735,13 @@ export default [
           const cid = e.carId || 'traffic';
           if (solid) bad.push(cid + ' still wears a solid light block');
           if (gf < 2) bad.push(cid + ' has ' + gf + ' front glow(s), want 2');
-          if (gr < 2) bad.push(cid + ' has ' + gr + ' rear glow(s), want 2'); }
+          if (gr < 2) bad.push(cid + ' has ' + gr + ' rear glow(s), want 2');
+          /* the glow must lie ON the body: measure the tilt-space body half-length from the real meshes, then check every glow quad against it */
+          const M4 = e.car.root.matrixWorld.constructor, V3 = e.car.root.position.constructor;
+          const inv = new M4().copy(e.car.tilt.matrixWorld).invert();
+          let half = 0;
+          e.car.tilt.traverse((q) => { if (!q.isMesh || q.userData.glow || q.name === 'apexname') return; const g = q.geometry; if (!g) return; g.computeBoundingBox(); const bb = g.boundingBox; if (!bb) return; const m = new M4().multiplyMatrices(inv, q.matrixWorld); for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const v = new V3(cx, cy, cz).applyMatrix4(m); half = Math.max(half, Math.abs(v.x)); } });
+          e.car.tilt.traverse((q) => { if (q.userData.glow && Math.abs(q.position.x) > half + 0.03) bad.push(cid + ' has a glow floating ' + (Math.abs(q.position.x) - half).toFixed(2) + ' m past the body'); }); }
         E.toMenu();
         return bad.length ? bad.join('; ') : true;
       });
