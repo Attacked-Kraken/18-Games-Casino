@@ -69,18 +69,23 @@ export async function realityCheck(page, wait) {
           try {
             const b = box(c); const q = wp(c); let low = b ? b.minY : Infinity;
             if (!b) {                           // bones only (no mesh): lowest bone under this node (toe) minus the sole offset
-              let lowest = q.y;
-              c.traverse && c.traverse(n => { try { const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
-              low = lowest - (+R.footOffset || 0);
+              let lowest = q.y, bones = 0;
+              c.traverse && c.traverse(n => { try { bones++; const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
+              // advisor Oct 21 2026: the shared human rig has NO toe bones, so an ankle bone sits ~8 cm above the sole
+              // and a 3 cm rule could never pass - without a footOffset the robot assumes the studio rig's 0.08 m
+              const off = R.footOffset != null ? +R.footOffset : (bones <= 1 ? 0.08 : 0);
+              low = lowest - off;
+              if (R.footOffset == null && bones <= 1) R.__assumedOffset = true;
             }
             gaps.push(+(low - g(q.x, q.z)).toFixed(3));
           } catch (e) {}
         }
+        const assumed = !!R.__assumedOffset;
         let gt = null; try { if (R.time) gt = +R.time(); } catch (e) {}
         let gs = null; try { if (R.speed) gs = +R.speed(); } catch (e) {}
         let ga = ''; try { if (R.gait) ga = String(R.gait() || '').toLowerCase(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
-        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null,
+        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null, assumed,
           gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
@@ -153,6 +158,7 @@ export async function realityCheck(page, wait) {
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
   out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  if (gaps.length && samples.some(s => s.assumed)) out.check.push('REALITY: the contact nodes are ankle bones with no footOffset - the robot assumed the studio rig sole offset 0.08 m; set footOffset in the hook to be exact');
   if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
 }
