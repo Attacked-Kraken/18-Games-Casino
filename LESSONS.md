@@ -36,3 +36,8 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · one giant game file with its own controls → one fix per job, shared controls in kit/controls.js, new games split into small files (STUDIO-STANDARD §9).
 - all · a fetched model came in white / sideways / half size → read each model's own materials and nose; clean shadow sheets; check every car shows its own paint.
 - all · the owner's redo workflow: his 👎 points are numbered, each with a TARGET (his picture, a link, a number); a 3D-model complaint picks and locks the model FIRST; every point goes to the game's NEVER list with a test; the report answers POINT k: YES/NO.
+
+## 2026-10-21 help desk (8:15 PM)
+- all · a game sent back for a redo (Baseball: players not real 3D, blurry, no close camera) came back again → first time right: (1) replay TODAY's main first - skip what is already fixed; (2) every send-back line becomes a measurable pass/fail and a failing tester-/play- test BEFORE any code; (3) real rigged models from SEARCH/REQUEST lines at true size, no code-drawn stand-ins (owner picks); (4) look at the robot's menu, play and close-up pictures at phone size, in both orientations - the report says "seen", not just "merged"; (5) the report names what was NOT tested.
+- all · quick-check.sh cannot run where the Muse's Chromium blocks 127.0.0.1 → open the PR early; the PR robot's one "🤖 Check status" comment is the quick check.
+- all · a report may say the wrong window number → the Mac reads jobs/G-NN.md by job id; write your own window number, nothing else changes.
