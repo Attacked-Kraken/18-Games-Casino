@@ -98,6 +98,24 @@ Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half si
    drivers, cameras) - change the smallest piece that fixes the point (owner Oct 19: "Muses still mess stuff up while
    trying to fix something else").
 
+**LOCKED (owner, Oct 21 2026 7:23 PM, from the advisor): models arrive GAME-READY - the robot fits them, games never do.**
+8. The Sketchfab / lab robot does ALL the fitting, once, on fetch (tools/glb-clean.mjs + tools/sketchfab-fetch.mjs):
+   real metres (from the MODEL-REQUESTS size line), the house's ONE forward direction (+Z = nose), centred at the
+   origin, wheels / feet exactly at y = 0, hidden parts (shadow sheets, collision boxes, cameras, lights) removed,
+   size and triangle limits enforced. Rules 1 and 6 above (turn/scale per model in the game) are REPLACED by this.
+9. Every model gets a measured CARD next to it (`<name>.card.json`, read from the FILE, never from names): size in
+   metres (length / width / height), nose direction, the ground points (lowest points of each wheel / foot), triangle
+   count, and which material really is the body / tyres / glass / skin (found by geometry: the big outer shell, the
+   round low parts, the see-through parts). The card's paint test proves that recolouring the body material changes
+   only the body - the robot renders before/after and compares.
+10. Games hold only the OUTER holder (`new THREE.Group()` with the model inside, straight from the file): they move
+    and steer the holder and set `model.paint(color)` from the card. Game code never rotates, scales, offsets or
+    repaints the model's own parts again - the robot FAILS a game that does (a `rotation`/`scale`/`position` set on a
+    loaded model's inner nodes, or a material swap outside the card's body material). Swapping a model = one line in
+    that game's model list (games.json `models` / MODELS.md), nothing in the code.
+11. Every model shows its front / side / back / top pictures + its card on the owner's board for his 👍 BEFORE any
+    builder job uses it (the model gate). Order of work: Exotic Racer's cars first, then the Baseball players.
+
 ## 4. Feel
 
 - The camera always shows the play. No camera stuck inside a wall or a player. A zoom that hides the action is a defect.
