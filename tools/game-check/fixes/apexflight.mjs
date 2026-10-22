@@ -570,6 +570,15 @@ export default [
           down('jRoll'); up('jRoll');
           ms = await until(() => F.trick === 'barrelRoll', 100);
           if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          // leave the shared page in a clean flying state on success (a failed
+          // test gets a harness reload anyway): the next test on this page -
+          // the G-117 yaw recheck - starts from whatever state it finds, and
+          // an unpiloted jet left mid-maneuver can crash in the gap and strand
+          // it ('never took off' on slow runs). Park it high, level, cruising.
+          if (!bad.length) {
+            P.pos.set(0, 300, 0); P.vel.set(0, 0, 40); P.pitch = 0; P.roll = 0; P.thr = 0.45; P.ground = false;
+            F.jetInput.throttle = 0.45; F.jetInput.pitch = 0; F.jetInput.roll = 0; F.jetInput.yaw = 0;
+          }
           return bad.length ? bad.join('; ') : true;
         })();
       });
