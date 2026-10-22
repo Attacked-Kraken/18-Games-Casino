@@ -1616,4 +1616,37 @@ export default [
     return true;
   },
 },
+
+{
+  id: 'play-hub-reset-disarms-on-close',
+  ask: 'G-159: closing the career hub disarms the ERASE button - arm it, close and reopen the hub, and a single tap must count as a fresh first tap only (the career survives)',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    const click = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    const hubOpen = () => h.eval(() => { const el = document.getElementById('hub'); return !!el && el.style.display === 'flex'; }).catch(() => false);
+    const resetState = () => h.eval(() => { const el = document.getElementById('hubReset'); return el ? { text: el.textContent, arm: el.dataset.arm || null } : null; }).catch(() => null);
+    await click('careerBtn'); await h.wait(900);
+    if (!await hubOpen()) return 'the career hub did not open from the menu';
+    await click('hubNew'); await h.wait(900);
+    if (!await h.eval(() => !!localStorage.getItem('apex_hockey_career_v1')).catch(() => false)) return 'START SEASON did not create a career save';
+    await click('hubReset'); await h.wait(600);
+    const armed = await resetState();
+    if (!armed || armed.arm !== '1') return 'the first ERASE tap did not arm the button';
+    await click('hubClose'); await h.wait(600);
+    await click('careerBtn'); await h.wait(1200);
+    if (!await hubOpen()) return 'the career hub did not reopen';
+    const after = await resetState();
+    if (!after || after.arm === '1') return 'ERASE stayed armed across a hub close and reopen - closing the hub must disarm it';
+    await click('hubReset'); await h.wait(600);
+    if (!await h.eval(() => !!localStorage.getItem('apex_hockey_career_v1')).catch(() => false)) return 'one tap after reopening erased the career - it must count as a fresh first tap only';
+    const rearmed = await resetState();
+    if (!rearmed || rearmed.arm !== '1') return 'the tap after reopening did not behave as a fresh first tap (the button should only now be armed)';
+    return true;
+  },
+},
 ];

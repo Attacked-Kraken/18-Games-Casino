@@ -1,0 +1,1 @@
+window 2 self-play fix: faceoffs wait for the player's first real input (sawInput latch, career auto-start excepted) so the game never plays itself - shipped in PR #1031, merged 31975b94; no G-number was sent for it.
