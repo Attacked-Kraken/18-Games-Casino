@@ -2,7 +2,11 @@
 
 # Read this first (every AI helper and person working in this repo)
 
-Owner: Mr. Cruz. Read these files, in this order, before any work. They are the law here.
+Owner: Mr. Cruz. **Before a job read THREE things only** (owner Oct 21 2026 "trim the rules"): your game's short
+list `rules/short/<game>.md`, `LESSONS.md` (one page), and the order itself. Everything below is the detail behind
+them - open a file only when your job or the short list points at it.
+
+The full law, for reference:
 
 1. **CLAIMS.md** — who is doing what. Claim your task before you start; never redo a claimed or done task.
 2. **FAMILY-RULES.md** — what a Game Development title may and may not contain (kids as young as 4
@@ -18,8 +22,8 @@ Owner: Mr. Cruz. Read these files, in this order, before any work. They are the 
    speed, game loop). The robot FAILs what it can measure; you prove the rest with a play test. Read it before EVERY job.
 8. **REALITY.md** — real sizes, which way things face and move, feet/wheels/skates on the ground, and the
    `window.__reality` robot hook every sports game must set.
-9. **LESSONS.md** — every mistake we already made and the rule that stops it. Read it before EVERY job. After every
-   owner 👎 or failed check, add one line to it.
+9. **LESSONS.md** — the rules that still matter (one page; history in LESSONS-ARCHIVE.md). After an owner 👎 or a
+   failed check add ONE line; when a rule replaces an older one, delete the old line.
 
 Short version: no gambling, casino or real-money content in Game Development titles; no real brands,
 players or famous characters; no personal info, chat, ads, tracking or internet; CC0 assets only;
