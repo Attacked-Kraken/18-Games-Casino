@@ -204,8 +204,11 @@ to be made 11 times, and shared parts (characters/) broke other games.
 
 1. **One fix per job.** A job asks for ONE change. The owner's list of 5 points = 5 jobs, sent one after another.
 2. **Shared controls.** Thumbstick, buttons, button layout and "let go = stop" (pointerup / pointercancel / blur /
-   hidden tab) live in ONE shared kit file (`kit/controls.js`, built first by one builder for its own game). Every
-   game uses it. A game never writes its own stick again; a stick bug is fixed once, in the kit.
+   hidden tab) live in ONE shared kit file (`kit/controls.js` - built Oct 21 2026, demo `kit/controls-demo.html`,
+   `createControls({ buttons, stick, rightStick, rotated, paused })` -> `read()` = `{ x, y, rx, ry, buttons }`). Every
+   game uses it; each game moves over in its own job and sets `"controls": "shared"` on its line in
+   tools/game-check/games.json. A game never writes its own stick again: the robot FAILS a shared-controls game whose
+   page still wires a pointerdown/touchstart near stick/joy/knob code ("OWN STICK CODE"), or that does not load the file.
 3. **NEW games are split into small files** from day one: `games/<slug>/` with `controls`, `camera`, `world`,
    `players`/`cars`, `ai`, `menus`, `rules` - each one job's worth. The page itself only loads them. No game file
    over ~800 lines.
