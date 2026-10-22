@@ -29,3 +29,5 @@ MODELS:
 - `G-NN 👌 ... small fix` - make only that fix, update VERSION in the same report file, STOP.
 - `G-NN 👎 NOT right yet` - redo just that part, update the report (new VERSION, or STATUS: NO CHANGE), STOP.
 - `G-NN OWNER PICKED this model: <path>` - use exactly that model, update the report, STOP.
+
+A red robot line you are sure is the ROBOT's mistake (its ruler, its timing, a test that waits for luck): do not fight it - add one line to jobs/HELP.md: `HELP-VP: window N · G-NN · robot fault: <the exact red line> - <why it is wrong>`. The VP puts it in tools/game-check/known-faults.json and from the next check that line is yellow ("KNOWN ROBOT FAULT") and never blocks your job.
