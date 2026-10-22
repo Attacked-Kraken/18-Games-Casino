@@ -786,4 +786,72 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-feet-within-3cm',
+    ask: 'BUILD G-146 (art director): every player stands ON the ground - soles measured on the skinned body (the reality robot method) across standing and the batter trot: 0 readings sunk more than 5 cm and every reading within 3 cm of the ground',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player && window.__test && window.__test.stadium && window.__test.stadium.loaded)); if (!ready) await h.wait(500); }
+      if (!ready) return 'the ballpark / players never became ready';
+      const installed = await h.eval(() => {
+        const R = window.__reality;
+        const groups = [R.player, ...(R.others || [])];
+        const sets = [];
+        for (const G of groups) {
+          const feet = [];
+          G.traverse(o => { if (o.isBone && (o.name === 'foot_l' || o.name === 'foot_r')) feet.push(o); });
+          for (const c of feet) {
+            const ids = new Set(); c.traverse(n => { if (n.isBone) ids.add(n.uuid); });
+            const list = [];
+            G.traverse(m => {
+              if (!m.isSkinnedMesh || !m.skeleton || !m.geometry || !m.geometry.attributes.skinIndex) return;
+              const bi = m.skeleton.bones.map((bn, i) => ids.has(bn.uuid) ? i : -1).filter(i => i >= 0);
+              if (!bi.length) return;
+              const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+              for (let v = 0; v < si.count; v++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(v, k))) w += sw.getComponent(v, k); if (w > 0.5) vs.push(v); }
+              if (vs.length) list.push({ m, vs });
+            });
+            if (list.length) sets.push({ bone: c, list });
+          }
+        }
+        if (!sets.length) return false;
+        window.__soleLog = [];
+        const vec = sets[0].bone.position.clone();
+        window.__soleTimer = setInterval(() => {
+          for (const s of sets) {
+            let sole = null;
+            for (const { m, vs } of s.list) {
+              if (!m.visible) continue;
+              m.updateMatrixWorld(true); if (m.skeleton.update) m.skeleton.update();
+              for (const i of vs) { m.getVertexPosition(i, vec); m.localToWorld(vec); if (sole == null || vec.y < sole) sole = vec.y; }
+            }
+            if (sole != null) {
+              const p = s.bone.getWorldPosition(vec);
+              let gy = 0; try { gy = +R.ground(p.x, p.z); } catch (e) {}
+              window.__soleLog.push(+(sole - gy).toFixed(3));
+            }
+          }
+        }, 50);
+        return true;
+      });
+      if (!installed) return 'no skinned feet found on the players - the sole sampler could not be installed';
+      await h.wait(3000);
+      await h.eval(() => window.__reality.go(true));
+      await h.wait(6000);
+      await h.eval(() => window.__reality.go(false));
+      await h.wait(2000);
+      const res = await h.eval(() => {
+        clearInterval(window.__soleTimer);
+        const log = window.__soleLog || [];
+        let min = null, sunk = 0;
+        for (const v of log) { if (min == null || v < min) min = v; if (v < -0.05) sunk++; }
+        return { n: log.length, min, sunk };
+      });
+      if (!res || res.n < 100) return 'too few sole readings (' + (res ? res.n : 0) + ') - the players were not sampled enough to prove ground contact';
+      if (res.sunk > 0) return res.sunk + ' of ' + res.n + ' sole readings sunk more than 5 cm under the ground (worst ' + res.min + ' m)';
+      if (res.min < -0.03) return 'worst sole reading ' + res.min + ' m over ' + res.n + ' readings - outside the 3 cm ground-contact band';
+      return true;
+    },
+  },
 ];
