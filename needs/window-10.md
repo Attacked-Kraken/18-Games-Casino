@@ -1,0 +1,7 @@
+# Window 10 - what would get a sent-back game right the FIRST time
+
+1. Start from today's game, not the complaint: a tester replays the CURRENT build first and re-measures every send-back line with numbers. On my last pass, two handed-down items were already fixed on main - a redo that skips this step rebuilds what is already right and ships what is still wrong.
+2. Proof before build: each surviving complaint becomes a failing tester- play test, written by a tester window that never touches the build. The redo is done when those exact tests pass on the new build - a merge alone never counts as done.
+3. Every adjective gets a number or a question: real 3D = the rig probe finds real bones at 1.75-1.95 m; blurry = renderer pixel ratio plus the robot's blur check at phone size; close camera = the player's measured share of the frame. A complaint nobody can turn into a number goes on HELP.md before the build starts, not back to the owner after it.
+4. Sign-off plays it the way the owner holds the phone: both orientations, start to finish, every mode. My G-105 pass found a game that was green in landscape with 8 of 9 menu buttons off-screen in portrait - the robot's one screen size is not the owner's phone.
+5. The report names what was NOT tested. A redo that hides its blind spots gets sent back for exactly those spots; honest gaps (my last report listed camera smoothness and foot-slide as untested) are what let the owner trust the parts that say done.
