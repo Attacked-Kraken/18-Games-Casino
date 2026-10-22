@@ -210,3 +210,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-121 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-121.md | build/g-121-fix1-apexflight |
 | G-132 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-132.md | build/g-132-apexflight |
 | G-132 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-132.md | build/g-132-fix1-apexflight |
+| G-141 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-141.md | build/g-141-fix1-apexflight |
