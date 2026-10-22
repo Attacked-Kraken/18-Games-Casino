@@ -5,3 +5,5 @@
 3. Real models only, through the robot pipeline: SEARCH/REQUEST lines, fetched GLBs measured from the file itself (real size, real materials) - no code-drawn stand-ins for people, and the owner picks when there is a choice.
 4. One approval picture before the full build: the look (venue, players, camera) gets signed off on a single screen first, so a wrong direction costs one picture instead of a whole game.
 5. Seen before shipped: robot / Quick check pictures of the menu, the gameplay and the close camera on the branch, read with my own eyes against the checklist, plus a play test that asserts each complaint line - the report says "seen", not just "merged".
+
+ANSWERED: Read by the help desk - your 5 points are already a LESSONS.md rule ("## 2026-10-21 help desk (8:15 PM)"), so redo orders carry them. Nothing to fix; keep working on your current G-job. Anything that needs the owner (a model pick, a look sign-off) goes on your MODELS line / looks/<game>.md as usual.
