@@ -638,7 +638,7 @@ async function attachAthletes(H){
       // the stick in both hands, and the owner's skating stance (lean 15-20, knees 25-30, hips back, wide).
       const T = TEAMS[s.team];
       const kitG = HK({ jersey: s.goalie ? kit.goalieTop : kit.top, yoke: kit.bottom, trim: T.trim, pants: new THREE.Color(kit.bottom).multiplyScalar(.55).getHex(),
-        helmet: T.helmet, gloves: kit.bottom, socks: s.goalie ? kit.goalieTop : kit.top, num: s.num, name: s.surname || '', crest: T.name[0], goalie: !!s.goalie, cage: true, // G-186: an open cage instead of the clear visor - the visor rendered as a dark bar across the eyes and the face did not read through it (art director, img/apexhockey-face.jpg); the kit cage is open steel bars and the face reads through it
+        helmet: T.helmet, gloves: kit.bottom, socks: s.goalie ? kit.goalieTop : kit.top, num: s.num, name: s.surname || '', crest: T.name[0], goalie: !!s.goalie,
         blade: s.goalie ? [0, .55] : [-.1, .8] });
       s._redrawPrints = () => kitG.setPrints({ num: s.num, name: s.surname || '' });
       const wrap = new THREE.Group(); s.g.add(wrap);
@@ -646,6 +646,7 @@ async function attachAthletes(H){
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
       s.kit = kitG; s.athStick = kitG.stick;
+      { const vs = kitG.parts && kitG.parts.visor; if (vs) { vs.castShadow = false; vs.material.opacity = 0.13; vs.material.metalness = 0; vs.material.roughness = 0.04; } } // G-186: the kit visor shipped cloudy - it shadowed and darkened the face into a bar across the eyes (art director, img/apexhockey-face.jpg); a visor casts no shadow and the glass is near-clear now, so the face reads through it
       a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
@@ -1620,7 +1621,7 @@ function stepCamera(dt){
 const _bv=new THREE.Vector3();
 function bladeIdx(steel){ // every steel (blade) vertex, split left/right skate (posed feet tilt, so the lowest point moves along the blade)
   const P=steel.geometry.attributes.position, L=[], R=[];
-  for(let i=0;i<P.count;i++){ if(P.getY(i)>0.35) continue; (P.getX(i)>=0?L:R).push(i); } // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test); G-186: the steel part also carries the helmet cage now (bind height 1.56+) - blade verts are the low ones only
+  for(let i=0;i<P.count;i++) (P.getX(i)>=0?L:R).push(i); // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test)
   return [L,R]; }
 const _lv1=new THREE.Vector3(), _lv2=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lx=new THREE.Vector3(), _la=new THREE.Quaternion();
 function levelBlades(s){ // G-170: the rendered boots+blades sit toe-down (owner screenshot 2026-10-22) although the kit stance flattens the foot-bone line in its own frame - the boot is mounted pitched on the foot bone, by a constant per model (measured on the rendered blades: home ~0.85 rad, away ~0.65 rad of toe-down at a standstill). Counter-pitch both feet by that constant about the true lateral axis (up x toe direction), every live frame, right after the pose: a constant keeps the blade drop a fixed property of the kit, so the grounding calibration the skate tests rely on stays exact (a per-frame measured correction made the drop vary and the markers disagreed with the bones by 5-10 cm).
