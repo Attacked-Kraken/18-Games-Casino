@@ -12,8 +12,8 @@ How to grade (be HARSH, like a paying player who just downloaded it):
 
 graded: 2026-10-22
 
-- apexbaseball.html: 34/50 - the owner's floodlit night ballpark still isn't in - it still plays in the old flat daytime park
-- apexf1.html: 14/50 - the LIGHTS OUT start button sits below the bottom of a sideways phone - you have to scroll just to start a race
+- apexbaseball.html: looks real 5/10 · plays right 8/10 · fun 7/10 · sound 7/10 · phone feel 7/10 = 34/50 - the owner's floodlit night ballpark still isn't in - it still plays in the old flat daytime park
+- apexf1.html: looks real 3/10 · plays right 4/10 · fun 3/10 · sound 3/10 · phone feel 1/10 = 14/50 - the LIGHTS OUT start button sits below the bottom of a sideways phone - you have to scroll just to start a race
 - apexflight.html: 11/50 - the plane barely moves and the controls don't answer in the air - you can't really fly it
 - apexhockey.html: 26/50 - the game plays itself: the clock runs down and the Sharks score with nobody touching the controls
 - apexracer.html: 29/50 - headlight glow floats in the air in front of the cars, past the nose
