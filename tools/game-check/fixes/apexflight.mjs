@@ -420,4 +420,84 @@ export default [
       });
     },
   },
+  {
+    id: 'play-jet-controls',
+    ask: 'G-90: the jet control pad (14 buttons + stick) is on the phone screen and every button works',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(500);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput || !F.jet) return 'no jet controls hook (window.__flight.jetInput)';
+        const ids = ['jThrUp', 'jThrDn', 'jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
+        for (const id of ids) {
+          const b = document.getElementById(id);
+          if (!b) return 'missing pad button #' + id;
+          const r = b.getBoundingClientRect();
+          if (r.width < 44 || r.height < 44) return 'pad button #' + id + ' is only ' + Math.round(r.width) + 'x' + Math.round(r.height) + 'px (min 44)';
+          if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'pad button #' + id + ' sits off the phone screen';
+        }
+        if (document.getElementById('stickZone')) return 'the old touch stick is still on the page';
+        const down = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
+        const up = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }));
+        const p0 = F.jet.paint; down('jPaint'); up('jPaint');
+        if (F.jet.paint === p0) return 'PAINT button did not change the jet paint';
+        const s0 = F.jet.style; down('jStyle'); up('jStyle');
+        if (F.jet.style === s0) return 'STYLE button did not change the jet';
+        let n = 0; while (F.jet.style !== 'fighter' && n++ < 7) { down('jStyle'); up('jStyle'); }
+        // gear in the air: raise then lower
+        F.P.pos.set(0, 300, 0); F.P.vel.set(0, 0, 40); F.P.ground = false;
+        down('jGear'); up('jGear');
+        if (F.jet.gearDown) return 'GEAR button did not raise the gear in the air';
+        down('jGear'); up('jGear');
+        if (!F.jet.gearDown) return 'GEAR button did not lower the gear again';
+        // held buttons drive their inputs
+        down('jBoost'); const boost = F.jetInput.boost === true; up('jBoost');
+        if (!boost) return 'BOOST button did not set boost while held';
+        down('jBrake'); const brake = F.jetInput.brake === true; up('jBrake');
+        if (!brake) return 'BRAKE button did not set brake while held';
+        down('jYawR'); const yaw = F.jetInput.yaw === 1; up('jYawR');
+        if (!yaw) return 'YAW button did not set yaw while held';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'tester-challenge-can-slow-to-band',
+    ask: 'Landing challenge: the jet must be able to slow to the 55-88 kt touchdown band in a descent (today: it accelerates to 130kt+ and cannot slow down, making the runway unreachable)',
+    async test(page, h) {
+      try { await h.press('#btnChal'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          const t0 = Date.now();
+          let minSpd = 999;
+          const iv = setInterval(() => {
+            // competent player: idle throttle, BRAKE airbrake on, gentle -600fpm descent
+            F.jetInput.throttle = 0;
+            if (F.P) F.P.thr = 0;
+            F.jetInput.brake = 1;
+            const vs = F.P.vel.y;
+            if (vs < -3.5) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+            else if (vs > -1.5) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.25);
+            const spdKt = F.P.vel.length() * 1.94384;
+            if (spdKt < minSpd) minSpd = spdKt;
+            // stop when we touch down, crash, or run out of time/altitude
+            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
+              clearInterval(iv);
+              if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
+              return res(true);
+            }
+            if (Date.now() - t0 > 30000) {
+              clearInterval(iv);
+              return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
+            }
+          }, 200);
+        });
+      });
+    },
+  },
 ];

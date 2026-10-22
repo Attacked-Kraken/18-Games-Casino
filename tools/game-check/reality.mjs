@@ -14,6 +14,7 @@
 //     time: () => seconds,                      // the GAME's clock (optional; owner Oct 21 5:26 PM - a busy robot computer
 //                                               //   stretches wall time and would call a sprint "walking"; game time can't)
 //     speed: () => metresPerSecond,             // the game's own player speed (optional; wins over the robot's estimate)
+//     gait: () => 'stand'|'walk'|'run',         // what the player is doing now (optional; wins over speed - owner Oct 21)
 //     expect: { length: [min, max], height: [min, max] }   // metres, overrides the kind defaults (optional)
 //   }
 // Missing hook = one CHECK line. Each broken rule = one FAIL line starting "REALITY:".
@@ -68,18 +69,24 @@ export async function realityCheck(page, wait) {
           try {
             const b = box(c); const q = wp(c); let low = b ? b.minY : Infinity;
             if (!b) {                           // bones only (no mesh): lowest bone under this node (toe) minus the sole offset
-              let lowest = q.y;
-              c.traverse && c.traverse(n => { try { const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
-              low = lowest - (+R.footOffset || 0);
+              let lowest = q.y, bones = 0;
+              c.traverse && c.traverse(n => { try { bones++; const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
+              // advisor Oct 21 2026: the shared human rig has NO toe bones, so an ankle bone sits ~8 cm above the sole
+              // and a 3 cm rule could never pass - without a footOffset the robot assumes the studio rig's 0.08 m
+              const off = R.footOffset != null ? +R.footOffset : (bones <= 1 ? 0.08 : 0);
+              low = lowest - off;
+              if (R.footOffset == null && bones <= 1) R.__assumedOffset = true;
             }
             gaps.push(+(low - g(q.x, q.z)).toFixed(3));
           } catch (e) {}
         }
+        const assumed = !!R.__assumedOffset;
         let gt = null; try { if (R.time) gt = +R.time(); } catch (e) {}
         let gs = null; try { if (R.speed) gs = +R.speed(); } catch (e) {}
+        let ga = ''; try { if (R.gait) ga = String(R.gait() || '').toLowerCase(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
-        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null,
-          x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+        return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null, assumed,
+          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -124,7 +131,15 @@ export async function realityCheck(page, wait) {
       // seconds of GAME time when the hook gives a clock (a slow robot can't stretch it); the game's own speed wins
       const dt = prev ? Math.max(0.05, s.t - prev.t) : 0.4;
       const v = s.speed != null ? s.speed : (prev ? Math.hypot(s.x - prev.x, s.z - prev.z) / dt : 0);
-      (v > 2 ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
+      // owner Oct 21 6:38 PM (window 1, G-100): the first steps of a sprint from a standstill are still under 2 m/s, but
+      // they are RUNNING steps (both feet leave the ground). A reading counts as standing/walking only when the hook's
+      // gait() says so, or - without gait() - when the player is NOT speeding up and no fast reading follows within 1 s.
+      const next = samples.slice(i + 1).find(x => x.t - s.t <= 1.0 && x.t > s.t);
+      const nv = next ? (next.speed != null ? next.speed : Math.hypot(next.x - s.x, next.z - s.z) / Math.max(0.05, next.t - s.t)) : v;
+      const speeding = next && nv > v * 1.15 + 0.2;
+      let isFast = v > 2 || speeding || nv > 2;
+      if (s.gait === 'run') isFast = true; else if (s.gait === 'walk' || s.gait === 'stand') isFast = false;
+      (isFast ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
     }
     const slowGaps = slow.flatMap(s => [s.low]);
     const floating = slowGaps.filter(g => g > 0.03).length;
@@ -143,6 +158,7 @@ export async function realityCheck(page, wait) {
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
   out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  if (gaps.length && samples.some(s => s.assumed)) out.check.push('REALITY: the contact nodes are ankle bones with no footOffset - the robot assumed the studio rig sole offset 0.08 m; set footOffset in the hook to be exact');
   if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
 }
@@ -152,15 +168,25 @@ export async function realityCheck(page, wait) {
 // any THREE camera it can find. Returns {x, y, width, height} in page pixels, or null (+ why).
 export async function playerScreenBox(page) {
   try {
-    return await page.evaluate(() => {
+    return await page.evaluate(async () => {
       const R = window.__reality, P = R && R.player;
       if (!P) return { why: 'no player in the hook' };
-      let cam = R.camera || null;
-      if (!cam) for (const k of Object.keys(window)) { try { const v = window[k]; if (v && v.isCamera && v.projectionMatrix) { cam = v; break; } } catch (e) {} }
-      if (!cam) { let root = P; while (root.parent) root = root.parent; root.traverse && root.traverse(o => { if (!cam && o.isCamera) cam = o; }); }
-      if (!cam) return { why: 'no camera found - add camera: <THREE.Camera> to window.__reality' };
-      const canvas = document.querySelector('canvas'); if (!canvas) return { why: 'no canvas' };
+      const canvas = [...document.querySelectorAll('canvas')].sort((a, b) => b.width * b.height - a.width * a.height)[0];
+      if (!canvas) return { why: 'no canvas' };
       const cr = canvas.getBoundingClientRect();
+      let cam = R.camera || null;
+      if (!cam) {
+        // the robot remembered every camera the game made (STUDIO_PROBE): the game camera is a perspective camera shaped
+        // like the screen that MOVES (follows the play); shadow / light cameras are square or never move
+        const want = cr.width / Math.max(1, cr.height);
+        const cams = (window.__cams || []).filter(c => c && c.isPerspectiveCamera && Math.abs((c.aspect || 1) - want) < 0.25);
+        const before = cams.map(c => c.matrixWorld.elements.slice());
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 300))));
+        const moved = cams.filter((c, i) => c.matrixWorld.elements.some((v, k) => Math.abs(v - before[i][k]) > 1e-4));
+        cam = moved[0] || cams[0] || null;
+      }
+      if (!cam) for (const k of Object.keys(window)) { try { const v = window[k]; if (v && v.isCamera && v.projectionMatrix) { cam = v; break; } } catch (e) {} }
+      if (!cam) return { why: 'no screen camera found - add camera: <THREE.Camera> to window.__reality' };
       P.updateMatrixWorld(true); cam.updateMatrixWorld(true); cam.updateProjectionMatrix && cam.updateProjectionMatrix();
       let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], n = 0;
       P.traverse(m => { if (!m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
@@ -182,6 +208,58 @@ export async function playerScreenBox(page) {
       const cx = (left + right) / 2, cy = top + h * 0.19;
       const x = Math.max(0, Math.min(innerWidth - size, cx - size / 2)), y = Math.max(0, Math.min(innerHeight - size, cy - size / 2));
       return { x: Math.round(x), y: Math.round(y), width: Math.round(Math.min(size, innerWidth)), height: Math.round(Math.min(size, innerHeight)), playerH: Math.round(h) };
+    });
+  } catch (e) { return { why: String(e.message).slice(0, 80) }; }
+}
+
+// A real CLOSE-UP (owner Oct 21 2026 6:45 PM: on the phone players are 20-30 px tall, so a crop of the screen is not a
+// close-up): the robot renders ONE extra frame with its own camera 'in front of the player's head', using the game's own
+// renderer and scene (remembered by STUDIO_PROBE), reads it as a JPEG and lets the game carry on. Nothing in the game
+// changes. Returns { jpg: dataURL } or { why }.
+export async function playerCloseUp(page) {
+  try {
+    return await page.evaluate(async () => {
+      const R = window.__reality, P = R && R.player;
+      if (!P) return { why: 'no player in the hook' };
+      const rend = (window.__renderers || []).find(x => x && x.domElement && x.domElement.isConnected) || (window.__renderers || [])[0];
+      if (!rend) return { why: 'no renderer found' };
+      const base = (window.__cams || []).find(c => c && c.isPerspectiveCamera) || R.camera;
+      if (!base) return { why: 'no camera found' };
+      let scene = P; while (scene.parent) scene = scene.parent;
+      P.updateMatrixWorld(true);
+      let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], n = 0;
+      P.traverse(m => { if (!m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+        const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+        mn = [Math.min(mn[0], b.min.x), Math.min(mn[1], b.min.y), Math.min(mn[2], b.min.z)]; mx = [Math.max(mx[0], b.max.x), Math.max(mx[1], b.max.y), Math.max(mx[2], b.max.z)]; n++; });
+      if (!n) return { why: 'player has no meshes' };
+      const V = base.position.constructor;
+      const h = mx[1] - mn[1], cx = (mn[0] + mx[0]) / 2, cz = (mn[2] + mx[2]) / 2;
+      const kind = String(R.kind || '').toLowerCase();
+      const tall = /person|skater|player|athlete/.test(kind) || (!/car|f1|truck|plane|bike|moto/.test(kind) && h > Math.max(mx[0] - mn[0], mx[2] - mn[2]));
+      // a person: aim at the head over the body's own spot (a bat or stick held out widens the box, not the body)
+      const wp = new V(); P.getWorldPosition(wp);
+      const look = new V(tall ? wp.x : cx, tall ? mx[1] - h * 0.16 : mn[1] + h * 0.6, tall ? wp.z : cz);
+      const fwd = new V(0, 0, 1); try { P.getWorldDirection(fwd); } catch (e) {}
+      fwd.y = 0; if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, 1); fwd.normalize();
+      const cam = base.clone();
+      cam.fov = 35; cam.aspect = 1; cam.near = 0.02; cam.far = Math.max(base.far || 1000, 200); cam.zoom = 1;
+      const span = tall ? h * 0.42 : Math.max(mx[0] - mn[0], mx[2] - mn[2]) * 0.9;   // head and shoulders / the whole car
+      const dist = (span / 2) / Math.tan(35 * Math.PI / 360) * 1.25;
+      cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08;
+      cam.lookAt(look); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+      const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
+      const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;
+      const side = Math.round(Math.min(size.x, size.y));
+      let url = '';
+      try {
+        rend.setScissorTest && rend.setScissorTest(false);
+        rend.setViewport(0, 0, side, side);
+        rend.render(scene, cam);
+        const c2 = document.createElement('canvas'); c2.width = c2.height = Math.min(480, side * pr);
+        c2.getContext('2d').drawImage(el, 0, el.height - side * pr, side * pr, side * pr, 0, 0, c2.width, c2.height);
+        url = c2.toDataURL('image/jpeg', 0.85);
+      } finally { rend.setViewport(0, 0, size.x, size.y); }
+      return url ? { jpg: url, tall } : { why: 'render failed' };
     });
   } catch (e) { return { why: String(e.message).slice(0, 80) }; }
 }

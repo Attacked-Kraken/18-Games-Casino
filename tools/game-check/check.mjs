@@ -14,7 +14,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 import path from 'path';
-import { realityCheck, playerScreenBox } from './reality.mjs';
+import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
@@ -47,6 +47,20 @@ const BRANDS = /\b(NHL|NBA|NFL|MLB|MLS|WNBA|FIFA|UEFA|NASCAR|IndyCar|Monster Jam
 // injected into every game page: counts skinned (rigged) shaders and draw calls per frame - works with any three.js build
 const STUDIO_PROBE = () => {
   const S = window.__studio = { skinned: 0, draws: 0, frames: 0, sum: 0, max: 0, t: -1 };
+  // owner Oct 21 2026 (close-up of the player): every THREE camera a game makes is remembered here, so the robot can take
+  // the close-up without the game exposing its camera (three.js sets this.isCamera = true in the Camera constructor)
+  try {
+    window.__cams = [];
+    Object.defineProperty(Object.prototype, 'isCamera', { configurable: true, set(v) {
+      Object.defineProperty(this, 'isCamera', { value: v, writable: true, enumerable: true, configurable: true });
+      try { if (v && window.__cams.length < 40) window.__cams.push(this); } catch (e) {}
+    } });
+    window.__renderers = [];
+    Object.defineProperty(Object.prototype, 'isWebGLRenderer', { configurable: true, set(v) {
+      Object.defineProperty(this, 'isWebGLRenderer', { value: v, writable: true, enumerable: true, configurable: true });
+      try { if (v && window.__renderers.length < 8) window.__renderers.push(this); } catch (e) {}
+    } });
+  } catch (e) {}
   const patch = (P) => { if (!P) return; const ss = P.shaderSource;
     P.shaderSource = function (sh, src) { if (/#define USE_SKINNING/.test(src)) S.skinned++; return ss.call(this, sh, src); };
     for (const k of ['drawElements', 'drawArrays', 'drawElementsInstanced', 'drawArraysInstanced']) { const f = P[k]; if (f) P[k] = function (...a) { S.draws++; return f.apply(this, a); }; } };
@@ -138,7 +152,8 @@ try {
 } catch (e) {}
 const results = [];
 for (const g of games) {
-  const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {} };
+  const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
+  const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -320,13 +335,29 @@ for (const g of games) {
         eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
         page: live,
       };
-      let timer;
-      try {
-        const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
-        ok = res === true; note = typeof res === 'string' ? res : '';
-      } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
-      clearTimeout(timer); dead = true;
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note });
+      let timer, inc = false; const tFx = Date.now();
+      // owner Oct 21 6:38 PM (window 1, G-100): a test that WAITS for a random game event ("no strikeout or walk happened
+      // in 29 s, so the reset could not be checked") did not find a bug - it found nothing. Such an answer is
+      // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
+      // A test says it by returning { inconclusive: 'why' }, or a sentence with "could not be checked" / "never happened".
+      const INCON = /could not be checked|couldn'?t be checked|could not be tested|never happened|did not happen in|no .{0,40} happened in \d+ ?s/i;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        dead = false; inc = false;
+        try {
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
+          ok = res === true;
+          if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
+          else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+        clearTimeout(timer); dead = true;
+        if (!inc || attempt === 2) break;
+        await freshGame();
+      }
+      // owner Oct 21 7:49 PM (tester scoreboard "the Muse never reports its own time"): every test records the robot's
+      // own play time (ms) and the mode/event it plays (fx.mode, or the first word of its id after the prefix)
+      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
+                     mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
+      if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
       if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();
@@ -350,6 +381,21 @@ for (const g of games) {
       for (const x of bad.slice(0, 3)) r.check.push(`Career mode broken: "${x.ask}"`);
       r.career = { tests: car.length, failing: bad.length };
     }
+    // SHARED CONTROLS (owner Oct 21 2026 7:08 PM, STUDIO-STANDARD §9 rule 2): a game on kit/controls.js must not keep or
+    // add its own stick code. games.json "controls": "shared" marks a game that moved; the robot then FAILS it when the
+    // shared file is not loaded in the running game, or when the page still wires its own thumbstick.
+    const usesShared = /kit\/controls\.js/.test(src);
+    const ownStick = (() => {
+      const re = /addEventListener\(\s*['"](pointerdown|touchstart)['"]/g; let m, hits = [];
+      while ((m = re.exec(src))) { const near = src.slice(Math.max(0, m.index - 500), m.index + 300); if (/stick|joy|knob|thumb/i.test(near)) hits.push(src.slice(0, m.index).split('\n').length); }
+      return hits;
+    })();
+    r.controls = { shared: usesShared, ownStick: ownStick.length };
+    if (g.controls === 'shared' || usesShared) {
+      let live = null; try { live = await page.evaluate(() => window.__controls && window.__controls.shared === true); } catch (e) {}
+      if (!usesShared || live === false) r.fail.push('SHARED CONTROLS: this game must use kit/controls.js (createControls) for its stick and buttons - the shared file is not loaded (STUDIO-STANDARD 9.2)');
+      if (ownStick.length) r.fail.push('OWN STICK CODE: the page still wires its own thumbstick (pointerdown/touchstart near "stick/joy/knob" at line ' + ownStick.slice(0, 3).join(', ') + ') - delete it and use kit/controls.js only (STUDIO-STANDARD 9.2)');
+    } else r.check.push('Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed');
   } catch (e) {}
   // FRIEND CODES (owner, 2026-10-17): every game needs "Play a friend" with friend codes (STORE-READY.md "Friend codes")
   try {
@@ -366,11 +412,11 @@ for (const g of games) {
     r.reality = rl.data; r.fail.push(...rl.fail); r.check.push(...rl.check);
     // CLOSE-UP (owner Oct 21 5:54 PM): head and shoulders of the main player, shown on his card next to the play picture
     try {
-      const fb = await playerScreenBox(page);
-      if (fb && fb.width) {
-        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 80, clip: fb }));
+      const fb = await playerCloseUp(page);
+      if (fb && fb.jpg) {
+        fs.writeFileSync(path.join(out, 'img', slug + '-face.jpg'), Buffer.from(fb.jpg.split(',')[1], 'base64'));
         r.img.face = 'img/' + slug + '-face.jpg';
-      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player + camera)');
+      } else r.check.push('No close-up of the player: ' + ((fb && fb.why) || 'unknown') + ' (REALITY.md hook: player)');
     } catch (e) { r.check.push('Close-up picture failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
     // PHONE LAYOUT robot (owner Oct 20, Grok audit): buttons on top of each other / cut off, a stick that can get stuck
     try { const mb = await mobileCheck(page, g.file); r.layout = mb.data; r.fail.push(...mb.fail); r.check.push(...mb.check); }
@@ -434,6 +480,23 @@ for (const g of games) {
     r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
     for (const c of browser.contexts()) if (c !== lab.context()) await c.close().catch(() => {});
   }
+  // KNOWN ROBOT FAULTS (owner Oct 21 2026 7:08 PM): a red line the robot itself is wrong about never blocks a builder
+  try {
+    const kf = JSON.parse(fs.readFileSync(path.join(here, 'known-faults.json'), 'utf8')).faults || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const live = kf.filter(f => f.match && (!f.game || f.game === g.file) && (!f.until || f.until >= today));
+    if (live.length) {
+      const keep = [];
+      for (const f of r.fail) {
+        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f); } catch (e) { return false; } });
+        if (hit) r.check.push('KNOWN ROBOT FAULT (robot side owns it, not the builder): ' + f.slice(0, 160) + ' - ' + (hit.why || '').slice(0, 140));
+        else keep.push(f);
+      }
+      r.knownFaults = r.fail.length - keep.length;
+      r.fail = keep;
+    }
+  } catch (e) {}
+  r.playMs = Date.now() - tGame0; r.endedAt = new Date().toISOString();
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);
