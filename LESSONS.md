@@ -70,3 +70,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (2:40 PM)
 - A bug found in an old tester run (1 s of game time per frame, Hockey G-129) may already be fixed: before asking for an owner job, read the line on today's main and the robot play test that covers it (play-clock-real-time); if it passes, say "already fixed" - no new job.
+
+## 2026-10-22 help desk
+- When orders land while the owner's own fix is in flight: owner's fix first, then the older small fix, then the new job - one at a time, one report each.
