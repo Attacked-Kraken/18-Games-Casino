@@ -37,7 +37,10 @@ keep the classic one-column menu; no other screen is touched.
 JOB G-122 (owner): an upright phone presents the SAME sideways box rotated, but the media
 query keyed on the viewport's own orientation - portrait kept the tall one-column menu
 inside the 390px-tall box and 8 of the 9 buttons landed off-screen. Portrait now gets the
-same compact menu; nothing else changes. */
+same compact menu; nothing else changes.
+JOB G-139 (owner): DONE.md's 44x44 touch target applies in the compact menu too - every
+menu button stands at least 44px tall (they were 36/30); the two-column compact layout
+absorbs the height, the menu still fits the sideways box with no scrolling. */
 @media (orientation:portrait), (orientation:landscape) and (max-height:460px){
 #menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
 #menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
@@ -47,8 +50,8 @@ same compact menu; nothing else changes. */
 #menu label.f{font-size:10px;margin:3px 0 1px}
 #menu input.txt{padding:5px;font-size:14px}
 #menu input[type=color].swatch{height:26px}
-#menu .btn{margin:3px 0;padding:6px 10px;min-height:36px;font-size:14px}
-#menu .btn.small{padding:4px 8px;min-height:30px;font-size:12px}
+#menu .btn{margin:3px 0;padding:6px 10px;min-height:44px;font-size:14px}
+#menu .btn.small{padding:4px 8px;min-height:44px;font-size:12px}
 #menu .hint{font-size:11px;margin:2px 0}
 #menuRivalLine{grid-column:1/-1}
 }
@@ -2321,6 +2324,13 @@ because game time ran in slow motion on weak phones; with game time tracking rea
 in by the same race moment at any frame rate. Same target lean (0.34), same final posture. */
 rig._lean=(rig._lean||0)+(leanT-(rig._lean||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
+// JOB G-139 (owner): ground trim. The UAL run clips carry their ground line under the
+// rig origin - at late stance the planted foot's sole measures up to 0.14 m UNDER the
+// track (REALITY SINK). While running, ease the body up 0.07 m so the stance foot
+// lands on the track; at the marks / idle / jumps the trim is 0 and feet stay planted.
+const trimT=(mode==='run'&&(speedFrac||0)>=0.04)?0.07:0;
+rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
+try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);
 rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
