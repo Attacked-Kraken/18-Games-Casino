@@ -25,6 +25,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a play-test file with a syntax error silently ran zero tests → it is now a hard FAIL naming the file; run node --check before the PR.
 - all · the REALITY robot read the ankle bone and the robot's clock → contact is the foot's LOWEST point, speed/gait from the game (hook time(), speed(), gait()); a sprint's first steps are running steps.
 - all · the game loop capped every frame at 0.033 s, so game time crawled on the robot → the simulation banks real time; the visual dt stays clamped; cameras ease by the simulation dt.
+- all · Baseball's feet sat 5 cm in the dirt and the fix tried was editing footOffset → a red SINK / FLOAT line means the BODY is in the wrong place: move the player's height on the field until the ground line is clean. Never change the hook's measuring numbers (footOffset, contact, ground) to clear a red line - the robot measures the real sole on the body and ignores footOffset (PR #1027).
 
 ## Look and build
 - all · hero things built from boxes / capsules → the player's car, bike, jet, athlete is a real model (CC0 / CC-BY with credit), picked through the model gate; people are the rigged studio humans.
