@@ -741,4 +741,20 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-reality-hook-camera',
+    mode: 'recheck',
+    ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      let keys = null;
+      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
+      if (!keys) return 'window.__reality never appeared';
+      const cam = await h.eval(() => { const c = window.__reality.camera; return c ? { persp: !!c.isPerspectiveCamera, fov: c.fov } : null; });
+      if (!cam) return '__reality has ' + keys.join(', ') + ' but no camera, so the robot cannot take the player close-up';
+      if (!cam.persp) return '__reality.camera is not the game PerspectiveCamera';
+      return true;
+    },
+  },
 ];
