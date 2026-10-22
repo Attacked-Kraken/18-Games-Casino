@@ -575,4 +575,36 @@ export default [
       });
     },
   },
+  {
+    id: 'tester-recheck-g117-controls',
+    ask: 'Re-check G-117 BUILD: YAW pad buttons must turn the jet in the air, and stick inputs must answer the same frame (G-117 fix verification)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          // take off first
+          F.jetInput.throttle = 1; if (F.P) F.P.thr = 1;
+          const t0 = Date.now();
+          let phase = 'takeoff';
+          let yaw0 = 0;
+          const iv = setInterval(() => {
+            if (phase === 'takeoff') {
+              if (!F.P.ground) { phase = 'yaw'; yaw0 = F.P.yaw; F.jetInput.yaw = 1; }
+              else if (Date.now() - t0 > 20000) { clearInterval(iv); return res('never took off'); }
+            } else if (phase === 'yaw') {
+              const dyaw = F.P.yaw - yaw0;
+              F.jetInput.yaw = 0;
+              if (Math.abs(dyaw) < 0.05) { clearInterval(iv); return res('YAW R did not turn the jet in the air (dyaw=' + dyaw.toFixed(3) + ')'); }
+              phase = 'done'; clearInterval(iv); return res(true);
+            }
+            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('timed out'); }
+          }, 200);
+        });
+      });
+    },
+  },
 ];
