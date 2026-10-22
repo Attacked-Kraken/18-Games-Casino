@@ -1562,11 +1562,15 @@ export default [
     try { await h.press('#playBtn'); } catch (e) {}
     // from here the test touches NOTHING - the human is idle
     let sawPlay = false, done = false;
+    let prev = null, gameSec = 0, realSec = 0; // clock SPEED: game seconds per real second, counted only between two samples that are both in play
     const t0 = Date.now();
     while (Date.now() - t0 < 55000) {
       await h.wait(200);
       const s = await read();
       if (!s) continue;
+      const nowMs = Date.now();
+      if (prev && prev.state === 'play' && s.state === 'play' && prev.period === s.period && s.clockT <= prev.clockT) { gameSec += prev.clockT - s.clockT; realSec += (nowMs - prev.at) / 1000; }
+      prev = { state: s.state, period: s.period, clockT: s.clockT, at: nowMs };
       if (s.state === 'play') sawPlay = true;
       if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
       if (s.period === 1 && s.clockT <= 105) { done = true; break; }
@@ -1574,6 +1578,11 @@ export default [
     }
     if (!sawPlay) return 'the untouched match never reached play';
     if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    // owner Oct 22 8:38 AM: the clock looked 6-7x too fast. Real time and the match clock must agree (1 game second per real second; frames are caught up in slices, so a slow robot does not change it).
+    if (realSec >= 5) {
+      const rate = Math.round(gameSec / realSec * 100) / 100;
+      if (rate > 1.25) return 'the match clock runs ' + rate + ' game seconds per real second (' + Math.round(gameSec * 10) / 10 + ' game s in ' + Math.round(realSec * 10) / 10 + ' real s in play) - it must not run faster than real time (1.0)';
+    }
     return true;
   },
 },
