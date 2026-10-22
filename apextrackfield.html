@@ -2544,7 +2544,11 @@ const PMAX=ev.eng==='sprint'?(ev.dist<=100?11.0:ev.dist<=200?10.6:10.0)
 : ev.eng==='distance'?10.4 : ev.eng==='hurdles'?(ev.dist<=110?9.2:9.8)
 : ev.eng==='relay'?10.8 : 10.5;
 if(ev.eng==='sprint'){
-const straight = ev.dist<=110;
+// owner 2026-10-21: the sprint start used a straight-line model that runs past the west
+// end of the painted track, so the 100m field started in the stands. Every sprint now
+// places on the oval (visS) like the 200m already did - identical on the home straight,
+// on the painted bend where the straight runs out.
+const straight = false;
 { const lanes=[3,0,1,2,4,5,6]; // JOB J7 round 2: blocks for the full field
 if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
 else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
@@ -2608,7 +2612,9 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 };
 }
 else if(ev.eng==='hurdles'){
-const straight=ev.dist<=110;
+// owner 2026-10-21: same fix as the sprint engine - the 110m hurdles field, its hurdles
+// and its blocks now all sit on the painted oval (visS), not past the end of the straight.
+const straight=false;
 { const lanes=[3,0,1,2,4,5,6]; // JOB J7 round 2: blocks for the full field
 if(straight) W3D.setBlocks(lanes.map(l=>({x:-ev.dist-0.45, z:straightZ(l), heading:Math.PI/2})));
 else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(l)); return {x:lp.x-lp.tx*0.45, z:lp.z-lp.tz*0.45, heading:Math.atan2(lp.tx,lp.tz)}; }));
