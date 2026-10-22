@@ -753,7 +753,7 @@ function step(dt) {
   ACC.set(0, -GRAV, 0);
   ACC.addScaledVector(F, THRUST * P.thr * (padBoost ? 1.9 : 1));   // BOOST pad button = afterburner (G-90)
   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
-  if (padBrake && !P.ground && v > 0.01) ACC.addScaledVector(P.vel, -0.012 * v);   // BRAKE pad button = airbrake (G-90)
+  if (padBrake && !P.ground && v > 0.01) ACC.addScaledVector(P.vel, -0.008 * v);   // BRAKE pad button = airbrake (G-90, G-115, G-116)
   if (!P.ground) {
     // Angle of attack = pitch vs the FLIGHT PATH, not pitch alone. With pitch
     // alone, capped lift beat gravity at ANY attitude once fast: full nose-down
@@ -763,7 +763,7 @@ function step(dt) {
     const aoa = clamp(1 + (P.pitch - fpa) * 2.5, 0, 1.5);
     // Stall: lift fades only when really pulling up too slow (stallNow), and gentler than before
     const stallFade = stallNow ? Math.max(0.45, v / VSTALL) : 1.0;
-    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade); }      // lift, capped
+    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade * (padBrake ? 0.35 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116)
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
 
@@ -1048,10 +1048,11 @@ function loop(now) {
   if (document.hidden) return;
   pollKeys();
   const thrWas = jetInput.throttle;
+  const brakeWas = jetInput.brake;   // tick() recomputes brake from the keyboard when no pad button is held, wiping a brake set through the hook before the game reads it (G-115)
   jetInput.tick(dt);
   if (phase === 'fly' || phase === 'scored') {
     if (jetStickHeld) { inp.pitchUp = clamp(jetInput.pitch, -1, 1); inp.rollRight = clamp(jetInput.roll, -1, 1); }
-    padYaw = jetInput.yaw; padBoost = jetInput.boost; padBrake = jetInput.brake;
+    padYaw = jetInput.yaw; padBoost = jetInput.boost; padBrake = jetInput.brake || brakeWas;
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
     // robot's play tests can still set the throttle directly.
