@@ -10,13 +10,11 @@ How to grade (be HARSH, like a paying player who just downloaded it):
 - Broken, toy-looking, or the owner has complained = under 20/50. 40+/50 only if you'd pay for it.
 - After the dash: the ONE biggest problem, in plain words.
 
-graded: 2026-10-18
+graded: 2026-10-22
 
-- apexbaseball.html: 24/50 - green computer-screen menu + PLAY BALL button 192px off-screen
-- apexf1.html: 18/50 - AI can't finish a lap, lap counter and results broken; menu buttons off-screen
-- apexflight.html: 14/50 - green menu, gameplay frozen, zero play tests
-- apexhockey.html: 31/50 - stutter (15 freezes in 6s); icing and goal-restart logic broken
-- apexmonstertruck.html: 22/50 - owner likes it now (KEEP) but check shows drive/crush/jump tests failing; no venue
-- apexracer.html: 26/50 - zero play tests, no owner-approved venue
-- apexsoccer.html: 19/50 - Safari script crash (mate.pos); players don't steal, mark, pass, or position
-- apextrackfield.html: 20/50 - career mode stalls, events don't load; FREE PLAY button 83px off-screen
+- apexbaseball.html: 34/50 - the owner's floodlit night ballpark still isn't in - it still plays in the old flat daytime park
+- apexf1.html: 14/50 - the LIGHTS OUT start button sits below the bottom of a sideways phone - you have to scroll just to start a race
+- apexflight.html: 11/50 - the plane barely moves and the controls don't answer in the air - you can't really fly it
+- apexhockey.html: 26/50 - the game plays itself: the clock runs down and the Sharks score with nobody touching the controls
+- apexracer.html: 29/50 - headlight glow floats in the air in front of the cars, past the nose
+- apextrackfield.html: 19/50 - rival runners run straight through the hurdles - only you have to jump them
