@@ -83,3 +83,4 @@ FIXED: robot line filed for the VP (HELP-VP: robot · wall-clock 20-30 s budgets
 HELP-VP: robot · tools/game-check/ + known-faults.json · Flight tests tester-challenge-can-slow-to-band, tester-recheck-g117-controls and the G-121 'ocean must still crash' test die on 20-30 s WALL-clock budgets when the runner is degraded (play job 29-45 min vs ~10); judge them in game time or retry once on a slow run, and add them to known-faults.json (robot side, expire 2026-10-29) meanwhile
 
 HELP-VP: TEST (no window, no job) · wake test written 11:55:19 AM Central by VP - nobody needs to act; this only proves a new HELP line wakes the VP Claude
+FIXED: test ok - the VP Claude was woken by this line at 11:57 AM Central with nobody typing.
