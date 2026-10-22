@@ -1131,15 +1131,18 @@ function aiSkater(s,dt){
   s.thinkT=0.25+Math.random()*0.15;
   const isHome=s.team==='home';
   const isControlled=isHome&&s===controlled&&state==='play';
-  if(isControlled){ s._chasing=false; return; } // input-driven
+  const humanDriving=joyVec.active||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight;
+  if(isControlled&&humanDriving){ s._chasing=false; return; } // input-driven while the human is actually driving him
+  // G-135: untouched, the human's skater plays with his team (defends, chases, takes the puck back) instead of standing at centre - but he never attacks for the human (see the carrier branch)
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
   if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
   const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
-  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled)) mates.push(m); } // the user's skater is input-driven — never count him as a chaser
+  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled&&humanDriving)) mates.push(m); } // the user's skater counts as a chaser only while the human is not driving him (G-135)
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
   const carrier=puck.owner;
   if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
+    if(isControlled){ s.target.copy(s.pos); s._chasing=false; return; } // G-135: a puck the idle human's skater wins is held for the human - he never attacks for him
     const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
     let nearestOpp=1e9;
     for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
@@ -1328,6 +1331,12 @@ function stepSkater(s,dt){
       // CLOSE camera looks along the attacking X axis: screen-right = +Z, screen-up = attacking direction.
       if(camMode===2){ const ad=TEAMS.home.dir; des.set(-iy/m*sp*ad,0,ix/m*sp); }
       else des.set(ix/m*sp,0,iy/m*sp); }
+    else { // G-135: no input - skate where the team brain sends him (defend, chase, support), like any AI skater
+      const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
+      const arr=s._chasing?1.0:2.5;
+      if(d>arr){ const sp2=Math.min(22.5,8.5+d*0.5); des.set(dx/d*sp2,0,dz/d*sp2); }
+      else des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
+    }
   } else if(state==='play'){
     const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
     const arr=s._chasing?1.0:2.5;
@@ -1633,6 +1642,9 @@ window.__reality={
   get contact(){ const c=controlled&&controlled._contact; if(!c) return []; return [c[0].position.y<=c[1].position.y? c[0] : c[1]]; }, // the skate carrying the weight, marked at its real lowest blade edge (the other one lifts on each stride)
   footOffset:0,
   ground:(x,z)=>0,
+  camera, // G-129: the game camera itself - the robot takes its player close-up from it
+  time:()=>(period-1)*PERIOD_LEN + (PERIOD_LEN - Math.min(Math.max(clockT,0),PERIOD_LEN)), // G-129: game seconds on the match clock (periods played + time gone this period) - the clock the robot measures movement against; gameNow itself is frozen at 0 by a comment-swallowed update in tick (see the G-129 report), so the hook reads the match clock, which ticks in true sim seconds
+  speed:()=>controlled? Math.hypot(controlled.vel.x,controlled.vel.z)/3.26 : 0, // G-129: the controlled skater's speed in metres per second (3.26 units = 1 m)
   go:(on)=>{ joyVec.x=on?1:0; joyVec.y=0; joyVec.active=!!on; },
   expect:{ height:[1.55*3.26, 2.2*3.26] } // rink is built at 3.26 units per metre; gaps are in the same units (3 cm = 0.1)
 }

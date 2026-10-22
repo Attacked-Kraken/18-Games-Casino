@@ -1524,6 +1524,60 @@ export default [
   },
 },
 {
+  id: 'tester-reality-hook-fields',
+  ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => ''); if (s === 'play' || s === 'faceoff') break; await h.wait(500); }
+    const f = await h.eval(() => {
+      const r = window.__reality;
+      if (!r) return null;
+      return { camera: 'camera' in r, time: typeof r.time, speed: typeof r.speed, go: typeof r.go, contact: Array.isArray(r.contact) };
+    });
+    if (!f) return 'window.__reality is not set in a running match';
+    const missing = [];
+    if (!f.camera) missing.push('camera');
+    if (f.time !== 'function') missing.push('time()');
+    if (f.speed !== 'function') missing.push('speed()');
+    if (missing.length) return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+    return true;
+  },
+},
+
+{
+  id: 'play-idle-wolves-defend',
+  ask: 'with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds',
+  async test(page, h) {
+    const read = () => h.eval(() => { const g = window.__hk && window.__hk.game; if (!g) return null; return { state: g.state, period: g.period, clockT: g.clockT, sA: g.scoreA, sH: g.scoreH }; }).catch(() => null);
+    let r = await read();
+    if (!r || r.state !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 12000, polling: 'raf' }); } catch (e) {}
+      r = await read();
+    }
+    if (!r || r.state !== 'menu') return 'the game was not at its menu to start the untouched match';
+    try { await h.press('#playBtn'); } catch (e) {}
+    // from here the test touches NOTHING - the human is idle
+    let sawPlay = false, done = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 55000) {
+      await h.wait(200);
+      const s = await read();
+      if (!s) continue;
+      if (s.state === 'play') sawPlay = true;
+      if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
+      if (s.period === 1 && s.clockT <= 105) { done = true; break; }
+      if (s.period > 1) { done = true; break; }
+    }
+    if (!sawPlay) return 'the untouched match never reached play';
+    if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    return true;
+  },
+},
+{
   id: 'tester-hub-reset-stays-armed',
   mode: 'reality',
   ask: 'TESTER (G-131): closing the career hub disarms the ERASE button - one tap arms it, but once the hub has been closed and reopened the button must be back to un-armed, so a later single tap cannot erase the career',
@@ -1553,5 +1607,4 @@ export default [
     return true;
   },
 },
-
 ];
