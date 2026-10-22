@@ -63,3 +63,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (9:45 AM)
 - A job step that names a feature but no place for it (a LOW quality option, "parked"): choose the smallest reading, keep everything else as is, write the choice in the report's NOTE line - and any new menu control must fit inside 844x390.
+
+## 2026-10-22 help desk
+- Tests that wait on WALL-clock seconds fail on slow runner days (Flight G-141). Rule: a play test judges time in GAME time (or retries once on a fresh page); a wall-clock budget is a robot fault - file "HELP-VP: robot", never fight it in the game.

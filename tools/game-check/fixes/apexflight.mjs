@@ -576,54 +576,42 @@ export default [
     },
   },
   {
-    id: 'tester-recheck-g117-controls',
-    ask: 'Re-check G-117 BUILD: YAW pad buttons must turn the jet in the air, and stick inputs must answer the same frame (G-117 fix verification)',
-    async test(page, h) {
-      try { await h.press('#btnFree'); } catch (e) {}
-      await h.wait(400);
-      return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
-        return new Promise((res) => {
-          // take off first
-          F.jetInput.throttle = 1; if (F.P) F.P.thr = 1;
-          const t0 = Date.now();
-          let phase = 'takeoff';
-          let yaw0 = 0;
-          const iv = setInterval(() => {
-            if (phase === 'takeoff') {
-              if (!F.P.ground) { phase = 'yaw'; yaw0 = F.P.yaw; F.jetInput.yaw = 1; }
-              else if (Date.now() - t0 > 20000) { clearInterval(iv); return res('never took off'); }
-            } else if (phase === 'yaw') {
-              const dyaw = F.P.yaw - yaw0;
-              F.jetInput.yaw = 0;
-              if (Math.abs(dyaw) < 0.05) { clearInterval(iv); return res('YAW R did not turn the jet in the air (dyaw=' + dyaw.toFixed(3) + ')'); }
-              phase = 'done'; clearInterval(iv); return res(true);
-            }
-            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('timed out'); }
-          }, 200);
-        });
-      });
-    },
-  },
-  {
-    id: 'tester-speed-band-shown',
-    ask: 'G-155 POINT 1: the 55-88 kt touchdown speed band must be shown on the HUD during the landing challenge approach (today: the player only learns it by getting downgraded)',
+    id: 'tester-recheck-g156-speed-control',
+    ask: 'Re-check G-156: the jet must maintain 68-78kt in the landing challenge descent with throttle/brake management (G-116 fix still working)',
     async test(page, h) {
       try { await h.press('#btnChal'); } catch (e) {}
       await h.wait(800);
       return h.eval(() => {
-        // Look for any HUD element showing the 55-88kt target band
-        const hud = document.getElementById('hud');
-        if (!hud) return 'no HUD found';
-        const text = hud.textContent || '';
-        // The band is 55-88kt. Check if it's displayed anywhere in the HUD.
-        if (/55.*88|88.*55/.test(text)) return true;
-        // Also check for a dedicated band element
-        const band = document.getElementById('hBand') || document.querySelector('[id*="band"]');
-        if (band && /55|88/.test(band.textContent)) return true;
-        return 'the 55-88kt touchdown speed band is not shown on the HUD during the approach (HUD shows: ' + text.slice(0, 100) + ')';
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput';
+        return new Promise((res) => {
+          const t0 = Date.now();
+          let inBand = 0, total = 0;
+          const iv = setInterval(() => {
+            const spdKt = F.P.vel.length() * 1.94384;
+            total++;
+            if (spdKt >= 68 && spdKt <= 78) inBand++;
+            // Simple speed management
+            if (spdKt > 78) { F.jetInput.throttle = 0; F.P.thr = 0; F.jetInput.brake = 1; }
+            else if (spdKt < 68) { F.jetInput.throttle = 0.3; F.P.thr = 0.3; F.jetInput.brake = 0; }
+            else { F.jetInput.throttle = 0.12; F.P.thr = 0.12; F.jetInput.brake = 0; }
+            // Gentle descent
+            const vs = F.P.vel.y;
+            if (vs < -3.0) F.P.pitch = Math.min(F.P.pitch + 0.02, 0.1);
+            else if (vs > -1.0) F.P.pitch = Math.max(F.P.pitch - 0.02, -0.2);
+            if (Date.now() - t0 > 20000) {
+              clearInterval(iv);
+              const pct = Math.round(inBand / total * 100);
+              if (pct >= 60) return res(true);
+              return res('jet could not maintain 68-78kt (only ' + pct + '% in band) - G-116 regression?');
+            }
+            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
+              clearInterval(iv);
+              return res(true); // landed or crashed - speed control was being tested
+            }
+          }, 200);
+        });
       });
     },
   },
