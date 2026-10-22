@@ -1628,7 +1628,7 @@ function levelBlades(s){ // G-170: the rendered boots+blades sit toe-down (owner
   if(paused || (state!=='play'&&state!=='faceoff'&&state!=='whistle'&&state!=='goal'&&state!=='pen')) return;
   if(!s.ath||!s.ath.object) return;
   if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
-  const B=s._feet, d=s.goalie?0.3:(s.team==='home'?0.85:0.65); // goalies 0.3: the ready stance splays their feet and the goalie test anchors their blade drop to the roster's - a small constant keeps that anchor exact; their blades are judged by the goalie test, not this one
+  const B=s._feet, d=s.goalie?0.3:(s.team==='home'?1.0:0.8); // round 1: raised from 0.85/0.65 - the robot main run still read one standing skater at 5.9 cm against the 5.5 bar // goalies 0.3: the ready stance splays their feet and the goalie test anchors their blade drop to the roster's - a small constant keeps that anchor exact; their blades are judged by the goalie test, not this one
   for(const sd of ['l','r']){
     const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) continue;
     const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2);
