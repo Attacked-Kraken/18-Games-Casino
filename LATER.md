@@ -13,3 +13,7 @@ before the owner says those 6 are done. Then do these in order, one job each:
    skates etc.), FPS floor robot, complaints list with proof pictures, phone home-screen install.
 4. New games - built split from day one (§9) and by GAME-DESIGN.md, the rulebook for every NEW game (grey-box fun in
    30 s, small scope, teach by playing, steal the shape + invent one thing, content as data, kill early).
+5. Public build log - a weekly note: what the swarm built, what the robots rejected, what the gate decided (advisor idea, Oct 22).
+6. Player-placed job - subscribers vote; the winning wish enters the real QUEUE with a real job number (advisor idea, Oct 22).
+7. Birth certificate - every Arcade game carries a page: born-on date, jobs, robot checks, testers, gate history (advisor idea, Oct 22).
+(Items 5-7 are parked ideas, NOT jobs - owner Oct 22 1:21 AM. They stay parked until he says the 6 games are done.)

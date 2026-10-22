@@ -1502,4 +1502,79 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-clock-real-time',
+  ask: 'the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score',
+  async test(page, h) {
+    const read = () => h.eval(() => { const c = (document.getElementById('clock') || {}).textContent || ''; const m = c.match(/(\d+):(\d+)/); return { sec: m ? (+m[1]) * 60 + (+m[2]) : -1, score: (document.getElementById('score') || {}).textContent || '' }; }).catch(() => ({ sec: -1, score: '' }));
+    // 1. untouched 10 s from the opening screen: nothing moves
+    const a = await read();
+    await h.wait(10000);
+    const b = await read();
+    if (b.sec !== a.sec || b.score !== a.score) return 'the game moved with nobody touching it: clock ' + a.sec + 's -> ' + b.sec + 's, score ' + a.score + ' -> ' + b.score;
+    // 2. a real PLAY press, then play 6 s: the clock may not lose much more than 6 s
+    await h.eval(() => { const pb = document.getElementById('playBtn'); if (pb) pb.click(); }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 15000, polling: 'raf' }); } catch (e) { return 'the match never reached play after PLAY was pressed'; }
+    const t0 = Date.now(); const c0 = await read();
+    await h.wait(6000);
+    const c1 = await read(); const wall = (Date.now() - t0) / 1000;
+    const used = c0.sec - c1.sec;
+    if (used > wall * 1.5 + 2) return 'the clock runs too fast: ' + used + 's came off the clock in ' + wall.toFixed(1) + 's of real time';
+    return true;
+  },
+},
+{
+  id: 'tester-reality-hook-fields',
+  ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => ''); if (s === 'play' || s === 'faceoff') break; await h.wait(500); }
+    const f = await h.eval(() => {
+      const r = window.__reality;
+      if (!r) return null;
+      return { camera: 'camera' in r, time: typeof r.time, speed: typeof r.speed, go: typeof r.go, contact: Array.isArray(r.contact) };
+    });
+    if (!f) return 'window.__reality is not set in a running match';
+    const missing = [];
+    if (!f.camera) missing.push('camera');
+    if (f.time !== 'function') missing.push('time()');
+    if (f.speed !== 'function') missing.push('speed()');
+    if (missing.length) return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+    return true;
+  },
+},
+
+{
+  id: 'play-idle-wolves-defend',
+  ask: 'with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds',
+  async test(page, h) {
+    const read = () => h.eval(() => { const g = window.__hk && window.__hk.game; if (!g) return null; return { state: g.state, period: g.period, clockT: g.clockT, sA: g.scoreA, sH: g.scoreH }; }).catch(() => null);
+    let r = await read();
+    if (!r || r.state !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 12000, polling: 'raf' }); } catch (e) {}
+      r = await read();
+    }
+    if (!r || r.state !== 'menu') return 'the game was not at its menu to start the untouched match';
+    try { await h.press('#playBtn'); } catch (e) {}
+    // from here the test touches NOTHING - the human is idle
+    let sawPlay = false, done = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 55000) {
+      await h.wait(200);
+      const s = await read();
+      if (!s) continue;
+      if (s.state === 'play') sawPlay = true;
+      if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
+      if (s.period === 1 && s.clockT <= 105) { done = true; break; }
+      if (s.period > 1) { done = true; break; }
+    }
+    if (!sawPlay) return 'the untouched match never reached play';
+    if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    return true;
+  },
+},
 ];

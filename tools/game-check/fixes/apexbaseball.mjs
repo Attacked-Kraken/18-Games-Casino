@@ -661,8 +661,13 @@ export default [
         s = await snap(); if (!s) return 'window.__test missing mid-test';
         if (s.phase === 'over') return 'the game ended before a strikeout or walk was seen';
         if (s.phase === 'start') { await click('startBtn'); await h.wait(400); continue; }
-        if (/^STRIKEOUT/.test(s.msg)) { endedBy = 'strikeout'; endedTag = s.tag; }
-        else if (/^WALK/.test(s.msg)) { endedBy = 'walk'; endedTag = s.tag; }
+        // G-134: EVERY plate-appearance ending proves this rule, not only a walk or
+        // strikeout - real at-bats end mostly in hits and outs, and a walk/strikeout-only
+        // wait outran the check runner's 30 s cap (a real walk took 9 pitches), so the
+        // old test timed out without ever checking the reset. The reset itself is the
+        // same call on every ending (onWalk/onStrikeout/applyHitResult/applyOutResult).
+        const paEnd = /^(WALK|STRIKEOUT|DOUBLE PLAY|SINGLE|DOUBLE|TRIPLE|HOME RUN|\d+-RUN HOME RUN|OUT|ERROR)/.exec(s.msg);
+        if (paEnd) { endedBy = paEnd[1].toLowerCase(); endedTag = s.tag; }
         else if (endedBy && (s.phase === 'select' || s.phase === 'cpuWindup')) {
           // a new at-bat in the SAME half, before its first pitch: the count must be 0-0
           if (s.tag === endedTag) {
@@ -687,7 +692,7 @@ export default [
         // batting halves: take every pitch (never swing) - called strikes and balls end at-bats on their own
         await h.wait(90);
       }
-      return 'no strikeout or walk happened in 29 s of real play, so the count reset could not be checked';
+      return 'no plate appearance ended in 29 s of real play, so the count reset could not be checked';
     },
   },
   {
@@ -738,6 +743,22 @@ export default [
       const p3 = await pos();
       const drift = Math.hypot(p3.x - p2.x, p3.z - p2.z);
       if (drift > 0.3) return 'go(false) did not stop him: he drifted ' + drift.toFixed(2) + ' m in 2 s';
+      return true;
+    },
+  },
+  {
+    id: 'play-reality-hook-camera',
+    mode: 'recheck',
+    ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      await h.wait(4500);
+      let keys = null;
+      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
+      if (!keys) return 'window.__reality never appeared';
+      const cam = await h.eval(() => { const c = window.__reality.camera; return c ? { persp: !!c.isPerspectiveCamera, fov: c.fov } : null; });
+      if (!cam) return '__reality has ' + keys.join(', ') + ' but no camera, so the robot cannot take the player close-up';
+      if (!cam.persp) return '__reality.camera is not the game PerspectiveCamera';
       return true;
     },
   },
