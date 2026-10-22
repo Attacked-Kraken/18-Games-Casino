@@ -420,4 +420,46 @@ export default [
       });
     },
   },
+  {
+    id: 'play-jet-controls',
+    ask: 'G-90: the jet control pad (14 buttons + stick) is on the phone screen and every button works',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(500);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput || !F.jet) return 'no jet controls hook (window.__flight.jetInput)';
+        const ids = ['jThrUp', 'jThrDn', 'jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
+        for (const id of ids) {
+          const b = document.getElementById(id);
+          if (!b) return 'missing pad button #' + id;
+          const r = b.getBoundingClientRect();
+          if (r.width < 44 || r.height < 44) return 'pad button #' + id + ' is only ' + Math.round(r.width) + 'x' + Math.round(r.height) + 'px (min 44)';
+          if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'pad button #' + id + ' sits off the phone screen';
+        }
+        if (document.getElementById('stickZone')) return 'the old touch stick is still on the page';
+        const down = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
+        const up = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }));
+        const p0 = F.jet.paint; down('jPaint'); up('jPaint');
+        if (F.jet.paint === p0) return 'PAINT button did not change the jet paint';
+        const s0 = F.jet.style; down('jStyle'); up('jStyle');
+        if (F.jet.style === s0) return 'STYLE button did not change the jet';
+        let n = 0; while (F.jet.style !== 'fighter' && n++ < 7) { down('jStyle'); up('jStyle'); }
+        // gear in the air: raise then lower
+        F.P.pos.set(0, 300, 0); F.P.vel.set(0, 0, 40); F.P.ground = false;
+        down('jGear'); up('jGear');
+        if (F.jet.gearDown) return 'GEAR button did not raise the gear in the air';
+        down('jGear'); up('jGear');
+        if (!F.jet.gearDown) return 'GEAR button did not lower the gear again';
+        // held buttons drive their inputs
+        down('jBoost'); const boost = F.jetInput.boost === true; up('jBoost');
+        if (!boost) return 'BOOST button did not set boost while held';
+        down('jBrake'); const brake = F.jetInput.brake === true; up('jBrake');
+        if (!brake) return 'BRAKE button did not set brake while held';
+        down('jYawR'); const yaw = F.jetInput.yaw === 1; up('jYawR');
+        if (!yaw) return 'YAW button did not set yaw while held';
+        return true;
+      });
+    },
+  },
 ];
