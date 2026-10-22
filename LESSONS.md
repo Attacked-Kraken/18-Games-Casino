@@ -58,3 +58,5 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
 - Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
 - A queue line whose proof test passes on main is done: tick it [x] with the job/PR number.
+- A tester report always starts WINDOW: N / PLAYED: N min (every round kind); a duplicate job = one-line NO CHANGE naming the earlier job/PR.
+- Two builds of the same change (G-100 PR #911 + G-125): keep one live PR, the second to merge takes main's version of the shared line.
