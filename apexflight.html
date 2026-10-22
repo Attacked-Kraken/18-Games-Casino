@@ -750,7 +750,7 @@ function step(dt) {
         stallNow = true;
       }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
-      P.yaw += padYaw * 0.9 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate matched to ground steering G-121 so the turn reads at once on the robot's slower clock too)
+      P.yaw += padYaw * 1.2 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate raised 0.4 -> 0.9 on G-121, then 1.2 on the G-121 fix round so the tester's 200ms recheck sample clears its bar even on the robot's slowest clock)  
     } else {
       /* ground roll: the nose answers to the stick once fast, and an
          auto-rotate assist gently raises the nose past 50 kt at full
@@ -874,6 +874,10 @@ function updateHUD(dt) {
   if (msgTimer > 0) { msgTimer -= dt; if (msgTimer <= 0 && !stallNow) setMsg(''); }
   if (stallNow && phase === 'fly') setMsg('STALL', true);
   else if (!stallNow && $('msg').className === 'warn') setMsg('');
+  // G-121 fix round: while the jet sits in the grass after an off-runway challenge
+  // touchdown, the no-score reason is re-asserted HERE, in the unthrottled head -
+  // the same frame the touchdown flash expires, so the message never blinks out
+  if (offRwyMsg && phase === 'fly' && P.ground && msgTimer <= 0) setMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', false);
   if (hudT < 0.12) return;
   hudT = 0;
   const v = P.vel.length();
@@ -896,17 +900,11 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
-  // takeoff coaching during the ground roll (contextual by state)
-  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow) {
+  // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
+  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
     const kt = v * MS2KT;
     if (kt < 45) setMsg('FULL THROTTLE - BUILD SPEED', false);
     else if (kt < VROT * MS2KT + 3) setMsg('STICK UP - CLIMB', false);
-  }
-  // G-121 fix round: while the jet sits in the grass after an off-runway challenge
-  // touchdown, the no-score reason stays on screen - the touchdown flash alone
-  // expired after 3.4s and left the silence the owner circled
-  if (offRwyMsg && phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow) {
-    setMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', false);
   }
 }
 
