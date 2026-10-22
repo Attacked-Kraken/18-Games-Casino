@@ -2385,4 +2385,50 @@ export default [
       return true;
     }
   }
+  ,{
+    id: 'tester-10000m-results-match-crossing',
+    mode: '10000m',
+    ask: 'TESTER (G-183): 10,000m - the results order matches who actually crosses the finish line first on the track (REALITY.md: finishing order = who crossed first). The player joins the leaders with 700m to go; if he runs the live segment fastest and crosses the line first, the results must place him 1st - a rival who is still short of the line cannot be credited ahead of him with a faster total time built from his own private early pace.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      })).catch(() => null);
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      const fin = await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, steps = 0;
+        while (!e.done && steps < 30000) {
+          e.update(1 / 60); steps++;
+          const t = steps / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        if (!e.done) return { notDone: true, pos: Math.round(e.r.pos), phase: e.phase };
+        return {
+          time: +e.time.toFixed(2), place: e.place,
+          ai: e.ai.map(a => ({ n: a.name, tt: +a.tTarget.toFixed(1), pos: Math.round(a.pos) })),
+          crossed: e.ai.filter(a => a.pos >= 10000).length
+        };
+      }).catch(() => null);
+      if (!fin) return 'the 10,000m drive could not be measured';
+      if (fin.notDone) return 'the player never finished the 10,000m (stuck at ' + fin.pos + 'm, phase ' + fin.phase + ')';
+      if (fin.crossed > 0) return true;
+      const best = fin.ai.reduce((a, b) => (b.pos > a.pos ? b : a), fin.ai[0]);
+      const credited = fin.ai.filter(a => a.tt < fin.time).sort((a, b) => a.tt - b.tt);
+      if (fin.place !== 1) return 'the player crossed the 10,000m finish line FIRST on the track (no rival reached 10000m; nearest rival ' + best.n + ' was still ' + (10000 - best.pos) + 'm short at ' + best.pos + 'm when the player finished in ' + fin.time + 's), but the results place him ' + fin.place + ' - credited ahead of him: ' + credited.map(a => a.n + ' ' + a.tt + 's').join(', ') + '. Rivals are ranked by their own private target times for the first 9300m instead of the race on the track (REALITY: finishing order matches who actually crossed first)';
+      return true;
+    }
+  }
 ];

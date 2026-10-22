@@ -73,3 +73,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk
 - When orders land while the owner's own fix is in flight: owner's fix first, then the older small fix, then the new job - one at a time, one report each.
+
+## 2026-10-22 help desk (5:40 PM)
+- A one-letter "MODE: g" in a tester order was a Mac typo, not a real mode. Rule: if a MODE name is not one the game has (see the game modes list), play ALL real modes, list them as "MODES:" in the report, and say in one HELP line which name looked wrong.

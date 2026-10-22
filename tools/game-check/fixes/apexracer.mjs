@@ -834,4 +834,32 @@ export default [
       return out === true ? true : out;
     },
   },
+  {
+    id: 'play-glow-on-surface',
+    ask: 'Lamp glow sits on the measured body surface, lamp-sized - no floating white dots (owner, G-163 follow-up)',
+    async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!/lampSurf/.test(src)) return 'apexracer.html has no lamp surface measurement (lampSurf) - the glow is not anchored to the measured body surface';
+      await h.eval(() => { const E = window.__erc; if (!(E.R && E.R.skids && E.R.P)) E.startRace(E.PLACES[0], 3); return true; });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const cars = (R.cars || []).concat(R.traffic || []).map((c) => c.car).filter(Boolean);
+        let checked = 0;
+        for (const car of cars) {
+          let hasLamp = false; const glows = [];
+          car.tilt.traverse((q) => { if (q.userData.hlight) hasLamp = true; if (q.userData.glow) glows.push(q); });
+          if (hasLamp) continue;
+          for (const g of glows) { const p = g.geometry && g.geometry.parameters; if (!p) return 'a lamp glow has no plane geometry on ' + (car.glbKey || 'a car'); if (p.width > 0.36 || p.height > 0.20) return 'a lamp glow is ' + p.width + 'x' + p.height + ' m on ' + (car.glbKey || 'a car') + ' - big enough to hang off the curved nose as a floating dot'; checked++; }
+        }
+        E.toMenu();
+        if (!checked) return 'no lamp-less car glow was checked';
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
 ];
