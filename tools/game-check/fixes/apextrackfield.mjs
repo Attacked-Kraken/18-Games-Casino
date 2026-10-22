@@ -2308,5 +2308,81 @@ export default [
       if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
       return true;
     }
+  },
+{
+    id: 'play-test-link-starts-the-event',
+    ask: 'G-171 (Mac, 2026-10-22): apextrackfield.html?test=60h (any EVENTS id) opens that event in Free Play and starts it at once - no menu, no card, no story; in a hurdles event the countdown camera holds every lane\u2019s first hurdle close in frame so the owner can check the hurdles in seconds',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=60h')) return 'the test-link page would not load';
+      let started = null;
+      for (let i = 0; i < 40 && !started; i++) {
+        started = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '60h') return null;
+          return { phase: e.phase, screen: (document.querySelector('.screen.on') || {}).id || null, playing: document.body.classList.contains('playing'), hurdles: __tf.hurdles() };
+        }).catch(() => null);
+        if (!started) await h.wait(500);
+      }
+      if (!started) return 'apextrackfield.html?test=60h never started the 60m Hurdles by itself (a menu or card is still in the way)';
+      if (started.screen === 'menu' || started.screen === 'card' || started.screen === 'grid') return 'the test link stopped at the ' + started.screen + ' instead of starting the event';
+      if (!started.playing) return 'the test link started no race (the page is not in the playing state)';
+      if (!started.hurdles || started.hurdles.count !== 40 || started.hurdles.placed !== 40) return 'the 60m Hurdles should stand 5 hurdles in each of 8 lanes (40 hurdles), got ' + JSON.stringify(started.hurdles);
+      const shot = await h.eval(() => new Promise(res => {
+        let last = null, tries = 0;
+        const cap = () => {
+          try {
+            const tv = __tf.throwView && __tf.throwView(); if (!tv || !tv.cam || !tv.look) return null;
+            let root = window.__reality && __reality.player; if (!root) return null;
+            while (root.parent) root = root.parent;
+            let mesh = null;
+            root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 40) mesh = o; });
+            if (!mesh) return null;
+            mesh.updateMatrixWorld();
+            const cvs = document.querySelector('canvas'); if (!cvs || !cvs.height) return null;
+            const aspect = cvs.width / cvs.height;
+            const f = 1 / Math.tan((58 * Math.PI / 180) / 2); // the game camera is PerspectiveCamera(58, W/H) in the source
+            const eye = [tv.cam.x, tv.cam.y, tv.cam.z], tgt = [tv.look.x, tv.look.y, tv.look.z];
+            let zx = eye[0] - tgt[0], zy = eye[1] - tgt[1], zz = eye[2] - tgt[2];
+            const zl = Math.hypot(zx, zy, zz) || 1; zx /= zl; zy /= zl; zz /= zl;
+            let xx = zz, xy = 0, xz = -zx;
+            const xl = Math.hypot(xx, xy, xz) || 1; xx /= xl; xy /= xl; xz /= xl;
+            const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+            const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+            const mul = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
+            let cx = 0, cz = 0; const pts = [];
+            for (let i2 = 0; i2 < 8; i2++) {
+              const w = mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14]);
+              const dx = w[0] - eye[0], dy = w[1] - eye[1], dz = w[2] - eye[2];
+              const xv = xx * dx + xy * dy + xz * dz, yv = yx * dx + yy * dy + yz * dz, zv = zx * dx + zy * dy + zz * dz;
+              pts.push({ x: +((f / aspect) * xv / -zv).toFixed(2), y: +(f * yv / -zv).toFixed(2), behind: zv >= 0 });
+              cx += w[0]; cz += w[2];
+            }
+            cx /= 8; cz /= 8;
+            return { pts, dist: +Math.hypot(eye[0] - cx, eye[2] - cz).toFixed(1) };
+          } catch (err) { return null; }
+        };
+        const iv = setInterval(() => {
+          tries++;
+          const e = window.__tf && __tf.eng();
+          if (!e) { if (tries > 240) { clearInterval(iv); res(last); } return; }
+          if (e.phase === 'marks' || e.phase === 'set') { const s = cap(); if (s) last = s; if (e.phase === 'set' && last) { clearInterval(iv); res(last); } return; }
+          if (last || tries > 240) { clearInterval(iv); res(last); }
+        }, 120);
+      })).catch(() => null);
+      if (!shot) return 'no countdown framing could be measured (the first hurdle row was never in front of the camera during marks/set)';
+      const out = shot.pts.filter(p => p.behind || Math.abs(p.x) > 0.98 || Math.abs(p.y) > 0.98);
+      if (out.length) return 'during the countdown ' + out.length + ' of the 8 first-row hurdles are outside the camera frame - the owner cannot see every lane\u2019s hurdle: ' + JSON.stringify(shot.pts);
+      if (shot.dist > 9) return 'during the countdown the camera is ' + shot.dist + ' m from the first hurdle row - not close enough to check the hurdles';
+      let ran = false;
+      for (let i = 0; i < 40 && !ran; i++) {
+        ran = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.phase === 'run' && e.ai && e.ai.length && e.ai[0].pos > 1); }).catch(() => false);
+        if (!ran) await h.wait(500);
+      }
+      if (!ran) return 'the test-link race never left the start (the field is not running after the gun)';
+      await nav(base);
+      return true;
+    }
   }
 ];
