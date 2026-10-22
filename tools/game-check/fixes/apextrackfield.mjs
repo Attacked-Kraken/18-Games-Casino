@@ -1860,5 +1860,39 @@ export default [
       if (hv.distinct !== 80) return 'the 80 hurdles are not at 80 different spots (' + hv.distinct + ' distinct) - they must stand one per lane per hurdle, not stacked in one lane';
       return true;
     },
-  },
+  }
+  ,{
+    id: 'play-portrait-menu-buttons-on-screen',
+    ask: 'G-122: on an upright phone (390x844) every main-menu button is on the screen and the far buttons can really be tapped',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }).catch(() => {});
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (bs.length < 9) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { id: b.id, t: b.textContent.trim().slice(0, 16), x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) { await page.setViewportSize({ width: 844, height: 390 }); return 'the main menu never appeared on an upright phone (390x844)'; }
+      const off = meas.filter(b => b.x < -1 || b.y < -1 || b.x + b.w > 391 || b.y + b.h > 845);
+      if (off.length) { await page.setViewportSize({ width: 844, height: 390 }); return 'G-122: ' + off.length + ' of ' + meas.length + ' main-menu buttons are off-screen on an upright phone (' + off.slice(0, 3).map(b => b.t + ' at x ' + b.x + ', y ' + b.y).join(', ') + ')'; }
+      const bests = meas.find(b => b.id === 'bBests');
+      if (!bests) { await page.setViewportSize({ width: 844, height: 390 }); return 'G-122: the BESTS button was not found on the menu'; }
+      await page.touchscreen.tap(Math.round(bests.x + bests.w / 2), Math.round(bests.y + bests.h / 2));
+      await h.wait(900);
+      const opened = await h.eval(() => { const s = document.querySelector('#bests.screen.on'); return !!s; }).catch(() => false);
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1200);
+      if (!opened) return 'G-122: BESTS is on the screen in portrait but tapping it did not open the bests screen';
+      return true;
+    }
+  }
 ];

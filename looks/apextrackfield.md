@@ -4,6 +4,13 @@ Read this before every job on Track & Field. The owner says each thing ONCE; it 
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apextrackfield.mjs`.
 
+## WHERE THINGS ARE (apextrackfield.html - line numbers, kept current per job)
+- Stage portrait rotation (the sideways box): line 21 - screens/panels CSS: lines 29-52
+- Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
+- Touch layer (stick / TAP RUN / ACTION): line 169 - menu markup: line 175 - event grid: line 206 - career screen: line 241
+- fitGame (sizes renderer + camera to the turned box): line 337 - audio (AudioSys): line 388
+- Live engine pointer ENG: line 789 - race frame loop frame(): line 3615 - REALITY hook: line 3680 - test hooks (__tf): line 3690
+
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
 - The stadium and the crowd exactly as they are (the venue is also LOCKED in MODELS.md as track-stadium)
