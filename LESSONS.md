@@ -42,3 +42,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · quick-check.sh cannot run where the Muse's Chromium blocks 127.0.0.1 → open the PR early; the PR robot's one "🤖 Check status" comment is the quick check.
 - all · a report may say the wrong window number → the Mac reads jobs/G-NN.md by job id; write your own window number, nothing else changes.
 - all · a redo can pass on the robot but change nothing on the owner's phone because his old save hides it → check the pictures with an OLD save loaded too (window 7).
+
+## 2026-10-21 help desk (9:12 PM)
+- advisor · a report left without an ANSWERED line shows as open on every run → every advisor report ends with one ANSWERED line per numbered item (FIXED / PART DONE / WON'T FIX).

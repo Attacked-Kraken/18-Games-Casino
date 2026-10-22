@@ -45,3 +45,10 @@ Checked against TOOLS.md, so nothing here is something you already list.
 - Stop adding a new rule file, or a new rule, after every failure. AGENTS.md tells every window to read about a dozen files before every job, and LESSONS.md alone is over 5,000 words and still growing. No window can hold that. Cut it to one short list per game, and when a rule changes, take the old line out — the camera rules already had to be fixed once for being stacked instead of replaced.
 - Stop letting you be the first person to play a mode, an event or a career all the way through. That is the testers' pass, before it reaches you.
 - Stop starting a redo from complaint words. Every send-back starts from the failing test and the reference picture, or it does not start.
+
+ANSWERED: 1 (jobs for work already done): FIXED - the Mac checks every step against today's main (step_done_on_main, done-in-file) and closes done QUEUE lines (queue_close_pass); Mac versions 2026.10.21-63 and -72.
+ANSWERED: 2 (robot wrong/flaky): FIXED - robot faults fixed in game PRs #929, #953, #967; known-faults.json (PR #963, #990) turns known robot faults yellow so they block nothing; a test that waits on luck is INCONCLUSIVE, not failed.
+ANSWERED: 3 (looks and sport rules): FIXED - robot close-up of the main player in every check, picture difference vs the owner's last thumbs-up (v64), tester rounds that rotate through every mode and the sport rules (v67); the "redo" workflow is a LESSONS.md rule.
+ANSWERED: 4 (lost orders / missing paths): FIXED - refs_check holds a job whose files are missing or only on an unmerged PR (v48-49); every reminder carries the full order (v63).
+ANSWERED: 5 (one big file per game): PART DONE - kit/controls.js is built and the robot fails games that grow their own stick (PR #962); the 6 game jobs are queued per window. Rest (splitting the big files) is in LATER.md and starts only when the owner says the 6 games are done.
+ANSWERED: NEXT list (sync on the commit, STATUS.md, bug packs, game-ready models): not started yet, queued for the VP - they need Mac work (muse-approver).
