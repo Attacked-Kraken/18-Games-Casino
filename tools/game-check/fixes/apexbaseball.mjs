@@ -661,8 +661,13 @@ export default [
         s = await snap(); if (!s) return 'window.__test missing mid-test';
         if (s.phase === 'over') return 'the game ended before a strikeout or walk was seen';
         if (s.phase === 'start') { await click('startBtn'); await h.wait(400); continue; }
-        if (/^STRIKEOUT/.test(s.msg)) { endedBy = 'strikeout'; endedTag = s.tag; }
-        else if (/^WALK/.test(s.msg)) { endedBy = 'walk'; endedTag = s.tag; }
+        // G-134: EVERY plate-appearance ending proves this rule, not only a walk or
+        // strikeout - real at-bats end mostly in hits and outs, and a walk/strikeout-only
+        // wait outran the check runner's 30 s cap (a real walk took 9 pitches), so the
+        // old test timed out without ever checking the reset. The reset itself is the
+        // same call on every ending (onWalk/onStrikeout/applyHitResult/applyOutResult).
+        const paEnd = /^(WALK|STRIKEOUT|DOUBLE PLAY|SINGLE|DOUBLE|TRIPLE|HOME RUN|\d+-RUN HOME RUN|OUT|ERROR)/.exec(s.msg);
+        if (paEnd) { endedBy = paEnd[1].toLowerCase(); endedTag = s.tag; }
         else if (endedBy && (s.phase === 'select' || s.phase === 'cpuWindup')) {
           // a new at-bat in the SAME half, before its first pitch: the count must be 0-0
           if (s.tag === endedTag) {
@@ -687,7 +692,7 @@ export default [
         // batting halves: take every pitch (never swing) - called strikes and balls end at-bats on their own
         await h.wait(90);
       }
-      return 'no strikeout or walk happened in 29 s of real play, so the count reset could not be checked';
+      return 'no plate appearance ended in 29 s of real play, so the count reset could not be checked';
     },
   },
   {
