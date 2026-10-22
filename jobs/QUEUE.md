@@ -38,6 +38,7 @@ was already sent. Muses: don't edit this file.
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
 
 ## window 4 · apextrackfield.html
+- [ ] TESTER: portrait-fills-screen still cannot run after the G-97 fix: once a race starts the game holds the page fullscreen, so the check's first page.setViewportSize(390x844) throws (Browser.setWindowBounds - a fullscreen window must be restored first). The portrait turn has to work in the state a race leaves the page in. Proof test tester-recheck-portrait-resize-after-race (mode recheck).
 - [ ] TESTER: On an upright phone (390x844) 8 of the 9 main-menu buttons are off the screen - only CHAMPIONSHIP can be tapped; FREE PLAY / CAREER MODE / TOURNAMENT are unreachable. Measured in the game; proof test tester-portrait-menu-fits-screen.
 - [ ] TESTER: Main-menu buttons are only 30-36 px tall (CHAMPIONSHIP 291x36, TOURNAMENT 140x30) - DONE.md asks for 44x44 touch targets. Measured in the game; proof test tester-menu-buttons-44px.
 - [ ] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.

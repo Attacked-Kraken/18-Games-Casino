@@ -1746,6 +1746,46 @@ export default [
     }
   }
   ,{
+    id: 'tester-recheck-portrait-resize-after-race',
+    mode: 'recheck',
+    ask: 'RECHECK G-97 (portrait-fills-screen): after a race starts the game holds the page in fullscreen, and page.setViewportSize cannot resize a fullscreen window - the portrait check still throws on its first line. Turning the phone must work in the state a race leaves the page in.',
+    async test(page, h) {
+      await h.eval(() => { ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__g68drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
+      const navLoop = async () => {
+        for (let i = 0; i < 8; i++) {
+          const st = await h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); return { screen: on ? on.id : null, racing: !!(e && document.body.classList.contains('playing')) }; });
+          if (st.racing || !st.screen) break;
+          if (st.screen === 'results') await h.eval(() => { const b = document.getElementById('bResMenu'); if (b) b.click(); return true; });
+          else if (st.screen === 'menu') await h.eval(() => { const b = document.getElementById('bFree'); if (b) b.click(); return true; });
+          else if (st.screen === 'grid') await h.eval(() => { const b = document.querySelector('#gridEvents button'); if (b) b.click(); return true; });
+          else if (st.screen === 'card') await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; });
+          else if (st.screen === 'career') await h.eval(() => { const b = document.getElementById('bCareerBack'); if (b) b.click(); return true; });
+          else break;
+          await h.wait(600);
+        }
+      };
+      const waitRace = async (ms) => {
+        let racing = false;
+        const w0 = Date.now();
+        while (Date.now() - w0 < ms && !racing) {
+          racing = await h.eval(() => { const e = window.__tf && window.__tf.eng(); return !!(e && document.body.classList.contains('playing')); });
+          if (!racing) await h.wait(400);
+        }
+        return racing;
+      };
+      await navLoop();
+      let racing = await waitRace(12000);
+      if (!racing) { await page.reload({ waitUntil: 'load' }); await h.wait(1500); await navLoop(); racing = await waitRace(12000); }
+      if (!racing) return 'no race could be started, so the portrait recheck could not be staged';
+      await h.wait(1200);
+      const fs = await h.eval(() => !!document.fullscreenElement);
+      let err = null;
+      try { await page.setViewportSize({ width: 390, height: 844 }); } catch (e) { err = String((e && e.message) || e); }
+      if (!err) { await h.wait(300); await page.setViewportSize({ width: 844, height: 390 }); return true; }
+      return 'the phone cannot be turned upright after a race starts (fullscreen ' + (fs ? 'ON' : 'off') + '): page.setViewportSize throws "' + err.split('\n')[0].slice(0, 120) + '" - portrait-fills-screen still dies on its first line, so the G-97 fix does not make the portrait check run';
+    }
+  }
+  ,{
     id: 'play-10000m-field-breaks-to-lane-1',
     ask: "JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane",
     async test(page, h) {
