@@ -297,6 +297,7 @@ function angDiff(a,b){ let d=(b-a)%TAU; if(d>Math.PI)d-=TAU; if(d<-Math.PI)d+=TA
 const Aud = {
   ctx:null, master:null, engineOsc:null, engineOsc2:null, engineGain:null, engineFilter:null,
   crowdGain:null, crowdFilter:null, rainGain:null, muted:false,
+  kit:null, kitBand:-1, kitShifts:0, _kitShiftT:0, _kitTried:false, _skidKit:false,
   ensure(){
     if(this.ctx){ if(this.ctx.state==='suspended'){ try{this.ctx.resume();}catch(e){} } return; }
     try{
@@ -323,16 +324,69 @@ const Aud = {
       this.rainGain=this.ctx.createGain(); this.rainGain.gain.value=0.0;
       rs.connect(rf); rf.connect(this.rainGain); this.rainGain.connect(this.master); rs.start();
       this.crowdExcite=0; this.rainAmt=0;
+      this.kitLoad(); // G-107: the owner's grand_prix engine kit (sounds/engines/grand_prix)
     }catch(e){}
   },
   setMuted(m){ this.muted=m; if(this.master) this.master.gain.value = m?0:0.9; },
   engine(rpm01, throttle){ // rpm01 0..1
     if(!this.ctx||this.muted) return;
-    const t=this.ctx.currentTime, f=55+rpm01*260+throttle*40;
+    const t=this.ctx.currentTime;
+    const kit=this.kit;
+    if(kit && kit.ready){ // G-107: kit loops - crossfade by throttle, playbackRate 0.9-1.25 by speed (TOOLS.md)
+      if(this.engineGain) this.engineGain.gain.setTargetAtTime(0,t,0.05); // synth engine off, the kit carries it
+      const x=Math.max(0,Math.min(1,throttle*0.7+rpm01*0.3)); // engine load
+      const level=0.08+0.12*x, centers={ idle:0, low:0.34, mid:0.67, high:1 }, order=['idle','low','mid','high'];
+      let band=0, bandW=-1;
+      for(const k of order){
+        const w=Math.max(0,1-Math.abs(x-centers[k])/0.36);
+        if(kit.gains[k]) kit.gains[k].gain.setTargetAtTime(w*level,t,0.06);
+        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.9+rpm01*0.35,t,0.1);
+        if(w>bandW){ bandW=w; band=order.indexOf(k); }
+      }
+      if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
+        this._kitShiftT=t; this.kitShifts++;
+        const buf=band>this.kitBand?kit.bufs.shiftUp:kit.bufs.shiftDn;
+        if(buf){ try{ const s=this.ctx.createBufferSource(); s.buffer=buf; const g=this.ctx.createGain(); g.gain.value=0.5; s.connect(g); g.connect(this.master); s.start(); }catch(e){} }
+      }
+      this.kitBand=band;
+      return;
+    }
+    const f=55+rpm01*260+throttle*40;
     this.engineOsc.frequency.setTargetAtTime(f,t,0.03);
     this.engineOsc2.frequency.setTargetAtTime(f*0.5+3,t,0.03);
     this.engineFilter.frequency.setTargetAtTime(500+rpm01*2600,t,0.05);
     this.engineGain.gain.setTargetAtTime(0.05+rpm01*0.10+throttle*0.05,t,0.05);
+  },
+  kitLoad(){ // G-107: fetch + decode the grand_prix kit once; on any failure kit stays null and the synth engine remains
+    if(this._kitTried || !this.ctx) return; this._kitTried=true;
+    const base='sounds/engines/grand_prix/grand_prix_';
+    const names={ idle:'idle_loop', low:'accel_low_loop', mid:'accel_mid_loop', high:'accel_high_loop', squeal:'tire_squeal_loop', shiftUp:'shift_up', shiftDn:'shift_down' };
+    const kit={ bufs:{}, gains:{}, srcs:{}, ready:false };
+    this.kit=kit;
+    const jobs=Object.entries(names).map(([k,n])=>
+      fetch(base+n+'.mp3').then(r=>r.arrayBuffer()).then(ab=>this.ctx.decodeAudioData(ab)).then(b=>{ kit.bufs[k]=b; }).catch(()=>{})
+    );
+    Promise.all(jobs).then(()=>{
+      if(!kit.bufs.idle || !kit.bufs.low || !kit.bufs.mid || !kit.bufs.high){ this.kit=null; return; }
+      try{
+        for(const k of ['idle','low','mid','high','squeal']){
+          if(!kit.bufs[k]) continue;
+          const s=this.ctx.createBufferSource(); s.buffer=kit.bufs[k]; s.loop=true;
+          const g=this.ctx.createGain(); g.gain.value=0;
+          s.connect(g); g.connect(this.master); s.start();
+          kit.srcs[k]=s; kit.gains[k]=g;
+        }
+        kit.ready=true;
+      }catch(e){ this.kit=null; }
+    });
+  },
+  kitState(){ // probe for the play test: is the kit carrying the engine, and what is it doing
+    const kit=this.kit;
+    if(!kit || !kit.ready) return { ready:false, files:kit&&kit.bufs?Object.keys(kit.bufs).length:0 };
+    const g=k=>kit.gains[k]?+kit.gains[k].gain.value.toFixed(3):null;
+    return { ready:true, band:this.kitBand, shifts:this.kitShifts,
+      gains:{ idle:g('idle'), low:g('low'), mid:g('mid'), high:g('high') },
+      rate:kit.srcs.idle?+kit.srcs.idle.playbackRate.value.toFixed(3):null, squeal:g('squeal') };
   },
   crowdTick(dt, excite){
     if(!this.ctx) return;
@@ -356,6 +410,12 @@ const Aud = {
   },
   skid(on){
     if(!this.ctx) return;
+    const kit=this.kit;
+    if(kit && kit.ready && kit.gains.squeal){ // G-107: the kit tire squeal loop replaces the synth noise
+      if(on && !this._skidKit){ this._skidKit=true; kit.gains.squeal.gain.setTargetAtTime(0.14,this.ctx.currentTime,0.05); }
+      else if(!on && this._skidKit){ this._skidKit=false; kit.gains.squeal.gain.setTargetAtTime(0.0,this.ctx.currentTime,0.08); }
+      return;
+    }
     if(on && !this._skid){
       const len=this.ctx.sampleRate, b=this.ctx.createBuffer(1,len,this.ctx.sampleRate), d=b.getChannelData(0);
       for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.5;
@@ -2345,11 +2405,30 @@ async function GPAttach(){
   if(!GP.lt || GP._attached) return;
   GP._attached = true;
   scene.add(GP.lt.root);
+  applyGroundKit(); // G-107: the owner's ground kit textures on the circuit (kit/ground/512)
   try{
     const evMod = await import('./kit/tracks/Grand-Prix-Track/grand-prix-event.js');
     GP.ev = evMod.createEvent({ scene, track:GP.lt, camera, soundBase:'kit/tracks/Grand-Prix-Track-Sounds/', crowdDensity: isTouch?0.5:0.8 });
     if(window.__gpTouched) GP.ev.enableAudio();
   }catch(e){ GP.ev = null; }
+}
+// G-107: asphalt + kerb textures from the owner's ground kit (kit/ground/512), laid over the
+// circuit materials that already carry tiling maps ('asphalt', 'asphalt_runoff', 'pit_lane', 'kerb')
+function applyGroundKit(){
+  if(!GP.lt || !GP.lt.root) return;
+  try{
+    const loader=new THREE.TextureLoader();
+    const mk=(url,name)=>{ const tx=loader.load(url); tx.wrapS=tx.wrapT=THREE.RepeatWrapping; tx.colorSpace=THREE.SRGBColorSpace; tx.name=name; return tx; };
+    const asphalt=mk('kit/ground/512/asphalt_plain.png','kit-ground-asphalt');
+    const kerb=mk('kit/ground/512/kerb_red_white.png','kit-ground-kerb');
+    const done=new Set();
+    GP.lt.root.traverse(o=>{
+      if(!o.isMesh || !o.material || done.has(o.material)) return;
+      const n=o.material.name;
+      if(n==='asphalt' || n==='asphalt_runoff' || n==='pit_lane'){ o.material.map=asphalt; o.material.needsUpdate=true; done.add(o.material); }
+      else if(n==='kerb'){ o.material.map=kerb; o.material.needsUpdate=true; done.add(o.material); }
+    });
+  }catch(e){}
 }
 function GPSetLights(n){ if(GP.lt) GP.lt.setStartLights(n); if(GP.ev) GP.ev.setLights(n); }
 function GPPlay(name, vol){ if(GP.ev && GP.ev.play) GP.ev.play(name, vol); }
@@ -2371,6 +2450,10 @@ window.__test = {
     const f=Track.frameAt(c.s);
     return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
   trackWidth: () => Track.width,
+  kitAudio: () => (Aud && Aud.kitState) ? Aud.kitState() : null, // G-107 probes
+  groundKit: () => { if(!GP.lt || !GP.lt.root) return null; const out={};
+    GP.lt.root.traverse(o=>{ if(o.isMesh && o.material && o.material.map){ if(o.material.name==='asphalt') out.asphalt=o.material.map.name||''; if(o.material.name==='kerb') out.kerb=o.material.map.name||''; } });
+    return out; },
   trackLength: () => Track.length,
   setInput: (inp) => { Object.assign(Input, inp); },
   // Test helper: place a car near the finish line to fast-forward lap tests
