@@ -64,7 +64,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
-      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));
+      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
       const passing = fresh.filter(f => f.ok || f.inconclusive);   // an undecided test proves nothing either
       if (fresh.length && passing.length === fresh.length)
         blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);
