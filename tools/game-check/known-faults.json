@@ -7,6 +7,28 @@
       "why": "play-icing-called is intermittent: the AI clears the puck before the staged icing lands (reviews/g-98-done-reality-audit.md). Robot side: make the test stage the clear itself.",
       "since": "2026-10-21",
       "until": "2026-10-28"
+    },
+    {
+      "game": "apexhockey.html",
+      "match": "goal (counts on the scoreboard and )?restarts from centre",
+      "why": "play-goal-restarts-centre is intermittent: the AI sometimes scores or ices before the staged goal is counted (advisor audit Oct 21). Robot side: stage the goal and freeze the AI for the check.",
+      "since": "2026-10-21",
+      "until": "2026-10-28"
+    },
+    {
+      "game": "apexhockey.html",
+      "match": "no defender took the puck|play-defender-takes-puck",
+      "why": "play-defender-takes-puck is intermittent: the away rush can score before any defender reaches the carrier, depending on the random faceoff (advisor audit Oct 21). Robot side: stage the rush from a fixed spot.",
+      "since": "2026-10-21",
+      "until": "2026-10-28"
     }
-  ]
+  ],
+  "_fixed_robot_side": [
+    "aborted downloads (ERR_ABORTED / page reload) - retried once, only a real 4xx is a missing file - PR #929",
+    "ground contact - the foot's LOWEST point, game time not the robot's clock - PR #929; no toe bones = 0.08 m sole assumed - PR #967",
+    "sprint vs walking - first steps of a sprint from a standstill are running steps; optional gait() hook - PR #953",
+    "the strikeout / count test (tester-count-resets-each-batter) - a test that waits for a random event and never sees it is INCONCLUSIVE (retried once, then yellow), never 'NOT done yet' - PR #953",
+    "play-defender-takes-puck had no 'ask' text, so its red line read 'undefined' - fixed in the same PR as this list"
+  ],
+  "_owner": "The robot side (the VP Claude) owns every flaky test here - never the builder. Each entry expires on 'until'; by then the test is fixed (staged, not random) or the entry is renewed with a reason."
 }
