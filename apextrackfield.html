@@ -33,8 +33,12 @@ background:rgba(4,10,20,.45)}
 /* JOB G-05 (owner): the menu must fit a sideways phone with NO scrolling (FREE PLAY sat 83px
 below the bottom of a 390px-tall screen). Short landscape screens only: the menu panel goes
 two columns and compacts until every menu button is on screen. Portrait and tall screens
-keep the classic one-column menu; no other screen is touched. */
-@media (orientation:landscape) and (max-height:460px){
+keep the classic one-column menu; no other screen is touched.
+JOB G-122 (owner): an upright phone presents the SAME sideways box rotated, but the media
+query keyed on the viewport's own orientation - portrait kept the tall one-column menu
+inside the 390px-tall box and 8 of the 9 buttons landed off-screen. Portrait now gets the
+same compact menu; nothing else changes. */
+@media (orientation:portrait), (orientation:landscape) and (max-height:460px){
 #menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
 #menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
 #menu .panel h1{grid-column:1/-1;font-size:19px}
