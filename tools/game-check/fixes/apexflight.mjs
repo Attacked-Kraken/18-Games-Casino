@@ -792,6 +792,7 @@ export default [
         if (!near.length || !far.length) return 'runway numbers missing at a threshold (decals near ' + near.length + ', far ' + far.length + ' - need one at each end)';
         for (const d of near.concat(far)) {
           if (d.material.map.anisotropy < 8) return 'a threshold decal has anisotropy ' + d.material.map.anisotropy + ' (need >= 8)';
+          if (d.material.map.repeat.x !== -1) return 'a threshold decal is not mirror-corrected (repeat.x ' + d.material.map.repeat.x + ') - its numbers read backwards from the cockpit';
           try {
             const cv = d.material.map.image, ctx = cv.getContext('2d');
             const px = ctx.getImageData(0, 0, cv.width, cv.height).data;

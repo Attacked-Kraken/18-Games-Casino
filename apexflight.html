@@ -292,7 +292,7 @@ scene.add(sun);
     for (let i = 0; i < 6; i++) d.fillRect(28 + i * 36, 24, 20, 150);       // piano keys
     d.font = 'bold 150px monospace'; d.textAlign = 'center';
     d.fillText(num, 128, 430);                                             // the number, ~14 m tall
-    const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso;
+    const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso; dt.wrapS = THREE.RepeatWrapping; dt.repeat.x = -1;   // ground-plane decals render mirrored from the cockpit without this flip - the numbers must read the correct way round (looks MUST)
     const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
       new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
     dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
