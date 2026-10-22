@@ -1737,4 +1737,29 @@ export default [
     }
   },
 },
+ {
+  id: 'play-helmet-cage-open',
+  ask: 'G-186 (art director): the close-up helmet must not be a plain dome with a dark visor bar across the eyes - an open steel cage instead, so the face reads through it (no visor part on a kitted skater; the steel part carries cage bars in the face zone)',
+  async test(page, h) {
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    let n = 0;
+    while (Date.now() - t0 < 30000) {
+      n = await h.eval(() => (window.__hk ? window.__hk.skaters.filter(s => s.kit).length : 0)).catch(() => 0);
+      if (n >= 8) break;
+      await page.waitForTimeout(500);
+    }
+    if (n < 8) return 'only ' + n + ' kitted skaters after 30 s - cannot judge the helmets';
+    const res = await h.eval(() => window.__hk.skaters.filter(s => s.kit).map(s => {
+      const st = s.kit.parts.steel; let zone = 0;
+      if (st) { const p = st.geometry.attributes.position;
+        for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+          if (Math.abs(x) <= 0.17 && y >= 1.56 && y <= 1.78 && z >= 0.03) zone++; } }
+      return { visor: !!s.kit.parts.visor, zone };
+    }));
+    const bad = res.filter(r => r.visor || r.zone < 400);
+    if (bad.length) return 'the helmet still hides the face on ' + bad.length + ' of ' + res.length + ' skaters (visor present: ' + bad[0].visor + ', cage-zone steel verts ' + bad[0].zone + ', need 400+) - the face must read through an open cage';
+    return true;
+  }
+ }
 ];
