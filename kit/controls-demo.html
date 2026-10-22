@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shared controls demo</title><style>html,body{margin:0;height:100%;background:#123;color:#fff;font:16px system-ui;overflow:hidden}#out{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:rgba(0,0,0,.5);padding:8px 14px;border-radius:10px;white-space:pre}#box{position:fixed;left:50%;top:50%;width:40px;height:40px;margin:-20px;background:#fc3;border-radius:8px}</style></head>
+<body><div id="out">move the stick · press a button</div><div id="box"></div>
+<script type="module">
+import { createControls } from './controls.js';
+const input = createControls({ buttons: [{ id: 'gas', label: 'GAS' }, { id: 'jump', label: 'JUMP' }] });
+let px = 0, py = 0; const box = document.getElementById('box'), out = document.getElementById('out');
+function frame() { const c = input.read(); px += c.x * 4; py += c.y * 4; box.style.transform = `translate(${px}px,${py}px)`;
+  out.textContent = `x ${c.x.toFixed(2)}  y ${c.y.toFixed(2)}  gas ${c.buttons.gas}  jump ${c.buttons.jump}` + (input.pressed('jump') ? '  JUMP!' : ''); requestAnimationFrame(frame); }
+frame();
+</script></body></html>

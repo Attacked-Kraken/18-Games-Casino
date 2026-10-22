@@ -377,6 +377,21 @@ for (const g of games) {
       for (const x of bad.slice(0, 3)) r.check.push(`Career mode broken: "${x.ask}"`);
       r.career = { tests: car.length, failing: bad.length };
     }
+    // SHARED CONTROLS (owner Oct 21 2026 7:08 PM, STUDIO-STANDARD §9 rule 2): a game on kit/controls.js must not keep or
+    // add its own stick code. games.json "controls": "shared" marks a game that moved; the robot then FAILS it when the
+    // shared file is not loaded in the running game, or when the page still wires its own thumbstick.
+    const usesShared = /kit\/controls\.js/.test(src);
+    const ownStick = (() => {
+      const re = /addEventListener\(\s*['"](pointerdown|touchstart)['"]/g; let m, hits = [];
+      while ((m = re.exec(src))) { const near = src.slice(Math.max(0, m.index - 500), m.index + 300); if (/stick|joy|knob|thumb/i.test(near)) hits.push(src.slice(0, m.index).split('\n').length); }
+      return hits;
+    })();
+    r.controls = { shared: usesShared, ownStick: ownStick.length };
+    if (g.controls === 'shared' || usesShared) {
+      let live = null; try { live = await page.evaluate(() => window.__controls && window.__controls.shared === true); } catch (e) {}
+      if (!usesShared || live === false) r.fail.push('SHARED CONTROLS: this game must use kit/controls.js (createControls) for its stick and buttons - the shared file is not loaded (STUDIO-STANDARD 9.2)');
+      if (ownStick.length) r.fail.push('OWN STICK CODE: the page still wires its own thumbstick (pointerdown/touchstart near "stick/joy/knob" at line ' + ownStick.slice(0, 3).join(', ') + ') - delete it and use kit/controls.js only (STUDIO-STANDARD 9.2)');
+    } else r.check.push('Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed');
   } catch (e) {}
   // FRIEND CODES (owner, 2026-10-17): every game needs "Play a friend" with friend codes (STORE-READY.md "Friend codes")
   try {
@@ -461,6 +476,22 @@ for (const g of games) {
     r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
     for (const c of browser.contexts()) if (c !== lab.context()) await c.close().catch(() => {});
   }
+  // KNOWN ROBOT FAULTS (owner Oct 21 2026 7:08 PM): a red line the robot itself is wrong about never blocks a builder
+  try {
+    const kf = JSON.parse(fs.readFileSync(path.join(here, 'known-faults.json'), 'utf8')).faults || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const live = kf.filter(f => f.match && (!f.game || f.game === g.file) && (!f.until || f.until >= today));
+    if (live.length) {
+      const keep = [];
+      for (const f of r.fail) {
+        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f); } catch (e) { return false; } });
+        if (hit) r.check.push('KNOWN ROBOT FAULT (robot side owns it, not the builder): ' + f.slice(0, 160) + ' - ' + (hit.why || '').slice(0, 140));
+        else keep.push(f);
+      }
+      r.knownFaults = r.fail.length - keep.length;
+      r.fail = keep;
+    }
+  } catch (e) {}
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);

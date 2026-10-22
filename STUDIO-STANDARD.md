@@ -98,6 +98,24 @@ Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half si
    drivers, cameras) - change the smallest piece that fixes the point (owner Oct 19: "Muses still mess stuff up while
    trying to fix something else").
 
+**LOCKED (owner, Oct 21 2026 7:23 PM, from the advisor): models arrive GAME-READY - the robot fits them, games never do.**
+8. The Sketchfab / lab robot does ALL the fitting, once, on fetch (tools/glb-clean.mjs + tools/sketchfab-fetch.mjs):
+   real metres (from the MODEL-REQUESTS size line), the house's ONE forward direction (+Z = nose), centred at the
+   origin, wheels / feet exactly at y = 0, hidden parts (shadow sheets, collision boxes, cameras, lights) removed,
+   size and triangle limits enforced. Rules 1 and 6 above (turn/scale per model in the game) are REPLACED by this.
+9. Every model gets a measured CARD next to it (`<name>.card.json`, read from the FILE, never from names): size in
+   metres (length / width / height), nose direction, the ground points (lowest points of each wheel / foot), triangle
+   count, and which material really is the body / tyres / glass / skin (found by geometry: the big outer shell, the
+   round low parts, the see-through parts). The card's paint test proves that recolouring the body material changes
+   only the body - the robot renders before/after and compares.
+10. Games hold only the OUTER holder (`new THREE.Group()` with the model inside, straight from the file): they move
+    and steer the holder and set `model.paint(color)` from the card. Game code never rotates, scales, offsets or
+    repaints the model's own parts again - the robot FAILS a game that does (a `rotation`/`scale`/`position` set on a
+    loaded model's inner nodes, or a material swap outside the card's body material). Swapping a model = one line in
+    that game's model list (games.json `models` / MODELS.md), nothing in the code.
+11. Every model shows its front / side / back / top pictures + its card on the owner's board for his 👍 BEFORE any
+    builder job uses it (the model gate). Order of work: Exotic Racer's cars first, then the Baseball players.
+
 ## 4. Feel
 
 - The camera always shows the play. No camera stuck inside a wall or a player. A zoom that hides the action is a defect.
@@ -204,8 +222,11 @@ to be made 11 times, and shared parts (characters/) broke other games.
 
 1. **One fix per job.** A job asks for ONE change. The owner's list of 5 points = 5 jobs, sent one after another.
 2. **Shared controls.** Thumbstick, buttons, button layout and "let go = stop" (pointerup / pointercancel / blur /
-   hidden tab) live in ONE shared kit file (`kit/controls.js`, built first by one builder for its own game). Every
-   game uses it. A game never writes its own stick again; a stick bug is fixed once, in the kit.
+   hidden tab) live in ONE shared kit file (`kit/controls.js` - built Oct 21 2026, demo `kit/controls-demo.html`,
+   `createControls({ buttons, stick, rightStick, rotated, paused })` -> `read()` = `{ x, y, rx, ry, buttons }`). Every
+   game uses it; each game moves over in its own job and sets `"controls": "shared"` on its line in
+   tools/game-check/games.json. A game never writes its own stick again: the robot FAILS a shared-controls game whose
+   page still wires a pointerdown/touchstart near stick/joy/knob code ("OWN STICK CODE"), or that does not load the file.
 3. **NEW games are split into small files** from day one: `games/<slug>/` with `controls`, `camera`, `world`,
    `players`/`cars`, `ai`, `menus`, `rules` - each one job's worth. The page itself only loads them. No game file
    over ~800 lines.
