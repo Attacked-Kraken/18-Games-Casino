@@ -26,6 +26,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Nothing built from boxes when a real model is possible
 - No untextured bars or stray parts on a car - every part on the car belongs to the car
 - No gameplay or proof camera inside a car
+- 2026-10-22: report has no 'OWNER CHECK IN 30 SECONDS: <test link> - <what to look at>' line (G-176)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
