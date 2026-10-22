@@ -617,4 +617,32 @@ export default [
       return out === true ? true : out;
     },
   },
+  {
+    id: 'play-reality-time-speed',
+    ask: 'G-143: the REALITY hook reports game time and player speed - time() advances in race seconds and speed() reads the car in m/s',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const H = window.__reality, E = window.__erc;
+        if (!H) return 'no __reality hook';
+        if (typeof H.time !== 'function') return 'the hook has no time()';
+        if (typeof H.speed !== 'function') return 'the hook has no speed()';
+        const s0 = H.speed(); if (typeof s0 !== 'number' || !(s0 >= 0)) return 'speed() is not a non-negative number before a race (' + s0 + ')';
+        return new Promise((res) => {
+          let n = 0, t1 = null;
+          H.go(true);
+          const iv = setInterval(() => {
+            n++;
+            const R = E && E.R;
+            if (R && R.P && H.time() > 0.2) {
+              if (t1 === null) { t1 = H.time(); return; }
+              const dtg = H.time() - t1, sp = H.speed();
+              if (dtg > 0.3 && sp > 2) { clearInterval(iv); H.go(false); E.toMenu(); res(true); }
+              else if (n > 50) { clearInterval(iv); H.go(false); E.toMenu(); res('time advanced ' + dtg.toFixed(2) + ' s but speed() read ' + sp.toFixed(1) + ' m/s while go(true) was driving'); }
+            } else if (n > 55) { clearInterval(iv); H.go(false); if (E) E.toMenu(); res('the race clock never started under go(true)'); }
+          }, 300);
+        });
+      });
+      return out === true ? true : out;
+    },
+  },
 ];
