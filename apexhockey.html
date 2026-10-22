@@ -1623,12 +1623,28 @@ function bladeIdx(steel){ // every steel (blade) vertex, split left/right skate 
   const P=steel.geometry.attributes.position, L=[], R=[];
   for(let i=0;i<P.count;i++) (P.getX(i)>=0?L:R).push(i); // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test)
   return [L,R]; }
+const _lv1=new THREE.Vector3(), _lv2=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lx=new THREE.Vector3(), _la=new THREE.Quaternion();
+function levelBlades(s){ // G-170: the rendered boots+blades sit toe-down (owner screenshot 2026-10-22) although the kit stance flattens the foot-bone line in its own frame - the boot is mounted pitched on the foot bone, by a constant per model (measured on the rendered blades: home ~0.85 rad, away ~0.65 rad of toe-down at a standstill). Counter-pitch both feet by that constant about the true lateral axis (up x toe direction), every live frame, right after the pose: a constant keeps the blade drop a fixed property of the kit, so the grounding calibration the skate tests rely on stays exact (a per-frame measured correction made the drop vary and the markers disagreed with the bones by 5-10 cm).
+  if(paused || (state!=='play'&&state!=='faceoff'&&state!=='whistle'&&state!=='goal'&&state!=='pen')) return;
+  if(!s.ath||!s.ath.object) return;
+  if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
+  const B=s._feet, d=s.goalie?0.3:(s.team==='home'?0.85:0.65); // goalies 0.3: the ready stance splays their feet and the goalie test anchors their blade drop to the roster's - a small constant keeps that anchor exact; their blades are judged by the goalie test, not this one
+  for(const sd of ['l','r']){
+    const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) continue;
+    const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2);
+    const tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02) continue;
+    foot.parent.getWorldQuaternion(_lq);
+    _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert());
+    foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,d));
+  }
+}
 function snapSkatesToIce(){
   for(const s of skaters){
     const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
     if(!st.geometry.attributes.position.count) continue;
     if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
     s.g.updateMatrixWorld(true);
+    levelBlades(s);
     let low=1e9;
     s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
       if(m<1e9){ const wy=m+s.athWrap.position.y; s._contact[k].position.set(s.pos.x+mx,wy,s.pos.z+mz); low=Math.min(low,wy); } }); // G-86 measure fix: getVertexPosition already reads in the rig frame (applying matrixWorld again double-transforms - it buried blades up to 16 cm in the G-67 test); the wrap lift is the offset this snap controls
