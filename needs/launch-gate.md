@@ -41,3 +41,7 @@ All of these, on **current main** — a green PR branch is not proof (a game has
 A LIVE or ARCADE game that fails a main check, draws the same complaint twice, or breaks a real rule drops back one gate the same day, and its QUEUE lines reopen. Demotion is routine, not punishment — it is how the floor stays trustworthy.
 
 *One page, on purpose. If a box can't be ticked, the answer is which job fixes it — write that job, don't argue with the gate.*
+
+## Known not-store-ready lines (owner Oct 22 1:20 AM, from the window 9 tester)
+- **Apex Flight - no reason to return** (no career, no progression, no traffic). NOT store-ready at Gate 2 until it has one.
+  No progression job yet. ASK THE ADVISOR: what is the smallest loop that makes Flight a game? (answer in needs/advisor-flight-loop.md)

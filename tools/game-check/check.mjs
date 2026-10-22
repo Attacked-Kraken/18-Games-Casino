@@ -92,6 +92,68 @@ async function measure(jpg) {
 }
 const changed = (a, b) => a.lum.filter((v, i) => Math.abs(v - b.lum[i]) > 12).length / a.lum.length;
 
+
+// ---------- IDLE RUN (owner Oct 22, Hockey played itself with a 6-7x clock): after start, nobody touches the game for ~15 s.
+// FAIL when a clock on the screen runs faster than real time, or a two-sided score (3 - 1) changes. Read the HUD text only,
+// so it works for every game. games.json "idleOk": true switches the score half off for a game whose AI may score by design.
+async function idleRead(page) {
+  return page.evaluate(() => {
+    const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+    const clocks = [], scores = [];
+    for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i],[id*="score" i],[class*="score" i]')) {
+      if (!vis(e) || e.children.length > 6) continue;
+      const t = (e.textContent || '').replace(/\s+/g, ' ').trim(); if (!t || t.length > 40) continue;
+      const key = (e.id || e.className || e.tagName) + '';
+      const m = t.match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/);
+      if (m) { clocks.push({ key, sec: +m[1] * 60 + +m[2] }); continue; }
+      if (/^\d{1,3}\s*[\u2013\u2014-]\s*\d{1,3}$/.test(t)) scores.push({ key, text: t });
+    }
+    return { clocks, scores, at: performance.now() };
+  }).catch(() => null);
+}
+function idleJudge(a, b, g, wallSec) {
+  const out = [];
+  if (!a || !b) return out;
+  for (const c of b.clocks) {
+    const c0 = a.clocks.find(x => x.key === c.key); if (!c0) continue;
+    const d = Math.abs(c.sec - c0.sec);
+    if (d > wallSec * 1.5 + 3) out.push(`IDLE RUN: the clock "${c.key}" moved ${d} s in ${wallSec.toFixed(0)} s of real time with nobody touching the game - it runs faster than real time (a 1.0 s frame step, a time-speed setting left on, or a lost lastT=now)`);
+  }
+  if (!g.idleOk) for (const s of b.scores) {   // idleGoalWarn: yellow instead of red until that game's AI defends an untouched team (Hockey, Oct 22)
+    const s0 = a.scores.find(x => x.key === s.key);
+    if (s0 && s0.text !== s.text) out.push(`${g.idleGoalWarn ? 'WARN|' : ''}IDLE RUN: the score "${s.key}" went ${s0.text} -> ${s.text} with nobody touching the game - a goal/point was scored by itself`);
+  }
+  return out;
+}
+
+// VIRTUAL CLOCK (owner Oct 22): on a slow robot a game that steps a whole second per frame (lost `lastT=now`) looks normal, because
+// real frames are slow too. So run the page on a FAKE clock: requestAnimationFrame hands out 16.7 ms per frame and performance.now
+// follows it. A healthy game then moves its HUD clock about 1 s per 60 frames; a broken one moves it many seconds per frame.
+async function virtualClockFail(ctx, base, g) {
+  const vp = await ctx.newPage();
+  try {
+    await vp.addInitScript(() => {
+      let v = 0; window.__vf = 0;
+      window.requestAnimationFrame = cb => setTimeout(() => { v += 16.667; window.__vf++; cb(v); }, 0);
+      performance.now = () => v;
+    });
+    await vp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await vp.waitForTimeout(4000);
+    for (const step of g.start || []) await pressStep(vp, step);
+    const hud = () => vp.evaluate(() => {
+      for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i]')) {
+        const r = e.getBoundingClientRect(); if (!r.width || !r.height) continue;
+        const m = (e.textContent || '').trim().match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/); if (m) return { key: (e.id || e.className) + '', sec: +m[1] * 60 + +m[2], vf: window.__vf };
+      } return null; });
+    const f0 = await vp.evaluate(() => window.__vf);
+    await vp.waitForFunction(n => window.__vf >= n, f0 + 30, { timeout: 90000, polling: 100 });
+    const a = await hud(); if (!a) return null;
+    await vp.waitForFunction(n => window.__vf >= n, a.vf + 60, { timeout: 120000, polling: 100 });
+    const b = await hud(); if (!b || b.key !== a.key) return null;
+    const vsec = (b.vf - a.vf) * 0.016667, d = Math.abs(b.sec - a.sec);
+    if (d > vsec * 1.5 + 3) return `IDLE RUN: the clock "${b.key}" moved ${d} s while the game was given only ${vsec.toFixed(1)} s of frames (${b.vf - a.vf} frames at 60/s) - the game steps far more than one frame of time per frame (a lost lastT=now, or a time-speed setting left on)`;
+    return null;
+  } catch (e) { return null; } finally { try { await vp.close(); } catch (e) {} }
+}
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
   try {
@@ -221,6 +283,7 @@ for (const g of games) {
   }
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
+  const idleA = await idleRead(page); const idleT0 = Date.now();
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
   try {
@@ -271,6 +334,8 @@ for (const g of games) {
     r.stutter = { frames: st.length, median: Math.round(med), hitches: hitches.length, worst: Math.round(Math.max(0, ...hitches)) };
     if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
   } catch (e) {}
+  try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) { if (m.startsWith('WARN|')) r.check.push(m.slice(5) + ' (yellow for now: this game is on the warning list until its AI defends an untouched team)'); else r.fail.push(m); } } catch (e) {}
+  try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;
@@ -445,7 +510,10 @@ for (const g of games) {
   if (up.dark > 0.93 || up.std < 6) r.fail.push('Upright screen is black or blank');
   // SHARPNESS (owner: "get them to not make blurry players"): the 3D picture must be drawn at 1.5x or more on a 2x phone
   const sharp = await p2.evaluate(() => {
-    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100);
+    // art director Oct 22 2026 (F1 "drawn at 0.18x"): a canvas still at the browser's default 300x150 has never been
+    // drawn by the game (F1 starts its 3D only when a race starts) - that is a menu over an empty canvas, not a blurry
+    // game, so it is skipped; the sharpness of the real 3D picture is measured on a canvas the game has sized.
+    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100 && !(c.width === 300 && c.height === 150));
     cs.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
     const c = cs[0]; if (!c) return null;
     let gl = false; try { gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
