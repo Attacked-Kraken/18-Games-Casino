@@ -6,6 +6,12 @@ the laptop sends the job back once with the FAIL lines; a 2nd time it asks a Cla
 Claudes: keep each list short, one change per step, the owner's words. `- [x]` = skip/done. Never reorder a step that
 was already sent. Muses: don't edit this file.
 
+LOOK lines (owner Oct 22 1:20 AM): a tester cannot see pictures. When a tester needs eyes ("check the HUD / camera / model is
+readable"), it writes ONE line under its game as `- [ ] LOOK: <what to check>`. The Mac never sends a LOOK line to a builder.
+The ART DIRECTOR (window 12) answers every open LOOK line from the robot's play pictures + close-up (img/<game>-*.jpg on
+game-checks) in reviews/look-<date>.md: `LOOK: <line> -> PASS` or `-> FAIL: <what is wrong>`. A FAIL becomes an art-director
+HELP line (one-fix job for that game's builder). Standing: the art director also reviews each game's robot pictures once a day.
+
 ## window 1 · apexbaseball.html
 - [ ] TESTER: The REALITY hook has no go(), so the reality robot cannot drive the player and every game check reports 'the player did not move in 5 s'. See it: window.__reality in a running game has kind/player/others/contact/ground but no go. Proof: play test tester-reality-hook-no-go fails in tools/game-check/fixes/apexbaseball.mjs. (sent as G-100) Rechecked in G-116 (TEST PR #987) on main f854c488: still no go() - BUILD PR #911 (G-100) is still open, the fix is not on main; played live, go is undefined and the player moved 0.0 m in 5 s.
 - [x] TESTER: The ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he can strike out on one strike or walk on one ball. See it: finish an at-bat with a strikeout or a walk, then watch the next batter's count. (fixed in the G-57 redo)

@@ -84,11 +84,13 @@ async function g37PlayLevel(page, h) {
     const b = document.getElementById('careerBtn'); if (b) b.click();
   }, { kind: 'career', opp: pend.opp, oppDef: g37Defs[pend.opp], label: pend.label });
   let playing = false;
+  await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
   for (let i = 0; i < 40 && !playing; i++) {
     await h.wait(250);
     const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     if (st === 'play') playing = true;
   }
+  await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
   if (!playing) return 'career match ' + pend.label + ' never reached play';
   await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 2; g.scoreA = 0; g.clockT = 0.05; });
   let over = false;
@@ -619,11 +621,13 @@ export default [
     await h.eval(() => { if (window.__hk && window.__hk.game && window.__hk.game.newMatch) window.__hk.game.newMatch(); });
     await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); });
     let playing = false;
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {}); // the faceoff gate: a staged match waits for the player's input - the test stands in for the player
     for (let i = 0; i < 40 && !playing; i++) {
       await h.wait(250);
       const st = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
       if (st === 'play') playing = true;
     }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
     if (!playing) return 'the friend match never reached play';
     const awayName = await h.eval(() => ((document.getElementById('nmA') || {}).textContent || ''));
     if (awayName !== 'REYES ALL-STARS') return 'the friend\'s team is not the one on the ice (scoreboard away team: ' + awayName + ')';
@@ -1461,6 +1465,65 @@ export default [
   },
 },
 {
+  id: 'play-waits-for-player-at-faceoff',
+  ask: 'the game does not play by itself: a faceoff waits for the player input instead of dropping on its own',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // stage the owner's exact situation with the game's own data: a career fixture is
+    // pending, the page reloads, and the match stages itself (G-104) - on the fresh
+    // page nobody has touched anything
+    await h.eval(() => {
+      try {
+        localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'SHARKS', oppDef: { name: 'SHARKS', jersey: 0x0e7c7b, helmet: 0x123a3a, trim: 0xffffff, str: 84 }, label: 'WEEK 1' }));
+      } catch (e) {}
+    }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    let atFaceoff = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'faceoff', null, { timeout: 15000, polling: 'raf' });
+      atFaceoff = true;
+    } catch (e) { atFaceoff = (await state()) === 'faceoff'; }
+    if (!atFaceoff) return 'the career match never staged its opening faceoff (state "' + (await state()) + '")';
+    // with no input at all, the drop must NOT happen by itself
+    for (let i = 0; i < 5; i++) {
+      await h.wait(400);
+      const st = await state();
+      if (st !== 'faceoff') return 'the game played by itself: the opening faceoff dropped with no player input (state became "' + st + '")';
+    }
+    // the player's first touch drops the puck
+    await h.eval(() => { try { window.__reality && window.__reality.go(true); } catch (e) {} }).catch(() => {});
+    let dropped = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 6000, polling: 'raf' });
+      dropped = true;
+    } catch (e) { dropped = (await state()) === 'play'; }
+    await h.eval(() => { try { window.__reality && window.__reality.go(false); } catch (e) {} }).catch(() => {});
+    if (!dropped) return 'the faceoff never dropped even after the player gave input';
+    return true;
+  },
+},
+{
+  id: 'play-clock-real-time',
+  ask: 'the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score',
+  async test(page, h) {
+    const read = () => h.eval(() => { const c = (document.getElementById('clock') || {}).textContent || ''; const m = c.match(/(\d+):(\d+)/); return { sec: m ? (+m[1]) * 60 + (+m[2]) : -1, score: (document.getElementById('score') || {}).textContent || '' }; }).catch(() => ({ sec: -1, score: '' }));
+    // 1. untouched 10 s from the opening screen: nothing moves
+    const a = await read();
+    await h.wait(10000);
+    const b = await read();
+    if (b.sec !== a.sec || b.score !== a.score) return 'the game moved with nobody touching it: clock ' + a.sec + 's -> ' + b.sec + 's, score ' + a.score + ' -> ' + b.score;
+    // 2. a real PLAY press, then play 6 s: the clock may not lose much more than 6 s
+    await h.eval(() => { const pb = document.getElementById('playBtn'); if (pb) pb.click(); }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 15000, polling: 'raf' }); } catch (e) { return 'the match never reached play after PLAY was pressed'; }
+    const t0 = Date.now(); const c0 = await read();
+    await h.wait(6000);
+    const c1 = await read(); const wall = (Date.now() - t0) / 1000;
+    const used = c0.sec - c1.sec;
+    if (used > wall * 1.5 + 2) return 'the clock runs too fast: ' + used + 's came off the clock in ' + wall.toFixed(1) + 's of real time';
+    return true;
+  },
+},
+{
   id: 'tester-reality-hook-fields',
   ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
   async test(page, h) {
@@ -1484,4 +1547,34 @@ export default [
   },
 },
 
+{
+  id: 'play-idle-wolves-defend',
+  ask: 'with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds',
+  async test(page, h) {
+    const read = () => h.eval(() => { const g = window.__hk && window.__hk.game; if (!g) return null; return { state: g.state, period: g.period, clockT: g.clockT, sA: g.scoreA, sH: g.scoreH }; }).catch(() => null);
+    let r = await read();
+    if (!r || r.state !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 12000, polling: 'raf' }); } catch (e) {}
+      r = await read();
+    }
+    if (!r || r.state !== 'menu') return 'the game was not at its menu to start the untouched match';
+    try { await h.press('#playBtn'); } catch (e) {}
+    // from here the test touches NOTHING - the human is idle
+    let sawPlay = false, done = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 55000) {
+      await h.wait(200);
+      const s = await read();
+      if (!s) continue;
+      if (s.state === 'play') sawPlay = true;
+      if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
+      if (s.period === 1 && s.clockT <= 105) { done = true; break; }
+      if (s.period > 1) { done = true; break; }
+    }
+    if (!sawPlay) return 'the untouched match never reached play';
+    if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    return true;
+  },
+},
 ];
