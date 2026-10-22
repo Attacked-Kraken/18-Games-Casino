@@ -4,16 +4,16 @@ Read this before every job on Baseball. The owner says each thing ONCE; it lives
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexbaseball.mjs`.
 
-## WHERE THINGS ARE (`apexbaseball.html`, line numbers as of G-100)
+## WHERE THINGS ARE (`apexbaseball.html`, line numbers as of G-144)
 
-- **Menus:** overlays in the HTML — `#loadOv` 179, `#startOv` 188, `#helpOv` 199, `#friendOv` 213, `#endOv` 226; `startGame()` 1469; the start menu opens only after the ballpark has loaded (loading gate).
-- **Controls:** pitch UI + `#aimPad` in the HTML (~150–170); aim-pad input 1512–1550 (drag tracked by pointer id, `resetInput()` 1542); flow is pick a pitch → THROW → aim on the pad → THROW → LOCK (`beginAim()` 795, `beginWindup()` 796).
-- **Camera:** `PITCHER_VIEW` / `BATTER_VIEW` 304–305 (one TV broadcast camera, FOV 42); view pick `setCam()` 1280; `#viewBtn` 132 cycles auto/wide/close.
-- **Players:** `TEAMS` 259; `FIELD_POS` 473; `dressDefense()` 488; `attachAthlete()` 583 (the `window.__reality` hook is set there, ~647; the G-100 trot driver sits just above it, 565–582); `fitAthletes()` 656; `athleteTick()` 666 (Idle/Walk/Jog/Sprint picked from measured speed).
-- **AI / rules:** `PITCHES` 760, `ZONE` 765; `deliverPitch()` 828; count — `resetCount()` 926, `onWalk()` 951, `onStrikeout()` 964; `stepMovers()` 1412 (fielders chase, runners run); main `loop()` 1325.
+- **Menus:** overlays in the HTML — `#loadOv` 179, `#startOv` 188, `#helpOv` 199, `#friendOv` 213, `#endOv` 226; `startGame()` 1477; the start menu opens only after the ballpark has loaded (loading gate).
+- **Controls:** pitch UI + `#aimPad` in the HTML (~150–170); aim-pad input ~1520–1558 (drag tracked by pointer id, `resetInput()` 1550); flow is pick a pitch → THROW → aim on the pad → THROW → LOCK (`beginAim()` 803, `beginWindup()` 804).
+- **Camera:** `PITCHER_VIEW` / `BATTER_VIEW` 304–305 (one TV broadcast camera, FOV 42); view pick `setCam()` 1288; `#viewBtn` 132 cycles auto/wide/close.
+- **Players:** `TEAMS` 259; `FIELD_POS` 473; `dressDefense()` 488; `attachAthlete()` 583 (the `window.__reality` hook is set there, 655; the G-100 trot driver sits just above it, 565–582); `fitAthletes()` 664; `athleteTick()` 674 (Idle/Walk/Jog/Sprint picked from measured speed).
+- **AI / rules:** `PITCHES` 768, `ZONE` 773; `deliverPitch()` 836; count — `resetCount()` 934, `onWalk()` 959, `onStrikeout()` 972; `stepMovers()` 1420 (fielders chase, runners run); main `loop()` 1333.
 - **HUD:** `#scoreboard` 138; top-right cluster `#viewBtn` / `#muteBtn` / `#helpHud` 132–134 (fixed widths, 8 px gaps).
-- **Sounds:** kit sounds via `Mus.*` at contact and results (909, 1191–1210: crack, pop, cheer, riff); crowd excitement via `crowdExcite()`.
-- **Venue:** old park built in `buildField()` 327 (`VENUE_FROM` 326, `oldParkMeshes` 431, hidden once the model loads); Night Ballpark loader 1932 (`kit/stadiums/Night-Ballpark/stadium.glb` — night look, kit field re-skin and touch material lightening all happen there); `window.__test` 2028.
+- **Sounds:** owner's kit samples via `Mus.loadKit()` 1760 (called from `Mus.init()` 1728) — bat crack / glove / big cheer / ambience from `sounds/stadium/baseball/`, synth voices as fallback; played at contact and results (917, 1199–1226: crack, pop, cheer, riff); crowd excitement via `crowdExcite()`; kit state exposed as `__test.kitAudio` 2053.
+- **Venue:** old park built in `buildField()` 327 (`VENUE_FROM` 326, `oldParkMeshes` 431, hidden once the model loads); Night Ballpark loader 1948 (`kit/stadiums/Night-Ballpark/stadium.glb` — night look, kit field re-skin and touch material lightening all happen there); kit field re-skin `kitFieldOnPark()` 1873 (G-144: the composed kit texture also lands on the field mesh's LIVE material — on touch the G-85 Lambert pass replaces the original before the async swap; live state is `__test.stadium.kitFieldLive`); `window.__test` 2044.
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
