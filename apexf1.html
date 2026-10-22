@@ -25,6 +25,8 @@
     .overlay input[type=text] { padding:6px 8px; font-size:13px; margin-bottom:4px; }
     .overlay .menuSub { font-size:12px; margin:4px 0 8px; }
     .overlay .bigbtn { margin:4px auto; padding:7px 12px; font-size:14px; border-radius:9px; }
+    .overlay table.stand { margin-top:2px; }
+    .overlay table.stand td, .overlay table.stand th { padding:2px 6px; }
   }
   .hidden { display:none !important; }
   h1.title { font-size:clamp(30px,6vw,58px); font-weight:900; letter-spacing:2px; background:linear-gradient(180deg,#fff,#ff5a5a 55%,#c00); -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; }
@@ -2309,9 +2311,11 @@ function finishQuali(time){
   Race.placeGrid(false);
   // grid list UI
   const order=[...Race.cars].sort((a,b)=>a.qualiTime-b.qualiTime);
-  let html='<table class="stand"><tr><th></th><th>DRIVER</th><th>TIME</th></tr>';
-  order.forEach((c,i)=>{ html+=`<tr${c.isPlayer?' class="me"':''}><td>P${i+1}</td><td>${c.name}</td><td>${fmtTime(c.qualiTime)}</td></tr>`; });
-  $('gridList').innerHTML=html+'</table>';
+  const grow=(c,i)=>`<tr${c.isPlayer?' class="me"':''}><td>P${i+1}</td><td>${c.name}</td><td>${fmtTime(c.qualiTime)}</td></tr>`;
+  const gtbl=(list,off)=>'<table class="stand" style="flex:1"><tr><th></th><th>DRIVER</th><th>TIME</th></tr>'+list.map((c,j)=>grow(c,off+j)).join('')+'</table>';
+  const half=Math.ceil(order.length/2);
+  // G-119 R1: two half tables side by side - one 20-row list pushed LIGHTS OUT 214px off a sideways phone
+  $('gridList').innerHTML='<div style="display:flex;gap:14px;align-items:flex-start">'+gtbl(order.slice(0,half),0)+gtbl(order.slice(half),half)+'</div>';
   Race.mode='grid'; show('gridMenu'); HUD.show(false);
 }
 

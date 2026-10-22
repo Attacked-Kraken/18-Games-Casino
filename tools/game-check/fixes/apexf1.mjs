@@ -739,7 +739,9 @@ export default [
       const stopDriving = async () => { await h.eval(`(() => { if (window.__g119drv) { clearInterval(window.__g119drv); window.__g119drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
       if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
       await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
-      if (!await h.poll(() => h.eval(`window.__test.race().mode`), m => m === 'quali', 15000)) return 'weekend never reached qualifying';
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
       await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
       let racing = false;
       for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
@@ -789,6 +791,37 @@ export default [
       for (const m of [0, 1, 2, 3]) { const bad = await sampleMode(m, 1100); if (bad) { await stopDriving(); return 'upright phone: ' + bad; } }
       await page.setViewportSize({ width: 844, height: 390 });
       await stopDriving();
+      return true;
+    },
+  },
+  {
+    id: 'never-g-119-p1',
+    ask: 'Start button on the screen: LIGHTS OUT and every menu fits 844x390 with no scrolling (the owner had to scroll to start the race)',
+    async test(page, h) {
+      const fits = async (label) => {
+        const r = await h.eval(`(() => {
+          const vis = [...document.querySelectorAll('.overlay')].find(o => !o.classList.contains('hidden'));
+          if (!vis) return { err: 'no menu visible' };
+          return { id: vis.id, sh: vis.scrollHeight, ch: vis.clientHeight };
+        })()`);
+        if (!r || r.err) return label + ': ' + (r ? r.err : 'probe failed');
+        if (r.sh > r.ch + 1) return label + ' (' + r.id + ') needs scrolling: content is ' + r.sh + 'px tall on a ' + r.ch + 'px screen';
+        return null;
+      };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      let bad = await fits('main menu'); if (bad) return bad;
+      await h.press('#careerBtn'); await h.wait(400);
+      bad = await fits('track menu'); if (bad) return bad;
+      await h.press('#toTeamBtn'); await h.wait(400);
+      bad = await fits('team menu'); if (bad) return bad;
+      await h.press('#startBtn');
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
+      await h.press('#qualiSkip'); await h.wait(800);
+      bad = await fits('starting grid menu'); if (bad) return bad;
+      const btn = await h.eval(`(() => { const b = document.getElementById('raceBtn').getBoundingClientRect(); return { top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+      if (!btn || btn.top < -1 || btn.bottom > btn.ih + 1) return 'LIGHTS OUT is off the screen (button ' + (btn ? Math.round(btn.top) + '..' + Math.round(btn.bottom) : '?') + ' on a ' + (btn ? btn.ih : '?') + 'px tall phone)';
       return true;
     },
   }
