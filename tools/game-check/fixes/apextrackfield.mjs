@@ -2006,5 +2006,76 @@ export default [
       return true;
     }
   }
+,{
+    id: 'never-g-139-p1',
+    ask: 'NEVER (G-139): every main-menu button is at least the 44x44 CSS px touch target (DONE.md section 2)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (!bs.length) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the main menu never appeared';
+      const small = meas.filter(b => b.w < 44 || b.h < 44);
+      if (small.length) return 'menu buttons under the 44x44 touch target: ' + small.map(b => b.t + ' is ' + b.w + 'x' + b.h).join(', ');
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p2',
+    ask: 'NEVER (G-139): feet do not sink into the ground - REALITY sampling at the menu (12 samples, go(true)) finds no more than 20% of foot readings more than 5 cm under',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      let ready = false;
+      for (let i = 0; i < 30 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player)).catch(() => false); if (!ready) await h.wait(1000); }
+      if (!ready) return 'the REALITY player never loaded';
+      const gaps = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        try { R.go && R.go(true); } catch (e) {}
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (const i2 of e.vs) { e.m.getVertexPosition(i2, v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 12) { clearInterval(iv); try { R.go && R.go(false); } catch (e) {} res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps || gaps.length < 12) return 'too few foot readings to judge the sink (' + (gaps ? gaps.length : 0) + ')';
+      const sunk = gaps.filter(g => g < -0.05).length;
+      if (sunk > gaps.length * 0.2) return 'feet SINK into the ground at the menu: ' + sunk + ' of ' + gaps.length + ' readings more than 5 cm under (worst ' + Math.min(...gaps).toFixed(2) + ' m) - G-139';
+      if (Math.min(...gaps) < -0.12) return 'a foot buries ' + Math.abs(Math.min(...gaps)).toFixed(2) + ' m under the track at the bottom of the stride - the stance foot must stay on the ground line (G-139)';
+      return true;
+    }
+  }
 
 ];
