@@ -154,6 +154,18 @@ async function virtualClockFail(ctx, base, g) {
     return null;
   } catch (e) { return null; } finally { try { await vp.close(); } catch (e) {} }
 }
+// SLOW-RUNNER CLOCK (owner Oct 22, help line "Flight wall-clock tests timing out on slow runner days"): the tests' time budgets are
+// real seconds, so a runner 3-4x slower than normal fails a test that passes at normal speed. The robot times a fixed amount of
+// arithmetic in the page; SLOW = how many times slower than the baseline in tools/game-check/runner-speed.json (never below 1,
+// never above 4, and under 1.5x counts as normal). Every test budget (the 30 s harness limit and the Flight tests' own
+// `Date.now() - t0 > N` limits via window.__slow) is multiplied by it. The measured number is logged in the result (r.slow).
+async function slowFactor(page) {
+  let base = 60; try { base = JSON.parse(fs.readFileSync(new URL('./runner-speed.json', import.meta.url), 'utf8')).baseMs || 60; } catch (e) {}
+  try {
+    const ms = await page.evaluate(() => { const t = performance.now(); let x = 0; for (let i = 0; i < 20e6; i++) x += Math.sqrt(i) * 1.0001; return performance.now() - t + (x < 0 ? 1 : 0); });
+    const f = ms / base; return { ms: Math.round(ms), base, factor: f < 1.5 ? 1 : Math.min(4, Math.round(f * 10) / 10) };
+  } catch (e) { return { ms: 0, base, factor: 1 }; }
+}
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
   try {
@@ -409,7 +421,8 @@ for (const g of games) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         dead = false; inc = false;
         try {
-          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
+          const sl = await slowFactor(page); r.slow = sl; try { await page.evaluate(f => { window.__slow = f; }, sl.factor); } catch (e) {}
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(30 * sl.factor) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, 30000 * sl.factor); })]);
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
