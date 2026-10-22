@@ -684,7 +684,7 @@ export default [
       const gBars = await h.eval(() => { const H = window.__reality; let n = 0; if (H && H.player) H.player.traverse((q) => { if (q.userData.lamp) n++; }); return n; });
       if (gBars) return 'the garage car still wears ' + gBars + ' light bar(s)';
       await h.press('#mRace');
-      await h.waitForSelector('[data-i="0"]');
+      await page.waitForSelector('[data-i="0"]');
       await h.press('[data-i="0"]');
       await h.press('#qRace');
       const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
@@ -704,7 +704,7 @@ export default [
     ask: 'G-145 point 3: every car has its own bright headlights and tail lights - lamp meshes or lenses glowing front and rear',
     async test(page, h) {
       await h.press('#mRace');
-      await h.waitForSelector('[data-i="0"]');
+      await page.waitForSelector('[data-i="0"]');
       await h.press('[data-i="0"]');
       await h.press('#qRace');
       const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
