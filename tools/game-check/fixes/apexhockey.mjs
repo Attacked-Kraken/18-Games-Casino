@@ -1547,4 +1547,34 @@ export default [
   },
 },
 
+{
+  id: 'play-idle-wolves-defend',
+  ask: 'with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds',
+  async test(page, h) {
+    const read = () => h.eval(() => { const g = window.__hk && window.__hk.game; if (!g) return null; return { state: g.state, period: g.period, clockT: g.clockT, sA: g.scoreA, sH: g.scoreH }; }).catch(() => null);
+    let r = await read();
+    if (!r || r.state !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 12000, polling: 'raf' }); } catch (e) {}
+      r = await read();
+    }
+    if (!r || r.state !== 'menu') return 'the game was not at its menu to start the untouched match';
+    try { await h.press('#playBtn'); } catch (e) {}
+    // from here the test touches NOTHING - the human is idle
+    let sawPlay = false, done = false;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 55000) {
+      await h.wait(200);
+      const s = await read();
+      if (!s) continue;
+      if (s.state === 'play') sawPlay = true;
+      if (s.sA > 0) return 'the Sharks scored in the first ' + Math.max(0, Math.round((120 - s.clockT) * 10) / 10) + ' seconds of an untouched game - the Wolves never contested the puck';
+      if (s.period === 1 && s.clockT <= 105) { done = true; break; }
+      if (s.period > 1) { done = true; break; }
+    }
+    if (!sawPlay) return 'the untouched match never reached play';
+    if (!done) return 'the game clock never ran 15 seconds in the untouched match';
+    return true;
+  },
+},
 ];
