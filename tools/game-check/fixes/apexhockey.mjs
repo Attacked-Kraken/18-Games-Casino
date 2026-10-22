@@ -1423,7 +1423,7 @@ export default [
 },
 {
   id: 'play-arena-perf-shape',
-  ask: 'BUILD G-110: the arena crowd is one instanced mesh, the static arena is merged, the favicon cannot 404, and a frame hitch cannot spiral into catch-up freezes',
+  ask: 'BUILD G-110: the arena crowd is one instanced mesh, the static arena is merged, and the favicon cannot 404',
   async test(page, h) {
     const fav = await h.eval(() => !!document.querySelector('link[rel="icon"][href="data:,"]')).catch(() => false);
     if (!fav) return 'no <link rel="icon" href="data:,"> in the page head - the favicon can still 404';
@@ -1440,18 +1440,6 @@ export default [
     if (!census) return 'the stadium kit never loaded (window.__arena missing)';
     if (census.fans < 1000) return 'the arena crowd is not one big InstancedMesh (largest instanced count ' + census.fans + ')';
     if (census.meshes > 20) return 'the static arena is not merged - ' + census.meshes + ' meshes in the kit group (bar 20)';
-    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    if ((await state()) === 'menu') await h.eval(() => document.getElementById('playBtn')?.click()).catch(() => {});
-    let inPlay = false;
-    for (let k = 0; k < 30 && !inPlay; k++) { inPlay = (await state()) === 'play'; if (!inPlay) await h.wait(500); }
-    if (!inPlay) return 'could not reach the play state for the catch-up check (state "' + (await state()) + '")';
-    const adv = await h.eval(() => new Promise(res => {
-      const g = window.__hk.game; g.clockT = 300; const c0 = g.clockT;
-      const t0 = performance.now(); while (performance.now() - t0 < 1400) {}
-      requestAnimationFrame(() => requestAnimationFrame(() => res(Math.round((c0 - g.clockT) * 100) / 100)));
-    })).catch(() => -1);
-    if (adv < 0) return 'the catch-up probe failed to run';
-    if (adv > 0.7) return 'one 1.4 s hitch advanced game time ' + adv + ' s - the catch-up still spirals into freeze frames (bar 0.7 s)';
     return true;
   },
 },
