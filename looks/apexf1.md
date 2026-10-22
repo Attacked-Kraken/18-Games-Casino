@@ -8,20 +8,21 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (on main):
+Feature → line numbers in apexf1.html (on main after G-107):
 - Page head + inline tab icon: lines 1-7 (icon declared G-95)
-- Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 176-260 (friend overlay #friendOv at 244)
+- Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 176-278 (friend overlay #friendOv at 244)
 - Import map (three + vendor loaders): line 279
-- Data: TRACKS 378, TEAMS 396, AI_NAMES 408
-- Track (samples, buildGP for the kit circuit at 559): line 516
-- Car mesh builder buildCarMesh: line 954; Car class: line 1231
-- Input object: line 1392; initInput (stick, buttons, releaseAll on blur): line 1401
-- Race object: line 1558 (setup 1560, placeGrid 1608, startLights 1629, beginRace 1655)
-- Career + friends: line 1957 (Save 1958, friendCode 1971, parseFriend 1977, showResults 1989)
-- Menu wiring (show 2050, friendBtn 2089, friendGo 2123): lines 2040-2160
-- startWeekend: line 2181; runQuali: ~line 2199; main loop: line 2247
-- Cockpit attach CKAttach: line 2316; Grand Prix kit GPBoot 2327, GPAttach 2343
-- Test hooks window.__test: line 2358; REALITY hook window.__reality: line 2436; boot calls: 2453-2456
+- Audio Aud: line 297 (engine() at 331 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 360, skid() at 411 - kit tire squeal loop; synth voices kept as fallback)
+- Data: TRACKS 438, TEAMS 456, AI_NAMES 468
+- Track (samples, buildGP for the kit circuit at 619): line 576
+- Car mesh builder buildCarMesh: line 1014; Car class: line 1291
+- Input object: line 1452; initInput (stick, buttons, releaseAll on blur): line 1461
+- Race object: line 1618 (setup 1624, placeGrid 1649, startLights 1689, beginRace 1715)
+- Career + friends: line 2017 (Save 2018, friendCode 2031, parseFriend 2037, showResults 2047)
+- Menu wiring (show 2110, friendBtn 2149, friendGo 2183): lines 2110-2227
+- startWeekend: line 2238; runQuali: line 2260; main loop: line 2307
+- Cockpit attach CKAttach: line 2376; Grand Prix kit GPBoot 2387, GPAttach 2403; applyGroundKit at 2417 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
+- Test hooks window.__test: line 2437 (kitAudio + groundKit probes at 2453); REALITY hook window.__reality: line 2519; boot calls: 2538
 
 ## MUST
 - Own fictional teams and drivers
