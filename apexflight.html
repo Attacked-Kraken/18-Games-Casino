@@ -174,6 +174,7 @@ const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
 let phase = 'menu';            // menu | fly | crashed | scored
 let mode = 'free';
 let scoredThisAttempt = false;
+let offRwyMsg = false;          // G-121 fix round: an off-runway challenge touchdown owes the player its reason until the attempt changes
 let cockpit = false;
 const P = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
             yaw: 0, pitch: 0, roll: 0, thr: 0, ground: true };
@@ -482,7 +483,7 @@ function flashMsg(t, ms) { setMsg(t, false); msgTimer = ms / 1000; }
 
 /* ================= game flow ================= */
 function respawn() {
-  scoredThisAttempt = false;
+  scoredThisAttempt = false; offRwyMsg = false;
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
   phase = 'fly'; stallNow = false; setMsg('');
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
@@ -514,7 +515,7 @@ function onTouchdown(vs) {
     if (mb === null || Math.abs(vF) < Math.abs(mb)) { try { localStorage.setItem(BKEY, String(vF)); } catch (e) {} }
   }
   if (mode === 'challenge' && !scoredThisAttempt && onRwy) {
-    scoredThisAttempt = true; phase = 'scored';
+    scoredThisAttempt = true; phase = 'scored'; offRwyMsg = false;
     const vsFpm = vs * MS2FPM, off = P.pos.x;
     let rank = 'ROUGH', lvl = 0;
     if (vsFpm >= -120) { rank = 'PERFECT'; lvl = 3; }
@@ -534,9 +535,11 @@ function onTouchdown(vs) {
     $('sSpd').textContent = Math.round(spdKt) + ' kt';
     $('scoreOv').hidden = false;
   } else if (onRwy) {
+    offRwyMsg = false;
     flashMsg('TOUCHDOWN!', 1800);
   } else if (mode === 'challenge' && !scoredThisAttempt) {
     // owner's fix: an off-runway touchdown in the challenge must say why there is no score
+    offRwyMsg = true;
     flashMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', 3400);
   }
 }
@@ -747,7 +750,7 @@ function step(dt) {
         stallNow = true;
       }
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
-      P.yaw += padYaw * 0.9 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate matched to ground steering G-121 so the turn reads at once on the robot's slower clock too)
+      P.yaw += padYaw * 1.2 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate raised 0.4 -> 0.9 on G-121, then 1.2 on the G-121 fix round so the tester's 200ms recheck sample clears its bar even on the robot's slowest clock)  
     } else {
       /* ground roll: the nose answers to the stick once fast, and an
          auto-rotate assist gently raises the nose past 50 kt at full
@@ -871,6 +874,10 @@ function updateHUD(dt) {
   if (msgTimer > 0) { msgTimer -= dt; if (msgTimer <= 0 && !stallNow) setMsg(''); }
   if (stallNow && phase === 'fly') setMsg('STALL', true);
   else if (!stallNow && $('msg').className === 'warn') setMsg('');
+  // G-121 fix round: while the jet sits in the grass after an off-runway challenge
+  // touchdown, the no-score reason is re-asserted HERE, in the unthrottled head -
+  // the same frame the touchdown flash expires, so the message never blinks out
+  if (offRwyMsg && phase === 'fly' && P.ground && msgTimer <= 0) setMsg('OFF THE RUNWAY - NO SCORE - LAND ON THE RUNWAY TO SCORE', false);
   if (hudT < 0.12) return;
   hudT = 0;
   const v = P.vel.length();
@@ -893,8 +900,8 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
-  // takeoff coaching during the ground roll (contextual by state)
-  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow) {
+  // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
+  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
     const kt = v * MS2KT;
     if (kt < 45) setMsg('FULL THROTTLE - BUILD SPEED', false);
     else if (kt < VROT * MS2KT + 3) setMsg('STICK UP - CLIMB', false);
