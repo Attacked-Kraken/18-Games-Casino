@@ -401,7 +401,7 @@ export default [
   },
   {
     id: 'play-colliders-visible',
-    ask: 'G-70: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with light bars',
+    ask: 'G-145: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with its own bright headlights and no light bars',
     async test(page, h) {
       return h.eval(() => {
         const E = window.__erc;
@@ -417,19 +417,20 @@ export default [
               let top = c.root, inScene = false;
               while (top) { if (top.visible === false) return kind + ' ' + i + ' is under an invisible parent'; if (top === R.W.scene) { inScene = true; break; } top = top.parent; }
               if (!inScene) return kind + ' ' + i + ' car is not in the world scene';
-              let meshes = 0, lamps = 0;
+              let meshes = 0, bars = 0, hl = 0;
               let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9, mnz = 1e9, mxz = -1e9;
               c.root.updateMatrixWorld(true);
               c.root.traverse((q) => {
                 if (!q.isMesh || !q.visible || q.userData.blob || !q.geometry || !q.geometry.attributes || !q.geometry.attributes.position) return;
-                meshes++; if (q.userData.lamp) lamps++;
+                meshes++; if (q.userData.lamp) bars++; if (q.userData.hlight) hl++;
                 const p = q.geometry.attributes.position, m = q.matrixWorld.elements, stride = Math.max(1, Math.floor(p.count / 400));
                 for (let vi = 0; vi < p.count; vi += stride) { const x = p.getX(vi), y = p.getY(vi), z = p.getZ(vi);
                   const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14];
                   if (wx < mnx) mnx = wx; if (wx > mxx) mxx = wx; if (wy < mny) mny = wy; if (wy > mxy) mxy = wy; if (wz < mnz) mnz = wz; if (wz > mxz) mxz = wz; }
               });
               if (meshes < 3) return kind + ' ' + i + ' has only ' + meshes + ' visible meshes - nothing to see';
-              if (lamps < 2) return kind + ' ' + i + ' has no light bars - invisible in the dark';
+              if (bars) return kind + ' ' + i + ' still has a light bar';
+              if (hl < 2) return kind + ' ' + i + ' has no bright headlights of its own';
               const len = Math.max(mxx - mnx, mxz - mnz), hgt = mxy - mny;
               if (len < 3.2 || len > 6.8) return kind + ' ' + i + ' is ' + len.toFixed(1) + ' m long - not a real car size';
               if (hgt < 0.5 || hgt > 2.2) return kind + ' ' + i + ' is ' + hgt.toFixed(1) + ' m tall - not a real car shape';
@@ -642,6 +643,84 @@ export default [
           }, 300);
         });
       });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-wrap-on-door',
+    ask: 'G-149 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const strips = [];
+        R.P.car.root.traverse((q) => { if (q.isMesh && q.name === 'apexname') strips.push(q); });
+        if (!strips.length) return 'the player goblin wears no APEX ARCADE wrap';
+        const tilt = strips[0].parent;
+        let mnx = 1e9, mxx = -1e9;
+        const v = tilt.position.clone();
+        tilt.updateWorldMatrix(true, true);
+        tilt.traverse((q) => { if (!q.isMesh || q.name === 'apexname') return; const p = q.geometry && q.geometry.attributes && q.geometry.attributes.position; if (!p) return;
+          for (let i = 0; i < p.count; i += 3) { v.fromBufferAttribute(p, i); v.applyMatrix4(q.matrixWorld); const l = tilt.worldToLocal(v.clone()); if (l.x < mnx) mnx = l.x; if (l.x > mxx) mxx = l.x; } });
+        const L = mxx - mnx, cx = (mnx + mxx) / 2, rearAx = cx - 0.31 * L, frontAx = cx + 0.31 * L;
+        for (const s of strips) { s.geometry.computeBoundingBox(); const b = s.geometry.boundingBox;
+          if (b.min.x < rearAx + 0.45) return 'the wrap starts at x ' + b.min.x.toFixed(2) + ' - over the rear wheel (the door starts at ' + (rearAx + 0.45).toFixed(2) + ')';
+          if (b.max.x > frontAx - 0.45) return 'the wrap ends at x ' + b.max.x.toFixed(2) + ' - over the front wheel (the door ends at ' + (frontAx - 0.45).toFixed(2) + ')'; }
+        E.toMenu();
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-no-light-bars',
+    ask: 'G-145 point 2: no car wears a light bar - the G-70 bumper bars are gone from the garage car, the race grid and traffic',
+    async test(page, h) {
+      const gBars = await h.eval(() => { const H = window.__reality; let n = 0; if (H && H.player) H.player.traverse((q) => { if (q.userData.lamp) n++; }); return n; });
+      if (gBars) return 'the garage car still wears ' + gBars + ' light bar(s)';
+      await h.press('#mRace');
+      await page.waitForSelector('[data-i="0"]');
+      await h.press('[data-i="0"]');
+      await h.press('#qRace');
+      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
+      if (!ready) return 'race did not build in 15 s';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let n = 0; e.car.root.traverse((q) => { if (q.userData.lamp) n++; }); if (n) bad.push((e.carId || 'traffic') + ' x' + n); }
+        E.toMenu();
+        return bad.length ? 'light bars remain on: ' + bad.join(', ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-headlights-bright',
+    ask: 'G-145 point 3: every car has its own bright headlights and tail lights - lamp meshes or lenses glowing front and rear',
+    async test(page, h) {
+      await h.press('#mRace');
+      await page.waitForSelector('[data-i="0"]');
+      await h.press('[data-i="0"]');
+      await h.press('#qRace');
+      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
+      if (!ready) return 'race did not build in 15 s';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let f = 0, r = 0, dim = 0;
+          e.car.root.traverse((q) => { if (!q.userData.hlight) return; if (q.userData.hlight === 1) f++; else r++;
+            const m = q.material; const bright = m && m.isMeshBasicMaterial ? Math.max(m.color.r, m.color.g, m.color.b) >= 1.5 : ((m && m.emissiveIntensity) || 0) >= 1.5; if (!bright) dim++; });
+          const cid = e.carId || 'traffic';
+          if (!f) bad.push(cid + ' has no front headlight');
+          if (!r) bad.push(cid + ' has no rear light');
+          if (dim) bad.push(cid + ' has ' + dim + ' dim lamp(s)'); }
+        E.toMenu();
+        return bad.length ? bad.join('; ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
       return out === true ? true : out;
     },
   },
