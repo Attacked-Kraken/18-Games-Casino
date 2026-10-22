@@ -1523,4 +1523,35 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-hub-reset-stays-armed',
+  mode: 'reality',
+  ask: 'TESTER (G-131): closing the career hub disarms the ERASE button - one tap arms it, but once the hub has been closed and reopened the button must be back to un-armed, so a later single tap cannot erase the career',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    const click = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    const hubOpen = () => h.eval(() => { const el = document.getElementById('hub'); return !!el && el.style.display === 'flex'; }).catch(() => false);
+    const resetState = () => h.eval(() => { const el = document.getElementById('hubReset'); return el ? { text: el.textContent, arm: el.dataset.arm || null } : null; }).catch(() => null);
+    await click('careerBtn'); await h.wait(900);
+    if (!await hubOpen()) return 'the career hub did not open from the menu';
+    await click('hubNew'); await h.wait(900);
+    const hasCareer = await h.eval(() => !!localStorage.getItem('apex_hockey_career_v1')).catch(() => false);
+    if (!hasCareer) return 'START SEASON did not create a career save';
+    await click('hubReset'); await h.wait(600);
+    const armed = await resetState();
+    if (!armed || armed.arm !== '1') return 'the first ERASE tap did not arm the button (dataset.arm is not set)';
+    await click('hubClose'); await h.wait(600);
+    await click('careerBtn'); await h.wait(1200);
+    if (!await hubOpen()) return 'the career hub did not reopen';
+    const after = await resetState();
+    if (after && after.arm === '1') return 'the ERASE button is still armed after the hub was closed and reopened (it still reads "' + after.text + '") - one more tap now erases the whole career on what looks like a first tap; closing the hub must disarm it';
+    return true;
+  },
+},
+
 ];
