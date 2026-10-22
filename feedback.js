@@ -29,6 +29,11 @@
         done(u ? u + '/?note=1' + (p ? '#pin=' + encodeURIComponent(p) : '') : '');
       }).catch(function () { done(''); });
   }
+  /* owner Oct 21 2026 10:36 PM: the page's top-left "‹ ENTRANCE" became "‹ Controller" - it goes back to his controller
+     (away link from anywhere, else the Mac mini's home address) */
+  window.apexController = function () {
+    awayCtl(function (u) { location.href = u ? u.replace('/?note=1', '/') : ctl(); });
+  };
   var css = document.createElement('style');
   css.textContent =
     '.fbk{position:absolute;inset:0;z-index:30;pointer-events:none}' +
