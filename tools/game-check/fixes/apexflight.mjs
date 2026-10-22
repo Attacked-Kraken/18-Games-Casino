@@ -500,4 +500,79 @@ export default [
       });
     },
   },
+  {
+    id: 'play-controls-answer-in-100ms',
+    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput || !F.jet) return 'no flight/jetInput hook';
+        const J = F.jetInput, P = F.P;
+        const el = (id) => document.getElementById(id);
+        const down = (id) => el(id).dispatchEvent(new PointerEvent('pointerdown', { pointerId: 11, bubbles: true }));
+        const up = (id) => el(id).dispatchEvent(new PointerEvent('pointerup', { pointerId: 11, bubbles: true }));
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return Math.round(performance.now() - t0); await wait(4); } return -1; };
+        return (async () => {
+          const bad = [];
+          // airborne setup, level and steady (state set through the hook, then real controls only)
+          P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
+          await wait(150);
+          // STICK: press and push down-right - the jet must answer, and stop when let go
+          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
+          let ms = await until(() => F.inp.pitchUp > 0.15 && F.inp.rollRight > 0.15, 100);
+          if (ms < 0) bad.push('stick did not move the jet within 100ms');
+          zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
+          ms = await until(() => F.inp.pitchUp === 0 && F.inp.rollRight === 0, 100);
+          if (ms < 0) bad.push('stick did not stop within 100ms of letting go');
+          // THR + : throttle must start rising at once, and stop when let go
+          P.thr = 0.5; J.throttle = 0.5; await wait(60);
+          down('jThrUp');
+          ms = await until(() => P.thr > 0.53, 100);
+          if (ms < 0) bad.push('THR+ did not raise the throttle within 100ms');
+          up('jThrUp'); await wait(80); const thrHold = P.thr; await wait(150);
+          if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after THR+ was let go');
+          // THR - : throttle must start falling at once
+          down('jThrDn');
+          ms = await until(() => P.thr < thrHold - 0.03, 100);
+          if (ms < 0) bad.push('THR- did not lower the throttle within 100ms');
+          up('jThrDn');
+          // BOOST and BRAKE: flags answer at once and clear at once
+          down('jBoost'); ms = await until(() => J.boost === true, 100);
+          if (ms < 0) bad.push('BOOST did not answer within 100ms');
+          up('jBoost'); ms = await until(() => J.boost === false, 100);
+          if (ms < 0) bad.push('BOOST did not stop within 100ms of letting go');
+          down('jBrake'); ms = await until(() => J.brake === true, 100);
+          if (ms < 0) bad.push('BRAKE did not answer within 100ms');
+          up('jBrake'); ms = await until(() => !J.brake, 100);
+          if (ms < 0) bad.push('BRAKE did not stop within 100ms of letting go');
+          // YAW: in the air the jet's heading must actually turn, and stop when let go
+          const yaw0 = P.yaw;
+          down('jYawR');
+          ms = await until(() => Math.abs(P.yaw - yaw0) > 0.02, 100);
+          if (ms < 0) bad.push('YAW did not turn the jet within 100ms (dead in the air)');
+          up('jYawR'); await wait(80); const yawHold = P.yaw; await wait(150);
+          if (Math.abs(P.yaw - yawHold) > 0.005) bad.push('jet kept yawing after YAW was let go');
+          // GEAR: a tap flips the gear state at once, both ways
+          if (!F.jet.gearDown) { down('jGear'); up('jGear'); await until(() => F.jet.gearDown, 200); }
+          down('jGear'); up('jGear');
+          ms = await until(() => F.jet.gearDown === false, 100);
+          if (ms < 0) bad.push('GEAR did not retract within 100ms of the tap');
+          down('jGear'); up('jGear');
+          ms = await until(() => F.jet.gearDown === true, 100);
+          if (ms < 0) bad.push('GEAR did not extend within 100ms of the tap');
+          // TRICK: a tap starts the maneuver at once
+          down('jRoll'); up('jRoll');
+          ms = await until(() => F.trick === 'barrelRoll', 100);
+          if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          return bad.length ? bad.join('; ') : true;
+        })();
+      });
+    },
+  },
 ];
