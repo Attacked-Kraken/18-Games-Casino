@@ -66,3 +66,4 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk
 - Tests that wait on WALL-clock seconds fail on slow runner days (Flight G-141). Rule: a play test judges time in GAME time (or retries once on a fresh page); a wall-clock budget is a robot fault - file "HELP-VP: robot", never fight it in the game.
+- 2026-10-22 (window 6, G-163): a ratio threshold is a claim about a real profile - print the profile (band/dband/run) from the actual car before shipping the fix. The Goblin door tapers ~10% under its own peak (peak 1.331, mid-door 1.18-1.22), so 0.92 of the peak left a 4-bucket island and the APEX ARCADE strip silently never drew.
