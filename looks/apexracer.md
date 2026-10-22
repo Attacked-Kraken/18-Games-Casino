@@ -17,11 +17,14 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - Cars match the owner's photo: wheels and rims exactly as in the picture (e.g. white rims)
+- Night exposure keeps every car's shape readable - lights never blow a car out to a white blob
 
 ## NEVER
 - No car missing its wheels
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- No untextured bars or stray parts on a car - every part on the car belongs to the car
+- No gameplay or proof camera inside a car
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

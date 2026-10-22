@@ -35,6 +35,8 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - JOB J42 (owner, 2026-10-17): DEV-ONLY "Skip level" button in career/season/tournament modes - only when the address has dev=1, NEVER without; it wins the current level and moves to the next, saving like a real win (STORE-READY.md "Developer skip")
 - JOB J42 (owner, 2026-10-17): 1500 m and every long race - the camera stays LOW behind the player's runner and follows him around the whole track, never up over the stands where he is a speck
 - JOB J42 (owner, 2026-10-17): DISCUS (and shot put, javelin) - after the throw, the camera follows the implement through the air and shows its landing marker
+- Hurdle heights are the real ones, measured in the robot run: 0.914 m (300/400 m hurdles), 0.838 m (100 m hurdles); the steeplechase barrier is 0.914 m and spans all lanes in one beam
+- Results screens show ONE table, athletes under the ATHLETE heading, and marks that match the race clock
 
 ## NEVER
 - Owner 2026-10-21: "racers so far back into the wall stands" - the field always starts ON the painted track; sprint/hurdles starts sit on the oval (visS), never on a straight-line extension past the track's end (guarded by play-racers-start-on-the-track).
@@ -45,6 +47,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - Add running lanes.
 - Make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.
 - Camera 7 m behind the player's runner along the lane direction (it follows the lane around the curves), 2.8 m up, looking at a point 10 m ahead of the runner; it never goes behind the start line into the stands or through any wall - clamp it inside the stadium.
+- No field starting on the finish line, and nobody starting metres ahead at full speed - the whole field starts together on its own start line, staggered where the event is staggered
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
