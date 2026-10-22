@@ -12,6 +12,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Own team names, colors and numbers (no NHL teams or real players)
 - Back numbers read the right way round (not mirrored)
 - Face visible through the cage
+- The robot's face close-up is the proof: visor or open cage fitted, the face readable through it, and the full name and number readable from behind
 - Owner's model sheet (2026-10-16): about 7.5 head heights; forward lean 15-20 deg; knee flex 25-30 deg; hips back over
   the heels; wide stance; helmet with visor; shoulder pads (bulk); oversized gloves; padded breezers; shin guards
   under the socks; skates with steel blades. Build players with the shared kit (`characters/base-human-v2/gear.js`,
@@ -24,6 +25,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Nothing built from boxes when a real model is possible
 - "They gave me this": blob players, upright floating sticks, scattered bits (2026-10-16)
 - "Why do I get offsides every time" (2026-10-17): AI teammates must hold the attacking blue line until the puck crosses it — never skate ahead of the puck into the zone
+- No menu text clipped or overlapping at 844x390 - every line inside the frame
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

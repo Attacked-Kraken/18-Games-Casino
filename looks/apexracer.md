@@ -7,7 +7,7 @@
 - World and race setup: buildWorld L1316 · setupRace L1762 · startRace L2070 · back to menu (toMenu) L2039
 - Sound: audioInit L1674 · sfx L1695 · music speed mix (musRaceMix) L1733
 - Racing: stepPlayer L1809 · stepAI L1854 (G-70 gap band + G-123 player-pace cap) · stepTraffic L1888 · updateRace L1906 (G-123 player pace tracker)
-- Test hooks: window.__erc L2293 · window.__reality L2304
+- Test hooks: window.__erc L2297 · window.__reality L2308
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
@@ -17,11 +17,14 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## MUST
 - Cars match the owner's photo: wheels and rims exactly as in the picture (e.g. white rims)
+- Night exposure keeps every car's shape readable - lights never blow a car out to a white blob
 
 ## NEVER
 - No car missing its wheels
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
+- No untextured bars or stray parts on a car - every part on the car belongs to the car
+- No gameplay or proof camera inside a car
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
