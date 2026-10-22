@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Read", "Edit(jobs/**)", "Write(jobs/**)", "Monitor",
+      "Bash(git status*)", "Bash(git pull*)", "Bash(git fetch*)", "Bash(git checkout*)", "Bash(git add jobs/*)",
+      "Bash(git commit*)", "Bash(git push origin mini/*)", "Bash(git log*)", "Bash(git diff*)",
+      "Bash(python3 tools/helpwatch-mini.py*)", "Bash(TZ=America/Chicago date*)", "Bash(date*)",
+      "Bash(gh api repos/Attacked-Kraken/18-Games-Casino/*)", "Bash(grep*)", "Bash(ls*)", "Bash(cat jobs/*)"
+    ],
+    "deny": [
+      "Bash(rm*)", "Bash(sudo*)", "Bash(git push --force*)", "Bash(git push -f*)", "Bash(git push origin main*)",
+      "Bash(curl*)", "Bash(wget*)", "Bash(ssh*)", "Bash(open*)", "Bash(osascript*)",
+      "Read(~/**)", "Edit(tools/**)", "Edit(.github/**)", "Edit(kit/**)", "Edit(models/**)"
+    ]
+  }
+}
