@@ -682,12 +682,10 @@ export default [
     async test(page, h) {
       const gBars = await h.eval(() => { const H = window.__reality; let n = 0; if (H && H.player) H.player.traverse((q) => { if (q.userData.lamp) n++; }); return n; });
       if (gBars) return 'the garage car still wears ' + gBars + ' light bar(s)';
-      await h.press('#mRace');
-      await page.waitForSelector('[data-i="0"]');
-      await h.press('[data-i="0"]');
-      await h.press('#qRace');
-      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
-      if (!ready) return 'race did not build in 15 s';
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       const out = await h.eval(() => {
         const E = window.__erc, R = E.R, bad = [];
         for (const e of [...R.cars, ...R.traffic]) { let n = 0; e.car.root.traverse((q) => { if (q.userData.lamp) n++; }); if (n) bad.push((e.carId || 'traffic') + ' x' + n); }
@@ -702,12 +700,10 @@ export default [
     id: 'play-headlights-bright',
     ask: 'G-163: every car shines from its own headlights and tail lights - lamp meshes plus a soft glow front and rear, nothing solid',
     async test(page, h) {
-      await h.press('#mRace');
-      await page.waitForSelector('[data-i="0"]');
-      await h.press('[data-i="0"]');
-      await h.press('#qRace');
-      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
-      if (!ready) return 'race did not build in 15 s';
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       const out = await h.eval(() => {
         const E = window.__erc, R = E.R, bad = [];
         for (const e of [...R.cars, ...R.traffic]) { let f = 0, r = 0, dim = 0;
@@ -726,14 +722,12 @@ export default [
   },
   {
     id: 'play-lights-no-solids',
-    ask: 'G-163 point 1: no solid light blocks on any car - the shine is soft glow sprites at the lamp corners, front and rear',
+    ask: 'G-163 point 1: no solid light blocks on any car - the shine is soft glow quads at the lamp corners, front and rear',
     async test(page, h) {
-      await h.press('#mRace');
-      await page.waitForSelector('[data-i="0"]');
-      await h.press('[data-i="0"]');
-      await h.press('#qRace');
-      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
-      if (!ready) return 'race did not build in 15 s';
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       const out = await h.eval(() => {
         const E = window.__erc, R = E.R, bad = [];
         for (const e of [...R.cars, ...R.traffic]) { let gf = 0, gr = 0, solid = 0;
@@ -761,6 +755,7 @@ export default [
       const out = await h.eval(() => {
         const E = window.__erc, R = E.R;
         if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        E.step(5, 1 / 60); /* pose the car once so its pool takes its place on the road */
         const car = R.P.car;
         if (!car.pool) { E.toMenu(); return 'the player car has no headlight pool'; }
         if (!car.pool.visible) { E.toMenu(); return 'the headlight pool is not switched on at night'; }
