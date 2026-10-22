@@ -2324,11 +2324,12 @@ because game time ran in slow motion on weak phones; with game time tracking rea
 in by the same race moment at any frame rate. Same target lean (0.34), same final posture. */
 rig._lean=(rig._lean||0)+(leanT-(rig._lean||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
-// JOB G-139 (owner): ground trim. The UAL run clips carry their ground line under the
-// rig origin - at late stance the planted foot's sole measures up to 0.14 m UNDER the
-// track (REALITY SINK). While running, ease the body up 0.07 m so the stance foot
-// lands on the track; at the marks / idle / jumps the trim is 0 and feet stay planted.
-const trimT=(mode==='run'&&(speedFrac||0)>=0.04)?0.07:0;
+// JOB G-139 (owner): ground trim. The UAL clips carry their ground line under the rig
+// origin - the idle clip stands 0.05 m under the track, the SET crouch reaches -0.115 m
+// and a running stance foot dives to -0.16 m (REALITY SINK). Round 1 (the robot still
+// read 16 of 24 sunk on the run-only trim): a constant 0.065 m trim grounds every
+// clip, plus 0.03 m more while a run clip plays, so no sampled stance reads under.
+const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0);
 rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);

@@ -9,7 +9,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
 - Touch layer (stick / TAP RUN / ACTION): line 169 - menu markup: line 175 - event grid: line 206 - career screen: line 241
 - fitGame (sizes renderer + camera to the turned box): line 337 - audio (AudioSys): line 388
-- Live engine pointer ENG: line 789 - race frame loop frame(): line 3649 - REALITY hook: line 3714 - test hooks (__tf): line 3724
+- Live engine pointer ENG: line 789 - race frame loop frame(): line 3650 - REALITY hook: line 3715 - test hooks (__tf): line 3725
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
@@ -43,6 +43,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - 2026-10-22: the 300m and 400m hurdles stand 1.07 m - hurdles stand at their REAL heights: 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m (G-122)
 - 2026-10-22: menu buttons under the 44x44 touch target (36px/30px tall in the compact menu) (G-139)
 - 2026-10-22: feet sink into the ground - the run clips' stance sole dives up to 0.16 m under the track; the run-mode ground trim holds it on the ground line (G-139)
+- 2026-10-22: feet still sink at the marks and in the SET crouch (robot 16 of 24 after the first fix) - the ground trim is constant in every state, and the guard test samples the standing start too (G-139)
 - No capsule / stick figures
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters
