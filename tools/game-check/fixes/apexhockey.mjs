@@ -1421,4 +1421,22 @@ export default [
     }
   },
 },
+{
+  id: 'tester-reality-hook-fields',
+  ask: 'TESTER (G-108): the __reality hook carries camera, time() and speed() as REALITY.md requires',
+  async test(page, h) {
+    return h.eval(() => {
+      const R = window.__reality;
+      if (!R) return 'no __reality hook at all';
+      const missing = [];
+      if (!R.camera) missing.push('camera');
+      if (typeof R.time !== 'function') missing.push('time()');
+      if (typeof R.speed !== 'function') missing.push('speed()');
+      if (missing.length) {
+        return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+      }
+      return true;
+    });
+  },
+}
 ];

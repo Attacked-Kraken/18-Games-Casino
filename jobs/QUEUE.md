@@ -18,6 +18,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
+- [ ] TESTER: The __reality hook has no camera, time() or speed() - REALITY.md requires all three, so the robot cannot take the player close-up or measure speed in game time. Proof: play test tester-reality-hook-fields fails in tools/game-check/fixes/apexhockey.mjs.
 - [ ] TESTER: Career PLAY NEXT MATCH never starts the match - it saves the fixture, reloads to the main menu, and the match only starts if you press CAREER again on the menu. Proof: play test tester-career-play-starts-match fails in tools/game-check/fixes/apexhockey.mjs.
 - [x] (already on main since G-86 - G-92/G-93 confirmed) TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
 - [x] TESTER: The stick never resets when the app loses focus or is hidden mid-hold - the knob stays pushed at +40 px after blur and a hide/show cycle, and only a real touchend centres it. Proof: play test tester-stick-resets-on-blur fails in tools/game-check/fixes/apexhockey.mjs. (fixed - G-103 confirmed in the running game: knob held at -40 px centres to 0 after blur + hide/show, and play-stick-resets-on-blur passes)
