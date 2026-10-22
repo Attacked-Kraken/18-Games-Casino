@@ -462,4 +462,42 @@ export default [
       });
     },
   },
+  {
+    id: 'tester-challenge-can-slow-to-band',
+    ask: 'Landing challenge: the jet must be able to slow to the 55-88 kt touchdown band in a descent (today: it accelerates to 130kt+ and cannot slow down, making the runway unreachable)',
+    async test(page, h) {
+      try { await h.press('#btnChal'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          const t0 = Date.now();
+          let minSpd = 999;
+          const iv = setInterval(() => {
+            // competent player: idle throttle, BRAKE airbrake on, gentle -600fpm descent
+            F.jetInput.throttle = 0;
+            if (F.P) F.P.thr = 0;
+            F.jetInput.brake = 1;
+            const vs = F.P.vel.y;
+            if (vs < -3.5) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+            else if (vs > -1.5) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.25);
+            const spdKt = F.P.vel.length() * 1.94384;
+            if (spdKt < minSpd) minSpd = spdKt;
+            // stop when we touch down, crash, or run out of time/altitude
+            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
+              clearInterval(iv);
+              if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
+              return res(true);
+            }
+            if (Date.now() - t0 > 30000) {
+              clearInterval(iv);
+              return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
+            }
+          }, 200);
+        });
+      });
+    },
+  },
 ];
