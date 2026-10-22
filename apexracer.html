@@ -1760,7 +1760,7 @@ function addEnt(o) {
   R.T.at(o.s0, o.d0, tmpA); e.x = tmpA.x; e.z = tmpA.z; e.h = tmpA.h; e.idx = tmpA.i; R.cars.push(e); return e;
 }
 async function setupRace(place, laps, friend) {
-  endRace();
+  endRace(); G.mode = 'loading';
   const W = await buildWorld(place), T = W.T, r = rng(Date.now() >>> 0); ldBar(45); await ldTick(1);
   R = { place, laps, W, T, cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
   const slot = (k) => ({ s0: -(9 + Math.floor(k / 2) * 9.5) / T.ds, d0: k % 2 ? 4 : -4 });
@@ -2068,6 +2068,9 @@ function openSheet(p) {
 }
 $('shX').onclick = () => { sfx('pclose'); openWorld(G.pick === 'friend' ? 'friend' : null); }; $('shGo').onclick = () => { sfx('pclose'); startRace(SH.p, SH.laps); };
 function startRace(place, laps) {
+  /* Oct 21 2026 (advisor): "R.skids is not iterable" - a second start while the first was still loading (the robot's go()
+     retries after 6 s, PR #834, and the staged start awaits mid-setup, PR #754) let the frame loop run a half-built race. */
+  if (G.mode === 'loading') return;
   S.lastPlace = place.i; save(); show('loading'); G.mode = 'loading'; $('ldT').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]}`; audioInit(); ldBar(8);
   setTimeout(async () => { try { await setupRace(place, laps, G.friend); } catch (e) { console.error(e); toMenu(); } }, 60);
 }
@@ -2265,7 +2268,7 @@ function updateGarage(dt, now) {
 let last = performance.now();
 function frame(now) {
   requestAnimationFrame(frame); const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (R && (G.mode === 'race' || G.mode === 'result' || G.mode === 'pause')) { if (!R.paused) updateRace(dt); renderRace(now); }
+  if (R && R.skids && (G.mode === 'race' || G.mode === 'result' || G.mode === 'pause')) { if (!R.paused) updateRace(dt); renderRace(now); }
   else if (G.mode !== 'loading') updateGarage(dt, now);
 }
 function goBack() {
