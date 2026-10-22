@@ -854,4 +854,57 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-daylight-batter-crowd',
+    ask: 'BUILD G-151 (art director): the play picture is a DAY scene - bright frame, the stands full of visible crowd people, and the batter big and lit above the bottom bar in the pitching view and with the ball in play',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      for (let i = 0; i < 30; i++) {
+        const ph = await h.eval(() => window.__test ? window.__test.phase : null);
+        if (ph && ph !== 'start') break;
+        await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        await h.wait(500);
+      }
+      // wait for the pitching view to settle on the pitcher camera, with the
+      // start menu fully gone (a start click that lands while the park is still
+      // loading can be followed by the loader re-showing the menu)
+      let proj = null;
+      for (let i = 0; i < 30; i++) {
+        const menuUp = await h.eval(() => { const so = document.getElementById('startOv'); return so && so.style.display !== 'none'; });
+        if (menuUp) { await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); }); await h.wait(400); continue; }
+        proj = await h.eval(() => {
+          const R = window.__reality; if (!R || !R.camera || !R.player || !window.__test.stadium.loaded) return null;
+          const cam = R.camera, P = R.player;
+          const feet = P.position.clone(); const head = feet.clone(); head.y += 2.02;
+          const pr = w => { const p = w.project(cam); return (1 - p.y) / 2 * 390; };
+          return { tallPx: Math.abs(pr(feet) - pr(head)), feetRow: pr(feet), camPos: cam.position.toArray().map(v => +v.toFixed(0)) };
+        });
+        if (proj && Math.abs(proj.camPos[2] + 26) < 6) break;
+        await h.wait(500);
+      }
+      if (!proj) return 'the pitching view never settled - no batter to measure';
+      if (proj.tallPx < 30) return 'the batter is a speck in the play picture: ' + proj.tallPx.toFixed(0) + ' px tall of 390 (art director: clearly visible)';
+      if (proj.feetRow > 312) return 'the batter is hidden behind the bottom bar: his feet land at row ' + proj.feetRow.toFixed(0) + ' of 390';
+      const shot = await page.screenshot({ type: 'jpeg', quality: 62 });
+      const stats = await page.evaluate(async (b64) => {
+        const img = new Image();
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/jpeg;base64,' + b64; });
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+        const d = cx.getImageData(0, 0, cv.width, cv.height).data;
+        const W = cv.width, H = cv.height;
+        let lumSum = 0, n = 0, crowd = 0, bn = 0;
+        for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+          const i = (y * W + x) * 4, r = d[i], g = d[i + 1], b = d[i + 2];
+          const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          lumSum += L; n++;
+          if (y < H * 0.42) { bn++; if (L >= 60 && (r - b) >= -10) crowd++; }
+        }
+        return { lum: lumSum / n, crowdPct: 100 * crowd / Math.max(bn, 1) };
+      }, shot.toString('base64'));
+      if (stats.lum < 75) return 'the play picture is night-dark: mean luminance ' + stats.lum.toFixed(0) + '/255 (art director: day-lit scene; the night grade measured 35)';
+      if (stats.crowdPct < 9) return 'the crowd reads empty: only ' + stats.crowdPct.toFixed(1) + '% of the stands band reads as visible crowd people (the night grade measured 1.0%)';
+      return true;
+    },
+  },
 ];
