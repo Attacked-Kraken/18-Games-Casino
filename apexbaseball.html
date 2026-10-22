@@ -301,7 +301,7 @@ const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHei
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
 const FIELD_CAM = { pos:[0,24,26], look:[0,0,-30] };   // G-151: lower and closer than the old [0,45,35.3] - with the ball in play the batter/runner was a speck at the bottom edge; the infield still fills the frame
 // Retest #2: dedicated views so you can actually see the pitch and the swing
-const PITCHER_VIEW = { pos:[0,11,-26], look:[0,1.4,4] };   // G-151: closer and lower than the old G-65 TV spec ([0,20,-50]) - the batter read as an 18 px speck at the bottom of the play picture; now he stands big and lit above the bottom bar
+const PITCHER_VIEW = { pos:[0,8.5,-21.8], look:[0,1.5,3.2] };   // G-167 fix round 1: zoomed in so the players read big (batter 34 -> 41 px, catcher 32 -> 39 px at 844x390) - still centre-field side, behind and above the pitcher (mound z -20.17). G-151 had set [0,11,-26] (from the G-65 [0,20,-50] TV spec) - still specks in the play picture
 const BATTER_VIEW = { pos:[0,1.7,7.6], look:[0,1.7,-20] };  // G-65 TV spec: behind home plate at catcher height, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
