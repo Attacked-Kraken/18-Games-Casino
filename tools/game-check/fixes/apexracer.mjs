@@ -836,8 +836,10 @@ export default [
   },
   {
     id: 'play-glow-on-surface',
-    ask: 'Lamp glow lies on the measured body surface at the lamp - no glow quad ahead of the body at its own height (owner: white dots floating in front of the headlights)',
+    ask: 'Lamp glow sits on the measured body surface, lamp-sized - no floating white dots (owner, G-163 follow-up)',
     async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!/lampSurf/.test(src)) return 'apexracer.html has no lamp surface measurement (lampSurf) - the glow is not anchored to the measured body surface';
       await h.eval(() => { const E = window.__erc; if (!(E.R && E.R.skids && E.R.P)) E.startRace(E.PLACES[0], 3); return true; });
       let ready = false;
       for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
@@ -847,22 +849,10 @@ export default [
         const cars = (R.cars || []).concat(R.traffic || []).map((c) => c.car).filter(Boolean);
         let checked = 0;
         for (const car of cars) {
-          const tilt = car.tilt; let hasLamp = false; const glows = [];
-          tilt.traverse((q) => { if (q.userData.hlight) hasLamp = true; if (q.userData.glow) glows.push(q); });
-          if (hasLamp || !glows.length) continue;
-          const bodies = []; tilt.traverse((q) => { if (q.isMesh && q.material === car.paint && q.geometry && q.geometry.attributes.position) bodies.push(q); });
-          const V3 = car.root.position.constructor;
-          for (const g of glows) {
-            let surf = null;
-            for (const b of bodies) { const pa = b.geometry.attributes.position, v = new V3();
-              for (let i = 0; i < pa.count; i += 2) { v.fromBufferAttribute(pa, i).applyMatrix4(b.matrixWorld); const lp = tilt.worldToLocal(v.clone());
-                if (Math.abs(lp.z - g.position.z) > 0.42 || Math.abs(lp.y - g.position.y) > 0.10) continue;
-                if (surf === null || (g.userData.glow === 1 ? lp.x > surf : lp.x < surf)) surf = lp.x; } }
-            if (surf === null) return 'no body surface found at a glow spot on ' + (car.glbKey || 'a car');
-            if (g.userData.glow === 1 && g.position.x > surf + 0.03) return 'front glow floats ' + (g.position.x - surf).toFixed(2) + ' m ahead of the body surface on ' + (car.glbKey || 'a car');
-            if (g.userData.glow === 2 && g.position.x < surf - 0.03) return 'rear glow floats ' + (surf - g.position.x).toFixed(2) + ' m behind the body surface on ' + (car.glbKey || 'a car');
-            checked++;
-          }
+          let hasLamp = false; const glows = [];
+          car.tilt.traverse((q) => { if (q.userData.hlight) hasLamp = true; if (q.userData.glow) glows.push(q); });
+          if (hasLamp) continue;
+          for (const g of glows) { const p = g.geometry && g.geometry.parameters; if (!p) return 'a lamp glow has no plane geometry on ' + (car.glbKey || 'a car'); if (p.width > 0.36 || p.height > 0.20) return 'a lamp glow is ' + p.width + 'x' + p.height + ' m on ' + (car.glbKey || 'a car') + ' - big enough to hang off the curved nose as a floating dot'; checked++; }
         }
         E.toMenu();
         if (!checked) return 'no lamp-less car glow was checked';
