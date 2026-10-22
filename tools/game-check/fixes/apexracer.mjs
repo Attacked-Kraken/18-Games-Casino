@@ -238,7 +238,7 @@ export default [
           const p = e.car.paint;
           if (p.clearcoat !== 1 || !(p.envMapIntensity >= 1.5)) return e.carId + ' paint is not the shiny clearcoat paint';
           let tot = 0, painted = 0;
-          e.car.root.traverse((q) => { if (!q.isMesh || q.userData.lamp || q.userData.blob) return; const n = q.geometry && q.geometry.attributes && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0; tot += n; if (q.material === p) painted += n; });
+          e.car.root.traverse((q) => { if (!q.isMesh || q.userData.lamp || q.userData.blob || q.userData.hlight) return; /* G-163: headlight meshes are not body paint */ const n = q.geometry && q.geometry.attributes && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0; tot += n; if (q.material === p) painted += n; });
           if (!tot) return e.carId + ' has no geometry';
           const share = painted / tot, key = e.car.glbKey || '?', min = MIN[key];
           if (min !== undefined && share < min) return e.carId + ' (' + key + ') wears its paint on only ' + Math.round(share * 100) + '% of the car - the rest is dark factory material and the car vanishes at night';
@@ -430,7 +430,7 @@ export default [
               });
               if (meshes < 3) return kind + ' ' + i + ' has only ' + meshes + ' visible meshes - nothing to see';
               if (bars) return kind + ' ' + i + ' still has a light bar';
-              if (hl < 2) return kind + ' ' + i + ' has no bright headlights of its own';
+              if (hl < 2) { let gl = 0; c.root.traverse((q) => { if (q.userData.glow) gl++; }); if (hl + gl < 2) return kind + ' ' + i + ' has no bright headlights of its own'; }
               const len = Math.max(mxx - mnx, mxz - mnz), hgt = mxy - mny;
               if (len < 3.2 || len > 6.8) return kind + ' ' + i + ' is ' + len.toFixed(1) + ' m long - not a real car size';
               if (hgt < 0.5 || hgt > 2.2) return kind + ' ' + i + ' is ' + hgt.toFixed(1) + ' m tall - not a real car shape';
@@ -700,7 +700,7 @@ export default [
   },
   {
     id: 'play-headlights-bright',
-    ask: 'G-145 point 3: every car has its own bright headlights and tail lights - lamp meshes or lenses glowing front and rear',
+    ask: 'G-163: every car shines from its own headlights and tail lights - lamp meshes plus a soft glow front and rear, nothing solid',
     async test(page, h) {
       await h.press('#mRace');
       await page.waitForSelector('[data-i="0"]');
@@ -711,7 +711,7 @@ export default [
       const out = await h.eval(() => {
         const E = window.__erc, R = E.R, bad = [];
         for (const e of [...R.cars, ...R.traffic]) { let f = 0, r = 0, dim = 0;
-          e.car.root.traverse((q) => { if (!q.userData.hlight) return; if (q.userData.hlight === 1) f++; else r++;
+          e.car.root.traverse((q) => { if (q.userData.glow === 1) { f++; return; } if (q.userData.glow === 2) { r++; return; } if (!q.userData.hlight) return; if (q.userData.hlight === 1) f++; else r++;
             const m = q.material; const bright = m && m.isMeshBasicMaterial ? Math.max(m.color.r, m.color.g, m.color.b) >= 1.5 : ((m && m.emissiveIntensity) || 0) >= 1.5; if (!bright) dim++; });
           const cid = e.carId || 'traffic';
           if (!f) bad.push(cid + ' has no front headlight');
@@ -719,6 +719,86 @@ export default [
           if (dim) bad.push(cid + ' has ' + dim + ' dim lamp(s)'); }
         E.toMenu();
         return bad.length ? bad.join('; ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-lights-no-solids',
+    ask: 'G-163 point 1: no solid light blocks on any car - the shine is soft glow sprites at the lamp corners, front and rear',
+    async test(page, h) {
+      await h.press('#mRace');
+      await page.waitForSelector('[data-i="0"]');
+      await h.press('[data-i="0"]');
+      await h.press('#qRace');
+      const ready = await page.waitForFunction(() => { const E = window.__erc; if (!E) return false; const R = E.R; return !!(R && R.skids && R.P); }, null, { timeout: 15000 }).then(() => true).catch(() => false);
+      if (!ready) return 'race did not build in 15 s';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let gf = 0, gr = 0, solid = 0;
+          e.car.root.traverse((q) => { if (q.userData.glow === 1) gf++; if (q.userData.glow === 2) gr++; if (q.userData.lamp) solid++; if (q.isMesh && q.userData.hlight && q.geometry && q.geometry.type === 'BoxGeometry' && q.geometry.parameters && q.geometry.parameters.width <= 0.1) solid++; });
+          const cid = e.carId || 'traffic';
+          if (solid) bad.push(cid + ' still wears a solid light block');
+          if (gf < 2) bad.push(cid + ' has ' + gf + ' front glow(s), want 2');
+          if (gr < 2) bad.push(cid + ' has ' + gr + ' rear glow(s), want 2'); }
+        E.toMenu();
+        return bad.length ? bad.join('; ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-headlight-pool',
+    ask: 'G-163 point 2: at night the headlights throw a pool of light on the road ahead of the car',
+    async test(page, h) {
+      const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
+      if (started !== 'ok') return started;
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the night race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        const car = R.P.car;
+        if (!car.pool) { E.toMenu(); return 'the player car has no headlight pool'; }
+        if (!car.pool.visible) { E.toMenu(); return 'the headlight pool is not switched on at night'; }
+        const pp = new (car.pool.position.constructor)(); car.pool.getWorldPosition(pp);
+        const fwd = new (car.root.position.constructor)(); car.root.getWorldDirection(fwd);
+        const ahead = (pp.x - car.root.position.x) * fwd.x + (pp.z - car.root.position.z) * fwd.z;
+        const m = car.pool.material;
+        E.toMenu();
+        if (ahead < 2) return 'the light pool sits ' + ahead.toFixed(1) + ' m ahead of the car - it must lie on the road in front';
+        if (!m || m.blending !== 2 || !(m.opacity >= 0.25)) return 'the pool is not a soft additive light pool';
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-brake-lights',
+    ask: 'G-163 point 3: brake lights - the rear lamps and glows flare bright red while the brake is held',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const rearOp = () => { let op = -1; R.P.car.root.traverse((q) => { if (q.userData.glow === 2) op = q.material.opacity; }); return op; };
+        for (let i = 0; i < 20 && R.t <= 0.2; i++) E.step(30, 1 / 60);
+        const off = rearOp();
+        E.K.brake = true; E.step(3, 1 / 60);
+        const on = rearOp();
+        E.K.brake = false; E.step(3, 1 / 60);
+        const off2 = rearOp();
+        E.toMenu();
+        if (off < 0) return 'the player car has no rear glow to flare';
+        if (!(on > off)) return 'rear glow did not flare under braking (opacity ' + off + ' -> ' + on + ')';
+        if (!(off2 <= off + 0.01)) return 'rear glow stayed flared after the brake was released';
+        return true;
       });
       if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
       return out === true ? true : out;
