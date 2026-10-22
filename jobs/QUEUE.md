@@ -40,6 +40,7 @@ was already sent. Muses: don't edit this file.
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
 
 ## window 4 · apextrackfield.html
+- [ ] TESTER: Every hurdle is drawn as two full-size boards crossed at 90 degrees - the sideways board sticks through the middle of each hurdle and shows as cross/plus shapes and extra hurdles between the real ones (about 50% of the hurdle surface faces sideways; the hurdle measures 1.18 m deep, as deep as it is wide). A hurdle should be one board facing the runner - remove the extra board in the middle of the original hurdles. Measured in the game; proof test tester-hurdle-cross-plane.
 - [ ] TESTER: On an upright phone (390x844) 8 of the 9 main-menu buttons are off the screen - only CHAMPIONSHIP can be tapped; FREE PLAY / CAREER MODE / TOURNAMENT are unreachable. Measured in the game; proof test tester-portrait-menu-fits-screen.
 - [ ] TESTER: Main-menu buttons are only 30-36 px tall (CHAMPIONSHIP 291x36, TOURNAMENT 140x30) - DONE.md asks for 44x44 touch targets. Measured in the game; proof test tester-menu-buttons-44px.
 - [ ] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.
