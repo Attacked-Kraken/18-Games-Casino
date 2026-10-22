@@ -40,8 +40,8 @@ HELP line (one-fix job for that game's builder). Standing: the art director also
 
 ## window 3 · apexflight.html
 - [x] TESTER: Landing challenge unplayable - the jet accelerates to 130kt+ in descents and cannot slow to the 55-88kt touchdown band (BRAKE airbrake too weak); it flies over the runway or lands far past it. See it: challenge start, idle throttle, BRAKE on, watch the speed. Proof test tester-challenge-can-slow-to-band.
-- [ ] TESTER: Landing challenge: touching down off the runway (grass, or past the threshold) shows no message and no score - the plane just rolls, so you never know why it didn't count. See it: land beside the runway or past z=700 in the landing challenge.
-- [ ] TESTER: After a scored landing, flying into the ocean or a hangar does not crash - crash() only fires when phase is 'fly'. See it: score a landing, then fly west past x=-9950.
+- [x] TESTER: Landing challenge: touching down off the runway (grass, or past the threshold) shows no message and no score - the plane just rolls, so you never know why it didn't count. See it: land beside the runway or past z=700 in the landing challenge.
+- [x] TESTER: After a scored landing, flying into the ocean or a hangar does not crash - crash() only fires when phase is 'fly'. See it: score a landing, then fly west past x=-9950.
 - [ ] TESTER: Landing challenge never shows the 55-88 kt touchdown speed band during the approach - you only learn it by getting downgraded. See it: land at 95 kt and watch a good touchdown drop a rank with no prior warning.
 - [x] Add 5 play tests that fly the game by its rules (take off, climb, turn, land, crash) as 'play-...' tests in tools/game-check/fixes/apexflight.mjs. (sent as G-09)
 - [x] The plane must still stall when you REALLY pull up too slow - it never stalls now (robot test play-no-easy-stall). Keep normal flying forgiving and keep everything else exactly as now. (sent by hand, window 3)
