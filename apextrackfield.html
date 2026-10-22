@@ -2068,7 +2068,22 @@ g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
 const m=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:0.4,side:THREE.DoubleSide});
 const im=new THREE.InstancedMesh(g,m,80);
 im.count=0; im.frustumCulled=false;
-this.scene.add(im); this.hurdlesMesh=im;
+this.scene.add(im); this.hurdlesMesh=im; this._hurdleBasePos=pos.slice(); this._hurdleH=1.07;
+},
+hurdleHeight(h){
+// G-122 round 1 (owner): a hurdles race stands at its REAL height (REALITY.md) -
+// the same cross-plane hurdle, its geometry re-scaled in Y per event.
+if(!this.hurdlesMesh||!this._hurdleBasePos) return;
+if(Math.abs(h-(this._hurdleH||1.07))<0.001) return;
+this._hurdleH=h;
+const k=h/1.07, base=this._hurdleBasePos, pos=new Float32Array(base);
+for(let i=1;i<pos.length;i+=3) pos[i]=base[i]*k;
+const cur=this.hurdlesMesh.geometry;
+const g2=new THREE.BufferGeometry();
+g2.setAttribute('position',new THREE.BufferAttribute(pos,3));
+g2.setAttribute('normal',new THREE.BufferAttribute(cur.attributes.normal.array.slice(),3));
+g2.setAttribute('uv',new THREE.BufferAttribute(cur.attributes.uv.array.slice(),2));
+this.hurdlesMesh.geometry=g2;
 },
 buildBarriers(){
 // JOB G-83 (owner): a steeplechase barrier is ONE beam across the whole track
@@ -2103,6 +2118,7 @@ this.barriersMesh.count=n; this.barriersMesh.instanceMatrix.needsUpdate=true;
 },
 setHurdles(list){
 this._hurdleList=list;
+const HC=(this._hurdleH||1.07)/2;
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(80,list.length);
@@ -2114,7 +2130,7 @@ E.set(0,h.heading||0,0); Q.setFromEuler(E);
 const f=clamp(h.fall||0,0,1), ang=f*1.42;
 QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
 FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
-P.set(h.x+FW.x*0.5*Math.sin(ang), 0.535*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
+P.set(h.x+FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -2624,6 +2640,8 @@ const hWorld=[]; ENG.hurdles.forEach(h=>{ for(let l=0;l<8;l++){ hWorld.push(stra
 ? {x:h.x-ev.dist, z:straightZ(l), heading:0}
 : (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })()); } });
 // G-39/G-43 fix (owner): a hurdle stands in EVERY lane, not only the player's - the rivals jump real hurdles too (the player's own lane is index k*8+3)
+// G-122 round 1 (owner): each hurdles race stands at its REAL height (REALITY.md) - 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m
+W3D.hurdleHeight({'100h':0.838,'110h':1.067,'300h':0.914,'400h':0.914}[ev.id]||1.067);
 W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
