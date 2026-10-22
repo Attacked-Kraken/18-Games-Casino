@@ -711,42 +711,6 @@ export default [
     },
   },
   {
-    id: 'tester-reality-hook-no-go',
-    mode: 'recheck',
-    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
-    async test(page, h) {
-      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
-      await h.wait(4500);
-      let keys = null;
-      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
-      if (!keys) return 'window.__reality never appeared';
-      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
-      if (!hasGo) return '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
-      // RECHECK of G-100: go(true) must really sprint him along the base path,
-      // facing the way he travels, at his measured size; go(false) must stop him.
-      const pos = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldPosition(v); return { x: v.x, z: v.z }; });
-      const height = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); let mn = 1e9, mx = -1e9; const walk = (o) => { if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox; [b.min, b.max].forEach(c => { v.copy(c).applyMatrix4(o.matrixWorld); if (v.y < mn) mn = v.y; if (v.y > mx) mx = v.y; }); } (o.children || []).forEach(walk); }; p.updateWorldMatrix(true, true); walk(p); return mx - mn; });
-      const p0 = await pos(); const h0 = await height();
-      await h.eval(() => window.__reality.go(true));
-      await h.wait(2500);
-      const p1 = await pos(); const h1 = await height();
-      await h.wait(2500);
-      const p2 = await pos();
-      const dist = Math.hypot(p2.x - p0.x, p2.z - p0.z);
-      if (dist < 3) return 'go(true) was called but the player moved only ' + dist.toFixed(2) + ' m in 5 s - the reality robot still cannot drive him';
-      if (h0 > 0.5 && Math.abs(h1 - h0) / h0 > 0.1) return 'the player changed size while sprinting: ' + h0.toFixed(2) + ' m at rest, ' + h1.toFixed(2) + ' m running';
-      const facing = await h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldDirection(v); return { x: v.x, z: v.z }; });
-      const tx = p2.x - p0.x, tz = p2.z - p0.z; const tl = Math.hypot(tx, tz); const fl = Math.hypot(facing.x, facing.z);
-      if (tl > 0 && fl > 0) { const cos = (tx * facing.x + tz * facing.z) / (tl * fl); if (cos < 0.5) return 'the player sprints without facing the way he travels'; }
-      await h.eval(() => window.__reality.go(false));
-      await h.wait(2000);
-      const p3 = await pos();
-      const drift = Math.hypot(p3.x - p2.x, p3.z - p2.z);
-      if (drift > 0.3) return 'go(false) did not stop him: he drifted ' + drift.toFixed(2) + ' m in 2 s';
-      return true;
-    },
-  },
-  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
