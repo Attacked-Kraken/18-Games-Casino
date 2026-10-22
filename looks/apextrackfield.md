@@ -9,7 +9,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
 - Touch layer (stick / TAP RUN / ACTION): line 169 - menu markup: line 175 - event grid: line 206 - career screen: line 241
 - fitGame (sizes renderer + camera to the turned box): line 337 - audio (AudioSys): line 388
-- Live engine pointer ENG: line 789 - race frame loop frame(): line 3647 - REALITY hook: line 3712 - test hooks (__tf): line 3722
+- Live engine pointer ENG: line 792 - TESTLINK (?test= link event, G-171): line 793 - hurdles test-link countdown framing: line 2674 - ?test= boot hook: line 3658 - race frame loop frame(): line 3664 - REALITY hook: line 3729 - test hooks (__tf): line 3739
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
