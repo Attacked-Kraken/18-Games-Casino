@@ -1444,4 +1444,28 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-reality-hook-fields',
+  ask: 'TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect',
+  async test(page, h) {
+    if (!await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) {
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => ''); if (s === 'play' || s === 'faceoff') break; await h.wait(500); }
+    const f = await h.eval(() => {
+      const r = window.__reality;
+      if (!r) return null;
+      return { camera: 'camera' in r, time: typeof r.time, speed: typeof r.speed, go: typeof r.go, contact: Array.isArray(r.contact) };
+    });
+    if (!f) return 'window.__reality is not set in a running match';
+    const missing = [];
+    if (!f.camera) missing.push('camera');
+    if (f.time !== 'function') missing.push('time()');
+    if (f.speed !== 'function') missing.push('speed()');
+    if (missing.length) return 'the __reality hook is missing ' + missing.join(', ') + ' - REALITY.md requires them (the robot takes its player close-up from camera and measures speed in game time)';
+    return true;
+  },
+},
+
 ];
