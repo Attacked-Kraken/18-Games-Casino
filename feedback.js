@@ -3,8 +3,37 @@
    📸 snap a picture · 📤 send it all to the Muses (it opens the owner's controller, which turns it into a job).
    No network calls of its own: the video goes straight from this page to the controller tab on the owner's phone. */
 (function () {
-  var CTL_KEY = 'apexCtlUrl', DEF = 'http://192.168.1.25:8765/';
+  var CTL_KEY = 'apexCtlUrl', DEF = 'http://192.168.1.231:8765/';   /* Mac mini on home Wi-Fi (old laptop .25 retired Oct 20) */
   function ctl() { try { return localStorage.getItem(CTL_KEY) || DEF; } catch (e) { return DEF; } }
+  /* owner Oct 21 2026 10:05 PM ("tried the screen recorder, don't know if it worked" - it went to the retired laptop's
+     address and failed): the pencil now reaches the controller from ANYWHERE through the Mac mini's away link. The
+     controller's "🎮 Game Development page" button opens this page with #fb=<link channel>&fp=<PIN>; both are kept on
+     this phone only (never sent anywhere but ntfy + the owner's own controller), then taken out of the address bar. */
+  var LT = 'apexLinkTopic', LP = 'apexLinkPin';
+  try {
+    var hh = new URLSearchParams(location.hash.slice(1));
+    if (hh.get('fb')) {
+      localStorage.setItem(LT, hh.get('fb')); if (hh.get('fp')) localStorage.setItem(LP, hh.get('fp'));
+      hh.delete('fb'); hh.delete('fp'); var rest = hh.toString();
+      history.replaceState(null, '', location.pathname + location.search + (rest ? '#' + rest : ''));
+    }
+  } catch (e) {}
+  function awayCtl(done) {             /* newest https://<words>.trycloudflare.com the Mac mini posted, or '' */
+    var t = ''; try { t = localStorage.getItem(LT) || ''; } catch (e) {}
+    if (!t) return done('');
+    fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(function (r) { return r.text(); })
+      .then(function (txt) {
+        var u = '';
+        txt.trim().split('\n').forEach(function (l) { try { var m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} });
+        var p = ''; try { p = localStorage.getItem(LP) || ''; } catch (e) {}
+        done(u ? u + '/?note=1' + (p ? '#pin=' + encodeURIComponent(p) : '') : '');
+      }).catch(function () { done(''); });
+  }
+  /* owner Oct 21 2026 10:36 PM: the page's top-left "‹ ENTRANCE" became "‹ Controller" - it goes back to his controller
+     (away link from anywhere, else the Mac mini's home address) */
+  window.apexController = function () {
+    awayCtl(function (u) { location.href = u ? u.replace('/?note=1', '/') : ctl(); });
+  };
   var css = document.createElement('style');
   css.textContent =
     '.fbk{position:absolute;inset:0;z-index:30;pointer-events:none}' +
@@ -106,7 +135,13 @@
       (function () {
         var payload = { type: 'apex-note', game: name, href: iframe.getAttribute('src') || '', text: text, images: snaps.slice(0, 6), video: videoBlob() };
         if (!snaps.length && !payload.video) { compose(); payload.images = [comp.toDataURL('image/jpeg', 0.8)]; }
-        var sent = false, w = window.open(ctl() + '?note=1', '_blank');
+        var sent = false, w = window.open('', '_blank');   /* opened inside the tap (popup rule), pointed below */
+        if (w) try { w.document.write('<p style="font:18px system-ui;padding:30px">Sending your note to the Muses…</p>'); } catch (x) {}
+        awayCtl(function (away) {
+          var u = away || (ctl() + '?note=1');
+          say(away ? 'Sending through your away link…' : 'Sending to your controller at home…');
+          if (w) try { w.location.href = u; } catch (x) { w = window.open(u, '_blank'); } else w = window.open(u, '_blank');
+        });
         function onMsg(e) {
           if (sent || !e.data || e.data.type !== 'muse-ready' || e.source !== w) return;
           sent = true; window.removeEventListener('message', onMsg);
@@ -118,10 +153,10 @@
           window.removeEventListener('message', onMsg);
           var v = payload.video;
           if (v && navigator.share && navigator.canShare && navigator.canShare({ files: [new File([v], 'game-note.mp4', { type: v.type })] })) {
-            if (confirm('Couldn\'t reach your controller (are you on home Wi-Fi?).\n\nSave the video instead, then add it to a note later?'))
+            if (confirm('Couldn\'t reach your controller.\n\nFix once: open this page from your controller\'s 🎮 Game Development button.\n\nSave the video instead for now?'))
               navigator.share({ files: [new File([v], 'game-note.mp4', { type: v.type })], text: name + ': ' + text }).catch(function () {});
-          } else say('Couldn\'t reach your controller - are you on home Wi-Fi? (⚙ to change its address)');
-        }, 20000);
+          } else say('Couldn\'t reach your controller - open the Game Development page once from your controller (🎮 button), then try again');
+        }, 30000);
       })();
     }
     box.querySelector('.bar').addEventListener('click', function (e) {

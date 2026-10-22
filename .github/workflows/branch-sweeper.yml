@@ -1,31 +1,63 @@
 name: Branch sweeper
 
-# Housekeeping (owner, 2026-10-16): every Sunday delete branches whose pull request was merged or closed more than
-# 7 days ago, so old work never piles up. Never touches main, game-checks or a branch with an OPEN pull request.
+# Housekeeping (owner Oct 21 2026 8:47 PM, advisor found branches piling up): every day delete every branch whose pull
+# request was MERGED or CLOSED. Kept always: main, game-checks, playtests (+ gh-pages, away, backup), any branch with an
+# OPEN pull request, and any branch with NO pull request yet. Safety: a branch is deleted only when its last commit is
+# the commit that PR ended on - a branch that got new work after its PR closed is kept.
+# Deletes go through one git push per 100 branches (no API rate limit). Before/after counts are in the run summary.
 on:
   schedule:
-    - cron: '23 9 * * 0'
+    - cron: '23 9 * * *'     # daily, 4:23 AM Central
   workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: read
 
+concurrency:
+  group: branch-sweeper
+  cancel-in-progress: false
+
 jobs:
   sweep:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           R: ${{ github.repository }}
         run: |
-          cutoff=$(date -u -d '7 days ago' +%s)
-          open=$(gh api "repos/$R/pulls?state=open&per_page=100" --paginate --jq '.[].head.ref' | sort -u)
-          gh api "repos/$R/pulls?state=closed&per_page=100" --paginate --jq '.[] | select(.head.repo.full_name == "'$R'") | .head.ref + " " + .closed_at' |
-          while read ref closed; do
-            case "$ref" in main|game-checks|gh-pages) continue;; esac
-            echo "$open" | grep -qx "$ref" && continue
-            [ $(date -u -d "$closed" +%s) -lt $cutoff ] || continue
-            gh api -X DELETE "repos/$R/git/refs/heads/$ref" >/dev/null 2>&1 && echo "deleted $ref"
+          set -e
+          git ls-remote --heads origin | awk '{sub("refs/heads/","",$2); print $2" "$1}' | sort > branches.txt
+          before=$(wc -l < branches.txt)
+          gh api "repos/$R/pulls?state=open&per_page=100" --paginate --jq '.[].head.ref' | sort -u > open.txt
+          gh api "repos/$R/pulls?state=closed&per_page=100" --paginate \
+            --jq '.[] | select(.head.repo.full_name == "'"$R"'") | .head.ref + " " + .head.sha' | sort -u > closed.txt
+          : > gone.txt
+          while read name sha; do
+            case "$name" in main|game-checks|playtests|gh-pages|away|backup) continue;; esac
+            grep -qxF "$name" open.txt && continue
+            grep -qxF "$name $sha" closed.txt || continue
+            echo "$name" >> gone.txt
+          done < branches.txt
+          n=$(wc -l < gone.txt)
+          echo "Branches before: $before · to delete (PR merged/closed, nothing new since): $n"
+          fail=0
+          split -l 100 gone.txt part.
+          for f in part.*; do
+            [ -s "$f" ] || continue
+            refs=$(sed 's#^#:refs/heads/#' "$f" | tr '\n' ' ')
+            git push origin $refs >/dev/null 2>&1 || { echo "a batch failed - deleting $f one by one"; while read b; do git push origin ":refs/heads/$b" >/dev/null 2>&1 || fail=$((fail+1)); done < "$f"; }
           done
-          echo done
+          after=$(git ls-remote --heads origin | wc -l)
+          {
+            echo "## 🧹 Branch sweeper"
+            echo "- Branches before: **$before**"
+            echo "- Deleted (PR merged or closed): **$n** (failed: $fail)"
+            echo "- Branches after: **$after**"
+            echo "- Kept: main, game-checks, playtests, branches with an open PR, branches with no PR, branches with new work after their PR"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=Branch sweeper::before $before, deleted $n, after $after (failed $fail)"

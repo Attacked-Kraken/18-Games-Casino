@@ -462,4 +462,205 @@ export default [
       });
     },
   },
+  {
+    id: 'tester-challenge-can-slow-to-band',
+    ask: 'Landing challenge: the jet must be able to slow to the 55-88 kt touchdown band in a descent (today: it accelerates to 130kt+ and cannot slow down, making the runway unreachable)',
+    async test(page, h) {
+      try { await h.press('#btnChal'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          const t0 = Date.now();
+          let minSpd = 999;
+          const iv = setInterval(() => {
+            // competent player: idle throttle, BRAKE airbrake on, gentle -600fpm descent
+            F.jetInput.throttle = 0;
+            if (F.P) F.P.thr = 0;
+            F.jetInput.brake = 1;
+            const vs = F.P.vel.y;
+            if (vs < -3.5) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+            else if (vs > -1.5) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.25);
+            const spdKt = F.P.vel.length() * 1.94384;
+            if (spdKt < minSpd) minSpd = spdKt;
+            // stop when we touch down, crash, or run out of time/altitude
+            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
+              clearInterval(iv);
+              if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
+              return res(true);
+            }
+            if (Date.now() - t0 > 30000) {
+              clearInterval(iv);
+              return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
+            }
+          }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-controls-answer-in-100ms',
+    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput || !F.jet) return 'no flight/jetInput hook';
+        const J = F.jetInput, P = F.P;
+        const el = (id) => document.getElementById(id);
+        const down = (id) => el(id).dispatchEvent(new PointerEvent('pointerdown', { pointerId: 11, bubbles: true }));
+        const up = (id) => el(id).dispatchEvent(new PointerEvent('pointerup', { pointerId: 11, bubbles: true }));
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return Math.round(performance.now() - t0); await wait(4); } return -1; };
+        return (async () => {
+          const bad = [];
+          // airborne setup, level and steady (state set through the hook, then real controls only)
+          P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
+          await wait(150);
+          // STICK: press and push down-right - the jet must answer, and stop when let go
+          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
+          let ms = await until(() => F.inp.pitchUp > 0.15 && F.inp.rollRight > 0.15, 100);
+          if (ms < 0) bad.push('stick did not move the jet within 100ms');
+          zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
+          ms = await until(() => F.inp.pitchUp === 0 && F.inp.rollRight === 0, 100);
+          if (ms < 0) bad.push('stick did not stop within 100ms of letting go');
+          // THR + : throttle must start rising at once, and stop when let go
+          P.thr = 0.5; J.throttle = 0.5; await wait(60);
+          down('jThrUp');
+          ms = await until(() => P.thr > 0.53, 100);
+          if (ms < 0) bad.push('THR+ did not raise the throttle within 100ms');
+          up('jThrUp'); await wait(80); const thrHold = P.thr; await wait(150);
+          if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after THR+ was let go');
+          // THR - : throttle must start falling at once
+          down('jThrDn');
+          ms = await until(() => P.thr < thrHold - 0.03, 100);
+          if (ms < 0) bad.push('THR- did not lower the throttle within 100ms');
+          up('jThrDn');
+          // BOOST and BRAKE: flags answer at once and clear at once
+          down('jBoost'); ms = await until(() => J.boost === true, 100);
+          if (ms < 0) bad.push('BOOST did not answer within 100ms');
+          up('jBoost'); ms = await until(() => J.boost === false, 100);
+          if (ms < 0) bad.push('BOOST did not stop within 100ms of letting go');
+          down('jBrake'); ms = await until(() => J.brake === true, 100);
+          if (ms < 0) bad.push('BRAKE did not answer within 100ms');
+          up('jBrake'); ms = await until(() => !J.brake, 100);
+          if (ms < 0) bad.push('BRAKE did not stop within 100ms of letting go');
+          // YAW: in the air the jet's heading must actually turn, and stop when let go
+          const yaw0 = P.yaw;
+          down('jYawR');
+          ms = await until(() => Math.abs(P.yaw - yaw0) > 0.02, 100);
+          if (ms < 0) bad.push('YAW did not turn the jet within 100ms (dead in the air)');
+          up('jYawR'); await wait(80); const yawHold = P.yaw; await wait(150);
+          if (Math.abs(P.yaw - yawHold) > 0.005) bad.push('jet kept yawing after YAW was let go');
+          // GEAR: a tap flips the gear state at once, both ways
+          if (!F.jet.gearDown) { down('jGear'); up('jGear'); await until(() => F.jet.gearDown, 200); }
+          down('jGear'); up('jGear');
+          ms = await until(() => F.jet.gearDown === false, 100);
+          if (ms < 0) bad.push('GEAR did not retract within 100ms of the tap');
+          down('jGear'); up('jGear');
+          ms = await until(() => F.jet.gearDown === true, 100);
+          if (ms < 0) bad.push('GEAR did not extend within 100ms of the tap');
+          // TRICK: a tap starts the maneuver at once
+          down('jRoll'); up('jRoll');
+          ms = await until(() => F.trick === 'barrelRoll', 100);
+          if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          return bad.length ? bad.join('; ') : true;
+        })();
+      });
+    },
+  },
+  {
+    id: 'tester-recheck-g117-controls',
+    ask: 'Re-check G-117 BUILD: YAW pad buttons must turn the jet in the air, and stick inputs must answer the same frame (G-117 fix verification)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        return new Promise((res) => {
+          // take off first
+          F.jetInput.throttle = 1; if (F.P) F.P.thr = 1;
+          const t0 = Date.now();
+          let phase = 'takeoff';
+          let yaw0 = 0;
+          const iv = setInterval(() => {
+            if (phase === 'takeoff') {
+              if (!F.P.ground) { phase = 'yaw'; yaw0 = F.P.yaw; F.jetInput.yaw = 1; }
+              else if (Date.now() - t0 > 20000) { clearInterval(iv); return res('never took off'); }
+            } else if (phase === 'yaw') {
+              const dyaw = F.P.yaw - yaw0;
+              F.jetInput.yaw = 0;
+              if (Math.abs(dyaw) < 0.05) { clearInterval(iv); return res('YAW R did not turn the jet in the air (dyaw=' + dyaw.toFixed(3) + ')'); }
+              phase = 'done'; clearInterval(iv); return res(true);
+            }
+            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('timed out'); }
+          }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-throttle-bar',
+    ask: 'G-121: the slim throttle bar beside the pad - dragging it sets the throttle at once, the fill shows the level live, and SPD KT answers (the old fat right-edge THR slider is gone)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        const P = F.P;
+        const bar = document.getElementById('thrBar');
+        if (!bar) return 'no #thrBar - the slim throttle bar is missing';
+        if (document.getElementById('thr')) return 'the old #thr slider is still there';
+        const fill = document.getElementById('thrBarFill');
+        if (!fill) return 'no #thrBarFill inside the bar';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(15); } return fn(); };
+        const spd = () => parseInt((document.getElementById('hSpd') || {}).textContent || '0', 10) || 0;
+        const pev = (type, x, y) => bar.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
+        return (async () => {
+          // geometry: slim, same height as the button block, standing alongside it
+          const pad = document.querySelector('.ajc .pad');
+          if (!pad) return 'jet pad not found';
+          const br = bar.getBoundingClientRect(), pr = pad.getBoundingClientRect();
+          if (br.width > 30) return 'bar is ' + Math.round(br.width) + 'px wide - not slim (about half a button)';
+          if (Math.abs(br.height - pr.height) > 12) return 'bar height ' + Math.round(br.height) + ' != button block height ' + Math.round(pr.height);
+          if (br.right > pr.left + 2) return 'bar overlaps the button block instead of standing alongside it';
+          if (Math.abs(br.bottom - pr.bottom) > 4) return 'bar bottom does not line up with the button block';
+          const cx = br.left + br.width / 2;
+          // drag to the bottom: the touch alone must cut the throttle at once
+          pev('pointerdown', cx, br.bottom - 4);
+          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'touching the bottom of the bar did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          pev('pointerup', cx, br.bottom - 4);
+          if (!await until(() => spd() <= 1, 3000)) return 'jet did not settle after throttle cut (spd ' + spd() + ' kt)';
+          const spd0 = spd();
+          // touch the top: throttle must jump at once, and the fill must show it live
+          pev('pointerdown', cx, br.top + 4);
+          if (!await until(() => P.thr >= 0.9, 100)) { pev('pointerup', cx, br.top + 4); return 'touching the top of the bar did not set full throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          await wait(120);
+          const fillFrac = fill.offsetHeight / br.height;
+          if (fillFrac < 0.8) { pev('pointerup', cx, br.top + 4); return 'fill does not show the throttle level (fill ' + Math.round(fillFrac * 100) + '% at full throttle)'; }
+          pev('pointerup', cx, br.top + 4);
+          // SPD KT must answer: the jet gathers speed under the dragged throttle
+          if (!await until(() => spd() >= spd0 + 10, 5000)) return 'SPD KT did not answer - speed stuck at ' + spd() + ' kt with full throttle set from the bar';
+          const spd1 = spd();
+          // drag back to the bottom: throttle cuts at once and the speed stops growing
+          pev('pointerdown', cx, br.bottom - 4);
+          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'dragging the bar down did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
+          pev('pointerup', cx, br.bottom - 4);
+          await wait(1500);
+          if (spd() > spd1 + 1) return 'speed kept growing after the bar cut the throttle (' + spd1 + ' -> ' + spd() + ' kt)';
+          return true;
+        })();
+      });
+    },
+  },
 ];

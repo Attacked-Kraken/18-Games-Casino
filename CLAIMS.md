@@ -166,6 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-116 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-116.md, CLAIMS.md | test/g-111-apexbaseball |
 | G-87 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-87.md, CLAIMS.md | test/g-87 |
 | G-85 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-85-perf-sticktests |
 | G-82 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-82-input-ui-404 |
@@ -181,6 +182,11 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-43 | window main | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, LESSONS.md | g-43-pole-vault |
 | G-56 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-56.md | test/g-56-trackfield-tester |
 | G-105 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-105.md | test/g-105-apextrackfield |
+| G-122 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-122.md, CLAIMS.md, LESSONS.md | build/g-122-apextrackfield - DONE, PR #1010 merged 15af2212 |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
 | G-90 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-90.md | build/g-90-jet-controls |
+| G-115 | window 3 | apexflight.html, looks/apexflight.md, jobs/G-115.md | build/g-115-apexflight |
+| G-116 | window 3 | apexflight.html, jobs/G-116.md | build/g-116-apexflight |
+| G-117 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-117.md | build/g-117-apexflight |
+| G-121 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-121.md | build/g-121-apexflight |
