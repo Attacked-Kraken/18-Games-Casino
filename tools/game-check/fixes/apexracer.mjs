@@ -648,18 +648,17 @@ export default [
   },
   {
     id: 'play-wrap-on-door',
-    ask: 'G-145 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end',
+    ask: 'G-149 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end',
     async test(page, h) {
-      await h.eval(() => { window.__erc.openGarage(); });
-      await h.wait(500);
-      await h.press('[data-car="goblin"]');
-      await h.wait(900);
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
       const out = await h.eval(() => {
-        const H = window.__reality, E = window.__erc;
-        if (!H || !H.player) return 'no garage car under the reality hook';
+        const E = window.__erc, R = E.R;
         const strips = [];
-        H.player.traverse((q) => { if (q.isMesh && q.name === 'apexname') strips.push(q); });
-        if (!strips.length) return 'the goblin wears no APEX ARCADE wrap in the garage';
+        R.P.car.root.traverse((q) => { if (q.isMesh && q.name === 'apexname') strips.push(q); });
+        if (!strips.length) return 'the player goblin wears no APEX ARCADE wrap';
         const tilt = strips[0].parent;
         let mnx = 1e9, mxx = -1e9;
         const v = tilt.position.clone();
