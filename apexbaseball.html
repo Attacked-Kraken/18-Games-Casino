@@ -299,9 +299,9 @@ segMesh.position.set(0, 8, -117); scene.add(segMesh);
 scene.fog = new THREE.Fog(0x87b5e0, 180, 380);
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 600); // G-65: TV broadcast field of view (40-45) - no wide-angle stretch
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
-const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
+const FIELD_CAM = { pos:[0,24,26], look:[0,0,-30] };   // G-151: lower and closer than the old [0,45,35.3] - with the ball in play the batter/runner was a speck at the bottom edge; the infield still fills the frame
 // Retest #2: dedicated views so you can actually see the pitch and the swing
-const PITCHER_VIEW = { pos:[0,20,-50], look:[0,1.2,2] };   // G-65 TV spec: high centre-field camera, behind and above the pitcher, looking at the batter and catcher
+const PITCHER_VIEW = { pos:[0,11,-26], look:[0,1.4,4] };   // G-151: closer and lower than the old G-65 TV spec ([0,20,-50]) - the batter read as an 18 px speck at the bottom of the play picture; now he stands big and lit above the bottom bar
 const BATTER_VIEW = { pos:[0,1.7,7.6], look:[0,1.7,-20] };  // G-65 TV spec: behind home plate at catcher height, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
@@ -1507,7 +1507,7 @@ function loop(){
   // the ball in play (look and position glide with it), then setCam cuts back
   if (camMode==='field' && ball.visible && viewMode!=='wide'){
     camLook.lerp(_camTmp.set(ball.position.x, 1, ball.position.z), 0.08);
-    camTgtP.set(ball.position.x*0.55, 45, 35.3 + ball.position.z*0.35);
+    camTgtP.set(ball.position.x*0.55, 24, 26 + ball.position.z*0.35);   // G-151: rides on the new FIELD_CAM height/depth
     camera.position.lerp(camTgtP, 0.05);
   }
   // view-button transitions glide to their target
@@ -2043,18 +2043,18 @@ try {
     _park.root = root; _park.loaded = true;
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
-    // G-40 redo (owner: 'nothing has changed'): the owner's park is a NIGHT park, and
-    // under the game's bright day sky it read as the old daytime park - the floodlights,
-    // the lit board and the dark bowl never showed. When his park loads, the game takes
-    // on the park's own night presentation: near-black sky, dim blue ambient, and one
-    // strong cool floodlight so the field stays lit like his preview pictures. If the
-    // model cannot load, the old park keeps its day look, untouched.
-    scene.background = new THREE.Color(0x060a18);
-    if (scene.fog) scene.fog.color.set(0x060a18);
+    // G-151 (art director: the play picture is night-dark, the crowd reads empty;
+    // the board's locked KEEP says day light, no night-dark field): when the park
+    // loads, the game takes a DAY presentation - bright blue sky, strong warm sun,
+    // full ambient - so the field, the players and the crowd in the bowl all read
+    // in daylight. (This supersedes the G-40 night grade.) If the model cannot
+    // load, the old park keeps its day look, untouched.
+    scene.background = new THREE.Color(0x8fc7ee);
+    if (scene.fog) scene.fog.color.set(0x8fc7ee);
     scene.traverse(o => {
-      if (o.isHemisphereLight){ o.color.set(0x35507e); o.groundColor.set(0x24351f); o.intensity = 0.95; }
-      else if (o.isDirectionalLight){ o.color.set(0xdfeaff); o.intensity = 1.5; }
-      else if (o.isSpotLight){ o.intensity = 0.85; }
+      if (o.isHemisphereLight){ o.color.set(0xcfe8ff); o.groundColor.set(0x67a05a); o.intensity = 1.4; }
+      else if (o.isDirectionalLight){ o.color.set(0xfff2d8); o.intensity = 2.15; }
+      else if (o.isSpotLight){ o.intensity = 0.9; }
     });
     // G-85 (owner: the game runs 13-17 fps): measured on the phone path, the park's
     // MeshStandardMaterial lighting is the biggest per-frame cost by far - swapping
@@ -2084,7 +2084,7 @@ try {
         o.material = L;
       });
     }
-    _park.night = true;
+    _park.night = false;   // G-151: day presentation
     revealMenu();
   }, ev => {
     if (ev && ev.lengthComputable && ev.total){
