@@ -643,7 +643,7 @@ function cyclePaint() { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textCont
 jetInput.on('paint', cyclePaint);
 jetInput.on('style', () => {
   jet.setStyle(JET_STYLE_KEYS.indexOf(jet.style) + 1);
-  jet.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+  jet.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });   // step 2 traverse, same as at creation
   if (P.ground) P.pos.y = jet.gearHeight;
   flashMsg('STYLE: ' + jet.styleName.toUpperCase(), 1500);
 });
