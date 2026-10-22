@@ -260,27 +260,49 @@ scene.add(sun);
   }
 })();
 
-/* runway with painted markings */
+/* runway with painted markings - G-132: clean and steady at every distance/angle.
+   Before: ONE 128x1024 canvas over the whole 1400 m (1.37 m per pixel along the
+   runway, so the numbers were smears) at anisotropy 4, the runway 0.015 m over the
+   grass strip with no depth offsets - the paint fought the ground and crawled.
+   Now: a tiling paint texture with square ~10 cm pixels, separate threshold decals
+   (piano keys + big numbers at BOTH ends), max anisotropy everywhere, and a
+   polygonOffset ladder (ground 0, strip -1, runway -2, decals -3). */
 (function runway() {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 1024;
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  // asphalt + repeating paint: one tile = 100 m of runway, pixels ~square
+  const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
   const g = c.getContext('2d');
-  g.fillStyle = '#33363b'; g.fillRect(0, 0, 128, 1024);
+  g.fillStyle = '#33363b'; g.fillRect(0, 0, 256, 1024);
   g.fillStyle = '#e8e8e8';
-  g.fillRect(6, 0, 4, 1024); g.fillRect(118, 0, 4, 1024);          // edge lines
-  for (let y = 40; y < 1024; y += 64) g.fillRect(61, y, 6, 34);   // centerline dashes
-  for (const e of [0, 1]) {                                       // threshold piano keys
-    const y0 = e ? 990 : 8;
-    for (let i = 0; i < 6; i++) g.fillRect(14 + i * 18, y0, 10, 26);
-  }
-  g.font = 'bold 44px monospace'; g.textAlign = 'center';
-  g.fillText('36', 64, 120);                                      // runway number (landing heading 360)
-  const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4;
+  g.fillRect(10, 0, 7, 1024); g.fillRect(239, 0, 7, 1024);              // edge lines
+  for (let i = 0; i < 2; i++) g.fillRect(121, 60 + i * 512, 14, 307);  // centerline dashes: 30 m on, 20 m off, twice per tile
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 14);
+  tex.anisotropy = maxAniso;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, RWY_HALF * 2),
-    new THREE.MeshLambertMaterial({ map: tex }));
+    new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, 0); scene.add(m);
+  // threshold decals: piano keys + the runway number, one at each end, each
+  // reading upright for the pilot landing toward it
+  function threshold(num, zEnd, flip) {
+    const dc = document.createElement('canvas'); dc.width = 256; dc.height = 640;
+    const d = dc.getContext('2d');
+    d.fillStyle = '#33363b'; d.fillRect(0, 0, 256, 640);
+    d.fillStyle = '#e8e8e8';
+    for (let i = 0; i < 6; i++) d.fillRect(28 + i * 36, 24, 20, 150);       // piano keys
+    d.font = 'bold 150px monospace'; d.textAlign = 'center';
+    d.fillText(num, 128, 430);                                             // the number, ~14 m tall
+    const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso;
+    const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
+      new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+    dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
+    dm.position.set(0, 0.045, zEnd); scene.add(dm);
+  }
+  threshold('36', -RWY_HALF + 30, false);
+  threshold('18', RWY_HALF - 30, true);
   // grass shoulders blend strip
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(60, RWY_HALF * 2 + 60),
-    new THREE.MeshLambertMaterial({ color: 0x4a7c3a }));
+    new THREE.MeshLambertMaterial({ color: 0x4a7c3a, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
   sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.015, 0); scene.add(sh);
 })();
 
