@@ -1912,7 +1912,9 @@ function renderMenu() {
   if (m) { cb.textContent = '▶ PLAY ' + m.label + ' vs ' + m.oppDef.name; $('playBtn').style.display = 'none'; $('friendBtn').style.display = 'none'; $('cancelMatch').style.display = 'block'; $('menuSub').textContent = m.kind === 'friend' ? 'Friend match is set — their star is already in the building.' : 'Career match is set — the visitors are already in the building.'; }
   else { cb.textContent = c ? '🏆 CAREER · ' + fmtRecord(c) + ' · SEASON ' + c.season : '🏆 START A CAREER'; $('playBtn').style.display = ''; $('friendBtn').style.display = ''; $('cancelMatch').style.display = 'none'; }
 }
+function disarmReset(){ const r = $('hubReset'); if (r) { delete r.dataset.arm; r.textContent = 'reset career'; } } // G-140: closing the hub disarms ERASE - an armed button must never survive into the next visit
 function renderHub() {
+  disarmReset();
   const c = cLoad(), body = $('hubBody');
   if (!c) { body.innerHTML = 'No career yet. Start one: a 10-game season, playoffs, and a star center who is yours to build.<br>Your friend code lives on the main menu.'; $('hubPlay').style.display = 'none'; $('hubNew').textContent = 'START MY CAREER'; $('hubNew').style.display = ''; return; }
   const rk = ranked(c);
@@ -1925,7 +1927,7 @@ function renderHub() {
 $('careerBtn').addEventListener('click', () => { if (mLoad()) { $('playBtn').click(); return; } renderHub(); $('hub').style.display = 'flex'; });
 $('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''; $('friendOv').style.display = 'flex'; });
 $('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
-$('hubClose').addEventListener('click', () => { $('hub').style.display = 'none'; });
+$('hubClose').addEventListener('click', () => { disarmReset(); $('hub').style.display = 'none'; });
 $('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
 $('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
 $('hubNew').addEventListener('click', () => {

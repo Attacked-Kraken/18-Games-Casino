@@ -32,6 +32,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Three outfielders visible who chase and catch fly balls
 - The batter clearly visible and lit
 - Realistic, not cartoonish
+- The player's face is visible in every close-up: eyes and face uncovered, never hidden by mask or blob geometry
+- Players wear the baseball uniform (cap or helmet, jersey, glove) in every picture, close-ups included
 
 ## NEVER
 - No green dim / green tint on the game menu
@@ -39,6 +41,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No real brands, leagues, teams, players or characters
 - Nothing built from boxes when a real model is possible
 - No baseball stadium
+- No covered or masked faces in close-ups, and no street clothes (T-shirts) on players
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

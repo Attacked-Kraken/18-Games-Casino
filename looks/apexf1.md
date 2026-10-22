@@ -27,6 +27,8 @@ Feature → line numbers in apexf1.html (on main after G-136):
 ## MUST
 - Own fictional teams and drivers
 - The car in the game must look like the model the owner approved
+- The picture renders sharp at 1.5x on a 2x phone - never lowered
+- Every car is the same model with the same wheel design; the car's height is the real 0.95 m
 
 ## NEVER
 - Never show the owner mockups or drawings - only the real in-game car (model viewer or game check pictures)
@@ -35,6 +37,7 @@ Feature → line numbers in apexf1.html (on main after G-136):
 - Nothing built from boxes when a real model is possible
 - Game does not start (owner 2026-10-17 — the game must start and render gameplay, never a black/blank screen)
 - 2026-10-22: Start button off the screen - "LIGHTS OUT" sat 214px below the bottom of a sideways phone and the owner had to scroll to press it; every menu fits 844x390 with NO scrolling (G-119)
+- No camera below the track surface - the helicopter camera never goes under the ground (owner's pictures, 2026-10-21)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

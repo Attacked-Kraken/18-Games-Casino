@@ -2006,5 +2006,132 @@ export default [
       return true;
     }
   }
+,{
+    id: 'never-g-139-p1',
+    ask: 'NEVER (G-139): every main-menu button is at least the 44x44 CSS px touch target (DONE.md section 2)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (!bs.length) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the main menu never appeared';
+      const small = meas.filter(b => b.w < 44 || b.h < 44);
+      if (small.length) return 'menu buttons under the 44x44 touch target: ' + small.map(b => b.t + ' is ' + b.w + 'x' + b.h).join(', ');
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p2',
+    ask: 'NEVER (G-139): feet do not sink into the ground - REALITY sampling at the menu (12 samples, go(true)) finds no more than 20% of foot readings more than 5 cm under',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      let ready = false;
+      for (let i = 0; i < 30 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player)).catch(() => false); if (!ready) await h.wait(1000); }
+      if (!ready) return 'the REALITY player never loaded';
+      const gaps = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        try { R.go && R.go(true); } catch (e) {}
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (const i2 of e.vs) { e.m.getVertexPosition(i2, v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 12) { clearInterval(iv); try { R.go && R.go(false); } catch (e) {} res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps || gaps.length < 12) return 'too few foot readings to judge the sink (' + (gaps ? gaps.length : 0) + ')';
+      // G-139 round 1: the robot also samples the player STANDING (idle clip at the marks,
+      // the SET crouch) - those clips ground low too, so sample a standing 100m start as well.
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no event'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+      if (nav !== 'racing') return 'could not start the 100m to sample the standing start: ' + nav;
+      const gaps2 = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                // the race start rebuilds the player rig, so the menu-cached index is gone:
+                // build the sole index on THESE bones when missing (same scan as above).
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (let i2 = 0; i2 < e.vs.length; i2++) { e.m.getVertexPosition(e.vs[i2], v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 8) { clearInterval(iv); res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps2 || gaps2.length < 6) return 'too few standing readings to judge the start-line sink (' + (gaps2 ? gaps2.length : 0) + ') - the test must sample the marks and SET, not pass blind (G-139)';
+      gaps.push(...gaps2);
+      // The standing readings are judged on their own pool too: on the round-0 build they
+      // hide inside the clean running pool (idle stands -0.05, the SET crouch reaches -0.115).
+      if (gaps2 && gaps2.length >= 8) {
+        const sunk2 = gaps2.filter(g => g < -0.05).length;
+        if (sunk2 > gaps2.length * 0.2) return 'feet SINK into the ground at the start line: ' + sunk2 + ' of ' + gaps2.length + ' standing readings more than 5 cm under - the idle and SET clips must ground on the track too (G-139)';
+        if (Math.min(...gaps2) < -0.08) return 'a foot buries ' + Math.abs(Math.min(...gaps2)).toFixed(2) + ' m under the track at the start - the SET crouch must sit on the ground line (G-139)';
+      }
+      const sunk = gaps.filter(g => g < -0.05).length;
+      if (sunk > gaps.length * 0.2) return 'feet SINK into the ground: ' + sunk + ' of ' + gaps.length + ' readings more than 5 cm under (worst ' + Math.min(...gaps).toFixed(2) + ' m) - G-139';
+      if (Math.min(...gaps) < -0.12) return 'a foot buries ' + Math.abs(Math.min(...gaps)).toFixed(2) + ' m under the track - the stance foot must stay on the ground line (G-139)';
+      return true;
+    }
+  }
 
 ];

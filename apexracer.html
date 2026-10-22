@@ -2327,9 +2327,12 @@ window.__reality = {
       if (!R || !R.P || R.P.fin) { const now = Date.now(); if (now - lastTry > 6000) { lastTry = now; startRace(PLACES[0], 3); } return; }
       if (R.t < 0) R.t = 0; /* skip the countdown so the robot measures real driving, not a standing car */
       K.gas = 1;
+      if (R.skids) { for (let i = 0; i < 3; i++) updateRace(1 / 30); } /* G-137: drive the simulation in game time while go is held - the robot's page starves requestAnimationFrame and the frame loop clamps dt at 0.05 s, so the gas flag alone moved the car 0.0 m in the robot's 5 s window */
     } catch (e) {} };
     kick(); _rcGoTimer = setInterval(kick, 150);
   },
+  time: () => (R ? R.t : 0), /* G-143: the race clock - game seconds, never the robot's wall clock */
+  speed: () => (R && R.P ? Math.abs(R.P.spd) : 0), /* G-143: the player car's own speed in m/s */
   expect: { length: [3.8, 5.9] }
 };
 /* LANDSCAPE LAW: first tap asks for fullscreen + a landscape lock where the platform allows */
