@@ -242,23 +242,39 @@ export default [
   id: 'play-icing-called',
   ask: 'icing is called on an untouched clear from the defensive half',
   async test(page, h) {
-    try { await h.press('#playBtn'); } catch (e) {}
-    await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    // G-124: deterministic staging. Start from a known state - a live match in the
+    // play state, waited for in game state, never a fixed sleep: staging during the
+    // opening faceoff let the drop reset the puck and the skaters (the old flake).
+    if ((await state()) === 'menu') { try { await h.press('#playBtn'); } catch (e) {} }
+    let inPlay = false;
+    try {
+      await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' });
+      inPlay = true;
+    } catch (e) { inPlay = (await state()) === 'play'; }
+    if (!inPlay) return 'could not reach the play state to stage the icing (state "' + (await state()) + '")';
     await h.eval(() => {
-      const H = window.__hk; if (!H || !H.puck) return;
-      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
-      H.puck.lastTouch = 'home'; H.puck.lastTouchX = -10; // dumped from the home defensive half
-      H.puck.pos.set(-10, 0.2, 30); H.puck.vel.set(60, 0, 0); // untouched clear down the ice (too fast to grab)
+      const H = window.__hk, g = H.game;
+      g.period = 1; g.clockT = 120; // a full period of runway - no intermission can interrupt
+      const P = H.puck;
+      P.owner = null; P.recv = null; P.shot = null; P.passGrace = null; P._dumpDeep = null;
+      P.lastTouch = 'home'; P.lastTouchX = -10; // dumped from the home defensive half
+      P.pos.set(-10, 0.06, 30); P.vel.set(85, 0, 0); // untouched clear down a lane nobody stands in
       for (const s of H.skaters) {
-        s.vel.set(0, 0, 0); s.thinkT = 999; // freeze the AI
-        // away wins the race, so the icing stands (not waived)
-        if (!s.goalie) { s.pos.set(s.team === 'away' ? 60 : -40, 0.1, s.pos.z || 0); if (s.target) s.target.copy(s.pos); } // 03: stop them skating to old targets
+        s.vel.set(0, 0, 0); s.thinkT = 9999; // freeze the AI for the whole flight
+        // deterministic race geometry, everybody 60+ units from the puck's lane (z = 30):
+        // the defending team is closest to the far end, so the hybrid race ends one way
+        if (s.team === 'away') s.pos.set(80, 0.1, -30); else s.pos.set(-40, 0.1, -30);
+        if (s.target) s.target.copy(s.pos);
       }
     });
-    for (let i = 0; i < 12; i++) {
-      await h.wait(1000);
-      const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
-      if (/ICING/i.test(banner)) return true;
+    // the whistle blows about 2 game-seconds after the clear; poll the banner fast so
+    // the 2 s banner can never slip between reads, and never count a waive as a call
+    for (let i = 0; i < 60; i++) {
+      await h.wait(250);
+      const txt = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '').catch(() => '');
+      if (/WAIVED/i.test(txt)) return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold';
+      if (/ICING/i.test(txt)) return true;
     }
     return 'an untouched clear from the defensive half past the far goal line never drew an icing whistle';
   },
