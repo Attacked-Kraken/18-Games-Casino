@@ -115,6 +115,16 @@ Learned the hard way on G-01 (the V12 Goblin came in white, sideways and half si
     that game's model list (games.json `models` / MODELS.md), nothing in the code.
 11. Every model shows its front / side / back / top pictures + its card on the owner's board for his 👍 BEFORE any
     builder job uses it (the model gate). Order of work: Exotic Racer's cars first, then the Baseball players.
+12. (owner Oct 21 7:26 PM) The lab has a TEST TRACK scene (`tools/model-lab/track.html`): every new model is loaded
+    there, driven (the holder moves on the house's forward direction) and photographed CLOSE (front / side / back)
+    before any game may use it - those pictures go on the owner's board with the card.
+13. (owner Oct 21 7:26 PM) A model, texture or shared part NEVER lands in the same pull request as game code - no
+    exceptions for small ones. The model lands first (its own PR), gets the owner's 👍, is LOCKED in MODELS.md, and
+    then a SEPARATE game job uses it. The robot FAILS a PR that mixes a model/texture/shared-part file with a game page.
+14. (owner Oct 21 7:26 PM) Once the first lab model is done end to end (fetched, fitted, carded, driven on the test
+    track, 👍'd, used by its game), it becomes THE worked example: every model order points to it
+    (`models/README.md` "The worked example").
+
 
 ## 4. Feel
 
