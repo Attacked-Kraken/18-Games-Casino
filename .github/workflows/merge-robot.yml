@@ -34,6 +34,8 @@ jobs:
       revisit: ${{ steps.robot.outputs.revisit }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # the conflict fix merges main into a PR branch: it needs the full history (a 1-commit checkout cannot merge)
       - name: Merge green pull requests
         id: robot
         env:
