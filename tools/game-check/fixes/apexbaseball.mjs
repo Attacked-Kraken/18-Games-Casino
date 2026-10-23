@@ -878,7 +878,7 @@ export default [
       // start from a fresh state: tap through the start overlay until it hides,
       // then wait for the batter's reality hook and the rigged athletes
       let ready = false;
-      for (let i = 0; i < 60 && !ready; i++) {
+      for (let i = 0; i < 30 && !ready; i++) {
         const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
         if (st.hook) { ready = true; break; }
         if (st.menu) await page.touchscreen.tap(422, 195);
@@ -1040,10 +1040,10 @@ export default [
       // the Oct 23 main check while its sibling play-contact-big-at-plate, which
       // retries, passed on the same check) - wait for each phase, then count.
       let last = null;
-      for (let tries = 0; tries < 3; tries++) {
+      for (let tries = 0; tries < 2; tries++) {
         const r = await h.eval(async () => {
           const sleep = ms => new Promise(res => setTimeout(res, ms));
-          for (let i = 0; i < 40; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
+          for (let i = 0; i < 27; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
           const btns = [...document.querySelectorAll('button')];
           const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
           await sleep(250);
@@ -1051,7 +1051,7 @@ export default [
           const R = window.__reality, cam = R.camera;
           const windPos = new Set(), flightPos = new Set();
           let flightN = 0, ballIn = 0, sawWind = false, sawFlight = false;
-          for (let i = 0; i < 300; i++) {
+          for (let i = 0; i < 220; i++) {
             const ph = window.__test.phase;
             const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
             if (ph === 'windup') { sawWind = true; windPos.add(key); }
@@ -1069,7 +1069,7 @@ export default [
         last = r;
         if (r.wind >= 3 && r.flight >= 3 && r.flightN >= 3 && r.ballIn / r.flightN >= 0.9) return true;
       }
-      if (!last.sawWind) return 'no windup phase was ever sampled in 3 throws (the throw clicks never took on this page)';
+      if (!last.sawWind) return 'no windup phase was ever sampled in 2 throws (the throw clicks never took on this page)';
       if (last.wind < 3) return 'the camera is frozen during the windup: ' + last.wind + ' distinct position(s) (owner: the camera follows the windup)';
       if (last.flight < 3) return 'the camera is frozen during the pitch flight: ' + last.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
       if (last.flightN < 3) return 'the pitch flight was too short to sample (' + last.flightN + ' samples)';
