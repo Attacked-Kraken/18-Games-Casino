@@ -1006,16 +1006,19 @@ function calledPitch(){
 }
 function nextPitchSoon(ms=950){ setTimeout(()=>{ if(!G.over) nextPitch(); }, ms); }
 function onBall(){
+  if (G.phase==='flight') setPhase('call');   // G-237: the pitch is decided - the flight phase ends now, not after the 950 ms call beat (the tester clock times the flight phase)
   G.balls++;
   if (G.balls>=4){ onWalk(); } else { banner('BALL', countText()); nextPitchSoon(); }
 }
 function onStrike(how){
+  if (G.phase==='flight') setPhase('call');   // G-237: same - the flight phase ends at the decision
   if (how==='swinging' || how==='called'){
     G.strikes++;
     if (G.strikes>=3){ onStrikeout(); } else { banner('STRIKE', (how==='swinging'?'Swinging':'Called')+' · '+countText()); nextPitchSoon(); }
   }
 }
 function onFoul(){
+  if (G.phase==='flight') setPhase('call');   // G-237: same - the flight phase ends at the decision
   ball.visible = false; trail.visible=false;
   if (G.strikes<2){ G.strikes++; banner('FOUL BALL','Strike '+G.strikes, 1300); }
   else banner('FOUL BALL','count stays '+countText(), 1300);
