@@ -1760,6 +1760,9 @@ function audioInit() {
   AU.buf = {}; const UIK = { tap: 'tap', coin: 'coin_pickup', win: 'win_jingle', unlock: 'unlock', levelup: 'level_up', popen: 'popup_open', pclose: 'popup_close', star1: 'star_1', star2: 'star_2', star3: 'star_3', near2: 'combo_x2', near3: 'combo_x3', near4: 'combo_x4', near5: 'combo_x5' };
   for (const k in UIK) fetch('sounds/ui-kit/arcade/' + UIK[k] + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { AU.buf[k] = b; }).catch(() => {});
   for (const [k, f] of [['stingW', 'sports_arena_victory_sting'], ['stingL', 'sports_arena_gameover_sting']]) fetch('sounds/pack/music/sports_arena/' + f + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { AU.buf[k] = b; }).catch(() => {});
+  /* G-240: the owner's supercar engine kit (sounds/engines/supercar/), decoded once into buffers - the owner's rule: looping sound lives on the context clock as buffers, never media elements */
+  AU.kitB = {}; AU.kitP = { gear: 0, load: 0, bfT: 0 };
+  for (const [k, f] of [['idle', 'idle_loop'], ['low', 'accel_low_loop'], ['mid', 'accel_mid_loop'], ['high', 'accel_high_loop'], ['sq', 'tire_squeal_loop'], ['shiftUp', 'shift_up'], ['shiftDown', 'shift_down'], ['bf1', 'backfire_1'], ['bf2', 'backfire_2'], ['bf3', 'backfire_3']]) fetch('sounds/engines/supercar/supercar_' + f + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { AU.kitB[k] = b; }).catch(() => {});
   musicStart(MUS.want || 'menu');
 }
 function setSnd(on) { S.snd = on ? 1 : 0; save(); if (AU.master) AU.master.gain.value = on ? 0.75 : 0; }
@@ -1780,11 +1783,39 @@ function sfx(k) {
   else if (k === 'win') { [523, 659, 784, 1047].forEach((f, i) => { const o = c.createOscillator(), gg = c.createGain(); o.type = 'triangle'; o.frequency.value = f; gg.gain.setValueAtTime(0.0001, t + i * 0.12); gg.gain.exponentialRampToValueAtTime(0.18, t + i * 0.12 + 0.02); gg.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.5); o.connect(gg); gg.connect(AU.master); o.start(t + i * 0.12); o.stop(t + i * 0.12 + 0.55); }); }
   else if (k === 'boom') { noise(1.2, 'lowpass', 300, 0.5); }
 }
+function kitLive() { return !!AU.kitG; }
+function kitShot(b, vol) { if (!b || !AU.ctx) return; const c = AU.ctx, s = c.createBufferSource(); s.buffer = b; const g = c.createGain(); g.gain.value = vol; s.connect(g); g.connect(AU.master); s.start(); }
+function engKitStart() { /* start the kit's five loops once, gains at 0 - engineSnd fades them by throttle/rpm */
+  if (AU.kitG || !AU.kitB) return; const c = AU.ctx; if (!c) return;
+  for (const k of ['idle', 'low', 'mid', 'high', 'sq']) if (!AU.kitB[k]) return;
+  AU.kitG = {}; AU.kitSrc = {};
+  for (const k of ['idle', 'low', 'mid', 'high', 'sq']) { const s = c.createBufferSource(); s.buffer = AU.kitB[k]; s.loop = true; const g = c.createGain(); g.gain.value = 0; s.connect(g); g.connect(AU.master); s.start(); AU.kitSrc[k] = s; AU.kitG[k] = g; }
+}
 function engineSnd(rpm, load, on, nos, scr, spd) {
-  const c = AU.ctx; if (!c) return; const t = c.currentTime, b = 42 + rpm * 165;
+  const c = AU.ctx; if (!c) return; const t = c.currentTime;
+  AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
+  engKitStart();
+  if (kitLive()) { /* G-240: the owner's supercar recordings carry the engine - idle + accel layers crossfaded by throttle, playbackRate by rpm, kit shift/backfire one-shots, kit tire squeal */
+    const G = AU.kitG, band = (x, a, b, cc, d) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < cc ? 1 : x < d ? 1 - (x - cc) / (d - cc) : 0, eg = on ? 1 : 0;
+    const rate = 0.9 + 0.35 * clamp(rpm, 0, 1);
+    for (const k of ['low', 'mid', 'high']) AU.kitSrc[k].playbackRate.setTargetAtTime(rate, t, 0.05);
+    AU.kitSrc.idle.playbackRate.setTargetAtTime(0.95 + 0.1 * clamp(rpm, 0, 1), t, 0.05);
+    G.idle.gain.setTargetAtTime(eg * 0.5 * (1 - load * 0.8), t, 0.07);
+    G.low.gain.setTargetAtTime(eg * 0.62 * load * (1 - band(rpm, 0.38, 0.62, 1e9, 1e9)), t, 0.06);
+    G.mid.gain.setTargetAtTime(eg * 0.62 * load * band(rpm, 0.3, 0.55, 0.75, 0.95), t, 0.06);
+    G.high.gain.setTargetAtTime(eg * 0.66 * load * band(rpm, 0.68, 0.9, 1e9, 1e9), t, 0.06);
+    G.sq.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.7 : 0, t, 0.05);
+    AU.scr.gain.setTargetAtTime(0, t, 0.05); AU.eng.g.gain.setTargetAtTime(0, t, 0.08);
+    const gear = R ? R.gear : 1, KP = AU.kitP;
+    if (on && KP.gear && gear !== KP.gear) kitShot(AU.kitB[gear > KP.gear ? 'shiftUp' : 'shiftDown'], 0.55);
+    if (on && KP.load > 0.85 && load < 0.25 && rpm > 0.5 && t - KP.bfT > 0.4 && Math.random() < 0.7) { KP.bfT = t; kitShot(AU.kitB['bf' + (1 + Math.floor(Math.random() * 3))], 0.5); }
+    KP.gear = gear; KP.load = load;
+    return;
+  }
+  const b = 42 + rpm * 165;
   AU.eng.o1.frequency.setTargetAtTime(b, t, 0.03); AU.eng.o2.frequency.setTargetAtTime(b * 0.5, t, 0.03); AU.eng.o3.frequency.setTargetAtTime(b * 2.01, t, 0.03);
   AU.eng.f.frequency.setTargetAtTime(380 + rpm * 2200 * (0.45 + load * 0.55), t, 0.05); AU.eng.g.gain.setTargetAtTime(on ? 0.07 + load * 0.08 : 0, t, 0.08);
-  AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.scr.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.2 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
+  AU.scr.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.2 : 0, t, 0.05);
 }
 
 /* ------------------------------------------------------------------ music: the owner's pack - sounds/pack/music/sports_arena/ (G-80)
@@ -2038,7 +2069,7 @@ function updateRace(dt) {
   W.anim.forEach((f) => f(dt, R.t + 10));
   /* sound */
   const st = P.st, frac = clamp(Math.abs(P.spd) / st.top, 0, 1.3), G2 = [0, 0.14, 0.28, 0.43, 0.58, 0.74, 0.9, 9]; let gear = 1; while (gear < 7 && frac > G2[gear]) gear++;
-  if (gear > R.gear && R.t > 0) sfx('shift'); R.gear = gear; const rpm = R.t < 0 ? 0.25 + Math.random() * 0.1 + (K.gas || K.sy > 0.2 ? 0.3 : 0) : clamp((frac - G2[gear - 1]) / (G2[gear] - G2[gear - 1]), 0, 1) * 0.75 + 0.25;
+  if (gear > R.gear && R.t > 0 && !kitLive()) sfx('shift'); R.gear = gear; const rpm = R.t < 0 ? 0.25 + Math.random() * 0.1 + (K.gas || K.sy > 0.2 ? 0.3 : 0) : clamp((frac - G2[gear - 1]) / (G2[gear] - G2[gear - 1]), 0, 1) * 0.75 + 0.25;
   engineSnd(rpm, R.t < 0 ? 0.3 : (K.gas || K.sy > 0.15) ? 1 : 0.2, true, P.nosOn, P.slide / 9, Math.abs(P.spd)); musRaceMix(Math.abs(P.spd));
   if (R.popT > 0) { R.popT -= dt; if (R.popT <= 0) $('pop').style.opacity = 0; }
   $('wrong').style.display = R.wrongT > 1 ? 'block' : 'none';
