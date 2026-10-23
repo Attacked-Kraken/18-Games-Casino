@@ -167,6 +167,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-141 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-141.md | test/g-141-apextrackfield |
+| G-145 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-145.md | test/g-145-apextrackfield |
 | G-229 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-229.md, CLAIMS.md | test/g-229-apextrackfield |
 | G-226 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-226.md, CLAIMS.md | test/g-226-apextrackfield |
 | G-222 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-222.md, CLAIMS.md | build/g-222-apexbaseball |
