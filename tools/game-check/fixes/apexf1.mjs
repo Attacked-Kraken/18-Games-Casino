@@ -867,6 +867,80 @@ export default [
       if (last.s - s0 < 700) return 'the driven sector was too short: ' + Math.round(last.s - s0) + ' m in 12 s';
       return true;
     },
+  },
+  {
+    id: 'play-owner-check-link',
+    ask: 'Owner check link: apexf1.html?test=grid opens straight at the starting grid with LIGHTS OUT on screen and no scrolling (G-204)',
+    async test(page, h) {
+      let out = null;
+      await h.eval(`location.href = location.pathname + '?test=grid'`).catch(() => {});
+      let grid = false;
+      for (let i = 0; i < 30 && !grid; i++) { await h.wait(500); grid = await h.eval(`(() => { const g = document.getElementById('gridMenu'); return !!g && !g.classList.contains('hidden'); })()`).catch(() => false); }
+      if (!grid) out = 'the ?test=grid link never opened the starting grid';
+      else {
+        const r = await h.eval(`(() => { const g = document.getElementById('gridMenu'); const b = document.getElementById('raceBtn').getBoundingClientRect(); return { sh: g.scrollHeight, ch: g.clientHeight, top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+        if (r.sh > r.ch + 1) out = 'the grid menu needs scrolling from the check link: content ' + r.sh + 'px on a ' + r.ch + 'px screen';
+        else if (r.top < -1 || r.bottom > r.ih + 1) out = 'LIGHTS OUT is off screen from the check link (button ' + Math.round(r.top) + '..' + Math.round(r.bottom) + ' on a ' + r.ih + 'px phone)';
+      }
+      await h.eval(`location.href = location.pathname`).catch(() => {});
+      await h.wait(600);
+      return out || true;
+    },
+  },
+  {
+    id: 'play-pack-stays-spread',
+    ask: 'Pack fix: the qualifying field stays spread out - no start-line spin pile-up, no tangled pack sitting in the contact box',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset failed (not at menu)';
+      await h.press('#careerBtn');
+      await h.wait(400);
+      await h.press('#toTeamBtn');
+      await h.wait(300);
+      await h.press('#startBtn');
+      let mode = '';
+      for (let i = 0; i < 16 && mode !== 'quali'; i++) { await h.wait(400); mode = await h.eval(`window.__test.race().mode`).catch(() => ''); }
+      if (mode !== 'quali') return 'never reached qualifying';
+      let pairSum = 0, samples = 0, stoppedMax = 0;
+      for (let k = 0; k < 12; k++) {
+        await h.wait(1250);
+        const r = await h.eval(`(() => { const t = window.__test; const cs = t.cars(); const L = t.trackLength(); let pairs = 0, stopped = 0;
+          for (let i = 0; i < cs.length; i++) { if (!cs[i].isPlayer && cs[i].v < 2 && Math.abs(cs[i].d) < 8) stopped++;
+            for (let j = i + 1; j < cs.length; j++) { if (cs[i].isPlayer || cs[j].isPlayer) continue; let ds = (cs[i].s - cs[j].s) % L; if (ds > L / 2) ds -= L; if (ds < -L / 2) ds += L; if (Math.abs(ds) < 7.9 && Math.abs(cs[i].d - cs[j].d) < 3.8) pairs++; } }
+          return { pairs, stopped }; })()`).catch(() => null);
+        if (!r) return 'pack sampling failed';
+        pairSum += r.pairs; samples++;
+        if (r.stopped > stoppedMax) stoppedMax = r.stopped;
+      }
+      const avg = pairSum / Math.max(samples, 1);
+      if (avg > 1.5) return 'the field still piles up: ' + avg.toFixed(1) + ' AI pairs inside the contact box on average (about 6.5 before the pack fix)';
+      if (stoppedMax > 1) return 'cars are stuck or spun in the pack: ' + stoppedMax + ' AI cars stopped on the road at once';
+      return true;
+    },
+  },
+  {
+    id: 'play-buttons-are-44px',
+    ask: 'the 2 small buttons are at least 44px: SKIP QUALI in qualifying and LIGHTS OUT on the starting grid (G-224)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset failed (not at menu)';
+      await h.press('#careerBtn');
+      await h.wait(400);
+      await h.press('#toTeamBtn');
+      await h.wait(300);
+      await h.press('#startBtn');
+      let mode = '';
+      for (let i = 0; i < 16 && mode !== 'quali'; i++) { await h.wait(400); mode = await h.eval(`window.__test.race().mode`).catch(() => ''); }
+      if (mode !== 'quali') return 'never reached qualifying';
+      const sk = await h.eval(`(() => { const b = document.getElementById('qualiSkip'); if (!b) return null; const r = b.getBoundingClientRect(); return { w: r.width, h: r.height }; })()`);
+      if (!sk) return 'no SKIP QUALI button in qualifying';
+      if (sk.h < 44 || sk.w < 44) return 'SKIP QUALI is only ' + Math.round(sk.w) + 'x' + Math.round(sk.h) + 'px - under the 44px tap target';
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      const rb = await h.eval(`(() => { const g = document.getElementById('gridMenu'); const b = document.getElementById('raceBtn'); if (!g || !b || g.classList.contains('hidden')) return null; const r = b.getBoundingClientRect(); return { w: r.width, h: r.height, top: r.top, bottom: r.bottom, ih: window.innerHeight, sh: g.scrollHeight, ch: g.clientHeight }; })()`);
+      if (!rb) return 'the starting grid never opened';
+      if (rb.h < 44 || rb.w < 44) return 'LIGHTS OUT is only ' + Math.round(rb.w) + 'x' + Math.round(rb.h) + 'px - under the 44px tap target';
+      if (rb.sh > rb.ch + 1) return 'the grid menu needs scrolling with the bigger button';
+      if (rb.top < -1 || rb.bottom > rb.ih + 1) return 'LIGHTS OUT fell off screen with the bigger button';
+      return true;
+    },
   }
-
 ];
