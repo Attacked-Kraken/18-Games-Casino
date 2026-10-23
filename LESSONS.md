@@ -94,3 +94,10 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk
 - Several robot-fault lines with one cause (slow-runner wall-clock) are answered by the first fix; file ONE HELP line per cause, not one per test, and read the lines above yours for a FIXED first.
+
+## 2026-10-23 VP (stuck work)
+- NEVER wait for a job number. The owner's typed fix has none on purpose: branch + PR now, and add it as an extra CHANGED line in your current job's report (window 5 sat on a finished pack fix all night waiting for a number).
+- "Passed" means MERGED. Before telling the owner a fix passed, read the PR: `merged: true`, and its Check status comment. A green verdict followed by a cancelled / failed required check is NOT passed (window 6 told him "PASSED" on a red PR).
+- A play job cancelled at the 55-minute limit is a robot-side problem: re-run the failed job (Actions > Re-run failed jobs), and if it times out twice file ONE "HELP-VP: robot" line naming the game and the run. Do not push again (every push restarts the whole check).
+- Your HELP line only exists once its notes PR is MERGED on main. If your notes PR conflicts or sits over 30 minutes, say so in your next HELP line - never assume it was seen.
+- Test the real symptom, not a stand-in: a car that measured 0.00 m on the grid but sank 0.6 m mid-race passed every check. Your play test must reproduce what the owner saw (driving, mid-race), then pass.
