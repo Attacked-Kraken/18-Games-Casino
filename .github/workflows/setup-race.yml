@@ -1,0 +1,54 @@
+name: Setup race (scratch)
+# Owner Oct 23 2026 6:32 PM: which robot setup really cures the browser-install failure? 3 ways x 12 runs side by side on a tiny game.
+on:
+  push:
+    branches: [scratch/setup-race]
+permissions:
+  contents: read
+jobs:
+  A-apt-fix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy: { fail-fast: false, matrix: { n: [1,2,3,4,5,6,7,8,9,10,11,12] } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Setup
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          sudo systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+          for w in $(seq 1 24); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1 || break; sleep 5; done
+          ok=0; for i in 1 2 3 4; do if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi; echo "::warning::A try $i failed"; sudo pkill -9 apt-get || true; sudo pkill -9 dpkg || true; sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock; sudo dpkg --configure -a || true; sleep 5; done
+          [ "$ok" = 1 ] || { echo "::error::A setup failed"; exit 1; }
+      - name: Tiny game
+        run: node tools/game-check/serve.mjs 8811 & sleep 2; node -e "const {chromium,webkit}=require('playwright');(async()=>{for(const b of [chromium,webkit]){const x=await b.launch();const p=await x.newPage();await p.goto('http://127.0.0.1:8811/apexpaperplane.html',{timeout:60000});console.log(b.name(),'ok',await p.title());await x.close();}})().catch(e=>{console.error(e);process.exit(1)})"
+  B-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    container: { image: "mcr.microsoft.com/playwright:v1.48.2-noble", options: --ipc=host }
+    strategy: { fail-fast: false, matrix: { n: [1,2,3,4,5,6,7,8,9,10,11,12] } }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        env: { PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1" }
+        run: npm install --no-save --no-package-lock playwright@1.48.2
+      - name: Tiny game
+        run: node tools/game-check/serve.mjs 8811 & sleep 2; node -e "const {chromium,webkit}=require('playwright');(async()=>{for(const b of [chromium,webkit]){const x=await b.launch();const p=await x.newPage();await p.goto('http://127.0.0.1:8811/apexpaperplane.html',{timeout:60000});console.log(b.name(),'ok',await p.title());await x.close();}})().catch(e=>{console.error(e);process.exit(1)})"
+  C-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy: { fail-fast: false, matrix: { n: [1,2,3,4,5,6,7,8,9,10,11,12] } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/cache@v4
+        with: { path: ~/.cache/ms-playwright, key: "playwright-1.48.2-${{ runner.os }}" }
+      - name: Setup
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          ok=0; for i in 1 2 3 4; do if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi; echo "::warning::C try $i failed"; sudo pkill -9 apt-get || true; sudo pkill -9 dpkg || true; sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock; sudo dpkg --configure -a || true; sleep 5; done
+          [ "$ok" = 1 ] || { echo "::error::C setup failed"; exit 1; }
+      - name: Tiny game
+        run: node tools/game-check/serve.mjs 8811 & sleep 2; node -e "const {chromium,webkit}=require('playwright');(async()=>{for(const b of [chromium,webkit]){const x=await b.launch();const p=await x.newPage();await p.goto('http://127.0.0.1:8811/apexpaperplane.html',{timeout:60000});console.log(b.name(),'ok',await p.title());await x.close();}})().catch(e=>{console.error(e);process.exit(1)})"
