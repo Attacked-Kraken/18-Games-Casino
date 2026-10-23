@@ -1,5 +1,26 @@
 [
  {
+  "slug": "rigged-character-animated-sports",
+  "words": "rigged character animated sports",
+  "for": "apexbaseball.html (a person we can pose as the batter; owner picks)",
+  "date": "2026-10-23",
+  "count": 0
+ },
+ {
+  "slug": "baseball-batter",
+  "words": "baseball batter",
+  "for": "apexbaseball.html (the batter; owner picks)",
+  "date": "2026-10-23",
+  "count": 6
+ },
+ {
+  "slug": "baseball-player",
+  "words": "baseball player",
+  "for": "apexbaseball.html (the batter; owner picks)",
+  "date": "2026-10-23",
+  "count": 12
+ },
+ {
   "slug": "generic-sports-car",
   "words": "generic sports car",
   "for": "",
