@@ -521,7 +521,7 @@ export default [
           P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
           await wait(150);
           // STICK: press and push down-right - the jet must answer, and stop when let go
-          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const zone = el('apcZone'); const r = zone.getBoundingClientRect();
           const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
           zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
           zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
@@ -602,6 +602,61 @@ export default [
             res(true);
           }, 8000);
         });
+      });
+    },
+  },
+  {
+    id: 'play-stick-shared-resets',
+    ask: 'G-232: the stick is the shared kit/controls.js stick (the jet pack stick is gone) and letting go stops it - pointerup, pointercancel, blur and hidden tab all reset it to centre',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const C = window.__controls, F = window.__flight;
+        if (!C || C.shared !== true) return 'the shared kit controls are not loaded (window.__controls missing)';
+        if (document.getElementById('jetStickZone')) return 'the jet pack stick zone is still on the page';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'the shared stick zone (#apcZone) is missing';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(5); } return false; };
+        const r = zone.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const drag = () => {
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: cx + 30, clientY: cy + 30, bubbles: true }));
+        };
+        const centred = () => { const c = C.read(); return c.x === 0 && c.y === 0; };
+        const inpZero = () => !F || (F.inp.pitchUp === 0 && F.inp.rollRight === 0);
+        return (async () => {
+          const bad = [];
+          const cases = [
+            ['pointerup', () => zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }))],
+            ['pointercancel', () => zone.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 7, bubbles: true }))],
+            ['blur', () => window.dispatchEvent(new Event('blur'))],
+          ];
+          for (const [name, fire] of cases) {
+            drag();
+            if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push(name + ': the stick did not deflect on drag'); continue; }
+            fire();
+            if (!(await until(centred, 300))) bad.push(name + ' did not reset the shared stick');
+            else if (!(await until(inpZero, 300))) bad.push(name + ' reset the stick but the jet kept steering');
+          }
+          // hidden tab: the reset must land while the tab is hidden (the kit
+          // releases synchronously on visibilitychange), then restore the tab
+          drag();
+          if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push('hidden tab: the stick did not deflect on drag'); }
+          else {
+            Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!centred()) bad.push('hidden tab did not reset the shared stick');
+            Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!(await until(inpZero, 300))) bad.push('hidden tab reset the stick but the jet kept steering');
+          }
+          return bad.length ? bad.join('; ') : true;
+        })();
       });
     },
   },

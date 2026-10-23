@@ -16,4 +16,5 @@ before the owner says those 6 are done. Then do these in order, one job each:
 5. Public build log - a weekly note: what the swarm built, what the robots rejected, what the gate decided (advisor idea, Oct 22).
 6. Player-placed job - subscribers vote; the winning wish enters the real QUEUE with a real job number (advisor idea, Oct 22).
 7. Birth certificate - every Arcade game carries a page: born-on date, jobs, robot checks, testers, gate history (advisor idea, Oct 22).
-(Items 5-7 are parked ideas, NOT jobs - owner Oct 22 1:21 AM. They stay parked until he says the 6 games are done.)
+8. Props size check in the REALITY robot - a `props: [{name, mesh}]` list in window.__reality so the robot measures the ball (0.074 m) and bat (0.86 m) like the player box (window 7 tester ask, owner Oct 22 10:53 PM: NO for now, parked until the 6 games are done).
+(Items 5-8 are parked ideas, NOT jobs - owner Oct 22 1:21 AM. They stay parked until he says the 6 games are done.)
