@@ -55,22 +55,22 @@
   #muteBtn { right: 12px; bottom: calc(306px + env(safe-area-inset-bottom)); width: 48px; height: 48px;
     padding: 0; font-size: 19px; z-index: 4500; }
   /* overlays */
-  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
+  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; overflow-y: auto;
     background: rgba(0,0,0,.82); padding: 20px; }
   .ovl[hidden] { display: none; }
-  .panel { width: min(420px, 92vw); max-height: 88vh; overflow-y: auto; background: rgba(11,20,36,.97);
-    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 26px 22px; text-align: center;
+  .panel { width: min(420px, 92vw); max-height: calc(100dvh - 16px); overflow-y: auto; background: rgba(11,20,36,.97);
+    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 14px 18px; text-align: center;
     box-shadow: 0 0 40px rgba(255,59,48,.15); color: #eef3f8; }
-  .panel h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: .22em; color: #ffb700; }
-  .panel h2 { margin: 0 0 14px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
-  .panel p { font-size: 12.5px; line-height: 1.65; color: #eef3f8; }
-  .bigbtn { display: block; width: 100%; margin: 10px 0; padding: 15px; border-radius: 999px; cursor: pointer;
+  .panel h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: .22em; color: #ffb700; }
+  .panel h2 { margin: 0 0 8px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
+  .panel p { font-size: 12px; line-height: 1.45; color: #eef3f8; }
+  .bigbtn { display: block; width: 100%; margin: 6px 0; padding: 10px 15px; border-radius: 999px; cursor: pointer;
     border: 1px solid rgba(255,59,48,.65); background: rgba(16,20,26,.9); color: #ffffff;
     font: 700 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .08em; }
-  .friendbtn { padding: 10px 15px; font-size: 13px; margin: 6px 0 2px; }
-  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
+  .friendbtn { padding: 8px 15px; font-size: 13px; margin: 4px 0 0; }
+  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
   #friendErr { color: #ff9a9a; font: 600 13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; min-height: 18px; margin-bottom: 8px; }
-  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 6px 0 10px; }
+  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 4px 0 6px; }
   .bigbtn small { display: block; font-weight: 400; font-size: 11px; color: #ffe9b0; margin-top: 4px; letter-spacing: .02em; }
   .ctl { text-align: left; font-size: 12px; line-height: 1.9; color: #eef3f8; margin: 14px 0 4px; }
   .ctl b { color: #ffffff; }
@@ -696,9 +696,9 @@ function trickOffsets(dt) {
   return { pe, re };
 }
 /* A phone call, notification or app switch must never leave the plane
-   steering itself: on window blur / tab hidden, every held input - keys,
-   stick, throttle-hold buttons - goes straight back to 0 (DONE.md stick
-   rule; the phone robot checks these handlers exist). */
+   steering itself: on window blur / tab hidden / touch cancel, every held
+   input - keys, stick, throttle-hold buttons - goes straight back to 0
+   (DONE.md stick rule; the phone robot checks these handlers exist). */
 function resetInputs() {
   for (const k in keys) keys[k] = false;
   kitHeld = false;
@@ -706,6 +706,7 @@ function resetInputs() {
   inp.pitchUp = 0; inp.rollRight = 0;
 }
 window.addEventListener('blur', resetInputs);
+window.addEventListener('touchcancel', resetInputs);
 document.addEventListener('visibilitychange', () => { if (document.hidden) resetInputs(); });
 
 /* ================= buttons ================= */
@@ -1180,8 +1181,11 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
-   free flight - menus skipped - with the shared kit pad on screen. */
-if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
+   free flight - menus skipped - with the shared kit pad on screen.
+   ?test=friend (G-238) opens the Play-a-Friend overlay instead. */
+const testParam = new URLSearchParams(location.search).get('test');
+if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
+else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
 
