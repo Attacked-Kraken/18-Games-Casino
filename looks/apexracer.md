@@ -12,7 +12,7 @@
 - Camera: chase camera inside updateRace L1986-2024 - race render (renderRace) L2102
 - HUD: lap/time readout inside updateRace L1986 - big center message (bigMsg) L1886 - race step (updateRace) L1986
 - Sounds: audioInit L1739 - sfx L1760 - music mix by speed (musRaceMix) L1811
-- Test hooks: window.__erc L2366 - REALITY hook (window.__reality, go/time/speed) L2377 - ?test=night owner link at boot L2364
+- Test hooks: window.__erc L2379 - REALITY hook (window.__reality, go/time/speed) L2390 - ?test=night owner link at boot L2377
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
