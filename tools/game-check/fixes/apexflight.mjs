@@ -697,4 +697,30 @@ export default [
       });
     },
   },
+  {
+    id: 'play-stick-never-stays-stuck',
+    ask: 'A cancelled touch (call, notification, palm) never leaves the stick stuck: touchcancel zeroes the stick and all input at once (G-238)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      await h.press('#btnFree');
+      await h.wait(400);
+      const r = await h.eval(async () => {
+        const F = window.__flight, C = window.__controls;
+        if (!C || !C.shared) return 'shared controls not loaded';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'no kit stick zone';
+        const zr = zone.getBoundingClientRect();
+        const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+        const ev = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 11, clientX: x, clientY: y, bubbles: true }));
+        ev('pointerdown', cx, cy); ev('pointermove', cx + 26, cy + 26);
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await new Promise(r2 => setTimeout(r2, 25)); } return fn(); };
+        if (!await until(() => Math.abs(C.read().x) > 0.3 && Math.abs(F.inp.pitchUp) > 0.2, 1500)) return 'stick drag never deflected the jet';
+        window.dispatchEvent(new TouchEvent('touchcancel', { bubbles: true }));
+        if (!await until(() => Math.abs(C.read().x) < 0.02 && Math.abs(C.read().y) < 0.02 && F.inp.pitchUp === 0 && F.inp.rollRight === 0, 1500)) return 'touchcancel left the stick stuck: read=' + JSON.stringify(C.read()) + ' inp=' + F.inp.pitchUp + '/' + F.inp.rollRight;
+        return true;
+      });
+      return r === true ? true : r;
+    }
+  }
 ];
