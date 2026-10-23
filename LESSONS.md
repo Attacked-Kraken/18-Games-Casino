@@ -16,6 +16,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · the merge robot merged a branch behind main and wiped another job's tests → only an up-to-date, green branch merges.
 - all · a tool saved files as base64 / double-encoded UTF-8 → always send plain UTF-8 text.
 - all · the quick check cannot run in a Muse sandbox that blocks 127.0.0.1 → open the PR early; the PR robot + its one "🤖 Check status" comment IS the quick check.
+- all · MUSIC through hidden audio elements (G-80 -> Exotic Racer: constant static + skipping on the owner's phone; files were clean 192 kbps) → music is decoded ONCE into an AudioBuffer (decodeAudioData) and looped with a looping AudioBufferSourceNode on the game's own AudioContext clock, layers started at the same context time; NEVER <audio>/HTMLMediaElement + createMediaElementSource (own clock, drifts, garbles on every pause/resume and loop seam). Every sound already did it right - the music was the only thing on the bad path. Guard test: play-music-buffers (0 media elements created across menu -> race -> menu). Fixed in game PR #1269; owner's ears are the final proof.
 
 ## Robot and tests
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
