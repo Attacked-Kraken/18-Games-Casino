@@ -512,6 +512,16 @@ TX.finish = ctex(1024, 256, (g, w, h) => {
   g.fillStyle = '#05030c'; g.fillRect(0, 0, w, h); g.strokeStyle = gr; g.lineWidth = 12; g.strokeRect(10, 10, w - 20, h - 20);
   g.shadowColor = '#fff'; g.shadowBlur = 30; g.fillStyle = '#fff'; g.font = 'italic 900 150px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('FINISH', w / 2, h / 2 + 6);
 }, true, false);
+/* G-207 fix 1: the finish-line sign tells the race story - START on lap 1, completed/total on the laps between, Finish only on the last lap; redrawn on the same canvas the gantry banner uses */
+const signState = { txt: 'FINISH' };
+function drawSign(txt) {
+  const cv = TX.finish.image; if (!cv || !cv.getContext) return; const g = cv.getContext('2d'), w = cv.width, h = cv.height;
+  const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#ff2bd6'); gr.addColorStop(0.5, '#8a5cff'); gr.addColorStop(1, '#19e6ff');
+  g.fillStyle = '#05030c'; g.fillRect(0, 0, w, h); g.strokeStyle = gr; g.lineWidth = 12; g.strokeRect(10, 10, w - 20, h - 20);
+  g.shadowColor = '#fff'; g.shadowBlur = 30; g.fillStyle = '#fff'; g.font = 'italic 900 150px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, h / 2 + 6, w - 90);
+  TX.finish.needsUpdate = true; signState.txt = txt;
+}
+function setSign(txt) { if (signState.txt !== txt) drawSign(txt); }
 TX.checker = ctex(64, 64, (g) => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) & 1 ? '#111' : '#f4f4f4'; g.fillRect(x * 8, y * 8, 8, 8); } });
 TX.checker.magFilter = THREE.NearestFilter;
 /* Apex Arcade trackside banner */
@@ -1827,7 +1837,8 @@ function addEnt(o) {
 async function setupRace(place, laps, friend) {
   endRace(); G.mode = 'loading';
   const W = await buildWorld(place), T = W.T, r = rng(Date.now() >>> 0); ldBar(45); await ldTick(1);
-  R = { place, laps, W, T, cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
+  R = { place, laps, W, T, signTxt: 'START', cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
+  setSign('START');
   const slot = (k) => ({ s0: -(9 + Math.floor(k / 2) * 9.5) / T.ds, d0: k % 2 ? 4 : -4 });
   const myCfg = S.cars[S.cur];
   for (let k = 0; k < 8; k++) { const sl = slot(k); if (k === 5) { R.P = addEnt(Object.assign({ name: user || 'You', carId: S.cur, cfg: myCfg, isP: true }, sl)); continue; }
@@ -1993,7 +2004,7 @@ function updateRace(dt) {
   for (const e of R.cars) {
     const pr = e.isP ? e.prog : e.s, lap = Math.floor(pr / T.N);
     if (e.lap === undefined) e.lap = lap;
-    if (lap > e.lap && lap >= 1 && !e.fin) { const lt = R.t - (e.lap0 || 0); e.lap0 = R.t; if (lap >= 1 && e.lap >= 0) e.lapT.push(lt); if (e.isP) { if (!R.best || lt < R.best) R.best = lt; if (lap < R.laps) { pop(lap === R.laps - 1 ? 'FINAL LAP!' : `LAP ${lap + 1}/${R.laps}`); sfx('coin'); } } }
+    if (lap > e.lap && lap >= 1 && !e.fin) { const lt = R.t - (e.lap0 || 0); e.lap0 = R.t; if (lap >= 1 && e.lap >= 0) e.lapT.push(lt); if (e.isP) { if (!R.best || lt < R.best) R.best = lt; if (lap < R.laps) { pop(lap === R.laps - 1 ? 'FINAL LAP!' : `LAP ${lap + 1}/${R.laps}`); sfx('coin'); const sl = lap === R.laps - 1 ? 'Finish' : lap + '/' + R.laps; R.signTxt = sl; setSign(sl); } } }
     e.lap = lap;
     if (!e.fin && !e.remote && pr >= R.laps * T.N) { e.fin = R.t; if (e.isP) playerFinished(); }
   }
