@@ -905,4 +905,135 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-cars-visible',
+    ask: 'Owner Oct 22 2026: every computer car SHOWS in every city - a real model and a paint bright enough to read at dusk/night, never near-black',
+    async test(page, h) {
+      const rows = await h.eval(async () => {
+        const E = window.__erc, out = [];
+        const places = [E.PLACES[0], E.PLACES.find((p) => p.city === 'Honolulu')];
+        for (const place of places) {
+          E.startRace(place, 3);
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+          if (!(E.R && E.R.P)) return [{ bad: 'race never built at ' + place.city }];
+          (E.R.cars || []).forEach((c) => { if (c !== E.R.P && c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          (E.R.traffic || []).forEach((c) => { if (c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          E.toMenu(); await new Promise((r) => setTimeout(r, 400));
+        }
+        return out;
+      });
+      if (!Array.isArray(rows) || rows.length < 20) return 'only sampled ' + (rows && rows.length) + ' computer cars - not enough to prove they all show';
+      const lum = (hex) => { const n = parseInt(hex.slice(1), 16), f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+      for (const row of rows) {
+        if (row.bad) return row.bad;
+        if (!row.real) return 'a computer car is not a real model (mockup or missing)';
+        if (lum(row.paint) < 0.1) return 'a computer car wears ' + row.paint + ' (luminance ' + lum(row.paint).toFixed(3) + ') - near-black, invisible at dusk/night';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-mountains-clear',
+    ask: 'Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road',
+    async test(page, h) {
+      const res = await h.eval(async () => {
+        const E = window.__erc;
+        const place = E.PLACES.find((p) => p.city === 'Honolulu');
+        E.startRace(place, 3);
+        for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+        if (!(E.R && E.R.P)) return { bad: 'race never built at Honolulu' };
+        const R = E.R, T = R.T; let min = 1e9, checked = 0;
+        R.W.scene.traverse((o) => {
+          if (!(o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position)) return;
+          o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox, sy = Math.abs(o.matrixWorld.elements[5]) || 1, sx = Math.abs(o.matrixWorld.elements[0]) || 1;
+          const height = (bb.max.y - bb.min.y) * sy, width = (bb.max.x - bb.min.x) * sx;
+          if (height <= 55 || width > 3000) return;
+          const pos = o.geometry.attributes.position, e = o.matrixWorld.elements, stride = Math.max(1, Math.floor(pos.count / 4000));
+          for (let i = 0; i < pos.count; i += stride) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const q = T.near(wx, wz, 3); if (q) { checked++; if (q.d < min) min = q.d; } }
+        });
+        return { min, checked };
+      });
+      if (!res || res.bad) return (res && res.bad) || 'no measurement came back';
+      if (!res.checked) return 'no tall scenery vertices were measured at Honolulu';
+      if (res.min < 25) return 'tall scenery comes within ' + Math.round(res.min) + ' m of the road at Honolulu - mountains belong off the road';
+      return true;
+    },
+  },
+  {
+    id: 'play-night-no-blob',
+    ask: 'G-206: at night no car blows out to a pink/white blob - the headlight pool stays low-energy on every car, pools still exist, and the ?test=night owner link is in the game',
+    async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!src.includes("get('test')") || !src.includes("tq === 'night'")) return 'the ?test=night owner-check link is missing from apexracer.html';
+      const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
+      if (started !== 'ok') return started;
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the night race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        E.step(5, 1 / 60);
+        const rows = [];
+        const see = (c) => { if (c && c.car && c.car.pool) rows.push({ op: c.car.pool.material.opacity, cmax: Math.max(c.car.pool.material.color.r, c.car.pool.material.color.g, c.car.pool.material.color.b), vis: !!c.car.pool.parent }); };
+        (R.cars || []).forEach(see); (R.traffic || []).forEach(see);
+        E.toMenu();
+        return rows;
+      });
+      if (!Array.isArray(out)) return String(out);
+      if (out.length < 8) return 'only ' + out.length + ' cars have headlight pools at night - the pools must stay, just weaker';
+      for (const r of out) {
+        if (!r.vis) return 'a headlight pool is not in the night scene';
+        if (r.op > 0.2) return 'a headlight pool has opacity ' + r.op + ' - that additive energy blows the centre car out to a pink/white blob at night (cap 0.2)';
+        if (r.cmax > 0.85) return 'a headlight pool color peaks at ' + r.cmax.toFixed(2) + ' - too hot at night (cap 0.85)';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-cars-grounded',
+    ask: 'G-207 (owner): every computer car in every city sits ON the road for the whole race - the skinned Tokii model shared one skeleton across all its cars and rendered sunk under the road (invisible cars); the pose is baked at load now, so no car may contain a skinned mesh or ride below the road while driving',
+    async test(page, h) {
+      const nights = [];
+      const nPlaces = await h.eval(() => window.__erc.PLACES.length);
+      for (let i = 0; i < nPlaces; i++) { const tod = await h.eval((idx) => window.__erc.PLACES[idx].tod, i); if (tod === 'n') nights.push(i); }
+      const picks = [nights[0], nights[Math.floor(nights.length / 2)], nights[nights.length - 1]].filter((v, i, a) => v !== undefined && a.indexOf(v) === i);
+      for (const ni of picks) {
+        const started = await h.eval((idx) => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[idx], 3); return 'ok'; }, ni);
+        if (started !== 'ok') return started;
+        let ready = false;
+        for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+        if (!ready) return 'a night race never finished building';
+        const out = await h.eval(() => {
+          const E = window.__erc, R = E.R;
+          let worst = 0, skinned = 0, cars = 0;
+          const census = () => {
+            const see = (c) => {
+              if (!c || !c.car || !c.car.root) return;
+              cars++;
+              const root = c.car.root; root.updateWorldMatrix(true, true);
+              root.traverse(q => {
+                if (!q.isMesh) return;
+                if (q.isSkinnedMesh) skinned++;
+                q.geometry.computeBoundingBox(); const bb = q.geometry.boundingBox; if (!bb) return;
+                const e = q.matrixWorld.elements;
+                for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const y = cx * e[1] + cy * e[5] + cz * e[9] + e[13]; if (y < worst) worst = y; }
+              });
+            };
+            (R.cars || []).forEach(see); (R.traffic || []).forEach(see);
+          };
+          census();
+          E.K.gas = 1;
+          for (let r = 0; r < 4; r++) { for (let i = 0; i < 150; i++) E.step(1, 1 / 30); census(); }
+          E.K.gas = 0;
+          E.toMenu();
+          return { worst: +worst.toFixed(2), skinned, cars };
+        });
+        if (out.skinned > 0) return 'a car still contains ' + out.skinned + ' skinned meshes - the shared-skeleton model was not baked at load';
+        if (out.cars < 10) return 'only ' + out.cars + ' computer cars censused - too few to prove the field';
+        if (out.worst < -0.15) return 'a computer car rides ' + out.worst + ' m under the road while driving (place index ' + ni + ') - an invisible car';
+      }
+      return true;
+    },
+  },
 ];

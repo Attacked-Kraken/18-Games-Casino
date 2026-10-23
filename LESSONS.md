@@ -16,6 +16,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · the merge robot merged a branch behind main and wiped another job's tests → only an up-to-date, green branch merges.
 - all · a tool saved files as base64 / double-encoded UTF-8 → always send plain UTF-8 text.
 - all · the quick check cannot run in a Muse sandbox that blocks 127.0.0.1 → open the PR early; the PR robot + its one "🤖 Check status" comment IS the quick check.
+- all · MUSIC through hidden audio elements (G-80 -> Exotic Racer: constant static + skipping on the owner's phone; files were clean 192 kbps) → music is decoded ONCE into an AudioBuffer (decodeAudioData) and looped with a looping AudioBufferSourceNode on the game's own AudioContext clock, layers started at the same context time; NEVER <audio>/HTMLMediaElement + createMediaElementSource (own clock, drifts, garbles on every pause/resume and loop seam). Every sound already did it right - the music was the only thing on the bad path. Guard test: play-music-buffers (0 media elements created across menu -> race -> menu). Fixed in game PR #1269; owner's ears are the final proof.
 
 ## Robot and tests
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
@@ -82,3 +83,23 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (8:15 PM)
 - The art director cannot grade the upright phone view without a picture of it. Rule: when a grader (window 11/12) needs a picture the robot does not save, file ONE "HELP-VP: robot" line naming the file and the picture wanted - never grade or ask windows from memory.
+
+## 2026-10-22 help desk (9:20 PM)
+- When main moves during a tester round, the report names the main commit the round was played on, and each TESTER line is re-run on current main before it is filed (file only if it still fails there).
+
+## 2026-10-22 help desk
+- A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
+
+## 2026-10-23 help desk
+- A PR check that reads RUNNING for a long time may have finished and merged since: read the PR state (merged?) before filing a HELP line. Rule: "stuck RUNNING" = look at `merged` and the check list first.
+
+## 2026-10-23 help desk
+- Several robot-fault lines with one cause (slow-runner wall-clock) are answered by the first fix; file ONE HELP line per cause, not one per test, and read the lines above yours for a FIXED first.
+
+## 2026-10-23 VP (stuck work)
+- NEVER wait for a job number. The owner's typed fix has none on purpose: branch + PR now, and add it as an extra CHANGED line in your current job's report (window 5 sat on a finished pack fix all night waiting for a number).
+- "Passed" means MERGED. Before telling the owner a fix passed, read the PR: `merged: true`, and its Check status comment. A green verdict followed by a cancelled / failed required check is NOT passed (window 6 told him "PASSED" on a red PR).
+- A play job cancelled at the 55-minute limit is a robot-side problem: re-run the failed job (Actions > Re-run failed jobs), and if it times out twice file ONE "HELP-VP: robot" line naming the game and the run. Do not push again (every push restarts the whole check).
+- Your HELP line only exists once its notes PR is MERGED on main. If your notes PR conflicts or sits over 30 minutes, say so in your next HELP line - never assume it was seen.
+- Test the real symptom, not a stand-in: a car that measured 0.00 m on the grid but sank 0.6 m mid-race passed every check. Your play test must reproduce what the owner saw (driving, mid-race), then pass.
+- The merge robot's "every 5 minutes" timer is NOT reliable (GitHub ran it every few hours), and a conflicted pull request never starts a check, so nothing wakes the robot for it. Since Oct 23 the robot wakes itself (heartbeat) while any pull request still needs a second look; if your PR sits conflicted or unmerged over 10 minutes, merge main into your branch yourself and say so in your next report.
