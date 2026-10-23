@@ -1,14 +1,18 @@
 # Look board — Exotic Racer Club (`apexracer.html`)
 
-## WHERE THINGS ARE (apexracer.html, line numbers on main after G-176)
-- Car data: GLB_MODELS registry L294 · CARS stats L316 · paint material (paintMat) L642
-- Places list (PLACES) L379
-- Name wrap: addNameWrap L953 (door run judged at 0.85 of the door's own widest line; wheel zones break the run)
-- Car building: makeGlbCar L1059 (lamps, on-lens glow quads, headlight pool L1106-1130) · makeCar (real-model swap, mockup fallback) L1135 · garage car (setGarageCar) L1229
-- World and race setup: buildWorld L1339 · setupRace L1785 (night headlight pools parked in the scene L1816) · startRace L2096 · back to menu (toMenu) L2065
-- Sound: audioInit L1697 · sfx L1718 · music speed mix (musRaceMix) L1756
-- Racing: stepPlayer L1833 · stepAI L1878 (G-70 gap band + G-123 player-pace cap) · stepTraffic L1912 · posePool L1922 · poseCar L1923 · updateRace L1931 (skids guard at its head, G-123 player pace tracker)
-- Test hooks: window.__erc L2323 · window.__reality L2334
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 22, 2026, after G-206; keep current per STUDIO-STANDARD 9.7)
+- Menu / turntable: menu home + showroom orbit (toMenu) L2107 - menu refresh (refreshMenu) L2100 - turntable spin + garage camera (updateGarage) L2315 - frame loop L2338
+- Garage: openGarage L2187 - garage cards and buying (renderGarage) L2197 - the shown car (setGarageCar) L1268
+- Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L668 - computer-car paints stay bright (brightPaint) L558
+- Car building: name wrap (addNameWrap) L979 - real-model car builder (makeGlbCar) L1085 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1174
+- World and race setup: world build in slices (buildWorld) L1378 - scenery keeps off the road (skirtClear, inside buildWorld) - race setup (setupRace) L1827 - grid camera inside setupRace L1861 - race start guards (PR #1023: startRace ignores a second start while loading) - race start (startRace) L2138
+- Driving physics: player car (stepPlayer) L1875
+- AI: stepAI L1920 - G-70 gap band + the G-123 player-pace cap on top
+- Traffic: stepTraffic L1954 - headlight pool follow (posePool) L1964 - car posing (poseCar) L1965
+- Camera: chase camera inside updateRace L2041-2024 - race render (renderRace) L2089
+- HUD: lap/time readout inside updateRace L2070 - big center message (bigMsg) L1873 - race step (updateRace) L1973
+- Sounds: audioInit L1739 - sfx L1760 - music mix by speed (musRaceMix) L1798
+- Test hooks: window.__erc L2366 - REALITY hook (window.__reality, go/time/speed) L2377 - ?test=night owner link at boot L2364
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
@@ -19,6 +23,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## MUST
 - Cars match the owner's photo: wheels and rims exactly as in the picture (e.g. white rims)
 - Night exposure keeps every car's shape readable - lights never blow a car out to a white blob
+- Every computer car shows its body in every city, day and night - computer paints are never near-black (owner, Oct 22 2026)
 
 ## NEVER
 - No car missing its wheels
@@ -26,6 +31,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Nothing built from boxes when a real model is possible
 - No untextured bars or stray parts on a car - every part on the car belongs to the car
 - No gameplay or proof camera inside a car
+- No mountain, mesa or volcano skirt within reach of the road - tall scenery keeps its distance from the track (owner, Oct 22 2026)
 - 2026-10-22: report has no 'OWNER CHECK IN 30 SECONDS: <test link> - <what to look at>' line (G-176)
 
 ## Reference pictures
