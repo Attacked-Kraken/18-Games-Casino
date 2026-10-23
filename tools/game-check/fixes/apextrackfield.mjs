@@ -268,7 +268,7 @@ export default [
       // never reach the menu): use the game's real screens (.screen.on) and real results buttons.
       let atMenu = false;
       while (budget() && !atMenu) {
-        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
+        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'grid') { const g = document.getElementById('bGridBack'); if (g) g.click(); return false; } if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
         if (!atMenu) await h.wait(500);
       }
       if (!atMenu) return 'could not get back to the menu (a race or results screen is stuck)';
@@ -410,7 +410,7 @@ export default [
       const budget = () => Date.now() - t0 < 27000;
       await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
       await h.eval(() => { if (!window.__tfdrv3) { window.__tfdrv3 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (typeof e.best === 'number' && e.phase === 'mark') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (e.phase === 'flight' && typeof e.ft === 'number' && typeof e.fT === 'number' && e.fT > 0) e.ft = Math.max(e.ft, e.fT - 0.05); if (e.phase === 'mark' && typeof e.resT === 'number') e.resT = Math.min(e.resT, 0.05); if (ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault') { if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
       let start = null, unlocked = false, guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -434,7 +434,7 @@ export default [
       await page.reload({ waitUntil: 'load' });
       await h.wait(1500);
       await h.eval(() => { if (!window.__tfdrv4) { window.__tfdrv4 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; const field = ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault'; if (typeof e.best === 'number') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (field) { const seen = window.__tfChampSeen || (window.__tfChampSeen = {}); const k = ev.id || ev.eng; if (!seen[k]) seen[k] = Date.now(); if (Date.now() - seen[k] > 3000) { e.done = true; return; } if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
       let guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -2508,6 +2508,60 @@ async test(page, h) {
   if (out.fumbled) return 'the leg-1 exchange FUMBLED - the carrier ran out of the zone without the pass button ever working';
   if (out.firstOkAt === null) return 'the PASS button never exchanged in the zone';
   if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
+  return true;
+}
+},{
+id: 'play-free-results-return-to-events',
+title: 'OWNER 2026-10-23: after a Free Play event the results bring you back to the free play menu to pick something else, and the event menu has its BACK button at the top (to the main menu)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=200m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '200m'); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 200m did not start from the test link';
+  await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return e.done;
+  });
+  let onResults = false;
+  for (let i = 0; i < 40 && !onResults; i++) {
+    onResults = await h.eval(() => { const on = document.querySelector('.screen.on'); return !!(on && on.id === 'results'); }).catch(() => false);
+    if (!onResults) await h.wait(1500);
+  }
+  if (!onResults) return 'the results screen never appeared after the free play 200m';
+  const chk = await h.eval(() => {
+    const next = document.getElementById('bResNext');
+    const menu = document.getElementById('bResMenu');
+    const out = { nextLabel: next ? next.textContent : '', menuLabel: menu ? menu.textContent : '' };
+    if (menu) menu.click();
+    return out;
+  });
+  await h.wait(500);
+  const after = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (!/RETRY EVENT/.test(chk.nextLabel || '')) return 'expected the free play results (RETRY EVENT button), got next=' + chk.nextLabel;
+  if (after !== 'grid') return 'after a free play event the results exit went to "' + after + '" - the owner: it must always bring you back to the free play menu (CHOOSE EVENT) to pick something else';
+  const top = await h.eval(() => {
+    const back = document.getElementById('bGridBack');
+    const firstEv = document.querySelector('#gridEvents button');
+    if (!back || !firstEv) return { ok: false, why: 'missing back or events' };
+    const br = back.getBoundingClientRect(), er = firstEv.getBoundingClientRect();
+    return { ok: br.top < er.top && br.top >= 0 && br.bottom <= window.innerHeight, backTop: Math.round(br.top), evTop: Math.round(er.top) };
+  });
+  if (!top || !top.ok) return 'the event menu BACK button is not at the top of the panel (back top=' + (top && top.backTop) + ', first event top=' + (top && top.evTop) + ') - the owner circled the top of the panel: on his phone it sits under all 29 events where it cannot be reached';
+  await h.eval(() => { const b = document.getElementById('bGridBack'); if (b) b.click(); });
+  await h.wait(500);
+  const home = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (home !== 'menu') return 'the event menu BACK button went to "' + home + '", not the main game menu';
   return true;
 }
 }
