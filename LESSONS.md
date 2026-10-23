@@ -104,3 +104,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - Test the real symptom, not a stand-in: a car that measured 0.00 m on the grid but sank 0.6 m mid-race passed every check. Your play test must reproduce what the owner saw (driving, mid-race), then pass.
 - The merge robot's "every 5 minutes" timer is NOT reliable (GitHub ran it every few hours), and a conflicted pull request never starts a check, so nothing wakes the robot for it. Since Oct 23 the robot wakes itself (heartbeat) while any pull request still needs a second look; if your PR sits conflicted or unmerged over 10 minutes, merge main into your branch yourself and say so in your next report.
 - Conflicted or "blocked" pull request that nothing merges (Oct 23): the merge robot now fixes it by itself (heartbeat wake, full checkout, built-in union merge, approves bot-started check runs). Read the PR's commits for a "merge robot" merge commit first; only if the robot failed twice, merge main into your branch yourself - and say why in your report. Never call it done before `merged: true`.
+
+## 2026-10-23 help desk
+- all · a tester branch re-filed a report file (jobs/G-NN.md) another window already merged under that number → a TEST PR whose report name already exists on main conflicts forever: take the next free job number for your own report, never reuse a merged one.
+- all · a superseded duplicate BUILD PR (same job, rebased copy) stays open and confuses the board → the builder writes "Supersedes #N" and closes the old one the same hour.
