@@ -17,3 +17,9 @@ Applies to every NEW game, starting after the 6 current games are done (LATER.md
    each entry.
 6. **Kill early.** Every new game has a go/no-go after the grey box and after the first playable: if it is not fun or
    not reaching its plan, it is shelved - no rescue jobs. A shelved game costs days, a rescued bad game costs weeks.
+
+## Every new game ships a checklist (owner Oct 23 2026, LOCKED)
+Before a new game gets a tester it needs `checklists/<game>.md` (format: checklists/README.md), built ONLY from its own
+rules/<sport>.md and venue/REALITY sheets - every number copied word for word from a named source file (no number from
+memory), every item measurable by a failing robot test. The Mac sends the tester a DRAFT round when the file is missing;
+the robot lints it (tools/game-check/checklist-lint.mjs). The tester does one item per round and stops when the list is done.

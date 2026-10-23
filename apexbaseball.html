@@ -301,7 +301,7 @@ const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHei
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
 const FIELD_CAM = { pos:[0,24,26], look:[0,0,-30] };   // G-151: lower and closer than the old [0,45,35.3] - with the ball in play the batter/runner was a speck at the bottom edge; the infield still fills the frame
 // Retest #2: dedicated views so you can actually see the pitch and the swing
-const PITCHER_VIEW = { pos:[0,11,-26], look:[0,1.4,4] };   // G-151: closer and lower than the old G-65 TV spec ([0,20,-50]) - the batter read as an 18 px speck at the bottom of the play picture; now he stands big and lit above the bottom bar
+const PITCHER_VIEW = { pos:[0,5,-29.5], look:[0,1.2,-6] };   // G-222 (owner order Oct 22): the pitching camera spec - low behind the pitcher, a little above him, the pitcher himself fully in frame (from the G-167 framing [0,8.5,-21.8] he projected clean out of the picture, feet at row ~1197 of 390) and the plate cluster ahead; the follow block in the frame loop rides the windup and the pitch flight from here so the contact moment lands big at the plate
 const BATTER_VIEW = { pos:[0,1.7,7.6], look:[0,1.7,-20] };  // G-65 TV spec: behind home plate at catcher height, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
@@ -1516,6 +1516,25 @@ function loop(){
     if (f.athlete){ if (!busy) athleteTick(f, dt); soleTrim(f); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
     if (!busy) animFigure(f, dt, running ? 'run' : 'idle');
   }
+  // G-222: the pitching camera follows the play (auto view, player pitching).
+  // Set shot: PITCHER_VIEW above, pitcher fully in frame. Windup: push in on
+  // the pitcher. Flight: ride with the ball from over his shoulder down to
+  // the plate, so the ball meeting the bat is big in frame at contact.
+  if (camMode==='pitch' && !playerBatting() && viewMode==='auto'){
+    if (G.phase==='windup'){
+      const k = 1 - Math.exp(-2.2*dt);
+      camera.position.lerp(_camTmp.set(0, 4.2, -26.2), k);
+      camLook.lerp(_camTmp.set(0, 1.5, -14), k);
+    } else if (G.phase==='flight' && flight.active){
+      const t = Math.min(Math.max(flight.t, 0), 1), e = t*t*(3-2*t);
+      camera.position.set(0, 4.2 - 1.5*e, -26.2 + 19.4*e);
+      camLook.lerp(_camTmp.set(ball.position.x, ball.position.y, ball.position.z), 0.5);
+    } else if (G.phase==='select' || G.phase==='aim'){
+      const k = 1 - Math.exp(-6*dt);
+      camera.position.lerp(_camTmp.set(...PITCHER_VIEW.pos), k);
+      camLook.lerp(_camTmp.set(...PITCHER_VIEW.look), k);
+    }
+  }
   // camera tracking (not in wide stadium view): G-65 - the high camera follows
   // the ball in play (look and position glide with it), then setCam cuts back
   if (camMode==='field' && ball.visible && viewMode!=='wide'){
@@ -2144,6 +2163,22 @@ updateAimDot();
 renderHUD();
 setPhase('start');
 loop();
+
+/* G-222: owner check link - apexbaseball.html?test=pitching skips the menu and
+   throws fastballs on a loop, so the rebuilt pitching camera (pitcher in
+   frame, windup + flight follow, big contact) can be seen in 30 seconds. */
+try {
+  if (new URLSearchParams(location.search).get('test') === 'pitching'){
+    const iv = setInterval(() => {
+      const so = document.getElementById('startOv');
+      if (so && so.style.display !== 'none'){ const b = document.getElementById('startBtn'); if (b) b.click(); return; }
+      if (!window.__test || !window.__test.stadium.loaded) return;
+      if (G.phase === 'select'){ const fb = [...document.querySelectorAll('button')].find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click(); }
+      else if (G.phase === 'aim'){ const th = [...document.querySelectorAll('button')].find(b => /THROW/i.test(b.textContent)); if (th) th.click(); }
+    }, 500);
+    setTimeout(() => clearInterval(iv), 120000);
+  }
+} catch (e) {}
 </script>
 
 <script>

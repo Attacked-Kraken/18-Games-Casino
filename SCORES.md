@@ -10,13 +10,11 @@ How to grade (be HARSH, like a paying player who just downloaded it):
 - Broken, toy-looking, or the owner has complained = under 20/50. 40+/50 only if you'd pay for it.
 - After the dash: the ONE biggest problem, in plain words.
 
-graded: 2026-10-18
+graded: 2026-10-23
 
-- apexbaseball.html: 24/50 - green computer-screen menu + PLAY BALL button 192px off-screen
-- apexf1.html: 18/50 - AI can't finish a lap, lap counter and results broken; menu buttons off-screen
-- apexflight.html: 14/50 - green menu, gameplay frozen, zero play tests
-- apexhockey.html: 31/50 - stutter (15 freezes in 6s); icing and goal-restart logic broken
-- apexmonstertruck.html: 22/50 - owner likes it now (KEEP) but check shows drive/crush/jump tests failing; no venue
-- apexracer.html: 26/50 - zero play tests, no owner-approved venue
-- apexsoccer.html: 19/50 - Safari script crash (mate.pos); players don't steal, mark, pass, or position
-- apextrackfield.html: 20/50 - career mode stalls, events don't load; FREE PLAY button 83px off-screen
+- apexbaseball.html: looks real 5/10 · plays right 7/10 · fun 7/10 · sound 7/10 · phone feel 6/10 = 32/50 - a well-timed swing still can't make contact on a slow phone - the swing is judged by the wall clock while the pitch flies on game time
+- apexf1.html: looks real 4/10 · plays right 4/10 · fun 4/10 · sound 3/10 · phone feel 4/10 = 19/50 - the steering still won't hold the racing line - the owner said he can't stay on the track and it still drifts wide
+- apexflight.html: looks real 3/10 · plays right 2/10 · fun 2/10 · sound 2/10 · phone feel 2/10 = 11/50 - the controls barely answer in the air and the plane hardly moves - you can't really fly it, let alone land it
+- apexhockey.html: looks real 6/10 · plays right 4/10 · fun 4/10 · sound 6/10 · phone feel 5/10 = 25/50 - goals don't count - a puck over the goal line never registers, so nobody can ever win a game
+- apexracer.html: looks real 5/10 · plays right 5/10 · fun 6/10 · sound 6/10 · phone feel 4/10 = 26/50 - the headlight glow still floats in the air well past the car's nose
+- apextrackfield.html: looks real 5/10 · plays right 3/10 · fun 3/10 · sound 5/10 · phone feel 3/10 = 19/50 - the high jump is still broken - he takes off a metre before the bar and never goes over it

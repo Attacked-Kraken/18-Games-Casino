@@ -17,6 +17,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a tool saved files as base64 / double-encoded UTF-8 → always send plain UTF-8 text.
 - all · the quick check cannot run in a Muse sandbox that blocks 127.0.0.1 → open the PR early; the PR robot + its one "🤖 Check status" comment IS the quick check.
 - all · MUSIC through hidden audio elements (G-80 -> Exotic Racer: constant static + skipping on the owner's phone; files were clean 192 kbps) → music is decoded ONCE into an AudioBuffer (decodeAudioData) and looped with a looping AudioBufferSourceNode on the game's own AudioContext clock, layers started at the same context time; NEVER <audio>/HTMLMediaElement + createMediaElementSource (own clock, drifts, garbles on every pause/resume and loop seam). Every sound already did it right - the music was the only thing on the bad path. Guard test: play-music-buffers (0 media elements created across menu -> race -> menu). Fixed in game PR #1269; owner's ears are the final proof.
+- all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
@@ -104,3 +105,11 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - Your HELP line only exists once its notes PR is MERGED on main. If your notes PR conflicts or sits over 30 minutes, say so in your next HELP line - never assume it was seen.
 - Test the real symptom, not a stand-in: a car that measured 0.00 m on the grid but sank 0.6 m mid-race passed every check. Your play test must reproduce what the owner saw (driving, mid-race), then pass.
 - The merge robot's "every 5 minutes" timer is NOT reliable (GitHub ran it every few hours), and a conflicted pull request never starts a check, so nothing wakes the robot for it. Since Oct 23 the robot wakes itself (heartbeat) while any pull request still needs a second look; if your PR sits conflicted or unmerged over 10 minutes, merge main into your branch yourself and say so in your next report.
+- Conflicted or "blocked" pull request that nothing merges (Oct 23): the merge robot now fixes it by itself (heartbeat wake, full checkout, built-in union merge, approves bot-started check runs). Read the PR's commits for a "merge robot" merge commit first; only if the robot failed twice, merge main into your branch yourself - and say why in your report. Never call it done before `merged: true`.
+
+## 2026-10-23 help desk
+- all · a tester branch re-filed a report file (jobs/G-NN.md) another window already merged under that number → a TEST PR whose report name already exists on main conflicts forever: take the next free job number for your own report, never reuse a merged one.
+- all · a superseded duplicate BUILD PR (same job, rebased copy) stays open and confuses the board → the builder writes "Supersedes #N" and closes the old one the same hour.
+
+## 2026-10-23 help desk
+- A notes PR (needs/window-N.md) goes "dirty" when main's copy of that file gained an ANSWERED line after you branched. Branch needs/ updates from fresh main, never reuse an old needs branch; if conflicted, a Claude re-files it.

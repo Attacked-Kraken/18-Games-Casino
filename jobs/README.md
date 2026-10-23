@@ -39,3 +39,5 @@ A red robot line you are sure is the ROBOT's mistake (its ruler, its timing, a t
 
 ## Help desk rule (owner Oct 22 2026, from the 8:35 AM help-desk report)
 The help desk never uses vp- branches and never touches tools/game-check/ (robot files, known-faults.json) or .github/. If a robot file has to change, write ONE line in jobs/HELP.md: "HELP-VP: robot · <what / which file / why>" and the VP does it. A known fault (tools/game-check/known-faults.json) must be a real, named bug with a reason AND an owner (the robot side, or a window) and an expiry - never an excuse to pass a check.
+
+CLOCK rule (owner Oct 22 2026): take every time you write (FIXED lines, notes, PR text) from an authoritative source - the HTTP `Date` header (`gh api -i rate_limit | grep -i '^date'`, convert to Central) - never estimate it and never write a time in the future. A wrong clock makes the owner's help-desk numbers wrong.

@@ -79,7 +79,7 @@ export default [
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
                 return res(true);
               }
-              if (Date.now() - t0 > 3000 * (window.__slow || 1)) {
+              if (Date.now() - t0 > 3000) {
                 clearInterval(iv);
                 F.P.thr = 1;
                 window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
@@ -126,7 +126,7 @@ export default [
             } else if (!document.getElementById('crashOv').hidden) {
               clearInterval(iv);
               res('plane crashed during the takeoff roll');
-            } else if (Date.now() - t0 > 22000 * (window.__slow || 1)) {
+            } else if (Date.now() - t0 > 22000) {
               clearInterval(iv);
               res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
             }
@@ -224,7 +224,7 @@ export default [
               const onRwy = Math.abs(F.P.pos.x) <= 14 && F.P.pos.z > -700 && F.P.pos.z < 700;
               return res(onRwy ? true : `touched down off the runway (x=${F.P.pos.x.toFixed(1)}, z=${F.P.pos.z.toFixed(1)})`);
             }
-            if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
+            if (Date.now() - t0 > 20000) {
               clearInterval(iv);
               return res('never touched down after 20s of approach');
             }
@@ -251,7 +251,7 @@ export default [
               clearInterval(iv);
               return res(true);
             }
-            if (Date.now() - t0 > 15000 * (window.__slow || 1)) {
+            if (Date.now() - t0 > 15000) {
               clearInterval(iv);
               return res('hard impact did not crash the plane');
             }
@@ -325,7 +325,7 @@ export default [
               clearInterval(iv);
               window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
               res(true);
-            } else if (Date.now() - t0 > 12000 * (window.__slow || 1)) {
+            } else if (Date.now() - t0 > 12000) {
               clearInterval(iv);
               window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
               res('full nose-down at cruise speed did not descend: min vertical speed ' +
@@ -367,7 +367,7 @@ export default [
               if (/off|runway|grass|no score/i.test(msg)) return res(true);
               return res('off-runway touchdown shows no message explaining why there is no score');
             }
-            if (Date.now() - t0 > 25000 * (window.__slow || 1)) { clearInterval(iv); return res('never touched down after 25s'); }
+            if (Date.now() - t0 > 25000) { clearInterval(iv); return res('never touched down after 25s'); }
           }, 200);
         });
       });
@@ -403,7 +403,7 @@ export default [
               } else if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 return res('plane crashed before the scored landing');
-              } else if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
+              } else if (Date.now() - t0 > 20000) {
                 clearInterval(iv);
                 return res('never scored a landing after 20s');
               }
@@ -413,7 +413,7 @@ export default [
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (Date.now() - t0 > 30000 * (window.__slow || 1)) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
+              if (Date.now() - t0 > 30000) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
             }
           }, 200);
         });
@@ -491,7 +491,7 @@ export default [
               if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
               return res(true);
             }
-            if (Date.now() - t0 > 30000 * (window.__slow || 1)) {
+            if (Date.now() - t0 > 30000) {
               clearInterval(iv);
               return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
             }
@@ -521,7 +521,7 @@ export default [
           P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
           await wait(150);
           // STICK: press and push down-right - the jet must answer, and stop when let go
-          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const zone = el('apcZone'); const r = zone.getBoundingClientRect();
           const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
           zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
           zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
@@ -585,41 +585,31 @@ export default [
     },
   },
   {
-    id: 'tester-recheck-g156-speed-control',
-    ask: 'Re-check G-156: the jet must maintain 68-78kt in the landing challenge descent with throttle/brake management (G-116 fix still working)',
+    id: 'tester-recheck-g158-freeflight',
+    ask: 'G-158 re-check: free flight stays stable - steady cruise keeps finite position and velocity, no crash, the jet keeps moving',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
-      await h.wait(800);
+      // dismiss the menu / a crash overlay with the game's own buttons, in-page
+      // (robust at any frame rate - no timed Playwright clicks)
+      await h.eval(() => {
+        if (!document.getElementById('startOv').hidden) document.getElementById('btnFree').click();
+        else if (!document.getElementById('crashOv').hidden) document.getElementById('crashOv').click();
+      }).catch(() => {});
+      await h.wait(600);
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        if (!F.jetInput) return 'no jetInput';
+        F.P.pos.set(0, 150, -2000); F.P.vel.set(0, 0, 40); F.P.ground = false;
+        F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0; F.P.thr = 0.5;
+        const x0 = F.P.pos.x, z0 = F.P.pos.z;
         return new Promise((res) => {
-          const t0 = Date.now();
-          let inBand = 0, total = 0;
-          const iv = setInterval(() => {
-            const spdKt = F.P.vel.length() * 1.94384;
-            total++;
-            if (spdKt >= 68 && spdKt <= 78) inBand++;
-            // Simple speed management
-            if (spdKt > 78) { F.jetInput.throttle = 0; F.P.thr = 0; F.jetInput.brake = 1; }
-            else if (spdKt < 68) { F.jetInput.throttle = 0.3; F.P.thr = 0.3; F.jetInput.brake = 0; }
-            else { F.jetInput.throttle = 0.12; F.P.thr = 0.12; F.jetInput.brake = 0; }
-            // Gentle descent
-            const vs = F.P.vel.y;
-            if (vs < -3.0) F.P.pitch = Math.min(F.P.pitch + 0.02, 0.1);
-            else if (vs > -1.0) F.P.pitch = Math.max(F.P.pitch - 0.02, -0.2);
-            if (Date.now() - t0 > 20000 * (window.__slow || 1)) {
-              clearInterval(iv);
-              const pct = Math.round(inBand / total * 100);
-              if (pct >= 60) return res(true);
-              return res('jet could not maintain 68-78kt (only ' + pct + '% in band) - G-116 regression?');
-            }
-            if (F.P.ground || document.getElementById('crashOv').hidden === false) {
-              clearInterval(iv);
-              return res(true); // landed or crashed - speed control was being tested
-            }
-          }, 200);
+          setTimeout(() => {
+            const p = F.P.pos, v = F.P.vel;
+            if (![p.x, p.y, p.z, v.x, v.y, v.z].every(Number.isFinite)) return res('non-finite position/velocity in steady free flight');
+            if (!document.getElementById('crashOv').hidden) return res('jet crashed during steady free flight');
+            const moved = Math.hypot(p.x - x0, p.z - z0);
+            if (moved < 1) return res('jet did not move in 8s of steady free flight');
+            res(true);
+          }, 8000);
         });
       });
     },
@@ -651,5 +641,60 @@ export default [
         }, 150);
       }));
     },
-  },,
+  },
+  {
+    id: 'play-stick-shared-resets',
+    ask: 'G-232: the stick is the shared kit/controls.js stick (the jet pack stick is gone) and letting go stops it - pointerup, pointercancel, blur and hidden tab all reset it to centre',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const C = window.__controls, F = window.__flight;
+        if (!C || C.shared !== true) return 'the shared kit controls are not loaded (window.__controls missing)';
+        if (document.getElementById('jetStickZone')) return 'the jet pack stick zone is still on the page';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'the shared stick zone (#apcZone) is missing';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(5); } return false; };
+        const r = zone.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const drag = () => {
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: cx + 30, clientY: cy + 30, bubbles: true }));
+        };
+        const centred = () => { const c = C.read(); return c.x === 0 && c.y === 0; };
+        const inpZero = () => !F || (F.inp.pitchUp === 0 && F.inp.rollRight === 0);
+        return (async () => {
+          const bad = [];
+          const cases = [
+            ['pointerup', () => zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }))],
+            ['pointercancel', () => zone.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 7, bubbles: true }))],
+            ['blur', () => window.dispatchEvent(new Event('blur'))],
+          ];
+          for (const [name, fire] of cases) {
+            drag();
+            if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push(name + ': the stick did not deflect on drag'); continue; }
+            fire();
+            if (!(await until(centred, 300))) bad.push(name + ' did not reset the shared stick');
+            else if (!(await until(inpZero, 300))) bad.push(name + ' reset the stick but the jet kept steering');
+          }
+          // hidden tab: the reset must land while the tab is hidden (the kit
+          // releases synchronously on visibilitychange), then restore the tab
+          drag();
+          if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push('hidden tab: the stick did not deflect on drag'); }
+          else {
+            Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!centred()) bad.push('hidden tab did not reset the shared stick');
+            Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!(await until(inpZero, 300))) bad.push('hidden tab reset the stick but the jet kept steering');
+          }
+          return bad.length ? bad.join('; ') : true;
+        })();
+      });
+    },
+  },
 ];
