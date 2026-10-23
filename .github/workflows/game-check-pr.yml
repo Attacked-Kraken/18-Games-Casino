@@ -149,7 +149,10 @@ jobs:
         run: |
           if [ "$OUTCOME" = "success" ]; then bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" PASSED; exit 0; fi
           R=game-check-out/blockers.txt
-          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game. Push an empty commit or ask the VP to re-run it." > $R; fi
+          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game." > $R; fi
+          # Oct 23 2026 owner: "could not play it / played 0" is the robot's own trouble - never tell the Muse to push (that restarts everything)
+          if [ "$PLAY" != "success" ] && grep -qiE "could not play it|played 0 game|robot itself broke" "$R" game-check-out/*.txt 2>/dev/null; then
+            bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" ROBOT "$R"; exit 0; fi
           bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" FAILED "$R"
       - uses: actions/upload-artifact@v4
         if: always()

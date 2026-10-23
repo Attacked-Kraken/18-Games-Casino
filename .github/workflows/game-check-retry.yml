@@ -36,6 +36,11 @@ jobs:
               | (($j.steps // []) | map(select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled")) | first) as $s
               | select($j.conclusion != "failure" or $s == null or (($s.name | startswith("Play ")) | not))
               | "\($j.name): \($s.name // $j.conclusion)"] | join("; ")' jobs.json)
+          # also: the verdict job said a game "could not be played" (0 test lines) - a runner failure mid-play, not a verdict
+          CK=$(jq -r '.jobs[]|select(.name=="check")|.id' jobs.json | head -1)
+          if [ -z "$INFRA" ] && [ -n "$CK" ]; then
+            if gh api "repos/$GITHUB_REPOSITORY/check-runs/$CK/annotations" -q '.[].message' 2>/dev/null | grep -qiE "could not play it|played 0 game"; then INFRA="check: a game could not be played (0 test lines)"; fi
+          fi
           echo "infra trouble: [$INFRA]"
           if [ -z "$INFRA" ]; then echo "no setup problem - a real verdict, not retried"; exit 0; fi
           printf '%s\n' "Failed in setup, not in the game: $INFRA" > /tmp/why.txt
