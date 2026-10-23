@@ -512,6 +512,16 @@ TX.finish = ctex(1024, 256, (g, w, h) => {
   g.fillStyle = '#05030c'; g.fillRect(0, 0, w, h); g.strokeStyle = gr; g.lineWidth = 12; g.strokeRect(10, 10, w - 20, h - 20);
   g.shadowColor = '#fff'; g.shadowBlur = 30; g.fillStyle = '#fff'; g.font = 'italic 900 150px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('FINISH', w / 2, h / 2 + 6);
 }, true, false);
+/* G-207 fix 1: the finish-line sign tells the race story - START on lap 1, completed/total on the laps between, Finish only on the last lap; redrawn on the same canvas the gantry banner uses */
+const signState = { txt: 'FINISH' };
+function drawSign(txt) {
+  const cv = TX.finish.image; if (!cv || !cv.getContext) return; const g = cv.getContext('2d'), w = cv.width, h = cv.height;
+  const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#ff2bd6'); gr.addColorStop(0.5, '#8a5cff'); gr.addColorStop(1, '#19e6ff');
+  g.fillStyle = '#05030c'; g.fillRect(0, 0, w, h); g.strokeStyle = gr; g.lineWidth = 12; g.strokeRect(10, 10, w - 20, h - 20);
+  g.shadowColor = '#fff'; g.shadowBlur = 30; g.fillStyle = '#fff'; g.font = 'italic 900 150px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, h / 2 + 6, w - 90);
+  TX.finish.needsUpdate = true; signState.txt = txt;
+}
+function setSign(txt) { if (signState.txt !== txt) drawSign(txt); }
 TX.checker = ctex(64, 64, (g) => { for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g.fillStyle = (x + y) & 1 ? '#111' : '#f4f4f4'; g.fillRect(x * 8, y * 8, 8, 8); } });
 TX.checker.magFilter = THREE.NearestFilter;
 /* Apex Arcade trackside banner */
@@ -1780,21 +1790,34 @@ function engineSnd(rpm, load, on, nos, scr, spd) {
 /* ------------------------------------------------------------------ music: the owner's pack - sounds/pack/music/sports_arena/ (G-80)
    menu track on the menus; a race plays the same track in three layers (low/mid/high)
    crossfaded by the car's speed; a win or a loss ends the race with its sting. */
-const MUS = { want: 'menu', mode: null, els: null, mix: { low: -1, mid: -1, high: -1 } };
+const MUS = { want: 'menu', mode: null, els: null, bufs: null, mix: { low: -1, mid: -1, high: -1 } };
 function musBuild() {
+  /* owner fix (Oct 23): the pack used to play through HTMLAudio elements piped into WebAudio as media-element sources - on the owner's phone every track came out static and skipping: a media element keeps its own clock, drifts against the audio context, and garbles on pause/resume and at each loop seam. Every other sound in this game is a decoded buffer and plays clean, so the music is buffers too: fetch + decode once, loop as buffer sources (one clock, sample-accurate loops, layers start in phase). */
   const c = AU.ctx;
-  const mk = (name) => { const a = new Audio(); a.src = 'sounds/pack/music/sports_arena/sports_arena_' + name + '.mp3'; a.loop = true; a.preload = 'auto'; const g = c.createGain(); g.gain.value = 0; c.createMediaElementSource(a).connect(g); g.connect(AU.music); const p = a.play(); if (p && p.catch) p.catch(() => {}); return { a, g }; };
-  MUS.els = { menu: mk('menu'), low: mk('gameplay_low'), mid: mk('gameplay_mid'), high: mk('gameplay_high') };
+  MUS.bufs = {};
+  for (const [k, name] of [['menu', 'menu'], ['low', 'gameplay_low'], ['mid', 'gameplay_mid'], ['high', 'gameplay_high']]) {
+    fetch('sounds/pack/music/sports_arena/sports_arena_' + name + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { MUS.bufs[k] = b; musStartLayer(k); }).catch(() => {});
+  }
+  const mk = () => { const g = c.createGain(); g.gain.value = 0; g.connect(AU.music); return { g, src: null }; };
+  MUS.els = { menu: mk(), low: mk(), mid: mk(), high: mk() };
 }
+function musStartLayer(k) { /* start layer k's looping buffer source once its decode has landed and the current mode wants it */
+  if (!MUS.mode || !MUS.els || !MUS.bufs || !MUS.bufs[k]) return;
+  if (MUS.mode === 'menu' && k !== 'menu') return;
+  if (MUS.mode === 'race' && k === 'menu') return;
+  const E = MUS.els[k]; if (E.src) return;
+  const s = AU.ctx.createBufferSource(); s.buffer = MUS.bufs[k]; s.loop = true; s.connect(E.g); s.start(); E.src = s;
+}
+function musStopLayer(k) { const E = MUS.els && MUS.els[k]; if (E && E.src) { try { E.src.stop(); } catch (e) {} E.src = null; } }
 function musicStart(mode) {
   MUS.want = mode; const c = AU.ctx; if (!c) return;
   if (!AU.music) { AU.music = c.createGain(); AU.music.gain.value = 0.9; AU.music.connect(AU.master); }
   if (!MUS.els) musBuild();
   MUS.mode = mode; const t = c.currentTime, E = MUS.els;
-  if (mode === 'menu') { for (const k of ['low', 'mid', 'high']) { E[k].g.gain.setTargetAtTime(0, t, 0.3); E[k].a.pause(); } const p = E.menu.a.play(); if (p && p.catch) p.catch(() => {}); E.menu.g.gain.setTargetAtTime(0.85, t, 0.4); }
-  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); E.menu.a.pause(); for (const k of ['low', 'mid', 'high']) { const p = E[k].a.play(); if (p && p.catch) p.catch(() => {}); } MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
+  if (mode === 'menu') { for (const k of ['low', 'mid', 'high']) { E[k].g.gain.setTargetAtTime(0, t, 0.3); musStopLayer(k); } musStartLayer('menu'); E.menu.g.gain.setTargetAtTime(0.85, t, 0.4); }
+  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); musStopLayer('menu'); for (const k of ['low', 'mid', 'high']) musStartLayer(k); MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
 }
-function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); MUS.els[k].a.pause(); } }
+function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); musStopLayer(k); } }
 function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
   if (MUS.mode !== 'race' || !MUS.els) return; const c = AU.ctx; if (!c) return;
   const band = (x, a, b, d, e) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < d ? 1 : x < e ? 1 - (x - d) / (e - d) : 0;
@@ -1827,7 +1850,8 @@ function addEnt(o) {
 async function setupRace(place, laps, friend) {
   endRace(); G.mode = 'loading';
   const W = await buildWorld(place), T = W.T, r = rng(Date.now() >>> 0); ldBar(45); await ldTick(1);
-  R = { place, laps, W, T, cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
+  R = { place, laps, W, T, signTxt: 'START', cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
+  setSign('START');
   const slot = (k) => ({ s0: -(9 + Math.floor(k / 2) * 9.5) / T.ds, d0: k % 2 ? 4 : -4 });
   const myCfg = S.cars[S.cur];
   for (let k = 0; k < 8; k++) { const sl = slot(k); if (k === 5) { R.P = addEnt(Object.assign({ name: user || 'You', carId: S.cur, cfg: myCfg, isP: true }, sl)); continue; }
@@ -1993,7 +2017,7 @@ function updateRace(dt) {
   for (const e of R.cars) {
     const pr = e.isP ? e.prog : e.s, lap = Math.floor(pr / T.N);
     if (e.lap === undefined) e.lap = lap;
-    if (lap > e.lap && lap >= 1 && !e.fin) { const lt = R.t - (e.lap0 || 0); e.lap0 = R.t; if (lap >= 1 && e.lap >= 0) e.lapT.push(lt); if (e.isP) { if (!R.best || lt < R.best) R.best = lt; if (lap < R.laps) { pop(lap === R.laps - 1 ? 'FINAL LAP!' : `LAP ${lap + 1}/${R.laps}`); sfx('coin'); } } }
+    if (lap > e.lap && lap >= 1 && !e.fin) { const lt = R.t - (e.lap0 || 0); e.lap0 = R.t; if (lap >= 1 && e.lap >= 0) e.lapT.push(lt); if (e.isP) { if (!R.best || lt < R.best) R.best = lt; if (lap < R.laps) { pop(lap === R.laps - 1 ? 'FINAL LAP!' : `LAP ${lap + 1}/${R.laps}`); sfx('coin'); const sl = lap === R.laps - 1 ? 'Finish' : lap + '/' + R.laps; R.signTxt = sl; setSign(sl); } } }
     e.lap = lap;
     if (!e.fin && !e.remote && pr >= R.laps * T.N) { e.fin = R.t; if (e.isP) playerFinished(); }
   }

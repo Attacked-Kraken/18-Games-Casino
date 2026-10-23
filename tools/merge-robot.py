@@ -119,6 +119,68 @@ def settle_pr(n):
     return full
 
 
+def approve_waiting(open_prs):
+    """Oct 23 2026 live test (PRs #1279/#1280): when the robot merged main into a PR branch, GitHub started that PR's
+    'Game check (PR)' / 'Asset check' runs in state action_required (a bot pushed - waits for a human to press
+    'Approve and run'). Those runs leave the required check 'check' EXPECTED, so the PR stayed 'blocked' for ever even though the
+    robot's own re-check was green. Approve them here. ONLY runs of OUR repo's own open pull-request branches (never a fork)."""
+    branches = {pr["head"]["ref"] for pr in open_prs if pr["head"].get("repo") and pr["head"]["repo"]["full_name"] == REPO}
+    waiting = (gh("repos/%s/actions/runs?status=action_required&per_page=30" % REPO) or {}).get("workflow_runs", [])
+    done = 0
+    for r in waiting:
+        if r.get("event") != "pull_request" or r.get("head_branch") not in branches:
+            continue
+        if (r.get("head_repository") or {}).get("full_name") != REPO:
+            continue
+        if gh("repos/%s/actions/runs/%d/approve" % (REPO, r["id"]), method="POST") is not None:
+            done += 1
+            print("::notice title=Merge robot::approved the waiting run %s (%s) on %s" % (r["id"], r.get("name"), r.get("head_branch")))
+        else:
+            print("::warning title=Merge robot::could not approve the waiting run %s (%s) on %s" % (r["id"], r.get("name"), r.get("head_branch")))
+    return done
+
+
+def restart_cancelled(pr):
+    """Owner Oct 23 2026 1:38 PM (PR #1269: its Racer play job was cancelled by GitHub, the check then failed 'could not
+    play it', the status comment kept saying RUNNING, and the PR sat blocked until a Claude restarted it by hand):
+    when a pull request's NEWEST 'Game check (PR)' run on its newest commit was CANCELLED and no newer run exists, the
+    robot re-runs it ONCE by itself and rewrites the stale status comment to 'cancelled, restarting'. A re-run replaces the
+    old attempt in place (a second run next to it would leave the old failed 'check' behind, and GitHub's ruleset still
+    counts that one). Once per run: a marker comment with the run id. Returns True when it restarted a run."""
+    n, sha, branch = pr["number"], pr["head"]["sha"], pr["head"]["ref"]
+    runs = (gh("repos/%s/actions/runs?head_sha=%s&per_page=30" % (REPO, sha)) or {}).get("workflow_runs", [])
+    mine = [r for r in runs if r.get("name") == "Game check (PR)"]
+    if not mine:
+        return False
+    newest = max(mine, key=lambda r: (r.get("created_at") or "", r.get("run_attempt") or 0))
+    if newest.get("status") != "completed" or newest.get("conclusion") != "cancelled":
+        return False                      # still running, finished, or a newer run already replaced it
+    marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], newest["id"])
+    comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
+    if any(marker in (c.get("body") or "") for c in comments):
+        return False                      # already restarted this one once - a second cancel is left for a human to look at
+    when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
+    how = "re-ran it"
+    if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
+        if gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch}) is None:
+            print("::warning title=Merge robot::#%d: the check run %s was cancelled and could not be restarted" % (n, newest["id"]))
+            return False
+        how = "started a new run"
+    for c in comments:                    # the stale 'RUNNING' comment must not keep lying
+        if (c.get("body") or "").startswith("<!-- check-status -->"):
+            gh("repos/%s/issues/comments/%d" % (REPO, c["id"]), method="PATCH", fields={"body":
+               "<!-- check-status -->\n## \U0001F916 Check status: \U0001F7E1 CANCELLED - restarting\n\n"
+               "GitHub cancelled the robot's check run (this is not a problem with this pull request). "
+               "The merge robot %s at %s UTC; this comment is rewritten when the new run starts.\n\n"
+               "_Updated %s UTC by the merge robot._" % (how, when, when)})
+            break
+    gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body":
+       "%s\n\U0001F916 Merge robot: the check run %s on commit %s was CANCELLED, so it %s at %s UTC (once; no human needed)."
+       % (marker, newest["id"], sha[:7], how, when)})
+    print("::notice title=Merge robot::#%d: the check run %s was cancelled - %s at %s UTC" % (n, newest["id"], how, when))
+    return True
+
+
 SUMMARY = []
 
 
@@ -143,7 +205,13 @@ def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
     revisit, looked = False, 0   # revisit = some PR still needs the robot to look again soon
-    for pr in gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []:
+    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []
+    try:
+        if approve_waiting(open_prs):
+            revisit = True      # their check runs now; look again when it finishes
+    except Exception as e:
+        print("::warning title=Merge robot::approving waiting runs failed: %s" % e)
+    for pr in open_prs:
         n, title = pr["number"], pr.get("title", "")
         made = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         too_old = (now - made).total_seconds() > MAX_AGE_H * 3600
@@ -192,6 +260,12 @@ def main():
                 print("#%d: behind main by %d but could not update the branch" % (n, behind))
             revisit = True
             continue
+        try:
+            if restart_cancelled(pr):
+                revisit = True
+                say("#%d: its cancelled check was restarted by the robot" % n); continue
+        except Exception as e:
+            print("::warning title=Merge robot::#%d: restarting a cancelled check failed: %s" % (n, e))
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
         for r in runs:                       # a re-run leaves the old run behind: only the newest of each check counts
