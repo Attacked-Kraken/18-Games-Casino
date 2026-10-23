@@ -1,0 +1,17 @@
+# Checklist: Ice Hockey (apexhockey.html) - numbers come only from the SOURCE file named on each line
+- [x] H01 | End-zone faceoff dots sit 6.7 m either side of centre | SOURCE: venues/rink.md | NUMBERS: 6.7 | MEASURE: read the 4 end-zone dot positions from the rink objects in the running game; test = |x| within 3% of 6.7 | TEST: tester-chk-h01 | RESULT: FOUND (test tester-chk-h01 fails: measured 6.13, source says 6.7)
+- [ ] H02 | End-zone faceoff dots sit 6.1 m out from the goal line | SOURCE: venues/rink.md | NUMBERS: 6.1 | MEASURE: dot z minus goal-line z, within 3% of 6.1 | TEST: tester-chk-h02
+- [ ] H03 | Neutral-zone dots sit 1.5 m inside the blue lines | SOURCE: venues/rink.md | NUMBERS: 1.5 | MEASURE: dot z minus blue-line z, within 3% of 1.5 | TEST: tester-chk-h03
+- [ ] H04 | Blue lines are 22.86 m from each end board | SOURCE: venues/rink.md | NUMBERS: 22.86 | MEASURE: blue-line z to end-board z, within 3% | TEST: tester-chk-h04
+- [ ] H05 | Goal lines are 3.35 m from each end board | SOURCE: venues/rink.md | NUMBERS: 3.35 | MEASURE: goal-line z to end-board z, within 3% | TEST: tester-chk-h05
+- [ ] H06 | Faceoff circles (centre and end zone) have radius 4.57 m | SOURCE: venues/rink.md | NUMBERS: 4.57 | MEASURE: circle mesh radius, within 3% | TEST: tester-chk-h06
+- [ ] H07 | Goal is 1.83 m wide and 1.22 m high | SOURCE: REALITY.md | NUMBERS: 1.83, 1.22 | MEASURE: Box3 of the goal frame, within 15% | TEST: tester-chk-h07
+- [ ] H08 | Goal crease is a half circle of radius 1.83 m | SOURCE: venues/rink.md | NUMBERS: 1.83 | MEASURE: crease mesh radius, within 3% | TEST: tester-chk-h08
+- [ ] H09 | Rink is 60.96 x 25.9 m | SOURCE: venues/rink.md | NUMBERS: 60.96, 25.9 | MEASURE: Box3 of the ice surface, within 3% | TEST: tester-chk-h09
+- [ ] H10 | Boards are 1.07 m high | SOURCE: REALITY.md | NUMBERS: 1.07 | MEASURE: Box3 height of the boards, within 15% | TEST: tester-chk-h10
+- [ ] H11 | Puck is 0.076 m wide | SOURCE: REALITY.md | NUMBERS: 0.076 | MEASURE: Box3 width of the puck, within 15% | TEST: tester-chk-h11
+- [ ] H12 | Each side plays 5 skaters + 1 goalie | SOURCE: rules/hockey.md | NUMBERS: 5 skaters + 1 goalie | MEASURE: count skater and goalie objects per team at the first faceoff | TEST: tester-chk-h12
+- [ ] H13 | A minor penalty is 2:00 of game time with 4 skaters on the penalised side | SOURCE: rules/hockey.md | NUMBERS: 4 skaters, 2:00 | MEASURE: force a minor, read the penalty clock and the skaters on ice | TEST: tester-chk-h13
+- [ ] H14 | A major penalty is 5 minutes | SOURCE: rules/hockey.md | NUMBERS: 5 for major | MEASURE: force a major, read the penalty clock | TEST: tester-chk-h14
+- [ ] H15 | A tied game goes to a 5-minute 3-on-3 sudden-death overtime | SOURCE: rules/hockey.md | NUMBERS: 5-minute, 3-on-3 | MEASURE: finish regulation tied, read the overtime clock and skaters on ice | TEST: tester-chk-h15
+- [ ] H16 | The shootout has 3 shooters each, then sudden death | SOURCE: rules/hockey.md | NUMBERS: 3 shooters | MEASURE: play out a tied overtime, count shooters per team before sudden death | TEST: tester-chk-h16
