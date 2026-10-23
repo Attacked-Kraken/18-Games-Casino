@@ -2076,4 +2076,54 @@ export default [
     }
   },
 },
+{
+  id: 'play-blades-flush-in-play',
+  ask: 'NEVER (G-47 REDO, owner picture 2026-10-23): in live play, not just standing still, the weight-bearing skate blade lies FLAT on the ice - the old end-to-end read went blind once a blade pitched past about 45 deg (its horizontal projection collapses), so this reads the blade true 3D tilt; on the shipped game planted blades sat at a median 12 deg tilt with a third over 16 deg and floated about 3 cm off the ice',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let st = await state();
+    if (st !== 'play' && st !== 'faceoff' && st !== 'whistle') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    }
+    const sample = () => h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return null;
+      const out = [];
+      for (const s of hk.skaters) {
+        if (!s.kit || !s._blade || s.goalie) continue;
+        const stl = s.kit.parts.steel; const V = hk.puck.mesh.position.constructor; const v = new V();
+        const feet = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of s._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + s.athWrap.position.y, v.z]); }
+          if (pts.length < 8) { feet.push(null); continue; }
+          let cx = 0, cy = 0, cz = 0; pts.forEach(p => { cx += p[0]; cy += p[1]; cz += p[2]; }); const n = pts.length; cx /= n; cy /= n; cz /= n;
+          let xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+          pts.forEach(p => { const dx = p[0] - cx, dy = p[1] - cy, dz = p[2] - cz; xx += dx * dx; xy += dx * dy; xz += dx * dz; yy += dy * dy; yz += dy * dz; zz += dz * dz; });
+          let ax = 1, ay = 0, az = 0;
+          for (let it = 0; it < 24; it++) { const nx = xx * ax + xy * ay + xz * az, ny = xy * ax + yy * ay + yz * az, nz = xz * ax + yz * ay + zz * az; const L = Math.hypot(nx, ny, nz) || 1; ax = nx / L; ay = ny / L; az = nz / L; }
+          feet.push({ tilt: Math.asin(Math.min(1, Math.abs(ay))) * 180 / Math.PI, cy });
+        }
+        if (!feet[0] || !feet[1]) continue;
+        const wb = feet[0].cy <= feet[1].cy ? feet[0] : feet[1];
+        out.push(wb.tilt);
+      }
+      return { st: hk.game.state, tilts: out };
+    }).catch(() => null);
+    const tilts = [];
+    for (let i = 0; i < 24 && tilts.length < 400; i++) {
+      const r = await sample();
+      if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
+      await new Promise(res => setTimeout(res, 650));
+    }
+    if (tilts.length < 150) return 'only ' + tilts.length + ' weight-bearing blade samples in live play - not enough to judge';
+    tilts.sort((a, b) => a - b);
+    const med = tilts[Math.floor(tilts.length / 2)];
+    const over = tilts.filter(t => t > 16).length;
+    if (med > 8) return 'planted blades pitched in live play: median tilt ' + med.toFixed(0) + ' deg - a planted blade lies flat';
+    if (over / tilts.length > 0.08) return 'planted blades pitched in live play: ' + over + ' of ' + tilts.length + ' weight-bearing feet tilted over 16 deg';
+    return true;
+  }
+ }
 ];
