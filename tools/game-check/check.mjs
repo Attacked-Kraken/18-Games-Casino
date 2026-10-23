@@ -418,16 +418,22 @@ for (const g of games) {
       // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
       // A test says it by returning { inconclusive: 'why' }, or a sentence with "could not be checked" / "never happened".
       const INCON = /could not be checked|couldn'?t be checked|could not be tested|never happened|did not happen in|no .{0,40} happened in \d+ ?s/i;
+      // Oct 22 9:20 PM (window 2 HELP, PR #1177): on a slow runner a tester test errored "took over 30 s" in 3 runs - the robot's
+      // clock, not a game bug. A test that only TIMED OUT gets one more try on a fresh game with DOUBLE the time; a test that
+      // times out twice still fails (a real hang must stay red).
+      let timedOut = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
-        dead = false; inc = false;
+        dead = false; inc = false; const budget = attempt === 2 ? 2 : 1;
         try {
           const sl = await slowFactor(page); r.slow = sl; try { await page.evaluate(f => { window.__slow = f; }, sl.factor); } catch (e) {}
-          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(30 * sl.factor) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, 30000 * sl.factor); })]);
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(30 * sl.factor * budget) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, 30000 * sl.factor * budget); })]);
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
-        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+          timedOut = false;
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); timedOut = /^took over \d+ s/.test(String(e.message)); }
         clearTimeout(timer); dead = true;
+        if (timedOut && attempt === 1) { await freshGame(); continue; }
         if (!inc || attempt === 2) break;
         await freshGame();
       }
