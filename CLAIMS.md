@@ -165,8 +165,6 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-job | Window | Files | Branch |
-| G-136 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-136-apexf1 |
-| G-119 R1 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1-r1 |
 |---|---|---|---|
 | G-187 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-187.md, CLAIMS.md | test/g-187-apextrackfield |
 | G-183 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/G-183.md, CLAIMS.md | test/g-183-apextrackfield |
@@ -177,7 +175,6 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-147 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-146.md, CLAIMS.md | build/g-146-apexbaseball |
 | G-144 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-144.md, CLAIMS.md | build/g-144-apexbaseball |
 | G-134 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/G-134.md, CLAIMS.md | build/g-134-apexbaseball |
-| G-119 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1 |
 | G-116 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-116.md, CLAIMS.md | test/g-111-apexbaseball |
 | G-87 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-87.md, CLAIMS.md | test/g-87 |
 | G-85 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-85-perf-sticktests |
