@@ -115,3 +115,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 23 2026 help desk
 - A PR whose check shows only guard and no Check status update is waiting on a run that never started; file the HELP line with the PR number and head, and a Claude merges main in to restart it. Do not wait hours.
+
+## 2026-10-23 help desk (3:36 PM)
+- A PR whose required `check` shows "expected" with no status: look at the PR HEAD first - if the head moved (main merged in), the new head runs its own check; read the Check status comment on the newest head before filing HELP.
