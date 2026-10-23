@@ -299,9 +299,9 @@ segMesh.position.set(0, 8, -117); scene.add(segMesh);
 scene.fog = new THREE.Fog(0x87b5e0, 180, 380);
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 600); // G-65: TV broadcast field of view (40-45) - no wide-angle stretch
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
-const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
+const FIELD_CAM = { pos:[0,24,26], look:[0,0,-30] };   // G-151: lower and closer than the old [0,45,35.3] - with the ball in play the batter/runner was a speck at the bottom edge; the infield still fills the frame
 // Retest #2: dedicated views so you can actually see the pitch and the swing
-const PITCHER_VIEW = { pos:[0,20,-50], look:[0,1.2,2] };   // G-65 TV spec: high centre-field camera, behind and above the pitcher, looking at the batter and catcher
+const PITCHER_VIEW = { pos:[0,8.5,-21.8], look:[0,1.5,3.2] };   // G-167 fix round 1: zoomed in so the players read big (batter 34 -> 41 px, catcher 32 -> 39 px at 844x390) - still centre-field side, behind and above the pitcher (mound z -20.17). G-151 had set [0,11,-26] (from the G-65 [0,20,-50] TV spec) - still specks in the play picture
 const BATTER_VIEW = { pos:[0,1.7,7.6], look:[0,1.7,-20] };  // G-65 TV spec: behind home plate at catcher height, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
@@ -580,6 +580,27 @@ function realityTrotTick(dt){
   g.position.x += dx / d * sp * dt; g.position.z += dz / d * sp * dt;
   g.rotation.y = Math.atan2(dx, dz); p._running = true;
 }
+/* G-146: the foot vertex sets the ground trim reads - the same skinned-sole
+   selection the reality robot uses (vertices weighted to the foot bone). */
+function buildSoleSets(obj, bones){
+  const sets = [];
+  for (const bn of ['foot_l', 'foot_r']){
+    const c = bones && bones[bn]; if (!c) continue;
+    const ids = new Set(); c.traverse(n => { if (n.isBone) ids.add(n.uuid); });
+    obj.traverse(m => {
+      if (!m.isSkinnedMesh || !m.skeleton || !m.geometry || !m.geometry.attributes.skinIndex) return;
+      const bi = m.skeleton.bones.map((b, i) => ids.has(b.uuid) ? i : -1).filter(i => i >= 0);
+      if (!bi.length) return;
+      const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight; let vs = [];
+      for (let v = 0; v < si.count; v++){ let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(v, k))) w += sw.getComponent(v, k); if (w > 0.5) vs.push(v); }
+      if (!vs.length) return;
+      const stride = Math.max(1, Math.ceil(vs.length / 240));
+      if (stride > 1) vs = vs.filter((_, i) => i % stride === 0);
+      sets.push({ m, vs });
+    });
+  }
+  return sets;
+}
 function attachAthlete(p, slotIdx){
   if (!H || p.athlete) return;
   try {
@@ -621,15 +642,24 @@ function attachAthlete(p, slotIdx){
     if (bones['Head']){ // cap (fielders) / batting helmet — the old primitives had them, the athletes lost them
       const capGrp = new THREE.Group();
       if (p.bat){
-        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.125,14,10,0,Math.PI*2,0,1.9), M(T.cap));
-        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.1,0.11), M(T.cap));
-        flap.position.set(-0.115,-0.03,0.02); capGrp.add(shell, flap);
+        // G-167: a batting helmet that keeps the face clear. The old shell was
+        // centred on the face (rim 1.9 rad down from the crown) - in the robot's
+        // close-up it read as a big dark blob hiding the eyes. The shell now
+        // crowns the head (rim 1.25 rad, above the brow), the group sits higher
+        // on the head, a short bill shades the brow and the flap covers the ear only.
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.132,14,10,0,Math.PI*2,0,1.25), M(T.cap));
+        const bill = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.016,0.075), M(T.cap));
+        bill.position.set(0,0.05,0.135);
+        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.09,0.1), M(T.cap));
+        flap.position.set(-0.128,-0.085,0.01); capGrp.add(shell, bill, flap);
+        capGrp.position.set(0,0.135,0.005);
       } else {
         const crown = new THREE.Mesh(new THREE.SphereGeometry(0.12,14,10,0,Math.PI*2,0,1.45), M(T.cap));
         const brim = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.02,0.13), M(T.cap));
         brim.position.set(0,0.015,0.155); capGrp.add(crown, brim);
+        capGrp.position.set(0,0.045,0);
       }
-      capGrp.position.set(0,0.045,0); bones['Head'].add(capGrp);
+      bones['Head'].add(capGrp);
     }
     const kS = a.object.scale.x || 1;           // G-65: hand props are sized in world units via the rig's real scale
     if (p.bat){                                 // batter: real bat in the right hand
@@ -650,11 +680,18 @@ function attachAthlete(p, slotIdx){
     let u = null;
     a.object.traverse(o => { if (o.isSkinnedMesh && o.material && o.material.userData && o.material.userData.U) u = o.material.userData.U; });
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
+    // G-167: the batter wears the full uniform - the kit shader's button-front
+    // cut (a jersey with a placket) in the team colour over the white trousers,
+    // not the graphic tee with its printed chest logo the baseball_kit preset uses.
+    if (p.bat && u && u.uCfg) u.uCfg.value.set(5, 1, 0, 0);
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
       try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
     }
     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
+    p.athleteBaseY = a.object.position.y;
+    p.trimPar = slotIdx % 2;
+    p.soleSets = buildSoleSets(a.object, bones);
   } catch (e) { p.athlete = null; }
 }
 /* G-08: attach athletes a few per frame. Creating every rigged human in one
@@ -687,6 +724,36 @@ function athleteTick(f, dt){
   if (a.clip !== want) a.play(want, 0.18);
   if (a.act) a.act.timeScale = a.ts;
   a.mixer.update(dt);
+}
+/* G-146 (art director: feet sink, 24 of 24 robot readings): the G-125 lift is
+   exact only for the pose it measured - in motion a clip blend can drag a toe
+   under the line. Every frame, read the athlete's real lowest sole
+   vertex (the robot's method) and hold the model inside its group so that
+   sole rests on the ground line (+4 mm), never below the G-125 lift and
+   never more than 9 cm over it. Standing readings do not move. */
+const _soleV = new THREE.Vector3();
+function soleTrim(f){
+  const a = f.athlete; if (!a || !f.soleSets || !f.soleSets.length || f.athleteBaseY == null) return;
+  a.object.updateWorldMatrix(true, true);   // fresh bone worlds for THIS pose - the renderer's own update runs after the trim, so without this the trim reads last frame's pose and lags every stride
+  // cheap skip: with both foot bones high, no foot pitch can put a sole under the
+  // line (the deepest toe-point on this rig drops the sole ~0.26 under its bone)
+  const gy = Math.hypot(f.g.position.x, f.g.position.z + 20.17) < 3 ? 0.3 : 0;
+  if (f.bones && f.bones.foot_l && f.bones.foot_r){
+    f.bones.foot_l.getWorldPosition(_soleV); const ly = _soleV.y;
+    f.bones.foot_r.getWorldPosition(_soleV);
+    if (Math.min(ly, _soleV.y) - 0.26 > gy + 0.004) return;
+  }
+  let low = Infinity;
+  for (const s of f.soleSets){
+    if (!s.m.visible) continue;
+    s.m.updateMatrixWorld(true); if (s.m.skeleton && s.m.skeleton.update) s.m.skeleton.update();
+    for (let i = 0; i < s.vs.length; i++){ s.m.getVertexPosition(s.vs[i], _soleV); s.m.localToWorld(_soleV); if (_soleV.y < low) low = _soleV.y; }
+  }
+  if (!isFinite(low)) return;
+  let y = a.object.position.y + (gy + 0.004 - low);
+  if (y < f.athleteBaseY - 0.002) y = f.athleteBaseY - 0.002;
+  if (y > f.athleteBaseY + 0.09) y = f.athleteBaseY + 0.09;
+  a.object.position.y = y;
 }
 function athletePose(f, kind, dt){
   const a = f.athlete, b = f.bones;
@@ -1446,14 +1513,14 @@ function loop(){
     if (!f.g.visible) continue;
     const running = f._running; f._running = false;
     const busy = (windupAnim.active && windupAnim.who===f) || (swingAnim.active && swingAnim.who===f);
-    if (f.athlete){ if (!busy) athleteTick(f, dt); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
+    if (f.athlete){ if (!busy) athleteTick(f, dt); soleTrim(f); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
     if (!busy) animFigure(f, dt, running ? 'run' : 'idle');
   }
   // camera tracking (not in wide stadium view): G-65 - the high camera follows
   // the ball in play (look and position glide with it), then setCam cuts back
   if (camMode==='field' && ball.visible && viewMode!=='wide'){
     camLook.lerp(_camTmp.set(ball.position.x, 1, ball.position.z), 0.08);
-    camTgtP.set(ball.position.x*0.55, 45, 35.3 + ball.position.z*0.35);
+    camTgtP.set(ball.position.x*0.55, 24, 26 + ball.position.z*0.35);   // G-151: rides on the new FIELD_CAM height/depth
     camera.position.lerp(camTgtP, 0.05);
   }
   // view-button transitions glide to their target
@@ -1870,7 +1937,8 @@ function drawParkVB(){
    UNDER that same painting: grass areas are re-skinned with kit/ground/512/grass_plain.png,
    dirt areas with kit/ground/512/baseball_infield.png, and the painting's own lines, markings
    and surround stay on top - the look is the same, the surfaces are the owner's kit. */
-function kitFieldOnPark(fieldMat){
+function kitFieldOnPark(fieldMat, fieldMesh){
+  _park.fieldMesh = fieldMesh || null;
   const paint = fieldMat.map && fieldMat.map.image;
   if (!paint || _park.kitField) return;
   const grass = new Image(), dirt = new Image();
@@ -1909,6 +1977,13 @@ function kitFieldOnPark(fieldMat){
       t.colorSpace = THREE.SRGBColorSpace;
       t.flipY = false;
       fieldMat.map = t; fieldMat.needsUpdate = true;
+      _park.kitTex = t;
+      // G-144: on touch the G-85 pass replaces the park materials with Lambert copies
+      // BEFORE this async swap lands, so the texture must also go on the mesh's LIVE
+      // material - otherwise it dies on the orphaned standard material and the
+      // kitField flag lies (the grass on screen stayed the baked painting).
+      const lm = fieldMesh && fieldMesh.material;
+      if (lm && lm !== fieldMat && !Array.isArray(lm)) { lm.map = t; lm.needsUpdate = true; }
       _park.kitField = true;
     } catch (e) { /* if anything fails the park keeps its own painting */ }
   };
@@ -1968,7 +2043,7 @@ try {
           _park.vbTex = t; m.map = t; m.emissiveMap = t; m.needsUpdate = true;
           drawParkVB();
         }
-        if (m.name === 'Field') kitFieldOnPark(m);
+        if (m.name === 'Field') kitFieldOnPark(m, o);
         if (m.name === 'Clay'){
           new THREE.TextureLoader().load('kit/ground/512/baseball_infield.png', t => {
             t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = false;
@@ -1981,18 +2056,18 @@ try {
     _park.root = root; _park.loaded = true;
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
-    // G-40 redo (owner: 'nothing has changed'): the owner's park is a NIGHT park, and
-    // under the game's bright day sky it read as the old daytime park - the floodlights,
-    // the lit board and the dark bowl never showed. When his park loads, the game takes
-    // on the park's own night presentation: near-black sky, dim blue ambient, and one
-    // strong cool floodlight so the field stays lit like his preview pictures. If the
-    // model cannot load, the old park keeps its day look, untouched.
-    scene.background = new THREE.Color(0x060a18);
-    if (scene.fog) scene.fog.color.set(0x060a18);
+    // G-151 (art director: the play picture is night-dark, the crowd reads empty;
+    // the board's locked KEEP says day light, no night-dark field): when the park
+    // loads, the game takes a DAY presentation - bright blue sky, strong warm sun,
+    // full ambient - so the field, the players and the crowd in the bowl all read
+    // in daylight. (This supersedes the G-40 night grade.) If the model cannot
+    // load, the old park keeps its day look, untouched.
+    scene.background = new THREE.Color(0x8fc7ee);
+    if (scene.fog) scene.fog.color.set(0x8fc7ee);
     scene.traverse(o => {
-      if (o.isHemisphereLight){ o.color.set(0x35507e); o.groundColor.set(0x24351f); o.intensity = 0.95; }
-      else if (o.isDirectionalLight){ o.color.set(0xdfeaff); o.intensity = 1.5; }
-      else if (o.isSpotLight){ o.intensity = 0.85; }
+      if (o.isHemisphereLight){ o.color.set(0xcfe8ff); o.groundColor.set(0x67a05a); o.intensity = 1.4; }
+      else if (o.isDirectionalLight){ o.color.set(0xfff2d8); o.intensity = 2.15; }
+      else if (o.isSpotLight){ o.intensity = 0.9; }
     });
     // G-85 (owner: the game runs 13-17 fps): measured on the phone path, the park's
     // MeshStandardMaterial lighting is the biggest per-frame cost by far - swapping
@@ -2022,7 +2097,7 @@ try {
         o.material = L;
       });
     }
-    _park.night = true;
+    _park.night = false;   // G-151: day presentation
     revealMenu();
   }, ev => {
     if (ev && ev.lengthComputable && ev.total){
@@ -2041,7 +2116,8 @@ window.__test = {
   get balls(){ return G.balls; },
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
-  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, night: _park.night }; },
+  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, kitFieldLive: !!(_park.kitTex && _park.fieldMesh && _park.fieldMesh.material && !Array.isArray(_park.fieldMesh.material) && _park.fieldMesh.material.map === _park.kitTex), night: _park.night }; },
+  get kitAudio(){ return { crack: !!Mus.kit.crack, glove: !!Mus.kit.glove, cheer: !!Mus.kit.cheer, amb: !!Mus.kit.amb }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get input(){ return { aimX: aim.x, aimY: aim.y, dragging: aimPid !== null }; },
   get umpire(){ const a = umpireMesh.g.position, c = catcherMesh.g.position; return { x:a.x, z:a.z, visible:umpireMesh.g.visible, catcherZ:c.z, dedup: fielders.P === pitcherMesh && fielders.C === catcherMesh }; },

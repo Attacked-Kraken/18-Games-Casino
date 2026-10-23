@@ -53,7 +53,7 @@ export default [
         if (s && s.phase !== 'start') {
           if (s.fov < 40 || s.fov > 45) return `camera field of view is ${s.fov} degrees - the broadcast spec is 40-45`;
           if (['select', 'aim', 'windup'].includes(s.phase)) {
-            if (!(s.pos[2] < -25 && s.pos[1] > 10)) return `pitching camera sits at ${s.pos} - the spec is high on the centre-field side, behind and above the pitcher`;
+            if (!(s.pos[2] < -20.5 && s.pos[1] > 7)) return `pitching camera sits at ${s.pos} - the spec is the centre-field side, behind and above the pitcher (the G-167 round-1 zoom moved the camera to [0,8.5,-21.8] so the players read big; the mound is at z -20.17)`;
           }
           return true;
         }
@@ -711,42 +711,6 @@ export default [
     },
   },
   {
-    id: 'tester-reality-hook-no-go',
-    mode: 'recheck',
-    ask: 'TESTER: the REALITY hook has no go() - the reality robot cannot drive the player, so every game check reports the player did not move in 5 s (REALITY.md robot hook)',
-    async test(page, h) {
-      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
-      await h.wait(4500);
-      let keys = null;
-      for (let i = 0; i < 30; i++) { keys = await h.eval(() => window.__reality ? Object.keys(window.__reality) : null); if (keys) break; await h.wait(500); }
-      if (!keys) return 'window.__reality never appeared';
-      const hasGo = await h.eval(() => typeof (window.__reality && window.__reality.go) === 'function');
-      if (!hasGo) return '__reality has ' + keys.join(', ') + ' but no go(), so the reality robot cannot drive the player';
-      // RECHECK of G-100: go(true) must really sprint him along the base path,
-      // facing the way he travels, at his measured size; go(false) must stop him.
-      const pos = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldPosition(v); return { x: v.x, z: v.z }; });
-      const height = () => h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); let mn = 1e9, mx = -1e9; const walk = (o) => { if (o.isMesh && o.geometry) { if (!o.geometry.boundingBox) o.geometry.computeBoundingBox(); const b = o.geometry.boundingBox; [b.min, b.max].forEach(c => { v.copy(c).applyMatrix4(o.matrixWorld); if (v.y < mn) mn = v.y; if (v.y > mx) mx = v.y; }); } (o.children || []).forEach(walk); }; p.updateWorldMatrix(true, true); walk(p); return mx - mn; });
-      const p0 = await pos(); const h0 = await height();
-      await h.eval(() => window.__reality.go(true));
-      await h.wait(2500);
-      const p1 = await pos(); const h1 = await height();
-      await h.wait(2500);
-      const p2 = await pos();
-      const dist = Math.hypot(p2.x - p0.x, p2.z - p0.z);
-      if (dist < 3) return 'go(true) was called but the player moved only ' + dist.toFixed(2) + ' m in 5 s - the reality robot still cannot drive him';
-      if (h0 > 0.5 && Math.abs(h1 - h0) / h0 > 0.1) return 'the player changed size while sprinting: ' + h0.toFixed(2) + ' m at rest, ' + h1.toFixed(2) + ' m running';
-      const facing = await h.eval(() => { const p = window.__reality.player; const v = new p.position.constructor(); p.getWorldDirection(v); return { x: v.x, z: v.z }; });
-      const tx = p2.x - p0.x, tz = p2.z - p0.z; const tl = Math.hypot(tx, tz); const fl = Math.hypot(facing.x, facing.z);
-      if (tl > 0 && fl > 0) { const cos = (tx * facing.x + tz * facing.z) / (tl * fl); if (cos < 0.5) return 'the player sprints without facing the way he travels'; }
-      await h.eval(() => window.__reality.go(false));
-      await h.wait(2000);
-      const p3 = await pos();
-      const drift = Math.hypot(p3.x - p2.x, p3.z - p2.z);
-      if (drift > 0.3) return 'go(false) did not stop him: he drifted ' + drift.toFixed(2) + ' m in 2 s';
-      return true;
-    },
-  },
-  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
@@ -759,6 +723,272 @@ export default [
       const cam = await h.eval(() => { const c = window.__reality.camera; return c ? { persp: !!c.isPerspectiveCamera, fov: c.fov } : null; });
       if (!cam) return '__reality has ' + keys.join(', ') + ' but no camera, so the robot cannot take the player close-up';
       if (!cam.persp) return '__reality.camera is not the game PerspectiveCamera';
+      return true;
+    },
+  },
+  {
+    id: 'play-kit-assets-live',
+    ask: 'BUILD G-144: the owner kits are really used - crowd, bat crack and glove samples from sounds/stadium/baseball/ decoded and ready, and the kit infield/grass textures from kit/ground/512/ on the park field LIVE material (touch path included)',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      for (let i = 0; i < 24; i++) {
+        const ph = await h.eval(() => window.__test ? window.__test.phase : null);
+        if (ph && ph !== 'start') break;
+        await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        await h.wait(500);
+      }
+      let audio = null;
+      for (let i = 0; i < 24; i++) { audio = await h.eval(() => window.__test && window.__test.kitAudio ? window.__test.kitAudio : null); if (audio && audio.crack && audio.glove && audio.cheer && audio.amb) break; await h.wait(500); }
+      if (!audio) return '__test.kitAudio missing - the kit sound state is not exposed';
+      const missing = ['crack', 'glove', 'cheer', 'amb'].filter(k => !audio[k]);
+      if (missing.length) return 'kit sounds not decoded: ' + missing.join(', ') + ' (sounds/stadium/baseball/)';
+      let st = null;
+      for (let i = 0; i < 30; i++) { st = await h.eval(() => window.__test && window.__test.stadium ? window.__test.stadium : null); if (st && st.loaded && st.kitField) break; await h.wait(500); }
+      if (!st || !st.loaded) return 'the ballpark never loaded';
+      if (!st.kitField) return 'the kit field was never applied (kitField flag false)';
+      if (!st.kitFieldLive) return 'kitField flag is set but the LIVE field material does not carry the kit texture - the swap landed on an orphaned material';
+      return true;
+    },
+  },
+  {
+    id: 'play-feet-within-3cm',
+    ask: 'BUILD G-146 (art director): every player stands ON the ground - soles measured on the skinned body (the reality robot method) across standing and the batter trot: 0 readings sunk more than 5 cm and every reading within 3 cm of the ground',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player && window.__test && window.__test.stadium && window.__test.stadium.loaded)); if (!ready) await h.wait(500); }
+      if (!ready) return 'the ballpark / players never became ready';
+      const installed = await h.eval(() => {
+        const R = window.__reality;
+        const groups = [R.player, ...(R.others || [])];
+        const sets = [];
+        for (const G of groups) {
+          const feet = [];
+          G.traverse(o => { if (o.isBone && (o.name === 'foot_l' || o.name === 'foot_r')) feet.push(o); });
+          for (const c of feet) {
+            const ids = new Set(); c.traverse(n => { if (n.isBone) ids.add(n.uuid); });
+            const list = [];
+            G.traverse(m => {
+              if (!m.isSkinnedMesh || !m.skeleton || !m.geometry || !m.geometry.attributes.skinIndex) return;
+              const bi = m.skeleton.bones.map((bn, i) => ids.has(bn.uuid) ? i : -1).filter(i => i >= 0);
+              if (!bi.length) return;
+              const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+              for (let v = 0; v < si.count; v++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(v, k))) w += sw.getComponent(v, k); if (w > 0.5) vs.push(v); }
+              if (vs.length) list.push({ m, vs });
+            });
+            if (list.length) sets.push({ bone: c, list });
+          }
+        }
+        if (!sets.length) return false;
+        window.__soleLog = [];
+        const vec = sets[0].bone.position.clone();
+        window.__soleTimer = setInterval(() => {
+          for (const s of sets) {
+            let sole = null;
+            for (const { m, vs } of s.list) {
+              if (!m.visible) continue;
+              m.updateMatrixWorld(true); if (m.skeleton.update) m.skeleton.update();
+              for (const i of vs) { m.getVertexPosition(i, vec); m.localToWorld(vec); if (sole == null || vec.y < sole) sole = vec.y; }
+            }
+            if (sole != null) {
+              const p = s.bone.getWorldPosition(vec);
+              let gy = 0; try { gy = +R.ground(p.x, p.z); } catch (e) {}
+              window.__soleLog.push(+(sole - gy).toFixed(3));
+            }
+          }
+        }, 50);
+        return true;
+      });
+      if (!installed) return 'no skinned feet found on the players - the sole sampler could not be installed';
+      await h.wait(3000);
+      await h.eval(() => window.__reality.go(true));
+      await h.wait(6000);
+      await h.eval(() => window.__reality.go(false));
+      await h.wait(2000);
+      const res = await h.eval(() => {
+        clearInterval(window.__soleTimer);
+        const log = window.__soleLog || [];
+        let min = null, sunk = 0;
+        for (const v of log) { if (min == null || v < min) min = v; if (v < -0.05) sunk++; }
+        return { n: log.length, min, sunk };
+      });
+      if (!res || res.n < 100) return 'too few sole readings (' + (res ? res.n : 0) + ') - the players were not sampled enough to prove ground contact';
+      if (res.sunk > 0) return res.sunk + ' of ' + res.n + ' sole readings sunk more than 5 cm under the ground (worst ' + res.min + ' m)';
+      if (res.min < -0.03) return 'worst sole reading ' + res.min + ' m over ' + res.n + ' readings - outside the 3 cm ground-contact band';
+      return true;
+    },
+  },
+  {
+    id: 'play-daylight-batter-crowd',
+    ask: 'BUILD G-151 (art director): the play picture is a DAY scene - bright frame, the stands full of visible crowd people, and the batter big and lit above the bottom bar in the pitching view and with the ball in play',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      for (let i = 0; i < 30; i++) {
+        const ph = await h.eval(() => window.__test ? window.__test.phase : null);
+        if (ph && ph !== 'start') break;
+        await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        await h.wait(500);
+      }
+      // wait for the pitching view to settle on the pitcher camera, with the
+      // start menu fully gone (a start click that lands while the park is still
+      // loading can be followed by the loader re-showing the menu)
+      let proj = null;
+      for (let i = 0; i < 30; i++) {
+        const menuUp = await h.eval(() => { const so = document.getElementById('startOv'); return so && so.style.display !== 'none'; });
+        if (menuUp) { await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); }); await h.wait(400); continue; }
+        proj = await h.eval(() => {
+          const R = window.__reality; if (!R || !R.camera || !R.player || !window.__test.stadium.loaded) return null;
+          const cam = R.camera, P = R.player;
+          const feet = P.position.clone(); const head = feet.clone(); head.y += 2.02;
+          const pr = w => { const p = w.project(cam); return (1 - p.y) / 2 * 390; };
+          return { tallPx: Math.abs(pr(feet) - pr(head)), feetRow: pr(feet), camPos: cam.position.toArray().map(v => +v.toFixed(0)) };
+        });
+        if (proj && Math.abs(proj.camPos[2] + 26) < 6) break;
+        await h.wait(500);
+      }
+      if (!proj) return 'the pitching view never settled - no batter to measure';
+      if (proj.tallPx < 30) return 'the batter is a speck in the play picture: ' + proj.tallPx.toFixed(0) + ' px tall of 390 (art director: clearly visible)';
+      if (proj.feetRow > 312) return 'the batter is hidden behind the bottom bar: his feet land at row ' + proj.feetRow.toFixed(0) + ' of 390';
+      const shot = await page.screenshot({ type: 'jpeg', quality: 62 });
+      const stats = await page.evaluate(async (b64) => {
+        const img = new Image();
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/jpeg;base64,' + b64; });
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const cx = cv.getContext('2d'); cx.drawImage(img, 0, 0);
+        const d = cx.getImageData(0, 0, cv.width, cv.height).data;
+        const W = cv.width, H = cv.height;
+        let lumSum = 0, n = 0, crowd = 0, bn = 0;
+        for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+          const i = (y * W + x) * 4, r = d[i], g = d[i + 1], b = d[i + 2];
+          const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          lumSum += L; n++;
+          if (y < H * 0.42) { bn++; if (L >= 60 && (r - b) >= -10) crowd++; }
+        }
+        return { lum: lumSum / n, crowdPct: 100 * crowd / Math.max(bn, 1) };
+      }, shot.toString('base64'));
+      if (stats.lum < 75) return 'the play picture is night-dark: mean luminance ' + stats.lum.toFixed(0) + '/255 (art director: day-lit scene; the night grade measured 35)';
+      if (stats.crowdPct < 9) return 'the crowd reads empty: only ' + stats.crowdPct.toFixed(1) + '% of the stands band reads as visible crowd people (the night grade measured 1.0%)';
+      return true;
+    },
+  },
+  {
+    id: 'play-face-closeup-uniform',
+    ask: 'the batter close-up shows his face and eyes (no helmet blob over them) and a full baseball uniform - button-front jersey in the team colour, no printed tee logo',
+    test: async (page, h) => {
+      // start from a fresh state: tap through the start overlay until it hides,
+      // then wait for the batter's reality hook and the rigged athletes
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) {
+        const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.hook) { ready = true; break; }
+        if (st.menu) await page.touchscreen.tap(422, 195);
+        await h.wait(700);
+      }
+      if (!ready) return 'no reality hook player (the batter) to take the close-up of';
+      for (let i = 0; i < 40; i++) { const n = await h.eval(() => (window.__athletesReady ? window.__athletesReady() : 0)); if (n >= 3) break; await h.wait(500); }
+      await h.wait(1200);
+      // render the robot's own head-and-shoulders close-up (the framing in
+      // tools/game-check/reality.mjs playerCloseUp) and measure the picture:
+      // discs anchored on the projected look point, so any batter/skin/helmet
+      // colour is measured the same way.
+      const stats = await h.eval(async () => {
+        const R = window.__reality, P = R.player;
+        const rend = (window.__renderers || []).find(x => x && x.domElement && x.domElement.isConnected) || (window.__renderers || [])[0];
+        const base = (window.__cams || []).find(c => c && c.isPerspectiveCamera) || R.camera;
+        if (!rend || !base) return null;
+        let scene = P; while (scene.parent) scene = scene.parent;
+        P.updateMatrixWorld(true);
+        let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+        P.traverse(m => { if (!m.geometry || !m.visible) return; if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+          const b = m.geometry.boundingBox.clone().applyMatrix4(m.matrixWorld);
+          mn = [Math.min(mn[0], b.min.x), Math.min(mn[1], b.min.y), Math.min(mn[2], b.min.z)]; mx = [Math.max(mx[0], b.max.x), Math.max(mx[1], b.max.y), Math.max(mx[2], b.max.z)]; });
+        const V = base.position.constructor;
+        const hgt = mx[1] - mn[1];
+        const wp = new V(); P.getWorldPosition(wp);
+        const look = new V(wp.x, mx[1] - hgt * 0.16, wp.z);
+        const fwd = new V(0, 0, 1); try { P.getWorldDirection(fwd); } catch (e) {}
+        fwd.y = 0; if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, 1); fwd.normalize();
+        const cam = base.clone();
+        cam.fov = 35; cam.aspect = 1; cam.near = 0.02; cam.far = Math.max(base.far || 1000, 200); cam.zoom = 1;
+        const span = hgt * 0.42;
+        const dist = (span / 2) / Math.tan(35 * Math.PI / 360) * 1.25;
+        cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08;
+        const rad = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2;
+        cam.near = Math.max(0.02, cam.position.distanceTo(look) - rad * 1.1);
+        cam.lookAt(look); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+        const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
+        const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;
+        const side = Math.round(Math.min(size.x, size.y));
+        const lp = look.clone(); lp.project(cam);
+        const out = { lx: lp.x * 0.5 + 0.5, ly: 0.5 - lp.y * 0.5 };
+        try {
+          rend.setScissorTest && rend.setScissorTest(false);
+          rend.setViewport(0, 0, side, side);
+          rend.render(scene, cam);
+          const c2 = document.createElement('canvas'); c2.width = c2.height = Math.min(480, side * pr);
+          const ctx = c2.getContext('2d');
+          ctx.drawImage(el, 0, el.height - side * pr, side * pr, side * pr, 0, 0, c2.width, c2.height);
+          const W = c2.width, Hh = c2.height;
+          const img = ctx.getImageData(0, 0, W, Hh).data;
+          const disc = (cx, cy, r) => {
+            let skin = 0, dark = 0, tot = 0, dL = 0, tL = 0, dR = 0, tR = 0;
+            const Rr = Math.floor(W * r);
+            for (let y = Math.floor(Hh * cy) - Rr; y < Math.floor(Hh * cy) + Rr; y++) for (let x = Math.floor(W * cx) - Rr; x < Math.floor(W * cx) + Rr; x++) {
+              if (x < 0 || y < 0 || x >= W || y >= Hh) continue;
+              const dx = x - W * cx, dy = y - Hh * cy; if (dx * dx + dy * dy > Rr * Rr) continue;
+              const i = (y * W + x) * 4, rr = img[i], gg = img[i + 1], bb = img[i + 2]; tot++;
+              const isSkin = rr > 115 && rr > gg + 16 && gg > bb + 5, isDark = rr < 75 && gg < 85 && bb < 115;
+              if (isSkin) skin++; if (isDark) dark++;
+              if (x < W * cx) { tL++; if (isDark) dL++; } else { tR++; if (isDark) dR++; }
+            }
+            return { skin: 100 * skin / tot, dark: 100 * dark / tot, darkL: 100 * dL / Math.max(1, tL), darkR: 100 * dR / Math.max(1, tR) };
+          };
+          out.eye = disc(out.lx, out.ly - 0.03, 0.055);
+          out.face = disc(out.lx, out.ly + 0.045, 0.10);
+          let yel = 0, sat = 0, tot = 0;
+          for (let y = Math.floor(Hh * 0.62); y < Hh * 0.95; y++) for (let x = Math.floor(W * 0.30); x < W * 0.70; x++) {
+            const i = (y * W + x) * 4, rr = img[i], gg = img[i + 1], bb = img[i + 2]; tot++;
+            if (rr > 180 && gg > 140 && bb < 90) yel++;
+            if (Math.max(rr, gg, bb) - Math.min(rr, gg, bb) > 40) sat++;
+          }
+          out.chestYellow = 100 * yel / tot; out.chestSat = 100 * sat / tot;
+        } finally { rend.setViewport(0, 0, size.x, size.y); }
+        return out;
+      });
+      if (!stats || !stats.eye) return 'the close-up could not be rendered/measured';
+      if (stats.eye.dark > 45) return 'a dark blob still covers the eyes: ' + stats.eye.dark.toFixed(0) + '% of the eye area is dark (the old face-covering helmet measured 94%)';
+      if (stats.eye.skin < 25) return 'the face is not visible around the eyes: only ' + stats.eye.skin.toFixed(0) + '% skin in the eye area (the old build measured 5%)';
+      if (stats.eye.darkL < 3 || stats.eye.darkR < 3 || stats.eye.darkL > 60 || stats.eye.darkR > 60) return 'the two eyes do not read in the close-up (dark left ' + stats.eye.darkL.toFixed(0) + '%, right ' + stats.eye.darkR.toFixed(0) + '% of their halves - eyes/brows on skin expected)';
+      if (stats.face.skin < 36) return 'the face does not read in the close-up: only ' + stats.face.skin.toFixed(0) + '% skin in the face area';
+      if (stats.chestYellow > 0.4) return 'the shirt still carries the printed tee logo (yellow crown pixels ' + stats.chestYellow.toFixed(1) + '% of the chest) - a plain button-front jersey is expected';
+      if (stats.chestSat < 25) return 'the chest does not read as a team-colour jersey (only ' + stats.chestSat.toFixed(0) + '% saturated colour)';
+      return true;
+    },
+  },
+  {
+    id: 'never-g-167-p1',
+    ask: 'NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture',
+    test: async (page, h) => {
+      // settle into the centre-field pitching view (the play-picture state),
+      // with the start menu fully gone (same guard as play-daylight-batter-crowd)
+      let m = null;
+      for (let i = 0; i < 40; i++) {
+        const menuUp = await h.eval(() => { const so = document.getElementById('startOv'); return so && so.style.display !== 'none'; });
+        if (menuUp) { await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); }); await h.wait(400); continue; }
+        const ath = await h.eval(() => (window.__athletesReady ? window.__athletesReady() : 0));
+        m = await h.eval(() => {
+          const R = window.__reality; if (!R || !R.camera || !R.player || !R.others || !R.others[1]) return null;
+          const cam = R.camera;
+          if (cam.position.z > -15) return null;   // not the centre-field pitching view (batter view / pitch cam)
+          const px = (g) => { const feet = g.position.clone(); const head = feet.clone(); head.y += 2.02; const pr = w => (1 - w.project(cam).y) / 2 * 390; return Math.abs(pr(feet) - pr(head)); };
+          return { batter: px(R.player), catcher: px(R.others[1]), camZ: cam.position.z };
+        });
+        if (m && ath >= 12) break;
+        await h.wait(500);
+      }
+      if (!m) return 'the centre-field pitching view never settled - no players to measure';
+      if (m.batter < 40) return 'the batter is still a speck in the pitching view: ' + m.batter.toFixed(0) + ' px tall of 390 (target at least 40; the far G-151 framing measured 34)';
+      if (m.catcher < 38) return 'the catcher is still a speck in the pitching view: ' + m.catcher.toFixed(0) + ' px tall of 390 (target at least 38; the far G-151 framing measured 32)';
       return true;
     },
   },

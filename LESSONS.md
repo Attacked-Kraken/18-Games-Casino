@@ -21,6 +21,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
 - all · tests drove input state directly / sampled meters on a wall clock → drive the game through its real controls; measure in game time, not the robot's clock.
 - all · Puppeteer calls (page.target, page.setViewport) in play tests → the robot is Playwright; use its calls.
+- apexracer · the REALITY robot read moves 0 while go(true) only set a gas flag → a hook that must MOVE the game steps the simulation itself in game time; never trust the frame loop on a robot page (its dt is clamped and its frames are starved).
 - all · a test that waits for a random event (a strikeout in 29 s) failed the game → such a test is INCONCLUSIVE (yellow), make the test CREATE the situation it checks.
 - all · a play-test file with a syntax error silently ran zero tests → it is now a hard FAIL naming the file; run node --check before the PR.
 - all · the REALITY robot read the ankle bone and the robot's clock → contact is the foot's LOWEST point, speed/gait from the game (hook time(), speed(), gait()); a sprint's first steps are running steps.
@@ -51,3 +52,42 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - apextrackfield · the compact menu keyed on the viewport's own orientation, so an upright phone kept the tall one-column menu inside the rotated sideways box and 8 of 9 menu buttons landed off-screen → rule: in portrait the stage IS the landscape box - any layout keyed to the short box must include (orientation:portrait) too.
 - apextrackfield · the sprint/hurdles start used a straight-line model that runs past the west end of the painted track, so the 100m and 110m hurdles fields started in the stands → rule: every start is placed on the painted oval (visS) - one model the camera, the blocks and the runners all share.
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
+- apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
+
+## 2026-10-22 help desk
+- A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
+- Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
+- A queue line whose proof test passes on main is done: tick it [x] with the job/PR number.
+- A tester report always starts WINDOW: N / PLAYED: N min (every round kind); a duplicate job = one-line NO CHANGE naming the earlier job/PR.
+- Two builds of the same change (G-100 PR #911 + G-125): keep one live PR, the second to merge takes main's version of the shared line.
+
+## 2026-10-22 help desk (9:45 AM)
+- A job step that names a feature but no place for it (a LOW quality option, "parked"): choose the smallest reading, keep everything else as is, write the choice in the report's NOTE line - and any new menu control must fit inside 844x390.
+
+## 2026-10-22 help desk
+- Tests that wait on WALL-clock seconds fail on slow runner days (Flight G-141). Rule: a play test judges time in GAME time (or retries once on a fresh page); a wall-clock budget is a robot fault - file "HELP-VP: robot", never fight it in the game.
+- 2026-10-22 (window 6, G-163): a ratio threshold is a claim about a real profile - print the profile (band/dband/run) from the actual car before shipping the fix. The Goblin door tapers ~10% under its own peak (peak 1.331, mid-door 1.18-1.22), so 0.92 of the peak left a 4-bucket island and the APEX ARCADE strip silently never drew.
+
+## 2026-10-22 help desk (2:40 PM)
+- A bug found in an old tester run (1 s of game time per frame, Hockey G-129) may already be fixed: before asking for an owner job, read the line on today's main and the robot play test that covers it (play-clock-real-time); if it passes, say "already fixed" - no new job.
+
+## 2026-10-22 help desk
+- When orders land while the owner's own fix is in flight: owner's fix first, then the older small fix, then the new job - one at a time, one report each.
+
+## 2026-10-22 help desk (5:40 PM)
+- A one-letter "MODE: g" in a tester order was a Mac typo, not a real mode. Rule: if a MODE name is not one the game has (see the game modes list), play ALL real modes, list them as "MODES:" in the report, and say in one HELP line which name looked wrong.
+
+## 2026-10-22 help desk (7:10 PM)
+- Finished tester round branches piled up unpushed because push approval taps never reached detached runs. Rule: push every finished round as a TEST PR the same day; drop only rounds already reported on main.
+
+## 2026-10-22 help desk (8:15 PM)
+- The art director cannot grade the upright phone view without a picture of it. Rule: when a grader (window 11/12) needs a picture the robot does not save, file ONE "HELP-VP: robot" line naming the file and the picture wanted - never grade or ask windows from memory.
+
+## 2026-10-22 help desk (9:20 PM)
+- When main moves during a tester round, the report names the main commit the round was played on, and each TESTER line is re-run on current main before it is filed (file only if it still fails there).
+
+## 2026-10-22 help desk
+- A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
+
+## 2026-10-23 help desk
+- A PR check that reads RUNNING for a long time may have finished and merged since: read the PR state (merged?) before filing a HELP line. Rule: "stuck RUNNING" = look at `merged` and the check list first.

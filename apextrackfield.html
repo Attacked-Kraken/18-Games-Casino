@@ -37,7 +37,10 @@ keep the classic one-column menu; no other screen is touched.
 JOB G-122 (owner): an upright phone presents the SAME sideways box rotated, but the media
 query keyed on the viewport's own orientation - portrait kept the tall one-column menu
 inside the 390px-tall box and 8 of the 9 buttons landed off-screen. Portrait now gets the
-same compact menu; nothing else changes. */
+same compact menu; nothing else changes.
+JOB G-139 (owner): DONE.md's 44x44 touch target applies in the compact menu too - every
+menu button stands at least 44px tall (they were 36/30); the two-column compact layout
+absorbs the height, the menu still fits the sideways box with no scrolling. */
 @media (orientation:portrait), (orientation:landscape) and (max-height:460px){
 #menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
 #menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
@@ -47,8 +50,8 @@ same compact menu; nothing else changes. */
 #menu label.f{font-size:10px;margin:3px 0 1px}
 #menu input.txt{padding:5px;font-size:14px}
 #menu input[type=color].swatch{height:26px}
-#menu .btn{margin:3px 0;padding:6px 10px;min-height:36px;font-size:14px}
-#menu .btn.small{padding:4px 8px;min-height:30px;font-size:12px}
+#menu .btn{margin:3px 0;padding:6px 10px;min-height:44px;font-size:14px}
+#menu .btn.small{padding:4px 8px;min-height:44px;font-size:12px}
 #menu .hint{font-size:11px;margin:2px 0}
 #menuRivalLine{grid-column:1/-1}
 }
@@ -787,6 +790,7 @@ a.speed += (target*(1+0.03*Math.sin(a.el*0.7))-a.speed)*Math.min(1,3*dt);
 a.pos+=a.speed*dt; a.phase+=a.speed*dt*1.9;
 }
 let ENG=null;
+let TESTLINK=null; // JOB G-171: the event a ?test= link opened (null in normal play)
 /* JOB J42 (owner) + STORE-READY "Developer skip": the Skip level button exists ONLY when
    the address carries dev=1 (the Game Development page opens games with ?dev=1). */
 const DEV_SKIP=/[?&]dev=1(?:&|$)/.test(location.search||'');
@@ -915,7 +919,10 @@ this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
 this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
 this.done=true; this.finishT=0; AudioSys.cheer(1.6);
-this.place=1+this.ai.filter(a=>a.tTarget<this.time).length;
+// G-193 (tester G-183): finishing order = who crossed first (REALITY) - keep the
+// crossing-aware count used all race; a rival still short of the line is never
+// credited ahead on his private target time for the banked early laps.
+this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 }
 },
 hud(){
@@ -2053,14 +2060,11 @@ c.fillRect(18,30,10,98); c.fillRect(100,30,10,98);
 c.fillStyle='#f2f2f2'; c.fillRect(10,18,108,26);
 c.fillStyle='#c0392b'; c.fillRect(10,18,16,26); c.fillRect(102,18,16,26);
 });
+// G-160 (owner): ONE board per hurdle, facing the runner - the old build crossed a
+// second full-size board at 90 degrees through the middle of every hurdle, which
+// showed as cross/plus shapes and extra hurdles between the real ones.
 const p1=new THREE.PlaneGeometry(1.18,1.07).toNonIndexed();
-const p2=new THREE.PlaneGeometry(1.18,1.07); p2.rotateY(Math.PI/2);
-const p2n=p2.toNonIndexed();
-const vC=p1.attributes.position.count+p2n.attributes.position.count;
-const pos=new Float32Array(vC*3), nor=new Float32Array(vC*3), uv=new Float32Array(vC*2);
-pos.set(p1.attributes.position.array,0); nor.set(p1.attributes.normal.array,0); uv.set(p1.attributes.uv.array,0);
-const o=p1.attributes.position.count;
-pos.set(p2n.attributes.position.array,o*3); nor.set(p2n.attributes.normal.array,o*3); uv.set(p2n.attributes.uv.array,o*2);
+const pos=new Float32Array(p1.attributes.position.array), nor=new Float32Array(p1.attributes.normal.array), uv=new Float32Array(p1.attributes.uv.array);
 const g=new THREE.BufferGeometry();
 g.setAttribute('position',new THREE.BufferAttribute(pos,3));
 g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
@@ -2072,7 +2076,7 @@ this.scene.add(im); this.hurdlesMesh=im; this._hurdleBasePos=pos.slice(); this._
 },
 hurdleHeight(h){
 // G-122 round 1 (owner): a hurdles race stands at its REAL height (REALITY.md) -
-// the same cross-plane hurdle, its geometry re-scaled in Y per event.
+// the same single-board hurdle, its geometry re-scaled in Y per event.
 if(!this.hurdlesMesh||!this._hurdleBasePos) return;
 if(Math.abs(h-(this._hurdleH||1.07))<0.001) return;
 this._hurdleH=h;
@@ -2122,15 +2126,15 @@ const HC=(this._hurdleH||1.07)/2;
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(80,list.length);
-const QT=new THREE.Quaternion(), AX=new THREE.Vector3(0,0,1), FW=new THREE.Vector3();
+const QT=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), FW=new THREE.Vector3();
 for(let k=0;k<n;k++){
 const h=list[k];
 E.set(0,h.heading||0,0); Q.setFromEuler(E);
 // owner 2026-10-17: a hurdle you hit goes DOWN - it tips forward (away from the runner) and lies on the track
 const f=clamp(h.fall||0,0,1), ang=f*1.42;
 QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
-FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
-P.set(h.x+FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
+FW.set(0,0,1).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
+P.set(h.x-FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z-FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -2321,6 +2325,14 @@ because game time ran in slow motion on weak phones; with game time tracking rea
 in by the same race moment at any frame rate. Same target lean (0.34), same final posture. */
 rig._lean=(rig._lean||0)+(leanT-(rig._lean||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
+// JOB G-139 (owner): ground trim. The UAL clips carry their ground line under the rig
+// origin - the idle clip stands 0.05 m under the track, the SET crouch reaches -0.115 m
+// and a running stance foot dives to -0.16 m (REALITY SINK). Round 1 (the robot still
+// read 16 of 24 sunk on the run-only trim): a constant 0.065 m trim grounds every
+// clip, plus 0.03 m more while a run clip plays, so no sampled stance reads under.
+const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0);
+rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
+try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);
 rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
@@ -2637,8 +2649,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 }
 
 const hWorld=[]; ENG.hurdles.forEach(h=>{ for(let l=0;l<8;l++){ hWorld.push(straight
-? {x:h.x-ev.dist, z:straightZ(l), heading:0}
-: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })()); } });
+? {x:h.x-ev.dist, z:straightZ(l), heading:-Math.PI/2}
+: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tx,-lp.tz)}; })()); } });
 // G-39/G-43 fix (owner): a hurdle stands in EVERY lane, not only the player's - the rivals jump real hurdles too (the player's own lane is index k*8+3)
 // G-122 round 1 (owner): each hurdles race stands at its REAL height (REALITY.md) - 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m
 W3D.hurdleHeight({'100h':0.838,'110h':1.067,'300h':0.914,'400h':0.914}[ev.id]||1.067);
@@ -2662,7 +2674,15 @@ if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,ev.dist),0.15,straightZ
 }else{
 const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,airM);
 ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,(a.airY||0)*0.011));
-followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
+if(TESTLINK && (ENG.phase==='marks'||ENG.phase==='set') && hWorld.length>=8){
+// JOB G-171: test-link opening shot - hold the camera close in front of the first
+// hurdle row (every lane in frame) through the countdown so the hurdles can be
+// checked in seconds; at the gun the normal follow camera takes over.
+let cx=0,cz=0; for(let i2=0;i2<8;i2++){ cx+=hWorld[i2].x; cz+=hWorld[i2].z; } cx/=8; cz/=8;
+const hp=lanePoint(visS(3,ENG.hurdles[0].x,ev.dist),laneOff(3));
+const cc=clampCamXZ(cx-hp.tx*6,cz-hp.tz*6);
+W3D.camTo(cc[0],1.7,cc[1],cx,0.9,cz,dt,10); W3D.camApply();
+} else followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
 overlayPhaseText(ENG);
@@ -3633,6 +3653,14 @@ else if(e.code==='Space'){ e.preventDefault(); ENG.action(); }
 });
 window.addEventListener('contextmenu',e=>{ if(document.body.classList.contains('playing')) e.preventDefault(); });
 showScreen('menu');
+// JOB G-171 (Mac): a test link - apextrackfield.html?test=<event id> (any id in
+// EVENTS, e.g. ?test=60h) opens that event in Free Play and starts it at once:
+// no menu, no card, no story (the menu never paints - same tick). In a hurdles
+// event the countdown camera holds a close shot of the first hurdle row.
+try{
+const tev=EV_BY_ID[new URLSearchParams(location.search).get('test')];
+if(tev){ TESTLINK=tev; G.mode='free'; G.singleEv=tev; showScreen(null); startPlay(tev, G.freeRivals||(G.freeRivals=freeRivals())); }
+}catch(err){}
 requestAnimationFrame(frame);
 }
 let lastT=0, acc=0;

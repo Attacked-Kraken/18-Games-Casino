@@ -36,3 +36,8 @@ PLAYED: <minutes you really played the game this round> min
 - `G-NN OWNER PICKED this model: <path>` - use exactly that model, update the report, STOP.
 
 A red robot line you are sure is the ROBOT's mistake (its ruler, its timing, a test that waits for luck): do not fight it - add one line to jobs/HELP.md: `HELP-VP: window N · G-NN · robot fault: <the exact red line> - <why it is wrong>`. The VP puts it in tools/game-check/known-faults.json and from the next check that line is yellow ("KNOWN ROBOT FAULT") and never blocks your job.
+
+## Help desk rule (owner Oct 22 2026, from the 8:35 AM help-desk report)
+The help desk never uses vp- branches and never touches tools/game-check/ (robot files, known-faults.json) or .github/. If a robot file has to change, write ONE line in jobs/HELP.md: "HELP-VP: robot · <what / which file / why>" and the VP does it. A known fault (tools/game-check/known-faults.json) must be a real, named bug with a reason AND an owner (the robot side, or a window) and an expiry - never an excuse to pass a check.
+
+CLOCK rule (owner Oct 22 2026): take every time you write (FIXED lines, notes, PR text) from an authoritative source - the HTTP `Date` header (`gh api -i rate_limit | grep -i '^date'`, convert to Central) - never estimate it and never write a time in the future. A wrong clock makes the owner's help-desk numbers wrong.

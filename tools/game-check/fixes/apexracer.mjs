@@ -238,7 +238,7 @@ export default [
           const p = e.car.paint;
           if (p.clearcoat !== 1 || !(p.envMapIntensity >= 1.5)) return e.carId + ' paint is not the shiny clearcoat paint';
           let tot = 0, painted = 0;
-          e.car.root.traverse((q) => { if (!q.isMesh || q.userData.lamp || q.userData.blob) return; const n = q.geometry && q.geometry.attributes && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0; tot += n; if (q.material === p) painted += n; });
+          e.car.root.traverse((q) => { if (!q.isMesh || q.userData.lamp || q.userData.blob || q.userData.hlight) return; /* G-163: headlight meshes are not body paint */ const n = q.geometry && q.geometry.attributes && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0; tot += n; if (q.material === p) painted += n; });
           if (!tot) return e.carId + ' has no geometry';
           const share = painted / tot, key = e.car.glbKey || '?', min = MIN[key];
           if (min !== undefined && share < min) return e.carId + ' (' + key + ') wears its paint on only ' + Math.round(share * 100) + '% of the car - the rest is dark factory material and the car vanishes at night';
@@ -401,7 +401,7 @@ export default [
   },
   {
     id: 'play-colliders-visible',
-    ask: 'G-70: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with light bars',
+    ask: 'G-145: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with its own bright headlights and no light bars',
     async test(page, h) {
       return h.eval(() => {
         const E = window.__erc;
@@ -417,19 +417,20 @@ export default [
               let top = c.root, inScene = false;
               while (top) { if (top.visible === false) return kind + ' ' + i + ' is under an invisible parent'; if (top === R.W.scene) { inScene = true; break; } top = top.parent; }
               if (!inScene) return kind + ' ' + i + ' car is not in the world scene';
-              let meshes = 0, lamps = 0;
+              let meshes = 0, bars = 0, hl = 0;
               let mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9, mnz = 1e9, mxz = -1e9;
               c.root.updateMatrixWorld(true);
               c.root.traverse((q) => {
                 if (!q.isMesh || !q.visible || q.userData.blob || !q.geometry || !q.geometry.attributes || !q.geometry.attributes.position) return;
-                meshes++; if (q.userData.lamp) lamps++;
+                meshes++; if (q.userData.lamp) bars++; if (q.userData.hlight) hl++;
                 const p = q.geometry.attributes.position, m = q.matrixWorld.elements, stride = Math.max(1, Math.floor(p.count / 400));
                 for (let vi = 0; vi < p.count; vi += stride) { const x = p.getX(vi), y = p.getY(vi), z = p.getZ(vi);
                   const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14];
                   if (wx < mnx) mnx = wx; if (wx > mxx) mxx = wx; if (wy < mny) mny = wy; if (wy > mxy) mxy = wy; if (wz < mnz) mnz = wz; if (wz > mxz) mxz = wz; }
               });
               if (meshes < 3) return kind + ' ' + i + ' has only ' + meshes + ' visible meshes - nothing to see';
-              if (lamps < 2) return kind + ' ' + i + ' has no light bars - invisible in the dark';
+              if (bars) return kind + ' ' + i + ' still has a light bar';
+              if (hl < 2) { let gl = 0; c.root.traverse((q) => { if (q.userData.glow) gl++; }); if (hl + gl < 2) return kind + ' ' + i + ' has no bright headlights of its own'; }
               const len = Math.max(mxx - mnx, mxz - mnz), hgt = mxy - mny;
               if (len < 3.2 || len > 6.8) return kind + ' ' + i + ' is ' + len.toFixed(1) + ' m long - not a real car size';
               if (hgt < 0.5 || hgt > 2.2) return kind + ' ' + i + ' is ' + hgt.toFixed(1) + ' m tall - not a real car shape';
@@ -592,6 +593,401 @@ export default [
         for (const n of needles) if (!src.includes(n)) return 'the game code does not use the sound pack (missing ' + n + ')';
         return true;
       }, ['sports_arena_', 'gameplay_low', 'gameplay_mid', 'gameplay_high', 'combo_x', 'coin_pickup', 'win_jingle', 'popup_open']);
+    },
+  },
+  {
+    id: 'play-reality-go',
+    ask: 'G-137: the REALITY robot can drive the car - go(true) really moves the player (over 0.3 m between samples)',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const H = window.__reality, E = window.__erc;
+        if (!H || typeof H.go !== 'function') return 'no __reality.go';
+        return new Promise((res) => {
+          let last = null, best = 0, path = 0, n = 0;
+          H.go(true);
+          const iv = setInterval(() => {
+            n++;
+            const inRace = E && E.R && E.R.P && E.R.P.car && H.player === E.R.P.car.root;
+            const p = inRace && H.player.position ? [H.player.position.x, H.player.position.z] : null;
+            if (p && last) { const d = Math.hypot(p[0] - last[0], p[1] - last[1]); if (d < 60) { best = Math.max(best, d); path += d; } }
+            last = p;
+            if ((best > 0.3 && path > 2) || n >= 55) { clearInterval(iv); H.go(false); if (E) E.toMenu(); res(best > 0.3 && path > 2 ? true : 'go(true) did not move the player (biggest step ' + best.toFixed(2) + ' m, path ' + path.toFixed(1) + ' m in ' + (n * 0.4).toFixed(1) + ' s)'); }
+          }, 400);
+        });
+      });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-reality-time-speed',
+    ask: 'G-143: the REALITY hook reports game time and player speed - time() advances in race seconds and speed() reads the car in m/s',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const H = window.__reality, E = window.__erc;
+        if (!H) return 'no __reality hook';
+        if (typeof H.time !== 'function') return 'the hook has no time()';
+        if (typeof H.speed !== 'function') return 'the hook has no speed()';
+        const s0 = H.speed(); if (typeof s0 !== 'number' || !(s0 >= 0)) return 'speed() is not a non-negative number before a race (' + s0 + ')';
+        return new Promise((res) => {
+          let n = 0, t1 = null;
+          H.go(true);
+          const iv = setInterval(() => {
+            n++;
+            const R = E && E.R;
+            if (R && R.P && H.time() > 0.2) {
+              if (t1 === null) { t1 = H.time(); return; }
+              const dtg = H.time() - t1, sp = H.speed();
+              if (dtg > 0.3 && sp > 2) { clearInterval(iv); H.go(false); E.toMenu(); res(true); }
+              else if (n > 50) { clearInterval(iv); H.go(false); E.toMenu(); res('time advanced ' + dtg.toFixed(2) + ' s but speed() read ' + sp.toFixed(1) + ' m/s while go(true) was driving'); }
+            } else if (n > 55) { clearInterval(iv); H.go(false); if (E) E.toMenu(); res('the race clock never started under go(true)'); }
+          }, 300);
+        });
+      });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-wrap-on-door',
+    ask: 'G-149 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const strips = [];
+        R.P.car.root.traverse((q) => { if (q.isMesh && q.name === 'apexname') strips.push(q); });
+        if (!strips.length) return 'the player goblin wears no APEX ARCADE wrap';
+        const tilt = strips[0].parent;
+        let mnx = 1e9, mxx = -1e9;
+        const v = tilt.position.clone();
+        tilt.updateWorldMatrix(true, true);
+        tilt.traverse((q) => { if (!q.isMesh || q.name === 'apexname') return; const p = q.geometry && q.geometry.attributes && q.geometry.attributes.position; if (!p) return;
+          for (let i = 0; i < p.count; i += 3) { v.fromBufferAttribute(p, i); v.applyMatrix4(q.matrixWorld); const l = tilt.worldToLocal(v.clone()); if (l.x < mnx) mnx = l.x; if (l.x > mxx) mxx = l.x; } });
+        const L = mxx - mnx, cx = (mnx + mxx) / 2, rearAx = cx - 0.31 * L, frontAx = cx + 0.31 * L;
+        for (const s of strips) { s.geometry.computeBoundingBox(); const b = s.geometry.boundingBox;
+          if (b.min.x < rearAx + 0.45) return 'the wrap starts at x ' + b.min.x.toFixed(2) + ' - over the rear wheel (the door starts at ' + (rearAx + 0.45).toFixed(2) + ')';
+          if (b.max.x > frontAx - 0.45) return 'the wrap ends at x ' + b.max.x.toFixed(2) + ' - over the front wheel (the door ends at ' + (frontAx - 0.45).toFixed(2) + ')'; }
+        E.toMenu();
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-no-light-bars',
+    ask: 'G-145 point 2: no car wears a light bar - the G-70 bumper bars are gone from the garage car, the race grid and traffic',
+    async test(page, h) {
+      const gBars = await h.eval(() => { const H = window.__reality; let n = 0; if (H && H.player) H.player.traverse((q) => { if (q.userData.lamp) n++; }); return n; });
+      if (gBars) return 'the garage car still wears ' + gBars + ' light bar(s)';
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let n = 0; e.car.root.traverse((q) => { if (q.userData.lamp) n++; }); if (n) bad.push((e.carId || 'traffic') + ' x' + n); }
+        E.toMenu();
+        return bad.length ? 'light bars remain on: ' + bad.join(', ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-headlights-bright',
+    ask: 'G-163: every car shines from its own headlights and tail lights - lamp meshes plus a soft glow front and rear, nothing solid',
+    async test(page, h) {
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let f = 0, r = 0, dim = 0;
+          e.car.root.traverse((q) => { if (q.userData.glow === 1) { f++; return; } if (q.userData.glow === 2) { r++; return; } if (!q.userData.hlight) return; if (q.userData.hlight === 1) f++; else r++;
+            const m = q.material; const bright = m && m.isMeshBasicMaterial ? Math.max(m.color.r, m.color.g, m.color.b) >= 1.5 : ((m && m.emissiveIntensity) || 0) >= 1.5; if (!bright) dim++; });
+          const cid = e.carId || 'traffic';
+          if (!f) bad.push(cid + ' has no front headlight');
+          if (!r) bad.push(cid + ' has no rear light');
+          if (dim) bad.push(cid + ' has ' + dim + ' dim lamp(s)'); }
+        E.toMenu();
+        return bad.length ? bad.join('; ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-lights-no-solids',
+    ask: 'G-163 point 1 + owner glow fix: no solid light blocks, and the glow sits ON the lens - no glow quad reaches past the nose or the tail, nothing floats in front of the car',
+    async test(page, h) {
+      await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, bad = [];
+        for (const e of [...R.cars, ...R.traffic]) { let gf = 0, gr = 0, solid = 0;
+          e.car.root.traverse((q) => { if (q.userData.glow === 1) gf++; if (q.userData.glow === 2) gr++; if (q.userData.lamp) solid++; if (q.isMesh && q.userData.hlight && q.geometry && q.geometry.type === 'BoxGeometry' && q.geometry.parameters && q.geometry.parameters.width <= 0.1) solid++; });
+          const cid = e.carId || 'traffic';
+          if (solid) bad.push(cid + ' still wears a solid light block');
+          if (gf < 2) bad.push(cid + ' has ' + gf + ' front glow(s), want 2');
+          if (gr < 2) bad.push(cid + ' has ' + gr + ' rear glow(s), want 2');
+          /* the glow must lie ON the body: measure the tilt-space body half-length from the real meshes, then check every glow quad against it */
+          const M4 = e.car.root.matrixWorld.constructor, V3 = e.car.root.position.constructor;
+          const inv = new M4().copy(e.car.tilt.matrixWorld).invert();
+          let half = 0;
+          e.car.tilt.traverse((q) => { if (!q.isMesh || q.userData.glow || q.name === 'apexname') return; const g = q.geometry; if (!g) return; g.computeBoundingBox(); const bb = g.boundingBox; if (!bb) return; const m = new M4().multiplyMatrices(inv, q.matrixWorld); for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const v = new V3(cx, cy, cz).applyMatrix4(m); half = Math.max(half, Math.abs(v.x)); } });
+          e.car.tilt.traverse((q) => { if (q.userData.glow && Math.abs(q.position.x) > half + 0.03) bad.push(cid + ' has a glow floating ' + (Math.abs(q.position.x) - half).toFixed(2) + ' m past the body'); }); }
+        E.toMenu();
+        return bad.length ? bad.join('; ') : true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-headlight-pool',
+    ask: 'G-163 point 2: at night the headlights throw a pool of light on the road ahead of the car',
+    async test(page, h) {
+      const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
+      if (started !== 'ok') return started;
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the night race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        E.step(5, 1 / 60); /* pose the car once so its pool takes its place on the road */
+        const car = R.P.car;
+        if (!car.pool) { E.toMenu(); return 'the player car has no headlight pool'; }
+        if (!car.pool.visible) { E.toMenu(); return 'the headlight pool is not switched on at night'; }
+        const pp = new (car.pool.position.constructor)(); car.pool.getWorldPosition(pp);
+        const fwd = new (car.root.position.constructor)(); car.root.getWorldDirection(fwd);
+        const ahead = (pp.x - car.root.position.x) * fwd.x + (pp.z - car.root.position.z) * fwd.z;
+        const m = car.pool.material;
+        E.toMenu();
+        if (ahead < 2) return 'the light pool sits ' + ahead.toFixed(1) + ' m ahead of the car - it must lie on the road in front';
+        if (!m || m.blending !== 2 || !(m.opacity >= 0.25)) return 'the pool is not a soft additive light pool';
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-brake-lights',
+    ask: 'G-163 point 3: brake lights - the rear lamps and glows flare bright red while the brake is held',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const rearOp = () => { let op = -1; R.P.car.root.traverse((q) => { if (q.userData.glow === 2) op = q.material.opacity; }); return op; };
+        for (let i = 0; i < 20 && R.t <= 0.2; i++) E.step(30, 1 / 60);
+        const off = rearOp();
+        E.K.brake = true; E.step(3, 1 / 60);
+        const on = rearOp();
+        E.K.brake = false; E.step(3, 1 / 60);
+        const off2 = rearOp();
+        E.toMenu();
+        if (off < 0) return 'the player car has no rear glow to flare';
+        if (!(on > off)) return 'rear glow did not flare under braking (opacity ' + off + ' -> ' + on + ')';
+        if (!(off2 <= off + 0.01)) return 'rear glow stayed flared after the brake was released';
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-wrap-both-doors',
+    ask: 'G-176: the APEX ARCADE name wrap is on BOTH doors of the Goblin - a strip on each side, each inside the door span between the axles',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R, car = R.P.car, tilt = car.tilt;
+        const M4 = car.root.matrixWorld.constructor, V3 = car.root.position.constructor;
+        const inv = new M4().copy(tilt.matrixWorld).invert();
+        const box = (o) => { const g = o.geometry; g.computeBoundingBox(); const bb = g.boundingBox, m = new M4().multiplyMatrices(inv, o.matrixWorld), r = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 }; for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const v = new V3(cx, cy, cz).applyMatrix4(m); r.x0 = Math.min(r.x0, v.x); r.x1 = Math.max(r.x1, v.x); r.z0 = Math.min(r.z0, v.z); r.z1 = Math.max(r.z1, v.z); } return r; };
+        let fb = null; const strips = [];
+        tilt.traverse((q) => { if (!q.isMesh || !q.geometry) return; if (q.name === 'apexname') { strips.push(box(q)); return; } if (q.material === car.paint) { const b = box(q); fb = fb ? { x0: Math.min(fb.x0, b.x0), x1: Math.max(fb.x1, b.x1) } : b; } });
+        E.toMenu();
+        if (!fb) return 'no painted body found on the player car';
+        if (!strips.length) return 'the player goblin wears no APEX ARCADE wrap at all';
+        const L = fb.x1 - fb.x0, cx = (fb.x0 + fb.x1) / 2, rearAx = cx - L * 0.31, frontAx = cx + L * 0.31;
+        const pos = strips.filter((b) => (b.z0 + b.z1) / 2 > 0), neg = strips.filter((b) => (b.z0 + b.z1) / 2 < 0);
+        if (!pos.length) return 'no wrap strip on the +z door';
+        if (!neg.length) return 'no wrap strip on the -z door';
+        for (const b of strips) { if (b.x0 < rearAx + 0.3 || b.x1 > frontAx - 0.3) return 'a wrap strip spills out of the door span (x ' + b.x0.toFixed(2) + '..' + b.x1.toFixed(2) + ', doors ' + (rearAx + 0.3).toFixed(2) + '..' + (frontAx - 0.3).toFixed(2) + ')'; }
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'play-glow-on-surface',
+    ask: 'Lamp glow sits on the measured body surface, lamp-sized - no floating white dots (owner, G-163 follow-up)',
+    async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!/lampSurf/.test(src)) return 'apexracer.html has no lamp surface measurement (lampSurf) - the glow is not anchored to the measured body surface';
+      await h.eval(() => { const E = window.__erc; if (!(E.R && E.R.skids && E.R.P)) E.startRace(E.PLACES[0], 3); return true; });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        const cars = (R.cars || []).concat(R.traffic || []).map((c) => c.car).filter(Boolean);
+        let checked = 0;
+        for (const car of cars) {
+          let hasLamp = false; const glows = [];
+          car.tilt.traverse((q) => { if (q.userData.hlight) hasLamp = true; if (q.userData.glow) glows.push(q); });
+          if (hasLamp) continue;
+          for (const g of glows) { const p = g.geometry && g.geometry.parameters; if (!p) return 'a lamp glow has no plane geometry on ' + (car.glbKey || 'a car'); if (p.width > 0.36 || p.height > 0.20) return 'a lamp glow is ' + p.width + 'x' + p.height + ' m on ' + (car.glbKey || 'a car') + ' - big enough to hang off the curved nose as a floating dot'; checked++; }
+        }
+        E.toMenu();
+        if (!checked) return 'no lamp-less car glow was checked';
+        return true;
+      });
+      if (out !== true) await h.eval(() => { window.__erc.toMenu(); });
+      return out === true ? true : out;
+    },
+  },
+  {
+    id: 'never-g-176-p1',
+    ask: 'NEVER (G-176): the job report carries an OWNER CHECK IN 30 SECONDS line with the target picture link and what to look at',
+    async test(page, h) {
+      const rep = fs.readFileSync(path.join(repoRoot, 'jobs/G-176.md'), 'utf8');
+      const line = rep.split('\n').find((l) => l.startsWith('OWNER CHECK IN 30 SECONDS:'));
+      if (!line) return 'jobs/G-176.md has no OWNER CHECK IN 30 SECONDS line';
+      if (!line.includes('https://raw.githubusercontent.com/Attacked-Kraken/18-Games-Casino/game-checks/img/apexracer-2-play.jpg')) return 'the OWNER CHECK line does not carry the target picture link';
+      if (!/ - \S/.test(line.split('apexracer-2-play.jpg')[1] || '')) return 'the OWNER CHECK line says nothing about what to look at';
+      return true;
+    },
+  },
+  {
+    id: 'map-apexracer-current',
+    ask: 'STUDIO-STANDARD 9.7 (G-179): the WHERE THINGS ARE map at the top of looks/apexracer.md names the main parts and its line numbers match apexracer.html',
+    async test(page, h) {
+      const map = fs.readFileSync(path.join(repoRoot, 'looks/apexracer.md'), 'utf8');
+      const game = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8').split('\n');
+      for (const part of ['Menu', 'Garage', 'Driving physics', 'AI', 'Traffic', 'Camera', 'HUD', 'Sounds', 'REALITY']) {
+        if (!new RegExp(part, 'i').test(map)) return 'the map does not name ' + part;
+      }
+      const pairs = [
+        ['toMenu', /function toMenu\(/],
+        ['renderGarage', /function renderGarage\(/],
+        ['makeGlbCar', /function makeGlbCar\(/],
+        ['buildWorld', /async function buildWorld\(/],
+        ['setupRace', /async function setupRace\(/],
+        ['stepPlayer', /function stepPlayer\(/],
+        ['stepAI', /function stepAI\(/],
+        ['stepTraffic', /function stepTraffic\(/],
+        ['musRaceMix', /function musRaceMix\(/],
+        ['__reality', /window\.__reality =/],
+      ];
+      for (const [name, re2] of pairs) {
+        const actual = game.findIndex((l) => re2.test(l)) + 1;
+        if (!actual) return name + ' not found in apexracer.html';
+        const m = map.match(new RegExp(name.replace(/[.]/g, '\\.') + '[^\\n]{0,28}?L(\\d+)'));
+        if (!m) return 'the map carries no line number for ' + name;
+        if (Math.abs(parseInt(m[1], 10) - actual) > 4) return 'the map says ' + name + ' is at L' + m[1] + ' but apexracer.html has it at L' + actual + ' - refresh the map (STUDIO-STANDARD 9.7)';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-cars-visible',
+    ask: 'Owner Oct 22 2026: every computer car SHOWS in every city - a real model and a paint bright enough to read at dusk/night, never near-black',
+    async test(page, h) {
+      const rows = await h.eval(async () => {
+        const E = window.__erc, out = [];
+        const places = [E.PLACES[0], E.PLACES.find((p) => p.city === 'Honolulu')];
+        for (const place of places) {
+          E.startRace(place, 3);
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+          if (!(E.R && E.R.P)) return [{ bad: 'race never built at ' + place.city }];
+          (E.R.cars || []).forEach((c) => { if (c !== E.R.P && c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          (E.R.traffic || []).forEach((c) => { if (c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          E.toMenu(); await new Promise((r) => setTimeout(r, 400));
+        }
+        return out;
+      });
+      if (!Array.isArray(rows) || rows.length < 20) return 'only sampled ' + (rows && rows.length) + ' computer cars - not enough to prove they all show';
+      const lum = (hex) => { const n = parseInt(hex.slice(1), 16), f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+      for (const row of rows) {
+        if (row.bad) return row.bad;
+        if (!row.real) return 'a computer car is not a real model (mockup or missing)';
+        if (lum(row.paint) < 0.1) return 'a computer car wears ' + row.paint + ' (luminance ' + lum(row.paint).toFixed(3) + ') - near-black, invisible at dusk/night';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-mountains-clear',
+    ask: 'Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road',
+    async test(page, h) {
+      const res = await h.eval(async () => {
+        const E = window.__erc;
+        const place = E.PLACES.find((p) => p.city === 'Honolulu');
+        E.startRace(place, 3);
+        for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+        if (!(E.R && E.R.P)) return { bad: 'race never built at Honolulu' };
+        const R = E.R, T = R.T; let min = 1e9, checked = 0;
+        R.W.scene.traverse((o) => {
+          if (!(o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position)) return;
+          o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox, sy = Math.abs(o.matrixWorld.elements[5]) || 1, sx = Math.abs(o.matrixWorld.elements[0]) || 1;
+          const height = (bb.max.y - bb.min.y) * sy, width = (bb.max.x - bb.min.x) * sx;
+          if (height <= 55 || width > 3000) return;
+          const pos = o.geometry.attributes.position, e = o.matrixWorld.elements, stride = Math.max(1, Math.floor(pos.count / 4000));
+          for (let i = 0; i < pos.count; i += stride) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const q = T.near(wx, wz, 3); if (q) { checked++; if (q.d < min) min = q.d; } }
+        });
+        return { min, checked };
+      });
+      if (!res || res.bad) return (res && res.bad) || 'no measurement came back';
+      if (!res.checked) return 'no tall scenery vertices were measured at Honolulu';
+      if (res.min < 25) return 'tall scenery comes within ' + Math.round(res.min) + ' m of the road at Honolulu - mountains belong off the road';
+      return true;
+    },
+  },
+  {
+    id: 'play-night-no-blob',
+    ask: 'G-206: at night no car blows out to a pink/white blob - the headlight pool stays low-energy on every car, pools still exist, and the ?test=night owner link is in the game',
+    async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!src.includes("get('test')") || !src.includes("tq === 'night'")) return 'the ?test=night owner-check link is missing from apexracer.html';
+      const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
+      if (started !== 'ok') return started;
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the night race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        E.step(5, 1 / 60);
+        const rows = [];
+        const see = (c) => { if (c && c.car && c.car.pool) rows.push({ op: c.car.pool.material.opacity, cmax: Math.max(c.car.pool.material.color.r, c.car.pool.material.color.g, c.car.pool.material.color.b), vis: !!c.car.pool.parent }); };
+        (R.cars || []).forEach(see); (R.traffic || []).forEach(see);
+        E.toMenu();
+        return rows;
+      });
+      if (!Array.isArray(out)) return String(out);
+      if (out.length < 8) return 'only ' + out.length + ' cars have headlight pools at night - the pools must stay, just weaker';
+      for (const r of out) {
+        if (!r.vis) return 'a headlight pool is not in the night scene';
+        if (r.op > 0.2) return 'a headlight pool has opacity ' + r.op + ' - that additive energy blows the centre car out to a pink/white blob at night (cap 0.2)';
+        if (r.cmax > 0.85) return 'a headlight pool color peaks at ' + r.cmax.toFixed(2) + ' - too hot at night (cap 0.85)';
+      }
+      return true;
     },
   },
 ];

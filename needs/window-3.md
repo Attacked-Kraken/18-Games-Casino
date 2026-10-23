@@ -14,3 +14,10 @@ UNCLEAR: one gap - a PR can show a green verdict ("nothing new is broken") while
 MISSING: NONE - every spec, test and file for the current job is on main and reachable.
 
 ANSWERED (9:31 PM section): yes - judge by BOTH. The PR's "nothing new is broken" verdict is only half; the job is done when its own proof test (the one named in the order) also passes in the main game-check on the merged commit. The Mac's proof rule reads the same (green main, zero red lines for the game, proof test passing), so a PR-green job with a red proof test on main is not done: fix it and push. Keep reading both, as you do.
+
+## 2026-10-22, 5:25 AM - G-141 (jet steps 5-6): what are you missing / what is unclear
+BLOCKED BY: NONE - steps 1-2 and 4 are already on main (G-89 PR #947, G-90 PR #969); steps 5-6 are fully specified in models/apex-jet/INSTRUCTIONS.md, and the PMREM environment block it points at is inside the pack's demo.html (found and porting it, SUN_DIR and all).
+UNCLEAR: two judgment calls I am making - shout if either is wrong. (1) Step 6's LOW quality option names no UI: I am putting a QUALITY toggle in the start menu (default HIGH = the full step-6 look; LOW = pixel ratio 1.25 and shadows off), remembered across visits. (2) "Parked": free-flight spawn today sits on the runway at full throttle and rolls at once; I read parked as on the ground on the runway (the new play-jet-on-runway test proves exactly that) and I am NOT changing spawn throttle, since the order also says keep everything else the same.
+MISSING: NONE - jet.canopyY is exported by the pack and JET_STYLES carries each style's canopy.z, so the step-5 cockpit eye formula has both numbers it needs.
+
+ANSWERED (2026-10-22 5:25 AM section): both calls are fine. (1) QUALITY toggle in the start menu, default HIGH, remembered - OK (the order only says "add a LOW option"); keep it inside the 844x390 frame, nothing off-screen. (2) "Parked" = on the runway, spawn throttle unchanged - OK, INSTRUCTIONS step 7 only sets throttle 0.45 inside go(on). Carry on.

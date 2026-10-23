@@ -81,7 +81,6 @@
   /* PORTRAIT GRIP: the stage is rotated, so place controls where the player's thumbs actually are:
      stick at the visual bottom-left, action buttons at the visual bottom-right */
   @media (orientation: portrait) {
-    #joy { left:auto; right:18px; }
     #btns { left:auto; right:18px; top:calc(16px + env(safe-area-inset-top)); bottom:auto; }
     #charge { left:auto; right:18px; top:calc(108px + env(safe-area-inset-top)); bottom:auto; }
     #muteBtn { right:auto; left:12px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
@@ -89,6 +88,15 @@
   }
 
   #starCard { font:600 14px system-ui, -apple-system, sans-serif; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
+  /* G-210: the menu column stood ~580px tall in a 390px frame - title and subtitle clipped off the top, the friend-code line sat on the bottom edge, the keys line fell off-screen entirely, and the star card slid under the VIEW button. Menu-only compact sizes: every line inside 844x390, nothing overlapping. */
+  #menu { padding:8px 12px; }
+  #menu h1 { font-size:27px; margin:0 0 2px; }
+  #menu h2 { font-size:13px; line-height:1.4; margin:0 0 8px; }
+  #menu #starCard { font-size:13px; line-height:1.45; padding:7px 14px; margin-bottom:8px; max-width:min(600px,94vw); }
+  #menu .bigbtn { font-size:18px; padding:8px 14px; margin:5px auto; }
+  #menu #creditsBtn { margin-top:6px; }
+  #menu #myCode { margin:8px 0 2px; }
+  #menu .keys { font-size:11px; line-height:1.45; margin-bottom:4px; }
   #myCode { font:600 12px system-ui, -apple-system, sans-serif; color:#ffd34d; margin:14px 0 4px; letter-spacing:.06em; }
   #cancelMatch, #hubReset { font:600 12px system-ui, -apple-system, sans-serif; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
   #creditsBtn { font:600 12px system-ui, -apple-system, sans-serif; color:#9fd8ff; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
@@ -647,6 +655,7 @@ async function attachAthletes(H){
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
       s.kit = kitG; s.athStick = kitG.stick;
+      { const vs = kitG.parts && kitG.parts.visor; if (vs) { vs.castShadow = false; vs.material.opacity = 0.13; vs.material.metalness = 0; vs.material.roughness = 0.04; } } // G-186: the kit visor shipped cloudy - it shadowed and darkened the face into a bar across the eyes (art director, img/apexhockey-face.jpg); a visor casts no shadow and the glass is near-clear now, so the face reads through it
       a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
@@ -1397,6 +1406,14 @@ function stepPuck(dt){
   if(puck.owner){
     const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
     puck.pos.set(o.pos.x+fx*STICK_REACH, 0.06, o.pos.z+fz*STICK_REACH);
+    // G-214 round 1 (the G-194 line): the carried puck rides the stick 2.9 ahead of the carrier and this
+    // branch returns before bouncePuck() runs - at the boards it poked clean through them (robot: centre
+    // at 101.7 at the end boards, 44.2 at the side boards). Clamp it inside the same rink shape the loose
+    // puck bounces in; it stays glued to the stick, just never outside the boards.
+    { const r=0.62, ccx=HX-RINK.CR, ccz=HZ-RINK.CR, ax=Math.abs(puck.pos.x), az=Math.abs(puck.pos.z);
+      if(az<=ccz && ax>HX-r) puck.pos.x=Math.sign(puck.pos.x)*(HX-r);
+      else if(ax<=ccx && az>HZ-r) puck.pos.z=Math.sign(puck.pos.z)*(HZ-r);
+      else { const dx=ax-ccx, dz=az-ccz, d=Math.hypot(dx,dz); if(d>RINK.CR-r && d>0){ puck.pos.x=Math.sign(puck.pos.x)*(ccx+dx/d*(RINK.CR-r)); puck.pos.z=Math.sign(puck.pos.z)*(ccz+dz/d*(RINK.CR-r)); } } }
     puck.vel.set(o.vel.x,0,o.vel.z);
     return;
   }
@@ -1594,7 +1611,7 @@ function stepCamera(dt){
     leadCur+=clamp(leadWant-leadCur,-38*dt,38*dt); // G-72: the lead swings at a capped rate - on a save the puck reverses, the camera must not rewind with it
     const px=clamp((puck.pos.x+leadCur)*0.55,-64,64), pz=puck.pos.z*0.30;
     const deep=Math.min(1,Math.abs(puck.pos.x)/95);
-    const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
+    const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
@@ -1623,12 +1640,47 @@ function bladeIdx(steel){ // every steel (blade) vertex, split left/right skate 
   const P=steel.geometry.attributes.position, L=[], R=[];
   for(let i=0;i<P.count;i++) (P.getX(i)>=0?L:R).push(i); // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test)
   return [L,R]; }
+const _lv1=new THREE.Vector3(), _lv2=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lx=new THREE.Vector3(), _la=new THREE.Quaternion();
+function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camera): the constant counter-pitch below was tuned on the standing pose, but in live play the walk cycle and the kit stance pitch BOTH feet together (measured 3D blade tilt: median 15 deg, p90 40 deg, worst 77 deg - a planted blade pointing at the ice like a toe pick, exactly the owner's picture; the old end-to-end read could not see it because a near-vertical blade's horizontal projection collapses). So level MEASURED, not constant: read this foot's blade slope along its own long axis in the current pose (skeleton refreshed first - getVertexPosition otherwise reads last frame's skeleton and the correction chases a ghost), and counter-rotate the foot bone by that angle about the true lateral axis (up x toe direction). Two passes per frame settle the residual; a foot clearly in the air (swing phase) is left to its animation, one near the ice is levelled fully. Goalies keep the old constant: their ready stance splays the feet and the goalie test anchors their blade drop.
+  if(paused || (state!=='play'&&state!=='faceoff'&&state!=='whistle'&&state!=='goal'&&state!=='pen')) return;
+  if(!s.ath||!s.ath.object) return;
+  if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
+  const B=s._feet;
+  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  if(s.goalie){ rot('l',0.3); rot('r',0.3); return; }
+  const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s._blade||!st.skeleton) return;
+  for(let pass=0; pass<2; pass++){
+    s.g.updateMatrixWorld(true); st.skeleton.update();
+    let maxCorr=0;
+    for(let k=0;k<2;k++){
+      const ids=s._blade[k]; if(!ids||ids.length<8) continue;
+      let n=0,Sx=0,Sy=0,Sz=0,Sxx=0,Syy=0,Szz=0,Sxy=0,Sxz=0,Szy=0,low=1e9;
+      for(const i of ids){ st.getVertexPosition(i,_bv); const x=_bv.x, y=_bv.y, z=_bv.z; Sx+=x; Sy+=y; Sz+=z; Sxx+=x*x; Syy+=y*y; Szz+=z*z; Sxy+=x*y; Sxz+=x*z; Szy+=z*y; if(y<low) low=y; n++; }
+      const cx=Sx/n, cy=Sy/n, cz=Sz/n;
+      const Cxx=Sxx-n*cx*cx, Czz=Szz-n*cz*cz, Cxz=Sxz-n*cx*cz, Cxy=Sxy-n*cx*cy, Czy=Szy-n*cz*cy;
+      const th=0.5*Math.atan2(2*Cxz,Cxx-Czz); let ax=Math.cos(th), az=Math.sin(th);
+      const foot=B[k===0?'foot_l':'foot_r'], leaf=B[k===0?'ball_leaf_l':'ball_leaf_r'];
+      const Fa=s._fa||(s._fa=new THREE.Vector3()), Fb=s._fb||(s._fb=new THREE.Vector3());
+      foot.getWorldPosition(Fa); s.ath.object.worldToLocal(Fa); leaf.getWorldPosition(Fb); s.ath.object.worldToLocal(Fb);
+      if(ax*(Fb.x-Fa.x)+az*(Fb.z-Fa.z)<0){ ax=-ax; az=-az; } // orient the blade axis heel->toe by the FOOT BONE in rig frame - s.facing lives in world frame and flips the slope sign for skaters facing away from the rig's forward, which made the correction double the tilt for them
+      const den=ax*ax*Cxx+2*ax*az*Cxz+az*az*Czz; if(den<1e-6) continue;
+      const slope=(ax*Cxy+az*Czy)/den, ang=Math.atan(slope);
+      const h=low+s.athWrap.position.y; // this foot's lowest blade edge above the ice right now
+      const w=h<=0.09?1:(h>=0.30?0:1-(h-0.09)/0.21); if(w<=0) continue;
+      const corr=Math.max(-1.15,Math.min(1.15,-ang*w));
+      if(Math.abs(corr)>0.004){ rot(k===0?'l':'r',corr); if(Math.abs(corr)>maxCorr) maxCorr=Math.abs(corr); }
+    }
+    if(maxCorr<0.03) break; // settled - skip the refinement pass (most standing frames)
+  }
+}
 function snapSkatesToIce(){
   for(const s of skaters){
     const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
     if(!st.geometry.attributes.position.count) continue;
     if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
     s.g.updateMatrixWorld(true);
+    levelBlades(s);
+    s.g.updateMatrixWorld(true); if(st.skeleton) st.skeleton.update(); // G-47 REDO: ground THIS frame's levelled pose, not last frame's skeleton (the stale read left planted blades floating ~3 cm in live play)
     let low=1e9;
     s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
       if(m<1e9){ const wy=m+s.athWrap.position.y; s._contact[k].position.set(s.pos.x+mx,wy,s.pos.z+mz); low=Math.min(low,wy); } }); // G-86 measure fix: getVertexPosition already reads in the rig frame (applying matrixWorld again double-transforms - it buried blades up to 16 cm in the G-67 test); the wrap lift is the offset this snap controls
@@ -1912,7 +1964,9 @@ function renderMenu() {
   if (m) { cb.textContent = '▶ PLAY ' + m.label + ' vs ' + m.oppDef.name; $('playBtn').style.display = 'none'; $('friendBtn').style.display = 'none'; $('cancelMatch').style.display = 'block'; $('menuSub').textContent = m.kind === 'friend' ? 'Friend match is set — their star is already in the building.' : 'Career match is set — the visitors are already in the building.'; }
   else { cb.textContent = c ? '🏆 CAREER · ' + fmtRecord(c) + ' · SEASON ' + c.season : '🏆 START A CAREER'; $('playBtn').style.display = ''; $('friendBtn').style.display = ''; $('cancelMatch').style.display = 'none'; }
 }
+function disarmReset(){ const r = $('hubReset'); if (r) { delete r.dataset.arm; r.textContent = 'reset career'; } } // G-140: closing the hub disarms ERASE - an armed button must never survive into the next visit
 function renderHub() {
+  disarmReset();
   const c = cLoad(), body = $('hubBody');
   if (!c) { body.innerHTML = 'No career yet. Start one: a 10-game season, playoffs, and a star center who is yours to build.<br>Your friend code lives on the main menu.'; $('hubPlay').style.display = 'none'; $('hubNew').textContent = 'START MY CAREER'; $('hubNew').style.display = ''; return; }
   const rk = ranked(c);
@@ -1925,7 +1979,7 @@ function renderHub() {
 $('careerBtn').addEventListener('click', () => { if (mLoad()) { $('playBtn').click(); return; } renderHub(); $('hub').style.display = 'flex'; });
 $('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''; $('friendOv').style.display = 'flex'; });
 $('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
-$('hubClose').addEventListener('click', () => { $('hub').style.display = 'none'; });
+$('hubClose').addEventListener('click', () => { disarmReset(); $('hub').style.display = 'none'; });
 $('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
 $('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
 $('hubNew').addEventListener('click', () => {
@@ -1957,6 +2011,15 @@ $('friendGo').addEventListener('click', () => {
   const pm2 = mLoad();
   if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
+
+// G-178: owner check link - apexhockey.html?test=match opens straight into a
+// match (skips the menu) so a change can be eyeballed in 30 seconds.
+try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'boards') { // G-216: ?test=boards = a match with the carrier staged at the end boards, puck on his stick - the carried-puck containment check
+    const pb = $('playBtn'); if (pb) pb.click();
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (hk.game.state === 'play') { const c = hk.skaters.find((s) => s.role === 'C' && s.team === 'home'); if (c) { c.pos.set(99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = 0; c.thinkT = 9; if (c.target) c.target.set(99.2, 0, -6); hk.puck.owner = c; hk.puck.shot = null; } } }, 50); setTimeout(() => clearInterval(iv), 25000);
+  }
+  else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
+  else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
 
 requestAnimationFrame(tick);
 

@@ -12,6 +12,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Own team names, colors and numbers (no NHL teams or real players)
 - Back numbers read the right way round (not mirrored)
 - Face visible through the cage
+- The robot's face close-up is the proof: visor or open cage fitted, the face readable through it, and the full name and number readable from behind
 - Owner's model sheet (2026-10-16): about 7.5 head heights; forward lean 15-20 deg; knee flex 25-30 deg; hips back over
   the heels; wide stance; helmet with visor; shoulder pads (bulk); oversized gloves; padded breezers; shin guards
   under the socks; skates with steel blades. Build players with the shared kit (`characters/base-human-v2/gear.js`,
@@ -24,6 +25,10 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Nothing built from boxes when a real model is possible
 - "They gave me this": blob players, upright floating sticks, scattered bits (2026-10-16)
 - "Why do I get offsides every time" (2026-10-17): AI teammates must hold the attacking blue line until the puck crosses it — never skate ahead of the puck into the zone
+- No menu text clipped or overlapping at 844x390 - every line inside the frame
+- 2026-10-22: skate blades pitched toe-down off the ice (owner screenshot) - blades must stay down flat on the ice (G-170)
+- 2026-10-23: the puck never leaves the rink - the carrier standing at the end boards and at the side boards facing them with the puck on his stick must keep the puck inside the boards shell (G-216)
+- 2026-10-23: blades flat in live play too, not just standing - the weight-bearing blade of a skating player lies flat on the ice, never pitched like a toe pick in the close camera (owner picture) (G-47 REDO)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
