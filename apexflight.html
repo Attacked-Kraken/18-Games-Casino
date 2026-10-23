@@ -496,6 +496,41 @@ const jet = createApexJet(THREE, { preset: 'normal', style: 'fighter', paint: 0,
 const plane = jet.group; scene.add(plane); scene.add(jet.fx); scene.add(jet.worldFx);
 // fx = afterburner flames (kept outside the group so the REALITY size box ignores them); worldFx = wingtip vapour trails
 const gearWheels = jet.wheels;   // the wheel meshes (REALITY robot contact points) - the same array stays valid after setStyle
+
+/* ================= computer traffic (G-247) =================
+   Four computer jets from the same pack - the other styles, other paints -
+   fly wide loops around the field at a safe height. They never touch the
+   player or the ground: fixed loops well above the field, and a jet eases
+   higher whenever the player climbs into its loop. Player start untouched. */
+const traffic = [];
+for (const cfg of [
+  { style: 'delta', paint: 1, cx: 350, cz: -150, R: 750, alt: 190, spd: 68, dir: 1, th: 0.5 },
+  { style: 'fwdswept', paint: 4, cx: -450, cz: 250, R: 620, alt: 240, spd: 74, dir: -1, th: 2.4 },
+  { style: 'stealth', paint: 5, cx: 100, cz: -800, R: 880, alt: 290, spd: 80, dir: 1, th: 4.2 },
+  { style: 'sport', paint: 7, cx: -150, cz: 700, R: 540, alt: 155, spd: 60, dir: -1, th: 1.1 },
+]) {
+  const tj = createApexJet(THREE, { preset: 'normal', style: cfg.style, paint: cfg.paint, external: true });
+  scene.add(tj.group); scene.add(tj.fx); scene.add(tj.worldFx);
+  tj.setGear(false);
+  tj.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  traffic.push({ ...cfg, jet: tj, altOff: 0 });
+}
+const trafficEul = new THREE.Euler(0, 0, 0, 'YXZ');
+function updateTraffic(dt) {
+  for (const t of traffic) {
+    t.th += t.dir * (t.spd / t.R) * dt;
+    const x = t.cx + t.R * Math.cos(t.th), z = t.cz + t.R * Math.sin(t.th);
+    const dx = x - P.pos.x, dz = z - P.pos.z, dy = (t.alt + t.altOff) - P.pos.y;
+    const near = dx * dx + dz * dz < 260 * 260 && Math.abs(dy) < 80;
+    t.altOff += ((near ? 95 : 0) - t.altOff) * Math.min(1, dt * 0.7);
+    const vx = -Math.sin(t.th) * t.dir, vz = Math.cos(t.th) * t.dir;
+    const bank = -t.dir * Math.min(0.38, Math.atan((t.spd * t.spd) / (t.R * 9.81)));
+    t.jet.group.position.set(x, t.alt + t.altOff, z);
+    trafficEul.set(0, Math.atan2(vx, vz), bank);
+    t.jet.group.quaternion.setFromEuler(trafficEul);
+    t.jet.update(dt, { pitch: 0, roll: bank, yaw: 0, throttle: 0.72, boost: false });
+  }
+}
 plane.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
 /* ================= HUD: artificial horizon ================= */
@@ -1104,7 +1139,7 @@ $('qualityBtn').addEventListener('click', () => {
 });
 applyQuality();
 
-window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
+window.__flight = { P, inp, jetInput, jet, aiJets: traffic, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
   friend: {
     code: () => friendCode(),
     set: (txt) => { const f = parseFriend(txt); if (!f) return false; friendGame = f; return true; },
@@ -1115,12 +1150,12 @@ window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, 
 window.__test = { friend: window.__flight.friend };
 /* REALITY robot hook (REALITY.md "Robot hook"): the robot measures the plane's
    size, facing vs travel, and that the wheels touch the ground. Flight is not
-   a race, so there is no track direction; there are no AI aircraft (others). */
+   a race, so there is no track direction; the computer traffic jets (G-247) are the others. */
 window.__reality = {
   kind: 'plane',
   expect: { span: [8, 16.5] },   // the jet's longest side is its length (fighter 15.4 m, delta 16.1 m) - INSTRUCTIONS step 7
   player: plane,
-  others: [],
+  others: traffic.map(t => t.jet.group),
   contact: gearWheels,
   ground: (x, z) => 0,
   go: (on) => {
@@ -1170,6 +1205,7 @@ function loop(now) {
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }
   }
   jet.update(dt, { pitch: inp.pitchUp, roll: inp.rollRight, yaw: padYaw, throttle: P.thr, boost: padBoost });
+  updateTraffic(dt);
   updateCamera(dt);
   updateHUD(dt);
   Mus.update(phase, P.thr);
@@ -1187,6 +1223,7 @@ function loop(now) {
    ?test=friend (G-238) opens the Play-a-Friend overlay instead. */
 const testParam = new URLSearchParams(location.search).get('test');
 if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
+else if (testParam === 'traffic') { mode = 'free'; respawn(); P.pos.set(0, 130, -1250); P.vel.set(0, 0, 58); P.thr = 0.72; jetInput.throttle = 0.72; P.ground = false; jet.setGear(false); jetInput.gear = false; jetInput.setGearLabel(false); }
 else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
