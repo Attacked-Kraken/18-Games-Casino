@@ -166,6 +166,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-226 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-226.md, CLAIMS.md | test/g-226-apextrackfield |
 | G-224 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-224.md, CLAIMS.md | build/g-224-apexf1 |
 | G-222 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-222.md, CLAIMS.md | build/g-222-apexbaseball |
 | G-187 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-187.md, CLAIMS.md | test/g-187-apextrackfield |
@@ -222,3 +223,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-176 fix 1 | window 6 | jobs/G-176.md, looks/apexracer.md, tools/game-check/fixes/apexracer.mjs | report/g-176-fix-window6 |
 | G-179 | window 6 | looks/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-179.md | build/g-179-apexracer |
 | G-206 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-206.md | build/g-206-apexracer |
+| G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
