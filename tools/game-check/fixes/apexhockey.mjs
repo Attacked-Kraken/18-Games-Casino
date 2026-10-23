@@ -2161,5 +2161,63 @@ export default [
     if (over / tilts.length > 0.08) return 'planted blades pitched in live play: ' + over + ' of ' + tilts.length + ' weight-bearing feet tilted over 16 deg';
     return true;
   }
- }
+ },
+{
+  id: 'tester-arena-no-icing-while-shorthanded',
+  mode: 'arena',
+  ask: 'TESTER (G-227): icing is NOT called while the dumping team is shorthanded (rules/hockey.md: icing "Not called when shorthanded"). A home skater is put in the box so the power-play tag is live, then home dumps the puck untouched from behind the centre line (lastTouch home at x -30) racing to the far goal line, exactly the dump that IS whistled at full strength: play must carry on with no icing whistle and no icing faceoff while the box is occupied.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game, el = document.getElementById('banner');
+      return {
+        state: g.state,
+        penTag: (document.getElementById('penTag') || {}).textContent || '',
+        banner: (el && el.classList.contains('show')) ? el.textContent.replace(/\s+/g, ' ').trim() : '',
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, penT: +s.penT.toFixed(1) })),
+        puckX: +window.__hk.puck.pos.x.toFixed(1)
+      };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    // wait for the match to reach 'play' (one real key press drops the puck)
+    let s = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the shorthanded dump';
+    // stage: home LW in the box (live power play against home), skaters parked for a decisive race, dump from home's half
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const sk = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
+      sk.inBox = true; sk.penT = 20; sk.pos.set(-6, 0.1, 41);
+      hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home') x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); });
+      hk.skaters.forEach(x => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0;
+      pk.lastTouch = 'home'; pk.lastTouchX = -30;
+      pk.pos.set(-30, 0.06, 20);
+      pk.vel.set(70, 0, 0);
+    });
+    // watch: an icing whistle while the box is occupied = the bug
+    let sawPP = false, icing = null;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 25000) {
+      const q = await snap();
+      if (q) {
+        if (/PP/.test(q.penTag)) sawPP = true;
+        if (q.banner && /ICING/.test(q.banner) && q.boxed.some(b => b.team === 'home')) { icing = q; break; }
+        if (q.state === 'whistle' && q.boxed.some(b => b.team === 'home')) {
+          // a whistle of another kind: check the puck's story before judging
+          if (q.puckX > 85) { icing = q; break; }
+        }
+      }
+      await page.waitForTimeout(400);
+    }
+    if (!sawPP) return 'the staged power play never showed on the HUD - cannot judge the shorthanded dump';
+    if (icing) return 'icing was whistled against the SHORTHANDED home team (banner "' + icing.banner + '", box still occupied, penTag live) - rules/hockey.md: icing is not called when shorthanded; the identical full-strength dump is whistled (G-227 stage a), so the call must be waived while a home skater sits in the box';
+    return true;
+  }
+}
 ];
