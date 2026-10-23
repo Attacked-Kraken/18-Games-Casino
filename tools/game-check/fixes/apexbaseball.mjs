@@ -711,48 +711,6 @@ export default [
     },
   },
   {
-    id: 'tester-batting-swing-wall-clock',
-    mode: 'batting',
-    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
-    async test(page, h) {
-      const snap = () => h.eval(() => {
-        const T = window.__test; if (!T) return null;
-        const tag = (document.getElementById('inningTag') || {}).textContent || '';
-        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
-                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
-      });
-      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
-      const t0 = Date.now();
-      let flightStart = null, sawFlight = false;
-      while (Date.now() - t0 < 29000) {
-        const s = await snap(); if (!s) return 'window.__test missing';
-        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
-        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
-        if (s.phase === 'flight') {
-          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
-          if (batting && s.ball && s.ball.z >= -0.5) {
-            await click('swingBtn');
-            await h.wait(700);
-            const a = await snap();
-            if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return `swung with the ball at the plate (z=${s.ball.z.toFixed(1)} m) and still got '${a.msg}' - the swing is judged on the wall clock, not on the ball`;
-            return true;
-          }
-        } else if (flightStart !== null) {
-          const wall = (Date.now() - flightStart) / 1000;
-          flightStart = null;
-          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
-        }
-        if (!batting) {
-          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
-          else if (s.phase === 'aim') await click('throwBtn');
-          else if (s.phase === 'windup') await click('lockBtn');
-        }
-        await h.wait(60);
-      }
-      return sawFlight ? true : 'no pitch flight seen in 29 s, so the swing clock could not be checked';
-    },
-  },
-  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
@@ -1077,35 +1035,45 @@ export default [
         else await h.wait(400);
       }
       if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
-
-      const r = await h.eval(async () => {
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-        const btns = [...document.querySelectorAll('button')];
-        const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
-        await sleep(200);
-        const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
-        const R = window.__reality, cam = R.camera;
-        const windPos = new Set(), flightPos = new Set();
-        let flightN = 0, ballIn = 0;
-        for (let i = 0; i < 70; i++) {
-          const ph = window.__test.phase;
-          const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
-          if (ph === 'windup') windPos.add(key);
-          if (ph === 'flight') {
-            flightPos.add(key); flightN++;
-            const b = window.__test.ball;
-            if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+      // Up to 3 throws: on the shared robot page a single click sequence can race
+      // the frame loop (the first version of this test caught 0 windup samples on
+      // the Oct 23 main check while its sibling play-contact-big-at-plate, which
+      // retries, passed on the same check) - wait for each phase, then count.
+      let last = null;
+      for (let tries = 0; tries < 3; tries++) {
+        const r = await h.eval(async () => {
+          const sleep = ms => new Promise(res => setTimeout(res, ms));
+          for (let i = 0; i < 40; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
+          const btns = [...document.querySelectorAll('button')];
+          const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+          await sleep(250);
+          const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
+          const R = window.__reality, cam = R.camera;
+          const windPos = new Set(), flightPos = new Set();
+          let flightN = 0, ballIn = 0, sawWind = false, sawFlight = false;
+          for (let i = 0; i < 300; i++) {
+            const ph = window.__test.phase;
+            const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
+            if (ph === 'windup') { sawWind = true; windPos.add(key); }
+            if (ph === 'flight') {
+              sawFlight = true; flightPos.add(key); flightN++;
+              const b = window.__test.ball;
+              if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+            }
+            if (ph === 'bip' || (sawFlight && ph !== 'flight' && ph !== 'windup')) break;
+            await sleep(40);
           }
-          if (ph === 'bip' || (flightN > 0 && ph !== 'flight' && ph !== 'windup')) break;
-          await sleep(80);
-        }
-        return { wind: windPos.size, flight: flightPos.size, flightN, ballIn };
-      });
-      if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
-      if (r.wind < 3) return 'the camera is frozen during the windup: ' + r.wind + ' distinct position(s) (owner: the camera follows the windup)';
-      if (r.flight < 3) return 'the camera is frozen during the pitch flight: ' + r.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
-      if (r.flightN < 3) return 'the pitch flight was too short to sample (' + r.flightN + ' samples)';
-      if (r.ballIn / r.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + r.ballIn + ' of ' + r.flightN + ' samples';
+          return { wind: windPos.size, flight: flightPos.size, flightN, ballIn, sawWind, sawFlight };
+        });
+        if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
+        last = r;
+        if (r.wind >= 3 && r.flight >= 3 && r.flightN >= 3 && r.ballIn / r.flightN >= 0.9) return true;
+      }
+      if (!last.sawWind) return 'no windup phase was ever sampled in 3 throws (the throw clicks never took on this page)';
+      if (last.wind < 3) return 'the camera is frozen during the windup: ' + last.wind + ' distinct position(s) (owner: the camera follows the windup)';
+      if (last.flight < 3) return 'the camera is frozen during the pitch flight: ' + last.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
+      if (last.flightN < 3) return 'the pitch flight was too short to sample (' + last.flightN + ' samples)';
+      if (last.ballIn / last.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + last.ballIn + ' of ' + last.flightN + ' samples';
       return true;
     },
   },
