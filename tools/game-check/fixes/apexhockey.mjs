@@ -1884,5 +1884,44 @@ export default [
     if (star) for (const c of m.chrome) if (overlap(star, c)) return 'the star card slides under the ' + c.name + ' button';
     return true;
   }
+ },
+ {
+  id: 'play-broadcast-skaters-readable',
+  ask: 'G-214 (art director): at the game (BROADCAST) camera the skaters are big enough to read numbers and stance - a faceoff ring staged at centre ice projects to at least 30 CSS px tall per skater on the 844x390 frame (they read ~20px when the camera sat ~91 units out)',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => window.__hk && window.__hk.game ? window.__hk.game.state : '').catch(() => ''); if (s === 'menu') break; await h.wait(500); }
+    await h.eval(() => { const el = document.getElementById('playBtn'); if (el) el.click(); return true; }).catch(() => {});
+    let st = '';
+    for (let i = 0; i < 25; i++) { st = await h.eval(() => window.__hk.game.state).catch(() => ''); if (st === 'play') break; try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if (st !== 'play') return 'the match did not reach play to measure the broadcast framing';
+    const m = await h.eval(() => new Promise((resolve) => {
+      const hk = window.__hk;
+      const ring = [];
+      const sk = hk.skaters.filter(s => !s.goalie && !s.inBox);
+      const spots = [[9, 0], [-9, 0], [6, 8], [-6, -8], [6, -8], [-6, 8]];
+      for (let j = 0; j < 6 && j < sk.length; j++) ring.push([sk[j], spots[j][0], spots[j][1]]);
+      const t0 = performance.now();
+      const iv = setInterval(() => {
+        // pin the whole scene at centre ice: puck dead at centre, six skaters in a faceoff ring, everyone else held where he stands
+        hk.puck.owner = null; hk.puck.shot = null; hk.puck.pos.set(0, 0.06, 0); hk.puck.vel.set(0, 0, 0);
+        for (const [s, x, z] of ring) { s.pos.set(x, 0, z); s.vel.set(0, 0, 0); s.thinkT = 9; s.target.set(x, 0, z); }
+        for (const s of hk.skaters) { if (!ring.some(r => r[0] === s)) { s.vel.set(0, 0, 0); s.thinkT = 9; if (s.target) s.target.set(s.pos.x, 0, s.pos.z); } }
+        if (performance.now() - t0 < 2200) return; // let the broadcast camera settle onto centre
+        clearInterval(iv);
+        const cam = hk.camera; cam.updateMatrixWorld();
+        const P = [...cam.projectionMatrix.elements], V = [...cam.matrixWorldInverse.elements];
+        const mul = (mm, x, y, z) => [mm[0]*x + mm[4]*y + mm[8]*z + mm[12], mm[1]*x + mm[5]*y + mm[9]*z + mm[13], mm[2]*x + mm[6]*y + mm[10]*z + mm[14], mm[3]*x + mm[7]*y + mm[11]*z + mm[15]];
+        const projY = (x, y, z) => { const v = mul(V, x, y, z); const c = mul(P, v[0], v[1], v[2]); if (c[3] <= 0) return null; return (-c[1]/c[3] * 0.5 + 0.5) * innerHeight; };
+        const hs = [];
+        for (const [s] of ring) { const f = projY(s.pos.x, 0, s.pos.z), hd = projY(s.pos.x, 6.1, s.pos.z); if (f !== null && hd !== null) hs.push(Math.abs(f - hd)); }
+        hs.sort((a, b) => a - b);
+        resolve({ n: hs.length, median: hs.length ? hs[Math.floor(hs.length / 2)] : 0, smallest: hs.length ? hs[0] : 0 });
+      }, 25);
+    }));
+    if (!m || m.n < 6) return 'could not measure the 6 ring skaters at the broadcast camera (got ' + (m ? m.n : 0) + ')';
+    if (m.median < 30) return 'skaters are a tiny cluster at the game camera: a centre-ice faceoff ring reads a median ' + m.median.toFixed(1) + ' CSS px tall (smallest ' + m.smallest.toFixed(1) + ') on the 390px frame - jersey numbers and stance must be readable (bar 30)';
+    return true;
+  }
  }
 ];
