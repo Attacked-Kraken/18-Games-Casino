@@ -240,10 +240,13 @@ def main():
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
             revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
-        if full.get("mergeable") is not True:
-            if full.get("mergeable") is None:
-                revisit = True  # GitHub still hasn't answered - ask again in a few minutes
-            say("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is False:
+            say("#%d skipped: not mergeable (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is None:
+            # Oct 23 2026 5:17 PM (window 9 #1293 green + clean, open 3 h 40 min): while main moves every few minutes GitHub can leave
+            # 'mergeable' unworked-out for HOURS, and the robot skipped such PRs on every round. The merge call itself is the real test:
+            # GitHub refuses it (405) if the PR really conflicts. So a green PR with an unknown state is TRIED, not skipped.
+            print("::notice title=Merge robot::#%d: GitHub has not worked out 'mergeable' - trying the merge anyway if its checks are green" % n)
         # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
         # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
         try:
@@ -251,6 +254,16 @@ def main():
             behind = int(cmp.get("behind_by") or 0)
         except Exception:
             behind = 0
+        if behind > 0:
+            # only when main's newer commits touch a file this PR changes (a notes / tests / checklist PR behind main on OTHER files
+            # merges as it is - updating it re-ran its 10-min check, main moved again, and it never merged: #1293, #1281, #1309)
+            try:
+                mfiles = {f["filename"] for f in ((gh("repos/%s/compare/%s...main" % (REPO, pr["head"]["sha"])) or {}).get("files") or [])}
+            except Exception:
+                mfiles = None
+            if mfiles is not None and not (mfiles & {f["filename"] for f in files}):
+                print("#%d is %d behind main but main's newer commits touch none of its files - merging as it is" % (n, behind))
+                behind = 0
         if behind > 0:
             res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
             if res is not None:
@@ -284,6 +297,9 @@ def main():
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+        if not (res and res.get("merged")):
+            revisit = True
+            print("::warning title=Merge robot::#%d: green but GitHub refused the merge (%s) - looking again next round" % (n, (res or {}).get("message", "no answer")))
         if res and res.get("merged"):
             merged.append(n)
             for wf, starts in FOLLOW:
