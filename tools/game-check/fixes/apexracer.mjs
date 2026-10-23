@@ -598,7 +598,7 @@ export default [
   {
     id: 'play-music-buffers',
     ask: 'Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo',
-    run: async (page, h) => {
+    async test(page, h) {
       const fs = await import('node:fs');
       const path = await import('node:path');
       const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
@@ -606,7 +606,7 @@ export default [
       if (!src.includes('MUS.bufs')) return 'the music buffer store is gone';
       if (!src.includes('s.loop = true')) return 'the music layers no longer loop as buffer sources';
       for (const f of ['menu', 'gameplay_low', 'gameplay_mid', 'gameplay_high']) if (!fs.existsSync(path.join(repoRoot, 'sounds/pack/music/sports_arena/sports_arena_' + f + '.mp3'))) return 'missing music file: ' + f;
-      return null;
+      return true;
     },
   },
   {
