@@ -2249,5 +2249,266 @@ export default [
       if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
       return true;
     }
+  },
+{
+    id: 'never-g-169-p1',
+    ask: 'NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '110m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => {
+            if (mesh || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) mesh = o;
+          });
+          if (!mesh) return null;
+          const p = mesh.geometry.attributes.position.array;
+          let side = 0, total = 0;
+          for (let t2 = 0; t2 + 8 < p.length; t2 += 9) {
+            const ax = p[t2], ay = p[t2 + 1], az = p[t2 + 2], bx = p[t2 + 3], by = p[t2 + 4], bz = p[t2 + 5], cx = p[t2 + 6], cy = p[t2 + 7], cz = p[t2 + 8];
+            const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            const area = 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (area === 0) continue;
+            total += area;
+            if (Math.abs(nx) / (2 * area) > 0.9) side += area;
+          }
+          if (!total) return null;
+          if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox;
+          return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
+      if (m.sideShare > 20) return 'each hurdle is two boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways - one board per hurdle, facing the runner (G-160)';
+      if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
+      return true;
+    }
+  },
+{
+    id: 'play-test-link-starts-the-event',
+    ask: 'G-171 (Mac, 2026-10-22): apextrackfield.html?test=60h (any EVENTS id) opens that event in Free Play and starts it at once - no menu, no card, no story; in a hurdles event the countdown camera holds every lane\u2019s first hurdle close in frame so the owner can check the hurdles in seconds',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=60h')) return 'the test-link page would not load';
+      let started = null;
+      for (let i = 0; i < 40 && !started; i++) {
+        started = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '60h') return null;
+          return { phase: e.phase, screen: (document.querySelector('.screen.on') || {}).id || null, playing: document.body.classList.contains('playing'), hurdles: __tf.hurdles() };
+        }).catch(() => null);
+        if (!started) await h.wait(500);
+      }
+      if (!started) return 'apextrackfield.html?test=60h never started the 60m Hurdles by itself (a menu or card is still in the way)';
+      if (started.screen === 'menu' || started.screen === 'card' || started.screen === 'grid') return 'the test link stopped at the ' + started.screen + ' instead of starting the event';
+      if (!started.playing) return 'the test link started no race (the page is not in the playing state)';
+      if (!started.hurdles || started.hurdles.count !== 40 || started.hurdles.placed !== 40) return 'the 60m Hurdles should stand 5 hurdles in each of 8 lanes (40 hurdles), got ' + JSON.stringify(started.hurdles);
+      const shot = await h.eval(() => new Promise(res => {
+        let last = null, tries = 0;
+        const cap = () => {
+          try {
+            const tv = __tf.throwView && __tf.throwView(); if (!tv || !tv.cam || !tv.look) return null;
+            let root = window.__reality && __reality.player; if (!root) return null;
+            while (root.parent) root = root.parent;
+            let mesh = null;
+            root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 40) mesh = o; });
+            if (!mesh) return null;
+            mesh.updateMatrixWorld();
+            const cvs = document.querySelector('canvas'); if (!cvs || !cvs.height) return null;
+            const aspect = cvs.width / cvs.height;
+            const f = 1 / Math.tan((58 * Math.PI / 180) / 2); // the game camera is PerspectiveCamera(58, W/H) in the source
+            const eye = [tv.cam.x, tv.cam.y, tv.cam.z], tgt = [tv.look.x, tv.look.y, tv.look.z];
+            let zx = eye[0] - tgt[0], zy = eye[1] - tgt[1], zz = eye[2] - tgt[2];
+            const zl = Math.hypot(zx, zy, zz) || 1; zx /= zl; zy /= zl; zz /= zl;
+            let xx = zz, xy = 0, xz = -zx;
+            const xl = Math.hypot(xx, xy, xz) || 1; xx /= xl; xy /= xl; xz /= xl;
+            const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+            const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+            const mul = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
+            let cx = 0, cz = 0; const pts = [];
+            for (let i2 = 0; i2 < 8; i2++) {
+              const w = mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14]);
+              const dx = w[0] - eye[0], dy = w[1] - eye[1], dz = w[2] - eye[2];
+              const xv = xx * dx + xy * dy + xz * dz, yv = yx * dx + yy * dy + yz * dz, zv = zx * dx + zy * dy + zz * dz;
+              pts.push({ x: +((f / aspect) * xv / -zv).toFixed(2), y: +(f * yv / -zv).toFixed(2), behind: zv >= 0 });
+              cx += w[0]; cz += w[2];
+            }
+            cx /= 8; cz /= 8;
+            return { pts, dist: +Math.hypot(eye[0] - cx, eye[2] - cz).toFixed(1) };
+          } catch (err) { return null; }
+        };
+        const iv = setInterval(() => {
+          tries++;
+          const e = window.__tf && __tf.eng();
+          if (!e) { if (tries > 240) { clearInterval(iv); res(last); } return; }
+          if (e.phase === 'marks' || e.phase === 'set') { const s = cap(); if (s) last = s; if (e.phase === 'set' && last) { clearInterval(iv); res(last); } return; }
+          if (last || tries > 240) { clearInterval(iv); res(last); }
+        }, 120);
+      })).catch(() => null);
+      if (!shot) return 'no countdown framing could be measured (the first hurdle row was never in front of the camera during marks/set)';
+      const out = shot.pts.filter(p => p.behind || Math.abs(p.x) > 0.98 || Math.abs(p.y) > 0.98);
+      if (out.length) return 'during the countdown ' + out.length + ' of the 8 first-row hurdles are outside the camera frame - the owner cannot see every lane\u2019s hurdle: ' + JSON.stringify(shot.pts);
+      if (shot.dist > 9) return 'during the countdown the camera is ' + shot.dist + ' m from the first hurdle row - not close enough to check the hurdles';
+      let ran = false;
+      for (let i = 0; i < 40 && !ran; i++) {
+        ran = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.phase === 'run' && e.ai && e.ai.length && e.ai[0].pos > 1); }).catch(() => false);
+        if (!ran) await h.wait(500);
+      }
+      if (!ran) return 'the test-link race never left the start (the field is not running after the gun)';
+      await nav(base);
+      return true;
+    }
   }
+  ,{
+    id: 'tester-10000m-results-match-crossing',
+    mode: '10000m',
+    ask: 'TESTER (G-183): 10,000m - the results order matches who actually crosses the finish line first on the track (REALITY.md: finishing order = who crossed first). The player joins the leaders with 700m to go; if he runs the live segment fastest and crosses the line first, the results must place him 1st - a rival who is still short of the line cannot be credited ahead of him with a faster total time built from his own private early pace.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      })).catch(() => null);
+      if (nav !== 'in') await h.wait(1200);
+      }
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      const fin = await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, steps = 0;
+        while (!e.done && steps < 30000) {
+          e.update(1 / 60); steps++;
+          const t = steps / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        if (!e.done) return { notDone: true, pos: Math.round(e.r.pos), phase: e.phase };
+        return {
+          time: +e.time.toFixed(2), place: e.place,
+          ai: e.ai.map(a => ({ n: a.name, tt: +a.tTarget.toFixed(1), pos: Math.round(a.pos) })),
+          crossed: e.ai.filter(a => a.pos >= 10000).length
+        };
+      }).catch(() => null);
+      if (!fin) return 'the 10,000m drive could not be measured';
+      if (fin.notDone) return 'the player never finished the 10,000m (stuck at ' + fin.pos + 'm, phase ' + fin.phase + ')';
+      if (fin.crossed > 0) return true;
+      const best = fin.ai.reduce((a, b) => (b.pos > a.pos ? b : a), fin.ai[0]);
+      const credited = fin.ai.filter(a => a.tt < fin.time).sort((a, b) => a.tt - b.tt);
+      if (fin.place !== 1) return 'the player crossed the 10,000m finish line FIRST on the track (no rival reached 10000m; nearest rival ' + best.n + ' was still ' + (10000 - best.pos) + 'm short at ' + best.pos + 'm when the player finished in ' + fin.time + 's), but the results place him ' + fin.place + ' - credited ahead of him: ' + credited.map(a => a.n + ' ' + a.tt + 's').join(', ') + '. Rivals are ranked by their own private target times for the first 9300m instead of the race on the track (REALITY: finishing order matches who actually crossed first)';
+      return true;
+    }
+  },
+{
+    id: 'never-g-174-p1',
+    ask: 'NEVER (G-174, owner video 2026-10-22): hurdles facing the wrong way - a hurdle board front faces the approaching runner: dot(board normal, lane tangent) = -1 at every hurdle, never 0 (edge-on)',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=110h')) return 'the 110m Hurdles test-link page would not load';
+      let m = null;
+      for (let i = 0; i < 40 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '110h') return null;
+          let root = window.__reality && __reality.player; if (!root) return null;
+          while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 80) mesh = o; });
+          if (!mesh) return null;
+          mesh.updateMatrixWorld();
+          const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+          const mul = (mm, x, y, z) => [mm[0] * x + mm[4] * y + mm[8] * z + mm[12], mm[1] * x + mm[5] * y + mm[9] * z + mm[13], mm[2] * x + mm[6] * y + mm[10] * z + mm[14]];
+          const P = [], N = [], P2 = [];
+          for (let i2 = 0; i2 < 8; i2++) { P.push(mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14])); N.push([im[i2 * 16 + 8], im[i2 * 16 + 10]]); P2.push(mul(mw, im[(i2 + 8) * 16 + 12], im[(i2 + 8) * 16 + 13], im[(i2 + 8) * 16 + 14])); }
+          let best = null;
+          for (let s = 0; s < 400; s += 0.5) { const lp = __tf.lanePoint(s, 3); const d = (lp.x - P[3][0]) * (lp.x - P[3][0]) + (lp.z - P[3][2]) * (lp.z - P[3][2]); if (!best || d < best.d) best = { d, tx: lp.tx, tz: lp.tz }; }
+          if (!best || best.d > 4) return null;
+          const tl = Math.hypot(best.tx, best.tz) || 1; const t = [best.tx / tl, best.tz / tl];
+          const dots = N.map(n => { const l = Math.hypot(n[0], n[1]) || 1; return +((n[0] / l) * t[0] + (n[1] / l) * t[1]).toFixed(2); });
+          return { dots };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle facing could be measured in the 110m Hurdles';
+      const bad = m.dots.filter(d => d > -0.75);
+      if (bad.length) return 'the hurdles face the wrong way: dot(board normal, lane tangent) is ' + JSON.stringify(m.dots) + ' - the board front must face the approaching runner (-1.00); 0 means the boards stand edge-on (G-174)';
+      return true;
+    }
+  },{
+id: 'never-g-193-p1',
+title: 'G-193 r1: the relay PASS button works from the start of the exchange zone - the receiver is in reach when the carrier arrives, not only in the last metres',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === 'relay' && e.relayState); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'relay did not start from the test link';
+  const out = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L', firstOkAt = null, fumbled = false, tooFarAt80 = null;
+    for (let step = 0; step < 60 * 40; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run' && !e.done && step % 2 === 0) { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+      const st = e.relayState(); const T0 = st.teams[0];
+      if (st.leg === 0 && T0.carrierPos >= 80 && T0.recvPos !== null) {
+        const before = T0.exchanges;
+        e.action();
+        if (T0.carrierPos <= 80.5 && e.msg === 'RECEIVER TOO FAR' && tooFarAt80 === null) tooFarAt80 = +T0.carrierPos.toFixed(1);
+        const st2 = e.relayState();
+        if (st2.teams[0].exchanges > before) { firstOkAt = +T0.carrierPos.toFixed(1); break; }
+      }
+      if (st.leg >= 1) { fumbled = e.msg === 'FUMBLED EXCHANGE'; break; }
+      if (e.done) break;
+    }
+    return { firstOkAt, fumbled, tooFarAt80 };
+  });
+  if (!out) return 'relay drive failed';
+  if (out.fumbled) return 'the leg-1 exchange FUMBLED - the carrier ran out of the zone without the pass button ever working';
+  if (out.firstOkAt === null) return 'the PASS button never exchanged in the zone';
+  if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
+  return true;
+}
+}
 ];

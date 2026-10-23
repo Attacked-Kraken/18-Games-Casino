@@ -790,6 +790,7 @@ a.speed += (target*(1+0.03*Math.sin(a.el*0.7))-a.speed)*Math.min(1,3*dt);
 a.pos+=a.speed*dt; a.phase+=a.speed*dt*1.9;
 }
 let ENG=null;
+let TESTLINK=null; // JOB G-171: the event a ?test= link opened (null in normal play)
 /* JOB J42 (owner) + STORE-READY "Developer skip": the Skip level button exists ONLY when
    the address carries dev=1 (the Game Development page opens games with ?dev=1). */
 const DEV_SKIP=/[?&]dev=1(?:&|$)/.test(location.search||'');
@@ -918,7 +919,10 @@ this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
 this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
 this.done=true; this.finishT=0; AudioSys.cheer(1.6);
-this.place=1+this.ai.filter(a=>a.tTarget<this.time).length;
+// G-193 (tester G-183): finishing order = who crossed first (REALITY) - keep the
+// crossing-aware count used all race; a rival still short of the line is never
+// credited ahead on his private target time for the banked early laps.
+this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 }
 },
 hud(){
@@ -1046,7 +1050,7 @@ if(!rcv.auto && T.carrier.pos>=LEG-36) rcv.auto=true;
 if(!rcv.auto) return;
 const inc=T.carrier.speed, gap=rcv.pos-T.carrier.pos;
 let tgt=inc*0.92;
-if(gap>6) tgt=Math.min(tgt, inc*0.55);
+if(gap>6) tgt=Math.min(tgt, inc*0.30); // G-193 r1: check up harder while far ahead - at 0.55 the gap was still 7.6-8.7m at the zone and PASS refused ('RECEIVER TOO FAR') for most of the zone
 else if(gap<2 && inc>1) tgt=Math.max(tgt, inc);
 rcv.speed+=clamp(tgt-rcv.speed, -7*dt, 5.5*dt);
 if(rcv.speed<0) rcv.speed=0;
@@ -1062,7 +1066,7 @@ sp.pos=LEG-18; sp.speed=0; sp.auto=false; sp.stamina=100; T.receiver=sp; T.spent
 }
 function passBaton(T, clean){
 const rcv=T.receiver, old=T.carrier;
-if(!clean) rcv.speed=Math.min(rcv.speed, 3.2);
+if(!clean) rcv.speed=Math.min(rcv.speed, 6.0); // G-193 r1: a fumble costs time, it does not strand the next carrier (was 3.2 - the crawl in the owner's screenshot)
 T.spent=old; T.spentLeg=T.leg; T.passFrom=old; T.passT=0.35; T.exchanges++;
 T.carrier=rcv; rcv.pos-=LEG; rcv.auto=false; T.receiver=null; T.leg++; T.legEl=1;
 return old;
@@ -1083,7 +1087,7 @@ if(this.done||this.phase!=='run'||this.leg>=3) return;
 const T=this.teams[0], rcv=T.receiver;
 if(!rcv||this.r.pos<LEG-20) return;
 const gap=rcv.pos-this.r.pos;
-if(gap>6){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; }
+if(gap>8){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; } // G-193 r1: reach 8m (was 6) - the zone-entry gap the run-up leaves
 const q=clamp(1-Math.abs(this.r.pos-(LEG-10))/10, 0, 1);
 this.passed=true; this.passQ=q;
 rcv.speed=Math.min(10.6, Math.max(rcv.speed, 4+q*5));
@@ -2122,15 +2126,15 @@ const HC=(this._hurdleH||1.07)/2;
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(80,list.length);
-const QT=new THREE.Quaternion(), AX=new THREE.Vector3(0,0,1), FW=new THREE.Vector3();
+const QT=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), FW=new THREE.Vector3();
 for(let k=0;k<n;k++){
 const h=list[k];
 E.set(0,h.heading||0,0); Q.setFromEuler(E);
 // owner 2026-10-17: a hurdle you hit goes DOWN - it tips forward (away from the runner) and lies on the track
 const f=clamp(h.fall||0,0,1), ang=f*1.42;
 QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
-FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
-P.set(h.x+FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
+FW.set(0,0,1).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
+P.set(h.x-FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z-FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -2645,8 +2649,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 }
 
 const hWorld=[]; ENG.hurdles.forEach(h=>{ for(let l=0;l<8;l++){ hWorld.push(straight
-? {x:h.x-ev.dist, z:straightZ(l), heading:0}
-: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })()); } });
+? {x:h.x-ev.dist, z:straightZ(l), heading:-Math.PI/2}
+: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tx,-lp.tz)}; })()); } });
 // G-39/G-43 fix (owner): a hurdle stands in EVERY lane, not only the player's - the rivals jump real hurdles too (the player's own lane is index k*8+3)
 // G-122 round 1 (owner): each hurdles race stands at its REAL height (REALITY.md) - 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m
 W3D.hurdleHeight({'100h':0.838,'110h':1.067,'300h':0.914,'400h':0.914}[ev.id]||1.067);
@@ -2670,7 +2674,15 @@ if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,ev.dist),0.15,straightZ
 }else{
 const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,airM);
 ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,(a.airY||0)*0.011));
-followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
+if(TESTLINK && (ENG.phase==='marks'||ENG.phase==='set') && hWorld.length>=8){
+// JOB G-171: test-link opening shot - hold the camera close in front of the first
+// hurdle row (every lane in frame) through the countdown so the hurdles can be
+// checked in seconds; at the gun the normal follow camera takes over.
+let cx=0,cz=0; for(let i2=0;i2<8;i2++){ cx+=hWorld[i2].x; cz+=hWorld[i2].z; } cx/=8; cz/=8;
+const hp=lanePoint(visS(3,ENG.hurdles[0].x,ev.dist),laneOff(3));
+const cc=clampCamXZ(cx-hp.tx*6,cz-hp.tz*6);
+W3D.camTo(cc[0],1.7,cc[1],cx,0.9,cz,dt,10); W3D.camApply();
+} else followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
 overlayPhaseText(ENG);
@@ -3641,6 +3653,14 @@ else if(e.code==='Space'){ e.preventDefault(); ENG.action(); }
 });
 window.addEventListener('contextmenu',e=>{ if(document.body.classList.contains('playing')) e.preventDefault(); });
 showScreen('menu');
+// JOB G-171 (Mac): a test link - apextrackfield.html?test=<event id> (any id in
+// EVENTS, e.g. ?test=60h) opens that event in Free Play and starts it at once:
+// no menu, no card, no story (the menu never paints - same tick). In a hurdles
+// event the countdown camera holds a close shot of the first hurdle row.
+try{
+const tev=EV_BY_ID[new URLSearchParams(location.search).get('test')];
+if(tev){ TESTLINK=tev; G.mode='free'; G.singleEv=tev; showScreen(null); startPlay(tev, G.freeRivals||(G.freeRivals=freeRivals())); }
+}catch(err){}
 requestAnimationFrame(frame);
 }
 let lastT=0, acc=0;
