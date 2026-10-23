@@ -76,3 +76,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (5:40 PM)
 - A one-letter "MODE: g" in a tester order was a Mac typo, not a real mode. Rule: if a MODE name is not one the game has (see the game modes list), play ALL real modes, list them as "MODES:" in the report, and say in one HELP line which name looked wrong.
+
+## 2026-10-22 help desk (7:10 PM)
+- Finished tester round branches piled up unpushed because push approval taps never reached detached runs. Rule: push every finished round as a TEST PR the same day; drop only rounds already reported on main.
