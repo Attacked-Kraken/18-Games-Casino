@@ -1603,7 +1603,7 @@ function stepCamera(dt){
     leadCur+=clamp(leadWant-leadCur,-38*dt,38*dt); // G-72: the lead swings at a capped rate - on a save the puck reverses, the camera must not rewind with it
     const px=clamp((puck.pos.x+leadCur)*0.55,-64,64), pz=puck.pos.z*0.30;
     const deep=Math.min(1,Math.abs(puck.pos.x)/95);
-    const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
+    const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
