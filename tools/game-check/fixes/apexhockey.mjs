@@ -1971,5 +1971,109 @@ export default [
     if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
     return true;
   }
- }
+ },
+{
+  id: 'never-g-217-p1',
+  ask: 'NEVER (G-217, the G-170 line): skate blades stay DOWN flat on the ice - the planted blade of a standing player lies flat, end-to-end pitch under 5.5 cm; the away boots were still toe-down at the 0.8 rad counter-pitch (signed medians -4.8..-6.2 cm, robot median 6.6) until they took the same 1.0 rad as the home boots',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    // Stage the owner's scene: a live match with every skater standing still
+    // (the faceoff picture) - reach play, then freeze the AI like the icing
+    // test does and let the stance settle into idle.
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'menu') await clickId('playBtn');
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
+    const freezeFn = () => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 1; g.clockT = 120;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+      if (!window.__standSpots) window.__standSpots = hk.skaters.map((s) => [s.pos.x, s.pos.z]);
+      hk.skaters.forEach((s, i) => { const sp = window.__standSpots[i]; s.pos.set(sp[0], 0.1, sp[1]); s.vel.set(0, 0, 0); s.thinkT = 9999; if (s.target) s.target.set(sp[0], 0, sp[1]); }); // target pinned too: thinkT alone leaves the last steering target live and the skater lunges at it between samples
+    };
+    await h.eval(freezeFn).catch(() => {});
+    await h.wait(1600);
+    const sampleFn = () => {
+      const hk = window.__hk; const out = [];
+      for (const s of hk.skaters) {
+        if (!s.kit || !s._blade || s.goalie) { out.push(null); continue; } // goalies stand splayed by design and have their own blade test - this one judges the skaters in the owner screenshot
+        const stl = s.kit.parts.steel; const v = new (hk.puck.mesh.position.constructor)();
+        const per = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of s._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + s.athWrap.position.y, v.z]); } // rig frame, like snapSkatesToIce: getVertexPosition is already world-aligned - matrixWorld would double-transform
+          let cx = 0, cz = 0; pts.forEach(p => { cx += p[0]; cz += p[2]; }); cx /= pts.length; cz /= pts.length;
+          let sxx = 0, szz = 0, sxz = 0; pts.forEach(p => { const dx = p[0] - cx, dz = p[2] - cz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; });
+          const th = 0.5 * Math.atan2(2 * sxz, sxx - szz); let ax = Math.cos(th), az = Math.sin(th); if (ax * Math.cos(s.facing) + az * Math.sin(s.facing) < 0) { ax = -ax; az = -az; } // G-217: orient along the facing so the sign reads toe-down (-) vs toe-up (+)
+          const F = [], B = []; let minAll = 1e9;
+          pts.forEach(p => { const t = (p[0] - cx) * ax + (p[2] - cz) * az; if (p[1] < minAll) minAll = p[1]; (t >= 0 ? F : B).push(p[1]); });
+          const p15 = (arr) => { const a = arr.slice().sort((x, y) => x - y); return a[Math.floor(a.length * 0.15)]; };
+          per.push({ pitch: (p15(F) - p15(B)) * 100 / 3.26, lift: minAll * 100 / 3.26 });
+        }
+        const planted = per[0].lift <= per[1].lift ? per[0] : per[1];
+        out.push(+planted.pitch.toFixed(1));
+      }
+      return out;
+    };
+    const samples = [];
+    for (let i = 0; i < 10; i++) { await h.eval(freezeFn).catch(() => {}); const r = await h.eval(sampleFn).catch(() => null); if (r) samples.push(r); await h.wait(300); }
+    // Second scene, independently settled: one frozen scene can flatter a pitched boot (the stance
+    // state differs per capture and the 0.8 rad build passed single scenes by luck while the robot
+    // read 6.6 cm) - thaw the skaters, let them skate, re-freeze at new spots and pool the medians.
+    await h.eval(() => { const hk = window.__hk; hk.skaters.forEach((s) => { s.thinkT = 0.05; if (s.target) s.target.set(s.pos.x + Math.cos(s.facing) * 30, 0, s.pos.z + Math.sin(s.facing) * 30); }); }).catch(() => {});
+    await h.wait(1800);
+    await h.eval(() => { delete window.__standSpots; }).catch(() => {});
+    for (let i = 0; i < 10; i++) { await h.eval(freezeFn).catch(() => {}); const r = await h.eval(sampleFn).catch(() => null); if (r) samples.push(r); await h.wait(300); }
+    if (samples.length < 12) return 'could not sample the standing skaters';
+    const worst = [];
+    for (let si = 0; si < 12; si++) {
+      const vals = samples.map((r) => r[si]).filter((x) => typeof x === 'number').sort((a, b) => a - b);
+      if (!vals.length) continue;
+      worst.push(vals[Math.floor(vals.length / 2)]);
+    }
+    if (!worst.length) return 'no skater could be measured';
+    const bad = worst.filter((x) => Math.abs(x) > 5.5);
+    if (bad.length) return 'a standing blade is pitched, not flat on the ice: median end-to-end pitch ' + bad.map((x) => Math.abs(x).toFixed(1) + ' cm').join(', ') + ' on ' + bad.length + ' skater(s) - blades must stay down flat like the owner screenshot demands (pitched blades read up to 8.5 cm on the shipped game)';
+    // Group centre: single scenes sway skater to skater, but a whole team's boots share one mount -
+    // pooled over both scenes, the away signed centre sat at -3.5..-5 cm (toe-down) on the 0.8 rad
+    // build and at ~0 once the away counter-pitch matched home's 1.0. Home is the control group.
+    const teams = await h.eval(() => window.__hk.skaters.map((s) => s.goalie ? 'G' : s.team)).catch(() => []);
+    const pool = (t) => { const v = []; samples.forEach((r) => { r.forEach((x, si) => { if (teams[si] === t && typeof x === 'number') v.push(x); }); }); return v.sort((a, b) => a - b); };
+    const med = (v) => v.length ? v[Math.floor(v.length / 2)] : 0;
+    const awayC = med(pool('away')), homeC = med(pool('home'));
+    if (Math.abs(homeC) > 3.5) return 'the home control group reads a signed centre of ' + homeC.toFixed(1) + ' cm - the measurement itself is suspect this run';
+    if (awayC - homeC < -2.25) return 'the away blades are still pitched toe-down as a group: signed centre ' + awayC.toFixed(1) + ' cm vs the home control ' + homeC.toFixed(1) + ' cm over ' + pool('away').length + ' pooled samples - the away boots need the same counter-pitch as home';
+    if (awayC - homeC > 3.0) return 'the away blades are over-corrected toe-up as a group: signed centre +' + awayC.toFixed(1) + ' cm vs the home control ' + homeC.toFixed(1) + ' cm';
+    return true;
+  }},
+{
+  id: 'play-joystick-starts-left',
+  ask: 'G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play' || st === 'faceoff') break;
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      await h.wait(600);
+    }
+    const st = await state();
+    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the joystick (state ' + st + ')';
+    try {
+      const land = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cx: r.x + r.width / 2, w: innerWidth }; });
+      if (!(land.cx < land.w / 2)) return 'in landscape the joystick centre sits at ' + Math.round(land.cx) + ' of ' + land.w + ' across - it must be in the left half of the screen';
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const port = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cy: r.y + r.height / 2, h: innerHeight }; });
+      if (!(port.cy < port.h / 2)) return 'on a portrait-held phone the joystick lands on the player right side when a match opens (its centre ' + Math.round(port.cy) + ' of ' + port.h + ' down the portrait screen becomes the right half once the stage rotates for play) - it must start and stay on the left';
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  },
+},
 ];
