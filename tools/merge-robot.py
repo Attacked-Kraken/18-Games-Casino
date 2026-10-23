@@ -119,6 +119,27 @@ def settle_pr(n):
     return full
 
 
+def approve_waiting(open_prs):
+    """Oct 23 2026 live test (PRs #1279/#1280): when the robot merged main into a PR branch, GitHub started that PR's
+    'Game check (PR)' / 'Asset check' runs in state action_required (a bot pushed - waits for a human to press
+    'Approve and run'). Those runs leave the required check 'check' EXPECTED, so the PR stayed 'blocked' for ever even though the
+    robot's own re-check was green. Approve them here. ONLY runs of OUR repo's own open pull-request branches (never a fork)."""
+    branches = {pr["head"]["ref"] for pr in open_prs if pr["head"].get("repo") and pr["head"]["repo"]["full_name"] == REPO}
+    waiting = (gh("repos/%s/actions/runs?status=action_required&per_page=30" % REPO) or {}).get("workflow_runs", [])
+    done = 0
+    for r in waiting:
+        if r.get("event") != "pull_request" or r.get("head_branch") not in branches:
+            continue
+        if (r.get("head_repository") or {}).get("full_name") != REPO:
+            continue
+        if gh("repos/%s/actions/runs/%d/approve" % (REPO, r["id"]), method="POST") is not None:
+            done += 1
+            print("::notice title=Merge robot::approved the waiting run %s (%s) on %s" % (r["id"], r.get("name"), r.get("head_branch")))
+        else:
+            print("::warning title=Merge robot::could not approve the waiting run %s (%s) on %s" % (r["id"], r.get("name"), r.get("head_branch")))
+    return done
+
+
 SUMMARY = []
 
 
@@ -143,7 +164,13 @@ def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
     revisit, looked = False, 0   # revisit = some PR still needs the robot to look again soon
-    for pr in gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []:
+    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []
+    try:
+        if approve_waiting(open_prs):
+            revisit = True      # their check runs now; look again when it finishes
+    except Exception as e:
+        print("::warning title=Merge robot::approving waiting runs failed: %s" % e)
+    for pr in open_prs:
         n, title = pr["number"], pr.get("title", "")
         made = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
         too_old = (now - made).total_seconds() > MAX_AGE_H * 3600
