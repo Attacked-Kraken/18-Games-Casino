@@ -1,7 +1,7 @@
 # Look board — Exotic Racer Club (`apexracer.html`)
 
 ## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 22, 2026, after G-206; keep current per STUDIO-STANDARD 9.7)
-- Menu / turntable: menu home + showroom orbit (toMenu) L2120 - menu refresh (refreshMenu) L2113 - turntable spin + garage camera (updateGarage) L2328 - frame loop L1747
+- Menu / turntable: menu home + showroom orbit (toMenu) L2120 - menu refresh (refreshMenu) L2113 - turntable spin + garage camera (updateGarage) L2328 - frame loop L2351
 - Garage: openGarage L2200 - garage cards and buying (renderGarage) L2210 - the shown car (setGarageCar) L1268
 - Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L668 - computer-car paints stay bright (brightPaint) L560
 - Car building: name wrap (addNameWrap) L979 - real-model car builder (makeGlbCar) L1085 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1174
