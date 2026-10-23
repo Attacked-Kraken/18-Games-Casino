@@ -4,7 +4,7 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1150 lines)
+## WHERE THINGS ARE — `apexflight.html` (1153 lines)
 - Menus / HTML / CSS (menu + friend overlays, HUD DOM, slim throttle bar CSS ~39): 1–152
 - Imports, helpers, constants, state (shared controls import at 156): 153–185
 - Renderer, scene, venue (runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 186–468
@@ -16,7 +16,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Physics (step ~762; lift/stall, airbrake in the forces block): 759–875
 - Camera: 876–904 · HUD update (off-runway reason re-assert): 905–946 · Music (procedural WebAudio): 947–1063
 - Test hooks (`__flight` ~1058, `__reality` ~1070): 1058–1104
-- Main loop (kit axes merge ~1113; ?test= owner-check hook ~1138): 1105–1150
+- Main loop (kit axes merge ~1113; ?test= owner-check hook ~1138): 1105–1153
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
