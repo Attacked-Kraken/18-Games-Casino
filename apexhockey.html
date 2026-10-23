@@ -1422,7 +1422,7 @@ function stepPuck(dt){
     puck.deadT=(puck.deadT||0)+dt;
     let nd=1e9; for(const o of skaters){ if(o.goalie||o.inBox) continue; const dd=(o.pos.x-puck.pos.x)**2+(o.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
     nd=Math.sqrt(nd);
-    if(puck._deadBest==null) puck._deadBest=nd;
+    if(puck._deadBest==null||nd>puck._deadBest+30) puck._deadBest=nd; // a far jump re-baselines the episode (a carried or reset puck must not poison the next loose one with a stale near mark)
     else if(nd<puck._deadBest-1){ puck._deadBest=nd; if(puck.deadT>1.5) puck.deadT=1.5; }
   } else { puck.deadT=0; puck._deadBest=null; }
   const _ps0=puck.vel.length();
