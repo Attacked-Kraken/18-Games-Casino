@@ -13,7 +13,7 @@ import re
 import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
-MAX_AGE_H = 12
+MAX_AGE_H = 72   # Oct 23 2026: 12 h hid dirty TEST PR #1200 for 18 h (analyst); only truly old PRs are left alone
 OK = {"success", "skipped", "neutral"}
 # merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
 FOLLOW = [("sound-robot.yml", ("sounds/recipes/", "sounds/rejects/", "tools/sound-robot.mjs", "tools/sound-themes.mjs", "beatmachine.html")),
@@ -140,6 +140,47 @@ def approve_waiting(open_prs):
     return done
 
 
+def restart_cancelled(pr):
+    """Owner Oct 23 2026 1:38 PM (PR #1269: its Racer play job was cancelled by GitHub, the check then failed 'could not
+    play it', the status comment kept saying RUNNING, and the PR sat blocked until a Claude restarted it by hand):
+    when a pull request's NEWEST 'Game check (PR)' run on its newest commit was CANCELLED and no newer run exists, the
+    robot re-runs it ONCE by itself and rewrites the stale status comment to 'cancelled, restarting'. A re-run replaces the
+    old attempt in place (a second run next to it would leave the old failed 'check' behind, and GitHub's ruleset still
+    counts that one). Once per run: a marker comment with the run id. Returns True when it restarted a run."""
+    n, sha, branch = pr["number"], pr["head"]["sha"], pr["head"]["ref"]
+    runs = (gh("repos/%s/actions/runs?head_sha=%s&per_page=30" % (REPO, sha)) or {}).get("workflow_runs", [])
+    mine = [r for r in runs if r.get("name") == "Game check (PR)"]
+    if not mine:
+        return False
+    newest = max(mine, key=lambda r: (r.get("created_at") or "", r.get("run_attempt") or 0))
+    if newest.get("status") != "completed" or newest.get("conclusion") != "cancelled":
+        return False                      # still running, finished, or a newer run already replaced it
+    marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], newest["id"])
+    comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
+    if any(marker in (c.get("body") or "") for c in comments):
+        return False                      # already restarted this one once - a second cancel is left for a human to look at
+    when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
+    how = "re-ran it"
+    if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
+        if gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch}) is None:
+            print("::warning title=Merge robot::#%d: the check run %s was cancelled and could not be restarted" % (n, newest["id"]))
+            return False
+        how = "started a new run"
+    for c in comments:                    # the stale 'RUNNING' comment must not keep lying
+        if (c.get("body") or "").startswith("<!-- check-status -->"):
+            gh("repos/%s/issues/comments/%d" % (REPO, c["id"]), method="PATCH", fields={"body":
+               "<!-- check-status -->\n## \U0001F916 Check status: \U0001F7E1 CANCELLED - restarting\n\n"
+               "GitHub cancelled the robot's check run (this is not a problem with this pull request). "
+               "The merge robot %s at %s UTC; this comment is rewritten when the new run starts.\n\n"
+               "_Updated %s UTC by the merge robot._" % (how, when, when)})
+            break
+    gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body":
+       "%s\n\U0001F916 Merge robot: the check run %s on commit %s was CANCELLED, so it %s at %s UTC (once; no human needed)."
+       % (marker, newest["id"], sha[:7], how, when)})
+    print("::notice title=Merge robot::#%d: the check run %s was cancelled - %s at %s UTC" % (n, newest["id"], how, when))
+    return True
+
+
 SUMMARY = []
 
 
@@ -181,7 +222,10 @@ def main():
             if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
                 continue
         low = title.lower()
-        if pr.get("draft") or any(w in low for w in ("hold", "wip", "draft", "do not merge")) or \
+        # Oct 23 2026 6:05 PM: window 9's "TEST G-231: DRAFT checklist apexflight" (#1293) sat green 4.5 h - the word 'draft' ANYWHERE in
+        # the title counted as 'do not merge' (it means a first-draft checklist). Hold only on GitHub's draft flag, a 'hold' label,
+        # or a title that STARTS with WIP / DRAFT / HOLD / [..] or says 'do not merge'.
+        if pr.get("draft") or re.match(r"\s*\[?\s*(wip|draft|hold)\b", low) or "do not merge" in low or \
                 any(l.get("name", "").lower() == "hold" for l in pr.get("labels", [])):
             say("#%d skipped: draft/hold" % n); continue
         if pr["head"]["repo"] is None or pr["head"]["repo"]["full_name"] != REPO:
@@ -199,10 +243,13 @@ def main():
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
             revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
-        if full.get("mergeable") is not True:
-            if full.get("mergeable") is None:
-                revisit = True  # GitHub still hasn't answered - ask again in a few minutes
-            say("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is False:
+            say("#%d skipped: not mergeable (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is None:
+            # Oct 23 2026 5:17 PM (window 9 #1293 green + clean, open 3 h 40 min): while main moves every few minutes GitHub can leave
+            # 'mergeable' unworked-out for HOURS, and the robot skipped such PRs on every round. The merge call itself is the real test:
+            # GitHub refuses it (405) if the PR really conflicts. So a green PR with an unknown state is TRIED, not skipped.
+            print("::notice title=Merge robot::#%d: GitHub has not worked out 'mergeable' - trying the merge anyway if its checks are green" % n)
         # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
         # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
         try:
@@ -210,6 +257,16 @@ def main():
             behind = int(cmp.get("behind_by") or 0)
         except Exception:
             behind = 0
+        if behind > 0:
+            # only when main's newer commits touch a file this PR changes (a notes / tests / checklist PR behind main on OTHER files
+            # merges as it is - updating it re-ran its 10-min check, main moved again, and it never merged: #1293, #1281, #1309)
+            try:
+                mfiles = {f["filename"] for f in ((gh("repos/%s/compare/%s...main" % (REPO, pr["head"]["sha"])) or {}).get("files") or [])}
+            except Exception:
+                mfiles = None
+            if mfiles is not None and not (mfiles & {f["filename"] for f in files}):
+                print("#%d is %d behind main but main's newer commits touch none of its files - merging as it is" % (n, behind))
+                behind = 0
         if behind > 0:
             res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
             if res is not None:
@@ -219,6 +276,12 @@ def main():
                 print("#%d: behind main by %d but could not update the branch" % (n, behind))
             revisit = True
             continue
+        try:
+            if restart_cancelled(pr):
+                revisit = True
+                say("#%d: its cancelled check was restarted by the robot" % n); continue
+        except Exception as e:
+            print("::warning title=Merge robot::#%d: restarting a cancelled check failed: %s" % (n, e))
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
         for r in runs:                       # a re-run leaves the old run behind: only the newest of each check counts
@@ -237,6 +300,9 @@ def main():
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+        if not (res and res.get("merged")):
+            revisit = True
+            print("::warning title=Merge robot::#%d: green but GitHub refused the merge (%s) - looking again next round" % (n, (res or {}).get("message", "no answer")))
         if res and res.get("merged"):
             merged.append(n)
             for wf, starts in FOLLOW:

@@ -596,6 +596,35 @@ export default [
     },
   },
   {
+    id: 'play-engine-kit',
+    ask: 'G-240 (owner): the engine sound is the supercar kit in sounds/engines/supercar/ - idle + accel loops crossfaded by throttle, shift and backfire one-shots, tire squeal - decoded as buffers, and every kit file is in the repo',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const files = ['idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_1', 'backfire_2', 'backfire_3'];
+      for (const f of files) if (!fs.existsSync(path.join(repoRoot, 'sounds/engines/supercar/supercar_' + f + '.mp3'))) return 'kit file missing from the repo: supercar_' + f + '.mp3';
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the game code does not use the supercar engine kit (missing ' + n + ')';
+        return true;
+      }, ['engines/supercar', 'idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_']);
+    },
+  },
+  {
+    id: 'play-music-buffers',
+    ask: 'Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (src.includes('createMediaElementSource')) return 'the music still plays through media elements (the static/skipping pipeline)';
+      if (!src.includes('MUS.bufs')) return 'the music buffer store is gone';
+      if (!src.includes('s.loop = true')) return 'the music layers no longer loop as buffer sources';
+      for (const f of ['menu', 'gameplay_low', 'gameplay_mid', 'gameplay_high']) if (!fs.existsSync(path.join(repoRoot, 'sounds/pack/music/sports_arena/sports_arena_' + f + '.mp3'))) return 'missing music file: ' + f;
+      return true;
+    },
+  },
+  {
     id: 'play-reality-go',
     ask: 'G-137: the REALITY robot can drive the car - go(true) really moves the player (over 0.3 m between samples)',
     async test(page, h) {
@@ -1033,6 +1062,25 @@ export default [
         if (out.cars < 10) return 'only ' + out.cars + ' computer cars censused - too few to prove the field';
         if (out.worst < -0.15) return 'a computer car rides ' + out.worst + ' m under the road while driving (place index ' + ni + ') - an invisible car';
       }
+      return true;
+    },
+  },
+  {
+    id: 'never-g-207-p1',
+    ask: 'G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); return true; });
+      let s0 = null;
+      for (let i = 0; i < 40 && !s0; i++) { await h.wait(500); s0 = await h.eval(() => { const R = window.__erc.R; return R && R.P ? R.signTxt : null; }); }
+      if (s0 !== 'START') return 'on lap 1 the finish-line sign says ' + JSON.stringify(s0) + ', not START';
+      const cross = async (want) => {
+        await h.eval(() => { const E = window.__erc, R = E.R, T = R.T, P = R.P; const o = { x: 0, z: 0, h: 0 }; T.at(T.N - 2, 0, o); P.x = o.x; P.z = o.z; P.h = o.h; P.idx = T.N - 2; P.prog = Math.floor(P.prog / T.N) * T.N + (T.N - 2); P.vx = P.vz = 0; return true; });
+        return h.eval((w) => { const E = window.__erc, R = E.R; E.K.gas = 1; for (let i = 0; i < 4000 && R.signTxt !== w; i++) E.step(1, 1 / 30); E.K.gas = 0; return R.signTxt; }, want);
+      };
+      const s1 = await cross('1/3');
+      if (s1 !== '1/3') return 'going into lap 2 the sign says ' + JSON.stringify(s1) + ', not 1/3';
+      const s2 = await cross('Finish');
+      if (s2 !== 'Finish') return 'on the last lap the sign says ' + JSON.stringify(s2) + ', not Finish';
       return true;
     },
   },

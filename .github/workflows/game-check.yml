@@ -86,7 +86,12 @@ jobs:
   play:
     needs: plan
     if: needs.plan.outputs.games != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # owner Oct 23 2026 6:19 PM: the browser install failed 4 tries even after the apt fix (#1369's own run) - play jobs run INSIDE
+    # Microsoft's official Playwright image: Chromium + WebKit + their system libraries are already in it, nothing to download.
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
     timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
     strategy:
       fail-fast: false
@@ -95,16 +100,15 @@ jobs:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install the test browser
+      - name: Test browser (already in the image)
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          npx playwright install --with-deps chromium webkit
+          ls /ms-playwright
       - name: Play ${{ matrix.game }}
         run: |
-          python3 -m http.server 8811 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 &
           sleep 2
           if [ "${{ matrix.game }}" = "models" ]; then
             ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
@@ -116,7 +120,7 @@ jobs:
         continue-on-error: true
         run: |
           [ -f game-check-out/results.json ] || exit 0
-          python3 -m http.server 8812 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8812 >/dev/null 2>&1 &
           sleep 2
           ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
       - uses: actions/upload-artifact@v4

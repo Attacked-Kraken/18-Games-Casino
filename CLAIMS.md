@@ -166,12 +166,25 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 ## Board
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-239 | window 10 | jobs/G-239.md, CLAIMS.md | test/g-239-apextrackfield |
+| G-246 | window 10 | jobs/G-246.md, CLAIMS.md | test/g-246-apextrackfield |
+| G-243 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-243.md | build/g-243-apexflight |
+| G-245 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-245 | window 10 | checklists/apextrackfield.md, jobs/G-245.md, CLAIMS.md | test/g-245-apextrackfield |
+| G-238 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-238.md | build/g-238-apexflight |
+| G-238 | window 7 | jobs/G-238.md, CLAIMS.md | test/g-238-apexbaseball |
+| G-237 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-237.md, CLAIMS.md | build/g-237-apexbaseball |
+| G-232 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight |
+| G-141 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-141.md | test/g-141-apextrackfield |
+| G-145 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-145.md | test/g-145-apextrackfield |
 | G-229 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-229.md, CLAIMS.md | test/g-229-apextrackfield |
 | G-226 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-226.md, CLAIMS.md | test/g-226-apextrackfield |
 | G-222 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-222.md, CLAIMS.md | build/g-222-apexbaseball |
+| G-227 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-227.md, CLAIMS.md | test/g-227-apextrackfield |
 | G-187 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-187.md, CLAIMS.md | test/g-187-apextrackfield |
 | G-183 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/G-183.md, CLAIMS.md | test/g-183-apextrackfield |
 | G-232 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-232.md, CLAIMS.md | test/g-232-apexbaseball |
+| G-184 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-184.md, CLAIMS.md | test/g-184-apexbaseball |
 | G-229 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/G-229.md, CLAIMS.md | test/g-229-apexbaseball |
 | G-201 | window 7 | jobs/G-201.md, CLAIMS.md | test/g-201-apexbaseball |
 | G-196 | window 7 | jobs/G-196.md, CLAIMS.md | test/g-196-apexbaseball |
@@ -210,7 +223,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-171 | window 4 | - | renamed G-172, G-173, then G-174 by the Mac (2026-10-22) - final report jobs/G-174.md |
 | G-173 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-173.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test=<event id> test link + hurdles countdown framing; play test play-test-link-starts-the-event |
 | G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test= test link; rounds 1-2 DONE PR #1181 (7aed11ab): hurdles face the runner (dot -1.00) + NEVER line + never-g-174-p1 |
-| G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot |
+| G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot | OWNER FIX 2026-10-23 CLAIMED (window 4): free play results return to the event menu + grid BACK at the top - build/g-193-freeplay-flow | OWNER FIX DONE 2026-10-23 (window 4): free-play flow - PR #1336 merged a6b32e11 |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
 | G-90 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-90.md | build/g-90-jet-controls |
@@ -228,6 +241,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-206 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-206.md | build/g-206-apexracer |
 | G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
+| G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->

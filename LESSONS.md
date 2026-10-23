@@ -17,6 +17,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a tool saved files as base64 / double-encoded UTF-8 → always send plain UTF-8 text.
 - all · the quick check cannot run in a Muse sandbox that blocks 127.0.0.1 → open the PR early; the PR robot + its one "🤖 Check status" comment IS the quick check.
 - all · MUSIC through hidden audio elements (G-80 -> Exotic Racer: constant static + skipping on the owner's phone; files were clean 192 kbps) → music is decoded ONCE into an AudioBuffer (decodeAudioData) and looped with a looping AudioBufferSourceNode on the game's own AudioContext clock, layers started at the same context time; NEVER <audio>/HTMLMediaElement + createMediaElementSource (own clock, drifts, garbles on every pause/resume and loop seam). Every sound already did it right - the music was the only thing on the bad path. Guard test: play-music-buffers (0 media elements created across menu -> race -> menu). Fixed in game PR #1269; owner's ears are the final proof.
+- all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
@@ -55,6 +56,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
 - apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
 
+- 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the misses were the runner's clock, later filed as known robot faults).
 ## 2026-10-22 help desk
 - A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
 - Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
@@ -104,3 +106,39 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - Test the real symptom, not a stand-in: a car that measured 0.00 m on the grid but sank 0.6 m mid-race passed every check. Your play test must reproduce what the owner saw (driving, mid-race), then pass.
 - The merge robot's "every 5 minutes" timer is NOT reliable (GitHub ran it every few hours), and a conflicted pull request never starts a check, so nothing wakes the robot for it. Since Oct 23 the robot wakes itself (heartbeat) while any pull request still needs a second look; if your PR sits conflicted or unmerged over 10 minutes, merge main into your branch yourself and say so in your next report.
 - Conflicted or "blocked" pull request that nothing merges (Oct 23): the merge robot now fixes it by itself (heartbeat wake, full checkout, built-in union merge, approves bot-started check runs). Read the PR's commits for a "merge robot" merge commit first; only if the robot failed twice, merge main into your branch yourself - and say why in your report. Never call it done before `merged: true`.
+
+## 2026-10-23 help desk
+- all · a tester branch re-filed a report file (jobs/G-NN.md) another window already merged under that number → a TEST PR whose report name already exists on main conflicts forever: take the next free job number for your own report, never reuse a merged one.
+- all · a superseded duplicate BUILD PR (same job, rebased copy) stays open and confuses the board → the builder writes "Supersedes #N" and closes the old one the same hour.
+
+## 2026-10-23 help desk
+- A notes PR (needs/window-N.md) goes "dirty" when main's copy of that file gained an ANSWERED line after you branched. Branch needs/ updates from fresh main, never reuse an old needs branch; if conflicted, a Claude re-files it.
+
+## Oct 23 2026 help desk
+- A PR whose check shows only guard and no Check status update is waiting on a run that never started; file the HELP line with the PR number and head, and a Claude merges main in to restart it. Do not wait hours.
+
+## 2026-10-23 help desk (3:36 PM)
+- A PR whose required `check` shows "expected" with no status: look at the PR HEAD first - if the head moved (main merged in), the new head runs its own check; read the Check status comment on the newest head before filing HELP.
+
+## 2026-10-23 help desk (4:10 PM)
+- An order with one CHANGED line per point may have a point that measures clean on today's build: file the other CHANGED lines, answer that point "YES - nothing to fix, measured clean" with the evidence in a NOTE line. Never invent a change to fill a line.
+
+## 2026-10-23 help desk
+- A play job that dies in ~4 min with "exit code 1" and NO test lines (check says "the robot could not play it") never reached a test: file the HELP line, the help desk re-runs it once; do not change game code for it. A second identical failure = HELP-VP: robot with both run links.
+
+## 2026-10-23 help desk (5 PM)
+- Two windows can end up with the same G-number (testers self-start rounds). Use the number the MAC typed; with none, take the next free jobs/G-NN.md on main right before filing; on a clash file HELP-VP naming both windows.
+- A needs/window-N.md PR that conflicts on a long-open branch: re-file the new lines on a fresh branch from main (prepend, keep every old line) and close the old PR as superseded.
+
+## 2026-10-23 help desk (5:20 PM)
+- A play job that dies in ~4.5 min with no test lines is usually the browser INSTALL step (apt lock / stall), not the game. Check the failed job's last lines; if it says 'Could not get lock' or 'Failed to install browsers', file ONE HELP-VP: robot line with the run link and do not push or rebuild - a push restarts the whole check.
+
+## 2026-10-23 help desk
+- A tester round that numbers itself with a G-number can overwrite or clash with a builder's jobs/G-NN.md and start a branch with no shared history (PR #1281, #1296): start every self-started round from a fresh branch off main and name the report T-<window>-<HHMM>, never G-NN.
+- A green TEST PR that sits unmerged for hours is usually (a) a conflict in a tests file where both sides appended (keep both sides) or (b) GitHub leaving mergeable unknown while main moves (merge robot fix: game PR #1351). Do not wait; file HELP-VP.
+
+## 2026-10-23 help desk (6:10 PM)
+- Tests/jobs/notes-only TEST PRs never need the owner's go-ahead: push them, the merge robot lands them. Waiting for a tap you do not need is the same as an idle window. A checklist item that measures OK is a tick + NO CHANGE report only.
+
+## 2026-10-23 help desk (Oct 23 06:14 PM)
+- A Muse token cannot re-run Actions jobs (403); a help-desk Claude can: ask with a HELP-VP line naming the PR and run id.

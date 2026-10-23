@@ -279,7 +279,8 @@ function addRuns(t,n){ ensureInn(t); G.score[t][G.inning-1]+=n; }
 
 /* ---------------- three.js setup ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference:'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, COARSE ? 1.5 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));   // G-222 fix round 1: the touch cap was 1.5 - on a DPR-3 phone the whole scene rendered at half resolution and read soft (owner screenshot)
+const ANISO = Math.min(4, (renderer.capabilities.getMaxAnisotropy && renderer.capabilities.getMaxAnisotropy()) || 1);   // G-222 fix round 1: ground textures at a glancing angle smear without anisotropy
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 if (isTouch) renderer.shadowMap.enabled = false;   // enforced: no shadow maps on touch
 else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
@@ -673,8 +674,17 @@ function attachAthlete(p, slotIdx){
       if (bones['hand_r']) bones['hand_r'].add(bg);
       p.batProp = bg;
     } else if (bones['hand_l']){                // fielders: glove on the left hand (0.35 m across, a real glove)
-      const gl = new THREE.Mesh(new THREE.SphereGeometry(0.19/kS,10,8), M(0x6a4423));
-      gl.scale.set(1,0.55,1.25); gl.position.set(-0.02,-0.16,0.06);
+      // G-222 fix round 1 (owner: 'the pitcher has a big brown thing on his arm'):
+      // the old glove was one smooth 0.48 m ellipsoid - a brown ball on the arm.
+      // A real mitt: a palm, a finger roll on top and a dark pocket, 0.34 m long.
+      const gl = new THREE.Group();
+      const palm = new THREE.Mesh(new THREE.SphereGeometry(0.145/kS,10,8), M(0x6a4423));
+      palm.scale.set(1.05,0.5,1.1); gl.add(palm);
+      const fingers = new THREE.Mesh(new THREE.SphereGeometry(0.105/kS,10,8), M(0x6a4423));
+      fingers.scale.set(1.2,0.45,0.75); fingers.position.set(0,0.055/kS,0.08/kS); fingers.rotation.x = -0.5; gl.add(fingers);
+      const pocket = new THREE.Mesh(new THREE.CircleGeometry(0.075/kS,10), M(0x4a2c12));
+      pocket.position.set(0,0.01/kS,0.152/kS); gl.add(pocket);
+      gl.position.set(-0.02,-0.16,0.06);
       bones['hand_l'].add(gl);
     }
     let u = null;
@@ -1006,16 +1016,19 @@ function calledPitch(){
 }
 function nextPitchSoon(ms=950){ setTimeout(()=>{ if(!G.over) nextPitch(); }, ms); }
 function onBall(){
+  if (G.phase==='flight') setPhase('call');   // G-237: the pitch is decided - the flight phase ends now, not after the 950 ms call beat (the tester clock times the flight phase)
   G.balls++;
   if (G.balls>=4){ onWalk(); } else { banner('BALL', countText()); nextPitchSoon(); }
 }
 function onStrike(how){
+  if (G.phase==='flight') setPhase('call');   // G-237: same - the flight phase ends at the decision
   if (how==='swinging' || how==='called'){
     G.strikes++;
     if (G.strikes>=3){ onStrikeout(); } else { banner('STRIKE', (how==='swinging'?'Swinging':'Called')+' · '+countText()); nextPitchSoon(); }
   }
 }
 function onFoul(){
+  if (G.phase==='flight') setPhase('call');   // G-237: same - the flight phase ends at the decision
   ball.visible = false; trail.visible=false;
   if (G.strikes<2){ G.strikes++; banner('FOUL BALL','Strike '+G.strikes, 1300); }
   else banner('FOUL BALL','count stays '+countText(), 1300);
@@ -1439,7 +1452,13 @@ function loop(){
   }
   // pitch flight
   if (flight.active && G.phase==='flight'){
-    flight.t += dt/flight.T;
+    // G-237: the pitch flies on its own clock - progress comes from the delivery
+    // stamp (flight.t0), not from frame steps: on a slow device the clamped frame
+    // dt stretched a 0.95 s fastball to 2-12 s of wall time, so the ball arrived
+    // seconds after the moment the swing was scored against and timed swings
+    // always whiffed (tester G-184). On a fast device this changes nothing.
+    if (flight.t0) flight.t = Math.max(flight.t, (performance.now() - flight.t0) / 1000 / flight.T);
+    else flight.t += dt/flight.T;
     const t = Math.min(flight.t, 1);
     const bp = ballPosAt(t);
     ball.position.set(bp[0],bp[1],bp[2]);
@@ -1597,7 +1616,7 @@ $('lockBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); l
 $('swingBtn').addEventListener('click', ()=>{ playerSwing(); });
 function playerSwing(){
   if (G.phase!=='flight' || !flight.active || flight.arrived) return;
-  const dt = (performance.now()-flight.t0)/1000 - flight.T;
+  const dt = (flight.t - 1) * flight.T;   // G-237: judge on the pitch's own game clock (flight.t), never the wall clock - on a slow device the wall runs seconds ahead of the ball, so a swing as the ball crossed the plate scored seconds late and always whiffed
   flight.arrived = true; flight.active = false;   // swing resolves now
   ball.visible = false; trail.visible=false;
   doSwing(dt);
@@ -1992,7 +2011,7 @@ function kitFieldOnPark(fieldMat, fieldMesh){
       og.drawImage(dc, 0, 0);
       pg.putImageData(im, 0, 0);
       og.drawImage(pc, 0, 0);
-      const t = new THREE.CanvasTexture(out);
+      const t = new THREE.CanvasTexture(out); t.anisotropy = ANISO;
       t.colorSpace = THREE.SRGBColorSpace;
       t.flipY = false;
       fieldMat.map = t; fieldMat.needsUpdate = true;
@@ -2065,7 +2084,7 @@ try {
         if (m.name === 'Field') kitFieldOnPark(m, o);
         if (m.name === 'Clay'){
           new THREE.TextureLoader().load('kit/ground/512/baseball_infield.png', t => {
-            t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = false;
+            t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.flipY = false; t.anisotropy = ANISO;
             m.color.set(0xffffff); m.map = t; m.needsUpdate = true;
           });
         }
@@ -2073,6 +2092,8 @@ try {
     });
     scene.add(root);
     _park.root = root; _park.loaded = true;
+    _park.aniso = ANISO;   // G-222 fix round 1: crisp ground at glancing angles
+    root.traverse(o => { if (o.isMesh && o.material && o.material.map) o.material.map.anisotropy = ANISO; });   // set before the park's first frame - no re-upload needed
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
     // G-151 (art director: the play picture is night-dark, the crowd reads empty;
@@ -2135,7 +2156,7 @@ window.__test = {
   get balls(){ return G.balls; },
   get strikes(){ return G.strikes; },
   get crowdCount(){ return _park.loaded ? _park.fans : _crowd.seats.length; },
-  get stadium(){ return { loaded: _park.loaded, fans: _park.fans, kitField: _park.kitField, kitFieldLive: !!(_park.kitTex && _park.fieldMesh && _park.fieldMesh.material && !Array.isArray(_park.fieldMesh.material) && _park.fieldMesh.material.map === _park.kitTex), night: _park.night }; },
+  get stadium(){ return { loaded: _park.loaded, aniso: _park.aniso || 0, fans: _park.fans, kitField: _park.kitField, kitFieldLive: !!(_park.kitTex && _park.fieldMesh && _park.fieldMesh.material && !Array.isArray(_park.fieldMesh.material) && _park.fieldMesh.material.map === _park.kitTex), night: _park.night }; },
   get kitAudio(){ return { crack: !!Mus.kit.crack, glove: !!Mus.kit.glove, cheer: !!Mus.kit.cheer, amb: !!Mus.kit.amb }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
   get input(){ return { aimX: aim.x, aimY: aim.y, dragging: aimPid !== null }; },
@@ -2177,6 +2198,18 @@ try {
       else if (G.phase === 'aim'){ const th = [...document.querySelectorAll('button')].find(b => /THROW/i.test(b.textContent)); if (th) th.click(); }
     }, 500);
     setTimeout(() => clearInterval(iv), 120000);
+  }
+  // G-237 owner check: ?test=batting opens straight into a bottom half with CPU
+  // pitches coming in - press SWING (or Space) as the ball reaches the plate.
+  if (new URLSearchParams(location.search).get('test') === 'batting'){
+    let batted = false;
+    const iv2 = setInterval(() => {
+      const so = document.getElementById('startOv');
+      if (so && so.style.display !== 'none'){ const b = document.getElementById('startBtn'); if (b) b.click(); return; }
+      if (!window.__test || !window.__test.stadium.loaded) return;
+      if (!batted && G.phase !== 'start'){ batted = true; G.half = 'bottom'; startCpuPitch(); try { renderHUD(); } catch (e) {} }
+    }, 500);
+    setTimeout(() => clearInterval(iv2), 120000);
   }
 } catch (e) {}
 </script>

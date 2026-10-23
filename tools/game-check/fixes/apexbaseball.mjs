@@ -711,6 +711,83 @@ export default [
     },
   },
   {
+    id: 'play-batting-timing-game-clock',
+    mode: 'batting',
+    ask: 'BUILD G-237: batting timing is scored on the pitch game clock, not the wall clock - a swing made as the ball crosses the plate contacts or fouls instead of always whiffing (G-184/G-237)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let swung = 0;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight' && batting && s.ball && s.ball.z >= -0.5) {
+          await click('swingBtn'); swung++;
+          await h.wait(700);
+          const a = await snap();
+          if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return 'swung with the ball at the plate (z=' + s.ball.z.toFixed(1) + ') and still got a clean swinging strike - timing is still scored on the wrong clock';
+          return true;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return swung ? true : 'never reached a swing at the plate in 29 s (game too slow to reach a bottom-half pitch at the plate)';
+    },
+  },
+  {
+    id: 'tester-batting-swing-wall-clock',
+    mode: 'batting',
+    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let flightStart = null, sawFlight = false;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight') {
+          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
+          if (batting && s.ball && s.ball.z >= -0.5) {
+            await click('swingBtn');
+            await h.wait(700);
+            const a = await snap();
+            if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return `swung with the ball at the plate (z=${s.ball.z.toFixed(1)} m) and still got '${a.msg}' - the swing is judged on the wall clock, not on the ball`;
+            return true;
+          }
+        } else if (flightStart !== null) {
+          const wall = (Date.now() - flightStart) / 1000;
+          flightStart = null;
+          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return sawFlight ? true : 'no pitch flight seen in 29 s, so the swing clock could not be checked';
+    },
+  },
+  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
@@ -878,7 +955,7 @@ export default [
       // start from a fresh state: tap through the start overlay until it hides,
       // then wait for the batter's reality hook and the rigged athletes
       let ready = false;
-      for (let i = 0; i < 60 && !ready; i++) {
+      for (let i = 0; i < 30 && !ready; i++) {
         const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
         if (st.hook) { ready = true; break; }
         if (st.menu) await page.touchscreen.tap(422, 195);
@@ -966,6 +1043,62 @@ export default [
     },
   },
   {
+    id: 'never-g-222-p1',
+    ask: 'NEVER (owner 2026-10-23, G-222 fix round 1): the field and players stay clear and recognizable in the pitching view (crisp rendering - texture anisotropy on the park), and the pitcher glove reads as a glove, never a big brown thing on his arm (a real mitt is ~0.32 m, not a 0.44 m smooth blob)',
+    test: async (page, h) => {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+      // the athlete queue fits the rigs a few per frame (G-08): wait until the
+      // pitcher's real rig (a skinned mesh) is actually on him before measuring
+      // his glove, so a slow attach cannot fake a missing glove.
+      let rigged = false;
+      for (let i = 0; i < 25 && !rigged; i++) {
+        rigged = await h.eval(() => { const R = window.__reality; if (!R || !R.others || !R.others[0]) return false; let n = 0; R.others[0].traverse(o => { if (o.isSkinnedMesh) n++; }); return n > 0; });
+        if (!rigged) await h.wait(400);
+      }
+      if (!rigged) return 'the pitcher rig never attached, so his glove could not be measured';
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const aniso = T.stadium && T.stadium.aniso;
+        if (!aniso || aniso < 4) return 'the park renders without texture anisotropy (aniso=' + aniso + ') - the field smears at the pitching camera glancing angle (owner: clear up players and field, my crisp camera view)';
+        const R = window.__reality; if (!R || !R.others || !R.others[0]) return '__reality pitcher missing';
+        // Measure the mitt in its parent space (the glove group's own axes):
+        // a world AABB inflates with the hand bone's pose rotation, but the
+        // mitt's true proportions are what the owner sees in the hand.
+        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; let found = false, parentScale = 1;
+        R.others[0].updateWorldMatrix(true, true);
+        R.others[0].traverse(o => {
+          if (!o.isMesh || !o.material || !o.material.color || !o.geometry) return;
+          // match the author's hex (material.color components are linear in
+          // three r152+, so compare getHexString(), not the raw components)
+          if (o.material.color.getHexString() !== '6a4423') return;
+          if (!found && o.parent) { const s = R.player.position.clone(); o.parent.getWorldScale(s); parentScale = s.x; }
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          const V = R.player.position.clone();
+          for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+            const v = V.set(x, y, z).applyMatrix4(o.matrix);
+            mn[0] = Math.min(mn[0], v.x); mn[1] = Math.min(mn[1], v.y); mn[2] = Math.min(mn[2], v.z);
+            mx[0] = Math.max(mx[0], v.x); mx[1] = Math.max(mx[1], v.y); mx[2] = Math.max(mx[2], v.z);
+          }
+          found = true;
+        });
+        if (!found) return 'no leather glove prop found on the pitcher at all';
+        const size = [0, 1, 2].map(i => (mx[i] - mn[i]) * parentScale * 0.9144);
+        const longest = Math.max(size[0], size[1], size[2]);
+        if (longest > 0.37) return 'the pitcher glove measures ' + longest.toFixed(2) + ' m long - a big brown thing on his arm (owner, G-222 fix round 1); a real mitt is about 0.32 m';
+        return true;
+      });
+    },
+  },
+  {
     id: 'never-g-167-p1',
     ask: 'NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture',
     test: async (page, h) => {
@@ -1035,35 +1168,45 @@ export default [
         else await h.wait(400);
       }
       if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
-
-      const r = await h.eval(async () => {
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-        const btns = [...document.querySelectorAll('button')];
-        const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
-        await sleep(200);
-        const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
-        const R = window.__reality, cam = R.camera;
-        const windPos = new Set(), flightPos = new Set();
-        let flightN = 0, ballIn = 0;
-        for (let i = 0; i < 70; i++) {
-          const ph = window.__test.phase;
-          const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
-          if (ph === 'windup') windPos.add(key);
-          if (ph === 'flight') {
-            flightPos.add(key); flightN++;
-            const b = window.__test.ball;
-            if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+      // Up to 3 throws: on the shared robot page a single click sequence can race
+      // the frame loop (the first version of this test caught 0 windup samples on
+      // the Oct 23 main check while its sibling play-contact-big-at-plate, which
+      // retries, passed on the same check) - wait for each phase, then count.
+      let last = null;
+      for (let tries = 0; tries < 2; tries++) {
+        const r = await h.eval(async () => {
+          const sleep = ms => new Promise(res => setTimeout(res, ms));
+          for (let i = 0; i < 27; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
+          const btns = [...document.querySelectorAll('button')];
+          const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+          await sleep(250);
+          const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
+          const R = window.__reality, cam = R.camera;
+          const windPos = new Set(), flightPos = new Set();
+          let flightN = 0, ballIn = 0, sawWind = false, sawFlight = false;
+          for (let i = 0; i < 220; i++) {
+            const ph = window.__test.phase;
+            const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
+            if (ph === 'windup') { sawWind = true; windPos.add(key); }
+            if (ph === 'flight') {
+              sawFlight = true; flightPos.add(key); flightN++;
+              const b = window.__test.ball;
+              if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+            }
+            if (ph === 'bip' || (sawFlight && ph !== 'flight' && ph !== 'windup')) break;
+            await sleep(40);
           }
-          if (ph === 'bip' || (flightN > 0 && ph !== 'flight' && ph !== 'windup')) break;
-          await sleep(80);
-        }
-        return { wind: windPos.size, flight: flightPos.size, flightN, ballIn };
-      });
-      if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
-      if (r.wind < 3) return 'the camera is frozen during the windup: ' + r.wind + ' distinct position(s) (owner: the camera follows the windup)';
-      if (r.flight < 3) return 'the camera is frozen during the pitch flight: ' + r.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
-      if (r.flightN < 3) return 'the pitch flight was too short to sample (' + r.flightN + ' samples)';
-      if (r.ballIn / r.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + r.ballIn + ' of ' + r.flightN + ' samples';
+          return { wind: windPos.size, flight: flightPos.size, flightN, ballIn, sawWind, sawFlight };
+        });
+        if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
+        last = r;
+        if (r.wind >= 3 && r.flight >= 3 && r.flightN >= 3 && r.ballIn / r.flightN >= 0.9) return true;
+      }
+      if (!last.sawWind) return 'no windup phase was ever sampled in 2 throws (the throw clicks never took on this page)';
+      if (last.wind < 3) return 'the camera is frozen during the windup: ' + last.wind + ' distinct position(s) (owner: the camera follows the windup)';
+      if (last.flight < 3) return 'the camera is frozen during the pitch flight: ' + last.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
+      if (last.flightN < 3) return 'the pitch flight was too short to sample (' + last.flightN + ' samples)';
+      if (last.ballIn / last.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + last.ballIn + ' of ' + last.flightN + ' samples';
       return true;
     },
   },
@@ -1138,7 +1281,10 @@ export default [
           if (pts.length !== 3) return null;
           const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
           const sorted = pts.slice().sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
-          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])];
+          // owner Oct 23 2026 5:05 PM: the game runs on 3 ft units (apexbaseball.html "field geometry (1 unit = 3 ft)") -
+          // convert to METRES before comparing: the hook's unitsPerMetre, else 1 unit = 0.9144 m (the game's own comment)
+          const upm = R.unitsPerMetre > 0 ? R.unitsPerMetre : 1 / 0.9144;
+          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])].map(v => v / upm);
         });
         if (m) {
           const SRC = 27.4;
