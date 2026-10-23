@@ -46,6 +46,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - 2026-10-22: feet still sink at the marks and in the SET crouch (robot 16 of 24 after the first fix) - the ground trim is constant in every state, and the guard test samples the standing start too (G-139)
 - 2026-10-22: a hurdle is two full-size boards crossed at 90 degrees - one board per hurdle, facing the runner (G-160)
 - 2026-10-22: hurdles facing the wrong way - the boards stand edge-on to the runners (dot(normal, lane tangent) 0.00); a hurdle's front face faces the approaching runner (dot -1.00) (G-174)
+- 2026-10-23: relay baton pass refused for most of the exchange zone - the receiver's run-up left the gap at 7.6-8.7m when the carrier reached the zone and PASS said RECEIVER TOO FAR until the last metres (44 of 45 taps refused with a slower carrier); a fumbled exchange then capped the next carrier at 3.2 m/s so the leg crawled - the owner: ran past the receiver, could not pass it and got stuck; the pass must work from the start of the zone (G-193)
 - No capsule / stick figures
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters

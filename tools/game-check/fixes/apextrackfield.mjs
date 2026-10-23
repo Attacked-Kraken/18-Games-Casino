@@ -2471,5 +2471,44 @@ export default [
       if (bad.length) return 'the hurdles face the wrong way: dot(board normal, lane tangent) is ' + JSON.stringify(m.dots) + ' - the board front must face the approaching runner (-1.00); 0 means the boards stand edge-on (G-174)';
       return true;
     }
+  },{
+id: 'never-g-193-p1',
+title: 'G-193 r1: the relay PASS button works from the start of the exchange zone - the receiver is in reach when the carrier arrives, not only in the last metres',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === 'relay' && e.relayState); }).catch(() => false);
+    if (!started) await h.wait(1500);
   }
+  if (!started) return 'relay did not start from the test link';
+  const out = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L', firstOkAt = null, fumbled = false, tooFarAt80 = null;
+    for (let step = 0; step < 60 * 40; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run' && !e.done && step % 2 === 0) { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+      const st = e.relayState(); const T0 = st.teams[0];
+      if (st.leg === 0 && T0.carrierPos >= 80 && T0.recvPos !== null) {
+        const before = T0.exchanges;
+        e.action();
+        if (T0.carrierPos <= 80.5 && e.msg === 'RECEIVER TOO FAR' && tooFarAt80 === null) tooFarAt80 = +T0.carrierPos.toFixed(1);
+        const st2 = e.relayState();
+        if (st2.teams[0].exchanges > before) { firstOkAt = +T0.carrierPos.toFixed(1); break; }
+      }
+      if (st.leg >= 1) { fumbled = e.msg === 'FUMBLED EXCHANGE'; break; }
+      if (e.done) break;
+    }
+    return { firstOkAt, fumbled, tooFarAt80 };
+  });
+  if (!out) return 'relay drive failed';
+  if (out.fumbled) return 'the leg-1 exchange FUMBLED - the carrier ran out of the zone without the pass button ever working';
+  if (out.firstOkAt === null) return 'the PASS button never exchanged in the zone';
+  if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
+  return true;
+}
+}
 ];
