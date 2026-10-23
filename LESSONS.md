@@ -17,6 +17,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · a tool saved files as base64 / double-encoded UTF-8 → always send plain UTF-8 text.
 - all · the quick check cannot run in a Muse sandbox that blocks 127.0.0.1 → open the PR early; the PR robot + its one "🤖 Check status" comment IS the quick check.
 - all · MUSIC through hidden audio elements (G-80 -> Exotic Racer: constant static + skipping on the owner's phone; files were clean 192 kbps) → music is decoded ONCE into an AudioBuffer (decodeAudioData) and looped with a looping AudioBufferSourceNode on the game's own AudioContext clock, layers started at the same context time; NEVER <audio>/HTMLMediaElement + createMediaElementSource (own clock, drifts, garbles on every pause/resume and loop seam). Every sound already did it right - the music was the only thing on the bad path. Guard test: play-music-buffers (0 media elements created across menu -> race -> menu). Fixed in game PR #1269; owner's ears are the final proof.
+- all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
@@ -55,6 +56,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
 - apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
 
+- 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the misses were the runner's clock, later filed as known robot faults).
 ## 2026-10-22 help desk
 - A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
 - Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
@@ -108,3 +110,12 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-23 help desk
 - all · a tester branch re-filed a report file (jobs/G-NN.md) another window already merged under that number → a TEST PR whose report name already exists on main conflicts forever: take the next free job number for your own report, never reuse a merged one.
 - all · a superseded duplicate BUILD PR (same job, rebased copy) stays open and confuses the board → the builder writes "Supersedes #N" and closes the old one the same hour.
+
+## 2026-10-23 help desk
+- A notes PR (needs/window-N.md) goes "dirty" when main's copy of that file gained an ANSWERED line after you branched. Branch needs/ updates from fresh main, never reuse an old needs branch; if conflicted, a Claude re-files it.
+
+## Oct 23 2026 help desk
+- A PR whose check shows only guard and no Check status update is waiting on a run that never started; file the HELP line with the PR number and head, and a Claude merges main in to restart it. Do not wait hours.
+
+## 2026-10-23 help desk (3:36 PM)
+- A PR whose required `check` shows "expected" with no status: look at the PR HEAD first - if the head moved (main merged in), the new head runs its own check; read the Check status comment on the newest head before filing HELP.

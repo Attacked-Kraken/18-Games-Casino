@@ -570,6 +570,15 @@ export default [
           down('jRoll'); up('jRoll');
           ms = await until(() => F.trick === 'barrelRoll', 100);
           if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          // leave the shared page in a clean flying state on success (a failed
+          // test gets a harness reload anyway): the next test on this page
+          // starts from whatever state it finds, and an unpiloted jet left
+          // mid-maneuver can crash in the gap and strand it. Park it high,
+          // level, cruising.
+          if (!bad.length) {
+            P.pos.set(0, 300, 0); P.vel.set(0, 0, 40); P.pitch = 0; P.roll = 0; P.thr = 0.45; P.ground = false;
+            F.jetInput.throttle = 0.45; F.jetInput.pitch = 0; F.jetInput.roll = 0; F.jetInput.yaw = 0;
+          }
           return bad.length ? bad.join('; ') : true;
         })();
       });
@@ -603,6 +612,34 @@ export default [
           }, 8000);
         });
       });
+    },
+  },
+  {
+    id: 'play-jet-on-runway',
+    ask: 'G-141: the owners jet is the player plane (INSTRUCTIONS steps 1-2, 5, 6) and it starts parked ON THE RUNWAY on the ground; the step-6 look is in (PMREM environment so the paint reflects, a shadow-casting sun) - today the jet is in but the look is not: no environment, shadows off',
+    async test(page, h) {
+      const url = await h.eval(() => location.href);
+      await page.goto(url);
+      for (let i = 0; i < 25; i++) { if (await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden))) break; await h.wait(400); }
+      if (!(await h.press('#btnFree'))) return 'could not press FREE FLIGHT after reloading to the menu';
+      return h.eval(() => new Promise((res) => {
+        const t0 = performance.now();
+        const iv = setInterval(() => {
+          const F = window.__flight, P = F && F.P;
+          if (F && F.jet && P && P.ground === true && Math.abs(P.pos.x) <= 12 && P.pos.z > -700 && P.pos.z < 700 && Math.abs(P.pos.y - F.jet.gearHeight) < 0.1) {
+            const scene = F.jet.group.parent;
+            let sun = null;
+            scene.traverse(o => { if (o.isDirectionalLight) sun = o; });
+            const missing = [];
+            if (!(F.jet.wheels && F.jet.wheels.length >= 3)) missing.push('jet wheels');
+            if (!scene.environment) missing.push('PMREM environment (step 6)');
+            if (!(sun && sun.castShadow && sun.shadow.mapSize.x === 2048)) missing.push('shadow sun 2048 (step 6)');
+            clearInterval(iv);
+            return res(missing.length ? 'jet is parked on the runway, but missing: ' + missing.join(', ') : true);
+          }
+          if (performance.now() - t0 > 6000) { clearInterval(iv); res('jet did not start parked on the runway (ground / on-runway / at gear height never all true)'); }
+        }, 150);
+      }));
     },
   },
   {
