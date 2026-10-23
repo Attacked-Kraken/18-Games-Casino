@@ -990,4 +990,50 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-cars-grounded',
+    ask: 'G-207 (owner): every computer car in every city sits ON the road for the whole race - the skinned Tokii model shared one skeleton across all its cars and rendered sunk under the road (invisible cars); the pose is baked at load now, so no car may contain a skinned mesh or ride below the road while driving',
+    async test(page, h) {
+      const nights = [];
+      const nPlaces = await h.eval(() => window.__erc.PLACES.length);
+      for (let i = 0; i < nPlaces; i++) { const tod = await h.eval((idx) => window.__erc.PLACES[idx].tod, i); if (tod === 'n') nights.push(i); }
+      const picks = [nights[0], nights[Math.floor(nights.length / 2)], nights[nights.length - 1]].filter((v, i, a) => v !== undefined && a.indexOf(v) === i);
+      for (const ni of picks) {
+        const started = await h.eval((idx) => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[idx], 3); return 'ok'; }, ni);
+        if (started !== 'ok') return started;
+        let ready = false;
+        for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+        if (!ready) return 'a night race never finished building';
+        const out = await h.eval(() => {
+          const E = window.__erc, R = E.R;
+          let worst = 0, skinned = 0, cars = 0;
+          const census = () => {
+            const see = (c) => {
+              if (!c || !c.car || !c.car.root) return;
+              cars++;
+              const root = c.car.root; root.updateWorldMatrix(true, true);
+              root.traverse(q => {
+                if (!q.isMesh) return;
+                if (q.isSkinnedMesh) skinned++;
+                q.geometry.computeBoundingBox(); const bb = q.geometry.boundingBox; if (!bb) return;
+                const e = q.matrixWorld.elements;
+                for (const cx of [bb.min.x, bb.max.x]) for (const cy of [bb.min.y, bb.max.y]) for (const cz of [bb.min.z, bb.max.z]) { const y = cx * e[1] + cy * e[5] + cz * e[9] + e[13]; if (y < worst) worst = y; }
+              });
+            };
+            (R.cars || []).forEach(see); (R.traffic || []).forEach(see);
+          };
+          census();
+          E.K.gas = 1;
+          for (let r = 0; r < 4; r++) { for (let i = 0; i < 150; i++) E.step(1, 1 / 30); census(); }
+          E.K.gas = 0;
+          E.toMenu();
+          return { worst: +worst.toFixed(2), skinned, cars };
+        });
+        if (out.skinned > 0) return 'a car still contains ' + out.skinned + ' skinned meshes - the shared-skeleton model was not baked at load';
+        if (out.cars < 10) return 'only ' + out.cars + ' computer cars censused - too few to prove the field';
+        if (out.worst < -0.15) return 'a computer car rides ' + out.worst + ' m under the road while driving (place index ' + ni + ') - an invisible car';
+      }
+      return true;
+    },
+  },
 ];
