@@ -132,3 +132,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (5:20 PM)
 - A play job that dies in ~4.5 min with no test lines is usually the browser INSTALL step (apt lock / stall), not the game. Check the failed job's last lines; if it says 'Could not get lock' or 'Failed to install browsers', file ONE HELP-VP: robot line with the run link and do not push or rebuild - a push restarts the whole check.
+
+## 2026-10-23 help desk
+- A tester round that numbers itself with a G-number can overwrite or clash with a builder's jobs/G-NN.md and start a branch with no shared history (PR #1281, #1296): start every self-started round from a fresh branch off main and name the report T-<window>-<HHMM>, never G-NN.
+- A green TEST PR that sits unmerged for hours is usually (a) a conflict in a tests file where both sides appended (keep both sides) or (b) GitHub leaving mergeable unknown while main moves (merge robot fix: game PR #1351). Do not wait; file HELP-VP.
