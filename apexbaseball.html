@@ -696,7 +696,7 @@ function attachAthlete(p, slotIdx){
     if (p.bat && u && u.uCfg) u.uCfg.value.set(5, 1, 0, 0);
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
-      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
+      try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, unitsPerMetre: 1.0936, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
     }
     if (typeof window !== 'undefined') window.__athletesReady = () => Object.keys(fielders).length + 3; // fielders + batter/pitcher/catcher
     p.athleteBaseY = a.object.position.y;

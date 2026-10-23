@@ -1256,6 +1256,19 @@ export default [
     },
   },
   {
+    id: 'play-reality-units-per-metre',
+    ask: 'BUILD G-248: the REALITY hook reports unitsPerMetre 1.0936 (the game runs on 3 ft units, 1 unit = 0.9144 m) so the robot and testers read metres (REALITY.md Units)',
+    async test(page, h) {
+      let saw = false;
+      for (let i = 0; i < 40; i++) {
+        const s = await h.eval(() => window.__reality ? { has: ('unitsPerMetre' in window.__reality), v: window.__reality.unitsPerMetre } : null);
+        if (s) { saw = true; if (s.has) return Math.abs(s.v - 1.0936) < 0.001 ? true : 'unitsPerMetre is ' + s.v + ' - REALITY.md says 1 unit = 0.9144 m, so it must be 1.0936'; }
+        await h.wait(250);
+      }
+      return saw ? 'window.__reality has no unitsPerMetre - the robot and testers cannot read metres' : 'window.__reality never appeared';
+    }
+  },
+  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
