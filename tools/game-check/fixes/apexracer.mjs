@@ -596,6 +596,21 @@ export default [
     },
   },
   {
+    id: 'play-engine-kit',
+    ask: 'G-240 (owner): the engine sound is the supercar kit in sounds/engines/supercar/ - idle + accel loops crossfaded by throttle, shift and backfire one-shots, tire squeal - decoded as buffers, and every kit file is in the repo',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const files = ['idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_1', 'backfire_2', 'backfire_3'];
+      for (const f of files) if (!fs.existsSync(path.join(repoRoot, 'sounds/engines/supercar/supercar_' + f + '.mp3'))) return 'kit file missing from the repo: supercar_' + f + '.mp3';
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the game code does not use the supercar engine kit (missing ' + n + ')';
+        return true;
+      }, ['engines/supercar', 'idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_']);
+    },
+  },
+  {
     id: 'play-music-buffers',
     ask: 'Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo',
     async test(page, h) {

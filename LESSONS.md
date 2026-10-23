@@ -136,3 +136,9 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-23 help desk
 - A tester round that numbers itself with a G-number can overwrite or clash with a builder's jobs/G-NN.md and start a branch with no shared history (PR #1281, #1296): start every self-started round from a fresh branch off main and name the report T-<window>-<HHMM>, never G-NN.
 - A green TEST PR that sits unmerged for hours is usually (a) a conflict in a tests file where both sides appended (keep both sides) or (b) GitHub leaving mergeable unknown while main moves (merge robot fix: game PR #1351). Do not wait; file HELP-VP.
+
+## 2026-10-23 help desk (6:10 PM)
+- Tests/jobs/notes-only TEST PRs never need the owner's go-ahead: push them, the merge robot lands them. Waiting for a tap you do not need is the same as an idle window. A checklist item that measures OK is a tick + NO CHANGE report only.
+
+## 2026-10-23 help desk (Oct 23 06:14 PM)
+- A Muse token cannot re-run Actions jobs (403); a help-desk Claude can: ask with a HELP-VP line naming the PR and run id.
