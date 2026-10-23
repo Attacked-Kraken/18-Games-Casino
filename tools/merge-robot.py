@@ -9,6 +9,7 @@ open pull request that is:
   - not changing the robots themselves (.github/) - those wait for the owner / Claude.
 After merging it starts the Game check on main once (merges made by this robot don't start it by themselves).
 If the Muse later asks to merge it too, its card just finds it already merged - harmless."""
+import re
 import json, os, subprocess, datetime
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
@@ -122,8 +123,13 @@ def main():
     for pr in gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []:
         n, title = pr["number"], pr.get("title", "")
         made = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
-        if (now - made).total_seconds() > MAX_AGE_H * 3600:
-            continue
+        too_old = (now - made).total_seconds() > MAX_AGE_H * 3600
+        if too_old:
+            # owner Oct 23 2026 7:46 AM: help lines + notes PRs older than 12 h were never touched again (window 3's HELP
+            # lines sat 13 h in PR #1152). A PR that changes ONLY notes files is never 'too old'.
+            _nf = gh("repos/%s/pulls/%d/files?per_page=100" % (REPO, n)) or []
+            if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
+                continue
         low = title.lower()
         if pr.get("draft") or any(w in low for w in ("hold", "wip", "draft", "do not merge")) or \
                 any(l.get("name", "").lower() == "hold" for l in pr.get("labels", [])):
