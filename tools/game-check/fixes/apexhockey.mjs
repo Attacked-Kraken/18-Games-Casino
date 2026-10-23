@@ -2254,4 +2254,211 @@ export default [
     return true;
   }
 }
+,
+{
+  id: 'tester-delayed-penalty-no-delay',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md requires a DELAYED penalty - when a foul is committed while the other team has the puck, play goes on until the penalised team touches the puck, and only then does the whistle blow and the man sit. An away skater is parked at centre with the puck and a home skater 2.2 u directly behind him; CHECK is fired through the button\'s real mousedown path in the same JS turn as the staging. The offender must NOT be boxed in that same turn - boxing him instantly with no whistle and no delayed arm is the bug.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state,
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, role: s.role, penT: +s.penT.toFixed(1) })) };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the delayed-penalty foul';
+    const r = await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const aC = hk.skaters.find(x => x.team === 'away' && x.role === 'C');
+      const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+      hk.skaters.forEach(x => { if (!x.goalie && x !== aC && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } });
+      aC.pos.set(0, 0.1, 0); aC.vel.set(0, 0, 0); aC.facing = 0;
+      hC.pos.set(-2.2, 0.1, 0); hC.vel.set(0, 0, 0); hC.facing = 0;
+      pk.owner = aC; pk.lastTouch = 'away'; pk.pos.set(0.6, 0.06, 0); pk.vel.set(0, 0, 0); pk.shot = null; pk.recv = null;
+      document.getElementById('btnCheck').dispatchEvent(new Event('mousedown'));
+      return { state: hk.game.state,
+        boxed: hk.skaters.filter(x => x.inBox).map(x => ({ team: x.team, role: x.role, penT: +x.penT.toFixed(1) })) };
+    });
+    const instant = r.boxed.find(b => b.team === 'home');
+    if (instant && r.state === 'play') return 'no delayed penalty: the foul (CHECK FROM BEHIND on the away carrier) boxed the home ' + instant.role + ' INSTANTLY (penT ' + instant.penT + ') with play still live and no whistle - rules/hockey.md requires play to go on until the penalised team touches the puck, and only then the whistle and the box';
+    if (r.boxed.length) return 'the foul boxed a skater at once instead of arming a delayed penalty (' + JSON.stringify(r.boxed) + ')';
+    return true;
+  },
+},
+{
+  id: 'tester-crease-goal-on-goalie',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md - the crease is protected (no goal if the goalie is pushed). The away goalie is parked in his crease and a home attacker is parked ON TOP of him (0.5 u away, inside the crease); the puck is then fired into the open net from 7 u out. The goal must NOT count while the attacker is standing on the goalie - counting it proves the crease is not protected.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state, sH: g.scoreH };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the crease crash';
+    const sH0 = s.sH;
+    const t1 = Date.now();
+    let goal = false;
+    while (Date.now() - t1 < 10000) {
+      const staged = await h.eval(() => {
+        const hk = window.__hk, pk = hk.puck;
+        const aG = hk.skaters.find(x => x.team === 'away' && x.goalie);
+        const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+        hk.skaters.forEach(x => { if (!x.goalie && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } });
+        aG.pos.set(87, 0.1, 0); aG.vel.set(0, 0, 0);           // goalie in his crease
+        hC.pos.set(87, 0.1, 0.5); hC.vel.set(0, 0, 0);         // attacker standing on him
+        if (!pk.shot || !pk.shot.t) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; }
+        if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
+        return { state: hk.game.state, sH: hk.game.scoreH };
+      }).catch(() => null);
+      if (!staged) break;
+      if (staged.state === 'goal' || staged.sH > sH0) { goal = true; break; }
+      await page.waitForTimeout(250);
+    }
+    if (goal) return 'the crease is NOT protected: the goal counted with the home attacker parked on top of the away goalie inside the crease - rules/hockey.md: no goal if the goalie is pushed';
+    return 'could not stage the crease-crash shot (no goal either way) - staging inconclusive, not a pass';
+  },
+},
+{
+  id: 'tester-intermission-stats-card',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md - intermission between periods shows a stats card. The period clock is run down so the game enters its intermission; during the intermission some stats card (shots, saves, hits, faceoffs - any period stats beyond the scorebug) must be visible. An END OF PERIOD banner alone is the bug.',
+  async test(page, h) {
+    const state = () => h.eval(() => window.__hk.game.state).catch(() => '');
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      const st = await state();
+      if (st === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to run down the period clock';
+    await h.eval(() => { window.__hk.game.clockT = 0.4; });
+    let inter = false; const t1 = Date.now();
+    while (Date.now() - t1 < 15000) {
+      if ((await state()) === 'intermission') { inter = true; break; }
+      await page.waitForTimeout(400);
+    }
+    if (!inter) return 'the period never entered intermission after the clock ran down';
+    const found = await h.eval(() => {
+      const vis = [];
+      document.querySelectorAll('body *').forEach(e => {
+        if (e.id === 'scorebug' || e.id === 'banner') return;
+        if (!e.offsetParent) return; // hidden itself or under a display:none ancestor
+        const t = (e.textContent || '').replace(/\s+/g, ' ').trim();
+        if (t.length > 8 && t.length < 220 && /shot|save|hit|faceoff won|stat|penalt|power play/i.test(t)) vis.push((e.id || e.className || e.tagName) + ': ' + t.slice(0, 60));
+      });
+      const banners = (document.getElementById('banner') || {}).textContent || '';
+      return { statsHits: [...new Set(vis)].slice(0, 6), banner: banners.replace(/\s+/g, ' ').trim().slice(0, 80) };
+    }).catch(() => null);
+    if (found && found.statsHits.length) return true;
+    return 'no stats card at the intermission - the break shows only the "' + (found ? found.banner : '') + '" banner and the game goes straight to the next period; rules/hockey.md: intermission between periods (stats card)';
+  },
+},
+{
+  id: 'tester-goal-no-light-no-replay',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md broadcast look - a goal brings the horn, the crowd, the goal light, spotlights and a replay from 2 angles. A clean goal is staged; during the goal state there must be a goal-light/replay element in the DOM or the camera must cut away from the broadcast follow to replay angles. The camera staying in broadcast follow with no light and no replay is the bug (horn/crowd/flash/banner are present and not in question).',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state, sH: g.scoreH,
+        cam: window.__hk.camera.position.toArray().map(v => +v.toFixed(1)),
+        view: (document.getElementById('viewBtn') || {}).textContent || '' };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the goal';
+    const sH0 = s.sH;
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+    });
+    const frames = []; const t1 = Date.now();
+    while (Date.now() - t1 < 12000) {
+      const f = await snap(); if (f) frames.push(f);
+      const gf = frames.filter(x => x.state === 'goal');
+      if ((f && (f.sH > sH0 || f.state === 'goal') && gf.length > 6)) break;
+      await page.waitForTimeout(120);
+    }
+    const gf = frames.filter(x => x.state === 'goal');
+    if (!gf.length) return 'the staged shot never became a goal - staging inconclusive, not a pass';
+    const dom = await h.eval(() => [...document.querySelectorAll('*')].map(e => e.id).filter(id => /goallight|goal-light|goal_light|replay|spotlight/i.test(id))).catch(() => []);
+    let maxJump = 0;
+    for (let i = 1; i < gf.length; i++) {
+      const a = gf[i - 1].cam, b = gf[i].cam;
+      maxJump = Math.max(maxJump, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    }
+    const views = [...new Set(gf.map(f => f.view))];
+    if (dom.length || maxJump > 40 || views.some(v => !/BROADCAST/i.test(v))) return true;
+    return 'a goal brings no goal light, no spotlights and no replay - the camera stays in broadcast follow (' + gf.length + ' goal-state frames, max 120 ms camera jump ' + maxJump.toFixed(1) + ' u, view stayed "' + views.join('/') + '", no light/replay element in the DOM); rules/hockey.md broadcast look: goal light, spotlights, replay from 2 angles';
+  },
+},
+{
+  id: 'tester-endscreen-wrong-winner-name',
+  mode: 'arena',
+  ask: 'TESTER (G-228): the end screen must name the team that actually won. A career WEEK 2 fixture vs the BEARS is started and the BEARS win it 3-0; the big title must name the BEARS, not the Sharks. Observed on current main: after a 0-2 loss to the STAMPEDE the title read "SHARKS WIN" while the scorebug correctly showed STAMPEDE (G-228 play); the title is hardcoded and the non-career sub "The Sharks steal this one. Run it back." is too.',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = { season: 1, week: 2, phase: 'reg', finalOpp: null,
+      star: { name: 'JAX KOVAC', g: 0, a: 0, cg: 0, ca: 0 }, champ: 0, friends: { w: 0, l: 0 }, lastLine: '',
+      table: { WOLVES: T(1, 0, 0, 2, 4, 1), SHARKS: T(0, 1, 0, 0, 1, 4), BEARS: T(0, 0, 0, 0, 0, 0),
+        EAGLES: T(0, 0, 0, 0, 0, 0), VIPERS: T(0, 0, 0, 0, 0, 0), STAMPEDE: T(0, 0, 0, 0, 0, 0) } };
+    await h.eval((s) => { try {
+      localStorage.setItem('apex_hockey_career_v1', JSON.stringify(s));
+      localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'BEARS', oppDef: { name: 'BEARS', jersey: 0x8a4b1f, helmet: 0x5a2f10, trim: 0xffd9a0, str: 82 }, label: 'WEEK 2' }));
+    } catch (e) {} }, seed).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      const st = await h.eval(() => window.__hk.game.state).catch(() => '');
+      if (st === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if ((await h.eval(() => window.__hk.game.state).catch(() => '')) !== 'play') return 'the career fixture never reached play';
+    // away team wins it: BEARS 3, WOLVES 0 at the end of the 3rd
+    await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 0; g.scoreA = 3; g.clockT = 0.05; });
+    let over = false; const t1 = Date.now();
+    while (Date.now() - t1 < 20000) {
+      if ((await h.eval(() => window.__hk.game.state).catch(() => '')) === 'over') { over = true; break; }
+      await page.waitForTimeout(400);
+    }
+    if (!over) return 'the fixture never reached its end screen';
+    const r = await h.eval(() => ({
+      title: (document.getElementById('finalTitle') || {}).textContent || '',
+      sub: (document.getElementById('finalSub') || {}).textContent || '',
+      away: (document.getElementById('nmA') || {}).textContent || '',
+    })).catch(() => null);
+    if (!r) return 'could not read the end screen';
+    if (!r.title.toUpperCase().includes(r.away.toUpperCase()))
+      return 'the end screen names the wrong winner: ' + r.away + ' won 3-0 but the title reads "' + r.title + '" (sub "' + r.sub + '") - the away title is hardcoded to the Sharks';
+    return true;
+  },
+},
 ];
