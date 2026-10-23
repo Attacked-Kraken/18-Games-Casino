@@ -1711,7 +1711,549 @@ export default [
     if (bad.length) return 'a standing blade is pitched, not flat on the ice: median end-to-end pitch ' + bad.map((x) => x.toFixed(1) + ' cm').join(', ') + ' on ' + bad.length + ' skater(s) - blades must stay down flat like the owner screenshot demands (pitched blades read up to 8.5 cm on the shipped game)';
     return true;
   }},
-,
+{
+  id: 'play-joystick-starts-left',
+  ask: 'G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play' || st === 'faceoff') break;
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      await h.wait(600);
+    }
+    const st = await state();
+    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the joystick (state ' + st + ')';
+    try {
+      const land = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cx: r.x + r.width / 2, w: innerWidth }; });
+      if (!(land.cx < land.w / 2)) return 'in landscape the joystick centre sits at ' + Math.round(land.cx) + ' of ' + land.w + ' across - it must be in the left half of the screen';
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const port = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cy: r.y + r.height / 2, h: innerHeight }; });
+      if (!(port.cy < port.h / 2)) return 'on a portrait-held phone the joystick lands on the player right side when a match opens (its centre ' + Math.round(port.cy) + ' of ' + port.h + ' down the portrait screen becomes the right half once the stage rotates for play) - it must start and stay on the left';
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  },
+}, {
+  id: 'play-helmet-face-reads',
+  ask: 'G-186 (art director): the close-up helmet must not read as a plain dome with a dark bar across the eyes - the visor glass is near-clear and casts no shadow, so the face reads through it (every kitted skater: visor present, castShadow off, opacity at most 0.2, metalness at most 0.05)',
+  async test(page, h) {
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    let n = 0;
+    while (Date.now() - t0 < 30000) {
+      n = await h.eval(() => (window.__hk ? window.__hk.skaters.filter(s => s.kit).length : 0)).catch(() => 0);
+      if (n >= 8) break;
+      await page.waitForTimeout(500);
+    }
+    if (n < 8) return 'only ' + n + ' kitted skaters after 30 s - cannot judge the helmets';
+    const res = await h.eval(() => window.__hk.skaters.filter(s => s.kit).map(s => {
+      const v = s.kit.parts.visor;
+      return v ? { has: true, shadow: v.castShadow, op: v.material.opacity, met: v.material.metalness } : { has: false };
+    }));
+    const bad = res.filter(r => !r.has || r.shadow !== false || r.op > 0.2 || r.met > 0.05);
+    if (bad.length) return 'the helmet still hides the face on ' + bad.length + ' of ' + res.length + ' skaters (visor present: ' + bad[0].has + ', castShadow: ' + bad[0].shadow + ', opacity: ' + bad[0].op + ', metalness: ' + bad[0].met + ') - the face must read through the visor';
+    return true;
+  }
+ },
+{
+  id: 'tester-puck-leaves-rink-at-boards',
+  mode: 'arena',
+  ask: 'TESTER (G-194): the puck never leaves the rink - staged pressure at the boards (loose pucks fired at the end boards, the puck carrier standing at the end boards and at the side boards facing them with the puck on his stick, a real shot released at the boards) with the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
+    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
+    await h.eval(() => {
+      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+      if (window.__excTimer) clearInterval(window.__excTimer);
+      window.__excTimer = setInterval(() => {
+        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+        if (hk.game.state !== 'play') return;
+        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+        window.__exc.n++;
+        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+      }, 50);
+    });
+    await clickId('playBtn');
+    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
+    for (let round = 0; round < 6; round++) {
+      const e = round % 2 === 0 ? 1 : -1;
+      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
+      await h.wait(700);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
+      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
+      await h.wait(700);
+      const stNow = await state();
+      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
+      if (stNow === 'goal') await h.wait(1500);
+    }
+    const exc = await h.eval(() => window.__exc).catch(() => null);
+    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (exc.maxX > 100.6 || exc.maxZ > 42.9)
+      return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
+    return true;
+  },
+},
+{
+  id: 'tester-puck-leaves-rink-at-boards',
+  mode: 'arena',
+  ask: 'TESTER (G-194): the puck never leaves the rink - staged pressure at the boards (loose pucks fired at the end boards, the puck carrier standing at the end boards and at the side boards facing them with the puck on his stick, a real shot released at the boards) with the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
+    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
+    await h.eval(() => {
+      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+      if (window.__excTimer) clearInterval(window.__excTimer);
+      window.__excTimer = setInterval(() => {
+        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+        if (hk.game.state !== 'play') return;
+        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+        window.__exc.n++;
+        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+      }, 50);
+    });
+    await clickId('playBtn');
+    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
+    for (let round = 0; round < 6; round++) {
+      const e = round % 2 === 0 ? 1 : -1;
+      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
+      await h.wait(700);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
+      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
+      await h.wait(700);
+      const stNow = await state();
+      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
+      if (stNow === 'goal') await h.wait(1500);
+    }
+    const exc = await h.eval(() => window.__exc).catch(() => null);
+    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (exc.maxX > 100.6 || exc.maxZ > 42.9)
+      return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
+    return true;
+  },
+},
+ {
+  id: 'play-menu-fits-frame',
+  ask: 'G-210 (art director): at 844x390 every menu line sits inside the frame and nothing overlaps - title, subtitle, star card, the three buttons, credits, friend code and the keys lines all fully visible, and the star card never slides under the VIEW/mute buttons',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    await h.wait(1500);
+    const m = await h.eval(() => {
+      const menu = document.getElementById('menu');
+      if (!menu || getComputedStyle(menu).display === 'none') return { menu: false };
+      const items = [];
+      [...menu.children].forEach((el) => {
+        const r = el.getBoundingClientRect(); const st = getComputedStyle(el);
+        if (!r.width || !r.height || st.display === 'none' || st.visibility === 'hidden') return;
+        if (!el.textContent.trim()) return;
+        items.push({ name: (el.id || el.className || el.tagName) + ' "' + el.textContent.trim().slice(0, 24) + '"', x: r.x, y: r.y, r: r.right, b: r.bottom });
+      });
+      const chrome = ['viewBtn', 'muteBtn'].map((id) => { const el = document.getElementById(id); if (!el) return null; const r = el.getBoundingClientRect(); return { name: id, x: r.x, y: r.y, r: r.right, b: r.bottom }; }).filter(Boolean);
+      return { menu: true, items, chrome, W: innerWidth, H: innerHeight };
+    });
+    if (!m || !m.menu) return 'the main menu is not showing to be measured';
+    if (m.items.length < 8) return 'only ' + m.items.length + ' menu lines found - the menu did not render fully';
+    const out = m.items.filter((b) => b.x < -1 || b.y < -1 || b.r > m.W + 1 || b.b > m.H + 1);
+    if (out.length) return 'menu lines are clipped by the frame at ' + m.W + 'x' + m.H + ': ' + out.map((b) => b.name + ' spans y ' + Math.round(b.y) + '..' + Math.round(b.b)).join('; ') + ' - every line must sit inside the frame';
+    const overlap = (a, b) => Math.min(a.r, b.r) - Math.max(a.x, b.x) > 2 && Math.min(a.b, b.b) - Math.max(a.y, b.y) > 2;
+    for (let i = 0; i < m.items.length; i++) for (let j = i + 1; j < m.items.length; j++)
+      if (overlap(m.items[i], m.items[j])) return 'menu lines overlap each other: ' + m.items[i].name + ' and ' + m.items[j].name;
+    const star = m.items.find((b) => b.name.indexOf('starCard') === 0);
+    if (star) for (const c of m.chrome) if (overlap(star, c)) return 'the star card slides under the ' + c.name + ' button';
+    return true;
+  }
+ },
+ {
+  id: 'play-broadcast-skaters-readable',
+  ask: 'G-214 (art director): at the game (BROADCAST) camera the skaters are big enough to read numbers and stance - a faceoff ring staged at centre ice projects to at least 30 CSS px tall per skater on the 844x390 frame (they read ~20px when the camera sat ~91 units out)',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => window.__hk && window.__hk.game ? window.__hk.game.state : '').catch(() => ''); if (s === 'menu') break; await h.wait(500); }
+    await h.eval(() => { const el = document.getElementById('playBtn'); if (el) el.click(); return true; }).catch(() => {});
+    let st = '';
+    for (let i = 0; i < 25; i++) { st = await h.eval(() => window.__hk.game.state).catch(() => ''); if (st === 'play') break; try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if (st !== 'play') return 'the match did not reach play to measure the broadcast framing';
+    const m = await h.eval(() => new Promise((resolve) => {
+      const hk = window.__hk;
+      const ring = [];
+      const sk = hk.skaters.filter(s => !s.goalie && !s.inBox);
+      const spots = [[9, 0], [-9, 0], [6, 8], [-6, -8], [6, -8], [-6, 8]];
+      for (let j = 0; j < 6 && j < sk.length; j++) ring.push([sk[j], spots[j][0], spots[j][1]]);
+      const t0 = performance.now();
+      const iv = setInterval(() => {
+        // pin the whole scene at centre ice: puck dead at centre, six skaters in a faceoff ring, everyone else held where he stands
+        hk.puck.owner = null; hk.puck.shot = null; hk.puck.pos.set(0, 0.06, 0); hk.puck.vel.set(0, 0, 0);
+        for (const [s, x, z] of ring) { s.pos.set(x, 0, z); s.vel.set(0, 0, 0); s.thinkT = 9; s.target.set(x, 0, z); }
+        for (const s of hk.skaters) { if (!ring.some(r => r[0] === s)) { s.vel.set(0, 0, 0); s.thinkT = 9; if (s.target) s.target.set(s.pos.x, 0, s.pos.z); } }
+        if (performance.now() - t0 < 2200) return; // let the broadcast camera settle onto centre
+        clearInterval(iv);
+        const cam = hk.camera; cam.updateMatrixWorld();
+        const P = [...cam.projectionMatrix.elements], V = [...cam.matrixWorldInverse.elements];
+        const mul = (mm, x, y, z) => [mm[0]*x + mm[4]*y + mm[8]*z + mm[12], mm[1]*x + mm[5]*y + mm[9]*z + mm[13], mm[2]*x + mm[6]*y + mm[10]*z + mm[14], mm[3]*x + mm[7]*y + mm[11]*z + mm[15]];
+        const projY = (x, y, z) => { const v = mul(V, x, y, z); const c = mul(P, v[0], v[1], v[2]); if (c[3] <= 0) return null; return (-c[1]/c[3] * 0.5 + 0.5) * innerHeight; };
+        const hs = [];
+        for (const [s] of ring) { const f = projY(s.pos.x, 0, s.pos.z), hd = projY(s.pos.x, 6.1, s.pos.z); if (f !== null && hd !== null) hs.push(Math.abs(f - hd)); }
+        hs.sort((a, b) => a - b);
+        resolve({ n: hs.length, median: hs.length ? hs[Math.floor(hs.length / 2)] : 0, smallest: hs.length ? hs[0] : 0 });
+      }, 25);
+    }));
+    if (!m || m.n < 6) return 'could not measure the 6 ring skaters at the broadcast camera (got ' + (m ? m.n : 0) + ')';
+    if (m.median < 30) return 'skaters are a tiny cluster at the game camera: a centre-ice faceoff ring reads a median ' + m.median.toFixed(1) + ' CSS px tall (smallest ' + m.smallest.toFixed(1) + ') on the 390px frame - jersey numbers and stance must be readable (bar 30)';
+    return true;
+  }
+ },
+ {
+  id: 'never-g-216-p1',
+  ask: 'NEVER (G-216, the G-194 line): the puck never leaves the rink - with the carrier standing at the end boards and at the side boards facing them, puck on his stick, the carried puck centre stays inside the boards shell (|x| <= 100.6, |z| <= 42.9); the carried puck used to poke through the boards by the full stick reach (robot: 101.7 at the end boards, 44.2 at the side)',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => window.__hk && window.__hk.game ? window.__hk.game.state : '').catch(() => ''); if (s === 'menu') break; await h.wait(500); }
+    await h.eval(() => { const el = document.getElementById('playBtn'); if (el) el.click(); return true; }).catch(() => {});
+    let st = '';
+    for (let i = 0; i < 25; i++) { st = await h.eval(() => window.__hk.game.state).catch(() => ''); if (st === 'play') break; try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if (st !== 'play') return 'the match did not reach play to stage the carrier at the boards';
+    const m = await h.eval(() => new Promise((resolve) => {
+      const hk = window.__hk;
+      const c = hk.skaters.find(s => s.role === 'C' && s.team === 'home');
+      if (!c) { resolve({ err: 'no home centre found' }); return; }
+      const held = hk.skaters.map(s => [s, s.pos.x, s.pos.z]);
+      const scenes = [[99.2, -6, 0], [-8, 41.5, Math.PI / 2], [-99.2, 6, Math.PI], [30, -41.5, -Math.PI / 2]];
+      let si = 0, tracked = 0, maxX = 0, maxZ = 0, worst = null;
+      const perScene = [];
+      const t0 = performance.now();
+      let sceneT0 = performance.now(), lastSample = 0;
+      const iv = setInterval(() => {
+        const [x, z, f] = scenes[si];
+        for (const [s, px, pz] of held) { if (s !== c) { s.pos.set(px, 0, pz); s.vel.set(0, 0, 0); s.thinkT = 9; if (s.target) s.target.set(px, 0, pz); } }
+        c.pos.set(x, 0, z); c.vel.set(0, 0, 0); c.facing = f; c.thinkT = 9; if (c.target) c.target.set(x, 0, z);
+        hk.puck.owner = c; hk.puck.shot = null;
+        // Count a sample only when the puck is PROVABLY riding this carrier's stick right now (owner set,
+        // carrier on his staged spot, puck within 3.0 of the stick tip - the faceoff routine's puck at a
+        // dot is metres away and never counts; the clamped puck sits at most ~2.7 off the tip and counts).
+        if (performance.now() - lastSample >= 110) {
+          lastSample = performance.now();
+          const p = hk.puck.pos;
+          const tipX = c.pos.x + Math.cos(f) * 2.9, tipZ = c.pos.z + Math.sin(f) * 2.9;
+          if (hk.game.state === 'play' && hk.puck.owner === c && Math.hypot(c.pos.x - x, c.pos.z - z) < 3 && Math.hypot(p.x - tipX, p.z - tipZ) < 3.0) {
+            tracked++;
+            if (Math.abs(p.x) > maxX) { maxX = Math.abs(p.x); worst = [p.x, p.z]; }
+            if (Math.abs(p.z) > maxZ) maxZ = Math.abs(p.z);
+          }
+        }
+        if (tracked >= 8 || performance.now() - sceneT0 > 9000) { perScene.push(tracked); si++; tracked = 0; sceneT0 = performance.now(); if (si >= scenes.length) { clearInterval(iv); resolve({ maxX, maxZ, worst, perScene }); } }
+        if (performance.now() - t0 > 50000) { clearInterval(iv); resolve({ maxX, maxZ, worst, perScene, short: true }); }
+      }, 10);
+    }));
+    if (!m || m.err) return 'staging failed: ' + (m ? m.err : 'no result');
+    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied';
+    if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
+    return true;
+  }
+ },
+{
+  id: 'never-g-217-p1',
+  ask: 'NEVER (G-217, the G-170 line): skate blades stay DOWN flat on the ice - the planted blade of a standing player lies flat, end-to-end pitch under 5.5 cm; the away boots were still toe-down at the 0.8 rad counter-pitch (signed medians -4.8..-6.2 cm, robot median 6.6) until they took the same 1.0 rad as the home boots. ROUND 1: and the blades stay levelled while skating around too, not only when stopped - the weight-bearing blade true 3D tilt in live play stays at a median of 8 deg or less',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    // Stage the owner's scene: a live match with every skater standing still
+    // (the faceoff picture) - reach play, then freeze the AI like the icing
+    // test does and let the stance settle into idle.
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'menu') await clickId('playBtn');
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
+    // ROUND 1 (G-217): first, while the match is live and everyone is skating, the weight-bearing blade true 3D tilt - the end-to-end read used below goes blind once a blade pitches past about 45 deg (its horizontal projection collapses), which is how pitched blades kept passing
+    const sampleSkate = () => h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return null;
+      const out = [];
+      for (const sk of hk.skaters) {
+        if (!sk.kit || !sk._blade || sk.goalie) continue;
+        const stl = sk.kit.parts.steel; const V = hk.puck.mesh.position.constructor; const v = new V();
+        const feet = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of sk._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + sk.athWrap.position.y, v.z]); }
+          if (pts.length < 8) { feet.push(null); continue; }
+          let cx = 0, cy = 0, cz = 0; pts.forEach(q => { cx += q[0]; cy += q[1]; cz += q[2]; }); const n = pts.length; cx /= n; cy /= n; cz /= n;
+          let xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+          pts.forEach(q => { const dx = q[0] - cx, dy = q[1] - cy, dz = q[2] - cz; xx += dx * dx; xy += dx * dy; xz += dx * dz; yy += dy * dy; yz += dy * dz; zz += dz * dz; });
+          let ax = 1, ay = 0, az = 0;
+          for (let it = 0; it < 24; it++) { const nx = xx * ax + xy * ay + xz * az, ny = xy * ax + yy * ay + yz * az, nz = xz * ax + yz * ay + zz * az; const L = Math.hypot(nx, ny, nz) || 1; ax = nx / L; ay = ny / L; az = nz / L; }
+          feet.push({ tilt: Math.asin(Math.min(1, Math.abs(ay))) * 180 / Math.PI, cy });
+        }
+        if (!feet[0] || !feet[1]) continue;
+        out.push(feet[0].cy <= feet[1].cy ? feet[0].tilt : feet[1].tilt);
+      }
+      return { st: hk.game.state, tilts: out };
+    }).catch(() => null);
+    const tilts = [];
+    for (let i = 0; i < 12 && tilts.length < 200; i++) {
+      const r = await sampleSkate();
+      if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
+      await h.wait(650);
+    }
+    if (tilts.length < 80) return 'round 1: only ' + tilts.length + ' weight-bearing blade samples while skating - not enough to judge';
+    tilts.sort((a, b) => a - b);
+    const medT = tilts[Math.floor(tilts.length / 2)];
+    const overT = tilts.filter(t => t > 16).length;
+    if (medT > 8) return 'round 1: blades level only when stopped - while skating the planted blade tilts a median ' + medT.toFixed(0) + ' deg (must stay levelled skating around too)';
+    if (overT / tilts.length > 0.08) return 'round 1: blades level only when stopped - ' + overT + ' of ' + tilts.length + ' weight-bearing feet tilted over 16 deg while skating';
+    const freezeFn = () => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 1; g.clockT = 120;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+      if (!window.__standSpots) window.__standSpots = hk.skaters.map((s) => [s.pos.x, s.pos.z]);
+      hk.skaters.forEach((s, i) => { const sp = window.__standSpots[i]; s.pos.set(sp[0], 0.1, sp[1]); s.vel.set(0, 0, 0); s.thinkT = 9999; if (s.target) s.target.set(sp[0], 0, sp[1]); }); // target pinned too: thinkT alone leaves the last steering target live and the skater lunges at it between samples
+    };
+    await h.eval(freezeFn).catch(() => {});
+    await h.wait(1600);
+    const sampleFn = () => {
+      const hk = window.__hk; const out = [];
+      for (const s of hk.skaters) {
+        if (!s.kit || !s._blade || s.goalie) { out.push(null); continue; } // goalies stand splayed by design and have their own blade test - this one judges the skaters in the owner screenshot
+        const stl = s.kit.parts.steel; const v = new (hk.puck.mesh.position.constructor)();
+        const per = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of s._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + s.athWrap.position.y, v.z]); } // rig frame, like snapSkatesToIce: getVertexPosition is already world-aligned - matrixWorld would double-transform
+          let cx = 0, cz = 0; pts.forEach(p => { cx += p[0]; cz += p[2]; }); cx /= pts.length; cz /= pts.length;
+          let sxx = 0, szz = 0, sxz = 0; pts.forEach(p => { const dx = p[0] - cx, dz = p[2] - cz; sxx += dx * dx; szz += dz * dz; sxz += dx * dz; });
+          const th = 0.5 * Math.atan2(2 * sxz, sxx - szz); let ax = Math.cos(th), az = Math.sin(th); if (ax * Math.cos(s.facing) + az * Math.sin(s.facing) < 0) { ax = -ax; az = -az; } // G-217: orient along the facing so the sign reads toe-down (-) vs toe-up (+)
+          const F = [], B = []; let minAll = 1e9;
+          pts.forEach(p => { const t = (p[0] - cx) * ax + (p[2] - cz) * az; if (p[1] < minAll) minAll = p[1]; (t >= 0 ? F : B).push(p[1]); });
+          const p15 = (arr) => { const a = arr.slice().sort((x, y) => x - y); return a[Math.floor(a.length * 0.15)]; };
+          per.push({ pitch: (p15(F) - p15(B)) * 100 / 3.26, lift: minAll * 100 / 3.26 });
+        }
+        const planted = per[0].lift <= per[1].lift ? per[0] : per[1];
+        out.push(+planted.pitch.toFixed(1));
+      }
+      return out;
+    };
+    const samples = [];
+    for (let i = 0; i < 10; i++) { await h.eval(freezeFn).catch(() => {}); const r = await h.eval(sampleFn).catch(() => null); if (r) samples.push(r); await h.wait(300); }
+    // Second scene, independently settled: one frozen scene can flatter a pitched boot (the stance
+    // state differs per capture and the 0.8 rad build passed single scenes by luck while the robot
+    // read 6.6 cm) - thaw the skaters, let them skate, re-freeze at new spots and pool the medians.
+    await h.eval(() => { const hk = window.__hk; hk.skaters.forEach((s) => { s.thinkT = 0.05; if (s.target) s.target.set(s.pos.x + Math.cos(s.facing) * 30, 0, s.pos.z + Math.sin(s.facing) * 30); }); }).catch(() => {});
+    await h.wait(1800);
+    await h.eval(() => { delete window.__standSpots; }).catch(() => {});
+    for (let i = 0; i < 10; i++) { await h.eval(freezeFn).catch(() => {}); const r = await h.eval(sampleFn).catch(() => null); if (r) samples.push(r); await h.wait(300); }
+    if (samples.length < 12) return 'could not sample the standing skaters';
+    const worst = [];
+    for (let si = 0; si < 12; si++) {
+      const vals = samples.map((r) => r[si]).filter((x) => typeof x === 'number').sort((a, b) => a - b);
+      if (!vals.length) continue;
+      worst.push(vals[Math.floor(vals.length / 2)]);
+    }
+    if (!worst.length) return 'no skater could be measured';
+    const bad = worst.filter((x) => Math.abs(x) > 5.5);
+    if (bad.length) return 'a standing blade is pitched, not flat on the ice: median end-to-end pitch ' + bad.map((x) => Math.abs(x).toFixed(1) + ' cm').join(', ') + ' on ' + bad.length + ' skater(s) - blades must stay down flat like the owner screenshot demands (pitched blades read up to 8.5 cm on the shipped game)';
+    // Group centre: single scenes sway skater to skater, but a whole team's boots share one mount -
+    // pooled over both scenes, the away signed centre sat at -3.5..-5 cm (toe-down) on the 0.8 rad
+    // build and at ~0 once the away counter-pitch matched home's 1.0. Home is the control group.
+    const teams = await h.eval(() => window.__hk.skaters.map((s) => s.goalie ? 'G' : s.team)).catch(() => []);
+    const pool = (t) => { const v = []; samples.forEach((r) => { r.forEach((x, si) => { if (teams[si] === t && typeof x === 'number') v.push(x); }); }); return v.sort((a, b) => a - b); };
+    const med = (v) => v.length ? v[Math.floor(v.length / 2)] : 0;
+    const awayC = med(pool('away')), homeC = med(pool('home'));
+    if (Math.abs(homeC) > 3.5) return 'the home control group reads a signed centre of ' + homeC.toFixed(1) + ' cm - the measurement itself is suspect this run';
+    if (awayC - homeC < -2.25) return 'the away blades are still pitched toe-down as a group: signed centre ' + awayC.toFixed(1) + ' cm vs the home control ' + homeC.toFixed(1) + ' cm over ' + pool('away').length + ' pooled samples - the away boots need the same counter-pitch as home';
+    if (awayC - homeC > 3.0) return 'the away blades are over-corrected toe-up as a group: signed centre +' + awayC.toFixed(1) + ' cm vs the home control ' + homeC.toFixed(1) + ' cm';
+    return true;
+  }},
+{
+  id: 'play-joystick-starts-left',
+  ask: 'G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play' || st === 'faceoff') break;
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      await h.wait(600);
+    }
+    const st = await state();
+    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the joystick (state ' + st + ')';
+    try {
+      const land = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cx: r.x + r.width / 2, w: innerWidth }; });
+      if (!(land.cx < land.w / 2)) return 'in landscape the joystick centre sits at ' + Math.round(land.cx) + ' of ' + land.w + ' across - it must be in the left half of the screen';
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const port = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cy: r.y + r.height / 2, h: innerHeight }; });
+      if (!(port.cy < port.h / 2)) return 'on a portrait-held phone the joystick lands on the player right side when a match opens (its centre ' + Math.round(port.cy) + ' of ' + port.h + ' down the portrait screen becomes the right half once the stage rotates for play) - it must start and stay on the left';
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  },
+},
+{
+  id: 'play-blades-flush-in-play',
+  ask: 'NEVER (G-47 REDO, owner picture 2026-10-23): in live play, not just standing still, the weight-bearing skate blade lies FLAT on the ice - the old end-to-end read went blind once a blade pitched past about 45 deg (its horizontal projection collapses), so this reads the blade true 3D tilt; on the shipped game planted blades sat at a median 12 deg tilt with a third over 16 deg and floated about 3 cm off the ice',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let st = await state();
+    if (st !== 'play' && st !== 'faceoff' && st !== 'whistle') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    }
+    const sample = () => h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return null;
+      const out = [];
+      for (const s of hk.skaters) {
+        if (!s.kit || !s._blade || s.goalie) continue;
+        const stl = s.kit.parts.steel; const V = hk.puck.mesh.position.constructor; const v = new V();
+        const feet = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of s._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + s.athWrap.position.y, v.z]); }
+          if (pts.length < 8) { feet.push(null); continue; }
+          let cx = 0, cy = 0, cz = 0; pts.forEach(p => { cx += p[0]; cy += p[1]; cz += p[2]; }); const n = pts.length; cx /= n; cy /= n; cz /= n;
+          let xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+          pts.forEach(p => { const dx = p[0] - cx, dy = p[1] - cy, dz = p[2] - cz; xx += dx * dx; xy += dx * dy; xz += dx * dz; yy += dy * dy; yz += dy * dz; zz += dz * dz; });
+          let ax = 1, ay = 0, az = 0;
+          for (let it = 0; it < 24; it++) { const nx = xx * ax + xy * ay + xz * az, ny = xy * ax + yy * ay + yz * az, nz = xz * ax + yz * ay + zz * az; const L = Math.hypot(nx, ny, nz) || 1; ax = nx / L; ay = ny / L; az = nz / L; }
+          feet.push({ tilt: Math.asin(Math.min(1, Math.abs(ay))) * 180 / Math.PI, cy });
+        }
+        if (!feet[0] || !feet[1]) continue;
+        const wb = feet[0].cy <= feet[1].cy ? feet[0] : feet[1];
+        out.push(wb.tilt);
+      }
+      return { st: hk.game.state, tilts: out };
+    }).catch(() => null);
+    const tilts = [];
+    for (let i = 0; i < 24 && tilts.length < 400; i++) {
+      const r = await sample();
+      if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
+      await new Promise(res => setTimeout(res, 650));
+    }
+    if (tilts.length < 150) return 'only ' + tilts.length + ' weight-bearing blade samples in live play - not enough to judge';
+    tilts.sort((a, b) => a - b);
+    const med = tilts[Math.floor(tilts.length / 2)];
+    const over = tilts.filter(t => t > 16).length;
+    if (med > 8) return 'planted blades pitched in live play: median tilt ' + med.toFixed(0) + ' deg - a planted blade lies flat';
+    if (over / tilts.length > 0.08) return 'planted blades pitched in live play: ' + over + ' of ' + tilts.length + ' weight-bearing feet tilted over 16 deg';
+    return true;
+  }
+ },
+{
+  id: 'tester-arena-no-icing-while-shorthanded',
+  mode: 'arena',
+  ask: 'TESTER (G-227): icing is NOT called while the dumping team is shorthanded (rules/hockey.md: icing "Not called when shorthanded"). A home skater is put in the box so the power-play tag is live, then home dumps the puck untouched from behind the centre line (lastTouch home at x -30) racing to the far goal line, exactly the dump that IS whistled at full strength: play must carry on with no icing whistle and no icing faceoff while the box is occupied.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game, el = document.getElementById('banner');
+      return {
+        state: g.state,
+        penTag: (document.getElementById('penTag') || {}).textContent || '',
+        banner: (el && el.classList.contains('show')) ? el.textContent.replace(/\s+/g, ' ').trim() : '',
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, penT: +s.penT.toFixed(1) })),
+        puckX: +window.__hk.puck.pos.x.toFixed(1)
+      };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    // wait for the match to reach 'play' (one real key press drops the puck)
+    let s = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the shorthanded dump';
+    // stage: home LW in the box (live power play against home), skaters parked for a decisive race, dump from home's half
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const sk = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
+      sk.inBox = true; sk.penT = 20; sk.pos.set(-6, 0.1, 41);
+      hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home') x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); });
+      hk.skaters.forEach(x => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0;
+      pk.lastTouch = 'home'; pk.lastTouchX = -30;
+      pk.pos.set(-30, 0.06, 20);
+      pk.vel.set(70, 0, 0);
+    });
+    // watch: an icing whistle while the box is occupied = the bug
+    let sawPP = false, icing = null;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 25000) {
+      const q = await snap();
+      if (q) {
+        if (/PP/.test(q.penTag)) sawPP = true;
+        if (q.banner && /ICING/.test(q.banner) && q.boxed.some(b => b.team === 'home')) { icing = q; break; }
+        if (q.state === 'whistle' && q.boxed.some(b => b.team === 'home')) {
+          // a whistle of another kind: check the puck's story before judging
+          if (q.puckX > 85) { icing = q; break; }
+        }
+      }
+      await page.waitForTimeout(400);
+    }
+    if (!sawPP) return 'the staged power play never showed on the HUD - cannot judge the shorthanded dump';
+    if (icing) return 'icing was whistled against the SHORTHANDED home team (banner "' + icing.banner + '", box still occupied, penTag live) - rules/hockey.md: icing is not called when shorthanded; the identical full-strength dump is whistled (G-227 stage a), so the call must be waived while a home skater sits in the box';
+    return true;
+  }
+},
+{
+  id: 'tester-chk-h01',
+  mode: 'h01',
+  ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
+  async test(page, h) {
+    const res = await h.eval(() => {
+      let ice = null;
+      window.__reality.player.parent.traverse(o => {
+        if (!ice && o.isMesh && o.geometry && o.material && o.material.map && o.material.color && o.material.color.getHexString() === 'ffffff') {
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox, sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y, sz = bb.max.z - bb.min.z;
+          const dims = [sx, sy, sz].sort((a, b) => b - a);
+          if (dims[0] > 190 && dims[1] > 80 && dims[2] < 0.1) ice = o;
+        }
+      });
+      if (!ice) return { err: 'no ice surface found in the running game' };
+      const img = ice.material.map.image, W = img.width, H = img.height;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0);
+      const d = cx.getImageData(0, 0, W, H).data, reds = [];
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = (j * W + i) * 4; if (d[k] > 140 && d[k + 1] < 110 && d[k + 2] < 110) reds.push([-100 + (i / W) * 200, -42.5 + (j / H) * 85]); }
+      const clus = [];
+      for (const p of reds) { const c = clus.find(c => Math.abs(c.x - p[0]) < 6 && Math.abs(c.z - p[1]) < 6); if (c) { c.n++; c.x = (c.x * (c.n - 1) + p[0]) / c.n; c.z = (c.z * (c.n - 1) + p[1]) / c.n; } else clus.push({ x: p[0], z: p[1], n: 1 }); }
+      const dots = clus.filter(c => c.n >= 90 && c.n <= 600 && Math.abs(Math.abs(c.z) - 20) <= 1.5 && Math.abs(c.x) >= 55 && Math.abs(c.x) <= 80).map(c => ({ x: +c.x.toFixed(1), z: +c.z.toFixed(1) }));
+      return { dots };
+    }).catch(e => ({ err: String(e).slice(0, 120) }));
+    if (res.err) return 'H01 cannot judge: ' + res.err;
+    if (!res.dots.length) return 'H01 cannot judge: no end-zone faceoff dots isolated in the ice paint';
+    const zs = res.dots.map(d => Math.abs(d.z) / 3.26);
+    const bad = zs.filter(m => Math.abs(m - 6.7) / 6.7 > 0.03);
+    if (bad.length) return 'H01 FOUND: end-zone faceoff dots sit ' + zs.map(m => m.toFixed(2)).join(', ') + ' m either side of centre - venues/rink.md says 6.7 m (3% band 6.50-6.90 m)';
+    return true;
+  }
+},
 {
   id: 'tester-career-quit-banks-goal',
   mode: 'reality',
@@ -1774,7 +2316,8 @@ export default [
     }
     return true;
   },
-},
+}
+,
 {
   id: 'tester-career-again-goes-to-hub',
   mode: 'reality',
