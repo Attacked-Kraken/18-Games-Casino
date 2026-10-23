@@ -89,3 +89,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk
 - A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
+
+## 2026-10-23 help desk
+- A PR check that reads RUNNING for a long time may have finished and merged since: read the PR state (merged?) before filing a HELP line. Rule: "stuck RUNNING" = look at `merged` and the check list first.
