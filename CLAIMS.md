@@ -167,6 +167,9 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-239 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-239.md, CLAIMS.md | build/g-239-apexf1 |
+| G-243 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-243.md | build/g-243-apexflight |
+| G-245 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-245 | window 10 | checklists/apextrackfield.md, jobs/G-245.md, CLAIMS.md | test/g-245-apextrackfield |
 | G-238 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-238.md | build/g-238-apexflight |
 | G-238 | window 7 | jobs/G-238.md, CLAIMS.md | test/g-238-apexbaseball |
 | G-237 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-237.md, CLAIMS.md | build/g-237-apexbaseball |
