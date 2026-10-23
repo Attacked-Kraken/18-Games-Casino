@@ -129,3 +129,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-23 help desk (5 PM)
 - Two windows can end up with the same G-number (testers self-start rounds). Use the number the MAC typed; with none, take the next free jobs/G-NN.md on main right before filing; on a clash file HELP-VP naming both windows.
 - A needs/window-N.md PR that conflicts on a long-open branch: re-file the new lines on a fresh branch from main (prepend, keep every old line) and close the old PR as superseded.
+
+## 2026-10-23 help desk (5:20 PM)
+- A play job that dies in ~4.5 min with no test lines is usually the browser INSTALL step (apt lock / stall), not the game. Check the failed job's last lines; if it says 'Could not get lock' or 'Failed to install browsers', file ONE HELP-VP: robot line with the run link and do not push or rebuild - a push restarts the whole check.
