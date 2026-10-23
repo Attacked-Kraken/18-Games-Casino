@@ -210,8 +210,8 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div class="panel">
 <h2>CHOOSE EVENT</h2>
 <div class="sponsor">PRESENTED BY <b>APEX ARCADE</b></div>
-<div id="gridEvents"></div>
 <button class="btn ghost" id="bGridBack">BACK</button>
+<div id="gridEvents"></div>
 </div>
 </div>
 <div class="screen" id="card">
@@ -3198,6 +3198,7 @@ $('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>'+(colHead||'ATH
 rows.map((r,i)=>'<tr'+(r.n===athleteName||String(r.n).indexOf(athleteName+' —')===0?' class="me"':'')+
 '><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+r.p+'</td></tr>').join('')+'</table>';
 G.nextFn=nextFn;
+$('bResMenu').textContent=(G.mode==='free')?'EVENTS':'MENU'; // OWNER 2026-10-23: in free play the exit leads back to the event picker
 $('bResNext').textContent=nextLabel;
 $('bResNext').style.display='block';
 showScreen('results');
@@ -3551,7 +3552,7 @@ wireMenu('bFree',()=>{ G.mode='free'; showScreen('grid'); });
 wireMenu('bGridBack',()=>showScreen('menu'));
 wireMenu('bCardBack',()=>showScreen(G.mode==='free'?'grid':(G.mode==='tourn'?'tourney':(G.mode==='career'?'career':'menu'))));
 wireMenu('bCardStart',()=>startPlay(G.cardEv, G.mode==='champ'?G.rivals:(G.mode==='career'?G.carRivals:(G.mode==='tourn'?[G.singleRival]:(G.freeRivals||(G.freeRivals=freeRivals()))))));
-wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; showScreen('menu'); refreshMenuRival(); });
+wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; if(G.mode==='free'){ showScreen('grid'); } else { showScreen('menu'); refreshMenuRival(); } }); // OWNER 2026-10-23: free play results always bring you back to the free play menu to pick something else
 wireMenu('bResNext',()=>{ if(G.nextFn) G.nextFn(); });
 wireMenu('bHow',()=>showScreen('howto'));
 wireMenu('bHowBack',()=>showScreen('menu'));

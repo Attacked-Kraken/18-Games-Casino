@@ -2510,5 +2510,59 @@ async test(page, h) {
   if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
   return true;
 }
+},{
+id: 'play-free-results-return-to-events',
+title: 'OWNER 2026-10-23: after a Free Play event the results bring you back to the free play menu to pick something else, and the event menu has its BACK button at the top (to the main menu)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=200m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '200m'); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 200m did not start from the test link';
+  await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return e.done;
+  });
+  let onResults = false;
+  for (let i = 0; i < 40 && !onResults; i++) {
+    onResults = await h.eval(() => { const on = document.querySelector('.screen.on'); return !!(on && on.id === 'results'); }).catch(() => false);
+    if (!onResults) await h.wait(1500);
+  }
+  if (!onResults) return 'the results screen never appeared after the free play 200m';
+  const chk = await h.eval(() => {
+    const next = document.getElementById('bResNext');
+    const menu = document.getElementById('bResMenu');
+    const out = { nextLabel: next ? next.textContent : '', menuLabel: menu ? menu.textContent : '' };
+    if (menu) menu.click();
+    return out;
+  });
+  await h.wait(500);
+  const after = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (!/RETRY EVENT/.test(chk.nextLabel || '')) return 'expected the free play results (RETRY EVENT button), got next=' + chk.nextLabel;
+  if (after !== 'grid') return 'after a free play event the results exit went to "' + after + '" - the owner: it must always bring you back to the free play menu (CHOOSE EVENT) to pick something else';
+  const top = await h.eval(() => {
+    const back = document.getElementById('bGridBack');
+    const firstEv = document.querySelector('#gridEvents button');
+    if (!back || !firstEv) return { ok: false, why: 'missing back or events' };
+    const br = back.getBoundingClientRect(), er = firstEv.getBoundingClientRect();
+    return { ok: br.top < er.top && br.top >= 0 && br.bottom <= window.innerHeight, backTop: Math.round(br.top), evTop: Math.round(er.top) };
+  });
+  if (!top || !top.ok) return 'the event menu BACK button is not at the top of the panel (back top=' + (top && top.backTop) + ', first event top=' + (top && top.evTop) + ') - the owner circled the top of the panel: on his phone it sits under all 29 events where it cannot be reached';
+  await h.eval(() => { const b = document.getElementById('bGridBack'); if (b) b.click(); });
+  await h.wait(500);
+  const home = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (home !== 'menu') return 'the event menu BACK button went to "' + home + '", not the main game menu';
+  return true;
+}
 }
 ];
