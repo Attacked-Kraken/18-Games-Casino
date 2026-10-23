@@ -2434,5 +2434,42 @@ export default [
       if (fin.place !== 1) return 'the player crossed the 10,000m finish line FIRST on the track (no rival reached 10000m; nearest rival ' + best.n + ' was still ' + (10000 - best.pos) + 'm short at ' + best.pos + 'm when the player finished in ' + fin.time + 's), but the results place him ' + fin.place + ' - credited ahead of him: ' + credited.map(a => a.n + ' ' + a.tt + 's').join(', ') + '. Rivals are ranked by their own private target times for the first 9300m instead of the race on the track (REALITY: finishing order matches who actually crossed first)';
       return true;
     }
+  },
+{
+    id: 'never-g-174-p1',
+    ask: 'NEVER (G-174, owner video 2026-10-22): hurdles facing the wrong way - a hurdle board front faces the approaching runner: dot(board normal, lane tangent) = -1 at every hurdle, never 0 (edge-on)',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=110h')) return 'the 110m Hurdles test-link page would not load';
+      let m = null;
+      for (let i = 0; i < 40 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '110h') return null;
+          let root = window.__reality && __reality.player; if (!root) return null;
+          while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 80) mesh = o; });
+          if (!mesh) return null;
+          mesh.updateMatrixWorld();
+          const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+          const mul = (mm, x, y, z) => [mm[0] * x + mm[4] * y + mm[8] * z + mm[12], mm[1] * x + mm[5] * y + mm[9] * z + mm[13], mm[2] * x + mm[6] * y + mm[10] * z + mm[14]];
+          const P = [], N = [], P2 = [];
+          for (let i2 = 0; i2 < 8; i2++) { P.push(mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14])); N.push([im[i2 * 16 + 8], im[i2 * 16 + 10]]); P2.push(mul(mw, im[(i2 + 8) * 16 + 12], im[(i2 + 8) * 16 + 13], im[(i2 + 8) * 16 + 14])); }
+          let best = null;
+          for (let s = 0; s < 400; s += 0.5) { const lp = __tf.lanePoint(s, 3); const d = (lp.x - P[3][0]) * (lp.x - P[3][0]) + (lp.z - P[3][2]) * (lp.z - P[3][2]); if (!best || d < best.d) best = { d, tx: lp.tx, tz: lp.tz }; }
+          if (!best || best.d > 4) return null;
+          const tl = Math.hypot(best.tx, best.tz) || 1; const t = [best.tx / tl, best.tz / tl];
+          const dots = N.map(n => { const l = Math.hypot(n[0], n[1]) || 1; return +((n[0] / l) * t[0] + (n[1] / l) * t[1]).toFixed(2); });
+          return { dots };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle facing could be measured in the 110m Hurdles';
+      const bad = m.dots.filter(d => d > -0.75);
+      if (bad.length) return 'the hurdles face the wrong way: dot(board normal, lane tangent) is ' + JSON.stringify(m.dots) + ' - the board front must face the approaching runner (-1.00); 0 means the boards stand edge-on (G-174)';
+      return true;
+    }
   }
 ];
