@@ -711,6 +711,48 @@ export default [
     },
   },
   {
+    id: 'tester-batting-swing-wall-clock',
+    mode: 'batting',
+    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let flightStart = null, sawFlight = false;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight') {
+          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
+          if (batting && s.ball && s.ball.z >= -0.5) {
+            await click('swingBtn');
+            await h.wait(700);
+            const a = await snap();
+            if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return `swung with the ball at the plate (z=${s.ball.z.toFixed(1)} m) and still got '${a.msg}' - the swing is judged on the wall clock, not on the ball`;
+            return true;
+          }
+        } else if (flightStart !== null) {
+          const wall = (Date.now() - flightStart) / 1000;
+          flightStart = null;
+          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return sawFlight ? true : 'no pitch flight seen in 29 s, so the swing clock could not be checked';
+    },
+  },
+  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
@@ -1110,6 +1152,45 @@ export default [
       }
       if (best < 80) return 'the batter is still a speck when the pitch reaches the plate: ' + best.toFixed(0) + ' px tall of 390 at the contact moment (target at least 80; the frozen G-167 framing measured ~42)';
       return true;
+    },
+  },
+  {
+    id: 'tester-chk-b01',
+    ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
+    mode: 'b01',
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const m = await h.eval(() => {
+          const T = window.__test; if (!T) return null;
+          if (T.phase === 'start') { const b = document.getElementById('startBtn'); if (b) b.click(); return null; }
+          const R = window.__reality; if (!R || !R.player || !R.player.isObject3D) return null;
+          let root = R.player; while (root.parent) root = root.parent;
+          const pts = [];
+          root.traverse(o => {
+            if (o.isMesh && o.geometry && o.geometry.type === 'BoxGeometry') {
+              const p = o.geometry.parameters || {};
+              if (Math.abs(p.width - 1.3) < 0.01 && Math.abs(p.depth - 1.3) < 0.01) {
+                let x = 0, z = 0, n = o;
+                while (n && n.position) { x += n.position.x; z += n.position.z; n = n.parent; }
+                pts.push([x, z]);
+              }
+            }
+          });
+          if (pts.length !== 3) return null;
+          const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+          const sorted = pts.slice().sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
+          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])];
+        });
+        if (m) {
+          const SRC = 27.4;
+          const bad = m.filter(s => Math.abs(s - SRC) / SRC > 0.03);
+          if (bad.length) return `checklist B01: bases measure ${m.map(s => s.toFixed(1)).join(' / ')} m between neighbours - REALITY.md says ${SRC} m (within 3%)`;
+          return true;
+        }
+        await h.wait(300);
+      }
+      return 'checklist B01: the base objects never became measurable in the running game';
     },
   },
 ];
