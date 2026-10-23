@@ -27,3 +27,7 @@ If a failing `tester-` test for the item already exists in the fixes file, tick 
 ## Who may change what
 Testers (PR title "TEST G-NN:", branch test/...) change only: their item line here, tools/game-check/fixes/<game>.mjs,
 jobs/G-NN.md, jobs/QUEUE.md, CLAIMS.md. Builders never edit checklists. The Mac reads `main` and sends the next `[ ]` item.
+
+
+## Units first (owner Oct 23 2026)
+Read the game's own unit comment first (e.g. Baseball: "1 unit = 3 ft" = 0.9144 m; Hockey: 3.26 units per metre) and the REALITY hook's `unitsPerMetre`, and convert to METRES before comparing with a real-world number. A raw game-unit reading is never a finding.
