@@ -165,6 +165,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-job | Window | Files | Branch |
+| PACK FIX (owner order 2026-10-23) | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-204-apexf1 |
 | G-204 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-204-apexf1 |
 | G-136 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-136-apexf1 |
 | G-119 R1 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1-r1 |

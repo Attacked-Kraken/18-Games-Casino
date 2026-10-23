@@ -886,6 +886,36 @@ export default [
       await h.wait(600);
       return out || true;
     },
+  },
+  {
+    id: 'play-pack-stays-spread',
+    ask: 'Pack fix: the qualifying field stays spread out - no start-line spin pile-up, no tangled pack sitting in the contact box',
+    async test(page, h) {
+      if (!await g33Reset(page, h, 9182)) return 'reset failed (not at menu)';
+      await h.press('#careerBtn');
+      await h.wait(400);
+      await h.press('#toTeamBtn');
+      await h.wait(300);
+      await h.press('#startBtn');
+      let mode = '';
+      for (let i = 0; i < 16 && mode !== 'quali'; i++) { await h.wait(400); mode = await h.eval(`window.__test.race().mode`).catch(() => ''); }
+      if (mode !== 'quali') return 'never reached qualifying';
+      let pairSum = 0, samples = 0, stoppedMax = 0;
+      for (let k = 0; k < 12; k++) {
+        await h.wait(1250);
+        const r = await h.eval(`(() => { const t = window.__test; const cs = t.cars(); const L = t.trackLength(); let pairs = 0, stopped = 0;
+          for (let i = 0; i < cs.length; i++) { if (!cs[i].isPlayer && cs[i].v < 2 && Math.abs(cs[i].d) < 8) stopped++;
+            for (let j = i + 1; j < cs.length; j++) { if (cs[i].isPlayer || cs[j].isPlayer) continue; let ds = (cs[i].s - cs[j].s) % L; if (ds > L / 2) ds -= L; if (ds < -L / 2) ds += L; if (Math.abs(ds) < 7.9 && Math.abs(cs[i].d - cs[j].d) < 3.8) pairs++; } }
+          return { pairs, stopped }; })()`).catch(() => null);
+        if (!r) return 'pack sampling failed';
+        pairSum += r.pairs; samples++;
+        if (r.stopped > stoppedMax) stoppedMax = r.stopped;
+      }
+      const avg = pairSum / Math.max(samples, 1);
+      if (avg > 1.5) return 'the field still piles up: ' + avg.toFixed(1) + ' AI pairs inside the contact box on average (about 6.5 before the pack fix)';
+      if (stoppedMax > 1) return 'cars are stuck or spun in the pack: ' + stoppedMax + ' AI cars stopped on the road at once';
+      return true;
+    },
   }
 
 ];

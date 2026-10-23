@@ -8,7 +8,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (on main after G-136):
+Feature → line numbers in apexf1.html (on the G-204 branch: G-204 + the pack fix, owner order 2026-10-23):
 - Page head + inline tab icon: lines 1-7 (icon declared G-95)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 181-283 (friend overlay #friendOv at 249) - on sideways phones the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136)
 - Import map (three + vendor loaders): line 284
@@ -17,12 +17,12 @@ Feature → line numbers in apexf1.html (on main after G-136):
 - Track (samples, buildGP for the kit circuit at 624): line 581
 - Car mesh builder buildCarMesh: line 1019; Car class: line 1296 (player steering at 1380-1384: G-136 the stick sets the heading directly, AI keeps the integrator)
 - Input object: line 1457; initInput (stick, buttons, releaseAll on blur): line 1466
-- Race object: line 1630 (setup 1636, placeGrid 1680, startLights 1701, beginRace 1727); trackGroundY at 1625 and updateCamera at 1916 (G-119: every view rides the road + a hard floor at the road nearest the camera)
-- Career + friends: line 2036 (Save ~2037, friendCode 2050, parseFriend ~2056, showResults ~2066)
-- Menu wiring (show 2129, friendBtn ~2168, friendGo ~2202): lines 2129-2246
-- startWeekend: line 2257; runQuali: line ~2279; grid list UI in finishQuali (2311): two half tables side by side at 2322 (G-119 R1 - one 20-row list pushed LIGHTS OUT 214px off a sideways phone); main loop: line 2328
-- Cockpit attach CKAttach: line 2397; Grand Prix kit GPBoot 2408, GPAttach 2424; applyGroundKit at 2438 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
-- Test hooks window.__test: line 2458 (steerProbe at 2470 (G-136), camProbe at 2471, kitAudio + groundKit probes ~2475); REALITY hook window.__reality: line 2550; boot calls: ~2569; owner check link ?test=grid at the very end of the script (G-204: opens straight at the starting grid, LIGHTS OUT on screen)
+- Race object: line 1641 (setup ~1647, placeGrid 1691, startLights 1712, beginRace 1738); trackGroundY at 1636 and updateCamera at 1927 (G-119: every view rides the road + a hard floor at the road nearest the camera); carContact just above trackGroundY (pack fix: separation capped per step, AI-AI spins need a big hit, speed glue per-second) and aiDrive above it (pack fix: close-range traffic speed match + each car's own quali line qOff)
+- Career + friends: line ~2047 (Save 2048, friendCode 2061, parseFriend 2067, showResults 2077)
+- Menu wiring (show 2140, friendBtn ~2179, friendGo ~2213): lines 2140-2257
+- startWeekend: line 2268; runQuali: line 2290 (pack fix at 2291: qualifying starts with the field spread around the lap, not in one grid funnel); grid list UI in finishQuali (2326): two half tables side by side at 2334 (G-119 R1 - one 20-row list pushed LIGHTS OUT 214px off a sideways phone); main loop: line ~2343
+- Cockpit attach CKAttach: line 2412; Grand Prix kit GPBoot ~2423, GPAttach 2439; applyGroundKit at 2453 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
+- Test hooks window.__test: line 2473 (steerProbe at 2485 (G-136), camProbe at 2486, kitAudio + groundKit probes ~2499); REALITY hook window.__reality: line 2565; boot calls: ~2584; owner check link ?test=grid at the very end of the script (G-204: opens straight at the starting grid, LIGHTS OUT on screen)
 
 ## MUST
 - Own fictional teams and drivers
