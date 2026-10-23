@@ -1439,7 +1439,13 @@ function loop(){
   }
   // pitch flight
   if (flight.active && G.phase==='flight'){
-    flight.t += dt/flight.T;
+    // G-237: the pitch flies on its own clock - progress comes from the delivery
+    // stamp (flight.t0), not from frame steps: on a slow device the clamped frame
+    // dt stretched a 0.95 s fastball to 2-12 s of wall time, so the ball arrived
+    // seconds after the moment the swing was scored against and timed swings
+    // always whiffed (tester G-184). On a fast device this changes nothing.
+    if (flight.t0) flight.t = Math.max(flight.t, (performance.now() - flight.t0) / 1000 / flight.T);
+    else flight.t += dt/flight.T;
     const t = Math.min(flight.t, 1);
     const bp = ballPosAt(t);
     ball.position.set(bp[0],bp[1],bp[2]);
