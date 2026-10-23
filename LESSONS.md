@@ -125,3 +125,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk
 - A play job that dies in ~4 min with "exit code 1" and NO test lines (check says "the robot could not play it") never reached a test: file the HELP line, the help desk re-runs it once; do not change game code for it. A second identical failure = HELP-VP: robot with both run links.
+
+## 2026-10-23 help desk (5 PM)
+- Two windows can end up with the same G-number (testers self-start rounds). Use the number the MAC typed; with none, take the next free jobs/G-NN.md on main right before filing; on a clash file HELP-VP naming both windows.
+- A needs/window-N.md PR that conflicts on a long-open branch: re-file the new lines on a fresh branch from main (prepend, keep every old line) and close the old PR as superseded.
