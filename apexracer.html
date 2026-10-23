@@ -298,10 +298,33 @@ const GLB_MODELS = {
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
 };
+function bakeSkins(rootObj) {
+  /* The Tokii is a SKINNED model (88 skinned meshes on one skeleton) and every car is a plain clone of the template - plain clones SHARE the template's skeleton (measured: two Tokii cars report the same skeleton object, its bones live in no car), and mid-race Tokii cars render sunk ~0.6 m under the road (the owner's invisible cars). The game plays no animations, so bake the bind pose into plain geometry once at load: no skeletons, no sharing, nothing left to drift. */
+  const swaps = [];
+  rootObj.updateWorldMatrix(true, true);
+  rootObj.traverse((q) => { if (q.isSkinnedMesh && q.skeleton && q.geometry && q.geometry.attributes.position && q.geometry.attributes.skinIndex && q.parent) swaps.push(q); });
+  const M = new THREE.Matrix4(), B = new THREE.Matrix4(), N = new THREE.Matrix4(), v = new THREE.Vector3(), nv = new THREE.Vector3();
+  for (const q of swaps) {
+    q.skeleton.update();
+    const g = q.geometry.clone();
+    const pa = g.attributes.position, na = g.attributes.normal, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bm = q.skeleton.boneMatrices;
+    for (let i = 0; i < pa.count; i++) {
+      M.identity().multiplyScalar(0);
+      for (let j = 0; j < 4; j++) { const w = sw.getComponent(i, j); if (!w) continue; B.fromArray(bm, si.getComponent(i, j) * 16).multiplyScalar(w); M.add(B); }
+      N.copy(q.bindMatrixInverse).multiply(M).multiply(q.bindMatrix);
+      v.fromBufferAttribute(pa, i).applyMatrix4(N); pa.setXYZ(i, v.x, v.y, v.z);
+      if (na) { nv.fromBufferAttribute(na, i).transformDirection(N); na.setXYZ(i, nv.x, nv.y, nv.z); }
+    }
+    g.deleteAttribute('skinIndex'); g.deleteAttribute('skinWeight');
+    const plain = new THREE.Mesh(g, q.material);
+    plain.name = q.name; plain.position.copy(q.position); plain.quaternion.copy(q.quaternion); plain.scale.copy(q.scale); plain.userData = q.userData;
+    q.parent.add(plain); q.parent.remove(q);
+  }
+}
 const glbTpl = {};
 for (const k of Object.keys(GLB_MODELS)) {
   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
-  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { glbTpl[k] = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; } catch (e) { glbTpl[k] = null; } }
+  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
 }
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
@@ -532,6 +555,9 @@ TX.marble = ctex(512, 512, (g, w, h) => { g.fillStyle = '#efefed'; g.fillRect(0,
 TX.stone = ctex(512, 512, (g, w, h) => { g.fillStyle = '#6d6258'; g.fillRect(0, 0, w, h); for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = 120 + Math.random() * 60; g.fillStyle = `rgb(${v},${v * 0.9},${v * 0.78})`; g.beginPath(); g.ellipse(x * 32 + 16 + (y & 1) * 16, y * 32 + 16, 14, 13, 0, 0, TAU); g.fill(); } });
 TX.cloud = ctex(256, 256, (g) => { for (let i = 0; i < 22; i++) { const x = 60 + Math.random() * 136, y = 90 + Math.random() * 80, r0 = 30 + Math.random() * 50; const r = g.createRadialGradient(x, y, 0, x, y, r0); r.addColorStop(0, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); } }, true, false);
 const PAINTS = ['#d4142a', '#ff3b30', '#ff8a00', '#ffd23a', '#c8ff00', '#16d07a', '#00b894', '#19e6ff', '#1e8bff', '#2438ff', '#8a2be2', '#ff2bd6', '#ff7ac8', '#e8e8ee', '#9aa0aa', '#3a3f48', '#0b0c10', '#b8860b', '#7a1020', '#0f4d3a', '#40e0d0', '#6a5acd', '#ff5e7e', '#f5f0e1'];
+/* owner Oct 22 2026: computer cars must SHOW in every city - a near-black paint reads as no body at all at dusk/night, only lamp dots */
+const paintLum = (hex) => { const n = parseInt(hex.slice(1), 16), f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+const brightPaint = (list, r) => { const ok = list.filter((p) => paintLum(p) >= 0.1); return ok[Math.floor(r() * ok.length)]; };
 
 /* ------------------------------------------------------------------ cars (our own designs: side profile -> extruded, rounded, tapered body) */
 const PROF = {
@@ -1132,8 +1158,8 @@ function makeGlbCar(id, cfg, o = {}) {
     const sr = lampSpot['r' + (sd > 0 ? 'p' : 'n')], ry = sr ? sr.y : ls.y * 0.58, rz = sr && sr.z !== null ? sr.z : sd * ls.z * 0.30, rs = sr ? null : lampSurf(false, ry, rz);
     const gr = new THREE.Mesh(rs ? glowGeoS : glowGeoR, glowMatR); gr.position.set(sr ? sr.x - 0.005 : (rs ? rs.x - 0.008 : -ls.x / 2 + 0.10), rs ? rs.y : ry, rs ? rs.z : rz); gr.rotation.y = -Math.PI / 2; gr.userData.glow = 2; tilt.add(gr); glowR.push(gr); /* the glow lies on the measured body surface at the lamp - nothing floats in front of the car, from any angle */
   }
-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 1.1), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
-  pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 0.7), transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false }));
+  pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */ /* G-206: pool energy cut (color 1.1 -> 0.7, opacity 0.38 -> 0.15) - measured on the night grid, the additive pool was the term blowing the centre car out to a pink/white blob (blown-white share 1.41% -> 0.37% with the pool off) */
   tilt.add(model);
   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
@@ -1521,6 +1547,7 @@ async function buildWorld(place) {
   await ldTick();
   /* buildings */
   const clearOK = (x, z, need) => { const q = T.near(x, z, 3); return q.d > need; };
+  const skirtClear = (x, z, rad, need) => { for (let k = 0; k < 12; k++) { const a = (k / 12) * TAU, q = T.near(x + Math.cos(a) * rad, z + Math.sin(a) * rad, 3); if (q && q.d < need) return false; } return true; }; /* owner Oct 22 2026: no mountain skirt within reach of the road */
   const bmat = (k) => std({ map: TX.win[k].map, emissiveMap: TX.win[k].emi, emissive: 0xffffff, emissiveIntensity: tp.emi * 0.8, roughness: k === 'glass' ? 0.1 : 0.75, metalness: k === 'glass' ? 0.75 : 0.1, vertexColors: true, envMapIntensity: k === 'glass' ? 1.4 : 1 });
   const PAL = { office: ['#c8ccd6', '#9aa6b8', '#d6cfc2', '#a8b8c8', '#e0e0e6', '#8c96a8'], glass: ['#ffffff', '#cfe8ff', '#bfeee6', '#e6d6b8', '#d8e0ff'], euro: ['#ffe2c0', '#ffd0a8', '#f5c6a0', '#ffe8d0', '#f0b890', '#ffd8b8', '#e8c0a0'], low: ['#ffffff', '#ffe6ea', '#e6fff4', '#fff4d6', '#e0f0ff'] };
   const CW = { office: [19, 46], glass: [18, 50], euro: [20, 38], low: [22, 40] };
@@ -1641,15 +1668,17 @@ async function buildWorld(place) {
     const L = []; scatter(220, 4, 26, (x, z) => { const s = 0.85 + r() * 0.5; L.push(M4(x, 0, z, 0, r() * TAU, 0, s, s, s)); }); inst(merge(parts), std({ vertexColors: true, roughness: 0.85 }), L); }
   if (X.has('cactus')) { const g = merge([[new THREE.CylinderGeometry(0.5, 0.55, 6, 8), M4(0, 3, 0)], [new THREE.CylinderGeometry(0.35, 0.35, 2.4, 8), M4(1, 3.2, 0, 0, 0, 0)], [new THREE.CylinderGeometry(0.35, 0.35, 2, 8), M4(-1, 4, 0)], [new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8), M4(0.55, 2.2, 0, 0, 0, Math.PI / 2)], [new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8), M4(-0.55, 3, 0, 0, 0, Math.PI / 2)]]);
     const L = []; scatter(180, 5, 120, (x, z) => L.push(M4(x, 0, z, 0, r() * TAU, 0, 1, 0.7 + r() * 0.8, 1))); inst(g, std({ color: 0x3e7a3a, roughness: 0.85 }), L); }
-  if (X.has('mesas')) { const L = []; for (let c = 0; c < 40; c++) { const a = r() * TAU, rd = 320 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd; if (!clearOK(x, z, 120)) continue; const R1 = 40 + r() * 90, h = 30 + r() * 80;
+  if (X.has('mesas')) { const L = []; for (let c = 0; c < 40; c++) { const a = r() * TAU, rd = 320 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd; const R1 = 40 + r() * 90, h = 30 + r() * 80; if (!clearOK(x, z, R1 * 1.25 + 40)) continue;
       L.push([new THREE.CylinderGeometry(R1, R1 * 1.25, h, 9), M4(x, h / 2, z, 0, r() * TAU, 0, 1, 1, 0.6 + r() * 0.6), new THREE.Color(r() < 0.5 ? '#b0582e' : '#c46a38')]); }
     scene.add(new THREE.Mesh(merge(L), std({ vertexColors: true, roughness: 0.95, flatShading: true }))); }
   if (X.has('mountains')) { const L = [], rr0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 700;
-    for (let c = 0; c < 60; c++) { const a = (c / 60) * TAU + r() * 0.1, rd = rr0 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd, h = 160 + r() * 380, R1 = 180 + r() * 260;
+    for (let c = 0; c < 60; c++) { const a = (c / 60) * TAU + r() * 0.1, h = 160 + r() * 380, R1 = 180 + r() * 260; let rd = rr0 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd;
+      if (!skirtClear(x, z, R1, 30)) { rd += 340; x = T.cx + Math.cos(a) * rd; z = T.cz + Math.sin(a) * rd; if (!skirtClear(x, z, R1, 30)) continue; }
       L.push([new THREE.ConeGeometry(R1, h, 7, 1), M4(x, h / 2 - 5, z, 0, r() * TAU, 0), new THREE.Color(place.biome === 'desert' ? '#a8683e' : place.biome === 'volcano' ? '#3a2a24' : '#4a5a64')]);
       if (place.biome !== 'desert' && place.biome !== 'volcano') L.push([new THREE.ConeGeometry(R1 * 0.33, h * 0.33, 7, 1), M4(x, h - h * 0.165 - 4, z, 0, r() * TAU, 0), new THREE.Color('#f4f8ff')]); }
     scene.add(new THREE.Mesh(merge(L), std({ vertexColors: true, roughness: 1, flatShading: true }))); }
-  if (X.has('volcano')) { const a = r() * TAU, d0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 520, vx = T.cx + Math.cos(a) * d0, vz = T.cz + Math.sin(a) * d0;
+  if (X.has('volcano')) { let a = r() * TAU, d0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 520, vx = 0, vz = 0;
+    for (let tries = 0; tries < 24; tries++) { vx = T.cx + Math.cos(a) * d0; vz = T.cz + Math.sin(a) * d0; if (skirtClear(vx, vz, 572, 45)) break; a += 0.7; if (tries % 6 === 5) d0 += 180; }
     const g = new THREE.ConeGeometry(520, 420, 48, 10, true); const pa = g.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y > 205) { pa.setY(i, 170); pa.setX(i, pa.getX(i) * 0.28 / Math.max(0.2, Math.hypot(pa.getX(i), pa.getZ(i)) / 520)); } const k = 1 + (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08; pa.setX(i, pa.getX(i) * k); pa.setZ(i, pa.getZ(i) * k); }
     g.computeVertexNormals(); const v = new THREE.Mesh(g, std({ color: 0x2a201c, roughness: 1, flatShading: true })); v.position.set(vx, 205, vz); scene.add(v);
     const lava = new THREE.Mesh(new THREE.CylinderGeometry(70, 70, 4, 32), new THREE.MeshBasicMaterial({ color: hdr('#ff5a1a', 5) })); lava.position.set(vx, 372, vz); scene.add(lava);
@@ -1786,7 +1815,7 @@ const K = { l: 0, r: 0, gas: 0, brake: 0, drift: 0, nos: 0 };
 let R = null;
 const tmpA = { x: 0, z: 0, h: 0, i: 0 };
 function randCfg(r, carId, tier) {
-  const c = defCfg(carId); c.paint = PAINTS[Math.floor(r() * PAINTS.length)]; c.fin = ['gloss', 'metal', 'metal', 'pearl', 'candy', 'matte'][Math.floor(r() * 6)]; c.rim = Math.floor(r() * 6);
+  const c = defCfg(carId); c.paint = brightPaint(PAINTS, r); c.fin = ['gloss', 'metal', 'metal', 'pearl', 'candy', 'matte'][Math.floor(r() * 6)]; c.rim = Math.floor(r() * 6);
   c.rimCol = ['#c9cdd6', '#2a2c30', '#d4a640', '#f2f2f2', '#c9cdd6'][Math.floor(r() * 5)]; c.aero = Math.floor(r() * 4); c.kit = r() < 0.4 ? 1 : 0; c.glow = r() < 0.4 ? PAINTS[Math.floor(r() * 12)] : '';
   c.eng = Math.min(4, Math.floor(tier * 0.8)); if (r() < 0.55) { c.wrap = ['stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'split', 'neon'][Math.floor(r() * 8)]; c.wrapCol = ['#ffffff', '#111111', '#ffd23a', '#19e6ff', '#ff2bd6'][Math.floor(r() * 5)]; } return c;
 }
@@ -1812,7 +1841,7 @@ async function setupRace(place, laps, friend) {
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
   if (W.traffic) { const n = W.traffic === 2 ? 9 : 10; for (let k = 0; k < n; k++) { const van = W.traffic === 2 ? r() < 0.7 : r() < 0.25;
-    const cfg = Object.assign(defCfg('vanta'), { paint: ['#e8e8ec', '#2a2c30', '#9aa0aa', '#ffd23a', '#1e4c8a', '#7a1020', '#f5f0e1', '#d4142a', '#1e8bff', '#16d07a', '#0b0c10', '#3a3f48', '#ff8a00', '#8a2be2'][Math.floor(r() * 14)], fin: 'gloss', glow: '' });
+    const cfg = Object.assign(defCfg('vanta'), { paint: brightPaint(['#e8e8ec', '#2a2c30', '#9aa0aa', '#ffd23a', '#1e4c8a', '#7a1020', '#f5f0e1', '#d4142a', '#1e8bff', '#16d07a', '#0b0c10', '#3a3f48', '#ff8a00', '#8a2be2'], r), fin: 'gloss', glow: '' });
     /* G-50: traffic cars are real fetched 3D models too, normal sedan size, each in its own paint */
     const car = makeCar('vanta', cfg, { glbKey: ['patriot', 'tokii', 'shc', 'lemans'][Math.floor(r() * 4)], prof: 'sedan' }); W.scene.add(car.root);
     R.traffic.push({ car, s: (170 + k * ((T.N * T.ds - 260) / n)) / T.ds, d: LANES[Math.floor(r() * 4)], v: 14 + r() * 8, v0: 14 + r() * 8, hit: 0, x: 0, z: 0, h: 0, ahead: true, van }); } }
@@ -2332,6 +2361,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { if 
 addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
 resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
+{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); } /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
 window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the

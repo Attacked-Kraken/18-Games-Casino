@@ -1,4 +1,4 @@
-BLOCKED BY: The robot queue - PR #1158 (G-170 round 1) has had only its guard check for ~50 minutes and no verdict; G-178 is verified locally and ships independently of it
+BLOCKED BY: NONE
 UNCLEAR: NONE
 MISSING: NONE
 
