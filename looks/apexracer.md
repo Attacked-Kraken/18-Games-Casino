@@ -1,6 +1,6 @@
 # Look board — Exotic Racer Club (`apexracer.html`)
 
-## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 22, 2026, after the owner cars+mountains fix; keep current per STUDIO-STANDARD 9.7)
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 22, 2026, after G-206; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2084 - menu refresh (refreshMenu) L2077 - turntable spin + garage camera (updateGarage) L2292 - frame loop L2315
 - Garage: openGarage L2164 - garage cards and buying (renderGarage) L2174 - the shown car (setGarageCar) L1245
 - Car data: model registry (GLB_MODELS) L294 - car stats (CARS) L316 - places (PLACES) L379 - paint material (paintMat) L645 - computer-car paints stay bright (brightPaint) L535
@@ -12,7 +12,7 @@
 - Camera: chase camera inside updateRace L2018-2024 - race render (renderRace) L2066
 - HUD: lap/time readout inside updateRace L2047 - big center message (bigMsg) L1850 - race step (updateRace) L1950
 - Sounds: audioInit L1716 - sfx L1737 - music mix by speed (musRaceMix) L1775
-- Test hooks: window.__erc L2342 - REALITY hook (window.__reality, go/time/speed) L2353
+- Test hooks: window.__erc L2343 - REALITY hook (window.__reality, go/time/speed) L2354 - ?test=night owner link at boot L2341
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
