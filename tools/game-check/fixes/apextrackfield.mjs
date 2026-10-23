@@ -2392,7 +2392,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -2406,6 +2408,8 @@ export default [
           if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
         }, 140);
       })).catch(() => null);
+      if (nav !== 'in') await h.wait(1200);
+      }
       if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
       const fin = await h.eval(() => {
         const e = window.__tf.eng();

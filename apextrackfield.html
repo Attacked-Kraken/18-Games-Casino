@@ -919,7 +919,10 @@ this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
 this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
 this.done=true; this.finishT=0; AudioSys.cheer(1.6);
-this.place=1+this.ai.filter(a=>a.tTarget<this.time).length;
+// G-193 (tester G-183): finishing order = who crossed first (REALITY) - keep the
+// crossing-aware count used all race; a rival still short of the line is never
+// credited ahead on his private target time for the banked early laps.
+this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 }
 },
 hud(){
