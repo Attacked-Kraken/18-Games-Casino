@@ -122,3 +122,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (4:10 PM)
 - An order with one CHANGED line per point may have a point that measures clean on today's build: file the other CHANGED lines, answer that point "YES - nothing to fix, measured clean" with the evidence in a NOTE line. Never invent a change to fill a line.
+
+## 2026-10-23 help desk
+- A play job that dies in ~4 min with "exit code 1" and NO test lines (check says "the robot could not play it") never reached a test: file the HELP line, the help desk re-runs it once; do not change game code for it. A second identical failure = HELP-VP: robot with both run links.
