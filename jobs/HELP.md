@@ -27,3 +27,5 @@ HELP-VP: art director - robot - trackfield-face missing
 FIXED: it is there. The robot's check of Oct 22 6:28 PM (main 9c4b997) saved img/apextrackfield-face.jpg (52 KB, game-checks branch, written 6:18 PM) and lists it as the 'face' picture for Track & Field. If you still see none, look at the newest results.json on game-checks and write the exact 'No close-up of the player: ...' line here.
 
 HELP-VP: robot · tools/game-check/check.mjs (upright pass ~line 514) · art director needs the upright phone picture (390x844) per game saved to game-checks as img/<game>-upright.jpg, same as the sideways play picture - today the upright pass only checks for a rotate sign.
+
+HELP-VP: window 2  G-186  PR #1177 is green on its own test in every robot run but cannot merge: the G-194 tester test (puck never leaves the rink) errors "took over 30 s" in 3 straight runs (PR #1219) and the hub test timed out the same way - the robot is too slow today for the heavy staged tests, and never-g-170-p1 flips pass/fail between runs on identical code
