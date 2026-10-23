@@ -1112,4 +1112,43 @@ export default [
       return true;
     },
   },
+  {
+    id: 'tester-chk-b01',
+    ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
+    mode: 'b01',
+    async test(page, h) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < 25000) {
+        const m = await h.eval(() => {
+          const T = window.__test; if (!T) return null;
+          if (T.phase === 'start') { const b = document.getElementById('startBtn'); if (b) b.click(); return null; }
+          const R = window.__reality; if (!R || !R.player || !R.player.isObject3D) return null;
+          let root = R.player; while (root.parent) root = root.parent;
+          const pts = [];
+          root.traverse(o => {
+            if (o.isMesh && o.geometry && o.geometry.type === 'BoxGeometry') {
+              const p = o.geometry.parameters || {};
+              if (Math.abs(p.width - 1.3) < 0.01 && Math.abs(p.depth - 1.3) < 0.01) {
+                let x = 0, z = 0, n = o;
+                while (n && n.position) { x += n.position.x; z += n.position.z; n = n.parent; }
+                pts.push([x, z]);
+              }
+            }
+          });
+          if (pts.length !== 3) return null;
+          const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+          const sorted = pts.slice().sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
+          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])];
+        });
+        if (m) {
+          const SRC = 27.4;
+          const bad = m.filter(s => Math.abs(s - SRC) / SRC > 0.03);
+          if (bad.length) return `checklist B01: bases measure ${m.map(s => s.toFixed(1)).join(' / ')} m between neighbours - REALITY.md says ${SRC} m (within 3%)`;
+          return true;
+        }
+        await h.wait(300);
+      }
+      return 'checklist B01: the base objects never became measurable in the running game';
+    },
+  },
 ];

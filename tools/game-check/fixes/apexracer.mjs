@@ -1050,4 +1050,23 @@ export default [
       return true;
     },
   },
+  {
+    id: 'never-g-207-p1',
+    ask: 'G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); return true; });
+      let s0 = null;
+      for (let i = 0; i < 40 && !s0; i++) { await h.wait(500); s0 = await h.eval(() => { const R = window.__erc.R; return R && R.P ? R.signTxt : null; }); }
+      if (s0 !== 'START') return 'on lap 1 the finish-line sign says ' + JSON.stringify(s0) + ', not START';
+      const cross = async (want) => {
+        await h.eval(() => { const E = window.__erc, R = E.R, T = R.T, P = R.P; const o = { x: 0, z: 0, h: 0 }; T.at(T.N - 2, 0, o); P.x = o.x; P.z = o.z; P.h = o.h; P.idx = T.N - 2; P.prog = Math.floor(P.prog / T.N) * T.N + (T.N - 2); P.vx = P.vz = 0; return true; });
+        return h.eval((w) => { const E = window.__erc, R = E.R; E.K.gas = 1; for (let i = 0; i < 4000 && R.signTxt !== w; i++) E.step(1, 1 / 30); E.K.gas = 0; return R.signTxt; }, want);
+      };
+      const s1 = await cross('1/3');
+      if (s1 !== '1/3') return 'going into lap 2 the sign says ' + JSON.stringify(s1) + ', not 1/3';
+      const s2 = await cross('Finish');
+      if (s2 !== 'Finish') return 'on the last lap the sign says ' + JSON.stringify(s2) + ', not Finish';
+      return true;
+    },
+  },
 ];

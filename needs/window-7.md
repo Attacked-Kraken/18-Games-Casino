@@ -1,3 +1,6 @@
+BLOCKED BY: runtime restarts - one killed today's pitching session at pitch 15 and both local test servers (Oct 23, ~10:56 AM); only the logs under ~/workspace survived. Approval cards still gate every connector write and one missed tap still kills a filing (G-201 sat overnight).
+UNCLEAR: which build judges a round when main moves mid-round (main moved 6659d191 -> 69207a5a during today's G-201/G-226 work) - and the robot's Baseball REALITY line says feet float up to 0.26 m while my own play measures a 0.0 m gap: which read is right?
+MISSING: NONE - the props size question was answered (parked by the owner until the 6 games are done, LATER.md item 8).
 BLOCKED BY: approval cards - every connector write waits on a tap (the G-196 filing sat ~6 min tonight; the stale G-123 claim card from 05:10Z is still pending and must NOT be tapped); runtime restarts also killed 3 play sessions today.
 UNCLEAR: which build judges a round when main moves mid-round - main changed three times today; I play the round-start build and re-measure the key numbers on current main, but no rule says which one counts.
 MISSING: ball and bat sizes from a play session - the __test hook exposes the ball's position only (no size, no fps readout), so the REALITY size lines (ball 0.074 m, bat 0.86 m) cannot be checked by playing.
