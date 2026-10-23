@@ -1406,6 +1406,14 @@ function stepPuck(dt){
   if(puck.owner){
     const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
     puck.pos.set(o.pos.x+fx*STICK_REACH, 0.06, o.pos.z+fz*STICK_REACH);
+    // G-214 round 1 (the G-194 line): the carried puck rides the stick 2.9 ahead of the carrier and this
+    // branch returns before bouncePuck() runs - at the boards it poked clean through them (robot: centre
+    // at 101.7 at the end boards, 44.2 at the side boards). Clamp it inside the same rink shape the loose
+    // puck bounces in; it stays glued to the stick, just never outside the boards.
+    { const r=0.62, ccx=HX-RINK.CR, ccz=HZ-RINK.CR, ax=Math.abs(puck.pos.x), az=Math.abs(puck.pos.z);
+      if(az<=ccz && ax>HX-r) puck.pos.x=Math.sign(puck.pos.x)*(HX-r);
+      else if(ax<=ccx && az>HZ-r) puck.pos.z=Math.sign(puck.pos.z)*(HZ-r);
+      else { const dx=ax-ccx, dz=az-ccz, d=Math.hypot(dx,dz); if(d>RINK.CR-r && d>0){ puck.pos.x=Math.sign(puck.pos.x)*(ccx+dx/d*(RINK.CR-r)); puck.pos.z=Math.sign(puck.pos.z)*(ccz+dz/d*(RINK.CR-r)); } } }
     puck.vel.set(o.vel.x,0,o.vel.z);
     return;
   }
@@ -1987,7 +1995,11 @@ $('friendGo').addEventListener('click', () => {
 
 // G-178: owner check link - apexhockey.html?test=match opens straight into a
 // match (skips the menu) so a change can be eyeballed in 30 seconds.
-try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
+try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'boards') { // G-216: ?test=boards = a match with the carrier staged at the end boards, puck on his stick - the carried-puck containment check
+    const pb = $('playBtn'); if (pb) pb.click();
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (hk.game.state === 'play') { const c = hk.skaters.find((s) => s.role === 'C' && s.team === 'home'); if (c) { c.pos.set(99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = 0; c.thinkT = 9; if (c.target) c.target.set(99.2, 0, -6); hk.puck.owner = c; hk.puck.shot = null; } } }, 50); setTimeout(() => clearInterval(iv), 25000);
+  }
+  else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
   else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
 
 requestAnimationFrame(tick);

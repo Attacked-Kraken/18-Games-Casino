@@ -1923,5 +1923,53 @@ export default [
     if (m.median < 30) return 'skaters are a tiny cluster at the game camera: a centre-ice faceoff ring reads a median ' + m.median.toFixed(1) + ' CSS px tall (smallest ' + m.smallest.toFixed(1) + ') on the 390px frame - jersey numbers and stance must be readable (bar 30)';
     return true;
   }
+ },
+ {
+  id: 'never-g-216-p1',
+  ask: 'NEVER (G-216, the G-194 line): the puck never leaves the rink - with the carrier standing at the end boards and at the side boards facing them, puck on his stick, the carried puck centre stays inside the boards shell (|x| <= 100.6, |z| <= 42.9); the carried puck used to poke through the boards by the full stick reach (robot: 101.7 at the end boards, 44.2 at the side)',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { const s = await h.eval(() => window.__hk && window.__hk.game ? window.__hk.game.state : '').catch(() => ''); if (s === 'menu') break; await h.wait(500); }
+    await h.eval(() => { const el = document.getElementById('playBtn'); if (el) el.click(); return true; }).catch(() => {});
+    let st = '';
+    for (let i = 0; i < 25; i++) { st = await h.eval(() => window.__hk.game.state).catch(() => ''); if (st === 'play') break; try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if (st !== 'play') return 'the match did not reach play to stage the carrier at the boards';
+    const m = await h.eval(() => new Promise((resolve) => {
+      const hk = window.__hk;
+      const c = hk.skaters.find(s => s.role === 'C' && s.team === 'home');
+      if (!c) { resolve({ err: 'no home centre found' }); return; }
+      const held = hk.skaters.map(s => [s, s.pos.x, s.pos.z]);
+      const scenes = [[99.2, -6, 0], [-8, 41.5, Math.PI / 2], [-99.2, 6, Math.PI], [30, -41.5, -Math.PI / 2]];
+      let si = 0, tracked = 0, maxX = 0, maxZ = 0, worst = null;
+      const perScene = [];
+      const t0 = performance.now();
+      let sceneT0 = performance.now(), lastSample = 0;
+      const iv = setInterval(() => {
+        const [x, z, f] = scenes[si];
+        for (const [s, px, pz] of held) { if (s !== c) { s.pos.set(px, 0, pz); s.vel.set(0, 0, 0); s.thinkT = 9; if (s.target) s.target.set(px, 0, pz); } }
+        c.pos.set(x, 0, z); c.vel.set(0, 0, 0); c.facing = f; c.thinkT = 9; if (c.target) c.target.set(x, 0, z);
+        hk.puck.owner = c; hk.puck.shot = null;
+        // Count a sample only when the puck is PROVABLY riding this carrier's stick right now (owner set,
+        // carrier on his staged spot, puck within 3.0 of the stick tip - the faceoff routine's puck at a
+        // dot is metres away and never counts; the clamped puck sits at most ~2.7 off the tip and counts).
+        if (performance.now() - lastSample >= 110) {
+          lastSample = performance.now();
+          const p = hk.puck.pos;
+          const tipX = c.pos.x + Math.cos(f) * 2.9, tipZ = c.pos.z + Math.sin(f) * 2.9;
+          if (hk.game.state === 'play' && hk.puck.owner === c && Math.hypot(c.pos.x - x, c.pos.z - z) < 3 && Math.hypot(p.x - tipX, p.z - tipZ) < 3.0) {
+            tracked++;
+            if (Math.abs(p.x) > maxX) { maxX = Math.abs(p.x); worst = [p.x, p.z]; }
+            if (Math.abs(p.z) > maxZ) maxZ = Math.abs(p.z);
+          }
+        }
+        if (tracked >= 8 || performance.now() - sceneT0 > 9000) { perScene.push(tracked); si++; tracked = 0; sceneT0 = performance.now(); if (si >= scenes.length) { clearInterval(iv); resolve({ maxX, maxZ, worst, perScene }); } }
+        if (performance.now() - t0 > 50000) { clearInterval(iv); resolve({ maxX, maxZ, worst, perScene, short: true }); }
+      }, 10);
+    }));
+    if (!m || m.err) return 'staging failed: ' + (m ? m.err : 'no result');
+    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied';
+    if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
+    return true;
+  }
  }
 ];
