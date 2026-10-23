@@ -85,3 +85,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (9:20 PM)
 - When main moves during a tester round, the report names the main commit the round was played on, and each TESTER line is re-run on current main before it is filed (file only if it still fails there).
+
+## 2026-10-22 help desk
+- A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
