@@ -878,7 +878,7 @@ export default [
       // start from a fresh state: tap through the start overlay until it hides,
       // then wait for the batter's reality hook and the rigged athletes
       let ready = false;
-      for (let i = 0; i < 60 && !ready; i++) {
+      for (let i = 0; i < 30 && !ready; i++) {
         const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
         if (st.hook) { ready = true; break; }
         if (st.menu) await page.touchscreen.tap(422, 195);
@@ -1035,35 +1035,45 @@ export default [
         else await h.wait(400);
       }
       if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
-
-      const r = await h.eval(async () => {
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-        const btns = [...document.querySelectorAll('button')];
-        const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
-        await sleep(200);
-        const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
-        const R = window.__reality, cam = R.camera;
-        const windPos = new Set(), flightPos = new Set();
-        let flightN = 0, ballIn = 0;
-        for (let i = 0; i < 70; i++) {
-          const ph = window.__test.phase;
-          const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
-          if (ph === 'windup') windPos.add(key);
-          if (ph === 'flight') {
-            flightPos.add(key); flightN++;
-            const b = window.__test.ball;
-            if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+      // Up to 3 throws: on the shared robot page a single click sequence can race
+      // the frame loop (the first version of this test caught 0 windup samples on
+      // the Oct 23 main check while its sibling play-contact-big-at-plate, which
+      // retries, passed on the same check) - wait for each phase, then count.
+      let last = null;
+      for (let tries = 0; tries < 2; tries++) {
+        const r = await h.eval(async () => {
+          const sleep = ms => new Promise(res => setTimeout(res, ms));
+          for (let i = 0; i < 27; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
+          const btns = [...document.querySelectorAll('button')];
+          const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+          await sleep(250);
+          const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
+          const R = window.__reality, cam = R.camera;
+          const windPos = new Set(), flightPos = new Set();
+          let flightN = 0, ballIn = 0, sawWind = false, sawFlight = false;
+          for (let i = 0; i < 220; i++) {
+            const ph = window.__test.phase;
+            const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
+            if (ph === 'windup') { sawWind = true; windPos.add(key); }
+            if (ph === 'flight') {
+              sawFlight = true; flightPos.add(key); flightN++;
+              const b = window.__test.ball;
+              if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+            }
+            if (ph === 'bip' || (sawFlight && ph !== 'flight' && ph !== 'windup')) break;
+            await sleep(40);
           }
-          if (ph === 'bip' || (flightN > 0 && ph !== 'flight' && ph !== 'windup')) break;
-          await sleep(80);
-        }
-        return { wind: windPos.size, flight: flightPos.size, flightN, ballIn };
-      });
-      if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
-      if (r.wind < 3) return 'the camera is frozen during the windup: ' + r.wind + ' distinct position(s) (owner: the camera follows the windup)';
-      if (r.flight < 3) return 'the camera is frozen during the pitch flight: ' + r.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
-      if (r.flightN < 3) return 'the pitch flight was too short to sample (' + r.flightN + ' samples)';
-      if (r.ballIn / r.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + r.ballIn + ' of ' + r.flightN + ' samples';
+          return { wind: windPos.size, flight: flightPos.size, flightN, ballIn, sawWind, sawFlight };
+        });
+        if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
+        last = r;
+        if (r.wind >= 3 && r.flight >= 3 && r.flightN >= 3 && r.ballIn / r.flightN >= 0.9) return true;
+      }
+      if (!last.sawWind) return 'no windup phase was ever sampled in 2 throws (the throw clicks never took on this page)';
+      if (last.wind < 3) return 'the camera is frozen during the windup: ' + last.wind + ' distinct position(s) (owner: the camera follows the windup)';
+      if (last.flight < 3) return 'the camera is frozen during the pitch flight: ' + last.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
+      if (last.flightN < 3) return 'the pitch flight was too short to sample (' + last.flightN + ' samples)';
+      if (last.ballIn / last.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + last.ballIn + ' of ' + last.flightN + ' samples';
       return true;
     },
   },

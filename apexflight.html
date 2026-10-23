@@ -55,22 +55,22 @@
   #muteBtn { right: 12px; bottom: calc(306px + env(safe-area-inset-bottom)); width: 48px; height: 48px;
     padding: 0; font-size: 19px; z-index: 4500; }
   /* overlays */
-  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
+  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; overflow-y: auto;
     background: rgba(0,0,0,.82); padding: 20px; }
   .ovl[hidden] { display: none; }
-  .panel { width: min(420px, 92vw); max-height: 88vh; overflow-y: auto; background: rgba(11,20,36,.97);
-    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 26px 22px; text-align: center;
+  .panel { width: min(420px, 92vw); max-height: calc(100dvh - 16px); overflow-y: auto; background: rgba(11,20,36,.97);
+    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 14px 18px; text-align: center;
     box-shadow: 0 0 40px rgba(255,59,48,.15); color: #eef3f8; }
-  .panel h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: .22em; color: #ffb700; }
-  .panel h2 { margin: 0 0 14px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
-  .panel p { font-size: 12.5px; line-height: 1.65; color: #eef3f8; }
-  .bigbtn { display: block; width: 100%; margin: 10px 0; padding: 15px; border-radius: 999px; cursor: pointer;
+  .panel h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: .22em; color: #ffb700; }
+  .panel h2 { margin: 0 0 8px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
+  .panel p { font-size: 12px; line-height: 1.45; color: #eef3f8; }
+  .bigbtn { display: block; width: 100%; margin: 6px 0; padding: 10px 15px; border-radius: 999px; cursor: pointer;
     border: 1px solid rgba(255,59,48,.65); background: rgba(16,20,26,.9); color: #ffffff;
     font: 700 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .08em; }
-  .friendbtn { padding: 10px 15px; font-size: 13px; margin: 6px 0 2px; }
-  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
+  .friendbtn { padding: 8px 15px; font-size: 13px; margin: 4px 0 0; }
+  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
   #friendErr { color: #ff9a9a; font: 600 13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; min-height: 18px; margin-bottom: 8px; }
-  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 6px 0 10px; }
+  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 4px 0 6px; }
   .bigbtn small { display: block; font-weight: 400; font-size: 11px; color: #ffe9b0; margin-top: 4px; letter-spacing: .02em; }
   .ctl { text-align: left; font-size: 12px; line-height: 1.9; color: #eef3f8; margin: 14px 0 4px; }
   .ctl b { color: #ffffff; }
@@ -113,6 +113,7 @@
     <button class="bigbtn" id="btnFree" type="button">FREE FLIGHT<small>Start on the runway - explore, practice, land anywhere</small></button>
     <button class="bigbtn" id="btnChal" type="button">LANDING CHALLENGE<small>Start on final approach - scored touchdown on runway 36</small></button>
     <button class="bigbtn friendbtn" id="friendBtn" type="button">&#x1F465; PLAY A FRIEND<small>Share your code, or enter a friend's code to beat their best landing</small></button>
+    <button class="bigbtn" id="qualityBtn" type="button" style="font-size:14px;padding:9px 14px;">QUALITY: HIGH<small>Step-6 look: shadows + reflections. LOW = pixel ratio 1.25, shadows off (slower phones)</small></button>
     <div class="ctl">
       <b>Touch:</b> left stick = pitch &amp; roll &nbsp;|&nbsp; right slider = throttle<br>
       <b>Keys:</b> &#8592;&#8593;&#8595;&#8594; / WASD = pitch &amp; roll &nbsp;|&nbsp; R / F = throttle &nbsp;|&nbsp; C = view &nbsp;|&nbsp; Space = reset<br>
@@ -191,17 +192,35 @@ const COARSE = matchMedia('(pointer: coarse)').matches;   // touch phones: cheap
 const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
-renderer.shadowMap.enabled = false;                     // perf: shadows off
+renderer.toneMapping = THREE.ACESFilmicToneMapping;          // jet pack look (INSTRUCTIONS step 6)
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.domElement.className = 'game';
 document.body.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0xbfd9e8, 1600, 9500);
 const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.3, 22000);
 
-scene.add(new THREE.HemisphereLight(0xcfe8ff, 0x3d5a34, 0.95));
-const sun = new THREE.DirectionalLight(0xfff2d8, 1.15);
-sun.position.set(0.45, 0.8, 0.3).multiplyScalar(1000);
-scene.add(sun);
+const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x5a5444, 0.55);   // step 6 values, from the pack demo
+scene.add(hemi);
+const SUN_DIR = new THREE.Vector3(-0.45, 0.62, 0.64).normalize();   // the pack demo's sun direction
+const sun = new THREE.DirectionalLight(0xfff0dc, 2.6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 200 });
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
+scene.add(sun); scene.add(sun.target);
+{ // environment for reflections (INSTRUCTIONS step 6, the pack demo's block):
+  // a gradient sky + a bright sun sphere baked with PMREM - without it the
+  // jet's paint has nothing to reflect and looks flat
+  const c = document.createElement('canvas'); c.width = 8; c.height = 256; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#2c5aa6'); g.addColorStop(.42, '#9fc0e2'); g.addColorStop(.5, '#e4ecf2'); g.addColorStop(.53, '#7d7a68'); g.addColorStop(1, '#4b4a3e');
+  x.fillStyle = g; x.fillRect(0, 0, 8, 256); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const es = new THREE.Scene(); es.add(new THREE.Mesh(new THREE.SphereGeometry(100, 32, 16), new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide })));
+  const sd = new THREE.Mesh(new THREE.SphereGeometry(5, 16, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(1, .95, .85).multiplyScalar(30) })); sd.position.copy(SUN_DIR).multiplyScalar(90); es.add(sd);
+  const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(es, 0.03).texture; pm.dispose();
+}
 
 /* sky dome: vertical gradient canvas */
 (function sky() {
@@ -248,7 +267,7 @@ scene.add(sun);
   tex.anisotropy = 4;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(20000, 20000),
     new THREE.MeshLambertMaterial({ map: tex }));
-  m.rotation.x = -Math.PI / 2; scene.add(m);
+  m.rotation.x = -Math.PI / 2; m.receiveShadow = true; scene.add(m);
   // ocean on the west side
   const oc = new THREE.Mesh(new THREE.PlaneGeometry(12000, 20000),
     new THREE.MeshLambertMaterial({ color: 0x1e5f8a }));
@@ -285,7 +304,7 @@ scene.add(sun);
   tex.anisotropy = maxAniso;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, RWY_HALF * 2),
     new THREE.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-  m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, 0); scene.add(m);
+  m.rotation.x = -Math.PI / 2; m.position.set(0, 0.03, 0); m.receiveShadow = true; scene.add(m);
   // threshold decals: piano keys + the runway number, one at each end, each
   // reading upright for the pilot landing toward it
   function threshold(num, zEnd, flip) {
@@ -300,14 +319,14 @@ scene.add(sun);
     const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
       new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
     dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
-    dm.position.set(0, 0.045, zEnd); scene.add(dm);
+    dm.position.set(0, 0.045, zEnd); dm.receiveShadow = true; scene.add(dm);
   }
   threshold('36', -RWY_HALF + 30, false);
   threshold('18', RWY_HALF - 30, true);
   // grass shoulders blend strip
   const sh = new THREE.Mesh(new THREE.PlaneGeometry(60, RWY_HALF * 2 + 60),
     new THREE.MeshLambertMaterial({ color: 0x4a7c3a, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-  sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.015, 0); scene.add(sh);
+  sh.rotation.x = -Math.PI / 2; sh.position.set(0, 0.015, 0); sh.receiveShadow = true; scene.add(sh);
 })();
 
 /* airport buildings (with collision boxes) */
@@ -634,7 +653,7 @@ function cyclePaint() { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textCont
 jetInput.on('paint', cyclePaint);
 jetInput.on('style', () => {
   jet.setStyle(JET_STYLE_KEYS.indexOf(jet.style) + 1);
-  jet.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+  jet.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });   // step 2 traverse, same as at creation
   if (P.ground) P.pos.y = jet.gearHeight;
   flashMsg('STYLE: ' + jet.styleName.toUpperCase(), 1500);
 });
@@ -677,9 +696,9 @@ function trickOffsets(dt) {
   return { pe, re };
 }
 /* A phone call, notification or app switch must never leave the plane
-   steering itself: on window blur / tab hidden, every held input - keys,
-   stick, throttle-hold buttons - goes straight back to 0 (DONE.md stick
-   rule; the phone robot checks these handlers exist). */
+   steering itself: on window blur / tab hidden / touch cancel, every held
+   input - keys, stick, throttle-hold buttons - goes straight back to 0
+   (DONE.md stick rule; the phone robot checks these handlers exist). */
 function resetInputs() {
   for (const k in keys) keys[k] = false;
   kitHeld = false;
@@ -687,6 +706,7 @@ function resetInputs() {
   inp.pitchUp = 0; inp.rollRight = 0;
 }
 window.addEventListener('blur', resetInputs);
+window.addEventListener('touchcancel', resetInputs);
 document.addEventListener('visibilitychange', () => { if (document.hidden) resetInputs(); });
 
 /* ================= buttons ================= */
@@ -874,29 +894,33 @@ function step(dt) {
 const camPos = new THREE.Vector3(0, 8, -620), camLook = new THREE.Vector3(), camLookS = new THREE.Vector3(0, 4, 0);
 let fovCur = 62;
 function updateCamera(dt) {
+  // step 6: the sun and its shadow box follow the jet
+  sun.position.copy(P.pos).addScaledVector(SUN_DIR, 80);
+  sun.target.position.copy(P.pos);
   /* speed feel: FOV eases 62 -> 68 as airspeed passes ~120kt (shared by both views) */
   const kt = P.vel.length() * MS2KT;
   const targetFov = 62 + 6 * clamp((kt - 90) / 30, 0, 1);
   fovCur += (targetFov - fovCur) * Math.min(1, 3 * dt);
   if (Math.abs(camera.fov - fovCur) > 0.1) { camera.fov = fovCur; camera.updateProjectionMatrix(); }
   if (cockpit) {
-    camPos.copy(P.pos).addScaledVector(U, 1.15).addScaledVector(F, 1.1);
+    // step 5 cockpit eye: over the canopy, at the canopy's own station
+    const eyeUp = jet.canopyY + 0.42;
+    const eyeFwd = (JET_STYLES[jet.style] && JET_STYLES[jet.style].canopy) ? JET_STYLES[jet.style].canopy.z : 3.15;
+    camPos.copy(P.pos).addScaledVector(U, eyeUp).addScaledVector(F, eyeFwd);
     camera.position.copy(camPos);
-    camLook.copy(P.pos).addScaledVector(F, 60).addScaledVector(U, 0.9);
+    camLook.copy(P.pos).addScaledVector(F, 60).addScaledVector(U, eyeUp - 0.25);
     camera.lookAt(camLook);
   } else {
-    /* chase: ~10% farther back, ~20% higher than before, with a subtle
-       velocity look-ahead; the look target is eased too, so no jitter */
-    camPos.copy(P.pos).addScaledVector(F, -14.85).addScaledVector(U, 5.28);
-    // Keep camera above ground during liftoff - don't let it dip into the runway
-    if (camPos.y < 3.0) camPos.y = 3.0;
+    /* chase: the pack's offset (INSTRUCTIONS step 5) - 17 m back plus a
+       little more with speed, 4.5 m up; the game's easing stays */
+    const spd = P.vel.length();
+    camPos.copy(P.pos).addScaledVector(F, -17 - spd * 0.012).addScaledVector(U, 4.5);
     camera.position.lerp(camPos, Math.min(1, 5 * dt));
-    // Ensure camera itself never goes below ground
-    if (camera.position.y < 2.0) camera.position.y = 2.0;
     camLook.copy(P.pos).addScaledVector(F, 12).addScaledVector(P.vel, 0.18);
     camLookS.lerp(camLook, Math.min(1, 6 * dt));
     camera.lookAt(camLookS);
   }
+  if (camera.position.y < 0.6) camera.position.y = 0.6;   // step 5: never under the ground
 }
 
 /* ================= HUD update ================= */
@@ -1060,6 +1084,24 @@ const Mus = (function () {
     get muted() { return M.muted; }, get mode() { return M.mode; }, get ctx() { return M.ctx; } };
 })();
 window.__mus = Mus;
+/* step 6 LOW quality option: a menu toggle - LOW drops the shadow sun and
+   caps the pixel ratio at 1.25 for slower phones; remembered across visits */
+let quality = 'high';
+try { quality = localStorage.getItem('apex_flight_quality') || 'high'; } catch (e) {}
+function applyQuality() {
+  const low = quality === 'low';
+  renderer.setPixelRatio(low ? 1.25 : Math.min(window.devicePixelRatio || 1, COARSE ? 1.5 : 2));
+  sun.castShadow = !low;
+  const b = $('qualityBtn');
+  if (b) b.firstChild.textContent = 'QUALITY: ' + (low ? 'LOW' : 'HIGH');
+}
+$('qualityBtn').addEventListener('click', () => {
+  quality = quality === 'low' ? 'high' : 'low';
+  try { localStorage.setItem('apex_flight_quality', quality); } catch (e) {}
+  applyQuality();
+});
+applyQuality();
+
 window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
   friend: {
     code: () => friendCode(),
@@ -1139,8 +1181,11 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
-   free flight - menus skipped - with the shared kit pad on screen. */
-if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
+   free flight - menus skipped - with the shared kit pad on screen.
+   ?test=friend (G-238) opens the Play-a-Friend overlay instead. */
+const testParam = new URLSearchParams(location.search).get('test');
+if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
+else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
 
