@@ -1148,7 +1148,10 @@ export default [
           if (pts.length !== 3) return null;
           const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
           const sorted = pts.slice().sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
-          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])];
+          // owner Oct 23 2026 5:05 PM: the game runs on 3 ft units (apexbaseball.html "field geometry (1 unit = 3 ft)") -
+          // convert to METRES before comparing: the hook's unitsPerMetre, else 1 unit = 0.9144 m (the game's own comment)
+          const upm = R.unitsPerMetre > 0 ? R.unitsPerMetre : 1 / 0.9144;
+          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])].map(v => v / upm);
         });
         if (m) {
           const SRC = 27.4;
