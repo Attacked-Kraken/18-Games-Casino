@@ -79,3 +79,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (7:10 PM)
 - Finished tester round branches piled up unpushed because push approval taps never reached detached runs. Rule: push every finished round as a TEST PR the same day; drop only rounds already reported on main.
+
+## 2026-10-22 help desk (8:15 PM)
+- The art director cannot grade the upright phone view without a picture of it. Rule: when a grader (window 11/12) needs a picture the robot does not save, file ONE "HELP-VP: robot" line naming the file and the picture wanted - never grade or ask windows from memory.
