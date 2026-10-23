@@ -19,6 +19,11 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
+- [ ] TESTER: the neutral-zone faceoff dots are painted in the end zones at |x| 12.3 m - they belong 1.5 m inside the blue lines (|x| about 6.2 m), and offside faceoffs drop on them there (G-199, proof test tester-arena-neutral-dots-in-neutral-zone)
+- [ ] TESTER: the end-zone faceoff dots sit 6.13 m either side of centre - venues/rink.md says 6.7 m, and every goalie-cover faceoff drops on the misplaced dots (G-199, proof test tester-arena-end-dots-spacing)
+- [ ] TESTER: the +x goal crease is painted behind its goal (light-blue paint runs to x 94.7 units, past the goal line at ~88.5-89) instead of in front of it like the -x crease (G-199, proof test tester-arena-crease-in-front-of-goal)
+- [ ] TESTER: the glass is 1.60 m high all the way round - venues/rink.md says about 1.8 m along the sides and about 2.4 m at the ends (G-199, proof test tester-arena-glass-height)
+- [ ] TESTER: the arena has no team benches, no penalty boxes and no scorekeeper's box at all - zero meshes outside the boards at ice level on either side, and a penalised skater just stands on the ice (G-199, proof test tester-arena-benches-and-boxes)
 - [ ] TESTER: icing is whistled against a SHORTHANDED team - rules/hockey.md says icing is 'Not called when shorthanded', but a staged dump (home skater in the box, power-play tag live) still drew 'ICING - WOLVES' and a faceoff in the home end; the identical dump is correctly whistled at full strength (G-227, proof test tester-arena-no-icing-while-shorthanded)
 - [ ] TESTER: Career PLAY NEXT MATCH never starts the match - it saves the fixture, reloads to the main menu, and the match only starts if you press CAREER again on the menu. Proof: play test tester-career-play-starts-match fails in tools/game-check/fixes/apexhockey.mjs.
 - [x] (already on main since G-86 - G-92/G-93 confirmed) TESTER: No window.__reality hook, so the REALITY robot cannot measure hockey at all (direction, real sizes, skates on the ice) - the hook is never set, even in a match. Proof: play test tester-reality-hook fails in tools/game-check/fixes/apexhockey.mjs.
