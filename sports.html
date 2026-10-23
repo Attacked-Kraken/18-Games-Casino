@@ -400,10 +400,25 @@ document.getElementById('grid').addEventListener('click', function (e) {
   /* LIVE AS YOU SCROLL: a game starts by itself when its screen is mostly in view, and rests again once it has
      scrolled well away - so every box shows its game running without overloading the phone */
   if ('IntersectionObserver' in window) {
+    /* owner 2026-10-22: scrolling got stuck - every box that passed 60% in view built a whole 3D game in the
+       middle of the swipe. Now a game starts only after the box has stayed in view and the finger has stopped for
+       SETTLE_MS; a box that scrolls away first never starts. */
+    var SETTLE_MS = 900, lastScroll = 0, wait = new WeakMap();
+    ['scroll', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, function () { lastScroll = Date.now(); }, { passive: true }); });
+    function tryStart(row) {
+      wait.delete(row);
+      if (document.querySelector('.stage.fs')) return;
+      var r = row.querySelector('.stage').getBoundingClientRect(), vh = window.innerHeight || 700;
+      var vis = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+      if (vis < 0.6 * r.height) return;                                /* scrolled away meanwhile */
+      if (Date.now() - lastScroll < SETTLE_MS) { wait.set(row, setTimeout(function () { tryStart(row); }, 300)); return; }   /* still moving */
+      start(row);
+    }
     var seen = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         var row = en.target.closest('.lrow');
-        if (en.intersectionRatio >= 0.6 && !document.querySelector('.stage.fs')) start(row);
+        if (en.intersectionRatio >= 0.6) { if (!wait.has(row) && !row.classList.contains('live')) wait.set(row, setTimeout(function () { tryStart(row); }, SETTLE_MS)); }
+        else if (wait.has(row)) { clearTimeout(wait.get(row)); wait.delete(row); }
       });
     }, { threshold: [0, 0.6] });
     var far = new IntersectionObserver(function (entries) {
