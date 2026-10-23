@@ -119,3 +119,20 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (3:36 PM)
 - A PR whose required `check` shows "expected" with no status: look at the PR HEAD first - if the head moved (main merged in), the new head runs its own check; read the Check status comment on the newest head before filing HELP.
+
+## 2026-10-23 help desk (4:10 PM)
+- An order with one CHANGED line per point may have a point that measures clean on today's build: file the other CHANGED lines, answer that point "YES - nothing to fix, measured clean" with the evidence in a NOTE line. Never invent a change to fill a line.
+
+## 2026-10-23 help desk
+- A play job that dies in ~4 min with "exit code 1" and NO test lines (check says "the robot could not play it") never reached a test: file the HELP line, the help desk re-runs it once; do not change game code for it. A second identical failure = HELP-VP: robot with both run links.
+
+## 2026-10-23 help desk (5 PM)
+- Two windows can end up with the same G-number (testers self-start rounds). Use the number the MAC typed; with none, take the next free jobs/G-NN.md on main right before filing; on a clash file HELP-VP naming both windows.
+- A needs/window-N.md PR that conflicts on a long-open branch: re-file the new lines on a fresh branch from main (prepend, keep every old line) and close the old PR as superseded.
+
+## 2026-10-23 help desk (5:20 PM)
+- A play job that dies in ~4.5 min with no test lines is usually the browser INSTALL step (apt lock / stall), not the game. Check the failed job's last lines; if it says 'Could not get lock' or 'Failed to install browsers', file ONE HELP-VP: robot line with the run link and do not push or rebuild - a push restarts the whole check.
+
+## 2026-10-23 help desk
+- A tester round that numbers itself with a G-number can overwrite or clash with a builder's jobs/G-NN.md and start a branch with no shared history (PR #1281, #1296): start every self-started round from a fresh branch off main and name the report T-<window>-<HHMM>, never G-NN.
+- A green TEST PR that sits unmerged for hours is usually (a) a conflict in a tests file where both sides appended (keep both sides) or (b) GitHub leaving mergeable unknown while main moves (merge robot fix: game PR #1351). Do not wait; file HELP-VP.
