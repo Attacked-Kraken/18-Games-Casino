@@ -101,8 +101,8 @@ jobs:
       - name: Install the test browser
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          # Oct 22 2026: this download hung 33 min on main and held every later main check; 4 min cap, one retry
-          timeout 240 npx playwright install --with-deps chromium webkit || timeout 240 npx playwright install --with-deps chromium webkit
+          # Oct 22 2026: this download hung 33 min on main and held every later main check; 10 min cap, one retry (Oct 23: the 4 min cap made every PR play job fail at the install step)
+          timeout 600 npx playwright install --with-deps chromium webkit || timeout 600 npx playwright install --with-deps chromium webkit
       - name: Play ${{ matrix.game }}
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
