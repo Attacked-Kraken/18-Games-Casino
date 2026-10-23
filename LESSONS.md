@@ -91,3 +91,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk
 - A PR check that reads RUNNING for a long time may have finished and merged since: read the PR state (merged?) before filing a HELP line. Rule: "stuck RUNNING" = look at `merged` and the check list first.
+
+## 2026-10-23 help desk
+- Several robot-fault lines with one cause (slow-runner wall-clock) are answered by the first fix; file ONE HELP line per cause, not one per test, and read the lines above yours for a FIXED first.
