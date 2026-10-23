@@ -22,7 +22,7 @@ Feature → line numbers in apexf1.html (on main after G-136):
 - Menu wiring (show 2129, friendBtn ~2168, friendGo ~2202): lines 2129-2246
 - startWeekend: line 2257; runQuali: line ~2279; grid list UI in finishQuali (2311): two half tables side by side at 2322 (G-119 R1 - one 20-row list pushed LIGHTS OUT 214px off a sideways phone); main loop: line 2328
 - Cockpit attach CKAttach: line 2397; Grand Prix kit GPBoot 2408, GPAttach 2424; applyGroundKit at 2438 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
-- Test hooks window.__test: line 2458 (steerProbe at 2470 (G-136), camProbe at 2471, kitAudio + groundKit probes ~2475); REALITY hook window.__reality: line 2550; boot calls: ~2569
+- Test hooks window.__test: line 2458 (steerProbe at 2470 (G-136), camProbe at 2471, kitAudio + groundKit probes ~2475); REALITY hook window.__reality: line 2550; boot calls: ~2569; owner check link ?test=grid at the very end of the script (G-204: opens straight at the starting grid, LIGHTS OUT on screen)
 
 ## MUST
 - Own fictional teams and drivers

@@ -2568,6 +2568,11 @@ window.__apexBoot=true;
 initMenus();
 renderMenuCode();
 requestAnimationFrame(loop);
+// G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
+// with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
+(function(){ try{ const q=new URLSearchParams(location.search).get('test'); if(q!=='grid') return;
+  startWeekend().then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
+}catch(e){} })();
 </script>
 </body>
 </html>

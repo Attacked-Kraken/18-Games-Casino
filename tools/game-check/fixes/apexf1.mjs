@@ -867,6 +867,25 @@ export default [
       if (last.s - s0 < 700) return 'the driven sector was too short: ' + Math.round(last.s - s0) + ' m in 12 s';
       return true;
     },
+  },
+  {
+    id: 'play-owner-check-link',
+    ask: 'Owner check link: apexf1.html?test=grid opens straight at the starting grid with LIGHTS OUT on screen and no scrolling (G-204)',
+    async test(page, h) {
+      let out = null;
+      await h.eval(`location.href = location.pathname + '?test=grid'`).catch(() => {});
+      let grid = false;
+      for (let i = 0; i < 30 && !grid; i++) { await h.wait(500); grid = await h.eval(`(() => { const g = document.getElementById('gridMenu'); return !!g && !g.classList.contains('hidden'); })()`).catch(() => false); }
+      if (!grid) out = 'the ?test=grid link never opened the starting grid';
+      else {
+        const r = await h.eval(`(() => { const g = document.getElementById('gridMenu'); const b = document.getElementById('raceBtn').getBoundingClientRect(); return { sh: g.scrollHeight, ch: g.clientHeight, top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+        if (r.sh > r.ch + 1) out = 'the grid menu needs scrolling from the check link: content ' + r.sh + 'px on a ' + r.ch + 'px screen';
+        else if (r.top < -1 || r.bottom > r.ih + 1) out = 'LIGHTS OUT is off screen from the check link (button ' + Math.round(r.top) + '..' + Math.round(r.bottom) + ' on a ' + r.ih + 'px phone)';
+      }
+      await h.eval(`location.href = location.pathname`).catch(() => {});
+      await h.wait(600);
+      return out || true;
+    },
   }
 
 ];
