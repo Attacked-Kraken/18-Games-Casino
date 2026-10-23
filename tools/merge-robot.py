@@ -67,12 +67,18 @@ def fix_notes_conflict(pr):
     def git(*a):
         return subprocess.run(["git"] + list(a), capture_output=True, text=True)
     git("config", "user.name", "merge robot"); git("config", "user.email", "actions@users.noreply.github.com")
-    git("config", "merge.union.driver", "git merge-file -p --union %A %O %B > %A")
-    if git("fetch", "-q", "origin", "main", branch).returncode != 0:
+    # NOTE: git has a built-in "union" merge (.gitattributes merge=union). Do NOT define merge.union.driver here: the old
+    # "... > %A" version emptied the PR's own file before merging and silently dropped its lines (found Oct 23 2026).
+    def warn(why, r=None):
+        # annotations are readable through the API (the run log is not): say WHY a fix did not happen
+        print("::warning title=Merge robot::#%d: %s %s" % (n, why, ((r.stderr or r.stdout or "").strip()[:160].replace("\n", " ") if r else "")))
         return False
-    if git("checkout", "-q", "-B", branch, "origin/" + branch).returncode != 0:
-        return False
-    git("fetch", "-q", "origin", "+refs/heads/main:refs/remotes/origin/main")
+    r = git("fetch", "-q", "origin", "+refs/heads/main:refs/remotes/origin/main", "+refs/heads/%s:refs/remotes/origin/%s" % (branch, branch))
+    if r.returncode != 0:
+        return warn("could not fetch main/branch", r)
+    r = git("checkout", "-q", "-B", branch, "origin/" + branch)
+    if r.returncode != 0:
+        return warn("could not check out the branch", r)
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
@@ -88,10 +94,12 @@ def fix_notes_conflict(pr):
             open(f, "w", encoding="utf-8").write(txt)
             git("add", f)
         tidy_queue()
-        if git("commit", "-q", "-m", "merge robot: merged main, notes kept from both sides").returncode != 0:
-            git("merge", "--abort"); return False
-    if git("push", "-q", "origin", branch).returncode != 0:
-        print("#%d: could not push the merge to %s" % (n, branch)); return False
+        r = git("commit", "-q", "-m", "merge robot: merged main, notes kept from both sides")
+        if r.returncode != 0:
+            git("merge", "--abort"); return warn("merge could not be committed", r)
+    r = git("push", "-q", "origin", branch)
+    if r.returncode != 0:
+        return warn("could not push the merge to %s" % branch, r)
     gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
     print("::notice title=Merge robot::#%d: merged main into %s (notes kept from both sides), check restarted" % (n, branch))
     return True
