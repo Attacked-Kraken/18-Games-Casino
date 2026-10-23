@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Apex F1 Racing</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏁</text></svg>"> <!-- G-95: declare an icon so the browser never 404s on /favicon.ico (the Grok audit's one console error) -->
+<link rel="icon" href="data:,"> <!-- G-224: the Grok recheck still saw the favicon 404 - an empty icon link stops the request outright -->
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#04070d; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; color:#eaf2ff; }
@@ -25,6 +26,7 @@
     .overlay input[type=text] { padding:6px 8px; font-size:13px; margin-bottom:4px; }
     .overlay .menuSub { font-size:12px; margin:4px 0 8px; }
     .overlay .bigbtn { margin:4px auto; padding:7px 12px; font-size:14px; border-radius:9px; }
+    #raceBtn { min-height:44px; box-sizing:border-box; } /* G-224: LIGHTS OUT is a full 44px tap target on a sideways phone */
     .overlay table.stand { margin-top:2px; }
     .overlay table.stand td, .overlay table.stand th { padding:2px 6px; }
     #menu { flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:flex-start; }
@@ -2298,7 +2300,7 @@ function runQuali(){
   Race.mode='quali';
   banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
-  sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;';
+  sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;min-height:44px;box-sizing:border-box;'; // G-224: SKIP QUALI is a full 44px tap target
   sk.textContent='SKIP QUALI → P12';
   sk.onclick=()=>{ finishQuali(null); };
   document.body.appendChild(sk);
