@@ -56,6 +56,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - 2026-10-22 · apexflight · The game-check page is shared by every fix test and the start menu never comes back after the first flight (the harness also starts in FREE FLIGHT) → rule: a test that needs a mode must reload the page back to the menu itself before pressing its button, or it silently runs in the mode an earlier test left - both challenge tester tests fail on main this way (free-flight mode: the challenge never scores and never messages), not from the game behaviors they name.
 - apextrackfield · the G-139 sink guard cached sole indices on the menu rig's bones and passed blind once the race rebuilt the rig -> a measuring test builds its index on the bones it samples and fails closed when readings are missing (G-139 round 1)
 
+- 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the misses were the runner's clock, later filed as known robot faults).
 ## 2026-10-22 help desk
 - A job whose number never reached a Muse (lost order): ask the Mac for the next G-number, or file the report in reviews/<window>-<topic>.md - never invent a G-number.
 - Before filing an art-director/robot line, read main's newest check: a measuring error (0.18x sharpness, 48/48 sunk) may already be fixed in tools/game-check (#1044, #1027).
