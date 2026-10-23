@@ -1160,5 +1160,42 @@ export default [
       }
       return 'checklist B01: the base objects never became measurable in the running game';
     },
+  },,
+  // G-242 (window 7): checklist B02 - REALITY.md says the pitcher's mound is
+  // 18.4 m from home plate. In the running game the mound cylinder (radiusTop
+  // 5.5) and its rubber sit at z -20.17 with the plate at the origin:
+  // 20.17 m, +9.6% - outside the 3% band.
+  {
+    id: 'tester-chk-b02',
+    mode: 'b02',
+    run: async (page, ok) => {
+      const t0 = Date.now();
+      let m = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        m = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          const wp = (o) => { let x = 0, z = 0, n = o; while (n) { if (n.position) { x += n.position.x; z += n.position.z; } n = n.parent; } return [x, z]; };
+          let mound = null, plate = null;
+          root.traverse(o => {
+            if (!o.isMesh) return;
+            const p = wp(o), g = o.geometry;
+            if (g.type === 'CylinderGeometry' && g.parameters && g.parameters.radiusTop > 5 && g.parameters.radiusTop < 6) mound = p;
+            if (g.type === 'BoxGeometry' && g.parameters && Math.abs(g.parameters.width - 1.5) < 0.01 && Math.hypot(p[0], p[1]) < 1) plate = p;
+          });
+          if (!mound || !plate) return null;
+          return Math.hypot(mound[0] - plate[0], mound[1] - plate[1]);
+        }).catch(() => null);
+        if (m != null) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      ok(m != null, 'checklist B02: mound and plate objects not found in the scene');
+      if (m == null) return;
+      const d = Math.round(m * 100) / 100;
+      ok(Math.abs(m - 18.4) / 18.4 <= 0.03, `checklist B02: mound measures ${d} m from home plate - REALITY.md says 18.4 m (within 3%)`);
+    }
   },
 ];
