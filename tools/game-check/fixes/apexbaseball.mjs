@@ -711,6 +711,83 @@ export default [
     },
   },
   {
+    id: 'play-batting-timing-game-clock',
+    mode: 'batting',
+    ask: 'BUILD G-237: batting timing is scored on the pitch game clock, not the wall clock - a swing made as the ball crosses the plate contacts or fouls instead of always whiffing (G-184/G-237)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let swung = 0;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight' && batting && s.ball && s.ball.z >= -0.5) {
+          await click('swingBtn'); swung++;
+          await h.wait(700);
+          const a = await snap();
+          if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return 'swung with the ball at the plate (z=' + s.ball.z.toFixed(1) + ') and still got a clean swinging strike - timing is still scored on the wrong clock';
+          return true;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return swung ? true : 'never reached a swing at the plate in 29 s (game too slow to reach a bottom-half pitch at the plate)';
+    },
+  },
+  {
+    id: 'tester-batting-swing-wall-clock',
+    mode: 'batting',
+    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let flightStart = null, sawFlight = false;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight') {
+          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
+          if (batting && s.ball && s.ball.z >= -0.5) {
+            await click('swingBtn');
+            await h.wait(700);
+            const a = await snap();
+            if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return `swung with the ball at the plate (z=${s.ball.z.toFixed(1)} m) and still got '${a.msg}' - the swing is judged on the wall clock, not on the ball`;
+            return true;
+          }
+        } else if (flightStart !== null) {
+          const wall = (Date.now() - flightStart) / 1000;
+          flightStart = null;
+          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return sawFlight ? true : 'no pitch flight seen in 29 s, so the swing clock could not be checked';
+    },
+  },
+  {
     id: 'play-reality-hook-camera',
     mode: 'recheck',
     ask: 'BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up',
