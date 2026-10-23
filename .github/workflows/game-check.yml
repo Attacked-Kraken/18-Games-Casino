@@ -32,7 +32,7 @@ permissions:
 jobs:
   plan:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       games: ${{ steps.pick.outputs.games }}
@@ -86,7 +86,7 @@ jobs:
   play:
     needs: plan
     if: needs.plan.outputs.games != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
     strategy:
       fail-fast: false
@@ -108,6 +108,11 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.48.2
           # Oct 23 2026: the browser download sometimes stalls (10 min) or the install dies and the play job fails before any test (#1326, #1307).
           # Saved copy above (no download when present) + 4 short tries; a stalled try is killed, its leftover apt lock is cleared before the next.
+          # Oct 23 2026 6:10 PM: the 4 tries still stalled on main (22:46-23:00 UTC, 3 jobs) - a fresh runner starts apt's own daily
+          # update / unattended-upgrades at boot and it holds the apt lock ("Could not get lock /var/lib/dpkg/lock-frontend").
+          # Stop them first and wait (max 2 min) for the lock to be free.
+          sudo systemctl stop unattended-upgrades apt-daily.service apt-daily-upgrade.service apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+          for w in $(seq 1 24); do sudo fuser /var/lib/dpkg/lock-frontend /var/lib/apt/lists/lock >/dev/null 2>&1 || break; sleep 5; done
           ok=0
           for i in 1 2 3 4; do
             if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi
@@ -145,7 +150,7 @@ jobs:
   check:
     needs: [plan, play]
     if: always() && needs.plan.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
