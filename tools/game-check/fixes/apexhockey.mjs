@@ -1854,4 +1854,35 @@ export default [
     return true;
   },
 },
+ {
+  id: 'play-menu-fits-frame',
+  ask: 'G-210 (art director): at 844x390 every menu line sits inside the frame and nothing overlaps - title, subtitle, star card, the three buttons, credits, friend code and the keys lines all fully visible, and the star card never slides under the VIEW/mute buttons',
+  async test(page, h) {
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    await h.wait(1500);
+    const m = await h.eval(() => {
+      const menu = document.getElementById('menu');
+      if (!menu || getComputedStyle(menu).display === 'none') return { menu: false };
+      const items = [];
+      [...menu.children].forEach((el) => {
+        const r = el.getBoundingClientRect(); const st = getComputedStyle(el);
+        if (!r.width || !r.height || st.display === 'none' || st.visibility === 'hidden') return;
+        if (!el.textContent.trim()) return;
+        items.push({ name: (el.id || el.className || el.tagName) + ' "' + el.textContent.trim().slice(0, 24) + '"', x: r.x, y: r.y, r: r.right, b: r.bottom });
+      });
+      const chrome = ['viewBtn', 'muteBtn'].map((id) => { const el = document.getElementById(id); if (!el) return null; const r = el.getBoundingClientRect(); return { name: id, x: r.x, y: r.y, r: r.right, b: r.bottom }; }).filter(Boolean);
+      return { menu: true, items, chrome, W: innerWidth, H: innerHeight };
+    });
+    if (!m || !m.menu) return 'the main menu is not showing to be measured';
+    if (m.items.length < 8) return 'only ' + m.items.length + ' menu lines found - the menu did not render fully';
+    const out = m.items.filter((b) => b.x < -1 || b.y < -1 || b.r > m.W + 1 || b.b > m.H + 1);
+    if (out.length) return 'menu lines are clipped by the frame at ' + m.W + 'x' + m.H + ': ' + out.map((b) => b.name + ' spans y ' + Math.round(b.y) + '..' + Math.round(b.b)).join('; ') + ' - every line must sit inside the frame';
+    const overlap = (a, b) => Math.min(a.r, b.r) - Math.max(a.x, b.x) > 2 && Math.min(a.b, b.b) - Math.max(a.y, b.y) > 2;
+    for (let i = 0; i < m.items.length; i++) for (let j = i + 1; j < m.items.length; j++)
+      if (overlap(m.items[i], m.items[j])) return 'menu lines overlap each other: ' + m.items[i].name + ' and ' + m.items[j].name;
+    const star = m.items.find((b) => b.name.indexOf('starCard') === 0);
+    if (star) for (const c of m.chrome) if (overlap(star, c)) return 'the star card slides under the ' + c.name + ' button';
+    return true;
+  }
+ }
 ];
