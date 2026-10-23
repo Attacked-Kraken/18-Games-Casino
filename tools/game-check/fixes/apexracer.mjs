@@ -874,4 +874,35 @@ export default [
       return true;
     },
   },
+  {
+    id: 'map-apexracer-current',
+    ask: 'STUDIO-STANDARD 9.7 (G-179): the WHERE THINGS ARE map at the top of looks/apexracer.md names the main parts and its line numbers match apexracer.html',
+    async test(page, h) {
+      const map = fs.readFileSync(path.join(repoRoot, 'looks/apexracer.md'), 'utf8');
+      const game = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8').split('\n');
+      for (const part of ['Menu', 'Garage', 'Driving physics', 'AI', 'Traffic', 'Camera', 'HUD', 'Sounds', 'REALITY']) {
+        if (!new RegExp(part, 'i').test(map)) return 'the map does not name ' + part;
+      }
+      const pairs = [
+        ['toMenu', /function toMenu\(/],
+        ['renderGarage', /function renderGarage\(/],
+        ['makeGlbCar', /function makeGlbCar\(/],
+        ['buildWorld', /async function buildWorld\(/],
+        ['setupRace', /async function setupRace\(/],
+        ['stepPlayer', /function stepPlayer\(/],
+        ['stepAI', /function stepAI\(/],
+        ['stepTraffic', /function stepTraffic\(/],
+        ['musRaceMix', /function musRaceMix\(/],
+        ['__reality', /window\.__reality =/],
+      ];
+      for (const [name, re2] of pairs) {
+        const actual = game.findIndex((l) => re2.test(l)) + 1;
+        if (!actual) return name + ' not found in apexracer.html';
+        const m = map.match(new RegExp(name.replace(/[.]/g, '\\.') + '[^\\n]{0,28}?L(\\d+)'));
+        if (!m) return 'the map carries no line number for ' + name;
+        if (Math.abs(parseInt(m[1], 10) - actual) > 4) return 'the map says ' + name + ' is at L' + m[1] + ' but apexracer.html has it at L' + actual + ' - refresh the map (STUDIO-STANDARD 9.7)';
+      }
+      return true;
+    },
+  },
 ];
