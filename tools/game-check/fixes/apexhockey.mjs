@@ -1974,7 +1974,7 @@ export default [
  },
 {
   id: 'never-g-217-p1',
-  ask: 'NEVER (G-217, the G-170 line): skate blades stay DOWN flat on the ice - the planted blade of a standing player lies flat, end-to-end pitch under 5.5 cm; the away boots were still toe-down at the 0.8 rad counter-pitch (signed medians -4.8..-6.2 cm, robot median 6.6) until they took the same 1.0 rad as the home boots',
+  ask: 'NEVER (G-217, the G-170 line): skate blades stay DOWN flat on the ice - the planted blade of a standing player lies flat, end-to-end pitch under 5.5 cm; the away boots were still toe-down at the 0.8 rad counter-pitch (signed medians -4.8..-6.2 cm, robot median 6.6) until they took the same 1.0 rad as the home boots. ROUND 1: and the blades stay levelled while skating around too, not only when stopped - the weight-bearing blade true 3D tilt in live play stays at a median of 8 deg or less',
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
@@ -1988,6 +1988,42 @@ export default [
       await h.wait(600);
     }
     if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
+    // ROUND 1 (G-217): first, while the match is live and everyone is skating, the weight-bearing blade true 3D tilt - the end-to-end read used below goes blind once a blade pitches past about 45 deg (its horizontal projection collapses), which is how pitched blades kept passing
+    const sampleSkate = () => h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return null;
+      const out = [];
+      for (const sk of hk.skaters) {
+        if (!sk.kit || !sk._blade || sk.goalie) continue;
+        const stl = sk.kit.parts.steel; const V = hk.puck.mesh.position.constructor; const v = new V();
+        const feet = [];
+        for (let k = 0; k < 2; k++) {
+          const pts = [];
+          for (const ix of sk._blade[k]) { stl.getVertexPosition(ix, v); pts.push([v.x, v.y + sk.athWrap.position.y, v.z]); }
+          if (pts.length < 8) { feet.push(null); continue; }
+          let cx = 0, cy = 0, cz = 0; pts.forEach(q => { cx += q[0]; cy += q[1]; cz += q[2]; }); const n = pts.length; cx /= n; cy /= n; cz /= n;
+          let xx = 0, xy = 0, xz = 0, yy = 0, yz = 0, zz = 0;
+          pts.forEach(q => { const dx = q[0] - cx, dy = q[1] - cy, dz = q[2] - cz; xx += dx * dx; xy += dx * dy; xz += dx * dz; yy += dy * dy; yz += dy * dz; zz += dz * dz; });
+          let ax = 1, ay = 0, az = 0;
+          for (let it = 0; it < 24; it++) { const nx = xx * ax + xy * ay + xz * az, ny = xy * ax + yy * ay + yz * az, nz = xz * ax + yz * ay + zz * az; const L = Math.hypot(nx, ny, nz) || 1; ax = nx / L; ay = ny / L; az = nz / L; }
+          feet.push({ tilt: Math.asin(Math.min(1, Math.abs(ay))) * 180 / Math.PI, cy });
+        }
+        if (!feet[0] || !feet[1]) continue;
+        out.push(feet[0].cy <= feet[1].cy ? feet[0].tilt : feet[1].tilt);
+      }
+      return { st: hk.game.state, tilts: out };
+    }).catch(() => null);
+    const tilts = [];
+    for (let i = 0; i < 12 && tilts.length < 200; i++) {
+      const r = await sampleSkate();
+      if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
+      await h.wait(650);
+    }
+    if (tilts.length < 80) return 'round 1: only ' + tilts.length + ' weight-bearing blade samples while skating - not enough to judge';
+    tilts.sort((a, b) => a - b);
+    const medT = tilts[Math.floor(tilts.length / 2)];
+    const overT = tilts.filter(t => t > 16).length;
+    if (medT > 8) return 'round 1: blades level only when stopped - while skating the planted blade tilts a median ' + medT.toFixed(0) + ' deg (must stay levelled skating around too)';
+    if (overT / tilts.length > 0.08) return 'round 1: blades level only when stopped - ' + overT + ' of ' + tilts.length + ' weight-bearing feet tilted over 16 deg while skating';
     const freezeFn = () => {
       const hk = window.__hk; const g = hk.game;
       g.period = 1; g.clockT = 120;
