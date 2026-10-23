@@ -1418,7 +1418,13 @@ function stepPuck(dt){
     return;
   }
   puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
-  puck.deadT = puck.vel.lengthSq()<9 ? (puck.deadT||0)+dt : 0; // a nearly-stopped loose puck starts the dead-puck clock
+  if(puck.vel.lengthSq()<9){ // a nearly-stopped loose puck starts the dead-puck clock - but that whistle is only for a puck NOBODY can take: while the nearest skater keeps closing on it the clock holds at the retrieval mark instead of blowing dead under his skates (G-228: a legal shorthanded dump dying behind the far net is retrieved, not whistled)
+    puck.deadT=(puck.deadT||0)+dt;
+    let nd=1e9; for(const o of skaters){ if(o.goalie||o.inBox) continue; const dd=(o.pos.x-puck.pos.x)**2+(o.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
+    nd=Math.sqrt(nd);
+    if(puck._deadBest==null) puck._deadBest=nd;
+    else if(nd<puck._deadBest-1){ puck._deadBest=nd; if(puck.deadT>1.5) puck.deadT=1.5; }
+  } else { puck.deadT=0; puck._deadBest=null; }
   const _ps0=puck.vel.length();
   puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
   if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
