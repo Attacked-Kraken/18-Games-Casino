@@ -575,7 +575,9 @@ for (const g of games) {
     if (live.length) {
       const keep = [];
       for (const f of r.fail) {
-        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f); } catch (e) { return false; } });
+        // owner Oct 22 11 PM (HELP-VP robot, window 3): the printed line carries the test's NAME (ask), not its id, so also match the ids of the failing tests whose text is in the line
+        const ids = (r.fixes || []).filter(x => x && !x.ok && x.ask && f.includes(String(x.ask).slice(0, 40))).map(x => x.id).join(' ');
+        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f + ' ' + ids); } catch (e) { return false; } });
         if (hit) r.check.push('KNOWN ROBOT FAULT (robot side owns it, not the builder): ' + f.slice(0, 160) + ' - ' + (hit.why || '').slice(0, 140));
         else keep.push(f);
       }
