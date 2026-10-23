@@ -1039,7 +1039,7 @@ export default [
   {
     id: 'never-g-207-p1',
     ask: 'G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap',
-    run: async (page, h) => {
+    async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); return true; });
       let s0 = null;
       for (let i = 0; i < 40 && !s0; i++) { await h.wait(500); s0 = await h.eval(() => { const R = window.__erc.R; return R && R.P ? R.signTxt : null; }); }
@@ -1052,7 +1052,7 @@ export default [
       if (s1 !== '1/3') return 'going into lap 2 the sign says ' + JSON.stringify(s1) + ', not 1/3';
       const s2 = await cross('Finish');
       if (s2 !== 'Finish') return 'on the last lap the sign says ' + JSON.stringify(s2) + ', not Finish';
-      return null;
+      return true;
     },
   },
 ];
