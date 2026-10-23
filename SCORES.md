@@ -10,11 +10,11 @@ How to grade (be HARSH, like a paying player who just downloaded it):
 - Broken, toy-looking, or the owner has complained = under 20/50. 40+/50 only if you'd pay for it.
 - After the dash: the ONE biggest problem, in plain words.
 
-graded: 2026-10-22
+graded: 2026-10-23
 
-- apexbaseball.html: looks real 5/10 · plays right 8/10 · fun 7/10 · sound 7/10 · phone feel 7/10 = 34/50 - the owner's floodlit night ballpark still isn't in - it still plays in the old flat daytime park
-- apexf1.html: looks real 3/10 · plays right 4/10 · fun 3/10 · sound 3/10 · phone feel 1/10 = 14/50 - the LIGHTS OUT start button sits below the bottom of a sideways phone - you have to scroll just to start a race
-- apexflight.html: 11/50 - the plane barely moves and the controls don't answer in the air - you can't really fly it
-- apexhockey.html: 26/50 - the game plays itself: the clock runs down and the Sharks score with nobody touching the controls
-- apexracer.html: 29/50 - headlight glow floats in the air in front of the cars, past the nose
-- apextrackfield.html: 19/50 - rival runners run straight through the hurdles - only you have to jump them
+- apexbaseball.html: looks real 5/10 · plays right 7/10 · fun 7/10 · sound 7/10 · phone feel 6/10 = 32/50 - a well-timed swing still can't make contact on a slow phone - the swing is judged by the wall clock while the pitch flies on game time
+- apexf1.html: looks real 4/10 · plays right 4/10 · fun 4/10 · sound 3/10 · phone feel 4/10 = 19/50 - the steering still won't hold the racing line - the owner said he can't stay on the track and it still drifts wide
+- apexflight.html: looks real 3/10 · plays right 2/10 · fun 2/10 · sound 2/10 · phone feel 2/10 = 11/50 - the controls barely answer in the air and the plane hardly moves - you can't really fly it, let alone land it
+- apexhockey.html: looks real 6/10 · plays right 4/10 · fun 4/10 · sound 6/10 · phone feel 5/10 = 25/50 - goals don't count - a puck over the goal line never registers, so nobody can ever win a game
+- apexracer.html: looks real 5/10 · plays right 5/10 · fun 6/10 · sound 6/10 · phone feel 4/10 = 26/50 - the headlight glow still floats in the air well past the car's nose
+- apextrackfield.html: looks real 5/10 · plays right 3/10 · fun 3/10 · sound 5/10 · phone feel 3/10 = 19/50 - the high jump is still broken - he takes off a metre before the bar and never goes over it
