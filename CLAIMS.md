@@ -167,10 +167,15 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-136 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-136.md | test/g-136-apextrackfield |
+| G-141 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-141.md | test/g-141-apextrackfield |
+| G-145 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-145.md | test/g-145-apextrackfield |
+| G-229 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-229.md, CLAIMS.md | test/g-229-apextrackfield |
 | G-226 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-226.md, CLAIMS.md | test/g-226-apextrackfield |
 | G-222 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-222.md, CLAIMS.md | build/g-222-apexbaseball |
 | G-187 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-187.md, CLAIMS.md | test/g-187-apextrackfield |
 | G-183 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/G-183.md, CLAIMS.md | test/g-183-apextrackfield |
+| G-229 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/G-229.md, CLAIMS.md | test/g-229-apexbaseball |
+| G-201 | window 7 | jobs/G-201.md, CLAIMS.md | test/g-201-apexbaseball |
 | G-196 | window 7 | jobs/G-196.md, CLAIMS.md | test/g-196-apexbaseball |
 | G-177 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-177.md, CLAIMS.md | test/g-177-apexbaseball |
 | G-167 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-167.md, CLAIMS.md | build/g-167-apexbaseball |
@@ -223,6 +228,11 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-176 fix 1 | window 6 | jobs/G-176.md, looks/apexracer.md, tools/game-check/fixes/apexracer.mjs | report/g-176-fix-window6 |
 | G-179 | window 6 | looks/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-179.md | build/g-179-apexracer |
 | G-206 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-206.md | build/g-206-apexracer |
+| G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
 
+<!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
+
+<!-- merge robot heartbeat test c, Oct 23 2026, safe to ignore -->
+<!-- merge robot heartbeat test d, Oct 23 2026, safe to ignore -->
