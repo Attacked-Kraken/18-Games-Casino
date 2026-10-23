@@ -1,7 +1,7 @@
 name: Game check (PR)
 # Owner Oct 21 2026 "split the good from repairs so it doesn't take 50 min - do both": the robot on a PULL REQUEST plays
 # the games SIDE BY SIDE (one robot per game, up to 8 at once) and one small step ("check") gives the verdict - about
-# 8-10 minutes instead of 50. A Claude change to the robot's own files plays only 2 reference games here; main's full
+# 8-10 minutes instead of 50. A Claude change to the robot's own files plays ONE small reference game here (Paper Plane, owner Oct 23 2026); main's full
 # check after the merge (game-check.yml, auto-undo) covers the rest. The 55-minute limit stays as the safety net.
 # The verdict job is NAMED "check" so the owner's GitHub rule ("check" must pass) and the merge robot keep working.
 on:
@@ -52,7 +52,7 @@ jobs:
           elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
             # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
             # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
-            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
+            MODE="robot-only"; G="apexpaperplane.html,"   # owner Oct 23 5:24 PM: ONE small reference game - a robot-only PR can't be killed by Hockey
           fi
           if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
@@ -84,11 +84,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Keep the test browser between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.48.2-${{ runner.os }}
       - name: Install the test browser
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          # Oct 22 2026: this download hung 33 min on main and held every later main check; 10 min cap, one retry (Oct 23: the 4 min cap made every PR play job fail at the install step)
-          timeout 600 npx playwright install --with-deps chromium webkit || timeout 600 npx playwright install --with-deps chromium webkit
+          # Oct 23 2026: the browser download sometimes stalls (10 min) or the install dies and the play job fails before any test (#1326, #1307).
+          # Saved copy above (no download when present) + 4 short tries; a stalled try is killed, its leftover apt lock is cleared before the next.
+          ok=0
+          for i in 1 2 3 4; do
+            if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi
+            echo "::warning::browser install try $i failed or stalled - trying again"
+            sudo pkill -9 apt-get 2>/dev/null || true; sudo pkill -9 dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 5
+          done
+          [ "$ok" = 1 ] || { echo "::error::test browser install failed 4 times"; exit 1; }
       - name: Play ${{ matrix.game }}
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
@@ -149,7 +164,10 @@ jobs:
         run: |
           if [ "$OUTCOME" = "success" ]; then bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" PASSED; exit 0; fi
           R=game-check-out/blockers.txt
-          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game. Push an empty commit or ask the VP to re-run it." > $R; fi
+          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game." > $R; fi
+          # Oct 23 2026 owner: "could not play it / played 0" is the robot's own trouble - never tell the Muse to push (that restarts everything)
+          if [ "$PLAY" != "success" ] && grep -qiE "could not play it|played 0 game|robot itself broke" "$R" game-check-out/*.txt 2>/dev/null; then
+            bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" ROBOT "$R"; exit 0; fi
           bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" FAILED "$R"
       - uses: actions/upload-artifact@v4
         if: always()
