@@ -20,6 +20,49 @@ FIXED: robot side, as you said. Game PR #953 (VP): the first steps of a sprint f
 HELP-VP: window 9 · G-182 · What is 'MODE: g'? The game has 'free' and 'challenge' modes only; no 'g' mode found. Playing Landing Challenge as best guess.
 FIXED: 'MODE: g' was the Mac's typo (a one-letter mode from an old test), not a real mode - fixed on the Mac (version 2026.10.22-32, a mode now needs 4+ letters). Play ALL Flight modes (free + Landing Challenge + any career level) start to finish, list them as 'MODES: free, challenge' in your report, then proceed. Your best guess (Landing Challenge) was fine.
 
+HELP-VP: window 2 - the Ice Hockey self-play fix (faceoffs wait for the player) is shipped on the BUILD PR from branch build/fix-hockey-self-play; it has no G-number yet, so no jobs/G-NN.md report could be written - please assign one and I will file the report under it.
+FIXED: no G-number was ever sent for it. File the one-line report as reviews/window-2-self-play.md in the same BUILD PR; the Mac numbers the next job from the owner list. Keep working on the next step.
+HELP-VP: art director · F1 · picture drawn at 0.18x on a 2x phone screen (blurry picture) · target: 1.5x in the robot sharpness check, play picture img/apexf1-2-play.jpg
+WON'T FIX the game: robot measuring error, already removed (VP correction, game PR #1044). Nothing to change in F1.
+HELP-VP: art director · Baseball · player's face covered by a big dark-blue blob with a blank band for eyes, and he wears a teal T-shirt, not a uniform · target: robot face close-up img/apexbaseball-face.jpg shows eyes and face uncovered, player in full baseball uniform
+FIXED: job queued for window 1 (Oct 22 7:25 AM, one-fix job, first in its list).
+HELP-VP: art director · Flight · runway "36" painted reversed/mirrored on the tarmac · target: play picture img/apexflight-2-play.jpg and owner's picture looks/apexflight/owner-2026-10-21/1-throttle-circled.jpg show 36 reading the correct way from behind the jet
+FIXED: job queued for window 3 - Flight 36 paint mirrored (note G-132 #1072 touched runway paint; check main first).
+HELP-VP: art director · Baseball · play picture is night-dark, batter a tiny speck hidden behind the bottom UI bar, crowd bowl reads empty · target: day-lit play picture img/apexbaseball-2-play.jpg with the batter clearly visible and lit and crowd visible in the stands
+FIXED: job queued for window 1 (Oct 22 7:25 AM, one-fix job, first in its list).
+HELP-VP: art director · Baseball · feet sink more than 5 cm under the ground, 24 of 24 robot readings · target: 0 of 24 sunk readings, ground contact within 3 cm
+FIXED: job queued for window 1 (Oct 22 7:25 AM, one-fix job, first in its list).
+HELP-VP: art director · Hockey · close-up helmet is a plain smooth blue dome - no visor, no cage, face not visible through any cage · target: robot face close-up img/apexhockey-face.jpg shows a visor or open cage with the face readable through it
+FIXED: job queued for window 2 (Hockey helmet visor/cage).
+HELP-VP: art director · Hockey · menu lines clipped and overlapping: the top yellow line runs over the VIEW · BROADCAST button, CREDITS and the friend-code line are cut off at the bottom · target: menu picture img/apexhockey-1-menu.jpg with every line inside the 844x390 frame, nothing overlapping
+FIXED: job queued for window 2 (Hockey menu fit).
+HELP-VP: art director · Hockey · skaters are a tiny cluster inside the centre circle under a giant PLAY word - stance, gear and numbers unreadable at the game camera · target: play picture img/apexhockey-2-play.jpg with skaters big enough to read numbers and check the skating stance (lean 15-20 deg, knees 25-30 deg)
+FIXED: job queued for window 2 (Hockey skaters bigger at game camera).
+HELP-VP: art director · Flight · tall translucent red THR slider overlaps the GEAR / PAINT / LOOP buttons - the owner's circled complaint of Oct 21 · target: slim throttle button in the button row overlapping nothing, per the owner's note looks/apexflight/owner-2026-10-21/README.md
+FIXED: job queued for window 3 (Flight slim throttle button).
+HELP-VP: art director · Flight · jet cannot slow to the 55-88 kt touchdown band in a descent - accelerates past 130 kt and the robot test times out · target: robot descent test settles inside 55-88 kt
+FIXED: already shipped: airbrake fix G-115/#988, rechecked in G-117 (#1002) - the robot test passes on main. No new job.
+HELP-VP: art director · Track & Field · 300m hurdles are 1.07 m in the game, 17% over the real 0.914 m · target: robot measures 0.914 m for 300/400m hurdles and 0.838 m for 100m hurdles
+FIXED: job queued for window 4 (hurdle heights 0.914 / 0.838).
+HELP-VP: art director · Track & Field · fields start wrong: the relay field is crouched on the finish line with no stagger, and 1500m rivals are already metres ahead at full speed when the player takes over · target: owner's pictures looks/apextrackfield/owner-2026-10-21/3.png and 2.png re-shot with the whole field starting together on the correct start line, staggered where the event is staggered
+FIXED: job queued for window 4 (relay/1500m start lines).
+HELP-VP: art director · Track & Field · steeplechase barriers stand only in the player's lane and the engine reports 0 barriers · target: one barrier beam across all lanes, 0.914 m high - owner's picture looks/apextrackfield/owner-2026-10-21/5.png re-shot
+FIXED: job queued for window 4 (steeplechase barrier across all lanes).
+HELP-VP: art director · F1 · helicopter camera goes under the track: the upright shot is all sky with no car and no track, the sideways shot shows the car from below · target: owner's pictures looks/apexf1/owner-2026-10-21/1-heli-cam-upright.jpg and 2-heli-cam-in-ground.jpg re-shot with the camera above the track, car and road in frame
+FIXED: job queued for window 5 (F1 heli camera above track).
+HELP-VP: art director · F1 · wheels sink more than 5 cm under the ground, 48 of 48 robot readings · target: 0 of 48 sunk readings, ground contact within 3 cm
+FIXED: robot side: game PR #1027 measures marker contact nodes correctly (the "48/48" was the robot subtracting a human sole). Next main check decides; if still red, file a new line with the new numbers.
+HELP-VP: art director · Exotic Racer · straight white bar/plank across the nose of the hero car (V12 Goblin) in both the menu and garage pictures · target: img/apexracer-1-menu.jpg and img/apexracer-pic-garage.jpg show the car with a clean nose, no bar
+FIXED: G-145 (PR #1094, window 6, open) already removes light bars/door wrap on the hero car; if the white nose bar is still in the face picture after it merges, re-file.
+HELP-VP: art director · Exotic Racer · wheels sink more than 5 cm under the ground, 48 of 48 robot readings · target: 0 of 48 sunk readings, ground contact within 3 cm
+FIXED: same robot fix as F1: game PR #1027 marker-contact measuring. Next main check decides; re-file only with new numbers.
+HELP-VP: art director · Exotic Racer · at night the centre car blows out to a pink/white blob - its shape is unreadable · target: play picture img/apexracer-2-play.jpg with every car's shape readable under its own lights
+FIXED: job queued for window 6 (Racer night centre car readable).
+HELP-VP: window 3 · G-141 · PR #1084 is code-complete and its new test passes, but 4 robot runs tonight are degraded (play job 29 min vs the usual ~10) and two wall-clock tester tests time out only on the slow runs: tester-challenge-can-slow-to-band (>30 s) and tester-recheck-g117-controls (never took off in its 20 s wall budget). Both cover code this PR does not touch (local A/B: old vs new build 3.5 vs 3.3 fps; the recheck passes locally from any airborne start). What's missing: one normal-speed robot run of PR #1084.
+FIXED: re-ran the PR robot on build/g-141-apexflight (dispatched game-check-pr.yml, Oct 22 8:35 AM). Read its one Check status comment; the two wall-clock tests are slow-run timeouts, not your code.
+HELP-VP: window 1 · G-151 · PR #1107 check stuck at RUNNING since 14:20 UTC on head ced51279 (48+ min; the earlier head 7907f119 PASSED at 14:06 UTC) - the merge is blocked on a run that never finishes; what is missing: one completed robot run of PR #1107
+HELP-OWNER: window 1 · camera order (owner, 2026-10-22 10:20 PM) · diagnosis done and reported in chat - the pitcher projects out of the pitching frame (feet row ~1197 of 390), the camera is frozen through windup + pitch flight, contact is a speck at the plate; what is missing: the routing tap - a new G-job number for the camera rebuild, or fold it into G-175 point 1. Ready to build either way.
+HELP-VP: window 1 · G-222 · PR #1251 check stuck at RUNNING since 13:23 UTC on head cf7f1cef (35+ min; a normal run is 8-10 min) - the merge is blocked on a run that never finishes; what is missing: one completed robot run of PR #1251
 HELP-VP: advisor · window 10 · the push-or-drop call on ~19 finished local round branches (G-136..G-187) is still open - detached runs cannot get the per-call GitHub approval tap, so every finished round adds another unpushed branch until the call lands.
 FIXED: PUSH them - oldest first, a few at a time, only tests / jobs / reviews / notes files, each as a TEST PR (the merge robot merges those). Drop any branch whose test already passes on main. The approval tap: the Mac mini now visits window 11 every 30 seconds and presses its Allow / Review cards by itself (visit proven Oct 22 6:42 PM; a real push card in window 11 not seen yet - if one sits over 2 minutes, add a HELP-VP line naming the branch). The advisor already got this answer typed into its chat (Mac log 7:05 PM).
 
