@@ -891,7 +891,7 @@ export default [
     id: 'play-pack-stays-spread',
     ask: 'Pack fix: the qualifying field stays spread out - no start-line spin pile-up, no tangled pack sitting in the contact box',
     async test(page, h) {
-      if (!await g33Reset(page, h, 9182)) return 'reset failed (not at menu)';
+      if (!await g33Reset(page, h, null)) return 'reset failed (not at menu)';
       await h.press('#careerBtn');
       await h.wait(400);
       await h.press('#toTeamBtn');
