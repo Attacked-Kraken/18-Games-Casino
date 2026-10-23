@@ -7,9 +7,9 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## WHERE THINGS ARE (apextrackfield.html - line numbers, kept current per job)
 - Stage portrait rotation (the sideways box): line 21 - screens/panels CSS: lines 29-52
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
-- Touch layer (stick / TAP RUN / ACTION): line 172 - menu markup: line 178 - event grid (#grid): lines 209-215 - career screen: line 244
+- Touch layer (stick / TAP RUN / ACTION): line 172 - menu markup: line 178 - event grid (#grid, BACK button bGridBack renders at the TOP of the panel via CSS order - DOM-last on purpose: the robot's '#grid button' start step must hit the first event): lines 209-215 - career screen: line 244
 - fitGame (sizes renderer + camera to the turned box): line 340 - audio (AudioSys): line 391
-- Live engine pointer ENG: line 792 - TESTLINK (?test= link event, G-171): line 793 - sprint start hold (G-244, field waits on the line): lines 834-836 - hurdles test-link countdown framing: line 2680 - results finishCommon: line 3196 - results exit wiring (bResMenu): line 3557 - ?test= boot hook: line 3664 - race frame loop frame(): line 3670 - REALITY hook: line 3735 - test hooks (__tf): line 3745
+- Live engine pointer ENG: line 792 - TESTLINK (?test= link event, G-171): line 793 - sprint start hold (G-244, field waits on the line; line numbers may have moved, search "start hold"): lines 834-836 - hurdles test-link countdown framing: line 2677 - results finishCommon: line 3195 - results exit wiring (bResMenu: free play returns to the event grid): line 3557 - ?test= boot hook: line 3664 - race frame loop frame(): line 3670 - REALITY hook: line 3735 - test hooks (__tf): line 3745
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
