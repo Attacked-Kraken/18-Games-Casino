@@ -10,7 +10,7 @@ open pull request that is:
 After merging it starts the Game check on main once (merges made by this robot don't start it by themselves).
 If the Muse later asks to merge it too, its card just finds it already merged - harmless."""
 import re
-import json, os, subprocess, datetime
+import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
 MAX_AGE_H = 12
@@ -67,12 +67,18 @@ def fix_notes_conflict(pr):
     def git(*a):
         return subprocess.run(["git"] + list(a), capture_output=True, text=True)
     git("config", "user.name", "merge robot"); git("config", "user.email", "actions@users.noreply.github.com")
-    git("config", "merge.union.driver", "git merge-file -p --union %A %O %B > %A")
-    if git("fetch", "-q", "origin", "main", branch).returncode != 0:
+    # NOTE: git has a built-in "union" merge (.gitattributes merge=union). Do NOT define merge.union.driver here: the old
+    # "... > %A" version emptied the PR's own file before merging and silently dropped its lines (found Oct 23 2026).
+    def warn(why, r=None):
+        # annotations are readable through the API (the run log is not): say WHY a fix did not happen
+        print("::warning title=Merge robot::#%d: %s %s" % (n, why, ((r.stderr or r.stdout or "").strip()[:160].replace("\n", " ") if r else "")))
         return False
-    if git("checkout", "-q", "-B", branch, "origin/" + branch).returncode != 0:
-        return False
-    git("fetch", "-q", "origin", "+refs/heads/main:refs/remotes/origin/main")
+    r = git("fetch", "-q", "origin", "+refs/heads/main:refs/remotes/origin/main", "+refs/heads/%s:refs/remotes/origin/%s" % (branch, branch))
+    if r.returncode != 0:
+        return warn("could not fetch main/branch", r)
+    r = git("checkout", "-q", "-B", branch, "origin/" + branch)
+    if r.returncode != 0:
+        return warn("could not check out the branch", r)
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
@@ -88,13 +94,29 @@ def fix_notes_conflict(pr):
             open(f, "w", encoding="utf-8").write(txt)
             git("add", f)
         tidy_queue()
-        if git("commit", "-q", "-m", "merge robot: merged main, notes kept from both sides").returncode != 0:
-            git("merge", "--abort"); return False
-    if git("push", "-q", "origin", branch).returncode != 0:
-        print("#%d: could not push the merge to %s" % (n, branch)); return False
+        r = git("commit", "-q", "-m", "merge robot: merged main, notes kept from both sides")
+        if r.returncode != 0:
+            git("merge", "--abort"); return warn("merge could not be committed", r)
+    r = git("push", "-q", "origin", branch)
+    if r.returncode != 0:
+        return warn("could not push the merge to %s" % branch, r)
     gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
     print("::notice title=Merge robot::#%d: merged main into %s (notes kept from both sides), check restarted" % (n, branch))
     return True
+
+
+WAIT_UNTIL = time.time() + 120   # total seconds this run may spend waiting for GitHub to work out 'mergeable'
+
+
+def settle_pr(n):
+    """Oct 23 2026 (window 5's PR #1264 sat 'dirty' with nobody noticing): right after main moves, GitHub answers
+    mergeable=null ("still working it out") for a while. The old robot read that as 'not mergeable yet', skipped the PR,
+    and nothing woke it again. Ask a few more times, within a total budget."""
+    full = gh("repos/%s/pulls/%d" % (REPO, n)) or {}
+    while full.get("mergeable") is None and time.time() < WAIT_UNTIL:
+        time.sleep(7)
+        full = gh("repos/%s/pulls/%d" % (REPO, n)) or full
+    return full
 
 
 SUMMARY = []
@@ -120,6 +142,7 @@ def tell_pr(n, sha, text):
 def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
+    revisit, looked = False, 0   # revisit = some PR still needs the robot to look again soon
     for pr in gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []:
         n, title = pr["number"], pr.get("title", "")
         made = datetime.datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=datetime.timezone.utc)
@@ -137,17 +160,21 @@ def main():
         if pr["head"]["repo"] is None or pr["head"]["repo"]["full_name"] != REPO:
             say("#%d skipped: from another repo" % n); continue
         files = gh("repos/%s/pulls/%d/files?per_page=100" % (REPO, n)) or []
+        looked += 1
         if any(f["filename"].startswith(".github/") for f in files):
             say("#%d skipped: changes the robots (.github/) - owner/Claude merges those" % n); continue
-        full = gh("repos/%s/pulls/%d" % (REPO, n)) or {}
+        full = settle_pr(n)
         if full.get("mergeable") is False and full.get("mergeable_state") == "dirty":
             # owner Oct 21 2026 2:24 PM (PR #883, window 8: green but a conflict in jobs/QUEUE.md): the robot fixes
             # NOTES conflicts by itself - QUEUE.md / job reports / CLAIMS.md keep BOTH sides' lines (git 'union' merge,
             # .gitattributes) - pushes the fix to the PR's branch and restarts its check. Anything else stays for a Muse.
             if fix_notes_conflict(pr):
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
+            revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
         if full.get("mergeable") is not True:
+            if full.get("mergeable") is None:
+                revisit = True  # GitHub still hasn't answered - ask again in a few minutes
             say("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
         # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
         # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
@@ -163,6 +190,7 @@ def main():
                 print("::notice title=Merge robot::#%d was %d commit(s) behind main - merged main into %s and restarted its check; merges next round if green" % (n, behind, pr["head"]["ref"]))
             else:
                 print("#%d: behind main by %d but could not update the branch" % (n, behind))
+            revisit = True
             continue
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
@@ -171,6 +199,7 @@ def main():
             if k not in newest or (r.get("started_at") or "") > (newest[k].get("started_at") or ""):
                 newest[k] = r
         if "check" not in newest:
+            revisit = True
             say("#%d skipped: the robot's game check hasn't run yet" % n); continue
         busy = [k for k, r in newest.items() if r.get("status") != "completed"]
         bad = [k for k, r in newest.items() if r.get("status") == "completed" and r.get("conclusion") not in OK]
@@ -187,6 +216,15 @@ def main():
                 if any(f["filename"].startswith(starts) for f in files):
                     follow.add(wf)
             print("::notice title=Merge robot::merged #%d %s" % (n, title))
+    if merged and looked > len(merged):
+        revisit = True          # a merge moved main: the other open PRs may have just turned conflicted
+    try:   # tells the workflow's heartbeat job to wake this robot again in a few minutes (GitHub's 5-minute timer is not reliable)
+        with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a") as f:
+            f.write("revisit=%s\n" % ("true" if revisit else "false"))
+        if revisit:
+            print("heartbeat: asking to be woken again in a few minutes")
+    except Exception:
+        pass
     if merged:
         gh("repos/%s/actions/workflows/game-check.yml/dispatches" % REPO, method="POST", fields={"ref": "main"})
         print("started the Game check on main")
