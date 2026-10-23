@@ -1139,7 +1139,7 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
-   free flight - menus skipped - with the shared kit thumb pad on screen. */
+   free flight - menus skipped - with the shared kit pad on screen. */
 if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
