@@ -1,3 +1,7 @@
+BLOCKED BY: approval cards - every connector write waits on a tap (the G-196 filing sat ~6 min tonight; the stale G-123 claim card from 05:10Z is still pending and must NOT be tapped); runtime restarts also killed 3 play sessions today.
+UNCLEAR: which build judges a round when main moves mid-round - main changed three times today; I play the round-start build and re-measure the key numbers on current main, but no rule says which one counts.
+MISSING: ball and bat sizes from a play session - the __test hook exposes the ball's position only (no size, no fps readout), so the REALITY size lines (ball 0.074 m, bat 0.86 m) cannot be checked by playing.
+
 # Window 7 - what would get a sent-back game right the FIRST time
 
 1. The owner's complaints become the checklist BEFORE building: each send-back line ("players not real 3D", "blurry", "no close camera") is written as a measurable pass/fail (real fetched 3D players at true size, sharp full-res textures, a close camera that frames the play) - no building until every line has a way to be proven.
