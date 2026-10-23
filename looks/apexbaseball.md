@@ -36,6 +36,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Players wear the baseball uniform (cap or helmet, jersey, glove) in every picture, close-ups included
 
 ## NEVER
+- 2026-10-23: No soft or smeared field and players in the pitching view - the rendering stays crisp (texture anisotropy on the park, full pixel ratio on phones), and the pitcher's glove reads as a glove, never a big brown thing on his arm (G-222)
 - No green dim / green tint on the game menu
 - No night-dark field where you can't see the batter
 - No real brands, leagues, teams, players or characters

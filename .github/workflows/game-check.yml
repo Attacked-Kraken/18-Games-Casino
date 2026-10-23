@@ -98,11 +98,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Keep the test browser between runs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-1.48.2-${{ runner.os }}
       - name: Install the test browser
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          # Oct 22 2026: this download hung 33 min on main and held every later main check; 10 min cap, one retry (Oct 23: the 4 min cap made every PR play job fail at the install step)
-          timeout 600 npx playwright install --with-deps chromium webkit || timeout 600 npx playwright install --with-deps chromium webkit
+          # Oct 23 2026: the browser download sometimes stalls (10 min) or the install dies and the play job fails before any test (#1326, #1307).
+          # Saved copy above (no download when present) + 4 short tries; a stalled try is killed, its leftover apt lock is cleared before the next.
+          ok=0
+          for i in 1 2 3 4; do
+            if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi
+            echo "::warning::browser install try $i failed or stalled - trying again"
+            sudo pkill -9 apt-get 2>/dev/null || true; sudo pkill -9 dpkg 2>/dev/null || true
+            sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock 2>/dev/null || true
+            sudo dpkg --configure -a 2>/dev/null || true
+            sleep 5
+          done
+          [ "$ok" = 1 ] || { echo "::error::test browser install failed 4 times"; exit 1; }
       - name: Play ${{ matrix.game }}
         run: |
           python3 -m http.server 8811 >/dev/null 2>&1 &
