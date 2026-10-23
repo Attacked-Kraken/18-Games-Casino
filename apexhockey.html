@@ -1490,6 +1490,8 @@ function rules(dt){
     const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
     const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
     if(fromDeep&&crossedFar){
+      if(skaters.some(o=>o.team===t&&o.inBox)){ puck.lastTouch=null; prevPuckX=px; } // G-228: icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - while one of the dumpers sits in the box the dump is legal and play just goes on, no banner, no whistle
+      else {
       let aD=1e9, dD=1e9;
       for(const o of skaters){ if(o.goalie||o.inBox) continue;
         const dd=Math.hypot(o.pos.x-px,o.pos.z-puck.pos.z);
@@ -1500,6 +1502,7 @@ function rules(dt){
         const d=DOTS[key]||DOTS.center;
         pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
         whistle('ICING',TEAMS[t].name); prevPuckX=px; return; }
+      }
     }
   }
   // goalie covers a slow loose puck
@@ -2017,6 +2020,11 @@ $('friendGo').addEventListener('click', () => {
 try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'boards') { // G-216: ?test=boards = a match with the carrier staged at the end boards, puck on his stick - the carried-puck containment check
     const pb = $('playBtn'); if (pb) pb.click();
     const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (hk.game.state === 'play') { const c = hk.skaters.find((s) => s.role === 'C' && s.team === 'home'); if (c) { c.pos.set(99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = 0; c.thinkT = 9; if (c.target) c.target.set(99.2, 0, -6); hk.puck.owner = c; hk.puck.shot = null; } } }, 50); setTimeout(() => clearInterval(iv), 25000);
+  }
+  else if (tp === 'powerplay') { // G-228: ?test=powerplay = a match with a Wolf in the box (power-play tag live) and the deep dump re-staged every few seconds - icing must NOT be called against the shorthanded Wolves; play just goes on
+    const pb = $('playBtn'); if (pb) pb.click();
+    let lastDump = 0;
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; const lw = hk.skaters.find((s) => s.team === 'home' && !s.goalie && s.role === 'LW'); if (lw) { lw.inBox = true; lw.penT = 30; } if (hk.game.state === 'play' && performance.now() - lastDump > 7000) { lastDump = performance.now(); const pk = hk.puck; hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== lw) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); }); hk.skaters.forEach((x) => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); }); pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.lastTouchX = -30; pk.pos.set(-30, 0.06, 20); pk.vel.set(70, 0, 0); } }, 250); setTimeout(() => clearInterval(iv), 90000);
   }
   else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
   else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
