@@ -1050,7 +1050,7 @@ if(!rcv.auto && T.carrier.pos>=LEG-36) rcv.auto=true;
 if(!rcv.auto) return;
 const inc=T.carrier.speed, gap=rcv.pos-T.carrier.pos;
 let tgt=inc*0.92;
-if(gap>6) tgt=Math.min(tgt, inc*0.55);
+if(gap>6) tgt=Math.min(tgt, inc*0.30); // G-193 r1: check up harder while far ahead - at 0.55 the gap was still 7.6-8.7m at the zone and PASS refused ('RECEIVER TOO FAR') for most of the zone
 else if(gap<2 && inc>1) tgt=Math.max(tgt, inc);
 rcv.speed+=clamp(tgt-rcv.speed, -7*dt, 5.5*dt);
 if(rcv.speed<0) rcv.speed=0;
@@ -1066,7 +1066,7 @@ sp.pos=LEG-18; sp.speed=0; sp.auto=false; sp.stamina=100; T.receiver=sp; T.spent
 }
 function passBaton(T, clean){
 const rcv=T.receiver, old=T.carrier;
-if(!clean) rcv.speed=Math.min(rcv.speed, 3.2);
+if(!clean) rcv.speed=Math.min(rcv.speed, 6.0); // G-193 r1: a fumble costs time, it does not strand the next carrier (was 3.2 - the crawl in the owner's screenshot)
 T.spent=old; T.spentLeg=T.leg; T.passFrom=old; T.passT=0.35; T.exchanges++;
 T.carrier=rcv; rcv.pos-=LEG; rcv.auto=false; T.receiver=null; T.leg++; T.legEl=1;
 return old;
@@ -1087,7 +1087,7 @@ if(this.done||this.phase!=='run'||this.leg>=3) return;
 const T=this.teams[0], rcv=T.receiver;
 if(!rcv||this.r.pos<LEG-20) return;
 const gap=rcv.pos-this.r.pos;
-if(gap>6){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; }
+if(gap>8){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; } // G-193 r1: reach 8m (was 6) - the zone-entry gap the run-up leaves
 const q=clamp(1-Math.abs(this.r.pos-(LEG-10))/10, 0, 1);
 this.passed=true; this.passQ=q;
 rcv.speed=Math.min(10.6, Math.max(rcv.speed, 4+q*5));
