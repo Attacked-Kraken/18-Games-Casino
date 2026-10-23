@@ -5,6 +5,7 @@
 //   as a module: import { judge } from './judge.mjs'  ->  judge({results, models, base0, changed, branch, title})
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 
 export function judge({ results = [], models = [], base0 = {}, changed = [], branch = '', title = '' }) {
   const norm = (x) => x.replace(/\d+/g, '#');
@@ -42,7 +43,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   {
     const branch = prBranch;
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
-    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
+    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
     const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
@@ -62,7 +63,14 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
     else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  // owner Oct 23 2026: a PR that touches checklists/ must pass the checklist lint (every number is in its named source file)
+  if (changed.some(f => /^checklists\/[a-z0-9-]+\.md$/.test(f))) {
+    try {
+      const r = spawnSync('node', [path.join(path.dirname(new URL(import.meta.url).pathname), 'checklist-lint.mjs')], { encoding: 'utf8' });
+      if (r.status) blockers.push('CHECKLIST: ' + String(r.stdout || '').split('\n').filter(l => l.startsWith('CHECKLIST FAIL')).slice(0, 5).join(' | '));
+    } catch (e) { console.log('checklist lint could not run: ' + e.message); }
+  }
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
