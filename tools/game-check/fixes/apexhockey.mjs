@@ -1736,7 +1736,28 @@ export default [
       await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
     }
   },
-},
+}, {
+  id: 'play-helmet-face-reads',
+  ask: 'G-186 (art director): the close-up helmet must not read as a plain dome with a dark bar across the eyes - the visor glass is near-clear and casts no shadow, so the face reads through it (every kitted skater: visor present, castShadow off, opacity at most 0.2, metalness at most 0.05)',
+  async test(page, h) {
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    let n = 0;
+    while (Date.now() - t0 < 30000) {
+      n = await h.eval(() => (window.__hk ? window.__hk.skaters.filter(s => s.kit).length : 0)).catch(() => 0);
+      if (n >= 8) break;
+      await page.waitForTimeout(500);
+    }
+    if (n < 8) return 'only ' + n + ' kitted skaters after 30 s - cannot judge the helmets';
+    const res = await h.eval(() => window.__hk.skaters.filter(s => s.kit).map(s => {
+      const v = s.kit.parts.visor;
+      return v ? { has: true, shadow: v.castShadow, op: v.material.opacity, met: v.material.metalness } : { has: false };
+    }));
+    const bad = res.filter(r => !r.has || r.shadow !== false || r.op > 0.2 || r.met > 0.05);
+    if (bad.length) return 'the helmet still hides the face on ' + bad.length + ' of ' + res.length + ' skaters (visor present: ' + bad[0].has + ', castShadow: ' + bad[0].shadow + ', opacity: ' + bad[0].op + ', metalness: ' + bad[0].met + ') - the face must read through the visor';
+    return true;
+  }
+ },
 {
   id: 'tester-puck-leaves-rink-at-boards',
   mode: 'arena',
@@ -1785,26 +1806,4 @@ export default [
     return true;
   },
 },
- {
-  id: 'play-helmet-face-reads',
-  ask: 'G-186 (art director): the close-up helmet must not read as a plain dome with a dark bar across the eyes - the visor glass is near-clear and casts no shadow, so the face reads through it (every kitted skater: visor present, castShadow off, opacity at most 0.2, metalness at most 0.05)',
-  async test(page, h) {
-    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
-    const t0 = Date.now();
-    let n = 0;
-    while (Date.now() - t0 < 30000) {
-      n = await h.eval(() => (window.__hk ? window.__hk.skaters.filter(s => s.kit).length : 0)).catch(() => 0);
-      if (n >= 8) break;
-      await page.waitForTimeout(500);
-    }
-    if (n < 8) return 'only ' + n + ' kitted skaters after 30 s - cannot judge the helmets';
-    const res = await h.eval(() => window.__hk.skaters.filter(s => s.kit).map(s => {
-      const v = s.kit.parts.visor;
-      return v ? { has: true, shadow: v.castShadow, op: v.material.opacity, met: v.material.metalness } : { has: false };
-    }));
-    const bad = res.filter(r => !r.has || r.shadow !== false || r.op > 0.2 || r.met > 0.05);
-    if (bad.length) return 'the helmet still hides the face on ' + bad.length + ' of ' + res.length + ' skaters (visor present: ' + bad[0].has + ', castShadow: ' + bad[0].shadow + ', opacity: ' + bad[0].op + ', metalness: ' + bad[0].met + ') - the face must read through the visor';
-    return true;
-  }
- }
 ];
