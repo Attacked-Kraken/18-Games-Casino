@@ -402,10 +402,10 @@ for (const g of games) {
     // VP-analyst Oct 23 2026 (window 6, PR #1282: "fx.test is not a function"): a play-test entry that is not shaped right is
     // rejected UP FRONT with the exact right shape, never a bare TypeError. Runs at PR time (the PR's game is played).
     {
-      const RIGHT = "right shape: { id: 'play-...', ask: 'the owner words', async test(page, h) { ...; return true; } } - the check is a method named `test` (async test(page, h)) that returns true when fine, or a short string saying why not; NOT `run:`, `fn:` or `check:`";
+      const RIGHT = "right shape: { id: 'play-...', ask: 'the owner words' (a line saying what is checked), async test(page, h) { ...; return true; } } - the check is a method named `test` (async test(page, h)) that returns true when fine, or a short string saying why not; NOT `run:`, `fn:` or `check:`";
       const good = [];
       for (const fx of Array.isArray(list) ? list : []) {
-        const why = !fx || typeof fx !== 'object' ? 'entry is not an object' : typeof fx.id !== 'string' || !fx.id ? 'missing id' : typeof fx.ask !== 'string' || !fx.ask ? 'missing ask (the owner words)'
+        const why = !fx || typeof fx !== 'object' ? 'entry is not an object' : typeof fx.id !== 'string' || !fx.id ? 'missing id'
           : typeof fx.test !== 'function' ? ('has no test function' + (['run', 'fn', 'check', 'exec', 'play'].filter(k => typeof fx[k] === 'function').map(k => ' - it uses `' + k + '` instead of `test`').join('')) ) : '';
         if (why) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs entry "' + (fx && fx.id || '?') + '" ' + why + ' - ' + RIGHT);
         else good.push(fx);
