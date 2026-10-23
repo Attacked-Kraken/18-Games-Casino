@@ -1,7 +1,7 @@
 name: Game check (PR)
 # Owner Oct 21 2026 "split the good from repairs so it doesn't take 50 min - do both": the robot on a PULL REQUEST plays
 # the games SIDE BY SIDE (one robot per game, up to 8 at once) and one small step ("check") gives the verdict - about
-# 8-10 minutes instead of 50. A Claude change to the robot's own files plays only 2 reference games here; main's full
+# 8-10 minutes instead of 50. A Claude change to the robot's own files plays ONE small reference game here (Paper Plane, owner Oct 23 2026); main's full
 # check after the merge (game-check.yml, auto-undo) covers the rest. The 55-minute limit stays as the safety net.
 # The verdict job is NAMED "check" so the owner's GitHub rule ("check" must pass) and the merge robot keep working.
 on:
@@ -52,7 +52,7 @@ jobs:
           elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
             # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
             # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
-            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
+            MODE="robot-only"; G="apexpaperplane.html,"   # owner Oct 23 5:24 PM: ONE small reference game - a robot-only PR can't be killed by Hockey
           fi
           if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
