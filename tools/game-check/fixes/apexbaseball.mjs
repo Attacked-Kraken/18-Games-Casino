@@ -966,6 +966,48 @@ export default [
     },
   },
   {
+    id: 'never-g-222-p1',
+    ask: 'NEVER (owner 2026-10-23, G-222 fix round 1): the field and players stay clear and recognizable in the pitching view (crisp rendering - texture anisotropy on the park), and the pitcher glove reads as a glove, never a big brown thing on his arm (a real mitt is ~0.32 m, not a 0.44 m smooth blob)',
+    test: async (page, h) => {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const aniso = T.stadium && T.stadium.aniso;
+        if (!aniso || aniso < 4) return 'the park renders without texture anisotropy (aniso=' + aniso + ') - the field smears at the pitching camera glancing angle (owner: clear up players and field, my crisp camera view)';
+        const R = window.__reality; if (!R || !R.others || !R.others[0]) return '__reality pitcher missing';
+        const V = R.player.position.clone();
+        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; let found = false;
+        R.others[0].updateWorldMatrix(true, true);
+        R.others[0].traverse(o => {
+          if (!o.isMesh || !o.material || !o.material.color || !o.geometry) return;
+          const c = o.material.color;
+          if (!(c.r > 0.3 && c.r < 0.5 && c.g > 0.18 && c.g < 0.36 && c.b < 0.2 && c.r > c.g + 0.08)) return;
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+            const v = V.set(x, y, z).applyMatrix4(o.matrixWorld);
+            mn[0] = Math.min(mn[0], v.x); mn[1] = Math.min(mn[1], v.y); mn[2] = Math.min(mn[2], v.z);
+            mx[0] = Math.max(mx[0], v.x); mx[1] = Math.max(mx[1], v.y); mx[2] = Math.max(mx[2], v.z);
+          }
+          found = true;
+        });
+        if (!found) return 'no leather glove prop found on the pitcher at all';
+        const size = [0, 1, 2].map(i => (mx[i] - mn[i]) * 0.9144);
+        const longest = Math.max(size[0], size[1], size[2]);
+        if (longest > 0.38) return 'the pitcher glove measures ' + longest.toFixed(2) + ' m long - a big brown thing on his arm (owner, G-222 fix round 1); a real mitt is about 0.32 m';
+        return true;
+      });
+    },
+  },
+  {
     id: 'never-g-167-p1',
     ask: 'NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture',
     test: async (page, h) => {
