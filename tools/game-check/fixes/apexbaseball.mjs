@@ -978,31 +978,45 @@ export default [
         else await h.wait(400);
       }
       if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+      // the athlete queue fits the rigs a few per frame (G-08): wait until the
+      // pitcher's real rig (a skinned mesh) is actually on him before measuring
+      // his glove, so a slow attach cannot fake a missing glove.
+      let rigged = false;
+      for (let i = 0; i < 25 && !rigged; i++) {
+        rigged = await h.eval(() => { const R = window.__reality; if (!R || !R.others || !R.others[0]) return false; let n = 0; R.others[0].traverse(o => { if (o.isSkinnedMesh) n++; }); return n > 0; });
+        if (!rigged) await h.wait(400);
+      }
+      if (!rigged) return 'the pitcher rig never attached, so his glove could not be measured';
       return h.eval(() => {
         const T = window.__test; if (!T) return 'window.__test missing';
         const aniso = T.stadium && T.stadium.aniso;
         if (!aniso || aniso < 4) return 'the park renders without texture anisotropy (aniso=' + aniso + ') - the field smears at the pitching camera glancing angle (owner: clear up players and field, my crisp camera view)';
         const R = window.__reality; if (!R || !R.others || !R.others[0]) return '__reality pitcher missing';
-        const V = R.player.position.clone();
-        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; let found = false;
+        // Measure the mitt in its parent space (the glove group's own axes):
+        // a world AABB inflates with the hand bone's pose rotation, but the
+        // mitt's true proportions are what the owner sees in the hand.
+        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; let found = false, parentScale = 1;
         R.others[0].updateWorldMatrix(true, true);
         R.others[0].traverse(o => {
           if (!o.isMesh || !o.material || !o.material.color || !o.geometry) return;
-          const c = o.material.color;
-          if (!(c.r > 0.3 && c.r < 0.5 && c.g > 0.18 && c.g < 0.36 && c.b < 0.2 && c.r > c.g + 0.08)) return;
+          // match the author's hex (material.color components are linear in
+          // three r152+, so compare getHexString(), not the raw components)
+          if (o.material.color.getHexString() !== '6a4423') return;
+          if (!found && o.parent) { const s = R.player.position.clone(); o.parent.getWorldScale(s); parentScale = s.x; }
           o.geometry.computeBoundingBox();
           const bb = o.geometry.boundingBox;
+          const V = R.player.position.clone();
           for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
-            const v = V.set(x, y, z).applyMatrix4(o.matrixWorld);
+            const v = V.set(x, y, z).applyMatrix4(o.matrix);
             mn[0] = Math.min(mn[0], v.x); mn[1] = Math.min(mn[1], v.y); mn[2] = Math.min(mn[2], v.z);
             mx[0] = Math.max(mx[0], v.x); mx[1] = Math.max(mx[1], v.y); mx[2] = Math.max(mx[2], v.z);
           }
           found = true;
         });
         if (!found) return 'no leather glove prop found on the pitcher at all';
-        const size = [0, 1, 2].map(i => (mx[i] - mn[i]) * 0.9144);
+        const size = [0, 1, 2].map(i => (mx[i] - mn[i]) * parentScale * 0.9144);
         const longest = Math.max(size[0], size[1], size[2]);
-        if (longest > 0.38) return 'the pitcher glove measures ' + longest.toFixed(2) + ' m long - a big brown thing on his arm (owner, G-222 fix round 1); a real mitt is about 0.32 m';
+        if (longest > 0.37) return 'the pitcher glove measures ' + longest.toFixed(2) + ' m long - a big brown thing on his arm (owner, G-222 fix round 1); a real mitt is about 0.32 m';
         return true;
       });
     },
