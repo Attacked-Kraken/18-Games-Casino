@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Apex F1 Racing</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏁</text></svg>"> <!-- G-95: declare an icon so the browser never 404s on /favicon.ico (the Grok audit's one console error) -->
+<link rel="icon" href="data:,"> <!-- G-224: the Grok recheck still saw the favicon 404 - an empty icon link stops the request outright -->
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#04070d; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; color:#eaf2ff; }
@@ -25,6 +26,12 @@
     .overlay input[type=text] { padding:6px 8px; font-size:13px; margin-bottom:4px; }
     .overlay .menuSub { font-size:12px; margin:4px 0 8px; }
     .overlay .bigbtn { margin:4px auto; padding:7px 12px; font-size:14px; border-radius:9px; }
+    #raceBtn { min-height:44px; box-sizing:border-box; } #gridMenu .card { padding-top:4px; padding-bottom:4px; } #gridMenu table.stand td, #gridMenu table.stand th { padding:1px 5px; } /* G-224: LIGHTS OUT is a full 44px tap target; the grid rows give back the fit headroom it spends (the stack sat at exactly 390) */
+    .overlay table.stand { margin-top:2px; }
+    .overlay table.stand td, .overlay table.stand th { padding:2px 6px; }
+    #menu { flex-direction:row; flex-wrap:wrap; justify-content:center; align-content:flex-start; }
+    #menu .title, #menu .menuSub, #menu .card { flex:0 0 100%; }
+    #menu .bigbtn { flex:0 0 46%; margin:3px; }
   }
   .hidden { display:none !important; }
   h1.title { font-size:clamp(30px,6vw,58px); font-weight:900; letter-spacing:2px; background:linear-gradient(180deg,#fff,#ff5a5a 55%,#c00); -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; }
@@ -1372,9 +1379,10 @@ class Car {
     // steering -> car heading (proper turning, tires grip, no sideways slide)
     const tireGrip=this.gripNow();
     const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/90,0,1)*0.62); // G-73: steering winds the heading much more gently at speed - a twitch at 80 m/s used to point the car at the grass before the player could catch it
-    this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
+    if(!this.isPlayer) this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
     // G-27: steering follows ONLY the driver's stick - no auto-align, no curve push
     const maxHead=0.6-0.24*clamp(this.v/90,0,1); this.headAngle=clamp(this.headAngle,-maxHead,maxHead); // G-73: the nose cannot point as far off the track at speed (full +-0.6 stays for slow corners and recovery); heading still changes ONLY from the stick (G-27)
+    if(this.isPlayer){ const target=this.steer*maxHead*(this.understeer?0.6:1); this.headAngle+=(target-this.headAngle)*(1-Math.exp(-dt/0.13)); } // G-136: for the player the stick IS the heading - deflection sets the nose angle directly: turns in fast, holds while held, and a centered stick straightens the car at once. The old integrator wound the heading up and never unwound it, so every touch drifted the car off the road (release drift 10.4 m in sim)
     // surface
     const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
@@ -1535,6 +1543,14 @@ function aiDrive(car, dt){
   vt*= (1.005+car.skill*0.02); // G-66: target the game's real corner speeds - the old 0.90 base cruised the AI well under the player's pace
   vt+=car.paceNow()*0.7; // G-66: tire/team/skill pace still counts, but at 0.7 weight - at 2.5 it alone cost the field ~1.5 m/s everywhere
   vt=Math.min(vt,97);
+  // pack fix: traffic - a car right ahead in the lane sets the speed early, so
+  // arrivals inside the contact box happen matched instead of at full closing speed
+  if(!car.inPits){ let vCap=Infinity;
+    for(const o of Race.cars){ if(o===car||o.finished) continue;
+      let ds=(o.s-car.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
+      if(ds>0 && ds<12 && Math.abs(o.d-car.d)<3.4) vCap=Math.min(vCap, o.v+(ds<6?0:(ds-6)*0.5)); }
+    if(vCap<vt) vt=Math.max(vCap,0);
+  }
   // rain mistakes: lift a touch more
   if(Race.weather.wet>0.3) vt*= (1-0.05*Race.weather.wet);
   car.throttle = car.v<vt*1.18?1:0; // G-66: stay on the throttle into the corner like the player does - cutting it at vt coasted away the entry speed
@@ -1546,6 +1562,7 @@ function aiDrive(car, dt){
   const f=Track.frameAt(car.s);
   let dT = Track.rlD? Track.rlDAt(lookS) : -Math.sign(f.curv)*W*0.22; // G-45: the kit's racing line
   dT += car.lineBias||0;
+  if(Race.mode==='quali' && car.qOff!==undefined) dT=clamp(dT+car.qOff, -W/2+1.2, W/2-1.2); // pack fix: qualifying cars spread across the road instead of one tangled line
   // defend: if a car is close behind, cover the inside
   const threat=car._threat;
   if(threat && !car.inPits){
@@ -1593,23 +1610,25 @@ function carContact(cars, dt){
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
-      const push=(3.8-Math.abs(dd))*Math.sign(dd||0.1)*dt*12;
+      const push=Math.min((3.8-Math.abs(dd))*dt*26, 0.35)*Math.sign(dd||0.1); // pack fix: separation is decisive at any frame rate but capped per step - the old push teleported cars in slow frames and was too weak to clear the box at 60 fps
       a.d+=push; b.d-=push;
       if(Math.abs(dd)<2.9 && Math.abs(ds)<7.3 && Math.abs(ds)>0.01){
         const sN=((a.s%Track.length)+Track.length)%Track.length;
         if(sN>30 && sN<Track.length-30){ // keep clear of the lap line
-          const drift=(7.3-Math.abs(ds))*dt*2*Math.sign(ds);
+          const drift=Math.min((7.3-Math.abs(ds))*dt*4, 0.35)*Math.sign(ds);
           a.s+=drift; b.s-=drift;
         }
         const ahead=ds>0?a:b, behind=ds>0?b:a;
         if(behind.v>ahead.v) behind.v=ahead.v; // no rear-ending into the car ahead
       }
       const avg=(a.v+b.v)/2*0.985;
-      if(Math.abs(a.v-b.v)>8){ // harder hit -> possible spin for the one behind
+      const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
+      if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
         const behind=ds>0?b:a;
-        if(Math.random()<0.25 && behind.spin<=0){ behind.spin=rand(0.4,0.9); banner('CONTACT!', behind.isPlayer?'You got turned around':'', 1200, '#ff9a5a'); }
+        if(Math.random()<0.25*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); banner('CONTACT!', behind.isPlayer?'You got turned around':'', 1200, '#ff9a5a'); }
       }
-      a.v=lerp(a.v,avg,0.4); b.v=lerp(b.v,avg,0.4);
+      const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
+      a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
       if(a.isPlayer||b.isPlayer){ Race.shake=Math.min(1,(Race.shake||0)+0.5); Aud.cheer(false); }
     }
   }
@@ -1647,7 +1666,7 @@ const Race = {
       const tm=TEAMS[i%TEAMS.length];
       const skill = cfg.friend&&i===0 ? cfg.friend.str/100 : clamp(rand(0.86,0.97)+cfg.aiDelta,0.4,0.99); // G-66: the whole field is quick now - the old 0.62 floor left the back cars 20%+ off the player's pace
       const c=new Car(nm, tm, false, skill);
-      c.tire='MEDIUM'; c.lineBias=rand(-0.05,0.05); // G-66: stay on the racing line - a constant offset costs ~10% of a lap per metre (the + side rides the outside of every corner), so the bias is a whisper
+      c.tire='MEDIUM'; c.lineBias=rand(-0.05,0.05); c.qOff=((i*2.39)%5)-2.5; // pack fix: each car holds its own lateral line in qualifying, so the field does not funnel onto one point // G-66: stay on the racing line - a constant offset costs ~10% of a lap per metre (the + side rides the outside of every corner), so the bias is a whisper
       this.cars.push(c);
     }
     this.mode='quali'; this.qualiT=0; this.qualiDone=false;
@@ -2271,13 +2290,17 @@ async function startWeekend(){
 }
 /* ---- qualifying: one flying lap ---- */
 function runQuali(){
+  // pack fix: qualifying starts with the field spread around the lap (real
+  // sessions send cars out spaced) instead of 19 cars leaving the grid in one
+  // funnel - the start-line spin pile-up cannot form.
+  { const ai=Race.cars.filter(c=>!c.isPlayer); ai.forEach((c,i)=>{ const back=140+i*((Track.length-700)/(ai.length+1)); c.s=((c.s-back)%Track.length+Track.length)%Track.length; c.raceDist-=back; c.v=Math.min(c.v,30); }); }
   const p=Race.player;
   p.s=Track.length-600; p.d=0; p.v=28; p.lap=1; p._lapT=0; p._qualiFlying=false; p._lastSN=undefined;
   p.headAngle=0; const qf=Track.frameAt(p.s); p.yaw=Math.atan2(qf.tz,qf.tx); // G-55: spawn facing the way the track goes
   Race.mode='quali';
   banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
-  sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;';
+  sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;min-height:44px;box-sizing:border-box;'; // G-224: SKIP QUALI is a full 44px tap target
   sk.textContent='SKIP QUALI → P12';
   sk.onclick=()=>{ finishQuali(null); };
   document.body.appendChild(sk);
@@ -2309,9 +2332,11 @@ function finishQuali(time){
   Race.placeGrid(false);
   // grid list UI
   const order=[...Race.cars].sort((a,b)=>a.qualiTime-b.qualiTime);
-  let html='<table class="stand"><tr><th></th><th>DRIVER</th><th>TIME</th></tr>';
-  order.forEach((c,i)=>{ html+=`<tr${c.isPlayer?' class="me"':''}><td>P${i+1}</td><td>${c.name}</td><td>${fmtTime(c.qualiTime)}</td></tr>`; });
-  $('gridList').innerHTML=html+'</table>';
+  const grow=(c,i)=>`<tr${c.isPlayer?' class="me"':''}><td>P${i+1}</td><td>${c.name}</td><td>${fmtTime(c.qualiTime)}</td></tr>`;
+  const gtbl=(list,off)=>'<table class="stand" style="flex:1"><tr><th></th><th>DRIVER</th><th>TIME</th></tr>'+list.map((c,j)=>grow(c,off+j)).join('')+'</table>';
+  const half=Math.ceil(order.length/2);
+  // G-119 R1: two half tables side by side - one 20-row list pushed LIGHTS OUT 214px off a sideways phone
+  $('gridList').innerHTML='<div style="display:flex;gap:14px;align-items:flex-start">'+gtbl(order.slice(0,half),0)+gtbl(order.slice(half),half)+'</div>';
   Race.mode='grid'; show('gridMenu'); HUD.show(false);
 }
 
@@ -2459,6 +2484,7 @@ window.__test = {
     playerFinished: !!(Race.player && Race.player.finished)
   }),
   camAt: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }), // G-77: camera probe (start framing)
+  steerProbe: () => { const p = Race.player; if(!p) return null; const look = p.s + p.v * 0.5 + 18; return { s: p.s, d: p.d, v: p.v, headAngle: p.headAngle, line: Track.rlDAt ? Track.rlDAt(look) : 0, maxV: Track.maxSpeedAt(look, p.gripNow()) }; }, // G-136: steering proof for the play test
   camProbe: () => { if(!Race.player || !camera) return null; // G-119: camera proof for the play test
     camera.updateMatrixWorld();
     const mp=Race.player.mesh.position;
@@ -2559,6 +2585,11 @@ window.__apexBoot=true;
 initMenus();
 renderMenuCode();
 requestAnimationFrame(loop);
+// G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
+// with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
+(function(){ try{ const q=new URLSearchParams(location.search).get('test'); if(q!=='grid') return;
+  startWeekend().then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
+}catch(e){} })();
 </script>
 </body>
 </html>

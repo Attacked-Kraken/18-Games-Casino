@@ -2385,4 +2385,130 @@ export default [
       return true;
     }
   }
+  ,{
+    id: 'tester-10000m-results-match-crossing',
+    mode: '10000m',
+    ask: 'TESTER (G-183): 10,000m - the results order matches who actually crosses the finish line first on the track (REALITY.md: finishing order = who crossed first). The player joins the leaders with 700m to go; if he runs the live segment fastest and crosses the line first, the results must place him 1st - a rival who is still short of the line cannot be credited ahead of him with a faster total time built from his own private early pace.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      })).catch(() => null);
+      if (nav !== 'in') await h.wait(1200);
+      }
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      const fin = await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, steps = 0;
+        while (!e.done && steps < 30000) {
+          e.update(1 / 60); steps++;
+          const t = steps / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        if (!e.done) return { notDone: true, pos: Math.round(e.r.pos), phase: e.phase };
+        return {
+          time: +e.time.toFixed(2), place: e.place,
+          ai: e.ai.map(a => ({ n: a.name, tt: +a.tTarget.toFixed(1), pos: Math.round(a.pos) })),
+          crossed: e.ai.filter(a => a.pos >= 10000).length
+        };
+      }).catch(() => null);
+      if (!fin) return 'the 10,000m drive could not be measured';
+      if (fin.notDone) return 'the player never finished the 10,000m (stuck at ' + fin.pos + 'm, phase ' + fin.phase + ')';
+      if (fin.crossed > 0) return true;
+      const best = fin.ai.reduce((a, b) => (b.pos > a.pos ? b : a), fin.ai[0]);
+      const credited = fin.ai.filter(a => a.tt < fin.time).sort((a, b) => a.tt - b.tt);
+      if (fin.place !== 1) return 'the player crossed the 10,000m finish line FIRST on the track (no rival reached 10000m; nearest rival ' + best.n + ' was still ' + (10000 - best.pos) + 'm short at ' + best.pos + 'm when the player finished in ' + fin.time + 's), but the results place him ' + fin.place + ' - credited ahead of him: ' + credited.map(a => a.n + ' ' + a.tt + 's').join(', ') + '. Rivals are ranked by their own private target times for the first 9300m instead of the race on the track (REALITY: finishing order matches who actually crossed first)';
+      return true;
+    }
+  },
+{
+    id: 'never-g-174-p1',
+    ask: 'NEVER (G-174, owner video 2026-10-22): hurdles facing the wrong way - a hurdle board front faces the approaching runner: dot(board normal, lane tangent) = -1 at every hurdle, never 0 (edge-on)',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=110h')) return 'the 110m Hurdles test-link page would not load';
+      let m = null;
+      for (let i = 0; i < 40 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '110h') return null;
+          let root = window.__reality && __reality.player; if (!root) return null;
+          while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 80) mesh = o; });
+          if (!mesh) return null;
+          mesh.updateMatrixWorld();
+          const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+          const mul = (mm, x, y, z) => [mm[0] * x + mm[4] * y + mm[8] * z + mm[12], mm[1] * x + mm[5] * y + mm[9] * z + mm[13], mm[2] * x + mm[6] * y + mm[10] * z + mm[14]];
+          const P = [], N = [], P2 = [];
+          for (let i2 = 0; i2 < 8; i2++) { P.push(mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14])); N.push([im[i2 * 16 + 8], im[i2 * 16 + 10]]); P2.push(mul(mw, im[(i2 + 8) * 16 + 12], im[(i2 + 8) * 16 + 13], im[(i2 + 8) * 16 + 14])); }
+          let best = null;
+          for (let s = 0; s < 400; s += 0.5) { const lp = __tf.lanePoint(s, 3); const d = (lp.x - P[3][0]) * (lp.x - P[3][0]) + (lp.z - P[3][2]) * (lp.z - P[3][2]); if (!best || d < best.d) best = { d, tx: lp.tx, tz: lp.tz }; }
+          if (!best || best.d > 4) return null;
+          const tl = Math.hypot(best.tx, best.tz) || 1; const t = [best.tx / tl, best.tz / tl];
+          const dots = N.map(n => { const l = Math.hypot(n[0], n[1]) || 1; return +((n[0] / l) * t[0] + (n[1] / l) * t[1]).toFixed(2); });
+          return { dots };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle facing could be measured in the 110m Hurdles';
+      const bad = m.dots.filter(d => d > -0.75);
+      if (bad.length) return 'the hurdles face the wrong way: dot(board normal, lane tangent) is ' + JSON.stringify(m.dots) + ' - the board front must face the approaching runner (-1.00); 0 means the boards stand edge-on (G-174)';
+      return true;
+    }
+  },{
+id: 'never-g-193-p1',
+title: 'G-193 r1: the relay PASS button works from the start of the exchange zone - the receiver is in reach when the carrier arrives, not only in the last metres',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === 'relay' && e.relayState); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'relay did not start from the test link';
+  const out = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L', firstOkAt = null, fumbled = false, tooFarAt80 = null;
+    for (let step = 0; step < 60 * 40; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run' && !e.done && step % 2 === 0) { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+      const st = e.relayState(); const T0 = st.teams[0];
+      if (st.leg === 0 && T0.carrierPos >= 80 && T0.recvPos !== null) {
+        const before = T0.exchanges;
+        e.action();
+        if (T0.carrierPos <= 80.5 && e.msg === 'RECEIVER TOO FAR' && tooFarAt80 === null) tooFarAt80 = +T0.carrierPos.toFixed(1);
+        const st2 = e.relayState();
+        if (st2.teams[0].exchanges > before) { firstOkAt = +T0.carrierPos.toFixed(1); break; }
+      }
+      if (st.leg >= 1) { fumbled = e.msg === 'FUMBLED EXCHANGE'; break; }
+      if (e.done) break;
+    }
+    return { firstOkAt, fumbled, tooFarAt80 };
+  });
+  if (!out) return 'relay drive failed';
+  if (out.fumbled) return 'the leg-1 exchange FUMBLED - the carrier ran out of the zone without the pass button ever working';
+  if (out.firstOkAt === null) return 'the PASS button never exchanged in the zone';
+  if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
+  return true;
+}
+}
 ];
