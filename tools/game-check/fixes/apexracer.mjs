@@ -959,4 +959,35 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-night-no-blob',
+    ask: 'G-206: at night no car blows out to a pink/white blob - the headlight pool stays low-energy on every car, pools still exist, and the ?test=night owner link is in the game',
+    async test(page, h) {
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!src.includes("get('test')") || !src.includes("tq === 'night'")) return 'the ?test=night owner-check link is missing from apexracer.html';
+      const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
+      if (started !== 'ok') return started;
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the night race never finished building';
+      const out = await h.eval(() => {
+        const E = window.__erc, R = E.R;
+        if (!R.W.night) { E.toMenu(); return 'the picked place is not a night race'; }
+        E.step(5, 1 / 60);
+        const rows = [];
+        const see = (c) => { if (c && c.car && c.car.pool) rows.push({ op: c.car.pool.material.opacity, cmax: Math.max(c.car.pool.material.color.r, c.car.pool.material.color.g, c.car.pool.material.color.b), vis: !!c.car.pool.parent }); };
+        (R.cars || []).forEach(see); (R.traffic || []).forEach(see);
+        E.toMenu();
+        return rows;
+      });
+      if (!Array.isArray(out)) return String(out);
+      if (out.length < 8) return 'only ' + out.length + ' cars have headlight pools at night - the pools must stay, just weaker';
+      for (const r of out) {
+        if (!r.vis) return 'a headlight pool is not in the night scene';
+        if (r.op > 0.2) return 'a headlight pool has opacity ' + r.op + ' - that additive energy blows the centre car out to a pink/white blob at night (cap 0.2)';
+        if (r.cmax > 0.85) return 'a headlight pool color peaks at ' + r.cmax.toFixed(2) + ' - too hot at night (cap 0.85)';
+      }
+      return true;
+    },
+  },
 ];
