@@ -66,4 +66,26 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk
 - Tests that wait on WALL-clock seconds fail on slow runner days (Flight G-141). Rule: a play test judges time in GAME time (or retries once on a fresh page); a wall-clock budget is a robot fault - file "HELP-VP: robot", never fight it in the game.
+- 2026-10-22 (window 6, G-163): a ratio threshold is a claim about a real profile - print the profile (band/dband/run) from the actual car before shipping the fix. The Goblin door tapers ~10% under its own peak (peak 1.331, mid-door 1.18-1.22), so 0.92 of the peak left a 4-bucket island and the APEX ARCADE strip silently never drew.
+
+## 2026-10-22 help desk (2:40 PM)
+- A bug found in an old tester run (1 s of game time per frame, Hockey G-129) may already be fixed: before asking for an owner job, read the line on today's main and the robot play test that covers it (play-clock-real-time); if it passes, say "already fixed" - no new job.
+
+## 2026-10-22 help desk
+- When orders land while the owner's own fix is in flight: owner's fix first, then the older small fix, then the new job - one at a time, one report each.
+
+## 2026-10-22 help desk (5:40 PM)
+- A one-letter "MODE: g" in a tester order was a Mac typo, not a real mode. Rule: if a MODE name is not one the game has (see the game modes list), play ALL real modes, list them as "MODES:" in the report, and say in one HELP line which name looked wrong.
+
+## 2026-10-22 help desk (7:10 PM)
+- Finished tester round branches piled up unpushed because push approval taps never reached detached runs. Rule: push every finished round as a TEST PR the same day; drop only rounds already reported on main.
+
+## 2026-10-22 help desk (8:15 PM)
+- The art director cannot grade the upright phone view without a picture of it. Rule: when a grader (window 11/12) needs a picture the robot does not save, file ONE "HELP-VP: robot" line naming the file and the picture wanted - never grade or ask windows from memory.
+
+## 2026-10-22 help desk (9:20 PM)
+- When main moves during a tester round, the report names the main commit the round was played on, and each TESTER line is re-run on current main before it is filed (file only if it still fails there).
+
+## 2026-10-22 help desk
+- A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
 - 2026-10-22 · apexflight · A look-only change (shadows, tone mapping, environment) can flip the tightest wall-clock play test on the robot with no real slowdown behind it → rule: measure fps old-vs-new before redesigning anything (G-141 step-6 look: 3.5 vs 3.3 fps in the software renderer - the misses were the runner's clock, later filed as known robot faults).
