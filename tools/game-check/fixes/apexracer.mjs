@@ -905,4 +905,58 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-cars-visible',
+    ask: 'Owner Oct 22 2026: every computer car SHOWS in every city - a real model and a paint bright enough to read at dusk/night, never near-black',
+    async test(page, h) {
+      const rows = await h.eval(async () => {
+        const E = window.__erc, out = [];
+        const places = [E.PLACES[0], E.PLACES.find((p) => p.city === 'Honolulu')];
+        for (const place of places) {
+          E.startRace(place, 3);
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+          if (!(E.R && E.R.P)) return [{ bad: 'race never built at ' + place.city }];
+          (E.R.cars || []).forEach((c) => { if (c !== E.R.P && c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          (E.R.traffic || []).forEach((c) => { if (c.car) out.push({ real: !!c.car.glbKey, paint: '#' + c.car.paint.color.getHexString() }); });
+          E.toMenu(); await new Promise((r) => setTimeout(r, 400));
+        }
+        return out;
+      });
+      if (!Array.isArray(rows) || rows.length < 20) return 'only sampled ' + (rows && rows.length) + ' computer cars - not enough to prove they all show';
+      const lum = (hex) => { const n = parseInt(hex.slice(1), 16), f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+      for (const row of rows) {
+        if (row.bad) return row.bad;
+        if (!row.real) return 'a computer car is not a real model (mockup or missing)';
+        if (lum(row.paint) < 0.1) return 'a computer car wears ' + row.paint + ' (luminance ' + lum(row.paint).toFixed(3) + ') - near-black, invisible at dusk/night';
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-mountains-clear',
+    ask: 'Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road',
+    async test(page, h) {
+      const res = await h.eval(async () => {
+        const E = window.__erc;
+        const place = E.PLACES.find((p) => p.city === 'Honolulu');
+        E.startRace(place, 3);
+        for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P) break; await new Promise((r) => setTimeout(r, 250)); }
+        if (!(E.R && E.R.P)) return { bad: 'race never built at Honolulu' };
+        const R = E.R, T = R.T; let min = 1e9, checked = 0;
+        R.W.scene.traverse((o) => {
+          if (!(o.isMesh && o.geometry && o.geometry.attributes && o.geometry.attributes.position)) return;
+          o.geometry.computeBoundingBox(); const bb = o.geometry.boundingBox, sy = Math.abs(o.matrixWorld.elements[5]) || 1, sx = Math.abs(o.matrixWorld.elements[0]) || 1;
+          const height = (bb.max.y - bb.min.y) * sy, width = (bb.max.x - bb.min.x) * sx;
+          if (height <= 55 || width > 3000) return;
+          const pos = o.geometry.attributes.position, e = o.matrixWorld.elements, stride = Math.max(1, Math.floor(pos.count / 4000));
+          for (let i = 0; i < pos.count; i += stride) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i); const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; const q = T.near(wx, wz, 3); if (q) { checked++; if (q.d < min) min = q.d; } }
+        });
+        return { min, checked };
+      });
+      if (!res || res.bad) return (res && res.bad) || 'no measurement came back';
+      if (!res.checked) return 'no tall scenery vertices were measured at Honolulu';
+      if (res.min < 25) return 'tall scenery comes within ' + Math.round(res.min) + ' m of the road at Honolulu - mountains belong off the road';
+      return true;
+    },
+  },
 ];

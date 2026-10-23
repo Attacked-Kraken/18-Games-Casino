@@ -2126,15 +2126,15 @@ const HC=(this._hurdleH||1.07)/2;
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(80,list.length);
-const QT=new THREE.Quaternion(), AX=new THREE.Vector3(0,0,1), FW=new THREE.Vector3();
+const QT=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), FW=new THREE.Vector3();
 for(let k=0;k<n;k++){
 const h=list[k];
 E.set(0,h.heading||0,0); Q.setFromEuler(E);
 // owner 2026-10-17: a hurdle you hit goes DOWN - it tips forward (away from the runner) and lies on the track
 const f=clamp(h.fall||0,0,1), ang=f*1.42;
 QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
-FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
-P.set(h.x+FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
+FW.set(0,0,1).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
+P.set(h.x-FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z-FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -2649,8 +2649,8 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 }
 
 const hWorld=[]; ENG.hurdles.forEach(h=>{ for(let l=0;l<8;l++){ hWorld.push(straight
-? {x:h.x-ev.dist, z:straightZ(l), heading:0}
-: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })()); } });
+? {x:h.x-ev.dist, z:straightZ(l), heading:-Math.PI/2}
+: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tx,-lp.tz)}; })()); } });
 // G-39/G-43 fix (owner): a hurdle stands in EVERY lane, not only the player's - the rivals jump real hurdles too (the player's own lane is index k*8+3)
 // G-122 round 1 (owner): each hurdles race stands at its REAL height (REALITY.md) - 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m
 W3D.hurdleHeight({'100h':0.838,'110h':1.067,'300h':0.914,'400h':0.914}[ev.id]||1.067);

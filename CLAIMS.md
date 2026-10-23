@@ -203,7 +203,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-169 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-169.md | build/g-169-apextrackfield - DONE PR #1127 (8adefac5): guard never-g-169-p1 added for the one-board hurdle point; game fix shipped as G-160 |
 | G-171 | window 4 | - | renamed G-172, G-173, then G-174 by the Mac (2026-10-22) - final report jobs/G-174.md |
 | G-173 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-173.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test=<event id> test link + hurdles countdown framing; play test play-test-link-starts-the-event |
-| G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test=<event id> test link + hurdles countdown framing; final report for the job renamed G-171 -> G-172 -> G-173 -> G-174 |
+| G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test= test link; rounds 1-2 DONE PR #1181 (7aed11ab): hurdles face the runner (dot -1.00) + NEVER line + never-g-174-p1 |
 | G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
