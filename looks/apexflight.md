@@ -4,19 +4,19 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1198 lines)
-- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; slim throttle bar CSS ~41; QUALITY button ~116): 1–157
-- Imports, helpers, constants, state (offRwyMsg flag ~183): 158–189
-- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 190–490
-- The jet (owner's Apex Jet pack, created external): 491–498
-- HUD artificial horizon: 499–524 · Messages: 525–528
-- Game flow (respawn ~532, crash, touchdown/scoring): 529–592
-- Input — keyboard (pollKeys ~597): 593–612 · Jet controls: pad + SHARED kit stick + throttle bar; resetInputs 702 (blur / touchcancel / hidden zero every input, G-238): 613–711
-- Buttons / view toggle: 712–721 · Play a Friend codes: 722–765 · fitGame ~766: 766–775
-- Physics (step ~781; lift/stall, airbrake in the forces block): 776–892
-- Camera (step-5 offsets + sun follow): 893–925 · HUD update (off-runway reason re-assert): 926–967 · Music (procedural WebAudio): 968–1092
-- QUALITY option wiring (~1095) · Test hooks (`__flight` 1105, `__reality` 1117): 1093–1143
-- Main loop (kit axes merge ~1155; ?test= owner-check hook 1183): 1144–1198
+## WHERE THINGS ARE — `apexflight.html` (1200 lines)
+- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; slim throttle bar CSS ~41; QUALITY button ~117; #jetBtn placed under #back at ~53, G-243): 1–159
+- Imports, helpers, constants, state (offRwyMsg flag ~185): 160–191
+- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 192–492
+- The jet (owner's Apex Jet pack, created external): 493–500
+- HUD artificial horizon: 501–526 · Messages: 527–530
+- Game flow (respawn ~534, crash, touchdown/scoring): 531–594
+- Input — keyboard (pollKeys ~599): 595–614 · Jet controls: pad + SHARED kit stick + throttle bar; resetInputs 704 (blur / touchcancel / hidden zero every input, G-238): 615–713
+- Buttons / view toggle: 714–723 · Play a Friend codes: 724–767 · fitGame ~768: 768–777
+- Physics (step ~783; lift/stall, airbrake in the forces block): 778–894
+- Camera (step-5 offsets + sun follow): 895–927 · HUD update (off-runway reason re-assert): 928–969 · Music (procedural WebAudio): 970–1094
+- QUALITY option wiring (~1097) · Test hooks (`__flight` 1107, `__reality` 1119): 1095–1145
+- Main loop (kit axes merge ~1157; ?test= owner-check hook 1185): 1146–1200
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
