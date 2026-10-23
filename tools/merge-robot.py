@@ -222,7 +222,10 @@ def main():
             if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
                 continue
         low = title.lower()
-        if pr.get("draft") or any(w in low for w in ("hold", "wip", "draft", "do not merge")) or \
+        # Oct 23 2026 6:05 PM: window 9's "TEST G-231: DRAFT checklist apexflight" (#1293) sat green 4.5 h - the word 'draft' ANYWHERE in
+        # the title counted as 'do not merge' (it means a first-draft checklist). Hold only on GitHub's draft flag, a 'hold' label,
+        # or a title that STARTS with WIP / DRAFT / HOLD / [..] or says 'do not merge'.
+        if pr.get("draft") or re.match(r"\s*\[?\s*(wip|draft|hold)\b", low) or "do not merge" in low or \
                 any(l.get("name", "").lower() == "hold" for l in pr.get("labels", [])):
             say("#%d skipped: draft/hold" % n); continue
         if pr["head"]["repo"] is None or pr["head"]["repo"]["full_name"] != REPO:
