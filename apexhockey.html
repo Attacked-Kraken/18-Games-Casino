@@ -1806,7 +1806,8 @@ function commSay(ev,pri){ if(!COMM) return; try{ if(COMM.say(ev,{priority:!!pri}
 function commSyncMute(){ if(COMM){ try{ COMM.mute(!!Mus.muted); }catch(e){} } }
 document.getElementById('creditsBtn').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='flex'; });
 document.getElementById('creditsClose').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='none'; });
-document.getElementById('againBtn').addEventListener('click',()=>location.reload());
+let againToHub = false; // set by careerAfterGame: the career end-screen button reads CAREER HUB, so it must open the hub - a bare reload boots to the main menu
+document.getElementById('againBtn').addEventListener('click',()=>{ if (againToHub) { document.getElementById('final').style.display = 'none'; renderHub(); document.getElementById('hub').style.display = 'flex'; } else location.reload(); });
 function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
 /* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
      rotation and the rink rendered into half the screen). CSS now owns the display
@@ -1931,7 +1932,7 @@ function careerAfterGame() {
     else line = 'Beaten in the final. So close — run it back with a new season from the hub.';
   }
   c.lastLine = line; cSave(c);
-  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →';
+  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →'; againToHub = true;
 }
 /* ---- friend codes ---- */
 function friendCode(c) {
@@ -1990,7 +1991,7 @@ $('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''
 $('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
 $('hubClose').addEventListener('click', () => { disarmReset(); $('hub').style.display = 'none'; });
 $('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
-$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
+$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label, base: { g: c.star.g, a: c.star.a, cg: c.star.cg, ca: c.star.ca, season: c.season, week: c.week, name: c.star.name } }); location.reload(); });
 $('hubNew').addEventListener('click', () => {
   let c = cLoad();
   if (!c) { c = newCareer(); }
@@ -2017,6 +2018,14 @@ $('friendGo').addEventListener('click', () => {
   // not strand the player on the menu to press CAREER a second time. Only a
   // career fixture auto-starts: a friend fixture still waits on the menu,
   // where its PLAY label and cancel live.
+  // A career fixture that was staged but never booked (the player quit
+  // mid-match) must not keep the star goals banked along the way, or the
+  // fixture can be replayed to farm them: roll the star tallies back to the
+  // snapshot staged with the fixture. Booked matches clear their record in
+  // careerAfterGame, so this only ever touches un-booked ones, and at a
+  // fresh start the snapshot equals the save (a no-op).
+  const pmB = mLoad();
+  if (pmB && pmB.kind === 'career' && pmB.base) { const cB = cLoad(); if (cB && cB.star && cB.season === pmB.base.season && cB.week === pmB.base.week && cB.star.name === pmB.base.name) { cB.star.g = pmB.base.g; cB.star.a = pmB.base.a; cB.star.cg = pmB.base.cg; cB.star.ca = pmB.base.ca; cSave(cB); } }
   const pm2 = mLoad();
   if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
