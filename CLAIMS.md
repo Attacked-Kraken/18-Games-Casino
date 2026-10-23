@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-242 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/G-242.md, CLAIMS.md | test/g-242-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-238 | window 7 | jobs/G-238.md, CLAIMS.md | test/g-238-apexbaseball |
