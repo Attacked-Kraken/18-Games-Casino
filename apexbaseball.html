@@ -280,7 +280,7 @@ function addRuns(t,n){ ensureInn(t); G.score[t][G.inning-1]+=n; }
 /* ---------------- three.js setup ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias: !COARSE, powerPreference:'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));   // G-222 fix round 1: the touch cap was 1.5 - on a DPR-3 phone the whole scene rendered at half resolution and read soft (owner screenshot)
-const ANISO = Math.min(8, (renderer.capabilities.getMaxAnisotropy && renderer.capabilities.getMaxAnisotropy()) || 1);   // G-222 fix round 1: ground textures at a glancing angle smear without anisotropy
+const ANISO = Math.min(4, (renderer.capabilities.getMaxAnisotropy && renderer.capabilities.getMaxAnisotropy()) || 1);   // G-222 fix round 1: ground textures at a glancing angle smear without anisotropy
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 if (isTouch) renderer.shadowMap.enabled = false;   // enforced: no shadow maps on touch
 else { renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; }
@@ -2084,7 +2084,7 @@ try {
     scene.add(root);
     _park.root = root; _park.loaded = true;
     _park.aniso = ANISO;   // G-222 fix round 1: crisp ground at glancing angles
-    root.traverse(o => { if (o.isMesh && o.material && o.material.map){ o.material.map.anisotropy = ANISO; if (o.material.map.image) o.material.map.needsUpdate = true; } });
+    root.traverse(o => { if (o.isMesh && o.material && o.material.map) o.material.map.anisotropy = ANISO; });   // set before the park's first frame - no re-upload needed
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
     // G-151 (art director: the play picture is night-dark, the crowd reads empty;
