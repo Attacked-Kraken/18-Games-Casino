@@ -43,6 +43,9 @@
     touch-action: none; overflow: hidden; pointer-events: auto; cursor: pointer; }
   #thrBarFill { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(255,59,48,.55), rgba(255,120,60,.8)); pointer-events: none; }
   #thrBarLbl { position: absolute; top: 4px; width: 100%; text-align: center; font-size: 8px; letter-spacing: .14em; color: #ffb700; pointer-events: none; }
+  /* the shared kit thumb zone (kit/controls.js) keeps the old pack zone's
+     footprint - left half, bottom 62% - so the top HUD stays tappable (G-232) */
+  #apcZone { top: 38%; height: 62%; }
   .tbtn { position: fixed; z-index: 1100; background: rgba(2,14,8,.75); color: #ffb700;
     border: 1px solid rgba(255,59,48,.5); border-radius: 10px; padding: 10px 12px;
     font: 700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .1em; cursor: pointer; }
@@ -578,11 +581,12 @@ window.addEventListener('keydown', e => {
 });
 window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 function pollKeys() {
+  kitHeld = !!(kitZone && kitZone.firstChild && kitZone.firstChild.classList.contains('on'));   // a thumb is on the shared kit pad (G-232)
   if (phase !== 'fly') return;
   const up = keys['arrowup'] || keys['w'], dn = keys['arrowdown'] || keys['s'];
   const lf = keys['arrowleft'] || keys['a'], rt = keys['arrowright'] || keys['d'];
-  if (up) inp.pitchUp = 1; else if (dn) inp.pitchUp = -1; else if (!jetStickHeld) inp.pitchUp = 0;
-  if (lf) inp.rollRight = -1; else if (rt) inp.rollRight = 1; else if (!jetStickHeld) inp.rollRight = 0;
+  if (up) inp.pitchUp = 1; else if (dn) inp.pitchUp = -1; else if (!kitHeld) inp.pitchUp = 0;
+  if (lf) inp.rollRight = -1; else if (rt) inp.rollRight = 1; else if (!kitHeld) inp.rollRight = 0;
   // throttle is owned by the jet controls (G-90): jetInput.tick() ramps it from the
   // THR +/- pad buttons and the R/F + Shift/Ctrl keys, and the loop copies it to P.thr
 }
@@ -590,31 +594,24 @@ function pollKeys() {
 /* ================= input: the owner's jet controls (jet job step 4 = G-90) =================
    createJetControls draws the 14-button pad (bottom-right): THR +, THR -,
    BOOST, YAW L, YAW R, GEAR, CAM, STYLE, PAINT, BRAKE, BARREL, LOOP, IMMEL,
-   SPLIT-S. The stick is the shared kit stick (kit/controls.js, G-232). The game's keyboard (pollKeys) stays in
-   charge of the arrow/WASD keys; the pad owns the throttle, the stick merges
+   SPLIT-S. The thumb controls are the shared kit (kit/controls.js, G-232). The game's keyboard (pollKeys) stays in
+   charge of the arrow/WASD keys; the pad owns the throttle, the kit axes merge
    when a finger is actually on it, and jet.update() animates the jet. */
-let jetStickHeld = false;
+let kitHeld = false;
 let padYaw = 0, padBoost = false, padBrake = false;
 jetInput = createJetControls(document.body, { rotated: () => innerHeight > innerWidth, throttle: 1 });
-/* the stick is the SHARED kit stick (kit/controls.js, STUDIO-STANDARD section 9
-   rule 2, G-232): the jet pack's own stick zone comes off the page and the kit's
-   left thumbstick drives pitch/roll instead. The kit owns the stick maths and
-   the "let go = stop" resets (pointerup / pointercancel / blur / hidden tab);
-   the 14-button pad stays the pack's. The kit zone is trimmed to the pack
-   zone's old footprint (bottom-left) so the top HUD stays tappable. */
-const packStickZone = document.getElementById('jetStickZone');
-if (packStickZone) packStickZone.remove();
-const kitCtl = createControls({ buttons: [], stick: true, rotated: () => innerHeight > innerWidth });
+/* the thumb controls are the SHARED kit (kit/controls.js, STUDIO-STANDARD
+   section 9 rule 2, G-232): the jet pack's own left zone comes off the page
+   and the kit's left thumb pad drives pitch/roll instead. The kit owns the
+   axis maths and the "let go = stop" resets (pointerup / pointercancel /
+   blur / hidden tab); the 14-button pad stays the pack's. Held state is read
+   off the kit's lit base ring each frame in pollKeys - the page wires no
+   pointer handlers of its own for the kit controls. */
+const packZone = jetInput.root.querySelector('.zone');
+if (packZone) packZone.remove();
+const kitCtl = createControls({ buttons: [], rotated: () => innerHeight > innerWidth });
 kitCtl.show(false);
-{
-  const zone = document.getElementById('apcZone');
-  if (zone) {
-    zone.style.top = '38%'; zone.style.height = '62%';
-    zone.addEventListener('pointerdown', () => { jetStickHeld = true; });
-    const off = () => { jetStickHeld = false; };
-    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => zone.addEventListener(n, off));
-  }
-}
+const kitZone = document.getElementById('apcZone');
 /* slim throttle bar (G-121): stands right alongside the pad, glued to its size; a
    touch or drag sets the throttle at once (the fill follows P.thr in the loop) */
 {
@@ -685,7 +682,7 @@ function trickOffsets(dt) {
    rule; the phone robot checks these handlers exist). */
 function resetInputs() {
   for (const k in keys) keys[k] = false;
-  jetStickHeld = false;
+  kitHeld = false;
   if (kitCtl) kitCtl.release();
   inp.pitchUp = 0; inp.rollRight = 0;
 }
@@ -1116,7 +1113,7 @@ function loop(now) {
   const boostWas = jetInput.boost, yawWas = jetInput.yaw;   // same tick() recompute wipes pad BOOST/YAW the same way (G-117)
   jetInput.tick(dt);
   if (phase === 'fly' || phase === 'scored') {
-    if (jetStickHeld) { const c = kitCtl.read(); inp.pitchUp = clamp(c.y, -1, 1); inp.rollRight = clamp(c.x, -1, 1); }
+    if (kitHeld) { const c = kitCtl.read(); inp.pitchUp = clamp(c.y, -1, 1); inp.rollRight = clamp(c.x, -1, 1); }
     padYaw = jetInput.yaw || yawWas; padBoost = jetInput.boost || boostWas; padBrake = jetInput.brake || brakeWas;
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
@@ -1141,8 +1138,8 @@ function loop(now) {
   }
   renderer.render(scene, camera);
 }
-/* OWNER CHECK (G-232): apexflight.html?test=stick opens straight into free
-   flight - menus skipped - with the shared kit stick on screen. */
+/* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
+   free flight - menus skipped - with the shared kit thumb pad on screen. */
 if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
