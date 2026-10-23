@@ -646,6 +646,7 @@ async function attachAthletes(H){
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
       s.kit = kitG; s.athStick = kitG.stick;
+      { const vs = kitG.parts && kitG.parts.visor; if (vs) { vs.castShadow = false; vs.material.opacity = 0.13; vs.material.metalness = 0; vs.material.roughness = 0.04; } } // G-186: the kit visor shipped cloudy - it shadowed and darkened the face into a bar across the eyes (art director, img/apexhockey-face.jpg); a visor casts no shadow and the glass is near-clear now, so the face reads through it
       a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
@@ -1977,7 +1978,7 @@ $('friendGo').addEventListener('click', () => {
 
 // G-178: owner check link - apexhockey.html?test=match opens straight into a
 // match (skips the menu) so a change can be eyeballed in 30 seconds.
-try { if (new URLSearchParams(location.search).get('test') === 'match') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } } } catch (e) {}
+try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
 
 requestAnimationFrame(tick);
 
