@@ -1,0 +1,21 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -1135,8 +1135,8 @@
+     const sr = lampSpot['r' + (sd > 0 ? 'p' : 'n')], ry = sr ? sr.y : ls.y * 0.58, rz = sr && sr.z !== null ? sr.z : sd * ls.z * 0.30, rs = sr ? null : lampSurf(false, ry, rz);
+     const gr = new THREE.Mesh(rs ? glowGeoS : glowGeoR, glowMatR); gr.position.set(sr ? sr.x - 0.005 : (rs ? rs.x - 0.008 : -ls.x / 2 + 0.10), rs ? rs.y : ry, rs ? rs.z : rz); gr.rotation.y = -Math.PI / 2; gr.userData.glow = 2; tilt.add(gr); glowR.push(gr); /* the glow lies on the measured body surface at the lamp - nothing floats in front of the car, from any angle */
+   }
+-  const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 1.1), transparent: true, opacity: 0.38, blending: THREE.AdditiveBlending, depthWrite: false }));
+-  pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */
++  const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 0.7), transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false }));
++  pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */ /* G-206: pool energy cut (color 1.1 -> 0.7, opacity 0.38 -> 0.15) - measured on the night grid, the additive pool was the term blowing the centre car out to a pink/white blob (blown-white share 1.41% -> 0.37% with the pool off) */
+   tilt.add(model);
+   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
+   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
+@@ -2338,6 +2338,7 @@
+ addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
+ resize(); toMenu();
+ { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
++{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); } /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
+ requestAnimationFrame(frame);
+ window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
+ /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
