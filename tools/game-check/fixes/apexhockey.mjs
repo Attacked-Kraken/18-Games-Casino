@@ -1737,4 +1737,52 @@ export default [
     }
   },
 },
+{
+  id: 'tester-puck-leaves-rink-at-boards',
+  mode: 'arena',
+  ask: 'TESTER (G-194): the puck never leaves the rink - staged pressure at the boards (loose pucks fired at the end boards, the puck carrier standing at the end boards and at the side boards facing them with the puck on his stick, a real shot released at the boards) with the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
+    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
+    await h.eval(() => {
+      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+      if (window.__excTimer) clearInterval(window.__excTimer);
+      window.__excTimer = setInterval(() => {
+        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+        if (hk.game.state !== 'play') return;
+        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+        window.__exc.n++;
+        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+      }, 50);
+    });
+    await clickId('playBtn');
+    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
+    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
+    for (let round = 0; round < 6; round++) {
+      const e = round % 2 === 0 ? 1 : -1;
+      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
+      await h.wait(700);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(900);
+      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
+      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
+      await h.wait(700);
+      const stNow = await state();
+      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
+      if (stNow === 'goal') await h.wait(1500);
+    }
+    const exc = await h.eval(() => window.__exc).catch(() => null);
+    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (exc.maxX > 100.6 || exc.maxZ > 42.9)
+      return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
+    return true;
+  },
+},
 ];
