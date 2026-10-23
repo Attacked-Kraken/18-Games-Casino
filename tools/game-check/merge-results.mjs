@@ -14,7 +14,7 @@ for (const d of fs.existsSync(parts) ? fs.readdirSync(parts).sort() : []) {
   let j = {}; try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { continue; }
   when = when || j.when || ''; sha = sha || j.sha || '';
   for (const r of j.results || []) if (!seen.has(r.file)) { seen.add(r.file); results.push(r); }
-  for (const m of j.models || []) if (!models.some(x => x.id === m.id && x.name === m.name)) models.push(m);
+  for (const m of (j.models || []).filter(Boolean)) if (!models.some(x => x && x.id === m.id && x.name === m.name)) models.push(m);
   // pictures: files AND folders (img/models/ holds the 3D model shots - Oct 21: a plain copyFileSync on that folder
   // crashed the whole verdict step of PR #873 with no reason shown)
   const img = path.join(parts, d, 'img');

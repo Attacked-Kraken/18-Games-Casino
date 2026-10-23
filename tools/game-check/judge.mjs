@@ -14,7 +14,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   // already fails on main is a known open bug, not something this PR broke.
   const key = (x) => { const m = String(x).match(/^(Owner'?s fix NOT done yet|Play test failing):\s*"(.*?)"/i); return m ? 'TEST|' + norm(m[2]) : norm(String(x)); };
   const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).concat(r.check || []).map(key)
-    .concat((r.fixes || []).filter(f => !f.ok).map(f => 'TEST|' + norm(String(f.ask || f.id)))))]));
+    .concat((r.fixes || []).filter(Boolean).filter(f => !f.ok).map(f => 'TEST|' + norm(String(f.ask || f.id)))))]));
   const blockers = [];
   // FAIR BLAME (Oct 18): a PR is only blocked for what it touched. Games re-checked just because a shared folder changed
   // (models/, characters/, tools/game-check/) block only on hard breakage, not on their old/flaky owner tests; a model
@@ -66,11 +66,11 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
-    const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).map(f => f.id))]));
+    const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).filter(Boolean).map(f => f.id))]));
     const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
-      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
+      const fresh = (r.fixes || []).filter(Boolean).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
       const passing = fresh.filter(f => f.ok || f.inconclusive);   // an undecided test proves nothing either
       if (fresh.length && passing.length === fresh.length)
         blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);

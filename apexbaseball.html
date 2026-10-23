@@ -299,9 +299,9 @@ segMesh.position.set(0, 8, -117); scene.add(segMesh);
 scene.fog = new THREE.Fog(0x87b5e0, 180, 380);
 const camera = new THREE.PerspectiveCamera(42, window.innerWidth/window.innerHeight, 0.1, 600); // G-65: TV broadcast field of view (40-45) - no wide-angle stretch
 const PITCH_CAM = { pos:[0,6.2,12.8], look:[0,2.4,-22] };
-const FIELD_CAM = { pos:[0,45,35.3], look:[0,0,-50] };
+const FIELD_CAM = { pos:[0,24,26], look:[0,0,-30] };   // G-151: lower and closer than the old [0,45,35.3] - with the ball in play the batter/runner was a speck at the bottom edge; the infield still fills the frame
 // Retest #2: dedicated views so you can actually see the pitch and the swing
-const PITCHER_VIEW = { pos:[0,20,-50], look:[0,1.2,2] };   // G-65 TV spec: high centre-field camera, behind and above the pitcher, looking at the batter and catcher
+const PITCHER_VIEW = { pos:[0,5,-29.5], look:[0,1.2,-6] };   // G-222 (owner order Oct 22): the pitching camera spec - low behind the pitcher, a little above him, the pitcher himself fully in frame (from the G-167 framing [0,8.5,-21.8] he projected clean out of the picture, feet at row ~1197 of 390) and the plate cluster ahead; the follow block in the frame loop rides the windup and the pitch flight from here so the contact moment lands big at the plate
 const BATTER_VIEW = { pos:[0,1.7,7.6], look:[0,1.7,-20] };  // G-65 TV spec: behind home plate at catcher height, looking at the pitcher
 camera.position.set(...PITCH_CAM.pos); camera.lookAt(...PITCH_CAM.look);
 
@@ -642,15 +642,24 @@ function attachAthlete(p, slotIdx){
     if (bones['Head']){ // cap (fielders) / batting helmet — the old primitives had them, the athletes lost them
       const capGrp = new THREE.Group();
       if (p.bat){
-        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.125,14,10,0,Math.PI*2,0,1.9), M(T.cap));
-        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.1,0.11), M(T.cap));
-        flap.position.set(-0.115,-0.03,0.02); capGrp.add(shell, flap);
+        // G-167: a batting helmet that keeps the face clear. The old shell was
+        // centred on the face (rim 1.9 rad down from the crown) - in the robot's
+        // close-up it read as a big dark blob hiding the eyes. The shell now
+        // crowns the head (rim 1.25 rad, above the brow), the group sits higher
+        // on the head, a short bill shades the brow and the flap covers the ear only.
+        const shell = new THREE.Mesh(new THREE.SphereGeometry(0.132,14,10,0,Math.PI*2,0,1.25), M(T.cap));
+        const bill = new THREE.Mesh(new THREE.BoxGeometry(0.16,0.016,0.075), M(T.cap));
+        bill.position.set(0,0.05,0.135);
+        const flap = new THREE.Mesh(new THREE.BoxGeometry(0.025,0.09,0.1), M(T.cap));
+        flap.position.set(-0.128,-0.085,0.01); capGrp.add(shell, bill, flap);
+        capGrp.position.set(0,0.135,0.005);
       } else {
         const crown = new THREE.Mesh(new THREE.SphereGeometry(0.12,14,10,0,Math.PI*2,0,1.45), M(T.cap));
         const brim = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.02,0.13), M(T.cap));
         brim.position.set(0,0.015,0.155); capGrp.add(crown, brim);
+        capGrp.position.set(0,0.045,0);
       }
-      capGrp.position.set(0,0.045,0); bones['Head'].add(capGrp);
+      bones['Head'].add(capGrp);
     }
     const kS = a.object.scale.x || 1;           // G-65: hand props are sized in world units via the rig's real scale
     if (p.bat){                                 // batter: real bat in the right hand
@@ -671,6 +680,10 @@ function attachAthlete(p, slotIdx){
     let u = null;
     a.object.traverse(o => { if (o.isSkinnedMesh && o.material && o.material.userData && o.material.userData.U) u = o.material.userData.U; });
     p.athleteU = u; p.athlete = a; p.px = null; p.pz = null;
+    // G-167: the batter wears the full uniform - the kit shader's button-front
+    // cut (a jersey with a placket) in the team colour over the white trousers,
+    // not the graphic tee with its printed chest logo the baseball_kit preset uses.
+    if (p.bat && u && u.uCfg) u.uCfg.value.set(5, 1, 0, 0);
     if (p === batterMesh && typeof window !== 'undefined'){
       // REALITY.md hook: the robot measures the player's real size and ground contact itself
       try { window.__reality = { kind:'person', player: p.g, others: [pitcherMesh, catcherMesh, ...runnerMeshes].map(x => x.g), contact: [bones['foot_l'], bones['foot_r']].filter(Boolean), footOffset: 0.05, ground: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), go: (on) => { realityTrot.on = !!on; }, camera: camera }; } catch (e) {}
@@ -1503,11 +1516,30 @@ function loop(){
     if (f.athlete){ if (!busy) athleteTick(f, dt); soleTrim(f); continue; }   // G-65: the busy athlete's mixer already advanced in athletePose - never twice in one frame
     if (!busy) animFigure(f, dt, running ? 'run' : 'idle');
   }
+  // G-222: the pitching camera follows the play (auto view, player pitching).
+  // Set shot: PITCHER_VIEW above, pitcher fully in frame. Windup: push in on
+  // the pitcher. Flight: ride with the ball from over his shoulder down to
+  // the plate, so the ball meeting the bat is big in frame at contact.
+  if (camMode==='pitch' && !playerBatting() && viewMode==='auto'){
+    if (G.phase==='windup'){
+      const k = 1 - Math.exp(-2.2*dt);
+      camera.position.lerp(_camTmp.set(0, 4.2, -26.2), k);
+      camLook.lerp(_camTmp.set(0, 1.5, -14), k);
+    } else if (G.phase==='flight' && flight.active){
+      const t = Math.min(Math.max(flight.t, 0), 1), e = t*t*(3-2*t);
+      camera.position.set(0, 4.2 - 1.5*e, -26.2 + 19.4*e);
+      camLook.lerp(_camTmp.set(ball.position.x, ball.position.y, ball.position.z), 0.5);
+    } else if (G.phase==='select' || G.phase==='aim'){
+      const k = 1 - Math.exp(-6*dt);
+      camera.position.lerp(_camTmp.set(...PITCHER_VIEW.pos), k);
+      camLook.lerp(_camTmp.set(...PITCHER_VIEW.look), k);
+    }
+  }
   // camera tracking (not in wide stadium view): G-65 - the high camera follows
   // the ball in play (look and position glide with it), then setCam cuts back
   if (camMode==='field' && ball.visible && viewMode!=='wide'){
     camLook.lerp(_camTmp.set(ball.position.x, 1, ball.position.z), 0.08);
-    camTgtP.set(ball.position.x*0.55, 45, 35.3 + ball.position.z*0.35);
+    camTgtP.set(ball.position.x*0.55, 24, 26 + ball.position.z*0.35);   // G-151: rides on the new FIELD_CAM height/depth
     camera.position.lerp(camTgtP, 0.05);
   }
   // view-button transitions glide to their target
@@ -2043,18 +2075,18 @@ try {
     _park.root = root; _park.loaded = true;
     oldParkMeshes.forEach(m => { m.visible = false; });
     segMesh.visible = false;
-    // G-40 redo (owner: 'nothing has changed'): the owner's park is a NIGHT park, and
-    // under the game's bright day sky it read as the old daytime park - the floodlights,
-    // the lit board and the dark bowl never showed. When his park loads, the game takes
-    // on the park's own night presentation: near-black sky, dim blue ambient, and one
-    // strong cool floodlight so the field stays lit like his preview pictures. If the
-    // model cannot load, the old park keeps its day look, untouched.
-    scene.background = new THREE.Color(0x060a18);
-    if (scene.fog) scene.fog.color.set(0x060a18);
+    // G-151 (art director: the play picture is night-dark, the crowd reads empty;
+    // the board's locked KEEP says day light, no night-dark field): when the park
+    // loads, the game takes a DAY presentation - bright blue sky, strong warm sun,
+    // full ambient - so the field, the players and the crowd in the bowl all read
+    // in daylight. (This supersedes the G-40 night grade.) If the model cannot
+    // load, the old park keeps its day look, untouched.
+    scene.background = new THREE.Color(0x8fc7ee);
+    if (scene.fog) scene.fog.color.set(0x8fc7ee);
     scene.traverse(o => {
-      if (o.isHemisphereLight){ o.color.set(0x35507e); o.groundColor.set(0x24351f); o.intensity = 0.95; }
-      else if (o.isDirectionalLight){ o.color.set(0xdfeaff); o.intensity = 1.5; }
-      else if (o.isSpotLight){ o.intensity = 0.85; }
+      if (o.isHemisphereLight){ o.color.set(0xcfe8ff); o.groundColor.set(0x67a05a); o.intensity = 1.4; }
+      else if (o.isDirectionalLight){ o.color.set(0xfff2d8); o.intensity = 2.15; }
+      else if (o.isSpotLight){ o.intensity = 0.9; }
     });
     // G-85 (owner: the game runs 13-17 fps): measured on the phone path, the park's
     // MeshStandardMaterial lighting is the biggest per-frame cost by far - swapping
@@ -2084,7 +2116,7 @@ try {
         o.material = L;
       });
     }
-    _park.night = true;
+    _park.night = false;   // G-151: day presentation
     revealMenu();
   }, ev => {
     if (ev && ev.lengthComputable && ev.total){
@@ -2131,6 +2163,22 @@ updateAimDot();
 renderHUD();
 setPhase('start');
 loop();
+
+/* G-222: owner check link - apexbaseball.html?test=pitching skips the menu and
+   throws fastballs on a loop, so the rebuilt pitching camera (pitcher in
+   frame, windup + flight follow, big contact) can be seen in 30 seconds. */
+try {
+  if (new URLSearchParams(location.search).get('test') === 'pitching'){
+    const iv = setInterval(() => {
+      const so = document.getElementById('startOv');
+      if (so && so.style.display !== 'none'){ const b = document.getElementById('startBtn'); if (b) b.click(); return; }
+      if (!window.__test || !window.__test.stadium.loaded) return;
+      if (G.phase === 'select'){ const fb = [...document.querySelectorAll('button')].find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click(); }
+      else if (G.phase === 'aim'){ const th = [...document.querySelectorAll('button')].find(b => /THROW/i.test(b.textContent)); if (th) th.click(); }
+    }, 500);
+    setTimeout(() => clearInterval(iv), 120000);
+  }
+} catch (e) {}
 </script>
 
 <script>

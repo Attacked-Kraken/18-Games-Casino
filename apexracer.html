@@ -298,10 +298,33 @@ const GLB_MODELS = {
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
 };
+function bakeSkins(rootObj) {
+  /* The Tokii is a SKINNED model (88 skinned meshes on one skeleton) and every car is a plain clone of the template - plain clones SHARE the template's skeleton (measured: two Tokii cars report the same skeleton object, its bones live in no car), and mid-race Tokii cars render sunk ~0.6 m under the road (the owner's invisible cars). The game plays no animations, so bake the bind pose into plain geometry once at load: no skeletons, no sharing, nothing left to drift. */
+  const swaps = [];
+  rootObj.updateWorldMatrix(true, true);
+  rootObj.traverse((q) => { if (q.isSkinnedMesh && q.skeleton && q.geometry && q.geometry.attributes.position && q.geometry.attributes.skinIndex && q.parent) swaps.push(q); });
+  const M = new THREE.Matrix4(), B = new THREE.Matrix4(), N = new THREE.Matrix4(), v = new THREE.Vector3(), nv = new THREE.Vector3();
+  for (const q of swaps) {
+    q.skeleton.update();
+    const g = q.geometry.clone();
+    const pa = g.attributes.position, na = g.attributes.normal, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bm = q.skeleton.boneMatrices;
+    for (let i = 0; i < pa.count; i++) {
+      M.identity().multiplyScalar(0);
+      for (let j = 0; j < 4; j++) { const w = sw.getComponent(i, j); if (!w) continue; B.fromArray(bm, si.getComponent(i, j) * 16).multiplyScalar(w); M.add(B); }
+      N.copy(q.bindMatrixInverse).multiply(M).multiply(q.bindMatrix);
+      v.fromBufferAttribute(pa, i).applyMatrix4(N); pa.setXYZ(i, v.x, v.y, v.z);
+      if (na) { nv.fromBufferAttribute(na, i).transformDirection(N); na.setXYZ(i, nv.x, nv.y, nv.z); }
+    }
+    g.deleteAttribute('skinIndex'); g.deleteAttribute('skinWeight');
+    const plain = new THREE.Mesh(g, q.material);
+    plain.name = q.name; plain.position.copy(q.position); plain.quaternion.copy(q.quaternion); plain.scale.copy(q.scale); plain.userData = q.userData;
+    q.parent.add(plain); q.parent.remove(q);
+  }
+}
 const glbTpl = {};
 for (const k of Object.keys(GLB_MODELS)) {
   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
-  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { glbTpl[k] = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; } catch (e) { glbTpl[k] = null; } }
+  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
 }
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
@@ -532,6 +555,9 @@ TX.marble = ctex(512, 512, (g, w, h) => { g.fillStyle = '#efefed'; g.fillRect(0,
 TX.stone = ctex(512, 512, (g, w, h) => { g.fillStyle = '#6d6258'; g.fillRect(0, 0, w, h); for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = 120 + Math.random() * 60; g.fillStyle = `rgb(${v},${v * 0.9},${v * 0.78})`; g.beginPath(); g.ellipse(x * 32 + 16 + (y & 1) * 16, y * 32 + 16, 14, 13, 0, 0, TAU); g.fill(); } });
 TX.cloud = ctex(256, 256, (g) => { for (let i = 0; i < 22; i++) { const x = 60 + Math.random() * 136, y = 90 + Math.random() * 80, r0 = 30 + Math.random() * 50; const r = g.createRadialGradient(x, y, 0, x, y, r0); r.addColorStop(0, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); } }, true, false);
 const PAINTS = ['#d4142a', '#ff3b30', '#ff8a00', '#ffd23a', '#c8ff00', '#16d07a', '#00b894', '#19e6ff', '#1e8bff', '#2438ff', '#8a2be2', '#ff2bd6', '#ff7ac8', '#e8e8ee', '#9aa0aa', '#3a3f48', '#0b0c10', '#b8860b', '#7a1020', '#0f4d3a', '#40e0d0', '#6a5acd', '#ff5e7e', '#f5f0e1'];
+/* owner Oct 22 2026: computer cars must SHOW in every city - a near-black paint reads as no body at all at dusk/night, only lamp dots */
+const paintLum = (hex) => { const n = parseInt(hex.slice(1), 16), f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255); };
+const brightPaint = (list, r) => { const ok = list.filter((p) => paintLum(p) >= 0.1); return ok[Math.floor(r() * ok.length)]; };
 
 /* ------------------------------------------------------------------ cars (our own designs: side profile -> extruded, rounded, tapered body) */
 const PROF = {
@@ -974,10 +1000,11 @@ function addNameWrap(tilt, bodyMat, col) {
     const sign = s === 0 ? 1 : -1;
     let band = 0; for (let b = 0; b < NB; b++) if (prof[s][b] !== undefined) band = Math.max(band, prof[s][b]);
     if (!band) continue;
+    let dband = 0; { const wcx0 = (fb.min.x + fb.max.x) / 2, wax0 = L * 0.31; for (let b = 0; b < NB; b++) { if (prof[s][b] === undefined) continue; const bx0 = fb.min.x + (b + 0.5) / NB * L; if (Math.abs(bx0 - (wcx0 - wax0)) > 0.62 && Math.abs(bx0 - (wcx0 + wax0)) > 0.62) dband = Math.max(dband, prof[s][b]); } } /* G-163: the door's OWN widest line */
     let run = null, cur = null;
     for (let b = 0; b <= NB; b++) {
       const bx = fb.min.x + (b + 0.5) / NB * L, wcx = (fb.min.x + fb.max.x) / 2, wax = L * 0.31; /* G-145: axles sit +/-0.31 of the length from the middle (the reality markers' measure) */
-      const ok = b < NB && prof[s][b] !== undefined && prof[s][b] >= band * 0.9 && Math.abs(bx - (wcx - wax)) > 0.62 && Math.abs(bx - (wcx + wax)) > 0.62; /* G-145: the strip breaks at the wheels - the run it can pick is the door */
+      const ok = b < NB && prof[s][b] !== undefined && prof[s][b] >= dband * 0.85 && Math.abs(bx - (wcx - wax)) > 0.62 && Math.abs(bx - (wcx + wax)) > 0.62; /* G-163 follow-up, measured on the Goblin's real profile: the door tapers ~10% below its own peak across the middle (peak 1.331, mid-door 1.18-1.22), so 0.92 left a 4-bucket island and no strip; 0.85 keeps the whole door run [8..19] between the axles */
       if (ok) { if (!cur) cur = [b, b]; else cur[1] = b; }
       else { if (cur && (!run || cur[1] - cur[0] > run[1] - run[0])) run = cur; cur = null; }
     }
@@ -1098,25 +1125,49 @@ function makeGlbCar(id, cfg, o = {}) {
   model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
   /* G-145 (owner): the G-70 light bars are GONE - the cars' OWN headlights, brighter.
      Light-named meshes (Patriot Lights, Tokii Headlight/TailLight, SHC Led_light) get
-     lamp-glow materials, split front/rear by where they sit; any end with no lamp mesh
-     of its own gets two small lenses instead - never a bar. */
+     lamp-glow materials, split front/rear by where they sit. */
   const ls = box.getSize(new THREE.Vector3());
   const lampMatF = new THREE.MeshBasicMaterial({ color: hdr('#eaf4ff', 3.4) }), lampMatR = new THREE.MeshBasicMaterial({ color: hdr('#ff2418', 3.2) });
   ownMats.push(lampMatF, lampMatR);
-  const lampEnds = { f: 0, r: 0 };
-  for (const q of lampCand) { const qc = new THREE.Box3().setFromObject(q).getCenter(new THREE.Vector3()); const front = qc.x >= 0; q.material = front ? lampMatF : lampMatR; q.userData.hlight = front ? 1 : 2; lampEnds[front ? 'f' : 'r']++; }
+  const lampSpot = {};
+  for (const q of lampCand) { const qb = new THREE.Box3().setFromObject(q); const qc = qb.getCenter(new THREE.Vector3()); const front = qc.x >= 0; q.material = front ? lampMatF : lampMatR; q.userData.hlight = front ? 1 : 2;
+    const key = (front ? 'f' : 'r') + (qc.z >= 0 ? 'p' : 'n'), fx = front ? qb.max.x : qb.min.x;
+    if (!lampSpot[key] || Math.abs(fx) > Math.abs(lampSpot[key].x)) lampSpot[key] = { x: fx, y: qc.y, z: Math.abs(qc.z) > 0.15 ? qc.z : null }; } /* the lamp's own face, for the glow to sit on */
+  /* G-163 (owner): no solid light blocks anywhere - the shine is a soft glow quad at each
+     lamp corner (nothing solid to see), a pool of headlight on the road ahead at night,
+     and rear lamps + glows that flare while braking (setBrake below). */
+  const glowMatF = new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#dfeeff', 2.6), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.85 });
+  const glowMatR = new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#ff2a18', 2.4), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.6 });
+  ownMats.push(glowMatF, glowMatR);
+  const glowGeoF = new THREE.PlaneGeometry(0.55, 0.24), glowGeoR = new THREE.PlaneGeometry(0.52, 0.22), glowGeoS = new THREE.PlaneGeometry(0.34, 0.15); /* owner fix: lamp-sized, not a billboard; glowGeoS = the short surface-hugging glow for models with no named lamp parts */
+  /* owner fix 2: a flat glow plane at the nose tip still hangs past the tucked chin
+     head-on - measure the real body surface at each lamp spot (the wrap's method)
+     and lay the glow on that surface, tilted with it, so nothing can float */
+  const lampSurf = (front, cy, cz) => { let bp = null; const v = new THREE.Vector3();
+    model.updateWorldMatrix(true, true);
+    model.traverse((q) => { if (!q.isMesh || q.material === tireMat || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position;
+      for (let i = 0; i < pa.count; i += 2) { v.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld);
+        if (Math.abs(v.y - cy) > 0.16 || Math.sign(v.z) !== Math.sign(cz) || Math.abs(v.z) < 0.15 || Math.abs(v.z - cz) > 0.55) continue;
+        if (front ? v.x < ls.x * 0.15 : v.x > -ls.x * 0.15) continue;
+        if (bp === null || (front ? v.x > bp.x : v.x < bp.x)) bp = { x: v.x, y: v.y, z: v.z }; } });
+    return bp; }; /* the foremost body point at the lamp, from every non-tire part: lamp-less models (Goblin, Tokii, Le Mans) sculpt their lamps into ordinary trim meshes, so a paint-only scan misses the nose and lands mid-car. The glow centers on this measured point itself */
+  const glowR = [];
   for (const sd of [-1, 1]) {
-    if (!lampEnds.f) { const ln = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, 0.32), lampMatF); ln.position.set(ls.x / 2 - 0.02, ls.y * 0.52, sd * ls.z * 0.30); ln.userData.hlight = 1; tilt.add(ln); }
-    if (!lampEnds.r) { const ln = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, 0.32), lampMatR); ln.position.set(-ls.x / 2 + 0.02, ls.y * 0.58, sd * ls.z * 0.30); ln.userData.hlight = 2; tilt.add(ln); }
+    const sf = lampSpot['f' + (sd > 0 ? 'p' : 'n')], fy = sf ? sf.y : ls.y * 0.52, fz = sf && sf.z !== null ? sf.z : sd * ls.z * 0.30, fs = sf ? null : lampSurf(true, fy, fz);
+    const gf = new THREE.Mesh(fs ? glowGeoS : glowGeoF, glowMatF); gf.position.set(sf ? sf.x + 0.005 : (fs ? fs.x + 0.008 : ls.x / 2 - 0.10), fs ? fs.y : fy, fs ? fs.z : fz); gf.rotation.y = Math.PI / 2; gf.userData.glow = 1; tilt.add(gf); /* centered on the measured foremost point at the lamp, small enough that the surface cannot curve away from it */
+    const sr = lampSpot['r' + (sd > 0 ? 'p' : 'n')], ry = sr ? sr.y : ls.y * 0.58, rz = sr && sr.z !== null ? sr.z : sd * ls.z * 0.30, rs = sr ? null : lampSurf(false, ry, rz);
+    const gr = new THREE.Mesh(rs ? glowGeoS : glowGeoR, glowMatR); gr.position.set(sr ? sr.x - 0.005 : (rs ? rs.x - 0.008 : -ls.x / 2 + 0.10), rs ? rs.y : ry, rs ? rs.z : rz); gr.rotation.y = -Math.PI / 2; gr.userData.glow = 2; tilt.add(gr); glowR.push(gr); /* the glow lies on the measured body surface at the lamp - nothing floats in front of the car, from any angle */
   }
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(3.9, 8.2), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr('#a9c8ff', 0.7), transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false }));
+  pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */ /* G-206: pool energy cut (color 1.1 -> 0.7, opacity 0.38 -> 0.15) - measured on the night grid, the additive pool was the term blowing the centre car out to a pink/white blob (blown-white share 1.41% -> 0.37% with the pool off) */
   tilt.add(model);
   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
   if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
-  const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: null, roll: 0, spinA: 0, glbKey: key,
-    setBrake(b) {},
+  const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: null, roll: 0, spinA: 0, glbKey: key, pool,
+    setBrake(b) { lampMatR.color.copy(hdr('#ff2418', b ? 7.5 : 3.2)); glowMatR.opacity = b ? 1 : 0.6; for (const s of glowR) s.scale.set(b ? 1.35 : 1, b ? 1.35 : 1, 1); }, /* G-163: brake lights flare while braking */
     dispose() { root.traverse((q) => { if (q.isMesh && q.geometry) q.geometry.dispose(); }); ownMats.forEach((m) => m.dispose()); } };
   return car;
 }
@@ -1496,6 +1547,7 @@ async function buildWorld(place) {
   await ldTick();
   /* buildings */
   const clearOK = (x, z, need) => { const q = T.near(x, z, 3); return q.d > need; };
+  const skirtClear = (x, z, rad, need) => { for (let k = 0; k < 12; k++) { const a = (k / 12) * TAU, q = T.near(x + Math.cos(a) * rad, z + Math.sin(a) * rad, 3); if (q && q.d < need) return false; } return true; }; /* owner Oct 22 2026: no mountain skirt within reach of the road */
   const bmat = (k) => std({ map: TX.win[k].map, emissiveMap: TX.win[k].emi, emissive: 0xffffff, emissiveIntensity: tp.emi * 0.8, roughness: k === 'glass' ? 0.1 : 0.75, metalness: k === 'glass' ? 0.75 : 0.1, vertexColors: true, envMapIntensity: k === 'glass' ? 1.4 : 1 });
   const PAL = { office: ['#c8ccd6', '#9aa6b8', '#d6cfc2', '#a8b8c8', '#e0e0e6', '#8c96a8'], glass: ['#ffffff', '#cfe8ff', '#bfeee6', '#e6d6b8', '#d8e0ff'], euro: ['#ffe2c0', '#ffd0a8', '#f5c6a0', '#ffe8d0', '#f0b890', '#ffd8b8', '#e8c0a0'], low: ['#ffffff', '#ffe6ea', '#e6fff4', '#fff4d6', '#e0f0ff'] };
   const CW = { office: [19, 46], glass: [18, 50], euro: [20, 38], low: [22, 40] };
@@ -1616,15 +1668,17 @@ async function buildWorld(place) {
     const L = []; scatter(220, 4, 26, (x, z) => { const s = 0.85 + r() * 0.5; L.push(M4(x, 0, z, 0, r() * TAU, 0, s, s, s)); }); inst(merge(parts), std({ vertexColors: true, roughness: 0.85 }), L); }
   if (X.has('cactus')) { const g = merge([[new THREE.CylinderGeometry(0.5, 0.55, 6, 8), M4(0, 3, 0)], [new THREE.CylinderGeometry(0.35, 0.35, 2.4, 8), M4(1, 3.2, 0, 0, 0, 0)], [new THREE.CylinderGeometry(0.35, 0.35, 2, 8), M4(-1, 4, 0)], [new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8), M4(0.55, 2.2, 0, 0, 0, Math.PI / 2)], [new THREE.CylinderGeometry(0.3, 0.3, 1.2, 8), M4(-0.55, 3, 0, 0, 0, Math.PI / 2)]]);
     const L = []; scatter(180, 5, 120, (x, z) => L.push(M4(x, 0, z, 0, r() * TAU, 0, 1, 0.7 + r() * 0.8, 1))); inst(g, std({ color: 0x3e7a3a, roughness: 0.85 }), L); }
-  if (X.has('mesas')) { const L = []; for (let c = 0; c < 40; c++) { const a = r() * TAU, rd = 320 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd; if (!clearOK(x, z, 120)) continue; const R1 = 40 + r() * 90, h = 30 + r() * 80;
+  if (X.has('mesas')) { const L = []; for (let c = 0; c < 40; c++) { const a = r() * TAU, rd = 320 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd; const R1 = 40 + r() * 90, h = 30 + r() * 80; if (!clearOK(x, z, R1 * 1.25 + 40)) continue;
       L.push([new THREE.CylinderGeometry(R1, R1 * 1.25, h, 9), M4(x, h / 2, z, 0, r() * TAU, 0, 1, 1, 0.6 + r() * 0.6), new THREE.Color(r() < 0.5 ? '#b0582e' : '#c46a38')]); }
     scene.add(new THREE.Mesh(merge(L), std({ vertexColors: true, roughness: 0.95, flatShading: true }))); }
   if (X.has('mountains')) { const L = [], rr0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 700;
-    for (let c = 0; c < 60; c++) { const a = (c / 60) * TAU + r() * 0.1, rd = rr0 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd, h = 160 + r() * 380, R1 = 180 + r() * 260;
+    for (let c = 0; c < 60; c++) { const a = (c / 60) * TAU + r() * 0.1, h = 160 + r() * 380, R1 = 180 + r() * 260; let rd = rr0 + r() * 700, x = T.cx + Math.cos(a) * rd, z = T.cz + Math.sin(a) * rd;
+      if (!skirtClear(x, z, R1, 30)) { rd += 340; x = T.cx + Math.cos(a) * rd; z = T.cz + Math.sin(a) * rd; if (!skirtClear(x, z, R1, 30)) continue; }
       L.push([new THREE.ConeGeometry(R1, h, 7, 1), M4(x, h / 2 - 5, z, 0, r() * TAU, 0), new THREE.Color(place.biome === 'desert' ? '#a8683e' : place.biome === 'volcano' ? '#3a2a24' : '#4a5a64')]);
       if (place.biome !== 'desert' && place.biome !== 'volcano') L.push([new THREE.ConeGeometry(R1 * 0.33, h * 0.33, 7, 1), M4(x, h - h * 0.165 - 4, z, 0, r() * TAU, 0), new THREE.Color('#f4f8ff')]); }
     scene.add(new THREE.Mesh(merge(L), std({ vertexColors: true, roughness: 1, flatShading: true }))); }
-  if (X.has('volcano')) { const a = r() * TAU, d0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 520, vx = T.cx + Math.cos(a) * d0, vz = T.cz + Math.sin(a) * d0;
+  if (X.has('volcano')) { let a = r() * TAU, d0 = Math.max(T.maxX - T.minX, T.maxZ - T.minZ) * 0.5 + 520, vx = 0, vz = 0;
+    for (let tries = 0; tries < 24; tries++) { vx = T.cx + Math.cos(a) * d0; vz = T.cz + Math.sin(a) * d0; if (skirtClear(vx, vz, 572, 45)) break; a += 0.7; if (tries % 6 === 5) d0 += 180; }
     const g = new THREE.ConeGeometry(520, 420, 48, 10, true); const pa = g.attributes.position; for (let i = 0; i < pa.count; i++) { const y = pa.getY(i); if (y > 205) { pa.setY(i, 170); pa.setX(i, pa.getX(i) * 0.28 / Math.max(0.2, Math.hypot(pa.getX(i), pa.getZ(i)) / 520)); } const k = 1 + (Math.sin(i * 12.9898) * 43758.5453 % 1) * 0.08; pa.setX(i, pa.getX(i) * k); pa.setZ(i, pa.getZ(i) * k); }
     g.computeVertexNormals(); const v = new THREE.Mesh(g, std({ color: 0x2a201c, roughness: 1, flatShading: true })); v.position.set(vx, 205, vz); scene.add(v);
     const lava = new THREE.Mesh(new THREE.CylinderGeometry(70, 70, 4, 32), new THREE.MeshBasicMaterial({ color: hdr('#ff5a1a', 5) })); lava.position.set(vx, 372, vz); scene.add(lava);
@@ -1761,7 +1815,7 @@ const K = { l: 0, r: 0, gas: 0, brake: 0, drift: 0, nos: 0 };
 let R = null;
 const tmpA = { x: 0, z: 0, h: 0, i: 0 };
 function randCfg(r, carId, tier) {
-  const c = defCfg(carId); c.paint = PAINTS[Math.floor(r() * PAINTS.length)]; c.fin = ['gloss', 'metal', 'metal', 'pearl', 'candy', 'matte'][Math.floor(r() * 6)]; c.rim = Math.floor(r() * 6);
+  const c = defCfg(carId); c.paint = brightPaint(PAINTS, r); c.fin = ['gloss', 'metal', 'metal', 'pearl', 'candy', 'matte'][Math.floor(r() * 6)]; c.rim = Math.floor(r() * 6);
   c.rimCol = ['#c9cdd6', '#2a2c30', '#d4a640', '#f2f2f2', '#c9cdd6'][Math.floor(r() * 5)]; c.aero = Math.floor(r() * 4); c.kit = r() < 0.4 ? 1 : 0; c.glow = r() < 0.4 ? PAINTS[Math.floor(r() * 12)] : '';
   c.eng = Math.min(4, Math.floor(tier * 0.8)); if (r() < 0.55) { c.wrap = ['stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'split', 'neon'][Math.floor(r() * 8)]; c.wrapCol = ['#ffffff', '#111111', '#ffd23a', '#19e6ff', '#ff2bd6'][Math.floor(r() * 5)]; } return c;
 }
@@ -1787,7 +1841,7 @@ async function setupRace(place, laps, friend) {
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
   if (W.traffic) { const n = W.traffic === 2 ? 9 : 10; for (let k = 0; k < n; k++) { const van = W.traffic === 2 ? r() < 0.7 : r() < 0.25;
-    const cfg = Object.assign(defCfg('vanta'), { paint: ['#e8e8ec', '#2a2c30', '#9aa0aa', '#ffd23a', '#1e4c8a', '#7a1020', '#f5f0e1', '#d4142a', '#1e8bff', '#16d07a', '#0b0c10', '#3a3f48', '#ff8a00', '#8a2be2'][Math.floor(r() * 14)], fin: 'gloss', glow: '' });
+    const cfg = Object.assign(defCfg('vanta'), { paint: brightPaint(['#e8e8ec', '#2a2c30', '#9aa0aa', '#ffd23a', '#1e4c8a', '#7a1020', '#f5f0e1', '#d4142a', '#1e8bff', '#16d07a', '#0b0c10', '#3a3f48', '#ff8a00', '#8a2be2'], r), fin: 'gloss', glow: '' });
     /* G-50: traffic cars are real fetched 3D models too, normal sedan size, each in its own paint */
     const car = makeCar('vanta', cfg, { glbKey: ['patriot', 'tokii', 'shc', 'lemans'][Math.floor(r() * 4)], prof: 'sedan' }); W.scene.add(car.root);
     R.traffic.push({ car, s: (170 + k * ((T.N * T.ds - 260) / n)) / T.ds, d: LANES[Math.floor(r() * 4)], v: 14 + r() * 8, v0: 14 + r() * 8, hit: 0, x: 0, z: 0, h: 0, ahead: true, van }); } }
@@ -1801,6 +1855,7 @@ async function setupRace(place, laps, friend) {
   R.fw.pts.frustumCulled = false; W.scene.add(R.fw.pts);
   R.skids = []; R.skidT = 0; const skidG = new THREE.PlaneGeometry(0.32, 1.15);
   for (let k = 0; k < 70; k++) { const m = new THREE.Mesh(skidG, new THREE.MeshBasicMaterial({ color: 0x0a0a0c, transparent: true, opacity: 0, depthWrite: false })); m.rotation.x = -Math.PI / 2; m.visible = false; m.renderOrder = 1; W.scene.add(m); R.skids.push({ m, life: 0 }); }
+  if (W.night) for (const e of [...R.cars, ...R.traffic]) if (e.car.pool) { W.scene.add(e.car.pool); e.car.pool.visible = true; } /* G-163: headlight pools light the road ahead at night - scene-owned, never part of the car */
   ldBar(92); await ldTick(1);
   /* camera start: sweep in from above the grid */
   cam.position.set(P.x - Math.sin(P.h) * 30, T.y + 18, P.z - Math.cos(P.h) * 30); R.camP.copy(cam.position);
@@ -1906,8 +1961,9 @@ function stepTraffic(t, dt) {
   t.ahead = g > 0;
   if (g < -70 || g > 900) { t.s = P.prog + (220 + Math.random() * 360) / T.ds; t.d = LANES[Math.floor(Math.random() * 4)]; t.v = t.v0; t.hit = 0; t.spin = 0; t.ahead = true; }
 }
+function posePool(c, x, z, h) { if (!c.pool || !c.pool.parent) return; const o = c.pool.userData.off || 4, fx = Math.sin(h), fz = Math.cos(h); c.pool.position.set(x + fx * o, R.T.y + 0.04, z + fz * o); c.pool.rotation.y = h; } /* G-163: the headlight pool follows its car along the road */
 function poseCar(e, dt) {
-  const c = e.car; c.root.position.set(e.x, R.T.y, e.z); c.root.rotation.y = e.h;
+  const c = e.car; c.root.position.set(e.x, R.T.y, e.z); c.root.rotation.y = e.h; posePool(c, e.x, e.z, e.h);
   const ro = clamp((e.isP ? -e.steer * Math.abs(e.spd) * 0.004 - (e.slide || 0) * 0.004 * Math.sign(e.steer) : -e.steer * 0.04), -0.08, 0.08); c.roll += (ro - c.roll) * Math.min(1, dt * 6); c.tilt.rotation.x = c.roll;
   const br = e.isP ? (K.brake && R.t > 0) : false; if (e._br !== br) { c.setBrake(br); e._br = br; }
   poseWheels(c, Math.abs(e.spd) * dt, e.steer || 0);
@@ -1942,7 +1998,7 @@ function updateRace(dt) {
     if (!e.fin && !e.remote && pr >= R.laps * T.N) { e.fin = R.t; if (e.isP) playerFinished(); }
   }
   if (P.fin) { P.auto = true; const i = ((P.idx + 14) % T.N), ax = T.px[i] - P.x, az = T.pz[i] - P.z, want = Math.atan2(ax, az); let dh = want - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; P.autoSteer = clamp(-dh * 2.5, -1, 1); P.st = Object.assign({}, P.st, { top: 30 }); }
-  R.cars.forEach((e) => poseCar(e, dt)); R.traffic.forEach((t) => { t.car.root.position.set(t.x, T.y, t.z); t.car.root.rotation.y = t.h; poseWheels(t.car, t.v * dt, 0); });
+  R.cars.forEach((e) => poseCar(e, dt)); R.traffic.forEach((t) => { t.car.root.position.set(t.x, T.y, t.z); t.car.root.rotation.y = t.h; posePool(t.car, t.x, t.z, t.h); poseWheels(t.car, t.v * dt, 0); });
   /* tire smoke */
   if (P.slide > 5 && Math.abs(P.spd) > 10 && Math.random() < 0.7) { const bx2 = P.x - Math.sin(P.h) * 1.6, bz2 = P.z - Math.cos(P.h) * 1.6; puff(bx2 + (Math.random() - 0.5) * 2, T.y + 0.5, bz2 + (Math.random() - 0.5) * 2); }
   if (P.slide > 6 && Math.abs(P.spd) > 12) { R.skidT -= dt; if (R.skidT <= 0) { R.skidT = 0.06;
@@ -2305,6 +2361,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { if 
 addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
 resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
+{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); } /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
 window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the

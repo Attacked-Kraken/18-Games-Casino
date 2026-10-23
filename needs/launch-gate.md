@@ -34,6 +34,7 @@ All of these, on **current main** — a green PR branch is not proof (a game has
 ## Gate 4 — LIVE (public, App Store / Google Play)
 - [ ] Score **40/50 or better** ("would you pay for it" line) and the owner's own full play-through with verdict recorded — the owner approves the look and the feel, not basic defects.
 - [ ] Store basics in place: privacy labels true, account deletion works, support contact live, age rating matches the catalogue, payments only through the store.
+- [ ] **Store-rules checks (five yes/no, from needs/store-readiness.md, checked against the stores' pages the week of submission):** (1) every game is in an index (title + link) App Review can open, nothing hidden; (2) every game runs only as interpreted code (WebKit/JavaScript on Apple, WebView JavaScript on Google), no native APIs exposed, no executable code downloaded; (3) the subscription inside each app is sold only through that store's billing (Apple IAP / Google Play Billing); (4) privacy declarations match reality on both stores, in-app account deletion works, any data shared with third-party AI is disclosed and consented; (5) no casino-style or real-money content, and the age rating covers the highest-rated game, with age-gating where a title exceeds it. Any NO stops LIVE.
 - [ ] Safety proven before strangers arrive: a backup from the last 24 hours exists **and a restore from it has been tested**; health log clean for 7 days.
 - [ ] Staged opening: invite players first, watch crashes/quits for a week, then open the doors. Any stage can send the game back a gate.
 

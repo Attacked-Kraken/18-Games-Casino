@@ -9,7 +9,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
 - Touch layer (stick / TAP RUN / ACTION): line 169 - menu markup: line 175 - event grid: line 206 - career screen: line 241
 - fitGame (sizes renderer + camera to the turned box): line 337 - audio (AudioSys): line 388
-- Live engine pointer ENG: line 789 - race frame loop frame(): line 3647 - REALITY hook: line 3712 - test hooks (__tf): line 3722
+- Live engine pointer ENG: line 792 - TESTLINK (?test= link event, G-171): line 793 - hurdles test-link countdown framing: line 2674 - ?test= boot hook: line 3658 - race frame loop frame(): line 3664 - REALITY hook: line 3729 - test hooks (__tf): line 3739
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
@@ -45,6 +45,8 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - 2026-10-22: feet sink into the ground - the run clips' stance sole dives up to 0.16 m under the track; the run-mode ground trim holds it on the ground line (G-139)
 - 2026-10-22: feet still sink at the marks and in the SET crouch (robot 16 of 24 after the first fix) - the ground trim is constant in every state, and the guard test samples the standing start too (G-139)
 - 2026-10-22: a hurdle is two full-size boards crossed at 90 degrees - one board per hurdle, facing the runner (G-160)
+- 2026-10-22: hurdles facing the wrong way - the boards stand edge-on to the runners (dot(normal, lane tangent) 0.00); a hurdle's front face faces the approaching runner (dot -1.00) (G-174)
+- 2026-10-23: relay baton pass refused for most of the exchange zone - the receiver's run-up left the gap at 7.6-8.7m when the carrier reached the zone and PASS said RECEIVER TOO FAR until the last metres (44 of 45 taps refused with a slower carrier); a fumbled exchange then capped the next carrier at 3.2 m/s so the leg crawled - the owner: ran past the receiver, could not pass it and got stuck; the pass must work from the start of the zone (G-193)
 - No capsule / stick figures
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters
