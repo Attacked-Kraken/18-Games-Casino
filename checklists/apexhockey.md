@@ -1,5 +1,5 @@
 # Checklist: Ice Hockey (apexhockey.html) - numbers come only from the SOURCE file named on each line
-- [ ] H01 | End-zone faceoff dots sit 6.7 m either side of centre | SOURCE: venues/rink.md | NUMBERS: 6.7 | MEASURE: read the 4 end-zone dot positions from the rink objects in the running game; test = |x| within 3% of 6.7 | TEST: tester-chk-h01
+- [x] H01 | End-zone faceoff dots sit 6.7 m either side of centre | SOURCE: venues/rink.md | NUMBERS: 6.7 | MEASURE: read the 4 end-zone dot positions from the rink objects in the running game; test = |x| within 3% of 6.7 | TEST: tester-chk-h01 | RESULT: FOUND (test tester-chk-h01 fails: measured 6.13, source says 6.7)
 - [ ] H02 | End-zone faceoff dots sit 6.1 m out from the goal line | SOURCE: venues/rink.md | NUMBERS: 6.1 | MEASURE: dot z minus goal-line z, within 3% of 6.1 | TEST: tester-chk-h02
 - [ ] H03 | Neutral-zone dots sit 1.5 m inside the blue lines | SOURCE: venues/rink.md | NUMBERS: 1.5 | MEASURE: dot z minus blue-line z, within 3% of 1.5 | TEST: tester-chk-h03
 - [ ] H04 | Blue lines are 22.86 m from each end board | SOURCE: venues/rink.md | NUMBERS: 22.86 | MEASURE: blue-line z to end-board z, within 3% | TEST: tester-chk-h04
