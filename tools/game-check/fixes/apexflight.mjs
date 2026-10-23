@@ -723,4 +723,99 @@ export default [
       return r === true ? true : r;
     }
   }
+,
+  {
+    id: 'play-g243-buttons-inside-safe-area',
+    ask: 'G-243 point 1: btnFree, friendGo and friendClose sit fully inside the 844x390 safe area',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 6; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } throw new Error('page never became ready after reload'); };
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      const inside = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + '] vs ' + innerWidth + 'x' + innerHeight; };
+      const a = await evalRetry(() => { const e = document.getElementById('btnFree'); if (!e) return 'btnFree missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : 'btnFree at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; });
+      if (a !== true) return a;
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const b = await evalRetry(() => {
+        const chk = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; };
+        return [chk('friendGo'), chk('friendClose')].find(x => x !== true) || true;
+      });
+      return b === true ? true : b;
+    }
+  },
+  {
+    id: 'play-g243-jetbtn-clear-of-back',
+    ask: 'G-243 point 2: the JET button does not overlap the back button',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const a = document.getElementById('back').getBoundingClientRect();
+        const b = document.getElementById('jetBtn').getBoundingClientRect();
+        const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+        return overlap ? 'jetBtn [' + Math.round(b.left) + ',' + Math.round(b.top) + '->' + Math.round(b.right) + ',' + Math.round(b.bottom) + '] overlaps back [' + Math.round(a.left) + ',' + Math.round(a.top) + '->' + Math.round(a.right) + ',' + Math.round(a.bottom) + ']' : true;
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-zone-never-covers-friend',
+    ask: 'G-243 point 3: the stick zone never covers the Play-a-Friend buttons',
+    test: async (page, h) => {
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const r = await h.eval(() => {
+        const z = document.getElementById('apcZone');
+        if (z && getComputedStyle(z).display !== 'none') return 'stick zone is visible over the menu';
+        const b = document.getElementById('friendGo');
+        const r2 = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(r2.left + r2.width / 2, r2.top + r2.height / 2);
+        return (hit === b || b.contains(hit)) ? true : 'friendGo is covered by ' + (hit ? (hit.id || hit.className || hit.tagName) : 'nothing');
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-favicon-declared',
+    ask: 'G-243 point 5: the page declares a data: favicon so the browser never asks for /favicon.ico',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const l = document.querySelector('link[rel="icon"]');
+        return (l && (l.getAttribute('href') || '').startsWith('data:')) ? true : 'no data: icon link in the page head';
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-portrait-stick-on-screen',
+    ask: 'G-243 point 4: in portrait (390x844, body rotated) the stick base sits on the screen and the stick answers',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await page.setViewport({ width: 390, height: 844 });
+      try {
+        await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; });
+        await h.wait(1000);
+        const r = await evalRetry(async () => {
+          const C = window.__controls;
+          if (!C || !C.shared) return 'shared controls not loaded in portrait';
+          const j = document.querySelector('.apc-joy');
+          if (!j) return 'no stick base in portrait';
+          const jr = j.getBoundingClientRect();
+          if (jr.right <= 0 || jr.bottom <= 0 || jr.left >= innerWidth || jr.top >= innerHeight) return 'stick base off-screen in portrait: [' + Math.round(jr.left) + ',' + Math.round(jr.top) + '->' + Math.round(jr.right) + ',' + Math.round(jr.bottom) + '] vs ' + innerWidth + 'x' + innerHeight;
+          const z = document.getElementById('apcZone');
+          const zr = z.getBoundingClientRect();
+          const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+          const ev = (type, x, y) => z.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
+          ev('pointerdown', cx, cy); ev('pointermove', cx, cy + 30);
+          await new Promise(r2 => setTimeout(r2, 250));
+          const c = C.read();
+          ev('pointerup', cx, cy);
+          return (Math.abs(c.x) > 0.25 || Math.abs(c.y) > 0.25) ? true : 'stick did not answer in portrait: ' + JSON.stringify(c);
+        });
+        return r === true ? true : r;
+      } finally {
+        try { await page.setViewport({ width: 844, height: 390 }); } catch (e) {}
+        try { await h.eval(() => { location.href = location.href.split('?')[0]; }); } catch (e) {}
+        await h.wait(900);
+      }
+    }
+  }
 ];
