@@ -13,7 +13,7 @@ import re
 import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
-MAX_AGE_H = 12
+MAX_AGE_H = 72   # Oct 23 2026: 12 h hid dirty TEST PR #1200 for 18 h (analyst); only truly old PRs are left alone
 OK = {"success", "skipped", "neutral"}
 # merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
 FOLLOW = [("sound-robot.yml", ("sounds/recipes/", "sounds/rejects/", "tools/sound-robot.mjs", "tools/sound-themes.mjs", "beatmachine.html")),
