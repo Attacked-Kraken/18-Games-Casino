@@ -82,3 +82,12 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-22 help desk (8:15 PM)
 - The art director cannot grade the upright phone view without a picture of it. Rule: when a grader (window 11/12) needs a picture the robot does not save, file ONE "HELP-VP: robot" line naming the file and the picture wanted - never grade or ask windows from memory.
+
+## 2026-10-22 help desk (9:20 PM)
+- When main moves during a tester round, the report names the main commit the round was played on, and each TESTER line is re-run on current main before it is filed (file only if it still fails there).
+
+## 2026-10-22 help desk
+- A request for a robot picture 'that is missing' may already exist under a different file name: list img/ on the game-checks branch (e.g. <game>-3-upright.jpg) before filing a robot change.
+
+## 2026-10-23 help desk
+- A PR check that reads RUNNING for a long time may have finished and merged since: read the PR state (merged?) before filing a HELP line. Rule: "stuck RUNNING" = look at `merged` and the check list first.
