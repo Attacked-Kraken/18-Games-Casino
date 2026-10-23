@@ -78,6 +78,8 @@ table.board th{color:#ffd34d;text-align:left;padding:6px 4px;border-bottom:2px s
 table.board td{padding:6px 4px;border-bottom:1px solid #223a56;color:#e8eef5}
 table.board tr.me td{color:#ffd34d;font-weight:800}
 #gridEvents{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+#grid .panel{display:flex;flex-direction:column}
+#bGridBack{order:-1;align-self:flex-start}
 #gridEvents .btn{font-size:14px;padding:12px 6px;min-height:52px;margin:0}
 .codebox{background:#0e2036;border:2px dashed #ffd34d;border-radius:10px;padding:14px;font-size:16px;
 font-weight:800;letter-spacing:1px;color:#ffd34d;text-align:center;margin:10px 0;word-break:break-all}
@@ -210,8 +212,8 @@ body.playing:not(.touch) .kbdhint{display:block}
 <div class="panel">
 <h2>CHOOSE EVENT</h2>
 <div class="sponsor">PRESENTED BY <b>APEX ARCADE</b></div>
-<button class="btn ghost" id="bGridBack">BACK</button>
 <div id="gridEvents"></div>
+<button class="btn ghost" id="bGridBack">BACK</button>
 </div>
 </div>
 <div class="screen" id="card">
