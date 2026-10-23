@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ONE "check status" readout per pull request (owner Oct 21 5:26 PM, window 1 G-100: "give Muses one check status readout").
-# Usage: status-comment.sh <PR number> <RUNNING|PASSED|FAILED> [reason file]
+# Usage: status-comment.sh <PR number> <RUNNING|RETRYING|ROBOT|PASSED|FAILED> [reason file]
 # Keeps a single comment (marker <!-- check-status -->) and rewrites it in place, so a Muse reads ONE place:
 #   🤖 Check status: RUNNING / PASSED / FAILED + the reason lines. Needs GH_TOKEN and GITHUB_REPOSITORY.
 set -u
@@ -8,6 +8,8 @@ PR="$1"; STATE="$2"; FILE="${3:-}"
 [ -n "$PR" ] && [ "$PR" != "null" ] || exit 0
 case "$STATE" in
   RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (about 8-10 min). Wait; do not re-ask to merge yet." ;;
+  RETRYING) ICON="🟠"; WORDS="RETRYING - the robot itself hit a setup problem (not your game), so it is re-running the failed part once by itself. Wait about 8-10 min; do not push, do not re-ask to merge." ;;
+  ROBOT)   ICON="🟠"; WORDS="ROBOT PROBLEM - the robot could not play the game (setup / runner failure, 0 games played). This is NOT your game. The robot re-runs the failed part ONCE by itself - do NOT push, do not re-ask to merge; wait for this comment to change." ;;
   PASSED)  ICON="🟢"; WORDS="PASSED - nothing new is broken. Ask to merge (the merge robot merges green pull requests by itself)." ;;
   *)       ICON="🔴"; WORDS="FAILED - fix the lines below and push again (only NEW problems this pull request brings are listed)." ;;
 esac

@@ -1,0 +1,48 @@
+name: Game check retry
+# Owner Oct 23 2026 4:40 PM "make the robot retry a failed play job ONCE by itself when the failure looks like
+# infrastructure ... rewrite the Check status comment to say it is retrying" (#1326 Racer: browser install failed,
+# #1330 Flight: install stalled 10 min, #1307: install failed - none of it the Muses' code).
+# When a "Game check (PR)" run ends FAILED on its first attempt and a failed job failed in SETUP (not in the game's own
+# play step), was cancelled, or timed out, this re-runs the failed jobs ONCE (run_attempt 2 is never retried) and
+# rewrites the one Check status comment to RETRYING. A real game failure (the play step ran and the judge says so) is left alone.
+on:
+  workflow_run:
+    workflows: ["Game check (PR)"]
+    types: [completed]
+permissions:
+  actions: write
+  contents: read
+  pull-requests: write
+  issues: write
+jobs:
+  retry:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look for a setup problem and retry once
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN: ${{ github.event.workflow_run.id }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/jobs?per_page=100" > jobs.json
+          # a failed job counts as setup trouble when the step that failed is NOT the game's own "Play <game>" step
+          # (Set up job, checkout, setup-node, browser cache/install, upload), or when it was cancelled / timed out.
+          INFRA=$(jq -r '[.jobs[] | select(.name != "check")
+              | select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled")
+              | . as $j
+              | (($j.steps // []) | map(select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled")) | first) as $s
+              | select($j.conclusion != "failure" or $s == null or (($s.name | startswith("Play ")) | not))
+              | "\($j.name): \($s.name // $j.conclusion)"] | join("; ")' jobs.json)
+          # also: the verdict job said a game "could not be played" (0 test lines) - a runner failure mid-play, not a verdict
+          CK=$(jq -r '.jobs[]|select(.name=="check")|.id' jobs.json | head -1)
+          if [ -z "$INFRA" ] && [ -n "$CK" ]; then
+            if gh api "repos/$GITHUB_REPOSITORY/check-runs/$CK/annotations" -q '.[].message' 2>/dev/null | grep -qiE "could not play it|played 0 game"; then INFRA="check: a game could not be played (0 test lines)"; fi
+          fi
+          echo "infra trouble: [$INFRA]"
+          if [ -z "$INFRA" ]; then echo "no setup problem - a real verdict, not retried"; exit 0; fi
+          printf '%s\n' "Failed in setup, not in the game: $INFRA" > /tmp/why.txt
+          [ -n "$PR" ] && bash tools/game-check/status-comment.sh "$PR" RETRYING /tmp/why.txt || true
+          gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/rerun-failed-jobs" && echo "::notice::ROBOT RETRY: re-running the failed jobs of run $RUN once ($INFRA)"
