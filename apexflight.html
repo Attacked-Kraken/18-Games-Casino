@@ -153,6 +153,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { createApexJet, createJetControls, JET_STYLE_KEYS, JET_PAINTS, JET_STYLES } from './models/apex-jet/apexJet.js';
+import { createControls } from './kit/controls.js';
 
 /* ================= helpers ================= */
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -507,6 +508,7 @@ function flashMsg(t, ms) { setMsg(t, false); msgTimer = ms / 1000; }
 function respawn() {
   scoredThisAttempt = false; offRwyMsg = false;
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
+  if (kitCtl) kitCtl.show(true);
   phase = 'fly'; stallNow = false; setMsg('');
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
   $('thrBarFill').style.height = '100%';
@@ -586,17 +588,28 @@ function pollKeys() {
 }
 
 /* ================= input: the owner's jet controls (jet job step 4 = G-90) =================
-   createJetControls draws its own stick (bottom-left) and the 14-button pad
-   (bottom-right): THR +, THR -, BOOST, YAW L, YAW R, GEAR, CAM, STYLE, PAINT,
-   BRAKE, BARREL, LOOP, IMMEL, SPLIT-S. The game's keyboard (pollKeys) stays in
+   createJetControls draws the 14-button pad (bottom-right): THR +, THR -,
+   BOOST, YAW L, YAW R, GEAR, CAM, STYLE, PAINT, BRAKE, BARREL, LOOP, IMMEL,
+   SPLIT-S. The stick is the shared kit stick (kit/controls.js, G-232). The game's keyboard (pollKeys) stays in
    charge of the arrow/WASD keys; the pad owns the throttle, the stick merges
    when a finger is actually on it, and jet.update() animates the jet. */
 let jetStickHeld = false;
 let padYaw = 0, padBoost = false, padBrake = false;
 jetInput = createJetControls(document.body, { rotated: () => innerHeight > innerWidth, throttle: 1 });
+/* the stick is the SHARED kit stick (kit/controls.js, STUDIO-STANDARD section 9
+   rule 2, G-232): the jet pack's own stick zone comes off the page and the kit's
+   left thumbstick drives pitch/roll instead. The kit owns the stick maths and
+   the "let go = stop" resets (pointerup / pointercancel / blur / hidden tab);
+   the 14-button pad stays the pack's. The kit zone is trimmed to the pack
+   zone's old footprint (bottom-left) so the top HUD stays tappable. */
+const packStickZone = document.getElementById('jetStickZone');
+if (packStickZone) packStickZone.remove();
+const kitCtl = createControls({ buttons: [], stick: true, rotated: () => innerHeight > innerWidth });
+kitCtl.show(false);
 {
-  const zone = document.getElementById('jetStickZone');
+  const zone = document.getElementById('apcZone');
   if (zone) {
+    zone.style.top = '38%'; zone.style.height = '62%';
     zone.addEventListener('pointerdown', () => { jetStickHeld = true; });
     const off = () => { jetStickHeld = false; };
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => zone.addEventListener(n, off));
@@ -673,6 +686,7 @@ function trickOffsets(dt) {
 function resetInputs() {
   for (const k in keys) keys[k] = false;
   jetStickHeld = false;
+  if (kitCtl) kitCtl.release();
   inp.pitchUp = 0; inp.rollRight = 0;
 }
 window.addEventListener('blur', resetInputs);
@@ -1102,7 +1116,7 @@ function loop(now) {
   const boostWas = jetInput.boost, yawWas = jetInput.yaw;   // same tick() recompute wipes pad BOOST/YAW the same way (G-117)
   jetInput.tick(dt);
   if (phase === 'fly' || phase === 'scored') {
-    if (jetStickHeld) { inp.pitchUp = clamp(jetInput.pitch, -1, 1); inp.rollRight = clamp(jetInput.roll, -1, 1); }
+    if (jetStickHeld) { const c = kitCtl.read(); inp.pitchUp = clamp(c.y, -1, 1); inp.rollRight = clamp(c.x, -1, 1); }
     padYaw = jetInput.yaw || yawWas; padBoost = jetInput.boost || boostWas; padBrake = jetInput.brake || brakeWas;
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
@@ -1127,6 +1141,9 @@ function loop(now) {
   }
   renderer.render(scene, camera);
 }
+/* OWNER CHECK (G-232): apexflight.html?test=stick opens straight into free
+   flight - menus skipped - with the shared kit stick on screen. */
+if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
 

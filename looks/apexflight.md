@@ -4,19 +4,24 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1139 lines)
+## WHERE THINGS ARE — `apexflight.html` (1156 lines)
 - Menus / HTML / CSS (menu + friend overlays, HUD DOM, slim throttle bar CSS ~39): 1–152
-- Imports, helpers, constants, state (offRwyMsg flag ~177): 153–182
-- Renderer, scene, venue (runway block 263-312 - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick ~449): 183–469
-- The jet (owner's Apex Jet pack, created external): 470–477
-- HUD artificial horizon: 478–503 · Messages: 504–507
-- Game flow (respawn ~512, crash ~524, touchdown/scoring ~531): 510–572
-- Input — keyboard (pollKeys ~582): 573–591 · Jet controls pad + tricks + throttle bar (~609): 592–684
-- Buttons / view toggle: 685–694 · Play a Friend codes: 695–734 · fitGame: 735–748
-- Physics (step ~752; lift/stall, airbrake in the forces block ~806): 749–865
-- Camera: 866–892 · HUD update (off-runway reason re-assert ~902): 893–938 · Music (procedural WebAudio): 939–1051
-- Test hooks (`__flight` 1052, `__reality` 1064): 1052–1096
-- Main loop (throttle/brake/boost/yaw latches ~1107–1115): 1097–1139
+- Imports, helpers, constants, state (shared controls import at 156): 153–185
+- Renderer, scene, venue (runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 186–468
+- The jet (owner's Apex Jet pack, created external): 469–476
+- HUD artificial horizon: 477–502 · Messages: 503–506
+- Game flow (respawn 508 - also shows the kit stick, crash, touchdown/scoring): 507–570
+- Input — keyboard (pollKeys 580): 571–589 · Jet controls: pad + SHARED kit stick (kit/controls.js, G-232; kit created 607, pack stick zone removed 605) + throttle bar: 590–694
+- Buttons / view toggle: 695–704 · Play a Friend codes: 705–748 · fitGame ~749: 749–758
+- Physics (step ~762; lift/stall, airbrake in the forces block): 759–875
+- Camera: 876–904 · HUD update (off-runway reason re-assert): 905–946 · Music (procedural WebAudio): 947–1063
+- Test hooks (`__flight` ~1064, `__reality` ~1076): 1064–1104
+- Main loop (kit stick merge at 1119; ?test= owner-check hook at 1144): 1105–1156
+
+Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
+thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
+its 14-button pad. Let go = stop is the kit's: pointerup / pointercancel / blur /
+hidden tab all reset it (play test play-stick-shared-resets).
 
 **Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
 
