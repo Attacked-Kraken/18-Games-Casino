@@ -1,0 +1,37 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -298,10 +298,33 @@
+   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
+   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
+ };
++function bakeSkins(rootObj) {
++  /* The Tokii is a SKINNED model (88 skinned meshes on one skeleton) and every car is a plain clone of the template - plain clones SHARE the template's skeleton (measured: two Tokii cars report the same skeleton object, its bones live in no car), and mid-race Tokii cars render sunk ~0.6 m under the road (the owner's invisible cars). The game plays no animations, so bake the bind pose into plain geometry once at load: no skeletons, no sharing, nothing left to drift. */
++  const swaps = [];
++  rootObj.updateWorldMatrix(true, true);
++  rootObj.traverse((q) => { if (q.isSkinnedMesh && q.skeleton && q.geometry && q.geometry.attributes.position && q.geometry.attributes.skinIndex && q.parent) swaps.push(q); });
++  const M = new THREE.Matrix4(), B = new THREE.Matrix4(), N = new THREE.Matrix4(), v = new THREE.Vector3(), nv = new THREE.Vector3();
++  for (const q of swaps) {
++    q.skeleton.update();
++    const g = q.geometry.clone();
++    const pa = g.attributes.position, na = g.attributes.normal, si = g.attributes.skinIndex, sw = g.attributes.skinWeight, bm = q.skeleton.boneMatrices;
++    for (let i = 0; i < pa.count; i++) {
++      M.identity().multiplyScalar(0);
++      for (let j = 0; j < 4; j++) { const w = sw.getComponent(i, j); if (!w) continue; B.fromArray(bm, si.getComponent(i, j) * 16).multiplyScalar(w); M.add(B); }
++      N.copy(q.bindMatrixInverse).multiply(M).multiply(q.bindMatrix);
++      v.fromBufferAttribute(pa, i).applyMatrix4(N); pa.setXYZ(i, v.x, v.y, v.z);
++      if (na) { nv.fromBufferAttribute(na, i).transformDirection(N); na.setXYZ(i, nv.x, nv.y, nv.z); }
++    }
++    g.deleteAttribute('skinIndex'); g.deleteAttribute('skinWeight');
++    const plain = new THREE.Mesh(g, q.material);
++    plain.name = q.name; plain.position.copy(q.position); plain.quaternion.copy(q.quaternion); plain.scale.copy(q.scale); plain.userData = q.userData;
++    q.parent.add(plain); q.parent.remove(q);
++  }
++}
+ const glbTpl = {};
+ for (const k of Object.keys(GLB_MODELS)) {
+   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
+-  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { glbTpl[k] = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; } catch (e) { glbTpl[k] = null; } }
++  for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
+ }
+ const $ = (id) => document.getElementById(id);
+ const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
