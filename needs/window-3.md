@@ -21,3 +21,8 @@ UNCLEAR: two judgment calls I am making - shout if either is wrong. (1) Step 6's
 MISSING: NONE - jet.canopyY is exported by the pack and JET_STYLES carries each style's canopy.z, so the step-5 cockpit eye formula has both numbers it needs.
 
 ANSWERED (2026-10-22 5:25 AM section): both calls are fine. (1) QUALITY toggle in the start menu, default HIGH, remembered - OK (the order only says "add a LOW option"); keep it inside the 844x390 frame, nothing off-screen. (2) "Parked" = on the runway, spawn throttle unchanged - OK, INSTRUCTIONS step 7 only sets throttle 0.45 inside go(on). Carry on.
+
+## 2026-10-23, 4:04 PM - G-238 (Grok audit fixes, Apex Flight): what are you missing / what is unclear
+BLOCKED BY: NONE - G-141 merged (528f40a) and its report is in; G-238 is built and in lab verification, nothing external in the way.
+UNCLEAR: one small one - G-238 point 3 (missing files / 404s): measured on today's build, the game makes zero failed requests and zero console errors (menu, friend overlay, free flight), so that point needs NO CHANGE, yet the order's DONE asks for 3 CHANGED lines, one per point. I am filing 2 CHANGED lines plus a NOTE line carrying point 3's evidence - shout if the VP wants a different shape.
+MISSING: NONE - the Grok report and shot are on main (reviews/grok-2026-10-20/), and all three points were reproduced or cleared on today's build first: touchcancel leaves the stick at 0.5/0.5 today, friendGo/friendClose/qualityBtn sit off the 390-high screen today, and the 404 list is empty today.
