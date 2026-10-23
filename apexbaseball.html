@@ -1597,7 +1597,7 @@ $('lockBtn').addEventListener('click', ()=>{ lastPitchAct = performance.now(); l
 $('swingBtn').addEventListener('click', ()=>{ playerSwing(); });
 function playerSwing(){
   if (G.phase!=='flight' || !flight.active || flight.arrived) return;
-  const dt = (performance.now()-flight.t0)/1000 - flight.T;
+  const dt = (flight.t - 1) * flight.T;   // G-237: judge on the pitch's own game clock (flight.t), never the wall clock - on a slow device the wall runs seconds ahead of the ball, so a swing as the ball crossed the plate scored seconds late and always whiffed
   flight.arrived = true; flight.active = false;   // swing resolves now
   ball.visible = false; trail.visible=false;
   doSwing(dt);
@@ -2177,6 +2177,18 @@ try {
       else if (G.phase === 'aim'){ const th = [...document.querySelectorAll('button')].find(b => /THROW/i.test(b.textContent)); if (th) th.click(); }
     }, 500);
     setTimeout(() => clearInterval(iv), 120000);
+  }
+  // G-237 owner check: ?test=batting opens straight into a bottom half with CPU
+  // pitches coming in - press SWING (or Space) as the ball reaches the plate.
+  if (new URLSearchParams(location.search).get('test') === 'batting'){
+    let batted = false;
+    const iv2 = setInterval(() => {
+      const so = document.getElementById('startOv');
+      if (so && so.style.display !== 'none'){ const b = document.getElementById('startBtn'); if (b) b.click(); return; }
+      if (!window.__test || !window.__test.stadium.loaded) return;
+      if (!batted && G.phase !== 'start'){ batted = true; G.half = 'bottom'; startCpuPitch(); try { renderHUD(); } catch (e) {} }
+    }, 500);
+    setTimeout(() => clearInterval(iv2), 120000);
   }
 } catch (e) {}
 </script>
