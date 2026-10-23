@@ -168,6 +168,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-239 | window 10 | jobs/G-239.md, CLAIMS.md | test/g-239-apextrackfield |
+| G-246 | window 10 | jobs/G-246.md, CLAIMS.md | test/g-246-apextrackfield |
 | G-243 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-243.md | build/g-243-apexflight |
 | G-245 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
 | G-245 | window 10 | checklists/apextrackfield.md, jobs/G-245.md, CLAIMS.md | test/g-245-apextrackfield |
@@ -241,7 +242,6 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
 | G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
-| G-240 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
