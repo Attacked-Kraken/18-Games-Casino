@@ -53,7 +53,7 @@ export default [
         if (s && s.phase !== 'start') {
           if (s.fov < 40 || s.fov > 45) return `camera field of view is ${s.fov} degrees - the broadcast spec is 40-45`;
           if (['select', 'aim', 'windup'].includes(s.phase)) {
-            if (!(s.pos[2] < -20.5 && s.pos[1] > 7)) return `pitching camera sits at ${s.pos} - the spec is the centre-field side, behind and above the pitcher (the G-167 round-1 zoom moved the camera to [0,8.5,-21.8] so the players read big; the mound is at z -20.17)`;
+            if (!(s.pos[2] < -25 && s.pos[1] > 3.5)) return `pitching camera sits at ${s.pos} - the G-222 spec is centre-field side behind the pitcher (mound z -20.17) and above his head, low enough that the pitcher himself is fully in the frame (set shot [0,5,-29.5]; the older G-65/G-167 height numbers aimed over his head and cut him out of the picture)`;
           }
           return true;
         }
@@ -987,8 +987,128 @@ export default [
         await h.wait(500);
       }
       if (!m) return 'the centre-field pitching view never settled - no players to measure';
-      if (m.batter < 40) return 'the batter is still a speck in the pitching view: ' + m.batter.toFixed(0) + ' px tall of 390 (target at least 40; the far G-151 framing measured 34)';
-      if (m.catcher < 38) return 'the catcher is still a speck in the pitching view: ' + m.catcher.toFixed(0) + ' px tall of 390 (target at least 38; the far G-151 framing measured 32)';
+      if (m.batter < 30) return 'the batter is still a speck in the pitching view: ' + m.batter.toFixed(0) + ' px tall of 390 (target at least 30 in the G-222 set shot, which also keeps the pitcher in frame - measured 33; the G-167 round-1 framing measured 41 with the pitcher out of frame)';
+      if (m.catcher < 27) return 'the catcher is still a speck in the pitching view: ' + m.catcher.toFixed(0) + ' px tall of 390 (target at least 27 in the G-222 set shot - measured 32; the G-167 round-1 framing measured 39 with the pitcher out of frame)';
+      return true;
+    },
+  },
+  {
+    id: 'play-pitcher-in-pitching-frame',
+    ask: 'BUILD G-222 (owner order Oct 22): the pitcher stands fully inside the pitching frame - head and feet on screen, not cut off below it',
+    test: async (page, h) => {
+      await page.goto(page.url(), { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+
+      const m = await h.eval(() => {
+        const R = window.__reality; if (!R || !R.camera || !R.others || !R.others[0]) return null;
+        const cam = R.camera, W = 844, H = 390;
+        const scr = (g, dy) => { const v = g.position.clone(); v.y += dy; const p = v.project(cam); return { x: (p.x * 0.5 + 0.5) * W, y: (1 - (p.y * 0.5 + 0.5)) * H }; };
+        const pit = R.others[0];
+        const feet = scr(pit, 0), head = scr(pit, 2.02);
+        const bat = scr(R.player, 0), batH = scr(R.player, 2.02);
+        return { feet, head, batterPx: Math.abs(bat.y - batH.y), camPos: cam.position.toArray().map(v => +v.toFixed(1)) };
+      });
+      if (!m) return 'no reality hook / pitcher to measure';
+      if (m.head.y < 2 || m.feet.y > 388 || m.head.x < 2 || m.head.x > 842 || m.feet.x < 2 || m.feet.x > 842)
+        return 'the pitcher is cut out of the pitching frame: head at row ' + m.head.y.toFixed(0) + ', feet at row ' + m.feet.y.toFixed(0) + ' of 390 (owner: keep the pitcher fully in the pitching frame; the old camera aimed over his head - feet projected to row ~1197)';
+      if (m.batterPx < 28) return 'the batter shrank out of the play picture in the new framing: ' + m.batterPx.toFixed(0) + ' px tall';
+      return true;
+    },
+  },
+  {
+    id: 'play-camera-follows-pitch',
+    ask: 'BUILD G-222 (owner order Oct 22): the camera follows the windup and the pitch in flight - it moves with the play and keeps the ball on screen until it reaches the plate',
+    test: async (page, h) => {
+      await page.goto(page.url(), { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+
+      const r = await h.eval(async () => {
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
+        const btns = [...document.querySelectorAll('button')];
+        const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+        await sleep(200);
+        const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
+        const R = window.__reality, cam = R.camera;
+        const windPos = new Set(), flightPos = new Set();
+        let flightN = 0, ballIn = 0;
+        for (let i = 0; i < 70; i++) {
+          const ph = window.__test.phase;
+          const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
+          if (ph === 'windup') windPos.add(key);
+          if (ph === 'flight') {
+            flightPos.add(key); flightN++;
+            const b = window.__test.ball;
+            if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+          }
+          if (ph === 'bip' || (flightN > 0 && ph !== 'flight' && ph !== 'windup')) break;
+          await sleep(80);
+        }
+        return { wind: windPos.size, flight: flightPos.size, flightN, ballIn };
+      });
+      if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
+      if (r.wind < 3) return 'the camera is frozen during the windup: ' + r.wind + ' distinct position(s) (owner: the camera follows the windup)';
+      if (r.flight < 3) return 'the camera is frozen during the pitch flight: ' + r.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
+      if (r.flightN < 3) return 'the pitch flight was too short to sample (' + r.flightN + ' samples)';
+      if (r.ballIn / r.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + r.ballIn + ' of ' + r.flightN + ' samples';
+      return true;
+    },
+  },
+  {
+    id: 'play-contact-big-at-plate',
+    ask: 'BUILD G-222 (owner order Oct 22): the contact moment is big at the plate - as the pitch reaches the plate the batter fills the frame (not a speck), so you see the ball meet the bat',
+    test: async (page, h) => {
+      await page.goto(page.url(), { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+
+      let best = 0, tries = 0;
+      while (tries < 6 && best < 80) {
+        tries++;
+        const r = await h.eval(async () => {
+          const sleep = ms => new Promise(res => setTimeout(res, ms));
+          for (let i = 0; i < 40; i++) { if (window.__test.phase === 'select' || window.__test.phase === 'aim') break; await sleep(150); }
+          const btns = [...document.querySelectorAll('button')];
+          const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+          await sleep(200);
+          const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return -1;
+          th.click();
+          const R = window.__reality, cam = R.camera;
+          let lastPx = 0, maxZ = -99;
+          for (let i = 0; i < 300; i++) {
+            const ph = window.__test.phase;
+            if (ph === 'flight') {
+              const b = window.__test.ball;
+              if (b && b.visible && b.z > maxZ) { maxZ = b.z; const f = R.player.position.clone(); const hd = f.clone(); hd.y += 2.02; const pr = w => (1 - w.project(cam).y) / 2 * 390; lastPx = Math.abs(pr(f) - pr(hd)); }
+            }
+            if (ph === 'bip' || (maxZ > -99 && ph !== 'flight' && ph !== 'windup')) break;
+            await sleep(10);
+          }
+          return lastPx;
+        });
+        if (r === -1) return 'no THROW button to pitch with';
+        if (r > best) best = r;
+      }
+      if (best < 80) return 'the batter is still a speck when the pitch reaches the plate: ' + best.toFixed(0) + ' px tall of 390 at the contact moment (target at least 80; the frozen G-167 framing measured ~42)';
       return true;
     },
   },
