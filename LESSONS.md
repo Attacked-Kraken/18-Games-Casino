@@ -152,3 +152,9 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 window 5 (G-239)
 - apexf1 · heading measured against the road itself made gas-only a full autopilot - the player's nose now holds a world heading and only the stick turns it; a robot check line can also be the robot's own older setup (two red lines cleared untouched on the newest setup's re-run), so read the re-run before pushing a fix.
+
+## 2026-10-23 help desk (8:25 PM)
+- A notes PR from an old needs/window-N branch can have NO shared history with main and show "dirty" forever; the fix is a fresh branch from main with the notes added, not a merge. Window helpers: start every notes PR from current main.
+
+## Oct 23 2026 help desk
+- A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.

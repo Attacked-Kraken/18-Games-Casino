@@ -9,7 +9,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Compact menu for short boxes incl. the G-122 portrait rule: lines 33-53 (media query line 41)
 - Touch layer (stick / TAP RUN / ACTION): line 172 - menu markup: line 178 - event grid (#grid, BACK button bGridBack renders at the TOP of the panel via CSS order - DOM-last on purpose: the robot's '#grid button' start step must hit the first event): lines 209-215 - career screen: line 244
 - fitGame (sizes renderer + camera to the turned box): line 340 - audio (AudioSys): line 391
-- Live engine pointer ENG: line 792 - TESTLINK (?test= link event, G-171): line 793 - sprint start hold (G-244, field waits on the line; line numbers may have moved, search "start hold"): lines 834-836 - hurdles test-link countdown framing: line 2677 - results finishCommon: line 3195 - results exit wiring (bResMenu: free play returns to the event grid): line 3557 - ?test= boot hook: line 3664 - race frame loop frame(): line 3670 - REALITY hook: line 3735 - test hooks (__tf): line 3745
+- Live engine pointer ENG: line 792
+- Jump timing controls (G-249 r1): long jump angle sweep line 1217 (55 deg/s, no run-on/foul while setting it) - triple jump quality curve line 1265, marker rate line 1292 (1.0/s), drawn green line 2798 - high jump / pole vault green half-width line 1351 (gw 0.20-0.24), bar sweep line 1381 (0.75/s) - TESTLINK (?test= link event, G-171): line 793 - sprint start hold (G-244, field waits on the line; line numbers may have moved, search "start hold"): lines 834-836 - hurdles test-link countdown framing: line 2677 - results finishCommon: line 3195 - results exit wiring (bResMenu: free play returns to the event grid): line 3557 - ?test= boot hook: line 3664 - race frame loop frame(): line 3670 - REALITY hook: line 3735 - test hooks (__tf): line 3745
 
 ## KEEP — LOCKED (owner checked JOB J7, 2026-10-17: HE LIKES IT — no Muse may change it)
 The owner, word for word: "how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera"
@@ -47,6 +48,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - 2026-10-22: a hurdle is two full-size boards crossed at 90 degrees - one board per hurdle, facing the runner (G-160)
 - 2026-10-22: hurdles facing the wrong way - the boards stand edge-on to the runners (dot(normal, lane tangent) 0.00); a hurdle's front face faces the approaching runner (dot -1.00) (G-174)
 - 2026-10-23: relay baton pass refused for most of the exchange zone - the receiver's run-up left the gap at 7.6-8.7m when the carrier reached the zone and PASS said RECEIVER TOO FAR until the last metres (44 of 45 taps refused with a slower carrier); a fumbled exchange then capped the next carrier at 3.2 m/s so the leg crawled - the owner: ran past the receiver, could not pass it and got stuck; the pass must work from the start of the zone (G-193)
+- 2026-10-23: jumping too hard to control - the tap had to land in a tiny green window on the timing bar (high jump green 0.10-0.22 of the bar, about 0.1-0.2 s), the long jump angle swept at 95 deg/s and you fouled running past the line while setting it, the triple jump marker ran at 1.6/s - jumping needs much more user-friendly controls (G-249)
 - No capsule / stick figures
 - No athletes gliding with still legs
 - No real brands, leagues, teams, players or characters
