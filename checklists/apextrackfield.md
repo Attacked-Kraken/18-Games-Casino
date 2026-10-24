@@ -1,6 +1,6 @@
 # Checklist: Track & Field (apextrackfield.html) - numbers come only from the SOURCE file named on each line
 - [x] T01 | The 400 m oval has two straights of 84.39 m and two bends of radius 36.5 m | SOURCE: venues/track.md | NUMBERS: 84.39, 36.5 | MEASURE: lane-1 path segment lengths from the track object, within 3% | TEST: tester-chk-t01 | RESULT: OK (measured straights 84.39 m; bend radius 37.11 m on the lane-1 path, 36.8 m on the measure line - source 36.5 m, within 3%)
-- [ ] T02 | 110 m hurdles are 1.067 m high | SOURCE: REALITY.md | NUMBERS: 1.067 | MEASURE: Box3 height of a hurdle in the 110 m event, within 15% | TEST: tester-chk-t02
+- [x] T02 | 110 m hurdles are 1.067 m high | SOURCE: REALITY.md | NUMBERS: 1.067 | MEASURE: Box3 height of a hurdle in the 110 m event, within 15% | TEST: tester-chk-t02 | RESULT: OK (measured 1.067 m)
 - [ ] T03 | 400 m hurdles are 0.914 m high | SOURCE: REALITY.md | NUMBERS: 0.914 | MEASURE: Box3 height of a hurdle in the 400 m hurdles, within 15% | TEST: tester-chk-t03
 - [ ] T04 | The relay baton changeover zone is 30 m long | SOURCE: rules/trackfield.md | NUMBERS: 30 m | MEASURE: changeover zone length from the track markings in the relay event, within 3% | TEST: tester-chk-t04
 - [ ] T05 | A tailwind over +2.0 m/s means the time does not count as a record (shown as "w") | SOURCE: rules/trackfield.md | NUMBERS: +2.0 m/s | MEASURE: force a wind above +2.0 in a sprint and read the results screen for the "w" mark | TEST: tester-chk-t05
