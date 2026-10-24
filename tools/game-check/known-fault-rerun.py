@@ -54,7 +54,8 @@ for pr in j(f"repos/{REPO}/pulls?state=open&per_page=100") or []:
     if not ok or upd >= faults_at: continue
     n += 1
     if DRY: print(f"::notice::  DRY RUN: would merge main into {pr['head']['ref']} and start a fresh check"); continue
-    why = "/tmp/why.txt"; open(why, "w").write("A known robot fault was added on main after this check ran, and every red line here is that fault. The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge.\n")
+    why = "/tmp/why.txt"
+    with open(why, "w") as fh: fh.write("A known robot fault was added on main after this check ran, and every red line here is that fault. The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge.\n")
     subprocess.run(["bash", "tools/game-check/status-comment.sh", str(num), "RETRYING", why])
     gh("-X", "PUT", f"repos/{REPO}/pulls/{num}/update-branch")
     import time; time.sleep(20)
