@@ -198,7 +198,7 @@ const HX = RINK.L/2, HZ = RINK.W/2;
 const GOAL_LINE = 89, GOAL_HALF = 3, BLUE = 25, POST_R = 0.9;
 const PERIOD_LEN = 120, N_PERIODS = 3;
 const DOTS = { center:[0,0],
-  n1:[40,20], n2:[40,-20], n3:[-40,20], n4:[-40,-20],
+  n1:[20,20], n2:[20,-20], n3:[-20,20], n4:[-20,-20], // G-273 (G-199): the neutral-zone dots sit 1.5 m INSIDE the blue lines (20 units = 6.13 m from centre, the blue line at 25) - never out at |x| 40 in the end zones
   e1:[69,21.4], e2:[69,-21.4], e3:[-69,21.4], e4:[-69,-21.4] }; // G-228 round 1 (H01/G-230): end-zone dots at the venues/rink.md 6.7 m either side of centre (21.4 units = 6.56 m, inside the checklist's 3% band)
 const TEAMS = {
   home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
@@ -263,7 +263,7 @@ function makeIceTexture(baseImg){
   g.fillStyle='rgba(31,111,214,.6)'; g.font='900 ' + Math.round(5.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
   g.fillText('APEX', X(0), Z(0)-1.1*S); g.fillText('ARCADE', X(0), Z(0)+5.9*S);
   // faceoff dots + end-zone circles
-  const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]];
+  const dots=[[20,20],[20,-20],[-20,20],[-20,-20],[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]]; // G-273: neutral dots painted at |x| 20 with the DOTS table
   g.fillStyle='#c8323c';
   dots.forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),1.1*S,0,TAU); g.fill(); });
   g.strokeStyle='#c8323c'; g.lineWidth=5;

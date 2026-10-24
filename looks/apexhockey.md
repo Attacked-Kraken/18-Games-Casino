@@ -7,6 +7,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-273)
+- Faceoff DOTS table ~200 (centre, n1-n4 neutral at |x| 20, e1-e4 end at |x| 69, z 21.4); the same spots are painted in makeIceTexture's dots list (~260). nearestDot() picks the drop spot for offside/icing whistles.
 ## WHERE THINGS ARE (apexhockey.html, line numbers as of G-272)
 - Penalties (G-272): callPenalty() ~1030 (major flag: penT 50 + 'MAJOR' banner for a check from behind in doCheck(); minors penT 20), endPenalty() below it; the penT countdown + PEN refresh live in stepPuck (~1508); a power-play goal springs MINORS only in onGoal().
 - Goal broadcast (G-266): #goalLight/#spotlights CSS 42-47, divs 128-129, goalFx() + lastGoalX after hideStatCard (~826), lit in onGoal(), cleared in faceoff() and gameOver(); the replay cuts live in stepCamera() (search 'REPLAY: two broadcast cuts').
@@ -43,6 +45,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-24: The puck never leaves the rink under boards pressure - the boards tests keep play alive between phases or they starve their own sampler (never-g-261-p1) (G-261)
 - 2026-10-24: A goal brings the broadcast look - horn, crowd, the red goal light, spotlights and a replay cut to 2 angles during the goal state (goalFx() + stepCamera replay cuts; never-g-266-p1) (G-266)
 - 2026-10-24: Each goal crease is painted IN FRONT of its goal - a light-blue semicircle r 1.83 m on the centre-ice side of the goal line, never behind it in the trapezoid (never-g-266-p2) (G-266)
+- 2026-10-24: The neutral-zone faceoff dots sit 1.5 m inside the blue lines (|x| 20 units, 6.13 m) in the neutral zone - never out at |x| 40 in the end zones; offside faceoffs drop on them (never-g-273-p1) (G-273)
 - 2026-10-24: A major penalty exists - a check from behind draws a 5:00 MAJOR (penT 50, banner MAJOR) that serves its full time; only minors leave the box early on a power-play goal (never-g-272-p1) (G-272)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
