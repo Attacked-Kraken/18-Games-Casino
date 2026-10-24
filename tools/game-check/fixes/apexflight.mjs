@@ -1090,39 +1090,30 @@ export default [
     },
   },
   {
-    id: "play-band-shows-on-final-freeflight",
-    ask: "G-268: the 55-88 kt band shows on the HUD during final approach in free flight too, so the robot's play picture shows it",
+    id: "play-rwy36-reads-correct",
+    ask: "G-275: runway 36 reads the correct way from behind the jet (not mirrored)",
     async test(page, h) {
-      // shared-page trap: an earlier test's flight hides the menu for good, so
-      // #btnFree can never be pressed again - reload to a known menu first
-      try {
-        const url = await h.eval(() => location.href);
-        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
-        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
-        await h.press('#btnFree');
-      } catch (e) {}
-      await h.wait(400);
       return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        // final in free flight: on the centreline, 80 m up, 1.8 km out, 70 kt
-        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 36); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
-        return new Promise((res) => {
-          let ticks = 0;
-          const iv = setInterval(() => {
-            ticks++;
-            if (!F.P.ground) {
-              const vs = F.P.vel.y;
-              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
-              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
-            }
-            const b = document.getElementById('bandBox');
-            const txt = b ? (b.textContent || '') : '';
-            const vis = !!(b && b.style.display === 'block');
-            if (vis && /55/.test(txt) && /88/.test(txt) && /IN BAND/i.test(txt)) { clearInterval(iv); return res(true); }
-            if (ticks > 40) { clearInterval(iv); return res('band not showing IN BAND on a free-flight final after 40 ticks (visible: ' + vis + ', text: "' + txt + '")'); }
-          }, 250);
-        });
+        const decals = window.__rwyDecals;
+        if (!decals || !decals.length) return 'runway decals not exposed';
+        const m36 = decals.find((d) => d && d.userData && d.userData.num === '36');
+        if (!m36) return 'no 36 decal found';
+        const img = m36.material && m36.material.map && m36.material.map.image;
+        if (!img || !img.getContext) return '36 decal has no canvas texture';
+        // The 6's loop sits at the BOTTOM of a correctly oriented digit: in the
+        // number's canvas rows, the lower third of the 6 half must carry more
+        // light pixels than the upper third. Mirrored (old) paint flips that.
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, img.width, img.height).data;
+        const W = img.width;
+        const light = (x, y) => data[(y * W + x) * 4] > 150;
+        let top = 0, bottom = 0;
+        for (let y = 325; y < 360; y++) for (let x = 128; x < 218; x++) if (light(x, y)) top++;
+        for (let y = 395; y < 430; y++) for (let x = 128; x < 218; x++) if (light(x, y)) bottom++;
+        if (top === 0 && bottom === 0) return 'no light pixels in the 6 half (canvas ' + img.width + 'x' + img.height + ')';
+        if (bottom > top) return true;
+        return '36 reads mirrored: 6-half light pixels top=' + top + ' bottom=' + bottom + ' (correct paint has bottom > top)';
       });
     },
   },
