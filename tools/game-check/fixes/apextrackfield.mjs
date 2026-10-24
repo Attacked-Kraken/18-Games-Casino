@@ -2899,6 +2899,49 @@ async test(page, h) {
         if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)';
         return true;
       },
+  },
+  {
+      id: 'tester-chk-t07',
+      mode: 't07',
+      ask: 'TESTER (G-271, checklist T07): throws get 3 attempts (plus 3 more for the top 8) - rules/trackfield.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let steps = 0;
+          while (!e.done && steps < 20000) {
+            e.update(1 / 60); steps++;
+            if (e.phase === 'power' && e.power >= 0.97) e.action();
+            else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+          }
+          if (!e.done) return { notDone: true };
+          const before = e.attempts.length;
+          e.action(); for (let s = 0; s < 120; s++) e.update(1 / 60);
+          return { attempts: e.attempts.length, attMax: e.attMax, done: e.done, afterDone: e.attempts.length, extra: e.attempts.length - before };
+        }).catch(() => null);
+        if (!m) return 'the Shot Put attempt count could not be read';
+        if (m.notDone) return 'the Shot Put never finished its attempts';
+        if (m.attempts <= 3 && m.done) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') and no athlete got 3 more attempts - rules/trackfield.md says throws get 3 attempts (plus 3 more for the top 8)';
+        return true;
+      }
   },{
 id: 'never-g-249-p3',
 title: 'G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)',
