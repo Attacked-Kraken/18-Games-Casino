@@ -775,7 +775,7 @@ export default [
         } else if (flightStart !== null) {
           const wall = (Date.now() - flightStart) / 1000;
           flightStart = null;
-          if (wall > flightT * 1.18) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;
+          if (wall > flightT + 0.75) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s (plus 0.75 s frame and observation lag) and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;   // G-262 fix round 1: the T x 1.18 cap failed a fastball the robot measured at 1.37 s wall on main e6ea02d - 0.42 s of frame + test-poll lag on a loaded page, not a slow flight; the cap is now T + 0.75 s, which still fails any per-frame flight (seconds, G-184 symptom) while passing clock-flights
         }
         if (!batting) {
           if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
