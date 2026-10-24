@@ -1156,11 +1156,9 @@ export default [
     },
   },
   {
-    id: "never-g-232-p1",
-    ask: "NEVER (G-232): taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing",
+    id: "play-thr-button-in-row",
+    ask: "G-280: the tall THR slider is gone; a slim THR button sits in the pad row overlapping nothing and ramps the throttle while held",
     async test(page, h) {
-      // shared-page trap: an earlier test's flight hides the menu for good, so
-      // #btnFree can never be pressed again - reload to a known menu first
       try {
         const url = await h.eval(() => location.href);
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
@@ -1169,22 +1167,31 @@ export default [
       } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
+        if (document.getElementById('thrBar')) return 'tall THR slider still present';
+        const pad = document.querySelector('.ajc .pad');
+        const btn = document.getElementById('thrBtn');
+        if (!pad || !btn) return 'THR button missing from the pad row';
+        if (!pad.contains(btn)) return 'THR button is not inside the pad row';
+        const r = (el) => el.getBoundingClientRect();
+        const br = r(btn);
+        for (const id of ['jGear', 'jPaint', 'jLoop']) {
+          const el = document.getElementById(id);
+          if (!el) return 'pad button ' + id + ' missing';
+          const o = r(el);
+          if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return 'THR button overlaps ' + id;
+        }
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        // just lifted off, sinking gently back, stick banked + slightly nose-down
-        // (the owner's takeoff: liftoff flash shown, then gear-collapse crash)
-        F.P.pos.set(0, F.jet.gearHeight + 0.3, -600); F.P.vel.set(0, -1.0, 25);
-        F.P.yaw = 0; F.P.roll = 0.5; F.P.pitch = -0.2; F.P.thr = 1.0; F.P.ground = false;
+        F.P.thr = 0.2;
+        btn.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, bubbles: true }));
+        const t0 = F.P.thr;
         return new Promise((res) => {
-          let ticks = 0;
-          const iv = setInterval(() => {
-            ticks++;
-            if (!F.P.ground) { F.P.roll = 0.5; F.P.pitch = -0.2; }
-            const crashOv = document.getElementById('crashOv');
-            if (crashOv && crashOv.hidden === false) { clearInterval(iv); return res('takeoff bounce crashed the jet: ' + (document.getElementById('crashWhy').textContent || '')); }
-            if (F.P.ground) { clearInterval(iv); return res(true); }
-            if (ticks > 60) { clearInterval(iv); return res('neither crashed nor touched down after 60 ticks'); }
-          }, 250);
+          setTimeout(() => {
+            const t1 = F.P.thr;
+            btn.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }));
+            if (t1 > t0 + 0.05) return res(true);
+            return res('THR button did not ramp the throttle while held (thr ' + t0.toFixed(2) + ' -> ' + t1.toFixed(2) + ')');
+          }, 1200);
         });
       });
     },
