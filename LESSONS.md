@@ -158,3 +158,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 23 2026 help desk
 - A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.
+
+## 2026-10-23 help desk (10:45 PM)
+- A known-faults.json "match" must use words the red line really prints (the test's ask text), not only the test id; before filing a fault, copy the exact red line and check the entry's pattern against it. Best cure: fix the test's wall-clock cap (scale by window.__slow) so no entry is needed.
