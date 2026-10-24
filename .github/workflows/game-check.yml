@@ -79,6 +79,8 @@ jobs:
             echo "full=" >> $GITHUB_OUTPUT
           fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
+          # owner Oct 23 2026 7:47 PM: Hockey (56 play tests) is split into 3 robots that each play a third of its tests (TEST_PART k/n)
+          LIST=$(echo "$LIST" | sed 's/\bapexhockey\.html\b/apexhockey.html@1of3,apexhockey.html@2of3,apexhockey.html@3of3/')
           JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
           echo "games=$JSON" >> $GITHUB_OUTPUT
           echo "list=$LIST" >> $GITHUB_OUTPUT
@@ -113,16 +115,18 @@ jobs:
           if [ "${{ matrix.game }}" = "models" ]; then
             ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           else
-            ONLY="${{ matrix.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+            M="${{ matrix.game }}"; GAME="${M%@*}"; PART=""
+            case "$M" in *@*of*) P="${M#*@}"; PART="${P%of*}/${P#*of}";; esac
+            ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
       - name: iPhone Safari pass
-        if: always() && matrix.game != 'models'
+        if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of')
         continue-on-error: true
         run: |
           [ -f game-check-out/results.json ] || exit 0
           node tools/game-check/serve.mjs 8812 >/dev/null 2>&1 &
           sleep 2
-          ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+          M="${{ matrix.game }}"; ONLY="${M%@*}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
       - uses: actions/upload-artifact@v4
         if: always()
         with:
