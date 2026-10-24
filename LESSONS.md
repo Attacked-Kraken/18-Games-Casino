@@ -166,3 +166,9 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-23 help desk (late)
 - A tester round you start yourself is named T-<window>-<HHMM> (file jobs/T-<window>-<HHMM>.md), never a G-number: there is no NEXT list for windows to read, and self-picked G-numbers collided (G-238, G-246).
 - A needs/window-N branch must start from current main (git checkout -b from origin/main), never `git init` or a fresh orphan: a branch with no shared history can never merge (PRs #1347, #1408, #1409).
+
+## 2026-10-24 help desk
+- A conflicted PR gets no real check (only the guard runs). When a test file and looks/*.md both gained entries on main, merge main in keeping BOTH sides; re-add your own test block after main's last entry rather than hand-editing the conflict markers. Run `node --check` and import the fixes file before pushing.
+
+## 2026-10-24 help desk
+- A tester asked where the Mac's NEXT list lives: it is not a repo file. A typed number is yours; a self-started round is T-<window>-HHMM, never a G-number.
