@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
@@ -265,3 +266,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
 | G-255 | window 10 | jobs/G-255.md, CLAIMS.md | test/g-255-apextrackfield |
 | G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
+| G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
