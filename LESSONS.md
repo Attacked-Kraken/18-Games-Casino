@@ -187,3 +187,14 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk
 - A code-drawn model (no model file) is not a MODEL FIRST job: do the fix, state it in the MODELS: line. A same-shaped entry the order did not name is listed in the report NOTE, not fixed.
+
+## 2026-10-24 help desk
+- A timing play test must not measure the robot's own speed: after a fix scores on the game clock, a leg that checks wall-clock duration (tester-batting-swing-wall-clock, 1.40 s vs 0.95 s) fails on a busy robot for no game reason. Keep only the leg that tests the rule; when the fix lands, drop the old wall-time leg in the same PR.
+- Testers do not wait for an owner go-ahead to file TEST PRs: push the backlog one PR at a time from a fresh branch off main, named T-<window>-HHMM.
+
+## 2026-10-24 help desk
+- A robot send-back that says "ignore it if your newest merge is newer": first check whether the robot's checked main CONTAINS your merge (git merge-base --is-ancestor). If it does, the red lines are yours - do not ignore them.
+- A main-run FAIL has no PR Check status comment; read the apexf1 (or your game's) entry in results.json on the game-checks branch instead. A play test must use `async test(page, h)`, never `run`.
+
+## Oct 24 2026 help desk
+- A step that says "show X on the final approach" or similar with no mode named means every mode where that moment happens; build it once and give a ?test= link per mode. Builder reports always go in jobs/G-NN-w<window>.md, never the plain jobs/G-NN.md (that file can belong to a tester round).

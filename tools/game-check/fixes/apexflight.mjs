@@ -340,18 +340,30 @@ export default [
     id: 'tester-challenge-offrunway-feedback',
     ask: 'Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: judge in game time, not the robot's wall clock - the
+        // gentle descent takes ~10 game-s, which is over 25 wall-s on a slow runner
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // short final 30 m right of the centreline: a gentle touchdown in the grass
         F.P.pos.set(30, 18, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
           const iv = setInterval(() => {
             const vs = F.P.vel.y;
             if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
@@ -367,7 +379,7 @@ export default [
               if (/off|runway|grass|no score/i.test(msg)) return res(true);
               return res('off-runway touchdown shows no message explaining why there is no score');
             }
-            if (Date.now() - t0 > 25000) { clearInterval(iv); return res('never touched down after 25s'); }
+            if (gt > 30) { clearInterval(iv); return res('never touched down (30 game-s)'); }
           }, 200);
         });
       });
@@ -377,35 +389,47 @@ export default [
     id: 'tester-postscore-crash',
     ask: 'After a scored landing, flying into the ocean must still crash the plane (today: nothing happens)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: game time, not the wall clock (see the off-runway test
+        // above) - the gentle landing takes ~13 game-s, over 20 wall-s when slow
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // score a gentle on-runway landing first
         F.P.pos.set(1, 8, -300); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
-          let phase2 = false;
+          let phase2 = false, phase2Gt = 0;
           const iv = setInterval(() => {
             if (!phase2) {
               const vs = F.P.vel.y;
               if (vs < -0.8) F.P.pitch = Math.min(F.P.pitch + 0.015, 0.1);
               else if (vs > -0.4) F.P.pitch = Math.max(F.P.pitch - 0.015, -0.25);
               if (document.getElementById('scoreOv').hidden === false) {
-                phase2 = true;
+                phase2 = true; phase2Gt = gt;
                 // scored: now fly west into the ocean from close by
                 F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
                 F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
               } else if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 return res('plane crashed before the scored landing');
-              } else if (Date.now() - t0 > 20000) {
+              } else if (gt > 30) {
                 clearInterval(iv);
-                return res('never scored a landing after 20s');
+                return res('never scored a landing (30 game-s)');
               }
             } else {
               if (document.getElementById('crashOv').hidden === false) {
@@ -413,7 +437,7 @@ export default [
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (Date.now() - t0 > 30000) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
+              if (gt - phase2Gt > 30) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash (30 game-s)'); }
             }
           }, 200);
         });
@@ -986,11 +1010,12 @@ export default [
         let gt = 0, last = performance.now();
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
-        // the tester's own gentle approach profile (started lower - same profile, less dead time)
-        F.P.pos.set(1, 5, -300); F.P.vel.set(0, -0.6, 30);
+        // the tester's own gentle approach profile (started lower and closer -
+        // same profile, less dead time, so a slow runner still finishes in budget)
+        F.P.pos.set(1, 3, -120); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
-          let phase2 = false, gtScore = 0; const w0 = Date.now();
+          let phase2 = false, gtScore = 0;
           const iv = setInterval(() => {
             if (!phase2) {
               const vs = F.P.vel.y;
@@ -1003,15 +1028,14 @@ export default [
                 F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
                 F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
               } else if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed before the scored landing'); }
-              else if (Date.now() - w0 > 28000) { clearInterval(iv); return res('never scored (game time reached only ' + gt.toFixed(1) + 's of the 20 game-s budget)'); }
+              else if (gt > 40) { clearInterval(iv); return res('never scored (game time reached ' + gt.toFixed(1) + 's)'); }   // game time ONLY - the 28 s wall cap fired after 1.4 game-s on a slow runner
             } else {
               if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }
-              if (Date.now() - w0 > 29000) { clearInterval(iv); return res('ocean phase ran out of wall time'); }
+              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }   // game time ONLY - the 29 s wall cap is what the robot quoted on main 519430d
             }
           }, 200);
         });
@@ -1061,6 +1085,113 @@ export default [
               else if (ticks > 100) { clearInterval(iv); return res('band never flipped to FAST at ~97 kt (text: "' + txt + '")'); }
             }
           }, 250);
+        });
+      });
+    },
+  },
+  {
+    id: "play-band-shows-on-final-freeflight",
+    ask: "G-268: the 55-88 kt band shows on the HUD during final approach in free flight too, so the robot's play picture shows it",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnFree can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // final in free flight: on the centreline, 80 m up, 1.8 km out, 70 kt
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 36); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          let ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            }
+            const b = document.getElementById('bandBox');
+            const txt = b ? (b.textContent || '') : '';
+            const vis = !!(b && b.style.display === 'block');
+            if (vis && /55/.test(txt) && /88/.test(txt) && /IN BAND/i.test(txt)) { clearInterval(iv); return res(true); }
+            if (ticks > 40) { clearInterval(iv); return res('band not showing IN BAND on a free-flight final after 40 ticks (visible: ' + vis + ', text: "' + txt + '")'); }
+          }, 250);
+        });
+      });
+    },
+  },
+  {
+    id: "play-rwy36-reads-correct",
+    ask: "G-275: runway 36 reads the correct way from behind the jet (not mirrored)",
+    async test(page, h) {
+      return h.eval(() => {
+        const decals = window.__rwyDecals;
+        if (!decals || !decals.length) return 'runway decals not exposed';
+        const m36 = decals.find((d) => d && d.userData && d.userData.num === '36');
+        if (!m36) return 'no 36 decal found';
+        const img = m36.material && m36.material.map && m36.material.map.image;
+        if (!img || !img.getContext) return '36 decal has no canvas texture';
+        // The 6's loop sits at the glyph's BOTTOM, and correct paint puts the
+        // glyph's bottom toward the approaching pilot - for the 36 end that is
+        // the SMALL canvas rows, so the upper third of the 6 half must carry
+        // more light pixels than the lower third. Mirrored (old) paint flips that.
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, img.width, img.height).data;
+        const W = img.width;
+        const light = (x, y) => data[(y * W + x) * 4] > 150;
+        let top = 0, bottom = 0;
+        for (let y = 325; y < 360; y++) for (let x = 128; x < 218; x++) if (light(x, y)) top++;
+        for (let y = 395; y < 430; y++) for (let x = 128; x < 218; x++) if (light(x, y)) bottom++;
+        if (top === 0 && bottom === 0) return 'no light pixels in the 6 half (canvas ' + img.width + 'x' + img.height + ')';
+        if (top > bottom) return true;
+        return '36 reads mirrored: 6-half light pixels top=' + top + ' bottom=' + bottom + ' (correct paint has top > bottom)';
+      });
+    },
+  },
+  {
+    id: "play-thr-button-in-row",
+    ask: "G-280: the tall THR slider is gone; a slim THR button sits in the pad row overlapping nothing and ramps the throttle while held",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        if (document.getElementById('thrBar')) return 'tall THR slider still present';
+        const pad = document.querySelector('.ajc .pad');
+        const btn = document.getElementById('thrBtn');
+        if (!pad || !btn) return 'THR button missing from the pad row';
+        if (!pad.contains(btn)) return 'THR button is not inside the pad row';
+        const r = (el) => el.getBoundingClientRect();
+        const br = r(btn);
+        for (const id of ['jGear', 'jPaint', 'jLoop']) {
+          const el = document.getElementById(id);
+          if (!el) return 'pad button ' + id + ' missing';
+          const o = r(el);
+          if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return 'THR button overlaps ' + id;
+        }
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.thr = 0.2;
+        btn.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, bubbles: true }));
+        const t0 = F.P.thr;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const t1 = F.P.thr;
+            btn.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }));
+            if (t1 > t0 + 0.05) return res(true);
+            return res('THR button did not ramp the throttle while held (thr ' + t0.toFixed(2) + ' -> ' + t1.toFixed(2) + ')');
+          }, 1200);
         });
       });
     },

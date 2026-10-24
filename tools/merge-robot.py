@@ -13,6 +13,7 @@ import re
 import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
+CLOSE_CONFLICT_H = 2
 MAX_AGE_H = 72   # Oct 23 2026: 12 h hid dirty TEST PR #1200 for 18 h (analyst); only truly old PRs are left alone
 OK = {"success", "skipped", "neutral"}
 # merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
@@ -34,7 +35,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: both the window and the help desk append - see auto_resolvable
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
@@ -66,16 +67,24 @@ def auto_resolvable(path):
     build job appends to): notes, look boards and a game's own play-test list are APPENDED to by both sides, so both sides are kept."""
     return (path in NOTES_UNION or path.startswith("jobs/G-") or (path.startswith("looks/") and path.endswith(".md"))
             or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs"))
+            or (path.startswith("needs/") and path.endswith(".md"))      # Oct 24 2026: #1487 (window 3 needs) sat 'dirty' - the help desk APPENDS answers to the same file the window appends to
             or (path.startswith("checklists/") and path.endswith(".md")))   # Oct 24 2026: merged by ITEM (tools/checklist-merge.py)
 
 
-def play_test_file_ok(path):
+def _dup_ids(text):
     import re as _re
+    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", text, flags=_re.M)
+    return {i for i in ids if ids.count(i) > 1}
+
+
+def play_test_file_ok(path, main_text=""):
+    """The merged file must load and must not gain a NEW duplicate test id. Oct 24 2026 (PR #1355 sat 'dirty' ~15 h): main's own
+    apexhockey.mjs already holds 3 duplicate ids (play-joystick-starts-left, tester-chk-h01, tester-puck-leaves-rink-at-boards), so
+    'any duplicate = bad' rejected EVERY merge that touched that file. Only duplicates main does not already have count."""
     r = subprocess.run(["node", "--check", path], capture_output=True, text=True)
     if r.returncode != 0:
         return False
-    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", open(path, encoding="utf-8", errors="replace").read(), flags=_re.M)
-    return len(ids) == len(set(ids))
+    return _dup_ids(open(path, encoding="utf-8", errors="replace").read()) <= _dup_ids(main_text)
 
 
 def fix_notes_conflict(pr):
@@ -116,7 +125,7 @@ def fix_notes_conflict(pr):
                         open("%s/%s.mjs" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
                     m = subprocess.run(["node", "tools/game-check/merge-play-tests.mjs", tmp + "/base.mjs", tmp + "/pr.mjs", tmp + "/main.mjs", f],
                                        capture_output=True, text=True)
-                    ok = m.returncode == 0 and play_test_file_ok(f)
+                    ok = m.returncode == 0 and play_test_file_ok(f, open(tmp + "/main.mjs", encoding="utf-8", errors="replace").read())
                     why = (m.stderr or m.stdout or "").strip()[:160].replace("\n", " ")
                 except Exception as e:
                     why = str(e)[:160]
@@ -232,6 +241,41 @@ def restart_cancelled(pr):
     return True
 
 
+def restart_cancelled_other(pr):
+    """Owner Oct 24 2026 12:35 PM (notes PR #1546: its 'Asset check' run waited 10 min for a runner, GitHub cancelled it, the
+    robot read that as a FAILED check and the notes PR sat 28 min). restart_cancelled only knew 'Game check (PR)'. Any OTHER
+    workflow run on the PR's newest commit that was CANCELLED, with no newer run of the same workflow, is re-run ONCE (marker
+    comment per run id). A cancelled run is GitHub losing the job, never a verdict on the PR. Returns True when it re-ran one."""
+    n, sha = pr["number"], pr["head"]["sha"]
+    runs = (gh("repos/%s/actions/runs?head_sha=%s&per_page=50" % (REPO, sha)) or {}).get("workflow_runs", [])
+    newest = {}
+    for r in runs:
+        k = r.get("name", "")
+        if k == "Game check (PR)":
+            continue
+        if k not in newest or (r.get("created_at") or "", r.get("run_attempt") or 0) > (newest[k].get("created_at") or "", newest[k].get("run_attempt") or 0):
+            newest[k] = r
+    comments = None
+    did = False
+    for k, r in newest.items():
+        if r.get("status") != "completed" or r.get("conclusion") != "cancelled":
+            continue
+        if comments is None:
+            comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
+        marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], r["id"])
+        if any(marker in (c.get("body") or "") for c in comments):
+            continue
+        when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
+        if gh("repos/%s/actions/runs/%d/rerun" % (REPO, r["id"]), method="POST") is None:
+            print("::warning title=Merge robot::#%d: the %s run %s was cancelled and could not be re-run" % (n, k, r["id"]))
+            continue
+        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body":
+           "%s\n\U0001F916 Merge robot: the '%s' run %s was CANCELLED by GitHub (not a verdict on this PR), so it re-ran it at %s UTC (once; no human needed)." % (marker, k, r["id"], when)})
+        print("::notice title=Merge robot::#%d: the %s run %s was cancelled - re-ran it at %s UTC" % (n, k, r["id"], when))
+        did = True
+    return did
+
+
 SUMMARY = []
 
 
@@ -306,6 +350,14 @@ def main():
             # .gitattributes) - pushes the fix to the PR's branch and restarts its check. Anything else stays for a Muse.
             if fix_notes_conflict(pr):
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
+            elif (now - made).total_seconds() > CLOSE_CONFLICT_H * 3600 and re.match(r"\s*(BUILD|TEST)\b", title) \
+                    and not any(f["filename"].startswith(("jobs/HELP", "needs/")) for f in files):
+                # owner Oct 24 2026 (04's item 5): a BUILD / TEST PR that stays conflicted 2+ h is closed with the reason and its
+                # window is told to re-file from fresh main (the branch stays, nothing is deleted). HELP / needs PRs are never closed.
+                tell_pr(n, pr["head"]["sha"], "CLOSED by the merge robot: this PR conflicted with main for over %d h and the robot could not combine it. "
+                        "Nothing was deleted - the branch is still there. Re-file: start a fresh branch from today's main and re-apply your change." % CLOSE_CONFLICT_H)
+                if gh("repos/%s/pulls/%d" % (REPO, n), method="PATCH", fields={"state": "closed"}) is not None:
+                    say("#%d: CLOSED - conflicted over %d h, window told to re-file" % (n, CLOSE_CONFLICT_H)); continue
             revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
         if full.get("mergeable") is False:
@@ -347,6 +399,12 @@ def main():
                 say("#%d: its cancelled check was restarted by the robot" % n); continue
         except Exception as e:
             print("::warning title=Merge robot::#%d: restarting a cancelled check failed: %s" % (n, e))
+        try:
+            if restart_cancelled_other(pr):
+                revisit = True
+                say("#%d: a cancelled non-game check was re-run by the robot" % n); continue
+        except Exception as e:
+            print("::warning title=Merge robot::#%d: re-running a cancelled check failed: %s" % (n, e))
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
         for r in runs:                       # a re-run leaves the old run behind: only the newest of each check counts
