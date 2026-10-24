@@ -1440,6 +1440,37 @@ export default [
   // single batterMesh and no lineup). This test counts distinct bat-holding
   // batter objects in the running scene and fails on the count.
   {
+    id: 'play-batting-order-nine',
+    ask: 'BUILD G-269: the batting order has 9 distinct batters (rules/baseball.md) - nine bat-holding figures stand in the scene, not the same one figure for every at-bat',
+    async test(page, h) {
+      const t0 = Date.now();
+      let n = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        n = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          const holders = new Set();
+          root.traverse(o => {
+            if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.geometry.parameters &&
+                Math.abs(o.geometry.parameters.width - 0.13) < 0.001 && Math.abs(o.geometry.parameters.height - 1.21) < 0.001) {
+              let hh = o;
+              while (hh.parent && hh.parent !== root) hh = hh.parent;
+              holders.add(hh);
+            }
+          });
+          return holders.size;
+        }).catch(() => null);
+        if (n != null) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (n == null) return 'no batter object found in the scene';
+      return n >= 9 ? true : `only ${n} distinct bat-holding batter(s) in the scene - rules/baseball.md says a batting order of 9`;
+    },
+  },
+  {
     id: 'tester-chk-b05',
     mode: 'b05',
     ask: 'The batting order has 9 batters (rules/baseball.md)',
