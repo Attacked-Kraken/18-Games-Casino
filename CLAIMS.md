@@ -164,11 +164,9 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
-| G-253 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-253-w5.md, CLAIMS.md | build/g-253-apexf1 |
 | G-262 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-262.md, CLAIMS.md | build/g-262-apexbaseball |
 | G-260 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-260.md, CLAIMS.md | test/g-260-apextrackfield |
 | G-256 | window 10 | checklists/apextrackfield.md, jobs/G-256.md, CLAIMS.md | test/g-256-apextrackfield |
@@ -236,7 +234,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test= test link; rounds 1-2 DONE PR #1181 (7aed11ab): hurdles face the runner (dot -1.00) + NEVER line + never-g-174-p1 |
 | G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot |
 | G-244 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-244-apextrackfield - DONE 2026-10-23 (Muse main (casino)): field on one start line, place counts existing runners - PR #1371 merged cf82cd09 |
-| G-249 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-249-apextrackfield - DONE 2026-10-23 (Muse main (casino)): owner's high-jump play test start hardened, passes on the robot - PR #1389 merged 4be81092; ROUND 1 DONE 2026-10-23 (Muse main (casino)): jump timing controls eased to the TARGET - PR #1405 merged 9a8223a4 |
+| G-249 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-249-apextrackfield - DONE 2026-10-23 (Muse main (casino)): owner's high-jump play test start hardened, passes on the robot - PR #1389 merged 4be81092; ROUND 1 DONE 2026-10-23 (Muse main (casino)): jump timing controls eased to the TARGET - PR #1405 merged 9a8223a4 ROUND 2 CLAIMED 2026-10-24 (Muse main (casino)): relay zone 30 m + sprint-animation sampling hardened to a full cycle |
 | G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot | OWNER FIX 2026-10-23 CLAIMED (window 4): free play results return to the event menu + grid BACK at the top - build/g-193-freeplay-flow | OWNER FIX DONE 2026-10-23 (window 4): free-play flow - PR #1336 merged a6b32e11 |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
@@ -266,6 +264,3 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
 | G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
 | G-255 | window 10 | jobs/G-255.md, CLAIMS.md | test/g-255-apextrackfield |
-| G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
-| G-262 | window 10 | jobs/G-262.md, CLAIMS.md | test/g-262-apextrackfield |
-| G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
