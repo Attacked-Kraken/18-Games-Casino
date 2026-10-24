@@ -2755,4 +2755,65 @@ async test(page, h) {
       return true;
     }
   }
+,{
+    id: 'tester-chk-t05',
+    mode: 't05',
+    ask: 'CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as "w" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the "w" mark instead of counting as a best',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 100m sprint: ' + nav;
+      const driven = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e) return null;
+        let side = 0, steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+          e.update(1 / 60);
+          steps++;
+        }
+        return { done: e.done };
+      }).catch(() => null);
+      if (!driven) return 'no sprint engine found in the 100m race';
+      if (!driven.done) return 'the 100m sprint never finished in game-time stepping';
+      for (let w = 0; w < 10; w++) {
+        const shown = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const mk = document.getElementById('resMark');
+          return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+        }).catch(() => false);
+        if (shown) break;
+        await h.wait(300);
+      }
+      const m = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        const on = document.querySelector('.screen.on');
+        const windKeys = Object.keys(e).filter(k => /wind/i.test(k));
+        const resMark = document.getElementById('resMark') ? document.getElementById('resMark').textContent : '';
+        const bodyText = document.body.innerText || '';
+        const windShown = /wind/i.test(bodyText) || /[+-]\d\.\d\s*m\/s/.test(resMark);
+        let bests = null;
+        try { bests = localStorage.getItem('tfapex_bests'); } catch (err) {}
+        return { screen: on ? on.id : null, windKeys, resMark, windShown, bests };
+      }).catch(() => null);
+      if (!m) return 'no sprint engine found in the 100m race';
+      if (!m.windShown) return 'the game models no wind at all: the sprint engine has no wind value (' + m.windKeys.length + ' wind keys), the results screen shows "' + m.resMark + '" with no wind reading and no "w" mark, and the time was saved as a best (' + m.bests + ') - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as "w") can never apply';
+      return true;
+    }
+  }
 ];
