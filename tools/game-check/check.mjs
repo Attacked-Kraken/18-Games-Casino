@@ -17,6 +17,8 @@ import path from 'path';
 import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
+// a play test written without `ask:` (e.g. only `title:` or just an id) must still print a real name, never "undefined"
+const askOf = (fx) => String((fx && (fx.ask || fx.title || fx.name || fx.id)) || 'unnamed test');
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -422,7 +424,7 @@ for (const g of games) {
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
     const GAME_CAP_MS = 20 * 60 * 1000, tGame = Date.now(); let notRun = [];
     for (const fx of list) {
-      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: fx.ask, ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
+      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
       let ok = false, note = '', dead = false;
       // the time limit really STOPS the test: after 30 s every call it makes on the page throws
       const live = new Proxy(page, { get(t, k) { if (dead) throw new Error('test stopped (time limit)'); const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
@@ -463,11 +465,11 @@ for (const g of games) {
       }
       // owner Oct 21 7:49 PM (tester scoreboard "the Muse never reports its own time"): every test records the robot's
       // own play time (ms) and the mode/event it plays (fx.mode, or the first word of its id after the prefix)
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
+      r.fixes.push({ id: fx.id, ask: askOf(fx), ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
                      mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
-      if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
-      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
-      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      if (inc) { r.check.push(`Play test could not decide (tried twice): "${askOf(fx)}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
+      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
+      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();
       // a test that FROZE the game (AI thinkT = 999, skaters pinned to stand spots, positions set by hand) and passed left the
       // game frozen for every later test - they waited for events that never came. Always start the next test on a fresh game.
@@ -477,7 +479,7 @@ for (const g of games) {
       r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
       // owner Oct 23 7:47 PM "if any can count as passed, that is a false green": an owner / never / keep test that was NOT RUN is NOT proven -
       // it stays red (robot side, named), so no job can be called done on a test the robot never ran.
-      for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${fx.ask || id}"`); }
+      for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${askOf(fx) || id}"`); }
     }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });

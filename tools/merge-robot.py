@@ -226,13 +226,27 @@ def say(line):
 
 
 def tell_pr(n, sha, text):
-    """Owner Oct 21 2026 'every robot writes its fail reason as a PR comment': once per head commit."""
+    """Owner Oct 21 2026 'every robot writes its fail reason as a PR comment': ONE comment per PR, edited in place.
+    Oct 24 2026 (HELP line, PR #1427 had 677 comments): the old check read only the first 50 comments, so on a PR with more
+    than 50 comments it never found its own earlier comment and posted a new one every ~2.5 min. Now every page is read (up to
+    30 pages of 100); an existing robot comment with the same commit + text = nothing to do; with another commit/text = that one
+    comment is edited; none = one new comment."""
     try:
-        cs = gh("repos/%s/issues/%d/comments?per_page=50" % (REPO, n)) or []
-        if any(sha[:7] in (c.get("body") or "") and "Merge robot" in (c.get("body") or "") for c in cs):
+        body = "\U0001F916 Merge robot (commit %s): %s" % (sha[:7], text)
+        mine = None
+        for page in range(1, 31):
+            cs = gh("repos/%s/issues/%d/comments?per_page=100&page=%d" % (REPO, n, page)) or []
+            for c in cs:
+                if (c.get("body") or "").startswith("\U0001F916 Merge robot (commit"):
+                    mine = c      # keep the NEWEST robot comment
+            if len(cs) < 100:
+                break
+        if mine is not None:
+            if (mine.get("body") or "").strip() == body.strip():
+                return
+            gh("repos/%s/issues/comments/%d" % (REPO, mine["id"]), method="PATCH", fields={"body": body})
             return
-        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
-           fields={"body": "🤖 Merge robot (commit %s): %s" % (sha[:7], text)})
+        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body": body})
     except Exception:
         pass
 
