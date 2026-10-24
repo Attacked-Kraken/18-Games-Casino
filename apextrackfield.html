@@ -1214,10 +1214,11 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='angle'){
-this.ang+=this.angDir*95*dt;
+this.ang+=this.angDir*55*dt;
 if(this.ang>65){this.ang=65;this.angDir=-1;} if(this.ang<15){this.ang=15;this.angDir=1;}
 updateRunner(this.r,dt,10.0,20);
-if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+// G-249 r1 (owner): the angle needle was too fast to set (95 deg/s), and crossing the line while setting it was an instant FOUL - the takeoff already counted, so there is no foul: reach the line still setting it and he jumps with the angle showing
+if(this.r.pos>=BOARD1){ this.angSet=this.ang; this.startFlight(); }
 }else if(this.phase==='flight'){
 this.ft+=dt; this.fx+=this.fvx*dt;
 if(this.ft>=this.fT){ this.endAttempt(); }
@@ -1263,7 +1264,7 @@ else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early coun
 }else if(this.phase==='phase'){
 if(this.tapped) return;
 this.tapped=true;
-const q=clamp(1-Math.abs(this.marker-0.5)/0.5,0,1);
+const q=clamp(1-Math.abs(this.marker-0.5)/0.8,0,1); // G-249 r1: quality falls off over a wider window, matching the wider green
 this.qs.push(q);
 const CO=[0.52,0.44,0.72];
 this.subTo=this.subFrom+(this.vT||this.r.speed)*CO[this.sub]*(0.45+0.55*q);
@@ -1290,7 +1291,7 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='phase'){
-this.marker+=this.mdir*1.6*dt;
+this.marker+=this.mdir*1.0*dt; // G-249 r1: the hop/step/jump marker was the fastest tap in the game (1.6/s)
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 this.subT+=dt;
 const u=Math.min(1,this.subT/this.subDur);
@@ -1349,7 +1350,7 @@ if(this.done) return;
 if(this.phase==='approach'){
 if(this.r.pos>=this.zoneLo&&this.r.pos<=this.zoneHi){
 this.phase='bar'; this.marker=0; this.mdir=1; this.swingT=0; this.barT=0; this.flightH=this.curH(); this.plantD=this.r.pos; this.barFell=false; this.vOver=false; this.vMat=false;
-this.gw=(0.05+0.06*clamp(this.r.speed/11,0,1))*SIM_MODS.tech;
+this.gw=(0.20+0.04*clamp(this.r.speed/11,0,1))*SIM_MODS.tech; // G-249 r1 (owner): the green window was 0.10-0.22 of the bar (~0.1-0.2s to tap) - now at least 0.40 wide
 AudioSys.click();
 }else{ this.miss(this.r.pos>this.zoneHi?'No takeoff — ran through':'Too early'); }
 }else if(this.phase==='bar'){
@@ -1379,7 +1380,7 @@ if(this.phase==='approach'){
 updateRunner(this.r,dt,10.5,15);
 if(this.r.pos>this.runOut) this.miss('No takeoff — ran through');
 }else if(this.phase==='bar'){
-this.marker+=this.mdir*1.15*dt;
+this.marker+=this.mdir*0.75*dt; // G-249 r1: slower sweep - the green lasts at least half a second
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 if(this.pv){ this.swingT+=dt; if(this.swingT>2.6) this.miss('No clear — came back down'); }
 if(!this.pv){ this.barT+=dt; if(this.barT>1.7) this.miss('No clear — came down short', true); }
@@ -2796,7 +2797,7 @@ W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
 if(ENG.phase==='runup'&&ENG.r.pos>27.5) centerText('TAKEOFF - TAP JUMP!', H*0.30, 24, '#ffd34d');
 if(ENG.msgT>0) centerText(ENG.msg, H*0.38, 20, '#ffb34d');
-if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.38,0.62,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
+if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.30,0.70,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
 if(ENG.phase==='mark'){
 const last=ENG.attempts[ENG.attempts.length-1];
 centerText(ENG.foul?ENG.res:fmtMark(last), H*0.30, 30, ENG.foul?'#ff7b7b':'#7dff9b');
