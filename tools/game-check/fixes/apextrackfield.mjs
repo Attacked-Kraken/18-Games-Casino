@@ -1129,17 +1129,28 @@ export default [
       // few metres in front of the bar, his body must be ABOVE the bar
       // height while he is over the bar, and he must land ON the mat behind
       // it - not run on the grass and never go over.
-      for (let i = 0; i < 140; i++) {
+      // HARDENED START (G-249): the suite's page-lifetime driver intervals (installed by
+      // earlier tests and never cleared) stride whatever engine is live, and on the robot's
+      // slower navigation they could run the approach through and burn this event's attempts
+      // before the drive below ever started - the reading came back 'takeoff at -1.0m' while
+      // the game itself takes off in front of the bar. Clear the known drivers and start the
+      // event fresh from its test link; the ask, the drive and every assertion below are
+      // unchanged from the owner's test.
+      await h.eval(() => {
+        for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+        try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+        return true;
+      });
+      const base = page.url().split('?')[0];
+      await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+      for (let i = 0; i < 30; i++) {
         const s = await h.eval(() => {
           const on = document.querySelector('.screen.on');
           const e = window.__tf && window.__tf.eng();
-          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null };
-        });
-        if (!s.screen && s.ev === 'hj') break;
-        if (s.screen === 'menu') await h.eval(() => { document.getElementById('bFree').click(); return true; });
-        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /high jump/i.test(x.textContent)); if (b) b.click(); return true; });
-        else if (s.screen === 'card') await h.eval(() => { document.getElementById('bCardStart').click(); return true; });
-        await h.wait(200);
+          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, st: e && typeof e.jumpState === 'function' };
+        }).catch(() => ({ screen: 'x' }));
+        if (!s.screen && s.ev === 'hj' && s.st) break;
+        await h.wait(1500);
       }
       const res = await h.eval(() => {
         const e = window.__tf && window.__tf.eng();
