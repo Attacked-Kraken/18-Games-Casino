@@ -398,9 +398,9 @@ const Aud = {
       }catch(e){ this.kit=null; this.kitRetry(); }
     });
   },
-  kitRetry(){ // G-239: one retry a few seconds on - a cold cache or a dropped fetch on the owner's phone gets a second chance before the synth has to carry the race
-    if(this._kitRetried) return; this._kitRetried=true;
-    setTimeout(()=>{ this._kitTried=false; this.kitLoad(); }, 4000);
+  kitRetry(){ // G-277: retry until the kit loads - one dropped fetch on the owner's phone used to spend the single retry and leave the synth carrying the whole race
+    const d=this._kitRetryN?8000:4000; this._kitRetryN=(this._kitRetryN||0)+1;
+    setTimeout(()=>{ if(this.kit&&this.kit.ready) return; this._kitTried=false; this.kitLoad(); }, d);
   },
   kitState(){ // probe for the play test: is the kit carrying the engine, and what is it doing
     const kit=this.kit;
