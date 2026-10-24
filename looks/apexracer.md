@@ -1,6 +1,6 @@
 # Look board — Exotic Racer Club (`apexracer.html`)
 
-## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 23, 2026, after G-240 fix 1; keep current per STUDIO-STANDARD 9.7)
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 23, 2026, after G-270 fix 1; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2162 - menu refresh (refreshMenu) L2155 - turntable spin + garage camera (updateGarage) L2370 - frame loop L2393
 - Garage: openGarage L2242 - garage cards and buying (renderGarage) L2252 - the shown car (setGarageCar) L1278
 - Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L678 - computer-car paints stay bright (brightPaint) L570
@@ -35,6 +35,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-22: report has no 'OWNER CHECK IN 30 SECONDS: <test link> - <what to look at>' line (G-176)
 - 2026-10-23: the finish-line sign says Finish at the wrong time - it must say START on lap 1, the completed/total count (1/3, 2/3) on the laps between, and Finish ONLY on the last lap (G-207)
 - 2026-10-23: the engine sound is a thin high-pitched whine, not an engine - the kit loops must play slow (playback rate never above 0.8) through a lowpass so the car growls deep (G-240)
+- 2026-10-24: the field is as fast as the player, so he can never lap anyone - all cars must be fast AND the player's car must lap the whole field (G-270)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
