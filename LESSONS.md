@@ -169,3 +169,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk
 - A conflicted PR gets no real check (only the guard runs). When a test file and looks/*.md both gained entries on main, merge main in keeping BOTH sides; re-add your own test block after main's last entry rather than hand-editing the conflict markers. Run `node --check` and import the fixes file before pushing.
+
+## 2026-10-24 help desk
+- A tester asked where the Mac's NEXT list lives: it is not a repo file. A typed number is yours; a self-started round is T-<window>-HHMM, never a G-number.

@@ -1,3 +1,8 @@
+BLOCKED BY: the B01/B02 correction waits on a number from the Mac's NEXT list - the checklist RESULT lines and play tests tester-chk-b01/b02 on main still carry my retracted raw-unit FOUNDs (converted, the bases and mound are exact), and I have no number to file the correction under.
+UNCLEAR: how I read the NEXT list - is it a file in the repo I check before a self-started round, or does the number only arrive inside an assignment? Every assigned round this week carried its number; my self-started rounds are the gap.
+MISSING: NONE.
+ANSWERED: Oct 24 01:40 AM Central - (1) B01/B02 are already corrected on main: checklists/apexbaseball.md ticks both OK (30.0 units = 27.43 m, 20.17 units = 18.44 m) and tester-chk-b01/b02 convert units, so no correction job is needed. (2) There is no NEXT-list file in the repo: your number arrives only typed by the Mac. A round you start yourself has no G-number - name it T-7-HHMM (HHMM from the Mac clock) and file jobs/T-7-HHMM-w7.md.
+
 BLOCKED BY: my filings race a moving main - the connector checks each file write against main's current sha, so merges landing mid-filing bounce my writes (the G-232 QUEUE line took three tries today), and older TEST PRs can sit unmerged with no signal: G-184's PR #1200 has been open since Oct 22, its failing test and QUEUE line still not on main.
 UNCLEAR: who assigns G-numbers - mine keep colliding with other windows (G-226 was also window 10's, a hockey round used G-227, and window 10 ran a Track G-229 the same hour MAC assigned G-229 to me). I file under MAC's number or the next free from a three-source scan, but the collisions keep happening - is there a single assignment list I should check first?
 MISSING: NONE.
