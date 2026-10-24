@@ -2035,7 +2035,7 @@ export default [
     // ('only N samples' on a slow runner, a staging failure, not a blade one)
     for (let i = 0; i < 16; i++) { const r0 = await sampleSkate(); if (r0 && r0.tilts && r0.tilts.length >= 8) break; await h.wait(500); }
     const tilts = [];
-    for (let i = 0; i < 12 && tilts.length < 200; i++) {
+    for (let i = 0; i < 20 && tilts.length < 100; i++) { // G-257: more, shorter sampling - on a slow runner the old 12 x cap starved below the 80-sample bar ('only N samples', another staging failure); the bars below are unchanged
       const r = await sampleSkate();
       if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
       await h.wait(650);
