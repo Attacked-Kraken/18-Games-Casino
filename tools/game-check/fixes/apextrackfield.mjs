@@ -3115,6 +3115,19 @@ async test(page, h) {
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
       let nav = null;
       for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
       nav = await h.eval(() => new Promise(res => {
@@ -3165,9 +3178,31 @@ async test(page, h) {
     mode: 'wind',
     ask: 'NEVER (G-289): a tailwind over +2.0 m/s still counts as a record - the sprint results screen must show a wind reading, a wind-aided time must carry the "w" mark, and it must never be saved as a best',
     async test(page, h) {
-      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      // G-289 robot lesson: clear the saved 100m best BEFORE reloading, so the
+      // fresh boot loads clean in-memory bests too (the game loads bests once
+      // at boot; deleting after boot leaves a stale in-memory best behind).
+      // The delete is verified - a reload-race throw used to swallow it and a
+      // stale 0.03 s fast-forward best from an earlier suite test survived.
+      let cleared = false;
+      for (let d = 0; d < 2 && !cleared; d++) {
+        cleared = await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } try { const b = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); delete b['100m']; localStorage.setItem('tfapex_bests', JSON.stringify(b)); const chk = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); return chk['100m'] == null; } catch (err) { return false; } }).catch(() => false);
+      }
+      if (!cleared) return 'could not clear the saved 100m best before the wind runs (G-289)';
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      await h.eval(() => { try { const b = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); delete b['100m']; localStorage.setItem('tfapex_bests', JSON.stringify(b)); } catch (err) {} return true; }).catch(() => {});
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
       const nav100 = async () => {
         let nav = null;
         for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
