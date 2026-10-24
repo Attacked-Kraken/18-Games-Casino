@@ -69,13 +69,20 @@ def auto_resolvable(path):
             or (path.startswith("checklists/") and path.endswith(".md")))   # Oct 24 2026: merged by ITEM (tools/checklist-merge.py)
 
 
-def play_test_file_ok(path):
+def _dup_ids(text):
     import re as _re
+    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", text, flags=_re.M)
+    return {i for i in ids if ids.count(i) > 1}
+
+
+def play_test_file_ok(path, main_text=""):
+    """The merged file must load and must not gain a NEW duplicate test id. Oct 24 2026 (PR #1355 sat 'dirty' ~15 h): main's own
+    apexhockey.mjs already holds 3 duplicate ids (play-joystick-starts-left, tester-chk-h01, tester-puck-leaves-rink-at-boards), so
+    'any duplicate = bad' rejected EVERY merge that touched that file. Only duplicates main does not already have count."""
     r = subprocess.run(["node", "--check", path], capture_output=True, text=True)
     if r.returncode != 0:
         return False
-    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", open(path, encoding="utf-8", errors="replace").read(), flags=_re.M)
-    return len(ids) == len(set(ids))
+    return _dup_ids(open(path, encoding="utf-8", errors="replace").read()) <= _dup_ids(main_text)
 
 
 def fix_notes_conflict(pr):
@@ -116,7 +123,7 @@ def fix_notes_conflict(pr):
                         open("%s/%s.mjs" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
                     m = subprocess.run(["node", "tools/game-check/merge-play-tests.mjs", tmp + "/base.mjs", tmp + "/pr.mjs", tmp + "/main.mjs", f],
                                        capture_output=True, text=True)
-                    ok = m.returncode == 0 and play_test_file_ok(f)
+                    ok = m.returncode == 0 and play_test_file_ok(f, open(tmp + "/main.mjs", encoding="utf-8", errors="replace").read())
                     why = (m.stderr or m.stdout or "").strip()[:160].replace("\n", " ")
                 except Exception as e:
                     why = str(e)[:160]
