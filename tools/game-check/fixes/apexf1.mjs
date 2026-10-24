@@ -126,17 +126,6 @@ async function g66PaceTest(page, h, pickFastest) {
   return true;
 }
 
-  async function g265PortraitOverlaps(page, h) {
-    let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
-    await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
-    let rects = null;
-    if (await g66ToRace(page, h)) {
-      rects = await h.eval(() => { const rect = id => { const e = document.querySelector(id); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
-        return { stick: rect('#stick'), pit: rect('#btnPit'), cam: rect('#btnCam') }; }).catch(() => null);
-    }
-    if (vp) await h.page.setViewportSize(vp).catch(() => {});
-    return rects;
-  }
 export default [
   {
     id: 'game-starts-not-black',
@@ -1205,14 +1194,9 @@ export default [
       return true;
     },
   },
-  // G-265 R1: on the upright phone (390x844) teamMenu must fit with no
-  // scrolling and no race button may sit on the stick - the robot's upright
-  // check found teamMenu scrolling 132 px (START WEEKEND 43 px below the
-  // fold) and the stick overlapping PIT by 1440 px^2 and CAM by 720 px^2,
-  // because the landscape compact rules do not apply there.
   {
-    id: 'never-g-265-p1',
-    ask: 'on the upright phone teamMenu fits with no scrolling',
+    id: "never-g-265-p1",
+    ask: "on the upright phone teamMenu fits with no scrolling",
     async test(page, h) {
       let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
       await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
@@ -1233,8 +1217,8 @@ export default [
     },
   },
   {
-    id: 'play-stick-clears-pit',
-    ask: 'on the upright phone the stick never overlaps the PIT button',
+    id: "play-stick-clears-pit",
+    ask: "on the upright phone the stick never overlaps the PIT button",
     async test(page, h) {
       const r = await g265PortraitOverlaps(page, h);
       if (!r) return 'race never started on the upright phone';
@@ -1246,8 +1230,8 @@ export default [
     },
   },
   {
-    id: 'play-stick-clears-cam',
-    ask: 'on the upright phone the stick never overlaps the CAM button',
+    id: "play-stick-clears-cam",
+    ask: "on the upright phone the stick never overlaps the CAM button",
     async test(page, h) {
       const r = await g265PortraitOverlaps(page, h);
       if (!r) return 'race never started on the upright phone';
