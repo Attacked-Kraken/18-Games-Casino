@@ -818,4 +818,37 @@ export default [
       }
     }
   }
+,
+  {
+    id: 'play-ai-jets-flying',
+    ask: 'G-247: 3-5 computer jets in the other styles and paints fly wide loops and stay above the ground',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=traffic'; });
+      await h.wait(1200);
+      const r = await evalRetry(() => new Promise((res) => {
+        const F = window.__flight;
+        if (!F || !F.aiJets) return res('no aiJets on the flight hook');
+        const jets = F.aiJets;
+        if (jets.length < 3 || jets.length > 5) return res('expected 3-5 computer jets, found ' + jets.length);
+        const styles = new Set(jets.map(a => a.jet.style)), paints = new Set(jets.map(a => a.jet.paint));
+        if (styles.size !== jets.length) return res('computer jets must each fly a different style');
+        if (paints.size !== jets.length) return res('computer jets must each wear a different paint');
+        if (styles.has('fighter')) return res('a computer jet uses the player style (fighter)');
+        const snap = () => jets.map(a => { const p = a.jet.group.position; return [p.x, p.y, p.z]; });
+        const a = snap();
+        for (const p of a) if (p[1] < 60) return res('a computer jet is too low: y=' + Math.round(p[1]));
+        setTimeout(() => {
+          const b = snap();
+          for (let i = 0; i < jets.length; i++) {
+            if (b[i][1] < 60) return res('computer jet ' + i + ' dropped too low: y=' + Math.round(b[i][1]));
+            const d = Math.hypot(b[i][0] - a[i][0], b[i][2] - a[i][2]);
+            if (d < 12) return res('computer jet ' + i + ' barely moved (' + d.toFixed(1) + ' m in 3 s)');
+          }
+          return res(true);
+        }, 3000);
+      }));
+      return r === true ? true : r;
+    }
+  }
 ];
