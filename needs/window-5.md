@@ -1,3 +1,3 @@
 BLOCKED BY: NONE
-UNCLEAR: (1) R1 'ignore if newer' clause: the robot checked main dde6164, which CONTAINS my game merge e1ef3f52c0b7 (verified: my merge is an ancestor of dde6164) - so I read the order as standing and will verify the layout on the current build before changing anything; say if you meant it void. (2) Point 1 bundles teamMenu scrolling + two overlap pairs (#stick+#btnPit, #stick+#btnCam) - I read it as one point with one CHANGED line covering all three; say if you want them split.
-MISSING: The robot's exact Check status comment / run link for this FAIL - I have the order's paraphrase of the lines, not the comment text.
+UNCLEAR: Report filename for G-286: your 3:46 PM tail says jobs/G-286-w5.md (a tester may use the plain number), your 4:09 PM nudge says jobs/G-286.md - I am writing w5 per the specific instruction unless you say otherwise.
+MISSING: NONE
