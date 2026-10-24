@@ -19,12 +19,23 @@ faults = [f for f in json.loads(out).get("faults", []) if not f.get("until") or 
 cm = j(f"repos/{REPO}/commits?path=tools/game-check/known-faults.json&sha=main&per_page=1")
 faults_at = parse(cm[0]["commit"]["committer"]["date"])
 print(f"::notice::{len(faults)} live faults; file last changed {faults_at.isoformat()}")
+ID = re.compile(r"(?:tester|play|never|owner|keep)(?:-[a-z0-9]+)+")
+def relaxed(rx):
+    """The Check status comment prints a test's TEXT, not its id (check.mjs tests faults against line + ids). When a fault regex
+    names a test id AND has a distinctive text after it, drop the id and keep the text; no distinctive text = never relaxed."""
+    m = list(ID.finditer(rx))
+    if not m: return rx
+    tail = re.sub(r"[.*+?()\\|\[\]^$]", "", rx[m[-1].end():]).strip()
+    if len(tail) < 8: return None
+    return ID.sub(".*", rx)
 def matches(line):
     for f in faults:
         if f.get("game") and f["game"] not in line: continue
-        try:
-            if re.search(f["match"], line, re.I): return True
-        except re.error: pass
+        for rx in (f["match"], relaxed(f["match"])):
+            if not rx: continue
+            try:
+                if re.search(rx, line, re.I): return True
+            except re.error: pass
     return False
 n = 0
 for pr in j(f"repos/{REPO}/pulls?state=open&per_page=100") or []:
