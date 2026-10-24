@@ -49,6 +49,13 @@
       "why": "G-121 ocean-crash test: wall-clock budget dies on slow runner days; the robot now stretches budgets by measured runner speed (runner-speed.json). Robot side owns it.",
       "since": "2026-10-22",
       "until": "2026-10-29"
+    },
+    {
+      "game": "apexflight.html",
+      "match": "Owner's fix NOT done yet: .*never-g-243-p1.*ran out of wall time",
+      "why": "never-g-243-p1: the test judges the message in game time but stops after a fixed 28 s of WALL time (Date.now), which a slow runner day cannot meet; the test does not scale by window.__slow like the robot's other budgets. Robot side owns it; the test should use window.__slow (HELP line window 3, Oct 23 2026 8:44 PM).",
+      "since": "2026-10-23",
+      "until": "2026-10-29"
     }
   ],
   "_fixed_robot_side": [
