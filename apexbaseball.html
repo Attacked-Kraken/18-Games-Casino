@@ -813,7 +813,7 @@ function athletePose(f, kind, dt){
 }
 
 /* ball + timing ring */
-const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12,12,10), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.4}));
+const ball = new THREE.Mesh(new THREE.SphereGeometry(0.0405,12,10), new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.4}));   // G-248 (checklist B03): a real ball is 0.074 m across (REALITY.md) = 0.0405 units radius - the old 0.12-unit ball measured 0.219 m, 3x too big
 const TRAIL_N = 18;
 const trailPos = new Float32Array(TRAIL_N*3);
 const trailGeo = new THREE.BufferGeometry();
