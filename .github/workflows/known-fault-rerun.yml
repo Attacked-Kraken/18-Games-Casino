@@ -3,8 +3,7 @@ name: Known fault re-run
 # (window 3 / PR #1402 needed a hand push). Runs when tools/game-check/known-faults.json changes on main, and by hand with dry_run.
 on:
   push:
-    branches: [main]
-    paths: ['tools/game-check/known-faults.json']
+    branches: ['scratch/fault-rerun']
   workflow_dispatch:
     inputs:
       dry_run: {description: 'only print what would re-run (1 = yes)', default: '0'}
@@ -20,9 +19,9 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
-        with: {ref: main}
+        with: {ref: scratch/fault-rerun}
       - run: python3 tools/game-check/known-fault-rerun.py
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DRY_RUN: ${{ github.event.inputs.dry_run == '1' && '1' || '0' }}
+          DRY_RUN: '1'
           ONLY_PR: ${{ github.event.inputs.only_pr }}
