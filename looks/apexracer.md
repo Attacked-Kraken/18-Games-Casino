@@ -1,6 +1,6 @@
 # Look board — Exotic Racer Club (`apexracer.html`)
 
-## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 23, 2026, after G-240; keep current per STUDIO-STANDARD 9.7)
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 23, 2026, after G-240 fix 1; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2162 - menu refresh (refreshMenu) L2155 - turntable spin + garage camera (updateGarage) L2370 - frame loop L2393
 - Garage: openGarage L2242 - garage cards and buying (renderGarage) L2252 - the shown car (setGarageCar) L1278
 - Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L678 - computer-car paints stay bright (brightPaint) L570
@@ -11,7 +11,7 @@
 - Traffic: stepTraffic L2009 - headlight pool follow (posePool) L2019 - car posing (poseCar) L2020
 - Camera: chase camera inside updateRace L2028 - race render (renderRace) L2144
 - HUD: lap/time readout inside updateRace L2028 - big center message (bigMsg) L1928 - race step (updateRace) L2028
-- Sounds: audioInit L1749 - sfx L1773 - engine kit + engine sound (engineSnd) L1794 - music mix by speed (musRaceMix) L1852
+- Sounds: audioInit L1749 - sfx L1773 - engine kit + engine sound (engineSnd) L1795 - music mix by speed (musRaceMix) L1853
 - Test hooks: window.__erc L2421 - REALITY hook (window.__reality, go/time/speed) L2432 - ?test=night owner link at boot L2419
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
@@ -34,6 +34,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - No mountain, mesa or volcano skirt within reach of the road - tall scenery keeps its distance from the track (owner, Oct 22 2026)
 - 2026-10-22: report has no 'OWNER CHECK IN 30 SECONDS: <test link> - <what to look at>' line (G-176)
 - 2026-10-23: the finish-line sign says Finish at the wrong time - it must say START on lap 1, the completed/total count (1/3, 2/3) on the laps between, and Finish ONLY on the last lap (G-207)
+- 2026-10-23: the engine sound is a thin high-pitched whine, not an engine - the kit loops must play slow (playback rate never above 0.8) through a lowpass so the car growls deep (G-240)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
