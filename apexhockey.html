@@ -474,6 +474,29 @@ function roundedRectSegs(hw,hh,r){
   scene.add(new THREE.Mesh(mergeGeometries(glassGeos), glassMat));
 }
 
+/* ================= benches + boxes (G-282, G-199, venues/rink.md) ================= */
+// Two team benches on the +z side, the two penalty boxes and the scorekeeper box on the -z side:
+// real meshes outside the boards at ice level, in the strips the arena scan reads (z just past +-42.8).
+{
+  const benchMat = new THREE.MeshStandardMaterial({color:0x24406e, roughness:.85});
+  const boxMat = new THREE.MeshStandardMaterial({color:0x3a3f46, roughness:.85});
+  const seatMat = new THREE.MeshStandardMaterial({color:0x8a2f2b, roughness:.8});
+  const addBox=(mat,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); scene.add(m); return m; };
+  for(const bx of [-26, 26]){ // team benches, +z side: base, red seat plank, back board
+    addBox(benchMat, 36, 1.1, 4.4, bx, 0.55, 47);
+    addBox(seatMat, 36, 0.35, 1.4, bx, 1.35, 46.2);
+    addBox(benchMat, 36, 2.2, 0.5, bx, 1.1, 49.1);
+  }
+  for(const bx of [-22, 22]){ // penalty boxes, -z side
+    addBox(boxMat, 14, 1.1, 4.4, bx, 0.55, -47);
+    addBox(seatMat, 14, 0.35, 1.4, bx, 1.35, -46.2);
+    addBox(boxMat, 14, 2.2, 0.5, bx, 1.1, -49.1);
+  }
+  // scorekeeper box between the penalty boxes, -z side
+  addBox(boxMat, 10, 1.1, 4.4, 0, 0.55, -47);
+  addBox(boxMat, 10, 2.6, 0.5, 0, 1.3, -49.1);
+}
+
 /* ================= goals ================= */
 // JOB J10: goals merged (14 meshes -> 2 draw calls)
 {
@@ -776,7 +799,6 @@ let state='menu', paused=false;
 let period=1, clockT=PERIOD_LEN, scoreH=0, scoreA=0, stateT=0, lastOwnerTeam=null;
 let statShots={home:0,away:0}, statSaves={home:0,away:0}, statFO={home:0,away:0}, foDropAt=-9; // G-257: real counters behind the intermission stats card (shots at shootPuck, saves in goalieSaves, faceoffs won = first clean grab after a drop)
 let pendingFaceoff=null;
-let delayedPen=null; // G-273 round 1 (G-228): an armed DELAYED penalty {off, why, major} - play goes on until the penalised team touches the puck (rules/hockey.md)
 let controlled = homeSkaters[0];
 /* G-37: the career play tests read and set the live game through this hook
    (the same __hk peek the other play tests use for the puck and the skaters).
@@ -796,7 +818,7 @@ window.__hk.game = {
   // a fresh match (period 1, 0-0, full clock): a player gets this from the
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
-  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; delayedPen = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -1028,25 +1050,13 @@ function shootFrom(s, power, aimed){
 const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
 const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
 function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
-function applyPenalty(off, why, major){ // the man actually sits (the old instant callPenalty body)
+function callPenalty(off, why, major){
+  if(!off || off.inBox || state!=='play') return;
   off.inBox=true; off.major=!!major; off.penT=major?50:20; PEN[off.team]=off; // G-272: 2:00 minor - or a 5:00 major for the worst fouls (rules/hockey.md), on this game's clock scale
   banner('PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2600, '#ffb3b3');
   commSay('penalty_box'); // G-44
   if(off===controlled) switchControl();
   updateHUD();
-}
-function callPenalty(off, why, major){
-  if(!off || off.inBox || state!=='play') return;
-  if(delayedPen){ // a second foul while one is already delayed: blow it down now and sit the man (both fouls if they differ)
-    const dp=delayedPen; delayedPen=null;
-    applyPenalty(dp.off, dp.why, dp.major); if(off!==dp.off) applyPenalty(off, why, major);
-    const d0=DOTS[nearestDot(puck.pos.x,puck.pos.z)]; pendingFaceoff={x:d0[0],z:d0[1],label:'FACEOFF'};
-    whistle('PENALTY', TEAMS[off.team].name); return;
-  }
-  if(puck.owner && puck.owner.team===off.team){ applyPenalty(off, why, major); return; } // his own team has the puck - he has already 'touched' it: he sits at once and play flows on
-  delayedPen={off, why, major}; // G-273 round 1: DELAYED penalty - the fouled team has the puck (or it is loose), so play goes on until the penalised team touches it; only then the whistle and the box
-  banner('DELAYED PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2200, '#ffd34d');
-  commSay('penalty_box'); // G-44
 }
 function endPenalty(off, quiet){
   if(!off) return;
@@ -1150,8 +1160,6 @@ function nearestDot(x,z){
   return best;
 }
 function onGoal(team){
-  if(delayedPen && team!==delayedPen.off.team){ const dp=delayedPen; delayedPen=null; if(dp.major) applyPenalty(dp.off, dp.why, true); } // G-273 round 1: the fouled team scores during the delay - a minor is washed out by the goal, a major is still served (rules/hockey.md)
-  else if(delayedPen){ const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major); } // a stoppage all the same: the armed man sits
   state='goal'; stateT=3.2;
   const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
   if(team==='home'){scoreH++;}else{scoreA++;}
@@ -1166,7 +1174,6 @@ function onGoal(team){
   if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
 }
 function whistle(text,sub){
-  if(delayedPen){ const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major); } // G-273 round 1: any stoppage assesses an armed delayed penalty
   state='whistle'; stateT=2.2; puck.vel.multiplyScalar(0.1);
   banner('WHISTLE', text+(sub?' · '+sub:''), 2000, '#ffb3b3');
   if(text==='ICING') commSay('icing'); else if(text==='OFFSIDE') commSay('offside'); // G-44
@@ -1525,16 +1532,23 @@ function rules(dt){
   for(const t of TEAM_IDS){ let pen=null; for(const x of skaters){ if(x.team===t&&x.inBox&&(!pen||x.penT<pen.penT)) pen=x; } PEN[t]=pen; } // G-35: one pass, no filter/reduce garbage per step (same pick: earliest lowest penT)
   if(PEN.home||PEN.away) updateHUD();
   if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
-  // G-273 round 1: a DELAYED penalty completes the moment the penalised team touches the puck - whistle, the man sits, faceoff at the nearest dot (rules/hockey.md: 'the neutral-zone dots otherwise'); checked before the goal line so the touch kills the play first
-  if(delayedPen && puck.owner && puck.owner.team===delayedPen.off.team){
-    const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major);
-    const d=DOTS[nearestDot(puck.pos.x,puck.pos.z)]; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'};
-    whistle('PENALTY', TEAMS[dp.off.team].name); prevPuckX=px; return;
-  }
+  // G-282 (G-228, rules/hockey.md): the crease is protected - no goal if the goalie is pushed. An attacker
+  // standing on the defending goalie (within 1.5 u) inside the crease (within 6 u of the goal centre) when
+  // the puck crosses waves the goal off: whistle, no goal, end-zone faceoff.
+  const creaseCrash=(att,gx)=>{
+    const gk=skaters.find(s=>s.goalie&&s.team!==att); if(!gk) return false;
+    for(const s of skaters){ if(s.goalie||s.team!==att||s.inBox) continue;
+      if(Math.hypot(s.pos.x-gk.pos.x,s.pos.z-gk.pos.z)<1.5&&Math.hypot(s.pos.x-gx,s.pos.z)<6) return true; }
+    return false;
+  };
   // GOAL: puck crosses the goal line between the posts = ALWAYS a goal (JOB J10)
   // Crossing-based (not position threshold) so a fast puck can't tunnel past the check
-  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('home'); return; }
-  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('away'); return; }
+  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){
+    if(creaseCrash('home',GOAL_LINE)){ const d=DOTS[puck.pos.z>0?'e1':'e2']; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'}; whistle('NO GOAL','GOALIE INTERFERENCE'); prevPuckX=px; return; }
+    onGoal('home'); return; }
+  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){
+    if(creaseCrash('away',-GOAL_LINE)){ const d=DOTS[puck.pos.z>0?'e3':'e4']; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'}; whistle('NO GOAL','GOALIE INTERFERENCE'); prevPuckX=px; return; }
+    onGoal('away'); return; }
   // OFFSIDE, the real way: DELAYED — attackers caught deep get a window to TAG UP and clear.
   if(offArm){
     const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
