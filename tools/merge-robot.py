@@ -61,6 +61,22 @@ def tidy_queue(path="jobs/QUEUE.md"):
         subprocess.run(["git", "add", path])
 
 
+def auto_resolvable(path):
+    """Oct 23 2026 (owner: cards faster; window 3's #1402 sat 'dirty' on looks/apexflight.md + fixes/apexflight.mjs, the two files every
+    build job appends to): notes, look boards and a game's own play-test list are APPENDED to by both sides, so both sides are kept."""
+    return (path in NOTES_UNION or path.startswith("jobs/G-") or (path.startswith("looks/") and path.endswith(".md"))
+            or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs")))
+
+
+def play_test_file_ok(path):
+    import re as _re
+    r = subprocess.run(["node", "--check", path], capture_output=True, text=True)
+    if r.returncode != 0:
+        return False
+    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", open(path, encoding="utf-8", errors="replace").read(), flags=_re.M)
+    return len(ids) == len(set(ids))
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -82,12 +98,32 @@ def fix_notes_conflict(pr):
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
-        if left and not all(x in NOTES_UNION or x.startswith("jobs/G-") for x in left):
+        if left and not all(auto_resolvable(x) for x in left):
             git("merge", "--abort")
             gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
                fields={"body": "Merge robot: this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5])})
             print("#%d: conflict in %s - left for the Muse" % (n, ", ".join(left[:5]))); return False
-        for f in left:   # a notes file the union driver did not catch: keep both sides' lines
+        for f in left:   # a notes / look-board / play-test file the union driver did not catch
+            if f.startswith("tools/game-check/fixes/") and f.endswith(".mjs"):
+                # Oct 23 2026: two PRs that each ADD tests conflict at the end of the list, and keeping both text sides breaks the
+                # file. Merge by test ENTRY: main's file + the tests only this PR has (tools/game-check/merge-play-tests.mjs).
+                ok = False
+                try:
+                    tmp = "/tmp/mpt"; os.makedirs(tmp, exist_ok=True)
+                    for k, nm in ((1, "base"), (2, "pr"), (3, "main")):
+                        open("%s/%s.mjs" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
+                    m = subprocess.run(["node", "tools/game-check/merge-play-tests.mjs", tmp + "/base.mjs", tmp + "/pr.mjs", tmp + "/main.mjs", f],
+                                       capture_output=True, text=True)
+                    ok = m.returncode == 0 and play_test_file_ok(f)
+                    why = (m.stderr or m.stdout or "").strip()[:160].replace("\n", " ")
+                except Exception as e:
+                    why = str(e)[:160]
+                if not ok:
+                    git("merge", "--abort")
+                    gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
+                       fields={"body": "Merge robot: both sides changed %s and the tests could not be combined (%s) - merge main into your branch by hand and push again." % (f, why)})
+                    print("::warning title=Merge robot::#%d: play-test merge of %s failed (%s) - left for the Muse" % (n, f, why)); return False
+                git("add", f); continue
             txt = open(f, encoding="utf-8", errors="replace").read()
             import re as _re
             txt = _re.sub(r"<<<<<<< [^\n]*\n(.*?)=======\n(.*?)>>>>>>> [^\n]*\n", lambda m: m.group(1) + m.group(2), txt, flags=_re.S)
