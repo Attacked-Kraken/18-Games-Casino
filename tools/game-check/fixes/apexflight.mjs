@@ -1159,6 +1159,13 @@ export default [
     id: "play-thr-button-in-row",
     ask: "G-280: the tall THR slider is gone; a slim THR button sits in the pad row overlapping nothing and ramps the throttle while held",
     async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
       return h.eval(() => {
         if (document.getElementById('thrBar')) return 'tall THR slider still present';
         const pad = document.querySelector('.ajc .pad');
