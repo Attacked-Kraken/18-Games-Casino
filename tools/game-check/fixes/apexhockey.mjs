@@ -1985,10 +1985,23 @@ export default [
     // Stage the owner's scene: a live match with every skater standing still
     // (the faceoff picture) - reach play, then freeze the AI like the icing
     // test does and let the stance settle into idle.
-    for (let i = 0; i < 24; i++) {
-      const st = await state();
-      if (st === 'play') break;
-      if (st === 'menu') await clickId('playBtn');
+    // G-257: boot like never-g-228-p1 - on the robot's shared page a previous
+    // test can leave the game at the final screen or in the hub, where the old
+    // click-only loop (24 x 600 ms, no key presses) never reached play and the
+    // test failed at staging ('could not get a match into play' on main).
+    // Reload to a known start when the state is not already live, click PLAY,
+    // then keep pressing 'k': the G-128 gate drops the faceoff only once the
+    // player is ready.
+    const st0 = await state();
+    if (st0 !== 'menu' && st0 !== 'play' && st0 !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    if ((await state()) === 'menu') await clickId('playBtn');
+    const tBoot = Date.now();
+    while (Date.now() - tBoot < 30000) {
+      if ((await state()) === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
       await h.wait(600);
     }
     if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
@@ -2016,8 +2029,13 @@ export default [
       }
       return { st: hk.game.state, tilts: out };
     }).catch(() => null);
+    // G-257: wait until the athlete kits are actually posed before sampling -
+    // the kits land a couple of seconds after PLAY, and with the faster boot
+    // the first samples otherwise read unposed feet and starve the count
+    // ('only N samples' on a slow runner, a staging failure, not a blade one)
+    for (let i = 0; i < 16; i++) { const r0 = await sampleSkate(); if (r0 && r0.tilts && r0.tilts.length >= 8) break; await h.wait(500); }
     const tilts = [];
-    for (let i = 0; i < 12 && tilts.length < 200; i++) {
+    for (let i = 0; i < 20 && tilts.length < 100; i++) { // G-257: more, shorter sampling - on a slow runner the old 12 x cap starved below the 80-sample bar ('only N samples', another staging failure); the bars below are unchanged
       const r = await sampleSkate();
       if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
       await h.wait(650);
@@ -2869,6 +2887,52 @@ export default [
     }).catch(() => null);
     if (!count) return 'could not count the skaters on the ice in overtime';
     if (count.home !== 3 || count.away !== 3) return 'H15 FOUND: a tied game goes to overtime with ' + count.home + ' home and ' + count.away + ' away skaters on the ice (5-on-5, clockT reads ' + Math.round(ot.clockT) + ' - untimed) - the owner rule (2026-10-23, rules/hockey.md line 20) is 3-on-3, first goal wins, no shootout';
+    return true;
+  }
+ },
+{
+  id: 'never-g-257-p1',
+  ask: 'NEVER (G-257): the intermission between periods shows a stats card - when the period clock runs out, the break puts the real match stats on screen (shots, saves, faceoffs won on a #statCard), not only the END OF PERIOD banner, and the card clears when the next period starts (rules/hockey.md: intermission between periods, stats card)',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await snap()) !== 'play') return 'could not get a match into play to run down the period clock';
+    await h.eval(() => { window.__hk.game.clockT = 0.4; });
+    let inter = false; const t1 = Date.now();
+    while (Date.now() - t1 < 15000) {
+      if ((await snap()) === 'intermission') { inter = true; break; }
+      await h.wait(400);
+    }
+    if (!inter) return 'the period never entered intermission after the clock ran down';
+    const card = await h.eval(() => {
+      const c = document.getElementById('statCard');
+      if (!c) return null;
+      return { display: c.style.display, visible: c.style.display !== 'none' && c.getClientRects().length > 0, text: (c.textContent || '').replace(/\s+/g, ' ').trim() }; // #statCard is position:fixed, whose offsetParent is always null - judge by layout boxes instead
+    }).catch(() => null);
+    if (!card) return 'no #statCard element exists at the intermission - the break shows only the END OF PERIOD banner';
+    if (!card.visible || card.display === 'none') return 'the stats card is in the DOM but not shown at the intermission (display ' + card.display + ')';
+    if (!/SHOTS/.test(card.text) || !/SAVES/.test(card.text) || !/FACEOFFS WON/.test(card.text)) return 'the intermission card does not carry the match stats - it reads: ' + card.text.slice(0, 90);
+    const t2 = Date.now();
+    let left = false;
+    while (Date.now() - t2 < 16000) {
+      if ((await snap()) !== 'intermission') { left = true; break; }
+      await h.wait(400);
+    }
+    if (!left) return 'the intermission never ended - the game is stuck on the break';
+    const after = await h.eval(() => { const c = document.getElementById('statCard'); return c ? { display: c.style.display, visible: c.style.display !== 'none' && c.getClientRects().length > 0 } : null; }).catch(() => null);
+    if (after && after.visible && after.display !== 'none') return 'the stats card is still on screen after the intermission ended - it must clear when the next period starts';
     return true;
   }
  }
