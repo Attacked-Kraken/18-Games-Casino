@@ -534,20 +534,20 @@ export default [
   // player could catch it). And with the stick released the heading must FREEZE:
   // steering still comes only from the stick, no self-steering (G-27 rule).
   {
-    id: 'play-car-holds-heading-at-speed', title: 'Apex F1: at speed the stick winds the heading gently and never steers by itself (G-73)',
-    run: async (page, h) => {
-      const m = await g66ToRace(page, h); if (m) return h.fail(m);
+    id: 'play-car-holds-heading-at-speed', ask: 'at speed the stick winds the heading gently and never steers by itself',
+    test: async (page, h) => {
+      if (!await g66ToRace(page, h)) return 'race never started';
       const scan = await h.eval(() => { for (let s = 200; s < 5400; s += 50) { const la = window.__test.lineAt(s); if (la.maxV >= 85 && la.rlD <= -3) return s; } return 1100; });
       const stage = await h.eval((sec) => { const T = window.__test; const pc = T.paceCars(); const pi = pc.findIndex(c => c.isPlayer); if (pi < 0) return -1;
         for (let i = 0; i < pc.length; i++) if (i !== pi) T.setCarS(i, 3400 + i * 50);
         T.setCarS(pi, sec - 300); return pi; }, scan);
-      if (stage < 0) return h.fail('no player car on the grid');
+      if (stage < 0) return 'no player car on the grid';
       await g66Driver(page, h, true);
       let fast = null; // settle: the driver runs the player up to speed on the line
       for (let i = 0; i < 30; i++) { const pc = await h.eval(() => window.__test.paceCars()); const p = pc[stage];
         if (p && p.v >= 80) { fast = p; break; } await h.wait(300); }
       await g66Driver(page, h, false);
-      if (!fast) return h.fail('player never reached 80 m/s on the fast section (steering check needs speed)');
+      if (!fast) return 'player never reached 80 m/s on the fast section (steering check needs speed)';
       const rd0 = await h.eval(() => window.__test.paceCars());
       const start = rd0[stage].raceDist;
       await h.eval(() => window.__test.setInput({ gas: true, brake: false, steer: 0.5 }));
@@ -559,28 +559,28 @@ export default [
       for (let i = 0; i < 60; i++) { const pc = await h.eval(() => window.__test.paceCars()); rd2 = pc[stage].raceDist; if (rd2 - rd1 >= 30) break; await h.wait(100); }
       const h2 = await h.eval((pi) => window.__test.heading(pi), stage);
       await h.eval(() => window.__test.setInput({ gas: false, brake: false, steer: 0 }));
-      if (Math.abs(h1.headAngle) > 0.36) return h.fail('half stick over 50 m at speed wound the heading to ' + h1.headAngle.toFixed(2) + ' rad - the car still points at the grass before the player can catch it');
-      if (Math.abs(h2.headAngle - h1.headAngle) > 0.03) return h.fail('with the stick released the heading moved on its own (' + h1.headAngle.toFixed(2) + ' -> ' + h2.headAngle.toFixed(2) + ') - steering must come only from the stick');
-      return h.pass('half stick over 50 m at speed wound the heading to only ' + h1.headAngle.toFixed(2) + ' rad, and with the stick released it stayed at ' + h2.headAngle.toFixed(2) + ' (no self-steering)');
+      if (Math.abs(h1.headAngle) > 0.36) return 'half stick over 50 m at speed wound the heading to ' + h1.headAngle.toFixed(2) + ' rad - the car still points at the grass before the player can catch it';
+      if (Math.abs(h2.headAngle - h1.headAngle) > 0.03) return 'with the stick released the heading moved on its own (' + h1.headAngle.toFixed(2) + ' -> ' + h2.headAngle.toFixed(2) + ') - steering must come only from the stick';
+      return true;
     }
   },
   // G-73 (2): the F1 car is about 20% bigger - the drawn car measured 6.45 m
   // long before G-73, so the player car must now draw about 7.7 m long and
   // about 2.2 m wide (real size from the visible meshes, as in G-66).
   {
-    id: 'play-car-grew-20-percent', title: 'Apex F1: the car is about 20 percent bigger (G-73)',
-    run: async (page, h) => {
+    id: 'play-car-grew-20-percent', ask: 'the car is about 20 percent bigger',
+    test: async (page, h) => {
       await g33Reset(page, h);
       await page.locator('#careerBtn').click();
       await page.locator('#toTeamBtn').click();
       await page.locator('#startBtn').click();
       await h.wait(1200);
       const mesh = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer); return T.carMesh(pi); });
-      if (!mesh) return h.fail('carMesh hook returned nothing for the player');
+      if (!mesh) return 'carMesh hook returned nothing for the player';
       const long = Math.max(mesh.size[0], mesh.size[2]), wide = Math.min(mesh.size[0], mesh.size[2]);
-      if (long < 7.3 || long > 8.2) return h.fail('player car draws ' + long.toFixed(2) + ' m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m)');
-      if (wide < 2.0 || wide > 2.45) return h.fail('player car draws ' + wide.toFixed(2) + ' m wide - expected about 2.2 m after the 20% growth');
-      return h.pass('player car draws ' + long.toFixed(2) + ' m long x ' + wide.toFixed(2) + ' m wide (was 6.45 x 1.86 before G-73)');
+      if (long < 7.3 || long > 8.2) return 'player car draws ' + long.toFixed(2) + ' m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m)';
+      if (wide < 2.0 || wide > 2.45) return 'player car draws ' + wide.toFixed(2) + ' m wide - expected about 2.2 m after the 20% growth';
+      return true;
     }
   },
   // G-77: the race start must open ON the player car on the grid - no tap.
@@ -1145,5 +1145,21 @@ export default [
       if (media !== 0) return media + ' media elements in the page - sound must be decoded buffers only';
       return true;
     },
-  }
+  },
+  {
+    id: 'never-g-253-p1',
+    ask: 'play-test entries are shaped right: play-car-holds-heading-at-speed and play-car-grew-20-percent expose test, not run',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      for (const id of ['play-car-holds-heading-at-speed', 'play-car-grew-20-percent']) {
+        const i = txt.indexOf("id: '" + id + "'");
+        if (i < 0) return 'entry ' + id + ' is missing from the fixes file';
+        const seg = txt.slice(i, i + 400);
+        if (!/test:\s*async/.test(seg)) return 'entry ' + id + ' has no test function';
+        if (/run:\s*async/.test(seg)) return 'entry ' + id + ' still uses run instead of test';
+      }
+      return true;
+    },
+  },
 ];
