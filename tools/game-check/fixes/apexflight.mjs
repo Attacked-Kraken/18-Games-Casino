@@ -933,7 +933,7 @@ export default [
         F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          let landedGt = null;
+          let landedGt = null, sawReason = false;
           const iv = setInterval(() => {
             if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed instead of landing gently in the grass'); }
             if (!F.P.ground) {
@@ -946,9 +946,19 @@ export default [
                 if (!document.getElementById('scoreOv').hidden) { clearInterval(iv); return res('off-runway touchdown scored (it should not)'); }
                 F.P.thr = 0; F.P.pitch = 0;   // pilot cuts power and sits in the grass
               }
+              // The first frames after touchdown can still show the throttle hint
+              // ("FULL THROTTLE - BUILD SPEED") before the off-runway reason lands -
+              // grace of 0.3 game-s, then the reason must be up and STAY up while
+              // the jet sits in the grass (robot check 2026-10-23 11:09 PM: failed
+              // at 0.0 game-s on the hint).
+              const el = gt - landedGt;
               const msg = document.getElementById('msg').textContent || '';
-              if (!/off|runway|grass|no score/i.test(msg)) { clearInterval(iv); return res('sitting in the grass ' + (gt - landedGt).toFixed(1) + ' game-s after touchdown, the no-score reason is gone (msg: "' + msg + '")'); }
-              if (gt - landedGt > 4.5) { clearInterval(iv); return res(true); }
+              const hasReason = /off|runway|grass|no score/i.test(msg);
+              if (el >= 0.3) {
+                if (hasReason) { sawReason = true; if (el > 4.5) { clearInterval(iv); return res(true); } }
+                else if (sawReason) { clearInterval(iv); return res('the no-score reason blinked out ' + el.toFixed(1) + ' game-s after touchdown (msg: "' + msg + '")'); }
+                else if (el > 4.5) { clearInterval(iv); return res('the no-score reason never showed within 4.5 game-s of touchdown (msg: "' + msg + '")'); }
+              }
             }
             if (gt > 100) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'message never settled (game time)'); }   // game time ONLY (VP's alternative, 2026-10-23): a wall cap here was always tighter than the harness's own budget, so slow GPU-bound runs failed on the clock, not the game
           }, 200);
