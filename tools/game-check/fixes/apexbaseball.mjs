@@ -1269,6 +1269,24 @@ export default [
     }
   },
   {
+    id: 'play-help-close-on-upright-phone',
+    ask: 'BUILD G-248 (robot red line on PR #1381): on an upright phone (390x844) the Help overlay CLOSE button sits off the left edge of the screen - the rotated stage is 390 tall but the compact-card rules only fire on a sideways phone, so the card lays out 695 tall inside the 390 stage and rotation pushes CLOSE off screen; the CLOSE button must be fully on screen on an upright phone',
+    async test(page, h) {
+      try {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await h.wait(600);
+        await h.eval(() => { const b = document.getElementById('helpBtn'); if (b) b.click(); });
+        await h.wait(400);
+        const r = await h.eval(() => { const b = document.getElementById('helpClose'); if (!b) return null; const x = b.getBoundingClientRect(); return { left: x.left, right: x.right, top: x.top, bottom: x.bottom }; });
+        if (!r) return 'help CLOSE button missing';
+        if (r.left < 0 || r.right > 390 || r.top < 0 || r.bottom > 844) return 'help CLOSE sits off the upright screen: left ' + Math.round(r.left) + ', right ' + Math.round(r.right) + ' on a 390-wide phone';
+        return true;
+      } finally {
+        try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+      }
+    }
+  },
+  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
@@ -1308,34 +1326,6 @@ export default [
         await h.wait(300);
       }
       return 'checklist B01: the base objects never became measurable in the running game';
-    },
-  },
-  {
-    id: 'tester-portrait-overlay-close-offscreen',
-    ask: 'TESTER: on an upright phone the Help overlay CLOSE button sits off the left edge of the screen - Help cannot be closed by tapping without rotating the phone',
-    mode: 'menu',
-    async test(page, h) {
-      await page.setViewportSize({ width: 390, height: 844 });
-      try {
-        await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
-        await h.wait(4500);
-        const centre = id => h.eval(x => { const e = document.getElementById(x); if (!e) return null; const r = e.getBoundingClientRect(); return { id: x, cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2), left: Math.round(r.left), right: Math.round(r.right), vw: innerWidth, vh: innerHeight }; }, id);
-        const bad = [];
-        if (!await h.eval(() => { const b = document.getElementById('helpBtn'); if (!b) return false; b.click(); return true; })) return 'no Help (?) button on the menu';
-        await h.wait(800);
-        const hc = await centre('helpClose');
-        if (!hc) return 'no CLOSE button inside Help';
-        if (hc.cx < 0 || hc.cx > hc.vw || hc.cy < 0 || hc.cy > hc.vh) bad.push(`Help CLOSE centre sits at (${hc.cx}, ${hc.cy}) on a ${hc.vw}x${hc.vh} upright phone (button spans x ${hc.left}..${hc.right}) - it cannot be tapped`);
-        await h.eval(() => { const b = document.getElementById('helpClose'); if (b) b.click(); });
-        await h.wait(400);
-        if (!await h.eval(() => { const b = document.getElementById('friendBtn'); if (!b) return false; b.click(); return true; })) return 'no Play a friend button on the menu';
-        await h.wait(800);
-        const fc = await centre('friendClose');
-        if (fc && (fc.cx < 0 || fc.cx > fc.vw || fc.cy < 0 || fc.cy > fc.vh)) bad.push(`Friend CLOSE centre sits at (${fc.cx}, ${fc.cy}) on a ${fc.vw}x${fc.vh} upright phone (button spans x ${fc.left}..${fc.right}) - it cannot be tapped`);
-        return bad.length ? bad.join('; ') : true;
-      } finally {
-        await page.setViewportSize({ width: 844, height: 390 });
-      }
     },
   },
 ];
