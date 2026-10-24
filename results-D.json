@@ -1,0 +1,127 @@
+[
+ {
+  "file": "apexmonstertruck.html",
+  "name": "Apex Monster Truck",
+  "start": [
+   "#playBtn"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "masher": {
+    "motion": 50,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 67,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexmonstertruck-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexmoto.html",
+  "name": "Apex Moto",
+  "start": [
+   "#raceBtn"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "masher": {
+    "motion": 67,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexmoto-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexpaperplane.html",
+  "name": "Paper Plane",
+  "start": [
+   "∞ Endless"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 69,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexpaperplane-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexreefdash.html",
+  "name": "Reef Dash",
+  "start": [
+   "∞ Endless"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 1,
+    "againOk": 1,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 100,
+    "overs": 3,
+    "againOk": 3,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 4,
+    "againOk": 4,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "firstOverS": 22,
+  "end": "img/apexreefdash-gas-end.jpg",
+  "status": "CLEAN"
+ }
+]

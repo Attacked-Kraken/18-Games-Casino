@@ -1,0 +1,99 @@
+[
+ {
+  "file": "apexf1.html",
+  "name": "Apex F1 Racing",
+  "start": [
+   "#quickBtn",
+   "#toTeamBtn",
+   "#startBtn",
+   "#qualiSkip",
+   "#raceBtn"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 2
+   },
+   "masher": {
+    "motion": 63,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "swiper": {
+    "motion": 50,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   }
+  },
+  "errors": [],
+  "end": "img/apexf1-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexhockey.html",
+  "name": "Apex Ice Hockey",
+  "start": [
+   "#playBtn"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexhockey-gas-end.jpg",
+  "status": "CLEAN"
+ },
+ {
+  "file": "apexsoccer.html",
+  "name": "Apex Soccer",
+  "start": [
+   "#btnStart"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 50,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexsoccer-gas-end.jpg",
+  "status": "CLEAN"
+ }
+]

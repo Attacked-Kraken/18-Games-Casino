@@ -1,0 +1,360 @@
+{
+ "when": "Oct 24, 2026, 8:38 AM",
+ "sha": "e6ea02d",
+ "results": [
+  {
+   "file": "apexbaseball.html",
+   "name": "Apex Baseball",
+   "start": [
+    "#startBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 87,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexbaseball-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexf1.html",
+   "name": "Apex F1 Racing",
+   "start": [
+    "#quickBtn",
+    "#toTeamBtn",
+    "#startBtn",
+    "#qualiSkip",
+    "#raceBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 2
+    },
+    "masher": {
+     "motion": 63,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "swiper": {
+     "motion": 50,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    }
+   },
+   "errors": [],
+   "end": "img/apexf1-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexflight.html",
+   "name": "Apex Flight",
+   "start": [
+    "text=FREE FLIGHT",
+    "#thrUp",
+    "#thrUp",
+    "#thrUp",
+    "#thrUp"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 97,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 84,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "swiper": {
+     "motion": 93,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexflight-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexhockey.html",
+   "name": "Apex Ice Hockey",
+   "start": [
+    "#playBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexhockey-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexmonstertruck.html",
+   "name": "Apex Monster Truck",
+   "start": [
+    "#playBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 50,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 67,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexmonstertruck-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexmoto.html",
+   "name": "Apex Moto",
+   "start": [
+    "#raceBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 67,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexmoto-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexpaperplane.html",
+   "name": "Paper Plane",
+   "start": [
+    "∞ Endless"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 69,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexpaperplane-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexracer.html",
+   "name": "Exotic Racer Club",
+   "start": [
+    "#mRace",
+    "#plist .pl",
+    "#shGo"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexracer-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexreefdash.html",
+   "name": "Reef Dash",
+   "start": [
+    "∞ Endless"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 1,
+     "againOk": 1,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 3,
+     "againOk": 3,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 4,
+     "againOk": 4,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "firstOverS": 22,
+   "end": "img/apexreefdash-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexsoccer.html",
+   "name": "Apex Soccer",
+   "start": [
+    "#btnStart"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 50,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexsoccer-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apextrackfield.html",
+   "name": "Apex Track & Field",
+   "start": [
+    "#bFree",
+    "#grid button",
+    "#bCardStart"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    }
+   },
+   "errors": [],
+   "end": "img/apextrackfield-gas-end.jpg",
+   "status": "CLEAN"
+  }
+ ]
+}
