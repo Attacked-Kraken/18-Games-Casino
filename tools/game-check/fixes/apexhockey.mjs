@@ -2632,7 +2632,7 @@ export default [
     if (!s || s.state !== 'play') return 'could not get a match into play to stage the crease crash';
     const sH0 = s.sH;
     const t1 = Date.now();
-    let goal = false;
+    let goal = false, maxPx = -999;
     while (Date.now() - t1 < 10000) {
       const staged = await h.eval(() => {
         const hk = window.__hk, pk = hk.puck;
@@ -2643,14 +2643,19 @@ export default [
         hC.pos.set(87, 0.1, 0.5); hC.vel.set(0, 0, 0);         // attacker standing on him
         if (!pk.shot || !pk.shot.t) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; }
         if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
-        return { state: hk.game.state, sH: hk.game.scoreH };
+        return { state: hk.game.state, sH: hk.game.scoreH, px: pk.pos.x };
       }).catch(() => null);
       if (!staged) break;
+      if (typeof staged.px === 'number' && staged.px > maxPx) maxPx = staged.px;
       if (staged.state === 'goal' || staged.sH > sH0) { goal = true; break; }
       await page.waitForTimeout(250);
     }
     if (goal) return 'the crease is NOT protected: the goal counted with the home attacker parked on top of the away goalie inside the crease - rules/hockey.md: no goal if the goalie is pushed';
-    return 'could not stage the crease-crash shot (no goal either way) - staging inconclusive, not a pass';
+    // G-282: the old verdict could never pass - a waved-off goal produces no 'goal' state and no score, so the
+    // loop simply timed out into 'inconclusive'. Pass when the shot genuinely arrived at the crease mouth
+    // (puck past x 86, at the parked goalie) and still did not count.
+    if (maxPx > 86) return true;
+    return 'could not stage the crease-crash shot (puck never reached the crease, max x ' + maxPx.toFixed(1) + ') - staging inconclusive, not a pass';
   },
 },
 {
@@ -3506,6 +3511,97 @@ export default [
     await unfreeze();
     if (!sat) return 'the penalised team touched the puck but the delayed penalty never sat the man - the whistle and the box must follow the touch';
     if (!(sat.penT >= 45)) return 'after the touch the home ' + sat.role + ' sat with penT ' + sat.penT + ' - a check from behind is a 5:00 major (penT 50)';
+    return true;
+  }
+}
+,
+{
+  id: 'never-g-282-p1',
+  ask: 'NEVER (G-282, G-228): the crease is protected - a goal scored while an attacker stands on the defending goalie inside the crease is waved off (no goal, whistle); the same shot with the crease clear counts (rules/hockey.md: no goal if the goalie is pushed)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await state();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the crease crash';
+    const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
+    const scoreH = () => h.eval(() => window.__hk.game.scoreH).catch(() => -1);
+    const stage = (crash) => h.eval((cr) => {
+      const hk = window.__hk, pk = hk.puck;
+      const aG = hk.skaters.find(x => x.team === 'away' && x.goalie);
+      const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+      hk.skaters.forEach(x => { x.thinkT = 999; x.vel.set(0, 0, 0); if (!x.goalie && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.target.set(x.pos.x, 0, x.pos.z); } });
+      aG.pos.set(87, 0.1, 0); aG.vel.set(0, 0, 0);
+      if (cr) { hC.pos.set(87, 0.1, 0.5); } else { hC.pos.set(-70, 0.1, 20); }
+      hC.vel.set(0, 0, 0); hC.target.set(hC.pos.x, 0, hC.pos.z);
+      if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
+      return { state: hk.game.state, sH: hk.game.scoreH, px: pk.pos.x };
+    }, crash).catch(() => null);
+    // phase A: attacker parked on the goalie - the shot must NOT count
+    const sH0 = await scoreH();
+    let arrived = false, counted = false;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 10000) {
+      const r = await stage(true);
+      if (!r) break;
+      if (r.state === 'goal' || r.sH > sH0) { counted = true; break; }
+      if (r.px > 86) arrived = true;
+      await h.wait(250);
+    }
+    if (counted) { await unfreeze(); return 'the goal counted with the home attacker parked on top of the away goalie inside the crease - the crease is not protected'; }
+    if (!arrived) { await unfreeze(); return 'the crease-crash shot never reached the crease mouth - staging inconclusive, not a pass'; }
+    // settle back to play for the control
+    const t2 = Date.now();
+    while (Date.now() - t2 < 20000) { if ((await state()) === 'play') break; await h.wait(500); }
+    if ((await state()) !== 'play') { await unfreeze(); return 'play did not resume after the waved-off goal - cannot run the clear-crease control'; }
+    // phase B: same shot, crease clear - the goal MUST count
+    const sH1 = await scoreH();
+    let countedB = false;
+    const t3 = Date.now();
+    while (Date.now() - t3 < 10000) {
+      const r = await stage(false);
+      if (!r) break;
+      if (r.state === 'goal' || r.sH > sH1) { countedB = true; break; }
+      await h.wait(250);
+    }
+    await unfreeze();
+    if (!countedB) return 'the same shot did not count with the crease clear - the wave-off is not specific to the attacker on the goalie';
+    return true;
+  }
+},
+{
+  id: 'never-g-282-p2',
+  ask: 'NEVER (G-282, G-199): the arena has real bench and box meshes at ice level outside the boards - two team benches on one side, two penalty boxes and the scorekeeper box on the other (venues/rink.md)',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    const r = await h.eval(() => {
+      const root = (() => { let r0 = window.__reality && window.__reality.player; if (!r0) return null; while (r0.parent) r0 = r0.parent; return r0; })();
+      if (!root) return null;
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      let plus = 0, minus = 0;
+      for (const o of meshes) {
+        if (!o.visible) continue;
+        const a = aabb(o);
+        const big = (a[3] - a[0]) > 150 || (a[5] - a[2]) > 130;
+        if (big || a[1] >= 9) continue;
+        if (a[5] > 42.8 && a[2] < 60) plus++;
+        if (a[2] < -42.8 && a[5] > -60) minus++;
+      }
+      return { plus, minus };
+    }).catch(() => null);
+    if (!r) return 'no scene root via __reality.player';
+    if (!((r.plus >= 2 && r.minus >= 3) || (r.plus >= 3 && r.minus >= 2))) return 'bench/box meshes missing or one-sided (z+ strip: ' + r.plus + ', z- strip: ' + r.minus + ') - venues/rink.md wants two team benches on one side and the penalty boxes + scorekeeper box on the other';
     return true;
   }
 }
