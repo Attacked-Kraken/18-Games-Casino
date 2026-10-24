@@ -24,7 +24,7 @@
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(255,59,48,.35); border-radius: 10px; padding: 7px 10px; }
-  #bandBox { display: none; }
+  #bandBox { display: none; position: absolute; top: calc(118px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); white-space: nowrap; }   /* G-283: a distinct chip under the runway box, clear of the stats, the top buttons and the messages - the old full-width strip sat buried under the top chrome */
   #bandBox.in { border-color: rgba(80,255,140,.7); color: #b6ffb6; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; font-size: 12px; }

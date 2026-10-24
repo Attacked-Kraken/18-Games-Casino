@@ -5,7 +5,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 `tools/game-check/fixes/apexflight.mjs`.
 
 ## WHERE THINGS ARE — `apexflight.html` (1264 lines)
-- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; THR button in the pad row, tall slider gone, G-280; QUALITY button ~113; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27, HTML ~101, G-263): 1–154
+- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; THR button in the pad row, tall slider gone, G-280; QUALITY button ~113; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27 (centered chip under the runway box, G-283), HTML ~101, G-263): 1–154
 - Imports, helpers, constants, state (offRwyMsg flag ~187; peakAir ~185, G-232 r1): 155–191
 - Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 192–500
 - The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~529): 501–542
@@ -35,6 +35,8 @@ Touchdown band, free flight (G-268): G-263's chip was challenge-only, but the ro
 Runway numbers upright (G-275): the threshold numbers were painted mirrored for the pilot landing toward them - glyph tops pointed AT the approaching jet, so from behind the jet 36 read upside-down. The number is now flipped vertically in its decal canvas (piano keys untouched); both ends share threshold(), so 18 is fixed too. Test: play-rwy36-reads-correct (reads the 36 decal's own canvas: the 6's loop mass sits toward the pilot).
 
 Takeoff bounce (G-232 r1): a jet that just lifted off and sinks straight back was crash-checked with full landing criteria, so a banked stick at the bounce collapsed the gear on the runway (owner screenshot: liftoff flash, then Hard impact at ALT 0). The banked/nose-down criteria now arm only once peakAir passes gearHeight + 2 m; a hard impact (vs under -3.2) still crashes always. Test: never-g-232-p1.
+
+Band chip uncovered (G-283): the TD band was a full-width strip at the very top, buried under the stats chips and the top buttons, so a pilot landing at 95 kt saw SPD big and centered but no band warning before the rank drop. The chip is now a distinct centered chip under the runway box (top 118 px), clear of every other HUD element, with the same 55-88 kt thresholds and SLOW/IN BAND/FAST states. Test: play-band-uncovered-on-approach.
 
 Fit rule (G-238): every overlay panel fits a 844x390 phone outright - .panel is
 compact (14px padding, slimmer buttons) and capped at calc(100dvh - 16px) with
