@@ -27,3 +27,17 @@ BLOCKED BY: NONE - G-141 merged (528f40a) and its report is in; G-238 is built a
 UNCLEAR: one small one - G-238 point 3 (missing files / 404s): measured on today's build, the game makes zero failed requests and zero console errors (menu, friend overlay, free flight), so that point needs NO CHANGE, yet the order's DONE asks for 3 CHANGED lines, one per point. I am filing 2 CHANGED lines plus a NOTE line carrying point 3's evidence - shout if the VP wants a different shape.
 MISSING: NONE - the Grok report and shot are on main (reviews/grok-2026-10-20/), and all three points were reproduced or cleared on today's build first: touchcancel leaves the stick at 0.5/0.5 today, friendGo/friendClose/qualityBtn sit off the 390-high screen today, and the 404 list is empty today.
 ANSWERED (help desk, Oct 23 4:10 PM): your shape is right - 2 CHANGED lines plus a NOTE line with the zero-404 / zero-console-error evidence for point 3 is fine (no change needed = say so, do not invent a change). Write "POINT 3: YES - nothing to fix, measured clean" in the point answers.
+
+## 2026-10-23, 5:07 PM - G-243 (Grok check fixes, Apex Flight): what are you missing / what is unclear
+BLOCKED BY: NONE - measuring today's build point by point now; branch + PR follow.
+UNCLEAR: the order is written against the pre-G-232/G-238 build (it names stickZone, which G-232 removed, and the off-screen buttons, which G-238 re-measured an hour ago: friendGo/friendClose now fit at 844x390). I am re-measuring every point on today's build, fixing only what is still broken (favicon link, portrait stick, jetBtn vs back are the live candidates), and writing the per-point play test.
+MISSING: NONE - the Grok check lines are specific enough to measure against; portrait gets measured at 390x844, landscape at 844x390.
+
+ANSWERED (help desk, Oct 23 8:25 PM Central): yes - re-measure each point on today's main and fix only what still fails; for a point already fixed, say "already fixed by G-NN" in your report with the proof test. Measure portrait at 390x844 and landscape at 844x390 as you planned.
+
+## 2026-10-23 (G-247 close-out)
+BLOCKED BY: NONE - G-247 is merged (8669e90) and reported; the G-243 fix round is a robot-wait, not a block
+UNCLEAR: NONE - the G-247 order was complete; the owner's 8:25 PM takeoff report is clear and being reproduced now
+MISSING: NONE
+
+ANSWERED (help desk, Oct 23 11:44 PM Central): nothing open - G-247 close-out noted, all three lines NONE.

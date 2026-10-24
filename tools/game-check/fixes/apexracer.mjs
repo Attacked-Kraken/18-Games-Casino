@@ -596,6 +596,34 @@ export default [
     },
   },
   {
+    id: 'never-g-240-p1',
+    ask: 'G-240 fix 1 (owner): the engine must growl deep, not whine - the kit accel layers play slow (rate never above 0.8) through a 1500 Hz lowpass, so their full-throttle spectral centroid lands at or under 850 Hz (measured 683-812 Hz) instead of 1650-2323 Hz',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (src.includes('0.9 + 0.35')) return 'the engine kit still plays at the old high rates (0.9-1.25) - the high-pitched whine';
+      if (!src.includes('0.6 + 0.2')) return 'the deep-growl playback rates (0.6-0.8) are not in the engine sound';
+      if (!src.includes('kitFil') || !src.includes('1500')) return 'the engine layers lost their 1500 Hz lowpass (kitFil)';
+      return true;
+    },
+  },
+  {
+    id: 'play-engine-kit',
+    ask: 'G-240 (owner): the engine sound is the supercar kit in sounds/engines/supercar/ - idle + accel loops crossfaded by throttle, shift and backfire one-shots, tire squeal - decoded as buffers, and every kit file is in the repo',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const files = ['idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_1', 'backfire_2', 'backfire_3'];
+      for (const f of files) if (!fs.existsSync(path.join(repoRoot, 'sounds/engines/supercar/supercar_' + f + '.mp3'))) return 'kit file missing from the repo: supercar_' + f + '.mp3';
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the game code does not use the supercar engine kit (missing ' + n + ')';
+        return true;
+      }, ['engines/supercar', 'idle_loop', 'accel_low_loop', 'accel_mid_loop', 'accel_high_loop', 'tire_squeal_loop', 'shift_up', 'shift_down', 'backfire_']);
+    },
+  },
+  {
     id: 'play-music-buffers',
     ask: 'Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo',
     async test(page, h) {

@@ -268,7 +268,7 @@ export default [
       // never reach the menu): use the game's real screens (.screen.on) and real results buttons.
       let atMenu = false;
       while (budget() && !atMenu) {
-        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
+        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'grid') { const g = document.getElementById('bGridBack'); if (g) g.click(); return false; } if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
         if (!atMenu) await h.wait(500);
       }
       if (!atMenu) return 'could not get back to the menu (a race or results screen is stuck)';
@@ -410,7 +410,7 @@ export default [
       const budget = () => Date.now() - t0 < 27000;
       await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
       await h.eval(() => { if (!window.__tfdrv3) { window.__tfdrv3 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (typeof e.best === 'number' && e.phase === 'mark') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (e.phase === 'flight' && typeof e.ft === 'number' && typeof e.fT === 'number' && e.fT > 0) e.ft = Math.max(e.ft, e.fT - 0.05); if (e.phase === 'mark' && typeof e.resT === 'number') e.resT = Math.min(e.resT, 0.05); if (ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault') { if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
       let start = null, unlocked = false, guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -434,7 +434,7 @@ export default [
       await page.reload({ waitUntil: 'load' });
       await h.wait(1500);
       await h.eval(() => { if (!window.__tfdrv4) { window.__tfdrv4 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; const field = ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault'; if (typeof e.best === 'number') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (field) { const seen = window.__tfChampSeen || (window.__tfChampSeen = {}); const k = ev.id || ev.eng; if (!seen[k]) seen[k] = Date.now(); if (Date.now() - seen[k] > 3000) { e.done = true; return; } if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
       let guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -1129,17 +1129,28 @@ export default [
       // few metres in front of the bar, his body must be ABOVE the bar
       // height while he is over the bar, and he must land ON the mat behind
       // it - not run on the grass and never go over.
-      for (let i = 0; i < 140; i++) {
+      // HARDENED START (G-249): the suite's page-lifetime driver intervals (installed by
+      // earlier tests and never cleared) stride whatever engine is live, and on the robot's
+      // slower navigation they could run the approach through and burn this event's attempts
+      // before the drive below ever started - the reading came back 'takeoff at -1.0m' while
+      // the game itself takes off in front of the bar. Clear the known drivers and start the
+      // event fresh from its test link; the ask, the drive and every assertion below are
+      // unchanged from the owner's test.
+      await h.eval(() => {
+        for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+        try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+        return true;
+      });
+      const base = page.url().split('?')[0];
+      await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+      for (let i = 0; i < 30; i++) {
         const s = await h.eval(() => {
           const on = document.querySelector('.screen.on');
           const e = window.__tf && window.__tf.eng();
-          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null };
-        });
-        if (!s.screen && s.ev === 'hj') break;
-        if (s.screen === 'menu') await h.eval(() => { document.getElementById('bFree').click(); return true; });
-        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /high jump/i.test(x.textContent)); if (b) b.click(); return true; });
-        else if (s.screen === 'card') await h.eval(() => { document.getElementById('bCardStart').click(); return true; });
-        await h.wait(200);
+          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, st: e && typeof e.jumpState === 'function' };
+        }).catch(() => ({ screen: 'x' }));
+        if (!s.screen && s.ev === 'hj' && s.st) break;
+        await h.wait(1500);
       }
       const res = await h.eval(() => {
         const e = window.__tf && window.__tf.eng();
@@ -2510,5 +2521,299 @@ async test(page, h) {
   if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
   return true;
 }
+},{
+id: 'play-free-results-return-to-events',
+title: 'OWNER 2026-10-23: after a Free Play event the results bring you back to the free play menu to pick something else, and the event menu has its BACK button at the top (to the main menu)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=200m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '200m'); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 200m did not start from the test link';
+  await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return e.done;
+  });
+  let onResults = false;
+  for (let i = 0; i < 40 && !onResults; i++) {
+    onResults = await h.eval(() => { const on = document.querySelector('.screen.on'); return !!(on && on.id === 'results'); }).catch(() => false);
+    if (!onResults) await h.wait(1500);
+  }
+  if (!onResults) return 'the results screen never appeared after the free play 200m';
+  const chk = await h.eval(() => {
+    const next = document.getElementById('bResNext');
+    const menu = document.getElementById('bResMenu');
+    const out = { nextLabel: next ? next.textContent : '', menuLabel: menu ? menu.textContent : '' };
+    if (menu) menu.click();
+    return out;
+  });
+  await h.wait(500);
+  const after = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (!/RETRY EVENT/.test(chk.nextLabel || '')) return 'expected the free play results (RETRY EVENT button), got next=' + chk.nextLabel;
+  if (after !== 'grid') return 'after a free play event the results exit went to "' + after + '" - the owner: it must always bring you back to the free play menu (CHOOSE EVENT) to pick something else';
+  const top = await h.eval(() => {
+    const back = document.getElementById('bGridBack');
+    const firstEv = document.querySelector('#gridEvents button');
+    if (!back || !firstEv) return { ok: false, why: 'missing back or events' };
+    const br = back.getBoundingClientRect(), er = firstEv.getBoundingClientRect();
+    return { ok: br.top < er.top && br.top >= 0 && br.bottom <= window.innerHeight, backTop: Math.round(br.top), evTop: Math.round(er.top) };
+  });
+  if (!top || !top.ok) return 'the event menu BACK button is not at the top of the panel (back top=' + (top && top.backTop) + ', first event top=' + (top && top.evTop) + ') - the owner circled the top of the panel: on his phone it sits under all 29 events where it cannot be reached';
+  await h.eval(() => { const b = document.getElementById('bGridBack'); if (b) b.click(); });
+  await h.wait(500);
+  const home = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (home !== 'menu') return 'the event menu BACK button went to "' + home + '", not the main game menu';
+  return true;
 }
+},{
+id: 'play-60m-field-starts-together',
+title: 'G-244 (art director): the 60m field waits on ONE start line until the player starts - no rivals racing off alone, no 7th place at 0m with the clock running',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '60m' && e.ai); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 60m did not start from the test link';
+  const held = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    for (let step = 0; step < 60 * 5; step++) e.update(1 / 60);
+    const rigs = __tf.rigs();
+    const px = rigs[0].group.position.x, pz = rigs[0].group.position.z;
+    const line = rigs.slice(0, 7).map(r => ({ vis: r.group.visible, dx: +(r.group.position.x - px).toFixed(1), dz: +(r.group.position.z - pz).toFixed(1) }));
+    return { phase: e.phase, time: +e.time.toFixed(2), place: e.place, rPos: +e.r.pos.toFixed(1), aiPos: e.ai.map(a => +a.pos.toFixed(1)), line };
+  });
+  if (!held) return 'the held-start measurement failed';
+  if (held.aiPos.some(p => p > 0.5)) return 'the field raced off without the player (rivals at ' + JSON.stringify(held.aiPos) + 'm after 5s with the player still on the line) - the robot play picture: one runner on the track, the field gone';
+  if (held.place !== 1) return 'with the whole field level on the start line the HUD place reads ' + held.place + ' - the place must count only the runners on the track (all level, nobody ahead)';
+  if (held.time > 0.05) return 'the race clock ran to ' + held.time + 's while the player was still on the start line at 0m';
+  if (held.line.some(r => !r.vis || Math.abs(r.dx) > 2.5)) return 'not every runner stands on the one start line: ' + JSON.stringify(held.line);
+  const fin = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return { done: e.done, place: e.place, aiPos: e.ai.map(a => +a.pos.toFixed(0)) };
+  });
+  if (!fin || !fin.done) return 'once the player started striding the 60m never finished';
+  if (fin.aiPos.some(p => p < 30)) return 'once the player started, the field did not race with him: ' + JSON.stringify(fin.aiPos);
+  if (!(fin.place >= 1 && fin.place <= 7)) return 'the finishing place ' + fin.place + ' is outside the field that exists (7 runners)';
+  return true;
+}
+},{
+id: 'never-g-249-p1',
+title: 'G-249 r1 (owner): jumping was too hard - the green window on the timing bar was tiny (high jump 0.10-0.22 wide, ~0.1-0.2s), the long jump angle swept at 95 deg/s and you fouled running past the line while setting it, the triple jump marker ran at 1.6/s',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  const waitEv = async (id) => {
+    for (let i = 0; i < 25; i++) {
+      const ok = await h.eval((a) => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === a.id); }, { id }).catch(() => false);
+      if (ok) return true;
+      await h.wait(1200);
+    }
+    return false;
+  };
+  const clean = () => h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    return true;
+  }).catch(() => false);
+  // HIGH JUMP: green width + sweep speed in the bar phase
+  await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('hj')) return 'the high jump did not start from the test link';
+  await clean();
+  const hj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'approach' && guard++ < 800) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= e.zoneLo && e.r.pos <= e.zoneHi) e.action();
+    }
+    if (e.phase !== 'bar') return { stage: 'nobar', phase: e.phase };
+    const gw = e.gw;
+    e.marker = 0; e.mdir = 1;
+    let path = 0, prev = 0;
+    for (let i = 0; i < 50; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    return { stage: 'ok', gw: +gw.toFixed(3), rate: +path.toFixed(2) };
+  });
+  if (!hj || hj.stage !== 'ok') return 'the high jump never reached the timing bar (stage ' + (hj && hj.stage) + ')';
+  if (hj.gw < 0.19) return 'the high jump green window is still only ' + (hj.gw * 2).toFixed(2) + ' of the bar wide - the owner: it is difficult to get in between green with the line bar (target: at least 0.40 wide)';
+  if (hj.rate > 0.9) return 'the high jump timing bar still sweeps at ' + hj.rate.toFixed(2) + '/s - the green lasts about a tenth of a second (target: 0.75/s, green at least half a second)';
+  // LONG JUMP: setting the angle must not foul, and the needle must be settable
+  await page.goto(base + '?test=lj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('lj')) return 'the long jump did not start from the test link';
+  await clean();
+  const lj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'angle') return { stage: 'noangle', phase: e.phase, foul: e.foul };
+    let path = 0, prev = e.ang;
+    for (let i = 0; i < 10; i++) { e.update(0.05); path += Math.abs(e.ang - prev); prev = e.ang; }
+    for (let i = 0; i < 20; i++) e.update(0.05);
+    return { stage: 'ok', sweep: +path.toFixed(1), phase: e.phase, foul: e.foul, moved: +(e.r.pos - 30).toFixed(1) };
+  });
+  if (!lj || lj.stage !== 'ok') return 'the long jump never reached the angle phase (stage ' + (lj && lj.stage) + ')';
+  if (lj.foul || lj.phase === 'mark') return 'setting the long jump angle still fouls - crossing the line while you set it ends the jump (owner: make the jump button easy, freely controlled)';
+  if (lj.phase !== 'angle' && lj.phase !== 'flight') return 'the long jump left the angle phase the wrong way (phase ' + lj.phase + ')';
+  if (lj.sweep > 30) return 'the long jump angle still sweeps at ' + lj.sweep.toFixed(0) + ' deg per half-second - too fast to set (target: 55 deg/s)';
+  // TRIPLE JUMP: marker speed
+  await page.goto(base + '?test=tj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('tj')) return 'the triple jump did not start from the test link';
+  await clean();
+  const tj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'phase') return { stage: 'nophase', phase: e.phase };
+    let path = 0, prev = e.marker;
+    for (let i = 0; i < 25; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    e.marker = 0.32; const before = e.qs.length; e.action();
+    const q = e.qs.length > before ? e.qs[e.qs.length - 1] : -1;
+    return { stage: 'ok', rate: +path.toFixed(2), q: +q.toFixed(2) };
+  });
+  if (!tj || tj.stage !== 'ok') return 'the triple jump never reached its timing phases (stage ' + (tj && tj.stage) + ')';
+  if (tj.rate > 0.55) return 'the triple jump marker still runs at ' + tj.rate.toFixed(2) + ' per half-second (1.6/s) - the fastest tap in the game (target: 1.0/s)';
+  if (tj.q < 0.72) return 'a triple jump tap just inside the old green edge still scores only ' + tj.q.toFixed(2) + ' - the quality window was not widened with the green';
+  return true;
+}
+},{
+    id: 'tester-chk-t04',
+    mode: 't04',
+    ask: 'CHECKLIST T04 (G-259): the relay baton changeover zone is 30 m long (rules/trackfield.md) - the green zone markings painted on the track in the relay event must span 30 m, within 3%',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the relay event: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const upm = (window.__reality && window.__reality.unitsPerMetre) || 1;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len / upm);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no relay changeover-zone markings found in the relay event';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long - the markings are ' + (100 * (30 - m.mean) / 30).toFixed(0) + '% short';
+      return true;
+    }
+  }
+,{
+    id: 'tester-chk-t05',
+    mode: 't05',
+    ask: 'CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as "w" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the "w" mark instead of counting as a best',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 100m sprint: ' + nav;
+      const driven = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e) return null;
+        let side = 0, steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+          e.update(1 / 60);
+          steps++;
+        }
+        return { done: e.done };
+      }).catch(() => null);
+      if (!driven) return 'no sprint engine found in the 100m race';
+      if (!driven.done) return 'the 100m sprint never finished in game-time stepping';
+      for (let w = 0; w < 10; w++) {
+        const shown = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const mk = document.getElementById('resMark');
+          return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+        }).catch(() => false);
+        if (shown) break;
+        await h.wait(300);
+      }
+      const m = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        const on = document.querySelector('.screen.on');
+        const windKeys = Object.keys(e).filter(k => /wind/i.test(k));
+        const resMark = document.getElementById('resMark') ? document.getElementById('resMark').textContent : '';
+        const bodyText = document.body.innerText || '';
+        const windShown = /wind/i.test(bodyText) || /[+-]\d\.\d\s*m\/s/.test(resMark);
+        let bests = null;
+        try { bests = localStorage.getItem('tfapex_bests'); } catch (err) {}
+        return { screen: on ? on.id : null, windKeys, resMark, windShown, bests };
+      }).catch(() => null);
+      if (!m) return 'no sprint engine found in the 100m race';
+      if (!m.windShown) return 'the game models no wind at all: the sprint engine has no wind value (' + m.windKeys.length + ' wind keys), the results screen shows "' + m.resMark + '" with no wind reading and no "w" mark, and the time was saved as a best (' + m.bests + ') - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as "w") can never apply';
+      return true;
+    }
+  }
 ];

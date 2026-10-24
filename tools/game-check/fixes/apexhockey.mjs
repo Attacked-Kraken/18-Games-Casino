@@ -3273,11 +3273,11 @@ export default [
     return true;
   }
  },
-{
-  id: 'tester-chk-h14',
-  mode: "h14",
-  ask: "CHECKLIST H14 (G-234): a major penalty is 5 minutes (rules/hockey.md: \"Penalties (2 minutes, or 5 for major)\"). Commit the harshest foul the game offers - a check from behind on the puck carrier - six times: at least one of the resulting penalties must be a 5:00 major (box clock reads 5:00 and/or the banner says MAJOR).",
-  async test(page, h) {
+  {
+    id: "tester-chk-h14",
+    mode: "h14",
+    ask: "CHECKLIST H14 (G-234): a major penalty is 5 minutes (rules/hockey.md: \"Penalties (2 minutes, or 5 for major)\"). Commit the harshest foul the game offers - a check from behind on the puck carrier - six times: at least one of the resulting penalties must be a 5:00 major (box clock reads 5:00 and/or the banner says MAJOR).",
+    async test(page, h) {
     const snap = () => h.eval(() => {
       const bEl = document.getElementById('banner');
       return {
@@ -3325,6 +3325,6 @@ export default [
     if (drew === 0) return 'could not draw a penalty from the check-from-behind foul - cannot judge the major';
     if (sawMajor || maxPenT >= 45) return true;
     return 'H14 FOUND: six check-from-behind fouls (the harshest foul the game offers) drew ' + drew + ' penalties, every one a 2:00 minor (box penT=20, banner always MINOR, never MAJOR) - rules/hockey.md says a major penalty is 5 minutes, but the game has no major-penalty path at all';
-  }
-}
+  },
+  },
 ];

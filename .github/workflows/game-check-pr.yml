@@ -1,14 +1,14 @@
 name: Game check (PR)
 # Owner Oct 21 2026 "split the good from repairs so it doesn't take 50 min - do both": the robot on a PULL REQUEST plays
 # the games SIDE BY SIDE (one robot per game, up to 8 at once) and one small step ("check") gives the verdict - about
-# 8-10 minutes instead of 50. A Claude change to the robot's own files plays only 2 reference games here; main's full
+# 8-10 minutes instead of 50. A Claude change to the robot's own files plays ONE small reference game here (Paper Plane, owner Oct 23 2026); main's full
 # check after the merge (game-check.yml, auto-undo) covers the rest. The 55-minute limit stays as the safety net.
 # The verdict job is NAMED "check" so the owner's GitHub rule ("check" must pass) and the merge robot keep working.
 on:
   pull_request:
   workflow_dispatch:        # robots start it on their own branch (robot/*) - a PR opened by a robot gets no PR event
 concurrency:
-  group: game-check-pr-${{ github.event.pull_request.number || github.ref }}
+  group: game-check-pr-${{ github.head_ref || github.ref_name }}   # one run per PR branch - a PR run and a robot retry/dispatch on the same branch share it (owner Oct 23 6:40 PM)
   cancel-in-progress: true
 permissions:
   contents: read
@@ -52,10 +52,12 @@ jobs:
           elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
             # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
             # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
-            MODE="robot-only"; G="apexhockey.html,apexf1.html,"
+            MODE="robot-only"; G="apexpaperplane.html,"   # owner Oct 23 5:24 PM: ONE small reference game - a robot-only PR can't be killed by Hockey
           fi
           if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
+          # owner Oct 23 2026 7:47 PM: Hockey (56 play tests) is split into 4 robots that each play a quarter of its tests (TEST_PART k/n)
+          LIST=$(echo "$LIST" | sed 's/\bapexhockey\.html\b/apexhockey.html@1of4,apexhockey.html@2of4,apexhockey.html@3of4,apexhockey.html@4of4/')
           JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
           echo "games=$JSON" >> $GITHUB_OUTPUT
           echo "list=$LIST" >> $GITHUB_OUTPUT
@@ -72,7 +74,12 @@ jobs:
   play:
     needs: plan
     if: needs.plan.outputs.games != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # owner Oct 23 2026 6:19 PM: the browser install failed 4 tries even after the apt fix (#1369's own run) - play jobs run INSIDE
+    # Microsoft's official Playwright image: Chromium + WebKit + their system libraries are already in it, nothing to download.
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
     timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
     strategy:
       fail-fast: false
@@ -81,31 +88,31 @@ jobs:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install the test browser
+      - name: Test browser (already in the image)
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          # Oct 22 2026: this download hung 33 min on main and held every later main check; 10 min cap, one retry (Oct 23: the 4 min cap made every PR play job fail at the install step)
-          timeout 600 npx playwright install --with-deps chromium webkit || timeout 600 npx playwright install --with-deps chromium webkit
+          ls /ms-playwright
       - name: Play ${{ matrix.game }}
         run: |
-          python3 -m http.server 8811 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 &
           sleep 2
           if [ "${{ matrix.game }}" = "models" ]; then
             ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           else
-            ONLY="${{ matrix.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+            M="${{ matrix.game }}"; GAME="${M%@*}"; PART=""
+            case "$M" in *@*of*) P="${M#*@}"; PART="${P%of*}/${P#*of}";; esac
+            ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
       - name: iPhone Safari pass
-        if: always() && matrix.game != 'models'
+        if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of') && !contains(matrix.game, '@4of')
         continue-on-error: true
         run: |
           [ -f game-check-out/results.json ] || exit 0
-          python3 -m http.server 8812 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8812 >/dev/null 2>&1 &
           sleep 2
-          ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+          M="${{ matrix.game }}"; ONLY="${M%@*}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -149,7 +156,10 @@ jobs:
         run: |
           if [ "$OUTCOME" = "success" ]; then bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" PASSED; exit 0; fi
           R=game-check-out/blockers.txt
-          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game. Push an empty commit or ask the VP to re-run it." > $R; fi
+          if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game." > $R; fi
+          # Oct 23 2026 owner: "could not play it / played 0" is the robot's own trouble - never tell the Muse to push (that restarts everything)
+          if [ "$PLAY" != "success" ] && grep -qiE "could not play it|played 0 game|robot itself broke" "$R" game-check-out/*.txt 2>/dev/null; then
+            bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" ROBOT "$R"; exit 0; fi
           bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" FAILED "$R"
       - uses: actions/upload-artifact@v4
         if: always()
