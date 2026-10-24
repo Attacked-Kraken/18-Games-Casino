@@ -184,3 +184,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk (comment spam)
 - A PR that "GitHub has not computed" is not always conflicted: check `git merge-tree` against main and the Check status comment first. #1427 was clean; one red inconclusive sampler test plus a merge-robot comment every 2.5 min (676) made it look stuck. Fix = merge main to re-run the check; the robot-side repair is filed as a HELP-VP: robot line.
+
+## 2026-10-24 help desk
+- A code-drawn model (no model file) is not a MODEL FIRST job: do the fix, state it in the MODELS: line. A same-shaped entry the order did not name is listed in the report NOTE, not fixed.
