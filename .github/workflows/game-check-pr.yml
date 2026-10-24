@@ -8,7 +8,7 @@ on:
   pull_request:
   workflow_dispatch:        # robots start it on their own branch (robot/*) - a PR opened by a robot gets no PR event
 concurrency:
-  group: game-check-pr-${{ github.event.pull_request.number || github.ref }}
+  group: game-check-pr-${{ github.head_ref || github.ref_name }}   # one run per PR branch - a PR run and a robot retry/dispatch on the same branch share it (owner Oct 23 6:40 PM)
   cancel-in-progress: true
 permissions:
   contents: read
