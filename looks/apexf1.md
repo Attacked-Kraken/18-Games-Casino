@@ -47,6 +47,7 @@ Feature → line numbers in apexf1.html (on the G-239 branch: through G-224 + th
 - 2026-10-23: The quali GAP readout must never sit at a fake +0.0s, and SKIP QUALI must never cover the speedometer (every frame of the recordings) (G-239)
 - 2026-10-23: APEX ARCADE text must read correctly from both sides of every board and gantry - never mirrored (seen video1-01, video2-09) (G-239)
 - 2026-10-23: The engine must be the grand_prix kit - one failed sound file must never kill the kit and leave the synth ("sounds like a rubber chicken") (G-239)
+- 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame
 - video1-01..07 + video2-01..09, ALL frames: '5s PENALTY' pinned top-centre for 50 s of clean on-road driving; stick knob dead-centre while the car corners at 113-191 MPH and gains places (P4→P3) hands-free; SKIP QUALI pill covering the speed digits; GAP frozen at +0.0s while the name behind it changes.
