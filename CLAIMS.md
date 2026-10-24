@@ -169,6 +169,11 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-271 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-271.md, CLAIMS.md | test/g-271-apextrackfield |
+| G-265 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-265-w5.md, CLAIMS.md | build/g-265-apexf1 |
+| T-10-0954 | window 10 | jobs/T-10-0954.md, CLAIMS.md | test/t-10-0954 |
+| G-269 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-269.md, CLAIMS.md | build/g-269-apexbaseball |
+| T-10-0920 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0920.md, CLAIMS.md | test/t-10-0920 |
 | T-10-0926 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0926.md, CLAIMS.md | test/t-10-0926 |
 | T-10-0929 | window 10 | jobs/T-10-0929.md, CLAIMS.md | test/t-10-0929 |
 | T-10-0934 | window 10 | jobs/T-10-0934.md, CLAIMS.md | test/t-10-0934 |
