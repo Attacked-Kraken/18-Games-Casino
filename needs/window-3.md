@@ -41,3 +41,8 @@ UNCLEAR: NONE - the G-247 order was complete; the owner's 8:25 PM takeoff report
 MISSING: NONE
 
 ANSWERED (help desk, Oct 23 11:44 PM Central): nothing open - G-247 close-out noted, all three lines NONE.
+
+## 2026-10-24 (G-263)
+BLOCKED BY: NONE - build PR #1471 merged b54dc98, robot green; report PR #1485 filed, merge robot's turn.
+UNCLEAR: report filename - the 7:39 AM order said jobs/G-263-w3.md (never plain jobs/G-263.md), the 8:08 AM nudge template said jobs/G-263.md; filed as jobs/G-263-w3.md (PR #1485) per the job-specific order - confirm that stands.
+MISSING: NONE - band display, play test, ?test=band link and report are all in place.
