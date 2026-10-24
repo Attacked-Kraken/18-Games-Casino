@@ -3097,9 +3097,10 @@ async test(page, h) {
         }
         if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
         let m = null;
-        for (let i = 0; i < 25 && !(m && m.count > 0); i++) {
+        // Robot 2026-10-24: the mesh was not placed within 10 s late in the shared-page suite - poll up to 60 s.
+        for (let i = 0; i < 60 && !(m && m.count > 0); i++) {
           try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
-          if (!(m && m.count > 0)) await h.wait(400);
+          if (!(m && m.count > 0)) await h.wait(1000);
         }
         if (!m || m.count <= 0) return 'the 300m Hurdles never placed its hurdle mesh';
         const perLane = Math.round(m.count / 8);
