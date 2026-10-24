@@ -178,3 +178,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk (merge robot)
 - A green pull request sat unmerged because a push cancels the old run's bare `play` job and nothing replaces that name (the new ones are `play (<game>.html)`), so the merge robot read the cancelled leftover as a FAILED check. The robot now ignores a cancelled check whose matrix children exist on the same commit. Rule for a Muse: a PR whose Check status says PASSED while the robot comment says "FAILED: play" is the robot's leftover - file HELP-VP: robot, do not push.
+
+## 2026-10-24 VP (hand merges)
+- Hand merge = say so (Team talk + PR comment, who and why). Read the whole HELP file and the PR timeline before 'I don't know'. A robot fix is proven only by the robot doing the job on a real PR (merged_by github-actions[bot]).
