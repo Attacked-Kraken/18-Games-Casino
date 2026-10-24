@@ -2793,4 +2793,48 @@ export default [
     });
   },
 },
+ {
+  id: 'tester-chk-h15',
+  mode: 'h15',
+  ask: 'H15: a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3, then count the skaters on the ice in overtime: 3 a side (plus the goalies), and the first overtime goal must end the game',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'menu') await clickId('playBtn');
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the tie';
+    await h.eval(() => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 3; g.scoreH = 1; g.scoreA = 1; g.clockT = 0.4;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+    }).catch(() => {});
+    let ot = null;
+    for (let i = 0; i < 30; i++) {
+      ot = await h.eval(() => {
+        const hk = window.__hk; if (!hk || !hk.game) return null;
+        return { period: hk.game.period, state: hk.game.state, clockT: hk.game.clockT };
+      }).catch(() => null);
+      if (ot && ot.period >= 4 && (ot.state === 'play' || ot.state === 'faceoff')) break;
+      await h.wait(700);
+    }
+    if (!ot || ot.period < 4) return 'a tied game at the end of period 3 never reached overtime (period stuck at ' + (ot ? ot.period : '?') + ') - the owner rule is 3-on-3 overtime, first goal wins, no shootout';
+    await h.wait(2500);
+    const count = await h.eval(() => {
+      const hk = window.__hk; const c = { home: 0, away: 0 };
+      for (const s of hk.skaters) {
+        if (s.goalie) continue;
+        if (s.boxT > 0) continue;
+        if (Math.abs(s.pos.x) <= 100.5 && Math.abs(s.pos.z) <= 42.8) c[s.team]++;
+      }
+      return c;
+    }).catch(() => null);
+    if (!count) return 'could not count the skaters on the ice in overtime';
+    if (count.home !== 3 || count.away !== 3) return 'H15 FOUND: a tied game goes to overtime with ' + count.home + ' home and ' + count.away + ' away skaters on the ice (5-on-5, clockT reads ' + Math.round(ot.clockT) + ' - untimed) - the owner rule (2026-10-23, rules/hockey.md line 20) is 3-on-3, first goal wins, no shootout';
+    return true;
+  }
+ }
 ];
