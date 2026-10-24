@@ -13,6 +13,7 @@ import re
 import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
+CLOSE_CONFLICT_H = 2
 MAX_AGE_H = 72   # Oct 23 2026: 12 h hid dirty TEST PR #1200 for 18 h (analyst); only truly old PRs are left alone
 OK = {"success", "skipped", "neutral"}
 # merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
@@ -313,6 +314,14 @@ def main():
             # .gitattributes) - pushes the fix to the PR's branch and restarts its check. Anything else stays for a Muse.
             if fix_notes_conflict(pr):
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
+            elif (now - made).total_seconds() > CLOSE_CONFLICT_H * 3600 and re.match(r"\s*(BUILD|TEST)\b", title) \
+                    and not any(f["filename"].startswith(("jobs/HELP", "needs/")) for f in files):
+                # owner Oct 24 2026 (04's item 5): a BUILD / TEST PR that stays conflicted 2+ h is closed with the reason and its
+                # window is told to re-file from fresh main (the branch stays, nothing is deleted). HELP / needs PRs are never closed.
+                tell_pr(n, pr["head"]["sha"], "CLOSED by the merge robot: this PR conflicted with main for over %d h and the robot could not combine it. "
+                        "Nothing was deleted - the branch is still there. Re-file: start a fresh branch from today's main and re-apply your change." % CLOSE_CONFLICT_H)
+                if gh("repos/%s/pulls/%d" % (REPO, n), method="PATCH", fields={"state": "closed"}) is not None:
+                    say("#%d: CLOSED - conflicted over %d h, window told to re-file" % (n, CLOSE_CONFLICT_H)); continue
             revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
         if full.get("mergeable") is False:
