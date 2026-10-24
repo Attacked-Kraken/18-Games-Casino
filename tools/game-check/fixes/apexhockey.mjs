@@ -2283,6 +2283,165 @@ export default [
   }
  },
 {
+  id: 'play-blades-stay-level-roll',
+  ask: 'OWNER VIDEO (2026-10-23): blades stay level in roll too, not only pitch - a planted blade\'s plate normal stays near horizontal, standing at the faceoff and in live play (the away stance stood rolled 12-26 deg; in play the plates flipped up toward the legs)',
+  async test(page, h) {
+    const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if (st0 !== 'faceoff') { // the standing phase must read a real faceoff stance - boot fresh unless one is already set
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    }
+    const start = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      window.__attAll = () => {
+        function eig3(C) {
+          let a = [[C[0], C[1], C[2]], [C[1], C[3], C[4]], [C[2], C[4], C[5]]];
+          let vv = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+          for (let sweep = 0; sweep < 12; sweep++) {
+            if (Math.abs(a[0][1]) + Math.abs(a[0][2]) + Math.abs(a[1][2]) < 1e-12) break;
+            for (const [pp, qq] of [[0, 1], [0, 2], [1, 2]]) {
+              const apq = a[pp][qq]; if (Math.abs(apq) < 1e-14) continue;
+              const phi = 0.5 * Math.atan2(2 * apq, a[qq][qq] - a[pp][pp]);
+              const c = Math.cos(phi), s = Math.sin(phi);
+              for (let t = 0; t < 3; t++) { const x = a[t][pp], y = a[t][qq]; a[t][pp] = c * x - s * y; a[t][qq] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = a[pp][t], y = a[qq][t]; a[pp][t] = c * x - s * y; a[qq][t] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = vv[t][pp], y = vv[t][qq]; vv[t][pp] = c * x - s * y; vv[t][qq] = s * x + c * y; }
+            }
+          }
+          const idx = [0, 1, 2].sort((i, j) => a[j][j] - a[i][i]);
+          return idx.map((i2) => [vv[0][i2], vv[1][i2], vv[2][i2]]);
+        }
+        const out = [];
+        for (const S of hk.skaters) {
+          if (S.goalie || !S._blade || !S.kit || !S.kit.parts || !S.kit.parts.steel) continue;
+          const st3 = S.kit.parts.steel;
+          const V3 = st3.skeleton.bones[0].position.constructor;
+          const v = new V3();
+          S.g.updateMatrixWorld(true); st3.skeleton.update();
+          for (let k = 0; k < 2; k++) {
+            const ids = S._blade[k]; if (!ids || ids.length < 8) continue;
+            let n = 0, Sx = 0, Sy = 0, Sz = 0, Sxx = 0, Syy = 0, Szz = 0, Sxy = 0, Sxz = 0, Syz = 0, low = 1e9;
+            for (const ix of ids) { st3.getVertexPosition(ix, v); Sx += v.x; Sy += v.y; Sz += v.z; Sxx += v.x * v.x; Syy += v.y * v.y; Szz += v.z * v.z; Sxy += v.x * v.y; Sxz += v.x * v.z; Syz += v.y * v.z; if (v.y < low) low = v.y; n++; }
+            const cx = Sx / n, cy = Sy / n, cz = Sz / n;
+            const C = [Sxx - n * cx * cx, Sxy - n * cx * cy, Sxz - n * cx * cz, Syy - n * cy * cy, Syz - n * cy * cz, Szz - n * cz * cz];
+            const e = eig3(C);
+            out.push({ roll: +(Math.asin(Math.min(1, Math.abs(e[2][1]))) * 57.3).toFixed(1), h: +(low + S.athWrap.position.y).toFixed(3) });
+          }
+        }
+        return out;
+      };
+      return 'ok';
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (start !== 'ok') return 'blades-roll test: ' + start;
+    // STANDING phase: at the faceoff, before the drop, every planted blade must lie level
+    // (wait until the athletes are really posed - early samples read the menu showcase)
+    let ready = false;
+    for (let i = 0; i < 26 && !ready; i++) {
+      const n0 = await h.eval(() => window.__attAll().length).catch(() => 0);
+      if (n0 >= 20) ready = true; else await h.wait(300);
+    }
+    const stand = [];
+    for (let i = 0; i < 4; i++) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) stand.push(r.roll);
+      await h.wait(250);
+    }
+    if (ready && stand.length >= 40) {
+      stand.sort((a, b) => a - b);
+      const p90 = stand[Math.floor(stand.length * 0.9)];
+      if (p90 > 10) return 'standing at the faceoff, blades sit rolled: p90 roll ' + p90 + ' deg (bar 10) - the plates lean sideways on the ice instead of lying level';
+    }
+    // drop the puck and judge LIVE play
+    for (let i = 0; i < 40; i++) {
+      const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+      if (s2 === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(400);
+    }
+    const rows = [];
+    const t0 = Date.now();
+    while (Date.now() - t0 < 7000) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) rows.push(r.roll);
+      await h.wait(120);
+    }
+    if (rows.length < 200) return 'too few planted blade samples in live play: ' + rows.length;
+    rows.sort((a, b) => a - b);
+    const med = rows[Math.floor(rows.length / 2)];
+    const bad = rows.filter((r) => r > 25).length;
+    const share = bad / rows.length;
+    if (med > 6) return 'planted blades sit rolled in live play: median roll ' + med + ' deg (bar 6) - the plates lean sideways instead of lying level';
+    if (share > 0.02) return 'planted blades flip rolled in live play: ' + (share * 100).toFixed(1) + '% of samples over 25 deg roll (bar 2%) - blades come up toward the legs';
+    return true;
+  },
+},
+{
+  id: 'play-chasers-not-mirrored',
+  ask: 'OWNER VIDEO (2026-10-23): the two AI chasers on a puck carrier do not mirror each other - they close from different sides instead of stacking onto the same point and skating through each other',
+  async test(page, h) {
+    const boot = async () => {
+      const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+      if (st0 !== 'play' && st0 !== 'faceoff') {
+        await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+        await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+        await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      }
+      for (let i = 0; i < 40; i++) {
+        const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+        if (s2 === 'play') return true;
+        await page.keyboard.press('k').catch(() => {});
+        await h.wait(400);
+      }
+      return false;
+    };
+    if (!(await boot())) return 'chasers test: could not get a match into play';
+    const stage = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      for (const s of hk.skaters) s.thinkT = 9999;
+      const C = hk.skaters.find((s) => s.team === 'home' && s.role === 'C');
+      const L = hk.skaters.find((s) => s.team === 'away' && s.role === 'LW');
+      const R = hk.skaters.find((s) => s.team === 'away' && s.role === 'RW');
+      const put = (s, x, z) => { s.pos.set(x, 0, z); s.vel.set(0, 0, 0); s.g.position.set(x, 0, z); s.target.set(x, 0, z); };
+      hk.skaters.forEach((s, i) => { if (s !== C && s !== L && s !== R) put(s, -95 + (i % 5) * 2, s.team === 'home' ? 38 : -38); });
+      put(C, -20, 0); put(L, 6, 10); put(R, 6, -10);
+      L.thinkT = 0.05; R.thinkT = 0.05;
+      hk.puck.owner = C; hk.puck.lastTouch = 'home'; hk.puck.pos.set(C.pos.x + 1.2, 0.06, C.pos.z);
+      window.__pair = [L, R]; window.__C0 = C;
+      return hk.game.state;
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (stage !== 'play') return 'chasers test: could not stage in play (state ' + stage + ')';
+    // Judge the chase while it develops: sample the pair's TARGET separation while the
+    // carrier still owns the puck (the literal defect: both chasers are handed the same
+    // target point, separation 0, and skate in lockstep), plus the pair's closest
+    // approach over the whole run (they end up stacked on the puck).
+    const tseps = [], allD = [];
+    const tEnd = Date.now() + 9000;
+    while (Date.now() < tEnd) {
+      const r = await h.eval(() => {
+        const [a, b] = window.__pair, C = window.__C0, hk = window.__hk;
+        return {
+          d: Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z),
+          tsep: Math.hypot(a.target.x - b.target.x, a.target.z - b.target.z),
+          own: hk.puck.owner === C,
+          dC: Math.min(Math.hypot(a.pos.x - C.pos.x, a.pos.z - C.pos.z), Math.hypot(b.pos.x - C.pos.x, b.pos.z - C.pos.z)),
+        };
+      }).catch(() => null);
+      if (r) { allD.push(r.d); if (r.own && r.dC < 26) tseps.push(r.tsep); if (tseps.length >= 8 && !r.own) break; }
+      await h.wait(100);
+    }
+    if (tseps.length < 5) return 'chasers test: too few developed-chase samples (carrier held the puck while closing): ' + tseps.length;
+    tseps.sort((a, b) => a - b);
+    const tmed = tseps[Math.floor(tseps.length / 2)];
+    if (tmed < 2.0) return 'the two chasers share one target point (median target separation ' + tmed.toFixed(2) + ' units) - they mirror each other onto the carrier instead of closing from two sides';
+    const min = Math.min(...allD);
+    if (min <= 1.8) return 'the two chasers stack onto the same point: closest approach ' + min.toFixed(2) + ' units - they mirror each other onto the carrier';
+    const overlap = allD.filter((d) => d < 1.6).length / Math.max(1, allD.length);
+    if (overlap > 0.1) return 'the two chasers skate through each other: ' + (overlap * 100).toFixed(0) + '% of the chase inside 1.6 units';
+    return true;
+  },
+},
+{
   id: 'tester-chk-h01',
   mode: 'h01',
   ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
