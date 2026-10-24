@@ -172,3 +172,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk
 - A tester asked where the Mac's NEXT list lives: it is not a repo file. A typed number is yours; a self-started round is T-<window>-HHMM, never a G-number.
+
+## 2026-10-24, 03:42 AM help desk
+- Notes PR with no shared history with main can never merge (PR #1441 again): re-file its newest section on a fresh branch from main, never merge main into it, and keep stale CLAIMS rows out.
