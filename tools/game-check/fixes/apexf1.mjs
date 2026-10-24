@@ -126,6 +126,17 @@ async function g66PaceTest(page, h, pickFastest) {
   return true;
 }
 
+  async function g265PortraitOverlaps(page, h) {
+    let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+    await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+    let rects = null;
+    if (await g66ToRace(page, h)) {
+      rects = await h.eval(() => { const rect = id => { const e = document.querySelector(id); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
+        return { stick: rect('#stick'), pit: rect('#btnPit'), cam: rect('#btnCam') }; }).catch(() => null);
+    }
+    if (vp) await h.page.setViewportSize(vp).catch(() => {});
+    return rects;
+  }
 export default [
   {
     id: 'game-starts-not-black',
@@ -1191,6 +1202,59 @@ export default [
       if (moved < 30) return 'gas-only car covered only ' + moved.toFixed(0) + ' m - the drive never got going';
       if (maxHead < 0.5) return 'gas only, stick centred, the heading stayed at ' + maxHead.toFixed(2) + ' rad on a sharp curve - the car is still following the road by itself';
       if (maxD < 10) return 'gas only, stick centred, the car stayed on the road (|d| max ' + maxD.toFixed(1) + ' m) - it is still driving itself round';
+      return true;
+    },
+  },
+  // G-265 R1: on the upright phone (390x844) teamMenu must fit with no
+  // scrolling and no race button may sit on the stick - the robot's upright
+  // check found teamMenu scrolling 132 px (START WEEKEND 43 px below the
+  // fold) and the stick overlapping PIT by 1440 px^2 and CAM by 720 px^2,
+  // because the landscape compact rules do not apply there.
+  {
+    id: 'never-g-265-p1',
+    ask: 'on the upright phone teamMenu fits with no scrolling',
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      let out = null;
+      if (!await g33Reset(page, h, null)) out = 'reset did not reach the main menu';
+      if (!out) { await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.wait(800); }
+      if (!out) {
+        const tm = await h.eval(() => { const m = document.querySelector('#teamMenu'); if (!m) return null;
+          const sb = document.querySelector('#startBtn').getBoundingClientRect();
+          return { scrollH: m.scrollHeight, clientH: m.clientHeight, scrollW: m.scrollWidth, clientW: m.clientWidth, startBottom: Math.round(sb.bottom) }; }).catch(() => null);
+        if (!tm) out = 'teamMenu never opened';
+        else if (tm.scrollH > tm.clientH) out = 'teamMenu needs scrolling on the upright phone (content ' + tm.scrollH + ' px in ' + tm.clientH + ' px)';
+        else if (tm.scrollW > tm.clientW) out = 'teamMenu overflows sideways on the upright phone (content ' + tm.scrollW + ' px in ' + tm.clientW + ' px)';
+        else if (tm.startBottom > tm.clientH) out = 'START WEEKEND sits below the fold on the upright phone';
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
+  {
+    id: 'play-stick-clears-pit',
+    ask: 'on the upright phone the stick never overlaps the PIT button',
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.pit) return 'stick or PIT never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.pit.x + r.pit.w) - Math.max(r.stick.x, r.pit.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.pit.y + r.pit.h) - Math.max(r.stick.y, r.pit.y);
+      if (x > 0 && y > 0) return 'the stick overlaps PIT by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: 'play-stick-clears-cam',
+    ask: 'on the upright phone the stick never overlaps the CAM button',
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.cam) return 'stick or CAM never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.cam.x + r.cam.w) - Math.max(r.stick.x, r.cam.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.cam.y + r.cam.h) - Math.max(r.stick.y, r.cam.y);
+      if (x > 0 && y > 0) return 'the stick overlaps CAM by ' + Math.round(x * y) + ' px^2 on the upright phone';
       return true;
     },
   },

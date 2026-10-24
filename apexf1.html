@@ -33,6 +33,15 @@
     #menu .title, #menu .menuSub, #menu .card { flex:0 0 100%; }
     #menu .bigbtn { flex:0 0 46%; margin:3px; }
   }
+  /* G-265 R1: the upright phone (390x844) gets the same no-scroll fit the sideways phone has - teamMenu's stack measured 976 px tall, 132 px over the fold, START WEEKEND 43 px below it; tighten only this menu */
+  @media (orientation:portrait) {
+    #teamMenu { justify-content:flex-start; padding:8px 12px; }
+    #teamMenu .title { font-size:20px !important; margin:2px 0 4px; }
+    #teamMenu .card { margin:3px auto; padding:8px 10px; width:min(740px,92vw); } /* 94vw rounded 1px past the overlay's padded content box (390 - 2x12px) */
+    #teamMenu .pick { padding:5px 8px; }
+    #teamMenu .bigbtn { margin:4px auto; padding:8px 12px; }
+    #teamMenu input[type=text] { padding:7px 10px; margin-bottom:2px; }
+  }
   .hidden { display:none !important; }
   h1.title { font-size:clamp(30px,6vw,58px); font-weight:900; letter-spacing:2px; background:linear-gradient(180deg,#fff,#ff5a5a 55%,#c00); -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; }
   h1.title small { display:block; font-size:clamp(11px,2vw,15px); letter-spacing:8px; color:#9fb6d8; -webkit-text-fill-color:#9fb6d8; margin-top:4px; }
@@ -95,7 +104,7 @@
   body.touch #stick { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnGas, body.touch #btnBrake, body.touch #btnRev { bottom:calc(250px + env(safe-area-inset-bottom, 0px)); }
   body.touch #btnDRS, body.touch #btnERS { bottom:calc(170px + env(safe-area-inset-bottom, 0px)); }
-  body.touch #btnPit, body.touch #btnCam { bottom:calc(270px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #btnPit, body.touch #btnCam { bottom:calc(295px + env(safe-area-inset-bottom, 0px)); } /* G-265 R1: was 270px - the stick (bottom 170 + 120 tall) overlapped both buttons by 20px on the upright phone, where the landscape compact rules do not apply */
   #rotateHint { display:none; position:fixed; left:50%; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); z-index:40; background:#060b14dd; border:1px solid #ffd76a66; color:#ffd76a; font-size:13px; font-weight:700; padding:8px 16px; border-radius:20px; pointer-events:none; }
   @media (pointer:coarse) and (orientation:portrait) { #rotateHint { display:block; } }
   /* landscape phones: compact bottom-corner buttons, HUD stays top — no overlaps */
