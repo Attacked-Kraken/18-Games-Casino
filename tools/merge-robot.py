@@ -215,10 +215,14 @@ def restart_cancelled(pr):
     newest = max(mine, key=lambda r: (r.get("created_at") or "", r.get("run_attempt") or 0))
     if newest.get("status") != "completed" or newest.get("conclusion") != "cancelled":
         return False                      # still running, finished, or a newer run already replaced it
-    marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], newest["id"])
+    # Oct 24 2026 3:10 PM (PR #1542: its 'plan' job was cancelled twice in a row by GitHub - runner starvation 12:00-12:30 PM - and the
+    # robot's ONE restart per run left it red for 3 h): up to 3 restarts per commit, each for a new attempt, at least 8 min apart.
+    marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], newest["id"], newest.get("run_attempt") or 1)
     comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
     if any(marker in (c.get("body") or "") for c in comments):
-        return False                      # already restarted this one once - a second cancel is left for a human to look at
+        return False                      # this attempt was already restarted
+    if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
+        return False                      # 3 restarts of this commit already - left for a human (the Mac speaks at 45 min)
     when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
     how = "re-ran it"
     if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
@@ -262,8 +266,10 @@ def restart_cancelled_other(pr):
             continue
         if comments is None:
             comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
-        marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], r["id"])
+        marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], r["id"], r.get("run_attempt") or 1)
         if any(marker in (c.get("body") or "") for c in comments):
+            continue
+        if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
             continue
         when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         if gh("repos/%s/actions/runs/%d/rerun" % (REPO, r["id"]), method="POST") is None:
