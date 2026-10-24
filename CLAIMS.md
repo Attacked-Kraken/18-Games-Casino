@@ -164,11 +164,13 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-255 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/QUEUE.md, jobs/G-255.md, CLAIMS.md | test/g-255-apexbaseball |
+| G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-264 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
 | G-264 | window 10 | checklists/apextrackfield.md, jobs/G-264.md, CLAIMS.md | test/g-264-apextrackfield |
-| G-253 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-253-w5.md, CLAIMS.md | build/g-253-apexf1 |
 | G-262 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-262.md, CLAIMS.md | build/g-262-apexbaseball |
 | G-260 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-260.md, CLAIMS.md | test/g-260-apextrackfield |
 | G-256 | window 10 | checklists/apextrackfield.md, jobs/G-256.md, CLAIMS.md | test/g-256-apextrackfield |
