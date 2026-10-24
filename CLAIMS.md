@@ -165,9 +165,15 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-255 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/QUEUE.md, jobs/G-255.md, CLAIMS.md | test/g-255-apexbaseball |
+| G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-262 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-262.md, CLAIMS.md | build/g-262-apexbaseball |
+| G-260 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-260.md, CLAIMS.md | test/g-260-apextrackfield |
+| G-256 | window 10 | checklists/apextrackfield.md, jobs/G-256.md, CLAIMS.md | test/g-256-apextrackfield |
+| G-257 | window 10 | jobs/G-257-w10.md, CLAIMS.md | test/g-257-apextrackfield |
+| G-259 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-259.md, CLAIMS.md | test/g-259-apextrackfield |
 | G-252 | window 10 | checklists/apextrackfield.md, jobs/G-252.md, CLAIMS.md | test/g-252-apextrackfield |
 | G-247 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-247.md | build/g-247-apexflight |
 | G-248 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-248.md, CLAIMS.md | build/g-248-apexbaseball |
@@ -260,3 +266,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
 | G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
 | G-255 | window 10 | jobs/G-255.md, CLAIMS.md | test/g-255-apextrackfield |
+| G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |

@@ -2181,6 +2181,7 @@ window.__test = {
   get stadium(){ return { loaded: _park.loaded, aniso: _park.aniso || 0, fans: _park.fans, kitField: _park.kitField, kitFieldLive: !!(_park.kitTex && _park.fieldMesh && _park.fieldMesh.material && !Array.isArray(_park.fieldMesh.material) && _park.fieldMesh.material.map === _park.kitTex), night: _park.night }; },
   get kitAudio(){ return { crack: !!Mus.kit.crack, glove: !!Mus.kit.glove, cheer: !!Mus.kit.cheer, amb: !!Mus.kit.amb }; },
   get ball(){ return { x:+ball.position.x.toFixed(1), y:+ball.position.y.toFixed(1), z:+ball.position.z.toFixed(1), visible: ball.visible }; },
+  get flightT(){ return G.phase === 'flight' ? flight.T : null; },   // G-262: the thrown pitch's own game time (fast 0.95 / curve 1.18 / change 1.38) so the timing test judges each flight against its own T, never a hardcoded fastball
   get input(){ return { aimX: aim.x, aimY: aim.y, dragging: aimPid !== null }; },
   get umpire(){ const a = umpireMesh.g.position, c = catcherMesh.g.position; return { x:a.x, z:a.z, visible:umpireMesh.g.visible, catcherZ:c.z, dedup: fielders.P === pitcherMesh && fielders.C === catcherMesh }; },
   get fx(){ try{ return { slowmoActive: !!(fx && fx.slowmoT > 0) }; }catch(e){ return { slowmoActive: false }; } },

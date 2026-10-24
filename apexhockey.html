@@ -786,7 +786,7 @@ window.__hk.game = {
   // a fresh match (period 1, 0-0, full clock): a player gets this from the
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
-  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -960,7 +960,7 @@ window.__mus = Mus;
 /* ================= actions ================= */
 function nearestSkater(team,pos,skipGoalie=true){
   let best=null,bd=1e9;
-  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue;
+  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue; if(s.otOut) continue; // G-261: a benched OT skater is out of the play
     const d=(s.pos.x-pos.x)**2+(s.pos.z-pos.z)**2; if(d<bd){bd=d;best=s;} }
   return best;
 }
@@ -1092,10 +1092,23 @@ function maybeSwapLines(){
   }
   tagFor=null; // the name tag redraws for whoever is controlled now
 }
+function otBenchRank(s){ return s.role==='RW'?0:s.role==='LD'?1:s.role==='RD'?2:s.role==='LW'?3:4; } // the C never sits - he takes the draw
+function otLines(){ // G-261 (H15, owner decision 2026-10-23): overtime is 3-on-3, first goal wins - in period 4 two skaters a side take the bench for the whole OT (boxT marks them off the ice); regulation clears the bench again
+  const benchAt = { home:[[-16,-(HZ-1.6)],[-23,-(HZ-1.6)]], away:[[16,-(HZ-1.6)],[23,-(HZ-1.6)]] };
+  for(const t of TEAM_IDS){
+    const list = (t==='home'?homeSkaters:awaySkaters).filter(x=>!x.goalie);
+    if(period>3){
+      const cand = list.filter(x=>!x.inBox && x!==controlled).sort((a,b)=>otBenchRank(a)-otBenchRank(b)).slice(0,2);
+      list.forEach(x=>{ const out = cand.includes(x); x.otOut = out; x.boxT = out?999:0;
+        if(out){ const sp = benchAt[t][cand.indexOf(x)]; x.benchSpot = sp; placeSkater(x, sp[0], sp[1], t==='home'?0:Math.PI); x.vel.set(0,0,0); x.target.set(sp[0],0,sp[1]); } });
+    } else list.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; });
+  }
+}
 function faceoff(dx,dz,label){
   maybeSwapLines();
   offArm=null;
   setupFaceoffPositions(dx,dz);
+  otLines();
   state='faceoff'; stateT=1.4; foDropAt=gameNow; updateHUD(); // G-257: the first clean grab inside 4 s of the drop wins the faceoff on the card
   if(label) banner(label,'',1400);
   commSay('faceoff');
@@ -1156,6 +1169,7 @@ function aiSkater(s,dt){
   if(isControlled&&humanDriving){ s._chasing=false; return; } // input-driven while the human is actually driving him
   // G-135: untouched, the human's skater plays with his team (defends, chases, takes the puck back) instead of standing at centre - but he never attacks for the human (see the carrier branch)
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
+  if(s.otOut){ if(s.benchSpot) s.target.set(s.benchSpot[0],0,s.benchSpot[1]); s._chasing=false; return; } // G-261: benched for the OT - stays on the bench
   if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
   const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
@@ -1191,8 +1205,12 @@ function aiSkater(s,dt){
   }
   if(!weHave && isChaser){
     const lead=oppHas?0.25:0;
-    s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
-                 puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
+    const tx0=puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3), tz0=puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3);
+    if(mates[1]===s && mates[0]!==s){ // owner video (2026-10-23): both chasers were handed the SAME target point, so they skated in lockstep - mirroring each other and overlapping. The second man takes the far side of the puck, opposite the first chaser's approach, so the pair closes in a pincer instead of stacking.
+      let ox=tx0-mates[0].pos.x, oz=tz0-mates[0].pos.z; const od=Math.hypot(ox,oz);
+      if(od>1.2){ ox/=od; oz/=od; s.target.set(tx0+ox*4.5,0,tz0+oz*4.5); }
+      else s.target.set(tx0-(carrier?Math.sin(carrier.facing):0)*4.5,0,tz0-(carrier?Math.cos(carrier.facing):1)*4.5);
+    } else s.target.set(tx0,0,tz0);
     s._chasing=true;
     // active pressure: poke it loose when right on the carrier - an IDLE carrier gets stripped
     if(carrier && !carrier.goalie) pokeCheck(s, carrier);
@@ -1454,7 +1472,7 @@ function stepPuck(dt){
     }
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
+    if(d<grabR&&canGrab&&!s.otOut){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1667,7 +1685,8 @@ function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camer
   if(!s.ath||!s.ath.object) return;
   if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
   const B=s._feet;
-  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); let tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02){ tx=Math.sin(s.facing); tz=Math.cos(s.facing); tl=1; } foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  const rotT=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, ty=Lf.y-F.y, tz=Lf.z-F.z, tl=Math.hypot(tx,ty,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(tx/tl,ty/tl,tz/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
   if(s.goalie){ rot('l',0.3); rot('r',0.3); return; }
   const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s._blade||!st.skeleton) return;
   for(let pass=0; pass<2; pass++){
@@ -1690,6 +1709,22 @@ function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camer
       const w=h<=0.09?1:(h>=0.30?0:1-(h-0.09)/0.21); if(w<=0) continue;
       const corr=Math.max(-1.15,Math.min(1.15,-ang*w));
       if(Math.abs(corr)>0.004){ rot(k===0?'l':'r',corr); if(Math.abs(corr)>maxCorr) maxCorr=Math.abs(corr); }
+      // owner video (2026-10-23): pitch alone left the blades ROLLED - the plate tilted sideways, far edge up toward the leg (standing away roll measured 12-26 deg; roll was never measured). Measure roll from the blade plate's NORMAL: inverse-iterate the 3x3 vertex covariance twice from the across direction (eigenvalues are ~35x apart, so it lands on the normal) - an across-slope regression divides by the across variance, which vanishes on a flat blade and invented phantom rolls of +/-30 deg that the correction then chased frame to frame.
+      const Cyy=Syy-n*cy*cy;
+      let nx=-az, ny=0, nz=ax; // seed: the across direction in plan (the normal of a flat blade)
+      for(let it=0; it<2; it++){
+        const det=Cxx*(Cyy*Czz-Czy*Czy)-Cxy*(Cxy*Czz-Czy*Cxz)+Cxz*(Cxy*Czy-Cyy*Cxz);
+        if(Math.abs(det)<1e-9){ nx=0; break; }
+        const ix=((Cyy*Czz-Czy*Czy)*nx+(Cxz*Czy-Cxy*Czz)*ny+(Cxy*Czy-Cxz*Cyy)*nz)/det;
+        const iy=((Cxz*Czy-Cxy*Czz)*nx+(Cxx*Czz-Cxz*Cxz)*ny+(Cxy*Cxz-Cxx*Czy)*nz)/det;
+        const iz=((Cxy*Czy-Cxz*Cyy)*nx+(Cxy*Cxz-Cxx*Czy)*ny+(Cxx*Cyy-Cxy*Cxy)*nz)/det;
+        const il=Math.hypot(ix,iy,iz); if(il<1e-9){ nx=0; break; }
+        nx=ix/il; ny=iy/il; nz=iz/il;
+      }
+      if(nx||nz){ if(nx*-az+nz*ax<0){ nx=-nx; ny=-ny; nz=-nz; } // orient the normal along +across
+        const rho=Math.asin(Math.max(-1,Math.min(1,ny))); // the plate's roll: how far its normal tips out of the horizontal
+        const rcorr=Math.max(-0.65,Math.min(0.65,rho*w));
+        if(Math.abs(rcorr)>0.004){ rotT(k===0?'l':'r',rcorr); if(Math.abs(rcorr)>maxCorr) maxCorr=Math.abs(rcorr); } }
     }
     if(maxCorr<0.03) break; // settled - skip the refinement pass (most standing frames)
   }
