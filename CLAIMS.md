@@ -165,6 +165,8 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-280 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-280.md | build/g-280-apexflight |
+| G-275 r1 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-275-w3.md | build/g-275-apexflight-r1b |
+| G-232 r1 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight-r1 |
 | G-275 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-275.md | build/g-275-apexflight |
 | G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
