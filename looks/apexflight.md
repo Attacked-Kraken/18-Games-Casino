@@ -44,6 +44,8 @@ resetInputs (play test play-stick-never-stays-stuck).
 - No control overlapping another control - the throttle is a slim button in the button row
 - 2026-10-22: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-121)
 - 2026-10-22: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-121)
+- 2026-10-23: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-243)
+- 2026-10-23: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-243)
 - 2026-10-23: Takeoff: a full-throttle roll must end in a real climb - never lift off, wallow at rotate speed and sink back onto the gear (owner video, no job number)
 - 2026-10-23: Frame time clamps at zero - a negative first frame threw the parked jet under the runway (y=-14), below ground contact, where it could never take off, land or crash (owner fix)
 
