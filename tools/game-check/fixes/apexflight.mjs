@@ -1018,4 +1018,51 @@ export default [
       });
     },
   },
+  {
+    id: "play-band-shows-on-approach",
+    ask: "G-263: the 55-88 kt touchdown band shows during the landing approach, and says whether the speed is inside it",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // final: on the centreline, 80 m up, 1.8 km out - inside the runway box's 9000 m window
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 36); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          let step = 0, ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            // gentle-descent trim (same pattern as never-g-243-p1): keeps speed stable
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            }
+            const b = document.getElementById('bandBox');
+            const txt = b ? (b.textContent || '') : '';
+            const vis = !!(b && b.style.display === 'block');
+            if (step === 0) {
+              if (!b) { clearInterval(iv); return res('no #bandBox element on approach'); }
+              if (vis && /55/.test(txt) && /88/.test(txt) && /IN BAND/i.test(txt)) { step = 1; F.P.vel.set(0, -2, 20); }
+              else if (ticks > 40) { clearInterval(iv); return res('band not showing IN BAND on approach after 40 ticks (visible: ' + vis + ', text: "' + txt + '")'); }
+            } else if (step === 1) {
+              if (/SLOW/i.test(txt)) { step = 2; F.P.vel.set(0, -2, 50); }
+              else if (ticks > 70) { clearInterval(iv); return res('band never flipped to SLOW at ~39 kt (text: "' + txt + '")'); }
+            } else {
+              if (/FAST/i.test(txt)) { clearInterval(iv); return res(true); }
+              else if (ticks > 100) { clearInterval(iv); return res('band never flipped to FAST at ~97 kt (text: "' + txt + '")'); }
+            }
+          }, 250);
+        });
+      });
+    },
+  },
 ];
