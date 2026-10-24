@@ -149,3 +149,5 @@ FIXED: Oct 23 10:43 PM Central per GitHub - game PR #1432 merged: the entry for 
 
 HELP-VP: art director · Track & Field · new fail this run: the live race camera had a wall between it and the runner at the 100 m start / 400 m curve in 1 of 4 samples · target: 0 of 4 samples, camera clamped inside the stadium with no wall in view
 FIXED: job queued for window 4 (camera clamped inside the stadium, 0 of 4 samples with a wall in view). Oct 24 01:29 AM Central.
+
+HELP-VP: robot · tools/merge-robot.py · PR #1452 (TEST G-260, Check status PASSED, mergeable clean) never merges: the robot says "not merged - checks FAILED: check, play" because a push cancelled the old run's bare `play` check-run and nothing supersedes that name (new ones are `play (apextrackfield.html)`). Ready patch on branch help-desk/1761300000 (commit ca1c315, PR #1454, 8 lines in tools/merge-robot.py: drop a cancelled check whose "<name> (" matrix children exist; tested on #1452's real check-run list). File guard blocks it for a help-desk branch, so a vp- branch must carry it; then merge #1452 (or let the robot). Written Oct 24 06:41 AM Central.
