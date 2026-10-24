@@ -1296,7 +1296,7 @@ export default [
       }
       return 'checklist B01: the base objects never became measurable in the running game';
     },
-  },,
+  },
   // G-246 (window 7): checklist B03 - REALITY.md says the ball is 0.074 m wide
   // and the bat 0.86 m long. Units first (per the checklist card): the game's
   // own field comment says 1 unit = 3 ft = 0.9144 m, and the REALITY hook
@@ -1307,7 +1307,7 @@ export default [
   {
     id: 'tester-chk-b03',
     mode: 'b03',
-    run: async (page, ok) => {
+    async test(page, h) {
       const t0 = Date.now();
       let m = null;
       while (Date.now() - t0 < 25000) {
@@ -1338,12 +1338,11 @@ export default [
         if (m) break;
         await new Promise(r => setTimeout(r, 400));
       }
-      ok(m != null, 'checklist B03: ball and bat meshes not reached in the scene');
-      if (!m) return;
+      if (!m) return 'checklist B03: ball and bat meshes not reached in the scene';
       const ballM = Math.round(m.ball * 1000) / 1000, batM = Math.round(m.bat * 1000) / 1000;
-      ok(Math.abs(m.ball - 0.074) / 0.074 <= 0.15 && Math.abs(m.bat - 0.86) / 0.86 <= 0.15,
-        `checklist B03: ball measures ${ballM} m wide and bat ${batM} m long - REALITY.md says ball 0.074 m, bat 0.86 m (within 15%)`);
-    }
+      if (Math.abs(m.ball - 0.074) / 0.074 <= 0.15 && Math.abs(m.bat - 0.86) / 0.86 <= 0.15) return true;
+      return `checklist B03: ball measures ${ballM} m wide and bat ${batM} m long - REALITY.md says ball 0.074 m, bat 0.86 m (within 15%)`;
+    },
   },
   {
     id: 'tester-portrait-overlay-close-offscreen',
