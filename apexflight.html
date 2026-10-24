@@ -319,12 +319,19 @@ scene.add(sun); scene.add(sun.target);
     d.fillStyle = '#e8e8e8';
     for (let i = 0; i < 6; i++) d.fillRect(28 + i * 36, 24, 20, 150);       // piano keys
     d.font = 'bold 150px monospace'; d.textAlign = 'center';
+    // G-275: the number was painted mirrored for the pilot landing toward it -
+    // its glyph tops pointed AT the approaching jet instead of away, so from
+    // behind the jet it read upside-down. Flip the number vertically in the
+    // canvas (keys untouched); both ends share threshold(), so both are fixed
+    d.save(); d.translate(0, 755); d.scale(1, -1);
     d.fillText(num, 128, 430);                                             // the number, ~14 m tall
+    d.restore();
     const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso; dt.wrapS = THREE.RepeatWrapping; dt.repeat.x = -1;   // ground-plane decals render mirrored from the cockpit without this flip - the numbers must read the correct way round (looks MUST)
     const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
       new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
     dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
     dm.position.set(0, 0.045, zEnd); dm.receiveShadow = true; scene.add(dm);
+    dm.userData.num = num; (window.__rwyDecals = window.__rwyDecals || []).push(dm);   // G-275: test hook only - lets play-rwy36-reads-correct read the decal canvas
   }
   threshold('36', -RWY_HALF + 30, false);
   threshold('18', RWY_HALF - 30, true);
