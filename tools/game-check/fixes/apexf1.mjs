@@ -1242,4 +1242,39 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-kit-retries-until-loaded',
+    ask: 'a dropped engine-kit fetch must not leave the synth carrying the race: the kit keeps retrying until it loads',
+    async test(page, h) {
+      const unwrap = () => h.eval(`window.__kitBlock = false;`).catch(() => {});
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.eval(() => {
+        window.__kitBlock = true;
+        if (!window.__kitFetchOrig) {
+          window.__kitFetchOrig = window.fetch;
+          window.fetch = function (u, o) {
+            const s = String(u);
+            if (window.__kitBlock && s.includes('grand_prix')) return Promise.reject(new Error('blocked for test'));
+            return window.__kitFetchOrig(u, o);
+          };
+        }
+      }).catch(() => {});
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      await h.wait(1200); await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) { await unwrap(); return 'the race never started'; }
+      await h.wait(3000);
+      await unwrap();
+      let ready = null;
+      for (let i = 0; i < 20; i++) {
+        const st = await h.eval(`window.__test.kitAudio()`).catch(() => null);
+        if (st && st.ready) { ready = st; break; }
+        await h.wait(1000);
+      }
+      await h.eval(`window.__test.setInput({ gas:false, steer:0 })`).catch(() => {});
+      if (!ready) return 'the engine kit never recovered after the fetch came back: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`).catch(() => null));
+      return true;
+    },
+  },
 ];

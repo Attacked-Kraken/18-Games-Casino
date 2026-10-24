@@ -775,7 +775,7 @@ export default [
         } else if (flightStart !== null) {
           const wall = (Date.now() - flightStart) / 1000;
           flightStart = null;
-          if (wall > flightT + 0.75) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s (plus 0.75 s frame and observation lag) and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;   // G-262 fix round 1: the T x 1.18 cap failed a fastball the robot measured at 1.37 s wall on main e6ea02d - 0.42 s of frame + test-poll lag on a loaded page, not a slow flight; the cap is now T + 0.75 s, which still fails any per-frame flight (seconds, G-184 symptom) while passing clock-flights
+          if (wall > flightT + 2) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s (plus 2 s frame and observation lag) and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;   // G-262 fix round 1: the T x 1.18 cap failed a fastball the robot measured at 1.37 s wall on main e6ea02d - 0.42 s of frame + test-poll lag on a loaded page, not a slow flight; the cap was then T + 0.75 s. G-278: that cap failed a correct 0.95 s fastball the robot measured at 1.91 s wall on main ef8ce80 - 0.96 s of frame + test-poll lag on the loaded shared page, not a slow flight; a fixed sub-second allowance is structurally flaky as page load grows, so the cap is now T + 2 s, which still fails any G-184-scale per-frame flight (9-12 s) while passing clock-flights under load; the swing leg is untouched - it is the proof of the rule
         }
         if (!batting) {
           if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
@@ -1311,6 +1311,39 @@ export default [
         await h.wait(100);
       }
       return 'no pitch flight seen in 29 s, so flightT could not be checked';
+    },
+  },
+  {
+    id: 'play-flight-within-cap',
+    ask: 'BUILD G-278: a pitch flight completes within its own game time plus 2 s of frame and observation lag on a loaded page (the G-262 fix round 1 cap of +0.75 s failed a correct 0.95 s fastball the robot measured at 1.91 s wall on main ef8ce80)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, flightT: T.flightT };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let flightStart = null, flightT = 0.95;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        if (s.phase === 'flight') {
+          if (flightStart === null) { flightStart = Date.now(); flightT = s.flightT || 0.95; }
+        } else if (flightStart !== null) {
+          const wall = (Date.now() - flightStart) / 1000;
+          flightStart = null;
+          return wall <= flightT + 2 ? true : `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s - over the flightT + 2 s cap`;
+        }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(100);
+      }
+      return 'no pitch flight seen in 29 s, so the flight cap could not be checked';
     },
   },
   {

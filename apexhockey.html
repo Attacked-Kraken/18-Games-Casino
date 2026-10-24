@@ -198,7 +198,7 @@ const HX = RINK.L/2, HZ = RINK.W/2;
 const GOAL_LINE = 89, GOAL_HALF = 3, BLUE = 25, POST_R = 0.9;
 const PERIOD_LEN = 120, N_PERIODS = 3;
 const DOTS = { center:[0,0],
-  n1:[40,20], n2:[40,-20], n3:[-40,20], n4:[-40,-20],
+  n1:[20,20], n2:[20,-20], n3:[-20,20], n4:[-20,-20], // G-273 (G-199): the neutral-zone dots sit 1.5 m INSIDE the blue lines (20 units = 6.13 m from centre, the blue line at 25) - never out at |x| 40 in the end zones
   e1:[69,21.4], e2:[69,-21.4], e3:[-69,21.4], e4:[-69,-21.4] }; // G-228 round 1 (H01/G-230): end-zone dots at the venues/rink.md 6.7 m either side of centre (21.4 units = 6.56 m, inside the checklist's 3% band)
 const TEAMS = {
   home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
@@ -263,7 +263,7 @@ function makeIceTexture(baseImg){
   g.fillStyle='rgba(31,111,214,.6)'; g.font='900 ' + Math.round(5.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
   g.fillText('APEX', X(0), Z(0)-1.1*S); g.fillText('ARCADE', X(0), Z(0)+5.9*S);
   // faceoff dots + end-zone circles
-  const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]];
+  const dots=[[20,20],[20,-20],[-20,20],[-20,-20],[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]]; // G-273: neutral dots painted at |x| 20 with the DOTS table
   g.fillStyle='#c8323c';
   dots.forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),1.1*S,0,TAU); g.fill(); });
   g.strokeStyle='#c8323c'; g.lineWidth=5;
@@ -1027,17 +1027,17 @@ function shootFrom(s, power, aimed){
 const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
 const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
 function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
-function callPenalty(off, why){
+function callPenalty(off, why, major){
   if(!off || off.inBox || state!=='play') return;
-  off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
-  banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+  off.inBox=true; off.major=!!major; off.penT=major?50:20; PEN[off.team]=off; // G-272: 2:00 minor - or a 5:00 major for the worst fouls (rules/hockey.md), on this game's clock scale
+  banner('PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2600, '#ffb3b3');
   commSay('penalty_box'); // G-44
   if(off===controlled) switchControl();
   updateHUD();
 }
 function endPenalty(off, quiet){
   if(!off) return;
-  off.inBox=false; off.penT=0; if(PEN[off.team]===off) PEN[off.team]=null;
+  off.inBox=false; off.penT=0; off.major=false; if(PEN[off.team]===off) PEN[off.team]=null;
   if(!quiet) banner('FULL STRENGTH', TEAMS[off.team].name, 1400, '#9fe8a9');
   updateHUD();
 }
@@ -1050,7 +1050,7 @@ function doCheck(){
     const dO=Math.hypot(s.pos.x-o.pos.x,s.pos.z-o.pos.z);
     if(dO<3.4){ // contact ON the carrier: from behind is a penalty; front or side is a clean poke
       const behind=(Math.cos(o.facing)*(s.pos.x-o.pos.x)+Math.sin(o.facing)*(s.pos.z-o.pos.z)) < -0.9;
-      if(behind){ callPenalty(s,'CHECK FROM BEHIND'); return; }
+      if(behind){ callPenalty(s,'CHECK FROM BEHIND', true); return; } // G-272: the harshest foul in the game is a 5-minute major (rules/hockey.md, checklist H14)
       const chance=dO<3?0.8:0.45;
       if(Math.random()<chance){ // poke it loose
         puck.owner=null;
@@ -1140,7 +1140,7 @@ function onGoal(team){
   state='goal'; stateT=3.2;
   const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
   if(team==='home'){scoreH++;}else{scoreA++;}
-  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
+  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed && !boxed.major) endPenalty(boxed, true); } // a power-play goal springs him - MINORS only (rules/hockey.md): a major serves the full 5:00
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');

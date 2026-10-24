@@ -3268,6 +3268,167 @@ export default [
       return true;
     });
   }
+},
+{
+  id: 'never-g-272-p1',
+  ask: 'NEVER (G-272, H14): a major penalty exists - a check from behind on the puck carrier (the harshest foul the game offers) draws a 5:00 MAJOR (box penT 50 on the game clock scale, banner says MAJOR), and a major serves its full time: a power-play goal springs a boxed MINOR but never a boxed MAJOR (rules/hockey.md)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await state();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to force the foul';
+    const snap = () => h.eval(() => {
+      const bEl = document.getElementById('banner');
+      return {
+        boxed: window.__hk.skaters.filter(x => x.inBox).map(x => ({ team: x.team, role: x.role, penT: +x.penT.toFixed(1), major: !!x.major })),
+        banner: (bEl && bEl.classList.contains('show')) ? bEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : ''
+      };
+    }).catch(() => null);
+    // phase 1: the foul itself - the h14 staging (hitter directly behind the carrier)
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; x.major = false; } });
+      hk.skaters.forEach((x, i) => {
+        x.thinkT = 5; x.vel.set(0, 0, 0);
+        if (x.team === 'home' && !x.goalie) x.pos.set(-80, 0.1, -20 + (i % 5) * 8);
+        if (x.team === 'away' && !x.goalie) x.pos.set(60, 0.1, 20 - (i % 5) * 8);
+      });
+      const hitter = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'C');
+      const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
+      hitter.pos.set(-2.5, 0.1, 0);
+      carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
+      pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
+      pk.shot = null; pk.lastTouch = 'away';
+    });
+    await page.keyboard.press('KeyL').catch(() => {});
+    await h.wait(900);
+    const q1 = await snap();
+    if (!q1 || !q1.boxed.length) return 'the check from behind drew no penalty at all - cannot judge the major';
+    const foul = q1.boxed[0];
+    if (!(foul.penT >= 45) && !/MAJOR/i.test(q1.banner)) return 'a check from behind drew penT ' + foul.penT + ' with banner "' + q1.banner + '" - the harshest foul must be a 5:00 major (penT 50, banner MAJOR), not another 2:00 minor';
+    if (/MINOR/i.test(q1.banner)) return 'the check-from-behind banner still says MINOR: "' + q1.banner + '"';
+    // phases 2-3: a power-play goal springs a minor, never a major
+    const stageBoxAndGoal = async (major) => {
+      // settle first: staging during the previous phase's goal celebration loses the puck to the centre faceoff
+      const ts = Date.now();
+      while (Date.now() - ts < 15000) { if ((await state()) === 'play') break; await h.wait(400); }
+      await h.eval((mj) => {
+        const hk = window.__hk, pk = hk.puck;
+        hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; x.major = false; } x.thinkT = 0.05; });
+        const lw = hk.skaters.find(x => x.team === 'away' && x.role === 'LW');
+        lw.inBox = true; lw.major = mj; lw.penT = mj ? 50 : 20;
+        hk.skaters.forEach(x => { if (!x.goalie && x !== lw) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else if (x.goalie) { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+        pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+        pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+      }, major);
+      const t = Date.now();
+      while (Date.now() - t < 10000) { if ((await state()) === 'goal') break; await h.wait(350); }
+      await h.wait(700);
+      return snap();
+    };
+    const q2 = await stageBoxAndGoal(true);
+    if (!q2 || !q2.boxed.some(x => x.team === 'away')) return 'a power-play goal sprung a MAJOR from the box - majors serve the full 5:00 (rules/hockey.md: early release is minors only)';
+    const q3 = await stageBoxAndGoal(false);
+    if (q3 && q3.boxed.some(x => x.team === 'away')) return 'a power-play goal no longer springs a MINOR - the minor early-release rule broke';
+    return true;
+  }
+}
+,
+{
+  id: 'never-g-273-p1',
+  ask: 'NEVER (G-273, G-199): the 4 neutral-zone faceoff dots sit 1.5 m inside the blue lines - painted at |x| about 6.2 m from centre in the neutral zone (never out at |x| 12.3 m in the end zones), and an offside faceoff drops on the neutral dot on that side',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    const scan = await h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the dot scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const reds = [];
+      for (let j = 4; j < H - 4; j += 2) for (let i = 4; i < W - 4; i += 2) { const [r, g, b] = px(i, j); if (r > 130 && r - b > 60 && r - g > 30) reds.push([i, j]); }
+      const clusters = [];
+      for (const [i, j] of reds) { const f = clusters.find(c => Math.abs(c.i - i) < W * 0.02 && Math.abs(c.j - j) < H * 0.05); if (f) { f.n++; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else clusters.push({ i, j, n: 1 }); }
+      const dots = clusters.filter(c => c.n >= 90).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85 })).filter(d => Math.abs(Math.abs(d.z) - 20) <= 1.5 && Math.abs(d.x) <= 80);
+      const neutral = dots.filter(d => Math.abs(d.x) < 55);
+      if (neutral.length < 4) return 'only ' + neutral.length + ' neutral-zone faceoff dots painted - venues/rink.md: 4, at 1.5 m inside the blue lines';
+      const bad = neutral.filter(d => Math.abs(d.x) > 21.6);
+      if (bad.length) return 'neutral-zone dots painted at |x| ' + bad.map(d => Math.abs(d.x).toFixed(1)).join(', ') + ' units (deep in the end zones) - they belong 1.5 m inside the blue lines, |x| about 20 (6.2 m)';
+      return true;
+    }).catch(() => 'dot scan failed');
+    if (scan !== true) return scan;
+    // gameplay: a real offside on the +x side must drop the faceoff on the +x neutral dot
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await state();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'dots are painted right, but no match could be opened to check the offside drop';
+    const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
+    await h.eval(() => {
+      const H = window.__hk; if (!H || !H.puck) return;
+      const S = H.skaters, pk = H.puck;
+      const deep = S.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
+      let j = 0;
+      for (const x of S) {
+        if (x.goalie) continue;
+        x.vel.set(0, 0, 0); x.thinkT = 999;
+        if (x === deep) { x.pos.set(40, 0.1, 10); } // attacker deep, ahead of the puck
+        else if (x.team === 'home') { x.pos.set(8, 0.1, (j % 2 ? -14 : 14)); }
+        else { x.pos.set(-55, 0.1, ((j % 5) - 2) * 12); }
+        x.target.set(x.pos.x, 0, x.pos.z); // PINNED: a brain-frozen skater still skates to his last target - unpinned, the deep man walks back onside, the delayed-offside arm cancels, and the stopped puck draws a dead-puck whistle (end-dot drop) instead
+        j++;
+      }
+      pk.owner = null; pk.recv = null; pk.shot = null; pk.passGrace = null;
+      pk.lastTouch = null; pk.deadT = 0;
+      pk.pos.set(20, 0.2, 0); pk.vel.set(14, 0, 0); // crosses the home attacking blue line loose, still sliding when the arm timer fires
+    });
+    let drop = null;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 25000) {
+      const q = await h.eval(() => {
+        const hk = window.__hk; if (!hk || !hk.game) return null;
+        const hc = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+        return { state: hk.game.state, px: +hk.puck.pos.x.toFixed(1), pz: +hk.puck.pos.z.toFixed(1), cx: hc ? +(hc.pos.x + 2.6).toFixed(1) : 0, cz: hc ? +hc.pos.z.toFixed(1) : 0, banner: ((document.querySelector('#banner') || {}).textContent || '') };
+      }).catch(() => null);
+      // the FIRST read inside the offside faceoff: the puck sits on the drop spot at that instant, and the
+      // centres are placed on it too (home C at dx-2.6) - a later read can catch a centre already skating
+      // off with the puck while the state is still 'faceoff', which is the game playing, not the drop spot
+      if (q && q.state === 'faceoff' && /OFFSIDE/i.test(q.banner || '')) { drop = q; break; }
+      await h.wait(200);
+    }
+    await unfreeze();
+    if (!drop) return 'the staged offside never reached a faceoff - cannot judge the drop spot';
+    const onDot = (x, z) => Math.abs(Math.abs(x) - 20) <= 4 && Math.abs(Math.abs(z) - 20) <= 4;
+    if (!onDot(drop.px, drop.pz) && !onDot(drop.cx, drop.cz)) return 'the offside faceoff dropped at puck (' + drop.px + ', ' + drop.pz + '), centres on (' + drop.cx + ', ' + drop.cz + ') - it belongs on the neutral-zone dot at |x| 20, |z| 20, 1.5 m inside the blue line';
+    return true;
+  }
 }
 
 ];

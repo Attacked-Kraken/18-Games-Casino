@@ -241,6 +241,41 @@ def restart_cancelled(pr):
     return True
 
 
+def restart_cancelled_other(pr):
+    """Owner Oct 24 2026 12:35 PM (notes PR #1546: its 'Asset check' run waited 10 min for a runner, GitHub cancelled it, the
+    robot read that as a FAILED check and the notes PR sat 28 min). restart_cancelled only knew 'Game check (PR)'. Any OTHER
+    workflow run on the PR's newest commit that was CANCELLED, with no newer run of the same workflow, is re-run ONCE (marker
+    comment per run id). A cancelled run is GitHub losing the job, never a verdict on the PR. Returns True when it re-ran one."""
+    n, sha = pr["number"], pr["head"]["sha"]
+    runs = (gh("repos/%s/actions/runs?head_sha=%s&per_page=50" % (REPO, sha)) or {}).get("workflow_runs", [])
+    newest = {}
+    for r in runs:
+        k = r.get("name", "")
+        if k == "Game check (PR)":
+            continue
+        if k not in newest or (r.get("created_at") or "", r.get("run_attempt") or 0) > (newest[k].get("created_at") or "", newest[k].get("run_attempt") or 0):
+            newest[k] = r
+    comments = None
+    did = False
+    for k, r in newest.items():
+        if r.get("status") != "completed" or r.get("conclusion") != "cancelled":
+            continue
+        if comments is None:
+            comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
+        marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], r["id"])
+        if any(marker in (c.get("body") or "") for c in comments):
+            continue
+        when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
+        if gh("repos/%s/actions/runs/%d/rerun" % (REPO, r["id"]), method="POST") is None:
+            print("::warning title=Merge robot::#%d: the %s run %s was cancelled and could not be re-run" % (n, k, r["id"]))
+            continue
+        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body":
+           "%s\n\U0001F916 Merge robot: the '%s' run %s was CANCELLED by GitHub (not a verdict on this PR), so it re-ran it at %s UTC (once; no human needed)." % (marker, k, r["id"], when)})
+        print("::notice title=Merge robot::#%d: the %s run %s was cancelled - re-ran it at %s UTC" % (n, k, r["id"], when))
+        did = True
+    return did
+
+
 SUMMARY = []
 
 
@@ -364,6 +399,12 @@ def main():
                 say("#%d: its cancelled check was restarted by the robot" % n); continue
         except Exception as e:
             print("::warning title=Merge robot::#%d: restarting a cancelled check failed: %s" % (n, e))
+        try:
+            if restart_cancelled_other(pr):
+                revisit = True
+                say("#%d: a cancelled non-game check was re-run by the robot" % n); continue
+        except Exception as e:
+            print("::warning title=Merge robot::#%d: re-running a cancelled check failed: %s" % (n, e))
         runs = (gh("repos/%s/commits/%s/check-runs?per_page=50" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
         newest = {}
         for r in runs:                       # a re-run leaves the old run behind: only the newest of each check counts
