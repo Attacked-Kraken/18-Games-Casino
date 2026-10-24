@@ -1191,8 +1191,12 @@ function aiSkater(s,dt){
   }
   if(!weHave && isChaser){
     const lead=oppHas?0.25:0;
-    s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
-                 puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
+    const tx0=puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3), tz0=puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3);
+    if(mates[1]===s && mates[0]!==s){ // owner video (2026-10-23): both chasers were handed the SAME target point, so they skated in lockstep - mirroring each other and overlapping. The second man takes the far side of the puck, opposite the first chaser's approach, so the pair closes in a pincer instead of stacking.
+      let ox=tx0-mates[0].pos.x, oz=tz0-mates[0].pos.z; const od=Math.hypot(ox,oz);
+      if(od>1.2){ ox/=od; oz/=od; s.target.set(tx0+ox*4.5,0,tz0+oz*4.5); }
+      else s.target.set(tx0-(carrier?Math.sin(carrier.facing):0)*4.5,0,tz0-(carrier?Math.cos(carrier.facing):1)*4.5);
+    } else s.target.set(tx0,0,tz0);
     s._chasing=true;
     // active pressure: poke it loose when right on the carrier - an IDLE carrier gets stripped
     if(carrier && !carrier.goalie) pokeCheck(s, carrier);
@@ -1667,7 +1671,8 @@ function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camer
   if(!s.ath||!s.ath.object) return;
   if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
   const B=s._feet;
-  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); let tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02){ tx=Math.sin(s.facing); tz=Math.cos(s.facing); tl=1; } foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  const rotT=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, ty=Lf.y-F.y, tz=Lf.z-F.z, tl=Math.hypot(tx,ty,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(tx/tl,ty/tl,tz/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
   if(s.goalie){ rot('l',0.3); rot('r',0.3); return; }
   const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s._blade||!st.skeleton) return;
   for(let pass=0; pass<2; pass++){
@@ -1690,6 +1695,22 @@ function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camer
       const w=h<=0.09?1:(h>=0.30?0:1-(h-0.09)/0.21); if(w<=0) continue;
       const corr=Math.max(-1.15,Math.min(1.15,-ang*w));
       if(Math.abs(corr)>0.004){ rot(k===0?'l':'r',corr); if(Math.abs(corr)>maxCorr) maxCorr=Math.abs(corr); }
+      // owner video (2026-10-23): pitch alone left the blades ROLLED - the plate tilted sideways, far edge up toward the leg (standing away roll measured 12-26 deg; roll was never measured). Measure roll from the blade plate's NORMAL: inverse-iterate the 3x3 vertex covariance twice from the across direction (eigenvalues are ~35x apart, so it lands on the normal) - an across-slope regression divides by the across variance, which vanishes on a flat blade and invented phantom rolls of +/-30 deg that the correction then chased frame to frame.
+      const Cyy=Syy-n*cy*cy;
+      let nx=-az, ny=0, nz=ax; // seed: the across direction in plan (the normal of a flat blade)
+      for(let it=0; it<2; it++){
+        const det=Cxx*(Cyy*Czz-Czy*Czy)-Cxy*(Cxy*Czz-Czy*Cxz)+Cxz*(Cxy*Czy-Cyy*Cxz);
+        if(Math.abs(det)<1e-9){ nx=0; break; }
+        const ix=((Cyy*Czz-Czy*Czy)*nx+(Cxz*Czy-Cxy*Czz)*ny+(Cxy*Czy-Cxz*Cyy)*nz)/det;
+        const iy=((Cxz*Czy-Cxy*Czz)*nx+(Cxx*Czz-Cxz*Cxz)*ny+(Cxy*Cxz-Cxx*Czy)*nz)/det;
+        const iz=((Cxy*Czy-Cxz*Cyy)*nx+(Cxy*Cxz-Cxx*Czy)*ny+(Cxx*Cyy-Cxy*Cxy)*nz)/det;
+        const il=Math.hypot(ix,iy,iz); if(il<1e-9){ nx=0; break; }
+        nx=ix/il; ny=iy/il; nz=iz/il;
+      }
+      if(nx||nz){ if(nx*-az+nz*ax<0){ nx=-nx; ny=-ny; nz=-nz; } // orient the normal along +across
+        const rho=Math.asin(Math.max(-1,Math.min(1,ny))); // the plate's roll: how far its normal tips out of the horizontal
+        const rcorr=Math.max(-0.65,Math.min(0.65,rho*w));
+        if(Math.abs(rcorr)>0.004){ rotT(k===0?'l':'r',rcorr); if(Math.abs(rcorr)>maxCorr) maxCorr=Math.abs(rcorr); } }
     }
     if(maxCorr<0.03) break; // settled - skip the refinement pass (most standing frames)
   }

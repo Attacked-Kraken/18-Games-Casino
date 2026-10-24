@@ -175,3 +175,12 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24, 03:42 AM help desk
 - Notes PR with no shared history with main can never merge (PR #1441 again): re-file its newest section on a fresh branch from main, never merge main into it, and keep stale CLAIMS rows out.
+
+## 2026-10-24 help desk (merge robot)
+- A green pull request sat unmerged because a push cancels the old run's bare `play` job and nothing replaces that name (the new ones are `play (<game>.html)`), so the merge robot read the cancelled leftover as a FAILED check. The robot now ignores a cancelled check whose matrix children exist on the same commit. Rule for a Muse: a PR whose Check status says PASSED while the robot comment says "FAILED: play" is the robot's leftover - file HELP-VP: robot, do not push.
+
+## 2026-10-24 VP (hand merges)
+- Hand merge = say so (Team talk + PR comment, who and why). Read the whole HELP file and the PR timeline before 'I don't know'. A robot fix is proven only by the robot doing the job on a real PR (merged_by github-actions[bot]).
+
+## 2026-10-24 help desk (comment spam)
+- A PR that "GitHub has not computed" is not always conflicted: check `git merge-tree` against main and the Check status comment first. #1427 was clean; one red inconclusive sampler test plus a merge-robot comment every 2.5 min (676) made it look stuck. Fix = merge main to re-run the check; the robot-side repair is filed as a HELP-VP: robot line.
