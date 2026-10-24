@@ -44,6 +44,8 @@ resetInputs (play test play-stick-never-stays-stuck).
 - No control overlapping another control - the throttle is a slim button in the button row
 - 2026-10-22: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-121)
 - 2026-10-22: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-121)
+- 2026-10-23: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-243)
+- 2026-10-23: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-243)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

@@ -851,4 +851,103 @@ export default [
       return r === true ? true : r;
     }
   }
+,
+  {
+    id: 'never-g-243-p1',
+    ask: 'NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time',
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        // the tester's own setup: short final right of the centreline, a gentle touchdown in the grass
+        F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
+        F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
+        return new Promise((res) => {
+          let landedGt = null; const w0 = Date.now();
+          const iv = setInterval(() => {
+            if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed instead of landing gently in the grass'); }
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            } else {
+              if (landedGt === null) {
+                landedGt = gt;
+                if (!document.getElementById('scoreOv').hidden) { clearInterval(iv); return res('off-runway touchdown scored (it should not)'); }
+                F.P.thr = 0; F.P.pitch = 0;   // pilot cuts power and sits in the grass
+              }
+              const msg = document.getElementById('msg').textContent || '';
+              if (!/off|runway|grass|no score/i.test(msg)) { clearInterval(iv); return res('sitting in the grass ' + (gt - landedGt).toFixed(1) + ' game-s after touchdown, the no-score reason is gone (msg: "' + msg + '")'); }
+              if (gt - landedGt > 4.5) { clearInterval(iv); return res(true); }
+            }
+            if (Date.now() - w0 > 28000) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'ran out of wall time watching the message'); }
+          }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: 'never-g-243-p2',
+    ask: 'NEVER (G-243): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure',
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // game-time clock: sum of capped frame deltas - measures the game, not the runner
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        // the tester's own gentle approach profile (started lower - same profile, less dead time)
+        F.P.pos.set(1, 5, -300); F.P.vel.set(0, -0.6, 30);
+        F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
+        return new Promise((res) => {
+          let phase2 = false, gtScore = 0; const w0 = Date.now();
+          const iv = setInterval(() => {
+            if (!phase2) {
+              const vs = F.P.vel.y;
+              if (vs < -0.8) F.P.pitch = Math.min(F.P.pitch + 0.015, 0.1);
+              else if (vs > -0.4) F.P.pitch = Math.max(F.P.pitch - 0.015, -0.25);
+              if (document.getElementById('scoreOv').hidden === false) {
+                phase2 = true; gtScore = gt;
+                if (gtScore > 20) { clearInterval(iv); return res('scored but too slowly: ' + gtScore.toFixed(1) + ' game-s (budget 20 game-s)'); }
+                // scored: now fly west into the ocean from close by (the tester's phase 2)
+                F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
+                F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
+              } else if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed before the scored landing'); }
+              else if (Date.now() - w0 > 28000) { clearInterval(iv); return res('never scored (game time reached only ' + gt.toFixed(1) + 's of the 20 game-s budget)'); }
+            } else {
+              if (document.getElementById('crashOv').hidden === false) {
+                clearInterval(iv);
+                const why = document.getElementById('crashWhy').textContent || '';
+                return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
+              }
+              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }
+              if (Date.now() - w0 > 29000) { clearInterval(iv); return res('ocean phase ran out of wall time'); }
+            }
+          }, 200);
+        });
+      });
+    },
+  }
 ];
