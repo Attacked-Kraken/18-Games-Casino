@@ -20,6 +20,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
+- ROBOT REPAIRS ARE RACED BEFORE THEY SHIP (owner Oct 23 2026, after 7 h on one setup failure): repair -> side-by-side on a scratch branch (not a PR), the new way and today's way, N runs each at the same time -> numbers -> only then a PR. Never prove a robot repair through the sick checker itself. The race of Oct 23 (12 runs each): Microsoft's Playwright image 0 failures, apt fix 1, saved browser 0 of 10 - the image shipped (#1374).
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
 - all · tests drove input state directly / sampled meters on a wall clock → drive the game through its real controls; measure in game time, not the robot's clock.
 - all · Puppeteer calls (page.target, page.setViewport) in play tests → the robot is Playwright; use its calls.
