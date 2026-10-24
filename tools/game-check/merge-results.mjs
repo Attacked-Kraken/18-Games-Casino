@@ -20,7 +20,7 @@ for (const d of fs.existsSync(parts) ? fs.readdirSync(parts).sort() : []) {
     // owner Oct 23 2026: a game played in parts (Hockey @1of3 ...) -> one result: all play tests, every red / yellow line once, worst numbers
     have.fixes = (have.fixes || []).concat(r.fixes || []);
     for (const k of ['fail', 'check', 'pass']) if (Array.isArray(r[k])) have[k] = [...new Set([...(have[k] || []), ...r[k]])];
-    if (!have.part || r.part === '1/' + String(r.part || '').split('/')[1]) for (const k of ['img', 'reality', 'slow', 'fps']) if (r[k] && !have[k]) have[k] = r[k];
+    if (!have.part || r.part === '1/' + String(r.part || '').split('/')[1]) for (const k of ['img', 'reality', 'slow', 'fps', 'phases']) if (r[k] && !have[k]) have[k] = r[k];
     have.part = 'all';
   }
   for (const m of (j.models || []).filter(Boolean)) if (!models.some(x => x && x.id === m.id && x.name === m.name)) models.push(m);
