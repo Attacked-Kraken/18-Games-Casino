@@ -13,7 +13,7 @@ Feature → line numbers in apexf1.html (re-checked on the G-265 R1 build, 2026-
 - Compact CSS: lines ~16-45 - landscape compact block at 16, portrait #teamMenu block at 36-45 (G-265 R1: the upright phone gets its own no-scroll fit); #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 192-294 (friend overlay #friendOv at 260)
 - Import map (three + vendor loaders): line 295
-- Audio: line 320 (engine() at 347 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 376 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at ~403 gives one retry; the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() at 433 - kit tire squeal loop; synth voices kept as fallback)
+- Audio: line 320 (engine() at 347 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 376 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at ~403 retries until loaded (4 s, then every 8 s; G-277); the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() at 433 - kit tire squeal loop; synth voices kept as fallback)
 - Data: TRACKS 460, TEAMS 478, AI_NAMES 490
 - Track (samples, buildGP for the kit circuit at 641): line 598
 - Car mesh builder buildCarMesh: line 1043; Car class: line 1320 (player steering at ~1408-1421: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay)
@@ -46,6 +46,7 @@ Feature → line numbers in apexf1.html (re-checked on the G-265 R1 build, 2026-
 - 2026-10-23: APEX ARCADE text must read correctly from both sides of every board and gantry - never mirrored (seen video1-01, video2-09) (G-239)
 - 2026-10-23: The engine must be the grand_prix kit - one failed sound file must never kill the kit and leave the synth ("sounds like a rubber chicken") (G-239)
 - 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
+- 2026-10-24: Play-test entries must use ask: (never title:) too - the third run: entry also carried title:, and the robot's format check rejects the whole shape (G-279)
 - 2026-10-24: teamMenu must fit with no scrolling and no race button may overlap the stick on the UPRIGHT phone too - the landscape compact rules do not apply there, so the base touch buttons and the portrait menu stack need their own fit (G-265 R1)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame

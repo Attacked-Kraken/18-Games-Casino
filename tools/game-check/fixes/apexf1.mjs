@@ -588,34 +588,34 @@ export default [
   // the LIGHTS OUT tap. Also: the start lights by the car must be BIG, the
   // reds must come on one by one up to 5, then green = GO and the race starts.
   {
-    id: 'play-start-on-car-with-lights', title: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
-    run: async (page, h) => {
+    id: 'play-start-on-car-with-lights', ask: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
+    test: async (page, h) => {
       await g33Reset(page, h);
-      await page.locator('#careerBtn').click();
-      await page.locator('#toTeamBtn').click();
-      await page.locator('#startBtn').click();
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
       await h.wait(1200);
-      await page.locator('#qualiSkip').click();
+      await h.press('#qualiSkip');
       let grid = false; // the grid screen, reached without any tap on the canvas
       for (let i = 0; i < 12; i++) { const md = await h.eval(() => window.__test.race().mode); if (md === 'grid') { grid = true; break; } await h.wait(300); }
-      if (!grid) return h.fail('never reached the grid screen after qualifying');
+      if (!grid) return 'never reached the grid screen after qualifying';;
       await h.wait(600); // let the grid camera settle on the car
       const frame = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer);
         const tp = T.carMesh(pi).trackPos, cam = T.camAt(); return { d: Math.hypot(cam.x - tp[0], cam.z - tp[2]) }; });
-      if (!frame) return h.fail('could not read the camera / player car at the grid');
-      if (frame.d > 16) return h.fail('at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)');
-      await page.locator('#raceBtn').click();
+      if (!frame) return 'could not read the camera / player car at the grid';;
+      if (frame.d > 16) return 'at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)';;
+      await h.press('#raceBtn');
       let maxRed = 0, sawGreen = false, lampW = 0, racing = false;
       for (let i = 0; i < 80; i++) { const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')];
           return { red: ls.filter(e => e.classList.contains('red')).length, green: ls.some(e => e.classList.contains('green')),
             w: ls.length ? ls[0].getBoundingClientRect().width : 0, mode: window.__test.race().mode }; });
         if (st.red > maxRed) maxRed = st.red; if (st.green) sawGreen = true; if (st.w > 0) lampW = st.w;
         if (st.mode === 'race') { racing = true; break; } await h.wait(100); }
-      if (maxRed !== 5) return h.fail('start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')');
-      if (!sawGreen) return h.fail('start lights never flashed green for GO');
-      if (!racing) return h.fail('race never started after lights out');
-      if (lampW < 48) return h.fail('start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car');
-      return h.pass('grid opened with the camera ' + frame.d.toFixed(1) + ' m from the player car (no tap), lamps ' + Math.round(lampW) + ' px wide, reds climbed to 5, green flash, race started');
+      if (maxRed !== 5) return 'start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')';;
+      if (!sawGreen) return 'start lights never flashed green for GO';;
+      if (!racing) return 'race never started after lights out';;
+      if (lampW < 48) return 'start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car';;
+      return true;
     }
   },
   /* ================= G-101 FRIEND CODE PLAY TEST =================
@@ -1239,6 +1239,60 @@ export default [
       const x = Math.min(r.stick.x + r.stick.w, r.cam.x + r.cam.w) - Math.max(r.stick.x, r.cam.x);
       const y = Math.min(r.stick.y + r.stick.h, r.cam.y + r.cam.h) - Math.max(r.stick.y, r.cam.y);
       if (x > 0 && y > 0) return 'the stick overlaps CAM by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: 'play-kit-retries-until-loaded',
+    ask: 'a dropped engine-kit fetch must not leave the synth carrying the race: the kit keeps retrying until it loads',
+    async test(page, h) {
+      const unwrap = () => h.eval(`window.__kitBlock = false;`).catch(() => {});
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.eval(() => {
+        window.__kitBlock = true;
+        if (!window.__kitFetchOrig) {
+          window.__kitFetchOrig = window.fetch;
+          window.fetch = function (u, o) {
+            const s = String(u);
+            if (window.__kitBlock && s.includes('grand_prix')) return Promise.reject(new Error('blocked for test'));
+            return window.__kitFetchOrig(u, o);
+          };
+        }
+      }).catch(() => {});
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      await h.wait(1200); await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) { await unwrap(); return 'the race never started'; }
+      await h.wait(3000);
+      await unwrap();
+      let ready = null;
+      for (let i = 0; i < 20; i++) {
+        const st = await h.eval(`window.__test.kitAudio()`).catch(() => null);
+        if (st && st.ready) { ready = st; break; }
+        await h.wait(1000);
+      }
+      await h.eval(`window.__test.setInput({ gas:false, steer:0 })`).catch(() => {});
+      if (!ready) return 'the engine kit never recovered after the fetch came back: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`).catch(() => null));
+      return true;
+    },
+  },
+  {
+    id: 'never-g-279-p1',
+    ask: 'play-test entries are shaped right: play-start-on-car-with-lights exposes test and ask, not run and title',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      const i = txt.indexOf("id: 'play-start-on-car-with-lights'");
+      if (i < 0) return 'entry play-start-on-car-with-lights is missing from the fixes file';
+      let seg = txt.slice(i);
+      const end = seg.indexOf('\n  },', 200);
+      if (end > 0) seg = seg.slice(0, end);
+      if (!/ask:/.test(seg)) return 'entry play-start-on-car-with-lights has no ask';
+      if (/title:/.test(seg)) return 'entry play-start-on-car-with-lights still uses title instead of ask';
+      if (!/test:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights has no test function';
+      if (/run:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights still uses run instead of test';
+      if (/h\.fail|h\.pass/.test(seg)) return 'entry play-start-on-car-with-lights still uses h.fail/h.pass instead of returns';
       return true;
     },
   },
