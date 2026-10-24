@@ -1431,7 +1431,7 @@ export default [
         await page.setViewportSize({ width: 844, height: 390 });
       }
     },
-  },,
+  },
   // G-255 (window 7): checklist B05 - rules/baseball.md says a batting order
   // of 9. Measured live in a full game (portrait, all six halves to the
   // results overlay): the SAME bat-holding batter object stepped up for every
