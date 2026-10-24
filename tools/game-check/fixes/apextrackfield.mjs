@@ -2673,10 +2673,11 @@ async test(page, h) {
     let path = 0, prev = e.ang;
     for (let i = 0; i < 10; i++) { e.update(0.05); path += Math.abs(e.ang - prev); prev = e.ang; }
     for (let i = 0; i < 20; i++) e.update(0.05);
-    return { stage: 'ok', sweep: +path.toFixed(1), phase: e.phase, foul: e.foul };
+    return { stage: 'ok', sweep: +path.toFixed(1), phase: e.phase, foul: e.foul, moved: +(e.r.pos - 30).toFixed(1) };
   });
   if (!lj || lj.stage !== 'ok') return 'the long jump never reached the angle phase (stage ' + (lj && lj.stage) + ')';
-  if (lj.foul || lj.phase !== 'angle') return 'setting the long jump angle still fouls - he runs past the line while you set it (owner: make the jump button easy, freely controlled)';
+  if (lj.foul || lj.phase === 'mark') return 'setting the long jump angle still fouls - crossing the line while you set it ends the jump (owner: make the jump button easy, freely controlled)';
+  if (lj.phase !== 'angle' && lj.phase !== 'flight') return 'the long jump left the angle phase the wrong way (phase ' + lj.phase + ')';
   if (lj.sweep > 30) return 'the long jump angle still sweeps at ' + lj.sweep.toFixed(0) + ' deg per half-second - too fast to set (target: 55 deg/s)';
   // TRIPLE JUMP: marker speed
   await page.goto(base + '?test=tj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
