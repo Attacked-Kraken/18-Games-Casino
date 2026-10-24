@@ -1256,6 +1256,35 @@ export default [
     },
   },
   {
+    id: 'play-reality-units-per-metre',
+    ask: 'BUILD G-248: the REALITY hook reports unitsPerMetre 1.0936 (the game runs on 3 ft units, 1 unit = 0.9144 m) so the robot and testers read metres (REALITY.md Units)',
+    async test(page, h) {
+      let saw = false;
+      for (let i = 0; i < 40; i++) {
+        const s = await h.eval(() => window.__reality ? { has: ('unitsPerMetre' in window.__reality), v: window.__reality.unitsPerMetre } : null);
+        if (s) { saw = true; if (s.has) return Math.abs(s.v - 1.0936) < 0.001 ? true : 'unitsPerMetre is ' + s.v + ' - REALITY.md says 1 unit = 0.9144 m, so it must be 1.0936'; }
+        await h.wait(250);
+      }
+      return saw ? 'window.__reality has no unitsPerMetre - the robot and testers cannot read metres' : 'window.__reality never appeared';
+    }
+  },  {
+    id: 'play-help-close-on-upright-phone',
+    ask: 'BUILD G-248 (robot red line on PR #1381): on an upright phone (390x844) the Help overlay CLOSE button sits off the left edge of the screen - the rotated stage is 390 tall but the compact-card rules only fire on a sideways phone, so the card lays out 695 tall inside the 390 stage and rotation pushes CLOSE off screen; the CLOSE button must be fully on screen on an upright phone',
+    async test(page, h) {
+      try {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await h.wait(600);
+        await h.eval(() => { const b = document.getElementById('helpBtn'); if (b) b.click(); });
+        await h.wait(400);
+        const r = await h.eval(() => { const b = document.getElementById('helpClose'); if (!b) return null; const x = b.getBoundingClientRect(); return { left: x.left, right: x.right, top: x.top, bottom: x.bottom }; });
+        if (!r) return 'help CLOSE button missing';
+        if (r.left < 0 || r.right > 390 || r.top < 0 || r.bottom > 844) return 'help CLOSE sits off the upright screen: left ' + Math.round(r.left) + ', right ' + Math.round(r.right) + ' on a 390-wide phone';
+        return true;
+      } finally {
+        try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+      }
+    }
+  },  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
@@ -1295,6 +1324,53 @@ export default [
         await h.wait(300);
       }
       return 'checklist B01: the base objects never became measurable in the running game';
+    },
+  },
+  // G-246 (window 7): checklist B03 - REALITY.md says the ball is 0.074 m wide
+  // and the bat 0.86 m long. Units first (per the checklist card): the game's
+  // own field comment says 1 unit = 3 ft = 0.9144 m, and the REALITY hook
+  // exposes no unitsPerMetre, so world sizes are converted at 0.9144 m/unit.
+  // Measured in the running game: ball diameter 0.24 units = 0.219 m (about
+  // 3x too wide, outside the 15% band); bat axis length 0.940 units =
+  // 0.860 m (dead-on). The item fails on the ball.
+  {
+    id: 'tester-chk-b03',
+    mode: 'b03',
+    async test(page, h) {
+      const t0 = Date.now();
+      let m = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        m = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          root.updateMatrixWorld(true);
+          const xf = (e, x, y, z) => [e[0]*x + e[4]*y + e[8]*z + e[12], e[1]*x + e[5]*y + e[9]*z + e[13], e[2]*x + e[6]*y + e[10]*z + e[14]];
+          let ball = null, bat = null;
+          root.traverse(o => {
+            if (!o.isMesh) return;
+            const g = o.geometry, prm = g.parameters || {}, e = o.matrixWorld.elements;
+            if (g.type === 'SphereGeometry' && Math.abs((prm.radius || 0) - 0.12) < 0.001 && prm.widthSegments === 12) {
+              const a = xf(e, prm.radius, 0, 0), b = xf(e, -prm.radius, 0, 0);
+              ball = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+            if (g.type === 'BoxGeometry' && Math.abs((prm.width || 0) - 0.13) < 0.001 && Math.abs((prm.height || 0) - 1.21) < 0.001) {
+              const h = prm.height / 2, a = xf(e, 0, h, 0), b = xf(e, 0, -h, 0);
+              bat = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+          });
+          if (ball == null || bat == null) return null;
+          return { ball: ball * 0.9144, bat: bat * 0.9144 };
+        }).catch(() => null);
+        if (m) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (!m) return 'checklist B03: ball and bat meshes not reached in the scene';
+      const ballM = Math.round(m.ball * 1000) / 1000, batM = Math.round(m.bat * 1000) / 1000;
+      if (Math.abs(m.ball - 0.074) / 0.074 <= 0.15 && Math.abs(m.bat - 0.86) / 0.86 <= 0.15) return true;
+      return `checklist B03: ball measures ${ballM} m wide and bat ${batM} m long - REALITY.md says ball 0.074 m, bat 0.86 m (within 15%)`;
     },
   },
   {

@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-252 | window 10 | checklists/apextrackfield.md, jobs/G-252.md, CLAIMS.md | test/g-252-apextrackfield |
@@ -248,6 +249,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
 | G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
+| G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
@@ -255,3 +257,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 <!-- merge robot heartbeat test c, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test d, Oct 23 2026, safe to ignore -->
 | G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
+| G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |

@@ -2403,7 +2403,7 @@ export default [
     const g0 = (s0.career.star && s0.career.star.g) || 0;
     await clickId('hubPlay'); // the game reloads itself here by design; the boot auto-starts the match
     await h.wait(5000); // let the reload settle before watching for the staged match
-    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    { let started = false; for (let i = 0; i < 40 && !started; i++) { const st = await state(); if (st === 'play' || st === 'faceoff') started = true; else await h.wait(600); } if (!started) return 'the career match did not auto-start after PLAY'; } // G-253: waitForFunction with raf polling never resolves across the reload; poll with waits instead
     for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
     let banked = false;
     const spots = [[78, 2, 0], [80, 6, -0.73], [80, -6, 0.73]];
@@ -2464,7 +2464,7 @@ export default [
     await clickId('hubNew'); await h.wait(800);
     await clickId('hubPlay');
     await h.wait(5000); // let the reload settle before watching for the staged match
-    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    { let started = false; for (let i = 0; i < 40 && !started; i++) { const st = await state(); if (st === 'play' || st === 'faceoff') started = true; else await h.wait(600); } if (!started) return 'the career match did not auto-start after PLAY'; } // G-253: waitForFunction with raf polling never resolves across the reload; poll with waits instead
     for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
     if ((await state()) !== 'play') return 'the match never reached play so the end screen could not be staged';
     await h.eval(() => { const g = window.__hk.game; g.period = 3; g.clockT = 3; g.scoreH = 2; g.scoreA = 0; }); // rig the last seconds of the last period with the Wolves ahead (a tied whistle goes to overtime instead of the end screen - see diag-clock); the whistle and the overlay play out for real
