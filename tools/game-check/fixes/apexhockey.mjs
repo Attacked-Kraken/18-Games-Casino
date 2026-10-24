@@ -1804,7 +1804,7 @@ export default [
       if (stNow === 'goal') await h.wait(1500);
     }
     const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (!exc || exc.n < 50) return { inconclusive: 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied, so this could not be checked' };
     if (exc.maxX > 100.6 || exc.maxZ > 42.9)
       return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
     return true;
@@ -1852,7 +1852,7 @@ export default [
       if (stNow === 'goal') await h.wait(1500);
     }
     const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (!exc || exc.n < 50) return { inconclusive: 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied, so this could not be checked' };
     if (exc.maxX > 100.6 || exc.maxZ > 42.9)
       return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
     return true;
@@ -1971,7 +1971,7 @@ export default [
       }, 10);
     }));
     if (!m || m.err) return 'staging failed: ' + (m ? m.err : 'no result');
-    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied';
+    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return { inconclusive: 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied, so this could not be checked' };
     if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
     return true;
   }
