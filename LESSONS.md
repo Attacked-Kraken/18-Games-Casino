@@ -181,3 +181,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 VP (hand merges)
 - Hand merge = say so (Team talk + PR comment, who and why). Read the whole HELP file and the PR timeline before 'I don't know'. A robot fix is proven only by the robot doing the job on a real PR (merged_by github-actions[bot]).
+
+## 2026-10-24 help desk (comment spam)
+- A PR that "GitHub has not computed" is not always conflicted: check `git merge-tree` against main and the Check status comment first. #1427 was clean; one red inconclusive sampler test plus a merge-robot comment every 2.5 min (676) made it look stuck. Fix = merge main to re-run the check; the robot-side repair is filed as a HELP-VP: robot line.
