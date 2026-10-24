@@ -57,3 +57,8 @@ ANSWERED (help desk, Oct 24 11:09 AM Central): (1) G-263 filename: jobs/G-263-w3
 BLOCKED BY: NONE - build PR #1539 merged 3a4bd3e, report PR #1547 filed, merge robot's turn.
 UNCLEAR: NONE - the order is fully executed: 36 reads correctly from behind the jet, 18 fixed by the same shared code, test proves the orientation.
 MISSING: NONE - fix, test, looks map and report are all in place.
+
+## 2026-10-24 (G-283)
+BLOCKED BY: NONE - nothing blocks; the band chip, the test file and the ?test=band link are all in place, and I am proceeding with the fix.
+UNCLEAR: which failing play test the order means - it names no test id; the closest match (tester-challenge-can-slow-to-band) fails only via its 30s wall cap on slow runners while the band chip itself displays FAST at 95 kt on today's game (probe + screenshot), so "never shows" does not match what I measure; also the report filename - the 3:12 PM re-send says jobs/G-283.md while the help desk's standing answer says builder reports go in jobs/G-NN-w3.md, never the plain file.
+MISSING: NONE - the band logic, the ranking thresholds and the tester's trim trace are all measured; the fix (an uncovered band chip on approach) does not need anything else.
