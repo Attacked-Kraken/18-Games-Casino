@@ -1100,9 +1100,10 @@ export default [
         if (!m36) return 'no 36 decal found';
         const img = m36.material && m36.material.map && m36.material.map.image;
         if (!img || !img.getContext) return '36 decal has no canvas texture';
-        // The 6's loop sits at the BOTTOM of a correctly oriented digit: in the
-        // number's canvas rows, the lower third of the 6 half must carry more
-        // light pixels than the upper third. Mirrored (old) paint flips that.
+        // The 6's loop sits at the glyph's BOTTOM, and correct paint puts the
+        // glyph's bottom toward the approaching pilot - for the 36 end that is
+        // the SMALL canvas rows, so the upper third of the 6 half must carry
+        // more light pixels than the lower third. Mirrored (old) paint flips that.
         const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
         const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
         const data = ctx.getImageData(0, 0, img.width, img.height).data;
@@ -1112,8 +1113,8 @@ export default [
         for (let y = 325; y < 360; y++) for (let x = 128; x < 218; x++) if (light(x, y)) top++;
         for (let y = 395; y < 430; y++) for (let x = 128; x < 218; x++) if (light(x, y)) bottom++;
         if (top === 0 && bottom === 0) return 'no light pixels in the 6 half (canvas ' + img.width + 'x' + img.height + ')';
-        if (bottom > top) return true;
-        return '36 reads mirrored: 6-half light pixels top=' + top + ' bottom=' + bottom + ' (correct paint has bottom > top)';
+        if (top > bottom) return true;
+        return '36 reads mirrored: 6-half light pixels top=' + top + ' bottom=' + bottom + ' (correct paint has top > bottom)';
       });
     },
   },
