@@ -803,6 +803,7 @@ const drain  = dist<=200?24 : 26;
 const E={
 ev, done:false, dq:false, S, dist,
 phase:'marks', phaseT:0, setDur:rnd(0.9,1.8), started:false,
+wind:+(Math.random()*6-3).toFixed(1), // G-289 (CHECKLIST T05): this race's wind, m/s, -3.0..+3.0; over +2.0 the time is wind-aided
 r:newRunner(), time:0, penalty:0, falseStarts:0, warnT:0, place:4,
 ai: rivals.map(rv=>makeLiveRival(rv,ev)),
 actionLabel(){ return '—'; },
@@ -854,7 +855,9 @@ pos: this.dq?'DQ':ordinal(this.place), speed:this.r.speed/maxSpd, stam:this.r.st
 getResult(){
 if(this.dq) return {value:null, display:'DQ — false start', points:0};
 const t=Math.round(this.time*100)/100;
-return {value:t, display:fmtTime(t)+'  ('+ordinal(this.place)+')', points:pointsFor(ev,t)};
+const windAided=this.wind!=null&&this.wind>2.0; // G-289 (CHECKLIST T05): a tailwind over +2.0 m/s never counts as a record
+const wTxt=this.wind==null?'':' — Wind '+(this.wind>=0?'+':'')+this.wind.toFixed(1)+' m/s';
+return {value:t, display:fmtTime(t)+(windAided?'w':'')+'  ('+ordinal(this.place)+')'+wTxt, wind:this.wind, windAided:windAided, points:pointsFor(ev,t)};
 }
 };
 return E;
@@ -3106,6 +3109,7 @@ SIM_MODS = (G.mode==='career') ? careerMods() : {spd:1,stam:1,tech:1};
 ENG=makeEngine(ev,rivals||[]);
 ENG._rivals=rivals||[];
 if(W3D.ready&&!W3D.failed){ try{ attachDriver3D(ENG); }catch(err){} }
+if(ENG.ev.eng==='relay'&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289 (CHECKLIST T04): the changeover zones paint at race start on the scene alone - the old path waited for the full 3D load (W3D.ready), so on a slow load the robot's 5 s poll found no markings at all
 // JOB J7 freeze hardening: pay the cold-start costs (shader programs for the painted
 // kits, texture uploads) HERE, in the start transition - not inside the first race
 // frames, where a compile storm on a slow device stalls the frame loop past the
@@ -3190,7 +3194,7 @@ refreshSkip();
 function finishEvent(){
 document.body.classList.remove('playing');
 const ev=ENG.ev, res=ENG.getResult();
-const newBest=recordBest(ev,res.value);
+const newBest=res.windAided?false:recordBest(ev,res.value); // G-289 (CHECKLIST T05): a wind-aided time is shown with 'w' and never saved as a best
 let nextLabel='NEXT EVENT', nextFn=null;
 $('resMedals').innerHTML='';
 if(G.mode==='champ'){
@@ -3711,7 +3715,7 @@ acc+=simDt;
 let n=0;
 while(acc>=1/60&&n<30){ ENG.update(1/60); acc-=1/60; n++; }
 if(n===30) acc=0;
-if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.ready&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} }
+if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289: scene, not ready - the scene exists at boot, the full load does not
 try{ if(ENG.draw3) ENG.draw3(dt); }catch(err){}
 updateHUD();
 Confetti.update(dt); Confetti.draw();
