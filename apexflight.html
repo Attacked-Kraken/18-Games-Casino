@@ -24,6 +24,8 @@
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(255,59,48,.35); border-radius: 10px; padding: 7px 10px; }
+  #bandBox { display: none; }
+  #bandBox.in { border-color: rgba(80,255,140,.7); color: #b6ffb6; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; font-size: 12px; }
   #stats b { display: block; font-size: 16px; color: #fff; font-weight: 700; }
@@ -96,6 +98,7 @@
     <div class="chip"><span>VS FPM</span><b id="hVs">0</b></div>
   </div>
   <div id="rwyBox" class="chip"><span id="hRwy">RWY --</span> &nbsp;<span id="hGlide"></span></div>
+  <div id="bandBox" class="chip"><span>TD BAND</span> &nbsp;<span id="hBand">55-88 KT</span> &nbsp;<span id="hBandState">-</span></div>
   <div id="msg"></div>
   <div id="ahWrap"><canvas id="ah" width="116" height="116"></canvas></div>
 </div>
@@ -994,6 +997,17 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
+  // touchdown band (G-263): the same approach window as the runway box above -
+  // the 55-88 kt band already decides a rank level at touchdown, now the pilot
+  // sees it while approaching, with whether the speed is inside it
+  const bb = $('bandBox');
+  if (rb.style.display === 'block') {
+    bb.style.display = 'block';
+    const kt = v * MS2KT;
+    const st = kt < 55 ? 'SLOW' : (kt > 88 ? 'FAST' : 'IN BAND');
+    $('hBandState').textContent = st;
+    bb.classList.toggle('in', st === 'IN BAND');
+  } else bb.style.display = 'none';
   // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
   if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
     const kt = v * MS2KT;
@@ -1220,10 +1234,12 @@ function loop(now) {
 }
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
    free flight - menus skipped - with the shared kit pad on screen.
-   ?test=friend (G-238) opens the Play-a-Friend overlay instead. */
+   ?test=friend (G-238) opens the Play-a-Friend overlay instead.
+   ?test=band (G-263) opens the landing challenge on final at 70 kt, band showing. */
 const testParam = new URLSearchParams(location.search).get('test');
 if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
 else if (testParam === 'traffic') { mode = 'free'; respawn(); P.pos.set(0, 130, -1250); P.vel.set(0, 0, 58); P.thr = 0.72; jetInput.throttle = 0.72; P.ground = false; jet.setGear(false); jetInput.gear = false; jetInput.setGearLabel(false); }
+else if (testParam === 'band') { mode = 'challenge'; respawn(); P.pos.set(0, 80, -2500); P.vel.set(0, -2, 36); P.yaw = 0; P.roll = 0; P.pitch = -0.05; P.thr = 0.4; P.ground = false; }
 else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
