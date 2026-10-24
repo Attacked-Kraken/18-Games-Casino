@@ -100,7 +100,7 @@ jobs:
     timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
     strategy:
       fail-fast: false
-      max-parallel: 12
+      max-parallel: 24
       matrix:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
