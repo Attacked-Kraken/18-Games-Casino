@@ -3393,34 +3393,40 @@ export default [
     const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
     await h.eval(() => {
       const H = window.__hk; if (!H || !H.puck) return;
-      H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
-      H.puck.lastTouch = null;
-      H.puck.pos.set(24, 0.2, 0); H.puck.vel.set(25, 0, 0);
-      const S = H.skaters;
-      const deep = S.find(x => x.team === 'home' && !x.goalie && x.role === 'RW');
+      const S = H.skaters, pk = H.puck;
+      const deep = S.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
       let j = 0;
       for (const x of S) {
+        if (x.goalie) continue;
         x.vel.set(0, 0, 0); x.thinkT = 999;
-        if (x === deep) { x.pos.set(40, 0.1, 10); continue; }
-        if (x.team === 'home' && !x.goalie) x.pos.set(10, 0.1, (j % 2 ? -12 : 12));
-        else if (x.team === 'away' && !x.goalie) x.pos.set(-55, 0.1, ((j % 5) - 2) * 12);
+        if (x === deep) { x.pos.set(40, 0.1, 10); } // attacker deep, ahead of the puck
+        else if (x.team === 'home') { x.pos.set(8, 0.1, (j % 2 ? -14 : 14)); }
+        else { x.pos.set(-55, 0.1, ((j % 5) - 2) * 12); }
+        x.target.set(x.pos.x, 0, x.pos.z); // PINNED: a brain-frozen skater still skates to his last target - unpinned, the deep man walks back onside, the delayed-offside arm cancels, and the stopped puck draws a dead-puck whistle (end-dot drop) instead
         j++;
       }
+      pk.owner = null; pk.recv = null; pk.shot = null; pk.passGrace = null;
+      pk.lastTouch = null; pk.deadT = 0;
+      pk.pos.set(20, 0.2, 0); pk.vel.set(14, 0, 0); // crosses the home attacking blue line loose, still sliding when the arm timer fires
     });
     let drop = null;
     const t1 = Date.now();
-    while (Date.now() - t1 < 20000) {
+    while (Date.now() - t1 < 25000) {
       const q = await h.eval(() => {
         const hk = window.__hk; if (!hk || !hk.game) return null;
-        return { state: hk.game.state, px: +hk.puck.pos.x.toFixed(1), pz: +hk.puck.pos.z.toFixed(1), banner: ((document.querySelector('#banner') || {}).textContent || '') };
+        const hc = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+        return { state: hk.game.state, px: +hk.puck.pos.x.toFixed(1), pz: +hk.puck.pos.z.toFixed(1), cx: hc ? +(hc.pos.x + 2.6).toFixed(1) : 0, cz: hc ? +hc.pos.z.toFixed(1) : 0, banner: ((document.querySelector('#banner') || {}).textContent || '') };
       }).catch(() => null);
+      // the FIRST read inside the offside faceoff: the puck sits on the drop spot at that instant, and the
+      // centres are placed on it too (home C at dx-2.6) - a later read can catch a centre already skating
+      // off with the puck while the state is still 'faceoff', which is the game playing, not the drop spot
       if (q && q.state === 'faceoff' && /OFFSIDE/i.test(q.banner || '')) { drop = q; break; }
-      if (q && q.state === 'faceoff') { drop = q; break; }
-      await h.wait(600);
+      await h.wait(200);
     }
     await unfreeze();
     if (!drop) return 'the staged offside never reached a faceoff - cannot judge the drop spot';
-    if (Math.abs(drop.px) > 22 || Math.abs(Math.abs(drop.pz) - 20) > 3.5) return 'the offside faceoff dropped at (' + drop.px + ', ' + drop.pz + ') - it belongs on the neutral-zone dot at about (20, 20), 1.5 m inside the blue line';
+    const onDot = (x, z) => Math.abs(Math.abs(x) - 20) <= 4 && Math.abs(Math.abs(z) - 20) <= 4;
+    if (!onDot(drop.px, drop.pz) && !onDot(drop.cx, drop.cz)) return 'the offside faceoff dropped at puck (' + drop.px + ', ' + drop.pz + '), centres on (' + drop.cx + ', ' + drop.cz + ') - it belongs on the neutral-zone dot at |x| 20, |z| 20, 1.5 m inside the blue line';
     return true;
   }
 }
