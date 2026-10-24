@@ -122,6 +122,18 @@
     body.touch #speedo { right:12px; bottom:184px; }
     body.touch #drsTag { bottom:24px; }
   }
+  /* upright phones: same compact bottom-corner buttons - the landscape block never applied here, so REV slid into the stick and CAM (G-286 R1) */
+  @media (pointer:coarse) and (orientation:portrait) {
+    body.touch #stick { left:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:110px; height:110px; }
+    body.touch #btnPit { left:134px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnCam { left:134px; bottom:calc(84px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnGas { right:12px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:88px; height:88px; }
+    body.touch #btnBrake { right:112px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); width:76px; height:76px; }
+    body.touch #btnRev { left:134px; right:auto; bottom:calc(148px + env(safe-area-inset-bottom, 0px)); width:64px; height:64px; }
+    body.touch #btnDRS { right:12px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #btnERS { right:88px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
+    body.touch #speedo { right:12px; bottom:calc(184px + env(safe-area-inset-bottom, 0px)); }
+  }
   /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
