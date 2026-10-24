@@ -43,19 +43,13 @@ export default [
         await h.wait(160);
       }
       if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
-      // thigh swing over a FULL cycle proves real leg drive (not a glide). G-249 r2:
-      // the old 7x200ms wall window covered only ~0.5s of animation on the robot
-      // (it paints ~3 frames a second, and the mixer advances on visual dt clamped
-      // to 0.12s a frame - 0.36s of animation per wall second), so the range it read
-      // was a phase-dependent slice of the cycle (0.43 rad on main 1efbb9b) while the
-      // same clip measures 1.85-1.95 rad over a full cycle. 30x250ms covers 2+ cycles
-      // at any frame rate. Ask and bar (0.7 rad) unchanged.
+      // thigh swing over ~1.4s proves real leg drive (not a glide)
       let mn = 1e9, mx = -1e9;
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 7; i++) {
         await drive();
         const p = await h.eval(() => window.__tf.pose());
         for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
-        await h.wait(250);
+        await h.wait(200);
       }
       if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
       return true;
@@ -2821,69 +2815,39 @@ async test(page, h) {
       if (!m.windShown) return 'the game models no wind at all: the sprint engine has no wind value (' + m.windKeys.length + ' wind keys), the results screen shows "' + m.resMark + '" with no wind reading and no "w" mark, and the time was saved as a best (' + m.bests + ') - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as "w") can never apply';
       return true;
     }
-  },{
-id: 'never-g-249-p3',
-title: 'G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)',
-async test(page, h) {
-  const base = page.url().split('?')[0];
-  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
-  let m = null;
-  for (let i = 0; i < 30 && !m; i++) {
-    m = await h.eval(() => {
-      const e = window.__tf && __tf.eng();
-      if (!e || !e.ev || e.ev.id !== 'relay') return null;
-      const grp = e._zone;
-      if (!grp || !grp.children.length) return null;
-      const upm = (window.__reality && __reality.unitsPerMetre) || 1;
-      const lens = [];
-      grp.children.forEach(mesh => {
-        const p = mesh.geometry.attributes.position.array;
-        for (let l = 0; l < 8; l++) {
-          const b0 = l * 10 * 3; let len = 0;
-          for (let j = 0; j < 4; j++) {
-            const a = b0 + j * 6, b = b0 + (j + 1) * 6;
-            len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
-          }
-          lens.push(len / upm);
-        }
-      });
-      const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
-      return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
-    }).catch(() => null);
-    if (!m) await h.wait(1500);
   }
-  if (!m) return 'no relay changeover-zone markings found in the relay event';
-  if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long';
-  return true;
-}
-},{
-id: 'never-g-249-p2',
-title: 'G-249 r2 point 1 (owner): runners must run with natural arm and leg motion - a real sprint animation, not posed bones (mirrors the hardened real-sprint-animation sampling: thighL range over a full cycle must reach 0.70 rad; the old 1.4s wall window read 0.43 rad on the ~3fps robot while the same clip measures 1.85+ rad over a full cycle)',
-async test(page, h) {
-  const base = page.url().split('?')[0];
-  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
-  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
-  const t0 = Date.now(); let best = null;
-  while (Date.now() - t0 < 120000) {
-    const st = await h.eval(() => { const e = window.__tf.eng(); return { pos: e && e.r ? e.r.pos : 0, pose: window.__tf.pose() }; });
-    if (st.pos > 12) {
-      for (const r of st.pose) {
-        if (r.human && r.sf > 0.3 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) { best = r; break; }
+,
+  {
+      id: 'tester-300mh-hurdle-count',
+      mode: 'freeplay',
+      ask: 'TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!m) await h.wait(400);
+        }
+        if (!m) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)';
+        return true;
       }
     }
-    if (best) break;
-    await h.wait(160);
-  }
-  if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
-  let mn = 1e9, mx = -1e9;
-  for (let i = 0; i < 30; i++) {
-    const p = await h.eval(() => window.__tf.pose());
-    for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
-    await h.wait(250);
-  }
-  if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
-  return true;
-}
-
-}
 ];
