@@ -466,7 +466,8 @@ function roundedRectSegs(hw,hh,r){
     _e.set(0,Math.PI,0); _q.setFromEuler(_e);
     const adM = M.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,2.3,-0.36), _q.clone(), _1));
     ad.applyMatrix4(adM); adGeos.push(ad);
-    const gl = new THREE.PlaneGeometry(len,5.2); gl.translate(0,6.3,0); gl.applyMatrix4(M); glassGeos.push(gl);
+    const gh = Math.abs(mx)>60?7.8:5.9; // G-282 round 1 (G-199, venues/rink.md): glass ~2.4 m at the ends, ~1.8 m along the sides - not one 1.6 m height all the way round
+    const gl = new THREE.PlaneGeometry(len,gh); gl.translate(0,3.7+gh/2,0); gl.applyMatrix4(M); glassGeos.push(gl);
   });
   scene.add(new THREE.Mesh(mergeGeometries(kickGeos), kickMat));
   scene.add(new THREE.Mesh(mergeGeometries(boardGeos), boardMat));
@@ -1900,9 +1901,11 @@ function tick(now){
 function gameOver(){
   hideStatCard(); goalFx(false); state='over';
   const win=scoreH>scoreA?'home':(scoreA>scoreH?'away':'tie');
-  $('finalTitle').textContent=win==='tie'?'DRAW':(win==='home'?'WOLVES WIN!':'SHARKS WIN');
+  // G-282 round 1 (G-228): the end screen names the team that ACTUALLY won - the away name is the live
+  // TEAMS.away.name (the career opponent, e.g. BEARS), never a hardcoded Sharks
+  $('finalTitle').textContent=win==='tie'?'DRAW':(TEAMS[win].name+' WIN!');
   $('finalScore').textContent=scoreH+' – '+scoreA;
-  $('finalSub').textContent=win==='home'?'The Wolves take it. What a game.':win==='away'?'The Sharks steal this one. Run it back.':'Dead even after overtime.';
+  $('finalSub').textContent=win==='home'?('The '+TEAMS.home.name+' take it. What a game.'):win==='away'?('The '+TEAMS.away.name+' steal this one. Run it back.'):'Dead even after overtime.';
   $('final').style.display='flex';
   commSay('final', true); // G-44
   try{ careerAfterGame(); }catch(e){}

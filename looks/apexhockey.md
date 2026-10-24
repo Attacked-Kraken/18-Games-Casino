@@ -7,10 +7,12 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
-## WHERE THINGS ARE (apexhockey.html, line numbers as of G-282)
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-282 round 1)
 - Faceoff DOTS table ~200 (centre, n1-n4 neutral at |x| 20, e1-e4 end at |x| 69, z 21.4); the same spots are painted in makeIceTexture's dots list (~260). nearestDot() picks the drop spot for offside/icing whistles.
 - Penalties (G-272 + G-273 round 1): callPenalty() ~1030 decides instant vs DELAYED - applyPenalty() below it does the sit (major flag: penT 50 + 'MAJOR' banner for a check from behind in doCheck(); minors penT 20); an armed delayedPen (declared ~779) completes in rules() when the penalised team touches the puck (whistle + nearest-dot faceoff), at any whistle(), or at a goal in onGoal() (a fouled-team goal washes a minor, never a major); endPenalty() below applyPenalty; the penT countdown + PEN refresh live in rules() (~1510); a power-play goal springs MINORS only in onGoal().
 - Crease protection (G-282): creaseCrash() in rules() gates both goal-line crossings - an attacker within 1.5 u of the defending goalie and within 6 u of the goal centre waves the goal off (whistle 'NO GOAL · GOALIE INTERFERENCE' + end-dot faceoff).
+- End screen (G-282 round 1): gameOver() ~1900 sets #finalTitle/#finalSub from TEAMS[win].name (the live away identity - career opponent included), never a hardcoded team; careerAfterGame() then overrides the sub/buttons for career results.
+- Glass (G-282 round 1): the boards block's glass planes are per-segment height - 7.8 u (top 11.5, ~2.4 m) for end segments (|mx| > 60), 5.9 u (top 9.6, ~1.8 m) for side segments, merged into the single bfe0ff glass mesh.
 - Benches + boxes (G-282): the 'benches + boxes' block right after the boards block - two team benches at z +47 (x -26/+26), two penalty boxes (x -22/+22) and the scorekeeper box (x 0) at z -47, all plain scene meshes at ice level.
 - Goal broadcast (G-266): #goalLight/#spotlights CSS 42-47, divs 128-129, goalFx() + lastGoalX after hideStatCard (~826), lit in onGoal(), cleared in faceoff() and gameOver(); the replay cuts live in stepCamera() (search 'REPLAY: two broadcast cuts').
 - Crease paint (G-266): makeIceTexture's goal-creases arc bulges toward centre ice (in front of the goal line).
@@ -50,6 +52,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-24: A major penalty exists - a check from behind draws a 5:00 MAJOR (penT 50, banner MAJOR) that serves its full time; only minors leave the box early on a power-play goal (never-g-272-p1) (G-272)
 - 2026-10-24: A penalty called while the other team has the puck is DELAYED - the man does not sit at once; play goes on until the penalised team touches the puck, and only then do the whistle blow and the box fill (never-g-273-p2) (G-273)
 - 2026-10-24: The crease is protected - a goal scored while an attacker stands on the defending goalie inside the crease is waved off, no goal (never-g-282-p1) (G-282)
+- 2026-10-24: The end screen names the team that actually won - the title and sub come from the live team names, never a hardcoded Sharks (never-g-282-p3) (G-282)
+- 2026-10-24: The glass is about 1.8 m high along the sides and about 2.4 m at the ends, not one height all the way round (never-g-282-p4) (G-282)
 - 2026-10-24: The arena has real bench and box meshes outside the boards at ice level - two team benches on one side, two penalty boxes and the scorekeeper box on the other (never-g-282-p2) (G-282)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
