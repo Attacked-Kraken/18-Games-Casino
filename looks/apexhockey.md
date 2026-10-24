@@ -7,7 +7,9 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
-## WHERE THINGS ARE (apexhockey.html, line numbers as of G-261)
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-266 round 1)
+- Goal broadcast (G-266): #goalLight/#spotlights CSS 42-47, divs 128-129, goalFx() + lastGoalX after hideStatCard (~826), lit in onGoal(), cleared in faceoff() and gameOver(); the replay cuts live in stepCamera() (search 'REPLAY: two broadcast cuts').
+- Crease paint (G-266): makeIceTexture's goal-creases arc bulges toward centre ice (in front of the goal line).
 - Rink constants: GOAL_LINE/BLUE 191, PERIOD_LEN/DOTS 192-193; boards bounce in stepPuck, carried-puck clamp in stepPuck's owned branch (G-216).
 - Test hook: window.__hk at 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch); window.__reality 1725.
 - Score + G-257 stat counters (statShots/statSaves/statFO): globals 767-768, reset at 782 in __hk.newMatch() (which also clears the OT bench marks).
@@ -38,6 +40,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: the intermission between periods shows a stats card (shots, saves, faceoffs won) - never just the END OF PERIOD banner (G-257)
 - 2026-10-24: Overtime is 3-on-3 - two skaters a side stay on the bench for the whole OT (otLines() in faceoff(); never-g-261-p2) (G-261)
 - 2026-10-24: The puck never leaves the rink under boards pressure - the boards tests keep play alive between phases or they starve their own sampler (never-g-261-p1) (G-261)
+- 2026-10-24: A goal brings the broadcast look - horn, crowd, the red goal light, spotlights and a replay cut to 2 angles during the goal state (goalFx() + stepCamera replay cuts; never-g-266-p1) (G-266)
+- 2026-10-24: Each goal crease is painted IN FRONT of its goal - a light-blue semicircle r 1.83 m on the centre-ice side of the goal line, never behind it in the trapezoid (never-g-266-p2) (G-266)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
 ## Reference pictures

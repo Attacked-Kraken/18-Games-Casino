@@ -39,6 +39,11 @@
   #statCard { position:fixed; top:56%; left:50%; transform:translate(-50%,-50%); z-index:9400; display:none; background:rgba(6,18,34,.88); border:1px solid #7fd4ff; border-radius:14px; padding:16px 30px; text-align:center; color:#eaf6ff; font-family:inherit; box-shadow:0 10px 40px rgba(0,0,0,.5); }
   #statCard h3 { margin:0 0 6px; font-size:22px; letter-spacing:.14em; color:#ffe27d; }
   #statCard .scScore { font-size:19px; font-weight:700; letter-spacing:.08em; margin-bottom:6px; }
+  #goalLight { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:9500; display:none; width:54px; height:54px; border-radius:50%; background:radial-gradient(circle at 50% 38%, #ffb3ab, #e02020 55%, #7d0d0d); border:3px solid #ffd9d4; box-shadow:0 0 34px 12px rgba(255,40,30,.75); }
+  #goalLight.on { display:block; animation:goalPulse .45s ease-in-out infinite alternate; }
+  @keyframes goalPulse { from { box-shadow:0 0 22px 6px rgba(255,40,30,.55); } to { box-shadow:0 0 46px 18px rgba(255,40,30,.95); } }
+  #spotlights { position:fixed; inset:0; z-index:9400; display:none; pointer-events:none; background:linear-gradient(105deg, transparent 30%, rgba(255,244,190,.20) 44%, transparent 58%), linear-gradient(255deg, transparent 30%, rgba(255,244,190,.20) 44%, transparent 58%); }
+  #spotlights.on { display:block; }
   #statCard .scRow { font-size:15px; letter-spacing:.1em; color:#cfe9ff; }
   #flash { position:fixed; inset:0; z-index:9400; background:#fff; opacity:0; pointer-events:none; transition:opacity .5s; }
   .overlay { position:fixed; inset:0; z-index:9600; display:flex; flex-direction:column; align-items:center;
@@ -121,6 +126,8 @@
 <button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
 <div id="statCard"></div>
+<div id="goalLight"></div>
+<div id="spotlights"></div>
 <div id="flash"></div>
 <div id="joy"><div id="knob"></div></div>
 <div id="btns">
@@ -264,8 +271,10 @@ function makeIceTexture(baseImg){
   // goal creases (light blue)
   g.fillStyle='rgba(140,200,250,.85)';
   [[GOAL_LINE,1],[-GOAL_LINE,-1]].forEach(([gx,s])=>{
-    g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.fill();
-    g.strokeStyle='#c8323c'; g.lineWidth=3; g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.stroke();
+    // G-266 (G-199): the crease is a semicircle IN FRONT of the goal (venues/rink.md, r 1.83 m) - it bulges toward centre ice, never behind the line into the trapezoid: for the +x goal the half with canvas-x offset <= 0, for the -x goal >= 0
+    const a0 = s > 0 ? Math.PI / 2 : -Math.PI / 2, a1 = s > 0 ? Math.PI * 1.5 : Math.PI / 2;
+    g.beginPath(); g.arc(X(gx),Z(0),6*S,a0,a1,false); g.fill();
+    g.strokeStyle='#c8323c'; g.lineWidth=3; g.beginPath(); g.arc(X(gx),Z(0),6*S,a0,a1,false); g.stroke();
   });
   const tex = new THREE.CanvasTexture(cv);
   tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace;
@@ -819,6 +828,12 @@ function showStatCard(){ // G-257: the intermission stats card (rules/hockey.md)
   c.style.display='block';
 }
 function hideStatCard(){ const c=$('statCard'); if(c) c.style.display='none'; }
+let lastGoalX = 0; // G-266: the goal the replay cuts orbit (set in onGoal)
+function goalFx(on){ // G-266 (G-228 broadcast look): a goal lights the red goal light behind the net and throws the spotlights on; both clear at the next faceoff / the final screen
+  const gl=$('goalLight'), sp=$('spotlights');
+  if(gl) gl.className = on ? 'on' : '';
+  if(sp) sp.className = on ? 'on' : '';
+}
 function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
   requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
 /* ================= G-47: owner's stadium kit sounds (sounds/stadium/hockey) =================
@@ -1109,6 +1124,7 @@ function faceoff(dx,dz,label){
   offArm=null;
   setupFaceoffPositions(dx,dz);
   otLines();
+  goalFx(false);
   state='faceoff'; stateT=1.4; foDropAt=gameNow; updateHUD(); // G-257: the first clean grab inside 4 s of the drop wins the faceoff on the card
   if(label) banner(label,'',1400);
   commSay('faceoff');
@@ -1126,6 +1142,7 @@ function onGoal(team){
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
+  lastGoalX = TEAMS[team].dir * GOAL_LINE; goalFx(true); // G-266: goal light + spotlights on, replay cuts run off lastGoalX
   if(period>3) commSay('goal_long', true); // G-44: the golden goal gets the long call
   else if(_deficit>=2 && (team==='home' ? scoreH>=scoreA : scoreA>=scoreH)) commSay('comeback', true);
   else commSay('goal', true);
@@ -1653,6 +1670,11 @@ function stepCamera(dt){
     const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
+  if(state==='goal'){ // G-266 REPLAY: two broadcast cuts around the goal just scored - a side close-up, then behind the net; the switch trips the >60 cut rule below, so the view JUMPS like a TV replay instead of gliding
+    const gx = lastGoalX || GOAL_LINE, out = Math.sign(gx) || 1;
+    if(stateT > 1.6){ camTgt.set(gx - out*26, 9, -26); lookTgt.set(gx, 1, 0); }
+    else { camTgt.set(gx + out*15, 5.5, 7); lookTgt.set(gx - out*12, 1, 0); }
+  }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
   // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
   if(camTgt.distanceTo(camera.position)>60 || (window.__lookCur && lookTgt.distanceTo(window.__lookCur)>60)){ camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
@@ -1814,7 +1836,7 @@ function tick(now){
   renderer.render(scene,camera);
 }
 function gameOver(){
-  hideStatCard(); state='over';
+  hideStatCard(); goalFx(false); state='over';
   const win=scoreH>scoreA?'home':(scoreA>scoreH?'away':'tie');
   $('finalTitle').textContent=win==='tie'?'DRAW':(win==='home'?'WOLVES WIN!':'SHARKS WIN');
   $('finalScore').textContent=scoreH+' – '+scoreA;
