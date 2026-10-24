@@ -827,7 +827,7 @@ export default [
   },
   {
     id: 'play-steering-holds-the-line',
-    ask: 'Steering gives real control: the car turns in with the stick, holds the racing line, and straightens the moment the stick is released (owner: steering is bad, he cannot stay on the track)',
+    ask: 'The player drives (owner recordings, G-239): the stick turns the car and a driven line stays on the road; let go and the nose HOLDS its world heading - it does not straighten itself back onto the road (that self-straightening was the autopilot)',
     async test(page, h) {
       const stopDriving = async () => { await h.eval(`(() => { if (window.__g136drv) { clearInterval(window.__g136drv); window.__g136drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
       if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
@@ -843,22 +843,29 @@ export default [
       await h.eval(`window.__test.setCarS(0, 400)`);
       await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
       for (let i = 0; i < 10; i++) { await h.wait(300); const v = await h.eval(`window.__test.steerProbe().v`).catch(() => 0); if (v > 40) break; }
-      // PART 1 - the release: wind the nose over with a held push, then let go.
-      // A wheel that stays wound drifts the car off the road (today: ~10 m in 2.5 s).
+      // PART 1 - the release (G-239): wind the nose over with a held push, then let go.
+      // The nose must HOLD its world heading - no snap back onto the road's line (the old
+      // law re-centred the heading on the road itself, so the car drove itself), and the
+      // car must travel sideways on that held heading: the driver brings it back, not the car.
       await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
       await h.wait(350);
       const d0 = await h.eval(`window.__test.steerProbe().d`);
+      const yaw0 = await h.eval(`window.__test.heading(0).yaw`);
       await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
       await h.wait(2500);
       const rel = await h.eval(`window.__test.steerProbe()`);
+      const yaw1 = await h.eval(`window.__test.heading(0).yaw`);
       if (!rel) return 'steer probe lost the player';
-      if (Math.abs(rel.headAngle) > 0.06) { await stopDriving(); return 'the car did not straighten on release: heading still ' + rel.headAngle.toFixed(2) + ' rad with the stick centered'; }
-      if (Math.abs(rel.d - d0) > 3.5) { await stopDriving(); return 'letting go of the stick drifted the car ' + Math.abs(rel.d - d0).toFixed(1) + ' m sideways in 2.5 s - it must straighten at once'; }
+      let dyaw = Math.abs(yaw1 - yaw0); if (dyaw > Math.PI) dyaw = 2 * Math.PI - dyaw;
+      if (dyaw > 0.08) { await stopDriving(); return 'letting go of the stick still turned the car: world heading moved ' + dyaw.toFixed(2) + ' rad in 2.5 s - the nose must HOLD and the driver must steer'; }
+      if (Math.abs(rel.d - d0) < 2.0) { await stopDriving(); return 'on a held heading the car should travel sideways off its line; it moved only ' + Math.abs(rel.d - d0).toFixed(1) + ' m - something is still steering it back'; }
       // PART 2 - hold the line: a stick driver (the game's own damped line law,
       // corner braking from its own speed table) drives a sector; the car must
-      // never leave the road and kerb (|d| <= width/2 + 1.6).
-      await h.eval(`(() => { const t = window.__test; window.__g136drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const steer = Math.max(-1, Math.min(1, (q.line - q.d) * 0.5 - q.headAngle * 1.1)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
-      const s0 = rel.s;
+      // never leave the road and kerb (|d| <= width/2 + 1.6). PART 1 ended with the
+      // car at the wall on a held heading, so the sector starts from a clean place.
+      await h.eval(`window.__test.setCarS(0, 400)`);
+      await h.eval(`(() => { const t = window.__test; window.__g136drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const want = Math.max(-0.5, Math.min(0.5, Math.atan2(q.line - q.d, 25))); const steer = Math.max(-1, Math.min(1, (want - q.headAngle) * 2.0)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
+      const s0 = (await h.eval(`window.__test.steerProbe()`)).s;
       let worst = 0, last = rel;
       for (let i = 0; i < 24; i++) { await h.wait(500); last = await h.eval(`window.__test.steerProbe()`).catch(() => null); if (!last) break; if (Math.abs(last.d) > worst) worst = Math.abs(last.d); }
       await stopDriving();
@@ -940,6 +947,202 @@ export default [
       if (rb.h < 44 || rb.w < 44) return 'LIGHTS OUT is only ' + Math.round(rb.w) + 'x' + Math.round(rb.h) + 'px - under the 44px tap target';
       if (rb.sh > rb.ch + 1) return 'the grid menu needs scrolling with the bigger button';
       if (rb.top < -1 || rb.bottom > rb.ih + 1) return 'LIGHTS OUT fell off screen with the bigger button';
+      return true;
+    },
+  },
+  {
+    id: 'play-player-must-steer',
+    ask: 'Gas alone must not drive the car (owner recordings, G-239): stick untouched, the car leaves the road - on the old build it covered 2,192 m in 60 s dead centre, hands-free',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      let left = false, dist = 0, lastS = null;
+      for (let i = 0; i < 40 && !left; i++) {
+        await h.wait(500);
+        const c = await h.eval(`window.__test.cars()[0]`).catch(() => null);
+        if (!c) continue;
+        if (lastS !== null) { let ds = c.s - lastS; if (ds < -L / 2) ds += L; if (ds > L / 2) ds -= L; dist += Math.max(0, ds); }
+        lastS = c.s;
+        if (Math.abs(c.d) > 8.6 || (c.v < 8 && dist > 300)) left = true;
+      }
+      await h.eval(`window.__test.setInput({ gas:false, brake:false, steer:0 })`).catch(() => {});
+      if (!left) return 'gas alone drove ' + Math.round(dist) + ' m and never left the road - the car is still driving itself';
+      return true;
+    },
+  },
+  {
+    id: 'play-broadcast-cam-steady',
+    ask: 'The broadcast (helicopter) camera is steady (owner, G-239): it rides BEHIND the car in the car frame - the old camera hung on a fixed point 26 m to the side, and that arm swung the picture around every corner',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      let mode = 0;
+      for (let i = 0; i < 5 && mode !== 2; i++) { await h.press('#btnCam'); await h.wait(300); mode = await h.eval(`window.__test.camProbe().mode`).catch(() => -1);
+        if (mode !== 2 && i >= 1) { await h.eval(`document.querySelector('#btnCam').dispatchEvent(new MouseEvent('mousedown', { bubbles:true }))`).catch(() => {}); await h.wait(300); mode = await h.eval(`window.__test.camProbe().mode`).catch(() => -1); } }
+      if (mode !== 2) return 'CAM cycling never reached broadcast (mode ' + mode + ')';
+      await h.eval(`(() => { const t = window.__test; window.__g239drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const want = Math.max(-0.5, Math.min(0.5, Math.atan2(q.line - q.d, 25))); const steer = Math.max(-1, Math.min(1, (want - q.headAngle) * 2.0)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
+      // the geometry is the steadiness: measure where the camera sits in the car's own
+      // frame - behind it (back) vs hanging off its side (side). The old side-arm point
+      // reads side/back ~1.4; a steady follow reads a small fraction of that.
+      let good = 0, seen = 0, worst = 0;
+      for (let i = 0; i < 10; i++) {
+        await h.wait(450);
+        const m = await h.eval(`(() => { const t = window.__test; const cam = t.camAt(); const cm = t.carMesh(0); const hd = t.heading(0); const car = t.cars()[0]; const pr = t.camProbe();
+          if (!cam || !cm || !hd || !car || !pr) return null;
+          const tan = hd.yaw - hd.headAngle, tx = Math.cos(tan), tz = Math.sin(tan);
+          const ox = cam.x - cm.center[0], oz = cam.z - cm.center[2];
+          const back = -(ox * tx + oz * tz), side = Math.abs(ox * -tz + oz * tx);
+          return { v: car.v, back, side, ratio: side / Math.max(1, back), ndc: pr.car }; })()`).catch(() => null);
+        if (!m || m.v < 20) continue;
+        seen++;
+        if (m.ratio > worst) worst = m.ratio;
+        if (m.ratio < 0.6 && Math.abs(m.ndc.x) < 0.95 && Math.abs(m.ndc.y) < 0.95) good++;
+      }
+      await h.eval(`(() => { if (window.__g239drv) { clearInterval(window.__g239drv); window.__g239drv = null; } window.__test.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {});
+      if (seen < 4) return 'never sampled the broadcast camera at speed (saw ' + seen + ')';
+      if (good < seen - 1) return 'the broadcast camera still hangs off the car side (worst side/back ' + worst.toFixed(2) + ') - that side arm is what swung the picture';
+      return true;
+    },
+  },
+  {
+    id: 'play-contact-banner-is-players-only',
+    ask: 'CONTACT! is the player news only (owner recordings, G-239): two AI cars hitting each other must never shout CONTACT! on the player screen',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      // park the player in the middle of the largest gap in the field, so no AI can
+      // reach him during the short staging window (a banner while an AI is on top of
+      // him would be HIS news and voids the attempt, it does not fail it)
+      const park = () => h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength();
+        const ss = cs.slice(1).map(c => c.s).sort((a, b) => a - b); let best = 0, bg = -1;
+        for (let i = 0; i < ss.length; i++) { const nx = ss[(i + 1) % ss.length]; let g = nx - ss[i]; if (g < 0) g += L; if (g > bg) { bg = g; best = ss[i] + g / 2; } }
+        window.__test.setCarS(0, ((best % L) + L) % L); return bg; })()`).catch(() => 0);
+      await park();
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      await h.wait(2500); // the AI reach racing speed
+      const bannerTxt = () => h.eval(`(() => { const b = document.getElementById('banner'); return b && b.classList.contains('show') ? b.querySelector('.b1').textContent : ''; })()`).catch(() => '');
+      const nearPlayer = () => h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength(); let m = 1e9; for (let i = 1; i < cs.length; i++) { let d = Math.abs(cs[i].s - cs[0].s); if (d > L / 2) d = L - d; if (d < m) m = d; } return m; })()`).catch(() => 0);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        // stage a hard AI-on-AI hit far from the player: fastest AI 5 m behind the slowest
+        const staged = await h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength(); const ps = cs[0].s;
+          const far = i => { let d = Math.abs(cs[i].s - ps); if (d > L / 2) d = L - d; return d > 600; };
+          let fast = -1, slow = -1, fv = -1, sv = 1e9;
+          for (let i = 1; i < cs.length; i++) { if (far(i) && cs[i].v > fv) { fv = cs[i].v; fast = i; } if (far(i) && cs[i].v < sv) { sv = cs[i].v; slow = i; } }
+          if (fast < 0 || slow < 0 || fast === slow) return false;
+          window.__test.setCarS(slow, cs[slow].s); window.__test.setCarS(fast, ((cs[slow].s - 5) % L + L) % L);
+          return true; })()`).catch(() => false);
+        if (!staged) { await park(); continue; }
+        let voided = false;
+        for (let i = 0; i < 7; i++) {
+          await h.wait(350);
+          if ((await nearPlayer()) < 60) { voided = true; break; }
+          const t = await bannerTxt();
+          if (t === 'CONTACT!') return 'an AI-on-AI hit shouted CONTACT! on the player screen (nearest AI ' + Math.round(await nearPlayer()) + ' m from the player)';
+        }
+        if (voided) await park();
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-no-penalty-for-being-shoved',
+    ask: 'No track-limits fine for being shoved (owner recordings, G-239): off-road time while a rival shove is fresh must not accrue, brief brushes decay, and a chosen excursion still accrues',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const pen = () => h.eval(`window.__test.penState()`).catch(() => null);
+      // 1) a chosen excursion DOES accrue off-track time (poll - the crossing takes a moment)
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      let st1 = null;
+      for (let i = 0; i < 25; i++) { await h.wait(200); st1 = await pen(); if (st1 && (st1.offT > 0.5 || st1.warnings > 0)) break; }
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      if (!st1 || !(st1.offT > 0.5 || st1.warnings > 0)) return 'a deliberate excursion accrued nothing (offT ' + (st1 && st1.offT) + ') - the limits clock is dead';
+      // back on the road, let the brush decay, note the warning count
+      await h.eval(`window.__test.setCarS(0, window.__test.cars()[0].s)`);
+      await h.wait(2500);
+      const wBefore = (await pen()).warnings;
+      // 2) the same excursion inside the shove grace must NOT accrue - read the moment the car is out
+      await h.eval(`window.__test.shoveNow()`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      let out = false;
+      for (let i = 0; i < 20 && !out; i++) { await h.wait(120); const c = await h.eval(`window.__test.cars()[0]`).catch(() => null); if (c && Math.abs(c.d) > 8.7) out = true; }
+      const st2 = await pen();
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      if (!out) return 'the car never left the road in the grace phase - the situation was not created';
+      if (!st2) return 'penalty probe lost the player';
+      if (st2.offT > 0.2 || st2.warnings !== wBefore) return 'off-road time accrued during the shove grace (offT ' + st2.offT + ', warnings ' + wBefore + ' -> ' + st2.warnings + ') - the player is still fined for being shoved';
+      return true;
+    },
+  },
+  {
+    id: 'play-quali-gap-is-real',
+    ask: 'The quali GAP readout is real (owner recordings, G-239): before any lap is banked it must not sit at a fake +0.0s - it shows no-data until a best-lap delta exists',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      // create a car ahead in the live order: teleport an AI to just before the line
+      // and let it drive across - its lap count puts it ahead of the parked player
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setCarS(5, ${0} + (window.__test.trackLength() - 150))`);
+      let g = '', sawGap = false;
+      for (let i = 0; i < 14; i++) {
+        await h.wait(500);
+        g = await h.eval(`document.getElementById('gapbox').textContent`).catch(() => '');
+        if (/^GAP/.test(g)) { sawGap = true; break; }
+      }
+      if (!sawGap) return 'never got a car ahead of the player in the quali order - the situation was not created (last: "' + g + '")';
+      if (/\+0\.0s/.test(g)) return 'the quali gap reads a fake +0.0s with no lap banked: "' + g + '"';
+      return true;
+    },
+  },
+  {
+    id: 'play-quali-skip-clears-the-speedo',
+    ask: 'SKIP QUALI must not sit on the speedometer (owner recordings, G-239): in every frame the pill hid the speed digits - the two rects must not overlap',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      await h.wait(500);
+      const r = await h.eval(`(() => { const a = document.getElementById('qualiSkip'), b = document.getElementById('speedo'); if (!a || !b) return null; const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); return { ox: Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), oy: Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top) }; })()`);
+      if (!r) return 'qualiSkip or speedo missing in qualifying';
+      if (r.ox > 0 && r.oy > 0) return 'SKIP QUALI overlaps the speedometer by ' + Math.round(r.ox) + 'x' + Math.round(r.oy) + ' px - the speed is hidden again';
+      return true;
+    },
+  },
+  {
+    id: 'play-engine-sound-is-the-kit',
+    ask: 'The engine the player hears is the grand_prix kit (owner: the synth sounds like a rubber chicken, G-239): the kit must be decoded and ready in a session, and no media elements exist anywhere (factory music rule)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      let ready = false;
+      for (let i = 0; i < 20 && !ready; i++) { await h.wait(500); ready = await h.eval(`(() => { const k = window.__test.kitAudio(); return !!(k && k.ready); })()`).catch(() => false); }
+      if (!ready) return 'the grand_prix engine kit never became ready - the synth fallback would carry the session (the rubber chicken)';
+      const media = await h.eval(`document.querySelectorAll('audio,video').length`);
+      if (media !== 0) return media + ' media elements in the page - sound must be decoded buffers only';
       return true;
     },
   }

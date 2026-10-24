@@ -78,6 +78,8 @@ table.board th{color:#ffd34d;text-align:left;padding:6px 4px;border-bottom:2px s
 table.board td{padding:6px 4px;border-bottom:1px solid #223a56;color:#e8eef5}
 table.board tr.me td{color:#ffd34d;font-weight:800}
 #gridEvents{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+#grid .panel{display:flex;flex-direction:column}
+#bGridBack{order:-1;align-self:flex-start}
 #gridEvents .btn{font-size:14px;padding:12px 6px;min-height:52px;margin:0}
 .codebox{background:#0e2036;border:2px dashed #ffd34d;border-radius:10px;padding:14px;font-size:16px;
 font-weight:800;letter-spacing:1px;color:#ffd34d;text-align:center;margin:10px 0;word-break:break-all}
@@ -800,7 +802,7 @@ const maxSpd = dist<=100?11.0 : dist<=200?10.6 : 10.0;
 const drain  = dist<=200?24 : 26;
 const E={
 ev, done:false, dq:false, S, dist,
-phase:'marks', phaseT:0, setDur:rnd(0.9,1.8),
+phase:'marks', phaseT:0, setDur:rnd(0.9,1.8), started:false,
 r:newRunner(), time:0, penalty:0, falseStarts:0, warnT:0, place:4,
 ai: rivals.map(rv=>makeLiveRival(rv,ev)),
 actionLabel(){ return '—'; },
@@ -830,8 +832,11 @@ if(this.warnT>0) this.warnT-=dt;
 if(this.phase==='marks'){ if(this.phaseT>1.1){ this.phase='set'; this.phaseT=0; this.setDur=rnd(0.9,1.8);} }
 else if(this.phase==='set'){ if(this.phaseT>this.setDur){ this.phase='run'; AudioSys.pistol(); } }
 else if(this.phase==='run'){
-this.time+=dt;
 updateRunner(this.r, dt, maxSpd, drain);
+if(!this.started){ // JOB G-244 (art director): the whole field waits on ONE start line until the player starts - the rivals do not race off without him, and until then the clock is still and the place counts only the runners on the track (all level at the line)
+if(this.r.pos>0||this.r.speed>0) this.started=true; else { this.place=1; return; }
+}
+this.time+=dt;
 for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,dt,dist,false); }
 this.place = 1 + this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
@@ -1209,10 +1214,11 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='angle'){
-this.ang+=this.angDir*95*dt;
+this.ang+=this.angDir*55*dt;
 if(this.ang>65){this.ang=65;this.angDir=-1;} if(this.ang<15){this.ang=15;this.angDir=1;}
 updateRunner(this.r,dt,10.0,20);
-if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+// G-249 r1 (owner): the angle needle was too fast to set (95 deg/s), and crossing the line while setting it was an instant FOUL - the takeoff already counted, so there is no foul: reach the line still setting it and he jumps with the angle showing
+if(this.r.pos>=BOARD1){ this.angSet=this.ang; this.startFlight(); }
 }else if(this.phase==='flight'){
 this.ft+=dt; this.fx+=this.fvx*dt;
 if(this.ft>=this.fT){ this.endAttempt(); }
@@ -1258,7 +1264,7 @@ else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early coun
 }else if(this.phase==='phase'){
 if(this.tapped) return;
 this.tapped=true;
-const q=clamp(1-Math.abs(this.marker-0.5)/0.5,0,1);
+const q=clamp(1-Math.abs(this.marker-0.5)/0.8,0,1); // G-249 r1: quality falls off over a wider window, matching the wider green
 this.qs.push(q);
 const CO=[0.52,0.44,0.72];
 this.subTo=this.subFrom+(this.vT||this.r.speed)*CO[this.sub]*(0.45+0.55*q);
@@ -1285,7 +1291,7 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='phase'){
-this.marker+=this.mdir*1.6*dt;
+this.marker+=this.mdir*1.0*dt; // G-249 r1: the hop/step/jump marker was the fastest tap in the game (1.6/s)
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 this.subT+=dt;
 const u=Math.min(1,this.subT/this.subDur);
@@ -1344,7 +1350,7 @@ if(this.done) return;
 if(this.phase==='approach'){
 if(this.r.pos>=this.zoneLo&&this.r.pos<=this.zoneHi){
 this.phase='bar'; this.marker=0; this.mdir=1; this.swingT=0; this.barT=0; this.flightH=this.curH(); this.plantD=this.r.pos; this.barFell=false; this.vOver=false; this.vMat=false;
-this.gw=(0.05+0.06*clamp(this.r.speed/11,0,1))*SIM_MODS.tech;
+this.gw=(0.20+0.04*clamp(this.r.speed/11,0,1))*SIM_MODS.tech; // G-249 r1 (owner): the green window was 0.10-0.22 of the bar (~0.1-0.2s to tap) - now at least 0.40 wide
 AudioSys.click();
 }else{ this.miss(this.r.pos>this.zoneHi?'No takeoff — ran through':'Too early'); }
 }else if(this.phase==='bar'){
@@ -1374,7 +1380,7 @@ if(this.phase==='approach'){
 updateRunner(this.r,dt,10.5,15);
 if(this.r.pos>this.runOut) this.miss('No takeoff — ran through');
 }else if(this.phase==='bar'){
-this.marker+=this.mdir*1.15*dt;
+this.marker+=this.mdir*0.75*dt; // G-249 r1: slower sweep - the green lasts at least half a second
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 if(this.pv){ this.swingT+=dt; if(this.swingT>2.6) this.miss('No clear — came back down'); }
 if(!this.pv){ this.barT+=dt; if(this.barT>1.7) this.miss('No clear — came down short', true); }
@@ -2791,7 +2797,7 @@ W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
 if(ENG.phase==='runup'&&ENG.r.pos>27.5) centerText('TAKEOFF - TAP JUMP!', H*0.30, 24, '#ffd34d');
 if(ENG.msgT>0) centerText(ENG.msg, H*0.38, 20, '#ffb34d');
-if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.38,0.62,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
+if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.30,0.70,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
 if(ENG.phase==='mark'){
 const last=ENG.attempts[ENG.attempts.length-1];
 centerText(ENG.foul?ENG.res:fmtMark(last), H*0.30, 30, ENG.foul?'#ff7b7b':'#7dff9b');
@@ -3198,6 +3204,7 @@ $('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>'+(colHead||'ATH
 rows.map((r,i)=>'<tr'+(r.n===athleteName||String(r.n).indexOf(athleteName+' —')===0?' class="me"':'')+
 '><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+r.p+'</td></tr>').join('')+'</table>';
 G.nextFn=nextFn;
+$('bResMenu').textContent=(G.mode==='free')?'EVENTS':'MENU'; // OWNER 2026-10-23: in free play the exit leads back to the event picker
 $('bResNext').textContent=nextLabel;
 $('bResNext').style.display='block';
 showScreen('results');
@@ -3551,7 +3558,7 @@ wireMenu('bFree',()=>{ G.mode='free'; showScreen('grid'); });
 wireMenu('bGridBack',()=>showScreen('menu'));
 wireMenu('bCardBack',()=>showScreen(G.mode==='free'?'grid':(G.mode==='tourn'?'tourney':(G.mode==='career'?'career':'menu'))));
 wireMenu('bCardStart',()=>startPlay(G.cardEv, G.mode==='champ'?G.rivals:(G.mode==='career'?G.carRivals:(G.mode==='tourn'?[G.singleRival]:(G.freeRivals||(G.freeRivals=freeRivals()))))));
-wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; showScreen('menu'); refreshMenuRival(); });
+wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; if(G.mode==='free'){ showScreen('grid'); } else { showScreen('menu'); refreshMenuRival(); } }); // OWNER 2026-10-23: free play results always bring you back to the free play menu to pick something else
 wireMenu('bResNext',()=>{ if(G.nextFn) G.nextFn(); });
 wireMenu('bHow',()=>showScreen('howto'));
 wireMenu('bHowBack',()=>showScreen('menu'));

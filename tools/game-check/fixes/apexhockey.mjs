@@ -235,8 +235,10 @@ export default [
     for (let i = 0; i < 12; i++) {
       await h.wait(1000);
       const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
-      if (/OFFSIDE/i.test(banner)) return true;
+      // G-228: every freeze in this file now restores thinkT before the test leaves - skater objects persist across matches on the shared page, and an unrestored freeze starved every later test's AI (the G-228 tester scene's retriever never came)
+      if (/OFFSIDE/i.test(banner)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; }
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'a real offside (attacker at x=40 ahead of the puck crossing the blue line) never drew a whistle';
   },
 },
@@ -275,9 +277,10 @@ export default [
     for (let i = 0; i < 60; i++) {
       await h.wait(250);
       const txt = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '').catch(() => '');
-      if (/WAIVED/i.test(txt)) return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold';
-      if (/ICING/i.test(txt)) return true;
+      if (/WAIVED/i.test(txt)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold'; }
+      if (/ICING/i.test(txt)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; }
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'an untouched clear from the defensive half past the far goal line never drew an icing whistle';
   },
 },
@@ -308,7 +311,7 @@ export default [
       }));
       if (/GOAL/i.test(r.banner)) { scored = true; changed = r.score !== before; }
     }
-    if (!scored) return 'a puck over the goal line did not register a goal';
+    if (!scored) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return 'a puck over the goal line did not register a goal'; }
     // Phase 2: after the 3.2 s goal celebration the puck must restart from centre ice.
     for (let i = 0; i < 16; i++) {
       await h.wait(500);
@@ -318,8 +321,9 @@ export default [
         pz: window.__hk && window.__hk.puck ? window.__hk.puck.pos.z : 999,
       }));
       if (r.score !== before) changed = true;
-      if (changed && Math.abs(r.px) < 6 && Math.abs(r.pz) < 6) return true; // caught mid-faceoff on the dot
+      if (changed && Math.abs(r.px) < 6 && Math.abs(r.pz) < 6) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; } // caught mid-faceoff on the dot
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'after the goal the puck did not restart from centre ice';
   },
 },
@@ -2221,6 +2225,98 @@ export default [
   }
 },
 {
+  id: 'never-g-228-p1',
+  ask: 'NEVER (G-228): icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - with a home skater in the box and the power-play tag live, the deep dump that is whistled at full strength must sail past the far goal line with no icing whistle and play carrying on',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game, el = document.getElementById('banner');
+      return {
+        state: g.state,
+        penTag: (document.getElementById('penTag') || {}).textContent || '',
+        banner: (el && el.classList.contains('show')) ? el.textContent.replace(/\s+/g, ' ').trim() : '',
+        boxedHome: window.__hk.skaters.some(s => s.inBox && s.team === 'home'),
+        puckX: +window.__hk.puck.pos.x.toFixed(1)
+      };
+    }).catch(() => null);
+    let s = await snap();
+    if (!s || (s.state !== 'menu' && s.state !== 'play' && s.state !== 'faceoff')) {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the shorthanded dump';
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const sk = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
+      sk.inBox = true; sk.penT = 30; sk.pos.set(-6, 0.1, 41);
+      hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== sk) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); });
+      hk.skaters.forEach(x => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0;
+      pk.lastTouch = 'home'; pk.lastTouchX = -30;
+      pk.pos.set(-30, 0.06, 20);
+      pk.vel.set(70, 0, 0);
+    });
+    let sawPP = false, crossedAt = 0;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 20000) {
+      const q = await snap();
+      if (q) {
+        if (/PP/.test(q.penTag)) sawPP = true;
+        if (q.banner && /ICING/.test(q.banner) && q.boxedHome) return 'icing was whistled against the SHORTHANDED home team (banner "' + q.banner + '") - rules/hockey.md: icing is not called when shorthanded';
+        if (!crossedAt && q.puckX > 89) crossedAt = Date.now();
+        if (crossedAt && Date.now() - crossedAt > 1500) {
+          if (q.state !== 'play') return 'play stopped after the shorthanded dump crossed the far goal line (state ' + q.state + ') - the dump is legal while a home skater sits in the box, play must carry on';
+          if (!sawPP) return 'the staged power play never showed on the HUD - cannot judge the shorthanded dump';
+          return true;
+        }
+      }
+      await h.wait(350);
+    }
+    return 'the staged shorthanded dump never crossed the far goal line - cannot judge the call';
+  }
+ },
+{
+  id: 'tester-chk-h01',
+  mode: 'h01',
+  ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
+  async test(page, h) {
+    const res = await h.eval(() => {
+      let ice = null;
+      window.__reality.player.parent.traverse(o => {
+        if (!ice && o.isMesh && o.geometry && o.material && o.material.map && o.material.color && o.material.color.getHexString() === 'ffffff') {
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox, sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y, sz = bb.max.z - bb.min.z;
+          const dims = [sx, sy, sz].sort((a, b) => b - a);
+          if (dims[0] > 190 && dims[1] > 80 && dims[2] < 0.1) ice = o;
+        }
+      });
+      if (!ice) return { err: 'no ice surface found in the running game' };
+      const img = ice.material.map.image, W = img.width, H = img.height;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0);
+      const d = cx.getImageData(0, 0, W, H).data, reds = [];
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = (j * W + i) * 4; if (d[k] > 140 && d[k + 1] < 110 && d[k + 2] < 110) reds.push([-100 + (i / W) * 200, -42.5 + (j / H) * 85]); }
+      const clus = [];
+      for (const p of reds) { const c = clus.find(c => Math.abs(c.x - p[0]) < 6 && Math.abs(c.z - p[1]) < 6); if (c) { c.n++; c.x = (c.x * (c.n - 1) + p[0]) / c.n; c.z = (c.z * (c.n - 1) + p[1]) / c.n; } else clus.push({ x: p[0], z: p[1], n: 1 }); }
+      const dots = clus.filter(c => c.n >= 90 && c.n <= 600 && Math.abs(Math.abs(c.z) - 20) <= 1.5 && Math.abs(c.x) >= 55 && Math.abs(c.x) <= 80).map(c => ({ x: +c.x.toFixed(1), z: +c.z.toFixed(1) }));
+      return { dots };
+    }).catch(e => ({ err: String(e).slice(0, 120) }));
+    if (res.err) return 'H01 cannot judge: ' + res.err;
+    if (!res.dots.length) return 'H01 cannot judge: no end-zone faceoff dots isolated in the ice paint';
+    const zs = res.dots.map(d => Math.abs(d.z) / 3.26);
+    const bad = zs.filter(m => Math.abs(m - 6.7) / 6.7 > 0.03);
+    if (bad.length) return 'H01 FOUND: end-zone faceoff dots sit ' + zs.map(m => m.toFixed(2)).join(', ') + ' m either side of centre - venues/rink.md says 6.7 m (3% band 6.50-6.90 m)';
+    return true;
+  }
+},
+{
   id: 'tester-chk-h01',
   mode: 'h01',
   ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
@@ -2697,4 +2793,48 @@ export default [
     });
   },
 },
+ {
+  id: 'tester-chk-h15',
+  mode: 'h15',
+  ask: 'H15: a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3, then count the skaters on the ice in overtime: 3 a side (plus the goalies), and the first overtime goal must end the game',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play') break;
+      if (st === 'menu') await clickId('playBtn');
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the tie';
+    await h.eval(() => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 3; g.scoreH = 1; g.scoreA = 1; g.clockT = 0.4;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+    }).catch(() => {});
+    let ot = null;
+    for (let i = 0; i < 30; i++) {
+      ot = await h.eval(() => {
+        const hk = window.__hk; if (!hk || !hk.game) return null;
+        return { period: hk.game.period, state: hk.game.state, clockT: hk.game.clockT };
+      }).catch(() => null);
+      if (ot && ot.period >= 4 && (ot.state === 'play' || ot.state === 'faceoff')) break;
+      await h.wait(700);
+    }
+    if (!ot || ot.period < 4) return 'a tied game at the end of period 3 never reached overtime (period stuck at ' + (ot ? ot.period : '?') + ') - the owner rule is 3-on-3 overtime, first goal wins, no shootout';
+    await h.wait(2500);
+    const count = await h.eval(() => {
+      const hk = window.__hk; const c = { home: 0, away: 0 };
+      for (const s of hk.skaters) {
+        if (s.goalie) continue;
+        if (s.boxT > 0) continue;
+        if (Math.abs(s.pos.x) <= 100.5 && Math.abs(s.pos.z) <= 42.8) c[s.team]++;
+      }
+      return c;
+    }).catch(() => null);
+    if (!count) return 'could not count the skaters on the ice in overtime';
+    if (count.home !== 3 || count.away !== 3) return 'H15 FOUND: a tied game goes to overtime with ' + count.home + ' home and ' + count.away + ' away skaters on the ice (5-on-5, clockT reads ' + Math.round(ot.clockT) + ' - untimed) - the owner rule (2026-10-23, rules/hockey.md line 20) is 3-on-3, first goal wins, no shootout';
+    return true;
+  }
+ }
 ];

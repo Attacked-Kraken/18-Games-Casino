@@ -13,5 +13,5 @@
 - [ ] H12 | Each side plays 5 skaters + 1 goalie | SOURCE: rules/hockey.md | NUMBERS: 5 skaters + 1 goalie | MEASURE: count skater and goalie objects per team at the first faceoff | TEST: tester-chk-h12
 - [ ] H13 | A minor penalty is 2:00 of game time with 4 skaters on the penalised side | SOURCE: rules/hockey.md | NUMBERS: 4 skaters, 2:00 | MEASURE: force a minor, read the penalty clock and the skaters on ice | TEST: tester-chk-h13
 - [ ] H14 | A major penalty is 5 minutes | SOURCE: rules/hockey.md | NUMBERS: 5 for major | MEASURE: force a major, read the penalty clock | TEST: tester-chk-h14
-- [ ] H15 | A tied game goes to a 5-minute 3-on-3 sudden-death overtime | SOURCE: rules/hockey.md | NUMBERS: 5-minute, 3-on-3 | MEASURE: finish regulation tied, read the overtime clock and skaters on ice | TEST: tester-chk-h15
-- [ ] H16 | The shootout has 3 shooters each, then sudden death | SOURCE: rules/hockey.md | NUMBERS: 3 shooters | MEASURE: play out a tied overtime, count shooters per team before sudden death | TEST: tester-chk-h16
+- [ ] H15 | A tied game goes to 3-on-3 overtime, first goal wins, no shootout | SOURCE: rules/hockey.md | NUMBERS: 3-on-3 | MEASURE: finish regulation tied, count the skaters on ice per team in overtime (3 + goalie), score once - the game must end on that goal with no shootout | TEST: tester-chk-h15
+- [-] H16 | (dropped) shootout | SOURCE: rules/hockey.md | NUMBERS: 3-on-3 | MEASURE: - | TEST: tester-chk-h16 | RESULT: DROPPED (owner decision Oct 23 2026 7:52 PM: no shootout - see H15)

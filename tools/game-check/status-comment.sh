@@ -8,7 +8,7 @@ PR="$1"; STATE="$2"; FILE="${3:-}"
 [ -n "$PR" ] && [ "$PR" != "null" ] || exit 0
 case "$STATE" in
   RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (about 8-10 min). Wait; do not re-ask to merge yet." ;;
-  RETRYING) ICON="🟠"; WORDS="RETRYING - the robot itself hit a setup problem (not your game), so it is re-running the failed part once by itself. Wait about 8-10 min; do not push, do not re-ask to merge." ;;
+  RETRYING) ICON="🟠"; WORDS="RETRYING - the robot is re-running this check by itself (the reason is below: a robot setup problem, or a known robot fault added after your check ran). It is not your game. Wait about 8-10 min; do not push, do not re-ask to merge." ;;
   ROBOT)   ICON="🟠"; WORDS="ROBOT PROBLEM - the robot could not play the game (setup / runner failure, 0 games played). This is NOT your game. The robot re-runs the failed part ONCE by itself - do NOT push, do not re-ask to merge; wait for this comment to change." ;;
   PASSED)  ICON="🟢"; WORDS="PASSED - nothing new is broken. Ask to merge (the merge robot merges green pull requests by itself)." ;;
   *)       ICON="🔴"; WORDS="FAILED - fix the lines below and push again (only NEW problems this pull request brings are listed)." ;;

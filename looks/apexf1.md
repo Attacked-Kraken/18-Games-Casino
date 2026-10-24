@@ -8,21 +8,22 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (on the G-224 branch: G-204 + the pack fix + G-224, 2026-10-23):
+Feature → line numbers in apexf1.html (on the G-239 branch: through G-224 + the G-239 owner-recordings fixes, 2026-10-23):
 - Page head + inline tab icons: lines 1-8 (SVG icon declared G-95; empty data:, icon added G-224 line 8 - the Grok recheck still saw the favicon 404)
 - Compact sideways CSS: line ~17-45 - #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 182-285 (friend overlay #friendOv at 251)
 - Import map (three + vendor loaders): line 286
-- Audio Aud: line 304 (engine() at 338 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 367, skid() at 418 - kit tire squeal loop; synth voices kept as fallback)
+- Audio Aud: line 304 (engine() at 338 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 367 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at 392 gives one retry; the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() - kit tire squeal loop; synth voices kept as fallback)
 - Data: TRACKS 445, TEAMS 463, AI_NAMES 475
 - Track (samples, buildGP for the kit circuit at 626): line 583
-- Car mesh builder buildCarMesh: line 1021; Car class: line 1298 (player steering at 1382-1386: G-136 the stick sets the heading directly, AI keeps the integrator)
+- Car mesh builder buildCarMesh: line 1034; Car class: line 1311 (player steering at ~1390-1412: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay)
+- Sponsor boards + gantries: buildSponsorBoards at 935 and the buildScenery gantry at ~811 (G-239: boxes carry a pre-flipped texture on the back face - APEX ARCADE reads correctly from both sides, never mirrored); horizon fog at 515 (300-1150, melts into the sky colour)
 - Input object: line 1460; initInput (stick, buttons, releaseAll on blur): line 1469
-- Race object: line 1643 (setup 1649, placeGrid 1693, startLights 1714, beginRace 1740); trackGroundY at 1638 and updateCamera at 1929 (G-119: every view rides the road + a hard floor at the road nearest the camera); carContact just above trackGroundY (pack fix: separation capped per step, AI-AI spins need a big hit, speed glue per-second) and aiDrive above it (pack fix: close-range traffic speed match + each car's own quali line qOff)
+- Race object: line 1672 (setup ~1678, placeGrid 1722, startLights ~1743, beginRace ~1769); trackGroundY at ~1665 and updateCamera at 1958 (G-119: every view rides the road + a hard floor; G-239: broadcast rides behind/above the car in the car's own frame looking down the road, frame-rate-independent easing, contact shake never applies to it); carContact at 1632 (pack fix + G-239: CONTACT! banners only when the player is in the pair, and a hard hit stamps the player's _shoveT limits grace) and aiDrive at 1558 (pack fix: close-range traffic speed match + each car's own quali line qOff)
 - Career + friends: line ~2049 (Save 2050, friendCode 2063, parseFriend 2069, showResults 2079)
 - Menu wiring (show 2142, friendBtn 2181, friendGo 2215): lines 2142-2259
-- startWeekend: line 2270; runQuali: line 2292 (pack fix at 2293: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2302-2303 - G-224: min-height 44px inline); grid list UI in finishQuali (2328): two half tables side by side at 2336 (G-119 R1 - one 20-row list pushed LIGHTS OUT 214px off a sideways phone); main loop: line 2345
-- Cockpit attach CKAttach: line 2414; Grand Prix kit GPBoot 2425, GPAttach 2441; applyGroundKit at 2455 (asphalt + kerb textures from kit/ground/512 on the 'asphalt'/'asphalt_runoff'/'pit_lane'/'kerb' materials, G-107)
+- startWeekend: line 2300; runQuali: line 2322 (pack fix at 2323: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2331-2332 - G-224: min-height 44px inline; G-239: top-centre at top:104px - at right/top:150 it sat on the speedometer); updateQuali at 2339 (G-239: sets the quali _gapF1 as a best-lap delta, null until both cars have a lap - HUD shows GAP —, never a fake +0.0s); grid list UI in finishQuali (2360): two half tables side by side (G-119 R1); main loop: line 2377
+- Cockpit attach CKAttach: line 2446; Grand Prix kit GPBoot ~2457, GPAttach ~2473; applyGroundKit ~2487 (asphalt + kerb textures from kit/ground/512, G-107); window.__test at 2507 (G-239 adds penState + shoveNow for the penalty tests)
 - Test hooks window.__test: line 2475 (steerProbe at 2487 (G-136), camProbe at 2488, kitAudio + groundKit probes ~2501); REALITY hook window.__reality: line 2567; boot calls: ~2587; owner check link ?test=grid at the very end of the script (G-204: opens straight at the starting grid, LIGHTS OUT on screen)
 
 ## MUST
@@ -39,6 +40,19 @@ Feature → line numbers in apexf1.html (on the G-224 branch: G-204 + the pack f
 - Game does not start (owner 2026-10-17 — the game must start and render gameplay, never a black/blank screen)
 - 2026-10-22: Start button off the screen - "LIGHTS OUT" sat 214px below the bottom of a sideways phone and the owner had to scroll to press it; every menu fits 844x390 with NO scrolling (G-119)
 - No camera below the track surface - the helicopter camera never goes under the ground (owner's pictures, 2026-10-21)
+- 2026-10-23: The car drives itself on gas alone - "I'm just pressing gas and it does the laps. Player had to control." The heading was measured against the road itself, so a centred stick lapped hands-free (measured 2,192 m in 60 s at d=0.0). The player's nose now holds a WORLD heading; only the stick turns it (G-239)
+- 2026-10-23: The helicopter/broadcast camera jitters and shakes everywhere (owner's recordings) - it now follows steady in the car's own frame and contact shake never reaches it (G-239)
+- 2026-10-23: A 5s PENALTY banner must not ride a whole clean lap - no limits fine for where a rival shoved you, and brief brushes decay instead of stacking (G-239)
+- 2026-10-23: CONTACT! is the player's news only - AI-on-AI hits never shout on his screen (seen video2-05) (G-239)
+- 2026-10-23: The quali GAP readout must never sit at a fake +0.0s, and SKIP QUALI must never cover the speedometer (every frame of the recordings) (G-239)
+- 2026-10-23: APEX ARCADE text must read correctly from both sides of every board and gantry - never mirrored (seen video1-01, video2-09) (G-239)
+- 2026-10-23: The engine must be the grand_prix kit - one failed sound file must never kill the kit and leave the synth ("sounds like a rubber chicken") (G-239)
+
+## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame
+- video1-01..07 + video2-01..09, ALL frames: '5s PENALTY' pinned top-centre for 50 s of clean on-road driving; stick knob dead-centre while the car corners at 113-191 MPH and gains places (P4→P3) hands-free; SKIP QUALI pill covering the speed digits; GAP frozen at +0.0s while the name behind it changes.
+- video2-05: CONTACT! in giant letters for a side-by-side in the pack - the player was not the one hit.
+- video1-01 (top edge) + video2-09 (left fence): APEX ARCADE mirrored off the gantry banner and a board's back face.
+- All frames: the horizon is a hard line - flat sky, no haze (fog now 300-1150 m into the sky colour).
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

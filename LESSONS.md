@@ -20,6 +20,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
+- ROBOT REPAIRS ARE RACED BEFORE THEY SHIP (owner Oct 23 2026, after 7 h on one setup failure): repair -> side-by-side on a scratch branch (not a PR), the new way and today's way, N runs each at the same time -> numbers -> only then a PR. Never prove a robot repair through the sick checker itself. The race of Oct 23 (12 runs each): Microsoft's Playwright image 0 failures, apt fix 1, saved browser 0 of 10 - the image shipped (#1374).
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
 - all · tests drove input state directly / sampled meters on a wall clock → drive the game through its real controls; measure in game time, not the robot's clock.
 - all · Puppeteer calls (page.target, page.setViewport) in play tests → the robot is Playwright; use its calls.
@@ -142,3 +143,18 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (Oct 23 06:14 PM)
 - A Muse token cannot re-run Actions jobs (403); a help-desk Claude can: ask with a HELP-VP line naming the PR and run id.
+
+## 2026-10-23 help desk (6:58 PM)
+- A PR that conflicts with main gets no useful check - a red robot line on it may just be the stale run. Look at mergeable state first; if conflicted, the help desk merges main in keeping both sides and the check restarts.
+
+## Oct 23 help desk
+- A tester round numbers itself only from the Mac's NEXT list; two PRs with the same G-number overwrite each other's jobs/G-NN.md. If it happens, the report moves to jobs/G-NN-wN.md.
+
+## 2026-10-23 window 5 (G-239)
+- apexf1 · heading measured against the road itself made gas-only a full autopilot - the player's nose now holds a world heading and only the stick turns it; a robot check line can also be the robot's own older setup (two red lines cleared untouched on the newest setup's re-run), so read the re-run before pushing a fix.
+
+## 2026-10-23 help desk (8:25 PM)
+- A notes PR from an old needs/window-N branch can have NO shared history with main and show "dirty" forever; the fix is a fresh branch from main with the notes added, not a merge. Window helpers: start every notes PR from current main.
+
+## Oct 23 2026 help desk
+- A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.

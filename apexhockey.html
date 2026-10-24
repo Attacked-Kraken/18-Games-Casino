@@ -1418,7 +1418,13 @@ function stepPuck(dt){
     return;
   }
   puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
-  puck.deadT = puck.vel.lengthSq()<9 ? (puck.deadT||0)+dt : 0; // a nearly-stopped loose puck starts the dead-puck clock
+  if(puck.vel.lengthSq()<9){ // a nearly-stopped loose puck starts the dead-puck clock - but that whistle is only for a puck NOBODY can take: while the nearest skater keeps closing on it the clock holds at the retrieval mark instead of blowing dead under his skates (G-228: a legal shorthanded dump dying behind the far net is retrieved, not whistled)
+    puck.deadT=(puck.deadT||0)+dt;
+    let nd=1e9; for(const o of skaters){ if(o.goalie||o.inBox) continue; const dd=(o.pos.x-puck.pos.x)**2+(o.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
+    nd=Math.sqrt(nd);
+    if(puck._deadBest==null||nd>puck._deadBest+30) puck._deadBest=nd; // a far jump re-baselines the episode (a carried or reset puck must not poison the next loose one with a stale near mark)
+    else if(nd<puck._deadBest-1){ puck._deadBest=nd; if(puck.deadT>1.5) puck.deadT=1.5; }
+  } else { puck.deadT=0; puck._deadBest=null; }
   const _ps0=puck.vel.length();
   puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
   if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
@@ -1490,6 +1496,8 @@ function rules(dt){
     const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
     const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
     if(fromDeep&&crossedFar){
+      if(skaters.some(o=>o.team===t&&o.inBox)){ puck.lastTouch=null; prevPuckX=px; } // G-228: icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - while one of the dumpers sits in the box the dump is legal and play just goes on, no banner, no whistle
+      else {
       let aD=1e9, dD=1e9;
       for(const o of skaters){ if(o.goalie||o.inBox) continue;
         const dd=Math.hypot(o.pos.x-px,o.pos.z-puck.pos.z);
@@ -1500,6 +1508,7 @@ function rules(dt){
         const d=DOTS[key]||DOTS.center;
         pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
         whistle('ICING',TEAMS[t].name); prevPuckX=px; return; }
+      }
     }
   }
   // goalie covers a slow loose puck
@@ -1797,7 +1806,8 @@ function commSay(ev,pri){ if(!COMM) return; try{ if(COMM.say(ev,{priority:!!pri}
 function commSyncMute(){ if(COMM){ try{ COMM.mute(!!Mus.muted); }catch(e){} } }
 document.getElementById('creditsBtn').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='flex'; });
 document.getElementById('creditsClose').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='none'; });
-document.getElementById('againBtn').addEventListener('click',()=>location.reload());
+let againToHub = false; // set by careerAfterGame: the career end-screen button reads CAREER HUB, so it must open the hub - a bare reload boots to the main menu
+document.getElementById('againBtn').addEventListener('click',()=>{ if (againToHub) { document.getElementById('final').style.display = 'none'; renderHub(); document.getElementById('hub').style.display = 'flex'; } else location.reload(); });
 function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
 /* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
      rotation and the rink rendered into half the screen). CSS now owns the display
@@ -1922,7 +1932,7 @@ function careerAfterGame() {
     else line = 'Beaten in the final. So close — run it back with a new season from the hub.';
   }
   c.lastLine = line; cSave(c);
-  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →';
+  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →'; againToHub = true;
 }
 /* ---- friend codes ---- */
 function friendCode(c) {
@@ -1981,7 +1991,7 @@ $('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''
 $('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
 $('hubClose').addEventListener('click', () => { disarmReset(); $('hub').style.display = 'none'; });
 $('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
-$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
+$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label, base: { g: c.star.g, a: c.star.a, cg: c.star.cg, ca: c.star.ca, season: c.season, week: c.week, name: c.star.name } }); location.reload(); });
 $('hubNew').addEventListener('click', () => {
   let c = cLoad();
   if (!c) { c = newCareer(); }
@@ -2008,6 +2018,14 @@ $('friendGo').addEventListener('click', () => {
   // not strand the player on the menu to press CAREER a second time. Only a
   // career fixture auto-starts: a friend fixture still waits on the menu,
   // where its PLAY label and cancel live.
+  // A career fixture that was staged but never booked (the player quit
+  // mid-match) must not keep the star goals banked along the way, or the
+  // fixture can be replayed to farm them: roll the star tallies back to the
+  // snapshot staged with the fixture. Booked matches clear their record in
+  // careerAfterGame, so this only ever touches un-booked ones, and at a
+  // fresh start the snapshot equals the save (a no-op).
+  const pmB = mLoad();
+  if (pmB && pmB.kind === 'career' && pmB.base) { const cB = cLoad(); if (cB && cB.star && cB.season === pmB.base.season && cB.week === pmB.base.week && cB.star.name === pmB.base.name) { cB.star.g = pmB.base.g; cB.star.a = pmB.base.a; cB.star.cg = pmB.base.cg; cB.star.ca = pmB.base.ca; cSave(cB); } }
   const pm2 = mLoad();
   if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
@@ -2017,6 +2035,11 @@ $('friendGo').addEventListener('click', () => {
 try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'boards') { // G-216: ?test=boards = a match with the carrier staged at the end boards, puck on his stick - the carried-puck containment check
     const pb = $('playBtn'); if (pb) pb.click();
     const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (hk.game.state === 'play') { const c = hk.skaters.find((s) => s.role === 'C' && s.team === 'home'); if (c) { c.pos.set(99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = 0; c.thinkT = 9; if (c.target) c.target.set(99.2, 0, -6); hk.puck.owner = c; hk.puck.shot = null; } } }, 50); setTimeout(() => clearInterval(iv), 25000);
+  }
+  else if (tp === 'powerplay') { // G-228: ?test=powerplay = a match with a Wolf in the box (power-play tag live) and the deep dump re-staged every few seconds - icing must NOT be called against the shorthanded Wolves; play just goes on
+    const pb = $('playBtn'); if (pb) pb.click();
+    let lastDump = 0;
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; const lw = hk.skaters.find((s) => s.team === 'home' && !s.goalie && s.role === 'LW'); if (lw) { lw.inBox = true; lw.penT = 30; } if (hk.game.state === 'play' && performance.now() - lastDump > 7000) { lastDump = performance.now(); const pk = hk.puck; hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== lw) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); }); hk.skaters.forEach((x) => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); }); pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.lastTouchX = -30; pk.pos.set(-30, 0.06, 20); pk.vel.set(70, 0, 0); } }, 250); setTimeout(() => clearInterval(iv), 90000);
   }
   else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
   else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up

@@ -8,7 +8,7 @@ on:
   pull_request:
   workflow_dispatch:        # robots start it on their own branch (robot/*) - a PR opened by a robot gets no PR event
 concurrency:
-  group: game-check-pr-${{ github.event.pull_request.number || github.ref }}
+  group: game-check-pr-${{ github.head_ref || github.ref_name }}   # one run per PR branch - a PR run and a robot retry/dispatch on the same branch share it (owner Oct 23 6:40 PM)
   cancel-in-progress: true
 permissions:
   contents: read
@@ -56,6 +56,8 @@ jobs:
           fi
           if echo "$CH" | grep -qE '^(models/|MODELS\.md|characters/)'; then G="${G}models,"; fi
           LIST=$(echo "$G" | tr ',' '\n' | grep -v '^$' | sort -u | paste -sd ',')
+          # owner Oct 23 2026 7:47 PM: Hockey (56 play tests) is split into 4 robots that each play a quarter of its tests (TEST_PART k/n)
+          LIST=$(echo "$LIST" | sed 's/\bapexhockey\.html\b/apexhockey.html@1of4,apexhockey.html@2of4,apexhockey.html@3of4,apexhockey.html@4of4/')
           JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
           echo "games=$JSON" >> $GITHUB_OUTPUT
           echo "list=$LIST" >> $GITHUB_OUTPUT
@@ -72,7 +74,12 @@ jobs:
   play:
     needs: plan
     if: needs.plan.outputs.games != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # owner Oct 23 2026 6:19 PM: the browser install failed 4 tries even after the apt fix (#1369's own run) - play jobs run INSIDE
+    # Microsoft's official Playwright image: Chromium + WebKit + their system libraries are already in it, nothing to download.
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
     timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
     strategy:
       fail-fast: false
@@ -81,46 +88,31 @@ jobs:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Keep the test browser between runs
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-1.48.2-${{ runner.os }}
-      - name: Install the test browser
+      - name: Test browser (already in the image)
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
         run: |
           npm install --no-save --no-package-lock playwright@1.48.2
-          # Oct 23 2026: the browser download sometimes stalls (10 min) or the install dies and the play job fails before any test (#1326, #1307).
-          # Saved copy above (no download when present) + 4 short tries; a stalled try is killed, its leftover apt lock is cleared before the next.
-          ok=0
-          for i in 1 2 3 4; do
-            if timeout 200 npx playwright install --with-deps chromium webkit; then ok=1; break; fi
-            echo "::warning::browser install try $i failed or stalled - trying again"
-            sudo pkill -9 apt-get 2>/dev/null || true; sudo pkill -9 dpkg 2>/dev/null || true
-            sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/lib/apt/lists/lock /var/cache/apt/archives/lock 2>/dev/null || true
-            sudo dpkg --configure -a 2>/dev/null || true
-            sleep 5
-          done
-          [ "$ok" = 1 ] || { echo "::error::test browser install failed 4 times"; exit 1; }
+          ls /ms-playwright
       - name: Play ${{ matrix.game }}
         run: |
-          python3 -m http.server 8811 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 &
           sleep 2
           if [ "${{ matrix.game }}" = "models" ]; then
             ONLY=none node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           else
-            ONLY="${{ matrix.game }}" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+            M="${{ matrix.game }}"; GAME="${M%@*}"; PART=""
+            case "$M" in *@*of*) P="${M#*@}"; PART="${P%of*}/${P#*of}";; esac
+            ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
       - name: iPhone Safari pass
-        if: always() && matrix.game != 'models'
+        if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of') && !contains(matrix.game, '@4of')
         continue-on-error: true
         run: |
           [ -f game-check-out/results.json ] || exit 0
-          python3 -m http.server 8812 >/dev/null 2>&1 &
+          node tools/game-check/serve.mjs 8812 >/dev/null 2>&1 &
           sleep 2
-          ONLY="${{ matrix.game }}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
+          M="${{ matrix.game }}"; ONLY="${M%@*}" timeout 600 node tools/game-check/safari.mjs http://127.0.0.1:8812/ game-check-out
       - uses: actions/upload-artifact@v4
         if: always()
         with:
