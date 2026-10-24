@@ -2616,5 +2616,92 @@ async test(page, h) {
   if (!(fin.place >= 1 && fin.place <= 7)) return 'the finishing place ' + fin.place + ' is outside the field that exists (7 runners)';
   return true;
 }
+},{
+id: 'never-g-249-p1',
+title: 'G-249 r1 (owner): jumping was too hard - the green window on the timing bar was tiny (high jump 0.10-0.22 wide, ~0.1-0.2s), the long jump angle swept at 95 deg/s and you fouled running past the line while setting it, the triple jump marker ran at 1.6/s',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  const waitEv = async (id) => {
+    for (let i = 0; i < 25; i++) {
+      const ok = await h.eval((a) => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === a.id); }, { id }).catch(() => false);
+      if (ok) return true;
+      await h.wait(1200);
+    }
+    return false;
+  };
+  const clean = () => h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    return true;
+  }).catch(() => false);
+  // HIGH JUMP: green width + sweep speed in the bar phase
+  await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('hj')) return 'the high jump did not start from the test link';
+  await clean();
+  const hj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'approach' && guard++ < 800) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= e.zoneLo && e.r.pos <= e.zoneHi) e.action();
+    }
+    if (e.phase !== 'bar') return { stage: 'nobar', phase: e.phase };
+    const gw = e.gw;
+    e.marker = 0; e.mdir = 1;
+    let path = 0, prev = 0;
+    for (let i = 0; i < 50; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    return { stage: 'ok', gw: +gw.toFixed(3), rate: +path.toFixed(2) };
+  });
+  if (!hj || hj.stage !== 'ok') return 'the high jump never reached the timing bar (stage ' + (hj && hj.stage) + ')';
+  if (hj.gw < 0.19) return 'the high jump green window is still only ' + (hj.gw * 2).toFixed(2) + ' of the bar wide - the owner: it is difficult to get in between green with the line bar (target: at least 0.40 wide)';
+  if (hj.rate > 0.9) return 'the high jump timing bar still sweeps at ' + hj.rate.toFixed(2) + '/s - the green lasts about a tenth of a second (target: 0.75/s, green at least half a second)';
+  // LONG JUMP: setting the angle must not foul, and the needle must be settable
+  await page.goto(base + '?test=lj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('lj')) return 'the long jump did not start from the test link';
+  await clean();
+  const lj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'angle') return { stage: 'noangle', phase: e.phase, foul: e.foul };
+    let path = 0, prev = e.ang;
+    for (let i = 0; i < 10; i++) { e.update(0.05); path += Math.abs(e.ang - prev); prev = e.ang; }
+    for (let i = 0; i < 20; i++) e.update(0.05);
+    return { stage: 'ok', sweep: +path.toFixed(1), phase: e.phase, foul: e.foul };
+  });
+  if (!lj || lj.stage !== 'ok') return 'the long jump never reached the angle phase (stage ' + (lj && lj.stage) + ')';
+  if (lj.foul || lj.phase !== 'angle') return 'setting the long jump angle still fouls - he runs past the line while you set it (owner: make the jump button easy, freely controlled)';
+  if (lj.sweep > 30) return 'the long jump angle still sweeps at ' + lj.sweep.toFixed(0) + ' deg per half-second - too fast to set (target: 55 deg/s)';
+  // TRIPLE JUMP: marker speed
+  await page.goto(base + '?test=tj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('tj')) return 'the triple jump did not start from the test link';
+  await clean();
+  const tj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'phase') return { stage: 'nophase', phase: e.phase };
+    let path = 0, prev = e.marker;
+    for (let i = 0; i < 25; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    e.marker = 0.32; const before = e.qs.length; e.action();
+    const q = e.qs.length > before ? e.qs[e.qs.length - 1] : -1;
+    return { stage: 'ok', rate: +path.toFixed(2), q: +q.toFixed(2) };
+  });
+  if (!tj || tj.stage !== 'ok') return 'the triple jump never reached its timing phases (stage ' + (tj && tj.stage) + ')';
+  if (tj.rate > 0.55) return 'the triple jump marker still runs at ' + tj.rate.toFixed(2) + ' per half-second (1.6/s) - the fastest tap in the game (target: 1.0/s)';
+  if (tj.q < 0.72) return 'a triple jump tap just inside the old green edge still scores only ' + tj.q.toFixed(2) + ' - the quality window was not widened with the green';
+  return true;
+}
 }
 ];
