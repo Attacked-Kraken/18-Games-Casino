@@ -1256,6 +1256,35 @@ export default [
     },
   },
   {
+    id: 'play-reality-units-per-metre',
+    ask: 'BUILD G-248: the REALITY hook reports unitsPerMetre 1.0936 (the game runs on 3 ft units, 1 unit = 0.9144 m) so the robot and testers read metres (REALITY.md Units)',
+    async test(page, h) {
+      let saw = false;
+      for (let i = 0; i < 40; i++) {
+        const s = await h.eval(() => window.__reality ? { has: ('unitsPerMetre' in window.__reality), v: window.__reality.unitsPerMetre } : null);
+        if (s) { saw = true; if (s.has) return Math.abs(s.v - 1.0936) < 0.001 ? true : 'unitsPerMetre is ' + s.v + ' - REALITY.md says 1 unit = 0.9144 m, so it must be 1.0936'; }
+        await h.wait(250);
+      }
+      return saw ? 'window.__reality has no unitsPerMetre - the robot and testers cannot read metres' : 'window.__reality never appeared';
+    }
+  },  {
+    id: 'play-help-close-on-upright-phone',
+    ask: 'BUILD G-248 (robot red line on PR #1381): on an upright phone (390x844) the Help overlay CLOSE button sits off the left edge of the screen - the rotated stage is 390 tall but the compact-card rules only fire on a sideways phone, so the card lays out 695 tall inside the 390 stage and rotation pushes CLOSE off screen; the CLOSE button must be fully on screen on an upright phone',
+    async test(page, h) {
+      try {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await h.wait(600);
+        await h.eval(() => { const b = document.getElementById('helpBtn'); if (b) b.click(); });
+        await h.wait(400);
+        const r = await h.eval(() => { const b = document.getElementById('helpClose'); if (!b) return null; const x = b.getBoundingClientRect(); return { left: x.left, right: x.right, top: x.top, bottom: x.bottom }; });
+        if (!r) return 'help CLOSE button missing';
+        if (r.left < 0 || r.right > 390 || r.top < 0 || r.bottom > 844) return 'help CLOSE sits off the upright screen: left ' + Math.round(r.left) + ', right ' + Math.round(r.right) + ' on a 390-wide phone';
+        return true;
+      } finally {
+        try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+      }
+    }
+  },  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
