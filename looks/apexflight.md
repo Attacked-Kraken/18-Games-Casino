@@ -38,6 +38,8 @@ Takeoff bounce (G-232 r1): a jet that just lifted off and sinks straight back wa
 
 Band chip uncovered (G-283): the TD band was a full-width strip at the very top, buried under the stats chips and the top buttons, so a pilot landing at 95 kt saw SPD big and centered but no band warning before the rank drop. The chip is now a distinct centered chip under the runway box (top 118 px), clear of every other HUD element, with the same 55-88 kt thresholds and SLOW/IN BAND/FAST states. Test: play-band-uncovered-on-approach.
 
+Reset clear of VS (G-290): the RESET button sat at right:262px, overlapping the VS FPM chip by 27 px in the top bar (measured 518-582 over the VS chip 486-545). It now sits at right:100px, in the gap between VIEW and mute, clear of the stats chips and every other top-bar element. Test: play-reset-clear-of-vs.
+
 Fit rule (G-238): every overlay panel fits a 844x390 phone outright - .panel is
 compact (14px padding, slimmer buttons) and capped at calc(100dvh - 16px) with
 internal scroll as the safety net. A touch cancel resets all input through
