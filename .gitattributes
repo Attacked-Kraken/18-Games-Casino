@@ -2,3 +2,4 @@ jobs/QUEUE.md merge=union
 CLAIMS.md merge=union
 jobs/G-*.md merge=union
 jobs/HELP.md merge=union
+needs/*.md merge=union
