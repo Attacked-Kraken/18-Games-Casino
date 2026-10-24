@@ -40,4 +40,4 @@ BLOCKED BY: NONE - G-247 is merged (8669e90) and reported; the G-243 fix round i
 UNCLEAR: NONE - the G-247 order was complete; the owner's 8:25 PM takeoff report is clear and being reproduced now
 MISSING: NONE
 
-ANSWERED (help desk, Oct 23 11:50 PM Central): nothing open - G-247 close-out noted, all three lines NONE.
+ANSWERED (help desk, Oct 23 11:45 PM Central): nothing open - G-247 close-out noted, all three lines NONE.
