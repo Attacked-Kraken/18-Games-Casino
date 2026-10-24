@@ -829,10 +829,12 @@ function showStatCard(){ // G-257: the intermission stats card (rules/hockey.md)
 }
 function hideStatCard(){ const c=$('statCard'); if(c) c.style.display='none'; }
 let lastGoalX = 0; // G-266: the goal the replay cuts orbit (set in onGoal)
+let replayAngle = 0; // G-266: which replay angle is on screen (0 = none) - a change is a hard TV cut
 function goalFx(on){ // G-266 (G-228 broadcast look): a goal lights the red goal light behind the net and throws the spotlights on; both clear at the next faceoff / the final screen
   const gl=$('goalLight'), sp=$('spotlights');
   if(gl) gl.className = on ? 'on' : '';
   if(sp) sp.className = on ? 'on' : '';
+  if(!on) replayAngle = 0;
 }
 function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
   requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
@@ -1670,10 +1672,12 @@ function stepCamera(dt){
     const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
-  if(state==='goal'){ // G-266 REPLAY: two broadcast cuts around the goal just scored - a side close-up, then behind the net; the switch trips the >60 cut rule below, so the view JUMPS like a TV replay instead of gliding
+  if(state==='goal'){ // G-266 REPLAY: two broadcast cuts around the goal just scored - a side close-up, then behind the net. The cut is HARD (the camera is placed on the angle the moment it changes): the >60 glide-cut rule below cannot be relied on - the camera mode persists across the robot's shared page, and from a close/end view the replay spot can sit within gliding distance, so the first robot run measured a 3.3 u glide instead of a cut
     const gx = lastGoalX || GOAL_LINE, out = Math.sign(gx) || 1;
-    if(stateT > 1.6){ camTgt.set(gx - out*26, 9, -26); lookTgt.set(gx, 1, 0); }
+    const ang = stateT > 1.6 ? 1 : 2;
+    if(ang === 1){ camTgt.set(gx - out*26, 9, -26); lookTgt.set(gx, 1, 0); }
     else { camTgt.set(gx + out*15, 5.5, 7); lookTgt.set(gx - out*12, 1, 0); }
+    if(replayAngle !== ang){ replayAngle = ang; camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
   // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
