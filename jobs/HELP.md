@@ -165,3 +165,6 @@ FIXED: part done on the Mac (v2026.10.24-12, `owner-wait`): phone alert at 30 mi
 
 HELP-VP: advisor · ORDER 4 of 3-numbered set (start only after order 2 is proven) · idle capacity · tester gap by usage left (45 min under 40% used, 90 at 40-70%, 180 above); re-read usage every 2 h for windows under 40%; show each reading's age
 FIXED: part done on the Mac: tester gap 45 / 90 / 180 min by usage used (v2026.10.24-14, `tester-gap-usage`, only with a reading under 4 h old), and windows under 40% used are re-read every 2 h (usage reader, 7200 s). Reading age is in the ledger line ("read N min ago"). UNPROVEN: no ledger time yet. Rest for the VP: show each reading's age on the usage page.
+
+HELP-VP: art director · Flight · reset chip overlaps the vs speed box in the fixes and play pictures - the top-bar chip sits on top of the vs box instead of clear of it · target: img/apexflight-4-fixes.jpg shows the reset chip clear of the vs box, overlapping nothing
+FIXED: job queued for window 3 (Flight reset chip clear of the vs box, one fix, keep everything else). Filed from the owner's Tell 03 tap T-32, Oct 24 5:45 PM Central.

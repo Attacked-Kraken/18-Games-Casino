@@ -199,3 +199,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## Oct 24 2026 help desk
 - A step that says "show X on the final approach" or similar with no mode named means every mode where that moment happens; build it once and give a ?test= link per mode. Builder reports always go in jobs/G-NN-w<window>.md, never the plain jobs/G-NN.md (that file can belong to a tester round).
 - A tester recheck that finds the defect already fixed on main reports STATUS: NO CHANGE plus a NOTE line naming the fixing commit/PR and what was measured. Only STATUS: CHANGED or NO CHANGE exist (jobs/README.md).
+
+## 2026-10-24 help desk
+- An art director line that window 12 shows but main lacks after 30 min: the owner taps Tell 03 and the help desk files it under jobs/HELP.md and queues the one-fix job. Rule: file it verbatim, answer directly under it, queue ONE job for the game owner window.
