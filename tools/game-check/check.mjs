@@ -230,6 +230,7 @@ const results = [];
 for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
   const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
+  const phases = []; let tPh = Date.now(); const mark = n => { phases.push({ phase: n, ms: Date.now() - tPh }); tPh = Date.now(); };   // owner Oct 24 2026 item 6: robot prints the time of each step
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -297,7 +298,7 @@ for (const g of games) {
   }
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
-  const idleA = await idleRead(page); const idleT0 = Date.now();
+  mark('load + menu + start'); const idleA = await idleRead(page); const idleT0 = Date.now();
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
   try {
@@ -349,6 +350,7 @@ for (const g of games) {
     if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
   } catch (e) {}
   try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) { if (m.startsWith('WARN|')) r.check.push(m.slice(5) + ' (yellow for now: this game is on the warning list until its AI defends an untouched team)'); else r.fail.push(m); } } catch (e) {}
+  mark('idle watch + first pictures');
   try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
@@ -391,6 +393,7 @@ for (const g of games) {
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
   if (fs.existsSync(fixFile)) {
     let list = [];
+    mark('pictures + reality + checks');
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
     catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '.mjs - it does not load, so NONE of its tests ran: ' + String(e.message).split('\n')[0].slice(0, 140)); }
     // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
@@ -620,6 +623,7 @@ for (const g of games) {
       r.fail = keep;
     }
   } catch (e) {}
+  mark('play tests + the rest'); r.phases = phases;
   r.playMs = Date.now() - tGame0; r.endedAt = new Date().toISOString();
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);

@@ -164,10 +164,28 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-286 | window 5 | checklists/apexf1.md, tools/game-check/fixes/apexf1.mjs, jobs/G-286-w5.md, CLAIMS.md | build/g-286-apexf1 |
+| G-280 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-280.md | build/g-280-apexflight |
+| G-275 r1 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-275-w3.md | build/g-275-apexflight-r1b |
+| G-232 r1 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight-r1b |
+| G-275 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-275.md | build/g-275-apexflight |
 | G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-281 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-277 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-277.md, CLAIMS.md | build/g-277-apexf1 |
+| G-278 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-278.md, CLAIMS.md | build/g-278-apexbaseball |
+| G-281 | window 10 | jobs/G-281.md, CLAIMS.md | test/g-281-apextrackfield |
+| G-276 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-276.md, CLAIMS.md | build/g-276-apexf1 |
+| G-271 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-271.md, CLAIMS.md | test/g-271-apextrackfield |
+| G-265 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-265-w5.md, CLAIMS.md | build/g-265-apexf1 |
+| T-10-0954 | window 10 | jobs/T-10-0954.md, CLAIMS.md | test/t-10-0954 |
+| T-10-1043 | window 10 | jobs/T-10-1043.md, CLAIMS.md | test/t-10-1043 |
+| G-269 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-269.md, CLAIMS.md | build/g-269-apexbaseball |
+| T-10-0920 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0920.md, CLAIMS.md | test/t-10-0920 |
+| T-10-0926 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0926.md, CLAIMS.md | test/t-10-0926 |
+| T-10-0929 | window 10 | jobs/T-10-0929.md, CLAIMS.md | test/t-10-0929 |
 | T-10-0934 | window 10 | jobs/T-10-0934.md, CLAIMS.md | test/t-10-0934 |
 | G-264 | window 10 | checklists/apextrackfield.md, jobs/G-264.md, CLAIMS.md | test/g-264-apextrackfield |
 | G-253 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-253-w5.md, CLAIMS.md | build/g-253-apexf1 |
@@ -259,6 +277,8 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
 | G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
 | G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
+| G-270 | window 6 | checklists/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-270-w6.md, CLAIMS.md | build/g-270-apexracer |
+| G-270 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/g-270-fix1-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
@@ -271,3 +291,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
 | G-262 | window 10 | jobs/G-262.md, CLAIMS.md | test/g-262-apextrackfield |
 | G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
+| T-10-1327 | window 10 | jobs/T-10-1327.md, CLAIMS.md | test/t-10-1327 |
+| G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d |

@@ -2821,6 +2821,127 @@ async test(page, h) {
       if (!m.windShown) return 'the game models no wind at all: the sprint engine has no wind value (' + m.windKeys.length + ' wind keys), the results screen shows "' + m.resMark + '" with no wind reading and no "w" mark, and the time was saved as a best (' + m.bests + ') - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as "w") can never apply';
       return true;
     }
+  }
+,
+  {
+      id: 'tester-10000m-mash-no-speed-exploit',
+      mode: '10000m',
+      ask: 'TESTER (G-200, BREAK round): 10,000m - mashing the run controls faster than any human cadence must not make the player faster. Stride input needs a rate cap: after settling into the run, 30 game-seconds of striding on EVERY tick (60/s) must not average more than 8.6 m/s (honest 0.30 s alternating cadence measured 7.56 m/s average, peak 7.97, on 2026-10-22; rivals are capped near 5.5-6.3 m/s).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+            const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+            if (on && on.id === 'menu') click('bFree');
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+            else if (on && on.id === 'card') click('bCardStart');
+            else if (on && on.id === 'results') click('bResMenu');
+            if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+          }, 140);
+        })).catch(() => null);
+        if (nav !== 'in') await h.wait(1200);
+        }
+        if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let side = 'L', last = -99;
+          // settle: 10 game-s of honest 0.30 s cadence once running
+          for (let i = 0; i < 600; i++) { e.update(1 / 60); const t = i / 60; if (e.phase === 'run' && t - last >= 0.30) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; } }
+          if (e.phase !== 'run') return { notRun: true, phase: e.phase };
+          const p0 = e.r.pos;
+          let peak = 0;
+          // mash: stride on every tick for 30 game-s
+          for (let i = 0; i < 1800; i++) { e.stride(side); side = side === 'L' ? 'R' : 'L'; e.update(1 / 60); if (e.r.speed > peak) peak = e.r.speed; }
+          return { gain: +(e.r.pos - p0).toFixed(1), avg: +((e.r.pos - p0) / 30).toFixed(2), peak: +peak.toFixed(2) };
+        }).catch(() => null);
+        if (!m) return 'the mash measurement could not be taken';
+        if (m.notRun) return 'the 10,000m never reached the run phase (phase ' + m.phase + ')';
+        if (m.avg > 8.6) return 'mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player ' + m.gain + 'm - an average of ' + m.avg + ' m/s, peak ' + m.peak + ' m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past)';
+        return true;
+      }
+    },
+  {
+    id: "tester-300mh-hurdle-count",
+    mode: "freeplay",
+    ask: "TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).",
+    async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!m) await h.wait(400);
+        }
+        if (!m) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)';
+        return true;
+      },
+  },
+  {
+      id: 'tester-chk-t07',
+      mode: 't07',
+      ask: 'TESTER (G-271, checklist T07): throws get 3 attempts (plus 3 more for the top 8) - rules/trackfield.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let steps = 0;
+          while (!e.done && steps < 20000) {
+            e.update(1 / 60); steps++;
+            if (e.phase === 'power' && e.power >= 0.97) e.action();
+            else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+          }
+          if (!e.done) return { notDone: true };
+          const before = e.attempts.length;
+          e.action(); for (let s = 0; s < 120; s++) e.update(1 / 60);
+          return { attempts: e.attempts.length, attMax: e.attMax, done: e.done, afterDone: e.attempts.length, extra: e.attempts.length - before };
+        }).catch(() => null);
+        if (!m) return 'the Shot Put attempt count could not be read';
+        if (m.notDone) return 'the Shot Put never finished its attempts';
+        if (m.attempts <= 3 && m.done) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') and no athlete got 3 more attempts - rules/trackfield.md says throws get 3 attempts (plus 3 more for the top 8)';
+        return true;
+      }
   },{
 id: 'never-g-249-p3',
 title: 'G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)',
@@ -2856,7 +2977,8 @@ async test(page, h) {
   if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long';
   return true;
 }
-},{
+},
+{
 id: 'never-g-249-p2',
 title: 'G-249 r2 point 1 (owner): runners must run with natural arm and leg motion - a real sprint animation, not posed bones (mirrors the hardened real-sprint-animation sampling: thighL range over a full cycle must reach 0.70 rad; the old 1.4s wall window read 0.43 rad on the ~3fps robot while the same clip measures 1.85+ rad over a full cycle)',
 async test(page, h) {
@@ -2884,6 +3006,31 @@ async test(page, h) {
   if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
   return true;
 }
-
+},
+{
+id: 'never-g-267-p1',
+title: 'G-267 (owner): the live race camera never has a wall between it and the runner - the wall check ray must target the runner (its length must match the camera-to-runner distance) and 4 samples must all read clear (today the ray targets the infield centre because ox/oz are never written)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+  const t0 = Date.now(); let live = null;
+  while (Date.now() - t0 < 120000) {
+    const st = await h.eval(() => { const e = window.__tf.eng(); const rigs = window.__tf.rigs(); const rp = rigs && rigs[0] && rigs[0].group ? rigs[0].group.position : null; return { pos: e && e.r ? e.r.pos : 0, phase: e ? e.phase : null, cam: window.__tf.camPos(), rig: rp ? { x: rp.x, z: rp.z } : null, clear: window.__tf.camClear() }; });
+    if (st.phase === 'run' && st.pos > 5 && st.cam && st.rig && st.clear) { live = st; break; }
+    await h.wait(160);
+  }
+  if (!live) return 'no live race camera seen on the runner';
+  const trueD = Math.hypot(live.cam.x - live.rig.x, live.cam.z - live.rig.z);
+  if (Math.abs(live.clear.dist - trueD) > 2) return 'camera ray does not target the runner: ray length ' + live.clear.dist + ' m but the runner is ' + trueD.toFixed(1) + ' m from the camera';
+  let seen = 0, blocked = 0;
+  for (let i = 0; i < 4; i++) {
+    const c = await h.eval(() => window.__tf.camClear());
+    if (c) { seen++; if (!c.clear) blocked++; }
+    await h.wait(400);
+  }
+  if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';
+  return true;
+}
 }
 ];

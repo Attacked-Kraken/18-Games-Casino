@@ -8,23 +8,21 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (on the G-239 branch: through G-224 + the G-239 owner-recordings fixes, 2026-10-23):
-- Page head + inline tab icons: lines 1-8 (SVG icon declared G-95; empty data:, icon added G-224 line 8 - the Grok recheck still saw the favicon 404)
-- Compact sideways CSS: line ~17-45 - #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136)
-- Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 182-285 (friend overlay #friendOv at 251)
-- Import map (three + vendor loaders): line 286
-- Audio Aud: line 304 (engine() at 338 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 367 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at 392 gives one retry; the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() - kit tire squeal loop; synth voices kept as fallback)
-- Data: TRACKS 445, TEAMS 463, AI_NAMES 475
-- Track (samples, buildGP for the kit circuit at 626): line 583
-- Car mesh builder buildCarMesh: line 1034; Car class: line 1311 (player steering at ~1390-1412: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay)
-- Sponsor boards + gantries: buildSponsorBoards at 935 and the buildScenery gantry at ~811 (G-239: boxes carry a pre-flipped texture on the back face - APEX ARCADE reads correctly from both sides, never mirrored); horizon fog at 515 (300-1150, melts into the sky colour)
-- Input object: line 1460; initInput (stick, buttons, releaseAll on blur): line 1469
-- Race object: line 1672 (setup ~1678, placeGrid 1722, startLights ~1743, beginRace ~1769); trackGroundY at ~1665 and updateCamera at 1958 (G-119: every view rides the road + a hard floor; G-239: broadcast rides behind/above the car in the car's own frame looking down the road, frame-rate-independent easing, contact shake never applies to it); carContact at 1632 (pack fix + G-239: CONTACT! banners only when the player is in the pair, and a hard hit stamps the player's _shoveT limits grace) and aiDrive at 1558 (pack fix: close-range traffic speed match + each car's own quali line qOff)
-- Career + friends: line ~2049 (Save 2050, friendCode 2063, parseFriend 2069, showResults 2079)
-- Menu wiring (show 2142, friendBtn 2181, friendGo 2215): lines 2142-2259
-- startWeekend: line 2300; runQuali: line 2322 (pack fix at 2323: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2331-2332 - G-224: min-height 44px inline; G-239: top-centre at top:104px - at right/top:150 it sat on the speedometer); updateQuali at 2339 (G-239: sets the quali _gapF1 as a best-lap delta, null until both cars have a lap - HUD shows GAP —, never a fake +0.0s); grid list UI in finishQuali (2360): two half tables side by side (G-119 R1); main loop: line 2377
-- Cockpit attach CKAttach: line 2446; Grand Prix kit GPBoot ~2457, GPAttach ~2473; applyGroundKit ~2487 (asphalt + kerb textures from kit/ground/512, G-107); window.__test at 2507 (G-239 adds penState + shoveNow for the penalty tests)
-- Test hooks window.__test: line 2475 (steerProbe at 2487 (G-136), camProbe at 2488, kitAudio + groundKit probes ~2501); REALITY hook window.__reality: line 2567; boot calls: ~2587; owner check link ?test=grid at the very end of the script (G-204: opens straight at the starting grid, LIGHTS OUT on screen)
+Feature → line numbers in apexf1.html (re-checked on the G-265 R1 build, 2026-10-24):
+- Page head + inline tab icons: lines 1-8 (SVG icon declared G-95; empty data:, icon added G-224 line 7 - the Grok recheck still saw the favicon 404)
+- Compact CSS: lines ~16-45 - landscape compact block at 16, portrait #teamMenu block at 36-45 (G-265 R1: the upright phone gets its own no-scroll fit); #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136)
+- Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 192-294 (friend overlay #friendOv at 260)
+- Import map (three + vendor loaders): line 295
+- Audio: line 320 (engine() at 347 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 376 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at ~403 retries until loaded (4 s, then every 8 s; G-277); the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() at 433 - kit tire squeal loop; synth voices kept as fallback)
+- Data: TRACKS 460, TEAMS 478, AI_NAMES 490
+- Track (samples, buildGP for the kit circuit at 641): line 598
+- Car mesh builder buildCarMesh: line 1043; Car class: line 1320 (player steering at ~1408-1421: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay)
+- Sponsor boards + gantries: buildSponsorBoards at 944 and the buildScenery gantry at ~897 (G-239: boxes carry a pre-flipped texture on the back face - APEX ARCADE reads correctly from both sides, never mirrored); horizon fog at 524 (300-1150, melts into the sky colour)
+- Input object: line 1497; initInput (stick, buttons, releaseAll on blur): line 1506
+- Race object: line 1681 (setup ~1687, placeGrid 1712, startLights ~1752, beginRace ~1778); trackGroundY at ~1676 and updateCamera at 1967 (G-119: every view rides the road + a hard floor; G-239: broadcast rides behind/above the car in the car's own frame looking down the road, frame-rate-independent easing, contact shake never applies to it); carContact at 1641 (pack fix + G-239: CONTACT! banners only when the player is in the pair, and a hard hit stamps the player's _shoveT limits grace) and aiDrive at 1567 (pack fix: close-range traffic speed match + each car's own quali line qOff)
+- Career + friends: line ~2089 (Save 2089, friendCode 2102, parseFriend 2108, showResults 2118)
+- Menu wiring (show 2181, friendBtn 2220, friendGo 2254): lines 2181-2268
+- startWeekend: line 2309; runQuali: line 2328 (pack fix at 2328: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2342 - G-224: min-height 44px inline; G-239: top-centre at top:104px - at right/top:150 it sat on the speedometer); updateQuali at 2348 (G-239: sets the quali _gapF1 as a best-lap delta, null until both cars have a lap - HUD shows GAP —, never a fake +0.0s); grid list UI in finishQuali (2369): two half tables side by side (G-119 R1); main loop: line 2386
 
 ## MUST
 - Own fictional teams and drivers
@@ -48,6 +46,8 @@ Feature → line numbers in apexf1.html (on the G-239 branch: through G-224 + th
 - 2026-10-23: APEX ARCADE text must read correctly from both sides of every board and gantry - never mirrored (seen video1-01, video2-09) (G-239)
 - 2026-10-23: The engine must be the grand_prix kit - one failed sound file must never kill the kit and leave the synth ("sounds like a rubber chicken") (G-239)
 - 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
+- 2026-10-24: Play-test entries must use ask: (never title:) too - the third run: entry also carried title:, and the robot's format check rejects the whole shape (G-279)
+- 2026-10-24: teamMenu must fit with no scrolling and no race button may overlap the stick on the UPRIGHT phone too - the landscape compact rules do not apply there, so the base touch buttons and the portrait menu stack need their own fit (G-265 R1)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame
 - video1-01..07 + video2-01..09, ALL frames: '5s PENALTY' pinned top-centre for 50 s of clean on-road driving; stick knob dead-centre while the car corners at 113-191 MPH and gains places (P4→P3) hands-free; SKIP QUALI pill covering the speed digits; GAP frozen at +0.0s while the name behind it changes.

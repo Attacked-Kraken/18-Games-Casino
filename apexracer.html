@@ -337,17 +337,17 @@ const MPH = 2.237;
 /* ------------------------------------------------------------------ player save */
 let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const CARS = [
-  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
-  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 65, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
-  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 68, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
-  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 74, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
-  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 82, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
-  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 90, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
+  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 75, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
+  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 81, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
+  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
+  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
+  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
+  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 113, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
-  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 98, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
-  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
+  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
+  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
@@ -1892,7 +1892,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.97 + r() * 0.05); e.ak = 1.05 + r() * 0.12; e.acc = P.st.acc * (0.95 + r() * 0.1); e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.60 + r() * 0.05); e.ak = 0.22 + r() * 0.06; /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.55 + r() * 0.1); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -1978,7 +1978,7 @@ function stepAI(e, dt) {
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
   if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.08; else if (gap < -120) vt *= 1.04; } /* G-70: gentle two-way pace keeping - the field stays with the player */
-  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 1.04, 14)); /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
+  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 0.58, 10)); /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));

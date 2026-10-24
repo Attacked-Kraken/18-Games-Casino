@@ -24,7 +24,7 @@
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(255,59,48,.35); border-radius: 10px; padding: 7px 10px; }
-  #bandBox { display: none; }
+  #bandBox { display: none; position: absolute; top: calc(118px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); white-space: nowrap; }   /* G-283: a distinct chip under the runway box, clear of the stats, the top buttons and the messages - the old full-width strip sat buried under the top chrome */
   #bandBox.in { border-color: rgba(80,255,140,.7); color: #b6ffb6; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; font-size: 12px; }
@@ -38,14 +38,7 @@
   #ah { display: block; border-radius: 50%; border: 2px solid rgba(255,59,48,.55); background: #06130a; }
   #rwyBox { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     font-size: 12px; display: none; }
-  /* slim throttle bar beside the jet pad (G-121 - replaces the old fat right-edge gauge,
-     which was display-only with pointer-events:none, so it never reacted): same height as
-     the button block, about half a button wide; drag it to set the throttle */
-  #thrBar { position: fixed; right: calc(182px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom)); width: 26px; height: 284px;
-    z-index: 1100; border-radius: 8px; border: 1px solid rgba(255,255,255,.3); background: rgba(10,16,28,.72);
-    touch-action: none; overflow: hidden; pointer-events: auto; cursor: pointer; }
-  #thrBarFill { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background: linear-gradient(to top, rgba(255,59,48,.55), rgba(255,120,60,.8)); pointer-events: none; }
-  #thrBarLbl { position: absolute; top: 4px; width: 100%; text-align: center; font-size: 8px; letter-spacing: .14em; color: #ffb700; pointer-events: none; }
+  /* G-280: the tall THR slider is gone - the throttle is a button in the pad row now (see the input section) */
   /* the shared kit thumb zone (kit/controls.js) keeps the old pack zone's
      footprint - left half, bottom 62% - so the top HUD stays tappable (G-232) */
   #apcZone { top: 38%; height: 62%; }
@@ -103,7 +96,6 @@
   <div id="ahWrap"><canvas id="ah" width="116" height="116"></canvas></div>
 </div>
 
-<div id="thrBar"><div id="thrBarFill"></div><div id="thrBarLbl">THR</div></div>
 <button class="tbtn" id="viewBtn" type="button">VIEW</button>
 <button class="tbtn" id="jetBtn" type="button">JET:<span id="jetStyleLabel">Neon Strike</span></button>
 <button class="tbtn" id="resetBtn" type="button">RESET</button>
@@ -120,7 +112,7 @@
     <button class="bigbtn friendbtn" id="friendBtn" type="button">&#x1F465; PLAY A FRIEND<small>Share your code, or enter a friend's code to beat their best landing</small></button>
     <button class="bigbtn" id="qualityBtn" type="button" style="font-size:14px;padding:9px 14px;">QUALITY: HIGH<small>Step-6 look: shadows + reflections. LOW = pixel ratio 1.25, shadows off (slower phones)</small></button>
     <div class="ctl">
-      <b>Touch:</b> left stick = pitch &amp; roll &nbsp;|&nbsp; right slider = throttle<br>
+      <b>Touch:</b> left stick = pitch &amp; roll &nbsp;|&nbsp; THR button (hold) = throttle<br>
       <b>Keys:</b> &#8592;&#8593;&#8595;&#8594; / WASD = pitch &amp; roll &nbsp;|&nbsp; R / F = throttle &nbsp;|&nbsp; C = view &nbsp;|&nbsp; Space = reset<br>
       Stick up = climb &nbsp;|&nbsp; stalls only if you pull up too slow
     </div>
@@ -190,6 +182,9 @@ const P = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
             yaw: 0, pitch: 0, roll: 0, thr: 0, ground: true };
 const inp = { pitchUp: 0, rollRight: 0 };   // -1..1
 let jetInput = null;   // the owner's jet controls (created below, G-90); respawn syncs its throttle
+let peakAir = 0;   // G-232 r1: highest altitude since leaving the ground - the banked/nose-down
+                   // gear-collapse check only arms once the jet has really flown (2 m up), so a
+                   // takeoff bounce that settles straight back is a roll, not a landing
 let stallNow = false, msgTimer = 0;
 
 /* ================= renderer / scene ================= */
@@ -319,12 +314,19 @@ scene.add(sun); scene.add(sun.target);
     d.fillStyle = '#e8e8e8';
     for (let i = 0; i < 6; i++) d.fillRect(28 + i * 36, 24, 20, 150);       // piano keys
     d.font = 'bold 150px monospace'; d.textAlign = 'center';
+    // G-275: the number was painted mirrored for the pilot landing toward it -
+    // its glyph tops pointed AT the approaching jet instead of away, so from
+    // behind the jet it read upside-down. Flip the number vertically in the
+    // canvas (keys untouched); both ends share threshold(), so both are fixed
+    d.save(); d.translate(0, 755); d.scale(1, -1);
     d.fillText(num, 128, 430);                                             // the number, ~14 m tall
+    d.restore();
     const dt = new THREE.CanvasTexture(dc); dt.anisotropy = maxAniso; dt.wrapS = THREE.RepeatWrapping; dt.repeat.x = -1;   // ground-plane decals render mirrored from the cockpit without this flip - the numbers must read the correct way round (looks MUST)
     const dm = new THREE.Mesh(new THREE.PlaneGeometry(RWY_W * 2, 60),
       new THREE.MeshLambertMaterial({ map: dt, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
     dm.rotation.x = -Math.PI / 2; if (flip) dm.rotation.z = Math.PI;
     dm.position.set(0, 0.045, zEnd); dm.receiveShadow = true; scene.add(dm);
+    dm.userData.num = num; (window.__rwyDecals = window.__rwyDecals || []).push(dm);   // G-275: test hook only - lets play-rwy36-reads-correct read the decal canvas
   }
   threshold('36', -RWY_HALF + 30, false);
   threshold('18', RWY_HALF - 30, true);
@@ -571,9 +573,8 @@ function respawn() {
   scoredThisAttempt = false; offRwyMsg = false;
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
   if (kitCtl) kitCtl.show(true);
-  phase = 'fly'; stallNow = false; setMsg('');
+  phase = 'fly'; stallNow = false; setMsg(''); peakAir = 0;
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
-  $('thrBarFill').style.height = '100%';
   if (mode === 'free') {
     P.pos.set(0, jet.gearHeight, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
     flashMsg('RUNWAY 36 - THROTTLE UP', 2600);
@@ -582,7 +583,7 @@ function respawn() {
     P.vel.set(0, 0, 34); P.thr = 0.35; P.ground = false;
     flashMsg('FINAL APPROACH - LAND RUNWAY 36', 3000);
   }
-  $('thrBarFill').style.height = (P.thr * 100) + '%';
+  syncThrBtn();
   if (jetInput) jetInput.throttle = P.thr;   // the jet pad owns the throttle (G-90) - keep it in sync
 }
 function crash(why) {
@@ -671,23 +672,25 @@ if (packZone) packZone.remove();
 const kitCtl = createControls({ buttons: [], rotated: () => innerHeight > innerWidth });
 kitCtl.show(false);
 const kitZone = document.getElementById('apcZone');
-/* slim throttle bar (G-121): stands right alongside the pad, glued to its size; a
-   touch or drag sets the throttle at once (the fill follows P.thr in the loop) */
+/* slim throttle button in the pad row (G-280): the tall THR slider overlapped
+   GEAR/PAINT/LOOP, so it is gone - this button takes the pad grid's last cell
+   (row 5, col 3), overlapping nothing, and ramps the throttle while held;
+   THR - still steps it down, and the label shows the live value */
+let thrHold = false, thrShown = -1;
+function syncThrBtn() {
+  const b = $('thrBtn'); if (!b) return;
+  const pct = Math.round(P.thr * 100);
+  if (pct !== thrShown) { thrShown = pct; b.textContent = 'THR ' + pct + '%'; }
+}
 {
-  const bar = $('thrBar');
   const padEl = jetInput.root.querySelector('.pad');
-  if (padEl) { bar.style.height = padEl.offsetHeight + 'px'; bar.style.right = 'calc(' + (padEl.offsetWidth + 14) + 'px + env(safe-area-inset-right))'; }
-  let thrPid = null;
-  const setFromTouch = (e) => {
-    const r = bar.getBoundingClientRect();
-    // portrait presents the stage rotated 90deg: the bar's length then runs along screen X, its top toward +X
-    const f = innerHeight > innerWidth ? (e.clientX - r.left) / r.width : 1 - (e.clientY - r.top) / r.height;
-    P.thr = clamp(f, 0, 1); jetInput.throttle = P.thr;
-  };
-  bar.addEventListener('pointerdown', e => { thrPid = e.pointerId; try { bar.setPointerCapture(e.pointerId); } catch (_) {} setFromTouch(e); e.preventDefault(); });
-  bar.addEventListener('pointermove', e => { if (e.pointerId === thrPid) setFromTouch(e); });
-  const thrEnd = e => { if (e.pointerId === thrPid) thrPid = null; };
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => bar.addEventListener(n, thrEnd));
+  const b = document.createElement('button');
+  b.id = 'thrBtn'; b.type = 'button'; b.textContent = 'THR 100%';
+  padEl.appendChild(b);
+  const holdOff = () => { thrHold = false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', e => { thrHold = true; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => b.addEventListener(n, holdOff));
+  window.addEventListener('blur', holdOff);
 }
 function cyclePaint() { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textContent = JET_PAINTS[jet.paint].name; }
 jetInput.on('paint', cyclePaint);
@@ -883,6 +886,7 @@ function step(dt) {
     ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade * (padBrake ? 0.1 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116, deepened G-117 so the descent finishes well inside the robot's 30 s test clock)
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
+  if (!P.ground) peakAir = Math.max(peakAir, P.pos.y);   // G-232 r1: arms the bounce-vs-landing call below
 
   // lateral tire grip on ground
   if (P.ground) {
@@ -897,10 +901,10 @@ function step(dt) {
   if (P.pos.y - jet.gearHeight <= 0 && P.pos.y > -2) {
     if (!P.ground && phase === 'fly') {
       const vs = P.vel.y;
-      if (vs < -3.2 || Math.abs(P.roll) > 0.35 || P.pitch < -0.28) { crash('Hard impact - the landing gear collapsed.'); return; }
+      if (vs < -3.2 || (peakAir > jet.gearHeight + 2 && (Math.abs(P.roll) > 0.35 || P.pitch < -0.28))) { crash('Hard impact - the landing gear collapsed.'); return; }   // G-232 r1: a hard impact always crashes; banked/nose-down only after a real hop
       onTouchdown(vs);
     }
-    P.ground = true; P.pos.y = jet.gearHeight;
+    P.ground = true; P.pos.y = jet.gearHeight; peakAir = 0;   // rolling again - the next takeoff starts unarmed
     if (!jet.gearDown) { jet.setGear(true); jetInput.gear = true; jetInput.setGearLabel(true); }   // touching down puts the gear back down (G-90)
     if (P.vel.y < 0) P.vel.y = 0;
     if (v > VROT && P.pitch > 0.03) { P.ground = false;
@@ -997,11 +1001,15 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
-  // touchdown band (G-263): the same approach window as the runway box above -
-  // the 55-88 kt band already decides a rank level at touchdown, now the pilot
-  // sees it while approaching, with whether the speed is inside it
+  // touchdown band (G-263 challenge-only; G-268: any mode on approach, so the
+  // robot's free-flight play picture shows it too): the 55-88 kt band already
+  // decides a rank level at touchdown, now the pilot sees it while approaching,
+  // with whether the speed is inside it - same 9000 m approach window as the
+  // runway box above, minus the mode gate
   const bb = $('bandBox');
-  if (rb.style.display === 'block') {
+  const bdx = P.pos.x, bdz = P.pos.z - (-RWY_HALF), bdy = P.pos.y;
+  const onApproach = phase === 'fly' && !P.ground && Math.sqrt(bdx * bdx + bdz * bdz + bdy * bdy) < 9000;
+  if (onApproach) {
     bb.style.display = 'block';
     const kt = v * MS2KT;
     const st = kt < 55 ? 'SLOW' : (kt > 88 ? 'FAST' : 'IN BAND');
@@ -1211,9 +1219,10 @@ function loop(now) {
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
     // robot's play tests can still set the throttle directly.
+    if (thrHold) { P.thr = clamp(P.thr + 0.6 * dt, 0, 1); jetInput.throttle = P.thr; }
     if (jetInput.throttle !== thrWas) P.thr = jetInput.throttle;
     else if (P.thr !== thrWas) jetInput.throttle = P.thr;
-    $('thrBarFill').style.height = (P.thr * 100) + '%';
+    syncThrBtn();
     step(dt);
     const toff = trickOffsets(dt);
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }
@@ -1235,11 +1244,13 @@ function loop(now) {
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
    free flight - menus skipped - with the shared kit pad on screen.
    ?test=friend (G-238) opens the Play-a-Friend overlay instead.
-   ?test=band (G-263) opens the landing challenge on final at 70 kt, band showing. */
+   ?test=band (G-263) opens the landing challenge on final at 70 kt, band showing.
+   ?test=bandfree (G-268) opens free flight on final at 70 kt, band showing. */
 const testParam = new URLSearchParams(location.search).get('test');
 if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
 else if (testParam === 'traffic') { mode = 'free'; respawn(); P.pos.set(0, 130, -1250); P.vel.set(0, 0, 58); P.thr = 0.72; jetInput.throttle = 0.72; P.ground = false; jet.setGear(false); jetInput.gear = false; jetInput.setGearLabel(false); }
 else if (testParam === 'band') { mode = 'challenge'; respawn(); P.pos.set(0, 80, -2500); P.vel.set(0, -2, 36); P.yaw = 0; P.roll = 0; P.pitch = -0.05; P.thr = 0.4; P.ground = false; }
+else if (testParam === 'bandfree') { mode = 'free'; respawn(); P.pos.set(0, 80, -2500); P.vel.set(0, -2, 36); P.yaw = 0; P.roll = 0; P.pitch = -0.05; P.thr = 0.4; P.ground = false; }
 else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>

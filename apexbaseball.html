@@ -498,7 +498,23 @@ const FIELD_POS = {
   B3:[-25,0,-18.5], LF:[-46,0,-62], CF:[0,0,-82], RF:[46,0,-62],
 };
 const fielders = {};
-const batterMesh = makePlayer('home',{bat:true});
+let batterMesh = makePlayer('home',{bat:true});
+/* G-269: a batting order of 9 (rules/baseball.md) - the same figure batted
+   every at-bat, home and away, so the checker saw 1 distinct batter. Nine
+   distinct figures, one per lineup spot; batterMesh always names the CURRENT
+   batter, so every existing batter reference follows the rotation. The rest
+   wait hidden, like the runner figures, until their turn. */
+const lineup = [batterMesh];
+for (let i = 1; i < 9; i++){ const f = makePlayer('home', {bat:true}); f.g.visible = false; lineup.push(f); }
+let batIdx = 0;
+function stepBatter(){   // a plate appearance resolved - the order advances one spot
+  batIdx = (batIdx + 1) % lineup.length;
+  batterMesh = lineup[batIdx];
+  if (typeof window !== 'undefined' && window.__reality && batterMesh.bones){
+    window.__reality.player = batterMesh.g;
+    window.__reality.contact = [batterMesh.bones['foot_l'], batterMesh.bones['foot_r']].filter(Boolean);
+  }
+}
 const pitcherMesh = makePlayer('away');
 const catcherMesh = makePlayer('away');
 const runnerMeshes = [makePlayer('away'), makePlayer('away'), makePlayer('away')];
@@ -521,7 +537,8 @@ function dressDefense(team){
     const p = FIELD_POS[k];
     place(fielders[k], p[0], p[1], p[2], k==='C'?Math.PI:0);
   }
-  pitcherMesh.g.visible = true; catcherMesh.g.visible = true; batterMesh.g.visible = true;
+  pitcherMesh.g.visible = true; catcherMesh.g.visible = true;
+  lineup.forEach(f => f.g.visible = (f === batterMesh));   // G-269: only the current batter stands at the plate - the rest of the order waits hidden
   fitAthletes();
 }
 /* recolor a player mesh to a team (batter/pitcher/catcher/runners/fielders) */
@@ -732,7 +749,7 @@ function attachAthlete(p, slotIdx){
 const athleteQueue = []; let athletePumpOn = false;
 function fitAthletes(){
   if (!H) return;
-  const slots = [batterMesh, pitcherMesh, catcherMesh, umpireMesh, ...runnerMeshes, ...Object.values(fielders)];
+  const slots = [...lineup, pitcherMesh, catcherMesh, umpireMesh, ...runnerMeshes, ...Object.values(fielders)];
   slots.forEach((s, i) => { if (s && !s.athlete && !athleteQueue.some(q => q.p === s)) athleteQueue.push({ p:s, i }); });
   if (!athletePumpOn && athleteQueue.length){ athletePumpOn = true; requestAnimationFrame(fitAthletesPump); }
 }
@@ -1253,6 +1270,7 @@ function forced(i){ // is runner on base i (0=1B) forced?
   return G.bases[0] && G.bases[1];
 }
 function afterPlay(outs, runs, forceThirdOut){
+  stepBatter();   // G-269: the plate appearance resolved - the next batter in the order steps up for the next one
   const t = battingTeam();
   let runsCount = runs;
   const newOuts = G.outs + outs;
@@ -1549,7 +1567,7 @@ function loop(){
   }
 }
 // idle figures
-  if (!ALLFIGS) ALLFIGS = [pitcherMesh, catcherMesh, batterMesh, ...runnerMeshes, ...Object.values(fielders)];
+  if (!ALLFIGS) ALLFIGS = [pitcherMesh, catcherMesh, ...lineup, ...runnerMeshes, ...Object.values(fielders)];
   for (const f of ALLFIGS){
     if (!f.g.visible) continue;
     const running = f._running; f._running = false;

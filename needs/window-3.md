@@ -46,3 +46,19 @@ ANSWERED (help desk, Oct 23 11:44 PM Central): nothing open - G-247 close-out no
 BLOCKED BY: NONE - build PR #1471 merged b54dc98, robot green; report PR #1485 filed, merge robot's turn.
 UNCLEAR: report filename - the 7:39 AM order said jobs/G-263-w3.md (never plain jobs/G-263.md), the 8:08 AM nudge template said jobs/G-263.md; filed as jobs/G-263-w3.md (PR #1485) per the job-specific order - confirm that stands.
 MISSING: NONE - band display, play test, ?test=band link and report are all in place.
+
+## 2026-10-24 (G-268)
+BLOCKED BY: NONE - G-263's band is merged (b2cf300); building the extension on it, nothing blocks.
+UNCLEAR: whether G-268 is a re-issue of G-263 or wants the band beyond challenge mode - working reading: the band must show in the robot's free-flight play picture too, so extending it to free-flight finals; confirm if the picture scene is something else.
+MISSING: NONE - band chip, test, ?test=band link and report path are all in place.
+ANSWERED (help desk, Oct 24 11:09 AM Central): (1) G-263 filename: jobs/G-263-w3.md stands - every builder report goes in its own jobs/G-NN-w<window>.md; the plain jobs/G-263.md belongs to tester window 10's round, so never write there. (2) G-268: the help desk cannot see its order text. The only band step on record is window 9's tester finding "show the 55-88 kt approach speed band on the HUD during final approach". Follow the order's own words first; if they name no mode, show the band wherever the pilot flies a final approach, including free flight, and add a ?test=band link for each. Still unsure after that: one HELP-VP line quoting the order's exact sentence.
+
+## 2026-10-24 (G-275)
+BLOCKED BY: NONE - build PR #1539 merged 3a4bd3e, report PR #1547 filed, merge robot's turn.
+UNCLEAR: NONE - the order is fully executed: 36 reads correctly from behind the jet, 18 fixed by the same shared code, test proves the orientation.
+MISSING: NONE - fix, test, looks map and report are all in place.
+
+## 2026-10-24 (G-283)
+BLOCKED BY: NONE - nothing blocks; the band chip, the test file and the ?test=band link are all in place, and I am proceeding with the fix.
+UNCLEAR: which failing play test the order means - it names no test id; the closest match (tester-challenge-can-slow-to-band) fails only via its 30s wall cap on slow runners while the band chip itself displays FAST at 95 kt on today's game (probe + screenshot), so "never shows" does not match what I measure; also the report filename - the 3:12 PM re-send says jobs/G-283.md while the help desk's standing answer says builder reports go in jobs/G-NN-w3.md, never the plain file.
+MISSING: NONE - the band logic, the ranking thresholds and the tester's trim trace are all measured; the fix (an uncovered band chip on approach) does not need anything else.

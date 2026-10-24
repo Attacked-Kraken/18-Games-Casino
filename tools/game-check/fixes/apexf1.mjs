@@ -588,34 +588,34 @@ export default [
   // the LIGHTS OUT tap. Also: the start lights by the car must be BIG, the
   // reds must come on one by one up to 5, then green = GO and the race starts.
   {
-    id: 'play-start-on-car-with-lights', title: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
-    run: async (page, h) => {
+    id: 'play-start-on-car-with-lights', ask: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
+    test: async (page, h) => {
       await g33Reset(page, h);
-      await page.locator('#careerBtn').click();
-      await page.locator('#toTeamBtn').click();
-      await page.locator('#startBtn').click();
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
       await h.wait(1200);
-      await page.locator('#qualiSkip').click();
+      await h.press('#qualiSkip');
       let grid = false; // the grid screen, reached without any tap on the canvas
       for (let i = 0; i < 12; i++) { const md = await h.eval(() => window.__test.race().mode); if (md === 'grid') { grid = true; break; } await h.wait(300); }
-      if (!grid) return h.fail('never reached the grid screen after qualifying');
+      if (!grid) return 'never reached the grid screen after qualifying';;
       await h.wait(600); // let the grid camera settle on the car
       const frame = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer);
         const tp = T.carMesh(pi).trackPos, cam = T.camAt(); return { d: Math.hypot(cam.x - tp[0], cam.z - tp[2]) }; });
-      if (!frame) return h.fail('could not read the camera / player car at the grid');
-      if (frame.d > 16) return h.fail('at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)');
-      await page.locator('#raceBtn').click();
+      if (!frame) return 'could not read the camera / player car at the grid';;
+      if (frame.d > 16) return 'at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)';;
+      await h.press('#raceBtn');
       let maxRed = 0, sawGreen = false, lampW = 0, racing = false;
       for (let i = 0; i < 80; i++) { const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')];
           return { red: ls.filter(e => e.classList.contains('red')).length, green: ls.some(e => e.classList.contains('green')),
             w: ls.length ? ls[0].getBoundingClientRect().width : 0, mode: window.__test.race().mode }; });
         if (st.red > maxRed) maxRed = st.red; if (st.green) sawGreen = true; if (st.w > 0) lampW = st.w;
         if (st.mode === 'race') { racing = true; break; } await h.wait(100); }
-      if (maxRed !== 5) return h.fail('start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')');
-      if (!sawGreen) return h.fail('start lights never flashed green for GO');
-      if (!racing) return h.fail('race never started after lights out');
-      if (lampW < 48) return h.fail('start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car');
-      return h.pass('grid opened with the camera ' + frame.d.toFixed(1) + ' m from the player car (no tap), lamps ' + Math.round(lampW) + ' px wide, reds climbed to 5, green flash, race started');
+      if (maxRed !== 5) return 'start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')';;
+      if (!sawGreen) return 'start lights never flashed green for GO';;
+      if (!racing) return 'race never started after lights out';;
+      if (lampW < 48) return 'start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car';;
+      return true;
     }
   },
   /* ================= G-101 FRIEND CODE PLAY TEST =================
@@ -1191,6 +1191,131 @@ export default [
       if (moved < 30) return 'gas-only car covered only ' + moved.toFixed(0) + ' m - the drive never got going';
       if (maxHead < 0.5) return 'gas only, stick centred, the heading stayed at ' + maxHead.toFixed(2) + ' rad on a sharp curve - the car is still following the road by itself';
       if (maxD < 10) return 'gas only, stick centred, the car stayed on the road (|d| max ' + maxD.toFixed(1) + ' m) - it is still driving itself round';
+      return true;
+    },
+  },
+  {
+    id: "never-g-265-p1",
+    ask: "on the upright phone teamMenu fits with no scrolling",
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      let out = null;
+      if (!await g33Reset(page, h, null)) out = 'reset did not reach the main menu';
+      if (!out) { await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.wait(800); }
+      if (!out) {
+        const tm = await h.eval(() => { const m = document.querySelector('#teamMenu'); if (!m) return null;
+          const sb = document.querySelector('#startBtn').getBoundingClientRect();
+          return { scrollH: m.scrollHeight, clientH: m.clientHeight, scrollW: m.scrollWidth, clientW: m.clientWidth, startBottom: Math.round(sb.bottom) }; }).catch(() => null);
+        if (!tm) out = 'teamMenu never opened';
+        else if (tm.scrollH > tm.clientH) out = 'teamMenu needs scrolling on the upright phone (content ' + tm.scrollH + ' px in ' + tm.clientH + ' px)';
+        else if (tm.scrollW > tm.clientW) out = 'teamMenu overflows sideways on the upright phone (content ' + tm.scrollW + ' px in ' + tm.clientW + ' px)';
+        else if (tm.startBottom > tm.clientH) out = 'START WEEKEND sits below the fold on the upright phone';
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
+  {
+    id: "play-stick-clears-pit",
+    ask: "on the upright phone the stick never overlaps the PIT button",
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.pit) return 'stick or PIT never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.pit.x + r.pit.w) - Math.max(r.stick.x, r.pit.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.pit.y + r.pit.h) - Math.max(r.stick.y, r.pit.y);
+      if (x > 0 && y > 0) return 'the stick overlaps PIT by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: "play-stick-clears-cam",
+    ask: "on the upright phone the stick never overlaps the CAM button",
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.cam) return 'stick or CAM never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.cam.x + r.cam.w) - Math.max(r.stick.x, r.cam.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.cam.y + r.cam.h) - Math.max(r.stick.y, r.cam.y);
+      if (x > 0 && y > 0) return 'the stick overlaps CAM by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: 'play-kit-retries-until-loaded',
+    ask: 'a dropped engine-kit fetch must not leave the synth carrying the race: the kit keeps retrying until it loads',
+    async test(page, h) {
+      const unwrap = () => h.eval(`window.__kitBlock = false;`).catch(() => {});
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.eval(() => {
+        window.__kitBlock = true;
+        if (!window.__kitFetchOrig) {
+          window.__kitFetchOrig = window.fetch;
+          window.fetch = function (u, o) {
+            const s = String(u);
+            if (window.__kitBlock && s.includes('grand_prix')) return Promise.reject(new Error('blocked for test'));
+            return window.__kitFetchOrig(u, o);
+          };
+        }
+      }).catch(() => {});
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      await h.wait(1200); await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) { await unwrap(); return 'the race never started'; }
+      await h.wait(3000);
+      await unwrap();
+      let ready = null;
+      for (let i = 0; i < 20; i++) {
+        const st = await h.eval(`window.__test.kitAudio()`).catch(() => null);
+        if (st && st.ready) { ready = st; break; }
+        await h.wait(1000);
+      }
+      await h.eval(`window.__test.setInput({ gas:false, steer:0 })`).catch(() => {});
+      if (!ready) return 'the engine kit never recovered after the fetch came back: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`).catch(() => null));
+      return true;
+    },
+  },
+  {
+    id: 'never-g-279-p1',
+    ask: 'play-test entries are shaped right: play-start-on-car-with-lights exposes test and ask, not run and title',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      const i = txt.indexOf("id: 'play-start-on-car-with-lights'");
+      if (i < 0) return 'entry play-start-on-car-with-lights is missing from the fixes file';
+      let seg = txt.slice(i);
+      const end = seg.indexOf('\n  },', 200);
+      if (end > 0) seg = seg.slice(0, end);
+      if (!/ask:/.test(seg)) return 'entry play-start-on-car-with-lights has no ask';
+      if (/title:/.test(seg)) return 'entry play-start-on-car-with-lights still uses title instead of ask';
+      if (!/test:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights has no test function';
+      if (/run:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights still uses run instead of test';
+      if (/h\.fail|h\.pass/.test(seg)) return 'entry play-start-on-car-with-lights still uses h.fail/h.pass instead of returns';
+      return true;
+    },
+  },
+  {
+    id: 'play-checklist-apexf1-format',
+    ask: 'Apex F1: checklists/apexf1.md exists with one measurable item per line, each carrying SOURCE, NUMBERS, MEASURE and a tester-chk TEST id (G-286)',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/checklists/apexf1.md'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read checklists/apexf1.md from the served repo';
+      const items = txt.split('\n').filter(l => /^- \[[ x-]\] [A-Z]\d+ \|/.test(l));
+      if (!items.length) return 'no checklist items found in checklists/apexf1.md';
+      const seen = new Set();
+      for (const line of items) {
+        const m = line.match(/^- \[[ x-]\] ([A-Z]\d+) \|(.*)$/);
+        if (!m) return 'checklist item line has the wrong shape: ' + line.slice(0, 80);
+        const id = m[1], rest = m[2];
+        if (seen.has(id)) return 'duplicate checklist id ' + id;
+        seen.add(id);
+        for (const k of ['SOURCE:', 'NUMBERS:', 'MEASURE:', 'TEST:']) if (!rest.includes(k)) return 'item ' + id + ' is missing ' + k;
+        const tp = rest.split(' | ').find(x => x.trim().startsWith('TEST:')) || '';
+        const tid = tp.split('TEST:')[1].trim().split(' ')[0];
+        if (tid !== 'tester-chk-' + id.toLowerCase()) return 'item ' + id + ' TEST must be tester-chk-' + id.toLowerCase();
+      }
       return true;
     },
   },

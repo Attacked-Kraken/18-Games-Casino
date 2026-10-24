@@ -7,7 +7,11 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
-## WHERE THINGS ARE (apexhockey.html, line numbers as of G-261)
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-273 round 1)
+- Faceoff DOTS table ~200 (centre, n1-n4 neutral at |x| 20, e1-e4 end at |x| 69, z 21.4); the same spots are painted in makeIceTexture's dots list (~260). nearestDot() picks the drop spot for offside/icing whistles.
+- Penalties (G-272 + G-273 round 1): callPenalty() ~1030 decides instant vs DELAYED - applyPenalty() below it does the sit (major flag: penT 50 + 'MAJOR' banner for a check from behind in doCheck(); minors penT 20); an armed delayedPen (declared ~779) completes in rules() when the penalised team touches the puck (whistle + nearest-dot faceoff), at any whistle(), or at a goal in onGoal() (a fouled-team goal washes a minor, never a major); endPenalty() below applyPenalty; the penT countdown + PEN refresh live in rules() (~1510); a power-play goal springs MINORS only in onGoal().
+- Goal broadcast (G-266): #goalLight/#spotlights CSS 42-47, divs 128-129, goalFx() + lastGoalX after hideStatCard (~826), lit in onGoal(), cleared in faceoff() and gameOver(); the replay cuts live in stepCamera() (search 'REPLAY: two broadcast cuts').
+- Crease paint (G-266): makeIceTexture's goal-creases arc bulges toward centre ice (in front of the goal line).
 - Rink constants: GOAL_LINE/BLUE 191, PERIOD_LEN/DOTS 192-193; boards bounce in stepPuck, carried-puck clamp in stepPuck's owned branch (G-216).
 - Test hook: window.__hk at 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch); window.__reality 1725.
 - Score + G-257 stat counters (statShots/statSaves/statFO): globals 767-768, reset at 782 in __hk.newMatch() (which also clears the OT bench marks).
@@ -38,6 +42,11 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: the intermission between periods shows a stats card (shots, saves, faceoffs won) - never just the END OF PERIOD banner (G-257)
 - 2026-10-24: Overtime is 3-on-3 - two skaters a side stay on the bench for the whole OT (otLines() in faceoff(); never-g-261-p2) (G-261)
 - 2026-10-24: The puck never leaves the rink under boards pressure - the boards tests keep play alive between phases or they starve their own sampler (never-g-261-p1) (G-261)
+- 2026-10-24: A goal brings the broadcast look - horn, crowd, the red goal light, spotlights and a replay cut to 2 angles during the goal state (goalFx() + stepCamera replay cuts; never-g-266-p1) (G-266)
+- 2026-10-24: Each goal crease is painted IN FRONT of its goal - a light-blue semicircle r 1.83 m on the centre-ice side of the goal line, never behind it in the trapezoid (never-g-266-p2) (G-266)
+- 2026-10-24: The neutral-zone faceoff dots sit 1.5 m inside the blue lines (|x| 20 units, 6.13 m) in the neutral zone - never out at |x| 40 in the end zones; offside faceoffs drop on them (never-g-273-p1) (G-273)
+- 2026-10-24: A major penalty exists - a check from behind draws a 5:00 MAJOR (penT 50, banner MAJOR) that serves its full time; only minors leave the box early on a power-play goal (never-g-272-p1) (G-272)
+- 2026-10-24: A penalty called while the other team has the puck is DELAYED - the man does not sit at once; play goes on until the penalised team touches the puck, and only then do the whistle blow and the box fill (never-g-273-p2) (G-273)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
 ## Reference pictures
