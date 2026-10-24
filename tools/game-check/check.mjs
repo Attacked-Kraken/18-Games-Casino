@@ -17,6 +17,8 @@ import path from 'path';
 import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
+// a play test written without `ask:` (e.g. only `title:` or just an id) must still print a real name, never "undefined"
+const askOf = (fx) => String((fx && (fx.ask || fx.title || fx.name || fx.id)) || 'unnamed test');
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -399,7 +401,30 @@ for (const g of games) {
       try { await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(2500);
         for (const step of g.start || []) await pressStep(page, step); await page.waitForTimeout(2500); } catch (e) {}
     };
+    // VP-analyst Oct 23 2026 (window 6, PR #1282: "fx.test is not a function"): a play-test entry that is not shaped right is
+    // rejected UP FRONT with the exact right shape, never a bare TypeError. Runs at PR time (the PR's game is played).
+    {
+      const RIGHT = "right shape: { id: 'play-...', ask: 'the owner words' (a line saying what is checked), async test(page, h) { ...; return true; } } - the check is a method named `test` (async test(page, h)) that returns true when fine, or a short string saying why not; NOT `run:`, `fn:` or `check:`";
+      const good = [];
+      for (const fx of Array.isArray(list) ? list : []) {
+        const why = !fx || typeof fx !== 'object' ? 'entry is not an object' : typeof fx.id !== 'string' || !fx.id ? 'missing id'
+          : typeof fx.test !== 'function' ? ('has no test function' + (['run', 'fn', 'check', 'exec', 'play'].filter(k => typeof fx[k] === 'function').map(k => ' - it uses `' + k + '` instead of `test`').join('')) ) : '';
+        if (why) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs entry "' + (fx && fx.id || '?') + '" ' + why + ' - ' + RIGHT);
+        else good.push(fx);
+      }
+      if (!Array.isArray(list)) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs must `export default [ ... ]` - an array of entries; ' + RIGHT);
+      list = good;
+    }
+    // owner Oct 23 2026 7:47 PM: TEST_PART=k/n plays only every n-th play test starting at k (Hockey's 56 tests on 3 robots side by side);
+    // merge-results puts the parts back together. Part 1 also does everything else (pictures, reality, Safari).
+    const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
+    if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
+    // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
+    // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
+    // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
+    const GAME_CAP_MS = 20 * 60 * 1000, tGame = Date.now(); let notRun = [];
     for (const fx of list) {
+      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
       let ok = false, note = '', dead = false;
       // the time limit really STOPS the test: after 30 s every call it makes on the page throws
       const live = new Proxy(page, { get(t, k) { if (dead) throw new Error('test stopped (time limit)'); const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
@@ -426,7 +451,8 @@ for (const g of games) {
         dead = false; inc = false; const budget = attempt === 2 ? 2 : 1;
         try {
           const sl = await slowFactor(page); r.slow = sl; try { await page.evaluate(f => { window.__slow = f; }, sl.factor); } catch (e) {}
-          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(30 * sl.factor * budget) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, 30000 * sl.factor * budget); })]);
+          const capMs = Math.min(30000 * sl.factor, 90000) * budget;
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(capMs / 1000) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, capMs); })]);
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
@@ -439,12 +465,21 @@ for (const g of games) {
       }
       // owner Oct 21 7:49 PM (tester scoreboard "the Muse never reports its own time"): every test records the robot's
       // own play time (ms) and the mode/event it plays (fx.mode, or the first word of its id after the prefix)
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
+      r.fixes.push({ id: fx.id, ask: askOf(fx), ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
                      mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
-      if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
-      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
-      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      if (inc) { r.check.push(`Play test could not decide (tried twice): "${askOf(fx)}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
+      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
+      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();
+      // a test that FROZE the game (AI thinkT = 999, skaters pinned to stand spots, positions set by hand) and passed left the
+      // game frozen for every later test - they waited for events that never came. Always start the next test on a fresh game.
+      else if (/thinkT|__standSpots|freeze|\.pos\.set\(/.test(String(fx.test))) await freshGame();
+    }
+    if (notRun.length) {
+      r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
+      // owner Oct 23 7:47 PM "if any can count as passed, that is a false green": an owner / never / keep test that was NOT RUN is NOT proven -
+      // it stays red (robot side, named), so no job can be called done on a test the robot never ran.
+      for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${askOf(fx) || id}"`); }
     }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });

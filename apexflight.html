@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <link rel="icon" href="data:,">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Apex Flight · Apex Arcade</title>
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
@@ -23,6 +24,8 @@
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(255,59,48,.35); border-radius: 10px; padding: 7px 10px; }
+  #bandBox { display: none; }
+  #bandBox.in { border-color: rgba(80,255,140,.7); color: #b6ffb6; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; font-size: 12px; }
   #stats b { display: block; font-size: 16px; color: #fff; font-weight: 700; }
@@ -50,27 +53,28 @@
     border: 1px solid rgba(255,59,48,.5); border-radius: 10px; padding: 10px 12px;
     font: 700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .1em; cursor: pointer; }
   #viewBtn { top: calc(10px + env(safe-area-inset-top)); right: 190px; }
+  #jetBtn { top: calc(58px + env(safe-area-inset-top)); left: 12px; }
   #resetBtn { top: calc(10px + env(safe-area-inset-top)); right: 262px; }
   /* mute button: above the throttle touch zone, clear of VIEW/RESET and the HUD */
   #muteBtn { right: 12px; bottom: calc(306px + env(safe-area-inset-bottom)); width: 48px; height: 48px;
     padding: 0; font-size: 19px; z-index: 4500; }
   /* overlays */
-  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center;
+  .ovl { position: fixed; inset: 0; z-index: 4000; display: flex; align-items: center; justify-content: center; overflow-y: auto;
     background: rgba(0,0,0,.82); padding: 20px; }
   .ovl[hidden] { display: none; }
-  .panel { width: min(420px, 92vw); max-height: 88vh; overflow-y: auto; background: rgba(11,20,36,.97);
-    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 26px 22px; text-align: center;
+  .panel { width: min(420px, 92vw); max-height: calc(100dvh - 16px); overflow-y: auto; background: rgba(11,20,36,.97);
+    border: 1px solid rgba(255,59,48,.5); border-radius: 18px; padding: 14px 18px; text-align: center;
     box-shadow: 0 0 40px rgba(255,59,48,.15); color: #eef3f8; }
-  .panel h1 { margin: 0 0 4px; font-size: 30px; letter-spacing: .22em; color: #ffb700; }
-  .panel h2 { margin: 0 0 14px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
-  .panel p { font-size: 12.5px; line-height: 1.65; color: #eef3f8; }
-  .bigbtn { display: block; width: 100%; margin: 10px 0; padding: 15px; border-radius: 999px; cursor: pointer;
+  .panel h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: .22em; color: #ffb700; }
+  .panel h2 { margin: 0 0 8px; font-size: 12px; letter-spacing: .3em; color: #ffcc33; font-weight: 500; }
+  .panel p { font-size: 12px; line-height: 1.45; color: #eef3f8; }
+  .bigbtn { display: block; width: 100%; margin: 6px 0; padding: 10px 15px; border-radius: 999px; cursor: pointer;
     border: 1px solid rgba(255,59,48,.65); background: rgba(16,20,26,.9); color: #ffffff;
     font: 700 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .08em; }
-  .friendbtn { padding: 10px 15px; font-size: 13px; margin: 6px 0 2px; }
-  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
+  .friendbtn { padding: 8px 15px; font-size: 13px; margin: 4px 0 0; }
+  #friendIn { font: 600 15px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; width: 100%; box-sizing: border-box; padding: 9px 12px; border-radius: 12px; border: 1px solid #ffcc33; background: #0b1424; color: #ffffff; margin: 8px 0 6px; }
   #friendErr { color: #ff9a9a; font: 600 13px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; min-height: 18px; margin-bottom: 8px; }
-  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 6px 0 10px; }
+  #myCode { font: 700 14px ui-monospace,Menlo,monospace; color: #ffcc33; word-break: break-all; margin: 4px 0 6px; }
   .bigbtn small { display: block; font-weight: 400; font-size: 11px; color: #ffe9b0; margin-top: 4px; letter-spacing: .02em; }
   .ctl { text-align: left; font-size: 12px; line-height: 1.9; color: #eef3f8; margin: 14px 0 4px; }
   .ctl b { color: #ffffff; }
@@ -94,6 +98,7 @@
     <div class="chip"><span>VS FPM</span><b id="hVs">0</b></div>
   </div>
   <div id="rwyBox" class="chip"><span id="hRwy">RWY --</span> &nbsp;<span id="hGlide"></span></div>
+  <div id="bandBox" class="chip"><span>TD BAND</span> &nbsp;<span id="hBand">55-88 KT</span> &nbsp;<span id="hBandState">-</span></div>
   <div id="msg"></div>
   <div id="ahWrap"><canvas id="ah" width="116" height="116"></canvas></div>
 </div>
@@ -169,8 +174,8 @@ const VSTALL = 20;          // m/s  (~39 kt) stall warning - more forgiving
 const VROT   = 23;          // m/s  (~45 kt) rotate speed - earlier liftoff
 const VROT_A = 22.5;        // m/s  (~44 kt) auto-rotate assist threshold
 const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
-const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
-const KLIFT  = 0.018;       // lift coefficient - more forgiving
+const THRUST = 4.6;         // m/s^2 at full throttle - raised 2026-10-23 (owner video: the jet could not get off the ground)
+const KLIFT  = 0.024;       // lift coefficient - raised 2026-10-23 (at the old value lift at rotate speed barely beat gravity, so the jet lifted, wallowed and sank back onto its gear)
 const GRAV   = 9.81;
 const RWY_HALF = 700, RWY_W = 12;
 const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
@@ -494,6 +499,41 @@ const jet = createApexJet(THREE, { preset: 'normal', style: 'fighter', paint: 0,
 const plane = jet.group; scene.add(plane); scene.add(jet.fx); scene.add(jet.worldFx);
 // fx = afterburner flames (kept outside the group so the REALITY size box ignores them); worldFx = wingtip vapour trails
 const gearWheels = jet.wheels;   // the wheel meshes (REALITY robot contact points) - the same array stays valid after setStyle
+
+/* ================= computer traffic (G-247) =================
+   Four computer jets from the same pack - the other styles, other paints -
+   fly wide loops around the field at a safe height. They never touch the
+   player or the ground: fixed loops well above the field, and a jet eases
+   higher whenever the player climbs into its loop. Player start untouched. */
+const traffic = [];
+for (const cfg of [
+  { style: 'delta', paint: 1, cx: 350, cz: -150, R: 750, alt: 190, spd: 68, dir: 1, th: 0.5 },
+  { style: 'fwdswept', paint: 4, cx: -450, cz: 250, R: 620, alt: 240, spd: 74, dir: -1, th: 2.4 },
+  { style: 'stealth', paint: 5, cx: 100, cz: -800, R: 880, alt: 290, spd: 80, dir: 1, th: 4.2 },
+  { style: 'sport', paint: 7, cx: -150, cz: 700, R: 540, alt: 155, spd: 60, dir: -1, th: 1.1 },
+]) {
+  const tj = createApexJet(THREE, { preset: 'normal', style: cfg.style, paint: cfg.paint, external: true });
+  scene.add(tj.group); scene.add(tj.fx); scene.add(tj.worldFx);
+  tj.setGear(false);
+  tj.group.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });   // traffic casts no shadows (owner fix 2026-10-23): at 155-290 m up their shadows never reach the player's shadow camera, and four detailed jets in the shadow pass cost phone frame rate
+  traffic.push({ ...cfg, jet: tj, altOff: 0 });
+}
+const trafficEul = new THREE.Euler(0, 0, 0, 'YXZ');
+function updateTraffic(dt) {
+  for (const t of traffic) {
+    t.th += t.dir * (t.spd / t.R) * dt;
+    const x = t.cx + t.R * Math.cos(t.th), z = t.cz + t.R * Math.sin(t.th);
+    const dx = x - P.pos.x, dz = z - P.pos.z, dy = (t.alt + t.altOff) - P.pos.y;
+    const near = dx * dx + dz * dz < 260 * 260 && Math.abs(dy) < 80;
+    t.altOff += ((near ? 95 : 0) - t.altOff) * Math.min(1, dt * 0.7);
+    const vx = -Math.sin(t.th) * t.dir, vz = Math.cos(t.th) * t.dir;
+    const bank = -t.dir * Math.min(0.38, Math.atan((t.spd * t.spd) / (t.R * 9.81)));
+    t.jet.group.position.set(x, t.alt + t.altOff, z);
+    trafficEul.set(0, Math.atan2(vx, vz), bank);
+    t.jet.group.quaternion.setFromEuler(trafficEul);
+    t.jet.update(dt, { pitch: 0, roll: bank, yaw: 0, throttle: 0.72, boost: false });
+  }
+}
 plane.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
 
 /* ================= HUD: artificial horizon ================= */
@@ -696,9 +736,9 @@ function trickOffsets(dt) {
   return { pe, re };
 }
 /* A phone call, notification or app switch must never leave the plane
-   steering itself: on window blur / tab hidden, every held input - keys,
-   stick, throttle-hold buttons - goes straight back to 0 (DONE.md stick
-   rule; the phone robot checks these handlers exist). */
+   steering itself: on window blur / tab hidden / touch cancel, every held
+   input - keys, stick, throttle-hold buttons - goes straight back to 0
+   (DONE.md stick rule; the phone robot checks these handlers exist). */
 function resetInputs() {
   for (const k in keys) keys[k] = false;
   kitHeld = false;
@@ -706,6 +746,7 @@ function resetInputs() {
   inp.pitchUp = 0; inp.rollRight = 0;
 }
 window.addEventListener('blur', resetInputs);
+window.addEventListener('touchcancel', resetInputs);
 document.addEventListener('visibilitychange', () => { if (document.hidden) resetInputs(); });
 
 /* ================= buttons ================= */
@@ -956,6 +997,17 @@ function updateHUD(dt) {
       $('hGlide').textContent = alt > want + 35 ? '▲ HIGH' : (alt < want - 35 ? '▼ LOW' : '◆ ON GLIDE');
     } else rb.style.display = 'none';
   } else rb.style.display = 'none';
+  // touchdown band (G-263): the same approach window as the runway box above -
+  // the 55-88 kt band already decides a rank level at touchdown, now the pilot
+  // sees it while approaching, with whether the speed is inside it
+  const bb = $('bandBox');
+  if (rb.style.display === 'block') {
+    bb.style.display = 'block';
+    const kt = v * MS2KT;
+    const st = kt < 55 ? 'SLOW' : (kt > 88 ? 'FAST' : 'IN BAND');
+    $('hBandState').textContent = st;
+    bb.classList.toggle('in', st === 'IN BAND');
+  } else bb.style.display = 'none';
   // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
   if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
     const kt = v * MS2KT;
@@ -1101,7 +1153,7 @@ $('qualityBtn').addEventListener('click', () => {
 });
 applyQuality();
 
-window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
+window.__flight = { P, inp, jetInput, jet, aiJets: traffic, get stallNow() { return stallNow; }, get trick() { return trick ? trick.name : null; },
   friend: {
     code: () => friendCode(),
     set: (txt) => { const f = parseFriend(txt); if (!f) return false; friendGame = f; return true; },
@@ -1112,12 +1164,12 @@ window.__flight = { P, inp, jetInput, jet, get stallNow() { return stallNow; }, 
 window.__test = { friend: window.__flight.friend };
 /* REALITY robot hook (REALITY.md "Robot hook"): the robot measures the plane's
    size, facing vs travel, and that the wheels touch the ground. Flight is not
-   a race, so there is no track direction; there are no AI aircraft (others). */
+   a race, so there is no track direction; the computer traffic jets (G-247) are the others. */
 window.__reality = {
   kind: 'plane',
   expect: { span: [8, 16.5] },   // the jet's longest side is its length (fighter 15.4 m, delta 16.1 m) - INSTRUCTIONS step 7
   player: plane,
-  others: [],
+  others: traffic.map(t => t.jet.group),
   contact: gearWheels,
   ground: (x, z) => 0,
   go: (on) => {
@@ -1145,7 +1197,7 @@ let last = performance.now();
 let fitChk = 0;
 function loop(now) {
   requestAnimationFrame(loop);
-  let dt = Math.min((now - last) / 1000, 0.05);
+  let dt = clamp((now - last) / 1000, 0, 0.05);   // BOTH ends (owner fix 2026-10-23): the first frame's rAF timestamp can predate 'last' after a slow module load - a negative dt integrated the parked jet BACKWARD to y=-14, under the ground-contact dead zone, where it could never take off, land or crash
   last = now;
   if (document.hidden) return;
   pollKeys();
@@ -1167,6 +1219,7 @@ function loop(now) {
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }
   }
   jet.update(dt, { pitch: inp.pitchUp, roll: inp.rollRight, yaw: padYaw, throttle: P.thr, boost: padBoost });
+  updateTraffic(dt);
   updateCamera(dt);
   updateHUD(dt);
   Mus.update(phase, P.thr);
@@ -1180,8 +1233,14 @@ function loop(now) {
   renderer.render(scene, camera);
 }
 /* OWNER CHECK (G-232): apexflight.html?test=controls opens straight into
-   free flight - menus skipped - with the shared kit pad on screen. */
-if (new URLSearchParams(location.search).get('test')) { mode = 'free'; respawn(); }
+   free flight - menus skipped - with the shared kit pad on screen.
+   ?test=friend (G-238) opens the Play-a-Friend overlay instead.
+   ?test=band (G-263) opens the landing challenge on final at 70 kt, band showing. */
+const testParam = new URLSearchParams(location.search).get('test');
+if (testParam === 'friend') { $('myCode').textContent = friendCode(); $('friendOv').hidden = false; }
+else if (testParam === 'traffic') { mode = 'free'; respawn(); P.pos.set(0, 130, -1250); P.vel.set(0, 0, 58); P.thr = 0.72; jetInput.throttle = 0.72; P.ground = false; jet.setGear(false); jetInput.gear = false; jetInput.setGearLabel(false); }
+else if (testParam === 'band') { mode = 'challenge'; respawn(); P.pos.set(0, 80, -2500); P.vel.set(0, -2, 36); P.yaw = 0; P.roll = 0; P.pitch = -0.05; P.thr = 0.4; P.ground = false; }
+else if (testParam) { mode = 'free'; respawn(); }
 requestAnimationFrame(loop);
 </script>
 

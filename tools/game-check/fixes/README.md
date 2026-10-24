@@ -54,3 +54,8 @@ still passed. So every game also gets **at least 5 play tests** in the same file
   Hockey `play-puck-in-rink` (the puck never leaves the boards). Racer `play-on-track` (AI cars finish a lap).
 - A failing play test shows as a CHECK (it doesn't block merges) and pulls the game's daily score down until fixed.
 - Under 5 play tests = a CHECK on that game.
+
+## Wrong shape is rejected with the right one (Oct 23 2026)
+An entry must have `id`, `ask` and a method named `test` (`async test(page, h)`). An entry that uses `run:` / `fn:` / `check:` instead
+(window 6, PR #1282: "fx.test is not a function") now fails the PR check with `PLAY-TEST FORMAT: ... right shape: ...` naming
+the file, the entry and what is wrong.

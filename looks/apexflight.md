@@ -4,40 +4,36 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1180 lines)
-- Menus / HTML / CSS (menu + friend overlays, HUD DOM, slim throttle bar CSS ~39, QUALITY button ~113): 1–157
-- Imports, helpers, constants, state (offRwyMsg flag ~180): 158–185
-- Renderer, scene, venue (step-6 look 191-219: ACES, SUN_DIR 203, shadow sun, PMREM env; runway block ~282-331; crowdTick ~470): 186–486
-- The jet (owner's Apex Jet pack, created external): 487–494
-- HUD artificial horizon: 495–520 · Messages: 521–524
-- Game flow (respawn ~526, crash ~543, touchdown/scoring ~550): 525–587
-- Input — keyboard (pollKeys ~597): 588–606 · Jet controls pad + tricks + throttle bar (~628): 607–699
-- Buttons / view toggle: 700–709 · Play a Friend codes: 710–749 · fitGame: 750–763
-- Physics (step ~771; lift/stall, airbrake in the forces block ~825): 764–880
-- Camera (step-5 offsets + sun follow): 881–913 · HUD update (off-runway reason re-assert ~925): 914–955 · Music (procedural WebAudio): 956–1074
-- QUALITY option wiring (~1075) · Test hooks (`__flight` 1093, `__reality` 1105): 1075–1131
-- Main loop (throttle/brake/boost/yaw latches ~1142–1150): 1132–1180
-## WHERE THINGS ARE — `apexflight.html` (1153 lines)
-- Menus / HTML / CSS (menu + friend overlays, HUD DOM, slim throttle bar CSS ~39): 1–152
-- Imports, helpers, constants, state (shared controls import at 156): 153–185
-- Renderer, scene, venue (runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 186–468
-- The jet (owner's Apex Jet pack, created external): 469–476
-- HUD artificial horizon: 477–502 · Messages: 503–506
-- Game flow (respawn 508 - also shows the kit stick, crash, touchdown/scoring): 507–570
-- Input — keyboard (pollKeys 580): 571–589 · Jet controls: pad + SHARED kit stick (kit/controls.js, G-232; kit created ~601, pack zone removed ~599) + throttle bar: 590–694
-- Buttons / view toggle: 695–704 · Play a Friend codes: 705–748 · fitGame ~749: 749–758
-- Physics (step ~762; lift/stall, airbrake in the forces block): 759–875
-- Camera: 876–904 · HUD update (off-runway reason re-assert): 905–946 · Music (procedural WebAudio): 947–1063
-- Test hooks (`__flight` ~1058, `__reality` ~1070): 1058–1104
-- Main loop (kit axes merge ~1113; ?test= owner-check hook ~1138): 1105–1153
+## WHERE THINGS ARE — `apexflight.html` (1253 lines)
+- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; slim throttle bar CSS ~43; QUALITY button ~121; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27, HTML ~101, G-263): 1–162
+- Imports, helpers, constants, state (offRwyMsg flag ~187): 163–196
+- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 197–495
+- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~522): 496–540
+- HUD artificial horizon: 541–564 · Messages: 565–568
+- Game flow (respawn ~570, crash, touchdown/scoring): 569–632
+- Input — keyboard (pollKeys ~642): 633–652 · Jet controls: pad + SHARED kit stick + throttle bar; resetInputs 742 (blur / touchcancel / hidden zero every input, G-238): 653–752
+- Buttons / view toggle: 753–773 · Play a Friend codes (friendCode ~774): 774–801 · fitGame ~802: 802–815
+- Physics (step ~823; lift/stall, airbrake in the forces block): 816–935
+- Camera (step-5 offsets + sun follow): 936–967 · HUD update (off-runway reason re-assert; touchdown band block ~1003, G-263): 968–1018 · Music (procedural WebAudio): 1019–1137
+- QUALITY option wiring (~1141) · Test hooks (`__flight` 1156 incl. aiJets, `__reality` 1168 - traffic as others): 1138–1197
+- Main loop (kit axes merge ~1206; updateTraffic ~1221; ?test= owner-check hook 1239, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263): 1198–1253
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
 its 14-button pad. Let go = stop is the kit's: pointerup / pointercancel / blur /
 hidden tab all reset it (play test play-stick-shared-resets).
 
-**Lighting preset:** `look-presets.js` → `field` (use the same one in the game and in tools/model-viewer.html).
-**Jet pack camera + look (G-141, INSTRUCTIONS steps 5-6):** chase offset is the pack's -17 - speed*0.012 back, +4.5 up; cockpit eye = U*(jet.canopyY + 0.42) + F*(JET_STYLES[style].canopy.z); camera ground clamp 0.6. Look = ACES tone mapping, the demo's shadow sun (SUN_DIR, 2048 PCFSoft, +-22 m box) following the jet, hemi 0.55, and the demo's PMREM environment so the paint reflects. LOW option (start-menu QUALITY toggle): pixel ratio 1.25, shadow sun off.
+Computer traffic (G-247): four pack jets (delta/Inferno, fwdswept/Arctic,
+stealth/Toxic, sport/Sunset) circle wide loops at 155-290 m, gear up, banked;
+updateTraffic flies them every frame and eases one higher when the player
+closes within 260 m. Tests see them as __flight.aiJets (play-ai-jets-flying).
+
+Touchdown band (G-263): the 55-88 kt band already decides a rank level at touchdown (outside it costs a level) - now the pilot sees it during the approach. The #bandBox chip shows beside the runway box in the landing challenge (same window: challenge, airborne, within 9000 m of the runway) reading TD BAND 55-88 KT with IN BAND (green) / SLOW / FAST. Test: play-band-shows-on-approach.
+
+Fit rule (G-238): every overlay panel fits a 844x390 phone outright - .panel is
+compact (14px padding, slimmer buttons) and capped at calc(100dvh - 16px) with
+internal scroll as the safety net. A touch cancel resets all input through
+resetInputs (play test play-stick-never-stays-stuck).
 
 ## MUST
 - (owner adds these)
@@ -50,6 +46,10 @@ hidden tab all reset it (play test play-stick-shared-resets).
 - No control overlapping another control - the throttle is a slim button in the button row
 - 2026-10-22: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-121)
 - 2026-10-22: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-121)
+- 2026-10-23: Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence) (G-243)
+- 2026-10-23: After a scored landing, flying into the ocean must still crash the plane (today: nothing happens) (G-243)
+- 2026-10-23: Takeoff: a full-throttle roll must end in a real climb - never lift off, wallow at rotate speed and sink back onto the gear (owner video, no job number)
+- 2026-10-23: Frame time clamps at zero - a negative first frame threw the parked jet under the runway (y=-14), below ground contact, where it could never take off, land or crash (owner fix)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

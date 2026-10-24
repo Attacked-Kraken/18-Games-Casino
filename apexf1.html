@@ -313,7 +313,7 @@ const Aud = {
       // engine: two detuned saws through lowpass, pitch = f(rpm)
       this.engineOsc = this.ctx.createOscillator(); this.engineOsc.type='sawtooth'; this.engineOsc.frequency.value=70;
       this.engineOsc2 = this.ctx.createOscillator(); this.engineOsc2.type='square'; this.engineOsc2.frequency.value=35;
-      this.engineFilter = this.ctx.createBiquadFilter(); this.engineFilter.type='lowpass'; this.engineFilter.frequency.value=900; this.engineFilter.Q.value=2;
+      this.engineFilter = this.ctx.createBiquadFilter(); this.engineFilter.type='lowpass'; this.engineFilter.frequency.value=900; this.engineFilter.Q.value=0.8; // G-239: the fallback synth's squeak was this filter's peak (Q 2 at a 3.1 kHz sweep) - flattened
       this.engineGain = this.ctx.createGain(); this.engineGain.gain.value=0.0;
       this.engineOsc.connect(this.engineFilter); this.engineOsc2.connect(this.engineFilter);
       this.engineFilter.connect(this.engineGain); this.engineGain.connect(this.master);
@@ -361,7 +361,7 @@ const Aud = {
     const f=55+rpm01*260+throttle*40;
     this.engineOsc.frequency.setTargetAtTime(f,t,0.03);
     this.engineOsc2.frequency.setTargetAtTime(f*0.5+3,t,0.03);
-    this.engineFilter.frequency.setTargetAtTime(500+rpm01*2600,t,0.05);
+    this.engineFilter.frequency.setTargetAtTime(340+rpm01*1150,t,0.05); // G-239: the synth tops out near 1.5 kHz now - a rumble under the kit, not a squeeze toy
     this.engineGain.gain.setTargetAtTime(0.05+rpm01*0.10+throttle*0.05,t,0.05);
   },
   kitLoad(){ // G-107: fetch + decode the grand_prix kit once; on any failure kit stays null and the synth engine remains
@@ -374,7 +374,9 @@ const Aud = {
       fetch(base+n+'.mp3').then(r=>r.arrayBuffer()).then(ab=>this.ctx.decodeAudioData(ab)).then(b=>{ kit.bufs[k]=b; }).catch(()=>{})
     );
     Promise.all(jobs).then(()=>{
-      if(!kit.bufs.idle || !kit.bufs.low || !kit.bufs.mid || !kit.bufs.high){ this.kit=null; return; }
+      if(!kit.bufs.idle && !kit.bufs.low && !kit.bufs.mid && !kit.bufs.high){ this.kit=null; this.kitRetry(); return; } // G-239: the kit dies only when NOTHING decoded
+      const ord=['idle','low','mid','high']; // G-239 (owner: 'rubber chicken'): ONE failed file used to kill the whole grand_prix kit and leave the synth to carry the race - a missing band now borrows its nearest decoded neighbour
+      for(let i=0;i<ord.length;i++){ if(!kit.bufs[ord[i]]){ let best=null,bd=9; for(let j=0;j<ord.length;j++){ if(kit.bufs[ord[j]] && Math.abs(j-i)<bd){ bd=Math.abs(j-i); best=ord[j]; } } if(best) kit.bufs[ord[i]]=kit.bufs[best]; } }
       try{
         for(const k of ['idle','low','mid','high','squeal']){
           if(!kit.bufs[k]) continue;
@@ -384,8 +386,12 @@ const Aud = {
           kit.srcs[k]=s; kit.gains[k]=g;
         }
         kit.ready=true;
-      }catch(e){ this.kit=null; }
+      }catch(e){ this.kit=null; this.kitRetry(); }
     });
+  },
+  kitRetry(){ // G-239: one retry a few seconds on - a cold cache or a dropped fetch on the owner's phone gets a second chance before the synth has to carry the race
+    if(this._kitRetried) return; this._kitRetried=true;
+    setTimeout(()=>{ this._kitTried=false; this.kitLoad(); }, 4000);
   },
   kitState(){ // probe for the play test: is the kit carrying the engine, and what is it doing
     const kit=this.kit;
@@ -506,7 +512,7 @@ function initGL(){
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x87b5e0);
-  scene.fog = new THREE.Fog(0x87b5e0, 400, 1600);
+  scene.fog = new THREE.Fog(0x87b5e0, 300, 1150); // G-239: horizon haze - the owner's frames show a hard line where the grass meets a flat sky; distance now melts into the sky colour well before the scenery edge
   camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.5, 4000);
   const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x3a5f3a, 0.9); scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xfff2dd, 1.6); sun.position.set(200,300,120);
@@ -819,8 +825,11 @@ const Track = {
     bc.fillStyle='#d21f26'; bc.fillRect(0,0,1024,16); bc.fillRect(0,112,1024,16);
     bc.fillStyle='#ffd76a'; bc.font='bold 72px Arial'; bc.textAlign='center'; bc.textBaseline='middle';
     bc.fillText('APEX ARCADE', 512, 64);
-    const banner=new THREE.Mesh(new THREE.PlaneGeometry(18,2.2),
-      new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(bcv),side:THREE.DoubleSide}));
+    const btex=new THREE.CanvasTexture(bcv);
+    const btexF=btex.clone(); btexF.wrapS=THREE.RepeatWrapping; btexF.repeat.x=-1; btexF.needsUpdate=true; // G-239: the back face carries a pre-flipped print - APEX ARCADE reads correctly from BOTH sides (a DoubleSide plane mirrored it, video1-01)
+    const bannerEdge=new THREE.MeshBasicMaterial({color:0x0a0e1a});
+    const banner=new THREE.Mesh(new THREE.BoxGeometry(18,2.2,0.12),
+      [bannerEdge,bannerEdge,bannerEdge,bannerEdge,new THREE.MeshBasicMaterial({map:btex}),new THREE.MeshBasicMaterial({map:btexF})]);
     banner.position.set(f0.x, f0.y+9.5, f0.z);
     banner.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2; gantry.add(banner);
     g.add(gantry);
@@ -933,7 +942,9 @@ const Track = {
     c.fillStyle='#ffffff'; c.fillText('APEX ARCADE', 256, 37);
     const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace;
     tex.anisotropy=4;
-    const mat=new THREE.MeshBasicMaterial({map:tex});
+    const texF=tex.clone(); texF.wrapS=THREE.RepeatWrapping; texF.repeat.x=-1; texF.needsUpdate=true; // G-239: pre-flipped print for the back face - the boards read APEX ARCADE from both directions (video2-09 showed it mirrored)
+    const boardEdge=new THREE.MeshBasicMaterial({color:0x0a0e16});
+    const mat=[boardEdge,boardEdge,boardEdge,boardEdge,new THREE.MeshBasicMaterial({map:tex}),new THREE.MeshBasicMaterial({map:texF})];
     const geo=new THREE.BoxGeometry(15,1.5,0.25);
     const step=140, count=Math.floor(this.length/step);
     for(let i=0;i<count;i++){
@@ -960,8 +971,10 @@ const Track = {
     gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
     gc.fillStyle='#ffd76a'; gc.fillText('★ APEX ARCADE ★', 512, 50);
     const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
+    const gtexF=gtex.clone(); gtexF.wrapS=THREE.RepeatWrapping; gtexF.repeat.x=-1; gtexF.needsUpdate=true; // G-239: same two-way print on the gantry beam
+    const beamEdge=new THREE.MeshBasicMaterial({color:0x0a0e16});
     const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
-      new THREE.MeshBasicMaterial({map:gtex}));
+      [beamEdge,beamEdge,beamEdge,beamEdge,new THREE.MeshBasicMaterial({map:gtex}),new THREE.MeshBasicMaterial({map:gtexF})]);
     beam.position.set(f0.x, f0.y+9.5, f0.z);
     beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2;
     g.add(beam);
@@ -1379,10 +1392,22 @@ class Car {
     // steering -> car heading (proper turning, tires grip, no sideways slide)
     const tireGrip=this.gripNow();
     const turnRate=2.4*clamp(this.v/18,0,1)*(1-clamp(this.v/90,0,1)*0.62); // G-73: steering winds the heading much more gently at speed - a twitch at 80 m/s used to point the car at the grass before the player could catch it
-    if(!this.isPlayer) this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1);
-    // G-27: steering follows ONLY the driver's stick - no auto-align, no curve push
-    const maxHead=0.6-0.24*clamp(this.v/90,0,1); this.headAngle=clamp(this.headAngle,-maxHead,maxHead); // G-73: the nose cannot point as far off the track at speed (full +-0.6 stays for slow corners and recovery); heading still changes ONLY from the stick (G-27)
-    if(this.isPlayer){ const target=this.steer*maxHead*(this.understeer?0.6:1); this.headAngle+=(target-this.headAngle)*(1-Math.exp(-dt/0.13)); } // G-136: for the player the stick IS the heading - deflection sets the nose angle directly: turns in fast, holds while held, and a centered stick straightens the car at once. The old integrator wound the heading up and never unwound it, so every touch drifted the car off the road (release drift 10.4 m in sim)
+    const maxHead=0.6-0.24*clamp(this.v/90,0,1); // G-73: the nose cannot point as far off the track at speed (full +-0.6 stays for slow corners and recovery)
+    if(!this.isPlayer){ this.headAngle += this.steer*turnRate*dt*(this.understeer?0.6:1); this.headAngle=clamp(this.headAngle,-maxHead,maxHead); }
+    else { // G-239 (owner's recordings, 2026-10-23): the PLAYER drives - the nose holds a WORLD heading
+      const tfw=Track.frameAt(this.s), tanYaw=Math.atan2(tfw.tz,tfw.tx);
+      if(this._yawW===undefined || this.headAngle!==this._lastHead) this._yawW=tanYaw+this.headAngle; // first frame, or the heading was set from outside (spawn, grid, teleport)
+      if(Math.abs(this.steer)>0.001){ // stick deflected: G-136 - the stick sets the heading against the road and the car tracks it fast
+        const target=this.steer*maxHead*(this.understeer?0.6:1);
+        this.headAngle+=(target-this.headAngle)*(1-Math.exp(-dt/0.13));
+        this._yawW=tanYaw+this.headAngle;
+      } else { // stick centered: NO autopilot - the world heading holds, so the road curves away under the car and the driver must steer it back. The old law measured the heading against the road itself, so gas alone lapped hands-free (measured: 2,192 m in 60 s, dead centre the whole way)
+        let rel=this._yawW-tanYaw; this.headAngle=Math.atan2(Math.sin(rel),Math.cos(rel));
+      }
+      this.headAngle=clamp(this.headAngle,-1.15,1.15); // a held heading may drift past the steering cap on a long corner; the mesh still has to render it
+      this._lastHead=this.headAngle;
+      if(this._shoveT>0) this._shoveT-=dt;
+    }
     // surface
     const edge=W/2, absD=Math.abs(this.d);
     this.offTrack=false;
@@ -1391,8 +1416,11 @@ class Car {
         this.d=Math.sign(this.d)*(edge+3.2); this.v*= (1-1.8*dt); this.hitWall=true;
       } else { this.v*=(1-0.9*dt); this.offTrack=true; } // grass/gravel
     } else if(absD>edge){ this.v*=(1-0.12*dt); this.offTrack=true; } // curb ok
-    // track limits for player
-    if(this.isPlayer && absD>edge+1.6 && this.v>15) Race.noteOffTrack(dt);
+    // track limits for player (G-239: no fine for time spent off the road while being shoved by a rival, and brief brushes decay instead of stacking across a whole lap - the owner's recordings show a 5s PENALTY riding the entire lap)
+    if(this.isPlayer){
+      if(absD>edge+1.6 && this.v>15 && !(this._shoveT>0)) Race.noteOffTrack(dt);
+      else if(absD<=edge) this._offT=Math.max(0,(this._offT||0)-dt*0.6);
+    }
     this.s+=Math.cos(this.headAngle)*this.v*dt;
     this.d+=Math.sin(this.headAngle)*this.v*dt;
     this.raceDist+=this.v*dt;
@@ -1625,7 +1653,8 @@ function carContact(cars, dt){
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
       if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
         const behind=ds>0?b:a;
-        if(Math.random()<0.25*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); banner('CONTACT!', behind.isPlayer?'You got turned around':'', 1200, '#ff9a5a'); }
+        if(Math.random()<0.25*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); if(a.isPlayer||b.isPlayer) banner('CONTACT!', behind.isPlayer?'You got turned around':'You were hit from behind', 1200, '#ff9a5a'); } // G-239: the headline is the PLAYER's news - two AI cars hitting each other no longer shouts on his screen
+        if(a.isPlayer) a._shoveT=2.0; if(b.isPlayer) b._shoveT=2.0; // G-239: a hard hit starts the limits grace - he is not fined for where a rival shoves him
       }
       const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
       a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
@@ -1947,17 +1976,18 @@ const Race = {
     if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
       const back=Track.posAt(p.s-11,p.d,0);
       cp.set(pp.x-fwd.x*11, back.y+3.4, pp.z-fwd.z*11); // G-119: height rides the road behind the car (was fixed y=5.2 - under the crests)
-    } else if(this.camMode===2){ // broadcast: high side, follows puck-style
-      const side=Track.posAt(p.s-18,26,0);
-      cp.set(side.x, side.y+15, side.z); // G-119: 15 m over the road under the camera (was fixed y=17)
+    } else if(this.camMode===2){ // G-239 (owner: 'helicopter noise... a camera that doesn't jitter and shake'): STEADY broadcast - it rides behind/above the car in the car's own frame and looks down the road. The old target was a fixed point 26 m to the side: as the road turned, that arm swung the whole picture around the car
+      const back=Track.posAt(p.s-26, p.d*0.5, 0);
+      cp.set(back.x, back.y+16, back.z);
+      lk.set(pp.x+fwd.x*20, pp.y+1.2, pp.z+fwd.z*20);
     } else { // onboard
       cp.set(pp.x+fwd.x*1.2, pp.y+1.15, pp.z+fwd.z*1.2);
       lk.set(pp.x+fwd.x*40, pp.y+0.9, pp.z+fwd.z*40);
     }
-    const k=Math.min(1,dt*(this.camMode===3?22:6));
+    const k=1-Math.exp(-dt/(this.camMode===3?0.045:this.camMode===2?0.45:0.16)); // G-239: frame-rate-independent easing (the old dt*rate ran 3x hotter on a slow frame); broadcast gets the long, calm ease
     camera.position.lerp(cp,k);
-    // shake
-    if(this.shake>0){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
+    // shake (never in broadcast - G-239: that camera stays steady, full stop)
+    if(this.shake>0 && this.camMode!==2){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
     // G-119: hard floor - whatever the view, the camera never renders below the road
     // (the loop folds back on itself, so the road nearest the camera counts too)
     const minY=Math.max(pp.y, trackGroundY(camera.position.x, camera.position.z)) + (this.camMode===3?0.5:1.2);
@@ -2007,7 +2037,7 @@ const HUD={
     $('lapTxt').textContent=`LAP ${Math.min(p.lap,Race.laps)}/${Race.laps}`;
     document.querySelector('#lapbox .pos').textContent='P'+p.position;
     const ahead=order[p.position-2];
-    $('gapbox').textContent = ahead? `GAP +${(p._gapF1||0).toFixed(1)}s ${ahead.name}` : 'LEADER — clean air';
+    $('gapbox').textContent = ahead? (p._gapF1==null? `GAP — ${ahead.name}` : `GAP +${p._gapF1.toFixed(1)}s ${ahead.name}`) : 'LEADER — clean air'; // G-239: quali sets _gapF1 to null until both cars have a lap - no more fake +0.0s
     const t=TIRES[p.tire];
     $('tireCmp').textContent=p.tire; $('tireCmp').style.color=t.color;
     $('wearFill').style.width=Math.max(0,100-p.wear*100)+'%';
@@ -2300,7 +2330,7 @@ function runQuali(){
   Race.mode='quali';
   banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
-  sk.style.cssText='position:fixed;right:12px;top:150px;z-index:45;width:auto;padding:10px 16px;font-size:13px;min-height:44px;box-sizing:border-box;'; // G-224: SKIP QUALI is a full 44px tap target
+  sk.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:104px;z-index:45;width:auto;padding:10px 16px;font-size:13px;min-height:44px;box-sizing:border-box;'; // G-224: SKIP QUALI is a full 44px tap target; G-239: top-centre - at right:12/top:150 it sat ON the speedometer and hid the speed in every frame of the owner's recordings
   sk.textContent='SKIP QUALI → P12';
   sk.onclick=()=>{ finishQuali(null); };
   document.body.appendChild(sk);
@@ -2313,7 +2343,9 @@ function updateQuali(dt){
   for(const c of Race.cars){ if(!c.isPlayer){ aiDrive(c,dt); c.update(dt); } }
   carContact(Race.cars,dt);
   const rpm=clamp(p.v/97,0,1); Aud.engine(rpm,p.throttle);
-  Race.updateCamera(dt); HUD.update(Race.positions());
+  const qOrder=Race.positions(); const qAhead=qOrder[p.position-2]; // G-239: the quali gap is a best-lap delta, set here - only the race loop set it before, so quali read a frozen +0.0s all session (owner's recordings)
+  p._gapF1 = (qAhead && isFinite(qAhead.bestLap) && isFinite(p.bestLap)) ? (p.bestLap-qAhead.bestLap) : null;
+  Race.updateCamera(dt); HUD.update(qOrder);
   Aud.crowdTick(dt,0.1); Track.updateCrowd(dt,0); RainFX.update(dt);
   const sN=((p.s%Track.length)+Track.length)%Track.length;
   if(p._lastSN!==undefined){
@@ -2524,6 +2556,8 @@ window.__test = {
       c.throttle = 1; c.brake = 0;
     }
   },
+  penState: () => { const p = Race.player; return p ? { warnings: p.warnings, penalty: p.penalty, offT: +(p._offT || 0).toFixed(2), shoveT: +(p._shoveT || 0).toFixed(2) } : null; }, // G-239: penalty proof for the play tests
+  shoveNow: () => { const p = Race.player; if (p) p._shoveT = 2.0; }, // G-239: test hook - stamps the same limits grace carContact stamps on a hard hit
   setCarLap: (idx, lap) => {
     const c = Race.cars[idx];
     if (c) { c.lap = lap; if (c._lc) c._lc.lap = lap; }

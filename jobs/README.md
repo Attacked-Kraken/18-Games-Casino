@@ -40,4 +40,11 @@ A red robot line you are sure is the ROBOT's mistake (its ruler, its timing, a t
 ## Help desk rule (owner Oct 22 2026, from the 8:35 AM help-desk report)
 The help desk never uses vp- branches and never touches tools/game-check/ (robot files, known-faults.json) or .github/. If a robot file has to change, write ONE line in jobs/HELP.md: "HELP-VP: robot · <what / which file / why>" and the VP does it. A known fault (tools/game-check/known-faults.json) must be a real, named bug with a reason AND an owner (the robot side, or a window) and an expiry - never an excuse to pass a check.
 
-CLOCK rule (owner Oct 22 2026): take every time you write (FIXED lines, notes, PR text) from an authoritative source - the HTTP `Date` header (`gh api -i rate_limit | grep -i '^date'`, convert to Central) - never estimate it and never write a time in the future. A wrong clock makes the owner's help-desk numbers wrong.
+ANSWER PLACEMENT rule (owner Oct 23 2026 7:56 PM): a FIXED / WON'T FIX line goes DIRECTLY under the HELP line it answers - never a second FIXED under another line (the Mac types it to that line's window: window 4's #1371 answer reached window 5). One answer per line; an answer must name that line's own PR / G-number.
+CLOCK rule (owner Oct 22 2026): take every time you write (FIXED lines, notes, PR text) from an authoritative source - the HTTP `Date` header (`gh api -i rate_limit | grep -i '^date'`, convert to Central) - never estimate it and never write a time in the future. A wrong clock makes the owner's help-desk numbers wrong. Oct 23 2026 (a 5:13 PM answer said '5:20 PM Central'): run logs, check runs and the Date header are UTC - SUBTRACT 5 hours for Central (CDT) and write 'PM Central' only after converting; quote run-log times as UTC ('22:20 UTC'). Easiest: `TZ=America/Chicago date '+%b %d %I:%M %p'`.
+
+
+## Hand merges and "I don't know" (owner Oct 24 2026 7:09 AM, LOCKED)
+- A Claude that merges a pull request by hand writes it where everyone sees it: a Team talk line AND a PR comment or the merge commit text, "hand merge by <who>, reason: <why>". A hand merge with no such line did not happen as far as the others can tell.
+- Before writing "I don't know who/what did X", read the WHOLE jobs/HELP.md and the PR's timeline (issues/N/timeline). Only then say it is unknown.
+- A robot fix is UNPROVEN until a real pull request needs it and the robot itself does the job (for a merge: merged_by github-actions[bot]). Show that PR and its time.

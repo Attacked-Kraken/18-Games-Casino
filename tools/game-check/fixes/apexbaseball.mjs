@@ -711,9 +711,9 @@ export default [
     },
   },
   {
-    id: 'tester-batting-swing-wall-clock',
+    id: 'play-batting-timing-game-clock',
     mode: 'batting',
-    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
+    ask: 'BUILD G-237: batting timing is scored on the pitch game clock, not the wall clock - a swing made as the ball crosses the plate contacts or fouls instead of always whiffing (G-184/G-237)',
     async test(page, h) {
       const snap = () => h.eval(() => {
         const T = window.__test; if (!T) return null;
@@ -723,13 +723,48 @@ export default [
       });
       const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
       const t0 = Date.now();
-      let flightStart = null, sawFlight = false;
+      let swung = 0;
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (s.phase === 'flight' && batting && s.ball && s.ball.z >= -0.5) {
+          await click('swingBtn'); swung++;
+          await h.wait(700);
+          const a = await snap();
+          if (a && /STRIKE/.test(a.msg) && !/FOUL/.test(a.msg)) return 'swung with the ball at the plate (z=' + s.ball.z.toFixed(1) + ') and still got a clean swinging strike - timing is still scored on the wrong clock';
+          return true;
+        }
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(60);
+      }
+      return swung ? true : 'never reached a swing at the plate in 29 s (game too slow to reach a bottom-half pitch at the plate)';
+    },
+  },
+  {
+    id: 'tester-batting-swing-wall-clock',
+    mode: 'batting',
+    ask: 'TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null, flightT: T.flightT };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      let flightStart = null, flightT = 0.95, sawFlight = false;
       while (Date.now() - t0 < 29000) {
         const s = await snap(); if (!s) return 'window.__test missing';
         if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
         const batting = s.tag.trim().toUpperCase().startsWith('BOT');
         if (s.phase === 'flight') {
-          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
+          if (flightStart === null) { flightStart = Date.now(); flightT = s.flightT || 0.95; sawFlight = true; }
           if (batting && s.ball && s.ball.z >= -0.5) {
             await click('swingBtn');
             await h.wait(700);
@@ -740,7 +775,7 @@ export default [
         } else if (flightStart !== null) {
           const wall = (Date.now() - flightStart) / 1000;
           flightStart = null;
-          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
+          if (wall > flightT + 0.75) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s (plus 0.75 s frame and observation lag) and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;   // G-262 fix round 1: the T x 1.18 cap failed a fastball the robot measured at 1.37 s wall on main e6ea02d - 0.42 s of frame + test-poll lag on a loaded page, not a slow flight; the cap is now T + 0.75 s, which still fails any per-frame flight (seconds, G-184 symptom) while passing clock-flights
         }
         if (!batting) {
           if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
@@ -920,7 +955,7 @@ export default [
       // start from a fresh state: tap through the start overlay until it hides,
       // then wait for the batter's reality hook and the rigged athletes
       let ready = false;
-      for (let i = 0; i < 60 && !ready; i++) {
+      for (let i = 0; i < 30 && !ready; i++) {
         const st = await h.eval(() => ({ hook: !!(window.__reality && window.__reality.player), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
         if (st.hook) { ready = true; break; }
         if (st.menu) await page.touchscreen.tap(422, 195);
@@ -1008,6 +1043,62 @@ export default [
     },
   },
   {
+    id: 'never-g-222-p1',
+    ask: 'NEVER (owner 2026-10-23, G-222 fix round 1): the field and players stay clear and recognizable in the pitching view (crisp rendering - texture anisotropy on the park), and the pitcher glove reads as a glove, never a big brown thing on his arm (a real mitt is ~0.32 m, not a 0.44 m smooth blob)',
+    test: async (page, h) => {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) {
+        const st = await h.eval(() => ({ ph: window.__test ? window.__test.phase : null, ath: window.__athletesReady ? window.__athletesReady() : 0, loaded: !!(window.__test && window.__test.stadium.loaded), menu: (() => { const el = document.getElementById('startOv'); return !!el && getComputedStyle(el).display !== 'none'; })() }));
+        if (st.menu) await h.eval(() => { const b = document.getElementById('startBtn'); if (b) b.click(); });
+        if (st.loaded && st.ath >= 12 && (st.ph === 'select' || st.ph === 'aim')) ready = true;
+        else await h.wait(400);
+      }
+      if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
+      // the athlete queue fits the rigs a few per frame (G-08): wait until the
+      // pitcher's real rig (a skinned mesh) is actually on him before measuring
+      // his glove, so a slow attach cannot fake a missing glove.
+      let rigged = false;
+      for (let i = 0; i < 25 && !rigged; i++) {
+        rigged = await h.eval(() => { const R = window.__reality; if (!R || !R.others || !R.others[0]) return false; let n = 0; R.others[0].traverse(o => { if (o.isSkinnedMesh) n++; }); return n > 0; });
+        if (!rigged) await h.wait(400);
+      }
+      if (!rigged) return 'the pitcher rig never attached, so his glove could not be measured';
+      return h.eval(() => {
+        const T = window.__test; if (!T) return 'window.__test missing';
+        const aniso = T.stadium && T.stadium.aniso;
+        if (!aniso || aniso < 4) return 'the park renders without texture anisotropy (aniso=' + aniso + ') - the field smears at the pitching camera glancing angle (owner: clear up players and field, my crisp camera view)';
+        const R = window.__reality; if (!R || !R.others || !R.others[0]) return '__reality pitcher missing';
+        // Measure the mitt in its parent space (the glove group's own axes):
+        // a world AABB inflates with the hand bone's pose rotation, but the
+        // mitt's true proportions are what the owner sees in the hand.
+        const mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9]; let found = false, parentScale = 1;
+        R.others[0].updateWorldMatrix(true, true);
+        R.others[0].traverse(o => {
+          if (!o.isMesh || !o.material || !o.material.color || !o.geometry) return;
+          // match the author's hex (material.color components are linear in
+          // three r152+, so compare getHexString(), not the raw components)
+          if (o.material.color.getHexString() !== '6a4423') return;
+          if (!found && o.parent) { const s = R.player.position.clone(); o.parent.getWorldScale(s); parentScale = s.x; }
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox;
+          const V = R.player.position.clone();
+          for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) {
+            const v = V.set(x, y, z).applyMatrix4(o.matrix);
+            mn[0] = Math.min(mn[0], v.x); mn[1] = Math.min(mn[1], v.y); mn[2] = Math.min(mn[2], v.z);
+            mx[0] = Math.max(mx[0], v.x); mx[1] = Math.max(mx[1], v.y); mx[2] = Math.max(mx[2], v.z);
+          }
+          found = true;
+        });
+        if (!found) return 'no leather glove prop found on the pitcher at all';
+        const size = [0, 1, 2].map(i => (mx[i] - mn[i]) * parentScale * 0.9144);
+        const longest = Math.max(size[0], size[1], size[2]);
+        if (longest > 0.37) return 'the pitcher glove measures ' + longest.toFixed(2) + ' m long - a big brown thing on his arm (owner, G-222 fix round 1); a real mitt is about 0.32 m';
+        return true;
+      });
+    },
+  },
+  {
     id: 'never-g-167-p1',
     ask: 'NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture',
     test: async (page, h) => {
@@ -1077,35 +1168,45 @@ export default [
         else await h.wait(400);
       }
       if (!ready) return 'the pitching view never settled (fresh page, top half, select/aim)';
-
-      const r = await h.eval(async () => {
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-        const btns = [...document.querySelectorAll('button')];
-        const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
-        await sleep(200);
-        const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
-        const R = window.__reality, cam = R.camera;
-        const windPos = new Set(), flightPos = new Set();
-        let flightN = 0, ballIn = 0;
-        for (let i = 0; i < 70; i++) {
-          const ph = window.__test.phase;
-          const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
-          if (ph === 'windup') windPos.add(key);
-          if (ph === 'flight') {
-            flightPos.add(key); flightN++;
-            const b = window.__test.ball;
-            if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+      // Up to 3 throws: on the shared robot page a single click sequence can race
+      // the frame loop (the first version of this test caught 0 windup samples on
+      // the Oct 23 main check while its sibling play-contact-big-at-plate, which
+      // retries, passed on the same check) - wait for each phase, then count.
+      let last = null;
+      for (let tries = 0; tries < 2; tries++) {
+        const r = await h.eval(async () => {
+          const sleep = ms => new Promise(res => setTimeout(res, ms));
+          for (let i = 0; i < 27; i++) { const p = window.__test.phase; if (p === 'select' || p === 'aim') break; await sleep(150); }
+          const btns = [...document.querySelectorAll('button')];
+          const fb = btns.find(b => /FASTBALL/i.test(b.textContent)); if (fb) fb.click();
+          await sleep(250);
+          const th = btns.find(b => /THROW/i.test(b.textContent)); if (!th) return { err: 'no THROW button' }; th.click();
+          const R = window.__reality, cam = R.camera;
+          const windPos = new Set(), flightPos = new Set();
+          let flightN = 0, ballIn = 0, sawWind = false, sawFlight = false;
+          for (let i = 0; i < 220; i++) {
+            const ph = window.__test.phase;
+            const key = cam.position.toArray().map(v => v.toFixed(1)).join(',');
+            if (ph === 'windup') { sawWind = true; windPos.add(key); }
+            if (ph === 'flight') {
+              sawFlight = true; flightPos.add(key); flightN++;
+              const b = window.__test.ball;
+              if (b && b.visible) { const v = R.player.position.clone(); v.set(b.x, b.y, b.z); const p = v.project(cam); if (Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1 && p.z < 1) ballIn++; }
+            }
+            if (ph === 'bip' || (sawFlight && ph !== 'flight' && ph !== 'windup')) break;
+            await sleep(40);
           }
-          if (ph === 'bip' || (flightN > 0 && ph !== 'flight' && ph !== 'windup')) break;
-          await sleep(80);
-        }
-        return { wind: windPos.size, flight: flightPos.size, flightN, ballIn };
-      });
-      if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
-      if (r.wind < 3) return 'the camera is frozen during the windup: ' + r.wind + ' distinct position(s) (owner: the camera follows the windup)';
-      if (r.flight < 3) return 'the camera is frozen during the pitch flight: ' + r.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
-      if (r.flightN < 3) return 'the pitch flight was too short to sample (' + r.flightN + ' samples)';
-      if (r.ballIn / r.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + r.ballIn + ' of ' + r.flightN + ' samples';
+          return { wind: windPos.size, flight: flightPos.size, flightN, ballIn, sawWind, sawFlight };
+        });
+        if (!r || r.err) return 'could not throw a pitch for the camera to follow: ' + (r && r.err);
+        last = r;
+        if (r.wind >= 3 && r.flight >= 3 && r.flightN >= 3 && r.ballIn / r.flightN >= 0.9) return true;
+      }
+      if (!last.sawWind) return 'no windup phase was ever sampled in 2 throws (the throw clicks never took on this page)';
+      if (last.wind < 3) return 'the camera is frozen during the windup: ' + last.wind + ' distinct position(s) (owner: the camera follows the windup)';
+      if (last.flight < 3) return 'the camera is frozen during the pitch flight: ' + last.flight + ' distinct position(s) (owner: the camera follows the pitch in flight)';
+      if (last.flightN < 3) return 'the pitch flight was too short to sample (' + last.flightN + ' samples)';
+      if (last.ballIn / last.flightN < 0.9) return 'the ball leaves the screen during the pitch flight: in frame for ' + last.ballIn + ' of ' + last.flightN + ' samples';
       return true;
     },
   },
@@ -1155,6 +1256,64 @@ export default [
     },
   },
   {
+    id: 'play-reality-units-per-metre',
+    ask: 'BUILD G-248: the REALITY hook reports unitsPerMetre 1.0936 (the game runs on 3 ft units, 1 unit = 0.9144 m) so the robot and testers read metres (REALITY.md Units)',
+    async test(page, h) {
+      let saw = false;
+      for (let i = 0; i < 40; i++) {
+        const s = await h.eval(() => window.__reality ? { has: ('unitsPerMetre' in window.__reality), v: window.__reality.unitsPerMetre } : null);
+        if (s) { saw = true; if (s.has) return Math.abs(s.v - 1.0936) < 0.001 ? true : 'unitsPerMetre is ' + s.v + ' - REALITY.md says 1 unit = 0.9144 m, so it must be 1.0936'; }
+        await h.wait(250);
+      }
+      return saw ? 'window.__reality has no unitsPerMetre - the robot and testers cannot read metres' : 'window.__reality never appeared';
+    }
+  },  {
+    id: 'play-help-close-on-upright-phone',
+    ask: 'BUILD G-248 (robot red line on PR #1381): on an upright phone (390x844) the Help overlay CLOSE button sits off the left edge of the screen - the rotated stage is 390 tall but the compact-card rules only fire on a sideways phone, so the card lays out 695 tall inside the 390 stage and rotation pushes CLOSE off screen; the CLOSE button must be fully on screen on an upright phone',
+    async test(page, h) {
+      try {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await h.wait(600);
+        await h.eval(() => { const b = document.getElementById('helpBtn'); if (b) b.click(); });
+        await h.wait(400);
+        const r = await h.eval(() => { const b = document.getElementById('helpClose'); if (!b) return null; const x = b.getBoundingClientRect(); return { left: x.left, right: x.right, top: x.top, bottom: x.bottom }; });
+        if (!r) return 'help CLOSE button missing';
+        if (r.left < 0 || r.right > 390 || r.top < 0 || r.bottom > 844) return 'help CLOSE sits off the upright screen: left ' + Math.round(r.left) + ', right ' + Math.round(r.right) + ' on a 390-wide phone';
+        return true;
+      } finally {
+        try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+      }
+    }
+  },  {
+    id: 'play-flight-t-exposed',
+    ask: 'BUILD G-262: during a pitch flight window.__test.flightT reports the thrown pitch\'s own game time (fast 0.95 / curve 1.18 / change 1.38) so the batting-timing test judges each flight against its own T instead of a hardcoded fastball',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, flightT: T.flightT };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        if (s.phase === 'flight') {
+          if (s.flightT == null) return 'window.__test.flightT is missing during a flight - the timing test cannot know this pitch\'s game time';
+          return [0.95, 1.18, 1.38].includes(s.flightT) ? true : 'flightT during a flight is ' + s.flightT + ' - PITCHES says a pitch flies 0.95, 1.18 or 1.38 s';
+        }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(100);
+      }
+      return 'no pitch flight seen in 29 s, so flightT could not be checked';
+    },
+  },
+  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
@@ -1180,7 +1339,10 @@ export default [
           if (pts.length !== 3) return null;
           const d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
           const sorted = pts.slice().sort((a, b) => Math.atan2(a[1], a[0]) - Math.atan2(b[1], b[0]));
-          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])];
+          // owner Oct 23 2026 5:05 PM: the game runs on 3 ft units (apexbaseball.html "field geometry (1 unit = 3 ft)") -
+          // convert to METRES before comparing: the hook's unitsPerMetre, else 1 unit = 0.9144 m (the game's own comment)
+          const upm = R.unitsPerMetre > 0 ? R.unitsPerMetre : 1 / 0.9144;
+          return [d([0, 0], sorted[0]), d(sorted[0], sorted[1]), d(sorted[1], sorted[2]), d(sorted[2], [0, 0])].map(v => v / upm);
         });
         if (m) {
           const SRC = 27.4;
@@ -1192,5 +1354,122 @@ export default [
       }
       return 'checklist B01: the base objects never became measurable in the running game';
     },
+  },
+  // G-246 (window 7): checklist B03 - REALITY.md says the ball is 0.074 m wide
+  // and the bat 0.86 m long. Units first (per the checklist card): the game's
+  // own field comment says 1 unit = 3 ft = 0.9144 m, and the REALITY hook
+  // exposes no unitsPerMetre, so world sizes are converted at 0.9144 m/unit.
+  // G-262: the ball matcher used to key on radius 0.12 - the pre-G-248
+  // oversized ball (0.219 m) - so after G-248 shrank the ball to its real
+  // 0.074 m (radius 0.0405 units) the test found no ball at all and reported
+  // "meshes not reached". The matcher now keys on the real size, 0.0405;
+  // the bat axis still measures 0.940 units = 0.860 m (dead-on).
+  {
+    id: 'tester-chk-b03',
+    mode: 'b03',
+    async test(page, h) {
+      const t0 = Date.now();
+      let m = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        m = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          root.updateMatrixWorld(true);
+          const xf = (e, x, y, z) => [e[0]*x + e[4]*y + e[8]*z + e[12], e[1]*x + e[5]*y + e[9]*z + e[13], e[2]*x + e[6]*y + e[10]*z + e[14]];
+          let ball = null, bat = null;
+          root.traverse(o => {
+            if (!o.isMesh) return;
+            const g = o.geometry, prm = g.parameters || {}, e = o.matrixWorld.elements;
+            if (g.type === 'SphereGeometry' && Math.abs((prm.radius || 0) - 0.0405) < 0.001 && prm.widthSegments === 12) {
+              const a = xf(e, prm.radius, 0, 0), b = xf(e, -prm.radius, 0, 0);
+              ball = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+            if (g.type === 'BoxGeometry' && Math.abs((prm.width || 0) - 0.13) < 0.001 && Math.abs((prm.height || 0) - 1.21) < 0.001) {
+              const h = prm.height / 2, a = xf(e, 0, h, 0), b = xf(e, 0, -h, 0);
+              bat = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+          });
+          if (ball == null || bat == null) return null;
+          return { ball: ball * 0.9144, bat: bat * 0.9144 };
+        }).catch(() => null);
+        if (m) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (!m) return 'checklist B03: ball and bat meshes not reached in the scene';
+      const ballM = Math.round(m.ball * 1000) / 1000, batM = Math.round(m.bat * 1000) / 1000;
+      if (Math.abs(m.ball - 0.074) / 0.074 <= 0.15 && Math.abs(m.bat - 0.86) / 0.86 <= 0.15) return true;
+      return `checklist B03: ball measures ${ballM} m wide and bat ${batM} m long - REALITY.md says ball 0.074 m, bat 0.86 m (within 15%)`;
+    },
+  },
+  {
+    id: 'tester-portrait-overlay-close-offscreen',
+    ask: 'TESTER: on an upright phone the Help overlay CLOSE button sits off the left edge of the screen - Help cannot be closed by tapping without rotating the phone',
+    mode: 'menu',
+    async test(page, h) {
+      await page.setViewportSize({ width: 390, height: 844 });
+      try {
+        await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+        await h.wait(4500);
+        const centre = id => h.eval(x => { const e = document.getElementById(x); if (!e) return null; const r = e.getBoundingClientRect(); return { id: x, cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2), left: Math.round(r.left), right: Math.round(r.right), vw: innerWidth, vh: innerHeight }; }, id);
+        const bad = [];
+        if (!await h.eval(() => { const b = document.getElementById('helpBtn'); if (!b) return false; b.click(); return true; })) return 'no Help (?) button on the menu';
+        await h.wait(800);
+        const hc = await centre('helpClose');
+        if (!hc) return 'no CLOSE button inside Help';
+        if (hc.cx < 0 || hc.cx > hc.vw || hc.cy < 0 || hc.cy > hc.vh) bad.push(`Help CLOSE centre sits at (${hc.cx}, ${hc.cy}) on a ${hc.vw}x${hc.vh} upright phone (button spans x ${hc.left}..${hc.right}) - it cannot be tapped`);
+        await h.eval(() => { const b = document.getElementById('helpClose'); if (b) b.click(); });
+        await h.wait(400);
+        if (!await h.eval(() => { const b = document.getElementById('friendBtn'); if (!b) return false; b.click(); return true; })) return 'no Play a friend button on the menu';
+        await h.wait(800);
+        const fc = await centre('friendClose');
+        if (fc && (fc.cx < 0 || fc.cx > fc.vw || fc.cy < 0 || fc.cy > fc.vh)) bad.push(`Friend CLOSE centre sits at (${fc.cx}, ${fc.cy}) on a ${fc.vw}x${fc.vh} upright phone (button spans x ${fc.left}..${fc.right}) - it cannot be tapped`);
+        return bad.length ? bad.join('; ') : true;
+      } finally {
+        await page.setViewportSize({ width: 844, height: 390 });
+      }
+    },
+  },
+  // G-255 (window 7): checklist B05 - rules/baseball.md says a batting order
+  // of 9. Measured live in a full game (portrait, all six halves to the
+  // results overlay): the SAME bat-holding batter object stepped up for every
+  // at-bat, home and away - 1 distinct batter, no order at all. The scene
+  // graph holds exactly one batter figure with a bat (game source builds a
+  // single batterMesh and no lineup). This test counts distinct bat-holding
+  // batter objects in the running scene and fails on the count.
+  {
+    id: 'tester-chk-b05',
+    mode: 'b05',
+    ask: 'The batting order has 9 batters (rules/baseball.md)',
+    async test(page, h) {
+      const t0 = Date.now();
+      let n = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        n = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          const holders = new Set();
+          root.traverse(o => {
+            if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.geometry.parameters &&
+                Math.abs(o.geometry.parameters.width - 0.13) < 0.001 && Math.abs(o.geometry.parameters.height - 1.21) < 0.001) {
+              let h = o;
+              while (h.parent && h.parent !== root) h = h.parent;
+              holders.add(h);
+            }
+          });
+          return holders.size;
+        }).catch(() => null);
+        if (n != null) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (n == null) return 'checklist B05: batter object not found in the scene';
+      if (n < 9) return `checklist B05: only ${n} distinct batter(s) in the game - rules/baseball.md says a batting order of 9`;
+      return true;
+    }
   },
 ];

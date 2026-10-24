@@ -13,6 +13,7 @@ import re
 import json, os, subprocess, datetime, time
 
 REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
+CLOSE_CONFLICT_H = 2
 MAX_AGE_H = 72   # Oct 23 2026: 12 h hid dirty TEST PR #1200 for 18 h (analyst); only truly old PRs are left alone
 OK = {"success", "skipped", "neutral"}
 # merges made with the robot's own key don't start the "on push to main" robots - start the ones a merge needs by hand
@@ -34,7 +35,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: both the window and the help desk append - see auto_resolvable
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
@@ -61,6 +62,31 @@ def tidy_queue(path="jobs/QUEUE.md"):
         subprocess.run(["git", "add", path])
 
 
+def auto_resolvable(path):
+    """Oct 23 2026 (owner: cards faster; window 3's #1402 sat 'dirty' on looks/apexflight.md + fixes/apexflight.mjs, the two files every
+    build job appends to): notes, look boards and a game's own play-test list are APPENDED to by both sides, so both sides are kept."""
+    return (path in NOTES_UNION or path.startswith("jobs/G-") or (path.startswith("looks/") and path.endswith(".md"))
+            or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs"))
+            or (path.startswith("needs/") and path.endswith(".md"))      # Oct 24 2026: #1487 (window 3 needs) sat 'dirty' - the help desk APPENDS answers to the same file the window appends to
+            or (path.startswith("checklists/") and path.endswith(".md")))   # Oct 24 2026: merged by ITEM (tools/checklist-merge.py)
+
+
+def _dup_ids(text):
+    import re as _re
+    ids = _re.findall(r"^\s*id:\s*['\"]([^'\"]+)['\"]", text, flags=_re.M)
+    return {i for i in ids if ids.count(i) > 1}
+
+
+def play_test_file_ok(path, main_text=""):
+    """The merged file must load and must not gain a NEW duplicate test id. Oct 24 2026 (PR #1355 sat 'dirty' ~15 h): main's own
+    apexhockey.mjs already holds 3 duplicate ids (play-joystick-starts-left, tester-chk-h01, tester-puck-leaves-rink-at-boards), so
+    'any duplicate = bad' rejected EVERY merge that touched that file. Only duplicates main does not already have count."""
+    r = subprocess.run(["node", "--check", path], capture_output=True, text=True)
+    if r.returncode != 0:
+        return False
+    return _dup_ids(open(path, encoding="utf-8", errors="replace").read()) <= _dup_ids(main_text)
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -82,12 +108,46 @@ def fix_notes_conflict(pr):
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
-        if left and not all(x in NOTES_UNION or x.startswith("jobs/G-") for x in left):
+        if left and not all(auto_resolvable(x) for x in left):
             git("merge", "--abort")
-            gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
-               fields={"body": "Merge robot: this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5])})
+            # Oct 24 2026 (PR #1355 got 960 of these): ONE comment per PR, edited in place - never a new post each round
+            tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                    "this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5]))
             print("#%d: conflict in %s - left for the Muse" % (n, ", ".join(left[:5]))); return False
-        for f in left:   # a notes file the union driver did not catch: keep both sides' lines
+        for f in left:   # a notes / look-board / play-test file the union driver did not catch
+            if f.startswith("tools/game-check/fixes/") and f.endswith(".mjs"):
+                # Oct 23 2026: two PRs that each ADD tests conflict at the end of the list, and keeping both text sides breaks the
+                # file. Merge by test ENTRY: main's file + the tests only this PR has (tools/game-check/merge-play-tests.mjs).
+                ok = False
+                try:
+                    tmp = "/tmp/mpt"; os.makedirs(tmp, exist_ok=True)
+                    for k, nm in ((1, "base"), (2, "pr"), (3, "main")):
+                        open("%s/%s.mjs" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
+                    m = subprocess.run(["node", "tools/game-check/merge-play-tests.mjs", tmp + "/base.mjs", tmp + "/pr.mjs", tmp + "/main.mjs", f],
+                                       capture_output=True, text=True)
+                    ok = m.returncode == 0 and play_test_file_ok(f, open(tmp + "/main.mjs", encoding="utf-8", errors="replace").read())
+                    why = (m.stderr or m.stdout or "").strip()[:160].replace("\n", " ")
+                except Exception as e:
+                    why = str(e)[:160]
+                if not ok:
+                    git("merge", "--abort")
+                    tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                            "both sides changed %s and the tests could not be combined (%s) - merge main into your branch by hand and push again." % (f, why))
+                    print("::warning title=Merge robot::#%d: play-test merge of %s failed (%s) - left for the Muse" % (n, f, why)); return False
+                git("add", f); continue
+            if f.startswith("checklists/") and f.endswith(".md"):
+                # Oct 24 2026: a checklist is merged item by item (the tester's ticked line wins over main's open line)
+                tmp = "/tmp/mcl"; os.makedirs(tmp, exist_ok=True)
+                for k, nm in ((1, "base"), (2, "pr"), (3, "main")):
+                    open("%s/%s.md" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
+                m = subprocess.run(["python3", "tools/checklist-merge.py", tmp + "/base.md", tmp + "/pr.md", tmp + "/main.md", f],
+                                   capture_output=True, text=True)
+                if m.returncode != 0:
+                    git("merge", "--abort")
+                    tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                            "both sides changed %s and the items could not be combined - merge main into your branch by hand and push again." % f)
+                    print("::warning title=Merge robot::#%d: checklist merge of %s failed - left for the Muse" % (n, f)); return False
+                git("add", f); continue
             txt = open(f, encoding="utf-8", errors="replace").read()
             import re as _re
             txt = _re.sub(r"<<<<<<< [^\n]*\n(.*?)=======\n(.*?)>>>>>>> [^\n]*\n", lambda m: m.group(1) + m.group(2), txt, flags=_re.S)
@@ -190,13 +250,27 @@ def say(line):
 
 
 def tell_pr(n, sha, text):
-    """Owner Oct 21 2026 'every robot writes its fail reason as a PR comment': once per head commit."""
+    """Owner Oct 21 2026 'every robot writes its fail reason as a PR comment': ONE comment per PR, edited in place.
+    Oct 24 2026 (HELP line, PR #1427 had 677 comments): the old check read only the first 50 comments, so on a PR with more
+    than 50 comments it never found its own earlier comment and posted a new one every ~2.5 min. Now every page is read (up to
+    30 pages of 100); an existing robot comment with the same commit + text = nothing to do; with another commit/text = that one
+    comment is edited; none = one new comment."""
     try:
-        cs = gh("repos/%s/issues/%d/comments?per_page=50" % (REPO, n)) or []
-        if any(sha[:7] in (c.get("body") or "") and "Merge robot" in (c.get("body") or "") for c in cs):
+        body = "\U0001F916 Merge robot (commit %s): %s" % (sha[:7], text)
+        mine = None
+        for page in range(1, 31):
+            cs = gh("repos/%s/issues/%d/comments?per_page=100&page=%d" % (REPO, n, page)) or []
+            for c in cs:
+                if (c.get("body") or "").startswith("\U0001F916 Merge robot (commit"):
+                    mine = c      # keep the NEWEST robot comment
+            if len(cs) < 100:
+                break
+        if mine is not None:
+            if (mine.get("body") or "").strip() == body.strip():
+                return
+            gh("repos/%s/issues/comments/%d" % (REPO, mine["id"]), method="PATCH", fields={"body": body})
             return
-        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
-           fields={"body": "🤖 Merge robot (commit %s): %s" % (sha[:7], text)})
+        gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body": body})
     except Exception:
         pass
 
@@ -222,7 +296,10 @@ def main():
             if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
                 continue
         low = title.lower()
-        if pr.get("draft") or any(w in low for w in ("hold", "wip", "draft", "do not merge")) or \
+        # Oct 23 2026 6:05 PM: window 9's "TEST G-231: DRAFT checklist apexflight" (#1293) sat green 4.5 h - the word 'draft' ANYWHERE in
+        # the title counted as 'do not merge' (it means a first-draft checklist). Hold only on GitHub's draft flag, a 'hold' label,
+        # or a title that STARTS with WIP / DRAFT / HOLD / [..] or says 'do not merge'.
+        if pr.get("draft") or re.match(r"\s*\[?\s*(wip|draft|hold)\b", low) or "do not merge" in low or \
                 any(l.get("name", "").lower() == "hold" for l in pr.get("labels", [])):
             say("#%d skipped: draft/hold" % n); continue
         if pr["head"]["repo"] is None or pr["head"]["repo"]["full_name"] != REPO:
@@ -238,12 +315,23 @@ def main():
             # .gitattributes) - pushes the fix to the PR's branch and restarts its check. Anything else stays for a Muse.
             if fix_notes_conflict(pr):
                 print("#%d: merged main into its branch (notes kept from both sides) - check restarted" % n)
+            elif (now - made).total_seconds() > CLOSE_CONFLICT_H * 3600 and re.match(r"\s*(BUILD|TEST)\b", title) \
+                    and not any(f["filename"].startswith(("jobs/HELP", "needs/")) for f in files):
+                # owner Oct 24 2026 (04's item 5): a BUILD / TEST PR that stays conflicted 2+ h is closed with the reason and its
+                # window is told to re-file from fresh main (the branch stays, nothing is deleted). HELP / needs PRs are never closed.
+                tell_pr(n, pr["head"]["sha"], "CLOSED by the merge robot: this PR conflicted with main for over %d h and the robot could not combine it. "
+                        "Nothing was deleted - the branch is still there. Re-file: start a fresh branch from today's main and re-apply your change." % CLOSE_CONFLICT_H)
+                if gh("repos/%s/pulls/%d" % (REPO, n), method="PATCH", fields={"state": "closed"}) is not None:
+                    say("#%d: CLOSED - conflicted over %d h, window told to re-file" % (n, CLOSE_CONFLICT_H)); continue
             revisit = True      # look again soon: the fix may not have taken, or main may have moved again
             continue
-        if full.get("mergeable") is not True:
-            if full.get("mergeable") is None:
-                revisit = True  # GitHub still hasn't answered - ask again in a few minutes
-            say("#%d skipped: not mergeable yet (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is False:
+            say("#%d skipped: not mergeable (%s)" % (n, full.get("mergeable_state"))); continue
+        if full.get("mergeable") is None:
+            # Oct 23 2026 5:17 PM (window 9 #1293 green + clean, open 3 h 40 min): while main moves every few minutes GitHub can leave
+            # 'mergeable' unworked-out for HOURS, and the robot skipped such PRs on every round. The merge call itself is the real test:
+            # GitHub refuses it (405) if the PR really conflicts. So a green PR with an unknown state is TRIED, not skipped.
+            print("::notice title=Merge robot::#%d: GitHub has not worked out 'mergeable' - trying the merge anyway if its checks are green" % n)
         # window 2, Oct 21 2026 (PR #902 merged from an old main and wiped G-88's two tests): a branch BEHIND main is
         # brought up to date first (main merged in, check re-run on the updated branch); it merges on a later round.
         try:
@@ -251,6 +339,16 @@ def main():
             behind = int(cmp.get("behind_by") or 0)
         except Exception:
             behind = 0
+        if behind > 0:
+            # only when main's newer commits touch a file this PR changes (a notes / tests / checklist PR behind main on OTHER files
+            # merges as it is - updating it re-ran its 10-min check, main moved again, and it never merged: #1293, #1281, #1309)
+            try:
+                mfiles = {f["filename"] for f in ((gh("repos/%s/compare/%s...main" % (REPO, pr["head"]["sha"])) or {}).get("files") or [])}
+            except Exception:
+                mfiles = None
+            if mfiles is not None and not (mfiles & {f["filename"] for f in files}):
+                print("#%d is %d behind main but main's newer commits touch none of its files - merging as it is" % (n, behind))
+                behind = 0
         if behind > 0:
             res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
             if res is not None:
@@ -272,6 +370,14 @@ def main():
             k = r.get("name", "")
             if k not in newest or (r.get("started_at") or "") > (newest[k].get("started_at") or ""):
                 newest[k] = r
+        # Oct 24 2026 (PR #1452): a push cancels the old run's bare 'play' job (the matrix parent, started before the plan job
+        # lists the games). Nothing ever replaces that name - the new runs are 'play (<game>.html)' - so the robot read the
+        # cancelled leftover as a FAILED check for good and never merged a green PR. A cancelled bare name that has matrix
+        # children ('play (...)') on the same commit is a leftover, not a verdict: the children and 'check' decide.
+        for k in list(newest):
+            r = newest[k]
+            if r.get("status") == "completed" and r.get("conclusion") == "cancelled" and any(o.startswith(k + " (") for o in newest):
+                del newest[k]
         if "check" not in newest:
             revisit = True
             say("#%d skipped: the robot's game check hasn't run yet" % n); continue
@@ -284,6 +390,9 @@ def main():
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+        if not (res and res.get("merged")):
+            revisit = True
+            print("::warning title=Merge robot::#%d: green but GitHub refused the merge (%s) - looking again next round" % (n, (res or {}).get("message", "no answer")))
         if res and res.get("merged"):
             merged.append(n)
             for wf, starts in FOLLOW:

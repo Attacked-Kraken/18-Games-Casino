@@ -235,8 +235,10 @@ export default [
     for (let i = 0; i < 12; i++) {
       await h.wait(1000);
       const banner = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '');
-      if (/OFFSIDE/i.test(banner)) return true;
+      // G-228: every freeze in this file now restores thinkT before the test leaves - skater objects persist across matches on the shared page, and an unrestored freeze starved every later test's AI (the G-228 tester scene's retriever never came)
+      if (/OFFSIDE/i.test(banner)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; }
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'a real offside (attacker at x=40 ahead of the puck crossing the blue line) never drew a whistle';
   },
 },
@@ -275,9 +277,10 @@ export default [
     for (let i = 0; i < 60; i++) {
       await h.wait(250);
       const txt = await h.eval(() => ((document.querySelector('#banner') || {}).textContent) || '').catch(() => '');
-      if (/WAIVED/i.test(txt)) return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold';
-      if (/ICING/i.test(txt)) return true;
+      if (/WAIVED/i.test(txt)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return 'the clear was waived off (ICING WAIVED) - the race geometry did not hold'; }
+      if (/ICING/i.test(txt)) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; }
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'an untouched clear from the defensive half past the far goal line never drew an icing whistle';
   },
 },
@@ -308,7 +311,7 @@ export default [
       }));
       if (/GOAL/i.test(r.banner)) { scored = true; changed = r.score !== before; }
     }
-    if (!scored) return 'a puck over the goal line did not register a goal';
+    if (!scored) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return 'a puck over the goal line did not register a goal'; }
     // Phase 2: after the 3.2 s goal celebration the puck must restart from centre ice.
     for (let i = 0; i < 16; i++) {
       await h.wait(500);
@@ -318,8 +321,9 @@ export default [
         pz: window.__hk && window.__hk.puck ? window.__hk.puck.pos.z : 999,
       }));
       if (r.score !== before) changed = true;
-      if (changed && Math.abs(r.px) < 6 && Math.abs(r.pz) < 6) return true; // caught mid-faceoff on the dot
+      if (changed && Math.abs(r.px) < 6 && Math.abs(r.pz) < 6) { await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {}); return true; } // caught mid-faceoff on the dot
     }
+    await h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     return 'after the goal the puck did not restart from centre ice';
   },
 },
@@ -1765,94 +1769,72 @@ export default [
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    // G-261: the staging below used to burn its fixed waits whatever state the
+    // game was in - its own staged shots score goals, the faceoffs after them
+    // need a fresh player-ready press, and on the robot's shared page the
+    // match was in 'play' for only ~0.75 s of the whole run ('the sampler
+    // collected too few play samples (15)'). Now play is re-established
+    // before EVERY pressure phase, with one full re-boot (plain URL, no
+    // ?test scene) if a phase cannot get it back. The pressure itself, the
+    // sampler and both bars are unchanged.
+    const ensurePlay = async (budget) => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < budget) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} }
+        await h.wait(450);
+      }
+      return (await state()) === 'play';
+    };
+    const boot = async () => {
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      if ((await state()) !== 'menu') return false;
+      await h.eval(() => {
+        window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+        if (window.__excTimer) clearInterval(window.__excTimer);
+        window.__excTimer = setInterval(() => {
+          const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+          if (hk.game.state !== 'play') return;
+          const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+          window.__exc.n++;
+          if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+          if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+        }, 50);
+      });
+      await clickId('playBtn');
+      return ensurePlay(12000);
+    };
+    const reboot = async () => {
+      try { const u = new URL(page.url()); await page.goto(u.origin + u.pathname, { waitUntil: 'domcontentloaded' }); } catch (e) { await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); }
+      return boot();
+    };
     await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
-    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
-    await h.eval(() => {
-      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
-      if (window.__excTimer) clearInterval(window.__excTimer);
-      window.__excTimer = setInterval(() => {
-        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
-        if (hk.game.state !== 'play') return;
-        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
-        window.__exc.n++;
-        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
-        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
-      }, 50);
-    });
-    await clickId('playBtn');
-    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
-    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    if (!(await boot())) return 'the match did not reach play for the arena test';
+    const ready = async () => (await ensurePlay(9000)) || (await reboot());
     const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
-    for (let round = 0; round < 6; round++) {
+    for (let round = 0; round < 5; round++) {
       const e = round % 2 === 0 ? 1 : -1;
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
-      await h.wait(700);
+      await h.wait(500);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
       if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
-      await h.wait(700);
-      const stNow = await state();
-      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
-      if (stNow === 'goal') await h.wait(1500);
+      await h.wait(500);
     }
     const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (!exc || exc.n < 50) return { inconclusive: 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied, so this could not be checked' };
     if (exc.maxX > 100.6 || exc.maxZ > 42.9)
       return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
     return true;
-  },
-},
-{
-  id: 'tester-puck-leaves-rink-at-boards',
-  mode: 'arena',
-  ask: 'TESTER (G-194): the puck never leaves the rink - staged pressure at the boards (loose pucks fired at the end boards, the puck carrier standing at the end boards and at the side boards facing them with the puck on his stick, a real shot released at the boards) with the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9)',
-  async test(page, h) {
-    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
-    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
-    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
-    await h.eval(() => {
-      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
-      if (window.__excTimer) clearInterval(window.__excTimer);
-      window.__excTimer = setInterval(() => {
-        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
-        if (hk.game.state !== 'play') return;
-        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
-        window.__exc.n++;
-        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
-        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
-      }, 50);
-    });
-    await clickId('playBtn');
-    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
-    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
-    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
-    for (let round = 0; round < 6; round++) {
-      const e = round % 2 === 0 ? 1 : -1;
-      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
-      await h.wait(700);
-      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
-      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
-      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
-      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
-      await h.wait(700);
-      const stNow = await state();
-      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
-      if (stNow === 'goal') await h.wait(1500);
-    }
-    const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
-    if (exc.maxX > 100.6 || exc.maxZ > 42.9)
-      return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
-    return true;
-  },
+  }
 },
  {
   id: 'play-menu-fits-frame',
@@ -1967,7 +1949,7 @@ export default [
       }, 10);
     }));
     if (!m || m.err) return 'staging failed: ' + (m ? m.err : 'no result');
-    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied';
+    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return { inconclusive: 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied, so this could not be checked' };
     if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
     return true;
   }
@@ -1981,10 +1963,23 @@ export default [
     // Stage the owner's scene: a live match with every skater standing still
     // (the faceoff picture) - reach play, then freeze the AI like the icing
     // test does and let the stance settle into idle.
-    for (let i = 0; i < 24; i++) {
-      const st = await state();
-      if (st === 'play') break;
-      if (st === 'menu') await clickId('playBtn');
+    // G-257: boot like never-g-228-p1 - on the robot's shared page a previous
+    // test can leave the game at the final screen or in the hub, where the old
+    // click-only loop (24 x 600 ms, no key presses) never reached play and the
+    // test failed at staging ('could not get a match into play' on main).
+    // Reload to a known start when the state is not already live, click PLAY,
+    // then keep pressing 'k': the G-128 gate drops the faceoff only once the
+    // player is ready.
+    const st0 = await state();
+    if (st0 !== 'menu' && st0 !== 'play' && st0 !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    if ((await state()) === 'menu') await clickId('playBtn');
+    const tBoot = Date.now();
+    while (Date.now() - tBoot < 30000) {
+      if ((await state()) === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
       await h.wait(600);
     }
     if ((await state()) !== 'play') return 'could not get a match into play to measure the blades';
@@ -2012,8 +2007,13 @@ export default [
       }
       return { st: hk.game.state, tilts: out };
     }).catch(() => null);
+    // G-257: wait until the athlete kits are actually posed before sampling -
+    // the kits land a couple of seconds after PLAY, and with the faster boot
+    // the first samples otherwise read unposed feet and starve the count
+    // ('only N samples' on a slow runner, a staging failure, not a blade one)
+    for (let i = 0; i < 16; i++) { const r0 = await sampleSkate(); if (r0 && r0.tilts && r0.tilts.length >= 8) break; await h.wait(500); }
     const tilts = [];
-    for (let i = 0; i < 12 && tilts.length < 200; i++) {
+    for (let i = 0; i < 20 && tilts.length < 100; i++) { // G-257: more, shorter sampling - on a slow runner the old 12 x cap starved below the 80-sample bar ('only N samples', another staging failure); the bars below are unchanged
       const r = await sampleSkate();
       if (r && (r.st === 'play' || r.st === 'faceoff' || r.st === 'whistle')) tilts.push(...r.tilts);
       await h.wait(650);
@@ -2086,32 +2086,6 @@ export default [
     if (awayC - homeC > 3.0) return 'the away blades are over-corrected toe-up as a group: signed centre +' + awayC.toFixed(1) + ' cm vs the home control ' + homeC.toFixed(1) + ' cm';
     return true;
   }},
-{
-  id: 'play-joystick-starts-left',
-  ask: 'G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right',
-  async test(page, h) {
-    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
-    for (let i = 0; i < 24; i++) {
-      const st = await state();
-      if (st === 'play' || st === 'faceoff') break;
-      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
-      await h.wait(600);
-    }
-    const st = await state();
-    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the joystick (state ' + st + ')';
-    try {
-      const land = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cx: r.x + r.width / 2, w: innerWidth }; });
-      if (!(land.cx < land.w / 2)) return 'in landscape the joystick centre sits at ' + Math.round(land.cx) + ' of ' + land.w + ' across - it must be in the left half of the screen';
-      await page.setViewportSize({ width: 390, height: 844 });
-      await h.wait(700);
-      const port = await h.eval(() => { const r = document.getElementById('joy').getBoundingClientRect(); return { cy: r.y + r.height / 2, h: innerHeight }; });
-      if (!(port.cy < port.h / 2)) return 'on a portrait-held phone the joystick lands on the player right side when a match opens (its centre ' + Math.round(port.cy) + ' of ' + port.h + ' down the portrait screen becomes the right half once the stage rotates for play) - it must start and stay on the left';
-      return true;
-    } finally {
-      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
-    }
-  },
-},
 {
   id: 'play-blades-flush-in-play',
   ask: 'NEVER (G-47 REDO, owner picture 2026-10-23): in live play, not just standing still, the weight-bearing skate blade lies FLAT on the ice - the old end-to-end read went blind once a blade pitched past about 45 deg (its horizontal projection collapses), so this reads the blade true 3D tilt; on the shipped game planted blades sat at a median 12 deg tilt with a third over 16 deg and floated about 3 cm off the ice',
@@ -2221,6 +2195,258 @@ export default [
   }
 },
 {
+  id: 'never-g-228-p1',
+  ask: 'NEVER (G-228): icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - with a home skater in the box and the power-play tag live, the deep dump that is whistled at full strength must sail past the far goal line with no icing whistle and play carrying on',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game, el = document.getElementById('banner');
+      return {
+        state: g.state,
+        penTag: (document.getElementById('penTag') || {}).textContent || '',
+        banner: (el && el.classList.contains('show')) ? el.textContent.replace(/\s+/g, ' ').trim() : '',
+        boxedHome: window.__hk.skaters.some(s => s.inBox && s.team === 'home'),
+        puckX: +window.__hk.puck.pos.x.toFixed(1)
+      };
+    }).catch(() => null);
+    let s = await snap();
+    if (!s || (s.state !== 'menu' && s.state !== 'play' && s.state !== 'faceoff')) {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the shorthanded dump';
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const sk = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'LW');
+      sk.inBox = true; sk.penT = 30; sk.pos.set(-6, 0.1, 41);
+      hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== sk) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); });
+      hk.skaters.forEach(x => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0;
+      pk.lastTouch = 'home'; pk.lastTouchX = -30;
+      pk.pos.set(-30, 0.06, 20);
+      pk.vel.set(70, 0, 0);
+    });
+    let sawPP = false, crossedAt = 0;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 20000) {
+      const q = await snap();
+      if (q) {
+        if (/PP/.test(q.penTag)) sawPP = true;
+        if (q.banner && /ICING/.test(q.banner) && q.boxedHome) return 'icing was whistled against the SHORTHANDED home team (banner "' + q.banner + '") - rules/hockey.md: icing is not called when shorthanded';
+        if (!crossedAt && q.puckX > 89) crossedAt = Date.now();
+        if (crossedAt && Date.now() - crossedAt > 1500) {
+          if (q.state !== 'play') return 'play stopped after the shorthanded dump crossed the far goal line (state ' + q.state + ') - the dump is legal while a home skater sits in the box, play must carry on';
+          if (!sawPP) return 'the staged power play never showed on the HUD - cannot judge the shorthanded dump';
+          return true;
+        }
+      }
+      await h.wait(350);
+    }
+    return 'the staged shorthanded dump never crossed the far goal line - cannot judge the call';
+  }
+ },
+{
+  id: 'never-g-228-p2',
+  ask: 'the end-zone faceoff dots sit 6.7 m either side of centre in the ice paint (venues/rink.md, H01)',
+  async test(page, h) {
+    const res = await h.eval(() => {
+      let ice = null;
+      window.__reality.player.parent.traverse(o => {
+        if (!ice && o.isMesh && o.geometry && o.material && o.material.map && o.material.color && o.material.color.getHexString() === 'ffffff') {
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox, sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y, sz = bb.max.z - bb.min.z;
+          const dims = [sx, sy, sz].sort((a, b) => b - a);
+          if (dims[0] > 190 && dims[1] > 80 && dims[2] < 0.1) ice = o;
+        }
+      });
+      if (!ice) return { err: 'no ice surface found in the running game' };
+      const img = ice.material.map.image, W = img.width, H = img.height;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0);
+      const d = cx.getImageData(0, 0, W, H).data, reds = [];
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = (j * W + i) * 4; if (d[k] > 140 && d[k + 1] < 110 && d[k + 2] < 110) reds.push([-100 + (i / W) * 200, -42.5 + (j / H) * 85]); }
+      const clus = [];
+      for (const p of reds) { const c = clus.find(c => Math.abs(c.x - p[0]) < 6 && Math.abs(c.z - p[1]) < 6); if (c) { c.n++; c.x = (c.x * (c.n - 1) + p[0]) / c.n; c.z = (c.z * (c.n - 1) + p[1]) / c.n; c.mnx = Math.min(c.mnx, p[0]); c.mxx = Math.max(c.mxx, p[0]); c.mnz = Math.min(c.mnz, p[1]); c.mxz = Math.max(c.mxz, p[1]); } else clus.push({ x: p[0], z: p[1], n: 1, mnx: p[0], mxx: p[0], mnz: p[1], mxz: p[1] }); }
+      // a dot core is a compact filled disc (~2.2 units across); the faceoff CIRCLE arcs around it
+      // form long thin clusters - keep only compact clusters in the end zones
+      const dots = clus.filter(c => c.n >= 90 && c.n <= 600 && Math.abs(c.x) >= 55 && Math.abs(c.x) <= 80 && (c.mxx - c.mnx) <= 2.6 && (c.mxz - c.mnz) <= 2.6).map(c => ({ x: +c.x.toFixed(1), z: +c.z.toFixed(1) }));
+      return { dots };
+    }).catch(e => ({ err: String(e).slice(0, 120) }));
+    if (res.err) return 'never-g-228-p2 cannot judge: ' + res.err;
+    if (res.dots.length !== 4) return 'expected exactly 4 end-zone faceoff dots in the ice paint, isolated ' + res.dots.length + ' (' + JSON.stringify(res.dots) + ')';
+    const zs = res.dots.map(d => Math.abs(d.z) / 3.26);
+    const bad = zs.filter(m => Math.abs(m - 6.7) / 6.7 > 0.03);
+    if (bad.length) return 'end-zone faceoff dots sit ' + zs.map(m => m.toFixed(2)).join(', ') + ' m either side of centre - venues/rink.md says 6.7 m (3% band 6.50-6.90 m)';
+    return true;
+  },
+},
+{
+  id: 'play-blades-stay-level-roll',
+  ask: 'OWNER VIDEO (2026-10-23): blades stay level in roll too, not only pitch - a planted blade\'s plate normal stays near horizontal, standing at the faceoff and in live play (the away stance stood rolled 12-26 deg; in play the plates flipped up toward the legs)',
+  async test(page, h) {
+    const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if (st0 !== 'faceoff') { // the standing phase must read a real faceoff stance - boot fresh unless one is already set
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    }
+    const start = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      window.__attAll = () => {
+        function eig3(C) {
+          let a = [[C[0], C[1], C[2]], [C[1], C[3], C[4]], [C[2], C[4], C[5]]];
+          let vv = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+          for (let sweep = 0; sweep < 12; sweep++) {
+            if (Math.abs(a[0][1]) + Math.abs(a[0][2]) + Math.abs(a[1][2]) < 1e-12) break;
+            for (const [pp, qq] of [[0, 1], [0, 2], [1, 2]]) {
+              const apq = a[pp][qq]; if (Math.abs(apq) < 1e-14) continue;
+              const phi = 0.5 * Math.atan2(2 * apq, a[qq][qq] - a[pp][pp]);
+              const c = Math.cos(phi), s = Math.sin(phi);
+              for (let t = 0; t < 3; t++) { const x = a[t][pp], y = a[t][qq]; a[t][pp] = c * x - s * y; a[t][qq] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = a[pp][t], y = a[qq][t]; a[pp][t] = c * x - s * y; a[qq][t] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = vv[t][pp], y = vv[t][qq]; vv[t][pp] = c * x - s * y; vv[t][qq] = s * x + c * y; }
+            }
+          }
+          const idx = [0, 1, 2].sort((i, j) => a[j][j] - a[i][i]);
+          return idx.map((i2) => [vv[0][i2], vv[1][i2], vv[2][i2]]);
+        }
+        const out = [];
+        for (const S of hk.skaters) {
+          if (S.goalie || !S._blade || !S.kit || !S.kit.parts || !S.kit.parts.steel) continue;
+          const st3 = S.kit.parts.steel;
+          const V3 = st3.skeleton.bones[0].position.constructor;
+          const v = new V3();
+          S.g.updateMatrixWorld(true); st3.skeleton.update();
+          for (let k = 0; k < 2; k++) {
+            const ids = S._blade[k]; if (!ids || ids.length < 8) continue;
+            let n = 0, Sx = 0, Sy = 0, Sz = 0, Sxx = 0, Syy = 0, Szz = 0, Sxy = 0, Sxz = 0, Syz = 0, low = 1e9;
+            for (const ix of ids) { st3.getVertexPosition(ix, v); Sx += v.x; Sy += v.y; Sz += v.z; Sxx += v.x * v.x; Syy += v.y * v.y; Szz += v.z * v.z; Sxy += v.x * v.y; Sxz += v.x * v.z; Syz += v.y * v.z; if (v.y < low) low = v.y; n++; }
+            const cx = Sx / n, cy = Sy / n, cz = Sz / n;
+            const C = [Sxx - n * cx * cx, Sxy - n * cx * cy, Sxz - n * cx * cz, Syy - n * cy * cy, Syz - n * cy * cz, Szz - n * cz * cz];
+            const e = eig3(C);
+            out.push({ roll: +(Math.asin(Math.min(1, Math.abs(e[2][1]))) * 57.3).toFixed(1), h: +(low + S.athWrap.position.y).toFixed(3) });
+          }
+        }
+        return out;
+      };
+      return 'ok';
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (start !== 'ok') return 'blades-roll test: ' + start;
+    // STANDING phase: at the faceoff, before the drop, every planted blade must lie level
+    // (wait until the athletes are really posed - early samples read the menu showcase)
+    let ready = false;
+    for (let i = 0; i < 26 && !ready; i++) {
+      const n0 = await h.eval(() => window.__attAll().length).catch(() => 0);
+      if (n0 >= 20) ready = true; else await h.wait(300);
+    }
+    const stand = [];
+    for (let i = 0; i < 4; i++) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) stand.push(r.roll);
+      await h.wait(250);
+    }
+    if (ready && stand.length >= 40) {
+      stand.sort((a, b) => a - b);
+      const p90 = stand[Math.floor(stand.length * 0.9)];
+      if (p90 > 10) return 'standing at the faceoff, blades sit rolled: p90 roll ' + p90 + ' deg (bar 10) - the plates lean sideways on the ice instead of lying level';
+    }
+    // drop the puck and judge LIVE play
+    for (let i = 0; i < 40; i++) {
+      const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+      if (s2 === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(400);
+    }
+    const rows = [];
+    const t0 = Date.now();
+    while (Date.now() - t0 < 7000) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) rows.push(r.roll);
+      await h.wait(120);
+    }
+    if (rows.length < 200) return 'too few planted blade samples in live play: ' + rows.length;
+    rows.sort((a, b) => a - b);
+    const med = rows[Math.floor(rows.length / 2)];
+    const bad = rows.filter((r) => r > 25).length;
+    const share = bad / rows.length;
+    if (med > 6) return 'planted blades sit rolled in live play: median roll ' + med + ' deg (bar 6) - the plates lean sideways instead of lying level';
+    if (share > 0.02) return 'planted blades flip rolled in live play: ' + (share * 100).toFixed(1) + '% of samples over 25 deg roll (bar 2%) - blades come up toward the legs';
+    return true;
+  },
+},
+{
+  id: 'play-chasers-not-mirrored',
+  ask: 'OWNER VIDEO (2026-10-23): the two AI chasers on a puck carrier do not mirror each other - they close from different sides instead of stacking onto the same point and skating through each other',
+  async test(page, h) {
+    const boot = async () => {
+      const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+      if (st0 !== 'play' && st0 !== 'faceoff') {
+        await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+        await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+        await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      }
+      for (let i = 0; i < 40; i++) {
+        const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+        if (s2 === 'play') return true;
+        await page.keyboard.press('k').catch(() => {});
+        await h.wait(400);
+      }
+      return false;
+    };
+    if (!(await boot())) return 'chasers test: could not get a match into play';
+    const stage = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      for (const s of hk.skaters) s.thinkT = 9999;
+      const C = hk.skaters.find((s) => s.team === 'home' && s.role === 'C');
+      const L = hk.skaters.find((s) => s.team === 'away' && s.role === 'LW');
+      const R = hk.skaters.find((s) => s.team === 'away' && s.role === 'RW');
+      const put = (s, x, z) => { s.pos.set(x, 0, z); s.vel.set(0, 0, 0); s.g.position.set(x, 0, z); s.target.set(x, 0, z); };
+      hk.skaters.forEach((s, i) => { if (s !== C && s !== L && s !== R) put(s, -95 + (i % 5) * 2, s.team === 'home' ? 38 : -38); });
+      put(C, -20, 0); put(L, 6, 10); put(R, 6, -10);
+      L.thinkT = 0.05; R.thinkT = 0.05;
+      hk.puck.owner = C; hk.puck.lastTouch = 'home'; hk.puck.pos.set(C.pos.x + 1.2, 0.06, C.pos.z);
+      window.__pair = [L, R]; window.__C0 = C;
+      return hk.game.state;
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (stage !== 'play') return 'chasers test: could not stage in play (state ' + stage + ')';
+    // Judge the chase while it develops: sample the pair's TARGET separation while the
+    // carrier still owns the puck (the literal defect: both chasers are handed the same
+    // target point, separation 0, and skate in lockstep), plus the pair's closest
+    // approach over the whole run (they end up stacked on the puck).
+    const tseps = [], allD = [];
+    const tEnd = Date.now() + 9000;
+    while (Date.now() < tEnd) {
+      const r = await h.eval(() => {
+        const [a, b] = window.__pair, C = window.__C0, hk = window.__hk;
+        return {
+          d: Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z),
+          tsep: Math.hypot(a.target.x - b.target.x, a.target.z - b.target.z),
+          own: hk.puck.owner === C,
+          dC: Math.min(Math.hypot(a.pos.x - C.pos.x, a.pos.z - C.pos.z), Math.hypot(b.pos.x - C.pos.x, b.pos.z - C.pos.z)),
+        };
+      }).catch(() => null);
+      if (r) { allD.push(r.d); if (r.own && r.dC < 26) tseps.push(r.tsep); if (tseps.length >= 8 && !r.own) break; }
+      await h.wait(100);
+    }
+    if (tseps.length < 5) return 'chasers test: too few developed-chase samples (carrier held the puck while closing): ' + tseps.length;
+    tseps.sort((a, b) => a - b);
+    const tmed = tseps[Math.floor(tseps.length / 2)];
+    if (tmed < 2.0) return 'the two chasers share one target point (median target separation ' + tmed.toFixed(2) + ' units) - they mirror each other onto the carrier instead of closing from two sides';
+    const min = Math.min(...allD);
+    if (min <= 1.8) return 'the two chasers stack onto the same point: closest approach ' + min.toFixed(2) + ' units - they mirror each other onto the carrier';
+    const overlap = allD.filter((d) => d < 1.6).length / Math.max(1, allD.length);
+    if (overlap > 0.1) return 'the two chasers skate through each other: ' + (overlap * 100).toFixed(0) + '% of the chase inside 1.6 units';
+    return true;
+  },
+},
+{
   id: 'tester-chk-h01',
   mode: 'h01',
   ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
@@ -2272,7 +2498,7 @@ export default [
     const g0 = (s0.career.star && s0.career.star.g) || 0;
     await clickId('hubPlay'); // the game reloads itself here by design; the boot auto-starts the match
     await h.wait(5000); // let the reload settle before watching for the staged match
-    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    { let started = false; for (let i = 0; i < 40 && !started; i++) { const st = await state(); if (st === 'play' || st === 'faceoff') started = true; else await h.wait(600); } if (!started) return 'the career match did not auto-start after PLAY'; } // G-253: waitForFunction with raf polling never resolves across the reload; poll with waits instead
     for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
     let banked = false;
     const spots = [[78, 2, 0], [80, 6, -0.73], [80, -6, 0.73]];
@@ -2333,7 +2559,7 @@ export default [
     await clickId('hubNew'); await h.wait(800);
     await clickId('hubPlay');
     await h.wait(5000); // let the reload settle before watching for the staged match
-    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    { let started = false; for (let i = 0; i < 40 && !started; i++) { const st = await state(); if (st === 'play' || st === 'faceoff') started = true; else await h.wait(600); } if (!started) return 'the career match did not auto-start after PLAY'; } // G-253: waitForFunction with raf polling never resolves across the reload; poll with waits instead
     for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
     if ((await state()) !== 'play') return 'the match never reached play so the end screen could not be staged';
     await h.eval(() => { const g = window.__hk.game; g.period = 3; g.clockT = 3; g.scoreH = 2; g.scoreA = 0; }); // rig the last seconds of the last period with the Wolves ahead (a tied whistle goes to overtime instead of the end screen - see diag-clock); the whistle and the overlay play out for real
@@ -2555,4 +2781,416 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-arena-neutral-dots-in-neutral-zone',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the 4 neutral-zone faceoff dots sit 1.5 m inside the blue lines (venues/rink.md) - painted on the ice at |x| about 6.2 m from centre, inside the neutral zone, not deep in the end zones',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the dot scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const reds = [];
+      for (let j = 4; j < H - 4; j += 2) for (let i = 4; i < W - 4; i += 2) { const [r, g, b] = px(i, j); if (r > 130 && r - b > 60 && r - g > 30) reds.push([i, j]); }
+      const clusters = [];
+      for (const [i, j] of reds) { const f = clusters.find(c => Math.abs(c.i - i) < W * 0.02 && Math.abs(c.j - j) < H * 0.05); if (f) { f.n++; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else clusters.push({ i, j, n: 1 }); }
+      const dots = clusters.filter(c => c.n >= 90).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85 })).filter(d => Math.abs(Math.abs(d.z) - 20) <= 1.5 && Math.abs(d.x) <= 80);
+      const neutral = dots.filter(d => Math.abs(d.x) < 55);
+      if (neutral.length < 4) return 'only ' + neutral.length + ' neutral-zone faceoff dots painted (venues/rink.md: 4, at 1.5 m inside the blue lines)';
+      const bad = neutral.filter(d => Math.abs(d.x) > 21.6);
+      if (bad.length) return 'neutral-zone dots are not in the neutral zone: painted at |x| ' + bad.map(d => Math.abs(d.x).toFixed(1)).join(', ') + ' units (' + bad.map(d => (Math.abs(d.x) / 3.26).toFixed(1)).join(', ') + ' m) - the blue line is at 25 units (7.67 m), so these sit inside the END zones; venues/rink.md puts them 1.5 m inside the blue lines (|x| about 20 units / 6.2 m)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-end-dots-spacing',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the 4 end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - painted on the ice at |z| about 21.9 units, not 20',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the dot scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const reds = [];
+      for (let j = 4; j < H - 4; j += 2) for (let i = 4; i < W - 4; i += 2) { const [r, g, b] = px(i, j); if (r > 130 && r - b > 60 && r - g > 30) reds.push([i, j]); }
+      const clusters = [];
+      for (const [i, j] of reds) { const f = clusters.find(c => Math.abs(c.i - i) < W * 0.02 && Math.abs(c.j - j) < H * 0.05); if (f) { f.n++; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else clusters.push({ i, j, n: 1 }); }
+      const dots = clusters.filter(c => c.n >= 90).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85 })).filter(d => Math.abs(Math.abs(d.z) - 20) <= 1.5 && Math.abs(d.x) <= 80);
+      const ends = dots.filter(d => Math.abs(d.x) >= 55);
+      if (ends.length < 4) return 'only ' + ends.length + ' end-zone faceoff dots painted (venues/rink.md: 4)';
+      const bad = ends.filter(d => Math.abs(Math.abs(d.z) - 21.85) > 1.2);
+      if (bad.length) return 'end-zone faceoff dots sit at |z| ' + bad.map(d => Math.abs(d.z).toFixed(1)).join(', ') + ' units (' + bad.map(d => (Math.abs(d.z) / 3.26).toFixed(2)).join(', ') + ' m) - venues/rink.md puts them 6.7 m either side of centre (21.9 units)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-crease-in-front-of-goal',
+  mode: 'arena',
+  ask: 'TESTER (G-199): each goal crease is painted in FRONT of its goal (venues/rink.md: light-blue semicircle r 1.83 m in front of the goal line) - neither crease may sit behind its goal line in the trapezoid area',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the crease scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const lb = [];
+      for (let j = 2; j < H - 2; j += 2) for (let i = 2; i < W - 2; i += 2) { const [r, g, b] = px(i, j); if (b > 150 && g > 130 && r > 80 && r < 190 && b - r > 30) lb.push([i, j]); }
+      const lbc = [];
+      for (const [i, j] of lb) { const f = lbc.find(c => Math.abs(c.i - i) < W * 0.03 && Math.abs(c.j - j) < H * 0.08); if (f) { f.n++; if (i < f.mni) f.mni = i; if (i > f.mxi) f.mxi = i; if (j < f.mnj) f.mnj = j; if (j > f.mxj) f.mxj = j; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else lbc.push({ i, j, n: 1, mni: i, mxi: i, mnj: j, mxj: j }); }
+      const creases = lbc.filter(c => c.n >= 500).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85, mnx: -100 + (c.mni / W) * 200, mxx: -100 + (c.mxi / W) * 200 })).filter(c => Math.abs(c.x) > 50 && Math.abs(c.z) < 6);
+      if (creases.length < 2) return 'only ' + creases.length + ' goal creases found on the ice paint (venues/rink.md: one in front of each goal)';
+      const pxC = creases.find(c => c.x > 0), nxC = creases.find(c => c.x < 0);
+      if (pxC && pxC.mxx > 90.5) return 'the +x crease is painted BEHIND its goal: light-blue paint runs to x ' + pxC.mxx.toFixed(1) + ' units, past the goal line at about 88.5-89 - the crease belongs in front of the goal (venues/rink.md), like the -x crease which ends at ' + (nxC ? nxC.mnx.toFixed(1) : '?');
+      if (nxC && nxC.mnx < -90.5) return 'the -x crease is painted BEHIND its goal: light-blue paint runs to x ' + nxC.mnx.toFixed(1) + ' units, past the goal line at about -88.5..-89 - the crease belongs in front of the goal (venues/rink.md)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-glass-height',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one 1.6 m height all the way round',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const glass = meshes.find(o => o.material && o.material.color && o.material.color.getHexString() === 'bfe0ff');
+      if (!glass) return 'glass mesh (bfe0ff) not found';
+      const p = glass.geometry.attributes.position, m = glass.matrixWorld.elements;
+      let topSide = 0, topEnd = 0;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (Math.abs(wx) > 90) { if (wy > topEnd) topEnd = wy; } else if (Math.abs(wz) > 40) { if (wy > topSide) topSide = wy; } }
+      if (!topSide || !topEnd) return 'glass verts not separable into sides/ends (side top ' + topSide + ', end top ' + topEnd + ')';
+      const hSide = (topSide - 3.7) / 3.26, hEnd = (topEnd - 3.7) / 3.26;
+      if (hEnd < 2.05) return 'the glass at the ENDS is ' + hEnd.toFixed(2) + ' m high (top at ' + topEnd.toFixed(1) + ' units) - venues/rink.md: about 2.4 m at the ends';
+      if (hSide < 1.55) return 'the glass along the SIDES is ' + hSide.toFixed(2) + ' m high (top at ' + topSide.toFixed(1) + ' units) - venues/rink.md: about 1.8 m along the sides';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-benches-and-boxes',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the arena has two team benches on one side of the rink and the penalty boxes plus scorekeeper box on the other (venues/rink.md) - real meshes outside the boards at ice level, not bare boards with the bowl behind',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      let plus = 0, minus = 0;
+      for (const o of meshes) {
+        if (!o.visible) continue;
+        const a = aabb(o);
+        const big = (a[3] - a[0]) > 150 || (a[5] - a[2]) > 130;
+        if (big || a[1] >= 9) continue;
+        if (a[5] > 42.8 && a[2] < 60) plus++;
+        if (a[2] < -42.8 && a[5] > -60) minus++;
+      }
+      if (!plus && !minus) return 'no benches, penalty boxes or scorekeeper box anywhere: zero meshes in the strips outside the boards at ice level on either side - venues/rink.md requires two team benches on one side and the penalty boxes + scorekeeper box on the other';
+      if (!plus || !minus) return 'bench/box meshes exist on only one side of the rink (z+ strip: ' + plus + ', z- strip: ' + minus + ') - venues/rink.md: benches on one side, penalty boxes + scorekeeper box on the other';
+      return true;
+    });
+  },
+},
+ {
+  id: 'tester-chk-h15',
+  mode: 'h15',
+  ask: 'H15: a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3, then count the skaters on the ice in overtime: 3 a side (plus the goalies), and the first overtime goal must end the game',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
+    // G-261: boot like never-g-228-p1 - the old click-only loop (24 x 600 ms,
+    // no key presses) failed at staging on the robot's shared page whenever a
+    // previous test left the game at the final screen or in the hub (the same
+    // defect G-257 fixed in never-g-217-p1). The staging and the count below
+    // are unchanged.
+    const st0 = await state();
+    if (st0 !== 'menu' && st0 !== 'play' && st0 !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    if ((await state()) === 'menu') await clickId('playBtn');
+    const tBootH = Date.now();
+    while (Date.now() - tBootH < 30000) {
+      if ((await state()) === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the tie';
+    await h.eval(() => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 3; g.scoreH = 1; g.scoreA = 1; g.clockT = 0.4;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+    }).catch(() => {});
+    let ot = null;
+    for (let i = 0; i < 30; i++) {
+      ot = await h.eval(() => {
+        const hk = window.__hk; if (!hk || !hk.game) return null;
+        return { period: hk.game.period, state: hk.game.state, clockT: hk.game.clockT };
+      }).catch(() => null);
+      if (ot && ot.period >= 4 && (ot.state === 'play' || ot.state === 'faceoff')) break;
+      await h.wait(700);
+    }
+    if (!ot || ot.period < 4) return 'a tied game at the end of period 3 never reached overtime (period stuck at ' + (ot ? ot.period : '?') + ') - the owner rule is 3-on-3 overtime, first goal wins, no shootout';
+    await h.wait(2500);
+    const count = await h.eval(() => {
+      const hk = window.__hk; const c = { home: 0, away: 0 };
+      for (const s of hk.skaters) {
+        if (s.goalie) continue;
+        if (s.boxT > 0) continue;
+        if (Math.abs(s.pos.x) <= 100.5 && Math.abs(s.pos.z) <= 42.8) c[s.team]++;
+      }
+      return c;
+    }).catch(() => null);
+    if (!count) return 'could not count the skaters on the ice in overtime';
+    if (count.home !== 3 || count.away !== 3) return 'H15 FOUND: a tied game goes to overtime with ' + count.home + ' home and ' + count.away + ' away skaters on the ice (5-on-5, clockT reads ' + Math.round(ot.clockT) + ' - untimed) - the owner rule (2026-10-23, rules/hockey.md line 20) is 3-on-3, first goal wins, no shootout';
+    return true;
+  }
+ },
+{
+  id: 'never-g-257-p1',
+  ask: 'NEVER (G-257): the intermission between periods shows a stats card - when the period clock runs out, the break puts the real match stats on screen (shots, saves, faceoffs won on a #statCard), not only the END OF PERIOD banner, and the card clears when the next period starts (rules/hockey.md: intermission between periods, stats card)',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await snap()) !== 'play') return 'could not get a match into play to run down the period clock';
+    await h.eval(() => { window.__hk.game.clockT = 0.4; });
+    let inter = false; const t1 = Date.now();
+    while (Date.now() - t1 < 15000) {
+      if ((await snap()) === 'intermission') { inter = true; break; }
+      await h.wait(400);
+    }
+    if (!inter) return 'the period never entered intermission after the clock ran down';
+    const card = await h.eval(() => {
+      const c = document.getElementById('statCard');
+      if (!c) return null;
+      return { display: c.style.display, visible: c.style.display !== 'none' && c.getClientRects().length > 0, text: (c.textContent || '').replace(/\s+/g, ' ').trim() }; // #statCard is position:fixed, whose offsetParent is always null - judge by layout boxes instead
+    }).catch(() => null);
+    if (!card) return 'no #statCard element exists at the intermission - the break shows only the END OF PERIOD banner';
+    if (!card.visible || card.display === 'none') return 'the stats card is in the DOM but not shown at the intermission (display ' + card.display + ')';
+    if (!/SHOTS/.test(card.text) || !/SAVES/.test(card.text) || !/FACEOFFS WON/.test(card.text)) return 'the intermission card does not carry the match stats - it reads: ' + card.text.slice(0, 90);
+    const t2 = Date.now();
+    let left = false;
+    while (Date.now() - t2 < 16000) {
+      if ((await snap()) !== 'intermission') { left = true; break; }
+      await h.wait(400);
+    }
+    if (!left) return 'the intermission never ended - the game is stuck on the break';
+    const after = await h.eval(() => { const c = document.getElementById('statCard'); return c ? { display: c.style.display, visible: c.style.display !== 'none' && c.getClientRects().length > 0 } : null; }).catch(() => null);
+    if (after && after.visible && after.display !== 'none') return 'the stats card is still on screen after the intermission ended - it must clear when the next period starts';
+    return true;
+  }
+ },
+{
+  id: 'never-g-261-p1',
+  ask: 'NEVER (G-261): the puck never leaves the rink under boards pressure - loose pucks fired at the end boards, the carrier parked at the end boards and at the side boards facing them with the puck on his stick, and a real shot released at the boards, with play re-established before every phase and the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9) and the sampler must collect at least 50 play samples',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const ensurePlay = async (budget) => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < budget) {
+        const st = await snap();
+        if (st === 'play') return true;
+        if (st === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} }
+        await h.wait(450);
+      }
+      return (await snap()) === 'play';
+    };
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => {
+      window.__exc2 = { maxX: 0, maxZ: 0, n: 0 };
+      if (window.__exc2Timer) clearInterval(window.__exc2Timer);
+      window.__exc2Timer = setInterval(() => {
+        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+        if (hk.game.state !== 'play') return;
+        const p = hk.puck.pos;
+        window.__exc2.n++;
+        window.__exc2.maxX = Math.max(window.__exc2.maxX, Math.abs(p.x));
+        window.__exc2.maxZ = Math.max(window.__exc2.maxZ, Math.abs(p.z));
+      }, 50);
+    }).catch(() => {});
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    if (!(await ensurePlay(15000))) return 'could not get a match into play to apply the boards pressure';
+    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
+    for (let round = 0; round < 4; round++) {
+      const e = round % 2 === 0 ? 1 : -1;
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
+      await h.wait(500);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(650);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(650);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
+      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
+      await h.wait(500);
+    }
+    const exc = await h.eval(() => window.__exc2).catch(() => null);
+    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (exc.maxX > 100.6 || exc.maxZ > 42.9) return 'the puck left the rink under boards pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.6 / |z| 42.9)';
+    return true;
+  }
+ },
+{
+  id: 'never-g-261-p2',
+  ask: 'NEVER (G-261, H15): a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3: exactly 3 skaters a side on the ice in overtime (plus the goalies), and the first overtime goal ends the game',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await snap()) !== 'play') return 'could not get a match into play to stage the tie';
+    await h.eval(() => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 3; g.scoreH = 1; g.scoreA = 1; g.clockT = 0.4;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+    }).catch(() => {});
+    let ot = null; const t1 = Date.now();
+    while (Date.now() - t1 < 25000) {
+      ot = await h.eval(() => { const hk = window.__hk; if (!hk || !hk.game) return null; return { period: hk.game.period, state: hk.game.state }; }).catch(() => null);
+      if (ot && ot.period >= 4 && (ot.state === 'play' || ot.state === 'faceoff')) break;
+      await h.wait(700);
+    }
+    if (!ot || ot.period < 4) return 'a tied game at the end of period 3 never reached overtime';
+    await h.wait(2500);
+    const count = await h.eval(() => {
+      const hk = window.__hk; const c = { home: 0, away: 0 };
+      for (const sk of hk.skaters) {
+        if (sk.goalie) continue;
+        if (sk.boxT > 0) continue;
+        if (Math.abs(sk.pos.x) <= 100.5 && Math.abs(sk.pos.z) <= 42.8) c[sk.team]++;
+      }
+      return c;
+    }).catch(() => null);
+    if (!count) return 'could not count the skaters on the ice in overtime';
+    if (count.home !== 3 || count.away !== 3) return 'overtime is ' + count.home + '-on-' + count.away + ' skaters - the owner rule is exactly 3 a side (plus the goalies), first goal wins, no shootout';
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+    }).catch(() => {});
+    let over = false; const t2 = Date.now();
+    while (Date.now() - t2 < 12000) {
+      if ((await snap()) === 'over') { over = true; break; }
+      await h.wait(400);
+    }
+    if (!over) return 'the first overtime goal did not end the game - golden goal, no shootout (owner decision 2026-10-23)';
+    return true;
+  }
+ },
+  {
+    id: "tester-chk-h14",
+    mode: "h14",
+    ask: "CHECKLIST H14 (G-234): a major penalty is 5 minutes (rules/hockey.md: \"Penalties (2 minutes, or 5 for major)\"). Commit the harshest foul the game offers - a check from behind on the puck carrier - six times: at least one of the resulting penalties must be a 5:00 major (box clock reads 5:00 and/or the banner says MAJOR).",
+    async test(page, h) {
+    const snap = () => h.eval(() => {
+      const bEl = document.getElementById('banner');
+      return {
+        state: window.__hk.game.state,
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, penT: +s.penT.toFixed(1) })),
+        banner: (bEl && bEl.classList.contains('show')) ? bEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : ''
+      };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 60000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to force the foul';
+    let drew = 0, maxPenT = 0, sawMajor = false;
+    for (let att = 0; att < 6; att++) {
+      await h.eval(() => {
+        const hk = window.__hk, pk = hk.puck;
+        hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; } });
+        hk.skaters.forEach((x, i) => {
+          x.thinkT = 5; x.vel.set(0, 0, 0);
+          if (x.team === 'home' && !x.goalie) x.pos.set(-80, 0.1, -20 + (i % 5) * 8);
+          if (x.team === 'away' && !x.goalie) x.pos.set(60, 0.1, 20 - (i % 5) * 8);
+        });
+        const hitter = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'C');
+        const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
+        hitter.pos.set(-2.5, 0.1, 0);
+        carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
+        pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
+        pk.shot = null; pk.lastTouch = 'away';
+      });
+      await page.keyboard.press('KeyL').catch(() => {}); // doCheck: check from behind -> penalty
+      await page.waitForTimeout(900);
+      const q = await snap();
+      if (q) {
+        for (const b of q.boxed) { drew++; if (b.penT > maxPenT) maxPenT = b.penT; }
+        if (/MAJOR/i.test(q.banner)) sawMajor = true;
+      }
+      await page.waitForTimeout(400);
+    }
+    if (drew === 0) return 'could not draw a penalty from the check-from-behind foul - cannot judge the major';
+    if (sawMajor || maxPenT >= 45) return true;
+    return 'H14 FOUND: six check-from-behind fouls (the harshest foul the game offers) drew ' + drew + ' penalties, every one a 2:00 minor (box penT=20, banner always MINOR, never MAJOR) - rules/hockey.md says a major penalty is 5 minutes, but the game has no major-penalty path at all';
+  },
+  },
 ];

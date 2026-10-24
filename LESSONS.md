@@ -20,6 +20,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - all · FENCE RULE: a Muse that fixes another PR's identical defect edits TEST FILES ONLY (tools/game-check/fixes/, jobs/, reviews/) and says so on that PR - untagged swarm-help is how branch drift happened in G-84.
 
 ## Robot and tests
+- ROBOT REPAIRS ARE RACED BEFORE THEY SHIP (owner Oct 23 2026, after 7 h on one setup failure): repair -> side-by-side on a scratch branch (not a PR), the new way and today's way, N runs each at the same time -> numbers -> only then a PR. Never prove a robot repair through the sick checker itself. The race of Oct 23 (12 runs each): Microsoft's Playwright image 0 failures, apt fix 1, saved browser 0 of 10 - the image shipped (#1374).
 - all · tests assumed a fresh menu; the robot runs all of a game's tests on ONE page → every test starts from its own fresh state and presses only visible buttons.
 - all · tests drove input state directly / sampled meters on a wall clock → drive the game through its real controls; measure in game time, not the robot's clock.
 - all · Puppeteer calls (page.target, page.setViewport) in play tests → the robot is Playwright; use its calls.
@@ -119,3 +120,74 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (3:36 PM)
 - A PR whose required `check` shows "expected" with no status: look at the PR HEAD first - if the head moved (main merged in), the new head runs its own check; read the Check status comment on the newest head before filing HELP.
+
+## 2026-10-23 help desk (4:10 PM)
+- An order with one CHANGED line per point may have a point that measures clean on today's build: file the other CHANGED lines, answer that point "YES - nothing to fix, measured clean" with the evidence in a NOTE line. Never invent a change to fill a line.
+
+## 2026-10-23 help desk
+- A play job that dies in ~4 min with "exit code 1" and NO test lines (check says "the robot could not play it") never reached a test: file the HELP line, the help desk re-runs it once; do not change game code for it. A second identical failure = HELP-VP: robot with both run links.
+
+## 2026-10-23 help desk (5 PM)
+- Two windows can end up with the same G-number (testers self-start rounds). Use the number the MAC typed; with none, take the next free jobs/G-NN.md on main right before filing; on a clash file HELP-VP naming both windows.
+- A needs/window-N.md PR that conflicts on a long-open branch: re-file the new lines on a fresh branch from main (prepend, keep every old line) and close the old PR as superseded.
+
+## 2026-10-23 help desk (5:20 PM)
+- A play job that dies in ~4.5 min with no test lines is usually the browser INSTALL step (apt lock / stall), not the game. Check the failed job's last lines; if it says 'Could not get lock' or 'Failed to install browsers', file ONE HELP-VP: robot line with the run link and do not push or rebuild - a push restarts the whole check.
+
+## 2026-10-23 help desk
+- A tester round that numbers itself with a G-number can overwrite or clash with a builder's jobs/G-NN.md and start a branch with no shared history (PR #1281, #1296): start every self-started round from a fresh branch off main and name the report T-<window>-<HHMM>, never G-NN.
+- A green TEST PR that sits unmerged for hours is usually (a) a conflict in a tests file where both sides appended (keep both sides) or (b) GitHub leaving mergeable unknown while main moves (merge robot fix: game PR #1351). Do not wait; file HELP-VP.
+
+## 2026-10-23 help desk (6:10 PM)
+- Tests/jobs/notes-only TEST PRs never need the owner's go-ahead: push them, the merge robot lands them. Waiting for a tap you do not need is the same as an idle window. A checklist item that measures OK is a tick + NO CHANGE report only.
+
+## 2026-10-23 help desk (Oct 23 06:14 PM)
+- A Muse token cannot re-run Actions jobs (403); a help-desk Claude can: ask with a HELP-VP line naming the PR and run id.
+
+## 2026-10-23 help desk (6:58 PM)
+- A PR that conflicts with main gets no useful check - a red robot line on it may just be the stale run. Look at mergeable state first; if conflicted, the help desk merges main in keeping both sides and the check restarts.
+
+## Oct 23 help desk
+- A tester round numbers itself only from the Mac's NEXT list; two PRs with the same G-number overwrite each other's jobs/G-NN.md. If it happens, the report moves to jobs/G-NN-wN.md.
+
+## 2026-10-23 window 5 (G-239)
+- apexf1 · heading measured against the road itself made gas-only a full autopilot - the player's nose now holds a world heading and only the stick turns it; a robot check line can also be the robot's own older setup (two red lines cleared untouched on the newest setup's re-run), so read the re-run before pushing a fix.
+
+## 2026-10-23 help desk (8:25 PM)
+- A notes PR from an old needs/window-N branch can have NO shared history with main and show "dirty" forever; the fix is a fresh branch from main with the notes added, not a merge. Window helpers: start every notes PR from current main.
+
+## Oct 23 2026 help desk
+- A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.
+
+## 2026-10-23 help desk (10:45 PM)
+- A known-faults.json "match" must use words the red line really prints (the test's ask text), not only the test id; before filing a fault, copy the exact red line and check the entry's pattern against it. Best cure: fix the test's wall-clock cap (scale by window.__slow) so no entry is needed.
+- Known-fault patterns match `<red line> <ids of the failing tests>` - the id comes AFTER the text, so write `(?=.*the-test-id)<text pattern>`, never `.*the-test-id.*<text>` (never-g-243-p1 and two tester entries could never match; fixed Oct 23 2026 10:45 PM).
+
+## 2026-10-23 help desk (late)
+- A tester round you start yourself is named T-<window>-<HHMM> (file jobs/T-<window>-<HHMM>.md), never a G-number: there is no NEXT list for windows to read, and self-picked G-numbers collided (G-238, G-246).
+- A needs/window-N branch must start from current main (git checkout -b from origin/main), never `git init` or a fresh orphan: a branch with no shared history can never merge (PRs #1347, #1408, #1409).
+
+## 2026-10-24 help desk
+- A conflicted PR gets no real check (only the guard runs). When a test file and looks/*.md both gained entries on main, merge main in keeping BOTH sides; re-add your own test block after main's last entry rather than hand-editing the conflict markers. Run `node --check` and import the fixes file before pushing.
+
+## 2026-10-24 help desk
+- A tester asked where the Mac's NEXT list lives: it is not a repo file. A typed number is yours; a self-started round is T-<window>-HHMM, never a G-number.
+
+## 2026-10-24, 03:42 AM help desk
+- Notes PR with no shared history with main can never merge (PR #1441 again): re-file its newest section on a fresh branch from main, never merge main into it, and keep stale CLAIMS rows out.
+
+## 2026-10-24 help desk (merge robot)
+- A green pull request sat unmerged because a push cancels the old run's bare `play` job and nothing replaces that name (the new ones are `play (<game>.html)`), so the merge robot read the cancelled leftover as a FAILED check. The robot now ignores a cancelled check whose matrix children exist on the same commit. Rule for a Muse: a PR whose Check status says PASSED while the robot comment says "FAILED: play" is the robot's leftover - file HELP-VP: robot, do not push.
+
+## 2026-10-24 VP (hand merges)
+- Hand merge = say so (Team talk + PR comment, who and why). Read the whole HELP file and the PR timeline before 'I don't know'. A robot fix is proven only by the robot doing the job on a real PR (merged_by github-actions[bot]).
+
+## 2026-10-24 help desk (comment spam)
+- A PR that "GitHub has not computed" is not always conflicted: check `git merge-tree` against main and the Check status comment first. #1427 was clean; one red inconclusive sampler test plus a merge-robot comment every 2.5 min (676) made it look stuck. Fix = merge main to re-run the check; the robot-side repair is filed as a HELP-VP: robot line.
+
+## 2026-10-24 help desk
+- A code-drawn model (no model file) is not a MODEL FIRST job: do the fix, state it in the MODELS: line. A same-shaped entry the order did not name is listed in the report NOTE, not fixed.
+
+## 2026-10-24 help desk
+- A timing play test must not measure the robot's own speed: after a fix scores on the game clock, a leg that checks wall-clock duration (tester-batting-swing-wall-clock, 1.40 s vs 0.95 s) fails on a busy robot for no game reason. Keep only the leg that tests the rule; when the fix lands, drop the old wall-time leg in the same PR.
+- Testers do not wait for an owner go-ahead to file TEST PRs: push the backlog one PR at a time from a fresh branch off main, named T-<window>-HHMM.
