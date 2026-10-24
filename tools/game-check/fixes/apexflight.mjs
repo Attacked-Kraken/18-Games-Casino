@@ -850,11 +850,69 @@ export default [
       }));
       return r === true ? true : r;
     }
-  }
-,
+  },
   {
-    id: 'never-g-243-p1',
-    ask: 'NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time',
+    id: 'play-takeoff-climbs',
+    ask: 'takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear)',
+    async test(page, h) {
+      // Same shared-page prelude as play-takeoff: get the plane back on the runway first.
+      const st = await h.eval(() => ({
+        menu: !document.getElementById('startOv').hidden,
+        crashed: !document.getElementById('crashOv').hidden,
+        ground: !!(window.__flight && window.__flight.P.ground),
+      })).catch(() => null);
+      if (!st) return 'no window.__flight hook';
+      if (!st.ground) {
+        try {
+          if (st.menu) await h.press('#btnFree');
+          else if (st.crashed) await h.press('#crashOv');
+          else await h.press('#resetBtn');
+        } catch (e) {}
+      }
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        return new Promise((res) => {
+          // Judged in GAME time (rAF delta-sum, the harness clock) - wall time only backstops.
+          let gt = 0, last = performance.now();
+          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 90) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+          const w0 = Date.now();
+          let gtV23 = -1;
+          const iv = setInterval(() => {
+            F.P.thr = 1; F.jetInput.throttle = 1;
+            const v = Math.hypot(F.P.vel.x, F.P.vel.z);
+            if (v >= 22.5) F.P.pitch = 0.22;   // the auto-rotate assist's own pitch, held
+            if (gtV23 < 0 && v >= 23) gtV23 = gt;
+            if (!document.getElementById('crashOv').hidden) { clearInterval(iv); return res('crashed during the climb-out: ' + document.getElementById('crashWhy').textContent); }
+            if (gtV23 >= 0 && F.P.pos.y > F.jet.gearHeight + 12) { clearInterval(iv); return res(gt - gtV23 <= 12 ? true : 'climbed, but took ' + (gt - gtV23).toFixed(1) + ' game-s after rotate speed'); }
+            if (gtV23 >= 0 && gt - gtV23 > 12) { clearInterval(iv); return res('reached rotate speed but could not climb - wallowed at y=' + F.P.pos.y.toFixed(1) + ' with vy=' + F.P.vel.y.toFixed(1)); }
+            if (Date.now() - w0 > 28000) { clearInterval(iv); return res('ran out of wall time (v23 at ' + gtV23.toFixed(1) + ' game-s)'); }
+          }, 100);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-first-frame-safe',
+    ask: 'first frame: a fresh load never throws the parked jet under the world (negative frame time - lab-measured 2026-10-23: frame 2 read y=-14.4, vy=+12.6, and ground contact could never reach it again)',
+    async test(page, h) {
+      // Fresh fly-phase load, then watch the first frames: the jet must sit on the runway.
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; return true; }).catch(() => {});
+      let sane = 0;
+      for (let i = 0; i < 40; i++) {
+        await h.wait(400);
+        const s = await h.eval(() => { const F = window.__flight; if (!F) return null; return { y: F.P.pos.y, vy: F.P.vel.y, gnd: F.P.ground }; }).catch(() => null);
+        if (!s) continue;
+        if (s.y <= -2) return 'jet thrown under the world on load (y=' + s.y.toFixed(1) + ')';
+        if (s.gnd && s.y > 1 && Math.abs(s.vy) < 3) { if (++sane >= 5) return true; } else sane = 0;
+      }
+      return 'jet never settled on the runway after load';
+    },
+  },
+  {
+    id: "never-g-243-p1",
+    ask: "NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time",
     async test(page, h) {
       // shared-page trap: an earlier test's flight hides the menu for good, so
       // #btnChal can never be pressed again - reload to a known menu first
@@ -899,8 +957,8 @@ export default [
     },
   },
   {
-    id: 'never-g-243-p2',
-    ask: 'NEVER (G-243): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure',
+    id: "never-g-243-p2",
+    ask: "NEVER (G-243): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure",
     async test(page, h) {
       // shared-page trap: an earlier test's flight hides the menu for good, so
       // #btnChal can never be pressed again - reload to a known menu first
@@ -949,5 +1007,5 @@ export default [
         });
       });
     },
-  }
+  },
 ];

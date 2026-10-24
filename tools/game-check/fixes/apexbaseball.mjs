@@ -1297,6 +1297,53 @@ export default [
       return 'checklist B01: the base objects never became measurable in the running game';
     },
   },
+  // G-246 (window 7): checklist B03 - REALITY.md says the ball is 0.074 m wide
+  // and the bat 0.86 m long. Units first (per the checklist card): the game's
+  // own field comment says 1 unit = 3 ft = 0.9144 m, and the REALITY hook
+  // exposes no unitsPerMetre, so world sizes are converted at 0.9144 m/unit.
+  // Measured in the running game: ball diameter 0.24 units = 0.219 m (about
+  // 3x too wide, outside the 15% band); bat axis length 0.940 units =
+  // 0.860 m (dead-on). The item fails on the ball.
+  {
+    id: 'tester-chk-b03',
+    mode: 'b03',
+    async test(page, h) {
+      const t0 = Date.now();
+      let m = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        m = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          root.updateMatrixWorld(true);
+          const xf = (e, x, y, z) => [e[0]*x + e[4]*y + e[8]*z + e[12], e[1]*x + e[5]*y + e[9]*z + e[13], e[2]*x + e[6]*y + e[10]*z + e[14]];
+          let ball = null, bat = null;
+          root.traverse(o => {
+            if (!o.isMesh) return;
+            const g = o.geometry, prm = g.parameters || {}, e = o.matrixWorld.elements;
+            if (g.type === 'SphereGeometry' && Math.abs((prm.radius || 0) - 0.12) < 0.001 && prm.widthSegments === 12) {
+              const a = xf(e, prm.radius, 0, 0), b = xf(e, -prm.radius, 0, 0);
+              ball = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+            if (g.type === 'BoxGeometry' && Math.abs((prm.width || 0) - 0.13) < 0.001 && Math.abs((prm.height || 0) - 1.21) < 0.001) {
+              const h = prm.height / 2, a = xf(e, 0, h, 0), b = xf(e, 0, -h, 0);
+              bat = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
+            }
+          });
+          if (ball == null || bat == null) return null;
+          return { ball: ball * 0.9144, bat: bat * 0.9144 };
+        }).catch(() => null);
+        if (m) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      if (!m) return 'checklist B03: ball and bat meshes not reached in the scene';
+      const ballM = Math.round(m.ball * 1000) / 1000, batM = Math.round(m.bat * 1000) / 1000;
+      if (Math.abs(m.ball - 0.074) / 0.074 <= 0.15 && Math.abs(m.bat - 0.86) / 0.86 <= 0.15) return true;
+      return `checklist B03: ball measures ${ballM} m wide and bat ${batM} m long - REALITY.md says ball 0.074 m, bat 0.86 m (within 15%)`;
+    },
+  },
   {
     id: 'tester-portrait-overlay-close-offscreen',
     ask: 'TESTER: on an upright phone the Help overlay CLOSE button sits off the left edge of the screen - Help cannot be closed by tapping without rotating the phone',
