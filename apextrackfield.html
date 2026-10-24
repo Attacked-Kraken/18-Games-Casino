@@ -1216,7 +1216,9 @@ if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; t
 }else if(this.phase==='angle'){
 this.ang+=this.angDir*55*dt;
 if(this.ang>65){this.ang=65;this.angDir=-1;} if(this.ang<15){this.ang=15;this.angDir=1;}
-// G-249 r1 (owner): the angle needle was too fast to set (95 deg/s), and he ran on and fouled crossing the line while you set it - he has taken off: no run-on, no foul for taking your time
+updateRunner(this.r,dt,10.0,20);
+// G-249 r1 (owner): the angle needle was too fast to set (95 deg/s), and crossing the line while setting it was an instant FOUL - the takeoff already counted, so there is no foul: reach the line still setting it and he jumps with the angle showing
+if(this.r.pos>=BOARD1){ this.angSet=this.ang; this.startFlight(); }
 }else if(this.phase==='flight'){
 this.ft+=dt; this.fx+=this.fvx*dt;
 if(this.ft>=this.fT){ this.endAttempt(); }
