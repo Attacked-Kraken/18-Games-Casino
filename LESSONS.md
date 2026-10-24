@@ -187,3 +187,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24 help desk
 - A code-drawn model (no model file) is not a MODEL FIRST job: do the fix, state it in the MODELS: line. A same-shaped entry the order did not name is listed in the report NOTE, not fixed.
+
+## 2026-10-24 help desk
+- A timing play test must not measure the robot's own speed: after a fix scores on the game clock, a leg that checks wall-clock duration (tester-batting-swing-wall-clock, 1.40 s vs 0.95 s) fails on a busy robot for no game reason. Keep only the leg that tests the rule; when the fix lands, drop the old wall-time leg in the same PR.
+- Testers do not wait for an owner go-ahead to file TEST PRs: push the backlog one PR at a time from a fresh branch off main, named T-<window>-HHMM.
