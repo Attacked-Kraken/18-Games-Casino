@@ -31,6 +31,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: blades flat in live play too, not just standing - the weight-bearing blade of a skating player lies flat on the ice, never pitched like a toe pick in the close camera (owner picture) (G-47 REDO)
 - 2026-10-23: skates stay levelled while skating around also - a skating player's planted blade lies flat on the ice, not only when he is stopped (G-217)
 - 2026-10-23: icing is never called against a shorthanded team - while one of the dumpers sits in the box the deep dump is legal and play carries on (G-228)
+- 2026-10-23: the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - 21.4 units, never back at 20 units / 6.13 m (G-228)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
