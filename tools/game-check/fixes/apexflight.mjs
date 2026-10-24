@@ -933,7 +933,7 @@ export default [
         F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          let landedGt = null; const w0 = Date.now();
+          let landedGt = null;
           const iv = setInterval(() => {
             if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed instead of landing gently in the grass'); }
             if (!F.P.ground) {
@@ -950,7 +950,7 @@ export default [
               if (!/off|runway|grass|no score/i.test(msg)) { clearInterval(iv); return res('sitting in the grass ' + (gt - landedGt).toFixed(1) + ' game-s after touchdown, the no-score reason is gone (msg: "' + msg + '")'); }
               if (gt - landedGt > 4.5) { clearInterval(iv); return res(true); }
             }
-            if (Date.now() - w0 > 28000 * (window.__slow || 1)) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'ran out of wall time watching the message'); }
+            if (gt > 100) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'message never settled (game time)'); }   // game time ONLY (VP's alternative, 2026-10-23): a wall cap here was always tighter than the harness's own budget, so slow GPU-bound runs failed on the clock, not the game
           }, 200);
         });
       });
