@@ -1155,4 +1155,38 @@ export default [
       });
     },
   },
+  {
+    id: "never-g-232-p1",
+    ask: "NEVER (G-232): taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnFree can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // just lifted off, sinking gently back, stick banked + slightly nose-down
+        // (the owner's takeoff: liftoff flash shown, then gear-collapse crash)
+        F.P.pos.set(0, F.jet.gearHeight + 0.3, -600); F.P.vel.set(0, -1.0, 25);
+        F.P.yaw = 0; F.P.roll = 0.5; F.P.pitch = -0.2; F.P.thr = 1.0; F.P.ground = false;
+        return new Promise((res) => {
+          let ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            if (!F.P.ground) { F.P.roll = 0.5; F.P.pitch = -0.2; }
+            const crashOv = document.getElementById('crashOv');
+            if (crashOv && crashOv.hidden === false) { clearInterval(iv); return res('takeoff bounce crashed the jet: ' + (document.getElementById('crashWhy').textContent || '')); }
+            if (F.P.ground) { clearInterval(iv); return res(true); }
+            if (ticks > 60) { clearInterval(iv); return res('neither crashed nor touched down after 60 ticks'); }
+          }, 250);
+        });
+      });
+    },
+  },
 ];
