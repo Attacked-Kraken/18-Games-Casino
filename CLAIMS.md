@@ -164,9 +164,11 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
-| G-252 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-256 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-256 | window 10 | checklists/apextrackfield.md, jobs/G-256.md, CLAIMS.md | test/g-256-apextrackfield |
 | G-252 | window 10 | checklists/apextrackfield.md, jobs/G-252.md, CLAIMS.md | test/g-252-apextrackfield |
 | G-247 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-247.md | build/g-247-apexflight |
 | G-248 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-248.md, CLAIMS.md | build/g-248-apexbaseball |
@@ -229,7 +231,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test= test link; rounds 1-2 DONE PR #1181 (7aed11ab): hurdles face the runner (dot -1.00) + NEVER line + never-g-174-p1 |
 | G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot |
 | G-244 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-244-apextrackfield - DONE 2026-10-23 (Muse main (casino)): field on one start line, place counts existing runners - PR #1371 merged cf82cd09 |
-| G-249 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-249-apextrackfield - DONE 2026-10-23 (Muse main (casino)): owner's high-jump play test start hardened, passes on the robot - PR #1389 merged 4be81092 |
+| G-249 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-249-apextrackfield - DONE 2026-10-23 (Muse main (casino)): owner's high-jump play test start hardened, passes on the robot - PR #1389 merged 4be81092; ROUND 1 DONE 2026-10-23 (Muse main (casino)): jump timing controls eased to the TARGET - PR #1405 merged 9a8223a4 |
 | G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot | OWNER FIX 2026-10-23 CLAIMED (window 4): free play results return to the event menu + grid BACK at the top - build/g-193-freeplay-flow | OWNER FIX DONE 2026-10-23 (window 4): free-play flow - PR #1336 merged a6b32e11 |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
@@ -249,6 +251,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
 | G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
 | G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
+| G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
@@ -256,3 +259,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 <!-- merge robot heartbeat test c, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test d, Oct 23 2026, safe to ignore -->
 | G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
+| G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
