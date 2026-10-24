@@ -2860,5 +2860,38 @@ async test(page, h) {
         if (m.avg > 8.6) return 'mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player ' + m.gain + 'm - an average of ' + m.avg + ' m/s, peak ' + m.peak + ' m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past)';
         return true;
       }
-    }
+    },
+  {
+    id: "tester-300mh-hurdle-count",
+    mode: "freeplay",
+    ask: "TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).",
+    async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!m) await h.wait(400);
+        }
+        if (!m) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)';
+        return true;
+      },
+  },
 ];
