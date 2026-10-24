@@ -1,0 +1,34 @@
+name: Hockey race (scratch)
+# owner Oct 23 2026 7:47 PM: race Hockey whole vs Hockey in 3 parts on a scratch branch before any PR
+on:
+  push:
+    branches: [scratch/hockey-race]
+permissions:
+  contents: read
+jobs:
+  whole:
+    runs-on: ubuntu-24.04
+    container: { image: "mcr.microsoft.com/playwright:v1.48.2-noble", options: --ipc=host }
+    timeout-minutes: 55
+    strategy: { fail-fast: false, matrix: { n: [1, 2] } }
+    steps:
+      - uses: actions/checkout@v4
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --no-package-lock playwright@1.48.2
+      - name: Play hockey whole
+        run: |
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 & sleep 2
+          ONLY=apexhockey.html SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ out || true
+          node -e "const r=require('./out/results.json').results[0];const f=r.fixes||[];console.log('::notice::WHOLE tests '+f.length+' ok '+f.filter(x=>x.ok).length+' notrun '+f.filter(x=>/not run/.test(x.note||'')).length+' fails '+(r.fail||[]).length)"
+  parts:
+    runs-on: ubuntu-24.04
+    container: { image: "mcr.microsoft.com/playwright:v1.48.2-noble", options: --ipc=host }
+    timeout-minutes: 55
+    strategy: { fail-fast: false, matrix: { n: [1, 2], k: [1, 2, 3] } }
+    steps:
+      - uses: actions/checkout@v4
+      - run: PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install --no-save --no-package-lock playwright@1.48.2
+      - name: Play hockey part
+        run: |
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 & sleep 2
+          ONLY=apexhockey.html TEST_PART=${{ matrix.k }}/3 SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ out || true
+          node -e "const r=require('./out/results.json').results[0];const f=r.fixes||[];console.log('::notice::PART ${{ matrix.k }}/3 tests '+f.length+' ok '+f.filter(x=>x.ok).length+' notrun '+f.filter(x=>/not run/.test(x.note||'')).length+' fails '+(r.fail||[]).length)"
