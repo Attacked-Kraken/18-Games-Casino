@@ -413,6 +413,10 @@ for (const g of games) {
       if (!Array.isArray(list)) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs must `export default [ ... ]` - an array of entries; ' + RIGHT);
       list = good;
     }
+    // owner Oct 23 2026 7:47 PM: TEST_PART=k/n plays only every n-th play test starting at k (Hockey's 56 tests on 3 robots side by side);
+    // merge-results puts the parts back together. Part 1 also does everything else (pictures, reality, Safari).
+    const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
+    if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
     // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
     // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
@@ -469,7 +473,12 @@ for (const g of games) {
       // game frozen for every later test - they waited for events that never came. Always start the next test on a fresh game.
       else if (/thinkT|__standSpots|freeze|\.pos\.set\(/.test(String(fx.test))) await freshGame();
     }
-    if (notRun.length) r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
+    if (notRun.length) {
+      r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
+      // owner Oct 23 7:47 PM "if any can count as passed, that is a false green": an owner / never / keep test that was NOT RUN is NOT proven -
+      // it stays red (robot side, named), so no job can be called done on a test the robot never ran.
+      for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${fx.ask || id}"`); }
+    }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
       fs.writeFileSync(path.join(out, 'img', slug + '-4-fixes.jpg'), fixJpg); r.img.fixes = 'img/' + slug + '-4-fixes.jpg';
