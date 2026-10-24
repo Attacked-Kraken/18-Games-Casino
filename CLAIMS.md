@@ -263,3 +263,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
 | G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
 | G-255 | window 10 | jobs/G-255.md, CLAIMS.md | test/g-255-apextrackfield |
+| G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
