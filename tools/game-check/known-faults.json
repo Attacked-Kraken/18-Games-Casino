@@ -31,14 +31,14 @@
     },
     {
       "game": "apexflight.html",
-      "match": "Owner's fix NOT done yet: .*tester-challenge-can-slow-to-band.*(took over|test error)",
+      "match": "(?=.*tester-challenge-can-slow-to-band)Owner's fix NOT done yet: .*(took over|test error)",
       "why": "tester-challenge-can-slow-to-band: wall-clock budget dies on slow runner days; the robot now stretches budgets by measured runner speed (runner-speed.json). Robot side owns it.",
       "since": "2026-10-22",
       "until": "2026-10-29"
     },
     {
       "game": "apexflight.html",
-      "match": "Owner's fix NOT done yet: .*tester-recheck-g117-controls.*(took over|test error)",
+      "match": "(?=.*tester-recheck-g117-controls)Owner's fix NOT done yet: .*(took over|test error)",
       "why": "tester-recheck-g117-controls: wall-clock budget dies on slow runner days; the robot now stretches budgets by measured runner speed (runner-speed.json). Robot side owns it.",
       "since": "2026-10-22",
       "until": "2026-10-29"
@@ -52,7 +52,7 @@
     },
     {
       "game": "apexflight.html",
-      "match": "Owner's fix NOT done yet: .*never-g-243-p1.*ran out of wall time",
+      "match": "(?=.*never-g-243-p1)Owner's fix NOT done yet: .*ran out of wall time",
       "why": "never-g-243-p1: the test judges the message in game time but stops after a fixed 28 s of WALL time (Date.now), which a slow runner day cannot meet; the test does not scale by window.__slow like the robot's other budgets. Robot side owns it; the test should use window.__slow (HELP line window 3, Oct 23 2026 8:44 PM).",
       "since": "2026-10-23",
       "until": "2026-10-29"

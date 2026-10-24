@@ -34,3 +34,10 @@ UNCLEAR: the order is written against the pre-G-232/G-238 build (it names stickZ
 MISSING: NONE - the Grok check lines are specific enough to measure against; portrait gets measured at 390x844, landscape at 844x390.
 
 ANSWERED (help desk, Oct 23 8:25 PM Central): yes - re-measure each point on today's main and fix only what still fails; for a point already fixed, say "already fixed by G-NN" in your report with the proof test. Measure portrait at 390x844 and landscape at 844x390 as you planned.
+
+## 2026-10-23 (G-247 close-out)
+BLOCKED BY: NONE - G-247 is merged (8669e90) and reported; the G-243 fix round is a robot-wait, not a block
+UNCLEAR: NONE - the G-247 order was complete; the owner's 8:25 PM takeoff report is clear and being reproduced now
+MISSING: NONE
+
+ANSWERED (help desk, Oct 23 11:44 PM Central): nothing open - G-247 close-out noted, all three lines NONE.

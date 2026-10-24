@@ -1789,7 +1789,8 @@ function engKitStart() { /* start the kit's five loops once, gains at 0 - engine
   if (AU.kitG || !AU.kitB) return; const c = AU.ctx; if (!c) return;
   for (const k of ['idle', 'low', 'mid', 'high', 'sq']) if (!AU.kitB[k]) return;
   AU.kitG = {}; AU.kitSrc = {};
-  for (const k of ['idle', 'low', 'mid', 'high', 'sq']) { const s = c.createBufferSource(); s.buffer = AU.kitB[k]; s.loop = true; const g = c.createGain(); g.gain.value = 0; s.connect(g); g.connect(AU.master); s.start(); AU.kitSrc[k] = s; AU.kitG[k] = g; }
+  AU.kitFil = c.createBiquadFilter(); AU.kitFil.type = 'lowpass'; AU.kitFil.frequency.value = 1500; AU.kitFil.Q.value = 0.5; AU.kitFil.connect(AU.master); /* G-240 fix 1: the engine layers run through this lowpass - the highs are what made it whine */
+  for (const k of ['idle', 'low', 'mid', 'high', 'sq']) { const s = c.createBufferSource(); s.buffer = AU.kitB[k]; s.loop = true; const g = c.createGain(); g.gain.value = 0; s.connect(g); g.connect(k === 'sq' ? AU.master : AU.kitFil); s.start(); AU.kitSrc[k] = s; AU.kitG[k] = g; }
 }
 function engineSnd(rpm, load, on, nos, scr, spd) {
   const c = AU.ctx; if (!c) return; const t = c.currentTime;
@@ -1797,9 +1798,9 @@ function engineSnd(rpm, load, on, nos, scr, spd) {
   engKitStart();
   if (kitLive()) { /* G-240: the owner's supercar recordings carry the engine - idle + accel layers crossfaded by throttle, playbackRate by rpm, kit shift/backfire one-shots, kit tire squeal */
     const G = AU.kitG, band = (x, a, b, cc, d) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < cc ? 1 : x < d ? 1 - (x - cc) / (d - cc) : 0, eg = on ? 1 : 0;
-    const rate = 0.9 + 0.35 * clamp(rpm, 0, 1);
+    const rate = 0.6 + 0.2 * clamp(rpm, 0, 1); /* G-240 fix 1: deep growl - measured: at the old 1.25 top rate the accel layers' spectral centroids sat at 1650-2323 Hz (a whine); at 0.8 through the 1500 Hz lowpass they sit at 683-812 Hz, target <= 850 Hz */
     for (const k of ['low', 'mid', 'high']) AU.kitSrc[k].playbackRate.setTargetAtTime(rate, t, 0.05);
-    AU.kitSrc.idle.playbackRate.setTargetAtTime(0.95 + 0.1 * clamp(rpm, 0, 1), t, 0.05);
+    AU.kitSrc.idle.playbackRate.setTargetAtTime(0.8 + 0.04 * clamp(rpm, 0, 1), t, 0.05);
     G.idle.gain.setTargetAtTime(eg * 0.5 * (1 - load * 0.8), t, 0.07);
     G.low.gain.setTargetAtTime(eg * 0.62 * load * (1 - band(rpm, 0.38, 0.62, 1e9, 1e9)), t, 0.06);
     G.mid.gain.setTargetAtTime(eg * 0.62 * load * band(rpm, 0.3, 0.55, 0.75, 0.95), t, 0.06);

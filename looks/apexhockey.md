@@ -7,6 +7,21 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-257)
+- Rink constants + faceoff DOTS table: lines 192-193 (PERIOD_LEN 120, N_PERIODS 3; DOTS e1-e4 end-zone spots at z +/-21.4)
+- Test hook: window.__hk at lines 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch)
+- Score/period globals: line 767; intermission stat counters (statShots/statSaves/statFO): line 768
+- HUD (updateHUD): line 796; banner(): line 810; intermission stats card (showStatCard/hideStatCard + #statCard): lines 816-822, CSS at line 39, div at line 123
+- Faceoffs: faceoff() line 1095 (drop timestamp foDropAt for faceoffs-won), setupFaceoffPositions above it
+- AI: aiSkater() line 1148 (the two closest chasers - the second takes the far side of the puck), aiGoalie below it
+- Shots: shootFrom() line 993 (puck.shot record + statShots count at line 1003)
+- Puck: stepPuck() line 1417 (clean grab counts the faceoff win inside 4 s of a drop); rules() below it - offside, then the hybrid ICING block at line 1504 (shorthanded gate first)
+- Goalie saves: goalieSaves() line 1549 (statSaves count in the save branch)
+- Camera: stepCamera() line 1613; blades: levelBlades() line 1665 (pitch + roll), snapSkatesToIce() line 1697
+- Match loop: tick() line 1729 - state machine (faceoff gate on playerReady, goal/whistle transitions, intermission at line 1761: END OF PERIOD -> showStatCard, 6 s break, card clears as the next period faceoffs)
+- gameOver(): line 1781; career hub renderHub(): line 1990
+- Owner test scenes (?test=...): the dispatcher at the end of the script - boards, powerplay, intermission (line 2056), menu, match, face
+
 ## MUST
 - Real skater models (a .glb from MODELS.md), not players built from boxes and tubes
 - Own team names, colors and numbers (no NHL teams or real players)
@@ -31,6 +46,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: blades flat in live play too, not just standing - the weight-bearing blade of a skating player lies flat on the ice, never pitched like a toe pick in the close camera (owner picture) (G-47 REDO)
 - 2026-10-23: skates stay levelled while skating around also - a skating player's planted blade lies flat on the ice, not only when he is stopped (G-217)
 - 2026-10-23: icing is never called against a shorthanded team - while one of the dumpers sits in the box the deep dump is legal and play carries on (G-228)
+- 2026-10-23: the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - 21.4 units, never back at 20 units / 6.13 m (G-228)
+- 2026-10-23: the intermission between periods shows a stats card (shots, saves, faceoffs won) - never just the END OF PERIOD banner (G-257)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
 ## Reference pictures
