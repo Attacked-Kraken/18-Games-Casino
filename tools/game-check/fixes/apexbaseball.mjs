@@ -754,17 +754,17 @@ export default [
         const T = window.__test; if (!T) return null;
         const tag = (document.getElementById('inningTag') || {}).textContent || '';
         return { phase: T.phase, tag, msg: (document.getElementById('msg') || {}).textContent || '',
-                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null };
+                 ball: T.ball ? { z: T.ball.z, vis: T.ball.visible } : null, flightT: T.flightT };
       });
       const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
       const t0 = Date.now();
-      let flightStart = null, sawFlight = false;
+      let flightStart = null, flightT = 0.95, sawFlight = false;
       while (Date.now() - t0 < 29000) {
         const s = await snap(); if (!s) return 'window.__test missing';
         if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
         const batting = s.tag.trim().toUpperCase().startsWith('BOT');
         if (s.phase === 'flight') {
-          if (flightStart === null) { flightStart = Date.now(); sawFlight = true; }
+          if (flightStart === null) { flightStart = Date.now(); flightT = s.flightT || 0.95; sawFlight = true; }
           if (batting && s.ball && s.ball.z >= -0.5) {
             await click('swingBtn');
             await h.wait(700);
@@ -775,7 +775,7 @@ export default [
         } else if (flightStart !== null) {
           const wall = (Date.now() - flightStart) / 1000;
           flightStart = null;
-          if (wall > 1.12) return `one pitch flight took ${wall.toFixed(2)} s of wall time while a fastball's game time is 0.95 s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - 0.95).toFixed(2)} s late and always whiffs`;
+          if (wall > flightT * 1.18) return `one pitch flight took ${wall.toFixed(2)} s of wall time while this pitch's game time is ${flightT.toFixed(2)} s and the whole contact window is 0.17 s - a batter swinging as the ball arrives is scored ${(wall - flightT).toFixed(2)} s late and always whiffs`;
         }
         if (!batting) {
           if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
@@ -1285,6 +1285,35 @@ export default [
       }
     }
   },  {
+    id: 'play-flight-t-exposed',
+    ask: 'BUILD G-262: during a pitch flight window.__test.flightT reports the thrown pitch\'s own game time (fast 0.95 / curve 1.18 / change 1.38) so the batting-timing test judges each flight against its own T instead of a hardcoded fastball',
+    async test(page, h) {
+      const snap = () => h.eval(() => {
+        const T = window.__test; if (!T) return null;
+        const tag = (document.getElementById('inningTag') || {}).textContent || '';
+        return { phase: T.phase, tag, flightT: T.flightT };
+      });
+      const click = id => h.eval(x => { const b = document.getElementById(x); if (!b) return false; b.click(); return true; }, id);
+      const t0 = Date.now();
+      while (Date.now() - t0 < 29000) {
+        const s = await snap(); if (!s) return 'window.__test missing';
+        if (s.phase === 'start') { await click('startBtn'); await h.wait(300); continue; }
+        if (s.phase === 'flight') {
+          if (s.flightT == null) return 'window.__test.flightT is missing during a flight - the timing test cannot know this pitch\'s game time';
+          return [0.95, 1.18, 1.38].includes(s.flightT) ? true : 'flightT during a flight is ' + s.flightT + ' - PITCHES says a pitch flies 0.95, 1.18 or 1.38 s';
+        }
+        const batting = s.tag.trim().toUpperCase().startsWith('BOT');
+        if (!batting) {
+          if (s.phase === 'select') { await h.eval(() => { const b = document.querySelector('.ptype[data-p="fast"]'); if (b) b.click(); }); await click('throwBtn'); }
+          else if (s.phase === 'aim') await click('throwBtn');
+          else if (s.phase === 'windup') await click('lockBtn');
+        }
+        await h.wait(100);
+      }
+      return 'no pitch flight seen in 29 s, so flightT could not be checked';
+    },
+  },
+  {
     id: 'tester-chk-b01',
     ask: 'CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%',
     mode: 'b01',
@@ -1330,9 +1359,11 @@ export default [
   // and the bat 0.86 m long. Units first (per the checklist card): the game's
   // own field comment says 1 unit = 3 ft = 0.9144 m, and the REALITY hook
   // exposes no unitsPerMetre, so world sizes are converted at 0.9144 m/unit.
-  // Measured in the running game: ball diameter 0.24 units = 0.219 m (about
-  // 3x too wide, outside the 15% band); bat axis length 0.940 units =
-  // 0.860 m (dead-on). The item fails on the ball.
+  // G-262: the ball matcher used to key on radius 0.12 - the pre-G-248
+  // oversized ball (0.219 m) - so after G-248 shrank the ball to its real
+  // 0.074 m (radius 0.0405 units) the test found no ball at all and reported
+  // "meshes not reached". The matcher now keys on the real size, 0.0405;
+  // the bat axis still measures 0.940 units = 0.860 m (dead-on).
   {
     id: 'tester-chk-b03',
     mode: 'b03',
@@ -1352,7 +1383,7 @@ export default [
           root.traverse(o => {
             if (!o.isMesh) return;
             const g = o.geometry, prm = g.parameters || {}, e = o.matrixWorld.elements;
-            if (g.type === 'SphereGeometry' && Math.abs((prm.radius || 0) - 0.12) < 0.001 && prm.widthSegments === 12) {
+            if (g.type === 'SphereGeometry' && Math.abs((prm.radius || 0) - 0.0405) < 0.001 && prm.widthSegments === 12) {
               const a = xf(e, prm.radius, 0, 0), b = xf(e, -prm.radius, 0, 0);
               ball = Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
             }
