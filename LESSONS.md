@@ -158,3 +158,4 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 23 2026 help desk
 - A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.
+- Known-fault patterns match `<red line> <ids of the failing tests>` - the id comes AFTER the text, so write `(?=.*the-test-id)<text pattern>`, never `.*the-test-id.*<text>` (never-g-243-p1 and two tester entries could never match; fixed Oct 23 2026 10:45 PM).
