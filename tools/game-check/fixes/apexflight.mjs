@@ -954,7 +954,9 @@ export default [
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
         // the tester's own setup: short final right of the centreline, a gentle touchdown in the grass
-        F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
+        // G-275 r1: started at 3 m, not 8 m - same 4.5 game-s sit assertion, less dead
+        // descent time so a slow runner still finishes inside the harness budget
+        F.P.pos.set(30, 3, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
           let landedGt = null, sawReason = false;
@@ -1010,11 +1012,12 @@ export default [
         let gt = 0, last = performance.now();
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
-        // the tester's own gentle approach profile (started lower - same profile, less dead time)
-        F.P.pos.set(1, 5, -300); F.P.vel.set(0, -0.6, 30);
+        // the tester's own gentle approach profile (started lower and closer -
+        // same profile, less dead time, so a slow runner still finishes in budget)
+        F.P.pos.set(1, 3, -120); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
-          let phase2 = false, gtScore = 0; const w0 = Date.now();
+          let phase2 = false, gtScore = 0;
           const iv = setInterval(() => {
             if (!phase2) {
               const vs = F.P.vel.y;
@@ -1027,15 +1030,14 @@ export default [
                 F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
                 F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
               } else if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed before the scored landing'); }
-              else if (Date.now() - w0 > 28000) { clearInterval(iv); return res('never scored (game time reached only ' + gt.toFixed(1) + 's of the 20 game-s budget)'); }
+              else if (gt > 40) { clearInterval(iv); return res('never scored (game time reached ' + gt.toFixed(1) + 's)'); }   // game time ONLY - the 28 s wall cap fired after 1.4 game-s on a slow runner
             } else {
               if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }
-              if (Date.now() - w0 > 29000) { clearInterval(iv); return res('ocean phase ran out of wall time'); }
+              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }   // game time ONLY - the 29 s wall cap is what the robot quoted on main 519430d
             }
           }, 200);
         });
