@@ -7,33 +7,21 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 **Lighting preset:** `look-presets.js` → `rink` (use the same one in the game and in tools/model-viewer.html).
 
-## WHERE THINGS ARE (apexhockey.html, line numbers as of G-257)
-- Rink constants + faceoff DOTS table: lines 192-193 (PERIOD_LEN 120, N_PERIODS 3; DOTS e1-e4 end-zone spots at z +/-21.4)
-- Test hook: window.__hk at lines 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch)
-- Score/period globals: line 767; intermission stat counters (statShots/statSaves/statFO): line 768
-- HUD (updateHUD): line 796; banner(): line 810; intermission stats card (showStatCard/hideStatCard + #statCard): lines 816-822, CSS at line 39, div at line 123
-- Faceoffs: faceoff() line 1095 (drop timestamp foDropAt for faceoffs-won), setupFaceoffPositions above it
-- AI: aiSkater() line 1148 (the two closest chasers - the second takes the far side of the puck), aiGoalie below it
-- Shots: shootFrom() line 993 (puck.shot record + statShots count at line 1003)
-- Puck: stepPuck() line 1417 (clean grab counts the faceoff win inside 4 s of a drop); rules() below it - offside, then the hybrid ICING block at line 1504 (shorthanded gate first)
-- Goalie saves: goalieSaves() line 1549 (statSaves count in the save branch)
-- Camera: stepCamera() line 1613; blades: levelBlades() line 1665 (pitch + roll), snapSkatesToIce() line 1697
-- Match loop: tick() line 1729 - state machine (faceoff gate on playerReady, goal/whistle transitions, intermission at line 1761: END OF PERIOD -> showStatCard, 6 s break, card clears as the next period faceoffs)
-- gameOver(): line 1781; career hub renderHub(): line 1990
-- Owner test scenes (?test=...): the dispatcher at the end of the script - boards, powerplay, intermission (line 2056), menu, match, face
-
-## MUST
-- Real skater models (a .glb from MODELS.md), not players built from boxes and tubes
-- Own team names, colors and numbers (no NHL teams or real players)
-- Back numbers read the right way round (not mirrored)
-- Face visible through the cage
-- The robot's face close-up is the proof: visor or open cage fitted, the face readable through it, and the full name and number readable from behind
-- Owner's model sheet (2026-10-16): about 7.5 head heights; forward lean 15-20 deg; knee flex 25-30 deg; hips back over
-  the heels; wide stance; helmet with visor; shoulder pads (bulk); oversized gloves; padded breezers; shin guards
-  under the socks; skates with steel blades. Build players with the shared kit (`characters/base-human-v2/gear.js`,
-  `hockeyKit`). The numbers are tests in `tools/game-check/fixes/apexhockey.mjs`.
-- Stick held in both hands, blade flat on the ice; the puck rides the blade
-- The arena follows `venues/rink.md`, and the game follows `rules/hockey.md`
+## WHERE THINGS ARE (apexhockey.html, line numbers as of G-261)
+- Rink constants: GOAL_LINE/BLUE 191, PERIOD_LEN/DOTS 192-193; boards bounce in stepPuck, carried-puck clamp in stepPuck's owned branch (G-216).
+- Test hook: window.__hk at 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch); window.__reality 1725.
+- Score + G-257 stat counters (statShots/statSaves/statFO): globals 767-768, reset at 782 in __hk.newMatch() (which also clears the OT bench marks).
+- HUD 796; banner() 811; intermission stats card: CSS #statCard 39, div 123, showStatCard() 816, hideStatCard() 821.
+- OT 3-on-3 (G-261): otLines()/otBenchRank 1090-1106, called at the top of faceoff() 1107; benched skaters (otOut, boxT 999, benchSpot) are held by aiSkater's bench branch, skipped by the puck grab in stepPuck and by nearestSkater; the golden goal already lived in onGoal() 1121 (period>3 ends the game).
+- Skaters/AI: aiSkater 1161; faceoff positions in setupFaceoffPositions (above faceoff).
+- Shooting: shootFrom() 993, shot record at 1003 (statShots counted there).
+- Puck: stepPuck() 1431; the icing gate inside stepPuck (crossing detectors, hybrid race, BOARDSTOP, the shorthanded gate from G-228).
+- Goalies: goalieSaves() 1563 (statSaves counted in its save branch); the crease push lives nearby.
+- Camera: stepCamera() 1627 - broadcast/chase/close/face views.
+- Blades: levelBlades() 1679 (per-foot measure + counter-rotate, two passes), snapSkatesToIce() 1711.
+- Main loop: tick() ends 1744; the intermission branch (period end, showStatCard, 6 s break) 1769-1778.
+- End screen: gameOver() 1795; career hub renderHub() 2004.
+- Owner test scenes: ?test= parsing near the file end (intermission 2070).
 
 ## NEVER
 - No real brands, leagues, teams, players or characters
@@ -48,6 +36,8 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: icing is never called against a shorthanded team - while one of the dumpers sits in the box the deep dump is legal and play carries on (G-228)
 - 2026-10-23: the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - 21.4 units, never back at 20 units / 6.13 m (G-228)
 - 2026-10-23: the intermission between periods shows a stats card (shots, saves, faceoffs won) - never just the END OF PERIOD banner (G-257)
+- 2026-10-24: Overtime is 3-on-3 - two skaters a side stay on the bench for the whole OT (otLines() in faceoff(); never-g-261-p2) (G-261)
+- 2026-10-24: The puck never leaves the rink under boards pressure - the boards tests keep play alive between phases or they starve their own sampler (never-g-261-p1) (G-261)
 - 2026-10-23: blades stay level in every direction - pitch AND roll measured and levelled, standing and skating, or the plate tips sideways up toward the leg (owner video)
 
 ## Reference pictures
