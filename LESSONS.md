@@ -145,3 +145,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (6:58 PM)
 - A PR that conflicts with main gets no useful check - a red robot line on it may just be the stale run. Look at mergeable state first; if conflicted, the help desk merges main in keeping both sides and the check restarts.
+
+## Oct 23 help desk
+- A tester round numbers itself only from the Mac's NEXT list; two PRs with the same G-number overwrite each other's jobs/G-NN.md. If it happens, the report moves to jobs/G-NN-wN.md.
