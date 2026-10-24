@@ -3605,5 +3605,89 @@ export default [
     return true;
   }
 }
+,
+{
+  id: 'never-g-282-p3',
+  ask: 'NEVER (G-282 round 1, G-228): the end screen names the team that actually won - a career fixture the BEARS win 3-0 titles the BEARS, and a home win titles the WOLVES; the away title is never hardcoded to the Sharks',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = { season: 1, week: 2, phase: 'reg', finalOpp: null,
+      star: { name: 'JAX KOVAC', g: 0, a: 0, cg: 0, ca: 0 }, champ: 0, friends: { w: 0, l: 0 }, lastLine: '',
+      table: { WOLVES: T(1, 0, 0, 2, 4, 1), SHARKS: T(0, 1, 0, 0, 1, 4), BEARS: T(0, 0, 0, 0, 0, 0),
+        EAGLES: T(0, 0, 0, 0, 0, 0), VIPERS: T(0, 0, 0, 0, 0, 0), STAMPEDE: T(0, 0, 0, 0, 0, 0) } };
+    const toPlay = async (career) => {
+      if (career) {
+        await h.eval((s) => { try {
+          localStorage.setItem('apex_hockey_career_v1', JSON.stringify(s));
+          localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'BEARS', oppDef: { name: 'BEARS', jersey: 0x8a4b1f, helmet: 0x5a2f10, trim: 0xffd9a0, str: 82 }, label: 'WEEK 2' }));
+        } catch (e) {} }, seed).catch(() => {});
+      } else {
+        await h.eval(() => { try { localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+      }
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+      await h.eval((c) => { const b = document.getElementById(c ? 'careerBtn' : 'playBtn'); if (b) b.click(); }, career).catch(() => {});
+      const t0 = Date.now();
+      while (Date.now() - t0 < 45000) {
+        const st = await h.eval(() => window.__hk.game.state).catch(() => '');
+        if (st === 'play') return true;
+        await page.keyboard.press('k').catch(() => {});
+        await page.waitForTimeout(600);
+      }
+      return false;
+    };
+    const finishWith = async (sh, sa) => {
+      await h.eval((ab) => { const g = window.__hk.game; g.period = 3; g.scoreH = ab[0]; g.scoreA = ab[1]; g.clockT = 0.05; }, [sh, sa]).catch(() => {}); // one arg only - h.eval forwards a single argument (two args silently dropped the away score and the game read as a draw)
+      const t1 = Date.now();
+      while (Date.now() - t1 < 20000) {
+        if ((await h.eval(() => window.__hk.game.state).catch(() => '')) === 'over') return true;
+        await page.waitForTimeout(400);
+      }
+      return false;
+    };
+    const readEnd = () => h.eval(() => ({
+      title: (document.getElementById('finalTitle') || {}).textContent || '',
+      away: (document.getElementById('nmA') || {}).textContent || ''
+    })).catch(() => null);
+    // phase 1: the BEARS win the career fixture 3-0 - the title must name the BEARS
+    if (!(await toPlay(true))) return 'the career fixture never reached play';
+    if (!(await finishWith(0, 3))) return 'the career fixture never reached its end screen';
+    let r = await readEnd();
+    if (!r) return 'could not read the end screen';
+    if (!r.title.toUpperCase().includes(r.away.toUpperCase()) || !/BEARS/.test(r.title.toUpperCase()))
+      return 'the end screen names the wrong winner: BEARS won 3-0 but the title reads "' + r.title + '"';
+    // phase 2: a home win in a fresh match - the title must name the WOLVES
+    if (!(await toPlay(false))) return 'the fresh match never reached play';
+    if (!(await finishWith(2, 0))) return 'the fresh match never reached its end screen';
+    r = await readEnd();
+    if (!r) return 'could not read the end screen after the home win';
+    if (!/WOLVES/.test(r.title.toUpperCase()))
+      return 'the end screen names the wrong winner: WOLVES won 2-0 but the title reads "' + r.title + '"';
+    return true;
+  }
+},
+{
+  id: 'never-g-282-p4',
+  ask: 'NEVER (G-282 round 1, G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one height all the way round',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    const r = await h.eval(() => {
+      const root = (() => { let r0 = window.__reality && window.__reality.player; if (!r0) return null; while (r0.parent) r0 = r0.parent; return r0; })();
+      if (!root) return null;
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const glass = meshes.find(o => o.material && o.material.color && o.material.color.getHexString() === 'bfe0ff');
+      if (!glass) return null;
+      const p = glass.geometry.attributes.position, m = glass.matrixWorld.elements;
+      let topSide = 0, topEnd = 0;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (Math.abs(wx) > 90) { if (wy > topEnd) topEnd = wy; } else if (Math.abs(wz) > 40) { if (wy > topSide) topSide = wy; } }
+      if (!topSide || !topEnd) return null;
+      return { hSide: (topSide - 3.7) / 3.26, hEnd: (topEnd - 3.7) / 3.26 };
+    }).catch(() => null);
+    if (!r) return 'glass mesh or separable side/end verts not found';
+    if (r.hEnd < 2.05) return 'the glass at the ENDS is ' + r.hEnd.toFixed(2) + ' m high - venues/rink.md: about 2.4 m at the ends';
+    if (r.hSide < 1.55) return 'the glass along the SIDES is ' + r.hSide.toFixed(2) + ' m high - venues/rink.md: about 1.8 m along the sides'; // no upper bound: corner-segment verts classify as side verts, exactly as in the tester scan
+    return true;
+  }
+}
 
 ];
