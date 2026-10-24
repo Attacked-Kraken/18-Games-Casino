@@ -802,7 +802,7 @@ const maxSpd = dist<=100?11.0 : dist<=200?10.6 : 10.0;
 const drain  = dist<=200?24 : 26;
 const E={
 ev, done:false, dq:false, S, dist,
-phase:'marks', phaseT:0, setDur:rnd(0.9,1.8),
+phase:'marks', phaseT:0, setDur:rnd(0.9,1.8), started:false,
 r:newRunner(), time:0, penalty:0, falseStarts:0, warnT:0, place:4,
 ai: rivals.map(rv=>makeLiveRival(rv,ev)),
 actionLabel(){ return '—'; },
@@ -832,8 +832,11 @@ if(this.warnT>0) this.warnT-=dt;
 if(this.phase==='marks'){ if(this.phaseT>1.1){ this.phase='set'; this.phaseT=0; this.setDur=rnd(0.9,1.8);} }
 else if(this.phase==='set'){ if(this.phaseT>this.setDur){ this.phase='run'; AudioSys.pistol(); } }
 else if(this.phase==='run'){
-this.time+=dt;
 updateRunner(this.r, dt, maxSpd, drain);
+if(!this.started){ // JOB G-244 (art director): the whole field waits on ONE start line until the player starts - the rivals do not race off without him, and until then the clock is still and the place counts only the runners on the track (all level at the line)
+if(this.r.pos>0||this.r.speed>0) this.started=true; else { this.place=1; return; }
+}
+this.time+=dt;
 for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,dt,dist,false); }
 this.place = 1 + this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){

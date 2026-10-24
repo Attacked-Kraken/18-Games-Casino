@@ -2564,5 +2564,46 @@ async test(page, h) {
   if (home !== 'menu') return 'the event menu BACK button went to "' + home + '", not the main game menu';
   return true;
 }
+},{
+id: 'play-60m-field-starts-together',
+title: 'G-244 (art director): the 60m field waits on ONE start line until the player starts - no rivals racing off alone, no 7th place at 0m with the clock running',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '60m' && e.ai); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 60m did not start from the test link';
+  const held = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    for (let step = 0; step < 60 * 5; step++) e.update(1 / 60);
+    const rigs = __tf.rigs();
+    const px = rigs[0].group.position.x, pz = rigs[0].group.position.z;
+    const line = rigs.slice(0, 7).map(r => ({ vis: r.group.visible, dx: +(r.group.position.x - px).toFixed(1), dz: +(r.group.position.z - pz).toFixed(1) }));
+    return { phase: e.phase, time: +e.time.toFixed(2), place: e.place, rPos: +e.r.pos.toFixed(1), aiPos: e.ai.map(a => +a.pos.toFixed(1)), line };
+  });
+  if (!held) return 'the held-start measurement failed';
+  if (held.aiPos.some(p => p > 0.5)) return 'the field raced off without the player (rivals at ' + JSON.stringify(held.aiPos) + 'm after 5s with the player still on the line) - the robot play picture: one runner on the track, the field gone';
+  if (held.place !== 1) return 'with the whole field level on the start line the HUD place reads ' + held.place + ' - the place must count only the runners on the track (all level, nobody ahead)';
+  if (held.time > 0.05) return 'the race clock ran to ' + held.time + 's while the player was still on the start line at 0m';
+  if (held.line.some(r => !r.vis || Math.abs(r.dx) > 2.5)) return 'not every runner stands on the one start line: ' + JSON.stringify(held.line);
+  const fin = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return { done: e.done, place: e.place, aiPos: e.ai.map(a => +a.pos.toFixed(0)) };
+  });
+  if (!fin || !fin.done) return 'once the player started striding the 60m never finished';
+  if (fin.aiPos.some(p => p < 30)) return 'once the player started, the field did not race with him: ' + JSON.stringify(fin.aiPos);
+  if (!(fin.place >= 1 && fin.place <= 7)) return 'the finishing place ' + fin.place + ' is outside the field that exists (7 runners)';
+  return true;
+}
 }
 ];
