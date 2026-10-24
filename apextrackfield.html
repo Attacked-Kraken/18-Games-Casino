@@ -2556,6 +2556,31 @@ W3D.camTo(cc[0], 2.8, cc[1], x+tx*10, 1.2, z+tz*10, (W3D._simDt!=null?W3D._simDt
 W3D.camApply();
 W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
 }
+function buildRelayZones(){
+// G-249 r2 (owner, CHECKLIST T04): the changeover zone is 30 m of TRACK per lane, painted at the end of each leg (race 70-100, 170-200, 270-300). The stations are walked along each lane's own line in world distance, so every strip measures 30 m no matter the stagger or the bend (the old 20 m of race coordinate measured 17.3-21.2 m, mean 20.08 m).
+if(ENG._zone) return ENG._zone;
+const zoneGrp=new THREE.Group();
+for(let k=1;k<=3;k++){
+// JOB G-83 (owner): with the staggered start each lane's exchange zone sits at
+// that lane's own staggered marks, so the ribbons are painted lane by lane.
+const pts=[], seg=4;
+for(let l=0;l<8;l++){
+const s0=visS(l,k*100-30,400), offA=laneOff(l)+0.61, offB=laneOff(l)-0.61;
+const marks=[s0]; let acc=0, sPrev=s0, pPrev=lanePoint(sPrev,offA);
+for(let step=0; step<400 && marks.length<=seg; step++){
+const sNext=sPrev+0.5, pNext=lanePoint(sNext,offA);
+acc+=Math.hypot(pNext.x-pPrev.x, pNext.z-pPrev.z); sPrev=sNext; pPrev=pNext;
+if(acc>=7.5*marks.length) marks.push(sPrev);
+}
+for(let i2=0;i2<=seg;i2++){ const s=marks[Math.min(i2,marks.length-1)]; const a=lanePoint(s,offA), bb=lanePoint(s,offB); pts.push(a.x,0.02,a.z, bb.x,0.02,bb.z); }
+}
+const g=new THREE.BufferGeometry();
+g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
+const idx=[]; for(let s2=0;s2<8;s2++){ const base=s2*(seg+1)*2; for(let i2=0;i2<seg;i2++){ const a=base+i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } } // JOB G-83: one strip per lane
+zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
+}
+W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp; return zoneGrp;
+}
 function attachDriver3D(ENG){
 const ev=ENG.ev, rivals=ENG._rivals||[];
 if(W3D.setBarriers && !ev.steeple) W3D.setBarriers([]); // JOB G-83: steeple barriers belong to the steeplechase only
@@ -2697,7 +2722,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='relay'){
 // JOB G-39 (owner): the relay runs ONE lap of the oval - legs at race
-// 0/100/200/300, exchange zones in the last 20m of legs 1-3, and only the
+// 0/100/200/300, exchange zones in the last 30m of legs 1-3 (CHECKLIST T04: 30 m of track per lane), and only the
 // last leg crosses the FINISH gantry. Every team shows its carrier AND the
 // next teammate waiting in the zone; a baton rides in the carrier's hand
 // and bridges the two runners at the hand-off.
@@ -2705,19 +2730,7 @@ const raceS=rp=>((TRK.straight+rp)%400+400)%400;
 const teamLane=ti=> ti===0?3:RIV_LANES[ti-1];
 styleRig(1, collegeCols.a, RELAY_TEAM[1]);
 ENG.teams.forEach((t,ti)=>{ if(ti>0){ const rv=(ENG._rivals||[])[ti-1]; if(rv){ styleRig(ti*2, rv.kit||'#888888', rv.name); styleRig(ti*2+1, rv.kit||'#888888', rv.name); } } });
-const zoneGrp=new THREE.Group();
-for(let k=1;k<=3;k++){
-// JOB G-83 (owner): with the staggered start each lane's exchange zone sits at
-// that lane's own staggered marks, so the ribbons are painted lane by lane.
-const pts=[], seg=4;
-for(let l=0;l<8;l++){ for(let i2=0;i2<=seg;i2++){ const s=visS(l,k*100-20+(20*i2/seg),400); const a=lanePoint(s,laneOff(l)+0.61), b=lanePoint(s,laneOff(l)-0.61); pts.push(a.x,0.02,a.z, b.x,0.02,b.z); } }
-const g=new THREE.BufferGeometry();
-g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
-const idx=[]; for(let s2=0;s2<8;s2++){ const base=s2*(seg+1)*2; for(let i2=0;i2<seg;i2++){ const a=base+i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } } // JOB G-83: one strip per lane
-g.setIndex(idx);
-zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
-}
-W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp;
+buildRelayZones();
 if(!W3D._batons){ W3D._batons=[]; for(let i2=0;i2<4;i2++){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.32,10), new THREE.MeshStandardMaterial({color:0xe8ecf2,roughness:0.3,metalness:0.75})); b.visible=false; W3D.scene.add(b); W3D._batons.push(b); } }
 // JOB G-83 (owner): the relay starts at the REAL staggered start - every lane
 // has blocks at its own staggered mark (never a line-up under the FINISH banner).
@@ -3696,6 +3709,7 @@ acc+=simDt;
 let n=0;
 while(acc>=1/60&&n<30){ ENG.update(1/60); acc-=1/60; n++; }
 if(n===30) acc=0;
+if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.ready&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} }
 try{ if(ENG.draw3) ENG.draw3(dt); }catch(err){}
 updateHUD();
 Confetti.update(dt); Confetti.draw();
