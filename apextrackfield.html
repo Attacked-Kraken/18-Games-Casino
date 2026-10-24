@@ -2532,7 +2532,7 @@ function clampCamXZ(cx, cz){
 // JOB J39 ONE camera rule: the camera never leaves the stadium - clamp it to
 // the track capsule (the oval centreline segment) widened past the outer lane,
 // so it can never sit behind the start line in the stands or inside a wall.
-const R=48.5, x0=-TRK.straight, x1=0;
+const R=46.0, x0=-TRK.straight, x1=0;
 const nx=Math.max(x0, Math.min(x1, cx));
 const dx=cx-nx, dz=cz; const d=Math.hypot(dx,dz);
 if(d>R){ const k=R/d; return [nx+dx*k, dz*k]; }
@@ -2554,7 +2554,7 @@ const cc=clampCamXZ(x-tx*7, z-tz*7);
 // (10.4 m away in the robot's check), so the runner shrank in the frame.
 W3D.camTo(cc[0], 2.8, cc[1], x+tx*10, 1.2, z+tz*10, (W3D._simDt!=null?W3D._simDt:dt), 5);
 W3D.camApply();
-W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
+W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z}; if(ENG&&ENG.r){ENG.r.ox=x; ENG.r.oz=z;}
 }
 function buildRelayZones(){
 // G-249 r2 (owner, CHECKLIST T04): the changeover zone is 30 m of TRACK per lane, painted at the end of each leg (race 70-100, 170-200, 270-300). The stations are walked along each lane's own line in world distance, so every strip measures 30 m no matter the stagger or the bend (the old 20 m of race coordinate measured 17.3-21.2 m, mean 20.08 m).

@@ -173,6 +173,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-job | Window | Files | Branch |
 |---|---|---|---|
 | G-279 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-279.md, CLAIMS.md | build/g-279-apexf1 |
+| G-281 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
 | G-277 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-277.md, CLAIMS.md | build/g-277-apexf1 |
 | G-278 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-278.md, CLAIMS.md | build/g-278-apexbaseball |
 | G-281 | window 10 | jobs/G-281.md, CLAIMS.md | test/g-281-apextrackfield |
@@ -289,3 +290,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
 | G-262 | window 10 | jobs/G-262.md, CLAIMS.md | test/g-262-apextrackfield |
 | G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
+| T-10-1327 | window 10 | jobs/T-10-1327.md, CLAIMS.md | test/t-10-1327 |
+| G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - CLAIMED 2026-10-24 (Muse main (casino)): live race camera never sees a wall |
