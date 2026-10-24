@@ -596,6 +596,29 @@ export default [
     },
   },
   {
+    id: 'play-checklist',
+    ask: 'G-270 self-audit: checklists/apexracer.md exists with at least 20 lint-shaped items, and every NUMBERS token appears word for word in its SOURCE file',
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const f = path.join(repoRoot, 'checklists', 'apexracer.md');
+      if (!fs.existsSync(f)) return 'checklists/apexracer.md is missing';
+      const lines = fs.readFileSync(f, 'utf8').split('\n').filter(l => /^- \[ \] [A-Z]\d+ \|/.test(l));
+      if (lines.length < 20) return 'only ' + lines.length + ' checklist items (want 20+)';
+      for (const l of lines) {
+        const parts = l.split(' | ').map(s => s.trim());
+        const get = k => (parts.find(p => p.startsWith(k + ':')) || '').slice(k.length + 1).trim();
+        const src = get('SOURCE'), nums = get('NUMBERS');
+        if (!src || !nums || !get('MEASURE') || !get('TEST')) return 'a checklist item is missing SOURCE/NUMBERS/MEASURE/TEST: ' + l.slice(0, 60);
+        const sf = path.join(repoRoot, src);
+        if (!fs.existsSync(sf)) return 'SOURCE file missing: ' + src;
+        const text = fs.readFileSync(sf, 'utf8');
+        for (const n of nums.split(',').map(s => s.trim()).filter(Boolean)) if (!text.includes(n)) return 'number "' + n + '" not word for word in ' + src;
+      }
+      return true;
+    },
+  },
+  {
     id: 'never-g-240-p1',
     ask: 'G-240 fix 1 (owner): the engine must growl deep, not whine - the kit accel layers play slow (rate never above 0.8) through a 1500 Hz lowpass, so their full-throttle spectral centroid lands at or under 850 Hz (measured 683-812 Hz) instead of 1650-2323 Hz',
     async test(page, h) {
