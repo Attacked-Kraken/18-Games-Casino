@@ -950,7 +950,7 @@ export default [
               if (!/off|runway|grass|no score/i.test(msg)) { clearInterval(iv); return res('sitting in the grass ' + (gt - landedGt).toFixed(1) + ' game-s after touchdown, the no-score reason is gone (msg: "' + msg + '")'); }
               if (gt - landedGt > 4.5) { clearInterval(iv); return res(true); }
             }
-            if (Date.now() - w0 > 28000) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'ran out of wall time watching the message'); }
+            if (Date.now() - w0 > 28000 * (window.__slow || 1)) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'ran out of wall time watching the message'); }
           }, 200);
         });
       });
