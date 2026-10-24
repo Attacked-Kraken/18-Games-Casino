@@ -1,0 +1,3961 @@
+{
+ "when": "Oct 24, 2026, 5:22 PM",
+ "sha": "a4ecca6",
+ "results": [
+  {
+   "file": "apexhockey.html",
+   "name": "Apex Ice Hockey",
+   "fail": [],
+   "check": [
+    "Stutter: 7 short freezes in 6 s of play (worst 2150 ms, normal frame 33 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"G-210 (art director): at 844x390 every menu line sits inside the frame and nothing overlaps - title, subtitle, star card, the three buttons, credits, friend code and the keys lines all fully visible, and the star card never slides under the VIEW/mute buttons\" (the main menu is not showing to be measured)",
+    "Play test failing: \"OWNER VIDEO (2026-10-23): blades stay level in roll too, not only pitch - a planted blade's plate normal stays near horizontal, standing at the faceoff and in live play (the away stance stood rolled 12-26 deg; in play the plates flipped up toward the legs)\" (standing at the faceoff, blades sit rolled: p90 roll 30.4 deg (bar 10) - the plates lean sideways on the ice instead of lying level)",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "Stutter: 11 short freezes in 6 s of play (worst 1183 ms, normal frame 17 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"skates touch the ice the whole time while skating (gap under 3 cm - never floating above it, never sunk under it)\" (could not get a match into play to measure the skates)",
+    "Play test failing: \"a defender takes the puck off an away rush (the rush does not score untouched)\" (the away rush scored - no defender took the puck)",
+    "Play test failing: \"with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds\" (the Sharks scored in the first 11.4 seconds of an untouched game - the Wolves never contested the puck)",
+    "Friend codes have no 'play-friend-code' test yet (STORE-READY.md \"Friend codes\")",
+    "Stutter: 6 short freezes in 6 s of play (worst 2250 ms, normal frame 33 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"the opening faceoff drops the puck at centre ice\" (opening faceoff not at centre: (45.2, 0.0))",
+    "Play test failing: \"skates sit exactly on the ice and the blades show silver under the boots: the goalie dropping into a butterfly never drags his blades under the ice, and the blade steel is a bright silver that reads as metal, not black\" (could not get a match into play to test the goalie blades)",
+    "Stutter: 12 short freezes in 6 s of play (worst 1650 ms, normal frame 33 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "IDLE RUN: the score \"score\" went 0 – 0 -> 0 – 1 with nobody touching the game - a goal/point was scored by itself (yellow for now: this game is on the warning list until its AI defends an untouched team)",
+    "Play test failing: \"a goal counts on the scoreboard and restarts from centre ice\" (after the goal the puck did not restart from centre ice)",
+    "Play test failing: \"after a save, SAVED! shows exactly once (a rebound re-save in the same scramble does not show it again) and the broadcast camera does not rewind: its puck lead swings smoothly instead of snapping when the puck reverses\" (could not get a match into play for the save test)",
+    "Play test failing: \"the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score\" (the game moved with nobody touching it: clock 118s -> 108s, score 0 – 0 -> 0 – 0)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexhockey-1-menu.jpg",
+    "play": "img/apexhockey-2-play.jpg",
+    "fixes": "img/apexhockey-4-fixes.jpg",
+    "face": "img/apexhockey-face.jpg",
+    "upright": "img/apexhockey-3-upright.jpg",
+    "safari": "img/apexhockey-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T22:13:26.620Z",
+   "title": "Apex Ice Hockey · Apex Arcade",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 29,
+    "median": 33,
+    "hitches": 7,
+    "worst": 2150
+   },
+   "words": 9,
+   "studio": {
+    "skinned": 8,
+    "drawsPerFrame": 159,
+    "maxDraws": 374
+   },
+   "fixes": [
+    {
+     "id": "real-players-not-blobs",
+     "ask": "They gave me this - blob players, upright floating sticks and scattered bits",
+     "ok": true,
+     "note": "",
+     "ms": 174,
+     "mode": "real"
+    },
+    {
+     "id": "real-arena-venue-sheet",
+     "ask": "Build a nice stadium, a big crowd in the stadium (venues/rink.md)",
+     "ok": true,
+     "note": "",
+     "ms": 159,
+     "mode": "real"
+    },
+    {
+     "id": "play-puck-stays-in-rink",
+     "ask": "the puck never leaves the rink during play",
+     "ok": true,
+     "note": "",
+     "ms": 23332,
+     "mode": "puck"
+    },
+    {
+     "id": "play-no-spin-max-turn-rate",
+     "ask": "Skater must not spin in place: turn speed is limited, glides through turns",
+     "ok": true,
+     "note": "",
+     "ms": 78,
+     "mode": "no"
+    },
+    {
+     "id": "play-career-weeks-5-7",
+     "ask": "career mode: play weeks 5-7 to the end - each week unlocks the next",
+     "ok": true,
+     "note": "",
+     "ms": 21144,
+     "mode": "career"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "friend codes: my code is on the menu, a friend code sets up their team, and the friend match result goes on my record",
+     "ok": true,
+     "note": "",
+     "ms": 15397,
+     "mode": "friend"
+    },
+    {
+     "id": "play-camera-stays-above-ice",
+     "ask": "the camera never falls through the ice when zooming in: in every view (BROADCAST, HIGH, CLOSE, PLAYER, END) it stays at least 1.5 m above the ice",
+     "ok": true,
+     "note": "",
+     "ms": 16669,
+     "mode": "camera"
+    },
+    {
+     "id": "tester-career-play-starts-match",
+     "ask": "TESTER (G-88): pressing PLAY in the career hub (PLAY NEXT MATCH) starts the career match",
+     "ok": true,
+     "note": "",
+     "ms": 16609,
+     "mode": "career"
+    },
+    {
+     "id": "tester-reality-hook-fields",
+     "ask": "TESTER (G-108): the __reality hook carries every field REALITY.md requires - camera, time() and speed() as well as kind, player, others, contact, ground, go and expect",
+     "ok": true,
+     "note": "",
+     "ms": 15771,
+     "mode": "reality"
+    },
+    {
+     "id": "never-g-170-p1",
+     "ask": "G-170 point 1 (owner screenshot 2026-10-22): skate blades stay DOWN flat on the ice - never pitched toe-down with the heel kicked up; the planted blade of a standing player lies flat, never kicked up at one end like the screenshot (end-to-end pitch under 5.5 cm; the shipped game read up to 8.5 cm)",
+     "ok": true,
+     "note": "",
+     "ms": 7440,
+     "mode": "g"
+    },
+    {
+     "id": "play-menu-fits-frame",
+     "ask": "G-210 (art director): at 844x390 every menu line sits inside the frame and nothing overlaps - title, subtitle, star card, the three buttons, credits, friend code and the keys lines all fully visible, and the star card never slides under the VIEW/mute buttons",
+     "ok": false,
+     "note": "the main menu is not showing to be measured",
+     "ms": 5413,
+     "mode": "menu"
+    },
+    {
+     "id": "play-blades-flush-in-play",
+     "ask": "NEVER (G-47 REDO, owner picture 2026-10-23): in live play, not just standing still, the weight-bearing skate blade lies FLAT on the ice - the old end-to-end read went blind once a blade pitched past about 45 deg (its horizontal projection collapses), so this reads the blade true 3D tilt; on the shipped game planted blades sat at a median 12 deg tilt with a third over 16 deg and floated about 3 cm off the ice",
+     "ok": true,
+     "note": "",
+     "ms": 16143,
+     "mode": "blades"
+    },
+    {
+     "id": "play-blades-stay-level-roll",
+     "ask": "OWNER VIDEO (2026-10-23): blades stay level in roll too, not only pitch - a planted blade's plate normal stays near horizontal, standing at the faceoff and in live play (the away stance stood rolled 12-26 deg; in play the plates flipped up toward the legs)",
+     "ok": false,
+     "note": "standing at the faceoff, blades sit rolled: p90 roll 30.4 deg (bar 10) - the plates lean sideways on the ice instead of lying level",
+     "ms": 1136,
+     "mode": "blades"
+    },
+    {
+     "id": "tester-career-again-goes-to-hub",
+     "ask": "TESTER (G-170): the career end-screen button that reads CAREER HUB takes the player to the career hub, not the main menu",
+     "ok": true,
+     "note": "",
+     "ms": 23485,
+     "mode": "reality"
+    },
+    {
+     "id": "tester-goal-no-light-no-replay",
+     "ask": "TESTER (G-228): rules/hockey.md broadcast look - a goal brings the horn, the crowd, the goal light, spotlights and a replay from 2 angles. A clean goal is staged; during the goal state there must be a goal-light/replay element in the DOM or the camera must cut away from the broadcast follow to replay angles. The camera staying in broadcast follow with no light and no replay is the bug (horn/crowd/flash/banner are present and not in question).",
+     "ok": true,
+     "note": "",
+     "ms": 53736,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-arena-crease-in-front-of-goal",
+     "ask": "TESTER (G-199): each goal crease is painted in FRONT of its goal (venues/rink.md: light-blue semicircle r 1.83 m in front of the goal line) - neither crease may sit behind its goal line in the trapezoid area",
+     "ok": true,
+     "note": "",
+     "ms": 2608,
+     "mode": "arena"
+    },
+    {
+     "id": "never-g-257-p1",
+     "ask": "NEVER (G-257): the intermission between periods shows a stats card - when the period clock runs out, the break puts the real match stats on screen (shots, saves, faceoffs won on a #statCard), not only the END OF PERIOD banner, and the card clears when the next period starts (rules/hockey.md: intermission between periods, stats card)",
+     "ok": true,
+     "note": "",
+     "ms": 13148,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-266-p1",
+     "ask": "NEVER (G-266): a goal brings the broadcast look (rules/hockey.md) - the red goal light lit in the DOM, the spotlights on, and the camera cutting to replay angles (a jump of more than 40 units between goal-state frames) instead of staying in the broadcast follow",
+     "ok": true,
+     "note": "",
+     "ms": 12707,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-273-p2",
+     "ask": "NEVER (G-273 round 1, G-228): a DELAYED penalty - a foul committed while the other team has the puck does NOT box the man at once; play goes on with the arm up until the penalised team touches the puck, and only then do the whistle blow and the man sit (rules/hockey.md)",
+     "ok": true,
+     "note": "",
+     "ms": 5405,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-282-p4",
+     "ask": "NEVER (G-282 round 1, G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one height all the way round",
+     "ok": true,
+     "note": "",
+     "ms": 82,
+     "mode": "g"
+    },
+    {
+     "id": "model-sheet-stance",
+     "ask": "How do I get exactly this hockey player? (7.5 head heights, forward lean 15-20, knee flex 25-30, hips back over the heels, wide stance)",
+     "ok": true,
+     "note": "",
+     "ms": 90,
+     "mode": "model"
+    },
+    {
+     "id": "play-offside-called",
+     "ask": "offside is called when an attacker crosses the blue line before the puck",
+     "ok": true,
+     "note": "",
+     "ms": 3608,
+     "mode": "offside"
+    },
+    {
+     "id": "play-5v5-plus-goalie",
+     "ask": "5 skaters plus a goalie a side, per the rules sheet",
+     "ok": true,
+     "note": "",
+     "ms": 112,
+     "mode": "5v5"
+    },
+    {
+     "id": "play-close-camera-fixed-yaw",
+     "ask": "CLOSE camera: 9m back along long axis, 5m up, never rotates with skater facing",
+     "ok": true,
+     "note": "",
+     "ms": 74,
+     "mode": "close"
+    },
+    {
+     "id": "play-career-weeks-8-10",
+     "ask": "career mode: play weeks 8-10 to the end - finishing the season unlocks the semifinal",
+     "ok": true,
+     "note": "",
+     "ms": 13671,
+     "mode": "career"
+    },
+    {
+     "id": "play-skates-touch-ice",
+     "ask": "skates touch the ice the whole time while skating (gap under 3 cm - never floating above it, never sunk under it)",
+     "ok": false,
+     "note": "could not get a match into play to measure the skates",
+     "ms": 15997,
+     "mode": "skates"
+    },
+    {
+     "id": "play-defender-takes-puck",
+     "ask": "a defender takes the puck off an away rush (the rush does not score untouched)",
+     "ok": false,
+     "note": "the away rush scored - no defender took the puck",
+     "ms": 20008,
+     "mode": "defender"
+    },
+    {
+     "id": "play-arena-perf-shape",
+     "ask": "BUILD G-110: the arena crowd is one instanced mesh, the static arena is merged, and the favicon cannot 404",
+     "ok": true,
+     "note": "",
+     "ms": 117,
+     "mode": "arena"
+    },
+    {
+     "id": "play-idle-wolves-defend",
+     "ask": "with nobody touching the joystick the Sharks score in the first 10 seconds and the Wolves never contest - untouched, the Wolves AI must defend and take the puck back, so no goal is scored in the first 15 seconds",
+     "ok": false,
+     "note": "the Sharks scored in the first 11.4 seconds of an untouched game - the Wolves never contested the puck",
+     "ms": 22692,
+     "mode": "idle"
+    },
+    {
+     "id": "play-joystick-starts-left",
+     "ask": "G-178: when a match opens, the joystick sits in the LEFT half of the screen and stays there - in landscape its centre is left of halfway, and on a portrait-held phone (the stage rotates for landscape play) it also lands on the player left, never the right",
+     "ok": true,
+     "note": "",
+     "ms": 762,
+     "mode": "joystick"
+    },
+    {
+     "id": "play-broadcast-skaters-readable",
+     "ask": "G-214 (art director): at the game (BROADCAST) camera the skaters are big enough to read numbers and stance - a faceoff ring staged at centre ice projects to at least 30 CSS px tall per skater on the 844x390 frame (they read ~20px when the camera sat ~91 units out)",
+     "ok": true,
+     "note": "",
+     "ms": 9731,
+     "mode": "broadcast"
+    },
+    {
+     "id": "tester-arena-no-icing-while-shorthanded",
+     "ask": "TESTER (G-227): icing is NOT called while the dumping team is shorthanded (rules/hockey.md: icing \"Not called when shorthanded\"). A home skater is put in the box so the power-play tag is live, then home dumps the puck untouched from behind the centre line (lastTouch home at x -30) racing to the far goal line, exactly the dump that IS whistled at full strength: play must carry on with no icing whistle and no icing faceoff while the box is occupied.",
+     "ok": true,
+     "note": "",
+     "ms": 27254,
+     "mode": "arena"
+    },
+    {
+     "id": "play-chasers-not-mirrored",
+     "ask": "OWNER VIDEO (2026-10-23): the two AI chasers on a puck carrier do not mirror each other - they close from different sides instead of stacking onto the same point and skating through each other",
+     "ok": true,
+     "note": "",
+     "ms": 9099,
+     "mode": "chasers"
+    },
+    {
+     "id": "tester-delayed-penalty-no-delay",
+     "ask": "TESTER (G-228): rules/hockey.md requires a DELAYED penalty - when a foul is committed while the other team has the puck, play goes on until the penalised team touches the puck, and only then does the whistle blow and the man sit. An away skater is parked at centre with the puck and a home skater 2.2 u directly behind him; CHECK is fired through the button's real mousedown path in the same JS turn as the staging. The offender must NOT be boxed in that same turn - boxing him instantly with no whistle and no delayed arm is the bug.",
+     "ok": true,
+     "note": "",
+     "ms": 1867,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-endscreen-wrong-winner-name",
+     "ask": "TESTER (G-228): the end screen must name the team that actually won. A career WEEK 2 fixture vs the BEARS is started and the BEARS win it 3-0; the big title must name the BEARS, not the Sharks. Observed on current main: after a 0-2 loss to the STAMPEDE the title read \"SHARKS WIN\" while the scorebug correctly showed STAMPEDE (G-228 play); the title is hardcoded and the non-career sub \"The Sharks steal this one. Run it back.\" is too.",
+     "ok": true,
+     "note": "",
+     "ms": 8621,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-arena-glass-height",
+     "ask": "TESTER (G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one 1.6 m height all the way round",
+     "ok": true,
+     "note": "",
+     "ms": 44,
+     "mode": "arena"
+    },
+    {
+     "id": "never-g-261-p1",
+     "ask": "NEVER (G-261): the puck never leaves the rink under boards pressure - loose pucks fired at the end boards, the carrier parked at the end boards and at the side boards facing them with the puck on his stick, and a real shot released at the boards, with play re-established before every phase and the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9) and the sampler must collect at least 50 play samples",
+     "ok": true,
+     "note": "",
+     "ms": 70155,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-266-p2",
+     "ask": "NEVER (G-266, G-199): each goal crease is painted in FRONT of its goal - a light-blue semicircle of radius 1.83 m on the centre-ice side of the goal line; on the ice paint neither crease may run past its goal line (max x <= 90.5 for the +x crease, min x >= -90.5 for the -x crease)",
+     "ok": true,
+     "note": "",
+     "ms": 2617,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-282-p1",
+     "ask": "NEVER (G-282, G-228): the crease is protected - a goal scored while an attacker stands on the defending goalie inside the crease is waved off (no goal, whistle); the same shot with the crease clear counts (rules/hockey.md: no goal if the goalie is pushed)",
+     "ok": true,
+     "note": "",
+     "ms": 19397,
+     "mode": "g"
+    },
+    {
+     "id": "gear-from-model-sheet",
+     "ask": "Helmet with visor, shoulder pads, oversized gloves, padded breezers, shin guards, skates with a wider stance - like my sheet",
+     "ok": true,
+     "note": "",
+     "ms": 151,
+     "mode": "gear"
+    },
+    {
+     "id": "play-icing-called",
+     "ask": "icing is called on an untouched clear from the defensive half",
+     "ok": true,
+     "note": "",
+     "ms": 2397,
+     "mode": "icing"
+    },
+    {
+     "id": "play-faceoff-at-centre",
+     "ask": "the opening faceoff drops the puck at centre ice",
+     "ok": false,
+     "note": "opening faceoff not at centre: (45.2, 0.0)",
+     "ms": 377,
+     "mode": "faceoff"
+    },
+    {
+     "id": "play-offside-really-over",
+     "ask": "Offside only when attacker is really over the blue line (1.5m), not on a skate blade",
+     "ok": true,
+     "note": "",
+     "ms": 70,
+     "mode": "offside"
+    },
+    {
+     "id": "play-career-semifinal",
+     "ask": "career mode: play the semifinal to the end - winning it unlocks the final",
+     "ok": true,
+     "note": "",
+     "ms": 11340,
+     "mode": "career"
+    },
+    {
+     "id": "play-goalie-blades-on-ice",
+     "ask": "skates sit exactly on the ice and the blades show silver under the boots: the goalie dropping into a butterfly never drags his blades under the ice, and the blade steel is a bright silver that reads as metal, not black",
+     "ok": false,
+     "note": "could not get a match into play to test the goalie blades",
+     "ms": 12780,
+     "mode": "goalie"
+    },
+    {
+     "id": "play-stick-resets-on-blur",
+     "ask": "the stick lets go when the app loses focus or is hidden mid-hold - hold it pushed, blur or hide the app, and the knob is back at centre (0 px) with no real touchend needed",
+     "ok": true,
+     "note": "",
+     "ms": 679,
+     "mode": "stick"
+    },
+    {
+     "id": "play-waits-for-player-at-faceoff",
+     "ask": "the game does not play by itself: a faceoff waits for the player input instead of dropping on its own",
+     "ok": true,
+     "note": "",
+     "ms": 12846,
+     "mode": "waits"
+    },
+    {
+     "id": "tester-hub-reset-stays-armed",
+     "ask": "TESTER (G-131): closing the career hub disarms the ERASE button - one tap arms it, but once the hub has been closed and reopened the button must be back to un-armed, so a later single tap cannot erase the career",
+     "ok": true,
+     "note": "",
+     "ms": 27544,
+     "mode": "reality"
+    },
+    {
+     "id": "play-helmet-face-reads",
+     "ask": "G-186 (art director): the close-up helmet must not read as a plain dome with a dark bar across the eyes - the visor glass is near-clear and casts no shadow, so the face reads through it (every kitted skater: visor present, castShadow off, opacity at most 0.2, metalness at most 0.05)",
+     "ok": true,
+     "note": "",
+     "ms": 123,
+     "mode": "helmet"
+    },
+    {
+     "id": "never-g-216-p1",
+     "ask": "NEVER (G-216, the G-194 line): the puck never leaves the rink - with the carrier standing at the end boards and at the side boards facing them, puck on his stick, the carried puck centre stays inside the boards shell (|x| <= 100.6, |z| <= 42.9); the carried puck used to poke through the boards by the full stick reach (robot: 101.7 at the end boards, 44.2 at the side)",
+     "ok": true,
+     "note": "",
+     "ms": 16358,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-228-p1",
+     "ask": "NEVER (G-228): icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - with a home skater in the box and the power-play tag live, the deep dump that is whistled at full strength must sail past the far goal line with no icing whistle and play carrying on",
+     "ok": true,
+     "note": "",
+     "ms": 9599,
+     "mode": "g"
+    },
+    {
+     "id": "tester-chk-h01",
+     "ask": "CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).",
+     "ok": true,
+     "note": "",
+     "ms": 1024,
+     "mode": "h01"
+    },
+    {
+     "id": "tester-crease-goal-on-goalie",
+     "ask": "TESTER (G-228): rules/hockey.md - the crease is protected (no goal if the goalie is pushed). The away goalie is parked in his crease and a home attacker is parked ON TOP of him (0.5 u away, inside the crease); the puck is then fired into the open net from 7 u out. The goal must NOT count while the attacker is standing on the goalie - counting it proves the crease is not protected.",
+     "ok": true,
+     "note": "",
+     "ms": 12001,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-arena-neutral-dots-in-neutral-zone",
+     "ask": "TESTER (G-199): the 4 neutral-zone faceoff dots sit 1.5 m inside the blue lines (venues/rink.md) - painted on the ice at |x| about 6.2 m from centre, inside the neutral zone, not deep in the end zones",
+     "ok": true,
+     "note": "",
+     "ms": 2721,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-arena-benches-and-boxes",
+     "ask": "TESTER (G-199): the arena has two team benches on one side of the rink and the penalty boxes plus scorekeeper box on the other (venues/rink.md) - real meshes outside the boards at ice level, not bare boards with the bowl behind",
+     "ok": true,
+     "note": "",
+     "ms": 467,
+     "mode": "arena"
+    },
+    {
+     "id": "never-g-261-p2",
+     "ask": "NEVER (G-261, H15): a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3: exactly 3 skaters a side on the ice in overtime (plus the goalies), and the first overtime goal ends the game",
+     "ok": true,
+     "note": "",
+     "ms": 9396,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-272-p1",
+     "ask": "NEVER (G-272, H14): a major penalty exists - a check from behind on the puck carrier (the harshest foul the game offers) draws a 5:00 MAJOR (box penT 50 on the game clock scale, banner says MAJOR), and a major serves its full time: a power-play goal springs a boxed MINOR but never a boxed MAJOR (rules/hockey.md)",
+     "ok": true,
+     "note": "",
+     "ms": 12273,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-282-p2",
+     "ask": "NEVER (G-282, G-199): the arena has real bench and box meshes at ice level outside the boards - two team benches on one side, two penalty boxes and the scorekeeper box on the other (venues/rink.md)",
+     "ok": true,
+     "note": "",
+     "ms": 791,
+     "mode": "g"
+    },
+    {
+     "id": "stick-in-hands-on-ice",
+     "ask": "Upright floating sticks",
+     "ok": true,
+     "note": "",
+     "ms": 122,
+     "mode": "stick"
+    },
+    {
+     "id": "play-goal-restarts-centre",
+     "ask": "a goal counts on the scoreboard and restarts from centre ice",
+     "ok": false,
+     "note": "after the goal the puck did not restart from centre ice",
+     "ms": 11884,
+     "mode": "goal"
+    },
+    {
+     "id": "play-joystick-screen-relative",
+     "ask": "Joystick must be screen-relative: push right = skate right on screen, even after the skater turns 180",
+     "ok": true,
+     "note": "",
+     "ms": 63,
+     "mode": "joystick"
+    },
+    {
+     "id": "play-career-weeks-1-4",
+     "ask": "career mode: start a career and play weeks 1-4 to the end - each week unlocks the next",
+     "ok": true,
+     "note": "",
+     "ms": 14641,
+     "mode": "career"
+    },
+    {
+     "id": "play-career-final",
+     "ask": "career mode: play the final to the end - winning it takes the title and unlocks the next season",
+     "ok": true,
+     "note": "",
+     "ms": 12259,
+     "mode": "career"
+    },
+    {
+     "id": "play-save-shows-once-camera-holds",
+     "ask": "after a save, SAVED! shows exactly once (a rebound re-save in the same scramble does not show it again) and the broadcast camera does not rewind: its puck lead swings smoothly instead of snapping when the puck reverses",
+     "ok": false,
+     "note": "could not get a match into play for the save test",
+     "ms": 12744,
+     "mode": "save"
+    },
+    {
+     "id": "tester-puck-size",
+     "ask": "TESTER (G-88): the puck is a real puck size - 7.6 cm across and 2.5 cm thick (REALITY.md), within 15%",
+     "ok": true,
+     "note": "",
+     "ms": 210,
+     "mode": "puck"
+    },
+    {
+     "id": "play-clock-real-time",
+     "ask": "the game clock and score run in real time: 5 seconds of play takes about 5 seconds off the clock (not 30), and a game nobody touches for 10 seconds keeps the same clock and score",
+     "ok": false,
+     "note": "the game moved with nobody touching it: clock 118s -> 108s, score 0 – 0 -> 0 – 0",
+     "ms": 10060,
+     "mode": "clock"
+    },
+    {
+     "id": "play-hub-reset-disarms-on-close",
+     "ask": "G-159: closing the career hub disarms the ERASE button - arm it, close and reopen the hub, and a single tap must count as a fresh first tap only (the career survives)",
+     "ok": true,
+     "note": "",
+     "ms": 23652,
+     "mode": "hub"
+    },
+    {
+     "id": "tester-puck-leaves-rink-at-boards",
+     "ask": "TESTER (G-194): the puck never leaves the rink - staged pressure at the boards (loose pucks fired at the end boards, the puck carrier standing at the end boards and at the side boards facing them with the puck on his stick, a real shot released at the boards) with the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9)",
+     "ok": true,
+     "note": "",
+     "ms": 83916,
+     "mode": "arena"
+    },
+    {
+     "id": "never-g-217-p1",
+     "ask": "NEVER (G-217, the G-170 line): skate blades stay DOWN flat on the ice - the planted blade of a standing player lies flat, end-to-end pitch under 5.5 cm; the away boots were still toe-down at the 0.8 rad counter-pitch (signed medians -4.8..-6.2 cm, robot median 6.6) until they took the same 1.0 rad as the home boots. ROUND 1: and the blades stay levelled while skating around too, not only when stopped - the weight-bearing blade true 3D tilt in live play stays at a median of 8 deg or less",
+     "ok": true,
+     "note": "",
+     "ms": 16442,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-228-p2",
+     "ask": "the end-zone faceoff dots sit 6.7 m either side of centre in the ice paint (venues/rink.md, H01)",
+     "ok": true,
+     "note": "",
+     "ms": 94,
+     "mode": "g"
+    },
+    {
+     "id": "tester-career-quit-banks-goal",
+     "ask": "TESTER (G-170): quitting a career match mid-game must not bank the star goal - a goal scored mid-match must not survive a quit while the fixture stays pending and replayable",
+     "ok": true,
+     "note": "",
+     "ms": 22774,
+     "mode": "reality"
+    },
+    {
+     "id": "tester-intermission-stats-card",
+     "ask": "TESTER (G-228): rules/hockey.md - intermission between periods shows a stats card. The period clock is run down so the game enters its intermission; during the intermission some stats card (shots, saves, hits, faceoffs - any period stats beyond the scorebug) must be visible. An END OF PERIOD banner alone is the bug.",
+     "ok": true,
+     "note": "",
+     "ms": 3896,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-arena-end-dots-spacing",
+     "ask": "TESTER (G-199): the 4 end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - painted on the ice at |z| about 21.9 units, not 20",
+     "ok": true,
+     "note": "",
+     "ms": 2863,
+     "mode": "arena"
+    },
+    {
+     "id": "tester-chk-h15",
+     "ask": "H15: a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3, then count the skaters on the ice in overtime: 3 a side (plus the goalies), and the first overtime goal must end the game",
+     "ok": true,
+     "note": "",
+     "ms": 11590,
+     "mode": "h15"
+    },
+    {
+     "id": "tester-chk-h14",
+     "ask": "CHECKLIST H14 (G-234): a major penalty is 5 minutes (rules/hockey.md: \"Penalties (2 minutes, or 5 for major)\"). Commit the harshest foul the game offers - a check from behind on the puck carrier - six times: at least one of the resulting penalties must be a 5:00 major (box clock reads 5:00 and/or the banner says MAJOR).",
+     "ok": true,
+     "note": "",
+     "ms": 9690,
+     "mode": "h14"
+    },
+    {
+     "id": "never-g-273-p1",
+     "ask": "NEVER (G-273, G-199): the 4 neutral-zone faceoff dots sit 1.5 m inside the blue lines - painted at |x| about 6.2 m from centre in the neutral zone (never out at |x| 12.3 m in the end zones), and an offside faceoff drops on the neutral dot on that side",
+     "ok": true,
+     "note": "",
+     "ms": 12822,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-282-p3",
+     "ask": "NEVER (G-282 round 1, G-228): the end screen names the team that actually won - a career fixture the BEARS win 3-0 titles the BEARS, and a home win titles the WOLVES; the away title is never hardcoded to the Sharks",
+     "ok": true,
+     "note": "",
+     "ms": 20631,
+     "mode": "g"
+    }
+   ],
+   "part": "all",
+   "slow": {
+    "ms": 70,
+    "base": 60,
+    "factor": 1
+   },
+   "career": {
+    "tests": 1,
+    "failing": 0
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 1
+   },
+   "reality": {
+    "kind": "skater",
+    "size": {
+     "x": 1.2875690471730845,
+     "y": 6.392079657612585,
+     "z": 6.059283775519271,
+     "minY": -0.42260764765422293
+    },
+    "sizeMetres": {
+     "x": 1.29,
+     "y": 6.39,
+     "z": 6.06
+    },
+    "unitsPerMetre": 1,
+    "moves": 7,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 12,
+    "gameTime": true,
+    "gameSpeed": true
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 7,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "knownFaults": 0,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 29572
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 36797
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 100646
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 375335
+    }
+   ],
+   "playMs": 542350,
+   "endedAt": "2026-10-24T22:22:28.971Z",
+   "status": "CHECK",
+   "safari": []
+  },
+  {
+   "file": "apexf1.html",
+   "name": "Apex F1 Racing",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/circuit.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Play test failing: \"every AI car uses the real F1 car model, same quality as the player car\" (KAI: drawn size 4.24 vs the player's 6.57 on footprint axis 0 - not the same car model)",
+    "Play test failing: \"at speed the stick winds the heading gently and never steers by itself\" (with the stick released the heading moved on its own (0.19 -> 0.29) - steering must come only from the stick)",
+    "Play test failing: \"on the upright phone the stick never overlaps the PIT button\" (test error: g265PortraitOverlaps is not defined)",
+    "Career mode has NO playability test - add 'play-career-...' tests that start every career level, play it to the end and unlock the next (STORE-READY.md \"Career mode\")",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)",
+    "Play test failing: \"the slowest AI car laps within 5 percent of the player - nobody gets driven away from\" (slowest AI covered only 84% of the player's distance in identical windows - the player just drives away from the field)",
+    "Play test failing: \"the car is about 20 percent bigger\" (player car draws 8.50 m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m))",
+    "Play test failing: \"The circuit wears the owner ground kit (asphalt + kerb textures from kit/ground/512) and the engine is the owner grand_prix sound kit: idle/accel loops crossfaded by throttle, shift sounds, tire squeal\" (test error: h.poll is not a function)",
+    "Play test failing: \"The player drives (owner recordings, G-239): the stick turns the car and a driven line stays on the road; let go and the nose HOLDS its world heading - it does not straighten itself back onto the road (that self-straightening was the autopilot)\" (letting go of the stick still turned the car: world heading moved 0.11 rad in 2.5 s - the nose must HOLD and the driver must steer)",
+    "Play test failing: \"on the upright phone the stick never overlaps the CAM button\" (test error: g265PortraitOverlaps is not defined)",
+    "Friend codes have no 'play-friend-code' test yet (STORE-READY.md \"Friend codes\")",
+    "Play test failing: \"the fastest AI car laps within 5 percent of the player - same real F1 pace\" (fastest AI covered only 88% of the player's distance in identical windows - the player just drives away from the field)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexf1-1-menu.jpg",
+    "play": "img/apexf1-2-play.jpg",
+    "fixes": "img/apexf1-4-fixes.jpg",
+    "face": "img/apexf1-face.jpg",
+    "upright": "img/apexf1-3-upright.jpg",
+    "safari": "img/apexf1-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T21:51:38.597Z",
+   "title": "Apex F1 Racing",
+   "look": {
+    "mono": 8,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 22,
+    "median": 283,
+    "hitches": 0,
+    "worst": 0
+   },
+   "words": 15,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 207,
+    "maxDraws": 282
+   },
+   "fixes": [
+    {
+     "id": "game-starts-not-black",
+     "ask": "Game does not start",
+     "ok": true,
+     "note": "",
+     "ms": 5059,
+     "mode": "game"
+    },
+    {
+     "id": "play-lap-counter-goes-up",
+     "ask": "lap counter goes up",
+     "ok": true,
+     "note": "",
+     "ms": 8061,
+     "mode": "lap"
+    },
+    {
+     "id": "play-race-ends-with-results",
+     "ask": "the race ends with results",
+     "ok": true,
+     "note": "",
+     "ms": 13055,
+     "mode": "race"
+    },
+    {
+     "id": "play-player-starts-facing-forward",
+     "ask": "the player car starts facing the right way and drives the same way as the AI cars and the checkpoints",
+     "ok": true,
+     "note": "",
+     "ms": 21538,
+     "mode": "player"
+    },
+    {
+     "id": "play-ai-cars-full-model",
+     "ask": "every AI car uses the real F1 car model, same quality as the player car",
+     "ok": false,
+     "note": "KAI: drawn size 4.24 vs the player's 6.57 on footprint axis 0 - not the same car model",
+     "ms": 8163,
+     "mode": "ai"
+    },
+    {
+     "id": "play-car-holds-heading-at-speed",
+     "ask": "at speed the stick winds the heading gently and never steers by itself",
+     "ok": false,
+     "note": "with the stick released the heading moved on its own (0.19 -> 0.29) - steering must come only from the stick",
+     "ms": 24271,
+     "mode": "car"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "friend codes: my code is shown in my career hub, a bad code is rejected, and a friend code puts that driver on my grid at their coded rating (G-101)",
+     "ok": true,
+     "note": "",
+     "ms": 20121,
+     "mode": "friend"
+    },
+    {
+     "id": "never-g-119-p1",
+     "ask": "Start button on the screen: LIGHTS OUT and every menu fits 844x390 with no scrolling (the owner had to scroll to start the race)",
+     "ok": true,
+     "note": "",
+     "ms": 10939,
+     "mode": "g"
+    },
+    {
+     "id": "play-pack-stays-spread",
+     "ask": "Pack fix: the qualifying field stays spread out - no start-line spin pile-up, no tangled pack sitting in the contact box",
+     "ok": true,
+     "note": "",
+     "ms": 24155,
+     "mode": "pack"
+    },
+    {
+     "id": "play-broadcast-cam-steady",
+     "ask": "The broadcast (helicopter) camera is steady (owner, G-239): it rides BEHIND the car in the car frame - the old camera hung on a fixed point 26 m to the side, and that arm swung the picture around every corner",
+     "ok": true,
+     "note": "",
+     "ms": 16857,
+     "mode": "broadcast"
+    },
+    {
+     "id": "play-quali-gap-is-real",
+     "ask": "The quali GAP readout is real (owner recordings, G-239): before any lap is banked it must not sit at a fake +0.0s - it shows no-data until a best-lap delta exists",
+     "ok": true,
+     "note": "",
+     "ms": 11707,
+     "mode": "quali"
+    },
+    {
+     "id": "never-g-253-p1",
+     "ask": "play-test entries are shaped right: play-car-holds-heading-at-speed and play-car-grew-20-percent expose test, not run",
+     "ok": true,
+     "note": "",
+     "ms": 61,
+     "mode": "g"
+    },
+    {
+     "id": "play-stick-clears-pit",
+     "ask": "on the upright phone the stick never overlaps the PIT button",
+     "ok": false,
+     "note": "test error: g265PortraitOverlaps is not defined",
+     "ms": 41,
+     "mode": "stick"
+    },
+    {
+     "id": "never-g-279-p1",
+     "ask": "play-test entries are shaped right: play-start-on-car-with-lights exposes test and ask, not run and title",
+     "ok": true,
+     "note": "",
+     "ms": 77,
+     "mode": "g"
+    },
+    {
+     "id": "play-cars-stay-on-track",
+     "ask": "cars stay on the track",
+     "ok": true,
+     "note": "",
+     "ms": 8054,
+     "mode": "cars"
+    },
+    {
+     "id": "play-braking-slows-car",
+     "ask": "braking slows the car",
+     "ok": true,
+     "note": "",
+     "ms": 11074,
+     "mode": "braking"
+    },
+    {
+     "id": "play-career-first-round",
+     "ask": "career mode works end to end",
+     "ok": true,
+     "note": "",
+     "ms": 28292,
+     "mode": "career"
+    },
+    {
+     "id": "play-steering-smooth-and-controllable",
+     "ask": "steering is smooth and controllable with the stick",
+     "ok": true,
+     "note": "",
+     "ms": 22738,
+     "mode": "steering"
+    },
+    {
+     "id": "play-ai-pace-slowest-matches-player",
+     "ask": "the slowest AI car laps within 5 percent of the player - nobody gets driven away from",
+     "ok": false,
+     "note": "slowest AI covered only 84% of the player's distance in identical windows - the player just drives away from the field",
+     "ms": 77397,
+     "mode": "ai"
+    },
+    {
+     "id": "play-car-grew-20-percent",
+     "ask": "the car is about 20 percent bigger",
+     "ok": false,
+     "note": "player car draws 8.50 m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m)",
+     "ms": 2768,
+     "mode": "car"
+    },
+    {
+     "id": "play-grand-prix-kits",
+     "ask": "The circuit wears the owner ground kit (asphalt + kerb textures from kit/ground/512) and the engine is the owner grand_prix sound kit: idle/accel loops crossfaded by throttle, shift sounds, tire squeal",
+     "ok": false,
+     "note": "test error: h.poll is not a function",
+     "ms": 6824,
+     "mode": "grand"
+    },
+    {
+     "id": "play-steering-holds-the-line",
+     "ask": "The player drives (owner recordings, G-239): the stick turns the car and a driven line stays on the road; let go and the nose HOLDS its world heading - it does not straighten itself back onto the road (that self-straightening was the autopilot)",
+     "ok": false,
+     "note": "letting go of the stick still turned the car: world heading moved 0.11 rad in 2.5 s - the nose must HOLD and the driver must steer",
+     "ms": 19149,
+     "mode": "steering"
+    },
+    {
+     "id": "play-buttons-are-44px",
+     "ask": "the 2 small buttons are at least 44px: SKIP QUALI in qualifying and LIGHTS OUT on the starting grid (G-224)",
+     "ok": true,
+     "note": "",
+     "ms": 10483,
+     "mode": "buttons"
+    },
+    {
+     "id": "play-contact-banner-is-players-only",
+     "ask": "CONTACT! is the player news only (owner recordings, G-239): two AI cars hitting each other must never shout CONTACT! on the player screen",
+     "ok": true,
+     "note": "",
+     "ms": 16897,
+     "mode": "contact"
+    },
+    {
+     "id": "play-quali-skip-clears-the-speedo",
+     "ask": "SKIP QUALI must not sit on the speedometer (owner recordings, G-239): in every frame the pill hid the speed digits - the two rects must not overlap",
+     "ok": true,
+     "note": "",
+     "ms": 7777,
+     "mode": "quali"
+    },
+    {
+     "id": "play-gas-only-never-laps",
+     "ask": "holding gas only, stick centred, the car does not drive itself round the track",
+     "ok": true,
+     "note": "",
+     "ms": 27443,
+     "mode": "gas"
+    },
+    {
+     "id": "play-stick-clears-cam",
+     "ask": "on the upright phone the stick never overlaps the CAM button",
+     "ok": false,
+     "note": "test error: g265PortraitOverlaps is not defined",
+     "ms": 45,
+     "mode": "stick"
+    },
+    {
+     "id": "play-checklist-apexf1-format",
+     "ask": "Apex F1: checklists/apexf1.md exists with one measurable item per line, each carrying SOURCE, NUMBERS, MEASURE and a tester-chk TEST id (G-286)",
+     "ok": true,
+     "note": "",
+     "ms": 59,
+     "mode": "checklist"
+    },
+    {
+     "id": "play-ai-finishes-lap",
+     "ask": "AI cars finish a lap",
+     "ok": true,
+     "note": "",
+     "ms": 8064,
+     "mode": "ai"
+    },
+    {
+     "id": "play-throttle-accelerates-car",
+     "ask": "throttle accelerates the car",
+     "ok": true,
+     "note": "",
+     "ms": 8078,
+     "mode": "throttle"
+    },
+    {
+     "id": "play-career-next-round",
+     "ask": "career mode works end to end",
+     "ok": true,
+     "note": "",
+     "ms": 25330,
+     "mode": "career"
+    },
+    {
+     "id": "play-no-invisible-cars",
+     "ask": "every car that can be hit is drawn and visible where it actually is",
+     "ok": true,
+     "note": "",
+     "ms": 8257,
+     "mode": "no"
+    },
+    {
+     "id": "play-ai-pace-fastest-matches-player",
+     "ask": "the fastest AI car laps within 5 percent of the player - same real F1 pace",
+     "ok": false,
+     "note": "fastest AI covered only 88% of the player's distance in identical windows - the player just drives away from the field",
+     "ms": 78397,
+     "mode": "ai"
+    },
+    {
+     "id": "play-start-on-car-with-lights",
+     "ask": "Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)",
+     "ok": true,
+     "note": "",
+     "ms": 16559,
+     "mode": "start"
+    },
+    {
+     "id": "play-cameras-above-ground",
+     "ask": "Every CAM view (chase, cockpit, broadcast helicopter, onboard) stays above the road with the car and the track ahead in view, sideways and upright - the owner saw the helicopter cam under the ground",
+     "ok": true,
+     "note": "",
+     "ms": 89062,
+     "mode": "cameras"
+    },
+    {
+     "id": "play-owner-check-link",
+     "ask": "Owner check link: apexf1.html?test=grid opens straight at the starting grid with LIGHTS OUT on screen and no scrolling (G-204)",
+     "ok": true,
+     "note": "",
+     "ms": 2985,
+     "mode": "owner"
+    },
+    {
+     "id": "play-player-must-steer",
+     "ask": "Gas alone must not drive the car (owner recordings, G-239): stick untouched, the car leaves the road - on the old build it covered 2,192 m in 60 s dead centre, hands-free",
+     "ok": true,
+     "note": "",
+     "ms": 10877,
+     "mode": "player"
+    },
+    {
+     "id": "play-no-penalty-for-being-shoved",
+     "ask": "No track-limits fine for being shoved (owner recordings, G-239): off-road time while a rival shove is fresh must not accrue, brief brushes decay, and a chosen excursion still accrues",
+     "ok": true,
+     "note": "",
+     "ms": 12981,
+     "mode": "no"
+    },
+    {
+     "id": "play-engine-sound-is-the-kit",
+     "ask": "The engine the player hears is the grand_prix kit (owner: the synth sounds like a rubber chicken, G-239): the kit must be decoded and ready in a session, and no media elements exist anywhere (factory music rule)",
+     "ok": true,
+     "note": "",
+     "ms": 7599,
+     "mode": "engine"
+    },
+    {
+     "id": "never-g-265-p1",
+     "ask": "on the upright phone teamMenu fits with no scrolling",
+     "ok": true,
+     "note": "",
+     "ms": 5620,
+     "mode": "g"
+    },
+    {
+     "id": "play-kit-retries-until-loaded",
+     "ask": "a dropped engine-kit fetch must not leave the synth carrying the race: the kit keeps retrying until it loads",
+     "ok": true,
+     "note": "",
+     "ms": 21651,
+     "mode": "kit"
+    },
+    {
+     "id": "never-g-286-p1",
+     "ask": "on the upright phone the stick, REV and CAM never overlap: the landscape compact rules do not apply upright, so portrait needs its own compact block",
+     "ok": true,
+     "note": "",
+     "ms": 17356,
+     "mode": "g"
+    }
+   ],
+   "part": "all",
+   "slow": {
+    "ms": 49,
+    "base": 60,
+    "factor": 1
+   },
+   "career": {
+    "tests": 0,
+    "failing": 0
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 2
+   },
+   "reality": {
+    "kind": "f1",
+    "size": {
+     "x": 5.949999911785127,
+     "y": 1.6424618959426884,
+     "z": 2.069999963641166,
+     "minY": -0.0874619483947754
+    },
+    "sizeMetres": {
+     "x": 5.95,
+     "y": 1.64,
+     "z": 2.07
+    },
+    "unitsPerMetre": 1,
+    "moves": 11,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 48,
+    "gameTime": false,
+    "gameSpeed": false
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 9,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 16927
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 22312
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 56358
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 241068
+    }
+   ],
+   "playMs": 336665,
+   "endedAt": "2026-10-24T21:57:15.262Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "6f61561"
+  },
+  {
+   "file": "apexflight.html",
+   "name": "Apex Flight",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/airport.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Busy play screen: about 33 words during play (biggest: \"SPD KT\") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md \"Clean screen\")",
+    "Heavy for phones: about 557 draw calls per frame (aim under 450; merge meshes - see STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"take off: full throttle on the runway lifts the plane into the air\" (plane rolled but never lifted off)",
+    "Play test failing: \"land on the runway: a gentle approach touches down without crashing\" (never touched down after 20s of approach)",
+    "Play test failing: \"A cancelled touch (call, notification, palm) never leaves the stick stuck: touchcancel zeroes the stick and all input at once (G-238)\" (stick drag never deflected the jet)",
+    "Play test failing: \"G-243 point 3: the stick zone never covers the Play-a-Friend buttons\" (stick zone is visible over the menu)",
+    "Friend codes have no 'play-friend-code' test yet (STORE-READY.md \"Friend codes\")",
+    "REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)",
+    "Busy play screen: about 32 words during play (biggest: \"SPD KT\") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md \"Clean screen\")",
+    "Heavy for phones: about 559 draw calls per frame (aim under 450; merge meshes - see STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"climb and fly: stick up gains altitude and the plane keeps flying\" (plane barely moved (96m in 5s))",
+    "Play test failing: \"takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear)\" (ran out of wall time (v23 at -1.0 game-s))",
+    "Heavy for phones: about 558 draw calls per frame (aim under 450; merge meshes - see STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"turn: holding right banks the plane and changes heading\" (heading changed only 0.21 rad in 4s (want > 0.3))",
+    "Play test failing: \"G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons\" (stick did not move the jet within 100ms; THR+ did not raise the throttle within 100ms; THR- did not lower the throttle within 100ms; YAW did not turn the jet within 100ms (dead in the air))",
+    "REALITY: the player did not move in 5 s with go(true) - add go() to the hook so the robot can drive/run"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexflight-1-menu.jpg",
+    "play": "img/apexflight-2-play.jpg",
+    "fixes": "img/apexflight-4-fixes.jpg",
+    "face": "img/apexflight-face.jpg",
+    "upright": "img/apexflight-3-upright.jpg",
+    "safari": "img/apexflight-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:52:08.207Z",
+   "title": "Apex Flight · Apex Arcade",
+   "look": {
+    "mono": 0,
+    "green": 4
+   },
+   "stutter": {
+    "frames": 32,
+    "median": 200,
+    "hitches": 1,
+    "worst": 617
+   },
+   "words": 33,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 557,
+    "maxDraws": 630
+   },
+   "fixes": [
+    {
+     "id": "not-frozen-on-start",
+     "ask": "Gameplay picture frozen for 1.5 seconds",
+     "ok": true,
+     "note": "",
+     "ms": 5773,
+     "mode": "not"
+    },
+    {
+     "id": "play-takeoff",
+     "ask": "take off: full throttle on the runway lifts the plane into the air",
+     "ok": false,
+     "note": "plane rolled but never lifted off",
+     "ms": 24109,
+     "mode": "takeoff"
+    },
+    {
+     "id": "play-land-on-runway",
+     "ask": "land on the runway: a gentle approach touches down without crashing",
+     "ok": false,
+     "note": "never touched down after 20s of approach",
+     "ms": 20672,
+     "mode": "land"
+    },
+    {
+     "id": "play-descend-at-speed",
+     "ask": "Play every Flight mode start to finish like a real pilot: at cruise speed, full nose-down must make the plane DESCEND - it climbed instead, so you could not come down to land",
+     "ok": true,
+     "note": "",
+     "ms": 9283,
+     "mode": "descend"
+    },
+    {
+     "id": "play-jet-controls",
+     "ask": "G-90: the jet control pad (14 buttons + stick) is on the phone screen and every button works",
+     "ok": true,
+     "note": "",
+     "ms": 835,
+     "mode": "jet"
+    },
+    {
+     "id": "tester-recheck-g158-freeflight",
+     "ask": "G-158 re-check: free flight stays stable - steady cruise keeps finite position and velocity, no crash, the jet keeps moving",
+     "ok": true,
+     "note": "",
+     "ms": 8769,
+     "mode": "recheck"
+    },
+    {
+     "id": "play-stick-never-stays-stuck",
+     "ask": "A cancelled touch (call, notification, palm) never leaves the stick stuck: touchcancel zeroes the stick and all input at once (G-238)",
+     "ok": false,
+     "note": "stick drag never deflected the jet",
+     "ms": 6882,
+     "mode": "stick"
+    },
+    {
+     "id": "play-g243-zone-never-covers-friend",
+     "ask": "G-243 point 3: the stick zone never covers the Play-a-Friend buttons",
+     "ok": false,
+     "note": "stick zone is visible over the menu",
+     "ms": 470,
+     "mode": "zone"
+    },
+    {
+     "id": "play-ai-jets-flying",
+     "ask": "G-247: 3-5 computer jets in the other styles and paints fly wide loops and stay above the ground",
+     "ok": true,
+     "note": "",
+     "ms": 13469,
+     "mode": "ai"
+    },
+    {
+     "id": "never-g-243-p1",
+     "ask": "NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time",
+     "ok": true,
+     "note": "",
+     "ms": 82286,
+     "mode": "g"
+    },
+    {
+     "id": "play-band-shows-on-final-freeflight",
+     "ask": "G-268: the 55-88 kt band shows on the HUD during final approach in free flight too, so the robot's play picture shows it",
+     "ok": true,
+     "note": "",
+     "ms": 10925,
+     "mode": "band"
+    },
+    {
+     "id": "never-g-232-p1",
+     "ask": "NEVER (G-232): taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing",
+     "ok": true,
+     "note": "",
+     "ms": 9675,
+     "mode": "g"
+    },
+    {
+     "id": "menu-apex-look",
+     "ask": "Menu has the old green \"computer screen\" look",
+     "ok": true,
+     "note": "",
+     "ms": 78,
+     "mode": "menu"
+    },
+    {
+     "id": "play-climb-and-fly",
+     "ask": "climb and fly: stick up gains altitude and the plane keeps flying",
+     "ok": false,
+     "note": "plane barely moved (96m in 5s)",
+     "ms": 5496,
+     "mode": "climb"
+    },
+    {
+     "id": "play-crash",
+     "ask": "crash: a hard nose-down impact ends the flight with the crash screen",
+     "ok": true,
+     "note": "",
+     "ms": 4650,
+     "mode": "crash"
+    },
+    {
+     "id": "tester-challenge-offrunway-feedback",
+     "ask": "Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence)",
+     "ok": true,
+     "note": "",
+     "ms": 25973,
+     "mode": "challenge"
+    },
+    {
+     "id": "tester-challenge-can-slow-to-band",
+     "ask": "Landing challenge: the jet must be able to slow to the 55-88 kt touchdown band in a descent (today: it accelerates to 130kt+ and cannot slow down, making the runway unreachable)",
+     "ok": true,
+     "note": "",
+     "ms": 650,
+     "mode": "challenge"
+    },
+    {
+     "id": "play-jet-on-runway",
+     "ask": "G-141: the owners jet is the player plane (INSTRUCTIONS steps 1-2, 5, 6) and it starts parked ON THE RUNWAY on the ground; the step-6 look is in (PMREM environment so the paint reflects, a shadow-casting sun) - today the jet is in but the look is not: no environment, shadows off",
+     "ok": true,
+     "note": "",
+     "ms": 5032,
+     "mode": "jet"
+    },
+    {
+     "id": "play-g243-buttons-inside-safe-area",
+     "ask": "G-243 point 1: btnFree, friendGo and friendClose sit fully inside the 844x390 safe area",
+     "ok": true,
+     "note": "",
+     "ms": 5753,
+     "mode": "buttons"
+    },
+    {
+     "id": "play-g243-favicon-declared",
+     "ask": "G-243 point 5: the page declares a data: favicon so the browser never asks for /favicon.ico",
+     "ok": true,
+     "note": "",
+     "ms": 43,
+     "mode": "favicon"
+    },
+    {
+     "id": "play-takeoff-climbs",
+     "ask": "takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear)",
+     "ok": false,
+     "note": "ran out of wall time (v23 at -1.0 game-s)",
+     "ms": 28054,
+     "mode": "takeoff"
+    },
+    {
+     "id": "never-g-243-p2",
+     "ask": "NEVER (G-243): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure",
+     "ok": true,
+     "note": "",
+     "ms": 13885,
+     "mode": "g"
+    },
+    {
+     "id": "play-rwy36-reads-correct",
+     "ask": "G-275: runway 36 reads the correct way from behind the jet (not mirrored)",
+     "ok": true,
+     "note": "",
+     "ms": 970,
+     "mode": "rwy36"
+    },
+    {
+     "id": "play-band-uncovered-on-approach",
+     "ask": "G-283: on a landing-challenge approach the TD band chip is a distinct chip nothing overlaps, so the 55-88 kt warning is actually seen",
+     "ok": true,
+     "note": "",
+     "ms": 10577,
+     "mode": "band"
+    },
+    {
+     "id": "play-no-easy-stall",
+     "ask": "The plane stalls too easily when flying around - normal flying should be forgiving, stall only when you really pull up too slow",
+     "ok": true,
+     "note": "",
+     "ms": 1423,
+     "mode": "no"
+    },
+    {
+     "id": "play-turn",
+     "ask": "turn: holding right banks the plane and changes heading",
+     "ok": false,
+     "note": "heading changed only 0.21 rad in 4s (want > 0.3)",
+     "ms": 4492,
+     "mode": "turn"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "Play a friend with a friend code (My code / Enter code)",
+     "ok": true,
+     "note": "",
+     "ms": 68,
+     "mode": "friend"
+    },
+    {
+     "id": "tester-postscore-crash",
+     "ask": "After a scored landing, flying into the ocean must still crash the plane (today: nothing happens)",
+     "ok": true,
+     "note": "",
+     "ms": 99324,
+     "mode": "postscore"
+    },
+    {
+     "id": "play-controls-answer-in-100ms",
+     "ask": "G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons",
+     "ok": false,
+     "note": "stick did not move the jet within 100ms; THR+ did not raise the throttle within 100ms; THR- did not lower the throttle within 100ms; YAW did not turn the jet within 100ms (dead in the air)",
+     "ms": 1570,
+     "mode": "controls"
+    },
+    {
+     "id": "play-stick-shared-resets",
+     "ask": "G-232: the stick is the shared kit/controls.js stick (the jet pack stick is gone) and letting go stops it - pointerup, pointercancel, blur and hidden tab all reset it to centre",
+     "ok": true,
+     "note": "",
+     "ms": 5327,
+     "mode": "stick"
+    },
+    {
+     "id": "play-g243-jetbtn-clear-of-back",
+     "ask": "G-243 point 2: the JET button does not overlap the back button",
+     "ok": true,
+     "note": "",
+     "ms": 88,
+     "mode": "jetbtn"
+    },
+    {
+     "id": "play-g243-portrait-stick-on-screen",
+     "ask": "G-243 point 4: in portrait (390x844, body rotated) the stick base sits on the screen and the stick answers",
+     "ok": true,
+     "note": "",
+     "ms": 10144,
+     "mode": "portrait"
+    },
+    {
+     "id": "play-first-frame-safe",
+     "ask": "first frame: a fresh load never throws the parked jet under the world (negative frame time - lab-measured 2026-10-23: frame 2 read y=-14.4, vy=+12.6, and ground contact could never reach it again)",
+     "ok": true,
+     "note": "",
+     "ms": 10323,
+     "mode": "first"
+    },
+    {
+     "id": "play-band-shows-on-approach",
+     "ask": "G-263: the 55-88 kt touchdown band shows during the landing approach, and says whether the speed is inside it",
+     "ok": true,
+     "note": "",
+     "ms": 18641,
+     "mode": "band"
+    },
+    {
+     "id": "play-thr-button-in-row",
+     "ask": "G-280: the tall THR slider is gone; a slim THR button sits in the pad row overlapping nothing and ramps the throttle while held",
+     "ok": true,
+     "note": "",
+     "ms": 9362,
+     "mode": "thr"
+    }
+   ],
+   "part": "all",
+   "slow": {
+    "ms": 58,
+    "base": 60,
+    "factor": 1
+   },
+   "controls": {
+    "shared": true,
+    "ownStick": 0
+   },
+   "reality": {
+    "kind": "plane",
+    "size": {
+     "x": 10.47658282937789,
+     "y": 5.01059441345808,
+     "z": 15.394004616222468,
+     "minY": -1.750000011920929
+    },
+    "sizeMetres": {
+     "x": 10.48,
+     "y": 5.01,
+     "z": 15.39
+    },
+    "unitsPerMetre": 1,
+    "moves": 1,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 48,
+    "gameTime": false,
+    "gameSpeed": false
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 21,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "knownFaults": 0,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 36472
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 24499
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 55100
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 397667
+    }
+   ],
+   "playMs": 513738,
+   "endedAt": "2026-10-24T21:00:41.945Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "7924902"
+  },
+  {
+   "file": "apexracer.html",
+   "name": "Exotic Racer Club",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/circuit.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Play test failing: \"Every car shows its own paint: each real 3D model body material is replaced by that car paint, and grid paints are not all the same\" (no race)",
+    "Play test failing: \"APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body\" (Garage button on the menu could not be pressed)",
+    "Play test failing: \"Home screen: slim left tile column (RACE, Garage, Race Friends, Graphics, Sound, Credits in that order), thin top stat bar with the coins, everything fits the sideways phone, and the car keeps turning on its turntable\" (car is not turning on the home screen (spin moved 0.02 rad in 1.4s))",
+    "Play test failing: \"G-50: city traffic cars are real fetched 3D models, each in its own paint\" (traffic car uses unknown model goblin)",
+    "Play test failing: \"G-76: better steering - the car answers the stick quickly, turns where it points without sliding wide, and never snaps\" (the car barely answered the stick: only 0.18 rad of turn in 0.5 s at 27 m/s - steering still lags)",
+    "Play test failing: \"G-163 point 2: at night the headlights throw a pool of light on the road ahead of the car\" (the pool is not a soft additive light pool)",
+    "Play test failing: \"Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road\" (tall scenery comes within 1 m of the road at Honolulu - mountains belong off the road)",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexracer-1-menu.jpg",
+    "play": "img/apexracer-2-play.jpg",
+    "pics": [
+     {
+      "name": "garage",
+      "src": "img/apexracer-pic-garage.jpg"
+     }
+    ],
+    "fixes": "img/apexracer-4-fixes.jpg",
+    "face": "img/apexracer-face.jpg",
+    "upright": "img/apexracer-3-upright.jpg",
+    "safari": "img/apexracer-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:38:17.151Z",
+   "title": "Exotic Racer Club · Apex Arcade",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 5,
+    "median": 1817,
+    "hitches": 0,
+    "worst": 0
+   },
+   "words": 12,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 346,
+    "maxDraws": 540
+   },
+   "fixes": [
+    {
+     "id": "play-race-starts",
+     "ask": "Race starts: starting a race creates the race, the player car and a full grid",
+     "ok": true,
+     "note": "",
+     "ms": 506,
+     "mode": "race"
+    },
+    {
+     "id": "play-cars-drive-forward",
+     "ask": "Cars drive forward once the race runs",
+     "ok": true,
+     "note": "",
+     "ms": 851,
+     "mode": "cars"
+    },
+    {
+     "id": "play-lap-goes-up",
+     "ask": "Lap counter goes up as cars complete laps",
+     "ok": true,
+     "note": "",
+     "ms": 990,
+     "mode": "lap"
+    },
+    {
+     "id": "play-race-finishes",
+     "ask": "Race finishes with a results screen",
+     "ok": true,
+     "note": "",
+     "ms": 3967,
+     "mode": "race"
+    },
+    {
+     "id": "play-garage-buy",
+     "ask": "Garage buy works: buying a car adds it to the garage and selects it",
+     "ok": true,
+     "note": "",
+     "ms": 2277,
+     "mode": "garage"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "Friend code: entering a friend's RACE- code puts their car in your race",
+     "ok": true,
+     "note": "",
+     "ms": 6502,
+     "mode": "friend"
+    },
+    {
+     "id": "play-paint-own-colors",
+     "ask": "Every car shows its own paint: each real 3D model body material is replaced by that car paint, and grid paints are not all the same",
+     "ok": false,
+     "note": "no race",
+     "ms": 7579,
+     "mode": "paint"
+    },
+    {
+     "id": "play-paint-covers-car",
+     "ask": "G-46 fix: proper shiny paint covers every racer car - the clearcoat paint is on the whole body shell, not a small slice, so no car can vanish into dark factory materials",
+     "ok": true,
+     "note": "",
+     "ms": 59,
+     "mode": "paint"
+    },
+    {
+     "id": "play-goblin-name-wrap",
+     "ask": "APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body",
+     "ok": false,
+     "note": "Garage button on the menu could not be pressed",
+     "ms": 384,
+     "mode": "goblin"
+    },
+    {
+     "id": "play-race-start-fast",
+     "ask": "Lap choices show on the race sheet and the race starts promptly - twice in a row (staged start, cached environment)",
+     "ok": true,
+     "note": "",
+     "ms": 5942,
+     "mode": "race"
+    },
+    {
+     "id": "play-menu-turntable",
+     "ask": "Home screen: slim left tile column (RACE, Garage, Race Friends, Graphics, Sound, Credits in that order), thin top stat bar with the coins, everything fits the sideways phone, and the car keeps turning on its turntable",
+     "ok": false,
+     "note": "car is not turning on the home screen (spin moved 0.02 rad in 1.4s)",
+     "ms": 5699,
+     "mode": "menu"
+    },
+    {
+     "id": "play-traffic-glb",
+     "ask": "G-50: city traffic cars are real fetched 3D models, each in its own paint",
+     "ok": false,
+     "note": "traffic car uses unknown model goblin",
+     "ms": 2108,
+     "mode": "traffic"
+    },
+    {
+     "id": "play-colliders-visible",
+     "ask": "G-145: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with its own bright headlights and no light bars",
+     "ok": true,
+     "note": "",
+     "ms": 4089,
+     "mode": "colliders"
+    },
+    {
+     "id": "play-ai-models",
+     "ask": "G-70: every AI racer and traffic car is a real fetched 3D model, never the blob mockup",
+     "ok": true,
+     "note": "",
+     "ms": 521,
+     "mode": "ai"
+    },
+    {
+     "id": "play-ai-pace",
+     "ask": "G-270 fix 1 (owner, supersedes G-70/G-123): the player is far faster than the field - every AI best lap is at least 25% slower than the player best, so the player laps them",
+     "ok": true,
+     "note": "",
+     "ms": 1315,
+     "mode": "ai"
+    },
+    {
+     "id": "never-g-270-p1",
+     "ask": "G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3",
+     "ok": true,
+     "note": "",
+     "ms": 1652,
+     "mode": "g"
+    },
+    {
+     "id": "play-steering-feel",
+     "ask": "G-76: better steering - the car answers the stick quickly, turns where it points without sliding wide, and never snaps",
+     "ok": false,
+     "note": "the car barely answered the stick: only 0.18 rad of turn in 0.5 s at 27 m/s - steering still lags",
+     "ms": 72,
+     "mode": "steering"
+    },
+    {
+     "id": "play-sound-kit",
+     "ask": "G-80: the game uses the owner sound packs - every music and UI file it plays is in the repo at the path the code asks for",
+     "ok": true,
+     "note": "",
+     "ms": 1932,
+     "mode": "sound"
+    },
+    {
+     "id": "play-checklist",
+     "ask": "G-270 self-audit: checklists/apexracer.md exists with at least 20 lint-shaped items, and every NUMBERS token appears word for word in its SOURCE file",
+     "ok": true,
+     "note": "",
+     "ms": 54,
+     "mode": "checklist"
+    },
+    {
+     "id": "never-g-240-p1",
+     "ask": "G-240 fix 1 (owner): the engine must growl deep, not whine - the kit accel layers play slow (rate never above 0.8) through a 1500 Hz lowpass, so their full-throttle spectral centroid lands at or under 850 Hz (measured 683-812 Hz) instead of 1650-2323 Hz",
+     "ok": true,
+     "note": "",
+     "ms": 53,
+     "mode": "g"
+    },
+    {
+     "id": "play-engine-kit",
+     "ask": "G-240 (owner): the engine sound is the supercar kit in sounds/engines/supercar/ - idle + accel loops crossfaded by throttle, shift and backfire one-shots, tire squeal - decoded as buffers, and every kit file is in the repo",
+     "ok": true,
+     "note": "",
+     "ms": 60,
+     "mode": "engine"
+    },
+    {
+     "id": "play-music-buffers",
+     "ask": "Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo",
+     "ok": true,
+     "note": "",
+     "ms": 54,
+     "mode": "music"
+    },
+    {
+     "id": "play-reality-go",
+     "ask": "G-137: the REALITY robot can drive the car - go(true) really moves the player (over 0.3 m between samples)",
+     "ok": true,
+     "note": "",
+     "ms": 873,
+     "mode": "reality"
+    },
+    {
+     "id": "play-reality-time-speed",
+     "ask": "G-143: the REALITY hook reports game time and player speed - time() advances in race seconds and speed() reads the car in m/s",
+     "ok": true,
+     "note": "",
+     "ms": 1270,
+     "mode": "reality"
+    },
+    {
+     "id": "play-wrap-on-door",
+     "ask": "G-149 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end",
+     "ok": true,
+     "note": "",
+     "ms": 335,
+     "mode": "wrap"
+    },
+    {
+     "id": "play-no-light-bars",
+     "ask": "G-145 point 2: no car wears a light bar - the G-70 bumper bars are gone from the garage car, the race grid and traffic",
+     "ok": true,
+     "note": "",
+     "ms": 404,
+     "mode": "no"
+    },
+    {
+     "id": "play-headlights-bright",
+     "ask": "G-163: every car shines from its own headlights and tail lights - lamp meshes plus a soft glow front and rear, nothing solid",
+     "ok": true,
+     "note": "",
+     "ms": 277,
+     "mode": "headlights"
+    },
+    {
+     "id": "play-lights-no-solids",
+     "ask": "G-163 point 1 + owner glow fix: no solid light blocks, and the glow sits ON the lens - no glow quad reaches past the nose or the tail, nothing floats in front of the car",
+     "ok": true,
+     "note": "",
+     "ms": 315,
+     "mode": "lights"
+    },
+    {
+     "id": "play-headlight-pool",
+     "ask": "G-163 point 2: at night the headlights throw a pool of light on the road ahead of the car",
+     "ok": false,
+     "note": "the pool is not a soft additive light pool",
+     "ms": 288,
+     "mode": "headlight"
+    },
+    {
+     "id": "play-brake-lights",
+     "ask": "G-163 point 3: brake lights - the rear lamps and glows flare bright red while the brake is held",
+     "ok": true,
+     "note": "",
+     "ms": 3952,
+     "mode": "brake"
+    },
+    {
+     "id": "play-wrap-both-doors",
+     "ask": "G-176: the APEX ARCADE name wrap is on BOTH doors of the Goblin - a strip on each side, each inside the door span between the axles",
+     "ok": true,
+     "note": "",
+     "ms": 4314,
+     "mode": "wrap"
+    },
+    {
+     "id": "play-glow-on-surface",
+     "ask": "Lamp glow sits on the measured body surface, lamp-sized - no floating white dots (owner, G-163 follow-up)",
+     "ok": true,
+     "note": "",
+     "ms": 358,
+     "mode": "glow"
+    },
+    {
+     "id": "never-g-176-p1",
+     "ask": "NEVER (G-176): the job report carries an OWNER CHECK IN 30 SECONDS line with the target picture link and what to look at",
+     "ok": true,
+     "note": "",
+     "ms": 63,
+     "mode": "g"
+    },
+    {
+     "id": "map-apexracer-current",
+     "ask": "STUDIO-STANDARD 9.7 (G-179): the WHERE THINGS ARE map at the top of looks/apexracer.md names the main parts and its line numbers match apexracer.html",
+     "ok": true,
+     "note": "",
+     "ms": 58,
+     "mode": "map"
+    },
+    {
+     "id": "play-cars-visible",
+     "ask": "Owner Oct 22 2026: every computer car SHOWS in every city - a real model and a paint bright enough to read at dusk/night, never near-black",
+     "ok": true,
+     "note": "",
+     "ms": 8162,
+     "mode": "cars"
+    },
+    {
+     "id": "play-mountains-clear",
+     "ask": "Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road",
+     "ok": false,
+     "note": "tall scenery comes within 1 m of the road at Honolulu - mountains belong off the road",
+     "ms": 346,
+     "mode": "mountains"
+    },
+    {
+     "id": "play-night-no-blob",
+     "ask": "G-206: at night no car blows out to a pink/white blob - the headlight pool stays low-energy on every car, pools still exist, and the ?test=night owner link is in the game",
+     "ok": true,
+     "note": "",
+     "ms": 2363,
+     "mode": "night"
+    },
+    {
+     "id": "play-cars-grounded",
+     "ask": "G-207 (owner): every computer car in every city sits ON the road for the whole race - the skinned Tokii model shared one skeleton across all its cars and rendered sunk under the road (invisible cars); the pose is baked at load now, so no car may contain a skinned mesh or ride below the road while driving",
+     "ok": true,
+     "note": "",
+     "ms": 9798,
+     "mode": "cars"
+    },
+    {
+     "id": "never-g-207-p1",
+     "ask": "G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap",
+     "ok": true,
+     "note": "",
+     "ms": 5465,
+     "mode": "g"
+    }
+   ],
+   "slow": {
+    "ms": 52,
+    "base": 60,
+    "factor": 1
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 2
+   },
+   "reality": {
+    "kind": "car",
+    "size": {
+     "x": 2.828000068664552,
+     "y": 1.548532986963492,
+     "z": 5.580000000000001,
+     "minY": -2.220446049250313e-16
+    },
+    "sizeMetres": {
+     "x": 2.83,
+     "y": 1.55,
+     "z": 5.58
+    },
+    "unitsPerMetre": 1,
+    "moves": 11,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 48,
+    "gameTime": true,
+    "gameSpeed": true
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 8,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 2,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 23302
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 221891
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 196058
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 249910
+    }
+   ],
+   "playMs": 691161,
+   "endedAt": "2026-10-24T20:49:48.313Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "ef3abcb"
+  },
+  {
+   "file": "apexbaseball.html",
+   "name": "Apex Baseball",
+   "fail": [],
+   "check": [
+    "No owner-approved venue - build it from venues/ballpark.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Stutter: 3 short freezes in 6 s of play (worst 650 ms, normal frame 67 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"The owner's new ballpark (Apex Arcade Park) loads with its crowd, presented as the night park it is (G-40)\" (the ballpark loaded but the game still shows the old daytime look - his park is a night park (floodlights, dark sky))",
+    "Play test failing: \"BUILD G-222 (owner order Oct 22): the contact moment is big at the plate - as the pitch reaches the plate the batter fills the frame (not a speck), so you see the ball meet the bat\" (the batter is still a speck when the pitch reaches the plate: 0 px tall of 390 at the contact moment (target at least 80; the frozen G-167 framing measured ~42))",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): feet/skates/wheels never touch down while moving fast - no touchdown for 2.8 s (a sprint lands a foot at least every 0.5 s; lowest 0.02 m)",
+    "REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)",
+    "Stutter: 8 short freezes in 6 s of play (worst 1267 ms, normal frame 17 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Play test failing: \"the batter close-up shows his face and eyes (no helmet blob over them) and a full baseball uniform - button-front jersey in the team colour, no printed tee logo\" (a dark blob still covers the eyes: 76% of the eye area is dark (the old face-covering helmet measured 94%))",
+    "Friend codes have no 'play-friend-code' test yet (STORE-READY.md \"Friend codes\")",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): wheels/feet/skates FLOAT above the ground while standing/walking (7 of 8 readings over 3 cm, highest 0.28 m)",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): feet/skates/wheels never touch down while moving fast - no touchdown for 4.1 s (a sprint lands a foot at least every 0.5 s; lowest 0.00 m)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexbaseball-1-menu.jpg",
+    "play": "img/apexbaseball-2-play.jpg",
+    "fixes": "img/apexbaseball-4-fixes.jpg",
+    "face": "img/apexbaseball-face.jpg",
+    "upright": "img/apexbaseball-3-upright.jpg",
+    "safari": "img/apexbaseball-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:23:17.547Z",
+   "title": "Apex Baseball · Apex Arcade",
+   "look": {
+    "mono": 27,
+    "green": 8
+   },
+   "stutter": {
+    "frames": 98,
+    "median": 67,
+    "hitches": 3,
+    "worst": 650
+   },
+   "words": 5,
+   "studio": {
+    "skinned": 4,
+    "drawsPerFrame": 111,
+    "maxDraws": 220
+   },
+   "fixes": [
+    {
+     "id": "no-missing-stadium",
+     "ask": "Make a baseball stadium",
+     "ok": true,
+     "note": "",
+     "ms": 65,
+     "mode": "no"
+    },
+    {
+     "id": "play-camera-broadcast",
+     "ask": "Cameras are the TV broadcast spec: field of view 40-45 degrees, and the pitching view sits high on the centre-field side behind the pitcher (G-65)",
+     "ok": true,
+     "note": "",
+     "ms": 61,
+     "mode": "camera"
+    },
+    {
+     "id": "play-stick-reset-pointerup",
+     "ask": "Stick proof 1 of 3 (real touch): drag the aim pad, lift the finger (pointerup) - the stick lets go, nothing stays held (G-85)",
+     "ok": true,
+     "note": "",
+     "ms": 5027,
+     "mode": "stick"
+    },
+    {
+     "id": "play-stick-reset-blur",
+     "ask": "Stick proof 3 of 3 (real touch): drag the aim pad, the window loses focus (blur, e.g. app switch) - the stick resets to zero (G-85)",
+     "ok": true,
+     "note": "",
+     "ms": 4208,
+     "mode": "stick"
+    },
+    {
+     "id": "keep-batting-flow",
+     "ask": "KEEP: everything that works and looks right now (batting flow)",
+     "ok": true,
+     "note": "",
+     "ms": 61,
+     "mode": "batting"
+    },
+    {
+     "id": "play-three-outfielders",
+     "ask": "Three outfielders visible who chase fly balls (KEEP)",
+     "ok": true,
+     "note": "",
+     "ms": 42,
+     "mode": "three"
+    },
+    {
+     "id": "play-score-tracks",
+     "ask": "Score, inning, balls/strikes/outs track correctly",
+     "ok": true,
+     "note": "",
+     "ms": 54,
+     "mode": "score"
+    },
+    {
+     "id": "no-freeze-slowmo",
+     "ask": "Gameplay picture must not freeze (no slowmo)",
+     "ok": true,
+     "note": "",
+     "ms": 43,
+     "mode": "no"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "Play a friend with a friend code (G-08)",
+     "ok": true,
+     "note": "",
+     "ms": 47,
+     "mode": "friend"
+    },
+    {
+     "id": "play-rules-hit",
+     "ask": "Play baseball by its rules: a batter puts the ball in play and gets a hit (hit)",
+     "ok": true,
+     "note": "",
+     "ms": 4402,
+     "mode": "rules"
+    },
+    {
+     "id": "play-rules-run-scores",
+     "ask": "Play baseball by its rules: a run crosses the plate and the score goes up (run scores)",
+     "ok": true,
+     "note": "",
+     "ms": 10947,
+     "mode": "rules"
+    },
+    {
+     "id": "play-stadium-loads",
+     "ask": "The owner's new ballpark (Apex Arcade Park) loads with its crowd, presented as the night park it is (G-40)",
+     "ok": false,
+     "note": "the ballpark loaded but the game still shows the old daytime look - his park is a night park (floodlights, dark sky)",
+     "ms": 46,
+     "mode": "stadium"
+    },
+    {
+     "id": "tester-overlay-buttons-off-phone",
+     "ask": "TESTER: menu overlay buttons hang off the bottom of a sideways phone - Help CLOSE is fully below the screen (overlay does not scroll, so Help cannot be closed) and the Friend START/CLOSE buttons are cut off",
+     "ok": true,
+     "note": "",
+     "ms": 8601,
+     "mode": "overlay"
+    },
+    {
+     "id": "tester-help-button-covers-cam",
+     "ask": "TESTER: the ? (help) button at the top right sits on top of the CAM button - the CAM label is partly covered and the covered part cannot be tapped",
+     "ok": true,
+     "note": "",
+     "ms": 67,
+     "mode": "help"
+    },
+    {
+     "id": "tester-batting-swing-wall-clock",
+     "ask": "TESTER: batting timing is judged on the wall clock while the pitch flies on game time - on a slow device a fastball takes ~9-12 s of wall time to arrive (game time 0.95 s), but a swing only counts within 0.17 s of the wall-clock mark, so a swing made exactly as the ball crosses the plate is always a swinging strike (G-184: 14 timed swings, 0 contact)",
+     "ok": true,
+     "note": "",
+     "ms": 29102,
+     "mode": "batting"
+    },
+    {
+     "id": "play-kit-assets-live",
+     "ask": "BUILD G-144: the owner kits are really used - crowd, bat crack and glove samples from sounds/stadium/baseball/ decoded and ready, and the kit infield/grass textures from kit/ground/512/ on the park field LIVE material (touch path included)",
+     "ok": true,
+     "note": "",
+     "ms": 3969,
+     "mode": "kit"
+    },
+    {
+     "id": "play-daylight-batter-crowd",
+     "ask": "BUILD G-151 (art director): the play picture is a DAY scene - bright frame, the stands full of visible crowd people, and the batter big and lit above the bottom bar in the pitching view and with the ball in play",
+     "ok": true,
+     "note": "",
+     "ms": 5064,
+     "mode": "daylight"
+    },
+    {
+     "id": "never-g-222-p1",
+     "ask": "NEVER (owner 2026-10-23, G-222 fix round 1): the field and players stay clear and recognizable in the pitching view (crisp rendering - texture anisotropy on the park), and the pitcher glove reads as a glove, never a big brown thing on his arm (a real mitt is ~0.32 m, not a 0.44 m smooth blob)",
+     "ok": true,
+     "note": "",
+     "ms": 2255,
+     "mode": "g"
+    },
+    {
+     "id": "play-pitcher-in-pitching-frame",
+     "ask": "BUILD G-222 (owner order Oct 22): the pitcher stands fully inside the pitching frame - head and feet on screen, not cut off below it",
+     "ok": true,
+     "note": "",
+     "ms": 2687,
+     "mode": "pitcher"
+    },
+    {
+     "id": "play-contact-big-at-plate",
+     "ask": "BUILD G-222 (owner order Oct 22): the contact moment is big at the plate - as the pitch reaches the plate the batter fills the frame (not a speck), so you see the ball meet the bat",
+     "ok": false,
+     "note": "the batter is still a speck when the pitch reaches the plate: 0 px tall of 390 at the contact moment (target at least 80; the frozen G-167 framing measured ~42)",
+     "ms": 71476,
+     "mode": "contact"
+    },
+    {
+     "id": "play-help-close-on-upright-phone",
+     "ask": "BUILD G-248 (robot red line on PR #1381): on an upright phone (390x844) the Help overlay CLOSE button sits off the left edge of the screen - the rotated stage is 390 tall but the compact-card rules only fire on a sideways phone, so the card lays out 695 tall inside the 390 stage and rotation pushes CLOSE off screen; the CLOSE button must be fully on screen on an upright phone",
+     "ok": true,
+     "note": "",
+     "ms": 1103,
+     "mode": "help"
+    },
+    {
+     "id": "play-flight-within-cap",
+     "ask": "BUILD G-278: a pitch flight completes within its own game time plus 2 s of frame and observation lag on a loaded page (the G-262 fix round 1 cap of +0.75 s failed a correct 0.95 s fastball the robot measured at 1.91 s wall on main ef8ce80)",
+     "ok": true,
+     "note": "",
+     "ms": 1240,
+     "mode": "flight"
+    },
+    {
+     "id": "tester-chk-b03",
+     "ask": "tester-chk-b03",
+     "ok": true,
+     "note": "",
+     "ms": 89,
+     "mode": "b03"
+    },
+    {
+     "id": "play-batting-order-nine",
+     "ask": "BUILD G-269: the batting order has 9 distinct batters (rules/baseball.md) - nine bat-holding figures stand in the scene, not the same one figure for every at-bat",
+     "ok": true,
+     "note": "",
+     "ms": 56,
+     "mode": "batting"
+    },
+    {
+     "id": "play-player-height",
+     "ask": "Players are real-proportioned people, about 1.85 m tall (G-65)",
+     "ok": true,
+     "note": "",
+     "ms": 102,
+     "mode": "player"
+    },
+    {
+     "id": "play-menu-over-new-ballpark",
+     "ask": "The first menu picture already shows the new ballpark: a loading screen covers the game until Apex Arcade Park has loaded, and only then does the menu open (G-79)",
+     "ok": true,
+     "note": "",
+     "ms": 2418,
+     "mode": "menu"
+    },
+    {
+     "id": "play-stick-reset-pointercancel",
+     "ask": "Stick proof 2 of 3 (real touch): drag the aim pad, the touch is cancelled (pointercancel, e.g. a call comes in) - the stick resets to zero (G-85)",
+     "ok": true,
+     "note": "",
+     "ms": 6406,
+     "mode": "stick"
+    },
+    {
+     "id": "play-umpire-behind-batter",
+     "ask": "The umpire stands behind the batter (behind the catcher) - never a second man stacked on the pitcher (owner G-85 fix)",
+     "ok": true,
+     "note": "",
+     "ms": 4671,
+     "mode": "umpire"
+    },
+    {
+     "id": "play-pitch-thrown",
+     "ask": "Pitcher throws the ball toward the plate",
+     "ok": true,
+     "note": "",
+     "ms": 2095,
+     "mode": "pitch"
+    },
+    {
+     "id": "play-crowd-present",
+     "ask": "Stadium has a crowd (venue sheet: 25,000+)",
+     "ok": true,
+     "note": "",
+     "ms": 75,
+     "mode": "crowd"
+    },
+    {
+     "id": "play-day-lighting",
+     "ask": "Day lighting: batter clearly visible (KEEP: no night-dark, no green tint)",
+     "ok": true,
+     "note": "",
+     "ms": 66,
+     "mode": "day"
+    },
+    {
+     "id": "menu-friend-button",
+     "ask": "Menu has a Play a friend button (G-08)",
+     "ok": true,
+     "note": "",
+     "ms": 64,
+     "mode": "menu"
+    },
+    {
+     "id": "play-rules-pitch",
+     "ask": "Play baseball by its rules: a pitch is thrown toward the plate and the count moves (pitch)",
+     "ok": true,
+     "note": "",
+     "ms": 1639,
+     "mode": "rules"
+    },
+    {
+     "id": "play-rules-out",
+     "ask": "Play baseball by its rules: an out is recorded on a strikeout, a catch or a ground out (out)",
+     "ok": true,
+     "note": "",
+     "ms": 15124,
+     "mode": "rules"
+    },
+    {
+     "id": "play-rules-inning-ends",
+     "ask": "Play baseball by its rules: three outs end the half inning and the other side comes in (inning ends)",
+     "ok": true,
+     "note": "",
+     "ms": 9014,
+     "mode": "rules"
+    },
+    {
+     "id": "play-kit-field-textures",
+     "ask": "The park field wears the owner's kit grass + infield dirt textures (G-51)",
+     "ok": true,
+     "note": "",
+     "ms": 74,
+     "mode": "kit"
+    },
+    {
+     "id": "tester-count-resets-each-batter",
+     "ask": "TESTER: the ball/strike count never resets after a strikeout or a walk - the next batter starts with the old count (the banner shows counts like 4-2), so he strikes out on one strike or walks on one ball",
+     "ok": true,
+     "note": "",
+     "ms": 27596,
+     "mode": "count"
+    },
+    {
+     "id": "play-batting-timing-game-clock",
+     "ask": "BUILD G-237: batting timing is scored on the pitch game clock, not the wall clock - a swing made as the ball crosses the plate contacts or fouls instead of always whiffing (G-184/G-237)",
+     "ok": true,
+     "note": "",
+     "ms": 4756,
+     "mode": "batting"
+    },
+    {
+     "id": "play-reality-hook-camera",
+     "ask": "BUILD G-120: the REALITY hook exposes camera: (REALITY.md) - the game THREE camera, so the robot can take the player close-up",
+     "ok": true,
+     "note": "",
+     "ms": 8417,
+     "mode": "recheck"
+    },
+    {
+     "id": "play-feet-within-3cm",
+     "ask": "BUILD G-146 (art director): every player stands ON the ground - soles measured on the skinned body (the reality robot method) across standing and the batter trot: 0 readings sunk more than 5 cm and every reading within 3 cm of the ground",
+     "ok": true,
+     "note": "",
+     "ms": 15143,
+     "mode": "feet"
+    },
+    {
+     "id": "play-face-closeup-uniform",
+     "ask": "the batter close-up shows his face and eyes (no helmet blob over them) and a full baseball uniform - button-front jersey in the team colour, no printed tee logo",
+     "ok": false,
+     "note": "a dark blob still covers the eyes: 76% of the eye area is dark (the old face-covering helmet measured 94%)",
+     "ms": 3453,
+     "mode": "face"
+    },
+    {
+     "id": "never-g-167-p1",
+     "ask": "NEVER (G-167 fix round 1, 2026-10-22): the pitching camera sits so far back that the players are specks - zoom in so the batter and catcher read big in the play picture",
+     "ok": true,
+     "note": "",
+     "ms": 125,
+     "mode": "g"
+    },
+    {
+     "id": "play-camera-follows-pitch",
+     "ask": "BUILD G-222 (owner order Oct 22): the camera follows the windup and the pitch in flight - it moves with the play and keeps the ball on screen until it reaches the plate",
+     "ok": true,
+     "note": "",
+     "ms": 24796,
+     "mode": "camera"
+    },
+    {
+     "id": "play-reality-units-per-metre",
+     "ask": "BUILD G-248: the REALITY hook reports unitsPerMetre 1.0936 (the game runs on 3 ft units, 1 unit = 0.9144 m) so the robot and testers read metres (REALITY.md Units)",
+     "ok": true,
+     "note": "",
+     "ms": 82,
+     "mode": "reality"
+    },
+    {
+     "id": "play-flight-t-exposed",
+     "ask": "BUILD G-262: during a pitch flight window.__test.flightT reports the thrown pitch's own game time (fast 0.95 / curve 1.18 / change 1.38) so the batting-timing test judges each flight against its own T instead of a hardcoded fastball",
+     "ok": true,
+     "note": "",
+     "ms": 5461,
+     "mode": "flight"
+    },
+    {
+     "id": "tester-chk-b01",
+     "ask": "CHECKLIST B01: Bases are 27.4 m apart (REALITY.md) - distance between neighbouring base objects, within 3%",
+     "ok": true,
+     "note": "",
+     "ms": 111,
+     "mode": "b01"
+    },
+    {
+     "id": "tester-portrait-overlay-close-offscreen",
+     "ask": "TESTER: on an upright phone the Help overlay CLOSE button sits off the left edge of the screen - Help cannot be closed by tapping without rotating the phone",
+     "ok": true,
+     "note": "",
+     "ms": 9223,
+     "mode": "menu"
+    },
+    {
+     "id": "tester-chk-b05",
+     "ask": "The batting order has 9 batters (rules/baseball.md)",
+     "ok": true,
+     "note": "",
+     "ms": 114,
+     "mode": "b05"
+    }
+   ],
+   "part": "all",
+   "slow": {
+    "ms": 40,
+    "base": 60,
+    "factor": 1
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 0
+   },
+   "reality": {
+    "kind": "person",
+    "size": {
+     "x": 2.064410522887499,
+     "y": 2.0537115983256515,
+     "z": 0.323720008239296,
+     "minY": 0.04217839588377917
+    },
+    "sizeMetres": {
+     "x": 1.89,
+     "y": 1.88,
+     "z": 0.3
+    },
+    "unitsPerMetre": 1.0936,
+    "moves": 11,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 24,
+    "gameTime": false,
+    "gameSpeed": false
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 5,
+    "stick": false
+   },
+   "uprightFill": 1,
+   "sharpness": 2,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 11957
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 20703
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 19806
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 204659
+    }
+   ],
+   "playMs": 257125,
+   "endedAt": "2026-10-24T20:27:34.672Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apexmonstertruck.html",
+   "name": "Apex Monster Truck",
+   "fail": [
+    "STICK: the touch controls can get stuck - add window blur + visibilitychange handlers that set the stick and every held button back to 0 (a call or notification on the phone must never leave the player moving or steering by itself)"
+   ],
+   "check": [
+    "No owner-approved venue - build it from venues/truck-arena.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Stutter: 11 short freezes in 6 s of play (worst 2617 ms, normal frame 17 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "looks/apexmonstertruck.md has no \"WHERE THINGS ARE\" map at the top (STUDIO-STANDARD 9.7) - add one with line numbers and keep it current",
+    "Play test failing: \"Truck drives forward when given speed\" (truck only moved 8.2m with sp=30 for 2s)",
+    "Play test failing: \"Truck landing on a car crushes it and scores\" (car not crushed after truck dropped on it)",
+    "Play test failing: \"Truck with upward velocity gets air and lands with gravity\" (truck did not complete jump arc)",
+    "Play test failing: \"J45: SAME J5 truck at 2x size (~5.4m tall, ~4.2m tires)\" (height 7.5m, want ~5.4m (2x J5))",
+    "Play test failing: \"J45(2): 3-2-1 camera starts high above HIS truck and dives to its back by GO\" (camera not dived by GO (y=103, want ~12.6))",
+    "Play test failing: \"J45(4): drive stick alone reaches ~90mph with quicker pickup\" (reached 90mph but took 11.1s (too slow))",
+    "Career mode has NO playability test - add 'play-career-...' tests that start every career level, play it to the end and unlock the next (STORE-READY.md \"Career mode\")",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "No friend codes yet - add a \"👥 Play a friend\" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md \"Friend codes\")",
+    "No REALITY hook yet (window.__reality) - add it so the robot can measure direction, sizes and ground contact (REALITY.md \"Robot hook\")",
+    "No close-up of the player: no player in the hook (REALITY.md hook: player)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexmonstertruck-1-menu.jpg",
+    "play": "img/apexmonstertruck-2-play.jpg",
+    "fixes": "img/apexmonstertruck-4-fixes.jpg",
+    "upright": "img/apexmonstertruck-3-upright.jpg",
+    "safari": "img/apexmonstertruck-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:25:14.555Z",
+   "title": "Apex Monster Truck · Apex Arcade Game Development",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 34,
+    "median": 17,
+    "hitches": 11,
+    "worst": 2617
+   },
+   "words": 11,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 399,
+    "maxDraws": 633
+   },
+   "fixes": [
+    {
+     "id": "play-drive-forward",
+     "ask": "Truck drives forward when given speed",
+     "ok": false,
+     "note": "truck only moved 8.2m with sp=30 for 2s",
+     "ms": 2113,
+     "mode": "drive"
+    },
+    {
+     "id": "play-crush-car",
+     "ask": "Truck landing on a car crushes it and scores",
+     "ok": false,
+     "note": "car not crushed after truck dropped on it",
+     "ms": 1562,
+     "mode": "crush"
+    },
+    {
+     "id": "play-jump-airtime",
+     "ask": "Truck with upward velocity gets air and lands with gravity",
+     "ok": false,
+     "note": "truck did not complete jump arc",
+     "ms": 6105,
+     "mode": "jump"
+    },
+    {
+     "id": "play-engine-revs",
+     "ask": "Engine sound revs with speed (J5: 35Hz idle to 180Hz)",
+     "ok": true,
+     "note": "",
+     "ms": 66,
+     "mode": "engine"
+    },
+    {
+     "id": "play-music-plays",
+     "ask": "Menu and game music play, mute silences all (J5)",
+     "ok": true,
+     "note": "",
+     "ms": 58,
+     "mode": "music"
+    },
+    {
+     "id": "play-real-sizes",
+     "ask": "J45: SAME J5 truck at 2x size (~5.4m tall, ~4.2m tires)",
+     "ok": false,
+     "note": "height 7.5m, want ~5.4m (2x J5)",
+     "ms": 54,
+     "mode": "real"
+    },
+    {
+     "id": "play-j45-stadium-fullsize",
+     "ask": "J45(1): full-size bowl around course - no toy kit stadium, no black slab",
+     "ok": true,
+     "note": "",
+     "ms": 64,
+     "mode": "j45"
+    },
+    {
+     "id": "play-j45-countdown-dive",
+     "ask": "J45(2): 3-2-1 camera starts high above HIS truck and dives to its back by GO",
+     "ok": false,
+     "note": "camera not dived by GO (y=103, want ~12.6)",
+     "ms": 3358,
+     "mode": "j45"
+    },
+    {
+     "id": "play-j45-no-boost",
+     "ask": "J45(3): BOOST button is gone",
+     "ok": true,
+     "note": "",
+     "ms": 72,
+     "mode": "j45"
+    },
+    {
+     "id": "play-j45-90mph",
+     "ask": "J45(4): drive stick alone reaches ~90mph with quicker pickup",
+     "ok": false,
+     "note": "reached 90mph but took 11.1s (too slow)",
+     "ms": 11205,
+     "mode": "j45"
+    },
+    {
+     "id": "play-300mph",
+     "ask": "Owner Oct 18 7:43 PM: the truck goes 300 mph (drive stick alone)",
+     "ok": true,
+     "note": "",
+     "ms": 74086,
+     "mode": "300mph"
+    },
+    {
+     "id": "play-engine-over-music",
+     "ask": "Owner Oct 18 6:28 / 7:25 / 9:08 PM: engine deep and separate, music has no bass under it, a little louder, steps back a bit while driving",
+     "ok": true,
+     "note": "",
+     "ms": 86,
+     "mode": "engine"
+    },
+    {
+     "id": "play-loops-and-sky-ramps",
+     "ask": "Owner Oct 18 9:09 PM: a big loop that launches you into the air + lots of different loops + ramps to jump high into the sky",
+     "ok": true,
+     "note": "",
+     "ms": 111,
+     "mode": "loops"
+    },
+    {
+     "id": "play-dirt-mounds-and-tracks",
+     "ask": "Owner Oct 18 9:42 PM: more individual dirt mounds to jump + dirt tracks everywhere",
+     "ok": true,
+     "note": "",
+     "ms": 88,
+     "mode": "dirt"
+    },
+    {
+     "id": "play-engine-recording",
+     "ask": "Owner Oct 18 7:52 + 8:08 PM: the engine is HIS tuned recordings mixed (idle, mid, high + supercharger whine on the gas), not the synth",
+     "ok": true,
+     "note": "",
+     "ms": 62,
+     "mode": "engine"
+    }
+   ],
+   "slow": {
+    "ms": 58,
+    "base": 60,
+    "factor": 1
+   },
+   "career": {
+    "tests": 0,
+    "failing": 0
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 1
+   },
+   "reality": null,
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 2,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 25280
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 44501
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 56211
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 216997
+    }
+   ],
+   "playMs": 342989,
+   "endedAt": "2026-10-24T20:30:57.544Z",
+   "status": "FAIL",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apexmoto.html",
+   "name": "Apex Moto",
+   "fail": [
+    "STICK: the touch controls can get stuck - add window blur + visibilitychange handlers that set the stick and every held button back to 0 (a call or notification on the phone must never leave the player moving or steering by itself)"
+   ],
+   "check": [
+    "Stutter: 5 short freezes in 6 s of play (worst 2733 ms, normal frame 17 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "Busy play screen: about 21 words during play (biggest: \"‹ GAME DEVELOPMENT\") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md \"Clean screen\")",
+    "Heavy for phones: about 646 draw calls per frame (aim under 450; merge meshes - see STUDIO-STANDARD.md \"Phone budget\")",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "No friend codes yet - add a \"👥 Play a friend\" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md \"Friend codes\")",
+    "No REALITY hook yet (window.__reality) - add it so the robot can measure direction, sizes and ground contact (REALITY.md \"Robot hook\")",
+    "No close-up of the player: no player in the hook (REALITY.md hook: player)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexmoto-1-menu.jpg",
+    "play": "img/apexmoto-2-play.jpg",
+    "fixes": "img/apexmoto-4-fixes.jpg",
+    "upright": "img/apexmoto-3-upright.jpg",
+    "safari": "img/apexmoto-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:22:01.376Z",
+   "title": "Apex Moto · Apex Arcade Game Development",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 15,
+    "median": 17,
+    "hitches": 5,
+    "worst": 2733
+   },
+   "words": 21,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 646,
+    "maxDraws": 985
+   },
+   "fixes": [
+    {
+     "id": "play-all-his-bikes",
+     "ask": "All the bikes he sent are in the garage, plus green / blue / orange Apex bikes",
+     "ok": true,
+     "note": "",
+     "ms": 118,
+     "mode": "all"
+    },
+    {
+     "id": "play-epic-cruz-paint",
+     "ask": "Extra paint jobs like the Epic Cruz",
+     "ok": true,
+     "note": "",
+     "ms": 149,
+     "mode": "epic"
+    },
+    {
+     "id": "play-more-racers",
+     "ask": "More computer racers in the line-up",
+     "ok": true,
+     "note": "",
+     "ms": 4085,
+     "mode": "more"
+    },
+    {
+     "id": "play-ai-race-laps",
+     "ask": "Computer racers race the circuit (no one stuck)",
+     "ok": true,
+     "note": "",
+     "ms": 209,
+     "mode": "ai"
+    },
+    {
+     "id": "play-player-rides",
+     "ask": "Your bike speeds up and rides the track",
+     "ok": true,
+     "note": "",
+     "ms": 70,
+     "mode": "player"
+    },
+    {
+     "id": "play-tires-on-asphalt",
+     "ask": "Owner Oct 19: the motorcycle tires are going into the asphalt - tires always sit on top of it, not in it",
+     "ok": true,
+     "note": "",
+     "ms": 237,
+     "mode": "tires"
+    },
+    {
+     "id": "play-credits",
+     "ask": "Every CC-BY bike maker is credited",
+     "ok": true,
+     "note": "",
+     "ms": 64,
+     "mode": "credits"
+    }
+   ],
+   "slow": {
+    "ms": 58,
+    "base": 60,
+    "factor": 1
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 0
+   },
+   "reality": null,
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 2,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.6,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 27402
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 59248
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 120270
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 62651
+    }
+   ],
+   "playMs": 269571,
+   "endedAt": "2026-10-24T20:26:30.948Z",
+   "status": "FAIL",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apexpaperplane.html",
+   "name": "Paper Plane",
+   "fail": [],
+   "check": [
+    "Couldn't press any start button - add/fix this game's steps in games.json",
+    "Busy play screen: about 24 words during play (biggest: \"Hold to climb · let go to glide\") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md \"Clean screen\")",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexpaperplane.mjs, ids 'play-...')",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "No friend codes yet - add a \"👥 Play a friend\" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md \"Friend codes\")",
+    "No REALITY hook yet (window.__reality) - add it so the robot can measure direction, sizes and ground contact (REALITY.md \"Robot hook\")",
+    "No close-up of the player: no player in the hook (REALITY.md hook: player)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexpaperplane-1-menu.jpg",
+    "clip": "img/apexpaperplane-clip.mp4",
+    "play": "img/apexpaperplane-2-play.jpg",
+    "upright": "img/apexpaperplane-3-upright.jpg",
+    "safari": "img/apexpaperplane-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:22:01.101Z",
+   "title": "Paper Plane",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 136,
+    "median": 50,
+    "hitches": 0,
+    "worst": 0
+   },
+   "words": 24,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 0,
+    "maxDraws": 0
+   },
+   "fixes": [],
+   "controls": {
+    "shared": false,
+    "ownStick": 0
+   },
+   "reality": null,
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 4,
+    "stick": false
+   },
+   "uprightFill": 1,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 9083
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 18985
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 22489
+    }
+   ],
+   "playMs": 50557,
+   "endedAt": "2026-10-24T20:22:51.658Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apexreefdash.html",
+   "name": "Reef Dash",
+   "fail": [],
+   "check": [
+    "Couldn't press any start button - add/fix this game's steps in games.json",
+    "Busy play screen: about 24 words during play (biggest: \"Steer your sub to the finish gate\") - aim for only button labels and the score; instructions go behind How to play (STUDIO-STANDARD.md \"Clean screen\")",
+    "Only 0 play test(s) - every game needs 5+ tests that play it by its rules (fixes/apexreefdash.mjs, ids 'play-...')",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "No friend codes yet - add a \"👥 Play a friend\" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md \"Friend codes\")",
+    "No REALITY hook yet (window.__reality) - add it so the robot can measure direction, sizes and ground contact (REALITY.md \"Robot hook\")",
+    "No close-up of the player: no player in the hook (REALITY.md hook: player)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexreefdash-1-menu.jpg",
+    "clip": "img/apexreefdash-clip.mp4",
+    "play": "img/apexreefdash-2-play.jpg",
+    "upright": "img/apexreefdash-3-upright.jpg",
+    "safari": "img/apexreefdash-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:22:10.503Z",
+   "title": "Reef Dash",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 173,
+    "median": 33,
+    "hitches": 0,
+    "worst": 0
+   },
+   "words": 24,
+   "studio": {
+    "skinned": 0,
+    "drawsPerFrame": 0,
+    "maxDraws": 0
+   },
+   "fixes": [],
+   "controls": {
+    "shared": false,
+    "ownStick": 2
+   },
+   "reality": null,
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 5,
+    "stick": false
+   },
+   "uprightFill": 1,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 8561
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 17790
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 20705
+    }
+   ],
+   "playMs": 47056,
+   "endedAt": "2026-10-24T20:22:57.559Z",
+   "status": "CHECK",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apexsoccer.html",
+   "name": "Apex Soccer",
+   "fail": [
+    "Owner's fix NOT done yet: \"The players do not steal the ball - computer players must tackle and win the ball\" (defending AI won the ball 2x and kept it 0x in 22s (need 2 steals, 1 kept))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - pass like real soccer\" (AI team completed only 1 passes in 16s of possession (need 3+))",
+    "Owner's fix NOT done yet: \"Players do not play correctly - position like real soccer\" (back line did not push up: defenders average x=-36.2 (anchors are -34) with the ball at +30)",
+    "STICK: the touch controls can get stuck - add window blur + visibilitychange handlers that set the stick and every held button back to 0 (a call or notification on the phone must never leave the player moving or steering by itself)"
+   ],
+   "check": [
+    "No owner-approved venue - build it from venues/soccer.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER",
+    "Stutter: 10 short freezes in 6 s of play (worst 1617 ms, normal frame 17 ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md \"Phone budget\")",
+    "looks/apexsoccer.md has no \"WHERE THINGS ARE\" map at the top (STUDIO-STANDARD 9.7) - add one with line numbers and keep it current",
+    "Play test failing: \"a goal restarts from the centre spot\" (after a goal the ball did not restart from the centre spot)",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "No friend codes yet - add a \"👥 Play a friend\" button (My code / Enter a friend's code) with ApexKit.friend and a 'play-friend-code' test (STORE-READY.md \"Friend codes\")",
+    "No REALITY hook yet (window.__reality) - add it so the robot can measure direction, sizes and ground contact (REALITY.md \"Robot hook\")",
+    "No close-up of the player: no player in the hook (REALITY.md hook: player)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apexsoccer-1-menu.jpg",
+    "play": "img/apexsoccer-2-play.jpg",
+    "fixes": "img/apexsoccer-4-fixes.jpg",
+    "upright": "img/apexsoccer-3-upright.jpg",
+    "safari": "img/apexsoccer-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:25:19.966Z",
+   "title": "Apex Soccer · Apex Arcade",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 34,
+    "median": 17,
+    "hitches": 10,
+    "worst": 1617
+   },
+   "words": 9,
+   "studio": {
+    "skinned": 4,
+    "drawsPerFrame": 153,
+    "maxDraws": 432
+   },
+   "fixes": [
+    {
+     "id": "stadium-is-real",
+     "ask": "The stadium is still not right - make it a real soccer stadium: stands all around, lights, a crowd",
+     "ok": true,
+     "note": "",
+     "ms": 85,
+     "mode": "stadium"
+    },
+    {
+     "id": "ai-tackles-and-wins",
+     "ask": "The players do not steal the ball - computer players must tackle and win the ball",
+     "ok": false,
+     "note": "defending AI won the ball 2x and kept it 0x in 22s (need 2 steals, 1 kept)",
+     "ms": 22162,
+     "mode": "ai"
+    },
+    {
+     "id": "defenders-mark-men",
+     "ask": "Players do not play correctly - mark like real soccer",
+     "ok": true,
+     "note": "",
+     "ms": 4063,
+     "mode": "defenders"
+    },
+    {
+     "id": "team-spreads-out",
+     "ask": "Players do not play correctly - spread out like real soccer",
+     "ok": true,
+     "note": "",
+     "ms": 3075,
+     "mode": "team"
+    },
+    {
+     "id": "ai-builds-up-with-passes",
+     "ask": "Players do not play correctly - pass like real soccer",
+     "ok": false,
+     "note": "AI team completed only 1 passes in 16s of possession (need 3+)",
+     "ms": 16127,
+     "mode": "ai"
+    },
+    {
+     "id": "team-positioning",
+     "ask": "Players do not play correctly - position like real soccer",
+     "ok": false,
+     "note": "back line did not push up: defenders average x=-36.2 (anchors are -34) with the ball at +30",
+     "ms": 5074,
+     "mode": "team"
+    },
+    {
+     "id": "play-ai-wins-ball-30s",
+     "ask": "computer players win the ball back within 30 s",
+     "ok": true,
+     "note": "",
+     "ms": 23118,
+     "mode": "ai"
+    },
+    {
+     "id": "play-keep-positions",
+     "ask": "players keep their positions (formation discipline, not everyone chasing)",
+     "ok": true,
+     "note": "",
+     "ms": 5060,
+     "mode": "keep"
+    },
+    {
+     "id": "play-goal-restarts-centre",
+     "ask": "a goal restarts from the centre spot",
+     "ok": false,
+     "note": "after a goal the ball did not restart from the centre spot",
+     "ms": 15106,
+     "mode": "goal"
+    },
+    {
+     "id": "play-11v11",
+     "ask": "11 v 11 - ten outfield players plus a goalkeeper per team",
+     "ok": true,
+     "note": "",
+     "ms": 61,
+     "mode": "11v11"
+    },
+    {
+     "id": "play-kickoff-from-centre",
+     "ask": "kick-off starts from the centre spot",
+     "ok": true,
+     "note": "",
+     "ms": 55,
+     "mode": "kickoff"
+    }
+   ],
+   "slow": {
+    "ms": 50,
+    "base": 60,
+    "factor": 1
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 2
+   },
+   "reality": null,
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 10,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 28617
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 51665
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 68931
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 266837
+    }
+   ],
+   "playMs": 416050,
+   "endedAt": "2026-10-24T20:32:16.016Z",
+   "status": "FAIL",
+   "safari": [],
+   "carried": "ae3e298"
+  },
+  {
+   "file": "apextrackfield.html",
+   "name": "Apex Track & Field",
+   "fail": [
+    "Owner's fix NOT done yet: \"TESTER (G-200, BREAK round): 10,000m - mashing the run controls faster than any human cadence must not make the player faster. Stride input needs a rate cap: after settling into the run, 30 game-seconds of striding on EVERY tick (60/s) must not average more than 8.6 m/s (honest 0.30 s alternating cadence measured 7.56 m/s average, peak 7.97, on 2026-10-22; rivals are capped near 5.5-6.3 m/s).\" (mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player 316.7m - an average of 10.56 m/s, peak 10.56 m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past))",
+    "Owner's fix NOT done yet: \"CHECKLIST T04 (G-259): the relay baton changeover zone is 30 m long (rules/trackfield.md) - the green zone markings painted on the track in the relay event must span 30 m, within 3%\" (no relay changeover-zone markings found in the relay event)",
+    "Owner's fix NOT done yet: \"TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).\" (the 300m Hurdles places 8 hurdles per lane (64 hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish))",
+    "Owner's fix NOT done yet: \"CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as \"w\" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the \"w\" mark instead of counting as a best\" (the game models no wind at all: the sprint engine has no wind value (0 wind keys), the results screen shows \"05.47  (1st)\" with no wind reading and no \"w\" mark, and the time was saved as a best ({\"60m\":0.85}) - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as \"w\") can never apply)",
+    "Owner's fix NOT done yet: \"TESTER (G-271, checklist T07): throws get 3 attempts (plus 3 more for the top 8) - rules/trackfield.md.\" (the Shot Put ended after 3 attempts (attMax 3) and no athlete got 3 more attempts - rules/trackfield.md says throws get 3 attempts (plus 3 more for the top 8))"
+   ],
+   "check": [
+    "Play test failing: \"Final results show ONE table and ONE menu button (not the standings twice, not MENU and BACK TO MENU together), and the top-left words sit on a dark backing\" (test error: page.evaluate: Execution context was destroyed, most likely because of a navigation)",
+    "Not on the shared controls yet (kit/controls.js) - its job moves this game over; until then its own stick code is allowed",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): wheels/feet/skates FLOAT above the ground while standing/walking (1 of 3 readings over 3 cm, highest 0.03 m)",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): feet/skates/wheels never touch down while moving fast - no touchdown for 3.7 s (a sprint lands a foot at least every 0.5 s; lowest 0.00 m)",
+    "REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)",
+    "Play test failing: \"Winning the career championship (final) meet must unlock the next season\" (won/played the championship meet but the next season never unlocked (career still at season 2))",
+    "Play test failing: \"OWNER (2026-10-20): Triple jump - play it start to finish like a real meet and fix what is not real\" (the jump does not land in the sand pit - he came down at x -17.8 and the pit runs from -29.5 to -18.5)",
+    "Play test failing: \"A call or notification must never leave the player steering by itself: the held stick resets to centre on window blur and when the page hides\" (test error: page.evaluate: Execution context was destroyed, most likely because of a navigation)",
+    "Play test failing: \"JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane\" (the 10,000m draw never reported the field lanes)",
+    "Career mode broken: \"Winning the career championship (final) meet must unlock the next season\"",
+    "Friend codes have no 'play-friend-code' test yet (STORE-READY.md \"Friend codes\")",
+    "REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): feet/skates/wheels never touch down while moving fast - no touchdown for 2.8 s (a sprint lands a foot at least every 0.5 s; lowest -0.05 m)",
+    "Play test failing: \"A held ACTION button (the discus hold-to-spin) must release when a call or notification interrupts - blur releases it like a finger lift\" (test error: page.evaluate: Execution context was destroyed, most likely because of a navigation)",
+    "Play test failing: \"JOB G-83 (owner 3.png): the 4x100 relay must start at the REAL staggered relay start - never a line-up under the FINISH banner - and every lane has starting blocks\" (the relay start shows 7 starting blocks - every one of the 8 lanes must have blocks)"
+   ],
+   "ok": [],
+   "img": {
+    "menu": "img/apextrackfield-1-menu.jpg",
+    "play": "img/apextrackfield-2-play.jpg",
+    "fixes": "img/apextrackfield-4-fixes.jpg",
+    "face": "img/apextrackfield-face.jpg",
+    "upright": "img/apextrackfield-3-upright.jpg",
+    "safari": "img/apextrackfield-5-safari.jpg"
+   },
+   "startedAt": "2026-10-24T20:26:35.923Z",
+   "title": "Apex Track & Field 3D",
+   "look": {
+    "mono": 0,
+    "green": 0
+   },
+   "stutter": {
+    "frames": 23,
+    "median": 383,
+    "hitches": 0,
+    "worst": 0
+   },
+   "words": 9,
+   "studio": {
+    "skinned": 8,
+    "drawsPerFrame": 101,
+    "maxDraws": 163
+   },
+   "fixes": [
+    {
+     "id": "touch-controls",
+     "ask": "I can't play Track & Field - no way to control it",
+     "ok": true,
+     "note": "",
+     "ms": 74,
+     "mode": "touch"
+    },
+    {
+     "id": "singlet-kit",
+     "ask": "Sprinters wear a track singlet kit, not a soccer kit",
+     "ok": true,
+     "note": "",
+     "ms": 62,
+     "mode": "singlet"
+    },
+    {
+     "id": "real-college-bowl",
+     "ask": "A real college track stadium: seating all the way around the oval, 30,000+ crowd",
+     "ok": true,
+     "note": "",
+     "ms": 64,
+     "mode": "real"
+    },
+    {
+     "id": "camera-one-rule",
+     "ask": "Camera 7 m behind the player's runner along the lane direction (it follows the lane around the curves), 2.8 m up, looking at a point 10 m ahead of the runner; it never goes behind the start line into the stands or through any wall - clamp it inside the stadium.",
+     "ok": true,
+     "note": "",
+     "ms": 2077,
+     "mode": "camera"
+    },
+    {
+     "id": "two-thumbs-at-once",
+     "ask": "Holding the stick must never block TAP RUN / HURDLE - two thumbs at once",
+     "ok": true,
+     "note": "",
+     "ms": 14335,
+     "mode": "two"
+    },
+    {
+     "id": "play-career-levels-load-play-unlock",
+     "ask": "CAREER MODE: the levels don't work - every career level must load, play and unlock the next",
+     "ok": true,
+     "note": "",
+     "ms": 8672,
+     "mode": "career"
+    },
+    {
+     "id": "discus-one-action",
+     "ask": "DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, like a real thrower; at most 2 taps) and the camera must show the thrower clearly from behind/side, never hidden behind the power bar",
+     "ok": true,
+     "note": "",
+     "ms": 8507,
+     "mode": "discus"
+    },
+    {
+     "id": "throw-flight-camera-and-landing-marker",
+     "ask": "JOB J42 (owner): DISCUS (and shot put, javelin) - after the throw, the camera follows the implement through the air and shows its landing marker",
+     "ok": true,
+     "note": "",
+     "ms": 14753,
+     "mode": "throw"
+    },
+    {
+     "id": "play-distance-races-real-speed",
+     "ask": "I'm running super fast in the long races - distance races must run at real speed (no fast-forward), long ones join at 700m to go",
+     "ok": true,
+     "note": "",
+     "ms": 102,
+     "mode": "distance"
+    },
+    {
+     "id": "play-friend-code",
+     "ask": "Friend codes: 'play a friend' - my TFAPEX code shows on the friend-code screen, a friend's code adds them as a rival at their rating, and they line up against you in a real race",
+     "ok": true,
+     "note": "",
+     "ms": 13330,
+     "mode": "friend"
+    },
+    {
+     "id": "finish-banner-never-covers-timer",
+     "ask": "OWNER (2026-10-20): the FINISH banner covers the timer at the top left",
+     "ok": true,
+     "note": "",
+     "ms": 57,
+     "mode": "finish"
+    },
+    {
+     "id": "play-long-jump-lands-in-the-pit",
+     "ask": "OWNER (2026-10-20): Long jump - play it start to finish like a real meet and fix what is not real",
+     "ok": true,
+     "note": "",
+     "ms": 57,
+     "mode": "long"
+    },
+    {
+     "id": "play-results-one-table-one-menu-button",
+     "ask": "Final results show ONE table and ONE menu button (not the standings twice, not MENU and BACK TO MENU together), and the top-left words sit on a dark backing",
+     "ok": false,
+     "note": "test error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+     "ms": 4906,
+     "mode": "results"
+    },
+    {
+     "id": "play-menu-fits-sideways-phone",
+     "ask": "JOB G-75 (owner + Grok audit): the main menu buttons (Career / Tournament / Free play / Code / Add rival / How to play) fall off-screen on a sideways phone - every menu control must fit inside the 844x390 screen with the panel fully shown (no scrolling)",
+     "ok": true,
+     "note": "",
+     "ms": 7791,
+     "mode": "menu"
+    },
+    {
+     "id": "play-races-start-on-the-line-together",
+     "ask": "JOB G-83 (owner 2.png): EVERY race starts with ALL runners on the start line together - nobody ahead of the line and nobody already running when the gun goes",
+     "ok": true,
+     "note": "",
+     "ms": 58,
+     "mode": "races"
+    },
+    {
+     "id": "tester-hurdle-height-300m",
+     "ask": "TESTER (G-56): real sizes - the 300m hurdles stand 0.914 m high like real ones (REALITY.md: real sizes in metres, within 15%)",
+     "ok": true,
+     "note": "",
+     "ms": 7908,
+     "mode": "hurdle"
+    },
+    {
+     "id": "tester-menu-buttons-44px",
+     "ask": "TESTER (G-105): controls - every main-menu button is at least the 44x44 CSS px touch target DONE.md section 2 asks for",
+     "ok": true,
+     "note": "",
+     "ms": 6540,
+     "mode": "menu"
+    },
+    {
+     "id": "play-hurdles-set-in-every-lane",
+     "ask": "G-39/G-43 fix (owner): hurdle races need hurdles in EVERY lane - a hurdle stands in front of every runner, not only in the player's lane",
+     "ok": true,
+     "note": "",
+     "ms": 1049,
+     "mode": "hurdles"
+    },
+    {
+     "id": "never-g-122-p1",
+     "ask": "NEVER (G-122): the 400m and 300m hurdles stand 0.914 m high like real ones (the robot FAIL lines of G-122 round 1)",
+     "ok": true,
+     "note": "",
+     "ms": 17698,
+     "mode": "g"
+    },
+    {
+     "id": "tester-hurdle-cross-plane",
+     "ask": "TESTER (G-130): one board per hurdle - a hurdle is a single board facing the runner, not two full-size boards crossed at 90 degrees (the sideways copy sticks through the middle of every hurdle and shows as cross/plus shapes and extra hurdles between the real ones)",
+     "ok": true,
+     "note": "",
+     "ms": 8441,
+     "mode": "hurdle"
+    },
+    {
+     "id": "play-test-link-starts-the-event",
+     "ask": "G-171 (Mac, 2026-10-22): apextrackfield.html?test=60h (any EVENTS id) opens that event in Free Play and starts it at once - no menu, no card, no story; in a hurdles event the countdown camera holds every lane’s first hurdle close in frame so the owner can check the hurdles in seconds",
+     "ok": true,
+     "note": "",
+     "ms": 16261,
+     "mode": "test"
+    },
+    {
+     "id": "never-g-193-p1",
+     "ask": "G-193 r1: the relay PASS button works from the start of the exchange zone - the receiver is in reach when the carrier arrives, not only in the last metres",
+     "ok": true,
+     "note": "",
+     "ms": 4606,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-249-p1",
+     "ask": "G-249 r1 (owner): jumping was too hard - the green window on the timing bar was tiny (high jump 0.10-0.22 wide, ~0.1-0.2s), the long jump angle swept at 95 deg/s and you fouled running past the line while setting it, the triple jump marker ran at 1.6/s",
+     "ok": true,
+     "note": "",
+     "ms": 22548,
+     "mode": "g"
+    },
+    {
+     "id": "tester-10000m-mash-no-speed-exploit",
+     "ask": "TESTER (G-200, BREAK round): 10,000m - mashing the run controls faster than any human cadence must not make the player faster. Stride input needs a rate cap: after settling into the run, 30 game-seconds of striding on EVERY tick (60/s) must not average more than 8.6 m/s (honest 0.30 s alternating cadence measured 7.56 m/s average, peak 7.97, on 2026-10-22; rivals are capped near 5.5-6.3 m/s).",
+     "ok": false,
+     "note": "mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player 316.7m - an average of 10.56 m/s, peak 10.56 m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past)",
+     "ms": 52822,
+     "mode": "10000m"
+    },
+    {
+     "id": "never-g-249-p3",
+     "ask": "G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)",
+     "ok": true,
+     "note": "",
+     "ms": 7122,
+     "mode": "g"
+    },
+    {
+     "id": "real-sprint-animation",
+     "ask": "Runners must run with natural arm and leg motion - a real sprint animation, not posed bones",
+     "ok": true,
+     "note": "",
+     "ms": 9792,
+     "mode": "real"
+    },
+    {
+     "id": "real-400-oval",
+     "ask": "A real 400m oval: 8 lanes of 1.22m, lane 1 lap is 400m",
+     "ok": true,
+     "note": "",
+     "ms": 87,
+     "mode": "real"
+    },
+    {
+     "id": "running-lanes-and-race-camera",
+     "ask": "Add running lanes and move camera angel back 10 blocks and up 15 blocks and centered behind player",
+     "ok": true,
+     "note": "",
+     "ms": 3285,
+     "mode": "running"
+    },
+    {
+     "id": "camera-never-sees-a-wall",
+     "ask": "The camera never sees a wall in front of the runner at the 100 m start and on the 400 m curve (clamped inside the stadium)",
+     "ok": true,
+     "note": "",
+     "ms": 1894,
+     "mode": "camera"
+    },
+    {
+     "id": "portrait-fills-screen",
+     "ask": "Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)",
+     "ok": true,
+     "note": "",
+     "ms": 1374,
+     "mode": "portrait"
+    },
+    {
+     "id": "play-career-championship-unlocks-next-season",
+     "ask": "Winning the career championship (final) meet must unlock the next season",
+     "ok": false,
+     "note": "won/played the championship meet but the next season never unlocked (career still at season 2)",
+     "ms": 27182,
+     "mode": "career"
+    },
+    {
+     "id": "dev-skip-level-button",
+     "ask": "DEV-ONLY \"Skip level\" button (STORE-READY \"Developer skip\"): with dev=1 in the address, career mode shows a small Skip level button that wins the current level and moves to the next, saving like a real win; it must NEVER show without dev=1",
+     "ok": true,
+     "note": "",
+     "ms": 10182,
+     "mode": "dev"
+    },
+    {
+     "id": "play-hurdles-fall-when-hit",
+     "ask": "Hurdles don't fall if you run into them - a hurdle you hit must go down (steeplechase barriers stay up, like real ones)",
+     "ok": true,
+     "note": "",
+     "ms": 74,
+     "mode": "hurdles"
+    },
+    {
+     "id": "play-800m-not-lined-up-under-finish",
+     "ask": "The 800m started everyone at the finish line under the FINISH banner - it must start staggered in lanes like the real race",
+     "ok": true,
+     "note": "",
+     "ms": 64,
+     "mode": "800m"
+    },
+    {
+     "id": "play-hurdles-every-runner-jumps",
+     "ask": "OWNER (2026-10-20): Hurdles (110m and 400m) - only the player jumps the hurdles; the other runners run through them. Every runner must jump every hurdle in his lane",
+     "ok": true,
+     "note": "",
+     "ms": 143,
+     "mode": "hurdles"
+    },
+    {
+     "id": "play-pole-vault-clears-bar",
+     "ask": "OWNER (2026-10-20): Pole vault - you can't see the player, he runs on the grass, has no pole and never goes over the bar. Make it a real vault: run down the runway holding a pole, plant it, swing up and over the bar onto the mat, camera beside him so you see it",
+     "ok": true,
+     "note": "",
+     "ms": 7973,
+     "mode": "pole"
+    },
+    {
+     "id": "play-triple-jump-hop-step-jump-into-pit",
+     "ask": "OWNER (2026-10-20): Triple jump - play it start to finish like a real meet and fix what is not real",
+     "ok": false,
+     "note": "the jump does not land in the sand pit - he came down at x -17.8 and the pit runs from -29.5 to -18.5",
+     "ms": 71,
+     "mode": "triple"
+    },
+    {
+     "id": "play-stick-resets-on-interruption",
+     "ask": "A call or notification must never leave the player steering by itself: the held stick resets to centre on window blur and when the page hides",
+     "ok": false,
+     "note": "test error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+     "ms": 6836,
+     "mode": "stick"
+    },
+    {
+     "id": "play-light-path-on-touch",
+     "ask": "JOB G-75 (owner): too slow on phones - a touch device must START on the STORE-READY light path (quality level already light from the first frame, shadows and anti-aliasing off), not reach it only after seconds of low fps",
+     "ok": true,
+     "note": "",
+     "ms": 7710,
+     "mode": "light"
+    },
+    {
+     "id": "play-steeplechase-barriers-span-track-ai-jump",
+     "ask": "JOB G-83 (owner 5.png): steeplechase - every barrier is ONE barrier across the whole track (not a hurdle in the player's lane only), and the AI runners jump them too",
+     "ok": true,
+     "note": "",
+     "ms": 1569,
+     "mode": "steeplechase"
+    },
+    {
+     "id": "tester-hurdle-height-100m",
+     "ask": "TESTER (G-56): real sizes - the 100m hurdles stand 0.838 m high like real ones (REALITY.md: real sizes in metres, within 15%)",
+     "ok": true,
+     "note": "",
+     "ms": 12016,
+     "mode": "hurdle"
+    },
+    {
+     "id": "play-10000m-field-breaks-to-lane-1",
+     "ask": "JOB G-83 (owner 4.png): in the 10,000m, after the start the WHOLE field (the player too) moves to lane 1, like a real distance race - nobody runs the whole race alone in an outer lane",
+     "ok": false,
+     "note": "the 10,000m draw never reported the field lanes",
+     "ms": 9325,
+     "mode": "10000m"
+    },
+    {
+     "id": "play-portrait-menu-buttons-on-screen",
+     "ask": "G-122: on an upright phone (390x844) every main-menu button is on the screen and the far buttons can really be tapped",
+     "ok": true,
+     "note": "",
+     "ms": 9759,
+     "mode": "portrait"
+    },
+    {
+     "id": "never-g-139-p1",
+     "ask": "NEVER (G-139): every main-menu button is at least the 44x44 CSS px touch target (DONE.md section 2)",
+     "ok": true,
+     "note": "",
+     "ms": 8401,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-160-p1",
+     "ask": "NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees",
+     "ok": true,
+     "note": "",
+     "ms": 11401,
+     "mode": "g"
+    },
+    {
+     "id": "tester-10000m-results-match-crossing",
+     "ask": "TESTER (G-183): 10,000m - the results order matches who actually crosses the finish line first on the track (REALITY.md: finishing order = who crossed first). The player joins the leaders with 700m to go; if he runs the live segment fastest and crosses the line first, the results must place him 1st - a rival who is still short of the line cannot be credited ahead of him with a faster total time built from his own private early pace.",
+     "ok": true,
+     "note": "",
+     "ms": 10804,
+     "mode": "10000m"
+    },
+    {
+     "id": "play-free-results-return-to-events",
+     "ask": "OWNER 2026-10-23: after a Free Play event the results bring you back to the free play menu to pick something else, and the event menu has its BACK button at the top (to the main menu)",
+     "ok": true,
+     "note": "",
+     "ms": 12659,
+     "mode": "free"
+    },
+    {
+     "id": "tester-chk-t04",
+     "ask": "CHECKLIST T04 (G-259): the relay baton changeover zone is 30 m long (rules/trackfield.md) - the green zone markings painted on the track in the relay event must span 30 m, within 3%",
+     "ok": false,
+     "note": "no relay changeover-zone markings found in the relay event",
+     "ms": 14275,
+     "mode": "t04"
+    },
+    {
+     "id": "tester-300mh-hurdle-count",
+     "ask": "TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).",
+     "ok": false,
+     "note": "the 300m Hurdles places 8 hurdles per lane (64 hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)",
+     "ms": 9324,
+     "mode": "freeplay"
+    },
+    {
+     "id": "never-g-249-p2",
+     "ask": "G-249 r2 point 1 (owner): runners must run with natural arm and leg motion - a real sprint animation, not posed bones (mirrors the hardened real-sprint-animation sampling: thighL range over a full cycle must reach 0.70 rad; the old 1.4s wall window read 0.43 rad on the ~3fps robot while the same clip measures 1.85+ rad over a full cycle)",
+     "ok": true,
+     "note": "",
+     "ms": 23494,
+     "mode": "g"
+    },
+    {
+     "id": "runners-stand-upright",
+     "ask": "Runners must run standing upright like real sprinters",
+     "ok": true,
+     "note": "",
+     "ms": 2604,
+     "mode": "runners"
+    },
+    {
+     "id": "staggered-starts-own-lane",
+     "ask": "Staggered starts for 200m/400m and every runner in his own lane",
+     "ok": true,
+     "note": "",
+     "ms": 87,
+     "mode": "staggered"
+    },
+    {
+     "id": "full-field-humans-finish-banner",
+     "ask": "Make camera angle always right behind player. And make the runners 3D humans from the studio. Make lanes for each tracker runner 1-7 and make finish line banner or floor marking to cross.",
+     "ok": true,
+     "note": "",
+     "ms": 1578,
+     "mode": "full"
+    },
+    {
+     "id": "career-never-stalls",
+     "ask": "Career mode must never stall",
+     "ok": true,
+     "note": "",
+     "ms": 12953,
+     "mode": "career"
+    },
+    {
+     "id": "keep-locked-look",
+     "ask": "KEEP - LOCKED (owner checked JOB J7, 2026-10-17, HE LIKES IT): 'how it looks and how it runs now - the stadium, crowd, track, runners, sharp picture, start camera' - no Muse may change it",
+     "ok": true,
+     "note": "",
+     "ms": 132,
+     "mode": "locked"
+    },
+    {
+     "id": "no-button-blocks-tap-run",
+     "ask": "On the long relay / long races around the track a RED button turns on and blocks running - no button may ever block TAP RUN, and holding the stick never blocks it",
+     "ok": true,
+     "note": "",
+     "ms": 24872,
+     "mode": "no"
+    },
+    {
+     "id": "long-race-camera-low-behind",
+     "ask": "JOB J42 (owner): 1500 m and every long race - the camera stays LOW behind the player runner and follows him around the track, never up over the stands where he is a speck",
+     "ok": true,
+     "note": "",
+     "ms": 20674,
+     "mode": "long"
+    },
+    {
+     "id": "play-long-jump-early-takeoff-counts",
+     "ask": "I can't jump in the long jump / triple jump - an early takeoff must still be a legal jump (measured from the board), only crossing the line is a foul",
+     "ok": true,
+     "note": "",
+     "ms": 72,
+     "mode": "long"
+    },
+    {
+     "id": "play-career-50-meets-every-event",
+     "ask": "The career is only 3 events - it needs about 50 (meets) and more track & field events",
+     "ok": true,
+     "note": "",
+     "ms": 63,
+     "mode": "career"
+    },
+    {
+     "id": "play-relay-baton-handoff",
+     "ask": "OWNER (2026-10-20): 4x100 relay - nobody is waiting to take the baton. Show the next teammate standing in the exchange zone, starting to run as you come, and a real baton hand-off; same for the other teams",
+     "ok": true,
+     "note": "",
+     "ms": 98,
+     "mode": "relay"
+    },
+    {
+     "id": "play-high-jump-runs-to-bar-over-onto-mat",
+     "ask": "OWNER (2026-10-20): High jump - he runs on the grass away from the bar. He must run up to the bar and go over it onto the mat",
+     "ok": true,
+     "note": "",
+     "ms": 9107,
+     "mode": "high"
+    },
+    {
+     "id": "play-good-play-can-win",
+     "ask": "Good play can win: striding at a strong human cadence (8 taps/s, alternating) the player wins the 200m outright, matches the best rival over 100m, and podiums in the 400m - he is not locked to last place",
+     "ok": true,
+     "note": "",
+     "ms": 99,
+     "mode": "good"
+    },
+    {
+     "id": "play-button-releases-on-interruption",
+     "ask": "A held ACTION button (the discus hold-to-spin) must release when a call or notification interrupts - blur releases it like a finger lift",
+     "ok": false,
+     "note": "test error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+     "ms": 7036,
+     "mode": "button"
+    },
+    {
+     "id": "play-relay-staggered-start-and-blocks",
+     "ask": "JOB G-83 (owner 3.png): the 4x100 relay must start at the REAL staggered relay start - never a line-up under the FINISH banner - and every lane has starting blocks",
+     "ok": false,
+     "note": "the relay start shows 7 starting blocks - every one of the 8 lanes must have blocks",
+     "ms": 926,
+     "mode": "relay"
+    },
+    {
+     "id": "tester-hurdle-height-400m",
+     "ask": "TESTER (G-56): real sizes - the 400m hurdles stand 0.914 m high like real ones (REALITY.md: real sizes in metres, within 15%)",
+     "ok": true,
+     "note": "",
+     "ms": 10494,
+     "mode": "hurdle"
+    },
+    {
+     "id": "tester-portrait-menu-fits-screen",
+     "ask": "TESTER (G-105): mobile layout - on an upright phone (390x844) every main-menu button sits on the screen and can be tapped (DONE.md section 3: no interactive element off-screen, in portrait too)",
+     "ok": true,
+     "note": "",
+     "ms": 9023,
+     "mode": "portrait"
+    },
+    {
+     "id": "play-career-results-event-column-and-clock",
+     "ask": "JOB G-83 (owner 1.png): the career meet results table lists the meet's EVENTS so its column must say EVENT (not ATHLETE), and the big time on the results screen must be the same time the race clock showed at the finish",
+     "ok": true,
+     "note": "",
+     "ms": 13445,
+     "mode": "career"
+    },
+    {
+     "id": "play-racers-start-on-the-track",
+     "ask": "owner 2026-10-21: \"Why are the racers so far back into the wall stands\" - at the start of a straight race (110m hurdles) every racer stands ON the painted track in his own lane, never out past the end of the straight in the stands",
+     "ok": true,
+     "note": "",
+     "ms": 8019,
+     "mode": "racers"
+    },
+    {
+     "id": "never-g-139-p2",
+     "ask": "NEVER (G-139): feet do not sink into the ground - REALITY sampling at the menu (12 samples, go(true)) finds no more than 20% of foot readings more than 5 cm under",
+     "ok": true,
+     "note": "",
+     "ms": 19254,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-169-p1",
+     "ask": "NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees",
+     "ok": true,
+     "note": "",
+     "ms": 11934,
+     "mode": "g"
+    },
+    {
+     "id": "never-g-174-p1",
+     "ask": "NEVER (G-174, owner video 2026-10-22): hurdles facing the wrong way - a hurdle board front faces the approaching runner: dot(board normal, lane tangent) = -1 at every hurdle, never 0 (edge-on)",
+     "ok": true,
+     "note": "",
+     "ms": 10548,
+     "mode": "g"
+    },
+    {
+     "id": "play-60m-field-starts-together",
+     "ask": "G-244 (art director): the 60m field waits on ONE start line until the player starts - no rivals racing off alone, no 7th place at 0m with the clock running",
+     "ok": true,
+     "note": "",
+     "ms": 10427,
+     "mode": "60m"
+    },
+    {
+     "id": "tester-chk-t05",
+     "ask": "CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as \"w\" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the \"w\" mark instead of counting as a best",
+     "ok": false,
+     "note": "the game models no wind at all: the sprint engine has no wind value (0 wind keys), the results screen shows \"05.47  (1st)\" with no wind reading and no \"w\" mark, and the time was saved as a best ({\"60m\":0.85}) - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as \"w\") can never apply",
+     "ms": 11881,
+     "mode": "t05"
+    },
+    {
+     "id": "tester-chk-t07",
+     "ask": "TESTER (G-271, checklist T07): throws get 3 attempts (plus 3 more for the top 8) - rules/trackfield.md.",
+     "ok": false,
+     "note": "the Shot Put ended after 3 attempts (attMax 3) and no athlete got 3 more attempts - rules/trackfield.md says throws get 3 attempts (plus 3 more for the top 8)",
+     "ms": 10997,
+     "mode": "t07"
+    },
+    {
+     "id": "never-g-267-p1",
+     "ask": "G-267 (owner): the live race camera never has a wall between it and the runner - the wall check ray must target the runner (its length must match the camera-to-runner distance) and 4 samples must all read clear (today the ray targets the infield centre because ox/oz are never written)",
+     "ok": true,
+     "note": "",
+     "ms": 16500,
+     "mode": "g"
+    }
+   ],
+   "part": "all",
+   "slow": {
+    "ms": 51,
+    "base": 60,
+    "factor": 1
+   },
+   "career": {
+    "tests": 1,
+    "failing": 0
+   },
+   "controls": {
+    "shared": false,
+    "ownStick": 2
+   },
+   "reality": {
+    "kind": "person",
+    "size": {
+     "x": 1.8280551051566614,
+     "y": 1.8185811059456833,
+     "z": 0.28665713875333243,
+     "minY": 0.08156794830642855
+    },
+    "sizeMetres": {
+     "x": 1.83,
+     "y": 1.82,
+     "z": 0.29
+    },
+    "unitsPerMetre": 1,
+    "moves": 5,
+    "wrongWay": 0,
+    "backwards": 0,
+    "gaps": 24,
+    "gameTime": false,
+    "gameSpeed": false
+   },
+   "layout": {
+    "off": [],
+    "over": [],
+    "n": 4,
+    "stick": true
+   },
+   "uprightFill": 1,
+   "sharpness": 1.5,
+   "phases": [
+    {
+     "phase": "load + menu + start",
+     "ms": 27398
+    },
+    {
+     "phase": "idle watch + first pictures",
+     "ms": 40406
+    },
+    {
+     "phase": "pictures + reality + checks",
+     "ms": 95519
+    },
+    {
+     "phase": "play tests + the rest",
+     "ms": 298691
+    }
+   ],
+   "playMs": 462014,
+   "endedAt": "2026-10-24T20:34:17.938Z",
+   "status": "FAIL",
+   "safari": [],
+   "carried": "ae3e298"
+  }
+ ],
+ "models": [
+  {
+   "id": "motorcycle-main",
+   "name": "Main sport motorcycle",
+   "status": "WAITING OWNER",
+   "version": "4",
+   "img": {
+    "q": "img/models/motorcycle-main-q.jpg",
+    "front": "img/models/motorcycle-main-front.jpg",
+    "side": "img/models/motorcycle-main-side.jpg"
+   },
+   "problems": [],
+   "info": "CODE-BUILT model · 29,628 triangles · 1.52 m tall · look: studio · drag to turn, pinch to zoom"
+  },
+  {
+   "id": "monster-truck-arena",
+   "name": "Monster Truck Arena (stadium kit + crowd) — DISCARDED BY OWNER 2026-10-18",
+   "status": "DISCARDED (owner: \"horrendous - throw this model away\" 2026-10-18)",
+   "version": "3",
+   "img": {
+    "q": "img/models/monster-truck-arena-q.jpg",
+    "front": "img/models/monster-truck-arena-front.jpg",
+    "side": "img/models/monster-truck-arena-side.jpg"
+   },
+   "problems": [],
+   "info": "VENUE · 226 × 166 m · 12,000 fans · 12,000 seats · 105 draw calls · 145k triangles · look: night"
+  },
+  {
+   "id": "pebble-hero",
+   "name": "Pebble hero (Flick Fortress)",
+   "status": "WAITING OWNER",
+   "version": "1",
+   "img": {
+    "q": "img/models/pebble-hero-q.jpg",
+    "front": "img/models/pebble-hero-front.jpg",
+    "side": "img/models/pebble-hero-side.jpg"
+   },
+   "problems": [],
+   "info": "CODE-BUILT model · 9,136 triangles · 2.01 m tall · look: studio · drag to turn, pinch to zoom"
+  },
+  {
+   "id": "ballpark",
+   "name": "Ballpark (baseball venue)",
+   "status": "",
+   "version": "",
+   "img": {
+    "q": "img/models/ballpark-q.jpg",
+    "front": "img/models/ballpark-front.jpg",
+    "side": "img/models/ballpark-side.jpg"
+   },
+   "problems": [],
+   "info": "VENUE · 280 × 280 m · 64k triangles · look: field"
+  }
+ ],
+ "missing": []
+}
