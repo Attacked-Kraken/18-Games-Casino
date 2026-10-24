@@ -1162,4 +1162,36 @@ export default [
       return true;
     },
   },
+  // G-265 (owner: "I'm not even controlling my driving. I'm just pressing gas
+  // and it does the laps"): gas only, stick centred, on a sharp curve - the
+  // car must NOT follow the road round. It holds its world heading (G-239),
+  // so the road curves away under it and it runs to the wall.
+  {
+    id: 'play-gas-only-never-laps',
+    ask: 'holding gas only, stick centred, the car does not drive itself round the track',
+    async test(page, h) {
+      if (!await g66ToRace(page, h)) return 'race never started';
+      const scan = await h.eval(() => { for (let s = 200; s < 5400; s += 50) { const la = window.__test.lineAt(s); if (Math.abs(la.rlD || 0) >= 4) return s; } return 850; });
+      const stage = await h.eval((sec) => { const T = window.__test; const pc = T.paceCars(); const pi = pc.findIndex(c => c.isPlayer); if (pi < 0) return -1;
+        for (let i = 0; i < pc.length; i++) if (i !== pi) T.setCarS(i, 3400 + i * 50);
+        T.setCarS(pi, sec); return pi; }, scan);
+      if (stage < 0) return 'no player car on the grid';
+      const rd0 = await h.eval((pi) => window.__test.paceCars()[pi].raceDist, stage);
+      await h.eval(() => window.__test.setInput({ gas: true, brake: false, steer: 0 }));
+      let moved = 0, maxHead = 0, maxD = 0;
+      for (let i = 0; i < 20; i++) {
+        const pc = await h.eval(() => window.__test.paceCars()); const p = pc[stage];
+        if (!p) break;
+        moved = Math.max(moved, p.raceDist - rd0);
+        maxHead = Math.max(maxHead, Math.abs(p.headAngle));
+        maxD = Math.max(maxD, Math.abs(p.d));
+        await h.wait(500);
+      }
+      await h.eval(() => window.__test.setInput({ gas: false, brake: false, steer: 0 }));
+      if (moved < 30) return 'gas-only car covered only ' + moved.toFixed(0) + ' m - the drive never got going';
+      if (maxHead < 0.5) return 'gas only, stick centred, the heading stayed at ' + maxHead.toFixed(2) + ' rad on a sharp curve - the car is still following the road by itself';
+      if (maxD < 10) return 'gas only, stick centred, the car stayed on the road (|d| max ' + maxD.toFixed(1) + ' m) - it is still driving itself round';
+      return true;
+    },
+  },
 ];
