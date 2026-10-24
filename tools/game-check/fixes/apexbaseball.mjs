@@ -1400,5 +1400,44 @@ export default [
         await page.setViewportSize({ width: 844, height: 390 });
       }
     },
+  },,
+  // G-255 (window 7): checklist B05 - rules/baseball.md says a batting order
+  // of 9. Measured live in a full game (portrait, all six halves to the
+  // results overlay): the SAME bat-holding batter object stepped up for every
+  // at-bat, home and away - 1 distinct batter, no order at all. The scene
+  // graph holds exactly one batter figure with a bat (game source builds a
+  // single batterMesh and no lineup). This test counts distinct bat-holding
+  // batter objects in the running scene and fails on the count.
+  {
+    id: 'tester-chk-b05',
+    mode: 'b05',
+    run: async (page, ok) => {
+      const t0 = Date.now();
+      let n = null;
+      while (Date.now() - t0 < 25000) {
+        const ph = await page.evaluate(() => window.__test ? window.__test.phase : null).catch(() => null);
+        if (ph === 'start') await page.evaluate(() => { const s = document.getElementById('startBtn'); if (s) s.click(); }).catch(() => {});
+        n = await page.evaluate(() => {
+          if (!window.__reality || !window.__reality.player || !window.__reality.player.isObject3D) return null;
+          let root = window.__reality.player;
+          while (root.parent) root = root.parent;
+          const holders = new Set();
+          root.traverse(o => {
+            if (o.isMesh && o.geometry.type === 'BoxGeometry' && o.geometry.parameters &&
+                Math.abs(o.geometry.parameters.width - 0.13) < 0.001 && Math.abs(o.geometry.parameters.height - 1.21) < 0.001) {
+              let h = o;
+              while (h.parent && h.parent !== root) h = h.parent;
+              holders.add(h);
+            }
+          });
+          return holders.size;
+        }).catch(() => null);
+        if (n != null) break;
+        await new Promise(r => setTimeout(r, 400));
+      }
+      ok(n != null, 'checklist B05: batter object not found in the scene');
+      if (n == null) return;
+      ok(n >= 9, `checklist B05: only ${n} distinct batter(s) in the game - rules/baseball.md says a batting order of 9`);
+    }
   },
 ];
