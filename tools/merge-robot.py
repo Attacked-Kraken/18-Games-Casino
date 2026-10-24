@@ -324,6 +324,14 @@ def main():
             k = r.get("name", "")
             if k not in newest or (r.get("started_at") or "") > (newest[k].get("started_at") or ""):
                 newest[k] = r
+        # Oct 24 2026 (PR #1452): a push cancels the old run's bare 'play' job (the matrix parent, started before the plan job
+        # lists the games). Nothing ever replaces that name - the new runs are 'play (<game>.html)' - so the robot read the
+        # cancelled leftover as a FAILED check for good and never merged a green PR. A cancelled bare name that has matrix
+        # children ('play (...)') on the same commit is a leftover, not a verdict: the children and 'check' decide.
+        for k in list(newest):
+            r = newest[k]
+            if r.get("status") == "completed" and r.get("conclusion") == "cancelled" and any(o.startswith(k + " (") for o in newest):
+                del newest[k]
         if "check" not in newest:
             revisit = True
             say("#%d skipped: the robot's game check hasn't run yet" % n); continue
