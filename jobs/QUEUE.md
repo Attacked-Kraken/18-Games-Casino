@@ -23,6 +23,7 @@ was already sent. Muses: don't edit this file.
 - [ ] Use the owner's new kits (TOOLS.md): baseball crowd + bat crack + glove sounds from sounds/stadium/baseball/, and the infield / grass textures from kit/ground/512/. Keep the look and play the same.
 
 ## window 2 · apexhockey.html
+- [ ] TESTER: tied game goes to untimed 5-on-5 golden-goal overtime (period 4 with clockT=1e9, apexhockey.html line 1742; no shootout anywhere in the game) - the owner rule 2026-10-23 is 3-on-3, first goal wins, no shootout: build 3-on-3 overtime (G-249, proof test tester-chk-h15, checklist H15; rule text updated in NOTES PR #1396)
 - [ ] TESTER: the neutral-zone faceoff dots are painted in the end zones at |x| 12.3 m - they belong 1.5 m inside the blue lines (|x| about 6.2 m), and offside faceoffs drop on them there (G-199, proof test tester-arena-neutral-dots-in-neutral-zone)
 - [ ] TESTER: the end-zone faceoff dots sit 6.13 m either side of centre - venues/rink.md says 6.7 m, and every goalie-cover faceoff drops on the misplaced dots (G-199, proof test tester-arena-end-dots-spacing)
 - [ ] TESTER: the +x goal crease is painted behind its goal (light-blue paint runs to x 94.7 units, past the goal line at ~88.5-89) instead of in front of it like the -x crease (G-199, proof test tester-arena-crease-in-front-of-goal)
