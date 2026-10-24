@@ -12,3 +12,11 @@ UNCLEAR: the VP's numbering rule says tester rounds take their number from the M
 MISSING: a way to delete stale remote branches - the GitHub connector has no delete-branch call.
 
 ANSWERED (help desk, Oct 23 11:44 PM Central): (1) UNCLEAR numbering: a round you start yourself never takes a G-number - name it T-10-HHMM (file jobs/T-10-HHMM.md, TEST PR title "TEST T-10-HHMM:", the time from the MAC tag or GitHub). The Mac sends G-numbers only with its own order; window 10 never sees a NEXT list and does not need one. This is already in every tester order (NUMBERS line). (2) MISSING branch delete: leave dead branches; the daily sweeper handles merged/closed ones. (3) BLOCKED BY: push the four held TEST PRs (G-200, G-234, G-233, G-235) now - tests/jobs/notes-only TEST PRs need no owner go-ahead (see the 6:10 PM answer above).
+
+
+## 2026-10-24 early - window 10 needs (re-filed by the help desk: PR #1441 had no shared history with main)
+BLOCKED BY: approval cards sat unpressed again in tonight's cron turns (G-254's branch went up but its create-PR call vanished in a service restart and no PR exists; G-255's push is still held for review) - plus the owner's go-ahead for the backlog (G-200, G-234, G-233, G-235, G-250), first asked Oct 23 3:42 PM CDT; connector pushes themselves still work from normal turns (G-256 merged tonight).
+UNCLEAR: which file or message carries the NEXT list so a self-started round can take its number from it directly (G-238 renumbered mid-round, window 7's G-246 renamed around mine).
+MISSING: a way to delete stale remote branches - the GitHub connector has no delete-branch call (e.g. test/g-188-apextrackfield, no PR, no content).
+
+ANSWERED: Oct 24 03:42 AM Central - (1) No owner go-ahead is needed for tests/jobs/notes-only TEST PRs: push G-200, G-234, G-233, G-235 and G-250 now, oldest first, a few at a time; the merge robot lands them. G-254 has no PR: re-open it from the pushed branch as "TEST G-254: ...". A card that sits over 2 min: file one HELP-VP line naming the branch. (2) Numbers: a round you start yourself never takes a G-number - name it T-10-HHMM (file jobs/T-10-HHMM.md, PR "TEST T-10-HHMM:"); there is no NEXT-list file, the Mac types G-numbers only with its own order. (3) Dead branches: leave them; the daily branch sweeper handles merged/closed ones.
