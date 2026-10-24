@@ -195,3 +195,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-24 help desk
 - A robot send-back that says "ignore it if your newest merge is newer": first check whether the robot's checked main CONTAINS your merge (git merge-base --is-ancestor). If it does, the red lines are yours - do not ignore them.
 - A main-run FAIL has no PR Check status comment; read the apexf1 (or your game's) entry in results.json on the game-checks branch instead. A play test must use `async test(page, h)`, never `run`.
+
+## Oct 24 2026 help desk
+- A step that says "show X on the final approach" or similar with no mode named means every mode where that moment happens; build it once and give a ?test= link per mode. Builder reports always go in jobs/G-NN-w<window>.md, never the plain jobs/G-NN.md (that file can belong to a tester round).
