@@ -4,19 +4,19 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1259 lines)
+## WHERE THINGS ARE — `apexflight.html` (1266 lines)
 - Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; slim throttle bar CSS ~43; QUALITY button ~121; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27, HTML ~101, G-263): 1–162
 - Imports, helpers, constants, state (offRwyMsg flag ~187): 163–196
-- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals, polygonOffset ladder, G-132; crowdTick): 197–495
-- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~522): 496–540
-- HUD artificial horizon: 541–564 · Messages: 565–568
-- Game flow (respawn ~570, crash, touchdown/scoring): 569–632
-- Input — keyboard (pollKeys ~642): 633–652 · Jet controls: pad + SHARED kit stick + throttle bar; resetInputs 742 (blur / touchcancel / hidden zero every input, G-238): 653–752
-- Buttons / view toggle: 753–773 · Play a Friend codes (friendCode ~774): 774–801 · fitGame ~802: 802–815
-- Physics (step ~823; lift/stall, airbrake in the forces block): 816–935
-- Camera (step-5 offsets + sun follow): 936–967 · HUD update (off-runway reason re-assert; touchdown band block ~1007, G-263/G-268): 968–1022 · Music (procedural WebAudio): 1023–1141
-- QUALITY option wiring (~1145) · Test hooks (`__flight` 1160 incl. aiJets, `__reality` 1172 - traffic as others): 1142–1201
-- Main loop (kit axes merge ~1210; updateTraffic ~1225; ?test= owner-check hook 1244, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1202–1259
+- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 197–502
+- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~529): 503–547
+- HUD artificial horizon: 548–571 · Messages: 572–575
+- Game flow (respawn ~577, crash, touchdown/scoring): 576–639
+- Input — keyboard (pollKeys ~649): 640–659 · Jet controls: pad + SHARED kit stick + throttle bar; resetInputs 749 (blur / touchcancel / hidden zero every input, G-238): 660–759
+- Buttons / view toggle: 760–780 · Play a Friend codes (friendCode ~781): 781–808 · fitGame ~809: 809–822
+- Physics (step ~830; lift/stall, airbrake in the forces block): 823–942
+- Camera (step-5 offsets + sun follow): 943–974 · HUD update (off-runway reason re-assert; touchdown band block ~1014, G-263/G-268): 975–1029 · Music (procedural WebAudio): 1030–1148
+- QUALITY option wiring (~1152) · Test hooks (`__flight` 1167 incl. aiJets, `__reality` 1179 - traffic as others): 1149–1208
+- Main loop (kit axes merge ~1217; updateTraffic ~1232; ?test= owner-check hook 1251, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1209–1266
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
@@ -31,6 +31,8 @@ closes within 260 m. Tests see them as __flight.aiJets (play-ai-jets-flying).
 Touchdown band (G-263): the 55-88 kt band already decides a rank level at touchdown (outside it costs a level) - now the pilot sees it during the approach. The #bandBox chip shows beside the runway box in the landing challenge (same window: challenge, airborne, within 9000 m of the runway) reading TD BAND 55-88 KT with IN BAND (green) / SLOW / FAST. Test: play-band-shows-on-approach.
 
 Touchdown band, free flight (G-268): G-263's chip was challenge-only, but the robot's play picture is a free-flight scene, so the band never appeared in it. The chip now shows on approach in ANY mode (same 9000 m window, minus the mode gate; the runway box stays challenge-only). Test: play-band-shows-on-final-freeflight. Owner check: apexflight.html?test=bandfree.
+
+Runway numbers upright (G-275): the threshold numbers were painted mirrored for the pilot landing toward them - glyph tops pointed AT the approaching jet, so from behind the jet 36 read upside-down. The number is now flipped vertically in its decal canvas (piano keys untouched); both ends share threshold(), so 18 is fixed too. Test: play-rwy36-reads-correct (reads the 36 decal's own canvas: the 6's loop mass sits toward the pilot).
 
 Fit rule (G-238): every overlay panel fits a 844x390 phone outright - .panel is
 compact (14px padding, slimmer buttons) and capped at calc(100dvh - 16px) with

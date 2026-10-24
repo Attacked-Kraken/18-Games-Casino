@@ -1027,17 +1027,17 @@ function shootFrom(s, power, aimed){
 const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
 const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
 function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
-function callPenalty(off, why){
+function callPenalty(off, why, major){
   if(!off || off.inBox || state!=='play') return;
-  off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
-  banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+  off.inBox=true; off.major=!!major; off.penT=major?50:20; PEN[off.team]=off; // G-272: 2:00 minor - or a 5:00 major for the worst fouls (rules/hockey.md), on this game's clock scale
+  banner('PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2600, '#ffb3b3');
   commSay('penalty_box'); // G-44
   if(off===controlled) switchControl();
   updateHUD();
 }
 function endPenalty(off, quiet){
   if(!off) return;
-  off.inBox=false; off.penT=0; if(PEN[off.team]===off) PEN[off.team]=null;
+  off.inBox=false; off.penT=0; off.major=false; if(PEN[off.team]===off) PEN[off.team]=null;
   if(!quiet) banner('FULL STRENGTH', TEAMS[off.team].name, 1400, '#9fe8a9');
   updateHUD();
 }
@@ -1050,7 +1050,7 @@ function doCheck(){
     const dO=Math.hypot(s.pos.x-o.pos.x,s.pos.z-o.pos.z);
     if(dO<3.4){ // contact ON the carrier: from behind is a penalty; front or side is a clean poke
       const behind=(Math.cos(o.facing)*(s.pos.x-o.pos.x)+Math.sin(o.facing)*(s.pos.z-o.pos.z)) < -0.9;
-      if(behind){ callPenalty(s,'CHECK FROM BEHIND'); return; }
+      if(behind){ callPenalty(s,'CHECK FROM BEHIND', true); return; } // G-272: the harshest foul in the game is a 5-minute major (rules/hockey.md, checklist H14)
       const chance=dO<3?0.8:0.45;
       if(Math.random()<chance){ // poke it loose
         puck.owner=null;
@@ -1140,7 +1140,7 @@ function onGoal(team){
   state='goal'; stateT=3.2;
   const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
   if(team==='home'){scoreH++;}else{scoreA++;}
-  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
+  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed && !boxed.major) endPenalty(boxed, true); } // a power-play goal springs him - MINORS only (rules/hockey.md): a major serves the full 5:00
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
