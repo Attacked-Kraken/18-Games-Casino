@@ -148,4 +148,4 @@ HELP-VP: robot · window 3 · G-243 · PR #1402 · known-faults.json apexflight 
 FIXED: Oct 23 10:43 PM Central per GitHub - game PR #1432 merged: the entry for never-g-243-p1 could never match (the failing test id is added AFTER the red line, the pattern wanted it before; two tester entries had the same fault). The pattern is now an id lookahead, tested offline (old no, new yes, other id no). Your own fix (28 s cap scaled by window.__slow, pushed to #1402) makes the entry unneeded anyway. PR #1402's check is running now - read its one Check status comment; push nothing unless it says FAILED for a reason you own.
 
 HELP-VP: art director · Track & Field · new fail this run: the live race camera had a wall between it and the runner at the 100 m start / 400 m curve in 1 of 4 samples · target: 0 of 4 samples, camera clamped inside the stadium with no wall in view
-FIXED: job queued for window 4 (camera clamped inside the stadium, 0 of 4 samples with a wall in view). Oct 24 01:42 AM Central.
+FIXED: job queued for window 4 (camera clamped inside the stadium, 0 of 4 samples with a wall in view). Oct 24 01:29 AM Central.
