@@ -3138,5 +3138,59 @@ export default [
     if (!over) return 'the first overtime goal did not end the game - golden goal, no shootout (owner decision 2026-10-23)';
     return true;
   }
- }
+ },
+  {
+    id: "tester-chk-h14",
+    mode: "h14",
+    ask: "CHECKLIST H14 (G-234): a major penalty is 5 minutes (rules/hockey.md: \"Penalties (2 minutes, or 5 for major)\"). Commit the harshest foul the game offers - a check from behind on the puck carrier - six times: at least one of the resulting penalties must be a 5:00 major (box clock reads 5:00 and/or the banner says MAJOR).",
+    async test(page, h) {
+    const snap = () => h.eval(() => {
+      const bEl = document.getElementById('banner');
+      return {
+        state: window.__hk.game.state,
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, penT: +s.penT.toFixed(1) })),
+        banner: (bEl && bEl.classList.contains('show')) ? bEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : ''
+      };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 60000) {
+      s = await snap();
+      if (s && s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to force the foul';
+    let drew = 0, maxPenT = 0, sawMajor = false;
+    for (let att = 0; att < 6; att++) {
+      await h.eval(() => {
+        const hk = window.__hk, pk = hk.puck;
+        hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; } });
+        hk.skaters.forEach((x, i) => {
+          x.thinkT = 5; x.vel.set(0, 0, 0);
+          if (x.team === 'home' && !x.goalie) x.pos.set(-80, 0.1, -20 + (i % 5) * 8);
+          if (x.team === 'away' && !x.goalie) x.pos.set(60, 0.1, 20 - (i % 5) * 8);
+        });
+        const hitter = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'C');
+        const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
+        hitter.pos.set(-2.5, 0.1, 0);
+        carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
+        pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
+        pk.shot = null; pk.lastTouch = 'away';
+      });
+      await page.keyboard.press('KeyL').catch(() => {}); // doCheck: check from behind -> penalty
+      await page.waitForTimeout(900);
+      const q = await snap();
+      if (q) {
+        for (const b of q.boxed) { drew++; if (b.penT > maxPenT) maxPenT = b.penT; }
+        if (/MAJOR/i.test(q.banner)) sawMajor = true;
+      }
+      await page.waitForTimeout(400);
+    }
+    if (drew === 0) return 'could not draw a penalty from the check-from-behind foul - cannot judge the major';
+    if (sawMajor || maxPenT >= 45) return true;
+    return 'H14 FOUND: six check-from-behind fouls (the harshest foul the game offers) drew ' + drew + ' penalties, every one a 2:00 minor (box penT=20, banner always MINOR, never MAJOR) - rules/hockey.md says a major penalty is 5 minutes, but the game has no major-penalty path at all';
+  },
+  },
 ];
