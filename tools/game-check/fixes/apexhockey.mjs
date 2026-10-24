@@ -3301,29 +3301,38 @@ export default [
         banner: (bEl && bEl.classList.contains('show')) ? bEl.textContent.replace(/\s+/g, ' ').trim().slice(0, 90) : ''
       };
     }).catch(() => null);
-    // phase 1: the foul itself - the h14 staging (hitter directly behind the carrier)
-    await h.eval(() => {
-      const hk = window.__hk, pk = hk.puck;
-      hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; x.major = false; } });
-      hk.skaters.forEach((x, i) => {
-        x.thinkT = 5; x.vel.set(0, 0, 0);
-        if (x.team === 'home' && !x.goalie) x.pos.set(-80, 0.1, -20 + (i % 5) * 8);
-        if (x.team === 'away' && !x.goalie) x.pos.set(60, 0.1, 20 - (i % 5) * 8);
-      });
-      const hitter = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'C');
-      const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
-      hitter.pos.set(-2.5, 0.1, 0);
-      carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
-      hk.skaters.forEach(x => { x.target.set(x.pos.x, 0, x.pos.z); }); // pin every man where he stands (G-273: a frozen brain still skates to his last target, and separation shoves the pair apart within a frame or two)
-      pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
-      pk.shot = null; pk.lastTouch = 'away';
-      document.getElementById('btnCheck').dispatchEvent(new Event('mousedown')); // G-273 round 1: the check fires in the SAME turn as the staging (the delayed-penalty tester's way) - a separate key press a frame later can find the pair already shoved out of contact range on a loaded runner
-    });
-    // G-273 round 1 (delayed penalty): the foul now ARMS while the fouled team holds the puck - hand the
-    // puck to a home skater (the penalised team touches it) so the whistle blows and the man sits
-    await h.eval(() => { const hk = window.__hk; const lw = hk.skaters.find(x => x.team === 'home' && x.role === 'LW'); if (lw) { hk.puck.owner = lw; hk.puck.pos.set(lw.pos.x, 0.06, lw.pos.z); hk.puck.vel.set(0, 0, 0); } });
-    await h.wait(900);
-    const q1 = await snap();
+    // phase 1: the foul itself - the h14 staging (hitter directly behind the carrier), the check fired in
+    // the staging turn, then the delayed penalty completed with a touch (G-273 round 1). The read POLLS
+    // and re-stages like never-g-273-p2: a single fixed read raced the suite context - an inherited live
+    // match can cycle a goal or faceoff through the staging window and eat the foul (PR #1564's red line:
+    // standalone it passes, in the full suite the box was not there at the one fixed read).
+    let q1 = null;
+    const tP1 = Date.now();
+    while (Date.now() - tP1 < 25000 && !(q1 && q1.boxed.length)) {
+      if ((await state()) === 'play') {
+        await h.eval(() => {
+          const hk = window.__hk, pk = hk.puck;
+          hk.skaters.forEach(x => { if (x.inBox) { x.inBox = false; x.penT = 0; x.major = false; } });
+          hk.skaters.forEach((x, i) => {
+            x.thinkT = 5; x.vel.set(0, 0, 0);
+            if (x.team === 'home' && !x.goalie) x.pos.set(-80, 0.1, -20 + (i % 5) * 8);
+            if (x.team === 'away' && !x.goalie) x.pos.set(60, 0.1, 20 - (i % 5) * 8);
+          });
+          const hitter = hk.skaters.find(x => x.team === 'home' && !x.goalie && x.role === 'C');
+          const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
+          hitter.pos.set(-2.5, 0.1, 0);
+          carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
+          hk.skaters.forEach(x => { x.target.set(x.pos.x, 0, x.pos.z); }); // pin every man where he stands (G-273)
+          pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
+          pk.shot = null; pk.lastTouch = 'away';
+          document.getElementById('btnCheck').dispatchEvent(new Event('mousedown')); // the check fires in the SAME turn as the staging
+        });
+        // the foul ARMS while the fouled team holds the puck - hand the puck to a home skater (the penalised team touches it)
+        await h.eval(() => { const hk = window.__hk; const lw = hk.skaters.find(x => x.team === 'home' && x.role === 'LW'); if (lw) { hk.puck.owner = lw; hk.puck.pos.set(lw.pos.x, 0.06, lw.pos.z); hk.puck.vel.set(0, 0, 0); } });
+      }
+      await h.wait(900);
+      q1 = await snap();
+    }
     if (!q1 || !q1.boxed.length) return 'the check from behind drew no penalty at all - cannot judge the major';
     const foul = q1.boxed[0];
     if (!(foul.penT >= 45) && !/MAJOR/i.test(q1.banner)) return 'a check from behind drew penT ' + foul.penT + ' with banner "' + q1.banner + '" - the harshest foul must be a 5:00 major (penT 50, banner MAJOR), not another 2:00 minor';
