@@ -35,7 +35,7 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
-NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: one window writes it, no union needed
+NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: both the window and the help desk append - see auto_resolvable
 
 
 def tidy_queue(path="jobs/QUEUE.md"):
@@ -67,6 +67,7 @@ def auto_resolvable(path):
     build job appends to): notes, look boards and a game's own play-test list are APPENDED to by both sides, so both sides are kept."""
     return (path in NOTES_UNION or path.startswith("jobs/G-") or (path.startswith("looks/") and path.endswith(".md"))
             or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs"))
+            or (path.startswith("needs/") and path.endswith(".md"))      # Oct 24 2026: #1487 (window 3 needs) sat 'dirty' - the help desk APPENDS answers to the same file the window appends to
             or (path.startswith("checklists/") and path.endswith(".md")))   # Oct 24 2026: merged by ITEM (tools/checklist-merge.py)
 
 
