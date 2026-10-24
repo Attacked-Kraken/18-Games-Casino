@@ -46,6 +46,7 @@ Feature → line numbers in apexf1.html (re-checked on the G-265 R1 build, 2026-
 - 2026-10-23: APEX ARCADE text must read correctly from both sides of every board and gantry - never mirrored (seen video1-01, video2-09) (G-239)
 - 2026-10-23: The engine must be the grand_prix kit - one failed sound file must never kill the kit and leave the synth ("sounds like a rubber chicken") (G-239)
 - 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
+- 2026-10-24: Play-test entries must use ask: (never title:) too - the third run: entry also carried title:, and the robot's format check rejects the whole shape (G-279)
 - 2026-10-24: teamMenu must fit with no scrolling and no race button may overlap the stick on the UPRIGHT phone too - the landscape compact rules do not apply there, so the base touch buttons and the portrait menu stack need their own fit (G-265 R1)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame

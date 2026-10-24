@@ -172,6 +172,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
+| G-279 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-279.md, CLAIMS.md | build/g-279-apexf1 |
 | G-281 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
 | G-277 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-277.md, CLAIMS.md | build/g-277-apexf1 |
 | G-278 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-278.md, CLAIMS.md | build/g-278-apexbaseball |
