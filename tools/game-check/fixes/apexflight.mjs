@@ -1230,4 +1230,47 @@ export default [
       });
     },
   },
+  {
+    id: "play-band-uncovered-on-approach",
+    ask: "G-283: on a landing-challenge approach the TD band chip is a distinct chip nothing overlaps, so the 55-88 kt warning is actually seen",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(4200);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 49); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const bb = document.getElementById('bandBox');
+            if (!bb) return res('no #bandBox element on approach');
+            if (bb.style.display !== 'block') return res('band chip not displayed on approach');
+            const txt = bb.textContent || '';
+            if (!/55/.test(txt) || !/88/.test(txt) || !/FAST/i.test(txt)) return res('band chip does not warn FAST at 95 kt (text: "' + txt + '")');
+            const r = (el) => el.getBoundingClientRect();
+            const br = r(bb);
+            const ids = ['stats', 'rwyBox', 'viewBtn', 'resetBtn', 'jetBtn', 'muteBtn', 'back', 'msg', 'ahWrap'];
+            for (const id of ids) {
+              const el = document.getElementById(id);
+              if (!el) continue;
+              const o = r(el);
+              if (o.width === 0 || o.height === 0) continue;
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('band chip overlaps #' + id + ' - the warning is buried, not seen');
+            }
+            const pad = document.querySelector('.ajc .pad');
+            if (pad) {
+              const o = r(pad);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('band chip overlaps the pad buttons');
+            }
+            return res(true);
+          }, 1500);
+        });
+      });
+    },
+  },
 ];
