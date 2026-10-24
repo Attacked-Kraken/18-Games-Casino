@@ -3108,4 +3108,135 @@ async test(page, h) {
         return true;
 }
 }
+,{
+    id: 'never-g-289-p1',
+    mode: 'relay',
+    ask: 'NEVER (G-289): the relay changeover-zone markings are not found in the relay event on a slow load - the zones must paint at race start on the scene alone, not wait for the full 3D load',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the relay event: ' + nav;
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const upm = (window.__reality && window.__reality.unitsPerMetre) || 1;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len / upm);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start - the zones still wait for the full 3D load (G-289)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but the changeover zone is 30 m long (G-289)';
+      return true;
+    }
+  }
+
+,{
+    id: 'never-g-289-p2',
+    mode: 'wind',
+    ask: 'NEVER (G-289): a tailwind over +2.0 m/s still counts as a record - the sprint results screen must show a wind reading, a wind-aided time must carry the "w" mark, and it must never be saved as a best',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      await h.eval(() => { try { const b = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); delete b['100m']; localStorage.setItem('tfapex_bests', JSON.stringify(b)); } catch (err) {} return true; }).catch(() => {});
+      const nav100 = async () => {
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        return nav;
+      };
+      const drive = async () => {
+        const driven = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng();
+          if (!e) return null;
+          let side = 0, steps = 0;
+          while (!e.done && steps < 6000) {
+            if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+            e.update(1 / 60);
+            steps++;
+          }
+          return { done: e.done };
+        }).catch(() => null);
+        if (!driven || !driven.done) return false;
+        for (let w = 0; w < 10; w++) {
+          const shown = await h.eval(() => {
+            const on = document.querySelector('.screen.on');
+            const mk = document.getElementById('resMark');
+            return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+          }).catch(() => false);
+          if (shown) return true;
+          await h.wait(300);
+        }
+        return false;
+      };
+      const readRes = async () => h.eval(() => {
+        const mk = document.getElementById('resMark');
+        let bests = null;
+        try { bests = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); } catch (err) {}
+        return { resMark: mk ? mk.textContent : '', bests };
+      }).catch(() => null);
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (wind-aided run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 2.5; return true; }).catch(() => {});
+      if (!await drive()) return 'the wind-aided 100m sprint never finished in game-time stepping';
+      const r1 = await readRes();
+      if (!r1) return 'no results screen after the wind-aided 100m sprint';
+      if (!/\d+\.\d+w\s*\(/.test(r1.resMark)) return 'a +2.5 m/s tailwind time carries no "w" mark: results show "' + r1.resMark + '" (G-289)';
+      if (!/Wind \+2\.5 m\/s/.test(r1.resMark)) return 'a +2.5 m/s tailwind time shows no wind reading: results show "' + r1.resMark + '" (G-289)';
+      if (r1.bests && r1.bests['100m'] != null) return 'a wind-aided 100m time was saved as a best (' + r1.bests['100m'] + ') though the results show "' + r1.resMark + '" (G-289)';
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (legal-wind run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 1.0; return true; }).catch(() => {});
+      if (!await drive()) return 'the legal-wind 100m sprint never finished in game-time stepping';
+      const r2 = await readRes();
+      if (!r2) return 'no results screen after the legal-wind 100m sprint';
+      if (/\d+\.\d+w\s*\(/.test(r2.resMark)) return 'a +1.0 m/s wind time wrongly carries a "w" mark: results show "' + r2.resMark + '" (G-289)';
+      if (!/Wind \+1\.0 m\/s/.test(r2.resMark)) return 'a +1.0 m/s wind time shows no wind reading: results show "' + r2.resMark + '" (G-289)';
+      const tm = r2.resMark.match(/(\d+\.\d+)\s*\(/);
+      if (!tm) return 'could not read the legal-wind 100m time from "' + r2.resMark + '" (G-289)';
+      if (!r2.bests || Math.abs(r2.bests['100m'] - parseFloat(tm[1])) > 0.011) return 'a legal-wind 100m time was not saved as a best: results show "' + r2.resMark + '", saved bests ' + JSON.stringify(r2.bests) + ' (G-289)';
+      return true;
+    }
+  }
+
 ];
