@@ -1,0 +1,28 @@
+name: Known fault re-run
+# Owner Oct 23 2026 8:58 PM: a check that already failed re-runs BY ITSELF when a known fault is added afterwards
+# (window 3 / PR #1402 needed a hand push). Runs when tools/game-check/known-faults.json changes on main, and by hand with dry_run.
+on:
+  push:
+    branches: [main]
+    paths: ['tools/game-check/known-faults.json']
+  workflow_dispatch:
+    inputs:
+      dry_run: {description: 'only print what would re-run (1 = yes)', default: '0'}
+      only_pr: {description: 'limit to one PR number', default: ''}
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  rerun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - run: python3 tools/game-check/known-fault-rerun.py
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == '1' && '1' || '0' }}
+          ONLY_PR: ${{ github.event.inputs.only_pr }}
