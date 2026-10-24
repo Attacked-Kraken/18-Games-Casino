@@ -3193,4 +3193,81 @@ export default [
     return 'H14 FOUND: six check-from-behind fouls (the harshest foul the game offers) drew ' + drew + ' penalties, every one a 2:00 minor (box penT=20, banner always MINOR, never MAJOR) - rules/hockey.md says a major penalty is 5 minutes, but the game has no major-penalty path at all';
   },
   },
+{
+  id: 'never-g-266-p1',
+  ask: 'NEVER (G-266): a goal brings the broadcast look (rules/hockey.md) - the red goal light lit in the DOM, the spotlights on, and the camera cutting to replay angles (a jump of more than 40 units between goal-state frames) instead of staying in the broadcast follow',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await snap()) !== 'play') return 'could not get a match into play to stage the goal';
+    const series = await h.eval(() => new Promise((resolve) => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+      const out = [];
+      const iv = setInterval(() => {
+        const gl = document.getElementById('goalLight');
+        out.push({ st: hk.game.state, cam: hk.camera.position.toArray().map(v => +v.toFixed(1)), light: gl ? gl.className : null });
+        const gf = out.filter(f => f.st === 'goal').length;
+        if (gf >= 14 || out.length > 110) { clearInterval(iv); resolve(out); }
+      }, 100);
+    })).catch(() => null);
+    if (!series) return 'the in-page sampler never ran - staging inconclusive, not a pass';
+    const gf = series.filter(f => f.st === 'goal');
+    if (!gf.length) return 'the staged shot never became a goal - staging inconclusive, not a pass';
+    if (!gf.some(f => f.light !== null)) return 'no goal-light element in the DOM during the goal - a goal must light the red goal light';
+    if (!gf.some(f => /\bon\b/.test(f.light || ''))) return 'the goal light was never lit during the goal celebration';
+    let maxJump = 0;
+    for (let i = 1; i < gf.length; i++) {
+      const a = gf[i - 1].cam, b = gf[i].cam;
+      maxJump = Math.max(maxJump, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    }
+    if (maxJump <= 40) return 'the camera stayed in broadcast follow through the goal (max jump ' + maxJump.toFixed(1) + ' u) - a goal must cut to a replay from 2 angles';
+    return true;
+  }
+},
+{
+  id: 'never-g-266-p2',
+  ask: 'NEVER (G-266, G-199): each goal crease is painted in FRONT of its goal - a light-blue semicircle of radius 1.83 m on the centre-ice side of the goal line; on the ice paint neither crease may run past its goal line (max x <= 90.5 for the +x crease, min x >= -90.5 for the -x crease)',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the crease scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const lb = [];
+      for (let j = 2; j < H - 2; j += 2) for (let i = 2; i < W - 2; i += 2) { const [r, g, b] = px(i, j); if (b > 150 && g > 130 && r > 80 && r < 190 && b - r > 30) lb.push([i, j]); }
+      const lbc = [];
+      for (const [i, j] of lb) { const f = lbc.find(c => Math.abs(c.i - i) < W * 0.03 && Math.abs(c.j - j) < H * 0.08); if (f) { f.n++; if (i < f.mni) f.mni = i; if (i > f.mxi) f.mxi = i; if (j < f.mnj) f.mnj = j; if (j > f.mxj) f.mxj = j; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else lbc.push({ i, j, n: 1, mni: i, mxi: i, mnj: j, mxj: j }); }
+      const creases = lbc.filter(c => c.n >= 500).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85, mnx: -100 + (c.mni / W) * 200, mxx: -100 + (c.mxi / W) * 200 })).filter(c => Math.abs(c.x) > 50 && Math.abs(c.z) < 6);
+      if (creases.length < 2) return 'only ' + creases.length + ' goal creases found on the ice paint - one in front of each goal';
+      const pxC = creases.find(c => c.x > 0), nxC = creases.find(c => c.x < 0);
+      if (pxC && pxC.mxx > 90.5) return 'the +x crease is painted BEHIND its goal: light-blue paint runs to x ' + pxC.mxx.toFixed(1) + ' - the crease belongs in front of the goal line (venues/rink.md)';
+      if (nxC && nxC.mnx < -90.5) return 'the -x crease is painted BEHIND its goal: light-blue paint runs to x ' + nxC.mnx.toFixed(1) + ' - the crease belongs in front of the goal line (venues/rink.md)';
+      return true;
+    });
+  }
+}
+
 ];
