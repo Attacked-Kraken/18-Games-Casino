@@ -3216,14 +3216,19 @@ export default [
       const hk = window.__hk, pk = hk.puck;
       hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
       pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
-      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+      pk.pos.set(87.5, 0.06, -30); pk.vel.set(0, 0, 0); // held wide of the net until the sampler is running
       const out = [];
       const iv = setInterval(() => {
         const gl = document.getElementById('goalLight');
         out.push({ st: hk.game.state, cam: hk.camera.position.toArray().map(v => +v.toFixed(1)), light: gl ? gl.className : null });
         const gf = out.filter(f => f.st === 'goal').length;
-        if (gf >= 14 || out.length > 110) { clearInterval(iv); resolve(out); }
+        if ((gf >= 4 && hk.game.state !== 'goal') || out.length > 220) { clearInterval(iv); resolve(out); }
       }, 100);
+      // G-273 round 1: the sampler starts BEFORE the shot and runs past the end of the goal state - the old
+      // series started in the same breath as the shot and stopped at 14 goal frames, so on a loaded runner
+      // it could open after the entry cut and close before the second angle, reading a static 0.0 u on a
+      // working replay (the instrument raced the game; the game was fine)
+      setTimeout(() => { pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0); }, 300);
     })).catch(() => null);
     if (!series) return 'the in-page sampler never ran - staging inconclusive, not a pass';
     const gf = series.filter(f => f.st === 'goal');
@@ -3231,8 +3236,9 @@ export default [
     if (!gf.some(f => f.light !== null)) return 'no goal-light element in the DOM during the goal - a goal must light the red goal light';
     if (!gf.some(f => /\bon\b/.test(f.light || ''))) return 'the goal light was never lit during the goal celebration';
     let maxJump = 0;
-    for (let i = 1; i < gf.length; i++) {
-      const a = gf[i - 1].cam, b = gf[i].cam;
+    for (let i = 1; i < series.length; i++) {
+      if (series[i].st !== 'goal') continue; // count every step INTO a goal frame: the entry cut and both replay angles
+      const a = series[i - 1].cam, b = series[i].cam;
       maxJump = Math.max(maxJump, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
     }
     if (maxJump <= 40) return 'the camera stayed in broadcast follow through the goal (max jump ' + maxJump.toFixed(1) + ' u) - a goal must cut to a replay from 2 angles';
@@ -3308,10 +3314,14 @@ export default [
       const carrier = hk.skaters.find(x => x.team === 'away' && !x.goalie && x.role === 'C');
       hitter.pos.set(-2.5, 0.1, 0);
       carrier.pos.set(0, 0.1, 0); carrier.facing = 0;
+      hk.skaters.forEach(x => { x.target.set(x.pos.x, 0, x.pos.z); }); // pin every man where he stands (G-273: a frozen brain still skates to his last target, and separation shoves the pair apart within a frame or two)
       pk.owner = carrier; pk.pos.set(0, 0.06, 0); pk.vel.set(0, 0, 0);
       pk.shot = null; pk.lastTouch = 'away';
+      document.getElementById('btnCheck').dispatchEvent(new Event('mousedown')); // G-273 round 1: the check fires in the SAME turn as the staging (the delayed-penalty tester's way) - a separate key press a frame later can find the pair already shoved out of contact range on a loaded runner
     });
-    await page.keyboard.press('KeyL').catch(() => {});
+    // G-273 round 1 (delayed penalty): the foul now ARMS while the fouled team holds the puck - hand the
+    // puck to a home skater (the penalised team touches it) so the whistle blows and the man sits
+    await h.eval(() => { const hk = window.__hk; const lw = hk.skaters.find(x => x.team === 'home' && x.role === 'LW'); if (lw) { hk.puck.owner = lw; hk.puck.pos.set(lw.pos.x, 0.06, lw.pos.z); hk.puck.vel.set(0, 0, 0); } });
     await h.wait(900);
     const q1 = await snap();
     if (!q1 || !q1.boxed.length) return 'the check from behind drew no penalty at all - cannot judge the major';
@@ -3427,6 +3437,66 @@ export default [
     if (!drop) return 'the staged offside never reached a faceoff - cannot judge the drop spot';
     const onDot = (x, z) => Math.abs(Math.abs(x) - 20) <= 4 && Math.abs(Math.abs(z) - 20) <= 4;
     if (!onDot(drop.px, drop.pz) && !onDot(drop.cx, drop.cz)) return 'the offside faceoff dropped at puck (' + drop.px + ', ' + drop.pz + '), centres on (' + drop.cx + ', ' + drop.cz + ') - it belongs on the neutral-zone dot at |x| 20, |z| 20, 1.5 m inside the blue line';
+    return true;
+  }
+}
+,
+{
+  id: 'never-g-273-p2',
+  ask: 'NEVER (G-273 round 1, G-228): a DELAYED penalty - a foul committed while the other team has the puck does NOT box the man at once; play goes on with the arm up until the penalised team touches the puck, and only then do the whistle blow and the man sit (rules/hockey.md)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await state();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the delayed penalty';
+    const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
+    const boxedHome = () => h.eval(() => window.__hk.skaters.filter(x => x.inBox && x.team === 'home').map(x => ({ role: x.role, penT: +x.penT.toFixed(1) }))).catch(() => null);
+    // the tester's staging: away C holds the puck at centre, home C 2.2 u directly behind him, the rest parked and pinned
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const aC = hk.skaters.find(x => x.team === 'away' && x.role === 'C');
+      const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+      hk.skaters.forEach(x => {
+        if (x.goalie) return;
+        x.vel.set(0, 0, 0); x.thinkT = 999;
+        if (x !== aC && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.target.set(x.pos.x, 0, x.pos.z); }
+      });
+      aC.pos.set(0, 0.1, 0); aC.target.set(0, 0, 0); aC.vel.set(0, 0, 0); aC.facing = 0;
+      hC.pos.set(-2.2, 0.1, 0); hC.target.set(-2.2, 0, 0); hC.vel.set(0, 0, 0); hC.facing = 0;
+      pk.owner = aC; pk.lastTouch = 'away'; pk.pos.set(0.6, 0.06, 0); pk.vel.set(0, 0, 0); pk.shot = null; pk.recv = null;
+      document.getElementById('btnCheck').dispatchEvent(new Event('mousedown')); // same turn as the staging: no frame can shove the pair apart first
+    });
+    await h.wait(400);
+    let b = await boxedHome();
+    if (b && b.length) { await unfreeze(); return 'the check from behind boxed the home ' + b[0].role + ' at once - a foul while the other team has the puck must ARM a delayed penalty, not sit the man instantly'; }
+    await h.wait(1500); // play goes on with the arm up: the away carrier still has the puck, nobody sits
+    b = await boxedHome();
+    const st = await state();
+    if (b && b.length) { await unfreeze(); return 'the delayed penalty sat the home ' + b[0].role + ' while the away team still had the puck - play must go on until the penalised team touches it'; }
+    if (st !== 'play') { await unfreeze(); return 'play stopped (state ' + st + ') while the delayed penalty was still armed - the whistle may only blow on the penalised team touching the puck'; }
+    // the penalised team touches the puck: NOW the whistle and the box
+    await h.eval(() => { const hk = window.__hk; const lw = hk.skaters.find(x => x.team === 'home' && x.role === 'LW'); if (lw) { hk.puck.owner = lw; hk.puck.pos.set(lw.pos.x, 0.06, lw.pos.z); hk.puck.vel.set(0, 0, 0); } });
+    let sat = null;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 8000) {
+      b = await boxedHome();
+      if (b && b.length) { sat = b[0]; break; }
+      await h.wait(400);
+    }
+    await unfreeze();
+    if (!sat) return 'the penalised team touched the puck but the delayed penalty never sat the man - the whistle and the box must follow the touch';
+    if (!(sat.penT >= 45)) return 'after the touch the home ' + sat.role + ' sat with penT ' + sat.penT + ' - a check from behind is a 5:00 major (penT 50)';
     return true;
   }
 }
