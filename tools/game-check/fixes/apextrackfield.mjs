@@ -43,13 +43,19 @@ export default [
         await h.wait(160);
       }
       if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
-      // thigh swing over ~1.4s proves real leg drive (not a glide)
+      // thigh swing over a FULL cycle proves real leg drive (not a glide). G-249 r2:
+      // the old 7x200ms wall window covered only ~0.5s of animation on the robot
+      // (it paints ~3 frames a second, and the mixer advances on visual dt clamped
+      // to 0.12s a frame - 0.36s of animation per wall second), so the range it read
+      // was a phase-dependent slice of the cycle (0.43 rad on main 1efbb9b) while the
+      // same clip measures 1.85-1.95 rad over a full cycle. 30x250ms covers 2+ cycles
+      // at any frame rate. Ask and bar (0.7 rad) unchanged.
       let mn = 1e9, mx = -1e9;
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 30; i++) {
         await drive();
         const p = await h.eval(() => window.__tf.pose());
         for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
-        await h.wait(200);
+        await h.wait(250);
       }
       if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
       return true;
@@ -2860,5 +2866,95 @@ async test(page, h) {
         if (m.avg > 8.6) return 'mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player ' + m.gain + 'm - an average of ' + m.avg + ' m/s, peak ' + m.peak + ' m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past)';
         return true;
       }
+    },{
+id: 'never-g-249-p3',
+title: 'G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let m = null;
+  for (let i = 0; i < 30 && !m; i++) {
+    m = await h.eval(() => {
+      const e = window.__tf && __tf.eng();
+      if (!e || !e.ev || e.ev.id !== 'relay') return null;
+      const grp = e._zone;
+      if (!grp || !grp.children.length) return null;
+      const upm = (window.__reality && __reality.unitsPerMetre) || 1;
+      const lens = [];
+      grp.children.forEach(mesh => {
+        const p = mesh.geometry.attributes.position.array;
+        for (let l = 0; l < 8; l++) {
+          const b0 = l * 10 * 3; let len = 0;
+          for (let j = 0; j < 4; j++) {
+            const a = b0 + j * 6, b = b0 + (j + 1) * 6;
+            len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+          }
+          lens.push(len / upm);
+        }
+      });
+      const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+      return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+    }).catch(() => null);
+    if (!m) await h.wait(1500);
+  }
+  if (!m) return 'no relay changeover-zone markings found in the relay event';
+  if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long';
+  return true;
+}
+},
+{
+id: 'never-g-249-p2',
+title: 'G-249 r2 point 1 (owner): runners must run with natural arm and leg motion - a real sprint animation, not posed bones (mirrors the hardened real-sprint-animation sampling: thighL range over a full cycle must reach 0.70 rad; the old 1.4s wall window read 0.43 rad on the ~3fps robot while the same clip measures 1.85+ rad over a full cycle)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+  const t0 = Date.now(); let best = null;
+  while (Date.now() - t0 < 120000) {
+    const st = await h.eval(() => { const e = window.__tf.eng(); return { pos: e && e.r ? e.r.pos : 0, pose: window.__tf.pose() }; });
+    if (st.pos > 12) {
+      for (const r of st.pose) {
+        if (r.human && r.sf > 0.3 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) { best = r; break; }
+      }
     }
+    if (best) break;
+    await h.wait(160);
+  }
+  if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
+  let mn = 1e9, mx = -1e9;
+  for (let i = 0; i < 30; i++) {
+    const p = await h.eval(() => window.__tf.pose());
+    for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
+    await h.wait(250);
+  }
+  if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
+  return true;
+}
+},
+{
+id: 'never-g-267-p1',
+title: 'G-267 (owner): the live race camera never has a wall between it and the runner - the wall check ray must target the runner (its length must match the camera-to-runner distance) and 4 samples must all read clear (today the ray targets the infield centre because ox/oz are never written)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+  const t0 = Date.now(); let live = null;
+  while (Date.now() - t0 < 120000) {
+    const st = await h.eval(() => { const e = window.__tf.eng(); const rigs = window.__tf.rigs(); const rp = rigs && rigs[0] && rigs[0].group ? rigs[0].group.position : null; return { pos: e && e.r ? e.r.pos : 0, phase: e ? e.phase : null, cam: window.__tf.camPos(), rig: rp ? { x: rp.x, z: rp.z } : null, clear: window.__tf.camClear() }; });
+    if (st.phase === 'run' && st.pos > 5 && st.cam && st.rig && st.clear) { live = st; break; }
+    await h.wait(160);
+  }
+  if (!live) return 'no live race camera seen on the runner';
+  const trueD = Math.hypot(live.cam.x - live.rig.x, live.cam.z - live.rig.z);
+  if (Math.abs(live.clear.dist - trueD) > 2) return 'camera ray does not target the runner: ray length ' + live.clear.dist + ' m but the runner is ' + trueD.toFixed(1) + ' m from the camera';
+  let seen = 0, blocked = 0;
+  for (let i = 0; i < 4; i++) {
+    const c = await h.eval(() => window.__tf.camClear());
+    if (c) { seen++; if (!c.clear) blocked++; }
+    await h.wait(400);
+  }
+  if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';
+  return true;
+}
+}
 ];
