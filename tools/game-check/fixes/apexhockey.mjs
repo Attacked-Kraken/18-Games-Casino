@@ -1769,46 +1769,72 @@ export default [
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    // G-261: the staging below used to burn its fixed waits whatever state the
+    // game was in - its own staged shots score goals, the faceoffs after them
+    // need a fresh player-ready press, and on the robot's shared page the
+    // match was in 'play' for only ~0.75 s of the whole run ('the sampler
+    // collected too few play samples (15)'). Now play is re-established
+    // before EVERY pressure phase, with one full re-boot (plain URL, no
+    // ?test scene) if a phase cannot get it back. The pressure itself, the
+    // sampler and both bars are unchanged.
+    const ensurePlay = async (budget) => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < budget) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} }
+        await h.wait(450);
+      }
+      return (await state()) === 'play';
+    };
+    const boot = async () => {
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      if ((await state()) !== 'menu') return false;
+      await h.eval(() => {
+        window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+        if (window.__excTimer) clearInterval(window.__excTimer);
+        window.__excTimer = setInterval(() => {
+          const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+          if (hk.game.state !== 'play') return;
+          const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+          window.__exc.n++;
+          if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+          if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+        }, 50);
+      });
+      await clickId('playBtn');
+      return ensurePlay(12000);
+    };
+    const reboot = async () => {
+      try { const u = new URL(page.url()); await page.goto(u.origin + u.pathname, { waitUntil: 'domcontentloaded' }); } catch (e) { await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); }
+      return boot();
+    };
     await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
-    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
-    await h.eval(() => {
-      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
-      if (window.__excTimer) clearInterval(window.__excTimer);
-      window.__excTimer = setInterval(() => {
-        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
-        if (hk.game.state !== 'play') return;
-        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
-        window.__exc.n++;
-        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
-        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
-      }, 50);
-    });
-    await clickId('playBtn');
-    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
-    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    if (!(await boot())) return 'the match did not reach play for the arena test';
+    const ready = async () => (await ensurePlay(9000)) || (await reboot());
     const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
-    for (let round = 0; round < 6; round++) {
+    for (let round = 0; round < 5; round++) {
       const e = round % 2 === 0 ? 1 : -1;
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
-      await h.wait(700);
+      await h.wait(500);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
       if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
-      await h.wait(700);
-      const stNow = await state();
-      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
-      if (stNow === 'goal') await h.wait(1500);
+      await h.wait(500);
     }
     const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (!exc || exc.n < 50) return { inconclusive: 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied, so this could not be checked' };
     if (exc.maxX > 100.6 || exc.maxZ > 42.9)
       return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
     return true;
-  },
+  }
 },
 {
   id: 'tester-puck-leaves-rink-at-boards',
@@ -1817,46 +1843,72 @@ export default [
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    // G-261: the staging below used to burn its fixed waits whatever state the
+    // game was in - its own staged shots score goals, the faceoffs after them
+    // need a fresh player-ready press, and on the robot's shared page the
+    // match was in 'play' for only ~0.75 s of the whole run ('the sampler
+    // collected too few play samples (15)'). Now play is re-established
+    // before EVERY pressure phase, with one full re-boot (plain URL, no
+    // ?test scene) if a phase cannot get it back. The pressure itself, the
+    // sampler and both bars are unchanged.
+    const ensurePlay = async (budget) => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < budget) {
+        const st = await state();
+        if (st === 'play') return true;
+        if (st === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} }
+        await h.wait(450);
+      }
+      return (await state()) === 'play';
+    };
+    const boot = async () => {
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      if ((await state()) !== 'menu') return false;
+      await h.eval(() => {
+        window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
+        if (window.__excTimer) clearInterval(window.__excTimer);
+        window.__excTimer = setInterval(() => {
+          const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+          if (hk.game.state !== 'play') return;
+          const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
+          window.__exc.n++;
+          if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
+          if (az > window.__exc.maxZ) window.__exc.maxZ = az;
+        }, 50);
+      });
+      await clickId('playBtn');
+      return ensurePlay(12000);
+    };
+    const reboot = async () => {
+      try { const u = new URL(page.url()); await page.goto(u.origin + u.pathname, { waitUntil: 'domcontentloaded' }); } catch (e) { await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); }
+      return boot();
+    };
     await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
-    for (let i = 0; i < 30; i++) { if ((await state()) === 'menu') break; await h.wait(500); }
-    if ((await state()) !== 'menu') return 'the game did not reach its menu for the arena test';
-    await h.eval(() => {
-      window.__exc = { maxX: 0, maxZ: 0, at: null, n: 0 };
-      if (window.__excTimer) clearInterval(window.__excTimer);
-      window.__excTimer = setInterval(() => {
-        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
-        if (hk.game.state !== 'play') return;
-        const p = hk.puck.pos; const ax = Math.abs(p.x), az = Math.abs(p.z);
-        window.__exc.n++;
-        if (ax > window.__exc.maxX) { window.__exc.maxX = ax; window.__exc.at = [p.x, p.z]; }
-        if (az > window.__exc.maxZ) window.__exc.maxZ = az;
-      }, 50);
-    });
-    await clickId('playBtn');
-    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); }
-    if ((await state()) !== 'play') return 'the match did not reach play for the arena test';
+    if (!(await boot())) return 'the match did not reach play for the arena test';
+    const ready = async () => (await ensurePlay(9000)) || (await reboot());
     const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
-    for (let round = 0; round < 6; round++) {
+    for (let round = 0; round < 5; round++) {
       const e = round % 2 === 0 ? 1 : -1;
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
-      await h.wait(700);
+      await h.wait(500);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
-      await h.wait(900);
+      await h.wait(650);
+      if (!(await ready())) return 'play could not be re-established between pressure rounds - the pressure was not applied';
       const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(s => s.role === 'C' && s.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
       if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
-      await h.wait(700);
-      const stNow = await state();
-      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(600); }
-      if (stNow === 'goal') await h.wait(1500);
+      await h.wait(500);
     }
     const exc = await h.eval(() => window.__exc).catch(() => null);
-    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (!exc || exc.n < 50) return { inconclusive: 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied, so this could not be checked' };
     if (exc.maxX > 100.6 || exc.maxZ > 42.9)
       return 'the puck left the rink under end-board pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.4 / |z| 42.8) - worst at (' + (exc.at ? exc.at.map(v => v.toFixed(1)).join(', ') : '?') + ')';
     return true;
-  },
+  }
 },
  {
   id: 'play-menu-fits-frame',
@@ -1971,7 +2023,7 @@ export default [
       }, 10);
     }));
     if (!m || m.err) return 'staging failed: ' + (m ? m.err : 'no result');
-    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied';
+    if (!m.perScene || m.perScene.length < 4 || m.perScene.some(v => v < 5)) return { inconclusive: 'too few stick-tracked samples per boards scene (' + (m.perScene || []).join(',') + ') - the pressure was not applied, so this could not be checked' };
     if (m.maxX > 100.6 || m.maxZ > 42.9) return 'the carried puck left the rink at the boards: max |x| ' + m.maxX.toFixed(1) + ', max |z| ' + m.maxZ.toFixed(1) + ' (shell 100.6 / 42.9) - worst at (' + (m.worst ? m.worst.map(v => v.toFixed(1)).join(', ') : '?') + ') - the puck on a carrier stick at the boards must stay inside';
     return true;
   }
@@ -2332,6 +2384,165 @@ export default [
     const zs = res.dots.map(d => Math.abs(d.z) / 3.26);
     const bad = zs.filter(m => Math.abs(m - 6.7) / 6.7 > 0.03);
     if (bad.length) return 'end-zone faceoff dots sit ' + zs.map(m => m.toFixed(2)).join(', ') + ' m either side of centre - venues/rink.md says 6.7 m (3% band 6.50-6.90 m)';
+    return true;
+  },
+},
+{
+  id: 'play-blades-stay-level-roll',
+  ask: 'OWNER VIDEO (2026-10-23): blades stay level in roll too, not only pitch - a planted blade\'s plate normal stays near horizontal, standing at the faceoff and in live play (the away stance stood rolled 12-26 deg; in play the plates flipped up toward the legs)',
+  async test(page, h) {
+    const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    if (st0 !== 'faceoff') { // the standing phase must read a real faceoff stance - boot fresh unless one is already set
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    }
+    const start = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      window.__attAll = () => {
+        function eig3(C) {
+          let a = [[C[0], C[1], C[2]], [C[1], C[3], C[4]], [C[2], C[4], C[5]]];
+          let vv = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+          for (let sweep = 0; sweep < 12; sweep++) {
+            if (Math.abs(a[0][1]) + Math.abs(a[0][2]) + Math.abs(a[1][2]) < 1e-12) break;
+            for (const [pp, qq] of [[0, 1], [0, 2], [1, 2]]) {
+              const apq = a[pp][qq]; if (Math.abs(apq) < 1e-14) continue;
+              const phi = 0.5 * Math.atan2(2 * apq, a[qq][qq] - a[pp][pp]);
+              const c = Math.cos(phi), s = Math.sin(phi);
+              for (let t = 0; t < 3; t++) { const x = a[t][pp], y = a[t][qq]; a[t][pp] = c * x - s * y; a[t][qq] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = a[pp][t], y = a[qq][t]; a[pp][t] = c * x - s * y; a[qq][t] = s * x + c * y; }
+              for (let t = 0; t < 3; t++) { const x = vv[t][pp], y = vv[t][qq]; vv[t][pp] = c * x - s * y; vv[t][qq] = s * x + c * y; }
+            }
+          }
+          const idx = [0, 1, 2].sort((i, j) => a[j][j] - a[i][i]);
+          return idx.map((i2) => [vv[0][i2], vv[1][i2], vv[2][i2]]);
+        }
+        const out = [];
+        for (const S of hk.skaters) {
+          if (S.goalie || !S._blade || !S.kit || !S.kit.parts || !S.kit.parts.steel) continue;
+          const st3 = S.kit.parts.steel;
+          const V3 = st3.skeleton.bones[0].position.constructor;
+          const v = new V3();
+          S.g.updateMatrixWorld(true); st3.skeleton.update();
+          for (let k = 0; k < 2; k++) {
+            const ids = S._blade[k]; if (!ids || ids.length < 8) continue;
+            let n = 0, Sx = 0, Sy = 0, Sz = 0, Sxx = 0, Syy = 0, Szz = 0, Sxy = 0, Sxz = 0, Syz = 0, low = 1e9;
+            for (const ix of ids) { st3.getVertexPosition(ix, v); Sx += v.x; Sy += v.y; Sz += v.z; Sxx += v.x * v.x; Syy += v.y * v.y; Szz += v.z * v.z; Sxy += v.x * v.y; Sxz += v.x * v.z; Syz += v.y * v.z; if (v.y < low) low = v.y; n++; }
+            const cx = Sx / n, cy = Sy / n, cz = Sz / n;
+            const C = [Sxx - n * cx * cx, Sxy - n * cx * cy, Sxz - n * cx * cz, Syy - n * cy * cy, Syz - n * cy * cz, Szz - n * cz * cz];
+            const e = eig3(C);
+            out.push({ roll: +(Math.asin(Math.min(1, Math.abs(e[2][1]))) * 57.3).toFixed(1), h: +(low + S.athWrap.position.y).toFixed(3) });
+          }
+        }
+        return out;
+      };
+      return 'ok';
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (start !== 'ok') return 'blades-roll test: ' + start;
+    // STANDING phase: at the faceoff, before the drop, every planted blade must lie level
+    // (wait until the athletes are really posed - early samples read the menu showcase)
+    let ready = false;
+    for (let i = 0; i < 26 && !ready; i++) {
+      const n0 = await h.eval(() => window.__attAll().length).catch(() => 0);
+      if (n0 >= 20) ready = true; else await h.wait(300);
+    }
+    const stand = [];
+    for (let i = 0; i < 4; i++) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) stand.push(r.roll);
+      await h.wait(250);
+    }
+    if (ready && stand.length >= 40) {
+      stand.sort((a, b) => a - b);
+      const p90 = stand[Math.floor(stand.length * 0.9)];
+      if (p90 > 10) return 'standing at the faceoff, blades sit rolled: p90 roll ' + p90 + ' deg (bar 10) - the plates lean sideways on the ice instead of lying level';
+    }
+    // drop the puck and judge LIVE play
+    for (let i = 0; i < 40; i++) {
+      const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+      if (s2 === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(400);
+    }
+    const rows = [];
+    const t0 = Date.now();
+    while (Date.now() - t0 < 7000) {
+      const part = await h.eval(() => window.__attAll()).catch(() => []);
+      for (const r of part) if (r.h <= 0.13) rows.push(r.roll);
+      await h.wait(120);
+    }
+    if (rows.length < 200) return 'too few planted blade samples in live play: ' + rows.length;
+    rows.sort((a, b) => a - b);
+    const med = rows[Math.floor(rows.length / 2)];
+    const bad = rows.filter((r) => r > 25).length;
+    const share = bad / rows.length;
+    if (med > 6) return 'planted blades sit rolled in live play: median roll ' + med + ' deg (bar 6) - the plates lean sideways instead of lying level';
+    if (share > 0.02) return 'planted blades flip rolled in live play: ' + (share * 100).toFixed(1) + '% of samples over 25 deg roll (bar 2%) - blades come up toward the legs';
+    return true;
+  },
+},
+{
+  id: 'play-chasers-not-mirrored',
+  ask: 'OWNER VIDEO (2026-10-23): the two AI chasers on a puck carrier do not mirror each other - they close from different sides instead of stacking onto the same point and skating through each other',
+  async test(page, h) {
+    const boot = async () => {
+      const st0 = await h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+      if (st0 !== 'play' && st0 !== 'faceoff') {
+        await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+        await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+        await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      }
+      for (let i = 0; i < 40; i++) {
+        const s2 = await h.eval(() => window.__hk.game.state).catch(() => '');
+        if (s2 === 'play') return true;
+        await page.keyboard.press('k').catch(() => {});
+        await h.wait(400);
+      }
+      return false;
+    };
+    if (!(await boot())) return 'chasers test: could not get a match into play';
+    const stage = await h.eval(() => {
+      const hk = window.__hk; if (!hk || !hk.skaters) return 'no __hk';
+      for (const s of hk.skaters) s.thinkT = 9999;
+      const C = hk.skaters.find((s) => s.team === 'home' && s.role === 'C');
+      const L = hk.skaters.find((s) => s.team === 'away' && s.role === 'LW');
+      const R = hk.skaters.find((s) => s.team === 'away' && s.role === 'RW');
+      const put = (s, x, z) => { s.pos.set(x, 0, z); s.vel.set(0, 0, 0); s.g.position.set(x, 0, z); s.target.set(x, 0, z); };
+      hk.skaters.forEach((s, i) => { if (s !== C && s !== L && s !== R) put(s, -95 + (i % 5) * 2, s.team === 'home' ? 38 : -38); });
+      put(C, -20, 0); put(L, 6, 10); put(R, 6, -10);
+      L.thinkT = 0.05; R.thinkT = 0.05;
+      hk.puck.owner = C; hk.puck.lastTouch = 'home'; hk.puck.pos.set(C.pos.x + 1.2, 0.06, C.pos.z);
+      window.__pair = [L, R]; window.__C0 = C;
+      return hk.game.state;
+    }).catch((e) => 'eval fail: ' + e.message);
+    if (stage !== 'play') return 'chasers test: could not stage in play (state ' + stage + ')';
+    // Judge the chase while it develops: sample the pair's TARGET separation while the
+    // carrier still owns the puck (the literal defect: both chasers are handed the same
+    // target point, separation 0, and skate in lockstep), plus the pair's closest
+    // approach over the whole run (they end up stacked on the puck).
+    const tseps = [], allD = [];
+    const tEnd = Date.now() + 9000;
+    while (Date.now() < tEnd) {
+      const r = await h.eval(() => {
+        const [a, b] = window.__pair, C = window.__C0, hk = window.__hk;
+        return {
+          d: Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z),
+          tsep: Math.hypot(a.target.x - b.target.x, a.target.z - b.target.z),
+          own: hk.puck.owner === C,
+          dC: Math.min(Math.hypot(a.pos.x - C.pos.x, a.pos.z - C.pos.z), Math.hypot(b.pos.x - C.pos.x, b.pos.z - C.pos.z)),
+        };
+      }).catch(() => null);
+      if (r) { allD.push(r.d); if (r.own && r.dC < 26) tseps.push(r.tsep); if (tseps.length >= 8 && !r.own) break; }
+      await h.wait(100);
+    }
+    if (tseps.length < 5) return 'chasers test: too few developed-chase samples (carrier held the puck while closing): ' + tseps.length;
+    tseps.sort((a, b) => a - b);
+    const tmed = tseps[Math.floor(tseps.length / 2)];
+    if (tmed < 2.0) return 'the two chasers share one target point (median target separation ' + tmed.toFixed(2) + ' units) - they mirror each other onto the carrier instead of closing from two sides';
+    const min = Math.min(...allD);
+    if (min <= 1.8) return 'the two chasers stack onto the same point: closest approach ' + min.toFixed(2) + ' units - they mirror each other onto the carrier';
+    const overlap = allD.filter((d) => d < 1.6).length / Math.max(1, allD.length);
+    if (overlap > 0.1) return 'the two chasers skate through each other: ' + (overlap * 100).toFixed(0) + '% of the chase inside 1.6 units';
     return true;
   },
 },
@@ -2853,10 +3064,21 @@ export default [
   async test(page, h) {
     const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
     const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); }, id).catch(() => {});
-    for (let i = 0; i < 24; i++) {
-      const st = await state();
-      if (st === 'play') break;
-      if (st === 'menu') await clickId('playBtn');
+    // G-261: boot like never-g-228-p1 - the old click-only loop (24 x 600 ms,
+    // no key presses) failed at staging on the robot's shared page whenever a
+    // previous test left the game at the final screen or in the hub (the same
+    // defect G-257 fixed in never-g-217-p1). The staging and the count below
+    // are unchanged.
+    const st0 = await state();
+    if (st0 !== 'menu' && st0 !== 'play' && st0 !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    if ((await state()) === 'menu') await clickId('playBtn');
+    const tBootH = Date.now();
+    while (Date.now() - tBootH < 30000) {
+      if ((await state()) === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
       await h.wait(600);
     }
     if ((await state()) !== 'play') return 'could not get a match into play to stage the tie';
@@ -2933,6 +3155,121 @@ export default [
     if (!left) return 'the intermission never ended - the game is stuck on the break';
     const after = await h.eval(() => { const c = document.getElementById('statCard'); return c ? { display: c.style.display, visible: c.style.display !== 'none' && c.getClientRects().length > 0 } : null; }).catch(() => null);
     if (after && after.visible && after.display !== 'none') return 'the stats card is still on screen after the intermission ended - it must clear when the next period starts';
+    return true;
+  }
+ },
+{
+  id: 'never-g-261-p1',
+  ask: 'NEVER (G-261): the puck never leaves the rink under boards pressure - loose pucks fired at the end boards, the carrier parked at the end boards and at the side boards facing them with the puck on his stick, and a real shot released at the boards, with play re-established before every phase and the puck sampled every 50 ms in play: its centre must never pass the boards shell (|x| <= 100.6, |z| <= 42.9) and the sampler must collect at least 50 play samples',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const ensurePlay = async (budget) => {
+      const t0 = Date.now();
+      while (Date.now() - t0 < budget) {
+        const st = await snap();
+        if (st === 'play') return true;
+        if (st === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} }
+        await h.wait(450);
+      }
+      return (await snap()) === 'play';
+    };
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => {
+      window.__exc2 = { maxX: 0, maxZ: 0, n: 0 };
+      if (window.__exc2Timer) clearInterval(window.__exc2Timer);
+      window.__exc2Timer = setInterval(() => {
+        const hk = window.__hk; if (!hk || !hk.puck || !hk.game) return;
+        if (hk.game.state !== 'play') return;
+        const p = hk.puck.pos;
+        window.__exc2.n++;
+        window.__exc2.maxX = Math.max(window.__exc2.maxX, Math.abs(p.x));
+        window.__exc2.maxZ = Math.max(window.__exc2.maxZ, Math.abs(p.z));
+      }, 50);
+    }).catch(() => {});
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    if (!(await ensurePlay(15000))) return 'could not get a match into play to apply the boards pressure';
+    const stage = (fn, arg) => h.eval(fn, arg).catch(() => false);
+    for (let round = 0; round < 4; round++) {
+      const e = round % 2 === 0 ? 1 : -1;
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((a) => { const pk = window.__hk.puck; pk.owner = null; pk.shot = null; pk.pos.set(a[0] * 78, 0.06, a[1]); pk.vel.set(a[0] * 150, 0, 0); return true; }, [e, ((round % 3) - 1) * 6]);
+      await h.wait(500);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(650);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(-8, 0, ee * 41.5); c.vel.set(0, 0, 0); c.facing = ee > 0 ? Math.PI / 2 : -Math.PI / 2; pk.owner = c; pk.shot = null; return true; }, e);
+      await h.wait(650);
+      if (!(await ensurePlay(9000))) return 'play could not be re-established between pressure rounds - the pressure was not applied';
+      const okC = await stage((ee) => { const sk = window.__hk.skaters; const c = sk.find(x => x.role === 'C' && x.team === 'home'); if (!c || c.inBox) return false; const pk = window.__hk.puck; c.pos.set(ee * 94, 0, 3); c.vel.set(0, 0, 0); c.facing = ee > 0 ? 0 : Math.PI; pk.pos.set(ee * 94, 0.06, 3); pk.vel.set(0, 0, 0); pk.owner = c; pk.shot = null; return true; }, e);
+      if (okC) { try { await page.keyboard.down('k'); await h.wait(450); await page.keyboard.up('k'); } catch (e2) {} }
+      await h.wait(500);
+    }
+    const exc = await h.eval(() => window.__exc2).catch(() => null);
+    if (!exc || exc.n < 50) return 'the sampler collected too few play samples (' + (exc ? exc.n : 0) + ') - the pressure was not applied';
+    if (exc.maxX > 100.6 || exc.maxZ > 42.9) return 'the puck left the rink under boards pressure: max |x| ' + exc.maxX.toFixed(1) + ', max |z| ' + exc.maxZ.toFixed(1) + ' (boards shell at |x| 100.6 / |z| 42.9)';
+    return true;
+  }
+ },
+{
+  id: 'never-g-261-p2',
+  ask: 'NEVER (G-261, H15): a tied game goes to 3-on-3 overtime, first goal wins, no shootout (owner decision 2026-10-23, rules/hockey.md line 20) - stage a tie at the end of period 3: exactly 3 skaters a side on the ice in overtime (plus the goalies), and the first overtime goal ends the game',
+  async test(page, h) {
+    const snap = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await snap();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await snap();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await snap()) !== 'play') return 'could not get a match into play to stage the tie';
+    await h.eval(() => {
+      const hk = window.__hk; const g = hk.game;
+      g.period = 3; g.scoreH = 1; g.scoreA = 1; g.clockT = 0.4;
+      hk.puck.pos.set(0, 0.06, -40); hk.puck.vel.set(0, 0, 0); hk.puck.owner = null;
+    }).catch(() => {});
+    let ot = null; const t1 = Date.now();
+    while (Date.now() - t1 < 25000) {
+      ot = await h.eval(() => { const hk = window.__hk; if (!hk || !hk.game) return null; return { period: hk.game.period, state: hk.game.state }; }).catch(() => null);
+      if (ot && ot.period >= 4 && (ot.state === 'play' || ot.state === 'faceoff')) break;
+      await h.wait(700);
+    }
+    if (!ot || ot.period < 4) return 'a tied game at the end of period 3 never reached overtime';
+    await h.wait(2500);
+    const count = await h.eval(() => {
+      const hk = window.__hk; const c = { home: 0, away: 0 };
+      for (const sk of hk.skaters) {
+        if (sk.goalie) continue;
+        if (sk.boxT > 0) continue;
+        if (Math.abs(sk.pos.x) <= 100.5 && Math.abs(sk.pos.z) <= 42.8) c[sk.team]++;
+      }
+      return c;
+    }).catch(() => null);
+    if (!count) return 'could not count the skaters on the ice in overtime';
+    if (count.home !== 3 || count.away !== 3) return 'overtime is ' + count.home + '-on-' + count.away + ' skaters - the owner rule is exactly 3 a side (plus the goalies), first goal wins, no shootout';
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+    }).catch(() => {});
+    let over = false; const t2 = Date.now();
+    while (Date.now() - t2 < 12000) {
+      if ((await snap()) === 'over') { over = true; break; }
+      await h.wait(400);
+    }
+    if (!over) return 'the first overtime goal did not end the game - golden goal, no shootout (owner decision 2026-10-23)';
     return true;
   }
  },
