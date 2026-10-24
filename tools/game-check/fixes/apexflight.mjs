@@ -954,9 +954,7 @@ export default [
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
         // the tester's own setup: short final right of the centreline, a gentle touchdown in the grass
-        // G-275 r1: started at 3 m, not 8 m - same 4.5 game-s sit assertion, less dead
-        // descent time so a slow runner still finishes inside the harness budget
-        F.P.pos.set(30, 3, -350); F.P.vel.set(0, -1.8, 30);
+        F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
           let landedGt = null, sawReason = false;
