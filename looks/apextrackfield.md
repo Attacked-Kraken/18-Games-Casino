@@ -11,6 +11,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - fitGame (sizes renderer + camera to the turned box): line 340 - audio (AudioSys): line 391
 - Live engine pointer ENG: line 792
 - Live race camera (G-267): followCam() line 2541 (records the followed runner's world position into ENG.r.ox/oz, so the wall check rays at the runner) - clampCamXZ() line 2531 (R 46.0, inside the bowl's ~47.5 m inner wall) - guard never-g-267-p1
+- Distance stride rate cap (G-267 r1): createDistanceEngine stride (impulse pre-scaled past 12 strides/game-s) - guard never-g-267-p2; 300m hurdles hCount 7 (event line) - guard never-g-267-p3
 - Relay changeover zones (G-249 r2): buildRelayZones() line 2559 (30 m of track per lane, walked along each lane's line) - frame() retry line 3703 (builds them if the race attach was skipped on a slow load) - guard never-g-249-p3; sprint swing: real-sprint-animation sampling hardened to 30x250ms (full cycle) + guard never-g-249-p2
 - Jump timing controls (G-249 r1): long jump angle sweep line 1217 (55 deg/s, no run-on/foul while setting it) - triple jump quality curve line 1265, marker rate line 1292 (1.0/s), drawn green line 2798 - high jump / pole vault green half-width line 1351 (gw 0.20-0.24), bar sweep line 1381 (0.75/s) - TESTLINK (?test= link event, G-171): line 793 - sprint start hold (G-244, field waits on the line; line numbers may have moved, search "start hold"): lines 834-836 - hurdles test-link countdown framing: line 2677 - results finishCommon: line 3195 - results exit wiring (bResMenu: free play returns to the event grid): line 3557 - ?test= boot hook: line 3664 - race frame loop frame(): line 3670 - REALITY hook: line 3735 - test hooks (__tf): line 3745
 
@@ -42,6 +43,8 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - Results screens show ONE table, athletes under the ATHLETE heading, and marks that match the race clock
 
 ## NEVER
+- 2026-10-24: mashing the run controls faster than any human cadence makes the player faster in the 10,000m - stride input past the 12th in a game-second window is pre-scaled in the distance engine, so 60 strides/s cannot outrun honest pace (G-267)
+- 2026-10-24: the 300m hurdles has 8 hurdles per lane - the real 300m hurdles has 7 (45 m to the first, 35 m apart, last at 255 m) (G-267)
 - 2026-10-24: the live race camera has a wall between it and the runner in 1 of 4 samples - the wall check ray targeted the infield centre, not the runner, because ENG.r.ox/oz were never written; the camera itself stays inside the stadium (clamp 46.0 m, inside the bowl's ~47.5 m inner wall) and its ray must land on the runner it follows (G-267)
 - Owner 2026-10-21: "racers so far back into the wall stands" - the field always starts ON the painted track; sprint/hurdles starts sit on the oval (visS), never on a straight-line extension past the track's end (guarded by play-racers-start-on-the-track).
 - 2026-10-22: the 300m and 400m hurdles stand 1.07 m - hurdles stand at their REAL heights: 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m (G-122)

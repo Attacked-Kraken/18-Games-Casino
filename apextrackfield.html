@@ -637,7 +637,7 @@ hint:'Five hurdles indoors. Tap HURDLE just before each one - hit it and it goes
 hint:'Ten hurdles, tighter spacing. Keep the rhythm: stride, stride, HURDLE.'},
 {id:'110h', name:'110m Hurdles', eng:'hurdles', timed:true, dist:110, ref:12.80, hCount:10, hStart:13.72, hGap:9.14,
 hint:'Sprint, then tap ACTION to clear each of the 10 hurdles. Clip one and you lose speed.'},
-{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:8, hStart:45, hGap:35,
+{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:7, hStart:45, hGap:35,
 hint:'Eight hurdles around the bend. Jump late and you knock one flat.'},
 {id:'400h', name:'400m Hurdles', eng:'hurdles', timed:true, dist:400, ref:46.29, hCount:10, hStart:45, hGap:35,
 hint:'10 hurdles over a full lap. Rhythm is everything — jump late and you will clip.'},
@@ -887,6 +887,8 @@ stride(side){
 if(this.done||this.phase!=='run') return;
 let imp=0.70;
 if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.25;
+// JOB G-267 ROUND 1: stride rate cap - mashing faster than any human cadence must not buy speed (tester-10000m-mash-no-speed-exploit): past the 12th stride in a game-second window the impulse is pre-scaled to 0.25, on top of the shared governor. Any per-tick gain above the drag at the hard cap (~0.048) pins speed at the cap forever (clamp + drag), so the governed gain must fall below it; 0.25 gives 0.043 at zero stamina. Honest cadence (<=12/s) is untouched.
+if(this.r.tapCount>=12) imp*=0.25;
 applyStride(this.r, side, imp);
 },
 action(){
