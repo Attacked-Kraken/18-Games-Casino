@@ -36,6 +36,10 @@
     opacity:0; transition:opacity .25s; pointer-events:none; text-align:center; white-space:nowrap; }
   #banner.show { opacity:1; }
   #banner small { display:block; font-size:16px; letter-spacing:.2em; color:#cfe9ff; margin-top:8px; }
+  #statCard { position:fixed; top:56%; left:50%; transform:translate(-50%,-50%); z-index:9400; display:none; background:rgba(6,18,34,.88); border:1px solid #7fd4ff; border-radius:14px; padding:16px 30px; text-align:center; color:#eaf6ff; font-family:inherit; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  #statCard h3 { margin:0 0 6px; font-size:22px; letter-spacing:.14em; color:#ffe27d; }
+  #statCard .scScore { font-size:19px; font-weight:700; letter-spacing:.08em; margin-bottom:6px; }
+  #statCard .scRow { font-size:15px; letter-spacing:.1em; color:#cfe9ff; }
   #flash { position:fixed; inset:0; z-index:9400; background:#fff; opacity:0; pointer-events:none; transition:opacity .5s; }
   .overlay { position:fixed; inset:0; z-index:9600; display:flex; flex-direction:column; align-items:center;
     justify-content:center; background:rgba(2,8,16,.82); color:#fff; text-align:center; padding:20px; }
@@ -116,6 +120,7 @@
 <div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div><div id="penTag"></div>
 <button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
+<div id="statCard"></div>
 <div id="flash"></div>
 <div id="joy"><div id="knob"></div></div>
 <div id="btns">
@@ -760,6 +765,7 @@ function releaseShot(){ if(!charging) return; charging=false; chargeEl.style.opa
 /* ================= game state / HUD ================= */
 let state='menu', paused=false;
 let period=1, clockT=PERIOD_LEN, scoreH=0, scoreA=0, stateT=0, lastOwnerTeam=null;
+let statShots={home:0,away:0}, statSaves={home:0,away:0}, statFO={home:0,away:0}, foDropAt=-9; // G-257: real counters behind the intermission stats card (shots at shootPuck, saves in goalieSaves, faceoffs won = first clean grab after a drop)
 let pendingFaceoff=null;
 let controlled = homeSkaters[0];
 /* G-37: the career play tests read and set the live game through this hook
@@ -780,7 +786,7 @@ window.__hk.game = {
   // a fresh match (period 1, 0-0, full clock): a player gets this from the
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
-  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; updateHUD(); },
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -807,6 +813,12 @@ function banner(main, sub, dur=1800, color){
   b.style.color=color||'#fff'; b.classList.add('show');
   clearTimeout(bannerTO); bannerTO=setTimeout(()=>b.classList.remove('show'), dur);
 }
+function showStatCard(){ // G-257: the intermission stats card (rules/hockey.md) - real counters, up for the whole break
+  const c=$('statCard'); if(!c) return;
+  c.innerHTML='<h3>END OF PERIOD '+period+'</h3><div class="scScore">'+TEAMS.home.name+' '+scoreH+' \u2013 '+scoreA+' '+TEAMS.away.name+'</div><div class="scRow">SHOTS '+statShots.home+'\u2013'+statShots.away+' \u00b7 SAVES '+statSaves.home+'\u2013'+statSaves.away+' \u00b7 FACEOFFS WON '+statFO.home+'\u2013'+statFO.away+'</div>';
+  c.style.display='block';
+}
+function hideStatCard(){ const c=$('statCard'); if(c) c.style.display='none'; }
 function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
   requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
 /* ================= G-47: owner's stadium kit sounds (sounds/stadium/hockey) =================
@@ -988,7 +1000,7 @@ function shootFrom(s, power, aimed){
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
   const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
-  puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; // G-78: origin, so a defender in the lane near the shooter can block it
+  puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; statShots[s.team]++; // G-78: origin, so a defender in the lane near the shooter can block it; G-257: the shot counts for the intermission card
   commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
   if(power>=0.8) puckSfx('hockey_puck_slapshot.mp3', 0.75); // G-47
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
@@ -1084,7 +1096,7 @@ function faceoff(dx,dz,label){
   maybeSwapLines();
   offArm=null;
   setupFaceoffPositions(dx,dz);
-  state='faceoff'; stateT=1.4; updateHUD();
+  state='faceoff'; stateT=1.4; foDropAt=gameNow; updateHUD(); // G-257: the first clean grab inside 4 s of the drop wins the faceoff on the card
   if(label) banner(label,'',1400);
   commSay('faceoff');
 }
@@ -1442,7 +1454,7 @@ function stepPuck(dt){
     }
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
+    if(d<grabR&&canGrab){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1549,7 +1561,7 @@ function goalieSaves(){
       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
-        gl._saveUntil=gameNow+1.2; puck.shot=null; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble
+        gl._saveUntil=gameNow+1.2; puck.shot=null; statSaves[gl.team]++; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble; G-257: the statSaves count above feeds the intermission card
         commSay(spd>70?'great_save':'save'); // G-44
         if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
       }
@@ -1741,12 +1753,12 @@ function tick(now){
     if(p) faceoff(p.x,p.z,p.label); else faceoff(0,0,'FACEOFF');
   }
   else if(state==='intermission'&&stateT<=0){
-    period++; clockT=PERIOD_LEN; faceoff(0,0,period>3?'OVERTIME':'PERIOD '+period);
+    hideStatCard(); period++; clockT=PERIOD_LEN; faceoff(0,0,period>3?'OVERTIME':'PERIOD '+period); // G-257: the card clears with the break
   }
   if(state==='play'){
     clockT-=dt;
     if(clockT<=0){
-      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); state='intermission'; stateT=2.6; }
+      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); showStatCard(); state='intermission'; stateT=6; } // G-257: the break carries the stats card (rules/hockey.md) and lasts long enough to read it
       else if(period===N_PERIODS){
         if(scoreH===scoreA){ period=4; clockT=1e9; banner('OVERTIME','GOLDEN GOAL · NEXT GOAL WINS',2600,'#ffe27d'); commSay('overtime'); faceoff(0,0,'OVERTIME'); }
         else gameOver();
@@ -1767,7 +1779,7 @@ function tick(now){
   renderer.render(scene,camera);
 }
 function gameOver(){
-  state='over';
+  hideStatCard(); state='over';
   const win=scoreH>scoreA?'home':(scoreA>scoreH?'away':'tie');
   $('finalTitle').textContent=win==='tie'?'DRAW':(win==='home'?'WOLVES WIN!':'SHARKS WIN');
   $('finalScore').textContent=scoreH+' – '+scoreA;
@@ -2040,6 +2052,11 @@ try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'b
     const pb = $('playBtn'); if (pb) pb.click();
     let lastDump = 0;
     const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; const lw = hk.skaters.find((s) => s.team === 'home' && !s.goalie && s.role === 'LW'); if (lw) { lw.inBox = true; lw.penT = 30; } if (hk.game.state === 'play' && performance.now() - lastDump > 7000) { lastDump = performance.now(); const pk = hk.puck; hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== lw) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); }); hk.skaters.forEach((x) => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); }); pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.lastTouchX = -30; pk.pos.set(-30, 0.06, 20); pk.vel.set(70, 0, 0); } }, 250); setTimeout(() => clearInterval(iv), 90000);
+  }
+  else if (tp === 'intermission') { // G-257: ?test=intermission = a match seconds from the period break - the clock runs down, the break starts and the stats card (shots, saves, faceoffs won) stays up for the whole intermission
+    const pb = $('playBtn'); if (pb) pb.click();
+    let cut = false;
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (!cut && hk.game.state === 'play') { cut = true; hk.game.clockT = 1.5; } if (hk.game.state === 'intermission') clearInterval(iv); }, 250); setTimeout(() => clearInterval(iv), 60000);
   }
   else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
   else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
