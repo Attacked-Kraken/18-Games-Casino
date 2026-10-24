@@ -1,0 +1,68 @@
+name: Game check retry
+# Owner Oct 23 2026 4:40 PM "make the robot retry a failed play job ONCE by itself when the failure looks like
+# infrastructure ... rewrite the Check status comment to say it is retrying" (#1326 Racer: browser install failed,
+# #1330 Flight: install stalled 10 min, #1307: install failed - none of it the Muses' code).
+# When a "Game check (PR)" run ends FAILED on its first attempt and a failed job failed in SETUP (not in the game's own
+# play step), was cancelled, or timed out, this re-runs the failed jobs ONCE (run_attempt 2 is never retried) and
+# rewrites the one Check status comment to RETRYING. A real game failure (the play step ran and the judge says so) is left alone.
+on:
+  workflow_run:
+    workflows: ["Game check (PR)"]
+    types: [completed]
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  issues: write
+jobs:
+  retry:
+    if: github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1 && github.event.workflow_run.event != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Look for a setup problem and retry once
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN: ${{ github.event.workflow_run.id }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/jobs?per_page=100" > jobs.json
+          # a failed job counts as setup trouble when the step that failed is NOT the game's own "Play <game>" step
+          # (Set up job, checkout, setup-node, browser cache/install, upload), or when it was cancelled / timed out.
+          INFRA=$(jq -r '[.jobs[] | select(.name != "check")
+              | select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled")
+              | . as $j
+              | (($j.steps // []) | map(select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled")) | first) as $s
+              | select($j.conclusion != "failure" or $s == null or (($s.name | startswith("Play ")) | not))
+              | "\($j.name): \($s.name // $j.conclusion)"] | join("; ")' jobs.json)
+          # also: the verdict job said a game "could not be played" (0 test lines) - a runner failure mid-play, not a verdict
+          CK=$(jq -r '.jobs[]|select(.name=="check")|.id' jobs.json | head -1)
+          if [ -z "$INFRA" ] && [ -n "$CK" ]; then
+            if gh api "repos/$GITHUB_REPOSITORY/check-runs/$CK/annotations" -q '.[].message' 2>/dev/null | grep -qiE "could not play it|played 0 game"; then INFRA="check: a game could not be played (0 test lines)"; fi
+          fi
+          echo "infra trouble: [$INFRA]"
+          if [ -z "$INFRA" ]; then echo "no setup problem - a real verdict, not retried"; exit 0; fi
+          BR="${{ github.event.workflow_run.head_branch }}"; SHA="${{ github.event.workflow_run.head_sha }}"
+          if [ -z "$PR" ]; then PR=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY%%/*}:$BR" -q '.[0].number' 2>/dev/null || true); fi
+          # once per PR: a 'robot-retried' label marks it (a second setup failure is a real result for the Muse / a robot bug for the VP)
+          if [ -n "$PR" ] && gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -q '.[].name' 2>/dev/null | grep -qx robot-retried; then
+            echo "::notice::#$PR was already retried once by the robot - not again"; exit 0; fi
+          [ -n "$PR" ] && gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -f "labels[]=robot-retried" >/dev/null 2>&1 || true
+          # owner Oct 23 2026 6:19 PM: a re-run of an OLD run re-uses that run's OLD robot setup (#1326 needed main merged in by hand).
+          # When main's robot files are newer than the PR's, the retry merges main into the PR branch and starts a FRESH check on the
+          # newest robot setup; otherwise it re-runs the failed jobs (same setup as main anyway).
+          ROBOT_NEW=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SHA...main" -q '[.files[]?.filename|select(startswith(".github/workflows/")|startswith("tools/game-check/"))]|length' 2>/dev/null || echo 0)
+          if [ -n "$PR" ] && [ "${ROBOT_NEW:-0}" -gt 0 ]; then
+            printf '%s\n' "Failed in setup, not in the game: $INFRA" "The robot's setup was fixed on main since this check started - the robot merged main into your branch and is checking it again on the newest setup. Pull before you push." > /tmp/why.txt
+            bash tools/game-check/status-comment.sh "$PR" RETRYING /tmp/why.txt || true
+            if gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/update-branch" >/dev/null; then
+              sleep 20
+              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/game-check-pr.yml/dispatches" -f ref="$BR" && echo "::notice::ROBOT RETRY (fresh setup): merged main into #$PR ($BR) and started a new check ($INFRA)"
+              exit 0
+            fi
+            echo "::warning::could not merge main into #$PR - re-running the old jobs instead"
+          fi
+          printf '%s\n' "Failed in setup, not in the game: $INFRA" > /tmp/why.txt
+          [ -n "$PR" ] && bash tools/game-check/status-comment.sh "$PR" RETRYING /tmp/why.txt || true
+          gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/rerun-failed-jobs" && echo "::notice::ROBOT RETRY: re-running the failed jobs of run $RUN once ($INFRA)"

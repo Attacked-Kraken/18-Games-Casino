@@ -1,0 +1,14 @@
+# Checklist: Track & Field (apextrackfield.html) - numbers come only from the SOURCE file named on each line
+- [x] T01 | The 400 m oval has two straights of 84.39 m and two bends of radius 36.5 m | SOURCE: venues/track.md | NUMBERS: 84.39, 36.5 | MEASURE: lane-1 path segment lengths from the track object, within 3% | TEST: tester-chk-t01 | RESULT: OK (measured straights 84.39 m; bend radius 37.11 m on the lane-1 path, 36.8 m on the measure line - source 36.5 m, within 3%)
+- [ ] T02 | 110 m hurdles are 1.067 m high | SOURCE: REALITY.md | NUMBERS: 1.067 | MEASURE: Box3 height of a hurdle in the 110 m event, within 15% | TEST: tester-chk-t02
+- [ ] T03 | 400 m hurdles are 0.914 m high | SOURCE: REALITY.md | NUMBERS: 0.914 | MEASURE: Box3 height of a hurdle in the 400 m hurdles, within 15% | TEST: tester-chk-t03
+- [ ] T04 | The relay baton changeover zone is 30 m long | SOURCE: rules/trackfield.md | NUMBERS: 30 m | MEASURE: changeover zone length from the track markings in the relay event, within 3% | TEST: tester-chk-t04
+- [ ] T05 | A tailwind over +2.0 m/s means the time does not count as a record (shown as "w") | SOURCE: rules/trackfield.md | NUMBERS: +2.0 m/s | MEASURE: force a wind above +2.0 in a sprint and read the results screen for the "w" mark | TEST: tester-chk-t05
+- [ ] T06 | High jump allows 3 tries per height | SOURCE: rules/trackfield.md | NUMBERS: 3 tries | MEASURE: fail one height three times in the high jump and read when the athlete is out | TEST: tester-chk-t06
+- [ ] T07 | Throws get 3 attempts (plus 3 more for the top 8) | SOURCE: rules/trackfield.md | NUMBERS: 3 attempts, 3 more for the top 8 | MEASURE: count attempts per athlete in a throw event and how many athletes get the extra 3 | TEST: tester-chk-t07
+- [ ] T08 | Race times are shown to 0.01 s | SOURCE: rules/trackfield.md | NUMBERS: 0.01 s | MEASURE: read the results-screen time text of a sprint, two decimals | TEST: tester-chk-t08
+- [ ] T09 | The shot put circle is 2.135 m across | SOURCE: venues/track.md | NUMBERS: 2.135 | MEASURE: circle mesh diameter, within 3% | TEST: tester-chk-t09
+- [ ] T10 | The shot put landing sector is 34.92 degrees | SOURCE: venues/track.md | NUMBERS: 34.92 | MEASURE: sector angle from the field-event markings, within 3% | TEST: tester-chk-t10
+- [ ] T11 | The long jump runway is 40 m | SOURCE: venues/track.md | NUMBERS: 40 m | MEASURE: runway mesh length, within 3% | TEST: tester-chk-t11
+- [ ] T12 | The high jump bar is 2.0-2.4 m for men | SOURCE: REALITY.md | NUMBERS: 2.0-2.4 | MEASURE: bar height values offered in the men's high jump | TEST: tester-chk-t12
+- [ ] T13 | The pole vault pole is 4.5-5.2 m long | SOURCE: REALITY.md | NUMBERS: 4.5-5.2 | MEASURE: Box3 length of the pole in the pole vault, within 15% | TEST: tester-chk-t13

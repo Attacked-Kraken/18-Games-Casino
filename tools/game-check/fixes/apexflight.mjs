@@ -521,7 +521,7 @@ export default [
           P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
           await wait(150);
           // STICK: press and push down-right - the jet must answer, and stop when let go
-          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const zone = el('apcZone'); const r = zone.getBoundingClientRect();
           const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
           zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
           zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
@@ -570,6 +570,15 @@ export default [
           down('jRoll'); up('jRoll');
           ms = await until(() => F.trick === 'barrelRoll', 100);
           if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          // leave the shared page in a clean flying state on success (a failed
+          // test gets a harness reload anyway): the next test on this page
+          // starts from whatever state it finds, and an unpiloted jet left
+          // mid-maneuver can crash in the gap and strand it. Park it high,
+          // level, cruising.
+          if (!bad.length) {
+            P.pos.set(0, 300, 0); P.vel.set(0, 0, 40); P.pitch = 0; P.roll = 0; P.thr = 0.45; P.ground = false;
+            F.jetInput.throttle = 0.45; F.jetInput.pitch = 0; F.jetInput.roll = 0; F.jetInput.yaw = 0;
+          }
           return bad.length ? bad.join('; ') : true;
         })();
       });
@@ -605,4 +614,241 @@ export default [
       });
     },
   },
+  {
+    id: 'play-jet-on-runway',
+    ask: 'G-141: the owners jet is the player plane (INSTRUCTIONS steps 1-2, 5, 6) and it starts parked ON THE RUNWAY on the ground; the step-6 look is in (PMREM environment so the paint reflects, a shadow-casting sun) - today the jet is in but the look is not: no environment, shadows off',
+    async test(page, h) {
+      const url = await h.eval(() => location.href);
+      await page.goto(url);
+      for (let i = 0; i < 25; i++) { if (await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden))) break; await h.wait(400); }
+      if (!(await h.press('#btnFree'))) return 'could not press FREE FLIGHT after reloading to the menu';
+      return h.eval(() => new Promise((res) => {
+        const t0 = performance.now();
+        const iv = setInterval(() => {
+          const F = window.__flight, P = F && F.P;
+          if (F && F.jet && P && P.ground === true && Math.abs(P.pos.x) <= 12 && P.pos.z > -700 && P.pos.z < 700 && Math.abs(P.pos.y - F.jet.gearHeight) < 0.1) {
+            const scene = F.jet.group.parent;
+            let sun = null;
+            scene.traverse(o => { if (o.isDirectionalLight) sun = o; });
+            const missing = [];
+            if (!(F.jet.wheels && F.jet.wheels.length >= 3)) missing.push('jet wheels');
+            if (!scene.environment) missing.push('PMREM environment (step 6)');
+            if (!(sun && sun.castShadow && sun.shadow.mapSize.x === 2048)) missing.push('shadow sun 2048 (step 6)');
+            clearInterval(iv);
+            return res(missing.length ? 'jet is parked on the runway, but missing: ' + missing.join(', ') : true);
+          }
+          if (performance.now() - t0 > 6000) { clearInterval(iv); res('jet did not start parked on the runway (ground / on-runway / at gear height never all true)'); }
+        }, 150);
+      }));
+    },
+  },
+  {
+    id: 'play-stick-shared-resets',
+    ask: 'G-232: the stick is the shared kit/controls.js stick (the jet pack stick is gone) and letting go stops it - pointerup, pointercancel, blur and hidden tab all reset it to centre',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const C = window.__controls, F = window.__flight;
+        if (!C || C.shared !== true) return 'the shared kit controls are not loaded (window.__controls missing)';
+        if (document.getElementById('jetStickZone')) return 'the jet pack stick zone is still on the page';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'the shared stick zone (#apcZone) is missing';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(5); } return false; };
+        const r = zone.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const drag = () => {
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: cx + 30, clientY: cy + 30, bubbles: true }));
+        };
+        const centred = () => { const c = C.read(); return c.x === 0 && c.y === 0; };
+        const inpZero = () => !F || (F.inp.pitchUp === 0 && F.inp.rollRight === 0);
+        return (async () => {
+          const bad = [];
+          const cases = [
+            ['pointerup', () => zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }))],
+            ['pointercancel', () => zone.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 7, bubbles: true }))],
+            ['blur', () => window.dispatchEvent(new Event('blur'))],
+          ];
+          for (const [name, fire] of cases) {
+            drag();
+            if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push(name + ': the stick did not deflect on drag'); continue; }
+            fire();
+            if (!(await until(centred, 300))) bad.push(name + ' did not reset the shared stick');
+            else if (!(await until(inpZero, 300))) bad.push(name + ' reset the stick but the jet kept steering');
+          }
+          // hidden tab: the reset must land while the tab is hidden (the kit
+          // releases synchronously on visibilitychange), then restore the tab
+          drag();
+          if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push('hidden tab: the stick did not deflect on drag'); }
+          else {
+            Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!centred()) bad.push('hidden tab did not reset the shared stick');
+            Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!(await until(inpZero, 300))) bad.push('hidden tab reset the stick but the jet kept steering');
+          }
+          return bad.length ? bad.join('; ') : true;
+        })();
+      });
+    },
+  },
+  {
+    id: 'play-stick-never-stays-stuck',
+    ask: 'A cancelled touch (call, notification, palm) never leaves the stick stuck: touchcancel zeroes the stick and all input at once (G-238)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      await h.press('#btnFree');
+      await h.wait(400);
+      const r = await h.eval(async () => {
+        const F = window.__flight, C = window.__controls;
+        if (!C || !C.shared) return 'shared controls not loaded';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'no kit stick zone';
+        const zr = zone.getBoundingClientRect();
+        const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+        const ev = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 11, clientX: x, clientY: y, bubbles: true }));
+        ev('pointerdown', cx, cy); ev('pointermove', cx + 26, cy + 26);
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await new Promise(r2 => setTimeout(r2, 25)); } return fn(); };
+        if (!await until(() => Math.abs(C.read().x) > 0.3 && Math.abs(F.inp.pitchUp) > 0.2, 1500)) return 'stick drag never deflected the jet';
+        window.dispatchEvent(new TouchEvent('touchcancel', { bubbles: true }));
+        if (!await until(() => Math.abs(C.read().x) < 0.02 && Math.abs(C.read().y) < 0.02 && F.inp.pitchUp === 0 && F.inp.rollRight === 0, 1500)) return 'touchcancel left the stick stuck: read=' + JSON.stringify(C.read()) + ' inp=' + F.inp.pitchUp + '/' + F.inp.rollRight;
+        return true;
+      });
+      return r === true ? true : r;
+    }
+  }
+,
+  {
+    id: 'play-g243-buttons-inside-safe-area',
+    ask: 'G-243 point 1: btnFree, friendGo and friendClose sit fully inside the 844x390 safe area',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 6; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } throw new Error('page never became ready after reload'); };
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      const inside = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + '] vs ' + innerWidth + 'x' + innerHeight; };
+      const a = await evalRetry(() => { const e = document.getElementById('btnFree'); if (!e) return 'btnFree missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : 'btnFree at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; });
+      if (a !== true) return a;
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const b = await evalRetry(() => {
+        const chk = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; };
+        return [chk('friendGo'), chk('friendClose')].find(x => x !== true) || true;
+      });
+      return b === true ? true : b;
+    }
+  },
+  {
+    id: 'play-g243-jetbtn-clear-of-back',
+    ask: 'G-243 point 2: the JET button does not overlap the back button',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const a = document.getElementById('back').getBoundingClientRect();
+        const b = document.getElementById('jetBtn').getBoundingClientRect();
+        const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+        return overlap ? 'jetBtn [' + Math.round(b.left) + ',' + Math.round(b.top) + '->' + Math.round(b.right) + ',' + Math.round(b.bottom) + '] overlaps back [' + Math.round(a.left) + ',' + Math.round(a.top) + '->' + Math.round(a.right) + ',' + Math.round(a.bottom) + ']' : true;
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-zone-never-covers-friend',
+    ask: 'G-243 point 3: the stick zone never covers the Play-a-Friend buttons',
+    test: async (page, h) => {
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const r = await h.eval(() => {
+        const z = document.getElementById('apcZone');
+        if (z && getComputedStyle(z).display !== 'none') return 'stick zone is visible over the menu';
+        const b = document.getElementById('friendGo');
+        const r2 = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(r2.left + r2.width / 2, r2.top + r2.height / 2);
+        return (hit === b || b.contains(hit)) ? true : 'friendGo is covered by ' + (hit ? (hit.id || hit.className || hit.tagName) : 'nothing');
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-favicon-declared',
+    ask: 'G-243 point 5: the page declares a data: favicon so the browser never asks for /favicon.ico',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const l = document.querySelector('link[rel="icon"]');
+        return (l && (l.getAttribute('href') || '').startsWith('data:')) ? true : 'no data: icon link in the page head';
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-portrait-stick-on-screen',
+    ask: 'G-243 point 4: in portrait (390x844, body rotated) the stick base sits on the screen and the stick answers',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await page.setViewport({ width: 390, height: 844 });
+      try {
+        await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; });
+        await h.wait(1000);
+        const r = await evalRetry(async () => {
+          const C = window.__controls;
+          if (!C || !C.shared) return 'shared controls not loaded in portrait';
+          const j = document.querySelector('.apc-joy');
+          if (!j) return 'no stick base in portrait';
+          const jr = j.getBoundingClientRect();
+          if (jr.right <= 0 || jr.bottom <= 0 || jr.left >= innerWidth || jr.top >= innerHeight) return 'stick base off-screen in portrait: [' + Math.round(jr.left) + ',' + Math.round(jr.top) + '->' + Math.round(jr.right) + ',' + Math.round(jr.bottom) + '] vs ' + innerWidth + 'x' + innerHeight;
+          const z = document.getElementById('apcZone');
+          const zr = z.getBoundingClientRect();
+          const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+          const ev = (type, x, y) => z.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
+          ev('pointerdown', cx, cy); ev('pointermove', cx, cy + 30);
+          await new Promise(r2 => setTimeout(r2, 250));
+          const c = C.read();
+          ev('pointerup', cx, cy);
+          return (Math.abs(c.x) > 0.25 || Math.abs(c.y) > 0.25) ? true : 'stick did not answer in portrait: ' + JSON.stringify(c);
+        });
+        return r === true ? true : r;
+      } finally {
+        try { await page.setViewport({ width: 844, height: 390 }); } catch (e) {}
+        try { await h.eval(() => { location.href = location.href.split('?')[0]; }); } catch (e) {}
+        await h.wait(900);
+      }
+    }
+  }
+,
+  {
+    id: 'play-ai-jets-flying',
+    ask: 'G-247: 3-5 computer jets in the other styles and paints fly wide loops and stay above the ground',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=traffic'; });
+      await h.wait(1200);
+      const r = await evalRetry(() => new Promise((res) => {
+        const F = window.__flight;
+        if (!F || !F.aiJets) return res('no aiJets on the flight hook');
+        const jets = F.aiJets;
+        if (jets.length < 3 || jets.length > 5) return res('expected 3-5 computer jets, found ' + jets.length);
+        const styles = new Set(jets.map(a => a.jet.style)), paints = new Set(jets.map(a => a.jet.paint));
+        if (styles.size !== jets.length) return res('computer jets must each fly a different style');
+        if (paints.size !== jets.length) return res('computer jets must each wear a different paint');
+        if (styles.has('fighter')) return res('a computer jet uses the player style (fighter)');
+        const snap = () => jets.map(a => { const p = a.jet.group.position; return [p.x, p.y, p.z]; });
+        const a = snap();
+        for (const p of a) if (p[1] < 60) return res('a computer jet is too low: y=' + Math.round(p[1]));
+        setTimeout(() => {
+          const b = snap();
+          for (let i = 0; i < jets.length; i++) {
+            if (b[i][1] < 60) return res('computer jet ' + i + ' dropped too low: y=' + Math.round(b[i][1]));
+            const d = Math.hypot(b[i][0] - a[i][0], b[i][2] - a[i][2]);
+            if (d < 12) return res('computer jet ' + i + ' barely moved (' + d.toFixed(1) + ' m in 3 s)');
+          }
+          return res(true);
+        }, 3000);
+      }));
+      return r === true ? true : r;
+    }
+  }
 ];

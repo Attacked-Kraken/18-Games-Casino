@@ -2219,5 +2219,482 @@ export default [
     if (icing) return 'icing was whistled against the SHORTHANDED home team (banner "' + icing.banner + '", box still occupied, penTag live) - rules/hockey.md: icing is not called when shorthanded; the identical full-strength dump is whistled (G-227 stage a), so the call must be waived while a home skater sits in the box';
     return true;
   }
+},
+{
+  id: 'tester-chk-h01',
+  mode: 'h01',
+  ask: 'CHECKLIST H01 (G-230): the end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md). Read the 4 end-zone dot positions from the ice paint in the running game: each end dot (red dot core at |x| beyond the blue lines) must sit with |z| within 3% of 6.7 m (21.85 units at 3.26 units per metre).',
+  async test(page, h) {
+    const res = await h.eval(() => {
+      let ice = null;
+      window.__reality.player.parent.traverse(o => {
+        if (!ice && o.isMesh && o.geometry && o.material && o.material.map && o.material.color && o.material.color.getHexString() === 'ffffff') {
+          o.geometry.computeBoundingBox();
+          const bb = o.geometry.boundingBox, sx = bb.max.x - bb.min.x, sy = bb.max.y - bb.min.y, sz = bb.max.z - bb.min.z;
+          const dims = [sx, sy, sz].sort((a, b) => b - a);
+          if (dims[0] > 190 && dims[1] > 80 && dims[2] < 0.1) ice = o;
+        }
+      });
+      if (!ice) return { err: 'no ice surface found in the running game' };
+      const img = ice.material.map.image, W = img.width, H = img.height;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const cx = cv.getContext('2d', { willReadFrequently: true }); cx.drawImage(img, 0, 0);
+      const d = cx.getImageData(0, 0, W, H).data, reds = [];
+      for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const k = (j * W + i) * 4; if (d[k] > 140 && d[k + 1] < 110 && d[k + 2] < 110) reds.push([-100 + (i / W) * 200, -42.5 + (j / H) * 85]); }
+      const clus = [];
+      for (const p of reds) { const c = clus.find(c => Math.abs(c.x - p[0]) < 6 && Math.abs(c.z - p[1]) < 6); if (c) { c.n++; c.x = (c.x * (c.n - 1) + p[0]) / c.n; c.z = (c.z * (c.n - 1) + p[1]) / c.n; } else clus.push({ x: p[0], z: p[1], n: 1 }); }
+      const dots = clus.filter(c => c.n >= 90 && c.n <= 600 && Math.abs(Math.abs(c.z) - 20) <= 1.5 && Math.abs(c.x) >= 55 && Math.abs(c.x) <= 80).map(c => ({ x: +c.x.toFixed(1), z: +c.z.toFixed(1) }));
+      return { dots };
+    }).catch(e => ({ err: String(e).slice(0, 120) }));
+    if (res.err) return 'H01 cannot judge: ' + res.err;
+    if (!res.dots.length) return 'H01 cannot judge: no end-zone faceoff dots isolated in the ice paint';
+    const zs = res.dots.map(d => Math.abs(d.z) / 3.26);
+    const bad = zs.filter(m => Math.abs(m - 6.7) / 6.7 > 0.03);
+    if (bad.length) return 'H01 FOUND: end-zone faceoff dots sit ' + zs.map(m => m.toFixed(2)).join(', ') + ' m either side of centre - venues/rink.md says 6.7 m (3% band 6.50-6.90 m)';
+    return true;
+  }
+},
+{
+  id: 'tester-career-quit-banks-goal',
+  mode: 'reality',
+  ask: 'TESTER (G-170): quitting a career match mid-game must not bank the star goal - a goal scored mid-match must not survive a quit while the fixture stays pending and replayable',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    const save = () => h.eval(() => ({ career: JSON.parse(localStorage.getItem('apex_hockey_career_v1') || 'null'), match: JSON.parse(localStorage.getItem('apex_hockey_match') || 'null') })).catch(() => null);
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 9000, polling: 'raf' }); } catch (e) { if ((await state()) !== 'menu') return 'the game did not reach its menu for the career test'; }
+    await clickId('careerBtn'); await h.wait(800);
+    await clickId('hubNew'); await h.wait(800);
+    const s0 = await save();
+    if (!s0 || !s0.career) return 'START SEASON did not create a career save';
+    const g0 = (s0.career.star && s0.career.star.g) || 0;
+    await clickId('hubPlay'); // the game reloads itself here by design; the boot auto-starts the match
+    await h.wait(5000); // let the reload settle before watching for the staged match
+    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
+    let banked = false;
+    const spots = [[78, 2, 0], [80, 6, -0.73], [80, -6, 0.73]];
+    for (let iter = 0; iter < 12 && !banked; iter++) {
+      let stNow = await state();
+      if (stNow === 'faceoff') { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(800); stNow = await state(); }
+      if (stNow !== 'play') { await h.wait(1500); continue; }
+      const spot = spots[iter % spots.length];
+      const ok = await h.eval(([sx, sz, fa]) => { // arrange the shot: the star with the puck alone in front of the net, mates onside; the star is pinned in place while the REAL shot is taken (his AI would otherwise skate him off - the pin is the set-up, the shot is the game)
+        const sk = window.__hk.skaters;
+        const star = sk.find(s => s.role === 'C' && s.team === 'home');
+        if (!star || star.inBox) return false;
+        let n = 0;
+        for (const s of sk) { if (s.team === 'home' && !s.goalie && s !== star && !s.inBox) { s.pos.set(20, 0, -18 + n * 12); s.vel.set(0, 0, 0); n++; } }
+        const pk = window.__hk.puck;
+        const ag = sk.find(s => s.goalie && s.team === 'away');
+        window.__pin = setInterval(() => { // the pin is the set-up: the star held with the puck in front of the net, the skaters kept out of the play and the goalie pulled far off his line; once the shot is away the pin stands down - the shot, the save attempt and the goal are the game
+          if (pk.shot) return;
+          star.pos.set(sx, 0, sz); star.vel.set(0, 0, 0); star.facing = fa;
+          pk.pos.set(sx, 0.06, sz); pk.vel.set(0, 0, 0); pk.owner = star; pk.recv = null;
+          let m = 0;
+          for (const s of sk) { if (s.team === 'away' && !s.goalie) { s.pos.set(-40, 0, -24 + m * 12); s.vel.set(0, 0, 0); m++; } }
+          if (ag) { ag.pos.set(86, 0, 25); ag.vel.set(0, 0, 0); }
+        }, 40);
+        return true;
+      }, spot).catch(() => false);
+      if (!ok) { await h.wait(1500); continue; }
+      try { await page.keyboard.down('k'); } catch (e) {}
+      await h.wait(450); // a real full-charge press
+      try { await page.keyboard.up('k'); } catch (e) {} // the game itself turns the release into the shot; the pin stands down once the shot exists
+      for (let w = 0; w < 10; w++) { await h.wait(300); const s2 = await save(); if (s2 && s2.career && s2.career.star && (s2.career.star.g || 0) > g0) { banked = true; break; } }
+      await h.eval(() => { try { clearInterval(window.__pin); } catch (e) {} }).catch(() => {});
+    }
+    if (!banked) return 'the star could not be made to score within 12 set-up shots - the scenario could not be driven on this build (a test limitation, not a game pass)';
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {}); // quit mid-match
+    await h.wait(4000);
+    const post = await save();
+    if (!post || !post.career) return 'the career save vanished after the mid-match quit';
+    if (post.career.star && (post.career.star.g || 0) > g0 && (post.career.week || 1) === 1 && post.match && post.match.kind === 'career') {
+      return 'the star goal banked instantly and survived the mid-match quit: star.g went ' + g0 + ' -> ' + post.career.star.g + ' mid-match and is still ' + post.career.star.g + ' after reloading the unplayed WEEK 1 fixture (week still 1, fixture pending) - quitting banks the goal while the match result never books, so the fixture can be replayed to farm goals forever';
+    }
+    return true;
+  },
 }
+,
+{
+  id: 'tester-career-again-goes-to-hub',
+  mode: 'reality',
+  ask: 'TESTER (G-170): the career end-screen button that reads CAREER HUB takes the player to the career hub, not the main menu',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    const clickId = (id) => h.eval((x) => { const el = document.getElementById(x); if (el) el.click(); return !!el; }, id).catch(() => false);
+    const disp = (id) => h.eval((x) => { const el = document.getElementById(x); return el ? getComputedStyle(el).display : 'missing'; }, id).catch(() => 'err');
+    await h.eval(() => { try { localStorage.removeItem('apex_hockey_career_v1'); localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', null, { timeout: 9000, polling: 'raf' }); } catch (e) { if ((await state()) !== 'menu') return 'the game did not reach its menu for the career test'; }
+    await clickId('careerBtn'); await h.wait(800);
+    await clickId('hubNew'); await h.wait(800);
+    await clickId('hubPlay');
+    await h.wait(5000); // let the reload settle before watching for the staged match
+    try { await page.waitForFunction(() => { const s = window.__hk && window.__hk.game && window.__hk.game.state; return s === 'play' || s === 'faceoff'; }, null, { timeout: 20000, polling: 'raf' }); } catch (e) { return 'the career match did not auto-start after PLAY'; }
+    for (let i = 0; i < 25 && (await state()) !== 'play'; i++) { try { await page.keyboard.press('k'); } catch (e) {} await h.wait(400); } // a real key press drops the opening faceoff
+    if ((await state()) !== 'play') return 'the match never reached play so the end screen could not be staged';
+    await h.eval(() => { const g = window.__hk.game; g.period = 3; g.clockT = 3; g.scoreH = 2; g.scoreA = 0; }); // rig the last seconds of the last period with the Wolves ahead (a tied whistle goes to overtime instead of the end screen - see diag-clock); the whistle and the overlay play out for real
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'over', null, { timeout: 30000, polling: 'raf' }); } catch (e) { return 'the rigged period did not reach the final whistle (state "' + (await state()) + '")'; }
+    let btn = false;
+    for (let i = 0; i < 20; i++) { btn = (await disp('againBtn')) !== 'none' && (await disp('againBtn')) !== 'missing'; if (btn) break; await h.wait(500); }
+    if (!btn) return 'the career end screen never showed its again button';
+    const label = await h.eval(() => { const el = document.getElementById('againBtn'); return el ? el.textContent : ''; }).catch(() => '');
+    await clickId('againBtn'); await h.wait(1200);
+    const hub = await disp('hub');
+    if (hub !== 'flex') return 'the career end-screen button reads "' + label + '" but landed on the main menu instead of the career hub (hub display "' + hub + '")';
+    return true;
+  },
+}
+,
+{
+  id: 'tester-delayed-penalty-no-delay',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md requires a DELAYED penalty - when a foul is committed while the other team has the puck, play goes on until the penalised team touches the puck, and only then does the whistle blow and the man sit. An away skater is parked at centre with the puck and a home skater 2.2 u directly behind him; CHECK is fired through the button\'s real mousedown path in the same JS turn as the staging. The offender must NOT be boxed in that same turn - boxing him instantly with no whistle and no delayed arm is the bug.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state,
+        boxed: window.__hk.skaters.filter(s => s.inBox).map(s => ({ team: s.team, role: s.role, penT: +s.penT.toFixed(1) })) };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the delayed-penalty foul';
+    const r = await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      const aC = hk.skaters.find(x => x.team === 'away' && x.role === 'C');
+      const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+      hk.skaters.forEach(x => { if (!x.goalie && x !== aC && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } });
+      aC.pos.set(0, 0.1, 0); aC.vel.set(0, 0, 0); aC.facing = 0;
+      hC.pos.set(-2.2, 0.1, 0); hC.vel.set(0, 0, 0); hC.facing = 0;
+      pk.owner = aC; pk.lastTouch = 'away'; pk.pos.set(0.6, 0.06, 0); pk.vel.set(0, 0, 0); pk.shot = null; pk.recv = null;
+      document.getElementById('btnCheck').dispatchEvent(new Event('mousedown'));
+      return { state: hk.game.state,
+        boxed: hk.skaters.filter(x => x.inBox).map(x => ({ team: x.team, role: x.role, penT: +x.penT.toFixed(1) })) };
+    });
+    const instant = r.boxed.find(b => b.team === 'home');
+    if (instant && r.state === 'play') return 'no delayed penalty: the foul (CHECK FROM BEHIND on the away carrier) boxed the home ' + instant.role + ' INSTANTLY (penT ' + instant.penT + ') with play still live and no whistle - rules/hockey.md requires play to go on until the penalised team touches the puck, and only then the whistle and the box';
+    if (r.boxed.length) return 'the foul boxed a skater at once instead of arming a delayed penalty (' + JSON.stringify(r.boxed) + ')';
+    return true;
+  },
+},
+{
+  id: 'tester-crease-goal-on-goalie',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md - the crease is protected (no goal if the goalie is pushed). The away goalie is parked in his crease and a home attacker is parked ON TOP of him (0.5 u away, inside the crease); the puck is then fired into the open net from 7 u out. The goal must NOT count while the attacker is standing on the goalie - counting it proves the crease is not protected.',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state, sH: g.scoreH };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the crease crash';
+    const sH0 = s.sH;
+    const t1 = Date.now();
+    let goal = false;
+    while (Date.now() - t1 < 10000) {
+      const staged = await h.eval(() => {
+        const hk = window.__hk, pk = hk.puck;
+        const aG = hk.skaters.find(x => x.team === 'away' && x.goalie);
+        const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+        hk.skaters.forEach(x => { if (!x.goalie && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } });
+        aG.pos.set(87, 0.1, 0); aG.vel.set(0, 0, 0);           // goalie in his crease
+        hC.pos.set(87, 0.1, 0.5); hC.vel.set(0, 0, 0);         // attacker standing on him
+        if (!pk.shot || !pk.shot.t) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; }
+        if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
+        return { state: hk.game.state, sH: hk.game.scoreH };
+      }).catch(() => null);
+      if (!staged) break;
+      if (staged.state === 'goal' || staged.sH > sH0) { goal = true; break; }
+      await page.waitForTimeout(250);
+    }
+    if (goal) return 'the crease is NOT protected: the goal counted with the home attacker parked on top of the away goalie inside the crease - rules/hockey.md: no goal if the goalie is pushed';
+    return 'could not stage the crease-crash shot (no goal either way) - staging inconclusive, not a pass';
+  },
+},
+{
+  id: 'tester-intermission-stats-card',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md - intermission between periods shows a stats card. The period clock is run down so the game enters its intermission; during the intermission some stats card (shots, saves, hits, faceoffs - any period stats beyond the scorebug) must be visible. An END OF PERIOD banner alone is the bug.',
+  async test(page, h) {
+    const state = () => h.eval(() => window.__hk.game.state).catch(() => '');
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      const st = await state();
+      if (st === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to run down the period clock';
+    await h.eval(() => { window.__hk.game.clockT = 0.4; });
+    let inter = false; const t1 = Date.now();
+    while (Date.now() - t1 < 15000) {
+      if ((await state()) === 'intermission') { inter = true; break; }
+      await page.waitForTimeout(400);
+    }
+    if (!inter) return 'the period never entered intermission after the clock ran down';
+    const found = await h.eval(() => {
+      const vis = [];
+      document.querySelectorAll('body *').forEach(e => {
+        if (e.id === 'scorebug' || e.id === 'banner') return;
+        if (!e.offsetParent) return; // hidden itself or under a display:none ancestor
+        const t = (e.textContent || '').replace(/\s+/g, ' ').trim();
+        if (t.length > 8 && t.length < 220 && /shot|save|hit|faceoff won|stat|penalt|power play/i.test(t)) vis.push((e.id || e.className || e.tagName) + ': ' + t.slice(0, 60));
+      });
+      const banners = (document.getElementById('banner') || {}).textContent || '';
+      return { statsHits: [...new Set(vis)].slice(0, 6), banner: banners.replace(/\s+/g, ' ').trim().slice(0, 80) };
+    }).catch(() => null);
+    if (found && found.statsHits.length) return true;
+    return 'no stats card at the intermission - the break shows only the "' + (found ? found.banner : '') + '" banner and the game goes straight to the next period; rules/hockey.md: intermission between periods (stats card)';
+  },
+},
+{
+  id: 'tester-goal-no-light-no-replay',
+  mode: 'arena',
+  ask: 'TESTER (G-228): rules/hockey.md broadcast look - a goal brings the horn, the crowd, the goal light, spotlights and a replay from 2 angles. A clean goal is staged; during the goal state there must be a goal-light/replay element in the DOM or the camera must cut away from the broadcast follow to replay angles. The camera staying in broadcast follow with no light and no replay is the bug (horn/crowd/flash/banner are present and not in question).',
+  async test(page, h) {
+    const snap = () => h.eval(() => {
+      const g = window.__hk.game;
+      return { state: g.state, sH: g.scoreH,
+        cam: window.__hk.camera.position.toArray().map(v => +v.toFixed(1)),
+        view: (document.getElementById('viewBtn') || {}).textContent || '' };
+    }).catch(() => null);
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    let s = null; const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      s = await snap(); if (!s) break;
+      if (s.state === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if (!s || s.state !== 'play') return 'could not get a match into play to stage the goal';
+    const sH0 = s.sH;
+    await h.eval(() => {
+      const hk = window.__hk, pk = hk.puck;
+      hk.skaters.forEach(x => { if (!x.goalie) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.vel.set(0, 0, 0); } else { x.pos.set(x.team === 'home' ? -95 : 95, 0.1, 30); x.vel.set(0, 0, 0); } });
+      pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home';
+      pk.pos.set(87.5, 0.06, 0); pk.vel.set(60, 0, 0);
+    });
+    const frames = []; const t1 = Date.now();
+    while (Date.now() - t1 < 12000) {
+      const f = await snap(); if (f) frames.push(f);
+      const gf = frames.filter(x => x.state === 'goal');
+      if ((f && (f.sH > sH0 || f.state === 'goal') && gf.length > 6)) break;
+      await page.waitForTimeout(120);
+    }
+    const gf = frames.filter(x => x.state === 'goal');
+    if (!gf.length) return 'the staged shot never became a goal - staging inconclusive, not a pass';
+    const dom = await h.eval(() => [...document.querySelectorAll('*')].map(e => e.id).filter(id => /goallight|goal-light|goal_light|replay|spotlight/i.test(id))).catch(() => []);
+    let maxJump = 0;
+    for (let i = 1; i < gf.length; i++) {
+      const a = gf[i - 1].cam, b = gf[i].cam;
+      maxJump = Math.max(maxJump, Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]));
+    }
+    const views = [...new Set(gf.map(f => f.view))];
+    if (dom.length || maxJump > 40 || views.some(v => !/BROADCAST/i.test(v))) return true;
+    return 'a goal brings no goal light, no spotlights and no replay - the camera stays in broadcast follow (' + gf.length + ' goal-state frames, max 120 ms camera jump ' + maxJump.toFixed(1) + ' u, view stayed "' + views.join('/') + '", no light/replay element in the DOM); rules/hockey.md broadcast look: goal light, spotlights, replay from 2 angles';
+  },
+},
+{
+  id: 'tester-endscreen-wrong-winner-name',
+  mode: 'arena',
+  ask: 'TESTER (G-228): the end screen must name the team that actually won. A career WEEK 2 fixture vs the BEARS is started and the BEARS win it 3-0; the big title must name the BEARS, not the Sharks. Observed on current main: after a 0-2 loss to the STAMPEDE the title read "SHARKS WIN" while the scorebug correctly showed STAMPEDE (G-228 play); the title is hardcoded and the non-career sub "The Sharks steal this one. Run it back." is too.',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = { season: 1, week: 2, phase: 'reg', finalOpp: null,
+      star: { name: 'JAX KOVAC', g: 0, a: 0, cg: 0, ca: 0 }, champ: 0, friends: { w: 0, l: 0 }, lastLine: '',
+      table: { WOLVES: T(1, 0, 0, 2, 4, 1), SHARKS: T(0, 1, 0, 0, 1, 4), BEARS: T(0, 0, 0, 0, 0, 0),
+        EAGLES: T(0, 0, 0, 0, 0, 0), VIPERS: T(0, 0, 0, 0, 0, 0), STAMPEDE: T(0, 0, 0, 0, 0, 0) } };
+    await h.eval((s) => { try {
+      localStorage.setItem('apex_hockey_career_v1', JSON.stringify(s));
+      localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'BEARS', oppDef: { name: 'BEARS', jersey: 0x8a4b1f, helmet: 0x5a2f10, trim: 0xffd9a0, str: 82 }, label: 'WEEK 2' }));
+    } catch (e) {} }, seed).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+    await h.eval(() => { const b = document.getElementById('careerBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 45000) {
+      const st = await h.eval(() => window.__hk.game.state).catch(() => '');
+      if (st === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await page.waitForTimeout(600);
+    }
+    if ((await h.eval(() => window.__hk.game.state).catch(() => '')) !== 'play') return 'the career fixture never reached play';
+    // away team wins it: BEARS 3, WOLVES 0 at the end of the 3rd
+    await h.eval(() => { const g = window.__hk.game; g.period = 3; g.scoreH = 0; g.scoreA = 3; g.clockT = 0.05; });
+    let over = false; const t1 = Date.now();
+    while (Date.now() - t1 < 20000) {
+      if ((await h.eval(() => window.__hk.game.state).catch(() => '')) === 'over') { over = true; break; }
+      await page.waitForTimeout(400);
+    }
+    if (!over) return 'the fixture never reached its end screen';
+    const r = await h.eval(() => ({
+      title: (document.getElementById('finalTitle') || {}).textContent || '',
+      sub: (document.getElementById('finalSub') || {}).textContent || '',
+      away: (document.getElementById('nmA') || {}).textContent || '',
+    })).catch(() => null);
+    if (!r) return 'could not read the end screen';
+    if (!r.title.toUpperCase().includes(r.away.toUpperCase()))
+      return 'the end screen names the wrong winner: ' + r.away + ' won 3-0 but the title reads "' + r.title + '" (sub "' + r.sub + '") - the away title is hardcoded to the Sharks';
+    return true;
+  },
+},
+{
+  id: 'tester-arena-neutral-dots-in-neutral-zone',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the 4 neutral-zone faceoff dots sit 1.5 m inside the blue lines (venues/rink.md) - painted on the ice at |x| about 6.2 m from centre, inside the neutral zone, not deep in the end zones',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the dot scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const reds = [];
+      for (let j = 4; j < H - 4; j += 2) for (let i = 4; i < W - 4; i += 2) { const [r, g, b] = px(i, j); if (r > 130 && r - b > 60 && r - g > 30) reds.push([i, j]); }
+      const clusters = [];
+      for (const [i, j] of reds) { const f = clusters.find(c => Math.abs(c.i - i) < W * 0.02 && Math.abs(c.j - j) < H * 0.05); if (f) { f.n++; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else clusters.push({ i, j, n: 1 }); }
+      const dots = clusters.filter(c => c.n >= 90).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85 })).filter(d => Math.abs(Math.abs(d.z) - 20) <= 1.5 && Math.abs(d.x) <= 80);
+      const neutral = dots.filter(d => Math.abs(d.x) < 55);
+      if (neutral.length < 4) return 'only ' + neutral.length + ' neutral-zone faceoff dots painted (venues/rink.md: 4, at 1.5 m inside the blue lines)';
+      const bad = neutral.filter(d => Math.abs(d.x) > 21.6);
+      if (bad.length) return 'neutral-zone dots are not in the neutral zone: painted at |x| ' + bad.map(d => Math.abs(d.x).toFixed(1)).join(', ') + ' units (' + bad.map(d => (Math.abs(d.x) / 3.26).toFixed(1)).join(', ') + ' m) - the blue line is at 25 units (7.67 m), so these sit inside the END zones; venues/rink.md puts them 1.5 m inside the blue lines (|x| about 20 units / 6.2 m)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-end-dots-spacing',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the 4 end-zone faceoff dots sit 6.7 m either side of centre (venues/rink.md) - painted on the ice at |z| about 21.9 units, not 20',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the dot scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const reds = [];
+      for (let j = 4; j < H - 4; j += 2) for (let i = 4; i < W - 4; i += 2) { const [r, g, b] = px(i, j); if (r > 130 && r - b > 60 && r - g > 30) reds.push([i, j]); }
+      const clusters = [];
+      for (const [i, j] of reds) { const f = clusters.find(c => Math.abs(c.i - i) < W * 0.02 && Math.abs(c.j - j) < H * 0.05); if (f) { f.n++; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else clusters.push({ i, j, n: 1 }); }
+      const dots = clusters.filter(c => c.n >= 90).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85 })).filter(d => Math.abs(Math.abs(d.z) - 20) <= 1.5 && Math.abs(d.x) <= 80);
+      const ends = dots.filter(d => Math.abs(d.x) >= 55);
+      if (ends.length < 4) return 'only ' + ends.length + ' end-zone faceoff dots painted (venues/rink.md: 4)';
+      const bad = ends.filter(d => Math.abs(Math.abs(d.z) - 21.85) > 1.2);
+      if (bad.length) return 'end-zone faceoff dots sit at |z| ' + bad.map(d => Math.abs(d.z).toFixed(1)).join(', ') + ' units (' + bad.map(d => (Math.abs(d.z) / 3.26).toFixed(2)).join(', ') + ' m) - venues/rink.md puts them 6.7 m either side of centre (21.9 units)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-crease-in-front-of-goal',
+  mode: 'arena',
+  ask: 'TESTER (G-199): each goal crease is painted in FRONT of its goal (venues/rink.md: light-blue semicircle r 1.83 m in front of the goal line) - neither crease may sit behind its goal line in the trapezoid area',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      const ice = meshes.find(o => { const a = aabb(o); return Math.abs(a[1]) < 0.01 && Math.abs(a[4]) < 0.01 && a[3] > 95 && a[5] > 40 && o.material && o.material.color && o.material.color.getHexString() === 'ffffff' && o.material.map; });
+      if (!ice) return 'ice mesh not found for the crease scan';
+      const img = ice.material.map.image; if (!img) return 'ice texture has no image';
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+      const W = img.width, H = img.height, data = ctx.getImageData(0, 0, W, H).data;
+      const px = (i, j) => { const k = (j * W + i) * 4; return [data[k], data[k + 1], data[k + 2]]; };
+      const lb = [];
+      for (let j = 2; j < H - 2; j += 2) for (let i = 2; i < W - 2; i += 2) { const [r, g, b] = px(i, j); if (b > 150 && g > 130 && r > 80 && r < 190 && b - r > 30) lb.push([i, j]); }
+      const lbc = [];
+      for (const [i, j] of lb) { const f = lbc.find(c => Math.abs(c.i - i) < W * 0.03 && Math.abs(c.j - j) < H * 0.08); if (f) { f.n++; if (i < f.mni) f.mni = i; if (i > f.mxi) f.mxi = i; if (j < f.mnj) f.mnj = j; if (j > f.mxj) f.mxj = j; f.i = (f.i * (f.n - 1) + i) / f.n; f.j = (f.j * (f.n - 1) + j) / f.n; } else lbc.push({ i, j, n: 1, mni: i, mxi: i, mnj: j, mxj: j }); }
+      const creases = lbc.filter(c => c.n >= 500).map(c => ({ x: -100 + (c.i / W) * 200, z: -42.5 + (c.j / H) * 85, mnx: -100 + (c.mni / W) * 200, mxx: -100 + (c.mxi / W) * 200 })).filter(c => Math.abs(c.x) > 50 && Math.abs(c.z) < 6);
+      if (creases.length < 2) return 'only ' + creases.length + ' goal creases found on the ice paint (venues/rink.md: one in front of each goal)';
+      const pxC = creases.find(c => c.x > 0), nxC = creases.find(c => c.x < 0);
+      if (pxC && pxC.mxx > 90.5) return 'the +x crease is painted BEHIND its goal: light-blue paint runs to x ' + pxC.mxx.toFixed(1) + ' units, past the goal line at about 88.5-89 - the crease belongs in front of the goal (venues/rink.md), like the -x crease which ends at ' + (nxC ? nxC.mnx.toFixed(1) : '?');
+      if (nxC && nxC.mnx < -90.5) return 'the -x crease is painted BEHIND its goal: light-blue paint runs to x ' + nxC.mnx.toFixed(1) + ' units, past the goal line at about -88.5..-89 - the crease belongs in front of the goal (venues/rink.md)';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-glass-height',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one 1.6 m height all the way round',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const glass = meshes.find(o => o.material && o.material.color && o.material.color.getHexString() === 'bfe0ff');
+      if (!glass) return 'glass mesh (bfe0ff) not found';
+      const p = glass.geometry.attributes.position, m = glass.matrixWorld.elements;
+      let topSide = 0, topEnd = 0;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (Math.abs(wx) > 90) { if (wy > topEnd) topEnd = wy; } else if (Math.abs(wz) > 40) { if (wy > topSide) topSide = wy; } }
+      if (!topSide || !topEnd) return 'glass verts not separable into sides/ends (side top ' + topSide + ', end top ' + topEnd + ')';
+      const hSide = (topSide - 3.7) / 3.26, hEnd = (topEnd - 3.7) / 3.26;
+      if (hEnd < 2.05) return 'the glass at the ENDS is ' + hEnd.toFixed(2) + ' m high (top at ' + topEnd.toFixed(1) + ' units) - venues/rink.md: about 2.4 m at the ends';
+      if (hSide < 1.55) return 'the glass along the SIDES is ' + hSide.toFixed(2) + ' m high (top at ' + topSide.toFixed(1) + ' units) - venues/rink.md: about 1.8 m along the sides';
+      return true;
+    });
+  },
+},
+{
+  id: 'tester-arena-benches-and-boxes',
+  mode: 'arena',
+  ask: 'TESTER (G-199): the arena has two team benches on one side of the rink and the penalty boxes plus scorekeeper box on the other (venues/rink.md) - real meshes outside the boards at ice level, not bare boards with the bowl behind',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    return h.eval(() => {
+      const root = (() => { let r = window.__reality && window.__reality.player; if (!r) return null; while (r.parent) r = r.parent; return r; })();
+      if (!root) return 'no scene root via __reality.player';
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      let plus = 0, minus = 0;
+      for (const o of meshes) {
+        if (!o.visible) continue;
+        const a = aabb(o);
+        const big = (a[3] - a[0]) > 150 || (a[5] - a[2]) > 130;
+        if (big || a[1] >= 9) continue;
+        if (a[5] > 42.8 && a[2] < 60) plus++;
+        if (a[2] < -42.8 && a[5] > -60) minus++;
+      }
+      if (!plus && !minus) return 'no benches, penalty boxes or scorekeeper box anywhere: zero meshes in the strips outside the boards at ice level on either side - venues/rink.md requires two team benches on one side and the penalty boxes + scorekeeper box on the other';
+      if (!plus || !minus) return 'bench/box meshes exist on only one side of the rink (z+ strip: ' + plus + ', z- strip: ' + minus + ') - venues/rink.md: benches on one side, penalty boxes + scorekeeper box on the other';
+      return true;
+    });
+  },
+},
 ];
