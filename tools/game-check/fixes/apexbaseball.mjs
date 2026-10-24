@@ -1411,7 +1411,8 @@ export default [
   {
     id: 'tester-chk-b05',
     mode: 'b05',
-    run: async (page, ok) => {
+    ask: 'The batting order has 9 batters (rules/baseball.md)',
+    async test(page, h) {
       const t0 = Date.now();
       let n = null;
       while (Date.now() - t0 < 25000) {
@@ -1435,9 +1436,9 @@ export default [
         if (n != null) break;
         await new Promise(r => setTimeout(r, 400));
       }
-      ok(n != null, 'checklist B05: batter object not found in the scene');
-      if (n == null) return;
-      ok(n >= 9, `checklist B05: only ${n} distinct batter(s) in the game - rules/baseball.md says a batting order of 9`);
+      if (n == null) return 'checklist B05: batter object not found in the scene';
+      if (n < 9) return `checklist B05: only ${n} distinct batter(s) in the game - rules/baseball.md says a batting order of 9`;
+      return true;
     }
   },
 ];
