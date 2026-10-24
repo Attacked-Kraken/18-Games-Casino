@@ -149,3 +149,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 23 help desk
 - A tester round numbers itself only from the Mac's NEXT list; two PRs with the same G-number overwrite each other's jobs/G-NN.md. If it happens, the report moves to jobs/G-NN-wN.md.
+
+## 2026-10-23 window 5 (G-239)
+- apexf1 · heading measured against the road itself made gas-only a full autopilot - the player's nose now holds a world heading and only the stick turns it; a robot check line can also be the robot's own older setup (two red lines cleared untouched on the newest setup's re-run), so read the re-run before pushing a fix.
