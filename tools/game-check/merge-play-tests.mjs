@@ -19,6 +19,7 @@ for (const t of P) {
     if (B.has(t.id) && B.get(t.id) === M.get(t.id)) {        // only the PR changed it - cannot patch in place safely
       console.error('PR changed existing test ' + t.id); process.exit(2);
     }
+    if (!B.has(t.id)) { console.log('note: both sides ADDED ' + t.id + ' (not in the base) - main\'s newer copy is kept'); continue; }   // Oct 24 2026 (PR #1355: its older copy of tester-chk-h15 vs main's G-261 version)
     console.error('both sides changed test ' + t.id); process.exit(2);
   }
   if (B.has(t.id)) continue;                                  // main deleted it on purpose

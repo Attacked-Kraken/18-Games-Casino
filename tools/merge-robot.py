@@ -65,7 +65,8 @@ def auto_resolvable(path):
     """Oct 23 2026 (owner: cards faster; window 3's #1402 sat 'dirty' on looks/apexflight.md + fixes/apexflight.mjs, the two files every
     build job appends to): notes, look boards and a game's own play-test list are APPENDED to by both sides, so both sides are kept."""
     return (path in NOTES_UNION or path.startswith("jobs/G-") or (path.startswith("looks/") and path.endswith(".md"))
-            or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs")))
+            or (path.startswith("tools/game-check/fixes/") and path.endswith(".mjs"))
+            or (path.startswith("checklists/") and path.endswith(".md")))   # Oct 24 2026: merged by ITEM (tools/checklist-merge.py)
 
 
 def play_test_file_ok(path):
@@ -100,8 +101,9 @@ def fix_notes_conflict(pr):
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
         if left and not all(auto_resolvable(x) for x in left):
             git("merge", "--abort")
-            gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
-               fields={"body": "Merge robot: this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5])})
+            # Oct 24 2026 (PR #1355 got 960 of these): ONE comment per PR, edited in place - never a new post each round
+            tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                    "this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5]))
             print("#%d: conflict in %s - left for the Muse" % (n, ", ".join(left[:5]))); return False
         for f in left:   # a notes / look-board / play-test file the union driver did not catch
             if f.startswith("tools/game-check/fixes/") and f.endswith(".mjs"):
@@ -120,9 +122,22 @@ def fix_notes_conflict(pr):
                     why = str(e)[:160]
                 if not ok:
                     git("merge", "--abort")
-                    gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST",
-                       fields={"body": "Merge robot: both sides changed %s and the tests could not be combined (%s) - merge main into your branch by hand and push again." % (f, why)})
+                    tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                            "both sides changed %s and the tests could not be combined (%s) - merge main into your branch by hand and push again." % (f, why))
                     print("::warning title=Merge robot::#%d: play-test merge of %s failed (%s) - left for the Muse" % (n, f, why)); return False
+                git("add", f); continue
+            if f.startswith("checklists/") and f.endswith(".md"):
+                # Oct 24 2026: a checklist is merged item by item (the tester's ticked line wins over main's open line)
+                tmp = "/tmp/mcl"; os.makedirs(tmp, exist_ok=True)
+                for k, nm in ((1, "base"), (2, "pr"), (3, "main")):
+                    open("%s/%s.md" % (tmp, nm), "w", encoding="utf-8").write(git("show", ":%d:%s" % (k, f)).stdout)
+                m = subprocess.run(["python3", "tools/checklist-merge.py", tmp + "/base.md", tmp + "/pr.md", tmp + "/main.md", f],
+                                   capture_output=True, text=True)
+                if m.returncode != 0:
+                    git("merge", "--abort")
+                    tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                            "both sides changed %s and the items could not be combined - merge main into your branch by hand and push again." % f)
+                    print("::warning title=Merge robot::#%d: checklist merge of %s failed - left for the Muse" % (n, f)); return False
                 git("add", f); continue
             txt = open(f, encoding="utf-8", errors="replace").read()
             import re as _re
