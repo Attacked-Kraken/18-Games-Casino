@@ -164,7 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-283 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-283.md | build/g-283-apexflight |
+| G-286 | window 5 | checklists/apexf1.md, tools/game-check/fixes/apexf1.mjs, jobs/G-286-w5.md, CLAIMS.md | build/g-286-apexf1 |
 | G-280 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-280.md | build/g-280-apexflight |
 | G-275 r1 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-275-w3.md | build/g-275-apexflight-r1b |
 | G-232 r1 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight-r1b |
@@ -292,4 +292,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-262 | window 10 | jobs/G-262.md, CLAIMS.md | test/g-262-apextrackfield |
 | G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
 | T-10-1327 | window 10 | jobs/T-10-1327.md, CLAIMS.md | test/t-10-1327 |
-| G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - CLAIMED 2026-10-24 (Muse main (casino)): live race camera never sees a wall |
+| G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d |

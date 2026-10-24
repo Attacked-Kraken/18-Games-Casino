@@ -1,0 +1,15 @@
+# Apex F1 Checklist (apexf1.html)
+
+Builder window 5, G-286 (Oct 24 2026). One measurable item per line, numbers word for word from the source file.
+Units: game distances are metres, speeds are m/s; convert m/s to km/h (x 3.6) for the pit-lane item.
+
+- [ ] F01 | The grid is 2 by 2, staggered, fastest lap first | SOURCE: rules/f1.md | NUMBERS: 2 by 2, staggered, fastest lap first | MEASURE: at the grid, carMesh trackPos shows cars in 2 lateral columns, staggered rows, ordered by qualifying time | TEST: tester-chk-f01
+- [ ] F02 | The start shows 5 red lights one by one, then all go out for GO | SOURCE: rules/f1.md | NUMBERS: 5 red lights, one by one, GO | MEASURE: #lights .light red count climbs to 5, then all out with green and race mode starts | TEST: tester-chk-f02
+- [ ] F03 | Moving before the lights go out is a jump start worth a 5-second penalty | SOURCE: rules/f1.md | NUMBERS: 5-second penalty, jump start | MEASURE: move during the lights phase, then penState() shows the penalty | TEST: tester-chk-f03
+- [ ] F04 | Race track limits: a warning then a 5-second penalty for all 4 wheels over the white line while gaining time | SOURCE: rules/f1.md | NUMBERS: all 4 wheels, 5-second penalty | MEASURE: sustained off-road running in the race drives penState() warnings 1/3, 2/3, then penalty 5 | TEST: tester-chk-f04
+- [-] F05 | Qualifying track limits: the lap time is deleted for all 4 wheels over the white line while gaining time | SOURCE: rules/f1.md | NUMBERS: all 4 wheels, lap time is deleted | MEASURE: fly a qualifying lap with all wheels over the line and read the lap time - no deletion hook or DOM state exposes it | TEST: tester-chk-f05 | RESULT: DROPPED (no lap-deletion state in the game: off-track in qualifying feeds the same warning counter, no lap is deleted)
+- [ ] F06 | The pit lane speed limit is 80 km/h | SOURCE: rules/f1.md | NUMBERS: 80 km/h | MEASURE: press PIT, sample the player cars() speed through the pit transit, convert m/s x 3.6, compare with 80 | TEST: tester-chk-f06
+- [ ] F07 | A race uses 2 different tyre compounds | SOURCE: rules/f1.md | NUMBERS: 2 different tyre compounds | MEASURE: #tireCmp text before the race and after a pit stop with a different pick - the two differ | TEST: tester-chk-f07
+- [ ] F08 | Points for the top 10 are 25-18-15-12-10-8-6-4-2-1 | SOURCE: rules/f1.md | NUMBERS: 25-18-15-12-10-8-6-4-2-1, top 10 | MEASURE: results and #champTable PTS after a race, top 10 in that order | TEST: tester-chk-f08
+- [ ] F09 | LIGHTS OUT is on screen on a 390 px tall sideways phone | SOURCE: rules/short/apexf1.md | NUMBERS: 390 px | MEASURE: at a sideways phone viewport 390 px tall, the LIGHTS OUT button's rect sits inside the viewport with no scrolling | TEST: tester-chk-f09
+- [ ] F10 | The grid holds 10+ cars | SOURCE: rules/short/apexf1.md | NUMBERS: 10+ cars | MEASURE: cars().length at the grid is 10 or more | TEST: tester-chk-f10

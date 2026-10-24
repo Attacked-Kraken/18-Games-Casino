@@ -1296,4 +1296,27 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-checklist-apexf1-format',
+    ask: 'Apex F1: checklists/apexf1.md exists with one measurable item per line, each carrying SOURCE, NUMBERS, MEASURE and a tester-chk TEST id (G-286)',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/checklists/apexf1.md'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read checklists/apexf1.md from the served repo';
+      const items = txt.split('\n').filter(l => /^- \[[ x-]\] [A-Z]\d+ \|/.test(l));
+      if (!items.length) return 'no checklist items found in checklists/apexf1.md';
+      const seen = new Set();
+      for (const line of items) {
+        const m = line.match(/^- \[[ x-]\] ([A-Z]\d+) \|(.*)$/);
+        if (!m) return 'checklist item line has the wrong shape: ' + line.slice(0, 80);
+        const id = m[1], rest = m[2];
+        if (seen.has(id)) return 'duplicate checklist id ' + id;
+        seen.add(id);
+        for (const k of ['SOURCE:', 'NUMBERS:', 'MEASURE:', 'TEST:']) if (!rest.includes(k)) return 'item ' + id + ' is missing ' + k;
+        const tp = rest.split(' | ').find(x => x.trim().startsWith('TEST:')) || '';
+        const tid = tp.split('TEST:')[1].trim().split(' ')[0];
+        if (tid !== 'tester-chk-' + id.toLowerCase()) return 'item ' + id + ' TEST must be tester-chk-' + id.toLowerCase();
+      }
+      return true;
+    },
+  },
 ];
