@@ -18,7 +18,7 @@ rc, out, _ = gh(f"repos/{REPO}/contents/tools/game-check/known-faults.json?ref=m
 faults = [f for f in json.loads(out).get("faults", []) if not f.get("until") or f["until"] >= today]
 cm = j(f"repos/{REPO}/commits?path=tools/game-check/known-faults.json&sha=main&per_page=1")
 faults_at = parse(cm[0]["commit"]["committer"]["date"])
-print(f"{len(faults)} live faults; file last changed {faults_at.isoformat()}")
+print(f"::notice::{len(faults)} live faults; file last changed {faults_at.isoformat()}")
 def matches(line):
     for f in faults:
         if f.get("game") and f["game"] not in line: continue
@@ -39,14 +39,14 @@ for pr in j(f"repos/{REPO}/pulls?state=open&per_page=100") or []:
     if not reasons: continue
     upd = parse(c["updated_at"])
     ok = all(matches(r) for r in reasons)
-    print(f"#{num}: FAILED, {len(reasons)} reason line(s), all known faults: {ok}, comment {upd.isoformat()} vs faults {faults_at.isoformat()}")
+    print(f"::notice::#{num}: FAILED, {len(reasons)} reason line(s), all known faults: {ok}, comment {upd.isoformat()} vs faults {faults_at.isoformat()}")
     if not ok or upd >= faults_at: continue
     n += 1
-    if DRY: print(f"  DRY RUN: would merge main into {pr['head']['ref']} and start a fresh check"); continue
+    if DRY: print(f"::notice::  DRY RUN: would merge main into {pr['head']['ref']} and start a fresh check"); continue
     why = "/tmp/why.txt"; open(why, "w").write("A known robot fault was added on main after this check ran, and every red line here is that fault. The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge.\n")
     subprocess.run(["bash", "tools/game-check/status-comment.sh", str(num), "RETRYING", why])
     gh("-X", "PUT", f"repos/{REPO}/pulls/{num}/update-branch")
     import time; time.sleep(20)
     rc, _, err = gh("-X", "POST", f"repos/{REPO}/actions/workflows/game-check-pr.yml/dispatches", "-f", f"ref={pr['head']['ref']}")
-    print(f"  ROBOT RE-RUN of #{num} ({pr['head']['ref']}): dispatch rc={rc} {err[:100]}")
-print(f"done: {n} PR(s) {'would be ' if DRY else ''}re-run")
+    print(f"::notice::  ROBOT RE-RUN of #{num} ({pr['head']['ref']}): dispatch rc={rc} {err[:100]}")
+print(f"::notice::done: {n} PR(s) {'would be ' if DRY else ''}re-run")
