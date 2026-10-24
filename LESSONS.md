@@ -162,3 +162,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-23 help desk (10:45 PM)
 - A known-faults.json "match" must use words the red line really prints (the test's ask text), not only the test id; before filing a fault, copy the exact red line and check the entry's pattern against it. Best cure: fix the test's wall-clock cap (scale by window.__slow) so no entry is needed.
 - Known-fault patterns match `<red line> <ids of the failing tests>` - the id comes AFTER the text, so write `(?=.*the-test-id)<text pattern>`, never `.*the-test-id.*<text>` (never-g-243-p1 and two tester entries could never match; fixed Oct 23 2026 10:45 PM).
+
+## 2026-10-23 help desk (late)
+- A tester round you start yourself is named T-<window>-<HHMM> (file jobs/T-<window>-<HHMM>.md), never a G-number: there is no NEXT list for windows to read, and self-picked G-numbers collided (G-238, G-246).
+- A needs/window-N branch must start from current main (git checkout -b from origin/main), never `git init` or a fresh orphan: a branch with no shared history can never merge (PRs #1347, #1408, #1409).
