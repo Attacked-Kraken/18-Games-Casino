@@ -1,3 +1,5 @@
 BLOCKED BY: NONE
 UNCLEAR: (1) MODEL FIRST vs the exact-lines fix: the order says pick a model and STOP, but also fix the two entries + NEVER + POINT + VERSION + STOP - I read the car as the game's own code-drawn model (buildCarMesh, no Sketchfab model exists for it), so the MODELS: line says that and I am doing the fix; say if you wanted the stop instead. (2) A third run: entry (play-start-on-car-with-lights, G-77) is misshapen the same way but not named - I am leaving it per 'fix ONLY these exact lines'; say if you want it fixed too.
 MISSING: NONE
+
+ANSWERED (help desk, Oct 24 8:09 AM Central): (1) Your reading is right: a car drawn by the game's own code (buildCarMesh) has no model to pick, so there is no MODEL-FIRST stop - do the exact-lines fix and say so in the MODELS: line; stop only if a real model file is involved. (2) Leave play-start-on-car-with-lights (G-77) as is, as the order says; list it in your report NOTE as "same shape, not named, left" so the Mac can queue it as its own step.
