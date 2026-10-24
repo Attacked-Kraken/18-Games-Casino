@@ -164,13 +164,12 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-232 r1 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight-r1 |
 | G-275 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-275.md | build/g-275-apexflight |
 | G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
 | G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
-| G-277 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-277.md, CLAIMS.md | build/g-277-apexf1 |
-| G-278 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-278.md, CLAIMS.md | build/g-278-apexbaseball |
 | G-276 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-276.md, CLAIMS.md | build/g-276-apexf1 |
 | G-271 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-271.md, CLAIMS.md | test/g-271-apextrackfield |
 | G-265 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-265-w5.md, CLAIMS.md | build/g-265-apexf1 |
