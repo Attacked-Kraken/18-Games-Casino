@@ -340,18 +340,30 @@ export default [
     id: 'tester-challenge-offrunway-feedback',
     ask: 'Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: judge in game time, not the robot's wall clock - the
+        // gentle descent takes ~10 game-s, which is over 25 wall-s on a slow runner
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // short final 30 m right of the centreline: a gentle touchdown in the grass
         F.P.pos.set(30, 18, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
           const iv = setInterval(() => {
             const vs = F.P.vel.y;
             if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
@@ -367,7 +379,7 @@ export default [
               if (/off|runway|grass|no score/i.test(msg)) return res(true);
               return res('off-runway touchdown shows no message explaining why there is no score');
             }
-            if (Date.now() - t0 > 25000) { clearInterval(iv); return res('never touched down after 25s'); }
+            if (gt > 30) { clearInterval(iv); return res('never touched down (30 game-s)'); }
           }, 200);
         });
       });
@@ -377,35 +389,47 @@ export default [
     id: 'tester-postscore-crash',
     ask: 'After a scored landing, flying into the ocean must still crash the plane (today: nothing happens)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: game time, not the wall clock (see the off-runway test
+        // above) - the gentle landing takes ~13 game-s, over 20 wall-s when slow
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // score a gentle on-runway landing first
         F.P.pos.set(1, 8, -300); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
-          let phase2 = false;
+          let phase2 = false, phase2Gt = 0;
           const iv = setInterval(() => {
             if (!phase2) {
               const vs = F.P.vel.y;
               if (vs < -0.8) F.P.pitch = Math.min(F.P.pitch + 0.015, 0.1);
               else if (vs > -0.4) F.P.pitch = Math.max(F.P.pitch - 0.015, -0.25);
               if (document.getElementById('scoreOv').hidden === false) {
-                phase2 = true;
+                phase2 = true; phase2Gt = gt;
                 // scored: now fly west into the ocean from close by
                 F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
                 F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
               } else if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 return res('plane crashed before the scored landing');
-              } else if (Date.now() - t0 > 20000) {
+              } else if (gt > 30) {
                 clearInterval(iv);
-                return res('never scored a landing after 20s');
+                return res('never scored a landing (30 game-s)');
               }
             } else {
               if (document.getElementById('crashOv').hidden === false) {
@@ -413,7 +437,7 @@ export default [
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (Date.now() - t0 > 30000) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
+              if (gt - phase2Gt > 30) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash (30 game-s)'); }
             }
           }, 200);
         });
