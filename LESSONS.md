@@ -155,3 +155,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-23 help desk (8:25 PM)
 - A notes PR from an old needs/window-N branch can have NO shared history with main and show "dirty" forever; the fix is a fresh branch from main with the notes added, not a merge. Window helpers: start every notes PR from current main.
+
+## Oct 23 2026 help desk
+- A test that waits on a wall-clock message cap goes red on a slow runner though the game is right; judge by game time, and file HELP-VP: robot (not a game change) with the red line.
