@@ -254,3 +254,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 <!-- merge robot heartbeat test c, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test d, Oct 23 2026, safe to ignore -->
+| G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
