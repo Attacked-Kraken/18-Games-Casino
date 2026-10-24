@@ -175,3 +175,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-24, 03:42 AM help desk
 - Notes PR with no shared history with main can never merge (PR #1441 again): re-file its newest section on a fresh branch from main, never merge main into it, and keep stale CLAIMS rows out.
+
+## 2026-10-24 help desk (merge robot)
+- A green pull request sat unmerged because a push cancels the old run's bare `play` job and nothing replaces that name (the new ones are `play (<game>.html)`), so the merge robot read the cancelled leftover as a FAILED check. The robot now ignores a cancelled check whose matrix children exist on the same commit. Rule for a Muse: a PR whose Check status says PASSED while the robot comment says "FAILED: play" is the robot's leftover - file HELP-VP: robot, do not push.
