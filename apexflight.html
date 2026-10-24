@@ -171,8 +171,8 @@ const VSTALL = 20;          // m/s  (~39 kt) stall warning - more forgiving
 const VROT   = 23;          // m/s  (~45 kt) rotate speed - earlier liftoff
 const VROT_A = 22.5;        // m/s  (~44 kt) auto-rotate assist threshold
 const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
-const THRUST = 3.2;         // m/s^2 at full throttle - stronger climb
-const KLIFT  = 0.018;       // lift coefficient - more forgiving
+const THRUST = 4.6;         // m/s^2 at full throttle - raised 2026-10-23 (owner video: the jet could not get off the ground)
+const KLIFT  = 0.024;       // lift coefficient - raised 2026-10-23 (at the old value lift at rotate speed barely beat gravity, so the jet lifted, wallowed and sank back onto its gear)
 const GRAV   = 9.81;
 const RWY_HALF = 700, RWY_W = 12;
 const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
@@ -512,7 +512,7 @@ for (const cfg of [
   const tj = createApexJet(THREE, { preset: 'normal', style: cfg.style, paint: cfg.paint, external: true });
   scene.add(tj.group); scene.add(tj.fx); scene.add(tj.worldFx);
   tj.setGear(false);
-  tj.group.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  tj.group.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });   // traffic casts no shadows (owner fix 2026-10-23): at 155-290 m up their shadows never reach the player's shadow camera, and four detailed jets in the shadow pass cost phone frame rate
   traffic.push({ ...cfg, jet: tj, altOff: 0 });
 }
 const trafficEul = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -1183,7 +1183,7 @@ let last = performance.now();
 let fitChk = 0;
 function loop(now) {
   requestAnimationFrame(loop);
-  let dt = Math.min((now - last) / 1000, 0.05);
+  let dt = clamp((now - last) / 1000, 0, 0.05);   // BOTH ends (owner fix 2026-10-23): the first frame's rAF timestamp can predate 'last' after a slow module load - a negative dt integrated the parked jet BACKWARD to y=-14, under the ground-contact dead zone, where it could never take off, land or crash
   last = now;
   if (document.hidden) return;
   pollKeys();
