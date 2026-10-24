@@ -786,7 +786,7 @@ window.__hk.game = {
   // a fresh match (period 1, 0-0, full clock): a player gets this from the
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
-  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -960,7 +960,7 @@ window.__mus = Mus;
 /* ================= actions ================= */
 function nearestSkater(team,pos,skipGoalie=true){
   let best=null,bd=1e9;
-  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue;
+  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue; if(s.otOut) continue; // G-261: a benched OT skater is out of the play
     const d=(s.pos.x-pos.x)**2+(s.pos.z-pos.z)**2; if(d<bd){bd=d;best=s;} }
   return best;
 }
@@ -1092,10 +1092,23 @@ function maybeSwapLines(){
   }
   tagFor=null; // the name tag redraws for whoever is controlled now
 }
+function otBenchRank(s){ return s.role==='RW'?0:s.role==='LD'?1:s.role==='RD'?2:s.role==='LW'?3:4; } // the C never sits - he takes the draw
+function otLines(){ // G-261 (H15, owner decision 2026-10-23): overtime is 3-on-3, first goal wins - in period 4 two skaters a side take the bench for the whole OT (boxT marks them off the ice); regulation clears the bench again
+  const benchAt = { home:[[-16,-(HZ-1.6)],[-23,-(HZ-1.6)]], away:[[16,-(HZ-1.6)],[23,-(HZ-1.6)]] };
+  for(const t of TEAM_IDS){
+    const list = (t==='home'?homeSkaters:awaySkaters).filter(x=>!x.goalie);
+    if(period>3){
+      const cand = list.filter(x=>!x.inBox && x!==controlled).sort((a,b)=>otBenchRank(a)-otBenchRank(b)).slice(0,2);
+      list.forEach(x=>{ const out = cand.includes(x); x.otOut = out; x.boxT = out?999:0;
+        if(out){ const sp = benchAt[t][cand.indexOf(x)]; x.benchSpot = sp; placeSkater(x, sp[0], sp[1], t==='home'?0:Math.PI); x.vel.set(0,0,0); x.target.set(sp[0],0,sp[1]); } });
+    } else list.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; });
+  }
+}
 function faceoff(dx,dz,label){
   maybeSwapLines();
   offArm=null;
   setupFaceoffPositions(dx,dz);
+  otLines();
   state='faceoff'; stateT=1.4; foDropAt=gameNow; updateHUD(); // G-257: the first clean grab inside 4 s of the drop wins the faceoff on the card
   if(label) banner(label,'',1400);
   commSay('faceoff');
@@ -1156,6 +1169,7 @@ function aiSkater(s,dt){
   if(isControlled&&humanDriving){ s._chasing=false; return; } // input-driven while the human is actually driving him
   // G-135: untouched, the human's skater plays with his team (defends, chases, takes the puck back) instead of standing at centre - but he never attacks for the human (see the carrier branch)
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
+  if(s.otOut){ if(s.benchSpot) s.target.set(s.benchSpot[0],0,s.benchSpot[1]); s._chasing=false; return; } // G-261: benched for the OT - stays on the bench
   if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
   const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
@@ -1454,7 +1468,7 @@ function stepPuck(dt){
     }
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
+    if(d<grabR&&canGrab&&!s.otOut){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
