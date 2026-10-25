@@ -5,10 +5,17 @@
 //   as a module: import { judge } from './judge.mjs'  ->  judge({results, models, base0, changed, branch, title})
 import fs from 'fs';
 import path from 'path';
+import { spawnSync } from 'child_process';
 
 export function judge({ results = [], models = [], base0 = {}, changed = [], branch = '', title = '' }) {
   const norm = (x) => x.replace(/\d+/g, '#');
-  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).map(norm))]));
+  // Owner Oct 22 2026 12:30 AM (window 2: builders blocked by testers' proof tests): a failing play test is the SAME open
+  // bug whatever its detail says this run ("still TOP 1" vs "BOT 1", "drifted 0.33 m" vs "0.41 m"), so a test line is
+  // matched to main's baseline by WHICH test it is (its quoted name), never by its changing detail. A tester- test that
+  // already fails on main is a known open bug, not something this PR broke.
+  const key = (x) => { const m = String(x).match(/^(Owner'?s fix NOT done yet|Play test failing):\s*"(.*?)"/i); return m ? 'TEST|' + norm(m[2]) : norm(String(x)); };
+  const old = new Map((base0.results || []).map(r => [r.file, new Set((r.fail || []).concat(r.check || []).map(key)
+    .concat((r.fixes || []).filter(Boolean).filter(f => !f.ok).map(f => 'TEST|' + norm(String(f.ask || f.id)))))]));
   const blockers = [];
   // FAIR BLAME (Oct 18): a PR is only blocked for what it touched. Games re-checked just because a shared folder changed
   // (models/, characters/, tools/game-check/) block only on hard breakage, not on their old/flaky owner tests; a model
@@ -36,7 +43,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   {
     const branch = prBranch;
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
-    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
+    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
     const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
@@ -56,15 +63,22 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
     else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  // owner Oct 23 2026: a PR that touches checklists/ must pass the checklist lint (every number is in its named source file)
+  if (changed.some(f => /^checklists\/[a-z0-9-]+\.md$/.test(f))) {
+    try {
+      const r = spawnSync('node', [path.join(path.dirname(new URL(import.meta.url).pathname), 'checklist-lint.mjs')], { encoding: 'utf8' });
+      if (r.status) blockers.push('CHECKLIST: ' + String(r.stdout || '').split('\n').filter(l => l.startsWith('CHECKLIST FAIL')).slice(0, 5).join(' | '));
+    } catch (e) { console.log('checklist lint could not run: ' + e.message); }
+  }
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
-    const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).map(f => f.id))]));
+    const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).filter(Boolean).map(f => f.id))]));
     const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
-      const fresh = (r.fixes || []).filter(f => /^tester-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));
+      const fresh = (r.fixes || []).filter(Boolean).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
       const passing = fresh.filter(f => f.ok || f.inconclusive);   // an undecided test proves nothing either
       if (fresh.length && passing.length === fresh.length)
         blockers.push(`TESTER: your new test${passing.length > 1 ? 's' : ''} ${passing.map(f => f.id).join(', ')} PASS on today's ${r.name} - that proves nothing. Make each one FAIL on the real problem, or drop it.`);
@@ -74,7 +88,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   for (const r of results) for (const f of r.fail) {
     if (/owner'?s eyes/i.test(f)) continue;
     if (testOnly && /NOT done yet/i.test(f)) continue;
-    if (old.get(r.file) && old.get(r.file).has(norm(f))) continue;
+    if (old.get(r.file) && old.get(r.file).has(key(f))) continue;
     if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
     blockers.push(`${r.file}: ${f}`);
   }

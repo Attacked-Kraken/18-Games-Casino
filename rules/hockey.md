@@ -17,7 +17,7 @@
 
 ## Game flow
 - 3 periods (20 min real, or shorter in quick games), with the clock stopping on whistles.
-- Ties: 5-minute **3-on-3** sudden-death overtime, then a **shootout** (3 shooters each, then sudden death).
+- Ties: **3-on-3** overtime, first goal wins (no time limit). **No shootout.** (owner decision Oct 23 2026 7:52 PM)
 - Intermission between periods (stats card).
 
 ## Broadcast look

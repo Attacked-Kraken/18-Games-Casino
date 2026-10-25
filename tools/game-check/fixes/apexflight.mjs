@@ -340,18 +340,30 @@ export default [
     id: 'tester-challenge-offrunway-feedback',
     ask: 'Landing challenge: touching down OFF the runway must tell the player why there is no score (today: silence)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: judge in game time, not the robot's wall clock - the
+        // gentle descent takes ~10 game-s, which is over 25 wall-s on a slow runner
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // short final 30 m right of the centreline: a gentle touchdown in the grass
         F.P.pos.set(30, 18, -350); F.P.vel.set(0, -1.8, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
           const iv = setInterval(() => {
             const vs = F.P.vel.y;
             if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
@@ -367,7 +379,7 @@ export default [
               if (/off|runway|grass|no score/i.test(msg)) return res(true);
               return res('off-runway touchdown shows no message explaining why there is no score');
             }
-            if (Date.now() - t0 > 25000) { clearInterval(iv); return res('never touched down after 25s'); }
+            if (gt > 30) { clearInterval(iv); return res('never touched down (30 game-s)'); }
           }, 200);
         });
       });
@@ -377,35 +389,47 @@ export default [
     id: 'tester-postscore-crash',
     ask: 'After a scored landing, flying into the ocean must still crash the plane (today: nothing happens)',
     async test(page, h) {
-      try { await h.press('#btnChal'); } catch (e) {}
+      // G-263 round 1: reload to a known menu first - on the shared page an
+      // earlier test's flight hides the menu for good, so #btnChal can never be
+      // pressed again and the test silently runs in the wrong mode
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       const crashed = await h.eval(() => !document.getElementById('crashOv').hidden).catch(() => false);
       if (crashed) { try { await h.press('#crashOv'); await h.wait(600); } catch (e) {} }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
+        // G-263 round 1: game time, not the wall clock (see the off-runway test
+        // above) - the gentle landing takes ~13 game-s, over 20 wall-s when slow
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         // score a gentle on-runway landing first
         F.P.pos.set(1, 8, -300); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
-          const t0 = Date.now();
-          let phase2 = false;
+          let phase2 = false, phase2Gt = 0;
           const iv = setInterval(() => {
             if (!phase2) {
               const vs = F.P.vel.y;
               if (vs < -0.8) F.P.pitch = Math.min(F.P.pitch + 0.015, 0.1);
               else if (vs > -0.4) F.P.pitch = Math.max(F.P.pitch - 0.015, -0.25);
               if (document.getElementById('scoreOv').hidden === false) {
-                phase2 = true;
+                phase2 = true; phase2Gt = gt;
                 // scored: now fly west into the ocean from close by
                 F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
                 F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
               } else if (document.getElementById('crashOv').hidden === false) {
                 clearInterval(iv);
                 return res('plane crashed before the scored landing');
-              } else if (Date.now() - t0 > 20000) {
+              } else if (gt > 30) {
                 clearInterval(iv);
-                return res('never scored a landing after 20s');
+                return res('never scored a landing (30 game-s)');
               }
             } else {
               if (document.getElementById('crashOv').hidden === false) {
@@ -413,7 +437,7 @@ export default [
                 const why = document.getElementById('crashWhy').textContent || '';
                 return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
               }
-              if (Date.now() - t0 > 30000) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash'); }
+              if (gt - phase2Gt > 30) { clearInterval(iv); return res('flew past x=-9950 after a scored landing and did not crash (30 game-s)'); }
             }
           }, 200);
         });
@@ -521,7 +545,7 @@ export default [
           P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
           await wait(150);
           // STICK: press and push down-right - the jet must answer, and stop when let go
-          const zone = el('jetStickZone'); const r = zone.getBoundingClientRect();
+          const zone = el('apcZone'); const r = zone.getBoundingClientRect();
           const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
           zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 9, clientX: cx, clientY: cy, bubbles: true }));
           zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
@@ -570,96 +594,731 @@ export default [
           down('jRoll'); up('jRoll');
           ms = await until(() => F.trick === 'barrelRoll', 100);
           if (ms < 0) bad.push('BARREL button did not start the trick within 100ms');
+          // leave the shared page in a clean flying state on success (a failed
+          // test gets a harness reload anyway): the next test on this page
+          // starts from whatever state it finds, and an unpiloted jet left
+          // mid-maneuver can crash in the gap and strand it. Park it high,
+          // level, cruising.
+          if (!bad.length) {
+            P.pos.set(0, 300, 0); P.vel.set(0, 0, 40); P.pitch = 0; P.roll = 0; P.thr = 0.45; P.ground = false;
+            F.jetInput.throttle = 0.45; F.jetInput.pitch = 0; F.jetInput.roll = 0; F.jetInput.yaw = 0;
+          }
           return bad.length ? bad.join('; ') : true;
         })();
       });
     },
   },
   {
-    id: 'tester-recheck-g117-controls',
-    ask: 'Re-check G-117 BUILD: YAW pad buttons must turn the jet in the air, and stick inputs must answer the same frame (G-117 fix verification)',
+    id: 'tester-recheck-g158-freeflight',
+    ask: 'G-158 re-check: free flight stays stable - steady cruise keeps finite position and velocity, no crash, the jet keeps moving',
     async test(page, h) {
+      // dismiss the menu / a crash overlay with the game's own buttons, in-page
+      // (robust at any frame rate - no timed Playwright clicks)
+      await h.eval(() => {
+        if (!document.getElementById('startOv').hidden) document.getElementById('btnFree').click();
+        else if (!document.getElementById('crashOv').hidden) document.getElementById('crashOv').click();
+      }).catch(() => {});
+      await h.wait(600);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.pos.set(0, 150, -2000); F.P.vel.set(0, 0, 40); F.P.ground = false;
+        F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0; F.P.thr = 0.5;
+        const x0 = F.P.pos.x, z0 = F.P.pos.z;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const p = F.P.pos, v = F.P.vel;
+            if (![p.x, p.y, p.z, v.x, v.y, v.z].every(Number.isFinite)) return res('non-finite position/velocity in steady free flight');
+            if (!document.getElementById('crashOv').hidden) return res('jet crashed during steady free flight');
+            const moved = Math.hypot(p.x - x0, p.z - z0);
+            if (moved < 1) return res('jet did not move in 8s of steady free flight');
+            res(true);
+          }, 8000);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-jet-on-runway',
+    ask: 'G-141: the owners jet is the player plane (INSTRUCTIONS steps 1-2, 5, 6) and it starts parked ON THE RUNWAY on the ground; the step-6 look is in (PMREM environment so the paint reflects, a shadow-casting sun) - today the jet is in but the look is not: no environment, shadows off',
+    async test(page, h) {
+      const url = await h.eval(() => location.href);
+      await page.goto(url);
+      for (let i = 0; i < 25; i++) { if (await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden))) break; await h.wait(400); }
+      if (!(await h.press('#btnFree'))) return 'could not press FREE FLIGHT after reloading to the menu';
+      return h.eval(() => new Promise((res) => {
+        const t0 = performance.now();
+        const iv = setInterval(() => {
+          const F = window.__flight, P = F && F.P;
+          if (F && F.jet && P && P.ground === true && Math.abs(P.pos.x) <= 12 && P.pos.z > -700 && P.pos.z < 700 && Math.abs(P.pos.y - F.jet.gearHeight) < 0.1) {
+            const scene = F.jet.group.parent;
+            let sun = null;
+            scene.traverse(o => { if (o.isDirectionalLight) sun = o; });
+            const missing = [];
+            if (!(F.jet.wheels && F.jet.wheels.length >= 3)) missing.push('jet wheels');
+            if (!scene.environment) missing.push('PMREM environment (step 6)');
+            if (!(sun && sun.castShadow && sun.shadow.mapSize.x === 2048)) missing.push('shadow sun 2048 (step 6)');
+            clearInterval(iv);
+            return res(missing.length ? 'jet is parked on the runway, but missing: ' + missing.join(', ') : true);
+          }
+          if (performance.now() - t0 > 6000) { clearInterval(iv); res('jet did not start parked on the runway (ground / on-runway / at gear height never all true)'); }
+        }, 150);
+      }));
+    },
+  },
+  {
+    id: 'play-stick-shared-resets',
+    ask: 'G-232: the stick is the shared kit/controls.js stick (the jet pack stick is gone) and letting go stops it - pointerup, pointercancel, blur and hidden tab all reset it to centre',
+    async test(page, h) {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
       try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const C = window.__controls, F = window.__flight;
+        if (!C || C.shared !== true) return 'the shared kit controls are not loaded (window.__controls missing)';
+        if (document.getElementById('jetStickZone')) return 'the jet pack stick zone is still on the page';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'the shared stick zone (#apcZone) is missing';
+        const wait = (ms) => new Promise(r => setTimeout(r, ms));
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(5); } return false; };
+        const r = zone.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        const drag = () => {
+          zone.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, clientX: cx, clientY: cy, bubbles: true }));
+          zone.dispatchEvent(new PointerEvent('pointermove', { pointerId: 7, clientX: cx + 30, clientY: cy + 30, bubbles: true }));
+        };
+        const centred = () => { const c = C.read(); return c.x === 0 && c.y === 0; };
+        const inpZero = () => !F || (F.inp.pitchUp === 0 && F.inp.rollRight === 0);
+        return (async () => {
+          const bad = [];
+          const cases = [
+            ['pointerup', () => zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }))],
+            ['pointercancel', () => zone.dispatchEvent(new PointerEvent('pointercancel', { pointerId: 7, bubbles: true }))],
+            ['blur', () => window.dispatchEvent(new Event('blur'))],
+          ];
+          for (const [name, fire] of cases) {
+            drag();
+            if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push(name + ': the stick did not deflect on drag'); continue; }
+            fire();
+            if (!(await until(centred, 300))) bad.push(name + ' did not reset the shared stick');
+            else if (!(await until(inpZero, 300))) bad.push(name + ' reset the stick but the jet kept steering');
+          }
+          // hidden tab: the reset must land while the tab is hidden (the kit
+          // releases synchronously on visibilitychange), then restore the tab
+          drag();
+          if (!(await until(() => { const c = C.read(); return c.x > 0.3 && c.y > 0.3; }, 300))) { bad.push('hidden tab: the stick did not deflect on drag'); }
+          else {
+            Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!centred()) bad.push('hidden tab did not reset the shared stick');
+            Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+            document.dispatchEvent(new Event('visibilitychange'));
+            if (!(await until(inpZero, 300))) bad.push('hidden tab reset the stick but the jet kept steering');
+          }
+          return bad.length ? bad.join('; ') : true;
+        })();
+      });
+    },
+  },
+  {
+    id: 'play-stick-never-stays-stuck',
+    ask: 'A cancelled touch (call, notification, palm) never leaves the stick stuck: touchcancel zeroes the stick and all input at once (G-238)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      await h.press('#btnFree');
+      await h.wait(400);
+      const r = await h.eval(async () => {
+        const F = window.__flight, C = window.__controls;
+        if (!C || !C.shared) return 'shared controls not loaded';
+        const zone = document.getElementById('apcZone');
+        if (!zone) return 'no kit stick zone';
+        const zr = zone.getBoundingClientRect();
+        const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+        const ev = (type, x, y) => zone.dispatchEvent(new PointerEvent(type, { pointerId: 11, clientX: x, clientY: y, bubbles: true }));
+        ev('pointerdown', cx, cy); ev('pointermove', cx + 26, cy + 26);
+        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await new Promise(r2 => setTimeout(r2, 25)); } return fn(); };
+        if (!await until(() => Math.abs(C.read().x) > 0.3 && Math.abs(F.inp.pitchUp) > 0.2, 1500)) return 'stick drag never deflected the jet';
+        window.dispatchEvent(new TouchEvent('touchcancel', { bubbles: true }));
+        if (!await until(() => Math.abs(C.read().x) < 0.02 && Math.abs(C.read().y) < 0.02 && F.inp.pitchUp === 0 && F.inp.rollRight === 0, 1500)) return 'touchcancel left the stick stuck: read=' + JSON.stringify(C.read()) + ' inp=' + F.inp.pitchUp + '/' + F.inp.rollRight;
+        return true;
+      });
+      return r === true ? true : r;
+    }
+  }
+,
+  {
+    id: 'play-g243-buttons-inside-safe-area',
+    ask: 'G-243 point 1: btnFree, friendGo and friendClose sit fully inside the 844x390 safe area',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 6; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } throw new Error('page never became ready after reload'); };
+      await h.eval(() => { location.href = location.href; });
+      await h.wait(900);
+      const inside = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + '] vs ' + innerWidth + 'x' + innerHeight; };
+      const a = await evalRetry(() => { const e = document.getElementById('btnFree'); if (!e) return 'btnFree missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : 'btnFree at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; });
+      if (a !== true) return a;
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const b = await evalRetry(() => {
+        const chk = (id) => { const e = document.getElementById(id); if (!e) return id + ' missing'; const r = e.getBoundingClientRect(); return (r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight) ? true : id + ' at [' + Math.round(r.left) + ',' + Math.round(r.top) + '->' + Math.round(r.right) + ',' + Math.round(r.bottom) + ']'; };
+        return [chk('friendGo'), chk('friendClose')].find(x => x !== true) || true;
+      });
+      return b === true ? true : b;
+    }
+  },
+  {
+    id: 'play-g243-jetbtn-clear-of-back',
+    ask: 'G-243 point 2: the JET button does not overlap the back button',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const a = document.getElementById('back').getBoundingClientRect();
+        const b = document.getElementById('jetBtn').getBoundingClientRect();
+        const overlap = a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+        return overlap ? 'jetBtn [' + Math.round(b.left) + ',' + Math.round(b.top) + '->' + Math.round(b.right) + ',' + Math.round(b.bottom) + '] overlaps back [' + Math.round(a.left) + ',' + Math.round(a.top) + '->' + Math.round(a.right) + ',' + Math.round(a.bottom) + ']' : true;
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-zone-never-covers-friend',
+    ask: 'G-243 point 3: the stick zone never covers the Play-a-Friend buttons',
+    test: async (page, h) => {
+      await h.press('#friendBtn');
+      await h.wait(400);
+      const r = await h.eval(() => {
+        const z = document.getElementById('apcZone');
+        if (z && getComputedStyle(z).display !== 'none') return 'stick zone is visible over the menu';
+        const b = document.getElementById('friendGo');
+        const r2 = b.getBoundingClientRect();
+        const hit = document.elementFromPoint(r2.left + r2.width / 2, r2.top + r2.height / 2);
+        return (hit === b || b.contains(hit)) ? true : 'friendGo is covered by ' + (hit ? (hit.id || hit.className || hit.tagName) : 'nothing');
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-favicon-declared',
+    ask: 'G-243 point 5: the page declares a data: favicon so the browser never asks for /favicon.ico',
+    test: async (page, h) => {
+      const r = await h.eval(() => {
+        const l = document.querySelector('link[rel="icon"]');
+        return (l && (l.getAttribute('href') || '').startsWith('data:')) ? true : 'no data: icon link in the page head';
+      });
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-g243-portrait-stick-on-screen',
+    ask: 'G-243 point 4: in portrait (390x844, body rotated) the stick base sits on the screen and the stick answers',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await page.setViewport({ width: 390, height: 844 });
+      try {
+        await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; });
+        await h.wait(1000);
+        const r = await evalRetry(async () => {
+          const C = window.__controls;
+          if (!C || !C.shared) return 'shared controls not loaded in portrait';
+          const j = document.querySelector('.apc-joy');
+          if (!j) return 'no stick base in portrait';
+          const jr = j.getBoundingClientRect();
+          if (jr.right <= 0 || jr.bottom <= 0 || jr.left >= innerWidth || jr.top >= innerHeight) return 'stick base off-screen in portrait: [' + Math.round(jr.left) + ',' + Math.round(jr.top) + '->' + Math.round(jr.right) + ',' + Math.round(jr.bottom) + '] vs ' + innerWidth + 'x' + innerHeight;
+          const z = document.getElementById('apcZone');
+          const zr = z.getBoundingClientRect();
+          const cx = zr.left + zr.width / 2, cy = zr.top + zr.height / 2;
+          const ev = (type, x, y) => z.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
+          ev('pointerdown', cx, cy); ev('pointermove', cx, cy + 30);
+          await new Promise(r2 => setTimeout(r2, 250));
+          const c = C.read();
+          ev('pointerup', cx, cy);
+          return (Math.abs(c.x) > 0.25 || Math.abs(c.y) > 0.25) ? true : 'stick did not answer in portrait: ' + JSON.stringify(c);
+        });
+        return r === true ? true : r;
+      } finally {
+        try { await page.setViewport({ width: 844, height: 390 }); } catch (e) {}
+        try { await h.eval(() => { location.href = location.href.split('?')[0]; }); } catch (e) {}
+        await h.wait(900);
+      }
+    }
+  }
+,
+  {
+    id: 'play-ai-jets-flying',
+    ask: 'G-247: 3-5 computer jets in the other styles and paints fly wide loops and stay above the ground',
+    test: async (page, h) => {
+      const evalRetry = async (fn) => { for (let i = 0; i < 8; i++) { try { return await h.eval(fn); } catch (e) { await h.wait(500); } } return 'page never became ready'; };
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=traffic'; });
+      await h.wait(1200);
+      const r = await evalRetry(() => new Promise((res) => {
+        const F = window.__flight;
+        if (!F || !F.aiJets) return res('no aiJets on the flight hook');
+        const jets = F.aiJets;
+        if (jets.length < 3 || jets.length > 5) return res('expected 3-5 computer jets, found ' + jets.length);
+        const styles = new Set(jets.map(a => a.jet.style)), paints = new Set(jets.map(a => a.jet.paint));
+        if (styles.size !== jets.length) return res('computer jets must each fly a different style');
+        if (paints.size !== jets.length) return res('computer jets must each wear a different paint');
+        if (styles.has('fighter')) return res('a computer jet uses the player style (fighter)');
+        const snap = () => jets.map(a => { const p = a.jet.group.position; return [p.x, p.y, p.z]; });
+        const a = snap();
+        for (const p of a) if (p[1] < 60) return res('a computer jet is too low: y=' + Math.round(p[1]));
+        setTimeout(() => {
+          const b = snap();
+          for (let i = 0; i < jets.length; i++) {
+            if (b[i][1] < 60) return res('computer jet ' + i + ' dropped too low: y=' + Math.round(b[i][1]));
+            const d = Math.hypot(b[i][0] - a[i][0], b[i][2] - a[i][2]);
+            if (d < 12) return res('computer jet ' + i + ' barely moved (' + d.toFixed(1) + ' m in 3 s)');
+          }
+          return res(true);
+        }, 3000);
+      }));
+      return r === true ? true : r;
+    }
+  },
+  {
+    id: 'play-takeoff-climbs',
+    ask: 'takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear)',
+    async test(page, h) {
+      // Same shared-page prelude as play-takeoff: get the plane back on the runway first.
+      const st = await h.eval(() => ({
+        menu: !document.getElementById('startOv').hidden,
+        crashed: !document.getElementById('crashOv').hidden,
+        ground: !!(window.__flight && window.__flight.P.ground),
+      })).catch(() => null);
+      if (!st) return 'no window.__flight hook';
+      if (!st.ground) {
+        try {
+          if (st.menu) await h.press('#btnFree');
+          else if (st.crashed) await h.press('#crashOv');
+          else await h.press('#resetBtn');
+        } catch (e) {}
+      }
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        return new Promise((res) => {
+          // Judged in GAME time (rAF delta-sum, the harness clock) - wall time only backstops.
+          let gt = 0, last = performance.now();
+          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 90) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+          const w0 = Date.now();
+          let gtV23 = -1;
+          const iv = setInterval(() => {
+            F.P.thr = 1; F.jetInput.throttle = 1;
+            const v = Math.hypot(F.P.vel.x, F.P.vel.z);
+            if (v >= 22.5) F.P.pitch = 0.22;   // the auto-rotate assist's own pitch, held
+            if (gtV23 < 0 && v >= 23) gtV23 = gt;
+            if (!document.getElementById('crashOv').hidden) { clearInterval(iv); return res('crashed during the climb-out: ' + document.getElementById('crashWhy').textContent); }
+            if (gtV23 >= 0 && F.P.pos.y > F.jet.gearHeight + 12) { clearInterval(iv); return res(gt - gtV23 <= 12 ? true : 'climbed, but took ' + (gt - gtV23).toFixed(1) + ' game-s after rotate speed'); }
+            if (gtV23 >= 0 && gt - gtV23 > 12) { clearInterval(iv); return res('reached rotate speed but could not climb - wallowed at y=' + F.P.pos.y.toFixed(1) + ' with vy=' + F.P.vel.y.toFixed(1)); }
+            if (Date.now() - w0 > 28000) { clearInterval(iv); return res('ran out of wall time (v23 at ' + gtV23.toFixed(1) + ' game-s)'); }
+          }, 100);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-first-frame-safe',
+    ask: 'first frame: a fresh load never throws the parked jet under the world (negative frame time - lab-measured 2026-10-23: frame 2 read y=-14.4, vy=+12.6, and ground contact could never reach it again)',
+    async test(page, h) {
+      // Fresh fly-phase load, then watch the first frames: the jet must sit on the runway.
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; return true; }).catch(() => {});
+      let sane = 0;
+      for (let i = 0; i < 40; i++) {
+        await h.wait(400);
+        const s = await h.eval(() => { const F = window.__flight; if (!F) return null; return { y: F.P.pos.y, vy: F.P.vel.y, gnd: F.P.ground }; }).catch(() => null);
+        if (!s) continue;
+        if (s.y <= -2) return 'jet thrown under the world on load (y=' + s.y.toFixed(1) + ')';
+        if (s.gnd && s.y > 1 && Math.abs(s.vy) < 3) { if (++sane >= 5) return true; } else sane = 0;
+      }
+      return 'jet never settled on the runway after load';
+    },
+  },
+  {
+    id: "never-g-243-p1",
+    ask: "NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        // the tester's own setup: short final right of the centreline, a gentle touchdown in the grass
+        F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
+        F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
         return new Promise((res) => {
-          // take off first
-          F.jetInput.throttle = 1; if (F.P) F.P.thr = 1;
-          const t0 = Date.now();
-          let phase = 'takeoff';
-          let yaw0 = 0;
+          let landedGt = null, sawReason = false;
           const iv = setInterval(() => {
-            if (phase === 'takeoff') {
-              if (!F.P.ground) { phase = 'yaw'; yaw0 = F.P.yaw; F.jetInput.yaw = 1; }
-              else if (Date.now() - t0 > 20000) { clearInterval(iv); return res('never took off'); }
-            } else if (phase === 'yaw') {
-              const dyaw = F.P.yaw - yaw0;
-              F.jetInput.yaw = 0;
-              if (Math.abs(dyaw) < 0.05) { clearInterval(iv); return res('YAW R did not turn the jet in the air (dyaw=' + dyaw.toFixed(3) + ')'); }
-              phase = 'done'; clearInterval(iv); return res(true);
+            if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed instead of landing gently in the grass'); }
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            } else {
+              if (landedGt === null) {
+                landedGt = gt;
+                if (!document.getElementById('scoreOv').hidden) { clearInterval(iv); return res('off-runway touchdown scored (it should not)'); }
+                F.P.thr = 0; F.P.pitch = 0;   // pilot cuts power and sits in the grass
+              }
+              // The first frames after touchdown can still show the throttle hint
+              // ("FULL THROTTLE - BUILD SPEED") before the off-runway reason lands -
+              // grace of 0.3 game-s, then the reason must be up and STAY up while
+              // the jet sits in the grass (robot check 2026-10-23 11:09 PM: failed
+              // at 0.0 game-s on the hint).
+              const el = gt - landedGt;
+              const msg = document.getElementById('msg').textContent || '';
+              const hasReason = /off|runway|grass|no score/i.test(msg);
+              if (el >= 0.3) {
+                if (hasReason) { sawReason = true; if (el > 4.5) { clearInterval(iv); return res(true); } }
+                else if (sawReason) { clearInterval(iv); return res('the no-score reason blinked out ' + el.toFixed(1) + ' game-s after touchdown (msg: "' + msg + '")'); }
+                else if (el > 4.5) { clearInterval(iv); return res('the no-score reason never showed within 4.5 game-s of touchdown (msg: "' + msg + '")'); }
+              }
             }
-            if (Date.now() - t0 > 30000) { clearInterval(iv); return res('timed out'); }
+            if (gt > 100) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'message never settled (game time)'); }   // game time ONLY (VP's alternative, 2026-10-23): a wall cap here was always tighter than the harness's own budget, so slow GPU-bound runs failed on the clock, not the game
           }, 200);
         });
       });
     },
   },
   {
-    id: 'play-throttle-bar',
-    ask: 'G-121: the slim throttle bar beside the pad - dragging it sets the throttle at once, the fill shows the level live, and SPD KT answers (the old fat right-edge THR slider is gone)',
+    id: "never-g-243-p2",
+    ask: "NEVER (G-243): after a scored landing, flying into the ocean must still crash the plane - judged in game time so a slow runner cannot fake the failure",
     async test(page, h) {
-      try { await h.press('#btnFree'); } catch (e) {}
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
-        const P = F.P;
-        const bar = document.getElementById('thrBar');
-        if (!bar) return 'no #thrBar - the slim throttle bar is missing';
-        if (document.getElementById('thr')) return 'the old #thr slider is still there';
-        const fill = document.getElementById('thrBarFill');
-        if (!fill) return 'no #thrBarFill inside the bar';
-        const wait = (ms) => new Promise(r => setTimeout(r, ms));
-        const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return true; await wait(15); } return fn(); };
-        const spd = () => parseInt((document.getElementById('hSpd') || {}).textContent || '0', 10) || 0;
-        const pev = (type, x, y) => bar.dispatchEvent(new PointerEvent(type, { pointerId: 13, clientX: x, clientY: y, bubbles: true }));
-        return (async () => {
-          // geometry: slim, same height as the button block, standing alongside it
-          const pad = document.querySelector('.ajc .pad');
-          if (!pad) return 'jet pad not found';
-          const br = bar.getBoundingClientRect(), pr = pad.getBoundingClientRect();
-          if (br.width > 30) return 'bar is ' + Math.round(br.width) + 'px wide - not slim (about half a button)';
-          if (Math.abs(br.height - pr.height) > 12) return 'bar height ' + Math.round(br.height) + ' != button block height ' + Math.round(pr.height);
-          if (br.right > pr.left + 2) return 'bar overlaps the button block instead of standing alongside it';
-          if (Math.abs(br.bottom - pr.bottom) > 4) return 'bar bottom does not line up with the button block';
-          const cx = br.left + br.width / 2;
-          // drag to the bottom: the touch alone must cut the throttle at once
-          pev('pointerdown', cx, br.bottom - 4);
-          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'touching the bottom of the bar did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
-          pev('pointerup', cx, br.bottom - 4);
-          if (!await until(() => spd() <= 1, 3000)) return 'jet did not settle after throttle cut (spd ' + spd() + ' kt)';
-          const spd0 = spd();
-          // touch the top: throttle must jump at once, and the fill must show it live
-          pev('pointerdown', cx, br.top + 4);
-          if (!await until(() => P.thr >= 0.9, 100)) { pev('pointerup', cx, br.top + 4); return 'touching the top of the bar did not set full throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
-          await wait(120);
-          const fillFrac = fill.offsetHeight / br.height;
-          if (fillFrac < 0.8) { pev('pointerup', cx, br.top + 4); return 'fill does not show the throttle level (fill ' + Math.round(fillFrac * 100) + '% at full throttle)'; }
-          pev('pointerup', cx, br.top + 4);
-          // SPD KT must answer: the jet gathers speed under the dragged throttle
-          if (!await until(() => spd() >= spd0 + 10, 5000)) return 'SPD KT did not answer - speed stuck at ' + spd() + ' kt with full throttle set from the bar';
-          const spd1 = spd();
-          // drag back to the bottom: throttle cuts at once and the speed stops growing
-          pev('pointerdown', cx, br.bottom - 4);
-          if (!await until(() => P.thr <= 0.1, 100)) { pev('pointerup', cx, br.bottom - 4); return 'dragging the bar down did not cut the throttle at once (thr ' + P.thr.toFixed(2) + ')'; }
-          pev('pointerup', cx, br.bottom - 4);
-          await wait(1500);
-          if (spd() > spd1 + 1) return 'speed kept growing after the bar cut the throttle (' + spd1 + ' -> ' + spd() + ' kt)';
-          return true;
-        })();
+        // game-time clock: sum of capped frame deltas - measures the game, not the runner
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        // the tester's own gentle approach profile (started lower and closer -
+        // same profile, less dead time, so a slow runner still finishes in budget)
+        F.P.pos.set(1, 3, -120); F.P.vel.set(0, -0.6, 30);
+        F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
+        return new Promise((res) => {
+          let phase2 = false, gtScore = 0;
+          const iv = setInterval(() => {
+            if (!phase2) {
+              const vs = F.P.vel.y;
+              if (vs < -0.8) F.P.pitch = Math.min(F.P.pitch + 0.015, 0.1);
+              else if (vs > -0.4) F.P.pitch = Math.max(F.P.pitch - 0.015, -0.25);
+              if (document.getElementById('scoreOv').hidden === false) {
+                phase2 = true; gtScore = gt;
+                if (gtScore > 20) { clearInterval(iv); return res('scored but too slowly: ' + gtScore.toFixed(1) + ' game-s (budget 20 game-s)'); }
+                // scored: now fly west into the ocean from close by (the tester's phase 2)
+                F.P.pos.set(-9900, 500, 0); F.P.vel.set(-60, 0, 0);
+                F.P.yaw = -Math.PI / 2; F.P.pitch = 0; F.P.roll = 0; F.P.ground = false; F.P.thr = 0.6;
+              } else if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed before the scored landing'); }
+              else if (gt > 40) { clearInterval(iv); return res('never scored (game time reached ' + gt.toFixed(1) + 's)'); }   // game time ONLY - the 28 s wall cap fired after 1.4 game-s on a slow runner
+            } else {
+              if (document.getElementById('crashOv').hidden === false) {
+                clearInterval(iv);
+                const why = document.getElementById('crashWhy').textContent || '';
+                return res(/ocean/i.test(why) ? true : 'crashed after scoring but not for the ocean: ' + why);
+              }
+              if (gt - gtScore > 10) { clearInterval(iv); return res('flew into the ocean after scoring and did not crash within 10 game-s'); }   // game time ONLY - the 29 s wall cap is what the robot quoted on main 519430d
+            }
+          }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: "play-band-shows-on-approach",
+    ask: "G-263: the 55-88 kt touchdown band shows during the landing approach, and says whether the speed is inside it",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnChal can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // final: on the centreline, 80 m up, 1.8 km out - inside the runway box's 9000 m window
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 36); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          let step = 0, ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            // gentle-descent trim (same pattern as never-g-243-p1): keeps speed stable
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            }
+            const b = document.getElementById('bandBox');
+            const txt = b ? (b.textContent || '') : '';
+            const vis = !!(b && b.style.display === 'block');
+            if (step === 0) {
+              if (!b) { clearInterval(iv); return res('no #bandBox element on approach'); }
+              if (vis && /55/.test(txt) && /88/.test(txt) && /IN BAND/i.test(txt)) { step = 1; F.P.vel.set(0, -2, 20); }
+              else if (ticks > 40) { clearInterval(iv); return res('band not showing IN BAND on approach after 40 ticks (visible: ' + vis + ', text: "' + txt + '")'); }
+            } else if (step === 1) {
+              if (/SLOW/i.test(txt)) { step = 2; F.P.vel.set(0, -2, 50); }
+              else if (ticks > 70) { clearInterval(iv); return res('band never flipped to SLOW at ~39 kt (text: "' + txt + '")'); }
+            } else {
+              if (/FAST/i.test(txt)) { clearInterval(iv); return res(true); }
+              else if (ticks > 100) { clearInterval(iv); return res('band never flipped to FAST at ~97 kt (text: "' + txt + '")'); }
+            }
+          }, 250);
+        });
+      });
+    },
+  },
+  {
+    id: "play-band-shows-on-final-freeflight",
+    ask: "G-268: the 55-88 kt band shows on the HUD during final approach in free flight too, so the robot's play picture shows it",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnFree can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // final in free flight: on the centreline, 80 m up, 1.8 km out, 70 kt
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 36); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          let ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            }
+            const b = document.getElementById('bandBox');
+            const txt = b ? (b.textContent || '') : '';
+            const vis = !!(b && b.style.display === 'block');
+            if (vis && /55/.test(txt) && /88/.test(txt) && /IN BAND/i.test(txt)) { clearInterval(iv); return res(true); }
+            if (ticks > 40) { clearInterval(iv); return res('band not showing IN BAND on a free-flight final after 40 ticks (visible: ' + vis + ', text: "' + txt + '")'); }
+          }, 250);
+        });
+      });
+    },
+  },
+  {
+    id: "play-rwy36-reads-correct",
+    ask: "G-275: runway 36 reads the correct way from behind the jet (not mirrored)",
+    async test(page, h) {
+      return h.eval(() => {
+        const decals = window.__rwyDecals;
+        if (!decals || !decals.length) return 'runway decals not exposed';
+        const m36 = decals.find((d) => d && d.userData && d.userData.num === '36');
+        if (!m36) return 'no 36 decal found';
+        const img = m36.material && m36.material.map && m36.material.map.image;
+        if (!img || !img.getContext) return '36 decal has no canvas texture';
+        // The 6's loop sits at the glyph's BOTTOM, and correct paint puts the
+        // glyph's bottom toward the approaching pilot - for the 36 end that is
+        // the SMALL canvas rows, so the upper third of the 6 half must carry
+        // more light pixels than the lower third. Mirrored (old) paint flips that.
+        const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+        const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, img.width, img.height).data;
+        const W = img.width;
+        const light = (x, y) => data[(y * W + x) * 4] > 150;
+        let top = 0, bottom = 0;
+        for (let y = 325; y < 360; y++) for (let x = 128; x < 218; x++) if (light(x, y)) top++;
+        for (let y = 395; y < 430; y++) for (let x = 128; x < 218; x++) if (light(x, y)) bottom++;
+        if (top === 0 && bottom === 0) return 'no light pixels in the 6 half (canvas ' + img.width + 'x' + img.height + ')';
+        if (top > bottom) return true;
+        return '36 reads mirrored: 6-half light pixels top=' + top + ' bottom=' + bottom + ' (correct paint has top > bottom)';
+      });
+    },
+  },
+  {
+    id: "play-thr-button-in-row",
+    ask: "G-280: the tall THR slider is gone; a slim THR button sits in the pad row overlapping nothing and ramps the throttle while held",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        if (document.getElementById('thrBar')) return 'tall THR slider still present';
+        const pad = document.querySelector('.ajc .pad');
+        const btn = document.getElementById('thrBtn');
+        if (!pad || !btn) return 'THR button missing from the pad row';
+        if (!pad.contains(btn)) return 'THR button is not inside the pad row';
+        const r = (el) => el.getBoundingClientRect();
+        const br = r(btn);
+        for (const id of ['jGear', 'jPaint', 'jLoop']) {
+          const el = document.getElementById(id);
+          if (!el) return 'pad button ' + id + ' missing';
+          const o = r(el);
+          if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return 'THR button overlaps ' + id;
+        }
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.thr = 0.2;
+        btn.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 7, bubbles: true }));
+        const t0 = F.P.thr;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const t1 = F.P.thr;
+            btn.dispatchEvent(new PointerEvent('pointerup', { pointerId: 7, bubbles: true }));
+            if (t1 > t0 + 0.05) return res(true);
+            return res('THR button did not ramp the throttle while held (thr ' + t0.toFixed(2) + ' -> ' + t1.toFixed(2) + ')');
+          }, 1200);
+        });
+      });
+    },
+  },
+  {
+    id: "never-g-232-p1",
+    ask: "NEVER (G-232): taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing",
+    async test(page, h) {
+      // shared-page trap: an earlier test's flight hides the menu for good, so
+      // #btnFree can never be pressed again - reload to a known menu first
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        // just lifted off, sinking gently back, stick banked + slightly nose-down
+        // (the owner's takeoff: liftoff flash shown, then gear-collapse crash)
+        F.P.pos.set(0, F.jet.gearHeight + 0.3, -600); F.P.vel.set(0, -1.0, 25);
+        F.P.yaw = 0; F.P.roll = 0.5; F.P.pitch = -0.2; F.P.thr = 1.0; F.P.ground = false;
+        return new Promise((res) => {
+          let ticks = 0;
+          const iv = setInterval(() => {
+            ticks++;
+            if (!F.P.ground) { F.P.roll = 0.5; F.P.pitch = -0.2; }
+            const crashOv = document.getElementById('crashOv');
+            if (crashOv && crashOv.hidden === false) { clearInterval(iv); return res('takeoff bounce crashed the jet: ' + (document.getElementById('crashWhy').textContent || '')); }
+            if (F.P.ground) { clearInterval(iv); return res(true); }
+            if (ticks > 60) { clearInterval(iv); return res('neither crashed nor touched down after 60 ticks'); }
+          }, 250);
+        });
+      });
+    },
+  },
+  {
+    id: "play-band-uncovered-on-approach",
+    ask: "G-283: on a landing-challenge approach the TD band chip is a distinct chip nothing overlaps, so the 55-88 kt warning is actually seen",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(4200);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 49); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const bb = document.getElementById('bandBox');
+            if (!bb) return res('no #bandBox element on approach');
+            if (bb.style.display !== 'block') return res('band chip not displayed on approach');
+            const txt = bb.textContent || '';
+            if (!/55/.test(txt) || !/88/.test(txt) || !/FAST/i.test(txt)) return res('band chip does not warn FAST at 95 kt (text: "' + txt + '")');
+            const r = (el) => el.getBoundingClientRect();
+            const br = r(bb);
+            const ids = ['stats', 'rwyBox', 'viewBtn', 'resetBtn', 'jetBtn', 'muteBtn', 'back', 'msg', 'ahWrap'];
+            for (const id of ids) {
+              const el = document.getElementById(id);
+              if (!el) continue;
+              const o = r(el);
+              if (o.width === 0 || o.height === 0) continue;
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('band chip overlaps #' + id + ' - the warning is buried, not seen');
+            }
+            const pad = document.querySelector('.ajc .pad');
+            if (pad) {
+              const o = r(pad);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('band chip overlaps the pad buttons');
+            }
+            return res(true);
+          }, 1500);
+        });
+      });
+    },
+  },
+  {
+    id: "play-reset-clear-of-vs",
+    ask: "G-290: the RESET button in the top bar overlaps nothing, least of all the VS speed box, on a challenge approach",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(4200);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 49); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const rb = document.getElementById('resetBtn');
+            if (!rb) return res('no #resetBtn in the top bar');
+            const r = (el) => el.getBoundingClientRect();
+            const br = r(rb);
+            const ids = ['viewBtn', 'muteBtn', 'jetBtn', 'back', 'rwyBox', 'bandBox', 'msg', 'ahWrap'];
+            for (const id of ids) {
+              const el = document.getElementById(id);
+              if (!el) continue;
+              const o = r(el);
+              if (o.width === 0 || o.height === 0) continue;
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('RESET button overlaps #' + id);
+            }
+            const chips = [...document.querySelectorAll('#stats .chip')];
+            if (!chips.length) return res('no stats chips in the top bar');
+            for (const c of chips) {
+              const o = r(c);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) {
+                const label = (c.textContent || '').trim().slice(0, 12);
+                return res('RESET button overlaps the stats chip "' + label + '"');
+              }
+            }
+            const pad = document.querySelector('.ajc .pad');
+            if (pad) {
+              const o = r(pad);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('RESET button overlaps the pad buttons');
+            }
+            return res(true);
+          }, 1500);
+        });
       });
     },
   },

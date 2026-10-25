@@ -1,6 +1,10 @@
 name: Merge robot
 # Owner Oct 19 2026: green Muse pull requests merge by themselves - no waiting on the laptop to press a card.
 # See tools/merge-robot.py for exactly which pull requests (fresh, not draft/hold, no conflicts, robot check passed).
+# Oct 23 2026 (PR #1264 sat conflicted for ~15 min): GitHub's '*/5' timer really fires only every few HOURS, and a
+# conflicted pull request never starts a check, so nothing woke the robot. Now the robot wakes ITSELF: when any open pull
+# request still needs a second look (conflict fixed, GitHub still working out 'mergeable', branch brought up to date,
+# main just moved) the 'heartbeat' job waits 2.5 minutes and starts this workflow again (max 40 rounds in a row).
 on:
   schedule:
     - cron: '*/5 * * * *'
@@ -8,22 +12,57 @@ on:
     workflows: ["Game check", "Game check (PR)", "Asset check", "File guard"]
     types: [completed]
   workflow_dispatch:
-concurrency:
-  group: merge-robot
-  cancel-in-progress: false
+    inputs:
+      hop:
+        description: 'heartbeat round (set by the robot itself)'
+        required: false
+        default: '0'
 permissions:
   contents: write
   pull-requests: write
   actions: write
   checks: read
+  issues: write
 jobs:
   merge:
     if: github.repository == 'Attacked-Kraken/18-Games-Casino'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    concurrency:                 # only the merging step takes turns, so the heartbeat's wait never blocks an event run
+      group: merge-robot
+      cancel-in-progress: false
+    outputs:
+      revisit: ${{ steps.robot.outputs.revisit }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # the conflict fix merges main into a PR branch: it needs the full history (a 1-commit checkout cannot merge)
       - name: Merge green pull requests
+        id: robot
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 tools/merge-robot.py
+      - name: Re-run PRs whose only red lines are known robot faults
+        # Oct 24 2026 8:25 PM: the push-triggered / timer 'Known fault re-run' never started after a bot merge (GITHUB_TOKEN merges start no push workflow,
+        # the timer fires late), so PR #1616 sat red 40 min behind a fault the robot already knew. The merge robot runs on every finished check,
+        # so it re-runs them here. Safe to repeat: the script only acts on a FAILED comment older than the faults file.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/game-check/known-fault-rerun.py
+  heartbeat:
+    needs: merge
+    if: needs.merge.outputs.revisit == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Wake the merge robot again soon
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOP: ${{ github.event.inputs.hop || '0' }}
+        run: |
+          hop="${HOP:-0}"
+          if [ "$hop" -ge 40 ]; then echo "heartbeat: 40 rounds in a row - stopping until the next check or timer"; exit 0; fi
+          sleep 150
+          gh workflow run merge-robot.yml --repo "$GITHUB_REPOSITORY" -f hop=$((hop+1))
+          echo "heartbeat: woke the merge robot again (round $((hop+1)))"

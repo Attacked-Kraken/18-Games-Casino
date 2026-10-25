@@ -36,6 +36,15 @@
     opacity:0; transition:opacity .25s; pointer-events:none; text-align:center; white-space:nowrap; }
   #banner.show { opacity:1; }
   #banner small { display:block; font-size:16px; letter-spacing:.2em; color:#cfe9ff; margin-top:8px; }
+  #statCard { position:fixed; top:56%; left:50%; transform:translate(-50%,-50%); z-index:9400; display:none; background:rgba(6,18,34,.88); border:1px solid #7fd4ff; border-radius:14px; padding:16px 30px; text-align:center; color:#eaf6ff; font-family:inherit; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  #statCard h3 { margin:0 0 6px; font-size:22px; letter-spacing:.14em; color:#ffe27d; }
+  #statCard .scScore { font-size:19px; font-weight:700; letter-spacing:.08em; margin-bottom:6px; }
+  #goalLight { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:9500; display:none; width:54px; height:54px; border-radius:50%; background:radial-gradient(circle at 50% 38%, #ffb3ab, #e02020 55%, #7d0d0d); border:3px solid #ffd9d4; box-shadow:0 0 34px 12px rgba(255,40,30,.75); }
+  #goalLight.on { display:block; animation:goalPulse .45s ease-in-out infinite alternate; }
+  @keyframes goalPulse { from { box-shadow:0 0 22px 6px rgba(255,40,30,.55); } to { box-shadow:0 0 46px 18px rgba(255,40,30,.95); } }
+  #spotlights { position:fixed; inset:0; z-index:9400; display:none; pointer-events:none; background:linear-gradient(105deg, transparent 30%, rgba(255,244,190,.20) 44%, transparent 58%), linear-gradient(255deg, transparent 30%, rgba(255,244,190,.20) 44%, transparent 58%); }
+  #spotlights.on { display:block; }
+  #statCard .scRow { font-size:15px; letter-spacing:.1em; color:#cfe9ff; }
   #flash { position:fixed; inset:0; z-index:9400; background:#fff; opacity:0; pointer-events:none; transition:opacity .5s; }
   .overlay { position:fixed; inset:0; z-index:9600; display:flex; flex-direction:column; align-items:center;
     justify-content:center; background:rgba(2,8,16,.82); color:#fff; text-align:center; padding:20px; }
@@ -81,7 +90,6 @@
   /* PORTRAIT GRIP: the stage is rotated, so place controls where the player's thumbs actually are:
      stick at the visual bottom-left, action buttons at the visual bottom-right */
   @media (orientation: portrait) {
-    #joy { left:auto; right:18px; }
     #btns { left:auto; right:18px; top:calc(16px + env(safe-area-inset-top)); bottom:auto; }
     #charge { left:auto; right:18px; top:calc(108px + env(safe-area-inset-top)); bottom:auto; }
     #muteBtn { right:auto; left:12px; top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
@@ -89,6 +97,15 @@
   }
 
   #starCard { font:600 14px system-ui, -apple-system, sans-serif; color:#ffe9a8; background:rgba(10,26,44,.72); border:1px solid rgba(255,215,106,.45); border-radius:14px; padding:10px 18px; margin-bottom:16px; line-height:1.6; text-align:center; }
+  /* G-210: the menu column stood ~580px tall in a 390px frame - title and subtitle clipped off the top, the friend-code line sat on the bottom edge, the keys line fell off-screen entirely, and the star card slid under the VIEW button. Menu-only compact sizes: every line inside 844x390, nothing overlapping. */
+  #menu { padding:8px 12px; }
+  #menu h1 { font-size:27px; margin:0 0 2px; }
+  #menu h2 { font-size:13px; line-height:1.4; margin:0 0 8px; }
+  #menu #starCard { font-size:13px; line-height:1.45; padding:7px 14px; margin-bottom:8px; max-width:min(600px,94vw); }
+  #menu .bigbtn { font-size:18px; padding:8px 14px; margin:5px auto; }
+  #menu #creditsBtn { margin-top:6px; }
+  #menu #myCode { margin:8px 0 2px; }
+  #menu .keys { font-size:11px; line-height:1.45; margin-bottom:4px; }
   #myCode { font:600 12px system-ui, -apple-system, sans-serif; color:#ffd34d; margin:14px 0 4px; letter-spacing:.06em; }
   #cancelMatch, #hubReset { font:600 12px system-ui, -apple-system, sans-serif; color:#ff9a9a; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
   #creditsBtn { font:600 12px system-ui, -apple-system, sans-serif; color:#9fd8ff; background:none; border:0; margin-top:10px; cursor:pointer; letter-spacing:.08em; }
@@ -108,6 +125,9 @@
 <div id="hud"><span class="dim" id="nmH">WOLVES</span><span class="sc" id="score">0 – 0</span><span class="dim" id="nmA">SHARKS</span><span class="clk"><span id="period">1ST</span><span id="clock">2:00</span></span></div><div id="shotTag"></div><div id="penTag"></div>
 <button id="viewBtn" type="button">VIEW · BROADCAST</button><button id="muteBtn" type="button">🔊</button>
 <div id="banner"></div>
+<div id="statCard"></div>
+<div id="goalLight"></div>
+<div id="spotlights"></div>
 <div id="flash"></div>
 <div id="joy"><div id="knob"></div></div>
 <div id="btns">
@@ -178,8 +198,8 @@ const HX = RINK.L/2, HZ = RINK.W/2;
 const GOAL_LINE = 89, GOAL_HALF = 3, BLUE = 25, POST_R = 0.9;
 const PERIOD_LEN = 120, N_PERIODS = 3;
 const DOTS = { center:[0,0],
-  n1:[40,20], n2:[40,-20], n3:[-40,20], n4:[-40,-20],
-  e1:[69,20], e2:[69,-20], e3:[-69,20], e4:[-69,-20] };
+  n1:[20,20], n2:[20,-20], n3:[-20,20], n4:[-20,-20], // G-273 (G-199): the neutral-zone dots sit 1.5 m INSIDE the blue lines (20 units = 6.13 m from centre, the blue line at 25) - never out at |x| 40 in the end zones
+  e1:[69,21.4], e2:[69,-21.4], e3:[-69,21.4], e4:[-69,-21.4] }; // G-228 round 1 (H01/G-230): end-zone dots at the venues/rink.md 6.7 m either side of centre (21.4 units = 6.56 m, inside the checklist's 3% band)
 const TEAMS = {
   home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
   away: { name:'SHARKS', dir:-1, jersey:0x0e7c7b, trim:0xffffff, helmet:0x123a3a, pads:0x0e7c7b },
@@ -243,16 +263,18 @@ function makeIceTexture(baseImg){
   g.fillStyle='rgba(31,111,214,.6)'; g.font='900 ' + Math.round(5.4*S) + 'px system-ui, sans-serif'; g.textAlign='center';
   g.fillText('APEX', X(0), Z(0)-1.1*S); g.fillText('ARCADE', X(0), Z(0)+5.9*S);
   // faceoff dots + end-zone circles
-  const dots=[[40,20],[40,-20],[-40,20],[-40,-20],[69,20],[69,-20],[-69,20],[-69,-20]];
+  const dots=[[20,20],[20,-20],[-20,20],[-20,-20],[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]]; // G-273: neutral dots painted at |x| 20 with the DOTS table
   g.fillStyle='#c8323c';
   dots.forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),1.1*S,0,TAU); g.fill(); });
   g.strokeStyle='#c8323c'; g.lineWidth=5;
-  [[69,20],[69,-20],[-69,20],[-69,-20]].forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),15*S,0,TAU); g.stroke(); });
+  [[69,21.4],[69,-21.4],[-69,21.4],[-69,-21.4]].forEach(d=>{ g.beginPath(); g.arc(X(d[0]),Z(d[1]),15*S,0,TAU); g.stroke(); });
   // goal creases (light blue)
   g.fillStyle='rgba(140,200,250,.85)';
   [[GOAL_LINE,1],[-GOAL_LINE,-1]].forEach(([gx,s])=>{
-    g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.fill();
-    g.strokeStyle='#c8323c'; g.lineWidth=3; g.beginPath(); g.arc(X(gx),Z(0),6*S,-Math.PI/2*s,Math.PI/2*s, s<0); g.stroke();
+    // G-266 (G-199): the crease is a semicircle IN FRONT of the goal (venues/rink.md, r 1.83 m) - it bulges toward centre ice, never behind the line into the trapezoid: for the +x goal the half with canvas-x offset <= 0, for the -x goal >= 0
+    const a0 = s > 0 ? Math.PI / 2 : -Math.PI / 2, a1 = s > 0 ? Math.PI * 1.5 : Math.PI / 2;
+    g.beginPath(); g.arc(X(gx),Z(0),6*S,a0,a1,false); g.fill();
+    g.strokeStyle='#c8323c'; g.lineWidth=3; g.beginPath(); g.arc(X(gx),Z(0),6*S,a0,a1,false); g.stroke();
   });
   const tex = new THREE.CanvasTexture(cv);
   tex.anisotropy = 4; tex.colorSpace = THREE.SRGBColorSpace;
@@ -444,12 +466,36 @@ function roundedRectSegs(hw,hh,r){
     _e.set(0,Math.PI,0); _q.setFromEuler(_e);
     const adM = M.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,2.3,-0.36), _q.clone(), _1));
     ad.applyMatrix4(adM); adGeos.push(ad);
-    const gl = new THREE.PlaneGeometry(len,5.2); gl.translate(0,6.3,0); gl.applyMatrix4(M); glassGeos.push(gl);
+    const gh = Math.abs(mx)>60?7.8:5.9; // G-282 round 1 (G-199, venues/rink.md): glass ~2.4 m at the ends, ~1.8 m along the sides - not one 1.6 m height all the way round
+    const gl = new THREE.PlaneGeometry(len,gh); gl.translate(0,3.7+gh/2,0); gl.applyMatrix4(M); glassGeos.push(gl);
   });
   scene.add(new THREE.Mesh(mergeGeometries(kickGeos), kickMat));
   scene.add(new THREE.Mesh(mergeGeometries(boardGeos), boardMat));
   scene.add(new THREE.Mesh(mergeGeometries(adGeos), adMat));
   scene.add(new THREE.Mesh(mergeGeometries(glassGeos), glassMat));
+}
+
+/* ================= benches + boxes (G-282, G-199, venues/rink.md) ================= */
+// Two team benches on the +z side, the two penalty boxes and the scorekeeper box on the -z side:
+// real meshes outside the boards at ice level, in the strips the arena scan reads (z just past +-42.8).
+{
+  const benchMat = new THREE.MeshStandardMaterial({color:0x24406e, roughness:.85});
+  const boxMat = new THREE.MeshStandardMaterial({color:0x3a3f46, roughness:.85});
+  const seatMat = new THREE.MeshStandardMaterial({color:0x8a2f2b, roughness:.8});
+  const addBox=(mat,w,h,d,x,y,z)=>{ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat); m.position.set(x,y,z); scene.add(m); return m; };
+  for(const bx of [-26, 26]){ // team benches, +z side: base, red seat plank, back board
+    addBox(benchMat, 36, 1.1, 4.4, bx, 0.55, 47);
+    addBox(seatMat, 36, 0.35, 1.4, bx, 1.35, 46.2);
+    addBox(benchMat, 36, 2.2, 0.5, bx, 1.1, 49.1);
+  }
+  for(const bx of [-22, 22]){ // penalty boxes, -z side
+    addBox(boxMat, 14, 1.1, 4.4, bx, 0.55, -47);
+    addBox(seatMat, 14, 0.35, 1.4, bx, 1.35, -46.2);
+    addBox(boxMat, 14, 2.2, 0.5, bx, 1.1, -49.1);
+  }
+  // scorekeeper box between the penalty boxes, -z side
+  addBox(boxMat, 10, 1.1, 4.4, 0, 0.55, -47);
+  addBox(boxMat, 10, 2.6, 0.5, 0, 1.3, -49.1);
 }
 
 /* ================= goals ================= */
@@ -647,6 +693,7 @@ async function attachAthletes(H){
       wrap.add(a.object);
       if(!COARSE) a.object.traverse(o=>{ if(o.isMesh) o.castShadow = true; }); else a.object.traverse(o=>{ if(o.isMesh) o.castShadow = false; });
       s.kit = kitG; s.athStick = kitG.stick;
+      { const vs = kitG.parts && kitG.parts.visor; if (vs) { vs.castShadow = false; vs.material.opacity = 0.13; vs.material.metalness = 0; vs.material.roughness = 0.04; } } // G-186: the kit visor shipped cloudy - it shadowed and darkened the face into a bar across the eyes (art director, img/apexhockey-face.jpg); a visor casts no shadow and the glass is near-clear now, so the face reads through it
       a.play('Idle_Loop', 0); a.mixer.update(0); kitG.stance.apply({ crouch: 1 }); // ready stance from the first frame (no T-pose behind the menu)
       s.body.visible = false; // hide the primitive figure (goalie butterfly mirrored to wrap below)
       s.ath = a; s.athWrap = wrap;
@@ -705,11 +752,14 @@ window.__hk.puck = puck; window.__hk.BLUE = BLUE; window.__hk.camera = camera; /
 
 /* ================= input ================= */
 const joyVec = { x:0, y:0, active:false };
+let sawInput = false, gateNoteAt = -1e9, bootAutoClick = false; // the game must not play by itself: until the player has really touched this page (a real press, key or stick touch - never a scripted click), a staged faceoff waits for him instead of dropping on its own
+function noteInput(){ sawInput = true; }
+function playerReady(){ return sawInput || joyVec.active; }
 {
   const joy=document.getElementById('joy'), knob=document.getElementById('knob');
   let tid=null, cx=0, cy=0;
   const setKnob=(dx,dy)=>{ knob.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; };
-  joy.addEventListener('touchstart',e=>{ e.preventDefault(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
+  joy.addEventListener('touchstart',e=>{ e.preventDefault(); noteInput(); if(tid!==null) return; // JOB J10: ignore 2nd finger (was hijacking the stick = glitchy/inverted feel)
     const t=e.changedTouches[0]; tid=t.identifier;
     const r=joy.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; },{passive:false});
   const move=e=>{ for(const t of e.changedTouches){ if(t.identifier!==tid) continue;
@@ -728,7 +778,7 @@ const joyVec = { x:0, y:0, active:false };
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) releaseAll(); });
 }
 const keys={};
-addEventListener('keydown',e=>{ if(e.repeat) return; keys[e.code]=true;
+addEventListener('keydown',e=>{ if(e.repeat) return; noteInput(); keys[e.code]=true;
   if(e.code==='KeyJ') doPass(); if(e.code==='KeyK') startCharge(); if(e.code==='KeyL') doCheck();
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); });
 addEventListener('keyup',e=>{ keys[e.code]=false; if(e.code==='KeyK') releaseShot(); });
@@ -748,7 +798,9 @@ function releaseShot(){ if(!charging) return; charging=false; chargeEl.style.opa
 /* ================= game state / HUD ================= */
 let state='menu', paused=false;
 let period=1, clockT=PERIOD_LEN, scoreH=0, scoreA=0, stateT=0, lastOwnerTeam=null;
+let statShots={home:0,away:0}, statSaves={home:0,away:0}, statFO={home:0,away:0}, foDropAt=-9; // G-257: real counters behind the intermission stats card (shots at shootPuck, saves in goalieSaves, faceoffs won = first clean grab after a drop)
 let pendingFaceoff=null;
+let delayedPen=null; // G-273 round 1 (G-228): an armed DELAYED penalty {off, why, major} - play goes on until the penalised team touches the puck (rules/hockey.md)
 let controlled = homeSkaters[0];
 /* G-37: the career play tests read and set the live game through this hook
    (the same __hk peek the other play tests use for the puck and the skaters).
@@ -768,7 +820,7 @@ window.__hk.game = {
   // a fresh match (period 1, 0-0, full clock): a player gets this from the
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
-  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; updateHUD(); },
+  newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; delayedPen = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -794,6 +846,20 @@ function banner(main, sub, dur=1800, color){
   const b=$('banner'); b.innerHTML=main+(sub?`<small>${sub}</small>`:'');
   b.style.color=color||'#fff'; b.classList.add('show');
   clearTimeout(bannerTO); bannerTO=setTimeout(()=>b.classList.remove('show'), dur);
+}
+function showStatCard(){ // G-257: the intermission stats card (rules/hockey.md) - real counters, up for the whole break
+  const c=$('statCard'); if(!c) return;
+  c.innerHTML='<h3>END OF PERIOD '+period+'</h3><div class="scScore">'+TEAMS.home.name+' '+scoreH+' \u2013 '+scoreA+' '+TEAMS.away.name+'</div><div class="scRow">SHOTS '+statShots.home+'\u2013'+statShots.away+' \u00b7 SAVES '+statSaves.home+'\u2013'+statSaves.away+' \u00b7 FACEOFFS WON '+statFO.home+'\u2013'+statFO.away+'</div>';
+  c.style.display='block';
+}
+function hideStatCard(){ const c=$('statCard'); if(c) c.style.display='none'; }
+let lastGoalX = 0; // G-266: the goal the replay cuts orbit (set in onGoal)
+let replayAngle = 0; // G-266: which replay angle is on screen (0 = none) - a change is a hard TV cut
+function goalFx(on){ // G-266 (G-228 broadcast look): a goal lights the red goal light behind the net and throws the spotlights on; both clear at the next faceoff / the final screen
+  const gl=$('goalLight'), sp=$('spotlights');
+  if(gl) gl.className = on ? 'on' : '';
+  if(sp) sp.className = on ? 'on' : '';
+  if(!on) replayAngle = 0;
 }
 function flash(){ const f=$('flash'); f.style.transition='none'; f.style.opacity=.55;
   requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; }); }
@@ -936,7 +1002,7 @@ window.__mus = Mus;
 /* ================= actions ================= */
 function nearestSkater(team,pos,skipGoalie=true){
   let best=null,bd=1e9;
-  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue;
+  for(const s of skaters){ if(s.team!==team) continue; if(skipGoalie&&s.goalie) continue; if(s.inBox) continue; if(s.otOut) continue; // G-261: a benched OT skater is out of the play
     const d=(s.pos.x-pos.x)**2+(s.pos.z-pos.z)**2; if(d<bd){bd=d;best=s;} }
   return best;
 }
@@ -976,7 +1042,7 @@ function shootFrom(s, power, aimed){
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
   const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
-  puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; // G-78: origin, so a defender in the lane near the shooter can block it
+  puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; statShots[s.team]++; // G-78: origin, so a defender in the lane near the shooter can block it; G-257: the shot counts for the intermission card
   commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
   if(power>=0.8) puckSfx('hockey_puck_slapshot.mp3', 0.75); // G-47
   if(s.team==='home') showShotTag(Math.round(sp*1.22));
@@ -986,17 +1052,29 @@ function shootFrom(s, power, aimed){
 const PEN = { home:null, away:null }; // the boxed skater per team (one minor at a time)
 const BOXSPOT = { home:[-6, HZ-1.6], away:[6, -(HZ-1.6)] };
 function fmtPen(t){ const sec=Math.max(0,Math.ceil(t*6)); return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
-function callPenalty(off, why){
-  if(!off || off.inBox || state!=='play') return;
-  off.inBox=true; off.penT=20; PEN[off.team]=off; // a 2:00 minor, on this game's clock scale
-  banner('PENALTY', TEAMS[off.team].name+' · '+why+' · MINOR', 2600, '#ffb3b3');
+function applyPenalty(off, why, major){ // the man actually sits (the old instant callPenalty body)
+  off.inBox=true; off.major=!!major; off.penT=major?50:20; PEN[off.team]=off; // G-272: 2:00 minor - or a 5:00 major for the worst fouls (rules/hockey.md), on this game's clock scale
+  banner('PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2600, '#ffb3b3');
   commSay('penalty_box'); // G-44
   if(off===controlled) switchControl();
   updateHUD();
 }
+function callPenalty(off, why, major){
+  if(!off || off.inBox || state!=='play') return;
+  if(delayedPen){ // a second foul while one is already delayed: blow it down now and sit the man (both fouls if they differ)
+    const dp=delayedPen; delayedPen=null;
+    applyPenalty(dp.off, dp.why, dp.major); if(off!==dp.off) applyPenalty(off, why, major);
+    const d0=DOTS[nearestDot(puck.pos.x,puck.pos.z)]; pendingFaceoff={x:d0[0],z:d0[1],label:'FACEOFF'};
+    whistle('PENALTY', TEAMS[off.team].name); return;
+  }
+  if(puck.owner && puck.owner.team===off.team){ applyPenalty(off, why, major); return; } // his own team has the puck - he has already 'touched' it: he sits at once and play flows on
+  delayedPen={off, why, major}; // G-273 round 1: DELAYED penalty - the fouled team has the puck (or it is loose), so play goes on until the penalised team touches it; only then the whistle and the box
+  banner('DELAYED PENALTY', TEAMS[off.team].name+' · '+why+(major?' MAJOR':' · MINOR'), 2200, '#ffd34d');
+  commSay('penalty_box'); // G-44
+}
 function endPenalty(off, quiet){
   if(!off) return;
-  off.inBox=false; off.penT=0; if(PEN[off.team]===off) PEN[off.team]=null;
+  off.inBox=false; off.penT=0; off.major=false; if(PEN[off.team]===off) PEN[off.team]=null;
   if(!quiet) banner('FULL STRENGTH', TEAMS[off.team].name, 1400, '#9fe8a9');
   updateHUD();
 }
@@ -1009,7 +1087,7 @@ function doCheck(){
     const dO=Math.hypot(s.pos.x-o.pos.x,s.pos.z-o.pos.z);
     if(dO<3.4){ // contact ON the carrier: from behind is a penalty; front or side is a clean poke
       const behind=(Math.cos(o.facing)*(s.pos.x-o.pos.x)+Math.sin(o.facing)*(s.pos.z-o.pos.z)) < -0.9;
-      if(behind){ callPenalty(s,'CHECK FROM BEHIND'); return; }
+      if(behind){ callPenalty(s,'CHECK FROM BEHIND', true); return; } // G-272: the harshest foul in the game is a 5-minute major (rules/hockey.md, checklist H14)
       const chance=dO<3?0.8:0.45;
       if(Math.random()<chance){ // poke it loose
         puck.owner=null;
@@ -1068,11 +1146,25 @@ function maybeSwapLines(){
   }
   tagFor=null; // the name tag redraws for whoever is controlled now
 }
+function otBenchRank(s){ return s.role==='RW'?0:s.role==='LD'?1:s.role==='RD'?2:s.role==='LW'?3:4; } // the C never sits - he takes the draw
+function otLines(){ // G-261 (H15, owner decision 2026-10-23): overtime is 3-on-3, first goal wins - in period 4 two skaters a side take the bench for the whole OT (boxT marks them off the ice); regulation clears the bench again
+  const benchAt = { home:[[-16,-(HZ-1.6)],[-23,-(HZ-1.6)]], away:[[16,-(HZ-1.6)],[23,-(HZ-1.6)]] };
+  for(const t of TEAM_IDS){
+    const list = (t==='home'?homeSkaters:awaySkaters).filter(x=>!x.goalie);
+    if(period>3){
+      const cand = list.filter(x=>!x.inBox && x!==controlled).sort((a,b)=>otBenchRank(a)-otBenchRank(b)).slice(0,2);
+      list.forEach(x=>{ const out = cand.includes(x); x.otOut = out; x.boxT = out?999:0;
+        if(out){ const sp = benchAt[t][cand.indexOf(x)]; x.benchSpot = sp; placeSkater(x, sp[0], sp[1], t==='home'?0:Math.PI); x.vel.set(0,0,0); x.target.set(sp[0],0,sp[1]); } });
+    } else list.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; });
+  }
+}
 function faceoff(dx,dz,label){
   maybeSwapLines();
   offArm=null;
   setupFaceoffPositions(dx,dz);
-  state='faceoff'; stateT=1.4; updateHUD();
+  otLines();
+  goalFx(false);
+  state='faceoff'; stateT=1.4; foDropAt=gameNow; updateHUD(); // G-257: the first clean grab inside 4 s of the drop wins the faceoff on the card
   if(label) banner(label,'',1400);
   commSay('faceoff');
 }
@@ -1082,19 +1174,23 @@ function nearestDot(x,z){
   return best;
 }
 function onGoal(team){
+  if(delayedPen && team!==delayedPen.off.team){ const dp=delayedPen; delayedPen=null; if(dp.major) applyPenalty(dp.off, dp.why, true); } // G-273 round 1: the fouled team scores during the delay - a minor is washed out by the goal, a major is still served (rules/hockey.md)
+  else if(delayedPen){ const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major); } // a stoppage all the same: the armed man sits
   state='goal'; stateT=3.2;
   const _deficit = team==='home' ? scoreA-scoreH : scoreH-scoreA; // G-44: how far back the scorer was, for the comeback call
   if(team==='home'){scoreH++;}else{scoreA++;}
-  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed) endPenalty(boxed, true); } // a power-play goal springs him
+  { const boxed=(team==='home'?awaySkaters:homeSkaters).find(x=>x.inBox); if(boxed && !boxed.major) endPenalty(boxed, true); } // a power-play goal springs him - MINORS only (rules/hockey.md): a major serves the full 5:00
   try{ careerOnGoal(team); }catch(e){}
   updateHUD(); flash(); horn();
   banner('GOAL!', TEAMS[team].name+' SCORES', 2800, '#ffe27d'); crowdExcite = 1; Mus.crowdGoal(team==='home');
+  lastGoalX = TEAMS[team].dir * GOAL_LINE; goalFx(true); // G-266: goal light + spotlights on, replay cuts run off lastGoalX
   if(period>3) commSay('goal_long', true); // G-44: the golden goal gets the long call
   else if(_deficit>=2 && (team==='home' ? scoreH>=scoreA : scoreA>=scoreH)) commSay('comeback', true);
   else commSay('goal', true);
   if(period>3) setTimeout(()=>{ if(state==='goal') gameOver(); },700); // golden goal ends it
 }
 function whistle(text,sub){
+  if(delayedPen){ const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major); } // G-273 round 1: any stoppage assesses an armed delayed penalty
   state='whistle'; stateT=2.2; puck.vel.multiplyScalar(0.1);
   banner('WHISTLE', text+(sub?' · '+sub:''), 2000, '#ffb3b3');
   if(text==='ICING') commSay('icing'); else if(text==='OFFSIDE') commSay('offside'); // G-44
@@ -1128,15 +1224,19 @@ function aiSkater(s,dt){
   s.thinkT=0.25+Math.random()*0.15;
   const isHome=s.team==='home';
   const isControlled=isHome&&s===controlled&&state==='play';
-  if(isControlled){ s._chasing=false; return; } // input-driven
+  const humanDriving=joyVec.active||keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight;
+  if(isControlled&&humanDriving){ s._chasing=false; return; } // input-driven while the human is actually driving him
+  // G-135: untouched, the human's skater plays with his team (defends, chases, takes the puck back) instead of standing at centre - but he never attacks for the human (see the carrier branch)
   if(state!=='play'){ s.target.copy(s.pos); s._chasing=false; return; }
+  if(s.otOut){ if(s.benchSpot) s.target.set(s.benchSpot[0],0,s.benchSpot[1]); s._chasing=false; return; } // G-261: benched for the OT - stays on the bench
   if(s.inBox){ const bp=BOXSPOT[s.team]; s.target.set(bp[0],0,bp[1]); s._chasing=false; return; }
   // closest-two chase logic
   const mates=_mates; mates.length=0; // G-35: refill the scratch roster (was .filter() = a new array per think)
-  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled)) mates.push(m); } // the user's skater is input-driven — never count him as a chaser
+  for(const m of (isHome?homeSkaters:awaySkaters)){ if(m!==puck.owner && !(isHome&&m===controlled&&humanDriving)) mates.push(m); } // the user's skater counts as a chaser only while the human is not driving him (G-135)
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
   const carrier=puck.owner;
   if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
+    if(isControlled){ s.target.copy(s.pos); s._chasing=false; return; } // G-135: a puck the idle human's skater wins is held for the human - he never attacks for him
     const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
     let nearestOpp=1e9;
     for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
@@ -1164,8 +1264,12 @@ function aiSkater(s,dt){
   }
   if(!weHave && isChaser){
     const lead=oppHas?0.25:0;
-    s.target.set(puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3),0,
-                 puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3));
+    const tx0=puck.pos.x+(carrier?carrier.vel.x*lead:puck.vel.x*0.3), tz0=puck.pos.z+(carrier?carrier.vel.z*lead:puck.vel.z*0.3);
+    if(mates[1]===s && mates[0]!==s){ // owner video (2026-10-23): both chasers were handed the SAME target point, so they skated in lockstep - mirroring each other and overlapping. The second man takes the far side of the puck, opposite the first chaser's approach, so the pair closes in a pincer instead of stacking.
+      let ox=tx0-mates[0].pos.x, oz=tz0-mates[0].pos.z; const od=Math.hypot(ox,oz);
+      if(od>1.2){ ox/=od; oz/=od; s.target.set(tx0+ox*4.5,0,tz0+oz*4.5); }
+      else s.target.set(tx0-(carrier?Math.sin(carrier.facing):0)*4.5,0,tz0-(carrier?Math.cos(carrier.facing):1)*4.5);
+    } else s.target.set(tx0,0,tz0);
     s._chasing=true;
     // active pressure: poke it loose when right on the carrier - an IDLE carrier gets stripped
     if(carrier && !carrier.goalie) pokeCheck(s, carrier);
@@ -1325,6 +1429,12 @@ function stepSkater(s,dt){
       // CLOSE camera looks along the attacking X axis: screen-right = +Z, screen-up = attacking direction.
       if(camMode===2){ const ad=TEAMS.home.dir; des.set(-iy/m*sp*ad,0,ix/m*sp); }
       else des.set(ix/m*sp,0,iy/m*sp); }
+    else { // G-135: no input - skate where the team brain sends him (defend, chase, support), like any AI skater
+      const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
+      const arr=s._chasing?1.0:2.5;
+      if(d>arr){ const sp2=Math.min(22.5,8.5+d*0.5); des.set(dx/d*sp2,0,dz/d*sp2); }
+      else des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
+    }
   } else if(state==='play'){
     const dx=s.target.x-s.pos.x, dz=s.target.z-s.pos.z, d=Math.hypot(dx,dz);
     const arr=s._chasing?1.0:2.5;
@@ -1385,11 +1495,25 @@ function stepPuck(dt){
   if(puck.owner){
     const o=puck.owner, fx=Math.cos(o.facing), fz=Math.sin(o.facing);
     puck.pos.set(o.pos.x+fx*STICK_REACH, 0.06, o.pos.z+fz*STICK_REACH);
+    // G-214 round 1 (the G-194 line): the carried puck rides the stick 2.9 ahead of the carrier and this
+    // branch returns before bouncePuck() runs - at the boards it poked clean through them (robot: centre
+    // at 101.7 at the end boards, 44.2 at the side boards). Clamp it inside the same rink shape the loose
+    // puck bounces in; it stays glued to the stick, just never outside the boards.
+    { const r=0.62, ccx=HX-RINK.CR, ccz=HZ-RINK.CR, ax=Math.abs(puck.pos.x), az=Math.abs(puck.pos.z);
+      if(az<=ccz && ax>HX-r) puck.pos.x=Math.sign(puck.pos.x)*(HX-r);
+      else if(ax<=ccx && az>HZ-r) puck.pos.z=Math.sign(puck.pos.z)*(HZ-r);
+      else { const dx=ax-ccx, dz=az-ccz, d=Math.hypot(dx,dz); if(d>RINK.CR-r && d>0){ puck.pos.x=Math.sign(puck.pos.x)*(ccx+dx/d*(RINK.CR-r)); puck.pos.z=Math.sign(puck.pos.z)*(ccz+dz/d*(RINK.CR-r)); } } }
     puck.vel.set(o.vel.x,0,o.vel.z);
     return;
   }
   puck.pos.x+=puck.vel.x*dt; puck.pos.z+=puck.vel.z*dt;
-  puck.deadT = puck.vel.lengthSq()<9 ? (puck.deadT||0)+dt : 0; // a nearly-stopped loose puck starts the dead-puck clock
+  if(puck.vel.lengthSq()<9){ // a nearly-stopped loose puck starts the dead-puck clock - but that whistle is only for a puck NOBODY can take: while the nearest skater keeps closing on it the clock holds at the retrieval mark instead of blowing dead under his skates (G-228: a legal shorthanded dump dying behind the far net is retrieved, not whistled)
+    puck.deadT=(puck.deadT||0)+dt;
+    let nd=1e9; for(const o of skaters){ if(o.goalie||o.inBox) continue; const dd=(o.pos.x-puck.pos.x)**2+(o.pos.z-puck.pos.z)**2; if(dd<nd) nd=dd; }
+    nd=Math.sqrt(nd);
+    if(puck._deadBest==null||nd>puck._deadBest+30) puck._deadBest=nd; // a far jump re-baselines the episode (a carried or reset puck must not poison the next loose one with a stale near mark)
+    else if(nd<puck._deadBest-1){ puck._deadBest=nd; if(puck.deadT>1.5) puck.deadT=1.5; }
+  } else { puck.deadT=0; puck._deadBest=null; }
   const _ps0=puck.vel.length();
   puck.vel.multiplyScalar(Math.max(0,1-(_ps0<6?2.2:0.55)*dt)); // firm settle when slow, true ice glide at speed
   if(puck.vel.lengthSq()<0.04) puck.vel.set(0,0,0);
@@ -1407,7 +1531,7 @@ function stepPuck(dt){
     }
     const grabR=(s===puck.recv&&puck.recvT>0)?4.2:2.9;
     const canGrab=(s===puck.recv&&puck.recvT>0)? ps<44 : ps<26; // a firm pass blows past bystanders; only its target cushions it at speed
-    if(d<grabR&&canGrab){ puck.owner=s; puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
+    if(d<grabR&&canGrab&&!s.otOut){ puck.owner=s; if(foDropAt>0&&gameNow-foDropAt<4){ statFO[s.team]++; foDropAt=-9; } puck.recv=null; puck.shot=null; puck.deadT=0; puck.lastTouch=s.team; puck.lastTouchX=s.pos.x; puck._dumpDeep=null; break; } // G-02: clear dump flag on grab
   }
   puck.recvT=Math.max(0,puck.recvT-dt);
   if(puck.shot) puck.shot.t+=dt;
@@ -1425,10 +1549,29 @@ function rules(dt){
   for(const t of TEAM_IDS){ let pen=null; for(const x of skaters){ if(x.team===t&&x.inBox&&(!pen||x.penT<pen.penT)) pen=x; } PEN[t]=pen; } // G-35: one pass, no filter/reduce garbage per step (same pick: earliest lowest penT)
   if(PEN.home||PEN.away) updateHUD();
   if(puck.owner){ possT[puck.owner.team]+=dt; const ot=puck.owner.team==='home'?'away':'home'; possT[ot]=0; } else { possT.home=0; possT.away=0; }
+  // G-273 round 1: a DELAYED penalty completes the moment the penalised team touches the puck - whistle, the man sits, faceoff at the nearest dot (rules/hockey.md: 'the neutral-zone dots otherwise'); checked before the goal line so the touch kills the play first
+  if(delayedPen && puck.owner && puck.owner.team===delayedPen.off.team){
+    const dp=delayedPen; delayedPen=null; applyPenalty(dp.off, dp.why, dp.major);
+    const d=DOTS[nearestDot(puck.pos.x,puck.pos.z)]; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'};
+    whistle('PENALTY', TEAMS[dp.off.team].name); prevPuckX=px; return;
+  }
+  // G-282 (G-228, rules/hockey.md): the crease is protected - no goal if the goalie is pushed. An attacker
+  // standing on the defending goalie (within 1.5 u) inside the crease (within 6 u of the goal centre) when
+  // the puck crosses waves the goal off: whistle, no goal, end-zone faceoff.
+  const creaseCrash=(att,gx)=>{
+    const gk=skaters.find(s=>s.goalie&&s.team!==att); if(!gk) return false;
+    for(const s of skaters){ if(s.goalie||s.team!==att||s.inBox) continue;
+      if(Math.hypot(s.pos.x-gk.pos.x,s.pos.z-gk.pos.z)<1.5&&Math.hypot(s.pos.x-gx,s.pos.z)<6) return true; }
+    return false;
+  };
   // GOAL: puck crosses the goal line between the posts = ALWAYS a goal (JOB J10)
   // Crossing-based (not position threshold) so a fast puck can't tunnel past the check
-  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('home'); return; }
-  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){ onGoal('away'); return; }
+  if(prevPuckX<=GOAL_LINE&&px>GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){
+    if(creaseCrash('home',GOAL_LINE)){ const d=DOTS[puck.pos.z>0?'e1':'e2']; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'}; whistle('NO GOAL','GOALIE INTERFERENCE'); prevPuckX=px; return; }
+    onGoal('home'); return; }
+  if(prevPuckX>=-GOAL_LINE&&px<-GOAL_LINE&&Math.abs(puck.pos.z)<GOAL_HALF+0.6){
+    if(creaseCrash('away',-GOAL_LINE)){ const d=DOTS[puck.pos.z>0?'e3':'e4']; pendingFaceoff={x:d[0],z:d[1],label:'FACEOFF'}; whistle('NO GOAL','GOALIE INTERFERENCE'); prevPuckX=px; return; }
+    onGoal('away'); return; }
   // OFFSIDE, the real way: DELAYED — attackers caught deep get a window to TAG UP and clear.
   if(offArm){
     const t=offArm.team, dir=TEAMS[t].dir, line=dir*BLUE;
@@ -1461,6 +1604,8 @@ function rules(dt){
     const fromDeep=dir>0?puck.lastTouchX<0:puck.lastTouchX>0;
     const crossedFar=dir>0?px>GOAL_LINE:px<-GOAL_LINE;
     if(fromDeep&&crossedFar){
+      if(skaters.some(o=>o.team===t&&o.inBox)){ puck.lastTouch=null; prevPuckX=px; } // G-228: icing is NOT called when the dumping team is shorthanded (rules/hockey.md) - while one of the dumpers sits in the box the dump is legal and play just goes on, no banner, no whistle
+      else {
       let aD=1e9, dD=1e9;
       for(const o of skaters){ if(o.goalie||o.inBox) continue;
         const dd=Math.hypot(o.pos.x-px,o.pos.z-puck.pos.z);
@@ -1471,6 +1616,7 @@ function rules(dt){
         const d=DOTS[key]||DOTS.center;
         pendingFaceoff={x:d[0],z:d[1],label:'ICING · FACEOFF'};
         whistle('ICING',TEAMS[t].name); prevPuckX=px; return; }
+      }
     }
   }
   // goalie covers a slow loose puck
@@ -1511,7 +1657,7 @@ function goalieSaves(){
       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
-        gl._saveUntil=gameNow+1.2; puck.shot=null; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble
+        gl._saveUntil=gameNow+1.2; puck.shot=null; statSaves[gl.team]++; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble; G-257: the statSaves count above feeds the intermission card
         commSay(spd>70?'great_save':'save'); // G-44
         if(spd>70) kitSfx('hockey_applause.mp3', 0.4); // G-47: the crowd applauds the big stop
       }
@@ -1582,8 +1728,15 @@ function stepCamera(dt){
     leadCur+=clamp(leadWant-leadCur,-38*dt,38*dt); // G-72: the lead swings at a capped rate - on a save the puck reverses, the camera must not rewind with it
     const px=clamp((puck.pos.x+leadCur)*0.55,-64,64), pz=puck.pos.z*0.30;
     const deep=Math.min(1,Math.abs(puck.pos.x)/95);
-    const h=camMode===1?62:47-8*deep, d=camMode===1?100:78-10*deep;
+    const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
+  }
+  if(state==='goal'){ // G-266 REPLAY: two broadcast cuts around the goal just scored - a side close-up, then behind the net. The cut is HARD (the camera is placed on the angle the moment it changes): the >60 glide-cut rule below cannot be relied on - the camera mode persists across the robot's shared page, and from a close/end view the replay spot can sit within gliding distance, so the first robot run measured a 3.3 u glide instead of a cut
+    const gx = lastGoalX || GOAL_LINE, out = Math.sign(gx) || 1;
+    const ang = stateT > 1.6 ? 1 : 2;
+    if(ang === 1){ camTgt.set(gx - out*26, 9, -26); lookTgt.set(gx, 1, 0); }
+    else { camTgt.set(gx + out*15, 5.5, 7); lookTgt.set(gx - out*12, 1, 0); }
+    if(replayAngle !== ang){ replayAngle = ang; camera.position.copy(camTgt); if(window.__lookCur) window.__lookCur.copy(lookTgt); }
   }
   if(s!==lastControlledRef){ lastControlledRef=s; camEase=1; } // quick ease onto a new skater
   // JOB-04: when a faceoff/whistle teleports the play, CUT to it like TV does (the slow lerp back across the rink looked like a rewind)
@@ -1611,12 +1764,64 @@ function bladeIdx(steel){ // every steel (blade) vertex, split left/right skate 
   const P=steel.geometry.attributes.position, L=[], R=[];
   for(let i=0;i<P.count;i++) (P.getX(i)>=0?L:R).push(i); // G-86: every vertex - every-3rd missed the dipping blade ends (3 cm sunk in the G-67 test)
   return [L,R]; }
+const _lv1=new THREE.Vector3(), _lv2=new THREE.Vector3(), _lq=new THREE.Quaternion(), _lx=new THREE.Vector3(), _la=new THREE.Quaternion();
+function levelBlades(s){ // G-47 REDO (owner picture 2026-10-23, the close camera): the constant counter-pitch below was tuned on the standing pose, but in live play the walk cycle and the kit stance pitch BOTH feet together (measured 3D blade tilt: median 15 deg, p90 40 deg, worst 77 deg - a planted blade pointing at the ice like a toe pick, exactly the owner's picture; the old end-to-end read could not see it because a near-vertical blade's horizontal projection collapses). So level MEASURED, not constant: read this foot's blade slope along its own long axis in the current pose (skeleton refreshed first - getVertexPosition otherwise reads last frame's skeleton and the correction chases a ghost), and counter-rotate the foot bone by that angle about the true lateral axis (up x toe direction). Two passes per frame settle the residual; a foot clearly in the air (swing phase) is left to its animation, one near the ice is levelled fully. Goalies keep the old constant: their ready stance splays the feet and the goalie test anchors their blade drop.
+  if(paused || (state!=='play'&&state!=='faceoff'&&state!=='whistle'&&state!=='goal'&&state!=='pen')) return;
+  if(!s.ath||!s.ath.object) return;
+  if(!s._feet){ const B={}; s.ath.object.traverse(o=>{ if(o.isBone&&(o.name==='foot_l'||o.name==='foot_r'||o.name==='ball_leaf_l'||o.name==='ball_leaf_r')) B[o.name]=o; }); if(!B.foot_l||!B.foot_r||!B.ball_leaf_l||!B.ball_leaf_r) return; s._feet=B; }
+  const B=s._feet;
+  const rot=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); let tx=Lf.x-F.x, tz=Lf.z-F.z, tl=Math.hypot(tx,tz); if(tl<0.02){ tx=Math.sin(s.facing); tz=Math.cos(s.facing); tl=1; } foot.parent.getWorldQuaternion(_lq); _lx.set(-tz/tl,0,tx/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  const rotT=(sd,ang)=>{ const foot=B['foot_'+sd], leaf=B['ball_leaf_'+sd]; if(!foot||!leaf||!foot.parent) return; const F=foot.getWorldPosition(_lv1), Lf=leaf.getWorldPosition(_lv2); const tx=Lf.x-F.x, ty=Lf.y-F.y, tz=Lf.z-F.z, tl=Math.hypot(tx,ty,tz); if(tl<0.02) return; foot.parent.getWorldQuaternion(_lq); _lx.set(tx/tl,ty/tl,tz/tl).applyQuaternion(_lq.invert()); foot.quaternion.premultiply(_la.setFromAxisAngle(_lx,ang)); };
+  if(s.goalie){ rot('l',0.3); rot('r',0.3); return; }
+  const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s._blade||!st.skeleton) return;
+  for(let pass=0; pass<2; pass++){
+    s.g.updateMatrixWorld(true); st.skeleton.update();
+    let maxCorr=0;
+    for(let k=0;k<2;k++){
+      const ids=s._blade[k]; if(!ids||ids.length<8) continue;
+      let n=0,Sx=0,Sy=0,Sz=0,Sxx=0,Syy=0,Szz=0,Sxy=0,Sxz=0,Szy=0,low=1e9;
+      for(const i of ids){ st.getVertexPosition(i,_bv); const x=_bv.x, y=_bv.y, z=_bv.z; Sx+=x; Sy+=y; Sz+=z; Sxx+=x*x; Syy+=y*y; Szz+=z*z; Sxy+=x*y; Sxz+=x*z; Szy+=z*y; if(y<low) low=y; n++; }
+      const cx=Sx/n, cy=Sy/n, cz=Sz/n;
+      const Cxx=Sxx-n*cx*cx, Czz=Szz-n*cz*cz, Cxz=Sxz-n*cx*cz, Cxy=Sxy-n*cx*cy, Czy=Szy-n*cz*cy;
+      const th=0.5*Math.atan2(2*Cxz,Cxx-Czz); let ax=Math.cos(th), az=Math.sin(th);
+      const foot=B[k===0?'foot_l':'foot_r'], leaf=B[k===0?'ball_leaf_l':'ball_leaf_r'];
+      const Fa=s._fa||(s._fa=new THREE.Vector3()), Fb=s._fb||(s._fb=new THREE.Vector3());
+      foot.getWorldPosition(Fa); s.ath.object.worldToLocal(Fa); leaf.getWorldPosition(Fb); s.ath.object.worldToLocal(Fb);
+      if(ax*(Fb.x-Fa.x)+az*(Fb.z-Fa.z)<0){ ax=-ax; az=-az; } // orient the blade axis heel->toe by the FOOT BONE in rig frame - s.facing lives in world frame and flips the slope sign for skaters facing away from the rig's forward, which made the correction double the tilt for them
+      const den=ax*ax*Cxx+2*ax*az*Cxz+az*az*Czz; if(den<1e-6) continue;
+      const slope=(ax*Cxy+az*Czy)/den, ang=Math.atan(slope);
+      const h=low+s.athWrap.position.y; // this foot's lowest blade edge above the ice right now
+      const w=h<=0.09?1:(h>=0.30?0:1-(h-0.09)/0.21); if(w<=0) continue;
+      const corr=Math.max(-1.15,Math.min(1.15,-ang*w));
+      if(Math.abs(corr)>0.004){ rot(k===0?'l':'r',corr); if(Math.abs(corr)>maxCorr) maxCorr=Math.abs(corr); }
+      // owner video (2026-10-23): pitch alone left the blades ROLLED - the plate tilted sideways, far edge up toward the leg (standing away roll measured 12-26 deg; roll was never measured). Measure roll from the blade plate's NORMAL: inverse-iterate the 3x3 vertex covariance twice from the across direction (eigenvalues are ~35x apart, so it lands on the normal) - an across-slope regression divides by the across variance, which vanishes on a flat blade and invented phantom rolls of +/-30 deg that the correction then chased frame to frame.
+      const Cyy=Syy-n*cy*cy;
+      let nx=-az, ny=0, nz=ax; // seed: the across direction in plan (the normal of a flat blade)
+      for(let it=0; it<2; it++){
+        const det=Cxx*(Cyy*Czz-Czy*Czy)-Cxy*(Cxy*Czz-Czy*Cxz)+Cxz*(Cxy*Czy-Cyy*Cxz);
+        if(Math.abs(det)<1e-9){ nx=0; break; }
+        const ix=((Cyy*Czz-Czy*Czy)*nx+(Cxz*Czy-Cxy*Czz)*ny+(Cxy*Czy-Cxz*Cyy)*nz)/det;
+        const iy=((Cxz*Czy-Cxy*Czz)*nx+(Cxx*Czz-Cxz*Cxz)*ny+(Cxy*Cxz-Cxx*Czy)*nz)/det;
+        const iz=((Cxy*Czy-Cxz*Cyy)*nx+(Cxy*Cxz-Cxx*Czy)*ny+(Cxx*Cyy-Cxy*Cxy)*nz)/det;
+        const il=Math.hypot(ix,iy,iz); if(il<1e-9){ nx=0; break; }
+        nx=ix/il; ny=iy/il; nz=iz/il;
+      }
+      if(nx||nz){ if(nx*-az+nz*ax<0){ nx=-nx; ny=-ny; nz=-nz; } // orient the normal along +across
+        const rho=Math.asin(Math.max(-1,Math.min(1,ny))); // the plate's roll: how far its normal tips out of the horizontal
+        const rcorr=Math.max(-0.65,Math.min(0.65,rho*w));
+        if(Math.abs(rcorr)>0.004){ rotT(k===0?'l':'r',rcorr); if(Math.abs(rcorr)>maxCorr) maxCorr=Math.abs(rcorr); } }
+    }
+    if(maxCorr<0.03) break; // settled - skip the refinement pass (most standing frames)
+  }
+}
 function snapSkatesToIce(){
   for(const s of skaters){
     const st=s.kit&&s.kit.parts&&s.kit.parts.steel; if(!st||!s.athWrap||!st.isSkinnedMesh) continue;
     if(!st.geometry.attributes.position.count) continue;
     if(!s._blade){ s._blade=bladeIdx(st); s._contact=[new THREE.Object3D(),new THREE.Object3D()]; s._contact.forEach(o=>scene.add(o)); }
     s.g.updateMatrixWorld(true);
+    levelBlades(s);
+    s.g.updateMatrixWorld(true); if(st.skeleton) st.skeleton.update(); // G-47 REDO: ground THIS frame's levelled pose, not last frame's skeleton (the stale read left planted blades floating ~3 cm in live play)
     let low=1e9;
     s._blade.forEach((ids,k)=>{ let m=1e9,mx=0,mz=0; for(const i of ids){ st.getVertexPosition(i,_bv); if(_bv.y<m){m=_bv.y;mx=_bv.x;mz=_bv.z;} }
       if(m<1e9){ const wy=m+s.athWrap.position.y; s._contact[k].position.set(s.pos.x+mx,wy,s.pos.z+mz); low=Math.min(low,wy); } }); // G-86 measure fix: getVertexPosition already reads in the rig frame (applying matrixWorld again double-transforms - it buried blades up to 16 cm in the G-67 test); the wrap lift is the offset this snap controls
@@ -1630,6 +1835,9 @@ window.__reality={
   get contact(){ const c=controlled&&controlled._contact; if(!c) return []; return [c[0].position.y<=c[1].position.y? c[0] : c[1]]; }, // the skate carrying the weight, marked at its real lowest blade edge (the other one lifts on each stride)
   footOffset:0,
   ground:(x,z)=>0,
+  camera, // G-129: the game camera itself - the robot takes its player close-up from it
+  time:()=>(period-1)*PERIOD_LEN + (PERIOD_LEN - Math.min(Math.max(clockT,0),PERIOD_LEN)), // G-129: game seconds on the match clock (periods played + time gone this period) - the clock the robot measures movement against; gameNow itself is frozen at 0 by a comment-swallowed update in tick (see the G-129 report), so the hook reads the match clock, which ticks in true sim seconds
+  speed:()=>controlled? Math.hypot(controlled.vel.x,controlled.vel.z)/3.26 : 0, // G-129: the controlled skater's speed in metres per second (3.26 units = 1 m)
   go:(on)=>{ joyVec.x=on?1:0; joyVec.y=0; joyVec.active=!!on; },
   expect:{ height:[1.55*3.26, 2.2*3.26] } // rink is built at 3.26 units per metre; gaps are in the same units (3 cm = 0.1)
 }
@@ -1644,7 +1852,8 @@ function tick(now){
     const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
     if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
   }
-  let frameSec=Math.min(1.0,(now-lastT)/1000); // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time
+  let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time. (Notes go on their OWN line: on Oct 21 a note pasted onto this line commented out lastT=now, so every frame was 1 s of game time - the clock ran 6-7x fast and the game played itself.)
+  // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays
   const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
   Mus.setMode(state==='play'?'game':'menu');
   if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
@@ -1654,19 +1863,22 @@ function tick(now){
   for(let si=0;si<steps;si++){
   if(state==='menu'||state==='over') break;
   stateT-=dt;
-  if(state==='faceoff'&&stateT<=0){ state='play'; banner('PLAY','','800'); }
+  if(state==='faceoff'&&stateT<=0){
+    if(playerReady()){ state='play'; banner('PLAY','','800'); }
+    else if(gameNow-gateNoteAt>3){ gateNoteAt=gameNow; banner('YOUR MOVE','TOUCH THE STICK TO DROP THE PUCK',900,'#ffd34d'); }
+  }
   else if(state==='goal'&&stateT<=0){ puck.pos.set(0,0.06,0); puck.vel.set(0,0,0); puck.owner=null; faceoff(0,0,'FACEOFF'); } // G-02: goal restarts at centre
   else if(state==='whistle'&&stateT<=0){
     const p=pendingFaceoff; pendingFaceoff=null;
     if(p) faceoff(p.x,p.z,p.label); else faceoff(0,0,'FACEOFF');
   }
   else if(state==='intermission'&&stateT<=0){
-    period++; clockT=PERIOD_LEN; faceoff(0,0,period>3?'OVERTIME':'PERIOD '+period);
+    hideStatCard(); period++; clockT=PERIOD_LEN; faceoff(0,0,period>3?'OVERTIME':'PERIOD '+period); // G-257: the card clears with the break
   }
   if(state==='play'){
     clockT-=dt;
     if(clockT<=0){
-      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); state='intermission'; stateT=2.6; }
+      if(period<N_PERIODS){ banner('END OF PERIOD','',1600); commSay('period_end'); showStatCard(); state='intermission'; stateT=6; } // G-257: the break carries the stats card (rules/hockey.md) and lasts long enough to read it
       else if(period===N_PERIODS){
         if(scoreH===scoreA){ period=4; clockT=1e9; banner('OVERTIME','GOLDEN GOAL · NEXT GOAL WINS',2600,'#ffe27d'); commSay('overtime'); faceoff(0,0,'OVERTIME'); }
         else gameOver();
@@ -1687,11 +1899,13 @@ function tick(now){
   renderer.render(scene,camera);
 }
 function gameOver(){
-  state='over';
+  hideStatCard(); goalFx(false); state='over';
   const win=scoreH>scoreA?'home':(scoreA>scoreH?'away':'tie');
-  $('finalTitle').textContent=win==='tie'?'DRAW':(win==='home'?'WOLVES WIN!':'SHARKS WIN');
+  // G-282 round 1 (G-228): the end screen names the team that ACTUALLY won - the away name is the live
+  // TEAMS.away.name (the career opponent, e.g. BEARS), never a hardcoded Sharks
+  $('finalTitle').textContent=win==='tie'?'DRAW':(TEAMS[win].name+' WIN!');
   $('finalScore').textContent=scoreH+' – '+scoreA;
-  $('finalSub').textContent=win==='home'?'The Wolves take it. What a game.':win==='away'?'The Sharks steal this one. Run it back.':'Dead even after overtime.';
+  $('finalSub').textContent=win==='home'?('The '+TEAMS.home.name+' take it. What a game.'):win==='away'?('The '+TEAMS.away.name+' steal this one. Run it back.'):'Dead even after overtime.';
   $('final').style.display='flex';
   commSay('final', true); // G-44
   try{ careerAfterGame(); }catch(e){}
@@ -1699,7 +1913,8 @@ function gameOver(){
 
 /* ================= wiring ================= */
 document.getElementById('back').addEventListener('click',()=>{ location.href='sports.html'; });
-document.getElementById('playBtn').addEventListener('click',async()=>{
+document.getElementById('playBtn').addEventListener('click',async(e)=>{
+  if(!bootAutoClick) noteInput(); // any press of PLAY is the player arriving - except the career boot auto-start's own scripted click, which is exactly the self-play being fixed
   document.getElementById('menu').style.display='none'; hornResume();
   Mus.ensure(); Mus.setMode('game');
   await preloadsDone(); // G-35: arena + athletes finish loading BEFORE the faceoff, never mid-game
@@ -1707,7 +1922,7 @@ document.getElementById('playBtn').addEventListener('click',async()=>{
 });
 document.getElementById('viewBtn').addEventListener('click',()=>cycleView());
 document.getElementById('muteBtn').addEventListener('click',()=>{ Mus.ensure(); Mus.setMuted(!Mus.muted); commSyncMute(); });
-document.addEventListener('pointerdown',()=>Mus.ensure());
+document.addEventListener('pointerdown',()=>{ Mus.ensure(); noteInput(); });
 Mus.setMuted(Mus.muted || localStorage.getItem('apex_muted')==='1');
 /* ================= G-44: commentary (sounds/commentary/hockey) =================
    The 138-clip hockey commentary pack: two voices (play-by-play + color),
@@ -1725,7 +1940,8 @@ function commSay(ev,pri){ if(!COMM) return; try{ if(COMM.say(ev,{priority:!!pri}
 function commSyncMute(){ if(COMM){ try{ COMM.mute(!!Mus.muted); }catch(e){} } }
 document.getElementById('creditsBtn').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='flex'; });
 document.getElementById('creditsClose').addEventListener('click',()=>{ document.getElementById('creditsOv').style.display='none'; });
-document.getElementById('againBtn').addEventListener('click',()=>location.reload());
+let againToHub = false; // set by careerAfterGame: the career end-screen button reads CAREER HUB, so it must open the hub - a bare reload boots to the main menu
+document.getElementById('againBtn').addEventListener('click',()=>{ if (againToHub) { document.getElementById('final').style.display = 'none'; renderHub(); document.getElementById('hub').style.display = 'flex'; } else location.reload(); });
 function hornResume(){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==='suspended')AC.resume(); }catch(e){} }
 /* fit system (owner bug 2026-10-14: on iOS the canvas kept a stale size after
      rotation and the rink rendered into half the screen). CSS now owns the display
@@ -1850,7 +2066,7 @@ function careerAfterGame() {
     else line = 'Beaten in the final. So close — run it back with a new season from the hub.';
   }
   c.lastLine = line; cSave(c);
-  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →';
+  $('finalSub').textContent = line; $('againBtn').textContent = 'CAREER HUB →'; againToHub = true;
 }
 /* ---- friend codes ---- */
 function friendCode(c) {
@@ -1892,7 +2108,9 @@ function renderMenu() {
   if (m) { cb.textContent = '▶ PLAY ' + m.label + ' vs ' + m.oppDef.name; $('playBtn').style.display = 'none'; $('friendBtn').style.display = 'none'; $('cancelMatch').style.display = 'block'; $('menuSub').textContent = m.kind === 'friend' ? 'Friend match is set — their star is already in the building.' : 'Career match is set — the visitors are already in the building.'; }
   else { cb.textContent = c ? '🏆 CAREER · ' + fmtRecord(c) + ' · SEASON ' + c.season : '🏆 START A CAREER'; $('playBtn').style.display = ''; $('friendBtn').style.display = ''; $('cancelMatch').style.display = 'none'; }
 }
+function disarmReset(){ const r = $('hubReset'); if (r) { delete r.dataset.arm; r.textContent = 'reset career'; } } // G-140: closing the hub disarms ERASE - an armed button must never survive into the next visit
 function renderHub() {
+  disarmReset();
   const c = cLoad(), body = $('hubBody');
   if (!c) { body.innerHTML = 'No career yet. Start one: a 10-game season, playoffs, and a star center who is yours to build.<br>Your friend code lives on the main menu.'; $('hubPlay').style.display = 'none'; $('hubNew').textContent = 'START MY CAREER'; $('hubNew').style.display = ''; return; }
   const rk = ranked(c);
@@ -1905,9 +2123,9 @@ function renderHub() {
 $('careerBtn').addEventListener('click', () => { if (mLoad()) { $('playBtn').click(); return; } renderHub(); $('hub').style.display = 'flex'; });
 $('friendBtn').addEventListener('click', () => { $('friendErr').textContent = ''; $('friendOv').style.display = 'flex'; });
 $('cancelMatch').addEventListener('click', () => { mSave(null); location.reload(); });
-$('hubClose').addEventListener('click', () => { $('hub').style.display = 'none'; });
+$('hubClose').addEventListener('click', () => { disarmReset(); $('hub').style.display = 'none'; });
 $('friendClose').addEventListener('click', () => { $('friendOv').style.display = 'none'; });
-$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label }); location.reload(); });
+$('hubPlay').addEventListener('click', () => { const c = cLoad(); const p = c && careerPending(c); if (!p) return; mSave({ kind: 'career', opp: p.opp, oppDef: defOf(p.opp), label: p.label, base: { g: c.star.g, a: c.star.a, cg: c.star.cg, ca: c.star.ca, season: c.season, week: c.week, name: c.star.name } }); location.reload(); });
 $('hubNew').addEventListener('click', () => {
   let c = cLoad();
   if (!c) { c = newCareer(); }
@@ -1934,9 +2152,36 @@ $('friendGo').addEventListener('click', () => {
   // not strand the player on the menu to press CAREER a second time. Only a
   // career fixture auto-starts: a friend fixture still waits on the menu,
   // where its PLAY label and cancel live.
+  // A career fixture that was staged but never booked (the player quit
+  // mid-match) must not keep the star goals banked along the way, or the
+  // fixture can be replayed to farm them: roll the star tallies back to the
+  // snapshot staged with the fixture. Booked matches clear their record in
+  // careerAfterGame, so this only ever touches un-booked ones, and at a
+  // fresh start the snapshot equals the save (a no-op).
+  const pmB = mLoad();
+  if (pmB && pmB.kind === 'career' && pmB.base) { const cB = cLoad(); if (cB && cB.star && cB.season === pmB.base.season && cB.week === pmB.base.week && cB.star.name === pmB.base.name) { cB.star.g = pmB.base.g; cB.star.a = pmB.base.a; cB.star.cg = pmB.base.cg; cB.star.ca = pmB.base.ca; cSave(cB); } }
   const pm2 = mLoad();
-  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) pb.click(); }
+  if (pm2 && pm2.kind === 'career') { const pb = $('playBtn'); if (pb) { bootAutoClick = true; pb.click(); bootAutoClick = false; } }
 })();
+
+// G-178: owner check link - apexhockey.html?test=match opens straight into a
+// match (skips the menu) so a change can be eyeballed in 30 seconds.
+try { const tp = new URLSearchParams(location.search).get('test'); if (tp === 'boards') { // G-216: ?test=boards = a match with the carrier staged at the end boards, puck on his stick - the carried-puck containment check
+    const pb = $('playBtn'); if (pb) pb.click();
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (hk.game.state === 'play') { const c = hk.skaters.find((s) => s.role === 'C' && s.team === 'home'); if (c) { c.pos.set(99.2, 0, -6); c.vel.set(0, 0, 0); c.facing = 0; c.thinkT = 9; if (c.target) c.target.set(99.2, 0, -6); hk.puck.owner = c; hk.puck.shot = null; } } }, 50); setTimeout(() => clearInterval(iv), 25000);
+  }
+  else if (tp === 'powerplay') { // G-228: ?test=powerplay = a match with a Wolf in the box (power-play tag live) and the deep dump re-staged every few seconds - icing must NOT be called against the shorthanded Wolves; play just goes on
+    const pb = $('playBtn'); if (pb) pb.click();
+    let lastDump = 0;
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; const lw = hk.skaters.find((s) => s.team === 'home' && !s.goalie && s.role === 'LW'); if (lw) { lw.inBox = true; lw.penT = 30; } if (hk.game.state === 'play' && performance.now() - lastDump > 7000) { lastDump = performance.now(); const pk = hk.puck; hk.skaters.forEach((x, i) => { if (!x.goalie && x.team === 'home' && x !== lw) x.pos.set(-80 + (i % 3) * 4, 0.1, -15 + (i % 5) * 7); }); hk.skaters.forEach((x) => { if (!x.goalie && x.team !== 'home') x.pos.set(0, 0.1, -14 + (x.num % 5) * 7); }); pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.lastTouchX = -30; pk.pos.set(-30, 0.06, 20); pk.vel.set(70, 0, 0); } }, 250); setTimeout(() => clearInterval(iv), 90000);
+  }
+  else if (tp === 'intermission') { // G-257: ?test=intermission = a match seconds from the period break - the clock runs down, the break starts and the stats card (shots, saves, faceoffs won) stays up for the whole intermission
+    const pb = $('playBtn'); if (pb) pb.click();
+    let cut = false;
+    const iv = setInterval(() => { const hk = window.__hk; if (!hk || !hk.game) return; if (!cut && hk.game.state === 'play') { cut = true; hk.game.clockT = 1.5; } if (hk.game.state === 'intermission') clearInterval(iv); }, 250); setTimeout(() => clearInterval(iv), 60000);
+  }
+  else if (tp === 'menu') { ['hub', 'friendOv', 'creditsOv', 'final'].forEach((id) => { const el = $(id); if (el) el.style.display = 'none'; }); const mn = $('menu'); if (mn) mn.style.display = 'flex'; } // G-210: ?test=menu = the plain main menu, for the menu-layout check
+  else if (tp === 'match' || tp === 'face') { const pm3 = mLoad(); if (!(pm3 && pm3.kind === 'career')) { const pb = $('playBtn'); if (pb) pb.click(); } if (tp === 'face') { camMode = 2; const vb = $('viewBtn'); if (vb) vb.textContent = 'VIEW · ' + CAMNAMES[camMode]; } } } catch (e) {} // G-186: ?test=face = the match in CLOSE view, for the helmet close-up
 
 requestAnimationFrame(tick);
 

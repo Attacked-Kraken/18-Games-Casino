@@ -164,9 +164,70 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
+| G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
+| G-258 r1 | window 7 | checklists/apexbaseball.md, jobs/G-258-w7.md | test/g-258-apexbaseball-r1 |
+| G-258 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/QUEUE.md, jobs/G-258-w7.md | test/g-258-apexbaseball |
+| G-280 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-280.md | build/g-280-apexflight |
+| G-275 r1 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-275-w3.md | build/g-275-apexflight-r1b |
+| G-232 r1 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight-r1b |
+| G-275 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-275.md | build/g-275-apexflight |
+| G-263 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-263-w3.md | build/g-263-apexflight |
+| G-254 | window 7 | checklists/apexbaseball.md, jobs/G-254.md, CLAIMS.md | test/g-254-apexbaseball |
 | G-job | Window | Files | Branch |
 |---|---|---|---|
-| G-119 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, CLAIMS.md | build/g-119-apexf1 |
+| G-281 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-277 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-277.md, CLAIMS.md | build/g-277-apexf1 |
+| G-278 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-278.md, CLAIMS.md | build/g-278-apexbaseball |
+| G-281 | window 10 | jobs/G-281.md, CLAIMS.md | test/g-281-apextrackfield |
+| G-276 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-276.md, CLAIMS.md | build/g-276-apexf1 |
+| G-271 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-271.md, CLAIMS.md | test/g-271-apextrackfield |
+| G-265 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-265-w5.md, CLAIMS.md | build/g-265-apexf1 |
+| T-10-0954 | window 10 | jobs/T-10-0954.md, CLAIMS.md | test/t-10-0954 |
+| T-10-1043 | window 10 | jobs/T-10-1043.md, CLAIMS.md | test/t-10-1043 |
+| G-269 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-269.md, CLAIMS.md | build/g-269-apexbaseball |
+| T-10-0920 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0920.md, CLAIMS.md | test/t-10-0920 |
+| T-10-0926 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/T-10-0926.md, CLAIMS.md | test/t-10-0926 |
+| T-10-0929 | window 10 | jobs/T-10-0929.md, CLAIMS.md | test/t-10-0929 |
+| T-10-0934 | window 10 | jobs/T-10-0934.md, CLAIMS.md | test/t-10-0934 |
+| G-264 | window 10 | checklists/apextrackfield.md, jobs/G-264.md, CLAIMS.md | test/g-264-apextrackfield |
+| G-253 | window 5 | tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-253-w5.md, CLAIMS.md | build/g-253-apexf1 |
+| G-262 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-262.md, CLAIMS.md | build/g-262-apexbaseball |
+| G-260 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-260.md, CLAIMS.md | test/g-260-apextrackfield |
+| G-256 | window 10 | checklists/apextrackfield.md, jobs/G-256.md, CLAIMS.md | test/g-256-apextrackfield |
+| G-257 | window 10 | jobs/G-257-w10.md, CLAIMS.md | test/g-257-apextrackfield |
+| G-259 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-259.md, CLAIMS.md | test/g-259-apextrackfield |
+| G-252 | window 10 | checklists/apextrackfield.md, jobs/G-252.md, CLAIMS.md | test/g-252-apextrackfield |
+| G-247 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-247.md | build/g-247-apexflight |
+| G-248 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-248.md, CLAIMS.md | build/g-248-apexbaseball |
+| G-239 | window 10 | jobs/G-239.md, CLAIMS.md | test/g-239-apextrackfield |
+| G-246 | window 10 | jobs/G-246.md, CLAIMS.md | test/g-246-apextrackfield |
+| G-243 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-243.md | build/g-243-apexflight |
+| G-245 | window 10 | needs/window-10.md, CLAIMS.md | needs/window-10 |
+| G-245 | window 10 | checklists/apextrackfield.md, jobs/G-245.md, CLAIMS.md | test/g-245-apextrackfield |
+| G-238 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-238.md | build/g-238-apexflight |
+| G-238 | window 7 | jobs/G-238.md, CLAIMS.md | test/g-238-apexbaseball |
+| G-237 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-237.md, CLAIMS.md | build/g-237-apexbaseball |
+| G-232 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-232.md | build/g-232-apexflight |
+| G-141 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-141.md | test/g-141-apextrackfield |
+| G-145 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-145.md | test/g-145-apextrackfield |
+| G-229 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-229.md, CLAIMS.md | test/g-229-apextrackfield |
+| G-226 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-226.md, CLAIMS.md | test/g-226-apextrackfield |
+| G-222 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-222.md, CLAIMS.md | build/g-222-apexbaseball |
+| G-227 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-227.md, CLAIMS.md | test/g-227-apextrackfield |
+| G-187 | window 10 | jobs/QUEUE.md (window 4 tester-line ticks only), jobs/G-187.md, CLAIMS.md | test/g-187-apextrackfield |
+| G-183 | window 10 | tools/game-check/fixes/apextrackfield.mjs, jobs/QUEUE.md, jobs/G-183.md, CLAIMS.md | test/g-183-apextrackfield |
+| G-232 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-232.md, CLAIMS.md | test/g-232-apexbaseball |
+| G-184 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-184.md, CLAIMS.md | test/g-184-apexbaseball |
+| G-229 | window 7 | tools/game-check/fixes/apexbaseball.mjs, checklists/apexbaseball.md, jobs/G-229.md, CLAIMS.md | test/g-229-apexbaseball |
+| G-201 | window 7 | jobs/G-201.md, CLAIMS.md | test/g-201-apexbaseball |
+| G-196 | window 7 | jobs/G-196.md, CLAIMS.md | test/g-196-apexbaseball |
+| G-177 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-177.md, CLAIMS.md | test/g-177-apexbaseball |
+| G-167 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-167.md, CLAIMS.md | build/g-167-apexbaseball |
+| G-151 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-151.md, CLAIMS.md | build/g-151-apexbaseball |
+| G-147 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-146.md, CLAIMS.md | build/g-146-apexbaseball |
+| G-144 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, looks/apexbaseball.md, jobs/G-144.md, CLAIMS.md | build/g-144-apexbaseball |
+| G-134 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/G-134.md, CLAIMS.md | build/g-134-apexbaseball |
 | G-116 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-116.md, CLAIMS.md | test/g-111-apexbaseball |
 | G-87 | window 1 | tools/game-check/fixes/apexbaseball.mjs, jobs/QUEUE.md, jobs/G-87.md, CLAIMS.md | test/g-87 |
 | G-85 | window main | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs | g-85-perf-sticktests |
@@ -184,6 +245,22 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-56 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-56.md | test/g-56-trackfield-tester |
 | G-105 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-105.md | test/g-105-apextrackfield |
 | G-122 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-122.md, CLAIMS.md, LESSONS.md | build/g-122-apextrackfield - DONE, PR #1010 merged 15af2212 |
+| G-122 ROUND 1 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-122-apextrackfield - DONE, PR #1058 merged 70a92359 |
+| G-139 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-139-apextrackfield - DONE round 1, PR #1085 merged 27f8f56b (round 0: PR #1078 fa2600ba) |
+| G-152 | window 4 | jobs/G-152.md | build/g-152-apextrackfield - NO CHANGE, duplicate of G-122 round 1 (PR #1058) |
+| G-154 | window 4 | jobs/G-154.md | build/g-154-apextrackfield - NO CHANGE, duplicate of G-83 (PR #879) |
+| G-156 | window 4 | jobs/G-156.md | build/g-156-apextrackfield - NO CHANGE, duplicate of G-83 (PR #879) |
+| G-160 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-160-apextrackfield - DONE, PR #1109 merged 94c67f94 |
+| G-165 | window 4 | jobs/G-165.md | build/g-165-apextrackfield - NO CHANGE, duplicate of G-160 (PR #1109) |
+| G-168 | window 4 | jobs/G-168.md | build/g-168-apextrackfield - NO CHANGE, duplicate of G-160 (PR #1109) |
+| G-169 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-169.md | build/g-169-apextrackfield - DONE PR #1127 (8adefac5): guard never-g-169-p1 added for the one-board hurdle point; game fix shipped as G-160 |
+| G-171 | window 4 | - | renamed G-172, G-173, then G-174 by the Mac (2026-10-22) - final report jobs/G-174.md |
+| G-173 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-173.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test=<event id> test link + hurdles countdown framing; play test play-test-link-starts-the-event |
+| G-174 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-174.md | build/g-171-apextrackfield - DONE PR #1137 (4155bef2): ?test= test link; rounds 1-2 DONE PR #1181 (7aed11ab): hurdles face the runner (dot -1.00) + NEVER line + never-g-174-p1 |
+| G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot |
+| G-244 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-244-apextrackfield - DONE 2026-10-23 (Muse main (casino)): field on one start line, place counts existing runners - PR #1371 merged cf82cd09 |
+| G-249 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-249-apextrackfield - DONE 2026-10-23 (Muse main (casino)): owner's high-jump play test start hardened, passes on the robot - PR #1389 merged 4be81092; ROUND 1 DONE 2026-10-23 (Muse main (casino)): jump timing controls eased to the TARGET - PR #1405 merged 9a8223a4 ROUND 2 DONE 2026-10-24 (Muse main (casino)): relay zone 30 m + sprint-animation sampling hardened - PR #1489 merged 82aa0a3f |
+| G-193 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, jobs/G-193.md | build/g-193-apextrackfield - DONE PR #1185 (4da0c8a5): 10000m results follow the crossing order; tester-10000m-results-match-crossing passes | Round 1 DONE PR #1245 (0469d092): relay PASS works from the zone start (receiver checks up 0.55->0.30, reach 6->8m, fumble cap 3.2->6.0) + never-g-193-p1 + NEVER line + owner screenshot | OWNER FIX 2026-10-23 CLAIMED (window 4): free play results return to the event menu + grid BACK at the top - build/g-193-freeplay-flow | OWNER FIX DONE 2026-10-23 (window 4): free-play flow - PR #1336 merged a6b32e11 |
 
 | G-89 | window 3 | apexflight.html, models/apex-jet/apexJet.js, models/apex-jet/flightModel.js, jobs/G-89.md | g-89-jet-game |
 | G-90 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-90.md | build/g-90-jet-controls |
@@ -191,3 +268,32 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-116 | window 3 | apexflight.html, jobs/G-116.md | build/g-116-apexflight |
 | G-117 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-117.md | build/g-117-apexflight |
 | G-121 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-121.md | build/g-121-apexflight |
+| G-125 | window main | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-125.md | test/g-125-apextrackfield |
+| G-121 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-121.md | build/g-121-fix1-apexflight |
+| G-132 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-132.md | build/g-132-apexflight |
+| G-132 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-132.md | build/g-132-fix1-apexflight |
+| G-176 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-176.md | build/g-163-wrap-fix |
+| G-176 fix 1 | window 6 | jobs/G-176.md, looks/apexracer.md, tools/game-check/fixes/apexracer.mjs | report/g-176-fix-window6 |
+| G-179 | window 6 | looks/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-179.md | build/g-179-apexracer |
+| G-206 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-206.md | build/g-206-apexracer |
+| G-225 | window 10 | jobs/QUEUE.md (window 4 tester-line tick only), jobs/G-225.md, CLAIMS.md | test/g-225-apextrackfield |
+| G-207 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-apexracer |
+| G-207 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-207.md | build/g-207-fix1-apexracer |
+| G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
+| G-270 | window 6 | checklists/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-270-w6.md, CLAIMS.md | build/g-270-apexracer |
+| G-270 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/g-270-fix1-apexracer |
+
+<!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
+<!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
+
+<!-- merge robot heartbeat test c, Oct 23 2026, safe to ignore -->
+<!-- merge robot heartbeat test d, Oct 23 2026, safe to ignore -->
+| G-249 | window 10 | tools/game-check/fixes/apextrackfield.mjs (tester- tests only), jobs/QUEUE.md, jobs/G-249.md, CLAIMS.md | test/g-249-apextrackfield |
+| G-253 | window 10 | jobs/G-253.md, CLAIMS.md | test/g-253-apextrackfield |
+| G-255 | window 10 | jobs/G-255.md, CLAIMS.md | test/g-255-apextrackfield |
+| G-263 | window 10 | jobs/G-263.md, CLAIMS.md | test/g-263-apextrackfield |
+| G-262 | window 10 | jobs/G-262.md, CLAIMS.md | test/g-262-apextrackfield |
+| G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
+| T-10-1327 | window 10 | jobs/T-10-1327.md, CLAIMS.md | test/t-10-1327 |
+| G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d | ROUND 1 DONE PR #1595 merged b3e07ddf
+| G-289 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-289-apextrackfield - DONE PR #1610 merged 0be0e068 |

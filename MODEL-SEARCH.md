@@ -21,3 +21,13 @@ Format: `- SEARCH · <words to search> · for <game / what it is>`
 - DONE (robot 2026-10-19: 12 found - tools/model-search.html) · airplane · for Flight
 - DONE (robot 2026-10-19: 1 found - tools/model-search.html) · running track stadium · for Track & Field venue
 - DONE (robot 2026-10-19: 0 found - tools/model-search.html) · crowd stadium seats · for crowds in every venue
+- DONE (robot 2026-10-23: 0 found - too many words, searched again below) · rigged baseball batter player character · for apexbaseball.html (the batter - must be rigged/animated, CC-BY or CC0; owner picks)
+- SEARCH · baseball player · for apexbaseball.html (the batter; owner picks)
+- SEARCH · baseball batter · for apexbaseball.html (the batter; owner picks)
+- SEARCH · rigged character animated sports · for apexbaseball.html (a person we can pose as the batter; owner picks)
+- SEARCH · fictional supercar concept · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · futuristic hypercar · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · concept car · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · muscle car · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · roadster · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · luxury grand tourer · for Exotic Racer Club new garage cars (owner picks)

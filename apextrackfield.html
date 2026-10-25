@@ -37,7 +37,10 @@ keep the classic one-column menu; no other screen is touched.
 JOB G-122 (owner): an upright phone presents the SAME sideways box rotated, but the media
 query keyed on the viewport's own orientation - portrait kept the tall one-column menu
 inside the 390px-tall box and 8 of the 9 buttons landed off-screen. Portrait now gets the
-same compact menu; nothing else changes. */
+same compact menu; nothing else changes.
+JOB G-139 (owner): DONE.md's 44x44 touch target applies in the compact menu too - every
+menu button stands at least 44px tall (they were 36/30); the two-column compact layout
+absorbs the height, the menu still fits the sideways box with no scrolling. */
 @media (orientation:portrait), (orientation:landscape) and (max-height:460px){
 #menu{padding-top:calc(env(safe-area-inset-top,0px) + 50px);padding-bottom:6px}
 #menu .panel{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;align-content:start;padding:10px 12px}
@@ -47,8 +50,8 @@ same compact menu; nothing else changes. */
 #menu label.f{font-size:10px;margin:3px 0 1px}
 #menu input.txt{padding:5px;font-size:14px}
 #menu input[type=color].swatch{height:26px}
-#menu .btn{margin:3px 0;padding:6px 10px;min-height:36px;font-size:14px}
-#menu .btn.small{padding:4px 8px;min-height:30px;font-size:12px}
+#menu .btn{margin:3px 0;padding:6px 10px;min-height:44px;font-size:14px}
+#menu .btn.small{padding:4px 8px;min-height:44px;font-size:12px}
 #menu .hint{font-size:11px;margin:2px 0}
 #menuRivalLine{grid-column:1/-1}
 }
@@ -75,6 +78,8 @@ table.board th{color:#ffd34d;text-align:left;padding:6px 4px;border-bottom:2px s
 table.board td{padding:6px 4px;border-bottom:1px solid #223a56;color:#e8eef5}
 table.board tr.me td{color:#ffd34d;font-weight:800}
 #gridEvents{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:10px 0}
+#grid .panel{display:flex;flex-direction:column}
+#bGridBack{order:-1;align-self:flex-start}
 #gridEvents .btn{font-size:14px;padding:12px 6px;min-height:52px;margin:0}
 .codebox{background:#0e2036;border:2px dashed #ffd34d;border-radius:10px;padding:14px;font-size:16px;
 font-weight:800;letter-spacing:1px;color:#ffd34d;text-align:center;margin:10px 0;word-break:break-all}
@@ -632,7 +637,7 @@ hint:'Five hurdles indoors. Tap HURDLE just before each one - hit it and it goes
 hint:'Ten hurdles, tighter spacing. Keep the rhythm: stride, stride, HURDLE.'},
 {id:'110h', name:'110m Hurdles', eng:'hurdles', timed:true, dist:110, ref:12.80, hCount:10, hStart:13.72, hGap:9.14,
 hint:'Sprint, then tap ACTION to clear each of the 10 hurdles. Clip one and you lose speed.'},
-{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:8, hStart:45, hGap:35,
+{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:7, hStart:45, hGap:35,
 hint:'Eight hurdles around the bend. Jump late and you knock one flat.'},
 {id:'400h', name:'400m Hurdles', eng:'hurdles', timed:true, dist:400, ref:46.29, hCount:10, hStart:45, hGap:35,
 hint:'10 hurdles over a full lap. Rhythm is everything — jump late and you will clip.'},
@@ -787,6 +792,7 @@ a.speed += (target*(1+0.03*Math.sin(a.el*0.7))-a.speed)*Math.min(1,3*dt);
 a.pos+=a.speed*dt; a.phase+=a.speed*dt*1.9;
 }
 let ENG=null;
+let TESTLINK=null; // JOB G-171: the event a ?test= link opened (null in normal play)
 /* JOB J42 (owner) + STORE-READY "Developer skip": the Skip level button exists ONLY when
    the address carries dev=1 (the Game Development page opens games with ?dev=1). */
 const DEV_SKIP=/[?&]dev=1(?:&|$)/.test(location.search||'');
@@ -796,7 +802,8 @@ const maxSpd = dist<=100?11.0 : dist<=200?10.6 : 10.0;
 const drain  = dist<=200?24 : 26;
 const E={
 ev, done:false, dq:false, S, dist,
-phase:'marks', phaseT:0, setDur:rnd(0.9,1.8),
+phase:'marks', phaseT:0, setDur:rnd(0.9,1.8), started:false,
+wind:+(Math.random()*6-3).toFixed(1), // G-289 (CHECKLIST T05): this race's wind, m/s, -3.0..+3.0; over +2.0 the time is wind-aided
 r:newRunner(), time:0, penalty:0, falseStarts:0, warnT:0, place:4,
 ai: rivals.map(rv=>makeLiveRival(rv,ev)),
 actionLabel(){ return '—'; },
@@ -826,8 +833,11 @@ if(this.warnT>0) this.warnT-=dt;
 if(this.phase==='marks'){ if(this.phaseT>1.1){ this.phase='set'; this.phaseT=0; this.setDur=rnd(0.9,1.8);} }
 else if(this.phase==='set'){ if(this.phaseT>this.setDur){ this.phase='run'; AudioSys.pistol(); } }
 else if(this.phase==='run'){
-this.time+=dt;
 updateRunner(this.r, dt, maxSpd, drain);
+if(!this.started){ // JOB G-244 (art director): the whole field waits on ONE start line until the player starts - the rivals do not race off without him, and until then the clock is still and the place counts only the runners on the track (all level at the line)
+if(this.r.pos>0||this.r.speed>0) this.started=true; else { this.place=1; return; }
+}
+this.time+=dt;
 for(const a of this.ai){ if(a.pos<dist) updateLiveRival(a,dt,dist,false); }
 this.place = 1 + this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
@@ -845,7 +855,9 @@ pos: this.dq?'DQ':ordinal(this.place), speed:this.r.speed/maxSpd, stam:this.r.st
 getResult(){
 if(this.dq) return {value:null, display:'DQ — false start', points:0};
 const t=Math.round(this.time*100)/100;
-return {value:t, display:fmtTime(t)+'  ('+ordinal(this.place)+')', points:pointsFor(ev,t)};
+const windAided=this.wind!=null&&this.wind>2.0; // G-289 (CHECKLIST T05): a tailwind over +2.0 m/s never counts as a record
+const wTxt=this.wind==null?'':' — Wind '+(this.wind>=0?'+':'')+this.wind.toFixed(1)+' m/s';
+return {value:t, display:fmtTime(t)+(windAided?'w':'')+'  ('+ordinal(this.place)+')'+wTxt, wind:this.wind, windAided:windAided, points:pointsFor(ev,t)};
 }
 };
 return E;
@@ -878,6 +890,8 @@ stride(side){
 if(this.done||this.phase!=='run') return;
 let imp=0.70;
 if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.25;
+// JOB G-267 ROUND 1: stride rate cap - mashing faster than any human cadence must not buy speed (tester-10000m-mash-no-speed-exploit): past the 12th stride in a game-second window the impulse is pre-scaled to 0.25, on top of the shared governor. Any per-tick gain above the drag at the hard cap (~0.048) pins speed at the cap forever (clamp + drag), so the governed gain must fall below it; 0.25 gives 0.043 at zero stamina. Honest cadence (<=12/s) is untouched.
+if(this.r.tapCount>=12) imp*=0.25;
 applyStride(this.r, side, imp);
 },
 action(){
@@ -915,7 +929,10 @@ this.lap=Math.min(ev.laps||Math.ceil(dist/400), Math.floor(this.r.pos/400)+1);
 this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 if(this.r.pos>=dist){
 this.done=true; this.finishT=0; AudioSys.cheer(1.6);
-this.place=1+this.ai.filter(a=>a.tTarget<this.time).length;
+// G-193 (tester G-183): finishing order = who crossed first (REALITY) - keep the
+// crossing-aware count used all race; a rival still short of the line is never
+// credited ahead on his private target time for the banked early laps.
+this.place=1+this.ai.filter(a=> a.pos>=dist ? a.tTarget<this.time : a.pos>this.r.pos).length;
 }
 },
 hud(){
@@ -1043,7 +1060,7 @@ if(!rcv.auto && T.carrier.pos>=LEG-36) rcv.auto=true;
 if(!rcv.auto) return;
 const inc=T.carrier.speed, gap=rcv.pos-T.carrier.pos;
 let tgt=inc*0.92;
-if(gap>6) tgt=Math.min(tgt, inc*0.55);
+if(gap>6) tgt=Math.min(tgt, inc*0.30); // G-193 r1: check up harder while far ahead - at 0.55 the gap was still 7.6-8.7m at the zone and PASS refused ('RECEIVER TOO FAR') for most of the zone
 else if(gap<2 && inc>1) tgt=Math.max(tgt, inc);
 rcv.speed+=clamp(tgt-rcv.speed, -7*dt, 5.5*dt);
 if(rcv.speed<0) rcv.speed=0;
@@ -1059,7 +1076,7 @@ sp.pos=LEG-18; sp.speed=0; sp.auto=false; sp.stamina=100; T.receiver=sp; T.spent
 }
 function passBaton(T, clean){
 const rcv=T.receiver, old=T.carrier;
-if(!clean) rcv.speed=Math.min(rcv.speed, 3.2);
+if(!clean) rcv.speed=Math.min(rcv.speed, 6.0); // G-193 r1: a fumble costs time, it does not strand the next carrier (was 3.2 - the crawl in the owner's screenshot)
 T.spent=old; T.spentLeg=T.leg; T.passFrom=old; T.passT=0.35; T.exchanges++;
 T.carrier=rcv; rcv.pos-=LEG; rcv.auto=false; T.receiver=null; T.leg++; T.legEl=1;
 return old;
@@ -1080,7 +1097,7 @@ if(this.done||this.phase!=='run'||this.leg>=3) return;
 const T=this.teams[0], rcv=T.receiver;
 if(!rcv||this.r.pos<LEG-20) return;
 const gap=rcv.pos-this.r.pos;
-if(gap>6){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; }
+if(gap>8){ this.msg='RECEIVER TOO FAR'; this.msgT=0.9; return; } // G-193 r1: reach 8m (was 6) - the zone-entry gap the run-up leaves
 const q=clamp(1-Math.abs(this.r.pos-(LEG-10))/10, 0, 1);
 this.passed=true; this.passQ=q;
 rcv.speed=Math.min(10.6, Math.max(rcv.speed, 4+q*5));
@@ -1202,10 +1219,11 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='angle'){
-this.ang+=this.angDir*95*dt;
+this.ang+=this.angDir*55*dt;
 if(this.ang>65){this.ang=65;this.angDir=-1;} if(this.ang<15){this.ang=15;this.angDir=1;}
 updateRunner(this.r,dt,10.0,20);
-if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
+// G-249 r1 (owner): the angle needle was too fast to set (95 deg/s), and crossing the line while setting it was an instant FOUL - the takeoff already counted, so there is no foul: reach the line still setting it and he jumps with the angle showing
+if(this.r.pos>=BOARD1){ this.angSet=this.ang; this.startFlight(); }
 }else if(this.phase==='flight'){
 this.ft+=dt; this.fx+=this.fvx*dt;
 if(this.ft>=this.fT){ this.endAttempt(); }
@@ -1251,7 +1269,7 @@ else { this.lost=Math.max(0,BOARD0-1.5-this.r.pos)*0.6; /* up to 1.5m early coun
 }else if(this.phase==='phase'){
 if(this.tapped) return;
 this.tapped=true;
-const q=clamp(1-Math.abs(this.marker-0.5)/0.5,0,1);
+const q=clamp(1-Math.abs(this.marker-0.5)/0.8,0,1); // G-249 r1: quality falls off over a wider window, matching the wider green
 this.qs.push(q);
 const CO=[0.52,0.44,0.72];
 this.subTo=this.subFrom+(this.vT||this.r.speed)*CO[this.sub]*(0.45+0.55*q);
@@ -1278,7 +1296,7 @@ if(this.phase==='runup'){
 updateRunner(this.r,dt,10.0,20);
 if(this.r.pos>BOARD1+0.4){ this.foul=true; this.res='FOUL — over the board'; this.endAttempt(); AudioSys.whistle(); }
 }else if(this.phase==='phase'){
-this.marker+=this.mdir*1.6*dt;
+this.marker+=this.mdir*1.0*dt; // G-249 r1: the hop/step/jump marker was the fastest tap in the game (1.6/s)
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 this.subT+=dt;
 const u=Math.min(1,this.subT/this.subDur);
@@ -1337,7 +1355,7 @@ if(this.done) return;
 if(this.phase==='approach'){
 if(this.r.pos>=this.zoneLo&&this.r.pos<=this.zoneHi){
 this.phase='bar'; this.marker=0; this.mdir=1; this.swingT=0; this.barT=0; this.flightH=this.curH(); this.plantD=this.r.pos; this.barFell=false; this.vOver=false; this.vMat=false;
-this.gw=(0.05+0.06*clamp(this.r.speed/11,0,1))*SIM_MODS.tech;
+this.gw=(0.20+0.04*clamp(this.r.speed/11,0,1))*SIM_MODS.tech; // G-249 r1 (owner): the green window was 0.10-0.22 of the bar (~0.1-0.2s to tap) - now at least 0.40 wide
 AudioSys.click();
 }else{ this.miss(this.r.pos>this.zoneHi?'No takeoff — ran through':'Too early'); }
 }else if(this.phase==='bar'){
@@ -1367,7 +1385,7 @@ if(this.phase==='approach'){
 updateRunner(this.r,dt,10.5,15);
 if(this.r.pos>this.runOut) this.miss('No takeoff — ran through');
 }else if(this.phase==='bar'){
-this.marker+=this.mdir*1.15*dt;
+this.marker+=this.mdir*0.75*dt; // G-249 r1: slower sweep - the green lasts at least half a second
 if(this.marker>1){this.marker=1;this.mdir=-1;} if(this.marker<0){this.marker=0;this.mdir=1;}
 if(this.pv){ this.swingT+=dt; if(this.swingT>2.6) this.miss('No clear — came back down'); }
 if(!this.pv){ this.barT+=dt; if(this.barT>1.7) this.miss('No clear — came down short', true); }
@@ -2053,14 +2071,11 @@ c.fillRect(18,30,10,98); c.fillRect(100,30,10,98);
 c.fillStyle='#f2f2f2'; c.fillRect(10,18,108,26);
 c.fillStyle='#c0392b'; c.fillRect(10,18,16,26); c.fillRect(102,18,16,26);
 });
+// G-160 (owner): ONE board per hurdle, facing the runner - the old build crossed a
+// second full-size board at 90 degrees through the middle of every hurdle, which
+// showed as cross/plus shapes and extra hurdles between the real ones.
 const p1=new THREE.PlaneGeometry(1.18,1.07).toNonIndexed();
-const p2=new THREE.PlaneGeometry(1.18,1.07); p2.rotateY(Math.PI/2);
-const p2n=p2.toNonIndexed();
-const vC=p1.attributes.position.count+p2n.attributes.position.count;
-const pos=new Float32Array(vC*3), nor=new Float32Array(vC*3), uv=new Float32Array(vC*2);
-pos.set(p1.attributes.position.array,0); nor.set(p1.attributes.normal.array,0); uv.set(p1.attributes.uv.array,0);
-const o=p1.attributes.position.count;
-pos.set(p2n.attributes.position.array,o*3); nor.set(p2n.attributes.normal.array,o*3); uv.set(p2n.attributes.uv.array,o*2);
+const pos=new Float32Array(p1.attributes.position.array), nor=new Float32Array(p1.attributes.normal.array), uv=new Float32Array(p1.attributes.uv.array);
 const g=new THREE.BufferGeometry();
 g.setAttribute('position',new THREE.BufferAttribute(pos,3));
 g.setAttribute('normal',new THREE.BufferAttribute(nor,3));
@@ -2068,7 +2083,22 @@ g.setAttribute('uv',new THREE.BufferAttribute(uv,2));
 const m=new THREE.MeshBasicMaterial({map:tex,transparent:true,alphaTest:0.4,side:THREE.DoubleSide});
 const im=new THREE.InstancedMesh(g,m,80);
 im.count=0; im.frustumCulled=false;
-this.scene.add(im); this.hurdlesMesh=im;
+this.scene.add(im); this.hurdlesMesh=im; this._hurdleBasePos=pos.slice(); this._hurdleH=1.07;
+},
+hurdleHeight(h){
+// G-122 round 1 (owner): a hurdles race stands at its REAL height (REALITY.md) -
+// the same single-board hurdle, its geometry re-scaled in Y per event.
+if(!this.hurdlesMesh||!this._hurdleBasePos) return;
+if(Math.abs(h-(this._hurdleH||1.07))<0.001) return;
+this._hurdleH=h;
+const k=h/1.07, base=this._hurdleBasePos, pos=new Float32Array(base);
+for(let i=1;i<pos.length;i+=3) pos[i]=base[i]*k;
+const cur=this.hurdlesMesh.geometry;
+const g2=new THREE.BufferGeometry();
+g2.setAttribute('position',new THREE.BufferAttribute(pos,3));
+g2.setAttribute('normal',new THREE.BufferAttribute(cur.attributes.normal.array.slice(),3));
+g2.setAttribute('uv',new THREE.BufferAttribute(cur.attributes.uv.array.slice(),2));
+this.hurdlesMesh.geometry=g2;
 },
 buildBarriers(){
 // JOB G-83 (owner): a steeplechase barrier is ONE beam across the whole track
@@ -2103,18 +2133,19 @@ this.barriersMesh.count=n; this.barriersMesh.instanceMatrix.needsUpdate=true;
 },
 setHurdles(list){
 this._hurdleList=list;
+const HC=(this._hurdleH||1.07)/2;
 const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),E=new THREE.Euler(),
 S=new THREE.Vector3(1,1,1),P=new THREE.Vector3();
 const n=Math.min(80,list.length);
-const QT=new THREE.Quaternion(), AX=new THREE.Vector3(0,0,1), FW=new THREE.Vector3();
+const QT=new THREE.Quaternion(), AX=new THREE.Vector3(1,0,0), FW=new THREE.Vector3();
 for(let k=0;k<n;k++){
 const h=list[k];
 E.set(0,h.heading||0,0); Q.setFromEuler(E);
 // owner 2026-10-17: a hurdle you hit goes DOWN - it tips forward (away from the runner) and lies on the track
 const f=clamp(h.fall||0,0,1), ang=f*1.42;
 QT.setFromAxisAngle(AX,-ang); Q.multiply(QT);
-FW.set(1,0,0).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
-P.set(h.x+FW.x*0.5*Math.sin(ang), 0.535*Math.cos(ang)+0.06*f, h.z+FW.z*0.5*Math.sin(ang));
+FW.set(0,0,1).applyQuaternion(new THREE.Quaternion().setFromEuler(E));
+P.set(h.x-FW.x*0.5*Math.sin(ang), HC*Math.cos(ang)+0.06*f, h.z-FW.z*0.5*Math.sin(ang));
 M.compose(P,Q,S); this.hurdlesMesh.setMatrixAt(k,M);
 }
 this.hurdlesMesh.count=n; this.hurdlesMesh.instanceMatrix.needsUpdate=true;
@@ -2305,6 +2336,14 @@ because game time ran in slow motion on weak phones; with game time tracking rea
 in by the same race moment at any frame rate. Same target lean (0.34), same final posture. */
 rig._lean=(rig._lean||0)+(leanT-(rig._lean||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
+// JOB G-139 (owner): ground trim. The UAL clips carry their ground line under the rig
+// origin - the idle clip stands 0.05 m under the track, the SET crouch reaches -0.115 m
+// and a running stance foot dives to -0.16 m (REALITY SINK). Round 1 (the robot still
+// read 16 of 24 sunk on the run-only trim): a constant 0.065 m trim grounds every
+// clip, plus 0.03 m more while a run clip plays, so no sampled stance reads under.
+const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0);
+rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
+try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);
 rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
 }
@@ -2498,7 +2537,7 @@ function clampCamXZ(cx, cz){
 // JOB J39 ONE camera rule: the camera never leaves the stadium - clamp it to
 // the track capsule (the oval centreline segment) widened past the outer lane,
 // so it can never sit behind the start line in the stands or inside a wall.
-const R=48.5, x0=-TRK.straight, x1=0;
+const R=46.0, x0=-TRK.straight, x1=0;
 const nx=Math.max(x0, Math.min(x1, cx));
 const dx=cx-nx, dz=cz; const d=Math.hypot(dx,dz);
 if(d>R){ const k=R/d; return [nx+dx*k, dz*k]; }
@@ -2520,7 +2559,32 @@ const cc=clampCamXZ(x-tx*7, z-tz*7);
 // (10.4 m away in the robot's check), so the runner shrank in the frame.
 W3D.camTo(cc[0], 2.8, cc[1], x+tx*10, 1.2, z+tz*10, (W3D._simDt!=null?W3D._simDt:dt), 5);
 W3D.camApply();
-W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
+W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z}; if(ENG&&ENG.r){ENG.r.ox=x; ENG.r.oz=z;}
+}
+function buildRelayZones(){
+// G-249 r2 (owner, CHECKLIST T04): the changeover zone is 30 m of TRACK per lane, painted at the end of each leg (race 70-100, 170-200, 270-300). The stations are walked along each lane's own line in world distance, so every strip measures 30 m no matter the stagger or the bend (the old 20 m of race coordinate measured 17.3-21.2 m, mean 20.08 m).
+if(ENG._zone) return ENG._zone;
+const zoneGrp=new THREE.Group();
+for(let k=1;k<=3;k++){
+// JOB G-83 (owner): with the staggered start each lane's exchange zone sits at
+// that lane's own staggered marks, so the ribbons are painted lane by lane.
+const pts=[], seg=4;
+for(let l=0;l<8;l++){
+const s0=visS(l,k*100-30,400), offA=laneOff(l)+0.61, offB=laneOff(l)-0.61;
+const marks=[s0]; let acc=0, sPrev=s0, pPrev=lanePoint(sPrev,offA);
+for(let step=0; step<400 && marks.length<=seg; step++){
+const sNext=sPrev+0.5, pNext=lanePoint(sNext,offA);
+acc+=Math.hypot(pNext.x-pPrev.x, pNext.z-pPrev.z); sPrev=sNext; pPrev=pNext;
+if(acc>=7.5*marks.length) marks.push(sPrev);
+}
+for(let i2=0;i2<=seg;i2++){ const s=marks[Math.min(i2,marks.length-1)]; const a=lanePoint(s,offA), bb=lanePoint(s,offB); pts.push(a.x,0.02,a.z, bb.x,0.02,bb.z); }
+}
+const g=new THREE.BufferGeometry();
+g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
+const idx=[]; for(let s2=0;s2<8;s2++){ const base=s2*(seg+1)*2; for(let i2=0;i2<seg;i2++){ const a=base+i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } } // JOB G-83: one strip per lane
+zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
+}
+W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp; return zoneGrp;
 }
 function attachDriver3D(ENG){
 const ev=ENG.ev, rivals=ENG._rivals||[];
@@ -2621,9 +2685,11 @@ else W3D.setBlocks(lanes.map(l=>{ const lp=lanePoint(visS(l,0,ev.dist), laneOff(
 }
 
 const hWorld=[]; ENG.hurdles.forEach(h=>{ for(let l=0;l<8;l++){ hWorld.push(straight
-? {x:h.x-ev.dist, z:straightZ(l), heading:0}
-: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tz,lp.tx)}; })()); } });
+? {x:h.x-ev.dist, z:straightZ(l), heading:-Math.PI/2}
+: (()=>{ const lp=lanePoint(visS(l,h.x,ev.dist),laneOff(l)); return {x:lp.x, z:lp.z, heading:Math.atan2(-lp.tx,-lp.tz)}; })()); } });
 // G-39/G-43 fix (owner): a hurdle stands in EVERY lane, not only the player's - the rivals jump real hurdles too (the player's own lane is index k*8+3)
+// G-122 round 1 (owner): each hurdles race stands at its REAL height (REALITY.md) - 100m 0.838 m, 300m/400m 0.914 m, 110m 1.067 m
+W3D.hurdleHeight({'100h':0.838,'110h':1.067,'300h':0.914,'400h':0.914}[ev.id]||1.067);
 W3D.setHurdles(hWorld);
 const mapP=p=> straight? p : p%400;
 const mapPL=(lane,p)=> straight? p : visS(lane,p,ev.dist);
@@ -2644,7 +2710,15 @@ if(r.speed>2&&Math.random()<dt*8) dustAt(straightX(r.pos,ev.dist),0.15,straightZ
 }else{
 const lp=placeOval(R[0],mapPL(3,r.pos),3,r.speed,PMAX,airM);
 ENG.ai.forEach((a,i)=>placeOval(R[i+1],mapPL(RIV_LANES[i],a.pos),RIV_LANES[i],a.speed,PMAX,(a.airY||0)*0.011));
-followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
+if(TESTLINK && (ENG.phase==='marks'||ENG.phase==='set') && hWorld.length>=8){
+// JOB G-171: test-link opening shot - hold the camera close in front of the first
+// hurdle row (every lane in frame) through the countdown so the hurdles can be
+// checked in seconds; at the gun the normal follow camera takes over.
+let cx=0,cz=0; for(let i2=0;i2<8;i2++){ cx+=hWorld[i2].x; cz+=hWorld[i2].z; } cx/=8; cz/=8;
+const hp=lanePoint(visS(3,ENG.hurdles[0].x,ev.dist),laneOff(3));
+const cc=clampCamXZ(cx-hp.tx*6,cz-hp.tz*6);
+W3D.camTo(cc[0],1.7,cc[1],cx,0.9,cz,dt,10); W3D.camApply();
+} else followCam(lp.x,lp.z,lp.tx,lp.tz,dt);
 }
 if(ENG.done) easeRigsToIdle(dt); else for(const q of R) if(q.group.visible) W3D.rigUpdate(q,dt);
 overlayPhaseText(ENG);
@@ -2653,7 +2727,7 @@ W3D.renderer.render(W3D.scene,W3D.camera);
 }
 else if(ev.eng==='relay'){
 // JOB G-39 (owner): the relay runs ONE lap of the oval - legs at race
-// 0/100/200/300, exchange zones in the last 20m of legs 1-3, and only the
+// 0/100/200/300, exchange zones in the last 30m of legs 1-3 (CHECKLIST T04: 30 m of track per lane), and only the
 // last leg crosses the FINISH gantry. Every team shows its carrier AND the
 // next teammate waiting in the zone; a baton rides in the carrier's hand
 // and bridges the two runners at the hand-off.
@@ -2661,19 +2735,7 @@ const raceS=rp=>((TRK.straight+rp)%400+400)%400;
 const teamLane=ti=> ti===0?3:RIV_LANES[ti-1];
 styleRig(1, collegeCols.a, RELAY_TEAM[1]);
 ENG.teams.forEach((t,ti)=>{ if(ti>0){ const rv=(ENG._rivals||[])[ti-1]; if(rv){ styleRig(ti*2, rv.kit||'#888888', rv.name); styleRig(ti*2+1, rv.kit||'#888888', rv.name); } } });
-const zoneGrp=new THREE.Group();
-for(let k=1;k<=3;k++){
-// JOB G-83 (owner): with the staggered start each lane's exchange zone sits at
-// that lane's own staggered marks, so the ribbons are painted lane by lane.
-const pts=[], seg=4;
-for(let l=0;l<8;l++){ for(let i2=0;i2<=seg;i2++){ const s=visS(l,k*100-20+(20*i2/seg),400); const a=lanePoint(s,laneOff(l)+0.61), b=lanePoint(s,laneOff(l)-0.61); pts.push(a.x,0.02,a.z, b.x,0.02,b.z); } }
-const g=new THREE.BufferGeometry();
-g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts),3));
-const idx=[]; for(let s2=0;s2<8;s2++){ const base=s2*(seg+1)*2; for(let i2=0;i2<seg;i2++){ const a=base+i2*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } } // JOB G-83: one strip per lane
-g.setIndex(idx);
-zoneGrp.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0x37c871,transparent:true,opacity:0.20,side:THREE.DoubleSide,depthWrite:false})));
-}
-W3D.scene.add(zoneGrp); ENG._zone=zoneGrp; W3D._zoneMesh=zoneGrp;
+buildRelayZones();
 if(!W3D._batons){ W3D._batons=[]; for(let i2=0;i2<4;i2++){ const b=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.32,10), new THREE.MeshStandardMaterial({color:0xe8ecf2,roughness:0.3,metalness:0.75})); b.visible=false; W3D.scene.add(b); W3D._batons.push(b); } }
 // JOB G-83 (owner): the relay starts at the REAL staggered start - every lane
 // has blocks at its own staggered mark (never a line-up under the FINISH banner).
@@ -2753,7 +2815,7 @@ W3D.rigUpdate(R[0],dt);
 W3D.camTo(ax-8,3.4,Z+12.5, ax+6,1.1,Z, dt, 4); W3D.camApply();
 if(ENG.phase==='runup'&&ENG.r.pos>27.5) centerText('TAKEOFF - TAP JUMP!', H*0.30, 24, '#ffd34d');
 if(ENG.msgT>0) centerText(ENG.msg, H*0.38, 20, '#ffb34d');
-if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.38,0.62,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
+if(ENG.phase==='phase') drawTimingBar(ENG.marker,0.30,0.70,['HOP','STEP','JUMP'][ENG.sub]+' — TAP ACTION IN THE GREEN');
 if(ENG.phase==='mark'){
 const last=ENG.attempts[ENG.attempts.length-1];
 centerText(ENG.foul?ENG.res:fmtMark(last), H*0.30, 30, ENG.foul?'#ff7b7b':'#7dff9b');
@@ -3047,6 +3109,7 @@ SIM_MODS = (G.mode==='career') ? careerMods() : {spd:1,stam:1,tech:1};
 ENG=makeEngine(ev,rivals||[]);
 ENG._rivals=rivals||[];
 if(W3D.ready&&!W3D.failed){ try{ attachDriver3D(ENG); }catch(err){} }
+if(ENG.ev.eng==='relay'&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289 (CHECKLIST T04): the changeover zones paint at race start on the scene alone - the old path waited for the full 3D load (W3D.ready), so on a slow load the robot's 5 s poll found no markings at all
 // JOB J7 freeze hardening: pay the cold-start costs (shader programs for the painted
 // kits, texture uploads) HERE, in the start transition - not inside the first race
 // frames, where a compile storm on a slow device stalls the frame loop past the
@@ -3131,7 +3194,7 @@ refreshSkip();
 function finishEvent(){
 document.body.classList.remove('playing');
 const ev=ENG.ev, res=ENG.getResult();
-const newBest=recordBest(ev,res.value);
+const newBest=res.windAided?false:recordBest(ev,res.value); // G-289 (CHECKLIST T05): a wind-aided time is shown with 'w' and never saved as a best
 let nextLabel='NEXT EVENT', nextFn=null;
 $('resMedals').innerHTML='';
 if(G.mode==='champ'){
@@ -3160,6 +3223,7 @@ $('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>'+(colHead||'ATH
 rows.map((r,i)=>'<tr'+(r.n===athleteName||String(r.n).indexOf(athleteName+' —')===0?' class="me"':'')+
 '><td>'+(i+1)+'</td><td>'+esc(r.n)+'</td><td>'+r.p+'</td></tr>').join('')+'</table>';
 G.nextFn=nextFn;
+$('bResMenu').textContent=(G.mode==='free')?'EVENTS':'MENU'; // OWNER 2026-10-23: in free play the exit leads back to the event picker
 $('bResNext').textContent=nextLabel;
 $('bResNext').style.display='block';
 showScreen('results');
@@ -3513,7 +3577,7 @@ wireMenu('bFree',()=>{ G.mode='free'; showScreen('grid'); });
 wireMenu('bGridBack',()=>showScreen('menu'));
 wireMenu('bCardBack',()=>showScreen(G.mode==='free'?'grid':(G.mode==='tourn'?'tourney':(G.mode==='career'?'career':'menu'))));
 wireMenu('bCardStart',()=>startPlay(G.cardEv, G.mode==='champ'?G.rivals:(G.mode==='career'?G.carRivals:(G.mode==='tourn'?[G.singleRival]:(G.freeRivals||(G.freeRivals=freeRivals()))))));
-wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; showScreen('menu'); refreshMenuRival(); });
+wireMenu('bResMenu',()=>{ $('bResNext').style.display='block'; if(G.mode==='free'){ showScreen('grid'); } else { showScreen('menu'); refreshMenuRival(); } }); // OWNER 2026-10-23: free play results always bring you back to the free play menu to pick something else
 wireMenu('bResNext',()=>{ if(G.nextFn) G.nextFn(); });
 wireMenu('bHow',()=>showScreen('howto'));
 wireMenu('bHowBack',()=>showScreen('menu'));
@@ -3615,6 +3679,14 @@ else if(e.code==='Space'){ e.preventDefault(); ENG.action(); }
 });
 window.addEventListener('contextmenu',e=>{ if(document.body.classList.contains('playing')) e.preventDefault(); });
 showScreen('menu');
+// JOB G-171 (Mac): a test link - apextrackfield.html?test=<event id> (any id in
+// EVENTS, e.g. ?test=60h) opens that event in Free Play and starts it at once:
+// no menu, no card, no story (the menu never paints - same tick). In a hurdles
+// event the countdown camera holds a close shot of the first hurdle row.
+try{
+const tev=EV_BY_ID[new URLSearchParams(location.search).get('test')];
+if(tev){ TESTLINK=tev; G.mode='free'; G.singleEv=tev; showScreen(null); startPlay(tev, G.freeRivals||(G.freeRivals=freeRivals())); }
+}catch(err){}
 requestAnimationFrame(frame);
 }
 let lastT=0, acc=0;
@@ -3643,6 +3715,7 @@ acc+=simDt;
 let n=0;
 while(acc>=1/60&&n<30){ ENG.update(1/60); acc-=1/60; n++; }
 if(n===30) acc=0;
+if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289: scene, not ready - the scene exists at boot, the full load does not
 try{ if(ENG.draw3) ENG.draw3(dt); }catch(err){}
 updateHUD();
 Confetti.update(dt); Confetti.draw();

@@ -44,12 +44,16 @@ export async function realityCheck(page, wait) {
       samples.push(await page.evaluate(() => {
         const R = window.__reality, P = R.player;
         const wp = o => { o.updateMatrixWorld && o.updateMatrixWorld(true); const v = o.position.clone(); return o.parent ? o.parent.localToWorld(v) : v; };
-        const box = (o, own) => {        // bounding box of every mesh under o (no global THREE needed); own = in o's own
+        const box = (o, own, bodyOnly) => {   // bounding box of every mesh under o (no global THREE needed); own = in o's own
           let mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], n = 0;   // axes (true size even when turned), else world
           o.updateMatrixWorld && o.updateMatrixWorld(true);
           const inv = own ? o.matrixWorld.clone().invert() : null;
+          // art director Oct 22 2026 (Hockey "skater 4.78 x 6.54 x 6.30"): a person's SIZE is the body, not the stick or bat
+          // they hold out - when the player has a skinned (rigged) body, only skinned meshes count
+          let skinned = false; if (bodyOnly) o.traverse(m => { if (m.isSkinnedMesh && m.visible) skinned = true; });
           o.traverse(m => {
             if (!m.geometry || !m.visible) return;
+            if (skinned && !m.isSkinnedMesh) return;
             if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
             const mw = own ? inv.clone().multiply(m.matrixWorld) : m.matrixWorld;
             const b = m.geometry.boundingBox.clone().applyMatrix4(mw);
@@ -68,14 +72,50 @@ export async function realityCheck(page, wait) {
         for (const c of (R.contact || [])) {   // the LOWEST point of the whole foot (toe/sole), never the ankle bone itself
           try {
             const b = box(c); const q = wp(c); let low = b ? b.minY : Infinity;
-            if (!b) {                           // bones only (no mesh): lowest bone under this node (toe) minus the sole offset
-              let lowest = q.y, bones = 0;
-              c.traverse && c.traverse(n => { try { bones++; const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
-              // advisor Oct 21 2026: the shared human rig has NO toe bones, so an ankle bone sits ~8 cm above the sole
-              // and a 3 cm rule could never pass - without a footOffset the robot assumes the studio rig's 0.08 m
-              const off = R.footOffset != null ? +R.footOffset : (bones <= 1 ? 0.08 : 0);
-              low = lowest - off;
-              if (R.footOffset == null && bones <= 1) R.__assumedOffset = true;
+            if (!b) {
+              // Advisor Oct 21 2026 10:55 PM (ONE robot job: Racer wheels 48/48 "sinking" + Baseball feet "sinking" were
+              // the same measuring mistake): the ground point of a contact node is MEASURED, never assumed.
+              //  (1) a plain marker node (not a bone, nothing under it - e.g. the Racer's 4 tyre points) IS the contact point;
+              //  (2) a bone (foot / ankle) is measured on the SKINNED BODY: the lowest posed vertex the body skins to that
+              //      bone (or the bones under it) = the real sole, whatever the rig's toe bones or the hook's footOffset say;
+              //  (3) only when no skinned body is found: lowest bone under it minus footOffset (or the rig's 0.08 m).
+              let lowest = q.y, bones = 0, isBone = false;
+              c.traverse && c.traverse(n => { try { if (n.isBone) { bones++; isBone = true; } const w = wp(n); if (w.y < lowest) lowest = w.y; } catch (e) {} });
+              let sole = null;
+              if (isBone) {
+                try {
+                  if (!c.__sole) {                // once per node: which skinned meshes + vertices belong to this foot
+                    const ids = new Set(); c.traverse(n => { if (n.isBone) ids.add(n.uuid); });
+                    const list = [];
+                    P.traverse(m => {
+                      if (!m.isSkinnedMesh || !m.skeleton || !m.geometry || !m.geometry.attributes.skinIndex) return;
+                      const bi = m.skeleton.bones.map((bn, i) => ids.has(bn.uuid) ? i : -1).filter(i => i >= 0);
+                      if (!bi.length) return;
+                      const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                      for (let v = 0; v < si.count; v++) {
+                        let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(v, k))) w += sw.getComponent(v, k);
+                        if (w > 0.5) vs.push(v);
+                      }
+                      const step = Math.max(1, Math.ceil(vs.length / 500));
+                      if (vs.length) list.push({ m, vs: vs.filter((_, i) => i % step === 0) });
+                    });
+                    c.__sole = list;
+                  }
+                  for (const { m, vs } of c.__sole) {
+                    if (!m.visible) continue;
+                    m.updateMatrixWorld(true); m.skeleton.update && m.skeleton.update();
+                    const v = c.position.clone();
+                    for (const i of vs) { m.getVertexPosition(i, v); m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; }
+                  }
+                } catch (e) { sole = null; }
+              }
+              if (sole != null) { low = sole; R.__measuredSole = true; }
+              else if (!isBone) low = lowest;     // a marker node: no offset at all
+              else {
+                const off = R.footOffset != null ? +R.footOffset : (bones <= 1 ? 0.08 : 0);
+                low = lowest - off;
+                if (R.footOffset == null && bones <= 1) R.__assumedOffset = true;
+              }
             }
             gaps.push(+(low - g(q.x, q.z)).toFixed(3));
           } catch (e) {}
@@ -86,7 +126,7 @@ export async function realityCheck(page, wait) {
         let ga = ''; try { if (R.gait) ga = String(R.gait() || '').toLowerCase(); } catch (e) {}
         const others = (R.others || []).slice(0, 30).map(o => { try { const b = box(o, true); return b && { x: b.x, y: b.y, z: b.z }; } catch (e) { return null; } }).filter(Boolean);
         return { t: (gt != null && isFinite(gt)) ? gt : performance.now() / 1000, gameTime: gt != null && isFinite(gt), speed: (gs != null && isFinite(gs)) ? gs : null, assumed,
-          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true), gaps, others, kind: R.kind || '', expect: R.expect || null };
+          gait: ga, x: p.x, z: p.z, fwd, tr, size: box(P, true, /person|skater|player|athlete/i.test(String(R.kind || ''))), unitsPerMetre: +(R.unitsPerMetre || 1), gaps, others, kind: R.kind || '', expect: R.expect || null };
       }));
     } catch (e) { out.check.push('REALITY hook error: ' + String(e.message).slice(0, 100)); return out; }
   }
@@ -95,6 +135,7 @@ export async function realityCheck(page, wait) {
   const exp = Object.assign({}, SIZES[kind] || {}, s0.expect || {});
   // ---- size: the longest side for cars/planes, the height for people/trucks
   const sz = s0.size;
+  const upm = s0.unitsPerMetre && s0.unitsPerMetre > 0 ? s0.unitsPerMetre : 1;   // e.g. Hockey's rink is 3.26 units per metre
   if (sz) {
     const len = Math.max(sz.x, sz.z), ht = sz.y;
     const chk = (name, v, r) => { if (r && (v < r[0] || v > r[1])) out.fail.push(`REALITY: the player is the wrong size - ${name} ${v.toFixed(2)} m, real is ${r[0]}-${r[1]} m (REALITY.md sizes)`); };
@@ -141,10 +182,15 @@ export async function realityCheck(page, wait) {
       if (s.gait === 'run') isFast = true; else if (s.gait === 'walk' || s.gait === 'stand') isFast = false;
       (isFast ? fast : slow).push({ low: Math.min(...s.gaps), t: s.t, v });
     }
+    // Advisor Oct 21 2026 10:55 PM (#911): telling standing/walking from a sprint start needs the GAME's clock or gait().
+    // Without them the robot is guessing from its own busy clock, so FLOAT-while-walking and no-touchdown-while-fast are
+    // yellow (robot side owns it) until the hook gives time()/speed() or gait(). SINK stays red at any speed.
+    const gaitKnown = samples.some(x => x.gameTime || x.gait);
+    const gaitLine = (msg) => gaitKnown ? out.fail.push(msg) : out.check.push(msg.replace('REALITY: ', 'REALITY (yellow - no time()/gait() in the hook, so the robot cannot tell a sprint start from walking): '));
     const slowGaps = slow.flatMap(s => [s.low]);
     const floating = slowGaps.filter(g => g > 0.03).length;
     if (slow.length >= 3 && floating > slow.length * 0.2)
-      out.fail.push(`REALITY: wheels/feet/skates FLOAT above the ground while standing/walking (${floating} of ${slow.length} readings over 3 cm, highest ${Math.max(...slowGaps).toFixed(2)} m)`);
+      gaitLine(`REALITY: wheels/feet/skates FLOAT above the ground while standing/walking (${floating} of ${slow.length} readings over 3 cm, highest ${Math.max(...slowGaps).toFixed(2)} m)`);
     if (fast.length >= 2) {
       let longest = 0, since = null;
       for (const f of fast) {
@@ -154,10 +200,10 @@ export async function realityCheck(page, wait) {
       }
       const ever = fast.some(f => f.low <= 0.03);
       if (!ever || longest > 0.6)
-        out.fail.push(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
+        gaitLine(`REALITY: feet/skates/wheels never touch down while moving fast - ${ever ? 'no touchdown for ' + longest.toFixed(1) + ' s' : 'no touchdown in ' + fast.length + ' fast readings'} (a sprint lands a foot at least every 0.5 s; lowest ${Math.min(...fast.map(f => f.low)).toFixed(2)} m)`);
     }
   } else out.check.push('REALITY: no contact nodes in the hook - list the wheels / feet / skates so the robot can check they touch the ground');
-  out.data = { kind, size: sz, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
+  out.data = { kind, size: sz, sizeMetres: sz ? { x: +(sz.x / upm).toFixed(2), y: +(sz.y / upm).toFixed(2), z: +(sz.z / upm).toFixed(2) } : null, unitsPerMetre: upm, moves, wrongWay, backwards, gaps: gaps.length, gameTime: samples.some(s => s.gameTime), gameSpeed: samples.some(s => s.speed != null) };
   if (gaps.length && samples.some(s => s.assumed)) out.check.push('REALITY: the contact nodes are ankle bones with no footOffset - the robot assumed the studio rig sole offset 0.08 m; set footOffset in the hook to be exact');
   if (gaps.length && !samples.some(s => s.gameTime)) out.check.push('REALITY: the hook has no time() - add time: () => <game seconds> and speed: () => <m/s> so a busy robot cannot mistake a sprint for walking (REALITY.md)');
   return out;
@@ -245,7 +291,15 @@ export async function playerCloseUp(page) {
       cam.fov = 35; cam.aspect = 1; cam.near = 0.02; cam.far = Math.max(base.far || 1000, 200); cam.zoom = 1;
       const span = tall ? h * 0.42 : Math.max(mx[0] - mn[0], mx[2] - mn[2]) * 0.9;   // head and shoulders / the whole car
       const dist = (span / 2) / Math.tan(35 * Math.PI / 360) * 1.25;
-      cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08;
+      if (tall) { cam.position.copy(look).addScaledVector(fwd, dist); cam.position.y += span * 0.08; }
+      else {    // art director Oct 22 2026: Racer's close-up was shot from INSIDE the car parked in front on the grid -
+                // a car is shot from a 3/4 front-side angle, raised, so the camera never sits in the car ahead
+        const side = new V(fwd.z, 0, -fwd.x);
+        cam.position.copy(look).addScaledVector(fwd, dist * 0.7).addScaledVector(side, dist * 0.7); cam.position.y += dist * 0.45;
+      }
+      // anything between the camera and the player (another car, a skater, a wall) is cut away by the near plane
+      const rad = Math.hypot(mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]) / 2;
+      cam.near = Math.max(0.02, cam.position.distanceTo(look) - rad * 1.1);
       cam.lookAt(look); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
       const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
       const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;

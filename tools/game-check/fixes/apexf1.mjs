@@ -534,20 +534,20 @@ export default [
   // player could catch it). And with the stick released the heading must FREEZE:
   // steering still comes only from the stick, no self-steering (G-27 rule).
   {
-    id: 'play-car-holds-heading-at-speed', title: 'Apex F1: at speed the stick winds the heading gently and never steers by itself (G-73)',
-    run: async (page, h) => {
-      const m = await g66ToRace(page, h); if (m) return h.fail(m);
+    id: 'play-car-holds-heading-at-speed', ask: 'at speed the stick winds the heading gently and never steers by itself',
+    test: async (page, h) => {
+      if (!await g66ToRace(page, h)) return 'race never started';
       const scan = await h.eval(() => { for (let s = 200; s < 5400; s += 50) { const la = window.__test.lineAt(s); if (la.maxV >= 85 && la.rlD <= -3) return s; } return 1100; });
       const stage = await h.eval((sec) => { const T = window.__test; const pc = T.paceCars(); const pi = pc.findIndex(c => c.isPlayer); if (pi < 0) return -1;
         for (let i = 0; i < pc.length; i++) if (i !== pi) T.setCarS(i, 3400 + i * 50);
         T.setCarS(pi, sec - 300); return pi; }, scan);
-      if (stage < 0) return h.fail('no player car on the grid');
+      if (stage < 0) return 'no player car on the grid';
       await g66Driver(page, h, true);
       let fast = null; // settle: the driver runs the player up to speed on the line
       for (let i = 0; i < 30; i++) { const pc = await h.eval(() => window.__test.paceCars()); const p = pc[stage];
         if (p && p.v >= 80) { fast = p; break; } await h.wait(300); }
       await g66Driver(page, h, false);
-      if (!fast) return h.fail('player never reached 80 m/s on the fast section (steering check needs speed)');
+      if (!fast) return 'player never reached 80 m/s on the fast section (steering check needs speed)';
       const rd0 = await h.eval(() => window.__test.paceCars());
       const start = rd0[stage].raceDist;
       await h.eval(() => window.__test.setInput({ gas: true, brake: false, steer: 0.5 }));
@@ -559,28 +559,28 @@ export default [
       for (let i = 0; i < 60; i++) { const pc = await h.eval(() => window.__test.paceCars()); rd2 = pc[stage].raceDist; if (rd2 - rd1 >= 30) break; await h.wait(100); }
       const h2 = await h.eval((pi) => window.__test.heading(pi), stage);
       await h.eval(() => window.__test.setInput({ gas: false, brake: false, steer: 0 }));
-      if (Math.abs(h1.headAngle) > 0.36) return h.fail('half stick over 50 m at speed wound the heading to ' + h1.headAngle.toFixed(2) + ' rad - the car still points at the grass before the player can catch it');
-      if (Math.abs(h2.headAngle - h1.headAngle) > 0.03) return h.fail('with the stick released the heading moved on its own (' + h1.headAngle.toFixed(2) + ' -> ' + h2.headAngle.toFixed(2) + ') - steering must come only from the stick');
-      return h.pass('half stick over 50 m at speed wound the heading to only ' + h1.headAngle.toFixed(2) + ' rad, and with the stick released it stayed at ' + h2.headAngle.toFixed(2) + ' (no self-steering)');
+      if (Math.abs(h1.headAngle) > 0.36) return 'half stick over 50 m at speed wound the heading to ' + h1.headAngle.toFixed(2) + ' rad - the car still points at the grass before the player can catch it';
+      if (Math.abs(h2.headAngle - h1.headAngle) > 0.03) return 'with the stick released the heading moved on its own (' + h1.headAngle.toFixed(2) + ' -> ' + h2.headAngle.toFixed(2) + ') - steering must come only from the stick';
+      return true;
     }
   },
   // G-73 (2): the F1 car is about 20% bigger - the drawn car measured 6.45 m
   // long before G-73, so the player car must now draw about 7.7 m long and
   // about 2.2 m wide (real size from the visible meshes, as in G-66).
   {
-    id: 'play-car-grew-20-percent', title: 'Apex F1: the car is about 20 percent bigger (G-73)',
-    run: async (page, h) => {
+    id: 'play-car-grew-20-percent', ask: 'the car is about 20 percent bigger',
+    test: async (page, h) => {
       await g33Reset(page, h);
       await page.locator('#careerBtn').click();
       await page.locator('#toTeamBtn').click();
       await page.locator('#startBtn').click();
       await h.wait(1200);
       const mesh = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer); return T.carMesh(pi); });
-      if (!mesh) return h.fail('carMesh hook returned nothing for the player');
+      if (!mesh) return 'carMesh hook returned nothing for the player';
       const long = Math.max(mesh.size[0], mesh.size[2]), wide = Math.min(mesh.size[0], mesh.size[2]);
-      if (long < 7.3 || long > 8.2) return h.fail('player car draws ' + long.toFixed(2) + ' m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m)');
-      if (wide < 2.0 || wide > 2.45) return h.fail('player car draws ' + wide.toFixed(2) + ' m wide - expected about 2.2 m after the 20% growth');
-      return h.pass('player car draws ' + long.toFixed(2) + ' m long x ' + wide.toFixed(2) + ' m wide (was 6.45 x 1.86 before G-73)');
+      if (long < 7.3 || long > 8.2) return 'player car draws ' + long.toFixed(2) + ' m long - G-73 wants about 20% bigger than the old 6.45 m (about 7.7 m)';
+      if (wide < 2.0 || wide > 2.45) return 'player car draws ' + wide.toFixed(2) + ' m wide - expected about 2.2 m after the 20% growth';
+      return true;
     }
   },
   // G-77: the race start must open ON the player car on the grid - no tap.
@@ -588,34 +588,34 @@ export default [
   // the LIGHTS OUT tap. Also: the start lights by the car must be BIG, the
   // reds must come on one by one up to 5, then green = GO and the race starts.
   {
-    id: 'play-start-on-car-with-lights', title: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
-    run: async (page, h) => {
+    id: 'play-start-on-car-with-lights', ask: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
+    test: async (page, h) => {
       await g33Reset(page, h);
-      await page.locator('#careerBtn').click();
-      await page.locator('#toTeamBtn').click();
-      await page.locator('#startBtn').click();
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
       await h.wait(1200);
-      await page.locator('#qualiSkip').click();
+      await h.press('#qualiSkip');
       let grid = false; // the grid screen, reached without any tap on the canvas
       for (let i = 0; i < 12; i++) { const md = await h.eval(() => window.__test.race().mode); if (md === 'grid') { grid = true; break; } await h.wait(300); }
-      if (!grid) return h.fail('never reached the grid screen after qualifying');
+      if (!grid) return 'never reached the grid screen after qualifying';;
       await h.wait(600); // let the grid camera settle on the car
       const frame = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer);
         const tp = T.carMesh(pi).trackPos, cam = T.camAt(); return { d: Math.hypot(cam.x - tp[0], cam.z - tp[2]) }; });
-      if (!frame) return h.fail('could not read the camera / player car at the grid');
-      if (frame.d > 16) return h.fail('at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)');
-      await page.locator('#raceBtn').click();
+      if (!frame) return 'could not read the camera / player car at the grid';;
+      if (frame.d > 16) return 'at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)';;
+      await h.press('#raceBtn');
       let maxRed = 0, sawGreen = false, lampW = 0, racing = false;
       for (let i = 0; i < 80; i++) { const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')];
           return { red: ls.filter(e => e.classList.contains('red')).length, green: ls.some(e => e.classList.contains('green')),
             w: ls.length ? ls[0].getBoundingClientRect().width : 0, mode: window.__test.race().mode }; });
         if (st.red > maxRed) maxRed = st.red; if (st.green) sawGreen = true; if (st.w > 0) lampW = st.w;
         if (st.mode === 'race') { racing = true; break; } await h.wait(100); }
-      if (maxRed !== 5) return h.fail('start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')');
-      if (!sawGreen) return h.fail('start lights never flashed green for GO');
-      if (!racing) return h.fail('race never started after lights out');
-      if (lampW < 48) return h.fail('start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car');
-      return h.pass('grid opened with the camera ' + frame.d.toFixed(1) + ' m from the player car (no tap), lamps ' + Math.round(lampW) + ' px wide, reds climbed to 5, green flash, race started');
+      if (maxRed !== 5) return 'start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')';;
+      if (!sawGreen) return 'start lights never flashed green for GO';;
+      if (!racing) return 'race never started after lights out';;
+      if (lampW < 48) return 'start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car';;
+      return true;
     }
   },
   /* ================= G-101 FRIEND CODE PLAY TEST =================
@@ -739,7 +739,9 @@ export default [
       const stopDriving = async () => { await h.eval(`(() => { if (window.__g119drv) { clearInterval(window.__g119drv); window.__g119drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
       if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
       await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
-      if (!await h.poll(() => h.eval(`window.__test.race().mode`), m => m === 'quali', 15000)) return 'weekend never reached qualifying';
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
       await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
       let racing = false;
       for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
@@ -791,6 +793,552 @@ export default [
       await stopDriving();
       return true;
     },
-  }
-
+  },
+  {
+    id: 'never-g-119-p1',
+    ask: 'Start button on the screen: LIGHTS OUT and every menu fits 844x390 with no scrolling (the owner had to scroll to start the race)',
+    async test(page, h) {
+      const fits = async (label) => {
+        const r = await h.eval(`(() => {
+          const vis = [...document.querySelectorAll('.overlay')].find(o => !o.classList.contains('hidden'));
+          if (!vis) return { err: 'no menu visible' };
+          return { id: vis.id, sh: vis.scrollHeight, ch: vis.clientHeight };
+        })()`);
+        if (!r || r.err) return label + ': ' + (r ? r.err : 'probe failed');
+        if (r.sh > r.ch + 1) return label + ' (' + r.id + ') needs scrolling: content is ' + r.sh + 'px tall on a ' + r.ch + 'px screen';
+        return null;
+      };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      let bad = await fits('main menu'); if (bad) return bad;
+      await h.press('#careerBtn'); await h.wait(400);
+      bad = await fits('track menu'); if (bad) return bad;
+      await h.press('#toTeamBtn'); await h.wait(400);
+      bad = await fits('team menu'); if (bad) return bad;
+      await h.press('#startBtn');
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
+      await h.press('#qualiSkip'); await h.wait(800);
+      bad = await fits('starting grid menu'); if (bad) return bad;
+      const btn = await h.eval(`(() => { const b = document.getElementById('raceBtn').getBoundingClientRect(); return { top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+      if (!btn || btn.top < -1 || btn.bottom > btn.ih + 1) return 'LIGHTS OUT is off the screen (button ' + (btn ? Math.round(btn.top) + '..' + Math.round(btn.bottom) : '?') + ' on a ' + (btn ? btn.ih : '?') + 'px tall phone)';
+      return true;
+    },
+  },
+  {
+    id: 'play-steering-holds-the-line',
+    ask: 'The player drives (owner recordings, G-239): the stick turns the car and a driven line stays on the road; let go and the nose HOLDS its world heading - it does not straighten itself back onto the road (that self-straightening was the autopilot)',
+    async test(page, h) {
+      const stopDriving = async () => { await h.eval(`(() => { if (window.__g136drv) { clearInterval(window.__g136drv); window.__g136drv = null; } const t = window.__test; if (t) t.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {}); };
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      { let quali = false;
+        for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+        if (!quali) return 'weekend never reached qualifying'; }
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) return 'the race never started';
+      // drive alone: jump the player ahead of the pack so no contact can shove him
+      await h.eval(`window.__test.setCarS(0, 400)`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      for (let i = 0; i < 10; i++) { await h.wait(300); const v = await h.eval(`window.__test.steerProbe().v`).catch(() => 0); if (v > 40) break; }
+      // PART 1 - the release (G-239): wind the nose over with a held push, then let go.
+      // The nose must HOLD its world heading - no snap back onto the road's line (the old
+      // law re-centred the heading on the road itself, so the car drove itself), and the
+      // car must travel sideways on that held heading: the driver brings it back, not the car.
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      await h.wait(350);
+      const d0 = await h.eval(`window.__test.steerProbe().d`);
+      const yaw0 = await h.eval(`window.__test.heading(0).yaw`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      await h.wait(2500);
+      const rel = await h.eval(`window.__test.steerProbe()`);
+      const yaw1 = await h.eval(`window.__test.heading(0).yaw`);
+      if (!rel) return 'steer probe lost the player';
+      let dyaw = Math.abs(yaw1 - yaw0); if (dyaw > Math.PI) dyaw = 2 * Math.PI - dyaw;
+      if (dyaw > 0.08) { await stopDriving(); return 'letting go of the stick still turned the car: world heading moved ' + dyaw.toFixed(2) + ' rad in 2.5 s - the nose must HOLD and the driver must steer'; }
+      if (Math.abs(rel.d - d0) < 2.0) { await stopDriving(); return 'on a held heading the car should travel sideways off its line; it moved only ' + Math.abs(rel.d - d0).toFixed(1) + ' m - something is still steering it back'; }
+      // PART 2 - hold the line: a stick driver (the game's own damped line law,
+      // corner braking from its own speed table) drives a sector; the car must
+      // never leave the road and kerb (|d| <= width/2 + 1.6). PART 1 ended with the
+      // car at the wall on a held heading, so the sector starts from a clean place.
+      await h.eval(`window.__test.setCarS(0, 400)`);
+      await h.eval(`(() => { const t = window.__test; window.__g136drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const want = Math.max(-0.5, Math.min(0.5, Math.atan2(q.line - q.d, 25))); const steer = Math.max(-1, Math.min(1, (want - q.headAngle) * 2.0)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
+      const s0 = (await h.eval(`window.__test.steerProbe()`)).s;
+      let worst = 0, last = rel;
+      for (let i = 0; i < 24; i++) { await h.wait(500); last = await h.eval(`window.__test.steerProbe()`).catch(() => null); if (!last) break; if (Math.abs(last.d) > worst) worst = Math.abs(last.d); }
+      await stopDriving();
+      if (!last) return 'steer probe lost the player while driving';
+      if (worst > 8.6) return 'the car left the track under stick driving: |d| reached ' + worst.toFixed(1) + ' m (road + kerb ends at 8.6)';
+      if (last.s - s0 < 700) return 'the driven sector was too short: ' + Math.round(last.s - s0) + ' m in 12 s';
+      return true;
+    },
+  },
+  {
+    id: 'play-owner-check-link',
+    ask: 'Owner check link: apexf1.html?test=grid opens straight at the starting grid with LIGHTS OUT on screen and no scrolling (G-204)',
+    async test(page, h) {
+      let out = null;
+      await h.eval(`location.href = location.pathname + '?test=grid'`).catch(() => {});
+      let grid = false;
+      for (let i = 0; i < 30 && !grid; i++) { await h.wait(500); grid = await h.eval(`(() => { const g = document.getElementById('gridMenu'); return !!g && !g.classList.contains('hidden'); })()`).catch(() => false); }
+      if (!grid) out = 'the ?test=grid link never opened the starting grid';
+      else {
+        const r = await h.eval(`(() => { const g = document.getElementById('gridMenu'); const b = document.getElementById('raceBtn').getBoundingClientRect(); return { sh: g.scrollHeight, ch: g.clientHeight, top: b.top, bottom: b.bottom, ih: window.innerHeight }; })()`);
+        if (r.sh > r.ch + 1) out = 'the grid menu needs scrolling from the check link: content ' + r.sh + 'px on a ' + r.ch + 'px screen';
+        else if (r.top < -1 || r.bottom > r.ih + 1) out = 'LIGHTS OUT is off screen from the check link (button ' + Math.round(r.top) + '..' + Math.round(r.bottom) + ' on a ' + r.ih + 'px phone)';
+      }
+      await h.eval(`location.href = location.pathname`).catch(() => {});
+      await h.wait(600);
+      return out || true;
+    },
+  },
+  {
+    id: 'play-pack-stays-spread',
+    ask: 'Pack fix: the qualifying field stays spread out - no start-line spin pile-up, no tangled pack sitting in the contact box',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset failed (not at menu)';
+      await h.press('#careerBtn');
+      await h.wait(400);
+      await h.press('#toTeamBtn');
+      await h.wait(300);
+      await h.press('#startBtn');
+      let mode = '';
+      for (let i = 0; i < 16 && mode !== 'quali'; i++) { await h.wait(400); mode = await h.eval(`window.__test.race().mode`).catch(() => ''); }
+      if (mode !== 'quali') return 'never reached qualifying';
+      let pairSum = 0, samples = 0, stoppedMax = 0;
+      for (let k = 0; k < 12; k++) {
+        await h.wait(1250);
+        const r = await h.eval(`(() => { const t = window.__test; const cs = t.cars(); const L = t.trackLength(); let pairs = 0, stopped = 0;
+          for (let i = 0; i < cs.length; i++) { if (!cs[i].isPlayer && cs[i].v < 2 && Math.abs(cs[i].d) < 8) stopped++;
+            for (let j = i + 1; j < cs.length; j++) { if (cs[i].isPlayer || cs[j].isPlayer) continue; let ds = (cs[i].s - cs[j].s) % L; if (ds > L / 2) ds -= L; if (ds < -L / 2) ds += L; if (Math.abs(ds) < 7.9 && Math.abs(cs[i].d - cs[j].d) < 3.8) pairs++; } }
+          return { pairs, stopped }; })()`).catch(() => null);
+        if (!r) return 'pack sampling failed';
+        pairSum += r.pairs; samples++;
+        if (r.stopped > stoppedMax) stoppedMax = r.stopped;
+      }
+      const avg = pairSum / Math.max(samples, 1);
+      if (avg > 1.5) return 'the field still piles up: ' + avg.toFixed(1) + ' AI pairs inside the contact box on average (about 6.5 before the pack fix)';
+      if (stoppedMax > 1) return 'cars are stuck or spun in the pack: ' + stoppedMax + ' AI cars stopped on the road at once';
+      return true;
+    },
+  },
+  {
+    id: 'play-buttons-are-44px',
+    ask: 'the 2 small buttons are at least 44px: SKIP QUALI in qualifying and LIGHTS OUT on the starting grid (G-224)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset failed (not at menu)';
+      await h.press('#careerBtn');
+      await h.wait(400);
+      await h.press('#toTeamBtn');
+      await h.wait(300);
+      await h.press('#startBtn');
+      let mode = '';
+      for (let i = 0; i < 16 && mode !== 'quali'; i++) { await h.wait(400); mode = await h.eval(`window.__test.race().mode`).catch(() => ''); }
+      if (mode !== 'quali') return 'never reached qualifying';
+      const sk = await h.eval(`(() => { const b = document.getElementById('qualiSkip'); if (!b) return null; const r = b.getBoundingClientRect(); return { w: r.width, h: r.height }; })()`);
+      if (!sk) return 'no SKIP QUALI button in qualifying';
+      if (sk.h < 44 || sk.w < 44) return 'SKIP QUALI is only ' + Math.round(sk.w) + 'x' + Math.round(sk.h) + 'px - under the 44px tap target';
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      const rb = await h.eval(`(() => { const g = document.getElementById('gridMenu'); const b = document.getElementById('raceBtn'); if (!g || !b || g.classList.contains('hidden')) return null; const r = b.getBoundingClientRect(); return { w: r.width, h: r.height, top: r.top, bottom: r.bottom, ih: window.innerHeight, sh: g.scrollHeight, ch: g.clientHeight }; })()`);
+      if (!rb) return 'the starting grid never opened';
+      if (rb.h < 44 || rb.w < 44) return 'LIGHTS OUT is only ' + Math.round(rb.w) + 'x' + Math.round(rb.h) + 'px - under the 44px tap target';
+      if (rb.sh > rb.ch + 1) return 'the grid menu needs scrolling with the bigger button';
+      if (rb.top < -1 || rb.bottom > rb.ih + 1) return 'LIGHTS OUT fell off screen with the bigger button';
+      return true;
+    },
+  },
+  {
+    id: 'play-player-must-steer',
+    ask: 'Gas alone must not drive the car (owner recordings, G-239): stick untouched, the car leaves the road - on the old build it covered 2,192 m in 60 s dead centre, hands-free',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:0 })`);
+      let left = false, dist = 0, lastS = null;
+      for (let i = 0; i < 40 && !left; i++) {
+        await h.wait(500);
+        const c = await h.eval(`window.__test.cars()[0]`).catch(() => null);
+        if (!c) continue;
+        if (lastS !== null) { let ds = c.s - lastS; if (ds < -L / 2) ds += L; if (ds > L / 2) ds -= L; dist += Math.max(0, ds); }
+        lastS = c.s;
+        if (Math.abs(c.d) > 8.6 || (c.v < 8 && dist > 300)) left = true;
+      }
+      await h.eval(`window.__test.setInput({ gas:false, brake:false, steer:0 })`).catch(() => {});
+      if (!left) return 'gas alone drove ' + Math.round(dist) + ' m and never left the road - the car is still driving itself';
+      return true;
+    },
+  },
+  {
+    id: 'play-broadcast-cam-steady',
+    ask: 'The broadcast (helicopter) camera is steady (owner, G-239): it rides BEHIND the car in the car frame - the old camera hung on a fixed point 26 m to the side, and that arm swung the picture around every corner',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      let mode = 0;
+      for (let i = 0; i < 5 && mode !== 2; i++) { await h.press('#btnCam'); await h.wait(300); mode = await h.eval(`window.__test.camProbe().mode`).catch(() => -1);
+        if (mode !== 2 && i >= 1) { await h.eval(`document.querySelector('#btnCam').dispatchEvent(new MouseEvent('mousedown', { bubbles:true }))`).catch(() => {}); await h.wait(300); mode = await h.eval(`window.__test.camProbe().mode`).catch(() => -1); } }
+      if (mode !== 2) return 'CAM cycling never reached broadcast (mode ' + mode + ')';
+      await h.eval(`(() => { const t = window.__test; window.__g239drv = setInterval(() => { const q = t.steerProbe(); if (!q) return; const want = Math.max(-0.5, Math.min(0.5, Math.atan2(q.line - q.d, 25))); const steer = Math.max(-1, Math.min(1, (want - q.headAngle) * 2.0)); t.setInput({ gas: q.v < q.maxV * 1.18, brake: q.v > q.maxV * 1.18, steer }); }, 100); })()`);
+      // the geometry is the steadiness: measure where the camera sits in the car's own
+      // frame - behind it (back) vs hanging off its side (side). The old side-arm point
+      // reads side/back ~1.4; a steady follow reads a small fraction of that.
+      let good = 0, seen = 0, worst = 0;
+      for (let i = 0; i < 10; i++) {
+        await h.wait(450);
+        const m = await h.eval(`(() => { const t = window.__test; const cam = t.camAt(); const cm = t.carMesh(0); const hd = t.heading(0); const car = t.cars()[0]; const pr = t.camProbe();
+          if (!cam || !cm || !hd || !car || !pr) return null;
+          const tan = hd.yaw - hd.headAngle, tx = Math.cos(tan), tz = Math.sin(tan);
+          const ox = cam.x - cm.center[0], oz = cam.z - cm.center[2];
+          const back = -(ox * tx + oz * tz), side = Math.abs(ox * -tz + oz * tx);
+          return { v: car.v, back, side, ratio: side / Math.max(1, back), ndc: pr.car }; })()`).catch(() => null);
+        if (!m || m.v < 20) continue;
+        seen++;
+        if (m.ratio > worst) worst = m.ratio;
+        if (m.ratio < 0.6 && Math.abs(m.ndc.x) < 0.95 && Math.abs(m.ndc.y) < 0.95) good++;
+      }
+      await h.eval(`(() => { if (window.__g239drv) { clearInterval(window.__g239drv); window.__g239drv = null; } window.__test.setInput({ gas:false, brake:false, steer:0 }); })()`).catch(() => {});
+      if (seen < 4) return 'never sampled the broadcast camera at speed (saw ' + seen + ')';
+      if (good < seen - 1) return 'the broadcast camera still hangs off the car side (worst side/back ' + worst.toFixed(2) + ') - that side arm is what swung the picture';
+      return true;
+    },
+  },
+  {
+    id: 'play-contact-banner-is-players-only',
+    ask: 'CONTACT! is the player news only (owner recordings, G-239): two AI cars hitting each other must never shout CONTACT! on the player screen',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      // park the player in the middle of the largest gap in the field, so no AI can
+      // reach him during the short staging window (a banner while an AI is on top of
+      // him would be HIS news and voids the attempt, it does not fail it)
+      const park = () => h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength();
+        const ss = cs.slice(1).map(c => c.s).sort((a, b) => a - b); let best = 0, bg = -1;
+        for (let i = 0; i < ss.length; i++) { const nx = ss[(i + 1) % ss.length]; let g = nx - ss[i]; if (g < 0) g += L; if (g > bg) { bg = g; best = ss[i] + g / 2; } }
+        window.__test.setCarS(0, ((best % L) + L) % L); return bg; })()`).catch(() => 0);
+      await park();
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      await h.wait(2500); // the AI reach racing speed
+      const bannerTxt = () => h.eval(`(() => { const b = document.getElementById('banner'); return b && b.classList.contains('show') ? b.querySelector('.b1').textContent : ''; })()`).catch(() => '');
+      const nearPlayer = () => h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength(); let m = 1e9; for (let i = 1; i < cs.length; i++) { let d = Math.abs(cs[i].s - cs[0].s); if (d > L / 2) d = L - d; if (d < m) m = d; } return m; })()`).catch(() => 0);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        // stage a hard AI-on-AI hit far from the player: fastest AI 5 m behind the slowest
+        const staged = await h.eval(`(() => { const cs = window.__test.cars(); const L = window.__test.trackLength(); const ps = cs[0].s;
+          const far = i => { let d = Math.abs(cs[i].s - ps); if (d > L / 2) d = L - d; return d > 600; };
+          let fast = -1, slow = -1, fv = -1, sv = 1e9;
+          for (let i = 1; i < cs.length; i++) { if (far(i) && cs[i].v > fv) { fv = cs[i].v; fast = i; } if (far(i) && cs[i].v < sv) { sv = cs[i].v; slow = i; } }
+          if (fast < 0 || slow < 0 || fast === slow) return false;
+          window.__test.setCarS(slow, cs[slow].s); window.__test.setCarS(fast, ((cs[slow].s - 5) % L + L) % L);
+          return true; })()`).catch(() => false);
+        if (!staged) { await park(); continue; }
+        let voided = false;
+        for (let i = 0; i < 7; i++) {
+          await h.wait(350);
+          if ((await nearPlayer()) < 60) { voided = true; break; }
+          const t = await bannerTxt();
+          if (t === 'CONTACT!') return 'an AI-on-AI hit shouted CONTACT! on the player screen (nearest AI ' + Math.round(await nearPlayer()) + ' m from the player)';
+        }
+        if (voided) await park();
+      }
+      return true;
+    },
+  },
+  {
+    id: 'play-no-penalty-for-being-shoved',
+    ask: 'No track-limits fine for being shoved (owner recordings, G-239): off-road time while a rival shove is fresh must not accrue, brief brushes decay, and a chosen excursion still accrues',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      const pen = () => h.eval(`window.__test.penState()`).catch(() => null);
+      // 1) a chosen excursion DOES accrue off-track time (poll - the crossing takes a moment)
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      let st1 = null;
+      for (let i = 0; i < 25; i++) { await h.wait(200); st1 = await pen(); if (st1 && (st1.offT > 0.5 || st1.warnings > 0)) break; }
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      if (!st1 || !(st1.offT > 0.5 || st1.warnings > 0)) return 'a deliberate excursion accrued nothing (offT ' + (st1 && st1.offT) + ') - the limits clock is dead';
+      // back on the road, let the brush decay, note the warning count
+      await h.eval(`window.__test.setCarS(0, window.__test.cars()[0].s)`);
+      await h.wait(2500);
+      const wBefore = (await pen()).warnings;
+      // 2) the same excursion inside the shove grace must NOT accrue - read the moment the car is out
+      await h.eval(`window.__test.shoveNow()`);
+      await h.eval(`window.__test.setInput({ gas:true, brake:false, steer:1 })`);
+      let out = false;
+      for (let i = 0; i < 20 && !out; i++) { await h.wait(120); const c = await h.eval(`window.__test.cars()[0]`).catch(() => null); if (c && Math.abs(c.d) > 8.7) out = true; }
+      const st2 = await pen();
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      if (!out) return 'the car never left the road in the grace phase - the situation was not created';
+      if (!st2) return 'penalty probe lost the player';
+      if (st2.offT > 0.2 || st2.warnings !== wBefore) return 'off-road time accrued during the shove grace (offT ' + st2.offT + ', warnings ' + wBefore + ' -> ' + st2.warnings + ') - the player is still fined for being shoved';
+      return true;
+    },
+  },
+  {
+    id: 'play-quali-gap-is-real',
+    ask: 'The quali GAP readout is real (owner recordings, G-239): before any lap is banked it must not sit at a fake +0.0s - it shows no-data until a best-lap delta exists',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      // create a car ahead in the live order: teleport an AI to just before the line
+      // and let it drive across - its lap count puts it ahead of the parked player
+      await h.eval(`window.__test.setInput({ gas:false, brake:true, steer:0 })`);
+      const L = await h.eval(`window.__test.trackLength()`);
+      await h.eval(`window.__test.setCarS(5, ${0} + (window.__test.trackLength() - 150))`);
+      let g = '', sawGap = false;
+      for (let i = 0; i < 14; i++) {
+        await h.wait(500);
+        g = await h.eval(`document.getElementById('gapbox').textContent`).catch(() => '');
+        if (/^GAP/.test(g)) { sawGap = true; break; }
+      }
+      if (!sawGap) return 'never got a car ahead of the player in the quali order - the situation was not created (last: "' + g + '")';
+      if (/\+0\.0s/.test(g)) return 'the quali gap reads a fake +0.0s with no lap banked: "' + g + '"';
+      return true;
+    },
+  },
+  {
+    id: 'play-quali-skip-clears-the-speedo',
+    ask: 'SKIP QUALI must not sit on the speedometer (owner recordings, G-239): in every frame the pill hid the speed digits - the two rects must not overlap',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      await h.wait(500);
+      const r = await h.eval(`(() => { const a = document.getElementById('qualiSkip'), b = document.getElementById('speedo'); if (!a || !b) return null; const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect(); return { ox: Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left), oy: Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top) }; })()`);
+      if (!r) return 'qualiSkip or speedo missing in qualifying';
+      if (r.ox > 0 && r.oy > 0) return 'SKIP QUALI overlaps the speedometer by ' + Math.round(r.ox) + 'x' + Math.round(r.oy) + ' px - the speed is hidden again';
+      return true;
+    },
+  },
+  {
+    id: 'play-engine-sound-is-the-kit',
+    ask: 'The engine the player hears is the grand_prix kit (owner: the synth sounds like a rubber chicken, G-239): the kit must be decoded and ready in a session, and no media elements exist anywhere (factory music rule)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return 'reset did not reach the main menu';
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      let quali = false;
+      for (let q = 0; q < 30 && !quali; q++) { await h.wait(500); quali = await h.eval(`window.__test.race().mode === 'quali'`).catch(() => false); }
+      if (!quali) return 'weekend never reached qualifying';
+      let ready = false;
+      for (let i = 0; i < 20 && !ready; i++) { await h.wait(500); ready = await h.eval(`(() => { const k = window.__test.kitAudio(); return !!(k && k.ready); })()`).catch(() => false); }
+      if (!ready) return 'the grand_prix engine kit never became ready - the synth fallback would carry the session (the rubber chicken)';
+      const media = await h.eval(`document.querySelectorAll('audio,video').length`);
+      if (media !== 0) return media + ' media elements in the page - sound must be decoded buffers only';
+      return true;
+    },
+  },
+  {
+    id: 'never-g-253-p1',
+    ask: 'play-test entries are shaped right: play-car-holds-heading-at-speed and play-car-grew-20-percent expose test, not run',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      for (const id of ['play-car-holds-heading-at-speed', 'play-car-grew-20-percent']) {
+        const i = txt.indexOf("id: '" + id + "'");
+        if (i < 0) return 'entry ' + id + ' is missing from the fixes file';
+        const seg = txt.slice(i, i + 400);
+        if (!/test:\s*async/.test(seg)) return 'entry ' + id + ' has no test function';
+        if (/run:\s*async/.test(seg)) return 'entry ' + id + ' still uses run instead of test';
+      }
+      return true;
+    },
+  },
+  // G-265 (owner: "I'm not even controlling my driving. I'm just pressing gas
+  // and it does the laps"): gas only, stick centred, on a sharp curve - the
+  // car must NOT follow the road round. It holds its world heading (G-239),
+  // so the road curves away under it and it runs to the wall.
+  {
+    id: 'play-gas-only-never-laps',
+    ask: 'holding gas only, stick centred, the car does not drive itself round the track',
+    async test(page, h) {
+      if (!await g66ToRace(page, h)) return 'race never started';
+      const scan = await h.eval(() => { for (let s = 200; s < 5400; s += 50) { const la = window.__test.lineAt(s); if (Math.abs(la.rlD || 0) >= 4) return s; } return 850; });
+      const stage = await h.eval((sec) => { const T = window.__test; const pc = T.paceCars(); const pi = pc.findIndex(c => c.isPlayer); if (pi < 0) return -1;
+        for (let i = 0; i < pc.length; i++) if (i !== pi) T.setCarS(i, 3400 + i * 50);
+        T.setCarS(pi, sec); return pi; }, scan);
+      if (stage < 0) return 'no player car on the grid';
+      const rd0 = await h.eval((pi) => window.__test.paceCars()[pi].raceDist, stage);
+      await h.eval(() => window.__test.setInput({ gas: true, brake: false, steer: 0 }));
+      let moved = 0, maxHead = 0, maxD = 0;
+      for (let i = 0; i < 20; i++) {
+        const pc = await h.eval(() => window.__test.paceCars()); const p = pc[stage];
+        if (!p) break;
+        moved = Math.max(moved, p.raceDist - rd0);
+        maxHead = Math.max(maxHead, Math.abs(p.headAngle));
+        maxD = Math.max(maxD, Math.abs(p.d));
+        await h.wait(500);
+      }
+      await h.eval(() => window.__test.setInput({ gas: false, brake: false, steer: 0 }));
+      if (moved < 30) return 'gas-only car covered only ' + moved.toFixed(0) + ' m - the drive never got going';
+      if (maxHead < 0.5) return 'gas only, stick centred, the heading stayed at ' + maxHead.toFixed(2) + ' rad on a sharp curve - the car is still following the road by itself';
+      if (maxD < 10) return 'gas only, stick centred, the car stayed on the road (|d| max ' + maxD.toFixed(1) + ' m) - it is still driving itself round';
+      return true;
+    },
+  },
+  {
+    id: "never-g-265-p1",
+    ask: "on the upright phone teamMenu fits with no scrolling",
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      let out = null;
+      if (!await g33Reset(page, h, null)) out = 'reset did not reach the main menu';
+      if (!out) { await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.wait(800); }
+      if (!out) {
+        const tm = await h.eval(() => { const m = document.querySelector('#teamMenu'); if (!m) return null;
+          const sb = document.querySelector('#startBtn').getBoundingClientRect();
+          return { scrollH: m.scrollHeight, clientH: m.clientHeight, scrollW: m.scrollWidth, clientW: m.clientWidth, startBottom: Math.round(sb.bottom) }; }).catch(() => null);
+        if (!tm) out = 'teamMenu never opened';
+        else if (tm.scrollH > tm.clientH) out = 'teamMenu needs scrolling on the upright phone (content ' + tm.scrollH + ' px in ' + tm.clientH + ' px)';
+        else if (tm.scrollW > tm.clientW) out = 'teamMenu overflows sideways on the upright phone (content ' + tm.scrollW + ' px in ' + tm.clientW + ' px)';
+        else if (tm.startBottom > tm.clientH) out = 'START WEEKEND sits below the fold on the upright phone';
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
+  {
+    id: "play-stick-clears-pit",
+    ask: "on the upright phone the stick never overlaps the PIT button",
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.pit) return 'stick or PIT never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.pit.x + r.pit.w) - Math.max(r.stick.x, r.pit.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.pit.y + r.pit.h) - Math.max(r.stick.y, r.pit.y);
+      if (x > 0 && y > 0) return 'the stick overlaps PIT by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: "play-stick-clears-cam",
+    ask: "on the upright phone the stick never overlaps the CAM button",
+    async test(page, h) {
+      const r = await g265PortraitOverlaps(page, h);
+      if (!r) return 'race never started on the upright phone';
+      if (!r.stick || !r.cam) return 'stick or CAM never rendered';
+      const x = Math.min(r.stick.x + r.stick.w, r.cam.x + r.cam.w) - Math.max(r.stick.x, r.cam.x);
+      const y = Math.min(r.stick.y + r.stick.h, r.cam.y + r.cam.h) - Math.max(r.stick.y, r.cam.y);
+      if (x > 0 && y > 0) return 'the stick overlaps CAM by ' + Math.round(x * y) + ' px^2 on the upright phone';
+      return true;
+    },
+  },
+  {
+    id: 'play-kit-retries-until-loaded',
+    ask: 'a dropped engine-kit fetch must not leave the synth carrying the race: the kit keeps retrying until it loads',
+    async test(page, h) {
+      const unwrap = () => h.eval(`window.__kitBlock = false;`).catch(() => {});
+      if (!await g33Reset(page, h, null)) return 'game did not return to the menu';
+      await h.eval(() => {
+        window.__kitBlock = true;
+        if (!window.__kitFetchOrig) {
+          window.__kitFetchOrig = window.fetch;
+          window.fetch = function (u, o) {
+            const s = String(u);
+            if (window.__kitBlock && s.includes('grand_prix')) return Promise.reject(new Error('blocked for test'));
+            return window.__kitFetchOrig(u, o);
+          };
+        }
+      }).catch(() => {});
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn');
+      await h.wait(1200); await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 16 && !racing; i++) { await h.wait(600); racing = await h.eval(`window.__test.race().mode === 'race'`).catch(() => false); }
+      if (!racing) { await unwrap(); return 'the race never started'; }
+      await h.wait(3000);
+      await unwrap();
+      let ready = null;
+      for (let i = 0; i < 20; i++) {
+        const st = await h.eval(`window.__test.kitAudio()`).catch(() => null);
+        if (st && st.ready) { ready = st; break; }
+        await h.wait(1000);
+      }
+      await h.eval(`window.__test.setInput({ gas:false, steer:0 })`).catch(() => {});
+      if (!ready) return 'the engine kit never recovered after the fetch came back: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`).catch(() => null));
+      return true;
+    },
+  },
+  {
+    id: 'never-g-279-p1',
+    ask: 'play-test entries are shaped right: play-start-on-car-with-lights exposes test and ask, not run and title',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      const i = txt.indexOf("id: 'play-start-on-car-with-lights'");
+      if (i < 0) return 'entry play-start-on-car-with-lights is missing from the fixes file';
+      let seg = txt.slice(i);
+      const end = seg.indexOf('\n  },', 200);
+      if (end > 0) seg = seg.slice(0, end);
+      if (!/ask:/.test(seg)) return 'entry play-start-on-car-with-lights has no ask';
+      if (/title:/.test(seg)) return 'entry play-start-on-car-with-lights still uses title instead of ask';
+      if (!/test:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights has no test function';
+      if (/run:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights still uses run instead of test';
+      if (/h\.fail|h\.pass/.test(seg)) return 'entry play-start-on-car-with-lights still uses h.fail/h.pass instead of returns';
+      return true;
+    },
+  },
+  {
+    id: 'play-checklist-apexf1-format',
+    ask: 'Apex F1: checklists/apexf1.md exists with one measurable item per line, each carrying SOURCE, NUMBERS, MEASURE and a tester-chk TEST id (G-286)',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/checklists/apexf1.md'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read checklists/apexf1.md from the served repo';
+      const items = txt.split('\n').filter(l => /^- \[[ x-]\] [A-Z]\d+ \|/.test(l));
+      if (!items.length) return 'no checklist items found in checklists/apexf1.md';
+      const seen = new Set();
+      for (const line of items) {
+        const m = line.match(/^- \[[ x-]\] ([A-Z]\d+) \|(.*)$/);
+        if (!m) return 'checklist item line has the wrong shape: ' + line.slice(0, 80);
+        const id = m[1], rest = m[2];
+        if (seen.has(id)) return 'duplicate checklist id ' + id;
+        seen.add(id);
+        for (const k of ['SOURCE:', 'NUMBERS:', 'MEASURE:', 'TEST:']) if (!rest.includes(k)) return 'item ' + id + ' is missing ' + k;
+        const tp = rest.split(' | ').find(x => x.trim().startsWith('TEST:')) || '';
+        const tid = tp.split('TEST:')[1].trim().split(' ')[0];
+        if (tid !== 'tester-chk-' + id.toLowerCase()) return 'item ' + id + ' TEST must be tester-chk-' + id.toLowerCase();
+      }
+      return true;
+    },
+  },
+  {
+    id: 'never-g-286-p1',
+    ask: 'on the upright phone the stick, REV and CAM never overlap: the landscape compact rules do not apply upright, so portrait needs its own compact block',
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      let out = null;
+      if (!await g66ToRace(page, h)) out = 'race never started on the upright phone';
+      if (!out) {
+        const r = await h.eval(() => { const q = (id) => { const el = document.querySelector('#' + id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; }; return { stick: q('stick'), rev: q('btnRev'), cam: q('btnCam') }; }).catch(() => null);
+        if (!r || !r.stick || !r.rev || !r.cam) out = 'stick, REV or CAM never rendered on the upright phone';
+        else {
+          const ov = (a, b) => { const x = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x); const y = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y); return (x > 0 && y > 0) ? Math.round(x * y) : 0; };
+          const sr = ov(r.stick, r.rev), rc = ov(r.rev, r.cam);
+          if (sr) out = 'the stick overlaps REV by ' + sr + ' px^2 on the upright phone';
+          else if (rc) out = 'REV overlaps CAM by ' + rc + ' px^2 on the upright phone';
+        }
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
 ];

@@ -1,0 +1,1 @@
+{"_what":"baseMs = time of the robot 20-million-step arithmetic test on a NORMAL runner (check.mjs slowFactor). Each result logs the measured ms in r.slow. Tune from real runs.","baseMs":60}

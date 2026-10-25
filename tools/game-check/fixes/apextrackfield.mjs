@@ -43,13 +43,19 @@ export default [
         await h.wait(160);
       }
       if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
-      // thigh swing over ~1.4s proves real leg drive (not a glide)
+      // thigh swing over a FULL cycle proves real leg drive (not a glide). G-249 r2:
+      // the old 7x200ms wall window covered only ~0.5s of animation on the robot
+      // (it paints ~3 frames a second, and the mixer advances on visual dt clamped
+      // to 0.12s a frame - 0.36s of animation per wall second), so the range it read
+      // was a phase-dependent slice of the cycle (0.43 rad on main 1efbb9b) while the
+      // same clip measures 1.85-1.95 rad over a full cycle. 30x250ms covers 2+ cycles
+      // at any frame rate. Ask and bar (0.7 rad) unchanged.
       let mn = 1e9, mx = -1e9;
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < 30; i++) {
         await drive();
         const p = await h.eval(() => window.__tf.pose());
         for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
-        await h.wait(200);
+        await h.wait(250);
       }
       if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
       return true;
@@ -268,7 +274,7 @@ export default [
       // never reach the menu): use the game's real screens (.screen.on) and real results buttons.
       let atMenu = false;
       while (budget() && !atMenu) {
-        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
+        atMenu = await h.eval(() => { const on = document.querySelector('.screen.on'); if (on && on.id === 'menu') return true; if (on && on.id === 'grid') { const g = document.getElementById('bGridBack'); if (g) g.click(); return false; } if (on && on.id === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { const m = document.getElementById('bResMenu'); if (m) m.click(); } else if (n) n.click(); } return false; });
         if (!atMenu) await h.wait(500);
       }
       if (!atMenu) return 'could not get back to the menu (a race or results screen is stuck)';
@@ -410,7 +416,7 @@ export default [
       const budget = () => Date.now() - t0 < 27000;
       await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
       await h.eval(() => { if (!window.__tfdrv3) { window.__tfdrv3 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (typeof e.best === 'number' && e.phase === 'mark') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (e.phase === 'flight' && typeof e.ft === 'number' && typeof e.fT === 'number' && e.fT > 0) e.ft = Math.max(e.ft, e.fT - 0.05); if (e.phase === 'mark' && typeof e.resT === 'number') e.resT = Math.min(e.resT, 0.05); if (ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault') { if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const e = window.__tf && window.__tf.eng(); const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') { const n = document.getElementById('bResNext'); const lbl = n ? n.textContent : ''; if (/RETRY EVENT/.test(lbl)) { if (!click('bResMenu')) click('bResNext'); } else click('bResNext'); } return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null, ev: e ? (e.ev || {}).id : null }; });
       let start = null, unlocked = false, guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -434,7 +440,7 @@ export default [
       await page.reload({ waitUntil: 'load' });
       await h.wait(1500);
       await h.eval(() => { if (!window.__tfdrv4) { window.__tfdrv4 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; const field = ev.eng === 'throw' || ev.eng === 'longjump' || ev.eng === 'triplejump' || ev.eng === 'highjump' || ev.eng === 'polevault'; if (typeof e.best === 'number') e.best = Math.max(e.best, (ev.ref || 2) * 0.97); if (field) { const seen = window.__tfChampSeen || (window.__tfChampSeen = {}); const k = ev.id || ev.eng; if (!seen[k]) seen[k] = Date.now(); if (Date.now() - seen[k] > 3000) { e.done = true; return; } if (e.r) e.r.speed = Math.max(e.r.speed || 0, 9.2); if (e.stride) { e.stride('L'); e.stride('R'); } if (e.action) e.action(); } else if (e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); if (e.action && e.phase === 'run' && (ev.eng === 'hurdles' || ev.eng === 'relay')) e.action(); } }, 160); } return true; });
-      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
+      const step = () => h.eval(() => { const on = document.querySelector('.screen.on'); let car = null; try { car = JSON.parse(localStorage.getItem('tfapex_career') || 'null'); } catch (e) {} const click = (id) => { const b = document.getElementById(id); if (b) { b.click(); return true; } return false; }; const screen = on ? on.id : null; if (screen === 'menu') click('bCareer'); else if (screen === 'career') click('bCareerMeet'); else if (screen === 'grid') click('bGridBack'); else if (screen === 'card') click('bCardStart'); else if (screen === 'results') click('bResNext'); return { screen, car: car ? { season: car.season, meet: car.meet, done: car.done } : null }; });
       let guard = 0;
       while (budget() && guard++ < 200) {
         const s2 = await step();
@@ -1129,17 +1135,28 @@ export default [
       // few metres in front of the bar, his body must be ABOVE the bar
       // height while he is over the bar, and he must land ON the mat behind
       // it - not run on the grass and never go over.
-      for (let i = 0; i < 140; i++) {
+      // HARDENED START (G-249): the suite's page-lifetime driver intervals (installed by
+      // earlier tests and never cleared) stride whatever engine is live, and on the robot's
+      // slower navigation they could run the approach through and burn this event's attempts
+      // before the drive below ever started - the reading came back 'takeoff at -1.0m' while
+      // the game itself takes off in front of the bar. Clear the known drivers and start the
+      // event fresh from its test link; the ask, the drive and every assertion below are
+      // unchanged from the owner's test.
+      await h.eval(() => {
+        for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+        try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+        return true;
+      });
+      const base = page.url().split('?')[0];
+      await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+      for (let i = 0; i < 30; i++) {
         const s = await h.eval(() => {
           const on = document.querySelector('.screen.on');
           const e = window.__tf && window.__tf.eng();
-          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null };
-        });
-        if (!s.screen && s.ev === 'hj') break;
-        if (s.screen === 'menu') await h.eval(() => { document.getElementById('bFree').click(); return true; });
-        else if (s.screen === 'grid') await h.eval(() => { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /high jump/i.test(x.textContent)); if (b) b.click(); return true; });
-        else if (s.screen === 'card') await h.eval(() => { document.getElementById('bCardStart').click(); return true; });
-        await h.wait(200);
+          return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, st: e && typeof e.jumpState === 'function' };
+        }).catch(() => ({ screen: 'x' }));
+        if (!s.screen && s.ev === 'hj' && s.st) break;
+        await h.wait(1500);
       }
       const res = await h.eval(() => {
         const e = window.__tf && window.__tf.eng();
@@ -1581,7 +1598,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1591,7 +1610,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 400m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1606,7 +1626,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 400m Hurdles race';
@@ -1621,7 +1641,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1631,7 +1653,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1646,7 +1669,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 300m Hurdles race';
@@ -1661,7 +1684,9 @@ export default [
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
-      const nav = await h.eval(() => new Promise(res => {
+      let nav = null;
+      for (let att = 0; att < 3 && nav === null; att++) {
+        try { nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
@@ -1671,7 +1696,8 @@ export default [
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
           if (++n > 90) { clearInterval(iv); res('stuck'); }
         }, 150);
-      }));
+      })); } catch (e) { await h.wait(1200); }
+      }
       if (nav !== 'racing') return 'could not start the 100m Hurdles: ' + nav;
       let m = null;
       for (let i = 0; i < 10 && !m; i++) {
@@ -1686,7 +1712,7 @@ export default [
             if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, w: +w.toFixed(3), h: +hh.toFixed(3) };
           });
           return found;
-        });
+        }).catch(() => null);
         if (!m) await h.wait(500);
       }
       if (!m) return 'no hurdle mesh found in the 100m Hurdles race';
@@ -1945,4 +1971,1307 @@ export default [
       return true;
     }
   }
+,{
+    id: 'never-g-122-p1',
+    ask: 'NEVER (G-122): the 400m and 300m hurdles stand 0.914 m high like real ones (the robot FAIL lines of G-122 round 1)',
+    async test(page, h) {
+      const measure = async (evName) => {
+        await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        // h.eval ships function SOURCE: the event name is baked into the source string below, never closed over
+        const navFn = eval(`() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '${evName}'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })`);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(navFn); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return { err: 'could not start ' + evName + ': ' + nav };
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          m = await h.eval(() => {
+            const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+            let root = rigs[0].group; while (root.parent) root = root.parent;
+            let found = null;
+            root.traverse(o => {
+              if (found || !o.isInstancedMesh || !o.count) return;
+              if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+              const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+              if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) found = { count: o.count, h: +hh.toFixed(3) };
+            });
+            return found;
+          }).catch(() => null);
+          if (!m) await h.wait(500);
+        }
+        if (!m) return { err: 'no hurdle mesh found in the ' + evName + ' race' };
+        return m;
+      };
+      const a = await measure('400m Hurdles');
+      if (a.err) return a.err;
+      if (Math.abs(a.h - 0.914) / 0.914 > 0.15) return 'the 400m hurdles are ' + a.h + ' m tall - real 400m hurdles are 0.914 m (G-122 round 1)';
+      const b = await measure('300m Hurdles');
+      if (b.err) return b.err;
+      if (Math.abs(b.h - 0.914) / 0.914 > 0.15) return 'the 300m hurdles are ' + b.h + ' m tall - real 300m hurdles are 0.914 m (G-122 round 1)';
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p1',
+    ask: 'NEVER (G-139): every main-menu button is at least the 44x44 CSS px touch target (DONE.md section 2)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.wait(2000);
+      let meas = null;
+      for (let i = 0; i < 16 && !meas; i++) {
+        meas = await h.eval(() => {
+          const on = document.querySelector('#menu.screen.on');
+          if (!on) return null;
+          const bs = [...on.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+          if (!bs.length) return null;
+          return bs.map(b => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }; });
+        }).catch(() => null);
+        if (!meas) await h.wait(500);
+      }
+      if (!meas) return 'the main menu never appeared';
+      const small = meas.filter(b => b.w < 44 || b.h < 44);
+      if (small.length) return 'menu buttons under the 44x44 touch target: ' + small.map(b => b.t + ' is ' + b.w + 'x' + b.h).join(', ');
+      return true;
+    }
+  }
+,{
+    id: 'never-g-139-p2',
+    ask: 'NEVER (G-139): feet do not sink into the ground - REALITY sampling at the menu (12 samples, go(true)) finds no more than 20% of foot readings more than 5 cm under',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      let ready = false;
+      for (let i = 0; i < 30 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player)).catch(() => false); if (!ready) await h.wait(1000); }
+      if (!ready) return 'the REALITY player never loaded';
+      const gaps = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        try { R.go && R.go(true); } catch (e) {}
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (const i2 of e.vs) { e.m.getVertexPosition(i2, v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 12) { clearInterval(iv); try { R.go && R.go(false); } catch (e) {} res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps || gaps.length < 12) return 'too few foot readings to judge the sink (' + (gaps ? gaps.length : 0) + ')';
+      // G-139 round 1: the robot also samples the player STANDING (idle clip at the marks,
+      // the SET crouch) - those clips ground low too, so sample a standing 100m start as well.
+      const nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no event'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+      if (nav !== 'racing') return 'could not start the 100m to sample the standing start: ' + nav;
+      const gaps2 = await h.eval(() => new Promise(res => {
+        const R = window.__reality; const out = [];
+        let n = 0;
+        const iv = setInterval(() => {
+          try {
+            const P = R.player;
+            if (P) {
+              for (const c of R.contact) {
+                // the race start rebuilds the player rig, so the menu-cached index is gone:
+                // build the sole index on THESE bones when missing (same scan as above).
+                if (!c.__soleIdx) {
+                  const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+                  const list = [];
+                  P.traverse(m => {
+                    if (!m.isSkinnedMesh || !m.skeleton) return;
+                    const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+                    if (!bi.length) return;
+                    const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+                    for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+                    const step = Math.max(1, Math.ceil(vs.length / 500));
+                    list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+                  });
+                  c.__soleIdx = list;
+                }
+                let sole = null; const wp = new (c.position.constructor)(); c.getWorldPosition(wp);
+                for (const e of c.__soleIdx) { if (!e.m.visible) continue; const v = wp.clone(); for (let i2 = 0; i2 < e.vs.length; i2++) { e.m.getVertexPosition(e.vs[i2], v); e.m.localToWorld(v); if (sole == null || v.y < sole) sole = v.y; } }
+                if (sole != null) out.push(+sole.toFixed(3));
+              }
+            }
+          } catch (e) {}
+          if (++n >= 8) { clearInterval(iv); res(out); }
+        }, 400);
+      })).catch(() => null);
+      if (!gaps2 || gaps2.length < 6) return 'too few standing readings to judge the start-line sink (' + (gaps2 ? gaps2.length : 0) + ') - the test must sample the marks and SET, not pass blind (G-139)';
+      gaps.push(...gaps2);
+      // The standing readings are judged on their own pool too: on the round-0 build they
+      // hide inside the clean running pool (idle stands -0.05, the SET crouch reaches -0.115).
+      if (gaps2 && gaps2.length >= 8) {
+        const sunk2 = gaps2.filter(g => g < -0.05).length;
+        if (sunk2 > gaps2.length * 0.2) return 'feet SINK into the ground at the start line: ' + sunk2 + ' of ' + gaps2.length + ' standing readings more than 5 cm under - the idle and SET clips must ground on the track too (G-139)';
+        if (Math.min(...gaps2) < -0.08) return 'a foot buries ' + Math.abs(Math.min(...gaps2)).toFixed(2) + ' m under the track at the start - the SET crouch must sit on the ground line (G-139)';
+      }
+      const sunk = gaps.filter(g => g < -0.05).length;
+      if (sunk > gaps.length * 0.2) return 'feet SINK into the ground: ' + sunk + ' of ' + gaps.length + ' readings more than 5 cm under (worst ' + Math.min(...gaps).toFixed(2) + ' m) - G-139';
+      if (Math.min(...gaps) < -0.12) return 'a foot buries ' + Math.abs(Math.min(...gaps)).toFixed(2) + ' m under the track - the stance foot must stay on the ground line (G-139)';
+      return true;
+    }
+  },
+
+{
+    id: 'tester-hurdle-cross-plane',
+    ask: 'TESTER (G-130): one board per hurdle - a hurdle is a single board facing the runner, not two full-size boards crossed at 90 degrees (the sideways copy sticks through the middle of every hurdle and shows as cross/plus shapes and extra hurdles between the real ones)',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '110m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 90) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => {
+            if (mesh || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) mesh = o;
+          });
+          if (!mesh) return null;
+          const p = mesh.geometry.attributes.position.array;
+          let side = 0, total = 0;
+          for (let t = 0; t + 8 < p.length; t += 9) {
+            const ax = p[t], ay = p[t + 1], az = p[t + 2], bx = p[t + 3], by = p[t + 4], bz = p[t + 5], cx = p[t + 6], cy = p[t + 7], cz = p[t + 8];
+            const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            const area = 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (area === 0) continue;
+            total += area;
+            if (Math.abs(nx) / (2 * area) > 0.9) side += area;
+          }
+          if (!total) return null;
+          if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox;
+          return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
+      if (m.sideShare > 20) return 'each hurdle is two full-size boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways (geometry depth ' + m.depth + ' m, as deep as the hurdle is wide) - the sideways board sticks through the middle of every hurdle and shows as cross/plus shapes and extra hurdles between the real ones; a hurdle should be one board facing the runner';
+      return true;
+    }
+  },{
+    id: 'never-g-160-p1',
+    ask: 'NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '110m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => {
+            if (mesh || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) mesh = o;
+          });
+          if (!mesh) return null;
+          const p = mesh.geometry.attributes.position.array;
+          let side = 0, total = 0;
+          for (let t2 = 0; t2 + 8 < p.length; t2 += 9) {
+            const ax = p[t2], ay = p[t2 + 1], az = p[t2 + 2], bx = p[t2 + 3], by = p[t2 + 4], bz = p[t2 + 5], cx = p[t2 + 6], cy = p[t2 + 7], cz = p[t2 + 8];
+            const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            const area = 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (area === 0) continue;
+            total += area;
+            if (Math.abs(nx) / (2 * area) > 0.9) side += area;
+          }
+          if (!total) return null;
+          if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox;
+          return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
+      if (m.sideShare > 20) return 'each hurdle is two boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways - one board per hurdle, facing the runner (G-160)';
+      if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
+      return true;
+    }
+  },
+{
+    id: 'never-g-169-p1',
+    ask: 'NEVER (G-160): one board per hurdle - a hurdle is a single board facing the runner, never two full-size boards crossed at 90 degrees',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv','__tfdrv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '110m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 110m Hurdles: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const rigs = window.__tf.rigs(); if (!rigs || !rigs.length || !rigs[0].group) return null;
+          let root = rigs[0].group; while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => {
+            if (mesh || !o.isInstancedMesh || !o.count) return;
+            if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+            const b = o.geometry.boundingBox, w = b.max.x - b.min.x, hh = b.max.y - b.min.y;
+            if (w > 1.0 && w < 1.4 && hh > 0.5 && hh < 1.5) mesh = o;
+          });
+          if (!mesh) return null;
+          const p = mesh.geometry.attributes.position.array;
+          let side = 0, total = 0;
+          for (let t2 = 0; t2 + 8 < p.length; t2 += 9) {
+            const ax = p[t2], ay = p[t2 + 1], az = p[t2 + 2], bx = p[t2 + 3], by = p[t2 + 4], bz = p[t2 + 5], cx = p[t2 + 6], cy = p[t2 + 7], cz = p[t2 + 8];
+            const ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            const area = 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (area === 0) continue;
+            total += area;
+            if (Math.abs(nx) / (2 * area) > 0.9) side += area;
+          }
+          if (!total) return null;
+          if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
+          const bb = mesh.geometry.boundingBox;
+          return { sideShare: +(100 * side / total).toFixed(1), depth: +(bb.max.z - bb.min.z).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle mesh found in the 110m Hurdles race';
+      if (m.sideShare > 20) return 'each hurdle is two boards crossed at 90 degrees: ' + m.sideShare + '% of the hurdle surface faces sideways - one board per hurdle, facing the runner (G-160)';
+      if (m.depth > 0.2) return 'the hurdle geometry is ' + m.depth + ' m deep - a single board facing the runner has no sideways copy sticking through it (G-160)';
+      return true;
+    }
+  },
+{
+    id: 'play-test-link-starts-the-event',
+    ask: 'G-171 (Mac, 2026-10-22): apextrackfield.html?test=60h (any EVENTS id) opens that event in Free Play and starts it at once - no menu, no card, no story; in a hurdles event the countdown camera holds every lane\u2019s first hurdle close in frame so the owner can check the hurdles in seconds',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=60h')) return 'the test-link page would not load';
+      let started = null;
+      for (let i = 0; i < 40 && !started; i++) {
+        started = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '60h') return null;
+          return { phase: e.phase, screen: (document.querySelector('.screen.on') || {}).id || null, playing: document.body.classList.contains('playing'), hurdles: __tf.hurdles() };
+        }).catch(() => null);
+        if (!started) await h.wait(500);
+      }
+      if (!started) return 'apextrackfield.html?test=60h never started the 60m Hurdles by itself (a menu or card is still in the way)';
+      if (started.screen === 'menu' || started.screen === 'card' || started.screen === 'grid') return 'the test link stopped at the ' + started.screen + ' instead of starting the event';
+      if (!started.playing) return 'the test link started no race (the page is not in the playing state)';
+      if (!started.hurdles || started.hurdles.count !== 40 || started.hurdles.placed !== 40) return 'the 60m Hurdles should stand 5 hurdles in each of 8 lanes (40 hurdles), got ' + JSON.stringify(started.hurdles);
+      const shot = await h.eval(() => new Promise(res => {
+        let last = null, tries = 0;
+        const cap = () => {
+          try {
+            const tv = __tf.throwView && __tf.throwView(); if (!tv || !tv.cam || !tv.look) return null;
+            let root = window.__reality && __reality.player; if (!root) return null;
+            while (root.parent) root = root.parent;
+            let mesh = null;
+            root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 40) mesh = o; });
+            if (!mesh) return null;
+            mesh.updateMatrixWorld();
+            const cvs = document.querySelector('canvas'); if (!cvs || !cvs.height) return null;
+            const aspect = cvs.width / cvs.height;
+            const f = 1 / Math.tan((58 * Math.PI / 180) / 2); // the game camera is PerspectiveCamera(58, W/H) in the source
+            const eye = [tv.cam.x, tv.cam.y, tv.cam.z], tgt = [tv.look.x, tv.look.y, tv.look.z];
+            let zx = eye[0] - tgt[0], zy = eye[1] - tgt[1], zz = eye[2] - tgt[2];
+            const zl = Math.hypot(zx, zy, zz) || 1; zx /= zl; zy /= zl; zz /= zl;
+            let xx = zz, xy = 0, xz = -zx;
+            const xl = Math.hypot(xx, xy, xz) || 1; xx /= xl; xy /= xl; xz /= xl;
+            const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+            const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+            const mul = (m, x, y, z) => [m[0] * x + m[4] * y + m[8] * z + m[12], m[1] * x + m[5] * y + m[9] * z + m[13], m[2] * x + m[6] * y + m[10] * z + m[14]];
+            let cx = 0, cz = 0; const pts = [];
+            for (let i2 = 0; i2 < 8; i2++) {
+              const w = mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14]);
+              const dx = w[0] - eye[0], dy = w[1] - eye[1], dz = w[2] - eye[2];
+              const xv = xx * dx + xy * dy + xz * dz, yv = yx * dx + yy * dy + yz * dz, zv = zx * dx + zy * dy + zz * dz;
+              pts.push({ x: +((f / aspect) * xv / -zv).toFixed(2), y: +(f * yv / -zv).toFixed(2), behind: zv >= 0 });
+              cx += w[0]; cz += w[2];
+            }
+            cx /= 8; cz /= 8;
+            return { pts, dist: +Math.hypot(eye[0] - cx, eye[2] - cz).toFixed(1) };
+          } catch (err) { return null; }
+        };
+        const iv = setInterval(() => {
+          tries++;
+          const e = window.__tf && __tf.eng();
+          if (!e) { if (tries > 240) { clearInterval(iv); res(last); } return; }
+          if (e.phase === 'marks' || e.phase === 'set') { const s = cap(); if (s) last = s; if (e.phase === 'set' && last) { clearInterval(iv); res(last); } return; }
+          if (last || tries > 240) { clearInterval(iv); res(last); }
+        }, 120);
+      })).catch(() => null);
+      if (!shot) return 'no countdown framing could be measured (the first hurdle row was never in front of the camera during marks/set)';
+      const out = shot.pts.filter(p => p.behind || Math.abs(p.x) > 0.98 || Math.abs(p.y) > 0.98);
+      if (out.length) return 'during the countdown ' + out.length + ' of the 8 first-row hurdles are outside the camera frame - the owner cannot see every lane\u2019s hurdle: ' + JSON.stringify(shot.pts);
+      if (shot.dist > 9) return 'during the countdown the camera is ' + shot.dist + ' m from the first hurdle row - not close enough to check the hurdles';
+      let ran = false;
+      for (let i = 0; i < 40 && !ran; i++) {
+        ran = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.phase === 'run' && e.ai && e.ai.length && e.ai[0].pos > 1); }).catch(() => false);
+        if (!ran) await h.wait(500);
+      }
+      if (!ran) return 'the test-link race never left the start (the field is not running after the gun)';
+      await nav(base);
+      return true;
+    }
+  }
+  ,{
+    id: 'tester-10000m-results-match-crossing',
+    mode: '10000m',
+    ask: 'TESTER (G-183): 10,000m - the results order matches who actually crosses the finish line first on the track (REALITY.md: finishing order = who crossed first). The player joins the leaders with 700m to go; if he runs the live segment fastest and crosses the line first, the results must place him 1st - a rival who is still short of the line cannot be credited ahead of him with a faster total time built from his own private early pace.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+          const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+          if (on && on.id === 'menu') click('bFree');
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+          else if (on && on.id === 'card') click('bCardStart');
+          else if (on && on.id === 'results') click('bResMenu');
+          if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+        }, 140);
+      })).catch(() => null);
+      if (nav !== 'in') await h.wait(1200);
+      }
+      if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+      const fin = await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, steps = 0;
+        while (!e.done && steps < 30000) {
+          e.update(1 / 60); steps++;
+          const t = steps / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        if (!e.done) return { notDone: true, pos: Math.round(e.r.pos), phase: e.phase };
+        return {
+          time: +e.time.toFixed(2), place: e.place,
+          ai: e.ai.map(a => ({ n: a.name, tt: +a.tTarget.toFixed(1), pos: Math.round(a.pos) })),
+          crossed: e.ai.filter(a => a.pos >= 10000).length
+        };
+      }).catch(() => null);
+      if (!fin) return 'the 10,000m drive could not be measured';
+      if (fin.notDone) return 'the player never finished the 10,000m (stuck at ' + fin.pos + 'm, phase ' + fin.phase + ')';
+      if (fin.crossed > 0) return true;
+      const best = fin.ai.reduce((a, b) => (b.pos > a.pos ? b : a), fin.ai[0]);
+      const credited = fin.ai.filter(a => a.tt < fin.time).sort((a, b) => a.tt - b.tt);
+      if (fin.place !== 1) return 'the player crossed the 10,000m finish line FIRST on the track (no rival reached 10000m; nearest rival ' + best.n + ' was still ' + (10000 - best.pos) + 'm short at ' + best.pos + 'm when the player finished in ' + fin.time + 's), but the results place him ' + fin.place + ' - credited ahead of him: ' + credited.map(a => a.n + ' ' + a.tt + 's').join(', ') + '. Rivals are ranked by their own private target times for the first 9300m instead of the race on the track (REALITY: finishing order matches who actually crossed first)';
+      return true;
+    }
+  },
+{
+    id: 'never-g-174-p1',
+    ask: 'NEVER (G-174, owner video 2026-10-22): hurdles facing the wrong way - a hurdle board front faces the approaching runner: dot(board normal, lane tangent) = -1 at every hurdle, never 0 (edge-on)',
+    async test(page, h) {
+      const base = page.url().split('?')[0];
+      const nav = async (url) => { for (let i = 0; i < 3; i++) { try { await page.goto(url, { waitUntil: 'load', timeout: 30000 }); return true; } catch (e) { await h.wait(1200); } } return false; };
+      if (!await nav(base + '?test=110h')) return 'the 110m Hurdles test-link page would not load';
+      let m = null;
+      for (let i = 0; i < 40 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && __tf.eng();
+          if (!e || !e.ev || e.ev.id !== '110h') return null;
+          let root = window.__reality && __reality.player; if (!root) return null;
+          while (root.parent) root = root.parent;
+          let mesh = null;
+          root.traverse(o => { if (!mesh && o.isInstancedMesh && o.count === 80) mesh = o; });
+          if (!mesh) return null;
+          mesh.updateMatrixWorld();
+          const im = mesh.instanceMatrix.array, mw = mesh.matrixWorld.elements;
+          const mul = (mm, x, y, z) => [mm[0] * x + mm[4] * y + mm[8] * z + mm[12], mm[1] * x + mm[5] * y + mm[9] * z + mm[13], mm[2] * x + mm[6] * y + mm[10] * z + mm[14]];
+          const P = [], N = [], P2 = [];
+          for (let i2 = 0; i2 < 8; i2++) { P.push(mul(mw, im[i2 * 16 + 12], im[i2 * 16 + 13], im[i2 * 16 + 14])); N.push([im[i2 * 16 + 8], im[i2 * 16 + 10]]); P2.push(mul(mw, im[(i2 + 8) * 16 + 12], im[(i2 + 8) * 16 + 13], im[(i2 + 8) * 16 + 14])); }
+          let best = null;
+          for (let s = 0; s < 400; s += 0.5) { const lp = __tf.lanePoint(s, 3); const d = (lp.x - P[3][0]) * (lp.x - P[3][0]) + (lp.z - P[3][2]) * (lp.z - P[3][2]); if (!best || d < best.d) best = { d, tx: lp.tx, tz: lp.tz }; }
+          if (!best || best.d > 4) return null;
+          const tl = Math.hypot(best.tx, best.tz) || 1; const t = [best.tx / tl, best.tz / tl];
+          const dots = N.map(n => { const l = Math.hypot(n[0], n[1]) || 1; return +((n[0] / l) * t[0] + (n[1] / l) * t[1]).toFixed(2); });
+          return { dots };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no hurdle facing could be measured in the 110m Hurdles';
+      const bad = m.dots.filter(d => d > -0.75);
+      if (bad.length) return 'the hurdles face the wrong way: dot(board normal, lane tangent) is ' + JSON.stringify(m.dots) + ' - the board front must face the approaching runner (-1.00); 0 means the boards stand edge-on (G-174)';
+      return true;
+    }
+  },{
+id: 'never-g-193-p1',
+title: 'G-193 r1: the relay PASS button works from the start of the exchange zone - the receiver is in reach when the carrier arrives, not only in the last metres',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === 'relay' && e.relayState); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'relay did not start from the test link';
+  const out = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L', firstOkAt = null, fumbled = false, tooFarAt80 = null;
+    for (let step = 0; step < 60 * 40; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run' && !e.done && step % 2 === 0) { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+      const st = e.relayState(); const T0 = st.teams[0];
+      if (st.leg === 0 && T0.carrierPos >= 80 && T0.recvPos !== null) {
+        const before = T0.exchanges;
+        e.action();
+        if (T0.carrierPos <= 80.5 && e.msg === 'RECEIVER TOO FAR' && tooFarAt80 === null) tooFarAt80 = +T0.carrierPos.toFixed(1);
+        const st2 = e.relayState();
+        if (st2.teams[0].exchanges > before) { firstOkAt = +T0.carrierPos.toFixed(1); break; }
+      }
+      if (st.leg >= 1) { fumbled = e.msg === 'FUMBLED EXCHANGE'; break; }
+      if (e.done) break;
+    }
+    return { firstOkAt, fumbled, tooFarAt80 };
+  });
+  if (!out) return 'relay drive failed';
+  if (out.fumbled) return 'the leg-1 exchange FUMBLED - the carrier ran out of the zone without the pass button ever working';
+  if (out.firstOkAt === null) return 'the PASS button never exchanged in the zone';
+  if (out.firstOkAt > 84) return 'PASS only started working at ' + out.firstOkAt + 'm - for most of the 20m zone the button refused (RECEIVER TOO FAR at 80m: ' + out.tooFarAt80 + ') - the owner: my player ran past the receiver, could not pass it and got stuck';
+  return true;
+}
+},{
+id: 'play-free-results-return-to-events',
+title: 'OWNER 2026-10-23: after a Free Play event the results bring you back to the free play menu to pick something else, and the event menu has its BACK button at the top (to the main menu)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=200m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '200m'); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 200m did not start from the test link';
+  await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return e.done;
+  });
+  let onResults = false;
+  for (let i = 0; i < 40 && !onResults; i++) {
+    onResults = await h.eval(() => { const on = document.querySelector('.screen.on'); return !!(on && on.id === 'results'); }).catch(() => false);
+    if (!onResults) await h.wait(1500);
+  }
+  if (!onResults) return 'the results screen never appeared after the free play 200m';
+  const chk = await h.eval(() => {
+    const next = document.getElementById('bResNext');
+    const menu = document.getElementById('bResMenu');
+    const out = { nextLabel: next ? next.textContent : '', menuLabel: menu ? menu.textContent : '' };
+    if (menu) menu.click();
+    return out;
+  });
+  await h.wait(500);
+  const after = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (!/RETRY EVENT/.test(chk.nextLabel || '')) return 'expected the free play results (RETRY EVENT button), got next=' + chk.nextLabel;
+  if (after !== 'grid') return 'after a free play event the results exit went to "' + after + '" - the owner: it must always bring you back to the free play menu (CHOOSE EVENT) to pick something else';
+  const top = await h.eval(() => {
+    const back = document.getElementById('bGridBack');
+    const firstEv = document.querySelector('#gridEvents button');
+    if (!back || !firstEv) return { ok: false, why: 'missing back or events' };
+    const br = back.getBoundingClientRect(), er = firstEv.getBoundingClientRect();
+    return { ok: br.top < er.top && br.top >= 0 && br.bottom <= window.innerHeight, backTop: Math.round(br.top), evTop: Math.round(er.top) };
+  });
+  if (!top || !top.ok) return 'the event menu BACK button is not at the top of the panel (back top=' + (top && top.backTop) + ', first event top=' + (top && top.evTop) + ') - the owner circled the top of the panel: on his phone it sits under all 29 events where it cannot be reached';
+  await h.eval(() => { const b = document.getElementById('bGridBack'); if (b) b.click(); });
+  await h.wait(500);
+  const home = await h.eval(() => { const on = document.querySelector('.screen.on'); return on ? on.id : null; }).catch(() => null);
+  if (home !== 'menu') return 'the event menu BACK button went to "' + home + '", not the main game menu';
+  return true;
+}
+},{
+id: 'play-60m-field-starts-together',
+title: 'G-244 (art director): the 60m field waits on ONE start line until the player starts - no rivals racing off alone, no 7th place at 0m with the clock running',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let started = false;
+  for (let i = 0; i < 30 && !started; i++) {
+    started = await h.eval(() => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === '60m' && e.ai); }).catch(() => false);
+    if (!started) await h.wait(1500);
+  }
+  if (!started) return 'the 60m did not start from the test link';
+  const held = await h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    const e = __tf.eng();
+    for (let step = 0; step < 60 * 5; step++) e.update(1 / 60);
+    const rigs = __tf.rigs();
+    const px = rigs[0].group.position.x, pz = rigs[0].group.position.z;
+    const line = rigs.slice(0, 7).map(r => ({ vis: r.group.visible, dx: +(r.group.position.x - px).toFixed(1), dz: +(r.group.position.z - pz).toFixed(1) }));
+    return { phase: e.phase, time: +e.time.toFixed(2), place: e.place, rPos: +e.r.pos.toFixed(1), aiPos: e.ai.map(a => +a.pos.toFixed(1)), line };
+  });
+  if (!held) return 'the held-start measurement failed';
+  if (held.aiPos.some(p => p > 0.5)) return 'the field raced off without the player (rivals at ' + JSON.stringify(held.aiPos) + 'm after 5s with the player still on the line) - the robot play picture: one runner on the track, the field gone';
+  if (held.place !== 1) return 'with the whole field level on the start line the HUD place reads ' + held.place + ' - the place must count only the runners on the track (all level, nobody ahead)';
+  if (held.time > 0.05) return 'the race clock ran to ' + held.time + 's while the player was still on the start line at 0m';
+  if (held.line.some(r => !r.vis || Math.abs(r.dx) > 2.5)) return 'not every runner stands on the one start line: ' + JSON.stringify(held.line);
+  const fin = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L';
+    for (let step = 0; step < 60 * 45 && !e.done; step++) {
+      e.update(1 / 60);
+      if (e.phase === 'run') { e.stride(side); side = side === 'L' ? 'R' : 'L'; }
+    }
+    return { done: e.done, place: e.place, aiPos: e.ai.map(a => +a.pos.toFixed(0)) };
+  });
+  if (!fin || !fin.done) return 'once the player started striding the 60m never finished';
+  if (fin.aiPos.some(p => p < 30)) return 'once the player started, the field did not race with him: ' + JSON.stringify(fin.aiPos);
+  if (!(fin.place >= 1 && fin.place <= 7)) return 'the finishing place ' + fin.place + ' is outside the field that exists (7 runners)';
+  return true;
+}
+},{
+id: 'never-g-249-p1',
+title: 'G-249 r1 (owner): jumping was too hard - the green window on the timing bar was tiny (high jump 0.10-0.22 wide, ~0.1-0.2s), the long jump angle swept at 95 deg/s and you fouled running past the line while setting it, the triple jump marker ran at 1.6/s',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  const waitEv = async (id) => {
+    for (let i = 0; i < 25; i++) {
+      const ok = await h.eval((a) => { const e = window.__tf && __tf.eng(); return !!(e && e.ev && e.ev.id === a.id); }, { id }).catch(() => false);
+      if (ok) return true;
+      await h.wait(1200);
+    }
+    return false;
+  };
+  const clean = () => h.eval(() => {
+    for (const n of ['__drv','__tfdrv2','__tfdrv3','__tfdrv4','__tfdrv5','__tfdrv6','__tfdrvF','__g68drv']) { try { clearInterval(window[n]); } catch (e) {} }
+    try { if (window.__reality && __reality.go) __reality.go(false); } catch (e) {}
+    return true;
+  }).catch(() => false);
+  // HIGH JUMP: green width + sweep speed in the bar phase
+  await page.goto(base + '?test=hj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('hj')) return 'the high jump did not start from the test link';
+  await clean();
+  const hj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'approach' && guard++ < 800) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= e.zoneLo && e.r.pos <= e.zoneHi) e.action();
+    }
+    if (e.phase !== 'bar') return { stage: 'nobar', phase: e.phase };
+    const gw = e.gw;
+    e.marker = 0; e.mdir = 1;
+    let path = 0, prev = 0;
+    for (let i = 0; i < 50; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    return { stage: 'ok', gw: +gw.toFixed(3), rate: +path.toFixed(2) };
+  });
+  if (!hj || hj.stage !== 'ok') return 'the high jump never reached the timing bar (stage ' + (hj && hj.stage) + ')';
+  if (hj.gw < 0.19) return 'the high jump green window is still only ' + (hj.gw * 2).toFixed(2) + ' of the bar wide - the owner: it is difficult to get in between green with the line bar (target: at least 0.40 wide)';
+  if (hj.rate > 0.9) return 'the high jump timing bar still sweeps at ' + hj.rate.toFixed(2) + '/s - the green lasts about a tenth of a second (target: 0.75/s, green at least half a second)';
+  // LONG JUMP: setting the angle must not foul, and the needle must be settable
+  await page.goto(base + '?test=lj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('lj')) return 'the long jump did not start from the test link';
+  await clean();
+  const lj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'angle') return { stage: 'noangle', phase: e.phase, foul: e.foul };
+    let path = 0, prev = e.ang;
+    for (let i = 0; i < 10; i++) { e.update(0.05); path += Math.abs(e.ang - prev); prev = e.ang; }
+    for (let i = 0; i < 20; i++) e.update(0.05);
+    return { stage: 'ok', sweep: +path.toFixed(1), phase: e.phase, foul: e.foul, moved: +(e.r.pos - 30).toFixed(1) };
+  });
+  if (!lj || lj.stage !== 'ok') return 'the long jump never reached the angle phase (stage ' + (lj && lj.stage) + ')';
+  if (lj.foul || lj.phase === 'mark') return 'setting the long jump angle still fouls - crossing the line while you set it ends the jump (owner: make the jump button easy, freely controlled)';
+  if (lj.phase !== 'angle' && lj.phase !== 'flight') return 'the long jump left the angle phase the wrong way (phase ' + lj.phase + ')';
+  if (lj.sweep > 30) return 'the long jump angle still sweeps at ' + lj.sweep.toFixed(0) + ' deg per half-second - too fast to set (target: 55 deg/s)';
+  // TRIPLE JUMP: marker speed
+  await page.goto(base + '?test=tj', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  if (!await waitEv('tj')) return 'the triple jump did not start from the test link';
+  await clean();
+  const tj = await h.eval(() => {
+    const e = __tf.eng();
+    let side = 'L', guard = 0;
+    while (e.phase === 'runup' && guard++ < 900) {
+      e.stride(side); side = side === 'L' ? 'R' : 'L';
+      e.update(0.05);
+      if (e.r.pos >= 30) e.action();
+      if (e.phase !== 'runup') break;
+    }
+    if (e.phase !== 'phase') return { stage: 'nophase', phase: e.phase };
+    let path = 0, prev = e.marker;
+    for (let i = 0; i < 25; i++) { e.update(0.02); path += Math.abs(e.marker - prev); prev = e.marker; }
+    e.marker = 0.32; const before = e.qs.length; e.action();
+    const q = e.qs.length > before ? e.qs[e.qs.length - 1] : -1;
+    return { stage: 'ok', rate: +path.toFixed(2), q: +q.toFixed(2) };
+  });
+  if (!tj || tj.stage !== 'ok') return 'the triple jump never reached its timing phases (stage ' + (tj && tj.stage) + ')';
+  if (tj.rate > 0.55) return 'the triple jump marker still runs at ' + tj.rate.toFixed(2) + ' per half-second (1.6/s) - the fastest tap in the game (target: 1.0/s)';
+  if (tj.q < 0.72) return 'a triple jump tap just inside the old green edge still scores only ' + tj.q.toFixed(2) + ' - the quality window was not widened with the green';
+  return true;
+}
+},{
+    id: 'tester-chk-t04',
+    mode: 't04',
+    ask: 'CHECKLIST T04 (G-259): the relay baton changeover zone is 30 m long (rules/trackfield.md) - the green zone markings painted on the track in the relay event must span 30 m, within 3%',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the relay event: ' + nav;
+      let m = null;
+      for (let i = 0; i < 10 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const upm = (window.__reality && window.__reality.unitsPerMetre) || 1;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len / upm);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(500);
+      }
+      if (!m) return 'no relay changeover-zone markings found in the relay event';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long - the markings are ' + (100 * (30 - m.mean) / 30).toFixed(0) + '% short';
+      return true;
+    }
+  }
+,{
+    id: 'tester-chk-t05',
+    mode: 't05',
+    ask: 'CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as "w" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the "w" mark instead of counting as a best',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 100m sprint: ' + nav;
+      const driven = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e) return null;
+        let side = 0, steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+          e.update(1 / 60);
+          steps++;
+        }
+        return { done: e.done };
+      }).catch(() => null);
+      if (!driven) return 'no sprint engine found in the 100m race';
+      if (!driven.done) return 'the 100m sprint never finished in game-time stepping';
+      for (let w = 0; w < 10; w++) {
+        const shown = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const mk = document.getElementById('resMark');
+          return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+        }).catch(() => false);
+        if (shown) break;
+        await h.wait(300);
+      }
+      const m = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        const on = document.querySelector('.screen.on');
+        const windKeys = Object.keys(e).filter(k => /wind/i.test(k));
+        const resMark = document.getElementById('resMark') ? document.getElementById('resMark').textContent : '';
+        const bodyText = document.body.innerText || '';
+        const windShown = /wind/i.test(bodyText) || /[+-]\d\.\d\s*m\/s/.test(resMark);
+        let bests = null;
+        try { bests = localStorage.getItem('tfapex_bests'); } catch (err) {}
+        return { screen: on ? on.id : null, windKeys, resMark, windShown, bests };
+      }).catch(() => null);
+      if (!m) return 'no sprint engine found in the 100m race';
+      if (!m.windShown) return 'the game models no wind at all: the sprint engine has no wind value (' + m.windKeys.length + ' wind keys), the results screen shows "' + m.resMark + '" with no wind reading and no "w" mark, and the time was saved as a best (' + m.bests + ') - so a tailwind over +2.0 m/s (rules/trackfield.md: the time does not count as a record, shown as "w") can never apply';
+      return true;
+    }
+  }
+,
+  {
+      id: 'tester-10000m-mash-no-speed-exploit',
+      mode: '10000m',
+      ask: 'TESTER (G-200, BREAK round): 10,000m - mashing the run controls faster than any human cadence must not make the player faster. Stride input needs a rate cap: after settling into the run, 30 game-seconds of striding on EVERY tick (60/s) must not average more than 8.6 m/s (honest 0.30 s alternating cadence measured 7.56 m/s average, peak 7.97, on 2026-10-22; rivals are capped near 5.5-6.3 m/s).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+            const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+            if (on && on.id === 'menu') click('bFree');
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+            else if (on && on.id === 'card') click('bCardStart');
+            else if (on && on.id === 'results') click('bResMenu');
+            if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+          }, 140);
+        })).catch(() => null);
+        if (nav !== 'in') await h.wait(1200);
+        }
+        if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let side = 'L', last = -99;
+          // settle: 10 game-s of honest 0.30 s cadence once running
+          for (let i = 0; i < 600; i++) { e.update(1 / 60); const t = i / 60; if (e.phase === 'run' && t - last >= 0.30) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; } }
+          if (e.phase !== 'run') return { notRun: true, phase: e.phase };
+          const p0 = e.r.pos;
+          let peak = 0;
+          // mash: stride on every tick for 30 game-s
+          for (let i = 0; i < 1800; i++) { e.stride(side); side = side === 'L' ? 'R' : 'L'; e.update(1 / 60); if (e.r.speed > peak) peak = e.r.speed; }
+          return { gain: +(e.r.pos - p0).toFixed(1), avg: +((e.r.pos - p0) / 30).toFixed(2), peak: +peak.toFixed(2) };
+        }).catch(() => null);
+        if (!m) return 'the mash measurement could not be taken';
+        if (m.notRun) return 'the 10,000m never reached the run phase (phase ' + m.phase + ')';
+        if (m.avg > 8.6) return 'mashing the run controls on every tick (60 strides/s) for 30 game-s moved the player ' + m.gain + 'm - an average of ' + m.avg + ' m/s, peak ' + m.peak + ' m/s - while honest 0.30 s alternating taps average 7.56 m/s and the rivals are capped near 5.5-6.3 m/s. There is no cap on stride rate, so inhuman tapping buys inhuman speed in the 10,000m (UNFAIR: the rivals obey caps the player can tap past)';
+        return true;
+      }
+    },
+  {
+    id: "tester-300mh-hurdle-count",
+    mode: "freeplay",
+    ask: "TESTER (G-234): real sport - the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (rules/short/apextrackfield.md: every event is the REAL sport start to finish).",
+    async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        for (let i = 0; i < 10 && !m; i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!m) await h.wait(400);
+        }
+        if (!m) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 hurdles per lane (rules/short/apextrackfield.md: every event is the REAL sport start to finish)';
+        return true;
+      },
+  },
+  {
+      id: 'tester-chk-t07',
+      mode: 't07',
+      ask: 'TESTER (G-271, checklist T07): throws get 3 attempts (plus 3 more for the top 8) - rules/trackfield.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let steps = 0;
+          while (!e.done && steps < 20000) {
+            e.update(1 / 60); steps++;
+            if (e.phase === 'power' && e.power >= 0.97) e.action();
+            else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+          }
+          if (!e.done) return { notDone: true };
+          const before = e.attempts.length;
+          e.action(); for (let s = 0; s < 120; s++) e.update(1 / 60);
+          return { attempts: e.attempts.length, attMax: e.attMax, done: e.done, afterDone: e.attempts.length, extra: e.attempts.length - before };
+        }).catch(() => null);
+        if (!m) return 'the Shot Put attempt count could not be read';
+        if (m.notDone) return 'the Shot Put never finished its attempts';
+        if (m.attempts <= 3 && m.done) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') and no athlete got 3 more attempts - rules/trackfield.md says throws get 3 attempts (plus 3 more for the top 8)';
+        return true;
+      }
+  },{
+id: 'never-g-249-p3',
+title: 'G-249 r2 point 2 (owner, CHECKLIST T04): the relay baton changeover zone is 30 m long - the green zone markings painted on the track in the relay event must span 30 m, within 3% (today: 20.08 m on average)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=relay', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  let m = null;
+  for (let i = 0; i < 30 && !m; i++) {
+    m = await h.eval(() => {
+      const e = window.__tf && __tf.eng();
+      if (!e || !e.ev || e.ev.id !== 'relay') return null;
+      const grp = e._zone;
+      if (!grp || !grp.children.length) return null;
+      const upm = (window.__reality && __reality.unitsPerMetre) || 1;
+      const lens = [];
+      grp.children.forEach(mesh => {
+        const p = mesh.geometry.attributes.position.array;
+        for (let l = 0; l < 8; l++) {
+          const b0 = l * 10 * 3; let len = 0;
+          for (let j = 0; j < 4; j++) {
+            const a = b0 + j * 6, b = b0 + (j + 1) * 6;
+            len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+          }
+          lens.push(len / upm);
+        }
+      });
+      const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+      return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+    }).catch(() => null);
+    if (!m) await h.wait(1500);
+  }
+  if (!m) return 'no relay changeover-zone markings found in the relay event';
+  if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but rules/trackfield.md says the changeover zone is 30 m long';
+  return true;
+}
+},
+{
+id: 'never-g-249-p2',
+title: 'G-249 r2 point 1 (owner): runners must run with natural arm and leg motion - a real sprint animation, not posed bones (mirrors the hardened real-sprint-animation sampling: thighL range over a full cycle must reach 0.70 rad; the old 1.4s wall window read 0.43 rad on the ~3fps robot while the same clip measures 1.85+ rad over a full cycle)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+  const t0 = Date.now(); let best = null;
+  while (Date.now() - t0 < 120000) {
+    const st = await h.eval(() => { const e = window.__tf.eng(); return { pos: e && e.r ? e.r.pos : 0, pose: window.__tf.pose() }; });
+    if (st.pos > 12) {
+      for (const r of st.pose) {
+        if (r.human && r.sf > 0.3 && /Sprint_Loop|Jog_Fwd_Loop/.test(r.clip || '')) { best = r; break; }
+      }
+    }
+    if (best) break;
+    await h.wait(160);
+  }
+  if (!best) return 'no runner was seen using Sprint_Loop / Jog_Fwd_Loop while racing';
+  let mn = 1e9, mx = -1e9;
+  for (let i = 0; i < 30; i++) {
+    const p = await h.eval(() => window.__tf.pose());
+    for (const r of p) if (r.human && r.sf > 0.3) { mn = Math.min(mn, r.thighL); mx = Math.max(mx, r.thighL); }
+    await h.wait(250);
+  }
+  if (mx - mn < 0.7) return 'thigh swing too small (' + (mx - mn).toFixed(2) + ' rad) - legs are not driving';
+  return true;
+}
+},
+{
+id: 'never-g-267-p1',
+title: 'G-267 (owner): the live race camera never has a wall between it and the runner - the wall check ray must target the runner (its length must match the camera-to-runner distance) and 4 samples must all read clear (today the ray targets the infield centre because ox/oz are never written)',
+async test(page, h) {
+  const base = page.url().split('?')[0];
+  await page.goto(base + '?test=60m', { waitUntil: 'load', timeout: 45000 }).catch(() => {});
+  await h.eval(() => { if (!window.__drv) { window.__tk = false; window.__drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase !== 'set') { e.stride(window.__tk ? 'R' : 'L'); window.__tk = !window.__tk; } }, 120); } return true; });
+  const t0 = Date.now(); let live = null;
+  while (Date.now() - t0 < 120000) {
+    const st = await h.eval(() => { const e = window.__tf.eng(); const rigs = window.__tf.rigs(); const rp = rigs && rigs[0] && rigs[0].group ? rigs[0].group.position : null; return { pos: e && e.r ? e.r.pos : 0, phase: e ? e.phase : null, cam: window.__tf.camPos(), rig: rp ? { x: rp.x, z: rp.z } : null, clear: window.__tf.camClear() }; });
+    if (st.phase === 'run' && st.pos > 5 && st.cam && st.rig && st.clear) { live = st; break; }
+    await h.wait(160);
+  }
+  if (!live) return 'no live race camera seen on the runner';
+  const trueD = Math.hypot(live.cam.x - live.rig.x, live.cam.z - live.rig.z);
+  if (Math.abs(live.clear.dist - trueD) > 2) return 'camera ray does not target the runner: ray length ' + live.clear.dist + ' m but the runner is ' + trueD.toFixed(1) + ' m from the camera';
+  let seen = 0, blocked = 0;
+  for (let i = 0; i < 4; i++) {
+    const c = await h.eval(() => window.__tf.camClear());
+    if (c) { seen++; if (!c.clear) blocked++; }
+    await h.wait(400);
+  }
+  if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';
+  return true;
+}
+},{
+    id: 'never-g-267-p2',
+      mode: '10000m',
+      ask: 'NEVER (G-267 round 1): 10,000m - mashing the run controls faster than any human cadence must not make the player faster (tester-10000m-mash-no-speed-exploit: 30 game-s of striding on every tick must not average more than 8.6 m/s).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+            const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+            if (on && on.id === 'menu') click('bFree');
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+            else if (on && on.id === 'card') click('bCardStart');
+            else if (on && on.id === 'results') click('bResMenu');
+            if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+          }, 140);
+        })).catch(() => null);
+        if (nav !== 'in') await h.wait(1200);
+        }
+        if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let side = 'L', last = -99;
+          for (let i = 0; i < 600; i++) { e.update(1 / 60); const t = i / 60; if (e.phase === 'run' && t - last >= 0.30) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; } }
+          if (e.phase !== 'run') return { notRun: true, phase: e.phase };
+          const p0 = e.r.pos;
+          let peak = 0;
+          for (let i = 0; i < 1800; i++) { e.stride(side); side = side === 'L' ? 'R' : 'L'; e.update(1 / 60); if (e.r.speed > peak) peak = e.r.speed; }
+          return { gain: +(e.r.pos - p0).toFixed(1), avg: +((e.r.pos - p0) / 30).toFixed(2), peak: +peak.toFixed(2) };
+        }).catch(() => null);
+        if (!m) return 'the mash measurement could not be taken';
+        if (m.notRun) return 'the 10,000m never reached the run phase (phase ' + m.phase + ')';
+        if (m.avg > 8.6) return 'mashing on every tick for 30 game-s still averages ' + m.avg + ' m/s (peak ' + m.peak + ') - the distance stride rate cap is not holding (G-267 round 1)';
+        return true;
+}
+},
+{
+    id: 'never-g-267-p3',
+      mode: 'freeplay',
+      ask: 'NEVER (G-267 round 1): the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (tester-300mh-hurdle-count).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        // Robot 2026-10-24: the mesh was not placed within 10 s late in the shared-page suite - poll up to 60 s.
+        for (let i = 0; i < 60 && !(m && m.count > 0); i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!(m && m.count > 0)) await h.wait(1000);
+        }
+        if (!m || m.count <= 0) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 (G-267 round 1)';
+        return true;
+}
+}
+,{
+    id: 'never-g-289-p1',
+    mode: 'relay',
+    ask: 'NEVER (G-289): the relay changeover-zone markings are not found in the relay event on a slow load - the zones must paint at race start on the scene alone, not wait for the full 3D load',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the relay event: ' + nav;
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const upm = (window.__reality && window.__reality.unitsPerMetre) || 1;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len / upm);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start - the zones still wait for the full 3D load (G-289)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but the changeover zone is 30 m long (G-289)';
+      return true;
+    }
+  }
+
+,{
+    id: 'never-g-289-p2',
+    mode: 'wind',
+    ask: 'NEVER (G-289): a tailwind over +2.0 m/s still counts as a record - the sprint results screen must show a wind reading, a wind-aided time must carry the "w" mark, and it must never be saved as a best',
+    async test(page, h) {
+      // G-289 robot lesson: clear the saved 100m best BEFORE reloading, so the
+      // fresh boot loads clean in-memory bests too (the game loads bests once
+      // at boot; deleting after boot leaves a stale in-memory best behind).
+      // The delete is verified - a reload-race throw used to swallow it and a
+      // stale 0.03 s fast-forward best from an earlier suite test survived.
+      let cleared = false;
+      for (let d = 0; d < 2 && !cleared; d++) {
+        cleared = await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } try { const b = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); delete b['100m']; localStorage.setItem('tfapex_bests', JSON.stringify(b)); const chk = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); return chk['100m'] == null; } catch (err) { return false; } }).catch(() => false);
+      }
+      if (!cleared) return 'could not clear the saved 100m best before the wind runs (G-289)';
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
+      const nav100 = async () => {
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        return nav;
+      };
+      const drive = async () => {
+        const driven = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng();
+          if (!e) return null;
+          let side = 0, steps = 0;
+          while (!e.done && steps < 6000) {
+            if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+            e.update(1 / 60);
+            steps++;
+          }
+          return { done: e.done };
+        }).catch(() => null);
+        if (!driven || !driven.done) return false;
+        for (let w = 0; w < 10; w++) {
+          const shown = await h.eval(() => {
+            const on = document.querySelector('.screen.on');
+            const mk = document.getElementById('resMark');
+            return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+          }).catch(() => false);
+          if (shown) return true;
+          await h.wait(300);
+        }
+        return false;
+      };
+      const readRes = async () => h.eval(() => {
+        const mk = document.getElementById('resMark');
+        let bests = null;
+        try { bests = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); } catch (err) {}
+        return { resMark: mk ? mk.textContent : '', bests };
+      }).catch(() => null);
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (wind-aided run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 2.5; return true; }).catch(() => {});
+      if (!await drive()) return 'the wind-aided 100m sprint never finished in game-time stepping';
+      const r1 = await readRes();
+      if (!r1) return 'no results screen after the wind-aided 100m sprint';
+      if (!/\d+\.\d+w\s*\(/.test(r1.resMark)) return 'a +2.5 m/s tailwind time carries no "w" mark: results show "' + r1.resMark + '" (G-289)';
+      if (!/Wind \+2\.5 m\/s/.test(r1.resMark)) return 'a +2.5 m/s tailwind time shows no wind reading: results show "' + r1.resMark + '" (G-289)';
+      if (r1.bests && r1.bests['100m'] != null) return 'a wind-aided 100m time was saved as a best (' + r1.bests['100m'] + ') though the results show "' + r1.resMark + '" (G-289)';
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (legal-wind run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 1.0; return true; }).catch(() => {});
+      if (!await drive()) return 'the legal-wind 100m sprint never finished in game-time stepping';
+      const r2 = await readRes();
+      if (!r2) return 'no results screen after the legal-wind 100m sprint';
+      if (/\d+\.\d+w\s*\(/.test(r2.resMark)) return 'a +1.0 m/s wind time wrongly carries a "w" mark: results show "' + r2.resMark + '" (G-289)';
+      if (!/Wind \+1\.0 m\/s/.test(r2.resMark)) return 'a +1.0 m/s wind time shows no wind reading: results show "' + r2.resMark + '" (G-289)';
+      const tm = r2.resMark.match(/(\d+\.\d+)\s*\(/);
+      if (!tm) return 'could not read the legal-wind 100m time from "' + r2.resMark + '" (G-289)';
+      if (!r2.bests || Math.abs(r2.bests['100m'] - parseFloat(tm[1])) > 0.011) return 'a legal-wind 100m time was not saved as a best: results show "' + r2.resMark + '", saved bests ' + JSON.stringify(r2.bests) + ' (G-289)';
+      return true;
+    }
+  }
+
 ];

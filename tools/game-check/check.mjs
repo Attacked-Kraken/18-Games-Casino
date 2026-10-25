@@ -17,6 +17,8 @@ import path from 'path';
 import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
 
+// a play test written without `ask:` (e.g. only `title:` or just an id) must still print a real name, never "undefined"
+const askOf = (fx) => String((fx && (fx.ask || fx.title || fx.name || fx.id)) || 'unnamed test');
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'game-check-out';
 const here = path.dirname(new URL(import.meta.url).pathname);
@@ -92,6 +94,80 @@ async function measure(jpg) {
 }
 const changed = (a, b) => a.lum.filter((v, i) => Math.abs(v - b.lum[i]) > 12).length / a.lum.length;
 
+
+// ---------- IDLE RUN (owner Oct 22, Hockey played itself with a 6-7x clock): after start, nobody touches the game for ~15 s.
+// FAIL when a clock on the screen runs faster than real time, or a two-sided score (3 - 1) changes. Read the HUD text only,
+// so it works for every game. games.json "idleOk": true switches the score half off for a game whose AI may score by design.
+async function idleRead(page) {
+  return page.evaluate(() => {
+    const vis = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };
+    const clocks = [], scores = [];
+    for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i],[id*="score" i],[class*="score" i]')) {
+      if (!vis(e) || e.children.length > 6) continue;
+      const t = (e.textContent || '').replace(/\s+/g, ' ').trim(); if (!t || t.length > 40) continue;
+      const key = (e.id || e.className || e.tagName) + '';
+      const m = t.match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/);
+      if (m) { clocks.push({ key, sec: +m[1] * 60 + +m[2] }); continue; }
+      if (/^\d{1,3}\s*[\u2013\u2014-]\s*\d{1,3}$/.test(t)) scores.push({ key, text: t });
+    }
+    return { clocks, scores, at: performance.now() };
+  }).catch(() => null);
+}
+function idleJudge(a, b, g, wallSec) {
+  const out = [];
+  if (!a || !b) return out;
+  for (const c of b.clocks) {
+    const c0 = a.clocks.find(x => x.key === c.key); if (!c0) continue;
+    const d = Math.abs(c.sec - c0.sec);
+    if (d > wallSec * 1.5 + 3) out.push(`IDLE RUN: the clock "${c.key}" moved ${d} s in ${wallSec.toFixed(0)} s of real time with nobody touching the game - it runs faster than real time (a 1.0 s frame step, a time-speed setting left on, or a lost lastT=now)`);
+  }
+  if (!g.idleOk) for (const s of b.scores) {   // idleGoalWarn: yellow instead of red until that game's AI defends an untouched team (Hockey, Oct 22)
+    const s0 = a.scores.find(x => x.key === s.key);
+    if (s0 && s0.text !== s.text) out.push(`${g.idleGoalWarn ? 'WARN|' : ''}IDLE RUN: the score "${s.key}" went ${s0.text} -> ${s.text} with nobody touching the game - a goal/point was scored by itself`);
+  }
+  return out;
+}
+
+// VIRTUAL CLOCK (owner Oct 22): on a slow robot a game that steps a whole second per frame (lost `lastT=now`) looks normal, because
+// real frames are slow too. So run the page on a FAKE clock: requestAnimationFrame hands out 16.7 ms per frame and performance.now
+// follows it. A healthy game then moves its HUD clock about 1 s per 60 frames; a broken one moves it many seconds per frame.
+async function virtualClockFail(ctx, base, g) {
+  const vp = await ctx.newPage();
+  try {
+    await vp.addInitScript(() => {
+      let v = 0; window.__vf = 0;
+      window.requestAnimationFrame = cb => setTimeout(() => { v += 16.667; window.__vf++; cb(v); }, 0);
+      performance.now = () => v;
+    });
+    await vp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await vp.waitForTimeout(4000);
+    for (const step of g.start || []) await pressStep(vp, step);
+    const hud = () => vp.evaluate(() => {
+      for (const e of document.querySelectorAll('[id*="clock" i],[id*="timer" i],[class*="clock" i],[class*="timer" i]')) {
+        const r = e.getBoundingClientRect(); if (!r.width || !r.height) continue;
+        const m = (e.textContent || '').trim().match(/^(\d{1,2}):(\d{2})(?:[.:]\d+)?$/); if (m) return { key: (e.id || e.className) + '', sec: +m[1] * 60 + +m[2], vf: window.__vf };
+      } return null; });
+    const f0 = await vp.evaluate(() => window.__vf);
+    await vp.waitForFunction(n => window.__vf >= n, f0 + 30, { timeout: 90000, polling: 100 });
+    const a = await hud(); if (!a) return null;
+    await vp.waitForFunction(n => window.__vf >= n, a.vf + 60, { timeout: 120000, polling: 100 });
+    const b = await hud(); if (!b || b.key !== a.key) return null;
+    const vsec = (b.vf - a.vf) * 0.016667, d = Math.abs(b.sec - a.sec);
+    if (d > vsec * 1.5 + 3) return `IDLE RUN: the clock "${b.key}" moved ${d} s while the game was given only ${vsec.toFixed(1)} s of frames (${b.vf - a.vf} frames at 60/s) - the game steps far more than one frame of time per frame (a lost lastT=now, or a time-speed setting left on)`;
+    return null;
+  } catch (e) { return null; } finally { try { await vp.close(); } catch (e) {} }
+}
+// SLOW-RUNNER CLOCK (owner Oct 22, help line "Flight wall-clock tests timing out on slow runner days"): the tests' time budgets are
+// real seconds, so a runner 3-4x slower than normal fails a test that passes at normal speed. The robot times a fixed amount of
+// arithmetic in the page; SLOW = how many times slower than the baseline in tools/game-check/runner-speed.json (never below 1,
+// never above 4, and under 1.5x counts as normal). Every test budget (the 30 s harness limit and the Flight tests' own
+// `Date.now() - t0 > N` limits via window.__slow) is multiplied by it. The measured number is logged in the result (r.slow).
+async function slowFactor(page) {
+  let base = 60; try { base = JSON.parse(fs.readFileSync(new URL('./runner-speed.json', import.meta.url), 'utf8')).baseMs || 60; } catch (e) {}
+  try {
+    const ms = await page.evaluate(() => { const t = performance.now(); let x = 0; for (let i = 0; i < 20e6; i++) x += Math.sqrt(i) * 1.0001; return performance.now() - t + (x < 0 ? 1 : 0); });
+    const f = ms / base; return { ms: Math.round(ms), base, factor: f < 1.5 ? 1 : Math.min(4, Math.round(f * 10) / 10) };
+  } catch (e) { return { ms: 0, base, factor: 1 }; }
+}
 async function pressStep(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
   try {
@@ -154,6 +230,7 @@ const results = [];
 for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
   const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
+  const phases = []; let tPh = Date.now(); const mark = n => { phases.push({ phase: n, ms: Date.now() - tPh }); tPh = Date.now(); };   // owner Oct 24 2026 item 6: robot prints the time of each step
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -221,6 +298,7 @@ for (const g of games) {
   }
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
+  mark('load + menu + start'); const idleA = await idleRead(page); const idleT0 = Date.now();
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
   try {
@@ -271,6 +349,9 @@ for (const g of games) {
     r.stutter = { frames: st.length, median: Math.round(med), hitches: hitches.length, worst: Math.round(Math.max(0, ...hitches)) };
     if (hitches.length >= 3) r.check.push(`Stutter: ${hitches.length} short freezes in 6 s of play (worst ${r.stutter.worst} ms, normal frame ${r.stutter.median} ms) - usually new objects made every frame (garbage), big pictures loaded mid-game or a model built during play; build everything before play starts and reuse objects (STUDIO-STANDARD.md "Phone budget")`);
   } catch (e) {}
+  try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) { if (m.startsWith('WARN|')) r.check.push(m.slice(5) + ' (yellow for now: this game is on the warning list until its AI defends an untouched team)'); else r.fail.push(m); } } catch (e) {}
+  mark('idle watch + first pictures');
+  try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;
@@ -312,6 +393,7 @@ for (const g of games) {
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
   if (fs.existsSync(fixFile)) {
     let list = [];
+    mark('pictures + reality + checks');
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
     catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '.mjs - it does not load, so NONE of its tests ran: ' + String(e.message).split('\n')[0].slice(0, 140)); }
     // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
@@ -322,7 +404,30 @@ for (const g of games) {
       try { await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(2500);
         for (const step of g.start || []) await pressStep(page, step); await page.waitForTimeout(2500); } catch (e) {}
     };
+    // VP-analyst Oct 23 2026 (window 6, PR #1282: "fx.test is not a function"): a play-test entry that is not shaped right is
+    // rejected UP FRONT with the exact right shape, never a bare TypeError. Runs at PR time (the PR's game is played).
+    {
+      const RIGHT = "right shape: { id: 'play-...', ask: 'the owner words' (a line saying what is checked), async test(page, h) { ...; return true; } } - the check is a method named `test` (async test(page, h)) that returns true when fine, or a short string saying why not; NOT `run:`, `fn:` or `check:`";
+      const good = [];
+      for (const fx of Array.isArray(list) ? list : []) {
+        const why = !fx || typeof fx !== 'object' ? 'entry is not an object' : typeof fx.id !== 'string' || !fx.id ? 'missing id'
+          : typeof fx.test !== 'function' ? ('has no test function' + (['run', 'fn', 'check', 'exec', 'play'].filter(k => typeof fx[k] === 'function').map(k => ' - it uses `' + k + '` instead of `test`').join('')) ) : '';
+        if (why) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs entry "' + (fx && fx.id || '?') + '" ' + why + ' - ' + RIGHT);
+        else good.push(fx);
+      }
+      if (!Array.isArray(list)) r.fail.push('PLAY-TEST FORMAT: tools/game-check/fixes/' + slug + '.mjs must `export default [ ... ]` - an array of entries; ' + RIGHT);
+      list = good;
+    }
+    // owner Oct 23 2026 7:47 PM: TEST_PART=k/n plays only every n-th play test starting at k (Hockey's 56 tests on 3 robots side by side);
+    // merge-results puts the parts back together. Part 1 also does everything else (pictures, reality, Safari).
+    const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
+    if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
+    // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
+    // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
+    // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
+    const GAME_CAP_MS = 20 * 60 * 1000, tGame = Date.now(); let notRun = [];
     for (const fx of list) {
+      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
       let ok = false, note = '', dead = false;
       // the time limit really STOPS the test: after 30 s every call it makes on the page throws
       const live = new Proxy(page, { get(t, k) { if (dead) throw new Error('test stopped (time limit)'); const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
@@ -341,26 +446,43 @@ for (const g of games) {
       // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
       // A test says it by returning { inconclusive: 'why' }, or a sentence with "could not be checked" / "never happened".
       const INCON = /could not be checked|couldn'?t be checked|could not be tested|never happened|did not happen in|no .{0,40} happened in \d+ ?s/i;
+      // Oct 22 9:20 PM (window 2 HELP, PR #1177): on a slow runner a tester test errored "took over 30 s" in 3 runs - the robot's
+      // clock, not a game bug. A test that only TIMED OUT gets one more try on a fresh game with DOUBLE the time; a test that
+      // times out twice still fails (a real hang must stay red).
+      let timedOut = false;
       for (let attempt = 1; attempt <= 2; attempt++) {
-        dead = false; inc = false;
+        dead = false; inc = false; const budget = attempt === 2 ? 2 : 1;
         try {
-          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over 30 s')); }, 30000); })]);
+          const sl = await slowFactor(page); r.slow = sl; try { await page.evaluate(f => { window.__slow = f; }, sl.factor); } catch (e) {}
+          const capMs = Math.min(30000 * sl.factor, 90000) * budget;
+          const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(capMs / 1000) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, capMs); })]);
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
-        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); }
+          timedOut = false;
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); timedOut = /^took over \d+ s/.test(String(e.message)); }
         clearTimeout(timer); dead = true;
+        if (timedOut && attempt === 1) { await freshGame(); continue; }
         if (!inc || attempt === 2) break;
         await freshGame();
       }
       // owner Oct 21 7:49 PM (tester scoreboard "the Muse never reports its own time"): every test records the robot's
       // own play time (ms) and the mode/event it plays (fx.mode, or the first word of its id after the prefix)
-      r.fixes.push({ id: fx.id, ask: fx.ask, ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
+      r.fixes.push({ id: fx.id, ask: askOf(fx), ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
                      mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
-      if (inc) { r.check.push(`Play test could not decide (tried twice): "${fx.ask}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
-      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
-      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${fx.ask}"${note ? ' (' + note + ')' : ''}`);
+      if (inc) { r.check.push(`Play test could not decide (tried twice): "${askOf(fx)}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
+      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
+      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();
+      // a test that FROZE the game (AI thinkT = 999, skaters pinned to stand spots, positions set by hand) and passed left the
+      // game frozen for every later test - they waited for events that never came. Always start the next test on a fresh game.
+      else if (/thinkT|__standSpots|freeze|\.pos\.set\(/.test(String(fx.test))) await freshGame();
+    }
+    if (notRun.length) {
+      r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
+      // owner Oct 23 7:47 PM "if any can count as passed, that is a false green": an owner / never / keep test that was NOT RUN is NOT proven -
+      // it stays red (robot side, named), so no job can be called done on a test the robot never ran.
+      for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${askOf(fx) || id}"`); }
     }
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
@@ -445,7 +567,10 @@ for (const g of games) {
   if (up.dark > 0.93 || up.std < 6) r.fail.push('Upright screen is black or blank');
   // SHARPNESS (owner: "get them to not make blurry players"): the 3D picture must be drawn at 1.5x or more on a 2x phone
   const sharp = await p2.evaluate(() => {
-    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100);
+    // art director Oct 22 2026 (F1 "drawn at 0.18x"): a canvas still at the browser's default 300x150 has never been
+    // drawn by the game (F1 starts its 3D only when a race starts) - that is a menu over an empty canvas, not a blurry
+    // game, so it is skipped; the sharpness of the real 3D picture is measured on a canvas the game has sized.
+    const cs = [...document.querySelectorAll('canvas')].filter((c) => c.clientWidth > 200 && c.clientHeight > 100 && !(c.width === 300 && c.height === 150));
     cs.sort((a, b) => b.clientWidth * b.clientHeight - a.clientWidth * a.clientHeight);
     const c = cs[0]; if (!c) return null;
     let gl = false; try { gl = !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) {}
@@ -488,7 +613,9 @@ for (const g of games) {
     if (live.length) {
       const keep = [];
       for (const f of r.fail) {
-        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f); } catch (e) { return false; } });
+        // owner Oct 22 11 PM (HELP-VP robot, window 3): the printed line carries the test's NAME (ask), not its id, so also match the ids of the failing tests whose text is in the line
+        const ids = (r.fixes || []).filter(x => x && !x.ok && x.ask && f.includes(String(x.ask).slice(0, 40))).map(x => x.id).join(' ');
+        const hit = live.find(k => { try { return new RegExp(k.match, 'i').test(f + ' ' + ids); } catch (e) { return false; } });
         if (hit) r.check.push('KNOWN ROBOT FAULT (robot side owns it, not the builder): ' + f.slice(0, 160) + ' - ' + (hit.why || '').slice(0, 140));
         else keep.push(f);
       }
@@ -496,6 +623,7 @@ for (const g of games) {
       r.fail = keep;
     }
   } catch (e) {}
+  mark('play tests + the rest'); r.phases = phases;
   r.playMs = Date.now() - tGame0; r.endedAt = new Date().toISOString();
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
