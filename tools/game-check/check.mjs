@@ -464,6 +464,8 @@ for (const g of games) {
         shot: async () => { if (dead) throw new Error('test stopped (time limit)'); return measure(await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 })); },
         changed,
         eval: (fn, arg) => { if (dead) throw new Error('test stopped (time limit)'); return page.evaluate(fn, arg); },
+        // Oct 25 2026 (window 5 HELP, play-grand-prix-kits: 'h.poll is not a function'): the F1 tests call h.poll(read, isOk, ms) - wait until isOk(read()) is true, true/false back; a read that throws counts as 'not yet'
+        poll: async (read, isOk, ms = 10000, step = 300) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (dead) throw new Error('test stopped (time limit)'); try { const v = await read(); if (isOk ? isOk(v) : v) return true; } catch (e) {} await page.waitForTimeout(step); } return false; },
         page: live,
       };
       let timer, inc = false; const tFx = Date.now();
