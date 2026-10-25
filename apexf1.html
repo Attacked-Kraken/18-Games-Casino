@@ -1774,7 +1774,7 @@ const Race = {
     const lights=$('lights').children;
     for(let i=0;i<5;i++) lights[i].className='light'+(i<n?' red':'');
     // jump start check
-    if(this.player.throttle>0.25 && this.stateT<4.2 && !this.jumpStart){
+    if(this.player.throttle>0.25 && !this.jumpStart){ // G-312: the whole lights phase counts - the old stateT<4.2 gate let throttle through the hold window (4.2 to lights-out) with no penalty
       this.jumpStart=true; this.player.penalty+=5;
       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
     }
