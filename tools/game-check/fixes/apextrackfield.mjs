@@ -2717,13 +2717,16 @@ async test(page, h) {
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
       let nav = null;
       for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
       nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
-          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (document.body.classList.contains('playing')) { const e = window.__tf && window.__tf.eng(); if (e && e.ev && e.ev.eng === 'relay') { clearInterval(iv); res('racing'); return; } }
           if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
           else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
@@ -2907,9 +2910,12 @@ async test(page, h) {
       async test(page, h) {
         await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
         await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
         let nav = null;
-        for (let att = 0; att < 3 && nav === null; att++) {
-          try { nav = await h.eval(() => new Promise(res => {
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
           let n = 0;
           const iv = setInterval(() => {
             const on = document.querySelector('.screen.on');
@@ -2921,7 +2927,8 @@ async test(page, h) {
             else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
             if (++n > 90) { clearInterval(iv); res('stuck'); }
           }, 150);
-        })); } catch (e) { await h.wait(1200); }
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
         }
         if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
         const m = await h.eval(() => {
@@ -3032,5 +3039,415 @@ async test(page, h) {
   if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';
   return true;
 }
+},{
+    id: 'never-g-267-p2',
+      mode: '10000m',
+      ask: 'NEVER (G-267 round 1): 10,000m - mashing the run controls faster than any human cadence must not make the player faster (tester-10000m-mash-no-speed-exploit: 30 game-s of striding on every tick must not average more than 8.6 m/s).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'in'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '10000m') { clearInterval(iv); res('in'); return; }
+            const click = id => { const b = document.getElementById(id); if (b) b.click(); };
+            if (on && on.id === 'menu') click('bFree');
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.includes('10,000')); if (b) b.click(); }
+            else if (on && on.id === 'card') click('bCardStart');
+            else if (on && on.id === 'results') click('bResMenu');
+            if (++n > 110) { clearInterval(iv); res('stuck:' + (on ? on.id : 'none')); }
+          }, 140);
+        })).catch(() => null);
+        if (nav !== 'in') await h.wait(1200);
+        }
+        if (nav !== 'in') return 'could not start the 10,000m: ' + nav;
+        const m = await h.eval(() => {
+          const e = window.__tf.eng();
+          let side = 'L', last = -99;
+          for (let i = 0; i < 600; i++) { e.update(1 / 60); const t = i / 60; if (e.phase === 'run' && t - last >= 0.30) { e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; } }
+          if (e.phase !== 'run') return { notRun: true, phase: e.phase };
+          const p0 = e.r.pos;
+          let peak = 0;
+          for (let i = 0; i < 1800; i++) { e.stride(side); side = side === 'L' ? 'R' : 'L'; e.update(1 / 60); if (e.r.speed > peak) peak = e.r.speed; }
+          return { gain: +(e.r.pos - p0).toFixed(1), avg: +((e.r.pos - p0) / 30).toFixed(2), peak: +peak.toFixed(2) };
+        }).catch(() => null);
+        if (!m) return 'the mash measurement could not be taken';
+        if (m.notRun) return 'the 10,000m never reached the run phase (phase ' + m.phase + ')';
+        if (m.avg > 8.6) return 'mashing on every tick for 30 game-s still averages ' + m.avg + ' m/s (peak ' + m.peak + ') - the distance stride rate cap is not holding (G-267 round 1)';
+        return true;
 }
+},
+{
+    id: 'never-g-267-p3',
+      mode: 'freeplay',
+      ask: 'NEVER (G-267 round 1): the 300m Hurdles has 7 hurdles per lane like the real 300m hurdles (tester-300mh-hurdle-count).',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+        let nav = null;
+        for (let att = 0; att < 3 && nav === null; att++) {
+          try { nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '300m Hurdles'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })); } catch (e) { await h.wait(1200); }
+        }
+        if (nav !== 'racing') return 'could not start the 300m Hurdles: ' + nav;
+        let m = null;
+        // Robot 2026-10-24: the mesh was not placed within 10 s late in the shared-page suite - poll up to 60 s.
+        for (let i = 0; i < 60 && !(m && m.count > 0); i++) {
+          try { m = await h.eval(() => (window.__tf && typeof window.__tf.hurdles === 'function') ? window.__tf.hurdles() : null); } catch (e) {}
+          if (!(m && m.count > 0)) await h.wait(1000);
+        }
+        if (!m || m.count <= 0) return 'the 300m Hurdles never placed its hurdle mesh';
+        const perLane = Math.round(m.count / 8);
+        if (perLane !== 7) return 'the 300m Hurdles places ' + perLane + ' hurdles per lane (' + m.count + ' hurdle instances for 8 lanes) - the real 300m hurdles has 7 (G-267 round 1)';
+        return true;
+}
+}
+,{
+    id: 'never-g-289-p1',
+    mode: 'relay',
+    ask: 'NEVER (G-289): the relay changeover-zone markings are not found in the relay event on a slow load - the zones must paint at race start on the scene alone, not wait for the full 3D load',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+      nav = await h.eval(() => new Promise(res => {
+        let n = 0;
+        const iv = setInterval(() => {
+          const on = document.querySelector('.screen.on');
+          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+          else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
+          else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+          if (++n > 120) { clearInterval(iv); res('stuck'); }
+        }, 150);
+      })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the relay event: ' + nav;
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const upm = (window.__reality && window.__reality.unitsPerMetre) || 1;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len / upm);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length, min: +Math.min(...lens).toFixed(2), max: +Math.max(...lens).toFixed(2) };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start - the zones still wait for the full 3D load (G-289)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips, ' + m.min + '-' + m.max + ' m) but the changeover zone is 30 m long (G-289)';
+      return true;
+    }
+  }
+
+,{
+    id: 'never-g-289-p2',
+    mode: 'wind',
+    ask: 'NEVER (G-289): a tailwind over +2.0 m/s still counts as a record - the sprint results screen must show a wind reading, a wind-aided time must carry the "w" mark, and it must never be saved as a best',
+    async test(page, h) {
+      // G-289 robot lesson: clear the saved 100m best BEFORE reloading, so the
+      // fresh boot loads clean in-memory bests too (the game loads bests once
+      // at boot; deleting after boot leaves a stale in-memory best behind).
+      // The delete is verified - a reload-race throw used to swallow it and a
+      // stale 0.03 s fast-forward best from an earlier suite test survived.
+      let cleared = false;
+      for (let d = 0; d < 2 && !cleared; d++) {
+        cleared = await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } try { const b = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); delete b['100m']; localStorage.setItem('tfapex_bests', JSON.stringify(b)); const chk = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); return chk['100m'] == null; } catch (err) { return false; } }).catch(() => false);
+      }
+      if (!cleared) return 'could not clear the saved 100m best before the wind runs (G-289)';
+      await h.eval(() => { location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      // G-289 robot lesson: reload + a fixed 1500 ms wait is not enough late in
+      // the suite - early evals can still hit the dying page, whose race is
+      // still playing. Wait for the NEW page (menu on, not playing, hooks live)
+      // before navigating; the gate is best-effort and nav follows regardless.
+      for (let i = 0; i < 120; i++) {
+        const ready = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          return !!(window.__tf && on && on.id === 'menu' && !document.body.classList.contains('playing'));
+        }).catch(() => false);
+        if (ready) break;
+        await h.wait(500);
+      }
+
+      const nav100 = async () => {
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        return nav;
+      };
+      const drive = async () => {
+        const driven = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng();
+          if (!e) return null;
+          let side = 0, steps = 0;
+          while (!e.done && steps < 6000) {
+            if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+            e.update(1 / 60);
+            steps++;
+          }
+          return { done: e.done };
+        }).catch(() => null);
+        if (!driven || !driven.done) return false;
+        for (let w = 0; w < 10; w++) {
+          const shown = await h.eval(() => {
+            const on = document.querySelector('.screen.on');
+            const mk = document.getElementById('resMark');
+            return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+          }).catch(() => false);
+          if (shown) return true;
+          await h.wait(300);
+        }
+        return false;
+      };
+      const readRes = async () => h.eval(() => {
+        const mk = document.getElementById('resMark');
+        let bests = null;
+        try { bests = JSON.parse(localStorage.getItem('tfapex_bests') || '{}'); } catch (err) {}
+        return { resMark: mk ? mk.textContent : '', bests };
+      }).catch(() => null);
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (wind-aided run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 2.5; return true; }).catch(() => {});
+      if (!await drive()) return 'the wind-aided 100m sprint never finished in game-time stepping';
+      const r1 = await readRes();
+      if (!r1) return 'no results screen after the wind-aided 100m sprint';
+      if (!/\d+\.\d+w\s*\(/.test(r1.resMark)) return 'a +2.5 m/s tailwind time carries no "w" mark: results show "' + r1.resMark + '" (G-289)';
+      if (!/Wind \+2\.5 m\/s/.test(r1.resMark)) return 'a +2.5 m/s tailwind time shows no wind reading: results show "' + r1.resMark + '" (G-289)';
+      if (r1.bests && r1.bests['100m'] != null) return 'a wind-aided 100m time was saved as a best (' + r1.bests['100m'] + ') though the results show "' + r1.resMark + '" (G-289)';
+      if (await nav100() !== 'racing') return 'could not start the 100m sprint (legal-wind run)';
+      await h.eval(() => { const e = window.__tf && window.__tf.eng(); if (e) e.wind = 1.0; return true; }).catch(() => {});
+      if (!await drive()) return 'the legal-wind 100m sprint never finished in game-time stepping';
+      const r2 = await readRes();
+      if (!r2) return 'no results screen after the legal-wind 100m sprint';
+      if (/\d+\.\d+w\s*\(/.test(r2.resMark)) return 'a +1.0 m/s wind time wrongly carries a "w" mark: results show "' + r2.resMark + '" (G-289)';
+      if (!/Wind \+1\.0 m\/s/.test(r2.resMark)) return 'a +1.0 m/s wind time shows no wind reading: results show "' + r2.resMark + '" (G-289)';
+      const tm = r2.resMark.match(/(\d+\.\d+)\s*\(/);
+      if (!tm) return 'could not read the legal-wind 100m time from "' + r2.resMark + '" (G-289)';
+      if (!r2.bests || Math.abs(r2.bests['100m'] - parseFloat(tm[1])) > 0.011) return 'a legal-wind 100m time was not saved as a best: results show "' + r2.resMark + '", saved bests ' + JSON.stringify(r2.bests) + ' (G-289)';
+      return true;
+    }
+  },
+  {
+    id: 'never-g-289-r1-p1',
+    ask: 'G-289 r1: throws get 3 attempts plus 3 more for the top 8 - the Shot Put ends with 6 attempts, the Discus still ends with 1',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Shot Put', 'sp')) return 'could not start the Shot Put (G-289 r1)';
+      const m = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 20000) {
+          e.update(1 / 60); steps++;
+          if (e.phase === 'power' && e.power >= 0.97) e.action();
+          else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!m) return 'the Shot Put attempt count could not be read (G-289 r1)';
+      if (m.notDone) return 'the Shot Put never finished its attempts (G-289 r1)';
+      if (m.attempts !== 6 || m.attMax !== 6) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') - rules/trackfield.md says 3 attempts plus 3 more for the top 8 (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Discus', 'dt')) return 'could not start the Discus (G-289 r1)';
+      const d = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'hold') e.actionDown();
+          else if (e.phase === 'spinning' && e.spinT >= 1.55) e.actionUp();
+          e.update(1 / 60); steps++;
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!d) return 'the Discus attempt count could not be read (G-289 r1)';
+      if (d.notDone) return 'the Discus never finished (G-289 r1)';
+      if (d.attempts !== 1 || d.attMax !== 1) return 'the Discus ended after ' + d.attempts + ' attempts (attMax ' + d.attMax + ') - the owner rule (G-25) says the Discus is ONE action (G-289 r1)';
+      return true;
+    }
+  },
+  {
+    id: 'never-g-289-r1-p2',
+    ask: 'G-289 r1: relay zones paint at race start even when arriving from another race already playing (the main-check arrival)',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('60m Dash', '60m')) return 'could not start the arrival 60m race (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Relay', 'relay')) return 'could not start the relay event after the arrival race (G-289 r1)';
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start after arriving from another race (G-289 r1)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
+      return true;
+    }
+  },
+  {
+      id: 'tester-chk-t10',
+      mode: 't10',
+      ask: 'TESTER (G-311, checklist T10): the shot put landing sector is 34.92 degrees - venues/track.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const rigs = window.__tf.rigs();
+          let root = rigs.length && rigs[0].group ? rigs[0].group : null;
+          if (!root) return null;
+          while (root.parent) root = root.parent;
+          const CX = -52, CZ = 20, dirs = [];
+          root.traverse(o => {
+            if (!o.isMesh || !o.geometry) return;
+            const g = o.geometry, p = g.parameters || {};
+            if (g.type === 'PlaneGeometry' && Math.abs(p.width - 46) < 0.01 && Math.abs(p.height - 0.14) < 0.01) {
+              const dx = o.position.x - CX, dz = o.position.z - CZ;
+              if (Math.abs(Math.hypot(dx, dz) - 23) < 0.5) dirs.push(Math.atan2(dz, dx));
+            }
+          });
+          if (dirs.length < 2) return { n: dirs.length };
+          const dot = Math.cos(dirs[0]) * Math.cos(dirs[1]) + Math.sin(dirs[0]) * Math.sin(dirs[1]);
+          const cross = Math.cos(dirs[0]) * Math.sin(dirs[1]) - Math.sin(dirs[0]) * Math.cos(dirs[1]);
+          return { angle: +(Math.atan2(Math.abs(cross), dot) * 180 / Math.PI).toFixed(2), n: dirs.length };
+        }).catch(() => null);
+        if (!m) return 'the shot put sector lines could not be read';
+        if (!m.angle) return 'fewer than two shot put sector lines found (' + m.n + ')';
+        if (Math.abs(m.angle - 34.92) / 34.92 > 0.03) return 'the shot put landing sector measures ' + m.angle + ' degrees between its markings but venues/track.md says 34.92 degrees';
+        return true;
+      }
+  },
 ];

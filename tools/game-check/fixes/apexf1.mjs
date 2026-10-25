@@ -1319,4 +1319,53 @@ export default [
       return true;
     },
   },
+  {
+    id: 'never-g-286-p1',
+    ask: 'on the upright phone the stick, REV and CAM never overlap: the landscape compact rules do not apply upright, so portrait needs its own compact block',
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      let out = null;
+      if (!await g66ToRace(page, h)) out = 'race never started on the upright phone';
+      if (!out) {
+        const r = await h.eval(() => { const q = (id) => { const el = document.querySelector('#' + id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; }; return { stick: q('stick'), rev: q('btnRev'), cam: q('btnCam') }; }).catch(() => null);
+        if (!r || !r.stick || !r.rev || !r.cam) out = 'stick, REV or CAM never rendered on the upright phone';
+        else {
+          const ov = (a, b) => { const x = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x); const y = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y); return (x > 0 && y > 0) ? Math.round(x * y) : 0; };
+          const sr = ov(r.stick, r.rev), rc = ov(r.rev, r.cam);
+          if (sr) out = 'the stick overlaps REV by ' + sr + ' px^2 on the upright phone';
+          else if (rc) out = 'REV overlaps CAM by ' + rc + ' px^2 on the upright phone';
+        }
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
+  {
+    id: 'tester-chk-f03', ask: 'Apex F1: gas after all 5 reds, before GO, is a jump start worth 5 seconds (G-312)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      await h.press('#raceBtn');
+      let fiveReds = false, gassed = false;
+      for (let i = 0; i < 120; i++) {
+        const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')]; return { red: ls.filter(e => e.classList.contains('red')).length, mode: window.__test ? window.__test.race().mode : '?' }; });
+        if (st.red === 5) fiveReds = true;
+        if (fiveReds && st.mode === 'lights') { await h.eval(() => window.__test.setInput({ gas: true })); gassed = true; }
+        if (st.mode === 'race') break;
+        await h.wait(100);
+      }
+      if (!fiveReds) return 'start lights never showed all 5 reds';
+      if (!gassed) return 'lights phase ended before gas could be applied after 5 reds';
+      await h.wait(500);
+      const pen = await h.eval(() => window.__test ? window.__test.penState().penalty : null);
+      if (pen === null) return 'could not read penState';
+      if (pen < 5) return 'gas after 5 reds, before GO, gave no jump-start penalty (penalty ' + pen + ', must be 5)';
+      await h.eval(() => { location.href = location.pathname; });
+      return true;
+    }
+  },
 ];

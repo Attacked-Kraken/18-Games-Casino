@@ -90,7 +90,13 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     if (testOnly && /NOT done yet/i.test(f)) continue;
     if (old.get(r.file) && old.get(r.file).has(key(f))) continue;
     if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
-    blockers.push(`${r.file}: ${f}`);
+    // owner Oct 24 2026 9:27 PM (window 6): say WHICH step threw and prove 'new' - a blocker is by definition not in main's baseline
+    let tag = '';
+    if (/^Script error/i.test(f)) {
+      const have = (base0.results || []).some(x => x.file === r.file);
+      tag = ` [${have ? "NEW in this PR - main's own check does not have this error" : "main's baseline could not be read, so 'new' is not proven"}${r.errorEvidence && r.errorEvidence.step ? ' · it fired ' + r.errorEvidence.step : ''}]`;
+    }
+    blockers.push(`${r.file}: ${f}${tag}`);
   }
   const oldM = new Set((base0.models || []).flatMap(m => (m.problems || []).map(x => m.name + '|' + norm(String(x)))));
   for (const m of models) {
@@ -116,7 +122,28 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
     blockers = ['the robot\'s judge crashed: ' + String(e && e.message || e).slice(0, 200) + ' - tell the VP'];
   }
   console.log(`::notice title=Game check::played ${(data.results || []).length} game(s), ${(data.models || []).length} model(s); ${changed.length} changed file(s); ${(data.missing || []).length} missing`);
-  for (const m of (data.missing || [])) blockers.push(`${m}: the robot could not play it (its run failed or timed out) - look at the run`);
+  // owner Oct 24 2026 8:40 PM: "show the robot's real failure reason, not 'look at the run'" - read this run's own play job and say
+  // WHICH STEP failed and whether that is the robot's setup (not the game) or the game's own play run.
+  const why = {};
+  try {
+    const rid = process.env.GITHUB_RUN_ID, repo = process.env.GITHUB_REPOSITORY, tok = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
+    if (rid && repo && tok && (data.missing || []).length) {
+      const r = await fetch(`https://api.github.com/repos/${repo}/actions/runs/${rid}/jobs?per_page=100`, { headers: { Authorization: `Bearer ${tok}`, Accept: 'application/vnd.github+json' } });
+      const jobs = (await r.json()).jobs || [];
+      for (const m of data.missing) {
+        const j = jobs.find(x => x.name === `play (${m})` || x.name.endsWith(`(${m})`));
+        if (!j) { why[m] = 'no play job named for it was found in this run'; continue; }
+        const bad = (j.steps || []).find(st => st.conclusion && !['success', 'skipped'].includes(st.conclusion));
+        const step = bad ? bad.name : '';
+        const setup = /set up|setup|checkout|install|download|container|initialize|pull|cache|browser/i.test(step) || /^Set up job/i.test(step);
+        const mins = (j.started_at && j.completed_at) ? Math.round((Date.parse(j.completed_at) - Date.parse(j.started_at)) / 60000) : null;
+        why[m] = (j.conclusion === 'cancelled' ? 'its play job was CANCELLED' + (mins != null ? ` after ${mins} min` : '') + (step ? ` during step "${step}"` : '') + ' (a newer push or the runner was lost)'
+          : setup ? `ROBOT SETUP failed at step "${step}" (not the game) - the robot retries this by itself`
+          : `the game's own play run ${j.conclusion || 'did not finish'}` + (step ? ` at step "${step}"` : '') + (mins != null ? ` after ${mins} min` : ''));
+      }
+    }
+  } catch (e) { console.log('::warning title=missing-reason::' + String(e).slice(0, 200)); }
+  for (const m of (data.missing || [])) blockers.push(`${m}: ${why[m] || 'the robot could not play it (its run failed or timed out; the run could not be read)'}`);
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
   for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));

@@ -1273,4 +1273,53 @@ export default [
       });
     },
   },
+  {
+    id: "play-reset-clear-of-vs",
+    ask: "G-290: the RESET button in the top bar overlaps nothing, least of all the VS speed box, on a challenge approach",
+    async test(page, h) {
+      try {
+        const url = await h.eval(() => location.href);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnChal');
+      } catch (e) {}
+      await h.wait(4200);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        F.P.pos.set(0, 80, -2500); F.P.vel.set(0, -2, 49); F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.05; F.P.thr = 0.4; F.P.ground = false;
+        return new Promise((res) => {
+          setTimeout(() => {
+            const rb = document.getElementById('resetBtn');
+            if (!rb) return res('no #resetBtn in the top bar');
+            const r = (el) => el.getBoundingClientRect();
+            const br = r(rb);
+            const ids = ['viewBtn', 'muteBtn', 'jetBtn', 'back', 'rwyBox', 'bandBox', 'msg', 'ahWrap'];
+            for (const id of ids) {
+              const el = document.getElementById(id);
+              if (!el) continue;
+              const o = r(el);
+              if (o.width === 0 || o.height === 0) continue;
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('RESET button overlaps #' + id);
+            }
+            const chips = [...document.querySelectorAll('#stats .chip')];
+            if (!chips.length) return res('no stats chips in the top bar');
+            for (const c of chips) {
+              const o = r(c);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) {
+                const label = (c.textContent || '').trim().slice(0, 12);
+                return res('RESET button overlaps the stats chip "' + label + '"');
+              }
+            }
+            const pad = document.querySelector('.ajc .pad');
+            if (pad) {
+              const o = r(pad);
+              if (br.left < o.right && br.right > o.left && br.top < o.bottom && br.bottom > o.top) return res('RESET button overlaps the pad buttons');
+            }
+            return res(true);
+          }, 1500);
+        });
+      });
+    },
+  },
 ];

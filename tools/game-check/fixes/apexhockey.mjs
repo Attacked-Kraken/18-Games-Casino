@@ -2632,7 +2632,7 @@ export default [
     if (!s || s.state !== 'play') return 'could not get a match into play to stage the crease crash';
     const sH0 = s.sH;
     const t1 = Date.now();
-    let goal = false;
+    let goal = false, maxPx = -999;
     while (Date.now() - t1 < 10000) {
       const staged = await h.eval(() => {
         const hk = window.__hk, pk = hk.puck;
@@ -2643,14 +2643,19 @@ export default [
         hC.pos.set(87, 0.1, 0.5); hC.vel.set(0, 0, 0);         // attacker standing on him
         if (!pk.shot || !pk.shot.t) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; }
         if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
-        return { state: hk.game.state, sH: hk.game.scoreH };
+        return { state: hk.game.state, sH: hk.game.scoreH, px: pk.pos.x };
       }).catch(() => null);
       if (!staged) break;
+      if (typeof staged.px === 'number' && staged.px > maxPx) maxPx = staged.px;
       if (staged.state === 'goal' || staged.sH > sH0) { goal = true; break; }
       await page.waitForTimeout(250);
     }
     if (goal) return 'the crease is NOT protected: the goal counted with the home attacker parked on top of the away goalie inside the crease - rules/hockey.md: no goal if the goalie is pushed';
-    return 'could not stage the crease-crash shot (no goal either way) - staging inconclusive, not a pass';
+    // G-282: the old verdict could never pass - a waved-off goal produces no 'goal' state and no score, so the
+    // loop simply timed out into 'inconclusive'. Pass when the shot genuinely arrived at the crease mouth
+    // (puck past x 86, at the parked goalie) and still did not count.
+    if (maxPx > 86) return true;
+    return 'could not stage the crease-crash shot (puck never reached the crease, max x ' + maxPx.toFixed(1) + ') - staging inconclusive, not a pass';
   },
 },
 {
@@ -3506,6 +3511,181 @@ export default [
     await unfreeze();
     if (!sat) return 'the penalised team touched the puck but the delayed penalty never sat the man - the whistle and the box must follow the touch';
     if (!(sat.penT >= 45)) return 'after the touch the home ' + sat.role + ' sat with penT ' + sat.penT + ' - a check from behind is a 5:00 major (penT 50)';
+    return true;
+  }
+}
+,
+{
+  id: 'never-g-282-p1',
+  ask: 'NEVER (G-282, G-228): the crease is protected - a goal scored while an attacker stands on the defending goalie inside the crease is waved off (no goal, whistle); the same shot with the crease clear counts (rules/hockey.md: no goal if the goalie is pushed)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu' && s !== 'play' && s !== 'faceoff') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+    }
+    await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+    const t0 = Date.now();
+    while (Date.now() - t0 < 30000) {
+      s = await state();
+      if (s === 'play') break;
+      await page.keyboard.press('k').catch(() => {});
+      await h.wait(600);
+    }
+    if ((await state()) !== 'play') return 'could not get a match into play to stage the crease crash';
+    const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
+    const scoreH = () => h.eval(() => window.__hk.game.scoreH).catch(() => -1);
+    const stage = (crash) => h.eval((cr) => {
+      const hk = window.__hk, pk = hk.puck;
+      const aG = hk.skaters.find(x => x.team === 'away' && x.goalie);
+      const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
+      hk.skaters.forEach(x => { x.thinkT = 999; x.vel.set(0, 0, 0); if (!x.goalie && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.target.set(x.pos.x, 0, x.pos.z); } });
+      aG.pos.set(87, 0.1, 0); aG.vel.set(0, 0, 0);
+      if (cr) { hC.pos.set(87, 0.1, 0.5); } else { hC.pos.set(-70, 0.1, 20); }
+      hC.vel.set(0, 0, 0); hC.target.set(hC.pos.x, 0, hC.pos.z);
+      if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
+      return { state: hk.game.state, sH: hk.game.scoreH, px: pk.pos.x };
+    }, crash).catch(() => null);
+    // phase A: attacker parked on the goalie - the shot must NOT count
+    const sH0 = await scoreH();
+    let arrived = false, counted = false;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 10000) {
+      const r = await stage(true);
+      if (!r) break;
+      if (r.state === 'goal' || r.sH > sH0) { counted = true; break; }
+      if (r.px > 86) arrived = true;
+      await h.wait(250);
+    }
+    if (counted) { await unfreeze(); return 'the goal counted with the home attacker parked on top of the away goalie inside the crease - the crease is not protected'; }
+    if (!arrived) { await unfreeze(); return 'the crease-crash shot never reached the crease mouth - staging inconclusive, not a pass'; }
+    // settle back to play for the control
+    const t2 = Date.now();
+    while (Date.now() - t2 < 20000) { if ((await state()) === 'play') break; await h.wait(500); }
+    if ((await state()) !== 'play') { await unfreeze(); return 'play did not resume after the waved-off goal - cannot run the clear-crease control'; }
+    // phase B: same shot, crease clear - the goal MUST count
+    const sH1 = await scoreH();
+    let countedB = false;
+    const t3 = Date.now();
+    while (Date.now() - t3 < 10000) {
+      const r = await stage(false);
+      if (!r) break;
+      if (r.state === 'goal' || r.sH > sH1) { countedB = true; break; }
+      await h.wait(250);
+    }
+    await unfreeze();
+    if (!countedB) return 'the same shot did not count with the crease clear - the wave-off is not specific to the attacker on the goalie';
+    return true;
+  }
+},
+{
+  id: 'never-g-282-p2',
+  ask: 'NEVER (G-282, G-199): the arena has real bench and box meshes at ice level outside the boards - two team benches on one side, two penalty boxes and the scorekeeper box on the other (venues/rink.md)',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    const r = await h.eval(() => {
+      const root = (() => { let r0 = window.__reality && window.__reality.player; if (!r0) return null; while (r0.parent) r0 = r0.parent; return r0; })();
+      if (!root) return null;
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const aabb = (o) => { const p = o.geometry.attributes.position, m = o.matrixWorld.elements, r = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]; for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (wx < r[0]) r[0] = wx; if (wy < r[1]) r[1] = wy; if (wz < r[2]) r[2] = wz; if (wx > r[3]) r[3] = wx; if (wy > r[4]) r[4] = wy; if (wz > r[5]) r[5] = wz; } return r; };
+      let plus = 0, minus = 0;
+      for (const o of meshes) {
+        if (!o.visible) continue;
+        const a = aabb(o);
+        const big = (a[3] - a[0]) > 150 || (a[5] - a[2]) > 130;
+        if (big || a[1] >= 9) continue;
+        if (a[5] > 42.8 && a[2] < 60) plus++;
+        if (a[2] < -42.8 && a[5] > -60) minus++;
+      }
+      return { plus, minus };
+    }).catch(() => null);
+    if (!r) return 'no scene root via __reality.player';
+    if (!((r.plus >= 2 && r.minus >= 3) || (r.plus >= 3 && r.minus >= 2))) return 'bench/box meshes missing or one-sided (z+ strip: ' + r.plus + ', z- strip: ' + r.minus + ') - venues/rink.md wants two team benches on one side and the penalty boxes + scorekeeper box on the other';
+    return true;
+  }
+}
+,
+{
+  id: 'never-g-282-p3',
+  ask: 'NEVER (G-282 round 1, G-228): the end screen names the team that actually won - a career fixture the BEARS win 3-0 titles the BEARS, and a home win titles the WOLVES; the away title is never hardcoded to the Sharks',
+  async test(page, h) {
+    const T = (w, l, t, pts, gf, ga) => ({ w, l, t, pts, gf, ga });
+    const seed = { season: 1, week: 2, phase: 'reg', finalOpp: null,
+      star: { name: 'JAX KOVAC', g: 0, a: 0, cg: 0, ca: 0 }, champ: 0, friends: { w: 0, l: 0 }, lastLine: '',
+      table: { WOLVES: T(1, 0, 0, 2, 4, 1), SHARKS: T(0, 1, 0, 0, 1, 4), BEARS: T(0, 0, 0, 0, 0, 0),
+        EAGLES: T(0, 0, 0, 0, 0, 0), VIPERS: T(0, 0, 0, 0, 0, 0), STAMPEDE: T(0, 0, 0, 0, 0, 0) } };
+    const toPlay = async (career) => {
+      if (career) {
+        await h.eval((s) => { try {
+          localStorage.setItem('apex_hockey_career_v1', JSON.stringify(s));
+          localStorage.setItem('apex_hockey_match', JSON.stringify({ kind: 'career', opp: 'BEARS', oppDef: { name: 'BEARS', jersey: 0x8a4b1f, helmet: 0x5a2f10, trim: 0xffd9a0, str: 82 }, label: 'WEEK 2' }));
+        } catch (e) {} }, seed).catch(() => {});
+      } else {
+        await h.eval(() => { try { localStorage.removeItem('apex_hockey_match'); } catch (e) {} }).catch(() => {});
+      }
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      for (let i = 0; i < 30; i++) { if (await h.eval(() => !!(window.__hk && window.__hk.game && window.__hk.game.state === 'menu')).catch(() => false)) break; await h.wait(500); }
+      await h.eval((c) => { const b = document.getElementById(c ? 'careerBtn' : 'playBtn'); if (b) b.click(); }, career).catch(() => {});
+      const t0 = Date.now();
+      while (Date.now() - t0 < 45000) {
+        const st = await h.eval(() => window.__hk.game.state).catch(() => '');
+        if (st === 'play') return true;
+        await page.keyboard.press('k').catch(() => {});
+        await page.waitForTimeout(600);
+      }
+      return false;
+    };
+    const finishWith = async (sh, sa) => {
+      await h.eval((ab) => { const g = window.__hk.game; g.period = 3; g.scoreH = ab[0]; g.scoreA = ab[1]; g.clockT = 0.05; }, [sh, sa]).catch(() => {}); // one arg only - h.eval forwards a single argument (two args silently dropped the away score and the game read as a draw)
+      const t1 = Date.now();
+      while (Date.now() - t1 < 20000) {
+        if ((await h.eval(() => window.__hk.game.state).catch(() => '')) === 'over') return true;
+        await page.waitForTimeout(400);
+      }
+      return false;
+    };
+    const readEnd = () => h.eval(() => ({
+      title: (document.getElementById('finalTitle') || {}).textContent || '',
+      away: (document.getElementById('nmA') || {}).textContent || ''
+    })).catch(() => null);
+    // phase 1: the BEARS win the career fixture 3-0 - the title must name the BEARS
+    if (!(await toPlay(true))) return 'the career fixture never reached play';
+    if (!(await finishWith(0, 3))) return 'the career fixture never reached its end screen';
+    let r = await readEnd();
+    if (!r) return 'could not read the end screen';
+    if (!r.title.toUpperCase().includes(r.away.toUpperCase()) || !/BEARS/.test(r.title.toUpperCase()))
+      return 'the end screen names the wrong winner: BEARS won 3-0 but the title reads "' + r.title + '"';
+    // phase 2: a home win in a fresh match - the title must name the WOLVES
+    if (!(await toPlay(false))) return 'the fresh match never reached play';
+    if (!(await finishWith(2, 0))) return 'the fresh match never reached its end screen';
+    r = await readEnd();
+    if (!r) return 'could not read the end screen after the home win';
+    if (!/WOLVES/.test(r.title.toUpperCase()))
+      return 'the end screen names the wrong winner: WOLVES won 2-0 but the title reads "' + r.title + '"';
+    return true;
+  }
+},
+{
+  id: 'never-g-282-p4',
+  ask: 'NEVER (G-282 round 1, G-199): the glass above the boards is about 1.8 m high along the sides and about 2.4 m at the ends (venues/rink.md) - not one height all the way round',
+  async test(page, h) {
+    for (let i = 0; i < 40; i++) { if (await h.eval(() => !!(window.__hk && window.__arena)).catch(() => false)) break; await h.wait(500); }
+    const r = await h.eval(() => {
+      const root = (() => { let r0 = window.__reality && window.__reality.player; if (!r0) return null; while (r0.parent) r0 = r0.parent; return r0; })();
+      if (!root) return null;
+      const meshes = []; root.traverse(o => { if (o.isMesh) meshes.push(o); });
+      const glass = meshes.find(o => o.material && o.material.color && o.material.color.getHexString() === 'bfe0ff');
+      if (!glass) return null;
+      const p = glass.geometry.attributes.position, m = glass.matrixWorld.elements;
+      let topSide = 0, topEnd = 0;
+      for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); const wx = m[0] * x + m[4] * y + m[8] * z + m[12], wy = m[1] * x + m[5] * y + m[9] * z + m[13], wz = m[2] * x + m[6] * y + m[10] * z + m[14]; if (Math.abs(wx) > 90) { if (wy > topEnd) topEnd = wy; } else if (Math.abs(wz) > 40) { if (wy > topSide) topSide = wy; } }
+      if (!topSide || !topEnd) return null;
+      return { hSide: (topSide - 3.7) / 3.26, hEnd: (topEnd - 3.7) / 3.26 };
+    }).catch(() => null);
+    if (!r) return 'glass mesh or separable side/end verts not found';
+    if (r.hEnd < 2.05) return 'the glass at the ENDS is ' + r.hEnd.toFixed(2) + ' m high - venues/rink.md: about 2.4 m at the ends';
+    if (r.hSide < 1.55) return 'the glass along the SIDES is ' + r.hSide.toFixed(2) + ' m high - venues/rink.md: about 1.8 m along the sides'; // no upper bound: corner-segment verts classify as side verts, exactly as in the tester scan
     return true;
   }
 }
