@@ -302,6 +302,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d | ROUND 1 DONE PR #1595 merged b3e07ddf
 | G-289 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-289-apextrackfield - DONE PR #1610 merged 0be0e068 | | ROUND 1 DONE PR #1616 merged 48d2ca09
 | T-10-2123 | window 10 | jobs/T-10-2123.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-2123 |
+| T-10-0253 | window 10 | jobs/T-10-0253.md, CLAIMS.md | test/t-10-0253 |
 | T-10-2223 | window 10 | jobs/T-10-2223.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-2223 |
 | G-298 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-298-w4.md | build/g-298-apextrackfield - NO CHANGE (T08 audit-right; tester-chk-t08 dropped per robot TESTER rule; report jobs/G-298-w4.md) |
 | G-296 | window 10 | checklists/apextrackfield.md, jobs/G-296.md, CLAIMS.md | test/g-296-apextrackfield |
