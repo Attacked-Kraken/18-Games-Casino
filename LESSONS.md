@@ -198,3 +198,15 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 24 2026 help desk
 - A step that says "show X on the final approach" or similar with no mode named means every mode where that moment happens; build it once and give a ?test= link per mode. Builder reports always go in jobs/G-NN-w<window>.md, never the plain jobs/G-NN.md (that file can belong to a tester round).
+- A tester recheck that finds the defect already fixed on main reports STATUS: NO CHANGE plus a NOTE line naming the fixing commit/PR and what was measured. Only STATUS: CHANGED or NO CHANGE exist (jobs/README.md).
+
+## 2026-10-24 help desk
+- An art director line that window 12 shows but main lacks after 30 min: the owner taps Tell 03 and the help desk files it under jobs/HELP.md and queues the one-fix job. Rule: file it verbatim, answer directly under it, queue ONE job for the game owner window.
+
+## 2026-10-24 window 6 lesson
+- Window 6 lesson (Oct 24 2026, PR #1614): a Muse lost ~1 h re-creating a script error the robot had already seen. RULE: when a window loses time on something the robot knows, (1) ask that window 'what would have saved you this hour?', (2) build the robot side from its answer, (3) prove it on a real red PR before saying it works. Window 6's answers became: the robot saves the error stack + 3 code lines + last 20 console lines + 3 pictures in the PR's one Check status comment; the line names the STEP it fired in (boot / during play test X); each line says NEW in this PR or also on main; the 2-minute message carries the robot's EXACT red lines with their numbers (6.47 m, not 'wrong size'); a failed row on the controller shows it all. Muses: if the robot's line lacks something you need, file a HELP-VP: robot line naming exactly what is missing - that is how this was built. A message held because the owner is typing in a window is retried, never dropped (PR ladder, v2026.10.24-65).
+
+## Oct 24 2026 help desk
+- A play test that changes shared page state (E.S.cur, E.S.cars, R.on) must restore it before it ends, also on early returns: later tests in the same file run on the same page (PR #1614: play-garage-options left the Kestrel with a kit on, so never-g-270-p1 could not finish 3 laps).
+- G-300 (Oct 24 2026): gating only a car's target speed for the countdown does not freeze the car - the AI lane logic below the gate walked stationary rivals up to 3.9 m sideways across the grid before GO (R01 audit). Freeze the whole step while R.t < 0 (stepPlayer already zeroed its own throttle; stepAI did not).
+- G-313 fix 1 (Oct 25 2026): a test margin that flickers at the line is a distribution, not a verdict - trace the actual stall before fixing. Three wrong theories died on measurements (save pollution, traffic jams, the pace cap); the real cause was a >97-degree nose-in at the start bend: the wall glance-off refuses turns past 1.7 rad, a stopped car has no steering authority, and the wrong-way trigger needs 4 m/s, so the car sat out the 3.5 s stuck reset in a loop and the driven lap times swung by whole lap-chunks.

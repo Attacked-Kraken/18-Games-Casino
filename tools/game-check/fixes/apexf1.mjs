@@ -588,34 +588,34 @@ export default [
   // the LIGHTS OUT tap. Also: the start lights by the car must be BIG, the
   // reds must come on one by one up to 5, then green = GO and the race starts.
   {
-    id: 'play-start-on-car-with-lights', title: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
-    run: async (page, h) => {
+    id: 'play-start-on-car-with-lights', ask: 'Apex F1: race start opens on the player car with big start lights, reds one by one then green (G-77)',
+    test: async (page, h) => {
       await g33Reset(page, h);
-      await page.locator('#careerBtn').click();
-      await page.locator('#toTeamBtn').click();
-      await page.locator('#startBtn').click();
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
       await h.wait(1200);
-      await page.locator('#qualiSkip').click();
+      await h.press('#qualiSkip');
       let grid = false; // the grid screen, reached without any tap on the canvas
       for (let i = 0; i < 12; i++) { const md = await h.eval(() => window.__test.race().mode); if (md === 'grid') { grid = true; break; } await h.wait(300); }
-      if (!grid) return h.fail('never reached the grid screen after qualifying');
+      if (!grid) return 'never reached the grid screen after qualifying';;
       await h.wait(600); // let the grid camera settle on the car
       const frame = await h.eval(() => { const T = window.__test; const cs = T.cars(); const pi = cs.findIndex(c => c.isPlayer);
         const tp = T.carMesh(pi).trackPos, cam = T.camAt(); return { d: Math.hypot(cam.x - tp[0], cam.z - tp[2]) }; });
-      if (!frame) return h.fail('could not read the camera / player car at the grid');
-      if (frame.d > 16) return h.fail('at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)');
-      await page.locator('#raceBtn').click();
+      if (!frame) return 'could not read the camera / player car at the grid';;
+      if (frame.d > 16) return 'at the grid the camera is ' + frame.d.toFixed(0) + ' m from the player car - the start still opens on grass, not on the car (no tap should be needed)';;
+      await h.press('#raceBtn');
       let maxRed = 0, sawGreen = false, lampW = 0, racing = false;
       for (let i = 0; i < 80; i++) { const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')];
           return { red: ls.filter(e => e.classList.contains('red')).length, green: ls.some(e => e.classList.contains('green')),
             w: ls.length ? ls[0].getBoundingClientRect().width : 0, mode: window.__test.race().mode }; });
         if (st.red > maxRed) maxRed = st.red; if (st.green) sawGreen = true; if (st.w > 0) lampW = st.w;
         if (st.mode === 'race') { racing = true; break; } await h.wait(100); }
-      if (maxRed !== 5) return h.fail('start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')');
-      if (!sawGreen) return h.fail('start lights never flashed green for GO');
-      if (!racing) return h.fail('race never started after lights out');
-      if (lampW < 48) return h.fail('start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car');
-      return h.pass('grid opened with the camera ' + frame.d.toFixed(1) + ' m from the player car (no tap), lamps ' + Math.round(lampW) + ' px wide, reds climbed to 5, green flash, race started');
+      if (maxRed !== 5) return 'start lights never showed all 5 red lamps one by one (max red seen: ' + maxRed + ')';;
+      if (!sawGreen) return 'start lights never flashed green for GO';;
+      if (!racing) return 'race never started after lights out';;
+      if (lampW < 48) return 'start lamps are only ' + Math.round(lampW) + ' px wide - they must be big near the car';;
+      return true;
     }
   },
   /* ================= G-101 FRIEND CODE PLAY TEST =================
@@ -1276,5 +1276,157 @@ export default [
       if (!ready) return 'the engine kit never recovered after the fetch came back: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`).catch(() => null));
       return true;
     },
+  },
+  {
+    id: 'never-g-279-p1',
+    ask: 'play-test entries are shaped right: play-start-on-car-with-lights exposes test and ask, not run and title',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/tools/game-check/fixes/apexf1.mjs'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read the fixes file from the served repo';
+      const i = txt.indexOf("id: 'play-start-on-car-with-lights'");
+      if (i < 0) return 'entry play-start-on-car-with-lights is missing from the fixes file';
+      let seg = txt.slice(i);
+      const end = seg.indexOf('\n  },', 200);
+      if (end > 0) seg = seg.slice(0, end);
+      if (!/ask:/.test(seg)) return 'entry play-start-on-car-with-lights has no ask';
+      if (/title:/.test(seg)) return 'entry play-start-on-car-with-lights still uses title instead of ask';
+      if (!/test:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights has no test function';
+      if (/run:\s*async/.test(seg)) return 'entry play-start-on-car-with-lights still uses run instead of test';
+      if (/h\.fail|h\.pass/.test(seg)) return 'entry play-start-on-car-with-lights still uses h.fail/h.pass instead of returns';
+      return true;
+    },
+  },
+  {
+    id: 'play-checklist-apexf1-format',
+    ask: 'Apex F1: checklists/apexf1.md exists with one measurable item per line, each carrying SOURCE, NUMBERS, MEASURE and a tester-chk TEST id (G-286)',
+    async test(page, h) {
+      const txt = await h.eval(async () => { try { const r = await fetch('/checklists/apexf1.md'); return r.ok ? await r.text() : ''; } catch (e) { return ''; } }).catch(() => '');
+      if (!txt) return 'could not read checklists/apexf1.md from the served repo';
+      const items = txt.split('\n').filter(l => /^- \[[ x-]\] [A-Z]\d+ \|/.test(l));
+      if (!items.length) return 'no checklist items found in checklists/apexf1.md';
+      const seen = new Set();
+      for (const line of items) {
+        const m = line.match(/^- \[[ x-]\] ([A-Z]\d+) \|(.*)$/);
+        if (!m) return 'checklist item line has the wrong shape: ' + line.slice(0, 80);
+        const id = m[1], rest = m[2];
+        if (seen.has(id)) return 'duplicate checklist id ' + id;
+        seen.add(id);
+        for (const k of ['SOURCE:', 'NUMBERS:', 'MEASURE:', 'TEST:']) if (!rest.includes(k)) return 'item ' + id + ' is missing ' + k;
+        const tp = rest.split(' | ').find(x => x.trim().startsWith('TEST:')) || '';
+        const tid = tp.split('TEST:')[1].trim().split(' ')[0];
+        if (tid !== 'tester-chk-' + id.toLowerCase()) return 'item ' + id + ' TEST must be tester-chk-' + id.toLowerCase();
+      }
+      return true;
+    },
+  },
+  {
+    id: 'never-g-286-p1',
+    ask: 'on the upright phone the stick, REV and CAM never overlap: the landscape compact rules do not apply upright, so portrait needs its own compact block',
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      // G-312 R1: race FIRST via the owner-check link, then go upright. The old flow
+      // ran the menu flow in portrait, but qualiSkip takes ~6 s to appear on a slow
+      // page while g66ToRace waits only 1.2 s after startBtn, so a strict press misses
+      // it and the race never starts. The point is the portrait layout during a race,
+      // not menu-flow speed.
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'never reached the grid at ?test=grid'; }
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'race never started on the upright phone'; }
+      await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+      await h.wait(800);
+      let out = null;
+      const r = await h.eval(() => { const q = (id) => { const el = document.querySelector('#' + id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; }; return { stick: q('stick'), rev: q('btnRev'), cam: q('btnCam') }; }).catch(() => null);
+      if (!r || !r.stick || !r.rev || !r.cam) out = 'stick, REV or CAM never rendered on the upright phone';
+      else {
+        const ov = (a, b) => { const x = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x); const y = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y); return (x > 0 && y > 0) ? Math.round(x * y) : 0; };
+        const sr = ov(r.stick, r.rev), rc = ov(r.rev, r.cam);
+        if (sr) out = 'the stick overlaps REV by ' + sr + ' px^2 on the upright phone';
+        else if (rc) out = 'REV overlaps CAM by ' + rc + ' px^2 on the upright phone';
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return out === null ? true : out;
+    },
+  },
+  {
+    id: 'tester-chk-f03', ask: 'Apex F1: gas after all 5 reds, before GO, is a jump start worth 5 seconds (G-312)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      await h.press('#raceBtn');
+      let fiveReds = false, gassed = false;
+      for (let i = 0; i < 120; i++) {
+        const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')]; return { red: ls.filter(e => e.classList.contains('red')).length, mode: window.__test ? window.__test.race().mode : '?' }; });
+        if (st.red === 5) fiveReds = true;
+        if (fiveReds && st.mode === 'lights') { await h.eval(() => window.__test.setInput({ gas: true })); gassed = true; }
+        if (st.mode === 'race') break;
+        await h.wait(100);
+      }
+      if (!fiveReds) return 'start lights never showed all 5 reds';
+      if (!gassed) return 'lights phase ended before gas could be applied after 5 reds';
+      await h.wait(500);
+      const pen = await h.eval(() => window.__test ? window.__test.penState().penalty : null);
+      if (pen === null) return 'could not read penState';
+      if (pen < 5) return 'gas after 5 reds, before GO, gave no jump-start penalty (penalty ' + pen + ', must be 5)';
+      await h.eval(() => { location.href = location.pathname; });
+      return true;
+    }
+  },
+  {
+    id: 'tester-chk-f06', ask: 'Apex F1: pit-lane speed never exceeds 80 km/h from the entry line on (G-321)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      // build speed on the grid straight (adaptive: the slow local rig needs more wall time per game second), then jump to 550 m before the pit entry
+      for (let i = 0; i < 120; i++) {
+        await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+          t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
+        await h.wait(100);
+        const v = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); return p.v; });
+        if (v >= 60) break;
+      }
+      const sped = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); return p.v; });
+      if (sped < 60) return 'could not build approach speed (v ' + sped.toFixed(1) + ', need 60+)';
+      const pit = await h.eval(() => { const t = window.__test; const L = t.trackLength();
+        const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, 0.9414 * L - 550); return { L, pitIn: 0.9414 * L }; });
+      // one deflected frame resyncs the world-heading hold after the teleport, then press PIT for real (the button listens to mousedown, not click)
+      await h.eval(() => { window.__test.setInput({ steer: 0.3, gas: true }); });
+      await h.eval(() => { document.getElementById('btnPit').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); });
+      await h.wait(500);
+      // drive flat-out to the line and sample the first 50 m of the pit lane
+      let maxV = 0, seen = false;
+      for (let i = 0; i < 200; i++) {
+        const st = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+          return { s: p.s, d: p.d, v: p.v }; });
+        const sN = ((st.s % pit.L) + pit.L) % pit.L;
+        if (sN < pit.pitIn - 40) {
+          await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+            t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
+        } else if (sN <= pit.pitIn + 50) {
+          seen = true; if (st.v > maxV) maxV = st.v;
+        } else if (sN > pit.pitIn + 50) break;
+        await h.wait(100);
+      }
+      if (!seen) return 'never reached the pit entry after arming PIT';
+      await h.eval(() => { location.href = location.pathname; });
+      if (maxV > 22.5) return 'pit-lane speed hit ' + (maxV * 3.6).toFixed(0) + ' km/h past the entry line (limit 80)';
+      return true;
+    }
   },
 ];

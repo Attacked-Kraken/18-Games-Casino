@@ -637,7 +637,7 @@ hint:'Five hurdles indoors. Tap HURDLE just before each one - hit it and it goes
 hint:'Ten hurdles, tighter spacing. Keep the rhythm: stride, stride, HURDLE.'},
 {id:'110h', name:'110m Hurdles', eng:'hurdles', timed:true, dist:110, ref:12.80, hCount:10, hStart:13.72, hGap:9.14,
 hint:'Sprint, then tap ACTION to clear each of the 10 hurdles. Clip one and you lose speed.'},
-{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:8, hStart:45, hGap:35,
+{id:'300h', name:'300m Hurdles', eng:'hurdles', timed:true, dist:300, ref:33.38, hCount:7, hStart:45, hGap:35,
 hint:'Eight hurdles around the bend. Jump late and you knock one flat.'},
 {id:'400h', name:'400m Hurdles', eng:'hurdles', timed:true, dist:400, ref:46.29, hCount:10, hStart:45, hGap:35,
 hint:'10 hurdles over a full lap. Rhythm is everything — jump late and you will clip.'},
@@ -803,6 +803,7 @@ const drain  = dist<=200?24 : 26;
 const E={
 ev, done:false, dq:false, S, dist,
 phase:'marks', phaseT:0, setDur:rnd(0.9,1.8), started:false,
+wind:+(Math.random()*6-3).toFixed(1), // G-289 (CHECKLIST T05): this race's wind, m/s, -3.0..+3.0; over +2.0 the time is wind-aided
 r:newRunner(), time:0, penalty:0, falseStarts:0, warnT:0, place:4,
 ai: rivals.map(rv=>makeLiveRival(rv,ev)),
 actionLabel(){ return '—'; },
@@ -854,7 +855,9 @@ pos: this.dq?'DQ':ordinal(this.place), speed:this.r.speed/maxSpd, stam:this.r.st
 getResult(){
 if(this.dq) return {value:null, display:'DQ — false start', points:0};
 const t=Math.round(this.time*100)/100;
-return {value:t, display:fmtTime(t)+'  ('+ordinal(this.place)+')', points:pointsFor(ev,t)};
+const windAided=this.wind!=null&&this.wind>2.0; // G-289 (CHECKLIST T05): a tailwind over +2.0 m/s never counts as a record
+const wTxt=this.wind==null?'':' — Wind '+(this.wind>=0?'+':'')+this.wind.toFixed(1)+' m/s';
+return {value:t, display:fmtTime(t)+(windAided?'w':'')+'  ('+ordinal(this.place)+')'+wTxt, wind:this.wind, windAided:windAided, points:pointsFor(ev,t)};
 }
 };
 return E;
@@ -887,6 +890,8 @@ stride(side){
 if(this.done||this.phase!=='run') return;
 let imp=0.70;
 if(this.r.pos>dist-400 && this.r.stamina>25) imp*=1.25;
+// JOB G-267 ROUND 1: stride rate cap - mashing faster than any human cadence must not buy speed (tester-10000m-mash-no-speed-exploit): past the 12th stride in a game-second window the impulse is pre-scaled to 0.25, on top of the shared governor. Any per-tick gain above the drag at the hard cap (~0.048) pins speed at the cap forever (clamp + drag), so the governed gain must fall below it; 0.25 gives 0.043 at zero stamina. Honest cadence (<=12/s) is untouched.
+if(this.r.tapCount>=12) imp*=0.25;
 applyStride(this.r, side, imp);
 },
 action(){
@@ -1562,7 +1567,10 @@ if(this.ft>=this.fT) this.endAttempt();
 }else if(this.phase==='mark'){
 this.resT-=dt;
 if(this.resT<=0){
-if(this.attempt>=this.attMax){ this.done=true; this.finishT=0; }
+if(this.attempt>=this.attMax){
+if(this.attMax===3){ const rank=1+this.aiBest.filter(b=>b>this.best).length; if(rank<=8){ this.attMax=6; this.attempt++; this.reset(); } else { this.done=true; this.finishT=0; } } // G-289 r1: rules/trackfield.md - 3 attempts, plus 3 more for the top 8 (discus keeps its 1, G-25)
+else { this.done=true; this.finishT=0; }
+}
 else { this.attempt++; this.reset(); }
 }
 }
@@ -2011,8 +2019,8 @@ const gray=new THREE.MeshStandardMaterial({color:0x777d85,roughness:0.9});
 const white=new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:0.7});
 const sandM=new THREE.MeshStandardMaterial({color:0xe3cf9a,roughness:1});
 const matBlue=new THREE.MeshStandardMaterial({color:0x1e5fc2,roughness:0.85});
-const rw=new THREE.Mesh(new THREE.BoxGeometry(45,0.08,1.4),gray);
-rw.position.set(-47.5,0.04,8); rw.receiveShadow=true; this.scene.add(rw);
+const rw=new THREE.Mesh(new THREE.BoxGeometry(40,0.08,1.4),gray); // G-316 (CHECKLIST T11): runway 40 m; was 45
+rw.position.set(-50,0.04,8); rw.receiveShadow=true; this.scene.add(rw); // G-316: span -70..-30, start to board; was -47.5 (span -70..-25)
 const board=new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,1.22),white);
 board.position.set(-31.25,0.06,8); this.scene.add(board); V.board=board;
 const pit=new THREE.Mesh(new THREE.BoxGeometry(11,0.5,3.2),sandM);
@@ -2050,9 +2058,9 @@ conc.position.set(-52,0.03,20); conc.receiveShadow=true; this.scene.add(conc);
 const rim=new THREE.Mesh(new THREE.TorusGeometry(1.07,0.05,8,28),white);
 rim.rotation.x=Math.PI/2; rim.position.set(-52,0.09,20); this.scene.add(rim);
 const secM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55});
-for(const a of [-0.6,0.6]){
+for(const a of [-0.3047,0.3047]){ // G-309 (CHECKLIST T10): half-angle 34.92/2 deg; was 0.6 (68.8 deg sector)
 const line=new THREE.Mesh(new THREE.PlaneGeometry(46,0.14),secM);
-line.rotation.x=-Math.PI/2; line.rotation.z=a;
+line.rotation.x=-Math.PI/2; line.rotation.z=-a; // G-309: radial - was +a, which crossed the lines into a V 38 m out
 line.position.set(-52+Math.cos(a)*23,0.015,20+Math.sin(a)*23);
 this.scene.add(line);
 }
@@ -2532,7 +2540,7 @@ function clampCamXZ(cx, cz){
 // JOB J39 ONE camera rule: the camera never leaves the stadium - clamp it to
 // the track capsule (the oval centreline segment) widened past the outer lane,
 // so it can never sit behind the start line in the stands or inside a wall.
-const R=48.5, x0=-TRK.straight, x1=0;
+const R=46.0, x0=-TRK.straight, x1=0;
 const nx=Math.max(x0, Math.min(x1, cx));
 const dx=cx-nx, dz=cz; const d=Math.hypot(dx,dz);
 if(d>R){ const k=R/d; return [nx+dx*k, dz*k]; }
@@ -2554,7 +2562,7 @@ const cc=clampCamXZ(x-tx*7, z-tz*7);
 // (10.4 m away in the robot's check), so the runner shrank in the frame.
 W3D.camTo(cc[0], 2.8, cc[1], x+tx*10, 1.2, z+tz*10, (W3D._simDt!=null?W3D._simDt:dt), 5);
 W3D.camApply();
-W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z};
+W3D._follow={x:x, z:z, tx:tx, tz:tz, cx:W3D.camPos.x, cy:W3D.camPos.y, cz:W3D.camPos.z}; if(ENG&&ENG.r){ENG.r.ox=x; ENG.r.oz=z;}
 }
 function buildRelayZones(){
 // G-249 r2 (owner, CHECKLIST T04): the changeover zone is 30 m of TRACK per lane, painted at the end of each leg (race 70-100, 170-200, 270-300). The stations are walked along each lane's own line in world distance, so every strip measures 30 m no matter the stagger or the bend (the old 20 m of race coordinate measured 17.3-21.2 m, mean 20.08 m).
@@ -3104,6 +3112,7 @@ SIM_MODS = (G.mode==='career') ? careerMods() : {spd:1,stam:1,tech:1};
 ENG=makeEngine(ev,rivals||[]);
 ENG._rivals=rivals||[];
 if(W3D.ready&&!W3D.failed){ try{ attachDriver3D(ENG); }catch(err){} }
+if(ENG.ev.eng==='relay'&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289 (CHECKLIST T04): the changeover zones paint at race start on the scene alone - the old path waited for the full 3D load (W3D.ready), so on a slow load the robot's 5 s poll found no markings at all
 // JOB J7 freeze hardening: pay the cold-start costs (shader programs for the painted
 // kits, texture uploads) HERE, in the start transition - not inside the first race
 // frames, where a compile storm on a slow device stalls the frame loop past the
@@ -3188,7 +3197,7 @@ refreshSkip();
 function finishEvent(){
 document.body.classList.remove('playing');
 const ev=ENG.ev, res=ENG.getResult();
-const newBest=recordBest(ev,res.value);
+const newBest=res.windAided?false:recordBest(ev,res.value); // G-289 (CHECKLIST T05): a wind-aided time is shown with 'w' and never saved as a best
 let nextLabel='NEXT EVENT', nextFn=null;
 $('resMedals').innerHTML='';
 if(G.mode==='champ'){
@@ -3709,7 +3718,7 @@ acc+=simDt;
 let n=0;
 while(acc>=1/60&&n<30){ ENG.update(1/60); acc-=1/60; n++; }
 if(n===30) acc=0;
-if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.ready&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} }
+if(playing&&ENG&&ENG.ev&&ENG.ev.eng==='relay'&&!ENG._zone&&!ENG.done&&W3D.scene&&!W3D.failed){ try{ buildRelayZones(); }catch(err){} } // G-289: scene, not ready - the scene exists at boot, the full load does not
 try{ if(ENG.draw3) ENG.draw3(dt); }catch(err){}
 updateHUD();
 Confetti.update(dt); Confetti.draw();

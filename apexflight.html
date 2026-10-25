@@ -24,7 +24,7 @@
   @media (orientation: portrait) { body { position:fixed; left:0; top:0; width:100vh; height:100vw; transform-origin:left top; transform:rotate(90deg) translateY(-100vw); } }
   #hud { position: fixed; inset: 0; z-index: 1000; pointer-events: none; color: #c9ffd6; }
   .chip { background: rgba(2,14,8,.62); border: 1px solid rgba(255,59,48,.35); border-radius: 10px; padding: 7px 10px; }
-  #bandBox { display: none; }
+  #bandBox { display: none; position: absolute; top: calc(118px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); white-space: nowrap; }   /* G-283: a distinct chip under the runway box, clear of the stats, the top buttons and the messages - the old full-width strip sat buried under the top chrome */
   #bandBox.in { border-color: rgba(80,255,140,.7); color: #b6ffb6; }
   #stats { position: absolute; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; font-size: 12px; }
@@ -47,7 +47,7 @@
     font: 700 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .1em; cursor: pointer; }
   #viewBtn { top: calc(10px + env(safe-area-inset-top)); right: 190px; }
   #jetBtn { top: calc(58px + env(safe-area-inset-top)); left: 12px; }
-  #resetBtn { top: calc(10px + env(safe-area-inset-top)); right: 262px; }
+  #resetBtn { top: calc(10px + env(safe-area-inset-top)); right: 100px; }   /* G-290: was right:262px, sitting on the VS chip - now in the gap between VIEW and mute, clear of every top-bar element */
   /* mute button: above the throttle touch zone, clear of VIEW/RESET and the HUD */
   #muteBtn { right: 12px; bottom: calc(306px + env(safe-area-inset-bottom)); width: 48px; height: 48px;
     padding: 0; font-size: 19px; z-index: 4500; }
@@ -182,6 +182,9 @@ const P = { pos: new THREE.Vector3(), vel: new THREE.Vector3(),
             yaw: 0, pitch: 0, roll: 0, thr: 0, ground: true };
 const inp = { pitchUp: 0, rollRight: 0 };   // -1..1
 let jetInput = null;   // the owner's jet controls (created below, G-90); respawn syncs its throttle
+let peakAir = 0;   // G-232 r1: highest altitude since leaving the ground - the banked/nose-down
+                   // gear-collapse check only arms once the jet has really flown (2 m up), so a
+                   // takeoff bounce that settles straight back is a roll, not a landing
 let stallNow = false, msgTimer = 0;
 
 /* ================= renderer / scene ================= */
@@ -570,7 +573,7 @@ function respawn() {
   scoredThisAttempt = false; offRwyMsg = false;
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
   if (kitCtl) kitCtl.show(true);
-  phase = 'fly'; stallNow = false; setMsg('');
+  phase = 'fly'; stallNow = false; setMsg(''); peakAir = 0;
   P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
   if (mode === 'free') {
     P.pos.set(0, jet.gearHeight, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
@@ -883,6 +886,7 @@ function step(dt) {
     ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade * (padBrake ? 0.1 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116, deepened G-117 so the descent finishes well inside the robot's 30 s test clock)
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
+  if (!P.ground) peakAir = Math.max(peakAir, P.pos.y);   // G-232 r1: arms the bounce-vs-landing call below
 
   // lateral tire grip on ground
   if (P.ground) {
@@ -897,10 +901,10 @@ function step(dt) {
   if (P.pos.y - jet.gearHeight <= 0 && P.pos.y > -2) {
     if (!P.ground && phase === 'fly') {
       const vs = P.vel.y;
-      if (vs < -3.2 || Math.abs(P.roll) > 0.35 || P.pitch < -0.28) { crash('Hard impact - the landing gear collapsed.'); return; }
+      if (vs < -3.2 || (peakAir > jet.gearHeight + 2 && (Math.abs(P.roll) > 0.35 || P.pitch < -0.28))) { crash('Hard impact - the landing gear collapsed.'); return; }   // G-232 r1: a hard impact always crashes; banked/nose-down only after a real hop
       onTouchdown(vs);
     }
-    P.ground = true; P.pos.y = jet.gearHeight;
+    P.ground = true; P.pos.y = jet.gearHeight; peakAir = 0;   // rolling again - the next takeoff starts unarmed
     if (!jet.gearDown) { jet.setGear(true); jetInput.gear = true; jetInput.setGearLabel(true); }   // touching down puts the gear back down (G-90)
     if (P.vel.y < 0) P.vel.y = 0;
     if (v > VROT && P.pitch > 0.03) { P.ground = false;

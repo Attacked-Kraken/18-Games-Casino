@@ -24,12 +24,17 @@ FOLLOW = [("sound-robot.yml", ("sounds/recipes/", "sounds/rejects/", "tools/soun
           ("patch-robot.yml", ("patches/", "bigfiles/", "pieces/request-"))]
 
 
+LAST_ERR = [""]
+
+
 def gh(*args, method="GET", fields=None):
+    LAST_ERR[0] = ""
     cmd = ["gh", "api", "-X", method] + list(args)
     for k, v in (fields or {}).items():
         cmd += ["-f", "%s=%s" % (k, v)]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
+        LAST_ERR[0] = (r.stdout.strip() + " " + r.stderr.strip())[:300]
         print("gh api failed:", " ".join(args), r.stderr.strip()[:200])
         return None
     return json.loads(r.stdout) if r.stdout.strip() else {}
@@ -215,10 +220,14 @@ def restart_cancelled(pr):
     newest = max(mine, key=lambda r: (r.get("created_at") or "", r.get("run_attempt") or 0))
     if newest.get("status") != "completed" or newest.get("conclusion") != "cancelled":
         return False                      # still running, finished, or a newer run already replaced it
-    marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], newest["id"])
+    # Oct 24 2026 3:10 PM (PR #1542: its 'plan' job was cancelled twice in a row by GitHub - runner starvation 12:00-12:30 PM - and the
+    # robot's ONE restart per run left it red for 3 h): up to 3 restarts per commit, each for a new attempt, at least 8 min apart.
+    marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], newest["id"], newest.get("run_attempt") or 1)
     comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
     if any(marker in (c.get("body") or "") for c in comments):
-        return False                      # already restarted this one once - a second cancel is left for a human to look at
+        return False                      # this attempt was already restarted
+    if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
+        return False                      # 3 restarts of this commit already - left for a human (the Mac speaks at 45 min)
     when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
     how = "re-ran it"
     if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
@@ -262,8 +271,10 @@ def restart_cancelled_other(pr):
             continue
         if comments is None:
             comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
-        marker = "<!-- robot-restart:%s:%s -->" % (sha[:7], r["id"])
+        marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], r["id"], r.get("run_attempt") or 1)
         if any(marker in (c.get("body") or "") for c in comments):
+            continue
+        if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
             continue
         when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         if gh("repos/%s/actions/runs/%d/rerun" % (REPO, r["id"]), method="POST") is None:
@@ -433,7 +444,19 @@ def main():
                  fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if not (res and res.get("merged")):
             revisit = True
-            print("::warning title=Merge robot::#%d: green but GitHub refused the merge (%s) - looking again next round" % (n, (res or {}).get("message", "no answer")))
+            why = (res or {}).get("message") or LAST_ERR[0] or "no answer"
+            print("::warning title=Merge robot::#%d: green but GitHub refused the merge (%s) - looking again next round" % (n, why))
+            # Oct 24 2026 9:15 PM (#1616: robot re-run passed, an older FAILED 'check' run on the same commit kept it 'blocked'; the robot
+            # said 'no answer' for 40 min): a refusal naming the required check = the commit's old failed run is in the way. A new commit
+            # (main merged into the branch) gets a clean check - the robot does that itself, once per commit.
+            try:
+                if re.search(r"status check|checks? (?:are|is) (?:expected|failing)|not mergeable|blocked", why, re.I) and not any(
+                        ("robot-refresh %s" % pr["head"]["sha"][:10]) in (c.get("body") or "") for c in (gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or [])):
+                    u = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
+                    tell_pr(n, pr["head"]["sha"], "<!-- robot-refresh %s -->\nGitHub refused a merge although the newest check passed (%s). The robot brought the branch up to date so a fresh check starts on a clean commit." % (pr["head"]["sha"][:10], why[:140]))
+                    print("::notice title=Merge robot::#%d: branch updated to clear a stale failed check run (%s)" % (n, "ok" if u is not None else "update failed: " + LAST_ERR[0][:120]))
+            except Exception as ex:
+                print("::warning title=Merge robot::#%d: refresh after refusal failed: %s" % (n, ex))
         if res and res.get("merged"):
             merged.append(n)
             for wf, starts in FOLLOW:

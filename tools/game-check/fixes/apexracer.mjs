@@ -479,10 +479,8 @@ export default [
   },
   {
     id: 'play-ai-pace',
-    ask: 'G-70: AI lap times within 5 percent of the player - the field is as fast as the player, nobody just drives away',
+    ask: 'G-270 fix 1 (owner, supersedes G-70/G-123): the player is far faster than the field - every AI best lap is at least 25% slower than the player best, so the player laps them',
     async test(page, h) {
-      // start the race from here and wait until the build has fully finished before stepping it:
-      // R.skids is created at the end of setupRace, and stepping a half-built race crashes it
       await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
       let ready = false;
       for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
@@ -506,12 +504,70 @@ export default [
         const pBest = Math.min.apply(null, P.lapT);
         const ais = R.cars.filter((e2) => e2.ai);
         if (!ais.length) return 'no AI cars in the race';
-        const times = [];
-        for (const e2 of ais) { if (!(e2.lapT || []).length) return 'AI car ' + e2.name + ' set no lap time'; times.push(Math.min.apply(null, e2.lapT)); }
-        times.sort((a, b) => a - b);
-        const med = times[Math.floor(times.length / 2)];
-        for (const tt of times) if (tt > pBest * 1.05) return 'an AI best lap of ' + tt.toFixed(1) + 's is more than 5% slower than the player best ' + pBest.toFixed(1) + 's - the player can just drive away';
-        if (med < pBest * 0.95) return 'the AI field median best lap ' + med.toFixed(1) + 's is more than 5% faster than the player best ' + pBest.toFixed(1) + 's';
+        for (const e2 of ais) { if (!(e2.lapT || []).length) return 'AI car ' + e2.name + ' set no lap time'; const b = Math.min.apply(null, e2.lapT); if (b < pBest * 1.25) return 'AI car ' + e2.name + ' best lap ' + b.toFixed(1) + 's is within 25% of the player best ' + pBest.toFixed(1) + 's - the player cannot lap the field'; }
+        return true;
+      });
+    },
+  },
+  {
+    id: 'tester-chk-r01',
+    cat: 'play',
+    name: 'checklist R01: the race starts with a countdown and no car moves before GO',
+    ask: 'G-300 checklist R01: with the gas held through the whole countdown, the player and every rival stay on their grid spots while R.t < 0 (before the fix the worst rival slid 4.15 m sideways at speed 0 - the AI lane logic walked it to its lane), and the player drives away once GO lands',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); });
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        for (let i = 0; i < 100; i++) { if (E.R && E.R.skids && E.R.P) break; await wait(200); }
+        if (!E.R || !E.R.P) return 'no race';
+        E.K.gas = true;
+        const grid = [{ x: E.R.P.x, z: E.R.P.z }].concat(E.R.cars.filter((e) => e.ai).map((e) => ({ x: e.x, z: e.z })));
+        let worst = 0;
+        for (let i = 0; i < 900 && E.R.t < 0; i++) { E.step(1, 1 / 30); if (E.R.t >= 0) break;
+          const now = [{ x: E.R.P.x, z: E.R.P.z }].concat(E.R.cars.filter((e) => e.ai).map((e) => ({ x: e.x, z: e.z })));
+          for (let k = 0; k < grid.length; k++) worst = Math.max(worst, Math.hypot(now[k].x - grid[k].x, now[k].z - grid[k].z)); }
+        if (E.R.t < 0) return 'countdown never ended';
+        const px = E.R.P.x, pz = E.R.P.z;
+        for (let i = 0; i < 40; i++) E.step(3, 1 / 30);
+        const moved = Math.hypot(E.R.P.x - px, E.R.P.z - pz);
+        E.K.gas = false; if (E.R) E.R.on = false;
+        return JSON.stringify({ worst: +worst.toFixed(3), moved: +moved.toFixed(2) });
+      });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return String(r);
+      if (d.worst > 0.05) return 'a car moved ' + d.worst.toFixed(2) + ' m before GO (R01)';
+      if (d.moved < 2) return 'the player did not move after GO (' + d.moved.toFixed(2) + ' m)';
+      return true;
+    },
+  },
+  {
+    id: 'never-g-270-p1',
+    ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
+      let ready = false;
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      if (!ready) return 'the race never finished building';
+      return h.eval(() => {
+        const E = window.__erc;
+        if (!E || !E.R) return 'no race';
+        const R = E.R, P = R.P, T = R.T;
+        if (P.st.top < 110) return 'the player car top speed is only ' + Math.round(P.st.top) + ' m/s - the cars are not fast (want 110+)';
+        const ais = R.cars.filter((e2) => e2.ai);
+        if (!ais.length) return 'no AI cars in the race';
+        for (const e2 of ais) if (e2.top < 60) return 'a rival top speed is only ' + Math.round(e2.top) + ' m/s - the field is not fast (want 60+)';
+        E.K.gas = 1;
+        let guard = 0;
+        while (guard++ < 6000) {
+          const idx = ((P.idx + 10) % T.N + T.N) % T.N;
+          let dh = Math.atan2(T.tx[idx], T.tz[idx]) - P.h;
+          while (dh > Math.PI) dh -= Math.PI * 2; while (dh < -Math.PI) dh += Math.PI * 2;
+          E.K.sx = Math.max(-1, Math.min(1, dh * 1.6));
+          E.step(6, 1 / 60);
+          if ((P.lapT || []).length >= 3) break;
+        }
+        E.K.gas = 0; E.K.sx = 0;
+        if ((P.lapT || []).length < 3) return 'the player did not finish 3 laps in the drive window';
+        for (const e2 of ais) { const prog = e2.s / T.N; if (prog > 2.1) return 'a rival is only ' + (3 - prog).toFixed(2) + ' laps behind after the player\'s 3 laps - the player must lap the whole field'; }
         return true;
       });
     },
@@ -1118,6 +1174,43 @@ export default [
       const s2 = await cross('Finish');
       if (s2 !== 'Finish') return 'on the last lap the sign says ' + JSON.stringify(s2) + ', not Finish';
       return true;
+    },
+  },
+  {
+    id: "play-garage-options",
+    cat: "play",
+    name: "garage options reach the car: bought glow, calipers, Limo tint, GT wing, body kit and rim faces are built onto the player car (owner)",
+    ask: "owner fix (garage): every garage tab's chosen style shows on the car - underglow live, a rim face and a caliper at all 4 wheels, Limo tint on the glass, the aero wing and the body kit fitted, on the Goblin and on a Tokii car; the test restores the save it borrowed (cur + both car entries) so the next test drives the stock car",
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; window.__gSave = { cur: E.S.cur, gob: E.S.cars.goblin ? JSON.parse(JSON.stringify(E.S.cars.goblin)) : null, kes: E.S.cars.kestrel ? JSON.parse(JSON.stringify(E.S.cars.kestrel)) : null };
+        const kit = { glow: '#19e6ff', cal: '#16d07a', tint: 2, aero: 3, kit: 1, rim: 3, rimCol: '#d4a640' };
+        for (const id of ['goblin', 'kestrel']) E.S.cars[id] = Object.assign(E.S.cars[id] || {}, kit); });
+      let fail = null;
+      for (const id of ['goblin', 'kestrel']) {
+        if (fail) break;
+        await h.eval((cid) => { const E = window.__erc; E.S.cur = cid; E.startRace(E.PLACES[0], 3); }, id);
+        const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || !E.R.P) return 'no race';
+          const car = E.R.P.car, acc = {};
+          car.root.traverse((q) => { if (q.userData && q.userData.acc) acc[q.userData.acc] = (acc[q.userData.acc] || 0) + 1; });
+          let limo = false;
+          car.root.traverse((q) => { if (q.isMesh) { const ms = Array.isArray(q.material) ? q.material : [q.material]; for (const m of ms) if (m && m.color && m.color.getHexString() === '020409') limo = true; } });
+          return JSON.stringify({ acc, glow: !!car.glow, limo });
+        });
+        let d = null; try { d = JSON.parse(r); } catch (e) {}
+        if (!d) fail = id + ': ' + r;
+        else if (!d.glow) fail = id + ': bought underglow is not on the car';
+        else if ((d.acc.rimface || 0) < 4) fail = id + ': rim style faces missing (' + (d.acc.rimface || 0) + '/4)';
+        else if ((d.acc.caliper || 0) < 4) fail = id + ': calipers missing (' + (d.acc.caliper || 0) + '/4)';
+        else if (!d.acc.underglow) fail = id + ': underglow part missing';
+        else if (!d.acc.wing) fail = id + ': spoiler (aero) missing';
+        else if (!d.acc.bodykit) fail = id + ': body kit missing';
+        else if (!d.limo) fail = id + ': Limo tint is not on the glass';
+        await h.eval(() => { const E = window.__erc; if (E.R) E.R.on = false; });
+      }
+      await h.eval(() => { const E = window.__erc, s = window.__gSave; if (s) { E.S.cur = s.cur; if (s.gob) E.S.cars.goblin = s.gob; else delete E.S.cars.goblin; if (s.kes) E.S.cars.kestrel = s.kes; else delete E.S.cars.kestrel; delete window.__gSave; } });
+      return fail || true;
     },
   },
 ];

@@ -337,17 +337,17 @@ const MPH = 2.237;
 /* ------------------------------------------------------------------ player save */
 let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const CARS = [
-  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 60, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
-  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 65, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
-  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 68, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
-  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 74, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
-  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 82, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
-  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 90, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
+  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 75, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
+  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 81, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
+  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
+  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
+  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
+  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 113, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 90, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
-  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 98, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
-  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 101, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
+  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
+  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
@@ -1103,7 +1103,7 @@ function makeGlbCar(id, cfg, o = {}) {
   const bodyMat = paintMat(cfg.paint || '#e8e8ee', cfg.fin || 'metal');
   const rimMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.9, roughness: 0.28 });
   const tireMat = new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.92, metalness: 0.05 });
-  const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x0a0e14, metalness: 0.9, roughness: 0.06, clearcoat: 1, envMapIntensity: 1.6 });
+  const TINTS = [[0x27364a, 0.05, 1.6], [0x0a0e14, 0.06, 1.6], [0x020409, 0.16, 1.1]]; const _tn = TINTS[clamp(cfg.tint === undefined ? 1 : cfg.tint, 0, 2)]; const glassMat = new THREE.MeshPhysicalMaterial({ color: _tn[0], metalness: 0.9, roughness: _tn[1], clearcoat: 1, envMapIntensity: _tn[2] }); /* garage fix: the Tint tab (Light/Dark/Limo) now reaches the glass - it was sold but never read */
   const ownMats = [bodyMat, rimMat, tireMat, glassMat];
   const kill = [];
   model.traverse((q) => { if (q.isMesh && /shadow/i.test(q.name)) kill.push(q); });
@@ -1176,7 +1176,100 @@ function makeGlbCar(id, cfg, o = {}) {
   if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
-  const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: null, roll: 0, spinA: 0, glbKey: key, pool,
+  /* garage fix (owner): the shop options were sold but never reached the real cars - wire them in.
+     Wheel hubs are measured from the model's own tire meshes (clustered per corner; a merged
+     tire blob falls back to the body box), then the chosen rim style is drawn on a face disc
+     at each wheel (rim color for the spokes, caliper color behind them). */
+  let accGlow = null;
+  try {
+    model.updateWorldMatrix(true, true);
+    const inv = new THREE.Matrix4().copy(tilt.matrixWorld).invert();
+    const toTilt = (v) => v.applyMatrix4(inv);
+    /* wheel hubs measured from the tire vertices themselves: density peaks along x give the
+       two axle lines, each side's slice gives centre, radius and width - works whether the
+       model's tires are separate meshes or one merged blob (the Goblin's are a blob) */
+    let hubs = [];
+    {
+      const tv = [];
+      model.traverse((q) => { if (!q.isMesh || q.material !== tireMat || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position, v = new THREE.Vector3();
+        for (let vi = 0; vi < pa.count; vi += 3) { v.fromBufferAttribute(pa, vi).applyMatrix4(q.matrixWorld); tv.push(toTilt(v.clone())); } });
+      if (tv.length > 200) {
+        const halfW = Math.max.apply(null, tv.map((p) => Math.abs(p.z)));
+        const low = tv.filter((p) => p.y < ls.y * 0.78 && Math.abs(p.z) > halfW * 0.3);
+        const bins = new Map();
+        for (const p of low) { const b = Math.round(p.x / 0.12); bins.set(b, (bins.get(b) || 0) + 1); }
+        const sorted = [...bins.entries()].sort((a, b2) => b2[1] - a[1]);
+        const peaks = [];
+        for (const [b] of sorted) { const x = b * 0.12; if (peaks.every((pk) => Math.abs(pk - x) > ls.x * 0.22)) peaks.push(x); if (peaks.length === 2) break; }
+        for (const pk of peaks) for (const sd of [1, -1]) {
+          const sl = low.filter((p) => Math.abs(p.x - pk) < 0.42 && Math.sign(p.z) === sd);
+          if (sl.length < 25) continue;
+          const ys = sl.map((p) => p.y), zs = sl.map((p) => p.z);
+          const y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), z0 = Math.min.apply(null, zs), z1 = Math.max.apply(null, zs);
+          /* the density peak sits on the tyre's shoulder, not its centre - the slice centroid is the centre */
+          let cx = sl.reduce((a, p) => a + p.x, 0) / sl.length;
+          const sl2 = low.filter((p) => Math.abs(p.x - cx) < 0.55 && Math.sign(p.z) === sd);
+          if (sl2.length >= 25) cx = sl2.reduce((a, p) => a + p.x, 0) / sl2.length; /* second pass: re-centre the window on the first centroid - the torus is symmetric, so this converges on the true axle centre */
+          hubs.push({ x: cx, y: (y0 + y1) / 2, z: (z0 + z1) / 2, h: y1 - y0, w: z1 - z0 });
+        }
+      }
+      if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
+    }
+
+    const rimTex = (style, col, cal) => ctex(256, 256, (g) => {
+      g.clearRect(0, 0, 256, 256);
+      const cx = 128, cy = 128;
+      g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 126, 0, TAU); g.fill();
+      g.strokeStyle = col; g.lineWidth = 7; g.beginPath(); g.arc(cx, cy, 118, 0, TAU); g.stroke();
+      g.fillStyle = cal; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 104, -2.25, -1.35); g.closePath(); g.fill(); /* the caliper, behind the spokes */
+      g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 100, 0, TAU); g.fill();
+      g.fillStyle = col; g.strokeStyle = col;
+      const spoke = (a, w2, r0, r1) => { g.save(); g.translate(cx, cy); g.rotate(a); g.fillRect(r0, -w2 / 2, r1 - r0, w2); g.restore(); };
+      if (style === 1) { for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; spoke(a - 0.10, 13, 26, 112); spoke(a + 0.10, 13, 26, 112); } }
+      else if (style === 2) { for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.moveTo(24, -7); g.quadraticCurveTo(80, -26, 112, -4); g.lineTo(112, 10); g.quadraticCurveTo(78, -8, 24, 8); g.closePath(); g.fill(); g.restore(); } }
+      else if (style === 3) { g.lineWidth = 16; g.beginPath(); g.arc(cx, cy, 96, 0, TAU); g.stroke(); for (let i = 0; i < 5; i++) spoke(i / 5 * TAU, 24, 20, 92); }
+      else if (style === 4) { g.lineWidth = 5; for (let i = 0; i < 10; i++) { spoke(i / 10 * TAU, 5, 18, 114); spoke(i / 10 * TAU + 0.31, 5, 18, 114); } }
+      else if (style === 5) { g.beginPath(); g.arc(cx, cy, 112, 0, TAU); g.fill(); g.fillStyle = '#101114'; for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; g.beginPath(); g.arc(cx + Math.cos(a) * 68, cy + Math.sin(a) * 68, 21, 0, TAU); g.fill(); } g.fillStyle = col; }
+      else { for (let i = 0; i < 5; i++) spoke(i / 5 * TAU, 30, 22, 112); }
+      g.beginPath(); g.arc(cx, cy, 27, 0, TAU); g.fill(); g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 10, 0, TAU); g.fill();
+    }, true);
+    const faceMat = new THREE.MeshStandardMaterial({ map: rimTex(clamp(cfg.rim || 0, 0, 5), cfg.rimCol || '#c9cdd6', cfg.cal || '#e01b2b'), metalness: 0.75, roughness: 0.34 });
+    ownMats.push(faceMat);
+    const carbon = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.42, metalness: 0.6 });
+    ownMats.push(carbon);
+    for (const hb of hubs) {
+      const fr = hb.h / 2 * 0.68;
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(fr, 28), faceMat);
+      disc.position.set(hb.x, hb.y, hb.z + Math.sign(hb.z) * (hb.w / 2 + 0.008));
+      if (hb.z < 0) disc.rotation.y = Math.PI;
+      disc.userData.acc = 'rimface'; tilt.add(disc);
+      const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.5, fr * 0.72, 0.05), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
+      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (hb.w / 2 - 0.02));
+      cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
+    }
+    if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+      accGlow.rotation.x = -Math.PI / 2; accGlow.position.y = 0.055; accGlow.renderOrder = 2; accGlow.userData.acc = 'underglow'; tilt.add(accGlow); }
+    const aero = cfg.aero || 0;
+    if (aero > 0) {
+      let deckY = ls.y * 0.72; { const v = new THREE.Vector3(); model.traverse((q) => { if (!q.isMesh || q.material === tireMat || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; for (let i = 0; i < pa.count; i += 3) { v.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); const lt = toTilt(v.clone()); if (lt.x > -ls.x * 0.52 && lt.x < -ls.x * 0.30 && Math.abs(lt.z) < ls.z * 0.3 && lt.y > deckY) deckY = Math.min(lt.y, ls.y * 0.98); } }); }
+      const wing = new THREE.Group(); wing.userData.acc = 'wing';
+      const blade = (w2, t2, y2, x2) => { const b = new THREE.Mesh(new THREE.BoxGeometry(t2, 0.035, w2), carbon); b.position.set(x2, y2, 0); b.rotation.z = 0.05; wing.add(b); return b; };
+      if (aero === 1) blade(ls.z * 0.8, 0.26, deckY + 0.015, -ls.x * 0.44);
+      else { const hgt = aero === 3 ? 0.27 : 0.17, bw = aero === 3 ? ls.z * 0.98 : ls.z * 0.88, bt = aero === 3 ? 0.46 : 0.36;
+        for (const sd of [-1, 1]) { const py = new THREE.Mesh(new THREE.BoxGeometry(0.05, hgt, 0.05), carbon); py.position.set(-ls.x * 0.44, deckY + hgt / 2, sd * ls.z * 0.27); wing.add(py); }
+        blade(bw, bt, deckY + hgt, -ls.x * 0.44);
+        if (aero === 3) for (const sd of [-1, 1]) { const ep = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.13, 0.02), carbon); ep.position.set(-ls.x * 0.44, deckY + hgt, sd * bw / 2); wing.add(ep); } }
+      tilt.add(wing);
+    }
+    if (cfg.kit) { const kitG = new THREE.Group(); kitG.userData.acc = 'bodykit';
+      const part = (sx2, sy2, sz2, x2, y2, z2) => { const m2 = new THREE.Mesh(new THREE.BoxGeometry(sx2, sy2, sz2), carbon); m2.position.set(x2, y2, z2); kitG.add(m2); };
+      part(ls.x * 0.09, 0.05, ls.z * 0.86, ls.x * 0.415, 0.07, 0);
+      part(ls.x * 0.44, 0.09, 0.05, -ls.x * 0.02, 0.10, ls.z * 0.44); part(ls.x * 0.44, 0.09, 0.05, -ls.x * 0.02, 0.10, -ls.z * 0.44);
+      part(ls.x * 0.08, 0.07, ls.z * 0.8, -ls.x * 0.44, 0.08, 0);
+      tilt.add(kitG); }
+    if (cfg.susp) model.position.y += [0, 0.1, -0.03, 0][clamp(cfg.susp, 0, 3)] || 0; /* Titan suspension: the stance shows it */
+  } catch (e) { /* accessories must never break the car */ }
+const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: accGlow, roll: 0, spinA: 0, glbKey: key, pool,
     setBrake(b) { lampMatR.color.copy(hdr('#ff2418', b ? 7.5 : 3.2)); glowMatR.opacity = b ? 1 : 0.6; for (const s of glowR) s.scale.set(b ? 1.35 : 1, b ? 1.35 : 1, 1); }, /* G-163: brake lights flare while braking */
     dispose() { root.traverse((q) => { if (q.isMesh && q.geometry) q.geometry.dispose(); }); ownMats.forEach((m) => m.dispose()); } };
   return car;
@@ -1794,6 +1887,7 @@ function engKitStart() { /* start the kit's five loops once, gains at 0 - engine
 }
 function engineSnd(rpm, load, on, nos, scr, spd) {
   const c = AU.ctx; if (!c) return; const t = c.currentTime;
+  if (!isFinite(rpm)) rpm = 0; if (!isFinite(load)) load = 0; if (!isFinite(scr)) scr = 0; if (!isFinite(spd)) spd = 0; /* one bad physics frame must never reach an AudioParam - setTargetAtTime throws on a non-finite value and the harness counts it as a script error (PR #1614) */
   AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
   engKitStart();
   if (kitLive()) { /* G-240: the owner's supercar recordings carry the engine - idle + accel layers crossfaded by throttle, playbackRate by rpm, kit shift/backfire one-shots, kit tire squeal */
@@ -1852,6 +1946,7 @@ function musicStart(mode) {
 function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); musStopLayer(k); } }
 function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
   if (MUS.mode !== 'race' || !MUS.els) return; const c = AU.ctx; if (!c) return;
+  if (!isFinite(sp)) sp = 0; /* same guard as engineSnd: a non-finite speed frame must never reach an AudioParam */
   const band = (x, a, b, d, e) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < d ? 1 : x < e ? 1 - (x - d) / (e - d) : 0;
   const tg = { low: 0.85 * (1 - band(sp, 16, 34, 1e9, 1e9)), mid: 0.85 * band(sp, 16, 34, 52, 70), high: 0.85 * band(sp, 52, 70, 1e9, 1e9) };
   const t = c.currentTime;
@@ -1892,7 +1987,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.97 + r() * 0.05); e.ak = 1.05 + r() * 0.12; e.acc = P.st.acc * (0.95 + r() * 0.1); e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.60 + r() * 0.05); e.ak = 0.22 + r() * 0.06; /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.55 + r() * 0.1); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -1963,7 +2058,7 @@ function stepPlayer(P, dt) {
   let di = bi - P.idx; if (di < -N / 2) di += N; if (di > N / 2) di -= N; P.prog += di; P.idx = bi;
   const nx = T.nx[bi], nz = T.nz[bi], d = (P.x - T.px[bi]) * nx + (P.z - T.pz[bi]) * nz, lim = HW - 1.05; P.d = d;
   if (Math.abs(d) > lim) { const s = Math.sign(d), pen = Math.abs(d) - lim; P.x -= nx * s * pen; P.z -= nz * s * pen; const vn = (P.vx * nx + P.vz * nz) * s;
-    if (vn > 0) { /* glance off the wall: turn the nose back along the road instead of grinding */ if (vF > 0) { let dh = Math.atan2(T.tx[bi], T.tz[bi]) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; if (Math.abs(dh) < 1.7) P.h += dh * Math.min(1, dt * 7); }
+    if (vn > 0) { /* glance off the wall: turn the nose back along the road instead of grinding */ if (vF > 0) { let dh = Math.atan2(T.tx[bi], T.tz[bi]) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; if (Math.abs(dh) < 1.7) P.h += dh * Math.min(1, dt * 7); else if (sp < 3) P.h += dh * Math.min(1, dt * 5); } /* G-313 fix 1: a nose-in past the 1.7 rad glance cap at a crawl was unrecoverable - no steering authority at speed 0, no wrong-way trigger under 4 m/s - so the car sat out the 3.5 s stuck reset again and again on the start bend (trace: dh -1.96 rad, speed 0.2, |d| at the limit). Past the cap at a crawl, still turn the nose back along the road by the shortest rotation; this pin cycle is the tail that kept never-g-270-p1 under its 0.9-lap line (draws of 0.87 / 0.89 / 0.62) */
       P.vx -= nx * s * vn * 1.3; P.vz -= nz * s * vn * 1.3; if (vn > 3) { P.vx *= 0.93; P.vz *= 0.93; R.shake = Math.min(1, R.shake + vn * 0.03); spark(P.x + nx * s * 1, T.y + 0.5, P.z + nz * s * 1, 10, P.vx, P.vz); sfx(vn > 9 ? 'crash' : 'scrape'); R.hits++; } }
     else if (sp > 8 && Math.random() < 0.3) spark(P.x + nx * s * 1, T.y + 0.4, P.z + nz * s * 1, 2, P.vx, P.vz); }
   const dirDot = fx * T.tx[bi] + fz * T.tz[bi];
@@ -1974,11 +2069,11 @@ function stepPlayer(P, dt) {
   if (R.stuckT > 3.5) { R.T.at(P.prog, 0, tmpA); P.x = tmpA.x; P.z = tmpA.z; P.h = tmpA.h; P.vx = P.vz = 0; R.stuckT = 0; R.wrongT = 0; pop('↺ BACK ON TRACK'); }
 }
 function stepAI(e, dt) {
-  const T = R.T, N = T.N, P = R.P;
+  const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
   if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.08; else if (gap < -120) vt *= 1.04; } /* G-70: gentle two-way pace keeping - the field stays with the player */
-  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 1.04, 14)); /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
+  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 0.58, 10)); /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));
