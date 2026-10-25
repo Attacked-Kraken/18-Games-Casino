@@ -3449,5 +3449,5 @@ async test(page, h) {
         if (Math.abs(m.angle - 34.92) / 34.92 > 0.03) return 'the shot put landing sector measures ' + m.angle + ' degrees between its markings but venues/track.md says 34.92 degrees';
         return true;
       }
-  }
+  },
 ];
