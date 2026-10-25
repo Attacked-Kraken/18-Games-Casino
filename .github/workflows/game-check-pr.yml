@@ -153,19 +153,22 @@ jobs:
           echo "Mode: ${{ needs.plan.outputs.mode }} (played side by side)"
           node tools/game-check/judge.mjs game-check-out/results.json base-results.json changed.txt game-check-out
       - name: Check status - PASSED / FAILED + reason (one readout the Muse reads)
-        if: always() && github.event_name == 'pull_request'
+        if: always()      # also on a robot re-run (workflow_dispatch): #1616's passed re-run left a stale ROBOT comment (Oct 24 9:00 PM)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OUTCOME: ${{ job.status }}
           PLAY: ${{ needs.play.result }}
         run: |
-          if [ "$OUTCOME" = "success" ]; then bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" PASSED; exit 0; fi
+          PRN="${{ github.event.pull_request.number }}"
+          if [ -z "$PRN" ]; then PRN=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY%%/*}:${GITHUB_REF_NAME}" -q '.[0].number' 2>/dev/null || true); fi
+          [ -n "$PRN" ] || exit 0          # a run on a branch with no open pull request has nothing to comment on
+          if [ "$OUTCOME" = "success" ]; then bash tools/game-check/status-comment.sh "$PRN" PASSED; exit 0; fi
           R=game-check-out/blockers.txt
           if [ ! -s "$R" ]; then mkdir -p game-check-out; echo "The robot itself broke before it could judge (play step: $PLAY) - not your game." > $R; fi
           # Oct 23 2026 owner: "could not play it / played 0" is the robot's own trouble - never tell the Muse to push (that restarts everything)
           if [ "$PLAY" != "success" ] && grep -qiE "could not play it|played 0 game|robot itself broke" "$R" game-check-out/*.txt 2>/dev/null; then
-            bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" ROBOT "$R"; exit 0; fi
-          bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" FAILED "$R"
+            bash tools/game-check/status-comment.sh "$PRN" ROBOT "$R"; exit 0; fi
+          bash tools/game-check/status-comment.sh "$PRN" FAILED "$R"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
