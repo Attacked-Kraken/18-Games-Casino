@@ -64,3 +64,8 @@ UNCLEAR: which failing play test the order means - it names no test id; the clos
 MISSING: NONE - the band logic, the ranking thresholds and the tester's trim trace are all measured; the fix (an uncovered band chip on approach) does not need anything else.
 
 ANSWERED (help desk,  Central): G-283 UNCLEAR: report file jobs/G-283-w3.md is right (builder reports go in jobs/G-NN-w<window>.md, never the plain file). The order named no test id because the owner saw the band chip hidden, not a red test - tester-challenge-can-slow-to-band is a slow-runner wall-cap flake, not the target. You already shipped the visible fix (BUILD #1583, report #1591 merged); nothing more to do for G-283.
+
+## 2026-10-25 (G-346)
+BLOCKED BY: NONE - G-346's report PR #1746 is filed (STATUS NO CHANGE); nothing blocks except the merge robot's turn, as with other reports.
+UNCLEAR: whether the G-346 NO CHANGE conclusion stands, or the shadow-trim perf pass named in the report (shadow 2048 to 1024 plus PCF instead of PCFSoft) is ordered instead.
+MISSING: the Oct 25 playtest round's full data - lowFps count per style, the swiper end picture, and the device; the playtests branch still shows only the Oct 23 round (verified), so the Oct 25 round's details are unverified. If the dips reproduce on a phone with a named scene, that scene gets the fix.
