@@ -164,7 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-330 | window 5 | tools/game-check/fixes/apexf1.mjs, jobs/G-330-w5.md, CLAIMS.md | build/g-330-r1-apexf1 |
+| G-328 | window 5 | checklists/apexf1.md, jobs/G-328-w5.md, CLAIMS.md | build/g-328-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
 | G-258 r1 | window 7 | checklists/apexbaseball.md, jobs/G-258-w7.md | test/g-258-apexbaseball-r1 |
@@ -315,3 +315,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-326 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-326-w4.md | build/g-326-apextrackfield - DONE PR #1701 merged 30a54e10 |
 | G-329 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-329-w4.md | build/g-329-apextrackfield - DONE (PR #1713 merged b051ca4c) |
 | G-335 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-335-w4.md | build/g-335-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
+| T-10-0503 | window 10 | jobs/T-10-0503.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-0503 |
