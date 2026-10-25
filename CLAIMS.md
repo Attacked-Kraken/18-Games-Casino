@@ -281,6 +281,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
 | G-270 | window 6 | checklists/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-270-w6.md, CLAIMS.md | build/g-270-apexracer |
 | G-270 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/g-270-fix1-apexracer |
+| owner fix: garage options reach the car | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/owner-garage-options-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
