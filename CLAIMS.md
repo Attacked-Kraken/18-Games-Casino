@@ -296,4 +296,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-261 | window 10 | jobs/G-261.md, CLAIMS.md | test/g-261-apextrackfield |
 | T-10-1327 | window 10 | jobs/T-10-1327.md, CLAIMS.md | test/t-10-1327 |
 | G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d | ROUND 1 DONE PR #1595 merged b3e07ddf
-| G-289 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-289-apextrackfield - DONE PR #1610 merged 0be0e068 | | ROUND 1 CLAIMED 2026-10-24 (Muse main (casino))
+| G-289 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-289-apextrackfield - DONE PR #1610 merged 0be0e068 | | ROUND 1 DONE PR #1616 merged 48d2ca09
