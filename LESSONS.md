@@ -216,3 +216,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-25 help desk (2)
 - A play test that sets `location.href` inside `h.eval` must end the call with `.catch(() => {})` - the navigation kills the page context and the test reports "Execution context was destroyed" as a game failure. Any helper a test calls (g265PortraitOverlaps) must be defined in the same fixes file; the robot shows "X is not defined" as a red line against the game.
+
+## 2026-10-25 window 6 (G-345)
+- A play test that starts a race on the shared page must census the race IT started, never the first ready R: the previous test's live race passes every readiness check, so play-garage-options read the sign test's stock Goblin and reported its bought underglow missing while the game built the kit car correctly. Capture the old R before startRace and wait for R to change identity. And: never claim a test is absent from a file on a pattern search - read the region; quote style alone hid play-garage-options (double quotes) from a single-quote grep.
