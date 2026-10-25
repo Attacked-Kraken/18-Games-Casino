@@ -3397,5 +3397,57 @@ async test(page, h) {
       if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
       return true;
     }
+  },
+  {
+      id: 'tester-chk-t10',
+      mode: 't10',
+      ask: 'TESTER (G-311, checklist T10): the shot put landing sector is 34.92 degrees - venues/track.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const rigs = window.__tf.rigs();
+          let root = rigs.length && rigs[0].group ? rigs[0].group : null;
+          if (!root) return null;
+          while (root.parent) root = root.parent;
+          const CX = -52, CZ = 20, dirs = [];
+          root.traverse(o => {
+            if (!o.isMesh || !o.geometry) return;
+            const g = o.geometry, p = g.parameters || {};
+            if (g.type === 'PlaneGeometry' && Math.abs(p.width - 46) < 0.01 && Math.abs(p.height - 0.14) < 0.01) {
+              const dx = o.position.x - CX, dz = o.position.z - CZ;
+              if (Math.abs(Math.hypot(dx, dz) - 23) < 0.5) dirs.push(Math.atan2(dz, dx));
+            }
+          });
+          if (dirs.length < 2) return { n: dirs.length };
+          const dot = Math.cos(dirs[0]) * Math.cos(dirs[1]) + Math.sin(dirs[0]) * Math.sin(dirs[1]);
+          const cross = Math.cos(dirs[0]) * Math.sin(dirs[1]) - Math.sin(dirs[0]) * Math.cos(dirs[1]);
+          return { angle: +(Math.atan2(Math.abs(cross), dot) * 180 / Math.PI).toFixed(2), n: dirs.length };
+        }).catch(() => null);
+        if (!m) return 'the shot put sector lines could not be read';
+        if (!m.angle) return 'fewer than two shot put sector lines found (' + m.n + ')';
+        if (Math.abs(m.angle - 34.92) / 34.92 > 0.03) return 'the shot put landing sector measures ' + m.angle + ' degrees between its markings but venues/track.md says 34.92 degrees';
+        return true;
+      }
   }
 ];

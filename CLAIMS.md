@@ -302,5 +302,6 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-298 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-298-w4.md | build/g-298-apextrackfield - NO CHANGE (T08 audit-right; tester-chk-t08 dropped per robot TESTER rule; report jobs/G-298-w4.md) |
 | G-296 | window 10 | checklists/apextrackfield.md, jobs/G-296.md, CLAIMS.md | test/g-296-apextrackfield |
 | G-307 | window 10 | checklists/apextrackfield.md, jobs/G-307.md, CLAIMS.md | test/g-307-apextrackfield |
+| G-311 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-311.md, CLAIMS.md | test/g-311-apextrackfield |
 | G-304 | window 4 | jobs/G-304-w4.md | - NO CHANGE (T09 audit-right; report jobs/G-304-w4.md) |
 | G-309 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-309-w4.md | build/g-309-apextrackfield - CLAIMED 2026-10-24 (Muse main (casino)) |
