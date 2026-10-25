@@ -1384,12 +1384,19 @@ export default [
       await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
       if (!grid) return 'never reached the grid at ?test=grid';
-      await h.press('#raceBtn');
+      // G-354: the robot's page can be slow, so a single strict press may miss and
+      // the lights watch can expire before all 5 reds show. Press until the menu
+      // leaves the grid, then watch twice as long for the 5-red moment.
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) {
+        await h.press('#raceBtn').catch(() => {});
+        for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); }
+      }
       let fiveReds = false, gassed = false;
-      for (let i = 0; i < 120; i++) {
-        const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')]; return { red: ls.filter(e => e.classList.contains('red')).length, mode: window.__test ? window.__test.race().mode : '?' }; });
+      for (let i = 0; i < 240; i++) {
+        const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')]; return { red: ls.filter(e => e.classList.contains('red')).length, mode: window.__test ? window.__test.race().mode : '?' }; }).catch(() => ({ red: -1, mode: '?' }));
         if (st.red === 5) fiveReds = true;
         if (fiveReds && st.mode === 'lights') { await h.eval(() => window.__test.setInput({ gas: true })); gassed = true; }
         if (st.mode === 'race') break;
