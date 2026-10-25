@@ -35,6 +35,8 @@ for ej in items:
     lines.append("- error: `%s`" % info.get("message", ""))
     if info.get("file"):
         lines.append("- where: `%s` line %s%s" % (info["file"], info.get("line"), (" col %s" % info["col"]) if info.get("col") else ""))
+    if info.get("step"):
+        lines.append("- fired: %s" % info["step"])
     lines.append("- stack:")
     for x in (info.get("stack") or [])[:8]:
         lines.append("    " + x.strip())

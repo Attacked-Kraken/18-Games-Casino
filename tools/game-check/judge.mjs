@@ -90,7 +90,13 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     if (testOnly && /NOT done yet/i.test(f)) continue;
     if (old.get(r.file) && old.get(r.file).has(key(f))) continue;
     if (changed.length && !direct.has(r.file) && !hard.test(f)) continue;
-    blockers.push(`${r.file}: ${f}`);
+    // owner Oct 24 2026 9:27 PM (window 6): say WHICH step threw and prove 'new' - a blocker is by definition not in main's baseline
+    let tag = '';
+    if (/^Script error/i.test(f)) {
+      const have = (base0.results || []).some(x => x.file === r.file);
+      tag = ` [${have ? "NEW in this PR - main's own check does not have this error" : "main's baseline could not be read, so 'new' is not proven"}${r.errorEvidence && r.errorEvidence.step ? ' · it fired ' + r.errorEvidence.step : ''}]`;
+    }
+    blockers.push(`${r.file}: ${f}${tag}`);
   }
   const oldM = new Set((base0.models || []).flatMap(m => (m.problems || []).map(x => m.name + '|' + norm(String(x)))));
   for (const m of models) {
