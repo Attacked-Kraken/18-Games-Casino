@@ -147,9 +147,9 @@ Format (one section per model — keep the keys exactly like this):
 ## MODEL: Exotic Racer sport rim (real 3D wheel)
 - id: erc-sport-rim
 - game: apexracer.html
-- file: models/fetched/car-wheelrim-f6f2600.glb (expected fetch path - see the G-345 OPEN line in MODEL-REQUESTS.md)
+- file: models/fetched/car-wheelrim-f6f260.glb (expected fetch path - see the G-345 OPEN line in MODEL-REQUESTS.md)
 - look: night
-- view: tools/model-viewer.html?m=models/fetched/car-wheelrim-f6f2600.glb&look=night
+- view: tools/model-viewer.html?m=models/fetched/car-wheelrim-f6f260.glb&look=night
 - by: algre141@gmail.com
 - version: 1
 - notes: replaces the flat canvas-texture rim faces (owner 2026-10-25: rims look small and fake, like a sticker; measured 0.000 m thick, 30 vertices per face) with a real 3D alloy wheel: Car Wheel/Rim by jack.wake04, CC-BY, 54k tris / 26.9k verts, https://sketchfab.com/3d-models/car-wheelrim-f6f2600358744d928f9b6afc4aabc004 - download file size unverified until the fetch robot lands it
