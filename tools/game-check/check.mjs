@@ -421,6 +421,12 @@ for (const g of games) {
     mark('pictures + reality + checks');
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
     catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '.mjs - it does not load, so NONE of its tests ran: ' + String(e.message).split('\n')[0].slice(0, 140)); }
+    // Oct 25 2026 (window 5 idea): lint the play-test file for h.eval calls that navigate / wait / poll without .catch (yellow only)
+    try {
+      const { lintFixes } = await import('./fixes-lint.mjs');
+      const hits = lintFixes(fs.readFileSync(fixFile, 'utf8'));
+      if (hits.length) r.check.push(`LINT fixes/${slug}.mjs: ${hits.length} h.eval call(s) navigate / wait / poll with no .catch (a destroyed execution context fails the test on the robot only) - first ones: ${hits.slice(0, 3).map(x => (x.id || '?') + ' line ' + x.line).join(', ')}. Add .catch(() => false) or try/catch. Run: node tools/game-check/fixes-lint.mjs tools/game-check/fixes/${slug}.mjs`);
+    } catch (e) { /* the lint never breaks a check */ }
     // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
     if (!page.setViewport) page.setViewport = v => page.setViewportSize({ width: v.width, height: v.height });
     if (!page.target) page.target = () => ({ createCDPSession: () => page.context().newCDPSession(page) });
@@ -488,7 +494,7 @@ for (const g of games) {
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
           timedOut = false;
-        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 100); timedOut = /^took over \d+ s/.test(String(e.message)); }
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 400); timedOut = /^took over \d+ s/.test(String(e.message)); }
         clearTimeout(timer); dead = true;
         if (timedOut && attempt === 1) { await freshGame(); continue; }
         if (!inc || attempt === 2) break;
@@ -499,8 +505,11 @@ for (const g of games) {
       r.fixes.push({ id: fx.id, ask: askOf(fx), ok, note, inconclusive: inc || undefined, ms: Date.now() - tFx,
                      mode: fx.mode || String(fx.id || '').replace(/^(play|tester|never|keep|owner)-(g\d+-)?/, '').split('-')[0] || '' });
       if (inc) { r.check.push(`Play test could not decide (tried twice): "${askOf(fx)}" (${note}) - make the test CREATE the situation it checks instead of waiting for luck`); await freshGame(); continue; }
-      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
-      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${askOf(fx)}"${note ? ' (' + note + ')' : ''}`);
+      // Oct 25 2026 (window 5 idea, VP): every red line names the test id and keeps the error text (400 chars) so a builder can
+      // diagnose without a HELP round-trip. The id goes AFTER the quoted ask - judge.mjs and the Mac match on the text before it.
+      const tid = fx.id ? ` [test id: ${fx.id}]` : '';
+      if (!ok && /^play-/.test(fx.id || '')) r.check.push(`Play test failing: "${askOf(fx)}"${tid}${note ? ' (' + note + ')' : ''}`);
+      else if (!ok) r.fail.push(`Owner's fix NOT done yet: "${askOf(fx)}"${tid}${note ? ' (' + note + ')' : ''}`);
       if (!ok) await freshGame();
       // a test that FROZE the game (AI thinkT = 999, skaters pinned to stand spots, positions set by hand) and passed left the
       // game frozen for every later test - they waited for events that never came. Always start the next test on a fresh game.
