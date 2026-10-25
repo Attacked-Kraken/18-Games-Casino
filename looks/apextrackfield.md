@@ -45,6 +45,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - Results screens show ONE table, athletes under the ATHLETE heading, and marks that match the race clock
 
 ## NEVER
+- 2026-10-25: the men's high jump offers bar heights from 1.70 m - REALITY.md says the men's bar is 2.0-2.4 m; the high jump now starts at 2.00 m and caps at 2.40 m (G-326)
 - 2026-10-25: the long jump runway mesh spans 45 m - venues/track.md says 40 m; the runway strip now runs 40 m from the start (-70) to the board (-30) (G-316)
 - 2026-10-24: throws end after 3 attempts with no extra rounds - rules/trackfield.md says 3 attempts plus 3 more for the top 8; the throw engine now grants 3 more when the player's rank after 3 attempts is top 8 (discus keeps its single action, G-25) (G-289 r1)
 - 2026-10-24: the main game-check still finds no relay zone markings after the G-289 merge - tester-chk-t04 accepted ANY playing race as 'the relay' and tester-chk-t07 never retried a 'stuck' nav, so a slow main-check load defeated both; both tests now wait for the new page and prove the event they started (G-289 r1)
