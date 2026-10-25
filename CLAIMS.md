@@ -307,4 +307,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-311 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-311.md, CLAIMS.md | test/g-311-apextrackfield |
 | G-304 | window 4 | jobs/G-304-w4.md | - NO CHANGE (T09 audit-right; report jobs/G-304-w4.md) |
 | G-309 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-309-w4.md | build/g-309-apextrackfield - DONE PR #1659 merged e29691e8 |
-| G-316 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-316-w4.md | build/g-316-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
+| G-316 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-316-w4.md | build/g-316-apextrackfield - DONE PR #1678 merged 3ce69239 |
