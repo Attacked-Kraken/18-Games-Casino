@@ -301,3 +301,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | T-10-2223 | window 10 | jobs/T-10-2223.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-2223 |
 | G-298 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-298-w4.md | build/g-298-apextrackfield - NO CHANGE (T08 audit-right; tester-chk-t08 dropped per robot TESTER rule; report jobs/G-298-w4.md) |
 | G-296 | window 10 | checklists/apextrackfield.md, jobs/G-296.md, CLAIMS.md | test/g-296-apextrackfield |
+| G-304 | window 4 | jobs/G-304-w4.md | - NO CHANGE (T09 audit-right; report jobs/G-304-w4.md) |
