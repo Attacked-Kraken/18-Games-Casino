@@ -208,3 +208,4 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 24 2026 help desk
 - A play test that changes shared page state (E.S.cur, E.S.cars, R.on) must restore it before it ends, also on early returns: later tests in the same file run on the same page (PR #1614: play-garage-options left the Kestrel with a kit on, so never-g-270-p1 could not finish 3 laps).
+- G-300 (Oct 24 2026): gating only a car's target speed for the countdown does not freeze the car - the AI lane logic below the gate walked stationary rivals up to 3.9 m sideways across the grid before GO (R01 audit). Freeze the whole step while R.t < 0 (stepPlayer already zeroed its own throttle; stepAI did not).
