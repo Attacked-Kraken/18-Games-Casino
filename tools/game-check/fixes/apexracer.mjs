@@ -253,8 +253,9 @@ export default [
     ask: "APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body",
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
-      await h.wait(300);
-      const opened = await h.press('#mGarage');
+      let opened = false;
+      for (let pi = 0; pi < 12 && !opened; pi++) { const st = await h.eval(() => { const m = document.querySelector('#menu'), l = document.querySelector('#loading'); const vis = (el) => !!el && getComputedStyle(el).display !== 'none'; return vis(m) && !vis(l); }); if (st) break; await h.wait(400); }
+      for (let pi = 0; pi < 4 && !opened; pi++) { opened = await h.press('#mGarage'); if (!opened) await h.wait(600); }
       if (!opened) return 'Garage button on the menu could not be pressed';
       return h.eval(() => {
         const E = window.__erc;
@@ -1188,9 +1189,9 @@ export default [
       let fail = null;
       for (const id of ['goblin', 'kestrel']) {
         if (fail) break;
-        await h.eval((cid) => { const E = window.__erc; E.S.cur = cid; E.startRace(E.PLACES[0], 3); }, id);
+        await h.eval((cid) => { const E = window.__erc; E.S.cur = cid; window.__gPrevR = E.R; E.startRace(E.PLACES[0], 3); }, id);
         const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
-          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          for (let i = 0; i < 80; i++) { if (E.R && E.R !== window.__gPrevR && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
           if (!E.R || !E.R.P) return 'no race';
           const car = E.R.P.car, acc = {};
           car.root.traverse((q) => { if (q.userData && q.userData.acc) acc[q.userData.acc] = (acc[q.userData.acc] || 0) + 1; });
@@ -1209,7 +1210,7 @@ export default [
         else if (!d.limo) fail = id + ': Limo tint is not on the glass';
         await h.eval(() => { const E = window.__erc; if (E.R) E.R.on = false; });
       }
-      await h.eval(() => { const E = window.__erc, s = window.__gSave; if (s) { E.S.cur = s.cur; if (s.gob) E.S.cars.goblin = s.gob; else delete E.S.cars.goblin; if (s.kes) E.S.cars.kestrel = s.kes; else delete E.S.cars.kestrel; delete window.__gSave; } });
+      await h.eval(() => { const E = window.__erc, s = window.__gSave; if (s) { E.S.cur = s.cur; if (s.gob) E.S.cars.goblin = s.gob; else delete E.S.cars.goblin; if (s.kes) E.S.cars.kestrel = s.kes; else delete E.S.cars.kestrel; delete window.__gSave; delete window.__gPrevR; } });
       return fail || true;
     },
   },
