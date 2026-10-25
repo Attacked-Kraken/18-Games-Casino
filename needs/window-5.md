@@ -1,3 +1,6 @@
+BLOCKED BY: NONE - the G-312 R1 point is being diagnosed now (portrait probe re-running after the last message cut its output off).
+UNCLEAR: whether the robot's "race never started on the upright phone" means its verification flow cannot start a race in portrait at all (a test/flow problem, fixable in tools/game-check/fixes/) or the stick/REV/CAM overlaps are really still on main (a game problem) - my portrait probe at ?test=grid was cut off before it printed the stick/REV/CAM rects, so I am re-running it to decide game fix vs test fix.
+MISSING: the robot's full red-line text for main 1558b29 (the game-checks README on the branch is still at the old 817714d run) and what the TARGET picture (apexf1-2-play.jpg) shows that the current build does not.
 BLOCKED BY: NONE
 UNCLEAR: Report filename for G-286: your 3:46 PM tail says jobs/G-286-w5.md (a tester may use the plain number), your 4:09 PM nudge says jobs/G-286.md - I am writing w5 per the specific instruction unless you say otherwise.
 MISSING: NONE
