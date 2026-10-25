@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-310 | window 5 | checklists/apexf1.md, jobs/G-310-w5.md, CLAIMS.md | build/g-310-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
 | G-258 r1 | window 7 | checklists/apexbaseball.md, jobs/G-258-w7.md | test/g-258-apexbaseball-r1 |
@@ -299,5 +300,9 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-267 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-267-apextrackfield - DONE PR #1520 merged 0bdab99d | ROUND 1 DONE PR #1595 merged b3e07ddf
 | G-289 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md | build/g-289-apextrackfield - DONE PR #1610 merged 0be0e068 | | ROUND 1 DONE PR #1616 merged 48d2ca09
 | T-10-2123 | window 10 | jobs/T-10-2123.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-2123 |
-| G-298 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-298-w4.md | build/g-298-apextrackfield - CLAIMED 2026-10-24 (Muse main (casino)) |
+| T-10-2223 | window 10 | jobs/T-10-2223.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-2223 |
+| G-298 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-298-w4.md | build/g-298-apextrackfield - NO CHANGE (T08 audit-right; tester-chk-t08 dropped per robot TESTER rule; report jobs/G-298-w4.md) |
 | G-296 | window 10 | checklists/apextrackfield.md, jobs/G-296.md, CLAIMS.md | test/g-296-apextrackfield |
+| G-307 | window 10 | checklists/apextrackfield.md, jobs/G-307.md, CLAIMS.md | test/g-307-apextrackfield |
+| G-304 | window 4 | jobs/G-304-w4.md | - NO CHANGE (T09 audit-right; report jobs/G-304-w4.md) |
+| G-309 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-309-w4.md | build/g-309-apextrackfield - CLAIMED 2026-10-24 (Muse main (casino)) |
