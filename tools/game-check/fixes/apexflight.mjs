@@ -948,8 +948,9 @@ export default [
         const url = await h.eval(() => location.href.split('?')[0]);
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
         for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        const menuUp = await h.eval(() => !document.getElementById('startOv').hidden).catch(() => false);
         await h.press('#btnChal');
-        const engaged = await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+        const engaged = menuUp && await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
         if (!engaged) return 'challenge menu did not engage after reload (test setup, not the game)';
       } catch (e) {}
       await h.wait(400);
@@ -1332,9 +1333,13 @@ export default [
     id: "play-g334-dirty-url-challenge",
     ask: "G-334: after an earlier test leaves a ?test= URL behind, the challenge menu still engages and the off-runway reason shows and stays",
     async test(page, h) {
-      // the suite-order trap itself: the previous test leaves ?test=controls behind
+      // the suite-order trap itself: the previous test leaves ?test=controls behind.
+      // Settle the page first (the robot's suite runs the previous test on a booted
+      // page), then dirty the URL and prove the dirty boot committed - the free-mode
+      // catch-all hides the menu - before the fixed prelude recovers from it.
+      for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
       await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; return true; }).catch(() => {});
-      await h.wait(1500);
+      for (let i = 0; i < 20; i++) { await h.wait(400); const dirty = await h.eval(() => !!(window.__flight && document.getElementById('startOv').hidden)).catch(() => false); if (dirty) break; }
       // shared-page trap (G-334): the test before this one leaves a ?test= URL behind
       // (play-first-frame-safe navigates to ?test=controls and never comes back), and
       // ANY ?test= value boots the game menu-hidden in free mode (the catch-all branch),
@@ -1345,8 +1350,9 @@ export default [
         const url = await h.eval(() => location.href.split('?')[0]);
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
         for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        const menuUp = await h.eval(() => !document.getElementById('startOv').hidden).catch(() => false);
         await h.press('#btnChal');
-        const engaged = await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+        const engaged = menuUp && await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
         if (!engaged) return 'challenge menu did not engage after reload (test setup, not the game)';
       } catch (e) {}
       await h.wait(400);
