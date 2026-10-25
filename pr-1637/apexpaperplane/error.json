@@ -1,0 +1,19 @@
+{
+ "step": "at boot (page load, before any test)",
+ "game": "apexpaperplane.html",
+ "message": "Failed to execute 'setTargetAtTime' on 'AudioParam': The provided float value is non-finite.",
+ "stack": [
+  "TypeError: Failed to execute 'setTargetAtTime' on 'AudioParam': The provided float value is non-finite.",
+  "    at evidenceTestFn (http://127.0.0.1:8811/apexpaperplane.html:359:94)"
+ ],
+ "file": "apexpaperplane.html",
+ "line": 359,
+ "col": 94,
+ "console": [],
+ "pics": {
+  "before": "before.jpg",
+  "at": "at.jpg",
+  "after": "after.jpg"
+ },
+ "at": "2026-10-25T03:01:18.014Z"
+}
