@@ -168,3 +168,4 @@ FIXED: part done on the Mac: tester gap 45 / 90 / 180 min by usage used (v2026.1
 
 HELP-VP: art director · Flight · reset chip overlaps the vs speed box in the fixes and play pictures - the top-bar chip sits on top of the vs box instead of clear of it · target: img/apexflight-4-fixes.jpg shows the reset chip clear of the vs box, overlapping nothing
 FIXED: job queued for window 3 (Flight reset chip clear of the vs box, one fix, keep everything else). Filed from the owner's Tell 03 tap T-32, Oct 24 5:45 PM Central.
+HELP-VP: window 4 · G-289 round 1 (PR #1616) - robot FAILED only on REALITY SINK (5 of 24 readings more than 5 cm under); the round's game change is throw-attempts only and cannot move sprint feet, and the same sprint code passed reality on PR #1610 (main's lowest reading -0.04 m, 1 cm above the bar) - please re-run the PR check
