@@ -2717,13 +2717,16 @@ async test(page, h) {
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
       let nav = null;
       for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
       nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
-          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (document.body.classList.contains('playing')) { const e = window.__tf && window.__tf.eng(); if (e && e.ev && e.ev.eng === 'relay') { clearInterval(iv); res('racing'); return; } }
           if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
           else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
@@ -2907,9 +2910,12 @@ async test(page, h) {
       async test(page, h) {
         await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
         await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
         let nav = null;
-        for (let att = 0; att < 3 && nav === null; att++) {
-          try { nav = await h.eval(() => new Promise(res => {
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
           let n = 0;
           const iv = setInterval(() => {
             const on = document.querySelector('.screen.on');
@@ -2921,7 +2927,8 @@ async test(page, h) {
             else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
             if (++n > 90) { clearInterval(iv); res('stuck'); }
           }, 150);
-        })); } catch (e) { await h.wait(1200); }
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
         }
         if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
         const m = await h.eval(() => {
@@ -3272,6 +3279,123 @@ async test(page, h) {
       if (!r2.bests || Math.abs(r2.bests['100m'] - parseFloat(tm[1])) > 0.011) return 'a legal-wind 100m time was not saved as a best: results show "' + r2.resMark + '", saved bests ' + JSON.stringify(r2.bests) + ' (G-289)';
       return true;
     }
+  },
+  {
+    id: 'never-g-289-r1-p1',
+    ask: 'G-289 r1: throws get 3 attempts plus 3 more for the top 8 - the Shot Put ends with 6 attempts, the Discus still ends with 1',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Shot Put', 'sp')) return 'could not start the Shot Put (G-289 r1)';
+      const m = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 20000) {
+          e.update(1 / 60); steps++;
+          if (e.phase === 'power' && e.power >= 0.97) e.action();
+          else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!m) return 'the Shot Put attempt count could not be read (G-289 r1)';
+      if (m.notDone) return 'the Shot Put never finished its attempts (G-289 r1)';
+      if (m.attempts !== 6 || m.attMax !== 6) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') - rules/trackfield.md says 3 attempts plus 3 more for the top 8 (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Discus', 'dt')) return 'could not start the Discus (G-289 r1)';
+      const d = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'hold') e.actionDown();
+          else if (e.phase === 'spinning' && e.spinT >= 1.55) e.actionUp();
+          e.update(1 / 60); steps++;
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!d) return 'the Discus attempt count could not be read (G-289 r1)';
+      if (d.notDone) return 'the Discus never finished (G-289 r1)';
+      if (d.attempts !== 1 || d.attMax !== 1) return 'the Discus ended after ' + d.attempts + ' attempts (attMax ' + d.attMax + ') - the owner rule (G-25) says the Discus is ONE action (G-289 r1)';
+      return true;
+    }
+  },
+  {
+    id: 'never-g-289-r1-p2',
+    ask: 'G-289 r1: relay zones paint at race start even when arriving from another race already playing (the main-check arrival)',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('60m Dash', '60m')) return 'could not start the arrival 60m race (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Relay', 'relay')) return 'could not start the relay event after the arrival race (G-289 r1)';
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start after arriving from another race (G-289 r1)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
+      return true;
+    }
   }
-
 ];
