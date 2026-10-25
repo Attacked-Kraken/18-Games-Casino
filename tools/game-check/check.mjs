@@ -230,7 +230,7 @@ const results = [];
 for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
   const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
-  const phases = []; let tPh = Date.now(); const mark = n => { phases.push({ phase: n, ms: Date.now() - tPh }); tPh = Date.now(); };   // owner Oct 24 2026 item 6: robot prints the time of each step
+  const phases = []; let tPh = Date.now(); let curStep = 'at boot (page load, before any test)'; const mark = n => { phases.push({ phase: n, ms: Date.now() - tPh }); tPh = Date.now(); curStep = 'after the "' + n + '" step'; };   // owner Oct 24 2026 item 6: robot prints the time of each step
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -261,13 +261,13 @@ for (const g of games) {
       const dir = path.join(out, 'evidence', slug); fs.mkdirSync(dir, { recursive: true });
       const stack = String(e.stack || e.message || e).split('\n').slice(0, 14).map(x => x.slice(0, 220));
       const top = (stack.find(x => /\.(html|js|mjs):\d+/.test(x)) || '').match(/([^\s()]+\.(?:html|js|mjs)):(\d+)(?::(\d+))?/);
-      const info = { game: g.file, message: String(e.message).split('\n')[0].slice(0, 300), stack, file: top ? top[1].replace(base, '') : '', line: top ? +top[2] : 0, col: top && top[3] ? +top[3] : 0, console: consoleTail.slice(), pics: {}, at: new Date().toISOString() };
+      const info = { step: curStep, game: g.file, message: String(e.message).split('\n')[0].slice(0, 300), stack, file: top ? top[1].replace(base, '') : '', line: top ? +top[2] : 0, col: top && top[3] ? +top[3] : 0, console: consoleTail.slice(), pics: {}, at: new Date().toISOString() };
       if (lastFrame) { fs.writeFileSync(path.join(dir, 'before.jpg'), lastFrame); info.pics.before = 'before.jpg'; }
       try { fs.writeFileSync(path.join(dir, 'at.jpg'), await page.screenshot({ timeout: 5000, type: 'jpeg', quality: 62 })); info.pics.at = 'at.jpg'; } catch (x) {}
       await new Promise(rs => setTimeout(rs, 1500));
       try { fs.writeFileSync(path.join(dir, 'after.jpg'), await page.screenshot({ timeout: 5000, type: 'jpeg', quality: 62 })); info.pics.after = 'after.jpg'; } catch (x) {}
       fs.writeFileSync(path.join(dir, 'error.json'), JSON.stringify(info, null, 1));
-      r.errorEvidence = { file: info.file, line: info.line };
+      r.errorEvidence = { file: info.file, line: info.line, step: curStep };
     } catch (x) { console.log('::warning title=error-evidence::' + String(x).slice(0, 160)); }
   });
   const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
@@ -452,6 +452,7 @@ for (const g of games) {
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
     const GAME_CAP_MS = 20 * 60 * 1000, tGame = Date.now(); let notRun = [];
     for (const fx of list) {
+      curStep = 'during play test ' + (fx && fx.id);
       if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
       let ok = false, note = '', dead = false;
       // the time limit really STOPS the test: after 30 s every call it makes on the page throws
