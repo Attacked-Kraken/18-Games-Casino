@@ -3550,5 +3550,5 @@ async test(page, h) {
       if (bad.length) return 'the men\'s high jump offers bar heights outside 2.0-2.4 m: ' + bad.join(',') + ' (full list ' + m.heights.join(',') + ') (G-326)';
       return true;
     }
-  }
+  },
 ];

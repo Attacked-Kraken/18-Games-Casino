@@ -164,6 +164,8 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-321 | window 5 | checklists/apexf1.md, jobs/G-321-w5.md, CLAIMS.md | build/g-321-apexf1 |
+| G-328 | window 5 | checklists/apexf1.md, jobs/G-328-w5.md, CLAIMS.md | build/g-328-apexf1 |
 | G-330 | window 5 | checklists/apexf1.md, jobs/G-330-w5.md, CLAIMS.md | build/g-330-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
@@ -312,5 +314,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-309 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-309-w4.md | build/g-309-apextrackfield - DONE PR #1659 merged e29691e8 |
 | G-316 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-316-w4.md | build/g-316-apextrackfield - DONE PR #1678 merged 3ce69239 |
 | G-314-w10 | window 10 | checklists/apextrackfield.md, jobs/G-314-w10.md | TEST G-314: checklist T11 OK (runway 40 m) |
+| G-327 | window 10 | tools/game-check/fixes/apextrackfield.mjs, checklists/apextrackfield.md, jobs/QUEUE.md, jobs/G-327.md | TEST G-327: checklist T12 FOUND (bar heights 1.70-2.50 vs 2.0-2.4) |
+| G-326 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-326-w4.md | build/g-326-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
 | G-326 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-326-w4.md | build/g-326-apextrackfield - DONE PR #1701 merged 30a54e10 |
 | G-329 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-329-w4.md | build/g-329-apextrackfield - DONE (PR #1713 merged b051ca4c) |
