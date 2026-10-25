@@ -48,6 +48,7 @@ Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-28
 - 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
 - 2026-10-24: Play-test entries must use ask: (never title:) too - the third run: entry also carried title:, and the robot's format check rejects the whole shape (G-279)
 - 2026-10-24: teamMenu must fit with no scrolling and no race button may overlap the stick on the UPRIGHT phone too - the landscape compact rules do not apply there, so the base touch buttons and the portrait menu stack need their own fit (G-265 R1)
+- 2026-10-25: A portrait race check must never depend on the slow menu flow - qualiSkip takes ~6 s to appear on a slow page while g66ToRace waits only 1.2 s after startBtn, so a strict press misses it and the race never starts; race via ?test=grid first, then go upright and read the buttons (G-312 R1)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame
 - video1-01..07 + video2-01..09, ALL frames: '5s PENALTY' pinned top-centre for 50 s of clean on-road driving; stick knob dead-centre while the car corners at 113-191 MPH and gains places (P4→P3) hands-free; SKIP QUALI pill covering the speed digits; GAP frozen at +0.0s while the name behind it changes.
