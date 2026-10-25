@@ -164,7 +164,9 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-334 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-334.md | build/g-334-apexflight |
+| G-353 | window 5 | tools/game-check/fixes/apexf1.mjs, jobs/G-353-w5.md, CLAIMS.md | build/g-353-apexf1 |
+| G-348 r1 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025-r1 |
+| G-348 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025 |
 | G-328 | window 5 | checklists/apexf1.md, jobs/G-328-w5.md, CLAIMS.md | build/g-328-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
@@ -287,6 +289,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | owner fix: garage options reach the car | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/owner-garage-options-apexracer |
 | G-300 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-300-w6.md, CLAIMS.md, LESSONS.md | build/g-300-apexracer |
 | G-313 fix 1 | window 6 | apexracer.html, looks/apexracer.md, jobs/G-313-w6.md, CLAIMS.md, LESSONS.md | build/g-313-fix1-apexracer |
+| G-345 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-345-w6.md, CLAIMS.md, LESSONS.md | build/g-345-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->

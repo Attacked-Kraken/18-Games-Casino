@@ -16,6 +16,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Benches + boxes (G-282): the 'benches + boxes' block right after the boards block - two team benches at z +47 (x -26/+26), two penalty boxes (x -22/+22) and the scorekeeper box (x 0) at z -47, all plain scene meshes at ice level.
 - Goal broadcast (G-266): #goalLight/#spotlights CSS 42-47, divs 128-129, goalFx() + lastGoalX after hideStatCard (~826), lit in onGoal(), cleared in faceoff() and gameOver(); the replay cuts live in stepCamera() (search 'REPLAY: two broadcast cuts').
 - Crease paint (G-266): makeIceTexture's goal-creases arc bulges toward centre ice (in front of the goal line).
+- Touch controls CSS: #joy 64, #btns 69, #muteBtn 78, #viewBtn 81; the PORTRAIT GRIP media query (~92-97) re-places them for the rotated stage - #btns/#charge to the visual bottom-right, #muteBtn/#viewBtn along the visual left strip PAST the joystick (left 170/222, G-343) so neither sits on the stick.
 - Rink constants: GOAL_LINE/BLUE 191, PERIOD_LEN/DOTS 192-193; boards bounce in stepPuck, carried-puck clamp in stepPuck's owned branch (G-216).
 - Test hook: window.__hk at 581, 718 and 776 (skaters, puck, game state getters/setters, newMatch); window.__reality 1725.
 - Score + G-257 stat counters (statShots/statSaves/statFO): globals 767-768, reset at 782 in __hk.newMatch() (which also clears the OT bench marks).
@@ -37,6 +38,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - "They gave me this": blob players, upright floating sticks, scattered bits (2026-10-16)
 - "Why do I get offsides every time" (2026-10-17): AI teammates must hold the attacking blue line until the puck crosses it — never skate ahead of the puck into the zone
 - No menu text clipped or overlapping at 844x390 - every line inside the frame
+- 2026-10-25: buttons on top of each other on a sideways phone - #viewBtn and #muteBtn must never overlap #joy in the portrait-held presentation (G-343)
 - 2026-10-22: skate blades pitched toe-down off the ice (owner screenshot) - blades must stay down flat on the ice (G-170)
 - 2026-10-23: the puck never leaves the rink - the carrier standing at the end boards and at the side boards facing them with the puck on his stick must keep the puck inside the boards shell (G-216)
 - 2026-10-23: blades flat in live play too, not just standing - the weight-bearing blade of a skating player lies flat on the ice, never pitched like a toe pick in the close camera (owner picture) (G-47 REDO)

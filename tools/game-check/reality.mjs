@@ -304,15 +304,27 @@ export async function playerCloseUp(page) {
       const el = rend.domElement, size = new V(); rend.getSize ? rend.getSize(size) : size.set(el.width, el.height, 0);
       const pr = rend.getPixelRatio ? rend.getPixelRatio() : 1;
       const side = Math.round(Math.min(size.x, size.y));
-      let url = '';
-      try {
-        rend.setScissorTest && rend.setScissorTest(false);
-        rend.setViewport(0, 0, side, side);
-        rend.render(scene, cam);
-        const c2 = document.createElement('canvas'); c2.width = c2.height = Math.min(480, side * pr);
-        c2.getContext('2d').drawImage(el, 0, el.height - side * pr, side * pr, side * pr, 0, 0, c2.width, c2.height);
-        url = c2.toDataURL('image/jpeg', 0.85);
-      } finally { rend.setViewport(0, 0, size.x, size.y); }
+      let url = '', black = true;
+      // owner Oct 25 2026 (G-345: the Racer card showed a solid BLACK close-up - the robot's saved picture was all 0): draw straight to the
+      // screen (never a render target a game's post pass left bound), and if the copy comes out black wait two frames and draw again;
+      // still black = say so (no picture) instead of handing the owner a black square
+      const prevT = rend.getRenderTarget ? rend.getRenderTarget() : null;
+      for (let tries = 0; tries < 4 && black; tries++) {
+        try {
+          rend.setRenderTarget && rend.setRenderTarget(null);
+          rend.setScissorTest && rend.setScissorTest(false);
+          rend.setViewport(0, 0, side, side);
+          rend.render(scene, cam);
+          const c2 = document.createElement('canvas'); c2.width = c2.height = Math.min(480, side * pr);
+          const cx2 = c2.getContext('2d'); cx2.drawImage(el, 0, el.height - side * pr, side * pr, side * pr, 0, 0, c2.width, c2.height);
+          const d = cx2.getImageData(0, 0, c2.width, c2.height).data; let sum = 0, cnt = 0;
+          for (let i = 0; i < d.length; i += 64) { sum += d[i] + d[i + 1] + d[i + 2]; cnt += 3; }
+          black = sum / Math.max(1, cnt) < 2.5;
+          if (!black) url = c2.toDataURL('image/jpeg', 0.85);
+        } finally { rend.setViewport(0, 0, size.x, size.y); rend.setRenderTarget && rend.setRenderTarget(prevT); }
+        if (black) await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 300))));
+      }
+      if (black) return { why: 'close-up came out black after 4 tries (renderer drew nothing)' };
       return url ? { jpg: url, tall } : { why: 'render failed' };
     });
   } catch (e) { return { why: String(e.message).slice(0, 80) }; }
