@@ -3,7 +3,7 @@
 # Read this first (every AI helper and person working in this repo)
 
 Owner: Mr. Cruz. **Before a job read THREE things only** (owner Oct 21 2026 "trim the rules"): your game's short
-list `rules/short/<game>.md`, `LESSONS.md` (one page), and the order itself. Everything below is the detail behind
+list `rules/short/<game>.md`, `LESSONS.md` (one page), `UNIVERSAL.md` (lessons every Muse follows), and the order itself. Everything below is the detail behind
 them - open a file only when your job or the short list points at it.
 
 The full law, for reference:
