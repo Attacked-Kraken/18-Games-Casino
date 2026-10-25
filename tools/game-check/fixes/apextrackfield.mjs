@@ -3397,5 +3397,63 @@ async test(page, h) {
       if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
       return true;
     }
+  },
+  {
+    id: 'tester-chk-t08',
+    mode: 't08',
+    ask: 'CHECKLIST T08 (G-298): race times are shown to 0.01 s - rules/trackfield.md. The sprint results-screen time text must carry exactly two decimals.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '100m') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the 100m sprint: ' + nav;
+      const driven = await h.eval(() => {
+        const e = window.__tf && window.__tf.eng();
+        if (!e) return null;
+        let side = 0, steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'run') { e.stride(side % 2 ? 'R' : 'L'); side++; }
+          e.update(1 / 60);
+          steps++;
+        }
+        return { done: e.done };
+      }).catch(() => null);
+      if (!driven) return 'no sprint engine found in the 100m race';
+      if (!driven.done) return 'the 100m sprint never finished in game-time stepping';
+      for (let w = 0; w < 10; w++) {
+        const shown = await h.eval(() => {
+          const on = document.querySelector('.screen.on');
+          const mk = document.getElementById('resMark');
+          return !!(on && on.id === 'results' && mk && mk.textContent !== '--');
+        }).catch(() => false);
+        if (shown) break;
+        await h.wait(300);
+      }
+      const mark = await h.eval(() => {
+        const mk = document.getElementById('resMark');
+        return mk ? mk.textContent : null;
+      }).catch(() => null);
+      if (!mark || mark === '--') return 'no results-screen time text after the 100m sprint finished';
+      const token = mark.split('(')[0].trim().replace(/w$/, '');
+      if (!/^\d{2}\.\d{2}$/.test(token) && !/^\d+:\d{2}\.\d{2}$/.test(token)) return 'the 100m results time is not shown to 0.01 s: resMark reads "' + mark + '" (time token "' + token + '")';
+      return true;
+    }
   }
 ];
