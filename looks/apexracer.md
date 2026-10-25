@@ -40,6 +40,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-23: the engine sound is a thin high-pitched whine, not an engine - the kit loops must play slow (playback rate never above 0.8) through a lowpass so the car growls deep (G-240)
 - 2026-10-24: the field is as fast as the player, so he can never lap anyone - all cars must be fast AND the player's car must lap the whole field (G-270)
 - 2026-10-24: a garage option is sold that the car never shows - every tab's chosen style must be ON the car in the garage and in races: underglow, caliper colour, window tint, spoiler, body kit, rim style and rim colour (owner)
+- 2026-10-25: garage rims are a flat sticker on the wheel - a zero-depth drawn disc (measured 0.000 m thick, 30 vertices) instead of real 3D rim geometry with depth, sized to the wheel (G-345)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
