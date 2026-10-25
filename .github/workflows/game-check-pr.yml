@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+  actions: read
   pull-requests: write
   issues: write
 jobs:
@@ -146,6 +147,7 @@ jobs:
         env:
           PR_BRANCH: ${{ github.head_ref || github.ref_name }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
           echo "Mode: ${{ needs.plan.outputs.mode }} (played side by side)"
