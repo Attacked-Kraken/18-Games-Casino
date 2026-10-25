@@ -1,0 +1,11 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -2058,7 +2058,7 @@
+   let di = bi - P.idx; if (di < -N / 2) di += N; if (di > N / 2) di -= N; P.prog += di; P.idx = bi;
+   const nx = T.nx[bi], nz = T.nz[bi], d = (P.x - T.px[bi]) * nx + (P.z - T.pz[bi]) * nz, lim = HW - 1.05; P.d = d;
+   if (Math.abs(d) > lim) { const s = Math.sign(d), pen = Math.abs(d) - lim; P.x -= nx * s * pen; P.z -= nz * s * pen; const vn = (P.vx * nx + P.vz * nz) * s;
+-    if (vn > 0) { /* glance off the wall: turn the nose back along the road instead of grinding */ if (vF > 0) { let dh = Math.atan2(T.tx[bi], T.tz[bi]) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; if (Math.abs(dh) < 1.7) P.h += dh * Math.min(1, dt * 7); }
++    if (vn > 0) { /* glance off the wall: turn the nose back along the road instead of grinding */ if (vF > 0) { let dh = Math.atan2(T.tx[bi], T.tz[bi]) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; if (Math.abs(dh) < 1.7) P.h += dh * Math.min(1, dt * 7); else if (sp < 3) P.h += dh * Math.min(1, dt * 5); } /* G-313 fix 1: a nose-in past the 1.7 rad glance cap at a crawl was unrecoverable - no steering authority at speed 0, no wrong-way trigger under 4 m/s - so the car sat out the 3.5 s stuck reset again and again on the start bend (trace: dh -1.96 rad, speed 0.2, |d| at the limit). Past the cap at a crawl, still turn the nose back along the road by the shortest rotation; this pin cycle is the tail that kept never-g-270-p1 under its 0.9-lap line (draws of 0.87 / 0.89 / 0.62) */
+       P.vx -= nx * s * vn * 1.3; P.vz -= nz * s * vn * 1.3; if (vn > 3) { P.vx *= 0.93; P.vz *= 0.93; R.shake = Math.min(1, R.shake + vn * 0.03); spark(P.x + nx * s * 1, T.y + 0.5, P.z + nz * s * 1, 10, P.vx, P.vz); sfx(vn > 9 ? 'crash' : 'scrape'); R.hits++; } }
+     else if (sp > 8 && Math.random() < 0.3) spark(P.x + nx * s * 1, T.y + 0.4, P.z + nz * s * 1, 2, P.vx, P.vz); }
+   const dirDot = fx * T.tx[bi] + fz * T.tz[bi];
