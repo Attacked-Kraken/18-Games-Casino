@@ -1356,11 +1356,11 @@ export default [
       await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
       if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'never reached the grid at ?test=grid'; }
       await h.press('#raceBtn');
       let racing = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
       if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'race never started on the upright phone'; }
       await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
       await h.wait(800);
