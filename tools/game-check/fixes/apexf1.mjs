@@ -1381,4 +1381,52 @@ export default [
       return true;
     }
   },
+  {
+    id: 'tester-chk-f06', ask: 'Apex F1: pit-lane speed never exceeds 80 km/h from the entry line on (G-321)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      // build speed on the grid straight (adaptive: the slow local rig needs more wall time per game second), then jump to 550 m before the pit entry
+      for (let i = 0; i < 120; i++) {
+        await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+          t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
+        await h.wait(100);
+        const v = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); return p.v; });
+        if (v >= 60) break;
+      }
+      const sped = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); return p.v; });
+      if (sped < 60) return 'could not build approach speed (v ' + sped.toFixed(1) + ', need 60+)';
+      const pit = await h.eval(() => { const t = window.__test; const L = t.trackLength();
+        const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, 0.9414 * L - 550); return { L, pitIn: 0.9414 * L }; });
+      // one deflected frame resyncs the world-heading hold after the teleport, then press PIT for real (the button listens to mousedown, not click)
+      await h.eval(() => { window.__test.setInput({ steer: 0.3, gas: true }); });
+      await h.eval(() => { document.getElementById('btnPit').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); });
+      await h.wait(500);
+      // drive flat-out to the line and sample the first 50 m of the pit lane
+      let maxV = 0, seen = false;
+      for (let i = 0; i < 200; i++) {
+        const st = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+          return { s: p.s, d: p.d, v: p.v }; });
+        const sN = ((st.s % pit.L) + pit.L) % pit.L;
+        if (sN < pit.pitIn - 40) {
+          await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
+            t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
+        } else if (sN <= pit.pitIn + 50) {
+          seen = true; if (st.v > maxV) maxV = st.v;
+        } else if (sN > pit.pitIn + 50) break;
+        await h.wait(100);
+      }
+      if (!seen) return 'never reached the pit entry after arming PIT';
+      await h.eval(() => { location.href = location.pathname; });
+      if (maxV > 22.5) return 'pit-lane speed hit ' + (maxV * 3.6).toFixed(0) + ' km/h past the entry line (limit 80)';
+      return true;
+    }
+  },
 ];
