@@ -219,3 +219,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-25 window 6 (G-345)
 - A play test that starts a race on the shared page must census the race IT started, never the first ready R: the previous test's live race passes every readiness check, so play-garage-options read the sign test's stock Goblin and reported its bought underglow missing while the game built the kit car correctly. Capture the old R before startRace and wait for R to change identity. And: never claim a test is absent from a file on a pattern search - read the region; quote style alone hid play-garage-options (double quotes) from a single-quote grep.
+
+## 2026-10-25 help desk
+- Confusion: the playtests robot said Flight "swiper: slow - under 15 fps several times" and a builder wondered whether to trim shadows. Rule: a playtests fps line is a robot reading (headless software rendering) - compare the three styles in results.json (lowFps per style) first; if gas/masher/swiper dip about equally it is the robot, not the input style, and no game change is ordered without a dip reproduced on a phone with a named scene.
