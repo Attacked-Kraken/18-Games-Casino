@@ -3,6 +3,9 @@
 ## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after the owner garage-options fix; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2256 - menu refresh (refreshMenu) L2249 - turntable spin + garage camera (updateGarage) L2464 - frame loop L2487
 - Garage: openGarage L2336 - garage cards and buying (renderGarage) L2346 - the shown car (setGarageCar) L1371
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after G-300; keep current per STUDIO-STANDARD 9.7)
+- Menu / turntable: menu home + showroom orbit (toMenu) L2162 - menu refresh (refreshMenu) L2155 - turntable spin + garage camera (updateGarage) L2370 - frame loop L2393
+- Garage: openGarage L2242 - garage cards and buying (renderGarage) L2252 - the shown car (setGarageCar) L1278
 - Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L678 - computer-car paints stay bright (brightPaint) L570
 - Car building: name wrap (addNameWrap) L989 - real-model car builder (makeGlbCar) L1095 - window tint table (TINTS, inside makeGlbCar) L1106 - bought options built onto the car: measured wheel hubs + rim faces + calipers + underglow + aero wing + body kit (inside makeGlbCar) L1179 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1277
 - World and race setup: world build in slices (buildWorld) L1481 - scenery keeps off the road (skirtClear, inside buildWorld) - finish-line sign text (drawSign/setSign) L517 - race setup (setupRace) L1975 - grid camera inside setupRace L2009 - race start guards (PR #1023: startRace ignores a second start while loading) - race start (startRace) L2287

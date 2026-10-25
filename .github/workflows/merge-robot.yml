@@ -22,6 +22,7 @@ permissions:
   pull-requests: write
   actions: write
   checks: read
+  issues: write
 jobs:
   merge:
     if: github.repository == 'Attacked-Kraken/18-Games-Casino'
@@ -41,6 +42,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 tools/merge-robot.py
+      - name: Re-run PRs whose only red lines are known robot faults
+        # Oct 24 2026 8:25 PM: the push-triggered / timer 'Known fault re-run' never started after a bot merge (GITHUB_TOKEN merges start no push workflow,
+        # the timer fires late), so PR #1616 sat red 40 min behind a fault the robot already knew. The merge robot runs on every finished check,
+        # so it re-runs them here. Safe to repeat: the script only acts on a FAILED comment older than the faults file.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 tools/game-check/known-fault-rerun.py
   heartbeat:
     needs: merge
     if: needs.merge.outputs.revisit == 'true'

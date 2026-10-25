@@ -2069,7 +2069,7 @@ function stepPlayer(P, dt) {
   if (R.stuckT > 3.5) { R.T.at(P.prog, 0, tmpA); P.x = tmpA.x; P.z = tmpA.z; P.h = tmpA.h; P.vx = P.vz = 0; R.stuckT = 0; R.wrongT = 0; pop('↺ BACK ON TRACK'); }
 }
 function stepAI(e, dt) {
-  const T = R.T, N = T.N, P = R.P;
+  const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
   if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.08; else if (gap < -120) vt *= 1.04; } /* G-70: gentle two-way pace keeping - the field stays with the player */
