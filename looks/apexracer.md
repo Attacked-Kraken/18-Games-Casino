@@ -3,7 +3,7 @@
 ## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after the owner garage-options fix; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2256 - menu refresh (refreshMenu) L2249 - turntable spin + garage camera (updateGarage) L2464 - frame loop L2487
 - Garage: openGarage L2336 - garage cards and buying (renderGarage) L2346 - the shown car (setGarageCar) L1371
-## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after G-300; keep current per STUDIO-STANDARD 9.7)
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after G-313 fix 1; keep current per STUDIO-STANDARD 9.7)
 - Menu / turntable: menu home + showroom orbit (toMenu) L2162 - menu refresh (refreshMenu) L2155 - turntable spin + garage camera (updateGarage) L2370 - frame loop L2393
 - Garage: openGarage L2242 - garage cards and buying (renderGarage) L2252 - the shown car (setGarageCar) L1278
 - Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L678 - computer-car paints stay bright (brightPaint) L570
