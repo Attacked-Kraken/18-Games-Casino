@@ -78,6 +78,30 @@ async function g66ToRace(page, h) {
   }
   return false;
 }
+// G-330 R1 (VP answer): play-stick-clears-pit/cam called g265PortraitOverlaps
+// without defining it, so both tests errored. Defined here: race FIRST via the
+// owner-check link, then go upright and read the stick/PIT/CAM rects - the
+// point is the portrait layout during a race, not menu-flow speed. Returns
+// null when no race starts; the callers treat a missing rect as never rendered.
+async function g265PortraitOverlaps(page, h) {
+  let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+  await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+  await h.wait(1500);
+  let grid = false;
+  for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+  if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return null; }
+  await h.press('#raceBtn');
+  let racing = false;
+  for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
+  if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return null; }
+  await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
+  await h.wait(800);
+  const r = await h.eval(() => { const q = (id) => { const el = document.querySelector('#' + id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; }; return { stick: q('stick'), pit: q('btnPit'), cam: q('btnCam') }; }).catch(() => null);
+  if (vp) await h.page.setViewportSize(vp).catch(() => {});
+  await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+  if (!r) return null;
+  return r;
+}
 async function g66Driver(page, h, on) {
   await h.eval((start) => { const t = window.__test; if (!t) return;
     if (window.__g66drv) { clearInterval(window.__g66drv); window.__g66drv = null; }
