@@ -130,6 +130,11 @@ jobs:
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:                 # contents: write only so the evidence step can save error pictures on the pr-evidence branch
+      contents: write
+      actions: read
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -168,7 +173,9 @@ jobs:
           # Oct 23 2026 owner: "could not play it / played 0" is the robot's own trouble - never tell the Muse to push (that restarts everything)
           if [ "$PLAY" != "success" ] && grep -qiE "could not play it|played 0 game|robot itself broke" "$R" game-check-out/*.txt 2>/dev/null; then
             bash tools/game-check/status-comment.sh "$PRN" ROBOT "$R"; exit 0; fi
-          bash tools/game-check/status-comment.sh "$PRN" FAILED "$R"
+          # owner Oct 24 2026 9:12 PM: script-error evidence (stack, console, 3 pictures, code lines) goes in the same comment
+          python3 tools/game-check/pr-evidence.py "$PRN" parts game-check-out || echo "::warning title=evidence::could not save the error evidence"
+          bash tools/game-check/status-comment.sh "$PRN" FAILED "$R" game-check-out/evidence.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
