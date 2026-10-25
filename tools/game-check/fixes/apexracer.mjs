@@ -510,6 +510,36 @@ export default [
     },
   },
   {
+    id: 'tester-chk-r01',
+    cat: 'play',
+    name: 'checklist R01: the race starts with a countdown and no car moves before GO',
+    ask: 'G-300 checklist R01: with the gas held through the whole countdown, the player and every rival stay on their grid spots while R.t < 0 (before the fix the worst rival slid 4.15 m sideways at speed 0 - the AI lane logic walked it to its lane), and the player drives away once GO lands',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); });
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        for (let i = 0; i < 100; i++) { if (E.R && E.R.skids && E.R.P) break; await wait(200); }
+        if (!E.R || !E.R.P) return 'no race';
+        E.K.gas = true;
+        const grid = [{ x: E.R.P.x, z: E.R.P.z }].concat(E.R.cars.filter((e) => e.ai).map((e) => ({ x: e.x, z: e.z })));
+        let worst = 0;
+        for (let i = 0; i < 900 && E.R.t < 0; i++) { E.step(1, 1 / 30); if (E.R.t >= 0) break;
+          const now = [{ x: E.R.P.x, z: E.R.P.z }].concat(E.R.cars.filter((e) => e.ai).map((e) => ({ x: e.x, z: e.z })));
+          for (let k = 0; k < grid.length; k++) worst = Math.max(worst, Math.hypot(now[k].x - grid[k].x, now[k].z - grid[k].z)); }
+        if (E.R.t < 0) return 'countdown never ended';
+        const px = E.R.P.x, pz = E.R.P.z;
+        for (let i = 0; i < 40; i++) E.step(3, 1 / 30);
+        const moved = Math.hypot(E.R.P.x - px, E.R.P.z - pz);
+        E.K.gas = false; if (E.R) E.R.on = false;
+        return JSON.stringify({ worst: +worst.toFixed(3), moved: +moved.toFixed(2) });
+      });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return String(r);
+      if (d.worst > 0.05) return 'a car moved ' + d.worst.toFixed(2) + ' m before GO (R01)';
+      if (d.moved < 2) return 'the player did not move after GO (' + d.moved.toFixed(2) + ' m)';
+      return true;
+    },
+  },
+  {
     id: 'never-g-270-p1',
     ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
     async test(page, h) {

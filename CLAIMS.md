@@ -164,7 +164,6 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-310 | window 5 | checklists/apexf1.md, jobs/G-310-w5.md, CLAIMS.md | build/g-310-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
 | G-258 r1 | window 7 | checklists/apexbaseball.md, jobs/G-258-w7.md | test/g-258-apexbaseball-r1 |
@@ -283,6 +282,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-240 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-240.md | build/g-240-fix1-apexracer |
 | G-270 | window 6 | checklists/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-270-w6.md, CLAIMS.md | build/g-270-apexracer |
 | G-270 fix 1 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-270-w6.md | build/g-270-fix1-apexracer |
+| G-300 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-300-w6.md, CLAIMS.md, LESSONS.md | build/g-300-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
