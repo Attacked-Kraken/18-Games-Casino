@@ -45,6 +45,7 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - Results screens show ONE table, athletes under the ATHLETE heading, and marks that match the race clock
 
 ## NEVER
+- 2026-10-25: the long jump runway mesh spans 45 m - venues/track.md says 40 m; the runway strip now runs 40 m from the start (-70) to the board (-30) (G-316)
 - 2026-10-24: throws end after 3 attempts with no extra rounds - rules/trackfield.md says 3 attempts plus 3 more for the top 8; the throw engine now grants 3 more when the player's rank after 3 attempts is top 8 (discus keeps its single action, G-25) (G-289 r1)
 - 2026-10-24: the main game-check still finds no relay zone markings after the G-289 merge - tester-chk-t04 accepted ANY playing race as 'the relay' and tester-chk-t07 never retried a 'stuck' nav, so a slow main-check load defeated both; both tests now wait for the new page and prove the event they started (G-289 r1)
 - 2026-10-24: the relay changeover-zone markings are not found in the relay event on a slow load - the zones were built only when the full 3D load finished (W3D.ready), so a 5 s poll found nothing; the zones paint at race start on the scene alone (G-289)
