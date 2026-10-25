@@ -510,6 +510,38 @@ export default [
     },
   },
   {
+    id: 'play-garage-options',
+    cat: 'play',
+    name: 'garage options reach the car: bought glow, calipers, Limo tint, GT wing, body kit and rim faces are built onto the player car (owner)',
+    ask: 'owner fix (garage): every garage tab\'s chosen style shows on the car - underglow live, a rim face and a caliper at all 4 wheels, Limo tint on the glass, the aero wing and the body kit fitted, on the Goblin and on a Tokii car',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; const kit = { glow: '#19e6ff', cal: '#16d07a', tint: 2, aero: 3, kit: 1, rim: 3, rimCol: '#d4a640' };
+        for (const id of ['goblin', 'kestrel']) E.S.cars[id] = Object.assign(E.S.cars[id] || {}, kit); });
+      for (const id of ['goblin', 'kestrel']) {
+        await h.eval((cid) => { const E = window.__erc; E.S.cur = cid; E.startRace(E.PLACES[0], 3); }, id);
+        const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || !E.R.P) return 'no race';
+          const car = E.R.P.car, acc = {};
+          car.root.traverse((q) => { if (q.userData && q.userData.acc) acc[q.userData.acc] = (acc[q.userData.acc] || 0) + 1; });
+          let limo = false;
+          car.root.traverse((q) => { if (q.isMesh) { const ms = Array.isArray(q.material) ? q.material : [q.material]; for (const m of ms) if (m && m.color && m.color.getHexString() === '020409') limo = true; } });
+          return JSON.stringify({ acc, glow: !!car.glow, limo });
+        });
+        const d = JSON.parse(r);
+        if (!d.glow) return id + ': bought underglow is not on the car';
+        if ((d.acc.rimface || 0) < 4) return id + ': rim style faces missing (' + (d.acc.rimface || 0) + '/4)';
+        if ((d.acc.caliper || 0) < 4) return id + ': calipers missing (' + (d.acc.caliper || 0) + '/4)';
+        if (!d.acc.underglow) return id + ': underglow part missing';
+        if (!d.acc.wing) return id + ': spoiler (aero) missing';
+        if (!d.acc.bodykit) return id + ': body kit missing';
+        if (!d.limo) return id + ': Limo tint is not on the glass';
+        await h.eval(() => { const E = window.__erc; if (E.R) E.R.on = false; });
+      }
+      return true;
+    },
+  },
+  {
     id: 'never-g-270-p1',
     ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
     async test(page, h) {
