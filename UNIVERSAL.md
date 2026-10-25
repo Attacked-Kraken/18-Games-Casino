@@ -16,3 +16,9 @@ One list for ALL windows. When any window teaches the factory something, it is a
 6. **Census what YOU started.** A play test that starts a race/match counts the one IT started, never the first ready one left by the last test: wait for the object's identity to change.
 7. **Restore shared state.** A test that changes shared page state restores it before it ends, also on early returns.
 8. **Trace before fixing.** A margin that flickers is a distribution - measure the real cause before changing code; three wrong theories cost an hour.
+9. **`h.eval` that navigates, reloads, waits or polls carries `.catch(() => false)` (or sits in try/catch).** "Execution context was destroyed" only fires on the robot, never on a Muse's local runner (window 5, Oct 25 2026). The robot now prints a yellow LINT line naming the test and line (`node tools/game-check/fixes-lint.mjs <file>`).
+10. **Red lines now carry `[test id: ...]` and 400 chars of the error** (window 5 idea). Quote the id back in your HELP line - never "the robot failed".
+
+## Ideas filed (status shown, so nobody files them twice)
+- window 5, Oct 25 2026 2:06 PM: red lines name the test id + full error - BUILT (game PR #1753). Lint for `h.eval` without `.catch` - BUILT (#1753). Robot-style local runner that throws on navigation so a robot-only throw can be watched failing first - QUEUED (next robot job). Game PR template carrying the report fields so one merged PR closes a job - PARKED: the Mac's proof reads jobs/G-NN-wN.md; smaller first step = the Mac drafts the report file from the merged PR (to look at after the runner).
+
