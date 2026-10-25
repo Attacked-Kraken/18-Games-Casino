@@ -4,7 +4,7 @@
 - [x] H03 | Neutral-zone dots sit 1.5 m inside the blue lines | SOURCE: venues/rink.md | NUMBERS: 1.5 | MEASURE: dot z minus blue-line z, within 3% of 1.5 | TEST: tester-chk-h03 | RESULT: OK (measured 1.53 m)
 - [x] H04 | Blue lines are 22.86 m from each end board | SOURCE: venues/rink.md | NUMBERS: 22.86 | MEASURE: blue-line z to end-board z, within 3% | TEST: tester-chk-h04 | RESULT: OK (measured 22.75 m)
 - [x] H05 | Goal lines are 3.35 m from each end board | SOURCE: venues/rink.md | NUMBERS: 3.35 | MEASURE: goal-line z to end-board z, within 3% | TEST: tester-chk-h05 | RESULT: OK (measured 3.36 m and 3.39 m from the ice paint in the running game, G-297 audit on main 9789ebc4, inside the 3% band of 3.35)
-- [ ] H06 | Faceoff circles (centre and end zone) have radius 4.57 m | SOURCE: venues/rink.md | NUMBERS: 4.57 | MEASURE: circle mesh radius, within 3% | TEST: tester-chk-h06
+- [x] H06 | Faceoff circles (centre and end zone) have radius 4.57 m | SOURCE: venues/rink.md | NUMBERS: 4.57 | MEASURE: circle mesh radius, within 3% | TEST: tester-chk-h06 | RESULT: OK (measured 4.60 m on the centre and end-zone circles from the ice paint in the running game, G-301 audit on main 5a313ad3, inside the 3% band of 4.57)
 - [ ] H07 | Goal is 1.83 m wide and 1.22 m high | SOURCE: REALITY.md | NUMBERS: 1.83, 1.22 | MEASURE: Box3 of the goal frame, within 15% | TEST: tester-chk-h07
 - [ ] H08 | Goal crease is a half circle of radius 1.83 m | SOURCE: venues/rink.md | NUMBERS: 1.83 | MEASURE: crease mesh radius, within 3% | TEST: tester-chk-h08
 - [ ] H09 | Rink is 60.96 x 25.9 m | SOURCE: venues/rink.md | NUMBERS: 60.96, 25.9 | MEASURE: Box3 of the ice surface, within 3% | TEST: tester-chk-h09
