@@ -1176,4 +1176,41 @@ export default [
       return true;
     },
   },
+  {
+    id: "play-garage-options",
+    cat: "play",
+    name: "garage options reach the car: bought glow, calipers, Limo tint, GT wing, body kit and rim faces are built onto the player car (owner)",
+    ask: "owner fix (garage): every garage tab's chosen style shows on the car - underglow live, a rim face and a caliper at all 4 wheels, Limo tint on the glass, the aero wing and the body kit fitted, on the Goblin and on a Tokii car; the test restores the save it borrowed (cur + both car entries) so the next test drives the stock car",
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; window.__gSave = { cur: E.S.cur, gob: E.S.cars.goblin ? JSON.parse(JSON.stringify(E.S.cars.goblin)) : null, kes: E.S.cars.kestrel ? JSON.parse(JSON.stringify(E.S.cars.kestrel)) : null };
+        const kit = { glow: '#19e6ff', cal: '#16d07a', tint: 2, aero: 3, kit: 1, rim: 3, rimCol: '#d4a640' };
+        for (const id of ['goblin', 'kestrel']) E.S.cars[id] = Object.assign(E.S.cars[id] || {}, kit); });
+      let fail = null;
+      for (const id of ['goblin', 'kestrel']) {
+        if (fail) break;
+        await h.eval((cid) => { const E = window.__erc; E.S.cur = cid; E.startRace(E.PLACES[0], 3); }, id);
+        const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+          for (let i = 0; i < 80; i++) { if (E.R && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || !E.R.P) return 'no race';
+          const car = E.R.P.car, acc = {};
+          car.root.traverse((q) => { if (q.userData && q.userData.acc) acc[q.userData.acc] = (acc[q.userData.acc] || 0) + 1; });
+          let limo = false;
+          car.root.traverse((q) => { if (q.isMesh) { const ms = Array.isArray(q.material) ? q.material : [q.material]; for (const m of ms) if (m && m.color && m.color.getHexString() === '020409') limo = true; } });
+          return JSON.stringify({ acc, glow: !!car.glow, limo });
+        });
+        let d = null; try { d = JSON.parse(r); } catch (e) {}
+        if (!d) fail = id + ': ' + r;
+        else if (!d.glow) fail = id + ': bought underglow is not on the car';
+        else if ((d.acc.rimface || 0) < 4) fail = id + ': rim style faces missing (' + (d.acc.rimface || 0) + '/4)';
+        else if ((d.acc.caliper || 0) < 4) fail = id + ': calipers missing (' + (d.acc.caliper || 0) + '/4)';
+        else if (!d.acc.underglow) fail = id + ': underglow part missing';
+        else if (!d.acc.wing) fail = id + ': spoiler (aero) missing';
+        else if (!d.acc.bodykit) fail = id + ': body kit missing';
+        else if (!d.limo) fail = id + ': Limo tint is not on the glass';
+        await h.eval(() => { const E = window.__erc; if (E.R) E.R.on = false; });
+      }
+      await h.eval(() => { const E = window.__erc, s = window.__gSave; if (s) { E.S.cur = s.cur; if (s.gob) E.S.cars.goblin = s.gob; else delete E.S.cars.goblin; if (s.kes) E.S.cars.kestrel = s.kes; else delete E.S.cars.kestrel; delete window.__gSave; } });
+      return fail || true;
+    },
+  },
 ];
