@@ -2,7 +2,7 @@
 - [x] H01 | End-zone faceoff dots sit 6.7 m either side of centre | SOURCE: venues/rink.md | NUMBERS: 6.7 | MEASURE: read the 4 end-zone dot positions from the rink objects in the running game; test = |x| within 3% of 6.7 | TEST: tester-chk-h01 | RESULT: OK (BUILD #1416, merged 2026-10-24, moved the dots to [69,21.4] = 6.56 m, inside the 3% band of 6.7; rechecked in G-257 on main 38d03356: tester-chk-h01 passes, dots measured 6.56-6.57 m live from the ice paint)
 - [x] H02 | End-zone faceoff dots sit 6.1 m out from the goal line | SOURCE: venues/rink.md | NUMBERS: 6.1 | MEASURE: dot z minus goal-line z, within 3% of 6.1 | TEST: tester-chk-h02 | RESULT: OK (measured 6.14)
 - [x] H03 | Neutral-zone dots sit 1.5 m inside the blue lines | SOURCE: venues/rink.md | NUMBERS: 1.5 | MEASURE: dot z minus blue-line z, within 3% of 1.5 | TEST: tester-chk-h03 | RESULT: OK (measured 1.53 m)
-- [ ] H04 | Blue lines are 22.86 m from each end board | SOURCE: venues/rink.md | NUMBERS: 22.86 | MEASURE: blue-line z to end-board z, within 3% | TEST: tester-chk-h04
+- [x] H04 | Blue lines are 22.86 m from each end board | SOURCE: venues/rink.md | NUMBERS: 22.86 | MEASURE: blue-line z to end-board z, within 3% | TEST: tester-chk-h04 | RESULT: OK (measured 22.75 m)
 - [ ] H05 | Goal lines are 3.35 m from each end board | SOURCE: venues/rink.md | NUMBERS: 3.35 | MEASURE: goal-line z to end-board z, within 3% | TEST: tester-chk-h05
 - [ ] H06 | Faceoff circles (centre and end zone) have radius 4.57 m | SOURCE: venues/rink.md | NUMBERS: 4.57 | MEASURE: circle mesh radius, within 3% | TEST: tester-chk-h06
 - [ ] H07 | Goal is 1.83 m wide and 1.22 m high | SOURCE: REALITY.md | NUMBERS: 1.83, 1.22 | MEASURE: Box3 of the goal frame, within 15% | TEST: tester-chk-h07
