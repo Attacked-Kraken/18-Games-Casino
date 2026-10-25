@@ -1247,7 +1247,7 @@ function makeGlbCar(id, cfg, o = {}) {
       cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (hb.w / 2 - 0.02));
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
     }
-    if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 1.16, ls.z * 2.1), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
       accGlow.rotation.x = -Math.PI / 2; accGlow.position.y = 0.055; accGlow.renderOrder = 2; accGlow.userData.acc = 'underglow'; tilt.add(accGlow); }
     const aero = cfg.aero || 0;
     if (aero > 0) {
