@@ -1329,7 +1329,7 @@ export default [
       // page while g66ToRace waits only 1.2 s after startBtn, so a strict press misses
       // it and the race never starts. The point is the portrait layout during a race,
       // not menu-flow speed.
-      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
       for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
@@ -1357,7 +1357,7 @@ export default [
   {
     id: 'tester-chk-f03', ask: 'Apex F1: gas after all 5 reds, before GO, is a jump start worth 5 seconds (G-312)',
     test: async (page, h) => {
-      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
       for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
