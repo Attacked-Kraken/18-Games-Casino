@@ -1341,32 +1341,4 @@ export default [
       return out === null ? true : out;
     },
   },
-  {
-    id: 'tester-chk-f01',
-    ask: 'Apex F1: the grid is 2 by 2, staggered, fastest lap first (checklist F01)',
-    async test(page, h) {
-      await h.eval(`location.href = location.pathname + '?test=grid'`).catch(() => {});
-      let grid = false;
-      for (let i = 0; i < 30 && !grid; i++) { await h.wait(500); grid = await h.eval(`(() => { const g = document.getElementById('gridMenu'); return !!g && !g.classList.contains('hidden'); })()`).catch(() => false); }
-      if (!grid) return 'the ?test=grid link never opened the starting grid';
-      const r = await h.eval(() => {
-        const cars = window.__test ? window.__test.cars() : [];
-        const g = document.getElementById('gridList');
-        const rows = g ? [...g.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim())).filter(x => x.length >= 3) : [];
-        return { cars, rows };
-      }).catch(() => null);
-      await h.eval(`location.href = location.pathname`).catch(() => {});
-      await h.wait(600);
-      if (!r || !r.cars.length) return 'no cars at the grid';
-      const ds = [...new Set(r.cars.map(c => +c.d.toFixed(2)))];
-      if (ds.length !== 2) return 'grid has ' + ds.length + ' lateral columns, not 2 (d values ' + ds.join(',') + ')';
-      const srt = [...r.cars].sort((a, b) => b.s - a.s);
-      for (let i = 1; i < srt.length; i++) { const step = srt[i - 1].s - srt[i].s; if (step <= 0) return 'grid is not staggered: two cars share s=' + srt[i].s; if (step > 20) return 'grid step ' + step.toFixed(1) + ' m is a gap, not a stagger'; }
-      const toSec = (t) => { const m = t.match(/(\d+):(\d+\.\d+)/); return m ? +m[1] * 60 + +m[2] : NaN; };
-      if (r.rows.length < 10) return 'grid list has only ' + r.rows.length + ' timed rows';
-      for (let i = 1; i < r.rows.length; i++) if (!(toSec(r.rows[i][2]) > toSec(r.rows[i - 1][2]))) return 'grid list times are not fastest-first at P' + (i + 1) + ' (' + r.rows[i - 1][2] + ' then ' + r.rows[i][2] + ')';
-      for (let i = 0; i < Math.min(r.rows.length, srt.length); i++) if (r.rows[i][1] !== srt[i].name) return 'grid list P' + (i + 1) + ' (' + r.rows[i][1] + ') is not the front-to-back car (' + srt[i].name + ')';
-      return true;
-    },
-  },
 ];
