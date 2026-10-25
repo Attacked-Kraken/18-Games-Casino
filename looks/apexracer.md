@@ -1,21 +1,21 @@
 # Look board \u2014 Exotic Racer Club (`apexracer.html`)
 
 ## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after the owner garage-options fix; keep current per STUDIO-STANDARD 9.7)
-- Menu / turntable: menu home + showroom orbit (toMenu) L2256 - menu refresh (refreshMenu) L2249 - turntable spin + garage camera (updateGarage) L2464 - frame loop L2487
-- Garage: openGarage L2336 - garage cards and buying (renderGarage) L2346 - the shown car (setGarageCar) L1371
+- Menu / turntable: menu home + showroom orbit (toMenu) L2260 - menu refresh (refreshMenu) L2253 - turntable spin + garage camera (updateGarage) L2468 - frame loop L2491
+- Garage: openGarage L2340 - garage cards and buying (renderGarage) L2350 - the shown car (setGarageCar) L1373
 ## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 24, 2026, after G-313 fix 1; keep current per STUDIO-STANDARD 9.7)
-- Menu / turntable: menu home + showroom orbit (toMenu) L2162 - menu refresh (refreshMenu) L2155 - turntable spin + garage camera (updateGarage) L2370 - frame loop L2393
-- Garage: openGarage L2242 - garage cards and buying (renderGarage) L2252 - the shown car (setGarageCar) L1278
-- Car data: model registry (GLB_MODELS) L294 - skinned-pose bake (bakeSkins) L301 - car stats (CARS) L339 - places (PLACES) L402 - paint material (paintMat) L678 - computer-car paints stay bright (brightPaint) L570
-- Car building: name wrap (addNameWrap) L989 - real-model car builder (makeGlbCar) L1095 - window tint table (TINTS, inside makeGlbCar) L1106 - bought options built onto the car: measured wheel hubs + rim faces + calipers + underglow + aero wing + body kit (inside makeGlbCar) L1179 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1277
-- World and race setup: world build in slices (buildWorld) L1481 - scenery keeps off the road (skirtClear, inside buildWorld) - finish-line sign text (drawSign/setSign) L517 - race setup (setupRace) L1975 - grid camera inside setupRace L2009 - race start guards (PR #1023: startRace ignores a second start while loading) - race start (startRace) L2287
-- Driving physics: player car (stepPlayer) L2024
-- AI: stepAI L2069 - G-70 gap band + the G-270 pace cap (58% of player pace) at L2074
-- Traffic: stepTraffic L2103 - headlight pool follow (posePool) L2113 - car posing (poseCar) L2114
-- Camera: chase camera inside updateRace L2122 - race render (renderRace) L2238
-- HUD: lap/time readout inside updateRace L2122 - big center message (bigMsg) L2022 - race step (updateRace) L2122
-- Sounds: audioInit L1842 - sfx L1866 - engine kit + engine sound (engineSnd) L1888 - music mix by speed (musRaceMix) L1946
-- Test hooks: window.__erc L2515 - REALITY hook (window.__reality, go/time/speed) L2526 - ?test=night owner link at boot L2513
+- Menu / turntable: menu home + showroom orbit (toMenu) L2260 - menu refresh (refreshMenu) L2253 - turntable spin + garage camera (updateGarage) L2468 - frame loop L2491
+- Garage: openGarage L2340 - garage cards and buying (renderGarage) L2350 - the shown car (setGarageCar) L1373
+- Car data: model registry (GLB_MODELS) L295 - skinned-pose bake (bakeSkins) L302 - car stats (CARS) L343 - places (PLACES) L402 - paint material (paintMat) L682 - computer-car paints stay bright (brightPaint) L570
+- Car building: name wrap (addNameWrap) L993 - real-model car builder (makeGlbCar) L1099 - window tint table (TINTS, inside makeGlbCar) L1110 - bought options built onto the car: measured wheel hubs + real 3D rim wheels (G-345) + calipers + underglow + aero wing + body kit (inside makeGlbCar) L1187 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1279
+- World and race setup: world build in slices (buildWorld) L1483 - scenery keeps off the road (skirtClear, inside buildWorld) - finish-line sign text (drawSign/setSign) L521 - race setup (setupRace) L1979 - grid camera inside setupRace L2013 - race start guards (PR #1023: startRace ignores a second start while loading) - race start (startRace) L2291
+- Driving physics: player car (stepPlayer) L2028
+- AI: stepAI L2073 - G-70 gap band + the G-270 pace cap (58% of player pace) at L2078
+- Traffic: stepTraffic L2107 - headlight pool follow (posePool) L2117 - car posing (poseCar) L2118
+- Camera: chase camera inside updateRace L2126 - race render (renderRace) L2242
+- HUD: lap/time readout inside updateRace L2126 - big center message (bigMsg) L2026 - race step (updateRace) L2126
+- Sounds: audioInit L1844 - sfx L1868 - engine kit + engine sound (engineSnd) L1890 - music mix by speed (musRaceMix) L1949
+- Test hooks: window.__erc L2519 - REALITY hook (window.__reality, go/time/speed) L2530 - ?test=night owner link at boot L2517
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
