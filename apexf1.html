@@ -1442,6 +1442,12 @@ class Car {
       if(absD>edge+1.6 && this.v>15 && !(this._shoveT>0)) Race.noteOffTrack(dt);
       else if(absD<=edge) this._offT=Math.max(0,(this._offT||0)-dt*0.6);
     }
+    // G-321: pit-lane limit starts BEFORE the entry line - a car at race speed
+    // cannot shed to 80 km/h in the 40 m pit window alone, so brake from 300 m out.
+    if(this.pitIntent && !this.inPits && !this.finished){
+      const sN=((this.s%Track.length)+Track.length)%Track.length;
+      if(sN>pitInS-300 && sN<pitInS && this.v>22) this.v+=Math.max(22-this.v,-30*dt);
+    }
     this.s+=Math.cos(this.headAngle)*this.v*dt;
     this.d+=Math.sin(this.headAngle)*this.v*dt;
     this.raceDist+=this.v*dt;
@@ -1774,7 +1780,7 @@ const Race = {
     const lights=$('lights').children;
     for(let i=0;i<5;i++) lights[i].className='light'+(i<n?' red':'');
     // jump start check
-    if(this.player.throttle>0.25 && this.stateT<4.2 && !this.jumpStart){
+    if(this.player.throttle>0.25 && !this.jumpStart){ // G-312: the whole lights phase counts - the old stateT<4.2 gate let throttle through the hold window (4.2 to lights-out) with no penalty
       this.jumpStart=true; this.player.penalty+=5;
       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
     }

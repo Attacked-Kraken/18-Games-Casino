@@ -5,6 +5,8 @@ on:
   push:
     branches: [main]
     paths: ['tools/game-check/known-faults.json']
+  schedule:
+    - cron: '*/10 * * * *'    # Oct 24 2026 7:47 PM: a merge made by the bot (GITHUB_TOKEN) starts NO push workflow, so the push trigger above never fired for PR #1619; the timer picks it up (no-op when no failed PR is covered)
   workflow_dispatch:
     inputs:
       dry_run: {description: 'only print what would re-run (1 = yes)', default: '0'}

@@ -8,7 +8,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 
 ## WHERE THINGS ARE
 
-Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-286 R1 portrait button block, 2026-10-24):
+Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-286 R1 portrait button block, 2026-10-24; +6 below old line 1445 for the G-321 pit-entry braking block, 2026-10-25):
 - Page head + inline tab icons: lines 1-8 (SVG icon declared G-95; empty data:, icon added G-224 line 7 - the Grok recheck still saw the favicon 404)
 - Compact CSS: lines ~16-45 - landscape compact block at 16, portrait #teamMenu block at 36-45 (G-265 R1: the upright phone gets its own no-scroll fit); #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136); touch buttons: base ~92-107, landscape compact block at 111, portrait compact block at 126 (G-286 R1)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 204-306 (friend overlay #friendOv at 272)
@@ -16,13 +16,13 @@ Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-28
 - Audio: line 332 (engine() at 359 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 388 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at ~415 retries until loaded (4 s, then every 8 s; G-277); the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() at 445 - kit tire squeal loop; synth voices kept as fallback)
 - Data: TRACKS 460, TEAMS 478, AI_NAMES 490
 - Track (samples, buildGP for the kit circuit at 653): line 610
-- Car mesh builder buildCarMesh: line 1055; Car class: line 1332 (player steering at ~1420-1421: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay)
+- Car mesh builder buildCarMesh: line 1055; Car class: line 1332 (player steering at ~1420-1421: G-239 - the player holds a WORLD heading (_yawW): stick deflected = G-136 stick-sets-heading against the road; stick centred = the world heading holds and the road curves away, the driver steers it back. AI keeps the integrator. Track-limits gate beside it: no accrual while _shoveT>0, brief brushes decay; G-321 pit-entry braking at 1445-1450: a pitIntent car sheds to 22 m/s from 300 m out, so the lane is at the limit from the line)
 - Sponsor boards + gantries: buildSponsorBoards at 956 and the buildScenery gantry at ~909 (G-239: boxes carry a pre-flipped texture on the back face - APEX ARCADE reads correctly from both sides, never mirrored); horizon fog at 536 (300-1150, melts into the sky colour)
-- Input object: line 1509; initInput (stick, buttons, releaseAll on blur): line 1518
-- Race object: line 1693 (setup ~1687, placeGrid 1712, startLights ~1752, beginRace ~1778); trackGroundY at ~1688 and updateCamera at 1979 (G-119: every view rides the road + a hard floor; G-239: broadcast rides behind/above the car in the car's own frame looking down the road, frame-rate-independent easing, contact shake never applies to it); carContact at 1653 (pack fix + G-239: CONTACT! banners only when the player is in the pair, and a hard hit stamps the player's _shoveT limits grace) and aiDrive at 1579 (pack fix: close-range traffic speed match + each car's own quali line qOff)
-- Career + friends: line ~2089 (Save 2089, friendCode 2102, parseFriend 2108, showResults 2118)
-- Menu wiring (show 2181, friendBtn 2220, friendGo 2254): lines 2193-2280
-- startWeekend: line 2321; runQuali: line 2340 (pack fix at 2340: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2354 - G-224: min-height 44px inline; G-239: top-centre at top:104px - at right/top:150 it sat on the speedometer); updateQuali at 2360 (G-239: sets the quali _gapF1 as a best-lap delta, null until both cars have a lap - HUD shows GAP —, never a fake +0.0s); grid list UI in finishQuali (2381): two half tables side by side (G-119 R1); main loop: line 2398
+- Input object: line 1515; initInput (stick, buttons, releaseAll on blur): line 1524
+- Race object: line 1699 (setup ~1693, placeGrid 1718, startLights ~1758, beginRace ~1784); trackGroundY at ~1694 and updateCamera at 1985 (G-119: every view rides the road + a hard floor; G-239: broadcast rides behind/above the car in the car's own frame looking down the road, frame-rate-independent easing, contact shake never applies to it); carContact at 1659 (pack fix + G-239: CONTACT! banners only when the player is in the pair, and a hard hit stamps the player's _shoveT limits grace) and aiDrive at 1585 (pack fix: close-range traffic speed match + each car's own quali line qOff)
+- Career + friends: line ~2095 (Save 2095, friendCode 2108, parseFriend 2114, showResults 2124)
+- Menu wiring (show 2187, friendBtn 2226, friendGo 2260): lines 2199-2286
+- startWeekend: line 2327; runQuali: line 2346 (pack fix at 2346: qualifying starts with the field spread around the lap, not in one grid funnel; the SKIP QUALI button is created at 2360 - G-224: min-height 44px inline; G-239: top-centre at top:104px - at right/top:150 it sat on the speedometer); updateQuali at 2366 (G-239: sets the quali _gapF1 as a best-lap delta, null until both cars have a lap - HUD shows GAP —, never a fake +0.0s); grid list UI in finishQuali (2387): two half tables side by side (G-119 R1); main loop: line 2404
 
 ## MUST
 - Own fictional teams and drivers
@@ -48,6 +48,7 @@ Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-28
 - 2026-10-24: Play-test entries must use test: (never run:) - the robot rejects a run: entry up front with a PLAY-TEST FORMAT line and drops it from the run, so the game loses the guard and takes the red line (G-253)
 - 2026-10-24: Play-test entries must use ask: (never title:) too - the third run: entry also carried title:, and the robot's format check rejects the whole shape (G-279)
 - 2026-10-24: teamMenu must fit with no scrolling and no race button may overlap the stick on the UPRIGHT phone too - the landscape compact rules do not apply there, so the base touch buttons and the portrait menu stack need their own fit (G-265 R1)
+- 2026-10-25: A portrait race check must never depend on the slow menu flow - qualiSkip takes ~6 s to appear on a slow page while g66ToRace waits only 1.2 s after startBtn, so a strict press misses it and the race never starts; race via ?test=grid first, then go upright and read the buttons (G-312 R1)
 
 ## G-239 — the owner's two recordings (looks/apexf1/owner-2026-10-23/), frame by frame
 - video1-01..07 + video2-01..09, ALL frames: '5s PENALTY' pinned top-centre for 50 s of clean on-road driving; stick knob dead-centre while the car corners at 113-191 MPH and gains places (P4→P3) hands-free; SKIP QUALI pill covering the speed digits; GAP frozen at +0.0s while the name behind it changes.

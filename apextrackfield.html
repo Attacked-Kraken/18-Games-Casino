@@ -647,7 +647,7 @@ hint:'You run all four legs. In each 20m exchange zone tap ACTION to pass — cl
 hint:'Stride the run-up, tap ACTION on the board (over it = foul), then tap ACTION to set takeoff angle. 3 attempts.'},
 {id:'tj', name:'Triple Jump', eng:'triplejump', timed:false, ref:18.29,
 hint:'Hop, step, jump: three timed ACTION taps after takeoff. 3 attempts, best counts.'},
-{id:'hj', name:'High Jump', eng:'highjump', timed:false, ref:2.45, startH:1.70, stepH:0.05,
+{id:'hj', name:'High Jump', eng:'highjump', timed:false, ref:2.45, startH:2.00, stepH:0.05, maxH:2.40,
 hint:'Stride in, tap ACTION in the takeoff zone, then tap ACTION with the marker in the green to clear the bar. 3 misses ends it.'},
 {id:'pv', name:'Pole Vault', eng:'polevault', timed:false, ref:6.27, startH:4.00, stepH:0.10,
 hint:'Plant the pole, tap ACTION in the zone, then time the green window to clear. 3 misses ends it.'},
@@ -1340,7 +1340,7 @@ const pv = kind==='pv';
 const ZONE = pv ? [42.8, 45.2] : [12.8, 15.2];
 const RUNOUT = pv ? 45.8 : 15.6;
 const heights=[];
-for(let h=ev.startH; h<=ev.ref*1.03+0.001; h+=ev.stepH) heights.push(Math.round(h*100)/100);
+for(let h=ev.startH; h<=(ev.maxH||ev.ref*1.03)+0.001; h+=ev.stepH) heights.push(Math.round(h*100)/100); // G-326 (CHECKLIST T12): HJ heights capped at maxH (men 2.0-2.4 m); PV has no maxH so its cap is unchanged
 const E={
 ev, done:false, dq:false, pv, heights, hi:0, attLeft:3, best:-1,
 phase:'approach', r:newRunner(), marker:0, mdir:1, gw:0.08, msg:'', msgT:0,
@@ -1567,7 +1567,10 @@ if(this.ft>=this.fT) this.endAttempt();
 }else if(this.phase==='mark'){
 this.resT-=dt;
 if(this.resT<=0){
-if(this.attempt>=this.attMax){ this.done=true; this.finishT=0; }
+if(this.attempt>=this.attMax){
+if(this.attMax===3){ const rank=1+this.aiBest.filter(b=>b>this.best).length; if(rank<=8){ this.attMax=6; this.attempt++; this.reset(); } else { this.done=true; this.finishT=0; } } // G-289 r1: rules/trackfield.md - 3 attempts, plus 3 more for the top 8 (discus keeps its 1, G-25)
+else { this.done=true; this.finishT=0; }
+}
 else { this.attempt++; this.reset(); }
 }
 }
@@ -2016,8 +2019,8 @@ const gray=new THREE.MeshStandardMaterial({color:0x777d85,roughness:0.9});
 const white=new THREE.MeshStandardMaterial({color:0xf2f2f2,roughness:0.7});
 const sandM=new THREE.MeshStandardMaterial({color:0xe3cf9a,roughness:1});
 const matBlue=new THREE.MeshStandardMaterial({color:0x1e5fc2,roughness:0.85});
-const rw=new THREE.Mesh(new THREE.BoxGeometry(45,0.08,1.4),gray);
-rw.position.set(-47.5,0.04,8); rw.receiveShadow=true; this.scene.add(rw);
+const rw=new THREE.Mesh(new THREE.BoxGeometry(40,0.08,1.4),gray); // G-316 (CHECKLIST T11): runway 40 m; was 45
+rw.position.set(-50,0.04,8); rw.receiveShadow=true; this.scene.add(rw); // G-316: span -70..-30, start to board; was -47.5 (span -70..-25)
 const board=new THREE.Mesh(new THREE.BoxGeometry(2.5,0.1,1.22),white);
 board.position.set(-31.25,0.06,8); this.scene.add(board); V.board=board;
 const pit=new THREE.Mesh(new THREE.BoxGeometry(11,0.5,3.2),sandM);
@@ -2055,9 +2058,9 @@ conc.position.set(-52,0.03,20); conc.receiveShadow=true; this.scene.add(conc);
 const rim=new THREE.Mesh(new THREE.TorusGeometry(1.07,0.05,8,28),white);
 rim.rotation.x=Math.PI/2; rim.position.set(-52,0.09,20); this.scene.add(rim);
 const secM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55});
-for(const a of [-0.6,0.6]){
+for(const a of [-0.3047,0.3047]){ // G-309 (CHECKLIST T10): half-angle 34.92/2 deg; was 0.6 (68.8 deg sector)
 const line=new THREE.Mesh(new THREE.PlaneGeometry(46,0.14),secM);
-line.rotation.x=-Math.PI/2; line.rotation.z=a;
+line.rotation.x=-Math.PI/2; line.rotation.z=-a; // G-309: radial - was +a, which crossed the lines into a V 38 m out
 line.position.set(-52+Math.cos(a)*23,0.015,20+Math.sin(a)*23);
 this.scene.add(line);
 }

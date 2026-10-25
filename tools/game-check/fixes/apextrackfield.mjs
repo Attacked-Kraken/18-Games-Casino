@@ -253,10 +253,23 @@ export default [
       if (!wc) return 'no wall check from the game (JOB J39 build missing)';
       if (!wc.start100) return 'at the 100m start the camera ends up behind a wall (in the stands) - clamp it inside the stadium';
       if (!wc.curve400) return 'on the 400m curve the camera ends up behind a wall - it must follow the lane and stay inside the stadium';
+      // G-335: the old loop counted EVERY camClear sample, including samples taken
+      // AFTER the race finished - when the camera is no longer the race camera but
+      // the rising results/ceremony camera, whose ray to the frozen runner crosses
+      // the stadium. That is what the robot measured (3 of 4 blocked; locally the
+      // same state gives 100m DONE 3 of 13 blocked while RUN is 0 of 32 and the
+      // whole 400m is 0 of 113). The rule is about the RACE camera, so only
+      // samples from a live (not finished) race count.
       const t0 = Date.now(); let seen = 0, blocked = 0;
       while (Date.now() - t0 < 15000 && seen < 4) {
-        const c = await h.eval(() => (window.__tf && window.__tf.camClear) ? window.__tf.camClear() : null);
-        if (c) { seen++; if (!c.clear) blocked++; }
+        const r = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return null;
+          const e = tf.eng ? tf.eng() : null;
+          const c = tf.camClear ? tf.camClear() : null;
+          if (!c) return null;
+          return { clear: c.clear, racing: !!(e && !e.done) };
+        });
+        if (r && r.racing) { seen++; if (!r.clear) blocked++; }
         await h.wait(400);
       }
       if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';
@@ -356,13 +369,36 @@ export default [
     id: 'portrait-fills-screen',
     ask: 'Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)',
     async test(page, h) {
+      // G-329: the old test read fill() once, 900 ms after resizing, and trusted
+      // that reading - on a slow runner the resize had not registered yet, so it
+      // reported landscape viewport values (844x390) as the upright state and
+      // failed a correct game. Worse, fill().cov is bounding-rect AREA, which is
+      // 1.0 even for an un-rotated canvas - so the old test passed the very
+      // state it should fail. This version proves the rule properly: it waits
+      // until the viewport really is 390x844, then measures CLIPPED overlap
+      // (rotation-aware) plus the turned-box renderer size.
       await page.setViewportSize({ width: 390, height: 844 });
-      await h.wait(900);
-      const f = await h.eval(() => (window.__tf && window.__tf.fill) ? window.__tf.fill() : null);
+      let settled = false;
+      for (let i = 0; i < 20; i++) {
+        settled = await h.eval(() => window.innerWidth === 390 && window.innerHeight === 844).catch(() => false);
+        if (settled) break;
+        await h.wait(500);
+      }
+      const f = await h.eval(() => {
+        const tf = window.__tf; if (!tf || !tf.fill) return null;
+        const c = document.getElementById('game'); if (!c) return null;
+        const r = c.getBoundingClientRect();
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const ix = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
+        const iy = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+        const rep = tf.fill();
+        return { overlap: (ix * iy) / (vw * vh), W: rep.W, H: rep.H, iw: vw, ih: vh, rotated: getComputedStyle(document.body).transform !== 'none' };
+      }).catch(() => null);
       await page.setViewportSize({ width: 844, height: 390 });
       await h.wait(400);
+      if (!settled) return 'upright viewport never applied after resize (harness) - the fill rule cannot be proven from a landscape viewport (G-329)';
       if (!f) return 'no fill report from the game (JOB J39 build missing)';
-      if (f.cov < 0.9) return 'held upright the game fills only ' + Math.round(f.cov * 100) + '% of the screen - wants the WHOLE screen (90%+)';
+      if (f.overlap < 0.9) return 'held upright the game fills only ' + Math.round(f.overlap * 100) + '% of the screen - wants the WHOLE screen (90%+)' + (f.rotated ? '' : ' (page un-rotated)');
       if (f.W !== f.ih || f.H !== f.iw) return 'the renderer is sized ' + f.W + 'x' + f.H + ' in an upright ' + f.iw + 'x' + f.ih + ' viewport - it must be sized to the turned (sideways) box ' + f.ih + 'x' + f.iw;
       return true;
     },
@@ -2717,13 +2753,16 @@ async test(page, h) {
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
       await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
       let nav = null;
       for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
       nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
-          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          if (document.body.classList.contains('playing')) { const e = window.__tf && window.__tf.eng(); if (e && e.ev && e.ev.eng === 'relay') { clearInterval(iv); res('racing'); return; } }
           if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
           else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /relay/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no relay button'); } }
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
@@ -2907,9 +2946,12 @@ async test(page, h) {
       async test(page, h) {
         await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
         await h.wait(1500);
+      // G-289 r1: wait for the NEW page before navigating - on a slow load the old page is still playing its race and the nav mistakes that for the target event.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+
         let nav = null;
-        for (let att = 0; att < 3 && nav === null; att++) {
-          try { nav = await h.eval(() => new Promise(res => {
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
           let n = 0;
           const iv = setInterval(() => {
             const on = document.querySelector('.screen.on');
@@ -2921,7 +2963,8 @@ async test(page, h) {
             else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
             if (++n > 90) { clearInterval(iv); res('stuck'); }
           }, 150);
-        })); } catch (e) { await h.wait(1200); }
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
         }
         if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
         const m = await h.eval(() => {
@@ -3272,6 +3315,253 @@ async test(page, h) {
       if (!r2.bests || Math.abs(r2.bests['100m'] - parseFloat(tm[1])) > 0.011) return 'a legal-wind 100m time was not saved as a best: results show "' + r2.resMark + '", saved bests ' + JSON.stringify(r2.bests) + ' (G-289)';
       return true;
     }
-  }
+  },
+  {
+    id: 'never-g-289-r1-p1',
+    ask: 'G-289 r1: throws get 3 attempts plus 3 more for the top 8 - the Shot Put ends with 6 attempts, the Discus still ends with 1',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Shot Put', 'sp')) return 'could not start the Shot Put (G-289 r1)';
+      const m = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 20000) {
+          e.update(1 / 60); steps++;
+          if (e.phase === 'power' && e.power >= 0.97) e.action();
+          else if (e.phase === 'angle' && e.ang >= 40.5 && e.ang <= 43.5) e.action();
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!m) return 'the Shot Put attempt count could not be read (G-289 r1)';
+      if (m.notDone) return 'the Shot Put never finished its attempts (G-289 r1)';
+      if (m.attempts !== 6 || m.attMax !== 6) return 'the Shot Put ended after ' + m.attempts + ' attempts (attMax ' + m.attMax + ') - rules/trackfield.md says 3 attempts plus 3 more for the top 8 (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Discus', 'dt')) return 'could not start the Discus (G-289 r1)';
+      const d = await h.eval(() => {
+        const e = window.__tf.eng();
+        let steps = 0;
+        while (!e.done && steps < 6000) {
+          if (e.phase === 'hold') e.actionDown();
+          else if (e.phase === 'spinning' && e.spinT >= 1.55) e.actionUp();
+          e.update(1 / 60); steps++;
+        }
+        if (!e.done) return { notDone: true };
+        return { attempts: e.attempts.length, attMax: e.attMax };
+      }).catch(() => null);
+      if (!d) return 'the Discus attempt count could not be read (G-289 r1)';
+      if (d.notDone) return 'the Discus never finished (G-289 r1)';
+      if (d.attempts !== 1 || d.attMax !== 1) return 'the Discus ended after ' + d.attempts + ' attempts (attMax ' + d.attMax + ') - the owner rule (G-25) says the Discus is ONE action (G-289 r1)';
+      return true;
+    }
+  },
+  {
+    id: 'never-g-289-r1-p2',
+    ask: 'G-289 r1: relay zones paint at race start even when arriving from another race already playing (the main-check arrival)',
+    async test(page, h) {
+    const navEv = async (btn, evId) => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await h.eval((a) => new Promise(res => {
+          let n = 0; const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === a.evId) { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const re = new RegExp(a.btn, 'i'); const b = [...document.querySelectorAll('#gridEvents button')].find(x => re.test(x.textContent.trim())); if (b) b.click(); else { clearInterval(iv); res('no button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        }), { evId: evId, btn: btn }).catch(() => null);
+        if (r === 'racing') return true;
+        await h.wait(1200);
+      }
+      return false;
+    };
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('60m Dash', '60m')) return 'could not start the arrival 60m race (G-289 r1)';
+    await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+    await h.wait(1500);
+    for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      if (!await navEv('Relay', 'relay')) return 'could not start the relay event after the arrival race (G-289 r1)';
+      let m = null;
+      for (let i = 0; i < 8 && !m; i++) {
+        m = await h.eval(() => {
+          const e = window.__tf && window.__tf.eng(); const grp = e && e._zone;
+          if (!grp || !grp.children.length) return null;
+          const lens = [];
+          grp.children.forEach(mesh => {
+            const p = mesh.geometry.attributes.position.array;
+            for (let l = 0; l < 8; l++) {
+              const base = l * 10 * 3; let len = 0;
+              for (let j = 0; j < 4; j++) {
+                const a = base + j * 6, b = base + (j + 1) * 6;
+                len += Math.hypot(p[b] - p[a], p[b + 1] - p[a + 1], p[b + 2] - p[a + 2]);
+              }
+              lens.push(len);
+            }
+          });
+          const mean = lens.reduce((a, b) => a + b, 0) / lens.length;
+          return { mean: +mean.toFixed(2), n: lens.length };
+        }).catch(() => null);
+        if (!m) await h.wait(250);
+      }
+      if (!m) return 'no relay changeover-zone markings within 2 s of race start after arriving from another race (G-289 r1)';
+      if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
+      return true;
+    }
+  },
+  {
+      id: 'tester-chk-t10',
+      mode: 't10',
+      ask: 'TESTER (G-311, checklist T10): the shot put landing sector is 34.92 degrees - venues/track.md.',
+      async test(page, h) {
+        await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+        await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
 
+        let nav = null;
+        for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+          nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'sp') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'Shot Put'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+          if (nav !== 'racing') await h.wait(1200);
+        }
+        if (nav !== 'racing') return 'could not start the Shot Put: ' + nav;
+        const m = await h.eval(() => {
+          const rigs = window.__tf.rigs();
+          let root = rigs.length && rigs[0].group ? rigs[0].group : null;
+          if (!root) return null;
+          while (root.parent) root = root.parent;
+          const CX = -52, CZ = 20, dirs = [];
+          root.traverse(o => {
+            if (!o.isMesh || !o.geometry) return;
+            const g = o.geometry, p = g.parameters || {};
+            if (g.type === 'PlaneGeometry' && Math.abs(p.width - 46) < 0.01 && Math.abs(p.height - 0.14) < 0.01) {
+              const dx = o.position.x - CX, dz = o.position.z - CZ;
+              if (Math.abs(Math.hypot(dx, dz) - 23) < 0.5) dirs.push(Math.atan2(dz, dx));
+            }
+          });
+          if (dirs.length < 2) return { n: dirs.length };
+          const dot = Math.cos(dirs[0]) * Math.cos(dirs[1]) + Math.sin(dirs[0]) * Math.sin(dirs[1]);
+          const cross = Math.cos(dirs[0]) * Math.sin(dirs[1]) - Math.sin(dirs[0]) * Math.cos(dirs[1]);
+          return { angle: +(Math.atan2(Math.abs(cross), dot) * 180 / Math.PI).toFixed(2), n: dirs.length };
+        }).catch(() => null);
+        if (!m) return 'the shot put sector lines could not be read';
+        if (!m.angle) return 'fewer than two shot put sector lines found (' + m.n + ')';
+        if (Math.abs(m.angle - 34.92) / 34.92 > 0.03) return 'the shot put landing sector measures ' + m.angle + ' degrees between its markings but venues/track.md says 34.92 degrees';
+        return true;
+      }
+  },
+  {
+    id: 'tester-chk-t11',
+    mode: 't11',
+    ask: 'CHECKLIST T11 (G-316): the long jump runway is 40 m - venues/track.md. The runway mesh length must be within 3% of 40 m.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let m = null;
+      for (let w = 0; w < 60; w++) {
+        m = await h.eval(() => {
+          try {
+            const tf = window.__tf; if (!tf) return null;
+            const rigs = tf.rigs() || [];
+            let scene = null;
+            for (const r of rigs) { const g = r.group || (r.h && r.h.object) || r.object || null; if (g && !scene) { let o = g; while (o.parent) o = o.parent; scene = o; } }
+            if (!scene) return null;
+            const found = [];
+            scene.traverse(o => {
+              if (!o.isMesh || !o.geometry) return;
+              const p = o.geometry.parameters || {};
+              if (o.geometry.type !== 'BoxGeometry') return;
+              if (Math.abs(p.height - 0.08) > 0.01 || Math.abs(p.depth - 1.4) > 0.01) return;
+              o.updateWorldMatrix(true, false);
+              const wz = o.matrixWorld.elements[14];
+              if (Math.abs(wz - 8) > 0.5) return;
+              found.push(+p.width.toFixed(2));
+            });
+            return { n: found.length, lens: found };
+          } catch (e) { return { err: e.message }; }
+        }).catch(() => null);
+        if (m && (m.n != null || m.err)) break;
+        await h.wait(500);
+      }
+      if (!m) return 'no long-jump runway scene found after reload (G-316)';
+      if (m.err) return 'runway measurement threw: ' + m.err;
+      if (m.n !== 1) return 'expected 1 long-jump runway strip, found ' + m.n + ' (G-316)';
+      const len = m.lens[0];
+      if (Math.abs(len - 40) / 40 > 0.03) return 'the long jump runway mesh spans ' + len + ' m but venues/track.md says 40 m (G-316)';
+      return true;
+    }
+  },
+  {
+    id: 'tester-chk-t12',
+    mode: 't12',
+    ask: 'CHECKLIST T12 (G-326): the high jump bar is 2.0-2.4 m for men - REALITY.md. The bar height values offered in the men\'s high jump must all lie in 2.0-2.4 m.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'hj') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'High Jump'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the High Jump: ' + nav;
+      const m = await h.eval(() => {
+        const e = window.__tf.eng();
+        return { heights: e.heights || null };
+      }).catch(() => null);
+      if (!m || !m.heights || !m.heights.length) return 'no high jump heights offered (G-326)';
+      const bad = m.heights.filter(h => h < 2.0 || h > 2.4);
+      if (bad.length) return 'the men\'s high jump offers bar heights outside 2.0-2.4 m: ' + bad.join(',') + ' (full list ' + m.heights.join(',') + ') (G-326)';
+      return true;
+    }
+  },
 ];
