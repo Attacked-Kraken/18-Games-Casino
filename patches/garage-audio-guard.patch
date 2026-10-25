@@ -1,0 +1,18 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -1887,6 +1887,7 @@
+ }
+ function engineSnd(rpm, load, on, nos, scr, spd) {
+   const c = AU.ctx; if (!c) return; const t = c.currentTime;
++  if (!isFinite(rpm)) rpm = 0; if (!isFinite(load)) load = 0; if (!isFinite(scr)) scr = 0; if (!isFinite(spd)) spd = 0; /* one bad physics frame must never reach an AudioParam - setTargetAtTime throws on a non-finite value and the harness counts it as a script error (PR #1614) */
+   AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
+   engKitStart();
+   if (kitLive()) { /* G-240: the owner's supercar recordings carry the engine - idle + accel layers crossfaded by throttle, playbackRate by rpm, kit shift/backfire one-shots, kit tire squeal */
+@@ -1945,6 +1946,7 @@
+ function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); musStopLayer(k); } }
+ function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
+   if (MUS.mode !== 'race' || !MUS.els) return; const c = AU.ctx; if (!c) return;
++  if (!isFinite(sp)) sp = 0; /* same guard as engineSnd: a non-finite speed frame must never reach an AudioParam */
+   const band = (x, a, b, d, e) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < d ? 1 : x < e ? 1 - (x - d) / (e - d) : 0;
+   const tg = { low: 0.85 * (1 - band(sp, 16, 34, 1e9, 1e9)), mid: 0.85 * band(sp, 16, 34, 52, 70), high: 0.85 * band(sp, 52, 70, 1e9, 1e9) };
+   const t = c.currentTime;
