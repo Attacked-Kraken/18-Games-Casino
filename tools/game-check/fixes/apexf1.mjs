@@ -1341,4 +1341,31 @@ export default [
       return out === null ? true : out;
     },
   },
+  {
+    id: 'tester-chk-f03', ask: 'Apex F1: gas after all 5 reds, before GO, is a jump start worth 5 seconds (G-312)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      await h.press('#raceBtn');
+      let fiveReds = false, gassed = false;
+      for (let i = 0; i < 120; i++) {
+        const st = await h.eval(() => { const ls = [...document.querySelectorAll('#lights .light')]; return { red: ls.filter(e => e.classList.contains('red')).length, mode: window.__test ? window.__test.race().mode : '?' }; });
+        if (st.red === 5) fiveReds = true;
+        if (fiveReds && st.mode === 'lights') { await h.eval(() => window.__test.setInput({ gas: true })); gassed = true; }
+        if (st.mode === 'race') break;
+        await h.wait(100);
+      }
+      if (!fiveReds) return 'start lights never showed all 5 reds';
+      if (!gassed) return 'lights phase ended before gas could be applied after 5 reds';
+      await h.wait(500);
+      const pen = await h.eval(() => window.__test ? window.__test.penState().penalty : null);
+      if (pen === null) return 'could not read penState';
+      if (pen < 5) return 'gas after 5 reds, before GO, gave no jump-start penalty (penalty ' + pen + ', must be 5)';
+      await h.eval(() => { location.href = location.pathname; });
+      return true;
+    }
+  },
 ];
