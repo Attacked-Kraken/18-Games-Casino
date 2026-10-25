@@ -40,6 +40,8 @@ Band chip uncovered (G-283): the TD band was a full-width strip at the very top,
 
 Reset clear of VS (G-290): the RESET button sat at right:262px, overlapping the VS FPM chip by 27 px in the top bar (measured 518-582 over the VS chip 486-545). It now sits at right:100px, in the gap between VIEW and mute, clear of the stats chips and every other top-bar element. Test: play-reset-clear-of-vs.
 
+Off-runway reason red line (G-334, test-only): the robot failed never-g-243-p1 on main b9f7978 ('reason never showed within 4.5 game-s, msg empty') but the game was right - play-first-frame-safe leaves a ?test=controls URL behind, and ANY ?test= value boots the game menu-hidden in free mode (the catch-all branch), so p1's reload of the CURRENT url hid the menu and its #btnChal press silently failed, running the touchdown in free mode where no reason exists. Fix: p1 reloads the BARE url (query stripped) so the menu opens and the challenge engages, plus a guard that fails loud ('challenge menu did not engage') instead of blaming the game. Regression test: play-g334-dirty-url-challenge.
+
 Fit rule (G-238): every overlay panel fits a 844x390 phone outright - .panel is
 compact (14px padding, slimmer buttons) and capped at calc(100dvh - 16px) with
 internal scroll as the safety net. A touch cancel resets all input through
