@@ -92,7 +92,7 @@ jobs:
           fi
           # owner Oct 21 2026 (upgrade b): front, side, back and top pictures of every new model, next to it
           # (models/fetched/<name>-front.jpg ...) - the job card shows them for the owner's approval before any game uses it
-          NEW=$(git ls-files --others --exclude-standard models/fetched | grep '\.glb$' || true)
+          NEW=$( (git ls-files --others --exclude-standard models/fetched; git ls-files -m models/fetched) | grep '\.glb$' | sort -u || true)   # VP backup Oct 25: a re-fetched model that is already on main is MODIFIED, not new - its pictures were never retaken (G-345 rim)
           if [ -n "$NEW" ]; then
             npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1 || true
             python3 -m http.server 8814 >/dev/null 2>&1 &
