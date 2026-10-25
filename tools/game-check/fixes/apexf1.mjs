@@ -1356,11 +1356,11 @@ export default [
       await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
       if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'never reached the grid at ?test=grid'; }
       await h.press('#raceBtn');
       let racing = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { racing = true; break; } await h.wait(300); }
       if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return 'race never started on the upright phone'; }
       await h.page.setViewportSize({ width: 390, height: 844 }).catch(() => {});
       await h.wait(800);
@@ -1408,14 +1408,21 @@ export default [
   {
     id: 'tester-chk-f06', ask: 'Apex F1: pit-lane speed never exceeds 80 km/h from the entry line on (G-321)',
     test: async (page, h) => {
-      await h.eval(() => { location.href = location.pathname + '?test=grid'; });
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       await h.wait(1500);
       let grid = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
       if (!grid) return 'never reached the grid at ?test=grid';
-      await h.press('#raceBtn');
+      // G-353: the robot's page can be slow, so a single strict press may miss and
+      // the 12 s race-only wait can expire inside the lights phase (6 s of game
+      // time). Press until the menu leaves the grid, then wait twice as long for GO.
+      let leftGrid = false;
+      for (let p = 0; p < 3 && !leftGrid; p++) {
+        await h.press('#raceBtn').catch(() => {});
+        for (let i = 0; i < 10; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { leftGrid = true; break; } await h.wait(300); }
+      }
       let racing = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
       if (!racing) return 'race never started at ?test=grid';
       // build speed on the grid straight (adaptive: the slow local rig needs more wall time per game second), then jump to 550 m before the pit entry
       for (let i = 0; i < 120; i++) {

@@ -938,13 +938,20 @@ export default [
     id: "never-g-243-p1",
     ask: "NEVER (G-243): Landing challenge: touching down OFF the runway must tell the player why there is no score - the reason stays on screen while the jet sits in the grass, judged in game time",
     async test(page, h) {
-      // shared-page trap: an earlier test's flight hides the menu for good, so
-      // #btnChal can never be pressed again - reload to a known menu first
+      // shared-page trap (G-334): the test before this one leaves a ?test= URL behind
+      // (play-first-frame-safe navigates to ?test=controls and never comes back), and
+      // ANY ?test= value boots the game menu-hidden in free mode (the catch-all branch),
+      // so reloading the CURRENT url hides the menu and the #btnChal press silently
+      // fails - the touchdown then runs in free mode and no reason ever shows (the
+      // robot's exact red line on main b9f7978). Reload the BARE url so the menu opens.
       try {
-        const url = await h.eval(() => location.href);
+        const url = await h.eval(() => location.href.split('?')[0]);
         await page.goto(url, { waitUntil: 'load', timeout: 20000 });
         for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        const menuUp = await h.eval(() => !document.getElementById('startOv').hidden).catch(() => false);
         await h.press('#btnChal');
+        const engaged = menuUp && await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+        if (!engaged) return 'challenge menu did not engage after reload (test setup, not the game)';
       } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
@@ -1318,6 +1325,76 @@ export default [
             }
             return res(true);
           }, 1500);
+        });
+      });
+    },
+  },
+{
+    id: "play-g334-dirty-url-challenge",
+    ask: "G-334: after an earlier test leaves a ?test= URL behind, the challenge menu still engages and the off-runway reason shows and stays",
+    async test(page, h) {
+      // the suite-order trap itself: the previous test leaves ?test=controls behind.
+      // Settle the page first (the robot's suite runs the previous test on a booted
+      // page), then dirty the URL and prove the dirty boot committed - the free-mode
+      // catch-all hides the menu - before the fixed prelude recovers from it.
+      for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+      await h.eval(() => { location.href = location.href.split('?')[0] + '?test=controls'; return true; }).catch(() => {});
+      for (let i = 0; i < 20; i++) { await h.wait(400); const dirty = await h.eval(() => !!(window.__flight && document.getElementById('startOv').hidden)).catch(() => false); if (dirty) break; }
+      // shared-page trap (G-334): the test before this one leaves a ?test= URL behind
+      // (play-first-frame-safe navigates to ?test=controls and never comes back), and
+      // ANY ?test= value boots the game menu-hidden in free mode (the catch-all branch),
+      // so reloading the CURRENT url hides the menu and the #btnChal press silently
+      // fails - the touchdown then runs in free mode and no reason ever shows (the
+      // robot's exact red line on main b9f7978). Reload the BARE url so the menu opens.
+      try {
+        const url = await h.eval(() => location.href.split('?')[0]);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        const menuUp = await h.eval(() => !document.getElementById('startOv').hidden).catch(() => false);
+        await h.press('#btnChal');
+        const engaged = menuUp && await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+        if (!engaged) return 'challenge menu did not engage after reload (test setup, not the game)';
+      } catch (e) {}
+      await h.wait(400);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F) return 'no window.__flight hook';
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        // the tester's own setup: short final right of the centreline, a gentle touchdown in the grass
+        F.P.pos.set(30, 8, -350); F.P.vel.set(0, -1.8, 30);
+        F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.08; F.P.thr = 0.3; F.P.ground = false;
+        return new Promise((res) => {
+          let landedGt = null, sawReason = false;
+          const iv = setInterval(() => {
+            if (document.getElementById('crashOv').hidden === false) { clearInterval(iv); return res('plane crashed instead of landing gently in the grass'); }
+            if (!F.P.ground) {
+              const vs = F.P.vel.y;
+              if (vs < -2.3) F.P.pitch = Math.min(F.P.pitch + 0.03, 0.1);
+              else if (vs > -1.3) F.P.pitch = Math.max(F.P.pitch - 0.03, -0.3);
+            } else {
+              if (landedGt === null) {
+                landedGt = gt;
+                if (!document.getElementById('scoreOv').hidden) { clearInterval(iv); return res('off-runway touchdown scored (it should not)'); }
+                F.P.thr = 0; F.P.pitch = 0;   // pilot cuts power and sits in the grass
+              }
+              // The first frames after touchdown can still show the throttle hint
+              // ("FULL THROTTLE - BUILD SPEED") before the off-runway reason lands -
+              // grace of 0.3 game-s, then the reason must be up and STAY up while
+              // the jet sits in the grass (robot check 2026-10-23 11:09 PM: failed
+              // at 0.0 game-s on the hint).
+              const el = gt - landedGt;
+              const msg = document.getElementById('msg').textContent || '';
+              const hasReason = /off|runway|grass|no score/i.test(msg);
+              if (el >= 0.3) {
+                if (hasReason) { sawReason = true; if (el > 4.5) { clearInterval(iv); return res(true); } }
+                else if (sawReason) { clearInterval(iv); return res('the no-score reason blinked out ' + el.toFixed(1) + ' game-s after touchdown (msg: "' + msg + '")'); }
+                else if (el > 4.5) { clearInterval(iv); return res('the no-score reason never showed within 4.5 game-s of touchdown (msg: "' + msg + '")'); }
+              }
+            }
+            if (gt > 100) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'message never settled (game time)'); }   // game time ONLY (VP's alternative, 2026-10-23): a wall cap here was always tighter than the harness's own budget, so slow GPU-bound runs failed on the clock, not the game
+          }, 200);
         });
       });
     },

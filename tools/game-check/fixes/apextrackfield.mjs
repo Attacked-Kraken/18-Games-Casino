@@ -253,10 +253,23 @@ export default [
       if (!wc) return 'no wall check from the game (JOB J39 build missing)';
       if (!wc.start100) return 'at the 100m start the camera ends up behind a wall (in the stands) - clamp it inside the stadium';
       if (!wc.curve400) return 'on the 400m curve the camera ends up behind a wall - it must follow the lane and stay inside the stadium';
+      // G-335: the old loop counted EVERY camClear sample, including samples taken
+      // AFTER the race finished - when the camera is no longer the race camera but
+      // the rising results/ceremony camera, whose ray to the frozen runner crosses
+      // the stadium. That is what the robot measured (3 of 4 blocked; locally the
+      // same state gives 100m DONE 3 of 13 blocked while RUN is 0 of 32 and the
+      // whole 400m is 0 of 113). The rule is about the RACE camera, so only
+      // samples from a live (not finished) race count.
       const t0 = Date.now(); let seen = 0, blocked = 0;
       while (Date.now() - t0 < 15000 && seen < 4) {
-        const c = await h.eval(() => (window.__tf && window.__tf.camClear) ? window.__tf.camClear() : null);
-        if (c) { seen++; if (!c.clear) blocked++; }
+        const r = await h.eval(() => {
+          const tf = window.__tf; if (!tf) return null;
+          const e = tf.eng ? tf.eng() : null;
+          const c = tf.camClear ? tf.camClear() : null;
+          if (!c) return null;
+          return { clear: c.clear, racing: !!(e && !e.done) };
+        });
+        if (r && r.racing) { seen++; if (!r.clear) blocked++; }
         await h.wait(400);
       }
       if (seen && blocked) return 'the live race camera had a wall between it and the runner in ' + blocked + ' of ' + seen + ' samples';

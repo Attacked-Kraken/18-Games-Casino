@@ -55,6 +55,8 @@ jobs:
         run: node tools/sketchfab-fetch.mjs
       - name: Shrink + save
         if: github.event.inputs.clean == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           cat fetch-report.txt >> "$GITHUB_STEP_SUMMARY" || true
