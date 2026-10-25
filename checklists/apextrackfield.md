@@ -9,6 +9,6 @@
 - [x] T08 | Race times are shown to 0.01 s | SOURCE: rules/trackfield.md | NUMBERS: 0.01 s | MEASURE: read the results-screen time text of a sprint, two decimals | TEST: tester-chk-t08 | RESULT: OK (measured 09.05, two decimals)
 - [x] T09 | The shot put circle is 2.135 m across | SOURCE: venues/track.md | NUMBERS: 2.135 | MEASURE: circle mesh diameter, within 3% | TEST: tester-chk-t09 | RESULT: OK (measured 2.14 m, source 2.135 m, +0.23%)
 - [x] T10 | The shot put landing sector is 34.92 degrees | SOURCE: venues/track.md | NUMBERS: 34.92 | MEASURE: sector angle from the field-event markings, within 3% | TEST: tester-chk-t10 | RESULT: FOUND (test tester-chk-t10 fails: measured 68.75 degrees, source says 34.92 degrees)
-- [ ] T11 | The long jump runway is 40 m | SOURCE: venues/track.md | NUMBERS: 40 m | MEASURE: runway mesh length, within 3% | TEST: tester-chk-t11
+- [x] T11 | The long jump runway is 40 m | SOURCE: venues/track.md | NUMBERS: 40 m | MEASURE: runway mesh length, within 3% | TEST: tester-chk-t11 | RESULT: OK (measured 40 m)
 - [ ] T12 | The high jump bar is 2.0-2.4 m for men | SOURCE: REALITY.md | NUMBERS: 2.0-2.4 | MEASURE: bar height values offered in the men's high jump | TEST: tester-chk-t12
 - [ ] T13 | The pole vault pole is 4.5-5.2 m long | SOURCE: REALITY.md | NUMBERS: 4.5-5.2 | MEASURE: Box3 length of the pole in the pole vault, within 15% | TEST: tester-chk-t13
