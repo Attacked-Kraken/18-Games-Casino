@@ -56,6 +56,13 @@
       "why": "never-g-243-p1: the test judges the message in game time but stops after a fixed 28 s of WALL time (Date.now), which a slow runner day cannot meet; the test does not scale by window.__slow like the robot's other budgets. Robot side owns it; the test should use window.__slow (HELP line window 3, Oct 23 2026 8:44 PM).",
       "since": "2026-10-23",
       "until": "2026-10-29"
+    },
+    {
+      "game": "apextrackfield.html",
+      "match": "REALITY: wheels/feet/skates SINK into the ground",
+      "why": "Track & Field sprint feet read between -0.04 m and -0.10 m under the ground on main itself (two main checks, Oct 24), so the 20% of readings under -5 cm bar flips on noise: PR #1616 (throw attempts only) failed 5 of 24. Robot side: measure the posed sole, then re-set the bar.",
+      "since": "2026-10-24",
+      "until": "2026-10-28"
     }
   ],
   "_fixed_robot_side": [
