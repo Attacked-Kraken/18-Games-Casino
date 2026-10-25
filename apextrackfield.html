@@ -647,7 +647,7 @@ hint:'You run all four legs. In each 20m exchange zone tap ACTION to pass — cl
 hint:'Stride the run-up, tap ACTION on the board (over it = foul), then tap ACTION to set takeoff angle. 3 attempts.'},
 {id:'tj', name:'Triple Jump', eng:'triplejump', timed:false, ref:18.29,
 hint:'Hop, step, jump: three timed ACTION taps after takeoff. 3 attempts, best counts.'},
-{id:'hj', name:'High Jump', eng:'highjump', timed:false, ref:2.45, startH:1.70, stepH:0.05,
+{id:'hj', name:'High Jump', eng:'highjump', timed:false, ref:2.45, startH:2.00, stepH:0.05, maxH:2.40,
 hint:'Stride in, tap ACTION in the takeoff zone, then tap ACTION with the marker in the green to clear the bar. 3 misses ends it.'},
 {id:'pv', name:'Pole Vault', eng:'polevault', timed:false, ref:6.27, startH:4.00, stepH:0.10,
 hint:'Plant the pole, tap ACTION in the zone, then time the green window to clear. 3 misses ends it.'},
@@ -1340,7 +1340,7 @@ const pv = kind==='pv';
 const ZONE = pv ? [42.8, 45.2] : [12.8, 15.2];
 const RUNOUT = pv ? 45.8 : 15.6;
 const heights=[];
-for(let h=ev.startH; h<=ev.ref*1.03+0.001; h+=ev.stepH) heights.push(Math.round(h*100)/100);
+for(let h=ev.startH; h<=(ev.maxH||ev.ref*1.03)+0.001; h+=ev.stepH) heights.push(Math.round(h*100)/100); // G-326 (CHECKLIST T12): HJ heights capped at maxH (men 2.0-2.4 m); PV has no maxH so its cap is unchanged
 const E={
 ev, done:false, dq:false, pv, heights, hi:0, attLeft:3, best:-1,
 phase:'approach', r:newRunner(), marker:0, mdir:1, gw:0.08, msg:'', msgT:0,

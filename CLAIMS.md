@@ -311,3 +311,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-309 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-309-w4.md | build/g-309-apextrackfield - DONE PR #1659 merged e29691e8 |
 | G-316 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-316-w4.md | build/g-316-apextrackfield - DONE PR #1678 merged 3ce69239 |
 | G-314-w10 | window 10 | checklists/apextrackfield.md, jobs/G-314-w10.md | TEST G-314: checklist T11 OK (runway 40 m) |
+| G-326 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs, looks/apextrackfield.md, jobs/G-326-w4.md | build/g-326-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
