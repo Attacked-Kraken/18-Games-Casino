@@ -4,7 +4,7 @@
 # Keeps a single comment (marker <!-- check-status -->) and rewrites it in place, so a Muse reads ONE place:
 #   🤖 Check status: RUNNING / PASSED / FAILED + the reason lines. Needs GH_TOKEN and GITHUB_REPOSITORY.
 set -u
-PR="$1"; STATE="$2"; FILE="${3:-}"
+PR="$1"; STATE="$2"; FILE="${3:-}"; EVID="${4:-}"
 [ -n "$PR" ] && [ "$PR" != "null" ] || exit 0
 case "$STATE" in
   RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (about 8-10 min). Wait; do not re-ask to merge yet." ;;
@@ -19,6 +19,7 @@ esac
   echo
   echo "$WORDS"
   if [ -n "$FILE" ] && [ -s "$FILE" ]; then echo; echo "Reason:"; echo; sed 's/^/- /' "$FILE" | head -40; fi
+  if [ -n "$EVID" ] && [ -s "$EVID" ]; then echo; echo "<!-- evidence -->"; echo "### Evidence the robot saved"; echo; head -60 "$EVID"; fi
   echo
   echo "_Updated $(date -u +'%Y-%m-%d %H:%M UTC') · this one comment is rewritten every run - read it instead of check_runs._"
 } > /tmp/check-status.md
