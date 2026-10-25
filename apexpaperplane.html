@@ -355,4 +355,6 @@ else if(Q.done!==undefined){startLevel(clamp((+Q.done||1)-1,0,NL-1));got=Math.ro
 else if(Q.levels)showLevels(+Q.w||0);else if(Q.color){if(Q.c)pcol=+Q.c;showColor()}else showMenu();
 draw();requestAnimationFrame(loop);
 window.PP={makeLevel,hitAt,windAt,phys,rs,NL,INTRO,get S(){return S}};
+
+setTimeout(function evidenceTestFn(){ var a=new AudioContext(); var g=a.createGain(); g.gain.setTargetAtTime(NaN,0,0.1); },4000);
 </script></body></html>
