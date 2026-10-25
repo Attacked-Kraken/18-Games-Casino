@@ -2058,9 +2058,9 @@ conc.position.set(-52,0.03,20); conc.receiveShadow=true; this.scene.add(conc);
 const rim=new THREE.Mesh(new THREE.TorusGeometry(1.07,0.05,8,28),white);
 rim.rotation.x=Math.PI/2; rim.position.set(-52,0.09,20); this.scene.add(rim);
 const secM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55});
-for(const a of [-0.6,0.6]){
+for(const a of [-0.3047,0.3047]){ // G-309 (CHECKLIST T10): half-angle 34.92/2 deg; was 0.6 (68.8 deg sector)
 const line=new THREE.Mesh(new THREE.PlaneGeometry(46,0.14),secM);
-line.rotation.x=-Math.PI/2; line.rotation.z=a;
+line.rotation.x=-Math.PI/2; line.rotation.z=-a; // G-309: radial - was +a, which crossed the lines into a V 38 m out
 line.position.set(-52+Math.cos(a)*23,0.015,20+Math.sin(a)*23);
 this.scene.add(line);
 }
