@@ -3688,6 +3688,40 @@ export default [
     if (r.hSide < 1.55) return 'the glass along the SIDES is ' + r.hSide.toFixed(2) + ' m high - venues/rink.md: about 1.8 m along the sides'; // no upper bound: corner-segment verts classify as side verts, exactly as in the tester scan
     return true;
   }
+},
+{
+  id: 'never-g-343-p1',
+  ask: 'NEVER (G-343): on a sideways phone no button sits on top of another - in the portrait-held presentation (the stage rotates for landscape play) the VIEW button and the mute button must not overlap the joystick, and none of the three may overlap each other, so every button can be pressed',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    for (let i = 0; i < 24; i++) {
+      const st = await state();
+      if (st === 'play' || st === 'faceoff') break;
+      await h.eval(() => { const b = document.getElementById('playBtn'); if (b) b.click(); }).catch(() => {});
+      await h.wait(600);
+    }
+    const st = await state();
+    if (st !== 'play' && st !== 'faceoff') return 'could not open a match to check the button layout (state ' + st + ')';
+    try {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const r = await h.eval(() => {
+        const g = (id) => { const el = document.getElementById(id); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, w: b.width, h: b.height }; };
+        return { joy: g('joy'), mute: g('muteBtn'), view: g('viewBtn'), iw: innerWidth, ih: innerHeight };
+      }).catch(() => null);
+      if (!r || !r.joy || !r.mute || !r.view) return 'joystick, mute or view button not found on the portrait phone';
+      const ov = (a, b) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+      if (ov(r.view, r.joy) > 1) return 'on a sideways phone the VIEW button sits on the joystick (' + Math.round(ov(r.view, r.joy)) + ' px of overlap) - it cannot be pressed cleanly';
+      if (ov(r.mute, r.joy) > 1) return 'on a sideways phone the mute button sits on the joystick (' + Math.round(ov(r.mute, r.joy)) + ' px of overlap) - it cannot be pressed cleanly';
+      if (ov(r.view, r.mute) > 1) return 'on a sideways phone the VIEW and mute buttons sit on each other (' + Math.round(ov(r.view, r.mute)) + ' px of overlap)';
+      for (const [nm, b] of [['joystick', r.joy], ['mute button', r.mute], ['VIEW button', r.view]]) {
+        if (b.x < -1 || b.y < -1 || b.x + b.w > r.iw + 1 || b.y + b.h > r.ih + 1) return 'the ' + nm + ' hangs off the sideways phone screen (' + Math.round(b.x) + ',' + Math.round(b.y) + ' ' + Math.round(b.w) + 'x' + Math.round(b.h) + ' in ' + r.iw + 'x' + r.ih + ')';
+      }
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  }
 }
 
 ];
