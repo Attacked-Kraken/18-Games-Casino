@@ -164,7 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-351 | window 5 | tools/game-check/fixes/apexf1.mjs, jobs/G-351-w5.md, CLAIMS.md | build/g-351-apexf1 |
+| G-348 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025 |
 | G-328 | window 5 | checklists/apexf1.md, jobs/G-328-w5.md, CLAIMS.md | build/g-328-apexf1 |
 | G-291 | window 7 | jobs/G-291.md | test/g-291-apexbaseball |
 | G-290 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, looks/apexflight.md, jobs/G-290-w3.md | build/g-290-apexflight |
