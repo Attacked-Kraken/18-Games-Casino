@@ -3491,5 +3491,41 @@ async test(page, h) {
       if (Math.abs(len - 40) / 40 > 0.03) return 'the long jump runway mesh spans ' + len + ' m but venues/track.md says 40 m (G-316)';
       return true;
     }
+  },
+  {
+    id: 'tester-chk-t12',
+    mode: 't12',
+    ask: 'CHECKLIST T12 (G-326): the high jump bar is 2.0-2.4 m for men - REALITY.md. The bar height values offered in the men\'s high jump must all lie in 2.0-2.4 m.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'hj') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === 'High Jump'); if (b) b.click(); else { clearInterval(iv); res('no event button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 90) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the High Jump: ' + nav;
+      const m = await h.eval(() => {
+        const e = window.__tf.eng();
+        return { heights: e.heights || null };
+      }).catch(() => null);
+      if (!m || !m.heights || !m.heights.length) return 'no high jump heights offered (G-326)';
+      const bad = m.heights.filter(h => h < 2.0 || h > 2.4);
+      if (bad.length) return 'the men\'s high jump offers bar heights outside 2.0-2.4 m: ' + bad.join(',') + ' (full list ' + m.heights.join(',') + ') (G-326)';
+      return true;
+    }
   }
 ];
