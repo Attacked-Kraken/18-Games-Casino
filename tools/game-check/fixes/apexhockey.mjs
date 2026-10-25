@@ -3536,17 +3536,17 @@ export default [
     if ((await state()) !== 'play') return 'could not get a match into play to stage the crease crash';
     const unfreeze = () => h.eval(() => { for (const x of window.__hk.skaters) x.thinkT = 0.05; }).catch(() => {});
     const scoreH = () => h.eval(() => window.__hk.game.scoreH).catch(() => -1);
-    const stage = (crash) => h.eval((cr) => {
+    const stage = (crash, force) => h.eval((a) => {
       const hk = window.__hk, pk = hk.puck;
       const aG = hk.skaters.find(x => x.team === 'away' && x.goalie);
       const hC = hk.skaters.find(x => x.team === 'home' && x.role === 'C');
       hk.skaters.forEach(x => { x.thinkT = 999; x.vel.set(0, 0, 0); if (!x.goalie && x !== hC) { x.pos.set(x.team === 'home' ? -70 : 70, 0.1, 20); x.target.set(x.pos.x, 0, x.pos.z); } });
       aG.pos.set(87, 0.1, 0); aG.vel.set(0, 0, 0);
-      if (cr) { hC.pos.set(87, 0.1, 0.5); } else { hC.pos.set(-70, 0.1, 20); }
+      if (a.cr) { hC.pos.set(87, 0.1, 0.5); } else { hC.pos.set(-70, 0.1, 20); }
       hC.vel.set(0, 0, 0); hC.target.set(hC.pos.x, 0, hC.pos.z);
-      if (hk.game.state === 'play' && Math.abs(pk.pos.x) < 84) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
+      if ((a.force || hk.game.state === 'play') && Math.abs(pk.pos.x) < 84) { pk.owner = null; pk.shot = null; pk.recv = null; pk.deadT = 0; pk.lastTouch = 'home'; pk.pos.set(80, 0.06, 0); pk.vel.set(70, 0, 0); }
       return { state: hk.game.state, sH: hk.game.scoreH, px: pk.pos.x };
-    }, crash).catch(() => null);
+    }, { cr: crash, force: !!force }).catch(() => null);
     // phase A: attacker parked on the goalie - the shot must NOT count
     const sH0 = await scoreH();
     let arrived = false, counted = false;
@@ -3560,16 +3560,20 @@ export default [
     }
     if (counted) { await unfreeze(); return 'the goal counted with the home attacker parked on top of the away goalie inside the crease - the crease is not protected'; }
     if (!arrived) { await unfreeze(); return 'the crease-crash shot never reached the crease mouth - staging inconclusive, not a pass'; }
-    // settle back to play for the control
+    // settle back to play for the control - press a key while settling: the faceoff after the
+    // wave-off only drops once playerReady latches on input (the G-128 gate), and without a
+    // press this loop can sit out the whole whistle/faceoff in a slow suite context (G-349)
     const t2 = Date.now();
-    while (Date.now() - t2 < 20000) { if ((await state()) === 'play') break; await h.wait(500); }
+    while (Date.now() - t2 < 20000) { if ((await state()) === 'play') break; await page.keyboard.press('k').catch(() => {}); await h.wait(500); }
     if ((await state()) !== 'play') { await unfreeze(); return 'play did not resume after the waved-off goal - cannot run the clear-crease control'; }
-    // phase B: same shot, crease clear - the goal MUST count
+    // phase B: same shot, crease clear - the goal MUST count. Re-stage the shot
+    // UNCONDITIONALLY (G-349): the old state==='play' gate inside stage() could starve
+    // every 250 ms sample in a slow suite context, so the control shot never fired.
     const sH1 = await scoreH();
     let countedB = false;
     const t3 = Date.now();
     while (Date.now() - t3 < 10000) {
-      const r = await stage(false);
+      const r = await stage(false, true);
       if (!r) break;
       if (r.state === 'goal' || r.sH > sH1) { countedB = true; break; }
       await h.wait(250);
