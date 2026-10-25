@@ -317,3 +317,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-329 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-329-w4.md | build/g-329-apextrackfield - DONE (PR #1713 merged b051ca4c) |
 | G-335 | window 4 | tools/game-check/fixes/apextrackfield.mjs, jobs/G-335-w4.md | build/g-335-apextrackfield - DONE (PR #1724 merged 86f020cd) |
 | T-10-0503 | window 10 | jobs/T-10-0503.md, jobs/QUEUE.md, CLAIMS.md | test/t-10-0503 |
+| T-10-0654 | window 10 | jobs/T-10-0654.md, jobs/QUEUE.md (window 4), CLAIMS.md | test/t-10-0654 - TEST |
