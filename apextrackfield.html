@@ -1567,7 +1567,10 @@ if(this.ft>=this.fT) this.endAttempt();
 }else if(this.phase==='mark'){
 this.resT-=dt;
 if(this.resT<=0){
-if(this.attempt>=this.attMax){ this.done=true; this.finishT=0; }
+if(this.attempt>=this.attMax){
+if(this.attMax===3){ const rank=1+this.aiBest.filter(b=>b>this.best).length; if(rank<=8){ this.attMax=6; this.attempt++; this.reset(); } else { this.done=true; this.finishT=0; } } // G-289 r1: rules/trackfield.md - 3 attempts, plus 3 more for the top 8 (discus keeps its 1, G-25)
+else { this.done=true; this.finishT=0; }
+}
 else { this.attempt++; this.reset(); }
 }
 }
