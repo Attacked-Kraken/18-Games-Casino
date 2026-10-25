@@ -208,6 +208,7 @@
       <div style="margin-top:6px"><b>"Tokii Abyss GT.7 V12"</b> by Glas'kavin, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
       <div style="margin-top:6px"><b>"SHC MC Free Promotion Car"</b> by denniswoo1993, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
       <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, via Sketchfab. Used for city traffic cars.</div>
+      <div style="margin-top:6px"><b>"Car Wheel/Rim"</b> by jack.wake04, CC-BY 4.0, via Sketchfab. Used for the garage rim wheels.</div>
     </div>
     <div class="row"><button class="neo alt" id="crBack">Back</button></div>
   </div>
@@ -326,6 +327,9 @@ for (const k of Object.keys(GLB_MODELS)) {
   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
   for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
 }
+/* G-345 fix 1: the real garage wheel (Car Wheel/Rim by jack.wake04, CC-BY 4.0, fetched by the robot) - preloaded like the cars; its raw file stands 109 m tall with the axle on X, the game wrapper normalizes it per hub */
+let rimTpl = null, rimDia0 = 1, rimWid0 = 1; const rimCtr = new THREE.Vector3();
+for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } }
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -1216,33 +1220,31 @@ function makeGlbCar(id, cfg, o = {}) {
       if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
     }
 
-    const rimTex = (style, col, cal) => ctex(256, 256, (g) => {
-      g.clearRect(0, 0, 256, 256);
-      const cx = 128, cy = 128;
-      g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 126, 0, TAU); g.fill();
-      g.strokeStyle = col; g.lineWidth = 7; g.beginPath(); g.arc(cx, cy, 118, 0, TAU); g.stroke();
-      g.fillStyle = cal; g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, 104, -2.25, -1.35); g.closePath(); g.fill(); /* the caliper, behind the spokes */
-      g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 100, 0, TAU); g.fill();
-      g.fillStyle = col; g.strokeStyle = col;
-      const spoke = (a, w2, r0, r1) => { g.save(); g.translate(cx, cy); g.rotate(a); g.fillRect(r0, -w2 / 2, r1 - r0, w2); g.restore(); };
-      if (style === 1) { for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; spoke(a - 0.10, 13, 26, 112); spoke(a + 0.10, 13, 26, 112); } }
-      else if (style === 2) { for (let i = 0; i < 12; i++) { const a = i / 12 * TAU; g.save(); g.translate(cx, cy); g.rotate(a); g.beginPath(); g.moveTo(24, -7); g.quadraticCurveTo(80, -26, 112, -4); g.lineTo(112, 10); g.quadraticCurveTo(78, -8, 24, 8); g.closePath(); g.fill(); g.restore(); } }
-      else if (style === 3) { g.lineWidth = 16; g.beginPath(); g.arc(cx, cy, 96, 0, TAU); g.stroke(); for (let i = 0; i < 5; i++) spoke(i / 5 * TAU, 24, 20, 92); }
-      else if (style === 4) { g.lineWidth = 5; for (let i = 0; i < 10; i++) { spoke(i / 10 * TAU, 5, 18, 114); spoke(i / 10 * TAU + 0.31, 5, 18, 114); } }
-      else if (style === 5) { g.beginPath(); g.arc(cx, cy, 112, 0, TAU); g.fill(); g.fillStyle = '#101114'; for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; g.beginPath(); g.arc(cx + Math.cos(a) * 68, cy + Math.sin(a) * 68, 21, 0, TAU); g.fill(); } g.fillStyle = col; }
-      else { for (let i = 0; i < 5; i++) spoke(i / 5 * TAU, 30, 22, 112); }
-      g.beginPath(); g.arc(cx, cy, 27, 0, TAU); g.fill(); g.fillStyle = '#101114'; g.beginPath(); g.arc(cx, cy, 10, 0, TAU); g.fill();
-    }, true);
-    const faceMat = new THREE.MeshStandardMaterial({ map: rimTex(clamp(cfg.rim || 0, 0, 5), cfg.rimCol || '#c9cdd6', cfg.cal || '#e01b2b'), metalness: 0.75, roughness: 0.34 });
-    ownMats.push(faceMat);
+    const latheMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.85, roughness: 0.3 });
+    ownMats.push(latheMat);
     const carbon = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.42, metalness: 0.6 });
     ownMats.push(carbon);
     for (const hb of hubs) {
       const fr = hb.h / 2 * 0.68;
-      const disc = new THREE.Mesh(new THREE.CircleGeometry(fr, 28), faceMat);
-      disc.position.set(hb.x, hb.y, hb.z + Math.sign(hb.z) * (hb.w / 2 + 0.008));
-      if (hb.z < 0) disc.rotation.y = Math.PI;
-      disc.userData.acc = 'rimface'; tilt.add(disc);
+      let rimDone = false;
+      if (rimTpl) { /* G-345 fix 1: the fetched real wheel, normalized to this hub with its axle turned flat onto Z; exactly one mesh per wheel carries the rimface tag */
+        const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h / rimDia0;
+        cl.rotation.y = th; cl.scale.setScalar(sc2);
+        cl.position.copy(rimCtr.clone().multiplyScalar(-sc2).applyEuler(new THREE.Euler(0, th, 0)));
+        const wrap = new THREE.Group(); wrap.add(cl);
+        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5);
+        wrap.position.set(hb.x, hb.y, hb.z);
+        let best = null, bestA = -1;
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const cc = q.material.color; if (cc && (0.2126 * cc.r + 0.7152 * cc.g + 0.0722 * cc.b) > 0.18) cc.set(cfg.rimCol || '#c9cdd6'); if ((q.material.metalness || 0) < 0.55) q.material.metalness = 0.55; const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+      }
+      if (!rimDone) { /* fallback if the fetched wheel ever fails to load: a lathe-turned rim with a real barrel and dish - still never a flat sticker */
+        const w2 = Math.max(0.07, hb.w * 0.32), pts = [];
+        for (const [rr, yy] of [[0.03, -0.5], [0.86, -0.5], [0.99, -0.3], [1.0, -0.16], [0.62, -0.05], [0.58, 0.06], [0.97, 0.22], [1.0, 0.38], [0.9, 0.5], [0.3, 0.5]]) pts.push(new THREE.Vector2(Math.max(0.021, rr * fr), yy * w2));
+        const lat = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), latheMat);
+        lat.rotation.x = Math.PI / 2; lat.position.set(hb.x, hb.y, hb.z);
+        lat.userData.acc = 'rimface'; tilt.add(lat);
+      }
       const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.5, fr * 0.72, 0.05), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
       cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (hb.w / 2 - 0.02));
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);

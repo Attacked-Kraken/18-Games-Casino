@@ -1214,4 +1214,37 @@ export default [
       return fail || true;
     },
   },
+  {
+    id: 'never-g-345-p1',
+    cat: 'never',
+    name: 'garage rims are never a flat sticker: real 3D rim geometry with depth on every wheel (G-345)',
+    ask: "owner 2026-10-25: 'rims look small and fake, just like a sticker with all options' - every rim face must be real 3D geometry: at least 300 vertices of spoke/barrel geometry and at least 0.03 m of depth per wheel, never a zero-thickness drawn disc (today's build: 30 vertices, 0.000 m thick)",
+    async test(page, h) {
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        const prev = E.R;
+        E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3);
+        for (let i = 0; i < 80; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+        if (!E.R || !E.R.P || !E.R.P.car) return 'no race';
+        const car = E.R.P.car; car.root.updateMatrixWorld(true);
+        const faces = [];
+        car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const g = q.geometry; g.computeBoundingBox(); const bb = g.boundingBox, e = q.matrixWorld.elements; const ext = { x: [1e9, -1e9], y: [1e9, -1e9], z: [1e9, -1e9] };
+          for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) { const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; ext.x = [Math.min(ext.x[0], wx), Math.max(ext.x[1], wx)]; ext.y = [Math.min(ext.y[0], wy), Math.max(ext.y[1], wy)]; ext.z = [Math.min(ext.z[0], wz), Math.max(ext.z[1], wz)]; }
+          const dims = [ext.x[1] - ext.x[0], ext.y[1] - ext.y[0], ext.z[1] - ext.z[0]].sort((a, b) => a - b);
+          faces.push({ thick: +dims[0].toFixed(3), dia: +dims[2].toFixed(3), verts: g.attributes.position.count }); } });
+        if (E.R) E.R.on = false;
+        return JSON.stringify(faces);
+      });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.length < 4) return 'only ' + d.length + '/4 rim faces on the car';
+      const flat = d.find((f) => f.thick < 0.03);
+      if (flat) return 'a rim face is a flat sticker: ' + flat.thick + ' m thick (real 3D rim depth is >= 0.03 m)';
+      const drawn = d.find((f) => f.verts < 300);
+      if (drawn) return 'a rim face is a drawn disc: ' + drawn.verts + ' vertices (real spoke geometry is >= 300)';
+      const small = d.find((f) => f.dia < 0.5);
+      if (small) return 'a rim face is too small: ' + small.dia + ' m across the wheel';
+      return true;
+    },
+  },
 ];
