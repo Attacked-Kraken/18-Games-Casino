@@ -338,3 +338,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: OWNER - made for the owner
 - downloaded: 2026-10-21, sent by the owner
 - used in: apexflight.html (to replace the old plane, jobs G-89 + G-90)
+
+## ASSET: models/fetched/car-wheelrim-f6f260.glb
+- title: Car Wheel/Rim
+- maker: jack.wake04
+- source: https://sketchfab.com/3d-models/car-wheelrim-f6f2600358744d928f9b6afc4aabc004
+- license: CC-BY 4.0
+- downloaded: 2026-10-25 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "jack.wake04" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
