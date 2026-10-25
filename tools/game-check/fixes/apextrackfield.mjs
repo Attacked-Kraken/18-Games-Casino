@@ -3397,5 +3397,50 @@ async test(page, h) {
       if (Math.abs(m.mean - 30) / 30 > 0.03) return 'the relay changeover zone markings span ' + m.mean + ' m on average (' + m.n + ' lane strips) but rules/trackfield.md says 30 m (G-289 r1)';
       return true;
     }
+  },
+  {
+    id: 'tester-chk-t10',
+    mode: 't10',
+    ask: 'CHECKLIST T10 (G-309): the shot put landing sector is 34.92 degrees - venues/track.md. The sector angle from the field-event markings must be within 3% of 34.92 deg.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let m = null;
+      for (let w = 0; w < 60; w++) {
+        m = await h.eval(() => {
+          try {
+            const tf = window.__tf; if (!tf) return null;
+            const rigs = tf.rigs() || [];
+            let scene = null;
+            for (const r of rigs) { const g = r.group || (r.h && r.h.object) || r.object || null; if (g && !scene) { let o = g; while (o.parent) o = o.parent; scene = o; } }
+            if (!scene) return null;
+            const lines = [];
+            scene.traverse(o => {
+              if (!o.isMesh || !o.geometry) return;
+              const p = o.geometry.parameters || {};
+              if (o.geometry.type !== 'PlaneGeometry') return;
+              if (Math.abs(p.width - 46) > 0.01 || Math.abs(p.height - 0.14) > 0.01) return;
+              const dx = o.position.x - (-52), dz = o.position.z - 20;
+              if (Math.hypot(dx, dz) > 30) return;
+              o.updateWorldMatrix(true, false);
+              const e = o.matrixWorld.elements;
+              const lx = e[0], lz = e[2], ll = Math.hypot(lx, lz);
+              lines.push([lx / ll, lz / ll]);
+            });
+            if (lines.length !== 2) return { n: lines.length };
+            const d = Math.max(-1, Math.min(1, lines[0][0] * lines[1][0] + lines[0][1] * lines[1][1]));
+            return { angle: +(Math.acos(d) * 180 / Math.PI).toFixed(2) };
+          } catch (e) { return { err: e.message }; }
+        }).catch(() => null);
+        if (m && (m.angle != null || m.n != null || m.err)) break;
+        await h.wait(500);
+      }
+      if (!m) return 'no throw-sector scene found after reload (G-309)';
+      if (m.err) return 'sector measurement threw: ' + m.err;
+      if (m.n != null) return 'expected 2 shot-put sector lines, found ' + m.n + ' (G-309)';
+      if (Math.abs(m.angle - 34.92) / 34.92 > 0.03) return 'the shot put landing sector spans ' + m.angle + ' deg but venues/track.md says 34.92 deg (G-309)';
+      return true;
+    }
   }
 ];
