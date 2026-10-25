@@ -356,13 +356,36 @@ export default [
     id: 'portrait-fills-screen',
     ask: 'Held upright the game fills the WHOLE screen sideways (the robot fails under 90%)',
     async test(page, h) {
+      // G-329: the old test read fill() once, 900 ms after resizing, and trusted
+      // that reading - on a slow runner the resize had not registered yet, so it
+      // reported landscape viewport values (844x390) as the upright state and
+      // failed a correct game. Worse, fill().cov is bounding-rect AREA, which is
+      // 1.0 even for an un-rotated canvas - so the old test passed the very
+      // state it should fail. This version proves the rule properly: it waits
+      // until the viewport really is 390x844, then measures CLIPPED overlap
+      // (rotation-aware) plus the turned-box renderer size.
       await page.setViewportSize({ width: 390, height: 844 });
-      await h.wait(900);
-      const f = await h.eval(() => (window.__tf && window.__tf.fill) ? window.__tf.fill() : null);
+      let settled = false;
+      for (let i = 0; i < 20; i++) {
+        settled = await h.eval(() => window.innerWidth === 390 && window.innerHeight === 844).catch(() => false);
+        if (settled) break;
+        await h.wait(500);
+      }
+      const f = await h.eval(() => {
+        const tf = window.__tf; if (!tf || !tf.fill) return null;
+        const c = document.getElementById('game'); if (!c) return null;
+        const r = c.getBoundingClientRect();
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const ix = Math.max(0, Math.min(r.right, vw) - Math.max(r.left, 0));
+        const iy = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+        const rep = tf.fill();
+        return { overlap: (ix * iy) / (vw * vh), W: rep.W, H: rep.H, iw: vw, ih: vh, rotated: getComputedStyle(document.body).transform !== 'none' };
+      }).catch(() => null);
       await page.setViewportSize({ width: 844, height: 390 });
       await h.wait(400);
+      if (!settled) return 'upright viewport never applied after resize (harness) - the fill rule cannot be proven from a landscape viewport (G-329)';
       if (!f) return 'no fill report from the game (JOB J39 build missing)';
-      if (f.cov < 0.9) return 'held upright the game fills only ' + Math.round(f.cov * 100) + '% of the screen - wants the WHOLE screen (90%+)';
+      if (f.overlap < 0.9) return 'held upright the game fills only ' + Math.round(f.overlap * 100) + '% of the screen - wants the WHOLE screen (90%+)' + (f.rotated ? '' : ' (page un-rotated)');
       if (f.W !== f.ih || f.H !== f.iw) return 'the renderer is sized ' + f.W + 'x' + f.H + ' in an upright ' + f.iw + 'x' + f.ih + ' viewport - it must be sized to the turned (sideways) box ' + f.ih + 'x' + f.iw;
       return true;
     },
