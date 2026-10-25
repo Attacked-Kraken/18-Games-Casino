@@ -1,4 +1,10 @@
-# UNIVERSAL.md - lessons every Muse follows (builders 1-6, testers 7-10)
+# UNIVERSAL.md - everything the Muses say will help them (builders 1-6, testers 7-10)
+
+## How this list works
+- It is YOUR list. Every rule here came from a window saying what would have saved it time.
+- Got a tip, lesson or missing tool that would help every Muse? Write one line in your chat: `IDEA: <what would help>`. The Mac reads your chat (any wording works, `IDEA:` is just the surest), separates ideas from problems, and a Claude checks it and adds it here the same day.
+- Stuck or worried about something? That is a problem, not an idea: write `HELP-MAC: <file>, <line>, <number you verified>, <decision needed>` (or a HELP-VP line). Problems get answered; ideas get filed.
+- Read this list with LESSONS.md and your game's short list before every job. Once a rule is here it stays - nobody removes one unless the owner says.
 
 One list for ALL windows. When any window teaches the factory something, it is added here the same day. Read it with the short list and LESSONS.md before a job.
 
