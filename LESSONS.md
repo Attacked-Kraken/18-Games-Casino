@@ -213,3 +213,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-25 help desk
 - A Mac order can arrive twice and name two report filenames (jobs/G-NN.md and jobs/G-NN-wN.md). Do the job once; the report file that counts is the window's own jobs/G-NN-w<window>.md.
+
+## 2026-10-25 help desk (2)
+- A play test that sets `location.href` inside `h.eval` must end the call with `.catch(() => {})` - the navigation kills the page context and the test reports "Execution context was destroyed" as a game failure. Any helper a test calls (g265PortraitOverlaps) must be defined in the same fixes file; the robot shows "X is not defined" as a red line against the game.
