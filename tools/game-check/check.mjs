@@ -245,6 +245,31 @@ for (const g of games) {
   page.on('request', q => { const u = q.url(); if (/^(https?|wss?):/i.test(u) && !u.startsWith(base)) { try { outside.add(new URL(u).host); } catch (e) { outside.add(u.slice(0, 60)); } } });
   page.on('response', res => { bytes += +(res.headers()['content-length'] || 0); });
   page.on('pageerror', e => errors.add(String(e.message).split('\n')[0].slice(0, 140)));
+  // owner Oct 24 2026 9:12 PM (window 6 spent an hour re-creating #1614's script error by hand): on the FIRST script error the robot keeps
+  // the evidence - full stack (file, line, function), the last 20 console lines, and 3 pictures (just before / at / just after).
+  // Saved to <out>/evidence/<game>/ ; the check job pushes it to the pr-evidence branch and the Check status comment links it.
+  const consoleTail = []; let lastFrame = null, frameBusy = false, evidenceDone = false;
+  page.on('console', m => { consoleTail.push(m.type() + ': ' + m.text().replace(/\s+/g, ' ').slice(0, 220)); if (consoleTail.length > 20) consoleTail.shift(); });
+  const frameTimer = setInterval(async () => {   // a small picture every 2 s, so "just before" exists when the error comes
+    if (frameBusy || evidenceDone) return; frameBusy = true;
+    try { lastFrame = await page.screenshot({ timeout: 4000, type: 'jpeg', quality: 45 }); } catch (e) {}
+    frameBusy = false;
+  }, 2000); frameTimer.unref();
+  page.on('pageerror', async e => {
+    if (evidenceDone) return; evidenceDone = true; clearInterval(frameTimer);
+    try {
+      const dir = path.join(out, 'evidence', slug); fs.mkdirSync(dir, { recursive: true });
+      const stack = String(e.stack || e.message || e).split('\n').slice(0, 14).map(x => x.slice(0, 220));
+      const top = (stack.find(x => /\.(html|js|mjs):\d+/.test(x)) || '').match(/([^\s()]+\.(?:html|js|mjs)):(\d+)(?::(\d+))?/);
+      const info = { game: g.file, message: String(e.message).split('\n')[0].slice(0, 300), stack, file: top ? top[1].replace(base, '') : '', line: top ? +top[2] : 0, col: top && top[3] ? +top[3] : 0, console: consoleTail.slice(), pics: {}, at: new Date().toISOString() };
+      if (lastFrame) { fs.writeFileSync(path.join(dir, 'before.jpg'), lastFrame); info.pics.before = 'before.jpg'; }
+      try { fs.writeFileSync(path.join(dir, 'at.jpg'), await page.screenshot({ timeout: 5000, type: 'jpeg', quality: 62 })); info.pics.at = 'at.jpg'; } catch (x) {}
+      await new Promise(rs => setTimeout(rs, 1500));
+      try { fs.writeFileSync(path.join(dir, 'after.jpg'), await page.screenshot({ timeout: 5000, type: 'jpeg', quality: 62 })); info.pics.after = 'after.jpg'; } catch (x) {}
+      fs.writeFileSync(path.join(dir, 'error.json'), JSON.stringify(info, null, 1));
+      r.errorEvidence = { file: info.file, line: info.line };
+    } catch (x) { console.log('::warning title=error-evidence::' + String(x).slice(0, 160)); }
+  });
   const shaderErr = new Set();   // a broken shader hides every model that uses it (Oct 16: invisible hockey players)
   page.on('console', m => { const t = m.text(); if (m.type() === 'error' && /Shader Error|shader is not compiled|Program Info Log/i.test(t)) shaderErr.add(t.replace(/\s+/g, ' ').slice(0, 120)); });
   const aborted = new Set();
@@ -600,6 +625,7 @@ for (const g of games) {
   for (const e of [...shaderErr].slice(0, 2)) r.fail.push('Broken 3D shader (models using it are invisible): ' + e);
   // owner Oct 19 9:53 PM: a script error (the red "Game error caught" bar on his phone) BLOCKS the merge - only NEW ones a PR
   // brings (errors main already has don't block; see STRICT below). The laptop tells that Muse the error line.
+  clearInterval(frameTimer);
   for (const e of [...errors].slice(0, 4)) r.fail.push('Script error: ' + e + ' - fix it before merging (this is the red "Game error caught" bar on the phone)');
   } catch (e) {
     r.fail.push('The game froze the phone - the robot could not finish checking it (' + String(e.message || e).split('\n')[0].slice(0, 90) + ')');
