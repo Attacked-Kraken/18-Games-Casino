@@ -3,7 +3,7 @@
 Builder window 5, G-286 (Oct 24 2026). One measurable item per line, numbers word for word from the source file.
 Units: game distances are metres, speeds are m/s; convert m/s to km/h (x 3.6) for the pit-lane item.
 
-- [ ] F01 | The grid is 2 by 2, staggered, fastest lap first | SOURCE: rules/f1.md | NUMBERS: 2 by 2, staggered, fastest lap first | MEASURE: at the grid, carMesh trackPos shows cars in 2 lateral columns, staggered rows, ordered by qualifying time | TEST: tester-chk-f01
+- [x] F01 | The grid is 2 by 2, staggered, fastest lap first | SOURCE: rules/f1.md | NUMBERS: 2 by 2, staggered, fastest lap first | MEASURE: at the grid, carMesh trackPos shows cars in 2 lateral columns, staggered rows, ordered by qualifying time | TEST: tester-chk-f01 | RESULT: OK (2 columns at d -3.2 and 3.2, 20 cars in 8 m stagger steps, grid list times 1:37.454 to 1:39.429 strictly ascending, P1 frontmost)
 - [ ] F02 | The start shows 5 red lights one by one, then all go out for GO | SOURCE: rules/f1.md | NUMBERS: 5 red lights, one by one, GO | MEASURE: #lights .light red count climbs to 5, then all out with green and race mode starts | TEST: tester-chk-f02
 - [ ] F03 | Moving before the lights go out is a jump start worth a 5-second penalty | SOURCE: rules/f1.md | NUMBERS: 5-second penalty, jump start | MEASURE: move during the lights phase, then penState() shows the penalty | TEST: tester-chk-f03
 - [ ] F04 | Race track limits: a warning then a 5-second penalty for all 4 wheels over the white line while gaining time | SOURCE: rules/f1.md | NUMBERS: all 4 wheels, 5-second penalty | MEASURE: sustained off-road running in the race drives penState() warnings 1/3, 2/3, then penalty 5 | TEST: tester-chk-f04
