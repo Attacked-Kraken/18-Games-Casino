@@ -3450,4 +3450,46 @@ async test(page, h) {
         return true;
       }
   },
+  {
+    id: 'tester-chk-t11',
+    mode: 't11',
+    ask: 'CHECKLIST T11 (G-316): the long jump runway is 40 m - venues/track.md. The runway mesh length must be within 3% of 40 m.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let m = null;
+      for (let w = 0; w < 60; w++) {
+        m = await h.eval(() => {
+          try {
+            const tf = window.__tf; if (!tf) return null;
+            const rigs = tf.rigs() || [];
+            let scene = null;
+            for (const r of rigs) { const g = r.group || (r.h && r.h.object) || r.object || null; if (g && !scene) { let o = g; while (o.parent) o = o.parent; scene = o; } }
+            if (!scene) return null;
+            const found = [];
+            scene.traverse(o => {
+              if (!o.isMesh || !o.geometry) return;
+              const p = o.geometry.parameters || {};
+              if (o.geometry.type !== 'BoxGeometry') return;
+              if (Math.abs(p.height - 0.08) > 0.01 || Math.abs(p.depth - 1.4) > 0.01) return;
+              o.updateWorldMatrix(true, false);
+              const wz = o.matrixWorld.elements[14];
+              if (Math.abs(wz - 8) > 0.5) return;
+              found.push(+p.width.toFixed(2));
+            });
+            return { n: found.length, lens: found };
+          } catch (e) { return { err: e.message }; }
+        }).catch(() => null);
+        if (m && (m.n != null || m.err)) break;
+        await h.wait(500);
+      }
+      if (!m) return 'no long-jump runway scene found after reload (G-316)';
+      if (m.err) return 'runway measurement threw: ' + m.err;
+      if (m.n !== 1) return 'expected 1 long-jump runway strip, found ' + m.n + ' (G-316)';
+      const len = m.lens[0];
+      if (Math.abs(len - 40) / 40 > 0.03) return 'the long jump runway mesh spans ' + len + ' m but venues/track.md says 40 m (G-316)';
+      return true;
+    }
+  }
 ];
