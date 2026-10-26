@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 2,
+  "tris": 89923,
+  "size": [
+   0.68,
+   0.68,
+   0.184
+  ],
+  "mainSize": [
+   0.68,
+   0.68,
+   0.184
+  ],
+  "stray": 1,
+  "bytes": 2255708
+ },
+ "pictures": [
+  {
+   "pic": "smokehaus-racing-turbine-m2-alloy--800149-front.jpg",
+   "pct": 29.1
+  },
+  {
+   "pic": "smokehaus-racing-turbine-m2-alloy--800149-side.jpg",
+   "pct": 12
+  },
+  {
+   "pic": "smokehaus-racing-turbine-m2-alloy--800149-back.jpg",
+   "pct": 28.7
+  },
+  {
+   "pic": "smokehaus-racing-turbine-m2-alloy--800149-top.jpg",
+   "pct": 21.2
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-26T12:44:00.746Z"
+}
