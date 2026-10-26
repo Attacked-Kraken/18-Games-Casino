@@ -56,6 +56,6 @@ jobs:
         run: |
           git config user.name "model audit robot"; git config user.email "actions@users.noreply.github.com"
           D=$(mktemp -d); cp audit.md audit.json "$D"/
-          cd "$D" && git init -q && git checkout -q -b model-audit && git add -A && git commit -qm "model audit $(date -u +%F)" 
+          cd "$D" && git init -q && git config user.name "model audit robot" && git config user.email "actions@users.noreply.github.com" && git checkout -q -b model-audit && git add -A && git commit -qm "model audit $(date -u +%F)" 
           git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
           git push -q -f origin model-audit
