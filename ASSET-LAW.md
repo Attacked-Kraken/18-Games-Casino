@@ -5,7 +5,7 @@ owner's approved list of FREE sources below. This is the law for every
 worker on this repo, for every game, no exceptions. If it is not on
 this list, do not use it.
 
-## Approved sources (all free, CC0)
+## Approved sources (all free, CC0 - 3D models and textures may also be CC-BY, see Part III)
 
 - **Quaternius** — our core library: characters, rigs, animations,
   props. (Already in this repo under `characters/`; full packs live in
@@ -30,7 +30,8 @@ whole point of the list.
 
 **No copyrighted material goes into these games. Ever.** Every asset
 must be copyright-free — CC0 / public domain, where the creator has
-given up the copyright entirely. If an asset carries a copyright (a ©
+given up the copyright entirely. (One exception, owner Oct 16: 3D models and
+textures may be CC-BY 3.0/4.0 with credit - Part III.) If an asset carries a copyright (a ©
 notice, "all rights reserved", an attribution-required license, a
 "free download" that keeps the creator's rights), it does not go in,
 whatever it looks like. When in doubt, leave it out and pick the CC0
@@ -38,9 +39,13 @@ equivalent from the approved list.
 
 ## NOT approved
 
-- **Sketchfab, Mixamo, TurboSquid** — skipped. License terms vary per
-  model there and some forbid use inside a paid app. Do not pull from
-  them, even when a single model looks "free".
+- **Mixamo, TurboSquid** — skipped. License terms vary per model there
+  and some forbid use inside a paid app. Do not pull from them, even
+  when a single model looks "free".
+- **Sketchfab** — NOT a blanket ban any more: only a model whose page shows
+  "CC Attribution" (or CC0) AND a Download button from the maker, fetched by
+  the fetch robot under Part III. A model that is merely "free" is not enough;
+  NC / ND / SA licenses never.
 - Anything ripped, leaked, scraped or paid. Anything whose license you
   have not actually read.
 
