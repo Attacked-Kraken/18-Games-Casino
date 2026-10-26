@@ -4,23 +4,27 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1264 lines)
-- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; THR button in the pad row, tall slider gone, G-280; QUALITY button ~113; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27 (centered chip under the runway box, G-283), HTML ~101, G-263): 1–154
-- Imports, helpers, constants, state (offRwyMsg flag ~187; peakAir ~185, G-232 r1): 155–191
-- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 192–500
-- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~529): 501–542
-- HUD artificial horizon: 543–566 · Messages: 567–571
-- Game flow (respawn ~572, crash, touchdown/scoring): 572–630
-- Input — keyboard (pollKeys ~643): 631–655 · Jet controls: pad + SHARED kit stick + THR button in the pad row (G-280); resetInputs 745 (blur / touchcancel / hidden zero every input, G-238): 656–754
-- Buttons / view toggle: 755–776 · Play a Friend codes (friendCode ~777): 777–804 · fitGame ~805: 805–825
-- Physics (step ~826; lift/stall, airbrake in the forces block; peakAir arms the gear-collapse check, G-232 r1): 826–939
-- Camera (step-5 offsets + sun follow): 940–971 · HUD update (off-runway reason re-assert; touchdown band block ~1014, G-263/G-268): 972–1024 · Music (procedural WebAudio): 1025–1145
-- QUALITY option wiring (~1149) · Test hooks (`__flight` 1164 incl. aiJets, `__reality` 1176 - traffic as others): 1146–1205
-- Main loop (kit axes merge ~1218; updateTraffic ~1233; ?test= owner-check hook 1249, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1206–1264
+## WHERE THINGS ARE — `apexflight.html` (1297 lines)
+- Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; THR lever left of the pad (owner 2026-10-25), tall slider gone, G-280; QUALITY button ~113; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27 (centered chip under the runway box, G-283), HTML ~101, G-263): 1–160
+- Imports, helpers, constants, state (offRwyMsg flag ~192; peakAir ~190, G-232 r1): 161–196
+- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 197–505
+- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~534): 506–547
+- HUD artificial horizon: 548–571 · Messages: 572–576
+- Game flow (respawn ~577, crash, touchdown/scoring): 577–635
+- Input — keyboard (pollKeys ~648): 636–660 · Jet controls: pad + SHARED kit stick + THR lever left of the pad (owner 2026-10-25); resetInputs 780 (blur / touchcancel / hidden zero every input, G-238): 661–789
+- Buttons / view toggle: 790–811 · Play a Friend codes (friendCode ~812): 812–839 · fitGame ~840: 840–860
+- Physics (step ~861; lift/stall, airbrake in the forces block; peakAir arms the gear-collapse check, G-232 r1): 861–974
+- Camera (step-5 offsets + sun follow): 975–1006 · HUD update (off-runway reason re-assert; touchdown band block ~1049, G-263/G-268): 1007–1059 · Music (procedural WebAudio): 1060–1180
+- QUALITY option wiring (~1184) · Test hooks (`__flight` 1198 incl. aiJets, `__reality` 1210 - traffic as others): 1181–1240
+- Main loop (kit axes merge ~1251; updateTraffic ~1264; ?test= owner-check hook 1283, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1240–1297
+
+Throttle lever (owner 2026-10-25, no job number): the throttle is a visible vertical lever, not buttons - a track left of the pad, exactly the pad's height, 14 px clear of it, so it overlaps nothing (G-280: the old tall slider covered GEAR/PAINT/LOOP). Drag up = more throttle, drag down = less, the handle shows the live %. The pack's THR + / THR - buttons stay in the DOM for the robot's checks but are hidden from the player (visibility:hidden keeps the pad grid's layout); R/F keys still ramp and the lever follows. Tests: play-throttle-lever (new), play-jet-controls (12 buttons + lever), play-controls-answer-in-100ms (lever sections).
+
+Manual takeoff (owner 2026-10-25, no job number): the plane must never lift by itself - throttle starts at idle on respawn (was forced full), the auto-rotate assist is gone, and the nose answers to the stick only once fast, so full throttle + no stick stays on the ground past rotate speed and pulling the stick up lifts it off. Help text updated to match. Test: play-takeoff (rewritten: starts-at-idle + stays-grounded-past-rotate + stick-lifts-off).
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
-its 14-button pad. Let go = stop is the kit's: pointerup / pointercancel / blur /
+its 14-button pad (THR + / THR - hidden on this page, replaced by the THR lever). Let go = stop is the kit's: pointerup / pointercancel / blur /
 hidden tab all reset it (play test play-stick-shared-resets).
 
 Computer traffic (G-247): four pack jets (delta/Inferno, fwdswept/Arctic,
@@ -63,7 +67,22 @@ resetInputs (play test play-stick-never-stays-stuck).
 - 2026-10-23: Takeoff: a full-throttle roll must end in a real climb - never lift off, wallow at rotate speed and sink back onto the gear (owner video, no job number)
 - 2026-10-23: Frame time clamps at zero - a negative first frame threw the parked jet under the runway (y=-14), below ground contact, where it could never take off, land or crash (owner fix)
 - 2026-10-24: taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing (G-232)
+- 2026-10-25: Takeoff is manual - it must not float up by itself, and the player loads the throttle up himself to take off and land (today: full throttle on start + auto-rotate lifts it with no stick input) (owner video, no job number)
+- 2026-10-25: Throttle is a visible lever, not buttons - anything that goes up and down needs to be a lever (today: THR + / THR - buttons and a hold button) (owner screenshot, no job number)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
+
+## REFERENCES (G-358)
+- Broadcast angle: Red Bull Air Race as television - cameras on the tails of the race planes, in the cockpits, in helicopters and below the pylons: https://generalaviationnews.com/2018/11/29/red-bull-air-racing-reality-vs-tv/
+- Athlete gear: fighter pilot in helmet and flight suit, visible in the cockpit of an F-35 on the runway: https://rare-gallery.com/4555321-military-military-aircraft-us-air-force-lockheed-martin-f-35-lightning-ii.html
+- Stance: pilot seated in the cockpit at the controls, hands on the stick (Cochran in a P-40): https://www.gettyimages.in/detail/news-photo/pilot-jacqueline-cochran-sits-in-the-cockpit-of-a-p-40-news-photo/514867614
+- Venue: Red Bull Air Race over the river at Porto, city behind the course: https://commons.wikimedia.org/wiki/File:Red_Bull_Air_Race_2_(Porto).jpg
+- Best game example of this kind: Ace Combat 7: Skies Unknown (console) - photorealistic skies, full 360-degree movement, arcade jet handling: https://www.xbox.com/en-NZ/games/store/ace-combat-7-skies-unknown/BZ45MMFWZP7F/0001
+
+## MUST MATCH (G-358, written from the links above)
+- Proportions: single-seat low-wing jet, wingspan clearly shorter than fuselage length, tall tail fin, gear set wide under the wings.
+- Camera height: chase view just above and behind the jet, looking slightly down at the runway, matching the tail-camera and helicopter broadcast angles.
+- Gear silhouette: wide three-point gear under the fuselage, nose slightly up on final, gear clearly readable against the runway.
+- Motion weight: banking turns carry momentum and bleed speed, rolls take time, touchdown sinks with weight rather than snapping flat.

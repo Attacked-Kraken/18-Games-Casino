@@ -86,3 +86,16 @@ If a fix seems to need a KEEP thing changed, ask the owner first.
 - Staggered starts for 200 m / 400 m / 400 m hurdles; every runner in his OWN lane; all lanes share the one finish line
 - A real college bowl from the shared stadium kit: seating all the way around the oval, 2 tiers, 40,000-60,000 seats, 30,000+ fans, canopy roof with a floodlight ring, 2 end screens
 - Starting blocks at every sprint / hurdle start, placed at the lanes and marks actually raced (including staggered marks)
+
+## REFERENCES (G-359, owner 2026-10-25, notes only)
+- Broadcast angle, sprint finish (Paris 2024 men's 100m final, AP photo, Lyles in lane 7): https://greatbendpost.com/posts/d297baec-d7e0-4e66-be9c-9e385deadadd
+- Broadcast photo-finish angle (the torso, not the foot, decides the finish): https://www.tntsports.co.uk/athletics/olympic-games-paris-2024/2024/photo-finishes-noah-lyles-100-metres-triathlon-relay-silver-bronze_sto20025705/story.shtml
+- Athlete gear + venue (pole vault final, Stadio Olimpico, Rome): https://www.gettyimages.ie/detail/news-photo/frances-athlete-alix-dehaynain-competes-in-the-womens-pole-news-photo/2156407773
+- Stance + venue (pole vault plant, Olympiastadion, Berlin): https://www.bigstockphoto.com/image-19865297/stock-photo-romain-mesni-france-competing-in-the-pole-vault-at-the-istaf-berlin-international-golden-league-athletics-held-at-berlin-s-olympia-stadium-%28olympic-stadium%29-1st-june-2008
+- Best mobile/console example of this kind of game (Olympic Games Tokyo 2020 - The Official Video Game, Sega, 100m / hurdles / relay / long jump / hammer): https://en.wikipedia.org/wiki/Olympic_Games_Tokyo_2020_-_The_Official_Video_Game
+
+## MUST MATCH (written from the links above)
+- Proportions: eight sprinters fill eight lanes shoulder-to-shoulder, and the finish is decided by the torso crossing first, not the foot.
+- Camera height: trackside, just above head height behind the field during the race, never a high blimp view until the finish-line photo angle.
+- Gear silhouette: singlet + shorts + spikes, and a long thin pole carried against the sky - no bulky kit, nothing that hides the athlete's shape.
+- Motion weight: low drive at about 45 degrees out of the blocks, upright at full speed, and a vault pole bent into a C before it throws the vaulter up.

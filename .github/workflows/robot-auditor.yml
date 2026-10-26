@@ -1,0 +1,46 @@
+name: Robot auditor
+# Owner Oct 25 2026: merges a short allowlist of robot-file pull requests by itself (the merge robot never does). Rules + allowlist:
+# tools/robot-auditor.py. Needs the repo secret ROBOT_MERGE_TOKEN (fine-grained, this repo only). Publishes the token's expiry date.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_run:
+    workflows: ["Game check (PR)"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      dry:
+        description: 'look only (1) or really merge (empty)'
+        required: false
+concurrency:
+  group: robot-auditor
+  cancel-in-progress: false
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the published status branch
+        run: |
+          git fetch origin robot-status:robot-status 2>/dev/null && git show robot-status:auditor.json > /tmp/old.json 2>/dev/null || true
+          mkdir -p robot-status && [ -f /tmp/old.json ] && cp /tmp/old.json robot-status/auditor.json || true
+      - name: Audit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
+          DRY: ${{ github.event.inputs.dry }}
+        run: python3 tools/robot-auditor.py
+      - name: Publish status (branch robot-status)
+        run: |
+          set -e
+          git config user.name "robot auditor"; git config user.email "actions@users.noreply.github.com"
+          d=$(mktemp -d); cp robot-status/auditor.json "$d/auditor.json"
+          git checkout --orphan rs-tmp; git rm -rf -q . ; cp "$d/auditor.json" auditor.json
+          git add auditor.json; git commit -qm "robot auditor status"
+          git push -f origin rs-tmp:robot-status

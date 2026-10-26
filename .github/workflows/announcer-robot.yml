@@ -31,6 +31,9 @@ jobs:
           VOICE_KEY: ${{ secrets.VOICE_KEY }}
         run: python tools/announcer-robot.py | tee voice-report.txt
       - name: Save them
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
         run: |
           rm -f /tmp/owner-voice.wav /tmp/owner-voice.wav.m4a
           git add -A sounds/voice sounds/announcer sounds/rejects
@@ -41,6 +44,6 @@ jobs:
           # game check on it; the merge robot merges it when green. No direct push to main.
           B="robot/announcer-${{ github.run_number }}"
           git checkout -q -b "$B" && git push -q origin "$B"
-          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Announcer robot: run ${{ github.run_number }}" -f body="Made by the announcer robot. Merged by the merge robot when the game check is green." --jq .number)
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Announcer robot: run ${{ github.run_number }}" -f body="Made by the announcer robot. Merged by the merge robot when the game check is green." --jq .number)
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::notice title=Announcer robot::opened pull request #$N"

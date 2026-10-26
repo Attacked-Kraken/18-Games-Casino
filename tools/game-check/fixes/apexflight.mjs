@@ -7,7 +7,7 @@ export default [
     ask: 'Gameplay picture frozen for 1.5 seconds',
     async test(page, h) {
       // Start the game, then verify the picture changes over 1.5s (plane moves)
-      try { await h.press('#btnStart'); } catch (e) {}
+      try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(500);
       const a = await h.shot();
       await h.wait(1500);
@@ -93,45 +93,116 @@ export default [
   },
   {
     id: 'play-takeoff',
-    ask: 'take off: full throttle on the runway lifts the plane into the air',
+    ask: 'take off is manual: full throttle with no stick stays on the ground past rotate speed, and pulling the stick up lifts it off (owner: the plane must never lift by itself)',
     async test(page, h) {
-      // The robot runs all tests on ONE shared page, so an earlier test can
-      // leave the plane flying or crashed - and h.press never clicks a hidden
-      // button. Return to the runway with the game's own buttons first:
-      // menu FREE FLIGHT, crash-overlay tap, or the HUD RESET button.
+      // Same shared-page prelude as before: get the plane back on the runway first.
       const st = await h.eval(() => ({
         menu: !document.getElementById('startOv').hidden,
         crashed: !document.getElementById('crashOv').hidden,
         ground: !!(window.__flight && window.__flight.P.ground),
       })).catch(() => null);
       if (!st) return 'no window.__flight hook';
-      if (!st.ground) {
+      // Fresh page or reload lands on the menu with the plane already parked
+      // (ground true) - the menu must still start free flight, or the test
+      // would sit in the menu forever watching a parked plane.
+      let freshStart = false;
+      if (st.menu) {
+        if (!(await h.press('#btnFree'))) return 'could not press FREE FLIGHT';
+        freshStart = true;
+      } else if (!st.ground) {
         try {
-          if (st.menu) await h.press('#btnFree');
-          else if (st.crashed) await h.press('#crashOv');
+          if (st.crashed) await h.press('#crashOv');
           else await h.press('#resetBtn');
         } catch (e) {}
+      }
+      if (freshStart) {
+        await h.wait(400);
+        // A fresh start must hand the player an idle plane, not full throttle.
+        const thr0 = await h.eval(() => window.__flight ? window.__flight.P.thr : null).catch(() => null);
+        if (thr0 !== null && thr0 > 0.01) return 'takeoff starts at full throttle - the player never spools up (thr ' + thr0.toFixed(2) + ')';
       }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
         return new Promise((res) => {
+          // Stage the roll exactly like a fresh free flight, then spool up by hand.
+          F.P.pos.set(0, F.jet.gearHeight, -600); F.P.vel.set(0, 0, 0); F.P.yaw = 0; F.P.pitch = 0; F.P.roll = 0; F.P.ground = true;
           const t0 = Date.now();
-          let sawGround = F.P.ground === true;
           const iv = setInterval(() => {
-            if (F.P.ground === true) sawGround = true;
-            if (sawGround && !F.P.ground && F.P.pos.y > 2) {
+            F.P.thr = 1; F.jetInput.throttle = 1;   // holding full throttle, like the player would
+            const v = Math.hypot(F.P.vel.x, F.P.vel.z);
+            if (F.P.ground === false) { clearInterval(iv); return res('plane lifted off with no stick input at ' + v.toFixed(1) + ' m/s - takeoff is not manual'); }
+            if (v >= 25) {
+              // Past rotate speed with full throttle and no stick, still on the
+              // ground: that is the proof. Now pull the stick up like the player would.
               clearInterval(iv);
-              res(true);
-            } else if (!document.getElementById('crashOv').hidden) {
-              clearInterval(iv);
-              res('plane crashed during the takeoff roll');
-            } else if (Date.now() - t0 > 22000) {
-              clearInterval(iv);
-              res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+              const t1 = Date.now();
+              const iv2 = setInterval(() => {
+                F.P.thr = 1; F.jetInput.throttle = 1;
+                if (F.P.ground === false && F.P.pos.y > F.jet.gearHeight + 2) {
+                  clearInterval(iv2);
+                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                  return res(true);
+                }
+                if (Date.now() - t1 > 10000) {
+                  clearInterval(iv2);
+                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                  return res('stick up at rotate speed did not lift the plane off');
+                }
+              }, 200);
             }
-          }, 300);
+            if (Date.now() - t0 > 15000) { clearInterval(iv); return res('plane never reached rotate speed at full throttle (v ' + v.toFixed(1) + ' m/s)'); }
+          }, 200);
         });
+      });
+    },
+  },
+  {
+    id: 'play-throttle-lever',
+    ask: 'throttle is a visible lever, not buttons: dragging the THR lever sets the throttle, the old THR buttons are hidden, and the lever overlaps no pad button (owner 2026-10-25)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(500);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput) return 'no flight/jetInput hook';
+        const lev = document.getElementById('thrLever');
+        if (!lev) return 'no throttle lever on the page';
+        const cs = getComputedStyle(lev);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return 'throttle lever is not visible';
+        const r = lev.getBoundingClientRect();
+        if (r.width < 44 || r.height < 100) return 'throttle lever is only ' + Math.round(r.width) + 'x' + Math.round(r.height) + 'px (want >= 44 wide, >= 100 tall)';
+        if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'throttle lever sits off the phone screen';
+        // The old THR buttons must be gone from the player's view (they stay in
+        // the DOM for the robot's checks, but hidden - visibility keeps the pad layout).
+        for (const id of ['jThrUp', 'jThrDn']) {
+          const b = document.getElementById(id);
+          if (!b) return 'pad button #' + id + ' is missing from the DOM';
+          if (getComputedStyle(b).visibility !== 'hidden') return 'pad button #' + id + ' is still visible - throttle must be a lever, not buttons';
+        }
+        // The lever must overlap no pad button (G-280: the old slider covered GEAR/PAINT/LOOP).
+        const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        for (const id of ['jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit']) {
+          const b = document.getElementById(id);
+          if (b && hit(r, b.getBoundingClientRect())) return 'throttle lever overlaps pad button #' + id;
+        }
+        // Drag the lever: down near the top must raise the throttle, down near
+        // the bottom must lower it, and letting go must hold the value.
+        const P = F.P, J = F.jetInput;
+        const yFor = (pct) => r.top + (1 - pct) * r.height;
+        const drag = (pct) => {
+          lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+          lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+          lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+        };
+        P.thr = 0.2; J.throttle = 0.2;
+        drag(0.8);
+        if (Math.abs(P.thr - 0.8) > 0.12) return 'dragging the lever to 80% gave throttle ' + P.thr.toFixed(2) + ' (want ~0.80)';
+        drag(0.3);
+        if (Math.abs(P.thr - 0.3) > 0.12) return 'dragging the lever to 30% gave throttle ' + P.thr.toFixed(2) + ' (want ~0.30)';
+        if (Math.abs(J.throttle - P.thr) > 0.02) return 'pad throttle (' + J.throttle.toFixed(2) + ') disagrees with the game throttle (' + P.thr.toFixed(2) + ') after a lever drag';
+        return true;
       });
     },
   },
@@ -446,14 +517,14 @@ export default [
   },
   {
     id: 'play-jet-controls',
-    ask: 'G-90: the jet control pad (14 buttons + stick) is on the phone screen and every button works',
+    ask: 'G-90: the jet control pad (12 buttons + throttle lever + stick) is on the phone screen and every button works',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(500);
       return h.eval(() => {
         const F = window.__flight;
         if (!F || !F.jetInput || !F.jet) return 'no jet controls hook (window.__flight.jetInput)';
-        const ids = ['jThrUp', 'jThrDn', 'jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
+        const ids = ['jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
         for (const id of ids) {
           const b = document.getElementById(id);
           if (!b) return 'missing pad button #' + id;
@@ -462,6 +533,10 @@ export default [
           if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'pad button #' + id + ' sits off the phone screen';
         }
         if (document.getElementById('stickZone')) return 'the old touch stick is still on the page';
+        const lev = document.getElementById('thrLever');
+        if (!lev) return 'throttle lever is missing (THR buttons are hidden, the lever must replace them)';
+        const lr = lev.getBoundingClientRect();
+        if (getComputedStyle(lev).visibility === 'hidden' || lr.width < 44 || lr.height < 100) return 'throttle lever is not a visible lever (' + Math.round(lr.width) + 'x' + Math.round(lr.height) + 'px)';
         const down = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
         const up = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }));
         const p0 = F.jet.paint; down('jPaint'); up('jPaint');
@@ -526,7 +601,7 @@ export default [
   },
   {
     id: 'play-controls-answer-in-100ms',
-    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
+    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, throttle lever, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(400);
@@ -554,18 +629,25 @@ export default [
           zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
           ms = await until(() => F.inp.pitchUp === 0 && F.inp.rollRight === 0, 100);
           if (ms < 0) bad.push('stick did not stop within 100ms of letting go');
-          // THR + : throttle must start rising at once, and stop when let go
-          P.thr = 0.5; J.throttle = 0.5; await wait(60);
-          down('jThrUp');
-          ms = await until(() => P.thr > 0.53, 100);
-          if (ms < 0) bad.push('THR+ did not raise the throttle within 100ms');
-          up('jThrUp'); await wait(80); const thrHold = P.thr; await wait(150);
-          if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after THR+ was let go');
-          // THR - : throttle must start falling at once
-          down('jThrDn');
-          ms = await until(() => P.thr < thrHold - 0.03, 100);
-          if (ms < 0) bad.push('THR- did not lower the throttle within 100ms');
-          up('jThrDn');
+          // THR LEVER: dragging it must move the throttle at once, and letting
+          // go must hold the value (the lever replaces the old THR + / THR - buttons)
+          const lev = el('thrLever');
+          if (!lev) bad.push('throttle lever is missing');
+          else {
+            const lr = lev.getBoundingClientRect();
+            const levDown = (pct) => lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 11, clientY: lr.top + (1 - pct) * lr.height, bubbles: true }));
+            const levUp = (pct) => lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 11, clientY: lr.top + (1 - pct) * lr.height, bubbles: true }));
+            P.thr = 0.5; J.throttle = 0.5; await wait(60);
+            levDown(0.9);
+            ms = await until(() => P.thr > 0.85, 100);
+            if (ms < 0) bad.push('throttle lever drag up did not raise the throttle within 100ms');
+            levUp(0.9); await wait(80); const thrHold = P.thr; await wait(150);
+            if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after the lever was let go');
+            levDown(0.2);
+            ms = await until(() => P.thr < thrHold - 0.03, 100);
+            if (ms < 0) bad.push('throttle lever drag down did not lower the throttle within 100ms');
+            levUp(0.2);
+          }
           // BOOST and BRAKE: flags answer at once and clear at once
           down('jBoost'); ms = await until(() => J.boost === true, 100);
           if (ms < 0) bad.push('BOOST did not answer within 100ms');

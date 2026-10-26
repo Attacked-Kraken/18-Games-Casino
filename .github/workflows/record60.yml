@@ -1,0 +1,84 @@
+name: Record 60
+# Owner Oct 25 2026 11:39 PM + 11:46 PM: the factory films every game itself, every night, no phone and no person - and any NEW game
+# in tools/game-check/games.json is picked up automatically. Plays one game on its own (gas held, same hook the robot uses), films
+# it, measures the camera, and saves the result on the `recordings` branch (rec/<game>/<time>/) and as a run artifact.
+# By hand: Actions > Record 60 > game = one page (apexracer.html) or "all". bless=true saves that recording as the game's spec.
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Game page, e.g. apexracer.html - or "all" for every game in games.json'
+        required: true
+        default: 'all'
+      seconds:
+        description: 'Game seconds to record'
+        default: '60'
+      bless:
+        description: 'true = save this recording as the spec'
+        default: 'false'
+  schedule:
+    - cron: '17 7 * * *'     # 2:17 AM Central, after the night play testers
+permissions:
+  contents: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      games: ${{ steps.list.outputs.games }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          G="${{ inputs.game }}"
+          if [ -z "$G" ] || [ "$G" = "all" ]; then
+            echo "games=$(node -e 'const g=require("./tools/game-check/games.json");console.log(JSON.stringify((Array.isArray(g)?g:g.games).map(x=>x.file)))')" >> "$GITHUB_OUTPUT"
+          else
+            echo "games=[\"$G\"]" >> "$GITHUB_OUTPUT"
+          fi
+  record:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        game: ${{ fromJSON(needs.plan.outputs.games) }}
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg (optional)
+        run: (apt-get install -y --no-install-recommends ffmpeg >/dev/null 2>&1 || echo "no ffmpeg - webm kept")
+      - name: Record
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 || true
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 &
+          sleep 2
+          GAME="${{ matrix.game }}" REC_SECONDS="${{ inputs.seconds || '60' }}" WALLCAP=1500 BLESS="${{ inputs.bless == 'true' && '1' || '0' }}" node tools/record60/record60.mjs http://127.0.0.1:8811/ rec-out || true
+          cat rec-out/*/verdict.txt >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rec-${{ matrix.game }}
+          path: rec-out
+          if-no-files-found: ignore
+  save:
+    needs: record
+    if: always() && needs.record.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-rec
+      - name: Save on the recordings branch
+        run: |
+          git config user.name "record60 robot"; git config user.email "robot@users.noreply.github.com"
+          STAMP=$(date -u +%Y%m%d-%H%M)
+          if git fetch origin recordings 2>/dev/null; then git checkout -B recordings origin/recordings; else git checkout --orphan recordings; git rm -rf . >/dev/null 2>&1 || true; fi
+          # keep 14 days: drop stamp folders older than that
+          CUT=$(date -u -d '14 days ago' +%Y%m%d); for d in rec/*/*/; do [ -d "$d" ] || continue; [ "$(basename "$d" | cut -c1-8)" -lt "$CUT" ] && git rm -rq "$d" || true; done
+          for d in all-rec/rec-*; do [ -d "$d" ] || continue; for g in "$d"/*/; do n=$(basename "$g"); mkdir -p "rec/$n/$STAMP"; cp -r "$g". "rec/$n/$STAMP"/; done; done
+          git add rec; git commit -m "record60: $STAMP" && git push origin recordings || true

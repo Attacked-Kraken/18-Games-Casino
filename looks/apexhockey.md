@@ -62,3 +62,16 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
+
+## REFERENCES:
+- Broadcast angle: https://petapixel.com/2026/02/26/every-nhl-arena-now-has-four-10-5k-cameras-to-improve-broadcasts-and-instant-replays/ - every NHL arena's broadcast/replay cameras: glass-level units behind each net and at the blue lines under the high centre-ice main camera
+- Athlete gear + goalie stance: https://seltytending.com/break-down/break-down-butterfly/ - NHL goaltenders (Fleury, Talbot, Elliott) in the butterfly: pads flared flat to the ice, knees together sealing the five-hole, chest up
+- Skater gear + stance in game action: https://commons.wikimedia.org/wiki/Category:Rogers_Arena - NHL game photos at Rogers Arena: full-kit skaters and goalies at game speed
+- Venue: https://commons.wikimedia.org/wiki/File:Heinz_Field_NHL_Winter_Classic_(cropped).jpg - a full-size rink sheet set inside a packed stadium bowl (2011 NHL Winter Classic)
+- Best console example of this kind of game: EA SPORTS NHL 25 - https://www.ea.com/games/nhl/nhl-25 - broadcast presentation, real player likeness and glide-led skating on PS5 / Xbox Series X|S
+
+## MUST MATCH:
+- Proportions: skaters about 1.85 m tall on skates in a 61 x 26 m rink - small figures on a big sheet at broadcast zoom, never screen-filling in the main view
+- Camera height: the main camera sits high at centre ice, well above the glass, with about half the rink in frame; glass-level cameras are replay angles only
+- Gear silhouette: wide padded shoulders tapering down to narrow skates, helmet with visor on top, stick blade flat on the ice; the goalie reads as a wall of pads
+- Motion weight: push-and-glide skating - carved turns, a lean into the stride, ice spray on hard stops; momentum carries through play, nobody stops or turns on a dime

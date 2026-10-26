@@ -52,9 +52,13 @@ jobs:
           SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
           DRY: ${{ github.event.inputs.dry }}
           TEST_UID: ${{ github.event.inputs.test }}
+          GH_TOKEN: ${{ github.token }}
         run: node tools/sketchfab-fetch.mjs
       - name: Shrink + save
         if: github.event.inputs.clean == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
         run: |
           set -e
           cat fetch-report.txt >> "$GITHUB_STEP_SUMMARY" || true
@@ -90,7 +94,7 @@ jobs:
           fi
           # owner Oct 21 2026 (upgrade b): front, side, back and top pictures of every new model, next to it
           # (models/fetched/<name>-front.jpg ...) - the job card shows them for the owner's approval before any game uses it
-          NEW=$(git ls-files --others --exclude-standard models/fetched | grep '\.glb$' || true)
+          NEW=$( (git ls-files --others --exclude-standard models/fetched; git ls-files -m models/fetched) | grep '\.glb$' | sort -u || true)   # VP backup Oct 25: a re-fetched model that is already on main is MODIFIED, not new - its pictures were never retaken (G-345 rim)
           if [ -n "$NEW" ]; then
             npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1 || true
             python3 -m http.server 8814 >/dev/null 2>&1 &
@@ -106,6 +110,7 @@ jobs:
           # request and starts the game check on it; the merge robot merges it when green. No direct push to main.
           B="robot/sketchfab-${{ github.run_number }}"
           git checkout -q -b "$B" && git push -q origin "$B"
-          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
+          # VP Oct 25 2026 8:40 PM (ChatGPT audit finding, verified: run 40253111030 "GitHub Actions is not permitted to create or approve pull requests" HTTP 403): the repo setting is off, so the PR is opened with the robot merge token (a PR it opens also starts the check itself).
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::notice title=Sketchfab robot::opened pull request #$N - the merge robot merges it when the game check is green"

@@ -60,3 +60,16 @@ Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-28
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
 - 2026-10-24: Every touch button must clear every other on the UPRIGHT phone too - the landscape compact block never applied there, so REV slid into the stick (1360 px²) and CAM (1890 px²) (G-286 R1)
+
+## REFERENCES (G-360, owner 2026-10-25 - research only; nothing real-named goes into the game, the NEVER rule stands)
+REFERENCES:
+- Broadcast angle - official onboard clip, race-start overtakes from the driver's-eye / chase framing: https://www.formula1.com/en/video/onboard-lando-norris-overtakes-half-the-field-at-sakhir-grand-prix-race-start.1687527781849549324
+- Athlete gear - driver in full race gear (fire suit, crash helmet and visor, HANS device) in parc ferme: https://www.gettyimages.ie/detail/news-photo/british-mercedes-formula-one-team-racing-driver-lewis-news-photo/1359055489
+- Stance - 2024 car launch photo gallery, full-car studio views of the single-seater: https://f1grandprix.motorionline.com/en/formula-1-red-bull-la-galleria-fotografica-della-nuova-rb20/
+- Venue - Monaco GP photo set: harbour general view, track, grandstands, cars at full speed between the barriers: https://www.gettyimages.co.uk/photos/monaco-formula-one-grand-prix
+- Best game example - F1 24, the official console game of the championship (broadcast shots, career, dynamic handling): https://www.playstation.com/en-th/games/f1-24/
+MUST MATCH:
+- Proportions: a long, wide, ground-hugging single-seater, about 5.6 m long and 2 m wide, 0.95 m tall, wheels filling the arches.
+- Camera height: chase cam low and tight just above the rear wing, like the broadcast chase framing, never a high helicopter look except the broadcast cam.
+- Gear silhouette: the driver reads only as helmet plus headrest plus halo frame in the cockpit, suit shoulders square under the halo, no exposed body.
+- Motion weight: heavy and planted, the car squats and grips through corners with no float, speed reads from trackside objects rushing past, not from camera shake.
