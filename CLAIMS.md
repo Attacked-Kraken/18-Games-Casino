@@ -339,4 +339,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
 | G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
 | G-368 | window 6 | MODELS.md, jobs/G-368-w6.md, CLAIMS.md | notes/g-368-models - DONE PR #1861 merged 51c01594 (Muse algre141) |
+| G-372 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-372-w6.md, CLAIMS.md | build/g-372-apexracer - CLAIMED Muse algre141 Oct 26 10:08 AM CDT (MAC tag) |
 | OWNER deep dish lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-deepdish-apexracer - CLAIMED Muse algre141 Oct 26 8:06 AM CDT (MAC tag) |
