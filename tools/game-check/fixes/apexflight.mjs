@@ -159,6 +159,54 @@ export default [
     },
   },
   {
+    id: 'play-throttle-lever',
+    ask: 'throttle is a visible lever, not buttons: dragging the THR lever sets the throttle, the old THR buttons are hidden, and the lever overlaps no pad button (owner 2026-10-25)',
+    async test(page, h) {
+      try { await h.press('#btnFree'); } catch (e) {}
+      await h.wait(500);
+      return h.eval(() => {
+        const F = window.__flight;
+        if (!F || !F.jetInput) return 'no flight/jetInput hook';
+        const lev = document.getElementById('thrLever');
+        if (!lev) return 'no throttle lever on the page';
+        const cs = getComputedStyle(lev);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return 'throttle lever is not visible';
+        const r = lev.getBoundingClientRect();
+        if (r.width < 44 || r.height < 100) return 'throttle lever is only ' + Math.round(r.width) + 'x' + Math.round(r.height) + 'px (want >= 44 wide, >= 100 tall)';
+        if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'throttle lever sits off the phone screen';
+        // The old THR buttons must be gone from the player's view (they stay in
+        // the DOM for the robot's checks, but hidden - visibility keeps the pad layout).
+        for (const id of ['jThrUp', 'jThrDn']) {
+          const b = document.getElementById(id);
+          if (!b) return 'pad button #' + id + ' is missing from the DOM';
+          if (getComputedStyle(b).visibility !== 'hidden') return 'pad button #' + id + ' is still visible - throttle must be a lever, not buttons';
+        }
+        // The lever must overlap no pad button (G-280: the old slider covered GEAR/PAINT/LOOP).
+        const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        for (const id of ['jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit']) {
+          const b = document.getElementById(id);
+          if (b && hit(r, b.getBoundingClientRect())) return 'throttle lever overlaps pad button #' + id;
+        }
+        // Drag the lever: down near the top must raise the throttle, down near
+        // the bottom must lower it, and letting go must hold the value.
+        const P = F.P, J = F.jetInput;
+        const yFor = (pct) => r.top + (1 - pct) * r.height;
+        const drag = (pct) => {
+          lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+          lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+          lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(pct), bubbles: true }));
+        };
+        P.thr = 0.2; J.throttle = 0.2;
+        drag(0.8);
+        if (Math.abs(P.thr - 0.8) > 0.12) return 'dragging the lever to 80% gave throttle ' + P.thr.toFixed(2) + ' (want ~0.80)';
+        drag(0.3);
+        if (Math.abs(P.thr - 0.3) > 0.12) return 'dragging the lever to 30% gave throttle ' + P.thr.toFixed(2) + ' (want ~0.30)';
+        if (Math.abs(J.throttle - P.thr) > 0.02) return 'pad throttle (' + J.throttle.toFixed(2) + ') disagrees with the game throttle (' + P.thr.toFixed(2) + ') after a lever drag';
+        return true;
+      });
+    },
+  },
+  {
     id: 'play-climb-and-fly',
     ask: 'climb and fly: stick up gains altitude and the plane keeps flying',
     async test(page, h) {
@@ -469,14 +517,14 @@ export default [
   },
   {
     id: 'play-jet-controls',
-    ask: 'G-90: the jet control pad (14 buttons + stick) is on the phone screen and every button works',
+    ask: 'G-90: the jet control pad (12 buttons + throttle lever + stick) is on the phone screen and every button works',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(500);
       return h.eval(() => {
         const F = window.__flight;
         if (!F || !F.jetInput || !F.jet) return 'no jet controls hook (window.__flight.jetInput)';
-        const ids = ['jThrUp', 'jThrDn', 'jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
+        const ids = ['jBoost', 'jYawL', 'jYawR', 'jGear', 'jCam', 'jStyle', 'jPaint', 'jBrake', 'jRoll', 'jLoop', 'jImm', 'jSplit'];
         for (const id of ids) {
           const b = document.getElementById(id);
           if (!b) return 'missing pad button #' + id;
@@ -485,6 +533,10 @@ export default [
           if (r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1) return 'pad button #' + id + ' sits off the phone screen';
         }
         if (document.getElementById('stickZone')) return 'the old touch stick is still on the page';
+        const lev = document.getElementById('thrLever');
+        if (!lev) return 'throttle lever is missing (THR buttons are hidden, the lever must replace them)';
+        const lr = lev.getBoundingClientRect();
+        if (getComputedStyle(lev).visibility === 'hidden' || lr.width < 44 || lr.height < 100) return 'throttle lever is not a visible lever (' + Math.round(lr.width) + 'x' + Math.round(lr.height) + 'px)';
         const down = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 7 }));
         const up = (id) => document.getElementById(id).dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerId: 7 }));
         const p0 = F.jet.paint; down('jPaint'); up('jPaint');
@@ -549,7 +601,7 @@ export default [
   },
   {
     id: 'play-controls-answer-in-100ms',
-    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, THR+, THR-, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
+    ask: 'G-117: every flight control answers within 100ms of the touch and stops at once when let go - stick, throttle lever, BOOST, BRAKE, YAW (in the air too), GEAR, trick buttons',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(400);
@@ -577,18 +629,25 @@ export default [
           zone.dispatchEvent(new PointerEvent('pointerup', { pointerId: 9, clientX: cx + 26, clientY: cy + 26, bubbles: true }));
           ms = await until(() => F.inp.pitchUp === 0 && F.inp.rollRight === 0, 100);
           if (ms < 0) bad.push('stick did not stop within 100ms of letting go');
-          // THR + : throttle must start rising at once, and stop when let go
-          P.thr = 0.5; J.throttle = 0.5; await wait(60);
-          down('jThrUp');
-          ms = await until(() => P.thr > 0.53, 100);
-          if (ms < 0) bad.push('THR+ did not raise the throttle within 100ms');
-          up('jThrUp'); await wait(80); const thrHold = P.thr; await wait(150);
-          if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after THR+ was let go');
-          // THR - : throttle must start falling at once
-          down('jThrDn');
-          ms = await until(() => P.thr < thrHold - 0.03, 100);
-          if (ms < 0) bad.push('THR- did not lower the throttle within 100ms');
-          up('jThrDn');
+          // THR LEVER: dragging it must move the throttle at once, and letting
+          // go must hold the value (the lever replaces the old THR + / THR - buttons)
+          const lev = el('thrLever');
+          if (!lev) bad.push('throttle lever is missing');
+          else {
+            const lr = lev.getBoundingClientRect();
+            const levDown = (pct) => lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 11, clientY: lr.top + (1 - pct) * lr.height, bubbles: true }));
+            const levUp = (pct) => lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 11, clientY: lr.top + (1 - pct) * lr.height, bubbles: true }));
+            P.thr = 0.5; J.throttle = 0.5; await wait(60);
+            levDown(0.9);
+            ms = await until(() => P.thr > 0.85, 100);
+            if (ms < 0) bad.push('throttle lever drag up did not raise the throttle within 100ms');
+            levUp(0.9); await wait(80); const thrHold = P.thr; await wait(150);
+            if (Math.abs(P.thr - thrHold) > 0.002) bad.push('throttle kept moving after the lever was let go');
+            levDown(0.2);
+            ms = await until(() => P.thr < thrHold - 0.03, 100);
+            if (ms < 0) bad.push('throttle lever drag down did not lower the throttle within 100ms');
+            levUp(0.2);
+          }
           // BOOST and BRAKE: flags answer at once and clear at once
           down('jBoost'); ms = await until(() => J.boost === true, 100);
           if (ms < 0) bad.push('BOOST did not answer within 100ms');
