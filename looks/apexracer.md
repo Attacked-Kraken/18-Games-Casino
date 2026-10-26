@@ -13,6 +13,19 @@
 - HUD: lap/time readout inside updateRace L2244 - big center message (bigMsg) L2144 - race step (updateRace) L2244
 - Sounds: audioInit L1962 - sfx L1986 - engine kit + engine sound (engineSnd) L2008 - music mix by speed (musRaceMix) L2067
 - Test hooks: window.__erc L2637 - REALITY hook (window.__reality, go/time/speed) L2648 - ?test=night / ?test=rim / ?test=rims owner links at boot L2635
+## WHERE THINGS ARE (apexracer.html - line numbers on main of Oct 26, 2026, after the Deep Dish lock-in; keep current per STUDIO-STANDARD 9.7)
+- Menu / turntable: menu home + showroom orbit (toMenu) L2343 - menu refresh (refreshMenu) L2336 - turntable spin + garage camera (updateGarage) L2551 - frame loop L2574
+- Garage: openGarage L2423 - garage cards and buying (renderGarage) L2433 - the shown car (setGarageCar) L1415 - rim showcase, every style side by side (showRims/hideRims, G-364) L1430
+- Car data: model registry (GLB_MODELS) L295 - skinned-pose bake (bakeSkins) L302 - car stats (CARS) L355 - places (PLACES) L414 - paint material (paintMat) L694 - computer-car paints stay bright (brightPaint) L586 - the LOCKED deep dish wheel template baked at load (dishTpl) L335
+- Car building: name wrap (addNameWrap) L1005 - rim builder shared by the cars and the showcase (procRim) L1112 - real-model car builder (makeGlbCar) L1129 - window tint table (TINTS, inside makeGlbCar) L1140 - bought options built onto the car: measured wheel hubs + real 3D rim styles + the LOCKED deep dish fit for style 3 (inside makeGlbCar) L1268 + Wheel Size lift (G-345) + calipers + underglow + aero wing + body kit (inside makeGlbCar) L1217 - its lamp glow lies on the measured body surface (lampSurf, inside makeGlbCar) - car entry + real-model swap (makeCar) L1321
+- World and race setup: world build in slices (buildWorld) L1566 - scenery keeps off the road (skirtClear, inside buildWorld) - finish-line sign text (drawSign/setSign) L533 - race setup (setupRace) L2062 - grid camera inside setupRace L2096 - race start guards (PR #1023: startRace ignores a second start while loading) - race start (startRace) L2374
+- Driving physics: player car (stepPlayer) L2111
+- AI: stepAI L2156 - G-70 gap band + the G-270 pace cap (58% of player pace) at L2161
+- Traffic: stepTraffic L2190 - headlight pool follow (posePool) L2200 - car posing (poseCar) L2201
+- Camera: chase camera inside updateRace L2209 - race render (renderRace) L2325
+- HUD: lap/time readout inside updateRace L2209 - big center message (bigMsg) L2109 - race step (updateRace) L2209
+- Sounds: audioInit L1927 - sfx L1951 - engine kit + engine sound (engineSnd) L1973 - music mix by speed (musRaceMix) L2032
+- Test hooks: window.__erc L2602 - REALITY hook (window.__reality, go/time/speed) L2613 - ?test=night / ?test=rim / ?test=rims owner links at boot L2600
 
 Read this before every job on Exotic Racer Club. The owner says each thing ONCE; it lives here forever.
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
