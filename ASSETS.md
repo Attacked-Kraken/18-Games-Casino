@@ -385,3 +385,4 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-26 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "JPepe" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
