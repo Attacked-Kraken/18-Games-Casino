@@ -330,4 +330,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | T-10-0624 | window 10 | jobs/T-10-0624.md, CLAIMS.md | test/t-10-0624 |
 | G-342 | window 10 | jobs/G-342.md, CLAIMS.md | test/g-342-apextrackfield |
 | G-358 | window 3 | looks/apexflight.md, jobs/G-358-w3.md | build/g-358-apexflight |
-| G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
+| G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - DONE PR #1818 merged e661d9dc (Muse main (casino)) |
