@@ -11,12 +11,12 @@ that can become a failing play test. No category = no complaint. Max 3 open line
 6. SOUND - music starts on the first tap, core actions make a sound, crowd where it belongs, mute stays muted.
 7. PHONE READABILITY + CONTROL FEEL - buttons reachable by thumbs, text readable on a 390 px wide phone, no input lag.
 
-## One line per complaint (copy this shape)
-`HELP-VP: art director · <game> · <category number + name> · <what is wrong> · <the measured number or the picture path> · <test id to add>`
+## One line per complaint (copy this shape - no free-form paragraphs)
+`HELP-VP: art director · <game> · <category number + name> · <what is wrong> · FRAME: <robot picture link or file> · TEST: <failing test id the builder must create> · SEVERITY: blocks ship / high / medium`
 
-Example: `HELP-VP: art director · apexhockey · 2 CAMERA · the camera sits 1.1 m above the ice and loses the puck behind the net · looks/apexhockey/ad-2026-10-26.jpg · tester-chk-cam-puck-framed`
+Example: `HELP-VP: art director · apexhockey · 2 CAMERA · the camera sits 1.1 m above the ice and loses the puck behind the net · FRAME: looks/apexhockey/ad-2026-10-26.jpg · TEST: tester-chk-cam-puck-framed · SEVERITY: high`
 
 ## What the robot and the Mac do with it
 - The VP files each line, the builder adds the failing test first, and a game with an open visual line cannot score above 50 (existing cap).
-- A line that has no category number, no number or picture, or no test id is sent back to the art director once.
+- A line that has no category number, no FRAME, no TEST id or no SEVERITY is sent back to the art director once.
 - Complaints about a real-sport measurement (field size, speed, rule) go to the tester checklist, not here.
