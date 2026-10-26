@@ -1372,5 +1372,50 @@ export default [
         E.S.cars.goblin.rim = 0;
         return 'ok'; });
       return res === 'ok' ? true : res;
-    } }
+    } },
+  {
+    id: "play-rims-showcase",
+    ask: "Owner Oct 25 10:14 PM via G-364: he wants to see ALL the rim options at once - ?test=rims opens straight in the garage lights and shows every rim style side by side on the wheel of his car, names under each",
+    async test(page, h) {
+      const E = () => window.__erc;
+      await h.wait(300);
+      const has = await h.eval((E) => { const e = E(); return !!e && typeof e.showRims === 'function'; }, E);
+      if (!has) return 'G-364: the rim showcase is missing - __erc.showRims is not a function, so ?test=rims cannot show all the rim styles at once';
+      await h.eval((E) => { E().openGarage(); E().showRims(); }, E);
+      await h.wait(1500);
+      const rows = await h.eval(() => {
+        const show = window.__rimShow;
+        if (!show) return null;
+        return show.children.map((w) => {
+          const sig = [];
+          let label = null, thick = 0, rimfaces = 0, verts = 0;
+          w.traverse((q) => {
+            if (q.userData && q.userData.label) label = q.userData.label;
+            if (!q.isMesh || q.userData.label || q.userData.tyre) return;
+            const n = q.geometry && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0;
+            verts += n; sig.push(n + '@' + (q.position ? q.position.z.toFixed(3) : '0'));
+            if (q.userData.acc === 'rimface') { rimfaces++; q.geometry.computeBoundingBox(); const bb = q.geometry.boundingBox, ws = q.getWorldScale(q.position.clone()); const dims = [(bb.max.x - bb.min.x) * Math.abs(ws.x), (bb.max.y - bb.min.y) * Math.abs(ws.y), (bb.max.z - bb.min.z) * Math.abs(ws.z)].filter((d) => d > 0.0001); if (dims.length) thick = Math.max(thick, Math.min.apply(null, dims)); }
+          });
+          return { style: w.userData.rimStyle, name: w.userData.rimName, label, thick, rimfaces, sig: sig.sort().join('|') + '#' + sig.length + '#' + verts };
+        });
+      });
+      const NAMES = ['Classic 5', 'Split 10', 'Turbine', 'Deep Dish', 'Mesh', 'Monoblock'];
+      let fail = null;
+      if (!rows) fail = 'G-364: __rimShow was not built by showRims()';
+      else if (rows.length !== 6) fail = 'G-364: the showcase shows ' + rows.length + ' wheels, not all 6 rim styles';
+      else {
+        for (let i = 0; i < 6 && !fail; i++) {
+          const r = rows.find((x) => x.style === i);
+          if (!r) fail = 'G-364: rim style ' + i + ' (' + NAMES[i] + ') is missing from the showcase';
+          else if (r.name !== NAMES[i] || r.label !== NAMES[i]) fail = 'G-364: style ' + i + ' shows the name "' + r.label + '" instead of "' + NAMES[i] + '" under the wheel';
+          else if (!r.rimfaces) fail = 'G-364: style ' + i + ' (' + NAMES[i] + ') has no real rim mesh in the showcase';
+          else if (r.thick < 0.03) fail = 'G-364: style ' + i + ' (' + NAMES[i] + ') rim is a flat sticker in the showcase (' + r.thick.toFixed(3) + ' m thick)';
+        }
+        if (!fail) { const seen = new Set(); for (const r of rows) { if (seen.has(r.sig)) { fail = 'G-364: two rim styles look the same in the showcase - ' + r.name + ' matches another style mesh for mesh'; break; } seen.add(r.sig); } }
+      }
+      await h.shot('rims-showcase');
+      await h.eval((E) => { try { E().hideRims(); } catch (e) {} }, E);
+      return fail || true;
+    }
+  }
 ];
