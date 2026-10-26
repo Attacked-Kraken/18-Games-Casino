@@ -1247,4 +1247,38 @@ export default [
       return true;
     },
   },
+  {
+    id: 'never-g-345-p2',
+    cat: 'never',
+    name: 'bigger wheel size fits bigger rims and the car rides higher (G-345)',
+    ask: "owner 2026-10-25: 'make sure able to have a bigger size like my current rims. And bigger size lifts suspension which makes car ride higher' - Wheel Size at Max must measure a bigger rim diameter than Stock and the car must sit higher",
+    async test(page, h) {
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy', rimCol: '#d4142a' };
+        const saved = E.S.cars.goblin.wheel;
+        const measure = async (w) => { E.S.cars.goblin.wheel = w; E.S.cur = 'goblin'; const prev = E.R; E.startRace(E.PLACES[0], 3);
+          for (let i = 0; i < 80; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || !E.R.P || !E.R.P.car) return null;
+          const car = E.R.P.car; car.root.updateMatrixWorld(true);
+          let best = null;
+          car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface' && q.geometry) { const g = q.geometry; g.computeBoundingBox(); const bb = g.boundingBox, e = q.matrixWorld.elements; const ext = { x: [1e9, -1e9], y: [1e9, -1e9], z: [1e9, -1e9] };
+            for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) { const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; ext.x = [Math.min(ext.x[0], wx), Math.max(ext.x[1], wx)]; ext.y = [Math.min(ext.y[0], wy), Math.max(ext.y[1], wy)]; ext.z = [Math.min(ext.z[0], wz), Math.max(ext.z[1], wz)]; }
+            const dia = Math.max(ext.x[1] - ext.x[0], ext.y[1] - ext.y[0], ext.z[1] - ext.z[0]); const cy = (ext.y[0] + ext.y[1]) / 2;
+            if (!best || dia > best.dia) best = { dia, cy }; } });
+          if (E.R) E.R.on = false;
+          return best; };
+        const a = await measure(0); if (!a) return 'no stock race';
+        const b = await measure(2); if (!b) return 'no max race';
+        E.S.cars.goblin.wheel = saved;
+        return JSON.stringify({ d0: +a.dia.toFixed(3), y0: +a.cy.toFixed(3), d2: +b.dia.toFixed(3), y2: +b.cy.toFixed(3) });
+      });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.d2 < d.d0 * 1.18) return 'bigger wheel size did not grow the rims: stock ' + d.d0 + ' m -> max ' + d.d2 + ' m';
+      if (d.y2 - d.y0 < 0.05) return 'bigger rims did not lift the car: hub height ' + d.y0 + ' m -> ' + d.y2 + ' m';
+      return true;
+    },
+  },
 ];
