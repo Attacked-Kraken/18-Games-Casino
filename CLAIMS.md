@@ -165,7 +165,6 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | T-7-1251 | window 7 | jobs/T-7-1251-w7.md | test/t-7-1251 |
-| G-352 | window 7 | jobs/G-352.md | test/g-352-apexbaseball |
 | G-348 r1 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025-r1 |
 | G-348 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025 |
 | G-328 | window 5 | checklists/apexf1.md, jobs/G-328-w5.md, CLAIMS.md | build/g-328-apexf1 |
@@ -292,6 +291,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-313 fix 1 | window 6 | apexracer.html, looks/apexracer.md, jobs/G-313-w6.md, CLAIMS.md, LESSONS.md | build/g-313-fix1-apexracer |
 | G-345 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-345-w6.md, CLAIMS.md, LESSONS.md | build/g-345-apexracer |
 | G-345 fix 1 | window 6 | looks/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-345-w6.md, CLAIMS.md, LESSONS.md | build/g-345-fix1b-apexracer |
+| G-345 fix 2 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, MODELS.md, MODEL-SEARCH.md, CLAIMS.md, LESSONS.md | build/g-345-fix2-apexracer |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
