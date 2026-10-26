@@ -357,14 +357,6 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - used in: (not in a game yet - the game that uses it must name "JohnyxTR" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
-## ASSET: models/fetched/wheel-9905f1.glb
-- title: Wheel
-- maker: prasetyoheru10
-- source: https://sketchfab.com/3d-models/wheel-9905f13918fd48b79dbdb032a9c80e64
-- license: CC-BY 4.0
-- downloaded: 2026-10-26 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "prasetyoheru10" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb
 - title: Smokehaus Racing - Turbine M2 Alloy Wheel
@@ -384,14 +376,6 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - used in: (not in a game yet - the game that uses it must name "pira.midale" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
-## ASSET: models/fetched/tuner-wheel-8ea8e1.glb
-- title: Tuner Wheel
-- maker: Martin Trafas
-- source: https://sketchfab.com/3d-models/tuner-wheel-8ea8e18f0c9a4044a694e2a03fc4beb1
-- license: CC-BY 4.0
-- downloaded: 2026-10-26 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "Martin Trafas" on its credits screen)
-- changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb
 - title: Fifteen52 Inspired rally rim
@@ -400,4 +384,23 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - license: CC-BY 4.0
 - downloaded: 2026-10-26 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "JPepe" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+
+## ASSET: models/fetched/medieval-fantasy-book-06d5a8.glb
+- title: Medieval Fantasy Book
+- maker: Pixel
+- source: https://sketchfab.com/3d-models/medieval-fantasy-book-06d5a80a04fc4c5ab552759e9a97d91a
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Pixel" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/bbs-rs16-tuner-car-wheel-188d0d.glb
+- title: BBS RS16 Tuner Car Wheel
+- maker: ZenuuxOfficiel
+- source: https://sketchfab.com/3d-models/bbs-rs16-tuner-car-wheel-188d0d33ca424524b10dcf34409e97f8
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)

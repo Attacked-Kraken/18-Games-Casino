@@ -1,0 +1,24 @@
+{
+ "file": "models/fetched/le-mans-race-car.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 7,
+  "tris": 89888,
+  "size": [
+   13.828,
+   3.477,
+   5.761
+  ],
+  "mainSize": [
+   13.828,
+   3.477,
+   5.761
+  ],
+  "stray": 1,
+  "bytes": 2139648
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:44:00.423Z"
+}

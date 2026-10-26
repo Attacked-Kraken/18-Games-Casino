@@ -155,17 +155,6 @@ Format (one section per model — keep the keys exactly like this):
 - notes: replaces the flat canvas-texture rim faces (owner 2026-10-25: rims look small and fake, like a sticker; measured 0.000 m thick, 30 vertices per face) with a real 3D alloy wheel: Car Wheel/Rim by jack.wake04, CC-BY, 54k tris / 26.9k verts, https://sketchfab.com/3d-models/car-wheelrim-f6f2600358744d928f9b6afc4aabc004 - download file size unverified until the fetch robot lands it
 - status: LOCKED (owner 👍 Sun Oct 25 2026 - nobody may swap it without the owner)
 
-## MODEL: Exotic Racer rim - Split 10 (artist wheel)
-- id: erc-rim-split10
-- game: apexracer.html
-- file: models/fetched/wheel-9905f1.glb
-- look: night
-- view: tools/model-viewer.html?m=models/fetched/wheel-9905f1.glb&look=night
-- by: algre141@gmail.com
-- version: 1
-- notes: for the Rims tab style Split 10. FETCH CAME BACK EMPTY - the robot's file is 384 bytes with 0 meshes (measured from the file itself) and all four robot pictures show an empty stage (0 triangles, 0.00 m tall), so there is nothing to judge yet: this one needs re-fetching before the owner can rule on it. The Sketchfab model itself is Wheel by prasetyoheru10, CC-BY, 202k tris, a true split-5 chrome design (verified from its Sketchfab pictures in G-361).
-- status: WAITING OWNER
-
 ## MODEL: Exotic Racer rim - Turbine (artist wheel)
 - id: erc-rim-turbine
 - game: apexracer.html
@@ -186,18 +175,7 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: for the Rims tab style Deep Dish. Robot pictures are good: a deep copper barrel with thin multi-spokes - the face reads clearly in the side picture (the front picture caught the wheel's back). 26,108 triangles, the lightest of the five. Car Rim by pira.midale, CC-BY.
-- status: WAITING OWNER
-
-## MODEL: Exotic Racer rim - Mesh, gold cross-hatch (artist wheel)
-- id: erc-rim-mesh
-- game: apexracer.html
-- file: models/fetched/tuner-wheel-8ea8e1.glb
-- look: night
-- view: tools/model-viewer.html?m=models/fetched/tuner-wheel-8ea8e1.glb&look=night
-- by: algre141@gmail.com
-- version: 1
-- notes: for the Rims tab style Mesh. PICTURES BROKEN: the model holds 55,958 triangles but sits off-centre, so the robot's pictures show it as a tiny speck (one view catches a small gold wheel face) - the owner cannot judge it from these pictures; it needs a recentered copy or a re-shoot first. The design per its Sketchfab pictures (G-361): a gold cross-hatch mesh wheel with its own tyre, Tuner Wheel by Martin Trafas, CC-BY. Note: the Mesh slot today runs the LOCKED erc-sport-rim (Car Wheel/Rim by jack.wake04) - putting this one in that slot needs the owner's word on both models.
-- status: WAITING OWNER
+- status: LOCKED (owner 👍 Mon Oct 26 2026 - nobody may swap it without the owner)
 
 ## MODEL: Exotic Racer rim - Monoblock rally (artist wheel)
 - id: erc-rim-monoblock
