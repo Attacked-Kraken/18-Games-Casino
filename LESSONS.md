@@ -227,3 +227,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-25 help desk
 - Sketchfab fetch robot runs can pile up duplicate PRs for one model (#1800 vs #1805). Before waiting on a robot/sketchfab-* PR that conflicts, check whether the same models/fetched file is already on main; if so it is superseded, not stuck.
+
+## 2026-10-26 help desk
+- A test that adds a long full-lap census to a game's suite can push its play step past the 35-min limit: say so in a HELP-VP: robot line with the run times, do not keep re-pushing.
