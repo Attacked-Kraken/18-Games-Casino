@@ -356,3 +356,48 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-26 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "JohnyxTR" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/wheel-9905f1.glb
+- title: Wheel
+- maker: prasetyoheru10
+- source: https://sketchfab.com/3d-models/wheel-9905f13918fd48b79dbdb032a9c80e64
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "prasetyoheru10" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb
+- title: Smokehaus Racing - Turbine M2 Alloy Wheel
+- maker: Smokahontas
+- source: https://sketchfab.com/3d-models/smokehaus-racing-turbine-m2-alloy-wheel-8001493da8084d8dadafa42d3c501df1
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Smokahontas" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/car-rim-c66cf1.glb
+- title: Car Rim
+- maker: pira.midale
+- source: https://sketchfab.com/3d-models/car-rim-c66cf16c00be4ffaad5200a8447df68c
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "pira.midale" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/tuner-wheel-8ea8e1.glb
+- title: Tuner Wheel
+- maker: Martin Trafas
+- source: https://sketchfab.com/3d-models/tuner-wheel-8ea8e18f0c9a4044a694e2a03fc4beb1
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Martin Trafas" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb
+- title: Fifteen52 Inspired rally rim
+- maker: JPepe
+- source: https://sketchfab.com/3d-models/fifteen52-inspired-rally-rim-a0c9aae9fb5d4a2fbf8c2152ff64b47f
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "JPepe" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
