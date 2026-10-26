@@ -48,3 +48,13 @@ Format (one line each, newest at the bottom):
 - DONE (robot 2026-10-26: models/fetched/car-rim-c66cf1.glb) · window 6 · Exotic Racer Club garage rim style (deep dish) · Car Rim by pira.midale · https://sketchfab.com/3d-models/car-rim-c66cf16c00be4ffaad5200a8447df68c · CC-BY · 26k tris · height 0.68 m
 - DONE (robot 2026-10-26: models/fetched/tuner-wheel-8ea8e1.glb) · window 6 · Exotic Racer Club garage rim style (mesh) · Tuner Wheel by Martin Trafas · https://sketchfab.com/3d-models/tuner-wheel-8ea8e18f0c9a4044a694e2a03fc4beb1 · CC-BY · 56k tris · height 0.68 m
 - DONE (robot 2026-10-26: models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb) · window 6 · Exotic Racer Club garage rim style (monoblock) · Fifteen52 Inspired rally rim by JPepe · https://sketchfab.com/3d-models/fifteen52-inspired-rally-rim-a0c9aae9fb5d4a2fbf8c2152ff64b47f · CC-BY · 92k tris · height 0.68 m
+
+**ACCEPTANCE ROBOT (owner Oct 26 2026, LOCKED): you never judge a bad download.** Every model the fetch robot saves is measured
+from the file itself and from its 4 pictures (tools/model-accept.mjs): EMPTY (nothing in the file), STRAY (a far-off piece makes it a
+speck), SIZE (not the real size on the request line, 20% allowed), HUGE / TINY, PICTURES (the model fills under 2% of the pictures).
+A model that FAILS is rejected by the robot (the line becomes `REJECTED (acceptance robot ...)`), its files are removed, and the
+NEXT-BEST free Sketchfab model for the same job is asked for by itself (tools/model-retry.mjs; ids already tried are in
+models/tried.json; an EMPTY download is first re-asked as a glTF zip; after 3 failed tries ONE `HELP-VP: robot · model fetch` line
+is filed). The passing model's measurements sit next to it as `<name>.accept.json`. A LOCKED model or one a game already uses is only
+reported, never replaced. The nightly Model audit (3:47 AM Central) measures every .glb in the repo and publishes audit.md on the
+`model-audit` branch. Put a real size on your request line (`height 0.68 m`) - it is what the robot checks against.

@@ -1,0 +1,61 @@
+name: Model audit
+# Owner Oct 26 2026: "all models for every game by every fetcher". Measures EVERY .glb in the repo (file + robot pictures when they
+# exist) with tools/model-accept.mjs and publishes the list to the `model-audit` branch (audit.md + audit.json). Nightly 3:47 AM Central.
+# fix=1 also runs the retry robot on fetched models that FAIL and are neither LOCKED nor used by a game: it rejects them and opens
+# ONE pull request that asks for the next-best model (the Sketchfab fetch robot downloads it when that merges).
+on:
+  schedule:
+    - cron: '47 8 * * *'
+  workflow_dispatch:
+    inputs:
+      fix:
+        description: '1 = also reject failed fetched models and ask for replacements (opens a PR)'
+        default: ''
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  audit:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Measure every model
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1 || true
+          ALL=$(git ls-files '*.glb' | grep -v '^characters/' | sort)
+          node tools/model-accept.mjs --write --pics $ALL > audit-out.txt || true
+          grep -E '^(::error|::notice|ACCEPT)' audit-out.txt | sed 's/^::[a-z]* title=Model acceptance:://' > audit.txt
+          { echo "# Model audit $(date -u +%F' '%H:%M) UTC"; echo; echo '```'; cat audit.txt; echo '```'; } > audit.md
+          cat audit.md >> "$GITHUB_STEP_SUMMARY"
+          node -e "
+            const fs=require('fs');const out=require('child_process').execSync(\"find . -name '*.accept.json' -not -path './node_modules/*'\").toString().split('\\n').filter(Boolean).map(f=>JSON.parse(fs.readFileSync(f)));
+            fs.writeFileSync('audit.json',JSON.stringify(out.map(r=>({file:r.file,ok:r.ok,why:r.why,tris:r.facts&&r.facts.tris,size:r.facts&&r.facts.size,pictures:r.pictures})),null,1));"
+      - name: Reject failed fetched models and ask for replacements
+        if: github.event.inputs.fix != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
+        run: |
+          FAILED=$(for f in models/fetched/*.accept.json; do grep -q '"ok": false' "$f" && echo "${f%.accept.json}.glb"; done)
+          [ -z "$FAILED" ] && { echo "no failed fetched models"; exit 0; }
+          node tools/model-retry.mjs $FAILED | tee retry-out.txt
+          git diff --quiet && { echo "nothing changed"; exit 0; }
+          git config user.name "model audit robot"; git config user.email "actions@users.noreply.github.com"
+          git add -A MODEL-REQUESTS.md ASSETS.md models jobs/HELP.md
+          git commit -m "Model audit robot: rejected failed models, asked for replacements"
+          B="robot/sketchfab-audit-${{ github.run_number }}"
+          git checkout -q -b "$B" && git push -q origin "$B"
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Model audit robot: replace failed models (run ${{ github.run_number }})" -f body="$(cat retry-out.txt)" --jq .number)
+          gh workflow run game-check-pr.yml --ref "$B" || true
+          echo "opened pull request #$N"
+      - name: Publish the audit
+        run: |
+          git config user.name "model audit robot"; git config user.email "actions@users.noreply.github.com"
+          D=$(mktemp -d); cp audit.md audit.json "$D"/
+          cd "$D" && git init -q && git checkout -q -b model-audit && git add -A && git commit -qm "model audit $(date -u +%F)" 
+          git remote add origin "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git"
+          git push -q -f origin model-audit
