@@ -1529,4 +1529,71 @@ export default [
       if (d.copper < 4) return 'the deep dish copper finish is missing from the wheels (found ' + d.copper + ' copper parts)';
       return true;
     } },
+  {
+    id: 'play-wheel-size-grounded',
+    ask: "Owner Oct 26 2026: 'Bigger rims only make car float' - at Wheel Size Plus and Max the whole car (its own tyres included) rose by the lift and hovered; the tyres must grow with the lift so the car rides higher AND stays on the ground",
+    async test(page, h) {
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      const res = await h.eval(async () => {
+        const E = window.__erc, sleep = (ms) => new Promise((s) => setTimeout(s, ms)), out = [];
+        for (let w = 0; w <= 2; w++) {
+          E.S.cars[E.S.cur] = Object.assign({}, E.S.cars[E.S.cur], { wheel: w });
+          E.openGarage(); await sleep(600);
+          const root = window.__reality.player; if (!root) return 'no garage car';
+          const tilt = root.children[0]; let best = null, bestN = 0;
+          for (const c of tilt.children) { let n = 0; c.traverse((q) => { if (q.isMesh) n++; }); if (n > bestN) { bestN = n; best = c; } }
+          let min = 1e9, top = -1e9; const v = new root.position.constructor();
+          best.traverse((q) => { if (!q.isMesh || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; for (let i = 0; i < pa.count; i += 2) { v.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); if (v.y < min) min = v.y; if (v.y > top) top = v.y; } });
+          out.push({ w, bottom: min, top });
+        }
+        return out;
+      });
+      if (typeof res === 'string') return res;
+      if (!res || res.length !== 3) return 'wheel size census did not run';
+      if (Math.abs(res[1].bottom - res[0].bottom) > 0.03 || Math.abs(res[2].bottom - res[0].bottom) > 0.03) return 'bigger wheel sizes float the car: bottoms stock/plus/max = ' + res.map((r) => r.bottom.toFixed(3)).join('/');
+      if (res[2].top - res[0].top < 0.05) return 'the car no longer rides higher at Max (body top rises only ' + (res[2].top - res[0].top).toFixed(3) + ' m) - the owner wants the higher ride, grounded';
+      return true;
+    }
+  },
+  {
+    id: 'play-garage-tabs-drag',
+    ask: "Owner Oct 26 2026: 'Still tabs don't scroll or work' - on a portrait phone the page is rotated 90 degrees and the tab strip could not be panned, so the lower tabs (Turbo onward) were unreachable; the strips must drag-scroll on either screen axis",
+    async test(page, h) {
+      const src = await h.eval(() => document.documentElement.innerHTML);
+      if (!src.includes('pan-x pan-y')) return 'the tab strips still restrict touch panning to one axis';
+      if (!src.includes('dragScroll')) return 'the strips have no drag-scroll wiring';
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      const r = await h.eval(async () => {
+        const E = window.__erc; E.openGarage();
+        await new Promise((s) => setTimeout(s, 600));
+        const el = document.getElementById('gtabs'); if (!el) return 'no tab strip';
+        if (el.scrollWidth <= el.clientWidth) return { inconclusive: 'the tab strip fits without scrolling at this viewport' };
+        const rect = el.getBoundingClientRect(), cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2;
+        const fire = (type, x, y) => el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, pointerId: 7, isPrimary: true }));
+        fire('pointerdown', cx, cy);
+        for (let i = 1; i <= 8; i++) fire('pointermove', cx - i * 30, cy);
+        fire('pointerup', cx - 240, cy);
+        if (el.scrollLeft < 30) return 'dragging the tab strip did not scroll it (scrollLeft ' + el.scrollLeft + ')';
+        el.scrollLeft = el.scrollWidth;
+        const last = el.children[el.children.length - 1]; last.click();
+        await new Promise((s) => setTimeout(s, 300));
+        return E.G.tab === last.dataset.t ? true : 'the last tab (' + last.dataset.t + ') did not open after scrolling to it';
+      });
+      return r === true || (r && r.inconclusive) ? r : (typeof r === 'string' ? r : 'tab drag check failed');
+    }
+  },
+  {
+    id: 'play-music-sync-start',
+    ask: "Owner Oct 26 2026: 'music static in and out' - the three race music stems each started the moment their own decode landed, leaving them offset against each other; the speed crossfade smeared the offset into static. The stems must start together at one context time",
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      for (const f of ['menu', 'gameplay_low', 'gameplay_mid', 'gameplay_high']) if (!fs.existsSync(path.join(repoRoot, 'sounds/pack/music/sports_arena/sports_arena_' + f + '.mp3'))) return 'music file missing from the repo: sports_arena_' + f + '.mp3';
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the race music stems do not start together (missing ' + n + ')';
+        return true;
+      }, ['musSyncRace', 'c.currentTime + 0.06', 's.start(when)']);
+    }
+  }
 ];
