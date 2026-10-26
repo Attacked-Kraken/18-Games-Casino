@@ -196,7 +196,7 @@ Format (one section per model — keep the keys exactly like this):
 - view: tools/model-viewer.html?m=models/fetched/tuner-wheel-8ea8e1.glb&look=night
 - by: algre141@gmail.com
 - version: 1
-- notes: for the Rims tab style Mesh. PICTURES BROKEN: the model holds 55,958 triangles but sits off-centre, so the robot's pictures show it as a tiny speck (one view catches a small gold wheel face) - the owner cannot judge it from these pictures; it needs a recentered copy or a re-shoot first. The design per its Sketchfab pictures (G-361): a gold cross-hatch mesh wheel with its own tyre, Tuner Wheel by Martin Trafas, CC-BY. Note: the Mesh slot today runs the LOCKED erc-sport-rim (Car Wheel/Rim by jack.wake04) - putting this one in that slot needs the owner's word on both models.
+- notes: for the Rims tab style Mesh. REBUILT by window 6 (Oct 26 2026): as fetched, the file's parts sat at broken scales - the gold rim measured 0.164 m across inside a flat-lying 1.6 m tyre, centres 0.24 m apart, so the robot's pictures showed a speck. The four parts were re-assembled into one wheel exactly as designed (gold cross-hatch rim, 0.42 m, in its own 0.68 m tyre, everything centred on the origin) with only the part transforms corrected - geometry, textures and maker unchanged: Tuner Wheel by Martin Trafas, CC-BY, 55,958 triangles. Ready for the owner's thumbs-up. Note: the Mesh slot today runs the LOCKED erc-sport-rim (Car Wheel/Rim by jack.wake04) - putting this one in that slot needs the owner's word on both models.
 - status: WAITING OWNER
 
 ## MODEL: Exotic Racer rim - Monoblock rally (artist wheel)
