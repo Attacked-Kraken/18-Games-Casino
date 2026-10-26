@@ -19,6 +19,12 @@ faults = [f for f in json.loads(out).get("faults", []) if not f.get("until") or 
 cm = j(f"repos/{REPO}/commits?path=tools/game-check/known-faults.json&sha=main&per_page=1")
 faults_at = parse(cm[0]["commit"]["committer"]["date"])
 print(f"::notice::{len(faults)} live faults; file last changed {faults_at.isoformat()}")
+# Owner Oct 26 2026 12:00 AM "closed loop pipeline, autonomous": a FAILED check older than the newest ROBOT change on main
+# (tools/game-check/**: tests, judge, measurements, faults) is stale - the robot may have been the problem (#1812 failed on a test
+# that #1832 fixed on main an hour later and sat red). It is re-run once: main merged in, fresh check. The fresh check rewrites the
+# comment, so it is newer than the robot change and cannot loop. A PR still red after that is a real red and goes to its window.
+tc = j(f"repos/{REPO}/commits?path=tools/game-check&sha=main&per_page=1")
+tools_at = parse(tc[0]["commit"]["committer"]["date"]) if tc else faults_at
 ID = re.compile(r"(?:tester|play|never|owner|keep)(?:-[a-z0-9]+)+")
 def relaxed(rx):
     """The Check status comment prints a test's TEXT, not its id (check.mjs tests faults against line + ids). When a fault regex
@@ -50,12 +56,14 @@ for pr in j(f"repos/{REPO}/pulls?state=open&per_page=100") or []:
     if not reasons: continue
     upd = parse(c["updated_at"])
     ok = all(matches(r) for r in reasons)
+    stale_robot = (not ok) and upd < tools_at and (datetime.datetime.now(datetime.timezone.utc) - upd).total_seconds() > 600
+    if stale_robot: ok = True
     print(f"::notice::#{num}: FAILED, {len(reasons)} reason line(s), all known faults: {ok}, comment {upd.isoformat()} vs faults {faults_at.isoformat()}")
-    if not ok or upd >= faults_at: continue
+    if not ok or (upd >= faults_at and not stale_robot): continue
     n += 1
     if DRY: print(f"::notice::  DRY RUN: would merge main into {pr['head']['ref']} and start a fresh check"); continue
     why = "/tmp/why.txt"
-    with open(why, "w") as fh: fh.write("A known robot fault was added on main after this check ran, and every red line here is that fault. The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge.\n")
+    with open(why, "w") as fh: fh.write(("The robot's own tests or measurements changed on main after this check ran (stale result). The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge." if stale_robot else "A known robot fault was added on main after this check ran, and every red line here is that fault. The robot merged main into your branch and is checking it again - do not push, do not re-ask to merge.\n"))
     subprocess.run(["bash", "tools/game-check/status-comment.sh", str(num), "RETRYING", why])
     gh("-X", "PUT", f"repos/{REPO}/pulls/{num}/update-branch")
     import time; time.sleep(20)
