@@ -2,18 +2,16 @@
  "game": "apexracer.html",
  "name": "Exotic Racer Club",
  "seconds": 60,
- "gameSecondsReached": 59.9,
- "wallSeconds": 89.6,
- "at": "2026-10-26T04:49:53.267Z",
- "samples": 209,
+ "gameSecondsReached": 30.9,
+ "wallSeconds": 1503.9,
+ "at": "2026-10-26T05:19:28.577Z",
+ "samples": 9456,
  "video": "video.webm",
  "frames": [
   "t00.jpg",
   "t10.jpg",
   "t20.jpg",
-  "t30.jpg",
-  "t40.jpg",
-  "t50.jpg"
+  "t30.jpg"
  ],
  "hook": {
   "camera": true,
@@ -21,40 +19,44 @@
  },
  "camera": {
   "distance": {
-   "min": 8.36,
-   "mean": 102.22,
-   "max": 167.93
+   "min": 6.63,
+   "mean": 12.48,
+   "max": 34.48
   },
   "height": {
-   "min": 2.3,
-   "mean": 2.54,
-   "max": 3.56
+   "min": 2.19,
+   "mean": 3.19,
+   "max": 17.63
   },
   "aimErrorDeg": {
-   "min": 0.48,
-   "mean": 5.08,
-   "max": 27.85
+   "min": 4.77,
+   "mean": 7.69,
+   "max": 13.57
   },
-  "followLagMetresPerMps": -0.08
+  "followLagMetresPerMps": 0.01
  },
  "playerOnScreenPct": 100,
  "speed": {
   "min": 0,
-  "mean": 50.13,
-  "max": 80.77
+  "mean": 41.65,
+  "max": 85.49
  },
- "metresMoved": 192.4,
+ "metresMoved": 182.3,
  "moments": [
   {
-   "at": 9,
-   "words": "#st/# LAP #/# TIME BEST GO!"
+   "at": 1.4,
+   "words": "#rd/#"
   },
   {
-   "at": 17,
+   "at": 1.9,
+   "words": "#st/#"
+  },
+  {
+   "at": 16.4,
    "words": "NEAR MISS! +NITRO"
   }
  ],
- "momentCount": 2,
+ "momentCount": 3,
  "camDebug": [
   {
    "type": "OrthographicCamera",
@@ -78,12 +80,12 @@
   },
   {
    "type": "PerspectiveCamera",
-   "fov": 71.33955312124903,
+   "fov": 71.69533587711204,
    "aspect": 2.164102564102564,
    "pos": [
-    -26.1,
-    2.6,
-    -171.8
+    165.9,
+    2.4,
+    -63.2
    ],
    "isRender": false,
    "parent": null
