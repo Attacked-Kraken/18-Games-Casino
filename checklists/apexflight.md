@@ -2,7 +2,7 @@
 
 DRAFT — tester window 9, G-231. Each item has SOURCE (file), NUMBERS (copied word-for-word), MEASURE (robot can do), TEST (tester-chk-<id>).
 
-## 1. Jet model
+## 1. Jet model [x] OK (G-341: verified — models/apex-jet exists, window.__flight.jet present, jet.group is Object3D with 3 wheels, style fighter)
 - SOURCE: rules/short/apexflight.md
 - NUMBERS: "models/apex-jet"
 - MEASURE: Check `window.__flight.jet` exists and `jet.group` is a THREE.Group (not boxes)
