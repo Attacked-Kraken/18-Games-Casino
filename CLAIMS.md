@@ -334,4 +334,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-363 | window 3 | looks/refs/apexflight.md, jobs/G-363-w3.md | build/g-363-apexflight |
 | G-364 | window 6 | jobs/G-364.md, CLAIMS.md | build/g-364-apexracer - DONE PR #1848 merged 4df36f0c (Muse algre141) |
 | G-366 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-366.md | build/g-366-apexflight |
-| G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
+| G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
