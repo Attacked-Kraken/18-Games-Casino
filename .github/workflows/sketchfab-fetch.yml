@@ -52,6 +52,7 @@ jobs:
           SKETCHFAB_TOKEN: ${{ secrets.SKETCHFAB_TOKEN }}
           DRY: ${{ github.event.inputs.dry }}
           TEST_UID: ${{ github.event.inputs.test }}
+          GH_TOKEN: ${{ github.token }}
         run: node tools/sketchfab-fetch.mjs
       - name: Shrink + save
         if: github.event.inputs.clean == ''

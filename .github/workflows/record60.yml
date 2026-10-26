@@ -1,0 +1,53 @@
+name: Record 60
+# Owner Oct 25 2026 11:39 PM: the factory makes the 60-second recording itself. No phone, no person.
+# Plays one game on its own (gas held, same hook the robot uses), films it, measures the camera, saves the result on the
+# `recordings` branch (rec/<game>/<time>/) and as a run artifact. Bless a good one with input bless=true (owner / director says so).
+on:
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Game page, e.g. apexracer.html'
+        required: true
+        default: 'apexracer.html'
+      seconds:
+        description: 'Game seconds to record'
+        default: '60'
+      bless:
+        description: 'true = save this recording as the spec'
+        default: 'false'
+permissions:
+  contents: write
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg (optional)
+        run: (apt-get install -y --no-install-recommends ffmpeg >/dev/null 2>&1 || echo "no ffmpeg - webm kept") 
+      - name: Record
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 || true
+          node tools/game-check/serve.mjs 8811 >/dev/null 2>&1 &
+          sleep 2
+          GAME="${{ inputs.game }}" REC_SECONDS="${{ inputs.seconds }}" WALLCAP=600 BLESS="${{ inputs.bless == 'true' && '1' || '0' }}" node tools/record60/record60.mjs http://127.0.0.1:8811/ rec-out || true
+          cat rec-out/*/verdict.txt >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recording
+          path: rec-out
+          if-no-files-found: ignore
+      - name: Save on the recordings branch
+        if: always()
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "record60 robot"; git config user.email "robot@users.noreply.github.com"
+          D=rec/$(basename "${{ inputs.game }}" .html)/$(date -u +%Y%m%d-%H%M)
+          git fetch origin recordings 2>/dev/null && git checkout -B recordings origin/recordings || git checkout --orphan recordings
+          git rm -rf . >/dev/null 2>&1 || true
+          mkdir -p "$D"; cp -r rec-out/*/* "$D"/ 2>/dev/null || true
+          git add rec; git commit -m "record60: ${{ inputs.game }} $D" && git push origin recordings || true
