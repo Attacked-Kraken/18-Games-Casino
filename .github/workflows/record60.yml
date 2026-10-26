@@ -77,7 +77,8 @@ jobs:
         run: |
           git config user.name "record60 robot"; git config user.email "robot@users.noreply.github.com"
           STAMP=$(date -u +%Y%m%d-%H%M)
-          git fetch origin recordings 2>/dev/null && git checkout -B recordings origin/recordings || git checkout --orphan recordings
-          git rm -rf . >/dev/null 2>&1 || true
+          if git fetch origin recordings 2>/dev/null; then git checkout -B recordings origin/recordings; else git checkout --orphan recordings; git rm -rf . >/dev/null 2>&1 || true; fi
+          # keep 14 days: drop stamp folders older than that
+          CUT=$(date -u -d '14 days ago' +%Y%m%d); for d in rec/*/*/; do [ -d "$d" ] || continue; [ "$(basename "$d" | cut -c1-8)" -lt "$CUT" ] && git rm -rq "$d" || true; done
           for d in all-rec/rec-*; do [ -d "$d" ] || continue; for g in "$d"/*/; do n=$(basename "$g"); mkdir -p "rec/$n/$STAMP"; cp -r "$g". "rec/$n/$STAMP"/; done; done
           git add rec; git commit -m "record60: $STAMP" && git push origin recordings || true
