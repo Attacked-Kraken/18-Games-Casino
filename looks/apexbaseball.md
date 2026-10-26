@@ -52,3 +52,17 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
+
+## REFERENCES: (G-356)
+- Broadcast angle — center-field camera, pitcher framed left of center with the plate just right of center and room around home plate: https://pitcherlist.com/know-your-angles-the-best-and-worst-of-mlb/
+- Stance, modern — pitcher mid-windup on the mound, gray uniform, cap and glove, blurred stadium crowd behind: https://wallpapers.com/wallpapers/baseball-pitcher-matthew-boyd-windup-m7wh684yf0osro7p.html
+- Stance, classic — pitcher standing in the windup position, white pinstripe uniform, glove on his throwing hand (UNI archive photo, 1971): https://scholarworks.uni.edu/panther_athletics/942
+- Gear — baseball glove close-up: leather texture, lacing, pocket shape, mitt silhouette: https://www.hippopx.com/en/free-photo-euzfg
+- Venue — view from the outfield seats: fans, players, grandstands and the full field in one frame: https://www.superstock.com/asset/view-fans-players-yankee-stadium-new-york-from-outfield-seats/4286-32407
+- Best in genre (console) — MLB The Show 25, official PlayStation page: https://www.playstation.com/en-us/games/mlb-the-show-25/
+
+## MUST MATCH: (G-356, written from the links above)
+- Proportions: athletes read ~1.8 m with real human proportions — head about 1/7 of height, long legs, no boxy or cartoon limbs.
+- Camera height: pitching view sits low behind the pitcher, slightly above him, pitcher fully in frame with the plate cluster ahead — the broadcast center-field framing, not a high wide shot.
+- Gear silhouette: glove reads as a mitt at a glance — dark pocket, finger roll, laced edge — never a brown blob; cap, button-front jersey, belted pants.
+- Motion weight: windup and delivery carry weight — leg lift, hip rotation, arm whip, planted lead foot, full follow-through — no floaty or instant poses.
