@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/car-rim-c66cf1.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 3,
+  "tris": 26108,
+  "size": [
+   0.37,
+   0.68,
+   0.68
+  ],
+  "mainSize": [
+   0.37,
+   0.68,
+   0.68
+  ],
+  "stray": 1,
+  "bytes": 424652
+ },
+ "pictures": [
+  {
+   "pic": "car-rim-c66cf1-front.jpg",
+   "pct": 25.3
+  },
+  {
+   "pic": "car-rim-c66cf1-side.jpg",
+   "pct": 24.5
+  },
+  {
+   "pic": "car-rim-c66cf1-back.jpg",
+   "pct": 25.6
+  },
+  {
+   "pic": "car-rim-c66cf1-top.jpg",
+   "pct": 25.3
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-26T12:43:59.767Z"
+}

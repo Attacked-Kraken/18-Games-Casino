@@ -45,12 +45,31 @@ jobs:
           for f in $(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$'); do G="$G$f,"; done
           for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
           MODE="touched"
-          NOTES='\.md$|^(jobs|reviews|plans|looks|ideas|team|notes)/'
-          if echo "$CH" | grep -qE '^(characters/|models/|vendor/|three\.module|look-presets\.js)'; then
+          # PERMANENT FIX (VP, Oct 26 2026, owner "why do checks take so long"): a model-audit PR that only added measuring sidecars
+          # (models/*.accept.json, pictures, ledgers) and removed two UNUSED wheels played Hockey x4 + Track & Field x3 + Baseball x2 + Soccer
+          # (12 min) because ANY file under models/ meant "shared". Now: sidecars never play anything; a model file plays only the game
+          # pages that NAME it (checked in the base and the PR, so a deleted file is caught too); the `models` job below still loads
+          # and measures every MODELS.md entry. Characters / three.js / look presets / kit scripts keep the old "every people game" rule.
+          SIDE_RE='^models/.*\.(accept\.json|ask|size|md|txt|jpg|jpeg|png|webp)$|^models/tried\.json$'
+          NOTES='\.md$|^(jobs|reviews|plans|looks|ideas|team|notes)/|'"$SIDE_RE"
+          SH=$(echo "$CH" | grep -E '^(characters/|models/|vendor/|three\.module|look-presets\.js)' | grep -vE "$SIDE_RE" || true)
+          OTHERSH=$(echo "$SH" | grep -vE '^models/' || true)
+          REFG=""; WIDE=""
+          for m in $(echo "$SH" | grep -E '^models/' || true); do
+            b=$(basename "$m")
+            for rev in origin/$BASE HEAD; do
+              for h in $(git grep -l -F -- "$b" $rev -- '*.html' '*.js' '*.mjs' 2>/dev/null | sed 's/^[^:]*://' | grep -vE '^(tools/|reviews/)' || true); do
+                case "$h" in apex*.html) REFG="$REFG$h,";; *) WIDE=1;; esac
+              done
+            done
+          done
+          if [ -n "$OTHERSH" ] || [ -n "$WIDE" ]; then
             MODE="shared"
             # shared 3D people / gear / three.js changed -> every game that draws people (fair blame: hard breakage only)
             G="$G$(node -e "console.log(require('./tools/game-check/games.json').games.filter(g=>g.people).map(g=>g.file).join(','))"),"
-          elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -qvE "$NOTES"; then
+          elif [ -n "$REFG" ]; then
+            MODE="shared"; G="$G$REFG"      # only the games whose page names a changed model
+          elif [ -z "$G" ] && [ -n "$CH" ] && echo "$CH" | grep -vE "$NOTES" | grep -qvE '^models/'; then
             # no game / fixes / shared folder, but code did change (robots, workflows, hub, kit...): a Claude's robot-only
             # change -> 2 reference games here (people game + vehicle game); main's full run after the merge does the rest
             MODE="robot-only"; G="apexpaperplane.html,"   # owner Oct 23 5:24 PM: ONE small reference game - a robot-only PR can't be killed by Hockey

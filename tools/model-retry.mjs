@@ -1,7 +1,7 @@
 // MODEL RETRY robot (owner Oct 26 2026: "if it ever comes out horrible or not what it's supposed to be it needs to
 // automatically bring the correct one"). Run right after tools/model-accept.mjs --write. For every model that FAILED acceptance:
 //   1. its request line in MODEL-REQUESTS.md becomes "REJECTED (acceptance robot <date>: <why>)" - the owner never sees it
-//   2. the bad file, its 4 pictures and its ledger entry are removed (a failed model is never saved on main)
+//   2. the bad file, its 4 pictures, its MODELS.md entry and its ledger entry are removed (a failed model is never saved on main)
 //   3. a replacement is asked for by itself, up to MAX tries per request:
 //        try 1 after an EMPTY download = the SAME model once more as a glTF zip (`FORMAT gltf` on the new OPEN line);
 //        otherwise the next-best free Sketchfab model for the same job (CC-BY / CC0, downloadable, under 20 MB, 5k-250k
@@ -24,7 +24,13 @@ let ledger = fs.existsSync('ASSETS.md') ? fs.readFileSync('ASSETS.md', 'utf8') :
 const jobKey = (l) => l.replace(/^\s*-\s*[A-Z]+[^·]*·\s*/, '').split('·').slice(0, 2).join('·').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80);
 export function inUse(file) {
   try { if (new RegExp('^## MODEL:[^\\n]*\\n(?:(?!^## MODEL)[\\s\\S])*?' + path.basename(file).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:(?!^## MODEL)[\\s\\S])*?status:\\s*\\**\\s*LOCKED', 'm').test(fs.readFileSync('MODELS.md', 'utf8'))) return 'LOCKED in MODELS.md'; } catch {}
-  try { const hit = execSync(`grep -l -F "${file}" *.html 2>/dev/null || true`, { encoding: 'utf8' }).trim(); if (hit) return 'used by ' + hit.split('\n')[0]; } catch {}
+  // PERMANENT RULE (Oct 26 2026, audit PR #1874 went red): a file is never deleted while anything in the repo still points at it.
+  // Everything tracked counts (game pages, kit/, tools/, tests, other models) except the ledgers this robot edits itself.
+  try {
+    const skip = [':!MODELS.md', ':!ASSETS.md', ':!MODEL-REQUESTS.md', ':!models/tried.json', ':!*.accept.json', ':!reviews', ':!jobs', ':!needs', ':!looks', ':!ideas', ':!reports', ':!plans', ':!team', ':!checklists', ':!' + file];
+    const hit = execSync(`git grep -l -F -- "${path.basename(file)}" -- . ${skip.map(x => `'${x}'`).join(' ')} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
+    if (hit) return 'still referenced by ' + hit.split('\n')[0];
+  } catch {}
   return '';
 }
 const licOf = (lic) => { const s = ((lic && (lic.slug || lic.label)) || '').toLowerCase(); return /cc0|public domain/.test(s) ? 'CC0' : (s === 'by' || (/attribution$/.test(s) && !/non|share|deriv/.test(s))) ? 'CC-BY 4.0' : null; };
@@ -64,6 +70,8 @@ for (const f of files) {
   // remove the bad model, its pictures, its ledger entry
   if (!DRY) {
     for (const g of [f, accFile, ...['front', 'side', 'back', 'top'].map(s => f.replace(/\.glb$/i, '-' + s + '.jpg'))]) try { fs.unlinkSync(g); } catch {}
+    // the game check plays every MODELS.md entry, so an entry whose file is gone would 404 (audit PR #1874, Oct 26 2026) - drop it too
+    try { const md = fs.readFileSync('MODELS.md', 'utf8'), base = path.basename(f); const keep = md.split(/^(?=## MODEL:)/m).filter(sec => !(sec.startsWith('## MODEL:') && sec.includes(base))); fs.writeFileSync('MODELS.md', keep.join('')); } catch {}
     ledger = ledger.replace(new RegExp('\\n## ASSET: ' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\n(?:(?!\\n## ASSET:|\\n---)[\\s\\S])*', 'g'), '\n');
   }
   if (rec.tries >= MAX) {

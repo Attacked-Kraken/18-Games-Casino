@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/medieval-fantasy-book-06d5a8.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 6,
+  "tris": 54781,
+  "size": [
+   1.51,
+   0.68,
+   1.06
+  ],
+  "mainSize": [
+   1.51,
+   0.536,
+   1.06
+  ],
+  "stray": 1,
+  "bytes": 2902212
+ },
+ "pictures": [
+  {
+   "pic": "medieval-fantasy-book-06d5a8-front.jpg",
+   "pct": 11.7
+  },
+  {
+   "pic": "medieval-fantasy-book-06d5a8-side.jpg",
+   "pct": 9.6
+  },
+  {
+   "pic": "medieval-fantasy-book-06d5a8-back.jpg",
+   "pct": 11.5
+  },
+  {
+   "pic": "medieval-fantasy-book-06d5a8-top.jpg",
+   "pct": 22
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-10-26T14:49:04.895Z"
+}
