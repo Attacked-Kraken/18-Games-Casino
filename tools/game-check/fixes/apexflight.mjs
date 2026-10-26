@@ -93,44 +93,67 @@ export default [
   },
   {
     id: 'play-takeoff',
-    ask: 'take off: full throttle on the runway lifts the plane into the air',
+    ask: 'take off is manual: full throttle with no stick stays on the ground past rotate speed, and pulling the stick up lifts it off (owner: the plane must never lift by itself)',
     async test(page, h) {
-      // The robot runs all tests on ONE shared page, so an earlier test can
-      // leave the plane flying or crashed - and h.press never clicks a hidden
-      // button. Return to the runway with the game's own buttons first:
-      // menu FREE FLIGHT, crash-overlay tap, or the HUD RESET button.
+      // Same shared-page prelude as before: get the plane back on the runway first.
       const st = await h.eval(() => ({
         menu: !document.getElementById('startOv').hidden,
         crashed: !document.getElementById('crashOv').hidden,
         ground: !!(window.__flight && window.__flight.P.ground),
       })).catch(() => null);
       if (!st) return 'no window.__flight hook';
-      if (!st.ground) {
+      // Fresh page or reload lands on the menu with the plane already parked
+      // (ground true) - the menu must still start free flight, or the test
+      // would sit in the menu forever watching a parked plane.
+      let freshStart = false;
+      if (st.menu) {
+        if (!(await h.press('#btnFree'))) return 'could not press FREE FLIGHT';
+        freshStart = true;
+      } else if (!st.ground) {
         try {
-          if (st.menu) await h.press('#btnFree');
-          else if (st.crashed) await h.press('#crashOv');
+          if (st.crashed) await h.press('#crashOv');
           else await h.press('#resetBtn');
         } catch (e) {}
+      }
+      if (freshStart) {
+        await h.wait(400);
+        // A fresh start must hand the player an idle plane, not full throttle.
+        const thr0 = await h.eval(() => window.__flight ? window.__flight.P.thr : null).catch(() => null);
+        if (thr0 !== null && thr0 > 0.01) return 'takeoff starts at full throttle - the player never spools up (thr ' + thr0.toFixed(2) + ')';
       }
       return h.eval(() => {
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
         return new Promise((res) => {
+          // Stage the roll exactly like a fresh free flight, then spool up by hand.
+          F.P.pos.set(0, F.jet.gearHeight, -600); F.P.vel.set(0, 0, 0); F.P.yaw = 0; F.P.pitch = 0; F.P.roll = 0; F.P.ground = true;
           const t0 = Date.now();
-          let sawGround = F.P.ground === true;
           const iv = setInterval(() => {
-            if (F.P.ground === true) sawGround = true;
-            if (sawGround && !F.P.ground && F.P.pos.y > 2) {
+            F.P.thr = 1; F.jetInput.throttle = 1;   // holding full throttle, like the player would
+            const v = Math.hypot(F.P.vel.x, F.P.vel.z);
+            if (F.P.ground === false) { clearInterval(iv); return res('plane lifted off with no stick input at ' + v.toFixed(1) + ' m/s - takeoff is not manual'); }
+            if (v >= 25) {
+              // Past rotate speed with full throttle and no stick, still on the
+              // ground: that is the proof. Now pull the stick up like the player would.
               clearInterval(iv);
-              res(true);
-            } else if (!document.getElementById('crashOv').hidden) {
-              clearInterval(iv);
-              res('plane crashed during the takeoff roll');
-            } else if (Date.now() - t0 > 22000) {
-              clearInterval(iv);
-              res(sawGround ? 'plane rolled but never lifted off' : 'plane did not start on the runway');
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+              const t1 = Date.now();
+              const iv2 = setInterval(() => {
+                F.P.thr = 1; F.jetInput.throttle = 1;
+                if (F.P.ground === false && F.P.pos.y > F.jet.gearHeight + 2) {
+                  clearInterval(iv2);
+                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                  return res(true);
+                }
+                if (Date.now() - t1 > 10000) {
+                  clearInterval(iv2);
+                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                  return res('stick up at rotate speed did not lift the plane off');
+                }
+              }, 200);
             }
-          }, 300);
+            if (Date.now() - t0 > 15000) { clearInterval(iv); return res('plane never reached rotate speed at full throttle (v ' + v.toFixed(1) + ' m/s)'); }
+          }, 200);
         });
       });
     },

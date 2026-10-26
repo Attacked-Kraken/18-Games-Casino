@@ -4,19 +4,21 @@ Read this before every job on Apex Flight. The owner says each thing ONCE; it li
 When the owner gives a 👎, his exact words are added under NEVER (or MUST) and as a test in
 `tools/game-check/fixes/apexflight.mjs`.
 
-## WHERE THINGS ARE — `apexflight.html` (1264 lines)
+## WHERE THINGS ARE — `apexflight.html` (1262 lines)
 - Menus / HTML / CSS (menu + friend overlays - .panel capped at 100dvh-16px, compacted so every panel fits a 390-high phone, G-238; THR button in the pad row, tall slider gone, G-280; QUALITY button ~113; #jetBtn placed under #back at ~55, G-243; touchdown band chip #bandBox CSS ~27 (centered chip under the runway box, G-283), HTML ~101, G-263): 1–154
-- Imports, helpers, constants, state (offRwyMsg flag ~187; peakAir ~185, G-232 r1): 155–191
-- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 192–500
-- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~529): 501–542
-- HUD artificial horizon: 543–566 · Messages: 567–571
-- Game flow (respawn ~572, crash, touchdown/scoring): 572–630
-- Input — keyboard (pollKeys ~643): 631–655 · Jet controls: pad + SHARED kit stick + THR button in the pad row (G-280); resetInputs 745 (blur / touchcancel / hidden zero every input, G-238): 656–754
-- Buttons / view toggle: 755–776 · Play a Friend codes (friendCode ~777): 777–804 · fitGame ~805: 805–825
-- Physics (step ~826; lift/stall, airbrake in the forces block; peakAir arms the gear-collapse check, G-232 r1): 826–939
-- Camera (step-5 offsets + sun follow): 940–971 · HUD update (off-runway reason re-assert; touchdown band block ~1014, G-263/G-268): 972–1024 · Music (procedural WebAudio): 1025–1145
-- QUALITY option wiring (~1149) · Test hooks (`__flight` 1164 incl. aiJets, `__reality` 1176 - traffic as others): 1146–1205
-- Main loop (kit axes merge ~1218; updateTraffic ~1233; ?test= owner-check hook 1249, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1206–1264
+- Imports, helpers, constants, state (offRwyMsg flag ~186; peakAir ~184, G-232 r1): 155–190
+- Renderer, scene, venue (step-6 look: ACES, shadow sun, PMREM env; runway block - tiling paint, threshold decals (numbers flipped upright for the pilot, G-275), polygonOffset ladder, G-132; crowdTick): 191–499
+- The jet (owner's Apex Jet pack, created external) + computer traffic (G-247: 4 pack jets in other styles/paints on wide loops, updateTraffic ~528): 500–541
+- HUD artificial horizon: 542–565 · Messages: 566–570
+- Game flow (respawn ~571, crash, touchdown/scoring): 571–629
+- Input — keyboard (pollKeys ~642): 630–654 · Jet controls: pad + SHARED kit stick + THR button in the pad row (G-280); resetInputs 744 (blur / touchcancel / hidden zero every input, G-238): 655–753
+- Buttons / view toggle: 754–775 · Play a Friend codes (friendCode ~776): 776–803 · fitGame ~804: 804–824
+- Physics (step ~825; lift/stall, airbrake in the forces block; peakAir arms the gear-collapse check, G-232 r1): 825–938
+- Camera (step-5 offsets + sun follow): 939–970 · HUD update (off-runway reason re-assert; touchdown band block ~1013, G-263/G-268): 971–1023 · Music (procedural WebAudio): 1024–1144
+- QUALITY option wiring (~1148) · Test hooks (`__flight` 1163 incl. aiJets, `__reality` 1175 - traffic as others): 1145–1204
+- Main loop (kit axes merge ~1217; updateTraffic ~1232; ?test= owner-check hook 1248, ?test=traffic = airborne in the traffic sky, ?test=band = challenge final at 70 kt, G-263, ?test=bandfree = free-flight final at 70 kt, G-268): 1205–1262
+
+Manual takeoff (owner 2026-10-25, no job number): the plane must never lift by itself - throttle starts at idle on respawn (was forced full), the auto-rotate assist is gone, and the nose answers to the stick only once fast, so full throttle + no stick stays on the ground past rotate speed and pulling the stick up lifts it off. Help text updated to match. Test: play-takeoff (rewritten: starts-at-idle + stays-grounded-past-rotate + stick-lifts-off).
 
 Shared stick (G-232): pitch/roll come from kit/controls.js `createControls` (left
 thumbstick, #apcZone trimmed to the old pack footprint); the jet pack keeps only
@@ -63,6 +65,7 @@ resetInputs (play test play-stick-never-stays-stuck).
 - 2026-10-23: Takeoff: a full-throttle roll must end in a real climb - never lift off, wallow at rotate speed and sink back onto the gear (owner video, no job number)
 - 2026-10-23: Frame time clamps at zero - a negative first frame threw the parked jet under the runway (y=-14), below ground contact, where it could never take off, land or crash (owner fix)
 - 2026-10-24: taking off must not crash the jet when it settles back onto the runway banked - a bounce is a roll, not a landing (G-232)
+- 2026-10-25: Takeoff is manual - it must not float up by itself, and the player loads the throttle up himself to take off and land (today: full throttle on start + auto-rotate lifts it with no stick input) (owner video, no job number)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.

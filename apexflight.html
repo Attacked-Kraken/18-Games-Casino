@@ -106,7 +106,7 @@
     <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX FLIGHT</h1>
     <h2>SINGLE-PROP SIMULATOR</h2>
-    <p>Line up on runway 36, push the throttle to full, and near 45 kt the nose rises on its own - stick up to climb. Grease the landing back on the centerline.</p>
+    <p>Line up on runway 36, push the throttle to full yourself, and near 45 kt pull the stick up to lift off. Grease the landing back on the centerline.</p>
     <button class="bigbtn" id="btnFree" type="button">FREE FLIGHT<small>Start on the runway - explore, practice, land anywhere</small></button>
     <button class="bigbtn" id="btnChal" type="button">LANDING CHALLENGE<small>Start on final approach - scored touchdown on runway 36</small></button>
     <button class="bigbtn friendbtn" id="friendBtn" type="button">&#x1F465; PLAY A FRIEND<small>Share your code, or enter a friend's code to beat their best landing</small></button>
@@ -164,7 +164,6 @@ const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 /* ================= constants ================= */
 const VSTALL = 20;          // m/s  (~39 kt) stall warning - more forgiving
 const VROT   = 23;          // m/s  (~45 kt) rotate speed - earlier liftoff
-const VROT_A = 22.5;        // m/s  (~44 kt) auto-rotate assist threshold
 const LIFTCAP = 14;         // m/s^2 cap on lift (keeps high-speed cruise trimmable)
 const THRUST = 4.6;         // m/s^2 at full throttle - raised 2026-10-23 (owner video: the jet could not get off the ground)
 const KLIFT  = 0.024;       // lift coefficient - raised 2026-10-23 (at the old value lift at rotate speed barely beat gravity, so the jet lifted, wallowed and sank back onto its gear)
@@ -574,7 +573,7 @@ function respawn() {
   $('crashOv').hidden = true; $('scoreOv').hidden = true; $('startOv').hidden = true;
   if (kitCtl) kitCtl.show(true);
   phase = 'fly'; stallNow = false; setMsg(''); peakAir = 0;
-  P.thr = 1.0; P.pitch = 0; P.roll = 0; // full throttle on start so the plane moves (robot + players see action immediately)
+  P.thr = 0; P.pitch = 0; P.roll = 0; // throttle starts at idle - the player spools up (owner: takeoff is manual, the plane must never lift by itself)
   if (mode === 'free') {
     P.pos.set(0, jet.gearHeight, -600); P.vel.set(0, 0, 0); P.yaw = 0; P.ground = true;
     flashMsg('RUNWAY 36 - THROTTLE UP', 2600);
@@ -848,12 +847,11 @@ function step(dt) {
       P.yaw -= (GRAV * Math.tan(clamp(P.roll, -1, 1)) / Math.max(v, 16)) * dt;
       P.yaw += padYaw * 1.2 * dt;   // jet pad rudder in the air (G-117 - it was ground-only, so the YAW buttons did nothing in flight; rate raised 0.4 -> 0.9 on G-121, then 1.2 on the G-121 fix round so the tester's 200ms recheck sample clears its bar even on the robot's slowest clock)  
     } else {
-      /* ground roll: the nose answers to the stick once fast, and an
-         auto-rotate assist gently raises the nose past 50 kt at full
-         throttle, so holding full throttle alone gets you airborne */
+      /* ground roll: the nose answers to the stick ONLY, once fast -
+         no auto-rotate (owner: takeoff is manual, the plane must never
+         lift by itself). Full throttle + no stick stays on the ground. */
       const noseAuth = clamp((v - (VROT - 9)) / 9, 0, 1);
       let targetPitch = clamp(inp.pitchUp, 0, 1) * 0.20 * noseAuth;
-      if (P.thr > 0.85 && v > VROT_A) targetPitch = Math.max(targetPitch, 0.22);
       P.pitch += (targetPitch - P.pitch) * 5 * dt;
       P.roll += (0 - P.roll) * 4 * dt;
       const vh = Math.hypot(P.vel.x, P.vel.z);
