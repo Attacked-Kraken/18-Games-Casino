@@ -1,0 +1,24 @@
+{
+ "file": "models/fetched/tokii-abyss-gt-7-v12-c39956.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 88,
+  "tris": 90304,
+  "size": [
+   2,
+   2,
+   2
+  ],
+  "mainSize": [
+   2,
+   2,
+   2
+  ],
+  "stray": 1,
+  "bytes": 3315548
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T13:41:00.798Z"
+}

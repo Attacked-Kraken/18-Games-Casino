@@ -1,0 +1,43 @@
+{
+ "file": "models/fetched/car-wheelrim-f6f260.glb",
+ "ok": false,
+ "why": [
+  "PICTURES: the model fills only 0% / 0% / 0% / 0% of the robot's pictures - the owner could not judge it"
+ ],
+ "facts": {
+  "meshes": 1,
+  "tris": 54044,
+  "size": [
+   0.343,
+   0.68,
+   0.68
+  ],
+  "mainSize": [
+   0.343,
+   0.68,
+   0.68
+  ],
+  "stray": 1,
+  "bytes": 847308
+ },
+ "pictures": [
+  {
+   "pic": "car-wheelrim-f6f260-front.jpg",
+   "pct": 0
+  },
+  {
+   "pic": "car-wheelrim-f6f260-side.jpg",
+   "pct": 0
+  },
+  {
+   "pic": "car-wheelrim-f6f260-back.jpg",
+   "pct": 0
+  },
+  {
+   "pic": "car-wheelrim-f6f260-top.jpg",
+   "pct": 0
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-26T13:41:00.191Z"
+}

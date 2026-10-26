@@ -1,0 +1,24 @@
+{
+ "file": "models/apex-jet/glb/apex-jet-canard.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 119,
+  "tris": 20108,
+  "size": [
+   8.777,
+   4.791,
+   13.494
+  ],
+  "mainSize": [
+   8.572,
+   4.791,
+   12.55
+  ],
+  "stray": 1.08,
+  "bytes": 1288284
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T13:40:59.022Z"
+}

@@ -1,0 +1,26 @@
+{
+ "file": "models/fetched/fictional-supercar-v12-goblin-0a20e4.glb",
+ "ok": false,
+ "why": [
+  "STRAY: a far-off piece makes the whole box 2.09x the size of the model itself - it shows as a speck; needs recentring"
+ ],
+ "facts": {
+  "meshes": 5,
+  "tris": 86623,
+  "size": [
+   0.247,
+   0.033,
+   0.247
+  ],
+  "mainSize": [
+   0.058,
+   0.032,
+   0.118
+  ],
+  "stray": 2.09,
+  "bytes": 2229520
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T13:41:00.191Z"
+}

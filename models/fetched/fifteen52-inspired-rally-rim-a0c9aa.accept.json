@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 2,
+  "tris": 91838,
+  "size": [
+   1.405,
+   0.68,
+   1.405
+  ],
+  "mainSize": [
+   1.405,
+   0.674,
+   1.405
+  ],
+  "stray": 1,
+  "bytes": 1294208
+ },
+ "pictures": [
+  {
+   "pic": "fifteen52-inspired-rally-rim-a0c9aa-front.jpg",
+   "pct": 21.9
+  },
+  {
+   "pic": "fifteen52-inspired-rally-rim-a0c9aa-side.jpg",
+   "pct": 22
+  },
+  {
+   "pic": "fifteen52-inspired-rally-rim-a0c9aa-back.jpg",
+   "pct": 20.6
+  },
+  {
+   "pic": "fifteen52-inspired-rally-rim-a0c9aa-top.jpg",
+   "pct": 29.9
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-26T13:41:00.487Z"
+}

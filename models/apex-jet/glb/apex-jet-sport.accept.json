@@ -1,0 +1,24 @@
+{
+ "file": "models/apex-jet/glb/apex-jet-sport.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 132,
+  "tris": 21920,
+  "size": [
+   11.883,
+   4.741,
+   13.933
+  ],
+  "mainSize": [
+   11.883,
+   4.741,
+   13.05
+  ],
+  "stray": 1.07,
+  "bytes": 1341032
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T13:40:59.033Z"
+}
