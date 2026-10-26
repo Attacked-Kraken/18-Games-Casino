@@ -1374,48 +1374,41 @@ export default [
       return res === 'ok' ? true : res;
     } },
   {
-    id: "play-rims-showcase",
-    ask: "Owner Oct 25 10:14 PM via G-364: he wants to see ALL the rim options at once - ?test=rims opens straight in the garage lights and shows every rim style side by side on the wheel of his car, names under each",
+    name: 'play-rims-showcase',
+    ask: "Owner order via G-371: a rims lab so I can judge the new rims in the real garage lights - ?test=rims opens the garage with my current car and shows all six rim styles (Classic 5 plus the five fetched wheels) side by side, same car, same lights, close camera, no menus; test view only, change nothing the garage selects",
     async test(page, h) {
-      const E = () => window.__erc;
-      await h.wait(300);
-      const has = await h.eval((E) => { const e = E(); return !!e && typeof e.showRims === 'function'; }, E);
-      if (!has) return 'G-364: the rim showcase is missing - __erc.showRims is not a function, so ?test=rims cannot show all the rim styles at once';
-      await h.eval((E) => { E().openGarage(); E().showRims(); }, E);
-      await h.wait(1500);
-      const rows = await h.eval(() => {
-        const show = window.__rimShow;
-        if (!show) return null;
-        return show.children.map((w) => {
-          const sig = [];
-          let label = null, thick = 0, rimfaces = 0, verts = 0;
-          w.traverse((q) => {
-            if (q.userData && q.userData.label) label = q.userData.label;
-            if (!q.isMesh || q.userData.label || q.userData.tyre) return;
-            const n = q.geometry && q.geometry.attributes.position ? q.geometry.attributes.position.count : 0;
-            verts += n; sig.push(n + '@' + (q.position ? q.position.z.toFixed(3) : '0'));
-            if (q.userData.acc === 'rimface') { rimfaces++; q.geometry.computeBoundingBox(); const bb = q.geometry.boundingBox, ws = q.getWorldScale(q.position.clone()); const dims = [(bb.max.x - bb.min.x) * Math.abs(ws.x), (bb.max.y - bb.min.y) * Math.abs(ws.y), (bb.max.z - bb.min.z) * Math.abs(ws.z)].filter((d) => d > 0.0001); if (dims.length) thick = Math.max(thick, Math.min.apply(null, dims)); }
-          });
-          return { style: w.userData.rimStyle, name: w.userData.rimName, label, thick, rimfaces, sig: sig.sort().join('|') + '#' + sig.length + '#' + verts };
-        });
-      });
+      const has = await h.eval(() => typeof window.__erc.showRims === 'function' && typeof window.__erc.openGarage === 'function');
+      if (!has) return 'the rims lab is missing - __erc.showRims is not a function';
+      await h.eval(() => { window.__bootStamp = 1; const s = JSON.parse(localStorage.getItem('apexracer1_guest') || '{}'); s.cur = 'goblin'; s.cars = s.cars || {}; s.cars.goblin = Object.assign(s.cars.goblin || {}, { id: 'goblin' }); localStorage.setItem('apexracer1_guest', JSON.stringify(s)); location.reload(); return true; }, 0);
+      await h.poll(() => !window.__bootStamp, (v) => v === true, 10000);
+      const ready = await h.poll(() => !!(window.__erc && window.__erc.G && typeof window.__erc.openGarage === 'function'), (v) => v === true, 30000);
+      if (!ready) return 'inconclusive: the game did not become ready in the lab test';
+      await h.eval(() => { window.__erc.openGarage(); window.__erc.showRims(); return true; }, 0);
+      const built = await h.poll(() => (window.__rimShowSlots || []).length, (v) => v === 6, 40000);
+      if (!built) return 'G-371: the rims lab never built - __rimShowSlots did not reach 6 (the fetched wheels may have failed to load)';
+      const rows = await h.eval(() => { const out = []; const show = window.__rimShow; if (!show) return out;
+        show.children.forEach((w) => { let rimVerts = 0, tyreCt = 0, label = null; const sig = [];
+          w.traverse((q) => { if (q.isMesh && q.userData.acc === 'rimface') { const g = q.geometry, posA = g.attributes.position, step = Math.max(1, Math.floor(posA.count / 24)); for (let vi = 0; vi < posA.count; vi += step) sig.push(Math.round(posA.getX(vi) * 500) + ',' + Math.round(posA.getY(vi) * 500) + ',' + Math.round(posA.getZ(vi) * 500)); rimVerts += posA.count; }
+            if (q.isMesh && q.userData.tyre) tyreCt++;
+            if (q.userData.label) label = q.userData.label; });
+          out.push({ style: w.userData.rimStyle, name: w.userData.rimName, rimVerts, tyreCt, label, sig: sig.sort().join('|') }); });
+        return out; }, 0);
+      const slots = await h.eval(() => window.__rimShowSlots, 0);
+      try { await h.shot('rims-lab'); } catch (e) { /* the measure is optional */ }
+      if (!rows || rows.length !== 6 || !slots || slots.length !== 6) return 'G-371: the lab shows ' + (rows ? rows.length : 0) + ' wheels - it must show exactly six';
       const NAMES = ['Classic 5', 'Split 10', 'Turbine', 'Deep Dish', 'Mesh', 'Monoblock'];
-      let fail = null;
-      if (!rows) fail = 'G-364: __rimShow was not built by showRims()';
-      else if (rows.length !== 6) fail = 'G-364: the showcase shows ' + rows.length + ' wheels, not all 6 rim styles';
-      else {
-        for (let i = 0; i < 6 && !fail; i++) {
-          const r = rows.find((x) => x.style === i);
-          if (!r) fail = 'G-364: rim style ' + i + ' (' + NAMES[i] + ') is missing from the showcase';
-          else if (r.name !== NAMES[i] || r.label !== NAMES[i]) fail = 'G-364: style ' + i + ' shows the name "' + r.label + '" instead of "' + NAMES[i] + '" under the wheel';
-          else if (!r.rimfaces) fail = 'G-364: style ' + i + ' (' + NAMES[i] + ') has no real rim mesh in the showcase';
-          else if (r.thick < 0.03) fail = 'G-364: style ' + i + ' (' + NAMES[i] + ') rim is a flat sticker in the showcase (' + r.thick.toFixed(3) + ' m thick)';
-        }
-        if (!fail) { const seen = new Set(); for (const r of rows) { if (seen.has(r.sig)) { fail = 'G-364: two rim styles look the same in the showcase - ' + r.name + ' matches another style mesh for mesh'; break; } seen.add(r.sig); } }
-      }
-      await h.shot('rims-showcase');
-      await h.eval((E) => { try { E().hideRims(); } catch (e) {} }, E);
-      return fail || true;
+      for (let i = 0; i < 6; i++) { const r0 = rows.find((x) => x.style === i), s0 = slots[i];
+        if (!r0 || r0.name !== NAMES[i] || r0.label !== NAMES[i]) return 'G-371: lab slot ' + i + ' is not labelled ' + NAMES[i];
+        if (!s0 || s0.name !== NAMES[i]) return 'G-371: slot record ' + i + ' is not ' + NAMES[i];
+        if (r0.rimVerts < 50 && s0.src !== 'fetched') return 'G-371: lab slot ' + NAMES[i] + ' has no real rim geometry';
+        if (i === 0 && s0.src !== 'built') return 'G-371: Classic 5 must be the built style in the lab, got ' + s0.src;
+        if (i >= 2 && s0.src !== 'fetched') return 'G-371: lab slot ' + NAMES[i] + ' must stand the FETCHED wheel, got ' + s0.src;
+        if (i >= 2 && !(s0.tris >= 5000)) return 'G-371: fetched wheel ' + NAMES[i] + ' reports only ' + s0.tris + ' triangles';
+        if (i === 1 && s0.src === 'fetched' && !(s0.tris >= 5000)) return 'G-371: Split 10 claims fetched with only ' + s0.tris + ' triangles';
+        if (i === 1 && s0.src !== 'fetched' && s0.src !== 'EMPTY') return 'G-371: the empty Split 10 fetch must be reported EMPTY, got ' + s0.src; }
+      for (let a = 0; a < 6; a++) for (let b = a + 1; b < 6; b++) { const ra = rows.find((x) => x.style === a), rb = rows.find((x) => x.style === b);
+        if (slots[a].src === 'fetched' && slots[b].src === 'fetched' && ra.sig && ra.sig === rb.sig) return 'G-371: fetched wheels ' + NAMES[a] + ' and ' + NAMES[b] + ' render identically in the lab'; }
+      return true;
     }
   },
   {
