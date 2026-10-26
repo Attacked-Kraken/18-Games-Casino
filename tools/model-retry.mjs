@@ -1,7 +1,7 @@
 // MODEL RETRY robot (owner Oct 26 2026: "if it ever comes out horrible or not what it's supposed to be it needs to
 // automatically bring the correct one"). Run right after tools/model-accept.mjs --write. For every model that FAILED acceptance:
 //   1. its request line in MODEL-REQUESTS.md becomes "REJECTED (acceptance robot <date>: <why>)" - the owner never sees it
-//   2. the bad file, its 4 pictures and its ledger entry are removed (a failed model is never saved on main)
+//   2. the bad file, its 4 pictures, its MODELS.md entry and its ledger entry are removed (a failed model is never saved on main)
 //   3. a replacement is asked for by itself, up to MAX tries per request:
 //        try 1 after an EMPTY download = the SAME model once more as a glTF zip (`FORMAT gltf` on the new OPEN line);
 //        otherwise the next-best free Sketchfab model for the same job (CC-BY / CC0, downloadable, under 20 MB, 5k-250k
@@ -64,6 +64,8 @@ for (const f of files) {
   // remove the bad model, its pictures, its ledger entry
   if (!DRY) {
     for (const g of [f, accFile, ...['front', 'side', 'back', 'top'].map(s => f.replace(/\.glb$/i, '-' + s + '.jpg'))]) try { fs.unlinkSync(g); } catch {}
+    // the game check plays every MODELS.md entry, so an entry whose file is gone would 404 (audit PR #1874, Oct 26 2026) - drop it too
+    try { const md = fs.readFileSync('MODELS.md', 'utf8'), base = path.basename(f); const keep = md.split(/^(?=## MODEL:)/m).filter(sec => !(sec.startsWith('## MODEL:') && sec.includes(base))); fs.writeFileSync('MODELS.md', keep.join('')); } catch {}
     ledger = ledger.replace(new RegExp('\\n## ASSET: ' + f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\n(?:(?!\\n## ASSET:|\\n---)[\\s\\S])*', 'g'), '\n');
   }
   if (rec.tries >= MAX) {
