@@ -21,3 +21,10 @@ A realistic Formula 1 racer for phones: sleek open-wheel single-seaters with pro
 - No real F1 team liveries (Ferrari red, Mercedes silver, Red Bull navy/yellow), no driver names, no "Formula 1" branding — original Apex designs only.
 - No boxy/cartoon cars — real F1 proportions.
 - No empty gray track with no scenery — grandstands, barriers, and trackside detail are required.
+
+## G-360 picture links (added 2026-10-26 - the same 5 links as the REFERENCES block in looks/apexf1.md; research only, nothing real-named goes into the game)
+- Broadcast angle - official onboard clip, race-start overtakes from the driver's-eye / chase framing: https://www.formula1.com/en/video/onboard-lando-norris-overtakes-half-the-field-at-sakhir-grand-prix-race-start.1687527781849549324
+- Athlete gear - driver in full race gear (fire suit, crash helmet and visor, HANS device) in parc ferme: https://www.gettyimages.ie/detail/news-photo/british-mercedes-formula-one-team-racing-driver-lewis-news-photo/1359055489
+- Stance - 2024 car launch photo gallery, full-car studio views of the single-seater: https://f1grandprix.motorionline.com/en/formula-1-red-bull-la-galleria-fotografica-della-nuova-rb20/
+- Venue - Monaco GP photo set: harbour general view, track, grandstands, cars at full speed between the barriers: https://www.gettyimages.co.uk/photos/monaco-formula-one-grand-prix
+- Best game example - F1 24, the official console game of the championship (broadcast shots, career, dynamic handling): https://www.playstation.com/en-th/games/f1-24/
