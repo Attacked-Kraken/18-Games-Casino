@@ -24,7 +24,13 @@ let ledger = fs.existsSync('ASSETS.md') ? fs.readFileSync('ASSETS.md', 'utf8') :
 const jobKey = (l) => l.replace(/^\s*-\s*[A-Z]+[^·]*·\s*/, '').split('·').slice(0, 2).join('·').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 80);
 export function inUse(file) {
   try { if (new RegExp('^## MODEL:[^\\n]*\\n(?:(?!^## MODEL)[\\s\\S])*?' + path.basename(file).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:(?!^## MODEL)[\\s\\S])*?status:\\s*\\**\\s*LOCKED', 'm').test(fs.readFileSync('MODELS.md', 'utf8'))) return 'LOCKED in MODELS.md'; } catch {}
-  try { const hit = execSync(`grep -l -F "${file}" *.html 2>/dev/null || true`, { encoding: 'utf8' }).trim(); if (hit) return 'used by ' + hit.split('\n')[0]; } catch {}
+  // PERMANENT RULE (Oct 26 2026, audit PR #1874 went red): a file is never deleted while anything in the repo still points at it.
+  // Everything tracked counts (game pages, kit/, tools/, tests, other models) except the ledgers this robot edits itself.
+  try {
+    const skip = [':!MODELS.md', ':!ASSETS.md', ':!MODEL-REQUESTS.md', ':!models/tried.json', ':!*.accept.json', ':!reviews', ':!jobs', ':!needs', ':!looks', ':!ideas', ':!reports', ':!plans', ':!team', ':!checklists', ':!' + file];
+    const hit = execSync(`git grep -l -F -- "${path.basename(file)}" -- . ${skip.map(x => `'${x}'`).join(' ')} 2>/dev/null || true`, { encoding: 'utf8' }).trim();
+    if (hit) return 'still referenced by ' + hit.split('\n')[0];
+  } catch {}
   return '';
 }
 const licOf = (lic) => { const s = ((lic && (lic.slug || lic.label)) || '').toLowerCase(); return /cc0|public domain/.test(s) ? 'CC0' : (s === 'by' || (/attribution$/.test(s) && !/non|share|deriv/.test(s))) ? 'CC-BY 4.0' : null; };
