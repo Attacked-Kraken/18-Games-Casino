@@ -2430,6 +2430,23 @@ function loop(t){
   }
   if(CK.root){ // G-48: cockpit shows only in cockpit cam; its wheel + shift lights stay live
     CK.root.visible = (Race.camMode===1 && (Race.mode==='race'||Race.mode==='lights'||Race.mode==='quali'));
+    // G-369: the cockpit eye sits inside the player's own bodywork, and one
+    // near-black body mesh (0x111318) renders from the inside and blacks the
+    // whole world ahead - the masher's "freeze" (HUD live, 3D void). Hide that
+    // mesh while the cockpit cam is on; restore it on exit, nothing forced.
+    if(Race.player && Race.player.mesh){
+      const cockpit = (Race.camMode===1 && (Race.mode==='race'||Race.mode==='lights'||Race.mode==='quali'));
+      let oc = null;
+      for(const ch of Race.player.mesh.children){
+        if(!ch.isMesh || !ch.material) continue;
+        const mats = Array.isArray(ch.material) ? ch.material : [ch.material];
+        if(mats.some(m=>m && m.color && m.color.getHex()===0x111318)){ oc = ch; break; }
+      }
+      if(oc){
+        if(cockpit && oc.visible){ oc.visible = false; CK._ocHidden = true; }
+        else if(!cockpit && CK._ocHidden){ oc.visible = true; CK._ocHidden = false; }
+      }
+    }
     if(Race.player){
       if(CK.wheel) CK.wheel.rotation.z = Race.player.steer*2.6;
       if(CK.leds){ const rpm=clamp(Race.player.v/97,0,1), lit=Math.round(rpm*15);
@@ -2449,7 +2466,7 @@ function loop(t){
    Parsed at boot like the track. Rides inside the player's car (hidden unless
    the COCKPIT camera is on): real halo, dash and wheel - the wheel turns with
    the player's steering and the 15 shift LEDs climb with the revs. */
-const CK = { root:null, wheel:null, leds:null, _boot:null, attachedTo:null };
+const CK = { root:null, wheel:null, leds:null, _boot:null, attachedTo:null, _ocHidden:false };
 function CKBoot(){
   if(CK._boot) return CK._boot;
   CK._boot = (async()=>{

@@ -1467,4 +1467,59 @@ export default [
       return true;
     }
   },
+  {
+    id: 'never-g-369-p2',
+    ask: 'in the cockpit camera the world ahead stays visible: the driver-eye view never goes black while the HUD stays live (G-369 masher point)',
+    async test(page, h) {
+      // Race FIRST via the owner-check link (G-312 R1: the menu flow is too
+      // slow on a slow page), then switch to the cockpit camera with the
+      // game's own CAM button. The eye sits inside the player's own
+      // bodywork; one near-black body mesh (0x111318) used to render from
+      // the inside and black the whole world ahead while the HUD stayed
+      // live, which reads as a 15 s freeze on a parked masher car.
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) return 'never reached the grid at ?test=grid';
+      for (let p = 0; p < 3; p++) {
+        await h.press('#raceBtn');
+        let started = false;
+        for (let i = 0; i < 20; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'lights' || md === 'race') { started = true; break; } await h.wait(300); }
+        if (started) break;
+        if (p === 2) return 'race never started at ?test=grid';
+      }
+      let racing = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'race never left the lights phase';
+      let cockpit = false;
+      for (let p = 0; p < 6; p++) {
+        const cp = await h.eval(() => { try { return window.__test ? window.__test.camProbe().mode : -1; } catch (e) { return -1; } }).catch(() => -1);
+        if (cp === 1) { cockpit = true; break; }
+        await h.press('#btnCam');
+        await h.wait(800);
+      }
+      if (!cockpit) return 'cockpit camera never engaged';
+      await h.wait(1500);
+      const r = await h.eval(() => {
+        try {
+          const m = (window.__reality && window.__reality.player) || null;
+          if (!m) return { err: 'no player mesh' };
+          let oc = null;
+          for (const ch of m.children) {
+            if (!ch.isMesh || !ch.material) continue;
+            const mats = Array.isArray(ch.material) ? ch.material : [ch.material];
+            if (mats.some(x => x && x.color && x.color.getHex() === 0x111318)) { oc = ch; break; }
+          }
+          if (!oc) return { err: 'occluder mesh (0x111318) not found among the player children' };
+          return { ocVisible: oc.visible };
+        } catch (e) { return { err: e.message }; }
+      }).catch(() => null);
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      if (!r) return 'could not read the player mesh in the cockpit camera';
+      if (r.err) return r.err;
+      if (r.ocVisible) return 'the cockpit view still shows the player\'s own near-black bodywork (0x111318 mesh visible) - it blacks the world ahead';
+      return true;
+    },
+  },
 ];
