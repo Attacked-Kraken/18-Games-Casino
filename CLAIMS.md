@@ -165,6 +165,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-356 | window 1 | looks/apexbaseball.md, jobs/G-356.md | build/g-356-apexbaseball |
+| G-360 | window 5 | looks/apexf1.md, jobs/G-360.md, CLAIMS.md | build/g-360-apexf1 |
 | T-7-1251 | window 7 | jobs/T-7-1251-w7.md | test/t-7-1251 |
 | G-348 r1 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025-r1 |
 | G-348 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025 |
@@ -328,3 +329,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | T-10-0654 | window 10 | jobs/T-10-0654.md, jobs/QUEUE.md (window 4), CLAIMS.md | test/t-10-0654 - TEST |
 | T-10-0624 | window 10 | jobs/T-10-0624.md, CLAIMS.md | test/t-10-0624 |
 | G-342 | window 10 | jobs/G-342.md, CLAIMS.md | test/g-342-apextrackfield |
+| G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
