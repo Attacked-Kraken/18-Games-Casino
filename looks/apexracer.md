@@ -42,6 +42,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - 2026-10-24: a garage option is sold that the car never shows - every tab's chosen style must be ON the car in the garage and in races: underglow, caliper colour, window tint, spoiler, body kit, rim style and rim colour (owner)
 - 2026-10-25: garage rims are a flat sticker on the wheel - a zero-depth drawn disc (measured 0.000 m thick, 30 vertices) instead of real 3D rim geometry with depth, sized to the wheel (G-345)
 - 2026-10-25: the Rims style buttons do nothing on a real car, and wheel size is not a choice - every style must be real 3D geometry on the car (Mesh = the owner's locked fetched wheel in its own finish), and a bigger wheel size must lift the car so it rides higher (G-345)
+- 2026-10-25: the rim colour repaints the whole wheel, and the brake caliper floats on the wheel face - the colour may tint only the rim itself (never the tyre, caliper or hub), and the caliper must sit behind the rim's face plane measured from the fitted rim's own depth, not the tyre's width (G-355)
 
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
