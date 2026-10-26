@@ -35,3 +35,7 @@ Every game in this repo is built to ship as an Apple App Store /
 Google Play app for iPhone and Android: phone performance first,
 landscape, touch-first, fully bundled and offline. The checklist lives
 in STORE-READY.md — a game that breaks it is not done.
+
+
+## Licence
+All rights reserved - see [LICENSE](LICENSE). Third-party models and sounds keep their own credited licences ([ASSETS.md](ASSETS.md)).
