@@ -186,7 +186,7 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: for the Rims tab style Deep Dish. Robot pictures are good: a deep copper barrel with thin multi-spokes - the face reads clearly in the side picture (the front picture caught the wheel's back). 26,108 triangles, the lightest of the five. Car Rim by pira.midale, CC-BY.
-- status: WAITING OWNER
+- status: LOCKED (owner 👍 Mon Oct 26 2026 - nobody may swap it without the owner)
 
 ## MODEL: Exotic Racer rim - Mesh, gold cross-hatch (artist wheel)
 - id: erc-rim-mesh
