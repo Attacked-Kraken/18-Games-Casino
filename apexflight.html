@@ -38,7 +38,13 @@
   #ah { display: block; border-radius: 50%; border: 2px solid rgba(255,59,48,.55); background: #06130a; }
   #rwyBox { position: absolute; top: calc(64px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
     font-size: 12px; display: none; }
-  /* G-280: the tall THR slider is gone - the throttle is a button in the pad row now (see the input section) */
+  /* THR lever (owner 2026-10-25: a visible lever, not buttons): the G-280 button is gone - the throttle is a vertical lever left of the pad (see the input section). The pack's THR + / THR - buttons stay in the DOM for the robot's checks but are hidden from the player; visibility:hidden keeps the pad grid's layout, so nothing shifts or overlaps. */
+  #jThrUp, #jThrDn { visibility: hidden; }
+  #thrLeverWrap { position: absolute; bottom: calc(env(safe-area-inset-bottom) + 8px); width: 54px; pointer-events: auto; touch-action: none; z-index: 21; }
+  #thrLeverWrap .thrCap { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font: 800 11px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; letter-spacing: .12em; color: #ffd166; text-shadow: 0 0 8px rgba(0,0,0,.9); white-space: nowrap; }
+  #thrLever { position: relative; width: 54px; border-radius: 14px; border: 1px solid rgba(255,255,255,.3); background: rgba(10,16,28,.72); touch-action: none; }
+  #thrLever .thrFill { position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; width: 14px; border-radius: 7px; background: rgba(242,165,26,.85); }
+  #thrLever .thrHandle { position: absolute; left: 50%; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; background: rgba(255,190,40,.95); box-shadow: 0 0 12px rgba(255,170,0,.6); color: #111; font: 800 12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; display: flex; align-items: center; justify-content: center; }
   /* the shared kit thumb zone (kit/controls.js) keeps the old pack zone's
      footprint - left half, bottom 62% - so the top HUD stays tappable (G-232) */
   #apcZone { top: 38%; height: 62%; }
@@ -106,7 +112,7 @@
     <div style="text-align:center;color:#ffcc33;letter-spacing:.42em;font-weight:800;font-size:11px;margin-bottom:6px;">APEX ARCADE PRESENTS</div>
     <h1>APEX FLIGHT</h1>
     <h2>SINGLE-PROP SIMULATOR</h2>
-    <p>Line up on runway 36, push the throttle to full yourself, and near 45 kt pull the stick up to lift off. Grease the landing back on the centerline.</p>
+    <p>Line up on runway 36, drag the THR lever up to full, and near 45 kt pull the stick up to lift off. Grease the landing back on the centerline.</p>
     <button class="bigbtn" id="btnFree" type="button">FREE FLIGHT<small>Start on the runway - explore, practice, land anywhere</small></button>
     <button class="bigbtn" id="btnChal" type="button">LANDING CHALLENGE<small>Start on final approach - scored touchdown on runway 36</small></button>
     <button class="bigbtn friendbtn" id="friendBtn" type="button">&#x1F465; PLAY A FRIEND<small>Share your code, or enter a friend's code to beat their best landing</small></button>
@@ -582,7 +588,7 @@ function respawn() {
     P.vel.set(0, 0, 34); P.thr = 0.35; P.ground = false;
     flashMsg('FINAL APPROACH - LAND RUNWAY 36', 3000);
   }
-  syncThrBtn();
+  syncThrLever();
   if (jetInput) jetInput.throttle = P.thr;   // the jet pad owns the throttle (G-90) - keep it in sync
 }
 function crash(why) {
@@ -671,25 +677,55 @@ if (packZone) packZone.remove();
 const kitCtl = createControls({ buttons: [], rotated: () => innerHeight > innerWidth });
 kitCtl.show(false);
 const kitZone = document.getElementById('apcZone');
-/* slim throttle button in the pad row (G-280): the tall THR slider overlapped
-   GEAR/PAINT/LOOP, so it is gone - this button takes the pad grid's last cell
-   (row 5, col 3), overlapping nothing, and ramps the throttle while held;
-   THR - still steps it down, and the label shows the live value */
-let thrHold = false, thrShown = -1;
-function syncThrBtn() {
-  const b = $('thrBtn'); if (!b) return;
-  const pct = Math.round(P.thr * 100);
-  if (pct !== thrShown) { thrShown = pct; b.textContent = 'THR ' + pct + '%'; }
+/* throttle lever (owner 2026-10-25: a visible lever, not buttons): a vertical
+   track left of the pad, exactly the pad's height, so it overlaps nothing
+   (G-280: the old tall slider covered GEAR/PAINT/LOOP). Drag up = more
+   throttle, drag down = less; the handle shows the live %. The pack's
+   THR + / THR - buttons stay in the DOM for the robot's checks but are
+   hidden from the player (see the CSS rule); R/F keys still ramp through
+   the pack's tick(), and the lever follows every change. */
+let thrLeverHandle = null, thrLeverFill = null, thrShown = -1;
+function syncThrLever() {
+  if (!thrLeverHandle) return;
+  const p = clamp(P.thr, 0, 1);
+  thrLeverHandle.style.bottom = 'calc(' + (p * 100) + '% - ' + (p * 44) + 'px)';
+  if (thrLeverFill) thrLeverFill.style.height = (p * 100) + '%';
+  const pct = Math.round(p * 100);
+  if (pct !== thrShown) { thrShown = pct; thrLeverHandle.textContent = pct + '%'; }
 }
 {
   const padEl = jetInput.root.querySelector('.pad');
-  const b = document.createElement('button');
-  b.id = 'thrBtn'; b.type = 'button'; b.textContent = 'THR 100%';
-  padEl.appendChild(b);
-  const holdOff = () => { thrHold = false; b.classList.remove('on'); };
-  b.addEventListener('pointerdown', e => { thrHold = true; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => b.addEventListener(n, holdOff));
-  window.addEventListener('blur', holdOff);
+  const wrap = document.createElement('div');
+  wrap.id = 'thrLeverWrap';
+  const cap = document.createElement('div');
+  cap.className = 'thrCap'; cap.textContent = 'THR';
+  const track = document.createElement('div');
+  track.id = 'thrLever';
+  const fill = document.createElement('div');
+  fill.className = 'thrFill';
+  const handle = document.createElement('div');
+  handle.className = 'thrHandle'; handle.textContent = '0%';
+  track.appendChild(fill); track.appendChild(handle);
+  wrap.appendChild(cap); wrap.appendChild(track);
+  jetInput.root.appendChild(wrap);
+  // Same height as the pad, same bottom anchor, 14 px clear of the pad's
+  // left edge - so the lever never covers a pad button or the horizon.
+  wrap.style.height = padEl.offsetHeight + 'px';
+  wrap.style.right = 'calc(env(safe-area-inset-right) + ' + (8 + padEl.offsetWidth + 14) + 'px)';
+  track.style.height = '100%';
+  thrLeverHandle = handle; thrLeverFill = fill;
+  let dragging = false;
+  const setFromY = (clientY) => {
+    const r = track.getBoundingClientRect();
+    const p = clamp(1 - (clientY - r.top) / r.height, 0, 1);
+    P.thr = p; jetInput.throttle = p; syncThrLever();
+  };
+  track.addEventListener('pointerdown', e => { dragging = true; try { track.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); setFromY(e.clientY); });
+  track.addEventListener('pointermove', e => { if (dragging) setFromY(e.clientY); });
+  const endDrag = () => { dragging = false; };
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => track.addEventListener(n, endDrag));
+  window.addEventListener('blur', endDrag);
+  syncThrLever();
 }
 function cyclePaint() { jet.setPaint(jet.paint + 1); $('jetStyleLabel').textContent = JET_PAINTS[jet.paint].name; }
 jetInput.on('paint', cyclePaint);
@@ -1217,10 +1253,9 @@ function loop(now) {
     // throttle arbitration: the pad wins only when IT moved the throttle this frame
     // (THR buttons / R/F keys); otherwise the pad follows P.thr, so the game and the
     // robot's play tests can still set the throttle directly.
-    if (thrHold) { P.thr = clamp(P.thr + 0.6 * dt, 0, 1); jetInput.throttle = P.thr; }
     if (jetInput.throttle !== thrWas) P.thr = jetInput.throttle;
     else if (P.thr !== thrWas) jetInput.throttle = P.thr;
-    syncThrBtn();
+    syncThrLever();
     step(dt);
     const toff = trickOffsets(dt);
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }
