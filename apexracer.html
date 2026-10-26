@@ -1251,21 +1251,21 @@ function makeGlbCar(id, cfg, o = {}) {
     for (const hb of hubs) {
       const fr = hb.h / 2 * 0.68 * rimScale;
       const style = clamp(cfg.rim || 0, 0, 5);
-      let rimDone = false;
+      let rimDone = false, rimHalf = 0.1;
       if (style === 4 && rimTpl) { /* the LOCKED fetched wheel, its own finish exactly as the owner approved it in the viewer - never repainted */
         const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h * rimScale / rimDia0;
         cl.rotation.y = th; cl.scale.setScalar(sc2);
         cl.position.copy(rimCtr.clone().multiplyScalar(-sc2).applyEuler(new THREE.Euler(0, th, 0)));
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5);
+        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5); rimHalf = rimWid0 * sc2 * wrap.scale.z / 2;
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
         if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
       }
-      if (!rimDone) { const w2 = Math.max(0.09, hb.w * 0.34); const grp = procRim(style, fr, w2); grp.position.set(hb.x, hb.y, hb.z); if (hb.z < 0) grp.rotation.y = Math.PI; tilt.add(grp); }
+      if (!rimDone) { const w2 = Math.max(0.09, hb.w * 0.34); rimHalf = w2 / 2; const grp = procRim(style, fr, w2); grp.position.set(hb.x, hb.y, hb.z); if (hb.z < 0) grp.rotation.y = Math.PI; tilt.add(grp); }
       const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.5, fr * 0.72, 0.05), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
-      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (hb.w / 2 - 0.12)); /* G-345 fix 2: seated behind the real spokes - at the old depth it floated on the wheel face (owner's screenshot) */
+      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (rimHalf > 0.12 ? rimHalf * 0.60 : rimHalf * 0.16)); /* G-355: the caliper sits behind the rim's face plane (measured from the fitted rim's own depth, not the tyre) - on the tyre-based depth it floated on the wheel face in the owner's screenshot */
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
     }
     if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -2533,7 +2533,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { if 
 addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
 resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
-{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); } /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
+{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); if (tq === 'rim') setTimeout(() => { try { S.cars[S.cur].rim = 3; S.cars[S.cur].rimCol = '#e8252f'; openGarage(); G.tab = 'rim'; renderGarage(); } catch (e) {} }, 700); } /* G-355: owner check link - opens straight at the garage Rims tab, Deep Dish style, red rim colour */ /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
 window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
