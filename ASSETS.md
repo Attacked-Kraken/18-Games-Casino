@@ -386,3 +386,21 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - used in: (not in a game yet - the game that uses it must name "JPepe" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
+
+## ASSET: models/fetched/medieval-fantasy-book-06d5a8.glb
+- title: Medieval Fantasy Book
+- maker: Pixel
+- source: https://sketchfab.com/3d-models/medieval-fantasy-book-06d5a80a04fc4c5ab552759e9a97d91a
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Pixel" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/bbs-rs16-tuner-car-wheel-188d0d.glb
+- title: BBS RS16 Tuner Car Wheel
+- maker: ZenuuxOfficiel
+- source: https://sketchfab.com/3d-models/bbs-rs16-tuner-car-wheel-188d0d33ca424524b10dcf34409e97f8
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
