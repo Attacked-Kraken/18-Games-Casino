@@ -90,7 +90,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a
 - license: CC-BY 4.0
 - downloaded: 2026-10-19 by the Sketchfab fetch robot
-- used in: apexracer.html (Exotic Racer Club city traffic cars, G-50) - maker credited on the game credits screen
+- used in: apexracer.html (credits screen names Naudaff3D)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: sounds/instruments/
