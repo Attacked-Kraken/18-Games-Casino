@@ -2,7 +2,7 @@ name: Game check (PR)
 # Owner Oct 21 2026 "split the good from repairs so it doesn't take 50 min - do both": the robot on a PULL REQUEST plays
 # the games SIDE BY SIDE (one robot per game, up to 8 at once) and one small step ("check") gives the verdict - about
 # 8-10 minutes instead of 50. A Claude change to the robot's own files plays ONE small reference game here (Paper Plane, owner Oct 23 2026); main's full
-# check after the merge (game-check.yml, auto-undo) covers the rest. The 55-minute limit stays as the safety net.
+# check after the merge (game-check.yml, auto-undo) covers the rest. The 35-minute limit (owner Oct 26 2026, was 55) is the safety net.
 # The verdict job is NAMED "check" so the owner's GitHub rule ("check" must pass) and the merge robot keep working.
 on:
   pull_request:
@@ -103,7 +103,7 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.48.2-noble
       options: --ipc=host
-    timeout-minutes: 55      # owner Oct 21: the 55-minute limit stays as the safety net
+    timeout-minutes: 35      # owner Oct 26 2026 11:10 AM: lowered from 55 ("so we are not waiting hours"); Racer normally takes 18-27 min, other games 8-19
     strategy:
       fail-fast: false
       max-parallel: 8
