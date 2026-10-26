@@ -175,7 +175,7 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: for the Rims tab style Turbine. Robot pictures are good: a red fan-blade turbine wheel with its own tyre, reads clearly from front, side, back and top. Weight: the Sketchfab page says 438k triangles, but the fetched file measures 89,923 triangles in the viewer, so NO lighter copy is needed before use - under 2x the locked Mesh wheel (54k) that already runs in the game. It is still the heaviest of the five, so if phones ever struggle it is the first candidate for a lighter copy. Smokehaus Racing - Turbine M2 Alloy Wheel by Smokahontas, CC-BY, an original design with no brand logos.
-- status: WAITING OWNER
+- status: LOCKED (owner 👍 Mon Oct 26 2026 - nobody may swap it without the owner)
 
 ## MODEL: Exotic Racer rim - Deep Dish (artist wheel)
 - id: erc-rim-deepdish
