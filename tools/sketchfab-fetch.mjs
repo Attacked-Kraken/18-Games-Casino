@@ -27,6 +27,16 @@ const TEST = (process.env.TEST_UID || '').trim();   // a token test: check one m
 const todo = TEST ? [{ l: '- OPEN test', i: -1, m: ['', 'test', TEST.match(/[0-9a-f]{32}/i)?.[0] || TEST] }] : lines.map((l, i) => ({ l, i, m: l.match(/sketchfab\.com\/3d-models\/([a-z0-9-]*?)-?([0-9a-f]{32})/i) }))
   .filter(x => /^\s*-\s*OPEN\b/.test(x.l) && x.m);
 if (!todo.length) { say('No OPEN Sketchfab requests with an exact model link.'); fs.writeFileSync('fetch-report.txt', report.join('\n')); process.exit(0); }
+// Oct 25 2026 (owner "getting ridiculous every night"): PRs #1800 + #1808 fetched the SAME model as an already-open fetch PR, because
+// every push to main re-ran the robot while the first fetch PR still waited, and the OPEN line was still OPEN on main. Now: while a
+// robot/sketchfab-* pull request is open, a run fetches nothing (the merge starts the next run for what is left).
+if (!TEST && !process.env.DRY && process.env.GH_TOKEN && process.env.GITHUB_REPOSITORY) {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/pulls?state=open&per_page=100`, { headers: { Authorization: 'Bearer ' + process.env.GH_TOKEN, 'User-Agent': 'fetch-robot' } });
+    const open = r.ok ? (await r.json()).filter(p => (p.head?.ref || '').startsWith('robot/sketchfab-')) : [];
+    if (open.length) { say(`Another fetch pull request is still open (#${open.map(p => p.number).join(', #')}) - not fetching again until it merges.`); fs.writeFileSync('fetch-report.txt', report.join('\n')); process.exit(0); }
+  } catch (e) { say('Could not list open fetch PRs (' + e.message + ') - going on.'); }
+}
 if (!TOKEN) { say('No SKETCHFAB_TOKEN secret yet - the owner adds it once in GitHub Settings > Secrets and variables > Actions.'); fs.writeFileSync('fetch-report.txt', report.join('\n')); process.exit(0); }
 const H = { Authorization: 'Token ' + TOKEN };
 const ledger = fs.readFileSync('ASSETS.md', 'utf8');
