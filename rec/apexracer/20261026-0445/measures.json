@@ -1,0 +1,125 @@
+{
+ "game": "apexracer.html",
+ "name": "Exotic Racer Club",
+ "seconds": 60,
+ "gameSecondsReached": 59.9,
+ "wallSeconds": 97.1,
+ "at": "2026-10-26T04:45:22.740Z",
+ "samples": 261,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": true
+ },
+ "camera": {
+  "distance": {
+   "min": 0,
+   "mean": 219.99,
+   "max": 286.84
+  },
+  "height": {
+   "min": 0,
+   "mean": 0,
+   "max": 0
+  },
+  "aimErrorDeg": {
+   "min": 0.35,
+   "mean": 83.1,
+   "max": 179.78
+  },
+  "followLagMetresPerMps": -0.002
+ },
+ "playerOnScreenPct": 22,
+ "speed": {
+  "min": 0,
+  "mean": 47.23,
+  "max": 78.73
+ },
+ "metresMoved": 186.4,
+ "moments": [
+  {
+   "at": 3.6,
+   "words": "#st/# LAP #/# TIME BEST GO!"
+  }
+ ],
+ "momentCount": 1,
+ "camDebug": [
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 74.67144524109143,
+   "aspect": 2.164102564102564,
+   "pos": [
+    -35.3,
+    2.6,
+    -173
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 2,
+ "scriptErrors": []
+}
