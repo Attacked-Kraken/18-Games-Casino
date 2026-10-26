@@ -173,6 +173,34 @@ def fix_notes_conflict(pr):
 WAIT_UNTIL = time.time() + 120   # total seconds this run may spend waiting for GitHub to work out 'mergeable'
 
 
+def fix_credits(pr):
+    """Owner Oct 26 2026 (Racer PRs #1870/#1877/#1881 sat 1-2 h: a CC-BY maker was missing on the credits screen, the ONLY failed
+    check was 'assets', and nothing wrote the line). When `assets` is the only failed check on our own branch, merge main in, run
+    `node tools/asset-check.mjs --fix` (writes the credit line + ledger 'used in'), push, and restart the game check. Proof = the tool
+    printing 'FIXED credit'. A conflict or no fix = nothing pushed. Returns True when it pushed a fix."""
+    n, branch = pr["number"], pr["head"]["ref"]
+    if not branch.startswith(("build/", "fix/", "test/", "vp-", "robot/")) or pr["head"]["repo"]["full_name"] != REPO:
+        return False
+    def g(*a):
+        return subprocess.run(["git", "-c", "user.name=merge robot", "-c", "user.email=merge-robot@users.noreply.github.com"] + list(a), capture_output=True, text=True)
+    g("fetch", "origin", "main", branch)
+    if g("checkout", "-q", "-B", "creditfix-%d" % n, "origin/" + branch).returncode:
+        return False
+    if g("merge", "--no-edit", "origin/main").returncode:
+        g("merge", "--abort"); print("fix_credits #%d: conflict with main, left alone" % n); return False
+    out = subprocess.run(["node", "tools/asset-check.mjs", "--fix"], capture_output=True, text=True).stdout
+    if "FIXED credit" not in out:
+        print("fix_credits #%d: nothing fixed (%s)" % (n, out.strip()[:150])); return False
+    g("add", "-A", "--", "*.html", "ASSETS.md")
+    if g("commit", "-m", "Credits are automatic: robot wrote the missing credit line(s) (asset-check --fix)").returncode:
+        return False
+    if g("push", "origin", "HEAD:refs/heads/" + branch).returncode:
+        print("fix_credits #%d: push refused" % n); return False
+    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    print("::notice title=Merge robot::PR #%d: robot wrote the missing credit line(s) and restarted the check. %s" % (n, " | ".join(l for l in out.splitlines() if "FIXED credit" in l)))
+    return True
+
+
 def settle_pr(n):
     """Oct 23 2026 (window 5's PR #1264 sat 'dirty' with nobody noticing): right after main moves, GitHub answers
     mergeable=null ("still working it out") for a while. The old robot read that as 'not mergeable yet', skipped the PR,
@@ -435,6 +463,12 @@ def main():
             say("#%d skipped: the robot's game check hasn't run yet" % n); continue
         busy = [k for k, r in newest.items() if r.get("status") != "completed"]
         bad = [k for k, r in newest.items() if r.get("status") == "completed" and r.get("conclusion") not in OK]
+        if bad == ["assets"] and not busy:
+            try:
+                if fix_credits(pr):
+                    revisit = True; continue
+            except Exception as e:
+                print("::warning title=Merge robot::credit fix failed on #%d: %s" % (n, e))
         if busy or bad:
             say("#%d skipped: checks %s" % (n, ("running: " + ", ".join(busy)) if busy else ("FAILED: " + ", ".join(bad))))
             if bad:
