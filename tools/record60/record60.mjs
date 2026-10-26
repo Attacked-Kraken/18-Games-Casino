@@ -58,7 +58,12 @@ const sample = () => page.evaluate(() => {
   const R = window.__reality || {}; const o = {};
   try { o.t = typeof R.time === 'function' ? R.time() : null; } catch (e) {}
   try { o.speed = typeof R.speed === 'function' ? R.speed() : null; } catch (e) {}
-  const cam = window.__renderCam || R.camera || (window.__cams || []).slice(-1)[0];
+  // First real run (Oct 25 11:45 PM): the render hook never fired and the last trapped camera sat at 0,0,0 (a cube/ortho helper).
+  // The game's own camera = a PerspectiveCamera whose aspect matches the screen and that is not parked at the origin.
+  const aspect = innerWidth / innerHeight;
+  const isMain = c => { try { c.updateMatrixWorld(true); const e = c.matrixWorld.elements; return c.type === 'PerspectiveCamera' && Math.abs(c.aspect - aspect) < 0.06 && (Math.abs(e[12]) + Math.abs(e[13]) + Math.abs(e[14])) > 0.01; } catch (x) { return false; } };
+  const cands = (window.__cams || []).filter(isMain);
+  const cam = (window.__renderCam && isMain(window.__renderCam) ? window.__renderCam : null) || (R.camera && isMain(R.camera) ? R.camera : null) || cands.slice(-1)[0];
   const pl = R.player;
   if (cam && pl) try {
     cam.updateMatrixWorld && cam.updateMatrixWorld(true); pl.updateMatrixWorld && pl.updateMatrixWorld(true);
@@ -75,9 +80,33 @@ const sample = () => page.evaluate(() => {
   o.text = (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 400);
   return o;
 }).catch(() => ({}));
-const go = async on => { try { await page.evaluate(v => window.__reality && window.__reality.go && window.__reality.go(v), on); } catch (e) {}
+const FAITHFUL = process.env.FAITHFUL !== '0';   // Oct 26 2026 12:00 AM: run 2 showed the camera trailing the car by 100+ m - the hook's go() fast-forwards the sim 3 steps per tick but this software-GL browser draws ~2 frames/s, so the camera never caught up. FAITHFUL = keys only, the game's own loop, so camera + car stay in step (slower, true).
+const go = async on => { if (!FAITHFUL) try { await page.evaluate(v => window.__reality && window.__reality.go && window.__reality.go(v), on); } catch (e) {}
   for (const k of ['ArrowUp', 'KeyW']) { try { on ? await page.keyboard.down(k) : await page.keyboard.up(k); } catch (e) {} } };
 await go(true);
+// ---- HUMAN PLAYER (owner Oct 25 2026 11:51 PM "a human aspect programmed in"): not gas-only. For a car it steers with A/D toward the
+// track line the way a thumb does (reaction delay of one look, a wobble, an occasional lapse), brakes and drifts in tight corners, taps
+// NITRO now and then, so the recording shows the whole game being USED (every control the owner can touch), not a car on rails.
+const HUMAN = process.env.HUMAN !== '0'; const held = new Set(); let humanLog = { steer: 0, brake: 0, nitro: 0, drift: 0, lapses: 0 }; let nextNitro = 8000, nitroUntil = 0;
+const setKey = async (k, on) => { try { if (on && !held.has(k)) { await page.keyboard.down(k); held.add(k); } else if (!on && held.has(k)) { await page.keyboard.up(k); held.delete(k); } } catch (e) {} };
+const humanStep = async (wallMs) => {
+  const r = await page.evaluate(() => { const R = window.__reality; if (!R || R.kind !== 'car' || !R.player || !R.track) return null;
+    R.player.updateMatrixWorld(true); const e = R.player.matrixWorld.elements; const x = e[12], z = e[14];
+    const t = R.track(x, z); if (!t) return null; const fl = Math.hypot(e[8], e[10]) || 1, tl = Math.hypot(t.x, t.z) || 1;
+    const fx = e[8] / fl, fz = e[10] / fl, tx = t.x / tl, tz = t.z / tl;
+    return { err: Math.atan2(fx * tz - fz * tx, fx * tx + fz * tz), sp: R.speed ? R.speed() : 0 }; }).catch(() => null);
+  if (!r) { await setKey('KeyW', true); return; }
+  if (Math.random() < 0.06) { humanLog.lapses++; return; }                       // a human looks away for a moment
+  const e = r.err + (Math.random() - 0.5) * 0.06;                                  // and never steers perfectly
+  const steerR = e < -0.07, steerL = e > 0.07;   // sign fixed by the first run: positive = track bends to the car's right
+  await setKey('KeyD', e > 0.07); await setKey('KeyA', e < -0.07); if (e > 0.07 || e < -0.07) humanLog.steer++;
+  const sharp = Math.abs(e) > 0.45 && r.sp > 30;
+  await setKey('KeyS', sharp && Math.abs(e) > 0.7); if (sharp && Math.abs(e) > 0.7) humanLog.brake++;
+  await setKey('KeyW', !(sharp && Math.abs(e) > 0.7));
+  await setKey('ShiftLeft', sharp && Math.abs(e) <= 0.7); if (sharp && Math.abs(e) <= 0.7) humanLog.drift++;
+  if (wallMs > nextNitro) { await setKey('Space', true); nitroUntil = wallMs + 1500; nextNitro = wallMs + 14000 + Math.random() * 6000; humanLog.nitro++; }
+  if (wallMs > nitroUntil) await setKey('Space', false);
+};
 const samples = []; const t0 = Date.now(); let lastTxt = ''; const moments = []; let nextShot = 0;
 const frames = [];
 const WALLCAP = +(process.env.WALLCAP || SECONDS * 5); let gt0 = null;
@@ -90,8 +119,10 @@ while ((Date.now() - t0) / 1000 < WALLCAP) {
   const words = (s.text || '').replace(/[0-9:.,]+/g, '#');          // numbers change every tick; only a WORD change is a moment
   if (words !== lastTxt) { const added = words.split(' ').filter(w => w.length > 2 && !lastTxt.includes(w)).slice(0, 6).join(' '); if (added && el > 1) moments.push({ at: +el.toFixed(1), words: added }); lastTxt = words; }
   if (el >= nextShot) { const f = 't' + String(Math.round(nextShot)).padStart(2, '0') + '.jpg'; try { fs.writeFileSync(path.join(dir, 'frames', f), await page.screenshot({ type: 'jpeg', quality: 70, timeout: 20000 })); frames.push(f); } catch (e) {} nextShot += 10; }
+  if (HUMAN) await humanStep(Date.now() - t0);
   await page.waitForTimeout(150);
 }
+for (const k of [...held]) await setKey(k, false);
 const gameSeconds = samples.length ? samples.at(-1).at : 0;
 await go(false);
 const fpsNow = await page.evaluate(() => new Promise(res => { let n = 0; const a = performance.now(); const f = () => { n++; performance.now() - a < 1000 ? requestAnimationFrame(f) : res(n); }; requestAnimationFrame(f); })).catch(() => 0);
@@ -101,7 +132,8 @@ const raw = await page.video().path().catch(() => null);
 await ctx.close(); await browser.close();
 let video = null;
 if (raw && fs.existsSync(raw)) { const mp4 = path.join(dir, 'video.mp4');
-  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-an', mp4]);
+  const wallTotal = (Date.now() - t0) / 1000, sp = FAITHFUL && wallTotal > SECONDS * 1.3 ? SECONDS / wallTotal : 1;
+  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-vf', 'setpts=' + sp.toFixed(4) + '*PTS', '-r', '25', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-an', mp4]);
   if (r.status === 0) video = 'video.mp4';
   else { try { fs.copyFileSync(raw, path.join(dir, 'video.webm')); video = 'video.webm'; } catch (e) {} } }
 fs.rmSync(path.join(dir, 'raw'), { recursive: true, force: true });
@@ -123,7 +155,7 @@ const m = {
   playerOnScreenPct: withCam.length ? Math.round(100 * withCam.filter(s => s.on).length / withCam.length) : null,
   speed: st(sp), metresMoved: moved === null ? null : +moved.toFixed(1),
   moments: moments.slice(0, 40), momentCount: moments.length,
-  camDebug, endedWithResultWords: finishWords.test(endText), fpsAtEnd: fpsNow, scriptErrors: errors.slice(0, 5),
+  humanLog, camDebug, endedWithResultWords: finishWords.test(endText), fpsAtEnd: fpsNow, scriptErrors: errors.slice(0, 5),
 };
 fs.writeFileSync(path.join(dir, 'samples.json'), JSON.stringify(samples.map(({ text, ...r }) => r)));
 fs.writeFileSync(path.join(dir, 'measures.json'), JSON.stringify(m, null, 1));
