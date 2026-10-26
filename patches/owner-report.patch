@@ -1,0 +1,27 @@
+--- a/jobs/G-372-w6.md
++++ b/jobs/G-372-w6.md
+@@ -3,5 +3,5 @@
+ TARGET: Owner order — make every garage tab provably work (17 tabs): for each tab and option, a robot picture of the real screen with the option applied and a play test that FAILS if choosing it changes nothing or looks wrong; fix what the census finds broken, one small PR per fix; one CHANGED line per tab; extend the existing census (the G-365 sweep on main) instead of starting over.
+ 
+-STATUS: IN PROGRESS — the census is DONE (all 17 tabs measured, below) and the one real fix it found is BUILT and bench-proven locally; the build PR carrying the fix plus the split census tests is NOT yet open. This file is the done/missing account MAC ordered at 10:08 AM CDT Oct 26 2026 (jobs/G-372.md on main belongs to window 8's hockey round, so this job reports here).
++STATUS: IN PROGRESS — the census is DONE (all 17 tabs measured, below); the wrap fix plus the split census tests are open in PR #1900 (checking). Three owner fixes from the owner's own playtest (Oct 26 2026, 10:24 AM CDT) ship in their own PR below. This file is the done/missing account MAC ordered at 10:08 AM CDT Oct 26 2026 (jobs/G-372.md on main belongs to window 8's hockey round, so this job reports here).
+ 
+ VERSION: main head 5797d71025 (read from GitHub at filing time); census numbers from the G-365 sweep on main (PR #1857, merged 6a3c60e6) plus this job's local probes on the current build.
+@@ -27,4 +27,10 @@
+ CHANGED Calipers tab - census verified each colour paints the calipers; works
+ 
++## Owner fixes (owner direct, Oct 26 2026 — his screenshots and words, separate PR)
++
++CHANGED Wheel Size float - tyres grow with the lift; car rides higher and stays grounded; measured on today's build the car's own bottom rose 0.077 -> 0.141 -> 0.205 m from Stock to Max because the lift raised the whole model, tyres included, and nothing grew to fill the gap (owner: 'Bigger rims only make car float')
++CHANGED Garage tabs scroll - strips drag-scroll on either screen axis now; on a portrait phone the page is rotated 90 degrees, so the strip's own-axis pan could never move and the lower tabs were unreachable (owner: 'Still tabs don't scroll or work'); bench drag in the rotated layout moves the strip the full drag distance
++CHANGED Music static - race stems start together at one audio-clock time; each stem used to start the moment its own decode landed, leaving the three layers of one song offset, and the speed crossfade smeared the offset into static that came and went (owner: 'music static in and out'); the stems measure identical length (30.9678 s), so a shared start keeps them in phase
++
+ ## The one fix the census found (built, bench-proven, not yet shipped)
+ 
+@@ -35,5 +41,5 @@
+ ## What is missing (not done)
+ 
+-- The build PR (branch build/g-372-apexracer: the wrap fix + the four split census tests + the looks map update) is not yet opened — nothing for this job is merged, so the nine wraps still show dead in the garage on the owner's phone until it lands.
++- The build PR (branch build/g-372-apexracer: the wrap fix + the four split census tests + the looks map update) is open as PR #1900 and checking — until it merges, the nine wraps still show dead in the garage on the owner's phone.
+ - Per-option robot pictures: the game-check harness takes one fixes picture per game, so per-option pictures come from the PR check's garage screenshots once the PR is open, plus the owner's own garage pass — the census tests themselves are the per-option proof (each fails if its option changes nothing).
+ - OWNER CHECK IN 30 SECONDS: https://attacked-kraken.github.io/18-Games-Casino/apexracer.html - open the Garage, Wrap tab: Name and Stripes work today; the other nine wraps are the dead ones this job fixes (the fix is built and proven on my bench, PR next).
