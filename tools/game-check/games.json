@@ -61,6 +61,22 @@
           "steps": [
             "#mGarage"
           ]
+        },
+        {
+          "name": "garage-rims",
+          "steps": [
+            "#mGarage",
+            ".gt[data-t=\"rim\"]",
+            ".go[data-rim=\"3\"]"
+          ]
+        },
+        {
+          "name": "garage-rimred",
+          "steps": [
+            "#mGarage",
+            ".gt[data-t=\"rimCol\"]",
+            ".go[data-rc=\"#d4142a\"]"
+          ]
         }
       ]
     },
