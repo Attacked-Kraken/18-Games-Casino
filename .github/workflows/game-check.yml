@@ -168,6 +168,7 @@ jobs:
         if: always() && github.event_name == 'push'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
         run: |
           [ -f game-check-out/results.json ] || exit 0
           MSG=$(git log -1 --format=%s $GITHUB_SHA)
@@ -201,7 +202,7 @@ jobs:
           if ! git revert --no-edit $R $GITHUB_SHA; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
           git commit --amend -q -m "AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
           git push -q origin "$B"
-          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
           # owner Oct 21 2026: main is protected - the undo merges through the merge robot once its own check is green
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${GITHUB_SHA::7} - merges when its check is green"
