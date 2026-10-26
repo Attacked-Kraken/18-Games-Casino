@@ -1,0 +1,115 @@
+{
+ "game": "apexmoto.html",
+ "name": "Apex Moto",
+ "seconds": 60,
+ "gameSecondsReached": 59.9,
+ "wallSeconds": 62.4,
+ "at": "2026-10-26T09:34:05.005Z",
+ "samples": 255,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": false,
+  "speed": false
+ },
+ "camera": null,
+ "playerOnScreenPct": null,
+ "speed": null,
+ "metresMoved": null,
+ "moments": [
+  {
+   "at": 23.9,
+   "words": "Rojo Blaze Viper Nova Storm Ace"
+  }
+ ],
+ "momentCount": 1,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 70.68313514962412,
+   "aspect": 2.164102564102564,
+   "pos": [
+    -34.2,
+    2.8,
+    -342.7
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    33.8,
+    120,
+    -302.7
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 6,
+ "scriptErrors": []
+}

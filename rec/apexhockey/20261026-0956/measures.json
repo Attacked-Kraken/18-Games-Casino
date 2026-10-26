@@ -1,0 +1,158 @@
+{
+ "game": "apexhockey.html",
+ "name": "Apex Ice Hockey",
+ "seconds": 60,
+ "gameSecondsReached": 59.8,
+ "wallSeconds": 70.1,
+ "at": "2026-10-26T09:32:08.466Z",
+ "samples": 295,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": true
+ },
+ "camera": {
+  "distance": {
+   "min": 14.02,
+   "mean": 78.43,
+   "max": 128.3
+  },
+  "height": {
+   "min": 5.4,
+   "mean": 22.19,
+   "max": 24.79
+  },
+  "aimErrorDeg": {
+   "min": 7.13,
+   "mean": 27.43,
+   "max": 63.4
+  },
+  "followLagMetresPerMps": 7.54
+ },
+ "playerOnScreenPct": 92,
+ "speed": {
+  "min": 0,
+  "mean": 5.88,
+  "max": 7.29
+ },
+ "metresMoved": 57.2,
+ "moments": [
+  {
+   "at": 2,
+   "words": "PLAY"
+  },
+  {
+   "at": 8.9,
+   "words": "SAVED! GOALIE"
+  },
+  {
+   "at": 19.1,
+   "words": "SHOT MPH"
+  },
+  {
+   "at": 21.4,
+   "words": "GOAL! SCORES"
+  },
+  {
+   "at": 21.4,
+   "words": "FACEOFF"
+  },
+  {
+   "at": 21.4,
+   "words": "PLAY"
+  },
+  {
+   "at": 33.8,
+   "words": "SAVED! GOALIE"
+  }
+ ],
+ "momentCount": 7,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 57,
+   "aspect": 2.164102564102564,
+   "pos": [
+    -44,
+    21.7,
+    37.4
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": false,
+ "fpsAtEnd": 6,
+ "scriptErrors": []
+}

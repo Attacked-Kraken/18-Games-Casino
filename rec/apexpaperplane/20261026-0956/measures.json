@@ -1,0 +1,44 @@
+{
+ "game": "apexpaperplane.html",
+ "name": "Paper Plane",
+ "seconds": 60,
+ "gameSecondsReached": 60,
+ "wallSeconds": 61.6,
+ "at": "2026-10-26T09:34:05.736Z",
+ "samples": 355,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": false,
+  "speed": false
+ },
+ "camera": null,
+ "playerOnScreenPct": null,
+ "speed": null,
+ "metresMoved": null,
+ "moments": [
+  {
+   "at": 44.4,
+   "words": "Crashed! You flew and grabbed Best#"
+  }
+ ],
+ "momentCount": 1,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [],
+ "endedWithResultWords": false,
+ "fpsAtEnd": 17,
+ "scriptErrors": []
+}
