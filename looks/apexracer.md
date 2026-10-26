@@ -28,6 +28,19 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Night exposure keeps every car's shape readable - lights never blow a car out to a white blob
 - Every computer car shows its body in every city, day and night - computer paints are never near-black (owner, Oct 22 2026)
 
+## REFERENCES
+- https://www.motorsport.com/f1/photos/ - broadcast-angle race photography: car stance, liveries and wheels at speed
+- https://www.fiawec.com - endurance night racing: headlight glow, pit venues, cars under floodlights
+- https://www.singaporegp.sg - the night street circuit: barriers, floodlights, city venue
+- https://www.imsa.com - North American endurance and street racing: venues and car presentation
+- Best console example: https://www.gran-turismo.com/us/products/gt7/ - the garage and showroom standard for car and wheel presentation
+
+## MUST MATCH
+- proportions: real car and wheel proportions - the wheel diameter reads true against the body, no cartoon stretch
+- camera height: the chase camera rides low, near kerb height, never a top-down toy view
+- gear silhouette: cars and wheels read by silhouette first - a rim design shows as a shape, not a texture
+- motion weight: the car leans and dives with its weight - braking dive, cornering roll, never floating
+
 ## NEVER
 - No car missing its wheels
 - No real brands, leagues, teams, players or characters
