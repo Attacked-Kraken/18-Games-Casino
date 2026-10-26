@@ -292,6 +292,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-345 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-345-w6.md, CLAIMS.md, LESSONS.md | build/g-345-apexracer |
 | G-345 fix 1 | window 6 | looks/apexracer.md, tools/game-check/fixes/apexracer.mjs, jobs/G-345-w6.md, CLAIMS.md, LESSONS.md | build/g-345-fix1b-apexracer |
 | G-345 fix 2 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, MODELS.md, MODEL-SEARCH.md, CLAIMS.md, LESSONS.md | build/g-345-fix2-apexracer |
+| G-355 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-355.md, CLAIMS.md, LESSONS.md | build/g-345-fix2-apexracer (PR #1794) |
 
 <!-- merge robot heartbeat test a, Oct 23 2026, safe to ignore -->
 <!-- merge robot heartbeat test b, Oct 23 2026, safe to ignore -->
