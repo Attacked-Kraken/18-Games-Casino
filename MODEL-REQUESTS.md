@@ -58,3 +58,5 @@ models/tried.json; an EMPTY download is first re-asked as a glTF zip; after 3 fa
 is filed). The passing model's measurements sit next to it as `<name>.accept.json`. A LOCKED model or one a game already uses is only
 reported, never replaced. The nightly Model audit (3:47 AM Central) measures every .glb in the repo and publishes audit.md on the
 `model-audit` branch. Put a real size on your request line (`height 0.68 m`) - it is what the robot checks against.
+
+- LOCKED (VP, Oct 26 2026, after audit PR #1874 went red): the acceptance/retry robot NEVER deletes a model file while anything tracked in the repo still names it (game pages, kit, tools, tests, other models); it reports it instead. When it does delete one it also drops that file's MODELS.md entry, so the game check can never 404 on a model the robot removed.
