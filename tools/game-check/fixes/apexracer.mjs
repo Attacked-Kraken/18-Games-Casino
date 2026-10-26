@@ -1247,4 +1247,130 @@ export default [
       return true;
     },
   },
+  {
+    id: 'never-g-345-p2',
+    cat: 'never',
+    name: 'bigger wheel size fits bigger rims and the car rides higher (G-345)',
+    ask: "owner 2026-10-25: 'make sure able to have a bigger size like my current rims. And bigger size lifts suspension which makes car ride higher' - Wheel Size at Max must measure a bigger rim diameter than Stock and the car must sit higher",
+    async test(page, h) {
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy', rimCol: '#d4142a' };
+        const saved = E.S.cars.goblin.wheel;
+        const measure = async (w) => { E.S.cars.goblin.wheel = w; E.S.cur = 'goblin';
+          for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200); /* startRace is swallowed while a build is loading */
+          const prev = E.R; E.startRace(E.PLACES[0], 3);
+          for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return null; /* fail closed: never census a stale race (the robot's first run read stock twice) */
+          const car = E.R.P.car; car.root.updateMatrixWorld(true);
+          let best = null;
+          car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface' && q.geometry) { const g = q.geometry; g.computeBoundingBox(); const bb = g.boundingBox, e = q.matrixWorld.elements; const ext = { x: [1e9, -1e9], y: [1e9, -1e9], z: [1e9, -1e9] };
+            for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) { const wx = e[0] * x + e[4] * y + e[8] * z + e[12], wy = e[1] * x + e[5] * y + e[9] * z + e[13], wz = e[2] * x + e[6] * y + e[10] * z + e[14]; ext.x = [Math.min(ext.x[0], wx), Math.max(ext.x[1], wx)]; ext.y = [Math.min(ext.y[0], wy), Math.max(ext.y[1], wy)]; ext.z = [Math.min(ext.z[0], wz), Math.max(ext.z[1], wz)]; }
+            const dia = Math.max(ext.x[1] - ext.x[0], ext.y[1] - ext.y[0], ext.z[1] - ext.z[0]); const cy = (ext.y[0] + ext.y[1]) / 2;
+            if (!best || dia > best.dia) best = { dia, cy }; } });
+          if (E.R) E.R.on = false;
+          return best; };
+        const a = await measure(0); if (!a) return 'no stock race';
+        const b = await measure(2); if (!b) return 'no max race';
+        E.S.cars.goblin.wheel = saved;
+        return JSON.stringify({ d0: +a.dia.toFixed(3), y0: +a.cy.toFixed(3), d2: +b.dia.toFixed(3), y2: +b.cy.toFixed(3) });
+      });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.d2 < d.d0 * 1.18) return 'bigger wheel size did not grow the rims: stock ' + d.d0 + ' m -> max ' + d.d2 + ' m';
+      if (d.y2 - d.y0 < 0.05) return 'bigger rims did not lift the car: hub height ' + d.y0 + ' m -> ' + d.y2 + ' m';
+      return true;
+    },
+  },
+  { id: 'never-g-355-p1', cat: 'never', name: 'every rim style builds a different real rim', async test(page, h) {
+      const sigs = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy', rimCol: '#c9cdd6' };
+        E.S.cur = 'goblin';
+        const sigOf = (car) => { car.root.updateMatrixWorld(true); const tilt = car.tilt;
+          const faces = []; car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') faces.push(q); });
+          if (faces.length !== 4) return null;
+          const ctr = faces.map((f) => { const v = f.position.clone(); f.getWorldPosition(v); return v; });
+          const parts = [];
+          car.root.traverse((q) => { if (!q.isMesh || !q.geometry || !q.geometry.attributes.position) return; const v = q.position.clone(); q.getWorldPosition(v);
+            for (let k = 0; k < 4; k++) { if (v.distanceTo(ctr[k]) < 0.34) { const lt = tilt.worldToLocal(v.clone()); const hub = tilt.worldToLocal(ctr[k].clone()); const sgn = Math.sign(hub.z) || 1; parts.push(q.geometry.attributes.position.count + '@' + Math.round(sgn * (lt.z - hub.z) * 40)); break; } } });
+          return parts.sort().join(','); };
+        const out = [];
+        for (let st = 0; st < 6; st++) { E.S.cars.goblin.rim = st;
+          for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+          const prev = E.R; E.startRace(E.PLACES[0], 3);
+          for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || E.R === prev || !E.R.P) return 'race did not rebuild for style ' + st;
+          const sg = sigOf(E.R.P.car); if (!sg) return 'style ' + st + ': rim faces missing';
+          out.push(sg); }
+        E.S.cars.goblin.rim = 0;
+        return out; });
+      if (typeof sigs === 'string') return sigs;
+      const distinct = new Set(sigs).size;
+      return distinct >= 5 ? true : 'only ' + distinct + ' different rims across the 6 styles - a style button changes nothing';
+    } },
+  { id: 'never-g-355-p2', cat: 'never', name: 'rim colour tints only the rim, never the tyre caliper or hub', async test(page, h) {
+      const res = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy' };
+        E.S.cars.goblin.rimCol = '#ff00ff'; E.S.cur = 'goblin';
+        const race = async (rim) => { E.S.cars.goblin.rim = rim;
+          for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+          const prev = E.R; E.startRace(E.PLACES[0], 3);
+          for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || E.R === prev || !E.R.P) return null; return E.R.P.car; };
+        const hex = (q) => (q.material && q.material.color) ? q.material.color.getHexString() : '';
+        const census = (car) => { const o = { faces: [], cals: [], stray: 0 };
+          car.root.updateMatrixWorld(true);
+          const ctr = []; car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const v = q.position.clone(); q.getWorldPosition(v); ctr.push(v); o.faces.push(hex(q)); } });
+          car.root.traverse((q) => { if (!q.isMesh) return; const a = q.userData && q.userData.acc, hx = hex(q);
+            if (a === 'caliper') o.cals.push(hx);
+            else if (a !== 'rimface' && hx === 'ff00ff') { const v = q.position.clone(); q.getWorldPosition(v); if (ctr.every((c) => v.distanceTo(c) >= 0.34)) o.stray++; } });
+          return o; };
+        const carA = await race(4); if (!carA) return 'mesh race did not rebuild';
+        const a = census(carA);
+        if (a.faces.some((x) => x === 'ff00ff')) return "the locked wheel is repainted solid rim colour (the owner's all-red wheel)";
+        if (a.stray) return 'rim colour leaked onto ' + a.stray + ' non-rim parts with the locked wheel';
+        const carB = await race(0); if (!carB) return 'classic race did not rebuild';
+        const b = census(carB);
+        if (!b.faces.length || !b.faces.every((x) => x === 'ff00ff')) return 'the rim itself does not wear the chosen colour';
+        if (b.cals.some((x) => x === 'ff00ff')) return 'the brake caliper took the rim colour';
+        if (b.stray) return 'rim colour leaked onto ' + b.stray + ' non-rim parts (tyre or body)';
+        E.S.cars.goblin.rim = 0; E.S.cars.goblin.rimCol = '#c9cdd6';
+        return 'ok'; });
+      return res === 'ok' ? true : res;
+    } },
+  { id: 'never-g-355-p3', cat: 'never', name: 'caliper sits behind the rim face along the axle', async test(page, h) {
+      const res = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy', rimCol: '#c9cdd6' };
+        E.S.cur = 'goblin';
+        const race = async (rim) => { E.S.cars.goblin.rim = rim;
+          for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+          const prev = E.R; E.startRace(E.PLACES[0], 3);
+          for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+          if (!E.R || E.R === prev || !E.R.P) return null; return E.R.P.car; };
+        const check = (car) => { car.root.updateMatrixWorld(true); const tilt = car.tilt;
+          const faces = [], cals = [];
+          car.root.traverse((q) => { const a = q.userData && q.userData.acc; if (a === 'rimface') faces.push(q); if (a === 'caliper') cals.push(q); });
+          if (faces.length !== 4 || cals.length !== 4) return 'rim faces ' + faces.length + ', calipers ' + cals.length;
+          const tOf = (q) => { const v = q.position.clone(); q.getWorldPosition(v); return tilt.worldToLocal(v); };
+          for (const f of faces) { const hub = tOf(f), sgn = Math.sign(hub.z) || 1;
+            let cal = null, bd = 1e18; for (const c of cals) { const p = tOf(c), d = (p.x - hub.x) ** 2 + (p.y - hub.y) ** 2 + (p.z - hub.z) ** 2; if (d < bd) { bd = d; cal = c; } }
+            const cg = cal.geometry; cg.computeBoundingBox(); const cb = cg.boundingBox; let front = -1e18;
+            for (const x of [cb.min.x, cb.max.x]) for (const y of [cb.min.y, cb.max.y]) for (const z of [cb.min.z, cb.max.z]) { const v = new cal.position.constructor(x, y, z); cal.localToWorld(v); tilt.worldToLocal(v); front = Math.max(front, sgn * (v.z - hub.z)); }
+            const pa = f.geometry.attributes.position, offs = [];
+            for (let i = 0; i < pa.count; i += 7) { const v = new cal.position.constructor(pa.getX(i), pa.getY(i), pa.getZ(i)); f.localToWorld(v); tilt.worldToLocal(v); offs.push(Math.abs(v.z - hub.z)); }
+            offs.sort((a2, b2) => a2 - b2); const face = offs[Math.floor(offs.length * 0.9)];
+            if (!(front < face - 0.005)) return 'a caliper front ' + front.toFixed(3) + ' m is not behind the rim face ' + face.toFixed(3) + ' m'; }
+          return 'ok'; };
+        const carA = await race(4); if (!carA) return 'mesh race did not rebuild';
+        const ra = check(carA); if (ra !== 'ok') return 'locked wheel: ' + ra;
+        const carB = await race(0); if (!carB) return 'classic race did not rebuild';
+        const rb = check(carB); if (rb !== 'ok') return 'classic rim: ' + rb;
+        E.S.cars.goblin.rim = 0;
+        return 'ok'; });
+      return res === 'ok' ? true : res;
+    } }
 ];

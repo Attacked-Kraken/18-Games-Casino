@@ -31,3 +31,5 @@ Format: `- SEARCH · <words to search> · for <game / what it is>`
 - DONE (robot 2026-10-25: 12 found - tools/model-search.html) · muscle car · for Exotic Racer Club new garage cars (owner picks)
 - DONE (robot 2026-10-25: 12 found - tools/model-search.html) · roadster · for Exotic Racer Club new garage cars (owner picks)
 - DONE (robot 2026-10-25: 12 found - tools/model-search.html) · luxury grand tourer · for Exotic Racer Club new garage cars (owner picks)
+- SEARCH · alloy wheel rim five spoke · for Exotic Racer Club garage Rims tab (more real 3D rim styles, owner 2026-10-25)
+- SEARCH · alloy wheel rim turbine · for Exotic Racer Club garage Rims tab (more real 3D rim styles, owner 2026-10-25)

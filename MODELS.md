@@ -153,5 +153,5 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: replaces the flat canvas-texture rim faces (owner 2026-10-25: rims look small and fake, like a sticker; measured 0.000 m thick, 30 vertices per face) with a real 3D alloy wheel: Car Wheel/Rim by jack.wake04, CC-BY, 54k tris / 26.9k verts, https://sketchfab.com/3d-models/car-wheelrim-f6f2600358744d928f9b6afc4aabc004 - download file size unverified until the fetch robot lands it
-- status: WAITING OWNER
+- status: LOCKED (owner 👍 Sun Oct 25 2026 - nobody may swap it without the owner)
 

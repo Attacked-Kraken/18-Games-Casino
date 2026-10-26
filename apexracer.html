@@ -354,7 +354,7 @@ const CARS = [
   { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
-const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
+const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
 const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
 let S = DEF();
@@ -1222,31 +1222,50 @@ function makeGlbCar(id, cfg, o = {}) {
 
     const latheMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.85, roughness: 0.3 });
     ownMats.push(latheMat);
+    /* G-345 fix 2 (owner): a bigger wheel size lifts the car - the body rises by the extra radius and the hubs rise with it, so the bigger wheels stay grounded */
+    const rimScale = [1, 1.15, 1.3][clamp(cfg.wheel || 0, 0, 2)];
+    if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
+    /* G-345 fix 2 (owner: 'wheel options don't work'): the Rims styles are real 3D rims on real cars now.
+       Mesh (style 4) is the owner's LOCKED fetched wheel in its own finish; the other five are turned
+       barrels with real spokes in each design, wearing the chosen rim colour. One barrel per wheel
+       carries the rimface tag. */
+    const procRim = (style, fr, w) => {
+      const grp = new THREE.Group();
+      const deep = style === 3, mono = style === 5;
+      const prof = mono ? [[0.02, -0.5], [0.7, -0.5], [0.97, -0.34], [1.0, -0.1], [0.99, 0.2], [0.9, 0.42], [0.55, 0.5], [0.3, 0.5]] : [[0.03, -0.5], [0.86, -0.5], [0.99, -0.3], [1.0, -0.16], [0.62, -0.05], [0.58, 0.06], [0.97, 0.22], [1.0, 0.38], [0.9, 0.5], [0.3, 0.5]];
+      const pts = prof.map(([rr, yy]) => new THREE.Vector2(Math.max(0.021, rr * fr), yy * w));
+      const barrel = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), latheMat);
+      barrel.rotation.x = Math.PI / 2; barrel.userData.acc = 'rimface'; grp.add(barrel);
+      const faceZ = deep ? -w * 0.12 : w * 0.16;
+      const spoke = (ang, len, wid, dep, z, twist) => { const m = new THREE.Mesh(new THREE.BoxGeometry(wid, len, dep), latheMat); m.position.set(Math.cos(ang) * fr * 0.52, Math.sin(ang) * fr * 0.52, z); m.rotation.z = ang - Math.PI / 2; if (twist) m.rotation.x = twist; grp.add(m); };
+      if (style === 0 || style === 3) { for (let k = 0; k < 5; k++) spoke(k / 5 * TAU, fr * 0.82, fr * 0.30, 0.05, faceZ, 0); }
+      else if (style === 1) { for (let k = 0; k < 5; k++) { spoke(k / 5 * TAU - 0.10, fr * 0.82, fr * 0.13, 0.05, faceZ, 0); spoke(k / 5 * TAU + 0.10, fr * 0.82, fr * 0.13, 0.05, faceZ, 0); } }
+      else if (style === 2) { for (let k = 0; k < 12; k++) spoke(k / 12 * TAU, fr * 0.84, fr * 0.15, 0.045, faceZ, 0.5); }
+      else if (style === 4) { for (let k = 0; k < 8; k++) { spoke(k / 8 * TAU - 0.16, fr * 0.84, fr * 0.07, 0.04, faceZ, 0); spoke(k / 8 * TAU + 0.16, fr * 0.84, fr * 0.07, 0.04, faceZ, 0); } }
+      const cap = new THREE.Mesh(new THREE.CylinderGeometry(fr * 0.17, fr * 0.17, 0.055, 20), latheMat);
+      cap.rotation.x = Math.PI / 2; cap.position.z = faceZ; grp.add(cap);
+      return grp;
+    };
     const carbon = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.42, metalness: 0.6 });
     ownMats.push(carbon);
     for (const hb of hubs) {
-      const fr = hb.h / 2 * 0.68;
-      let rimDone = false;
-      if (rimTpl) { /* G-345 fix 1: the fetched real wheel, normalized to this hub with its axle turned flat onto Z; exactly one mesh per wheel carries the rimface tag */
-        const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h / rimDia0;
+      const fr = hb.h / 2 * 0.68 * rimScale;
+      const style = clamp(cfg.rim || 0, 0, 5);
+      let rimDone = false, rimHalf = 0.1;
+      if (style === 4 && rimTpl) { /* the LOCKED fetched wheel, its own finish exactly as the owner approved it in the viewer - never repainted */
+        const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h * rimScale / rimDia0;
         cl.rotation.y = th; cl.scale.setScalar(sc2);
         cl.position.copy(rimCtr.clone().multiplyScalar(-sc2).applyEuler(new THREE.Euler(0, th, 0)));
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5);
+        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5); rimHalf = rimWid0 * sc2 * wrap.scale.z / 2;
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
-        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const cc = q.material.color; if (cc && (0.2126 * cc.r + 0.7152 * cc.g + 0.0722 * cc.b) > 0.18) cc.set(cfg.rimCol || '#c9cdd6'); if ((q.material.metalness || 0) < 0.55) q.material.metalness = 0.55; const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
         if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
       }
-      if (!rimDone) { /* fallback if the fetched wheel ever fails to load: a lathe-turned rim with a real barrel and dish - still never a flat sticker */
-        const w2 = Math.max(0.07, hb.w * 0.32), pts = [];
-        for (const [rr, yy] of [[0.03, -0.5], [0.86, -0.5], [0.99, -0.3], [1.0, -0.16], [0.62, -0.05], [0.58, 0.06], [0.97, 0.22], [1.0, 0.38], [0.9, 0.5], [0.3, 0.5]]) pts.push(new THREE.Vector2(Math.max(0.021, rr * fr), yy * w2));
-        const lat = new THREE.Mesh(new THREE.LatheGeometry(pts, 40), latheMat);
-        lat.rotation.x = Math.PI / 2; lat.position.set(hb.x, hb.y, hb.z);
-        lat.userData.acc = 'rimface'; tilt.add(lat);
-      }
+      if (!rimDone) { const w2 = Math.max(0.09, hb.w * 0.34); rimHalf = w2 / 2; const grp = procRim(style, fr, w2); grp.position.set(hb.x, hb.y, hb.z); if (hb.z < 0) grp.rotation.y = Math.PI; tilt.add(grp); }
       const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.5, fr * 0.72, 0.05), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
-      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (hb.w / 2 - 0.02));
+      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (rimHalf > 0.12 ? rimHalf * 0.60 : rimHalf * 0.16)); /* G-355: the caliper sits behind the rim's face plane (measured from the fitted rim's own depth, not the tyre) - on the tyre-based depth it floated on the wheel face in the owner's screenshot */
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
     }
     if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -2331,11 +2350,11 @@ const UP = { eng: { lv: ['Stock', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'], p
   tire: { lv: ['Street', 'Sport', 'Semi-Slick', 'Race Slick'], p: [0, 4000, 10000, 22000] }, nos: { lv: ['1 Bottle', '2 Bottles', '3 Bottles', 'Race Tank'], p: [0, 5000, 13000, 28000] },
   aero: { lv: ['None', 'Lip', 'Wing', 'GT Wing'], p: [0, 2500, 6000, 12000] },
   quad: { only: 'titan', lv: ['Dual Motor', 'Tri Motor', 'Quad Motor', '⚡ Hyperdrive'], p: [0, 250000, 600000, 1500000] }, rocket: { only: 'titan', lv: ['None', 'Twin Boosters', 'Quad Boosters', '🔥 Afterburner'], p: [0, 200000, 500000, 1200000] },
-  susp: { only: 'titan', lv: ['Stock', 'Lifted', 'Race Drop', 'Active Air'], p: [0, 120000, 300000, 700000] }, kit: { lv: ['Stock', 'Carbon Kit'], p: [0, 9000] }, tint: { lv: ['Light', 'Dark', 'Limo'], p: [0, 600, 1200] } };
+  susp: { only: 'titan', lv: ['Stock', 'Lifted', 'Race Drop', 'Active Air'], p: [0, 120000, 300000, 700000] }, kit: { lv: ['Stock', 'Carbon Kit'], p: [0, 9000] }, tint: { lv: ['Light', 'Dark', 'Limo'], p: [0, 600, 1200] }, wheel: { lv: ['Stock', 'Plus', 'Max'], p: [0, 4500, 11000] } };
 const GLOWS = ['', '#19e6ff', '#ff2bd6', '#8a5cff', '#7dff6a', '#ff3b30', '#ffd23a', '#ffffff', '#2438ff'];
 const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a'];
 const CALS = ['#e01b2b', '#ffd23a', '#19e6ff', '#16d07a', '#ff2bd6', '#ff8a00', '#2a2c30', '#f2f2f2'];
-const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['wrapCol', 'Wrap Color'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Rim Color'], ['tire', 'Tires'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', '💡 Underglow'], ['tint', '🕶 Tint'], ['cal', 'Calipers']];
+const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['wrapCol', 'Wrap Color'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['tire', 'Tires'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', '💡 Underglow'], ['tint', '🕶 Tint'], ['cal', 'Calipers']];
 const VIEW = { wrap: [1.0, 0.22, 7.6], wrapCol: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };
 function openGarage() { clearPrev(); G.mode = 'garage'; G.gSel = S.cur; gOrb.auto = 1; setGarageCar(S.cur, S.cars[S.cur]); show('garage'); renderGarage(); }
 const gCfg = () => S.cars[G.gSel] || defCfg(G.gSel);
@@ -2514,7 +2533,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { if 
 addEventListener('pointerdown',function(){ try{ var el=document.documentElement; if(el.requestFullscreen&&!document.fullscreenElement){ var p=el.requestFullscreen(); if(p&&p.then)p.then(function(){ try{ var q=screen.orientation.lock('landscape'); if(q&&q.catch)q.catch(function(){}); }catch(e){} }).catch(function(){}); } }catch(e){} },{once:true});
 resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
-{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); } /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
+{ const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); if (tq === 'rim') setTimeout(() => { try { S.cars[S.cur].rim = 3; S.cars[S.cur].rimCol = '#e8252f'; G.tab = 'rim'; openGarage(); } catch (e) {} }, 2500); } /* G-355: owner check link - opens straight at the garage Rims tab, Deep Dish style, red rim colour */ /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
 window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
