@@ -59,21 +59,21 @@ for (const t of todo) {
       lines[t.i] = lines[t.i].replace(/^(\s*-\s*)OPEN/, `$1SKIPPED (not downloadable, robot ${today})`); continue; }
     const dl = await fetch(`${API}/models/${uid}/download`, { headers: H });
     if (!dl.ok) { say(`FAILED ${uid} "${info.name}": Sketchfab answered ${dl.status} to the download (token wrong or not allowed?)`); continue; }
-    const d = await dl.json(), pick = d.glb || d.gltf;
+    const d = await dl.json(), useGltf = /FORMAT gltf/i.test(t.l) && !!d.gltf, isGlb = !useGltf && !!d.glb, pick = useGltf ? d.gltf : (d.glb || d.gltf);   // Oct 26: the acceptance robot re-asks an EMPTY glb as a glTF zip
     if (!pick || !pick.url) { say(`FAILED ${uid}: no glb/gltf download offered`); continue; }
     const mb = (pick.size || 0) / 1e6;
-    say(`${DRY ? 'WOULD FETCH' : 'FETCHING'} "${info.name}" by ${maker} (${licName}) - ${d.glb ? 'glb' : 'gltf zip'} ${mb.toFixed(1)} MB`);
+    say(`${DRY ? 'WOULD FETCH' : 'FETCHING'} "${info.name}" by ${maker} (${licName}) - ${isGlb ? 'glb' : 'gltf zip'} ${mb.toFixed(1)} MB`);
     if (DRY) continue;
     if (mb > 90) { say(`SKIPPED ${uid}: ${mb.toFixed(0)} MB is too big even to shrink - ask for a smaller one`);
       lines[t.i] = lines[t.i].replace(/^(\s*-\s*)OPEN/, `$1SKIPPED (${mb.toFixed(0)} MB too big, robot ${today})`); continue; }
     const buf = Buffer.from(await (await fetch(pick.url)).arrayBuffer());
     const raw = `models/fetched/${slug}-raw.glb`;
-    if (d.glb) fs.writeFileSync(raw, buf);
-    const sizeAsk = /\b(length|height|width)\s*:?\s*([\d.]+)\s*m\b/i.exec(t.l);     // owner Oct 21: "length 4.6 m" on the line = scale to it
-    if (sizeAsk) fs.writeFileSync(raw.replace('-raw.glb', '.size'), sizeAsk[1].toLowerCase() + ' ' + sizeAsk[2]);
-    else if (!d.glb) { const tmp = fs.mkdtempSync('/tmp/sf-'); fs.writeFileSync(tmp + '/m.zip', buf); execSync(`unzip -q -o m.zip`, { cwd: tmp });
+    if (isGlb) fs.writeFileSync(raw, buf);
+    else { const tmp = fs.mkdtempSync('/tmp/sf-'); fs.writeFileSync(tmp + '/m.zip', buf); execSync(`unzip -q -o m.zip`, { cwd: tmp });
       const g = execSync(`find ${tmp} -name '*.gltf' | head -1`, { encoding: 'utf8' }).trim();
       execSync(`gltf-transform copy "${g}" "${raw}"`, { stdio: 'inherit' }); }
+    const sizeAsk = /\b(length|height|width)\s*:?\s*([\d.]+)\s*m\b/i.exec(t.l);     // owner Oct 21: "length 4.6 m" on the line = scale to it
+    if (sizeAsk) { fs.writeFileSync(raw.replace('-raw.glb', '.size'), sizeAsk[1].toLowerCase() + ' ' + sizeAsk[2]); fs.writeFileSync(raw.replace('-raw.glb', '.ask'), sizeAsk[0]); }   // .ask = what the acceptance robot checks the size against
     const out = raw.replace('-raw.glb', '.glb');
     if (!ledger.includes(`## ASSET: ${out}`)) addLedger += `\n## ASSET: ${out}\n- title: ${info.name}\n- maker: ${maker}\n- source: ${info.viewerUrl || 'https://sketchfab.com/3d-models/' + uid}\n- license: ${licName}\n- downloaded: ${today} by the Sketchfab fetch robot\n- used in: (not in a game yet - the game that uses it must name "${maker}" on its credits screen)\n- changes: shrunk for phones (textures max 1024 px, WebP)\n`;
     lines[t.i] = lines[t.i].replace(/^(\s*-\s*)OPEN/, `$1DONE (robot ${today}: ${out})`);
