@@ -331,3 +331,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-342 | window 10 | jobs/G-342.md, CLAIMS.md | test/g-342-apextrackfield |
 | G-358 | window 3 | looks/apexflight.md, jobs/G-358-w3.md | build/g-358-apexflight |
 | G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - DONE PR #1818 merged e661d9dc (Muse main (casino)) |
+| G-366 | window 3 | tools/game-check/fixes/apexflight.mjs, jobs/G-366.md | build/g-366-apexflight |
