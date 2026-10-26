@@ -1,0 +1,24 @@
+{
+ "file": "models/apex-jet/glb/apex-jet-fighter.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 131,
+  "tris": 22168,
+  "size": [
+   10.477,
+   5.011,
+   15.394
+  ],
+  "mainSize": [
+   10.34,
+   5.011,
+   14.45
+  ],
+  "stray": 1.07,
+  "bytes": 1360052
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:43:58.887Z"
+}

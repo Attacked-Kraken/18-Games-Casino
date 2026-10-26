@@ -1,0 +1,26 @@
+{
+ "file": "models/bikes/phantom-bike.glb",
+ "ok": false,
+ "why": [
+  "HUGE: 95434.6 m across - not a real-world size"
+ ],
+ "facts": {
+  "meshes": 30,
+  "tris": 89994,
+  "size": [
+   27805.909,
+   37061.913,
+   95434.619
+  ],
+  "mainSize": [
+   27805.909,
+   37061.913,
+   95434.619
+  ],
+  "stray": 1,
+  "bytes": 2618228
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:43:58.894Z"
+}

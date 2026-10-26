@@ -1,0 +1,24 @@
+{
+ "file": "models/apex-jet/glb/apex-jet-delta.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 124,
+  "tris": 20880,
+  "size": [
+   9.777,
+   5.65,
+   16.094
+  ],
+  "mainSize": [
+   9.572,
+   5.65,
+   15.15
+  ],
+  "stray": 1.06,
+  "bytes": 1315820
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:43:58.883Z"
+}
