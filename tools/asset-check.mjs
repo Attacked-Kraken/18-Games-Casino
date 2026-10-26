@@ -19,7 +19,7 @@ for (const line of fs.readFileSync('ASSETS.md', 'utf8').split('\n')) {
   if (cur && kv) cur[kv[1].trim().toLowerCase()] = kv[2].trim();
 }
 const problems = [], missing = [];
-const creditLine = e => `<div style="margin-top:6px"><b>"${(e.title || e.path).replace(/"/g, '')}"</b> by ${e.maker}, ${e.license || 'CC-BY 4.0'}, via Sketchfab. Shrunk for phones.</div>`;
+const creditLine = e => `<div style="margin-top:6px"><b>"${(e.title || e.path).replace(/"/g, '')}"</b> by ${e.maker}, ${e.license || 'CC-BY 4.0'}, <a href="${e.source || '#'}" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>`;
 for (const e of ledger) {
   // sounds may also be Apache-2.0 (Kokoro voices) or CC-BY-SA 4.0 (one commentary voice, credited) - owner Oct 19
   const okSound = /^sounds\//.test(e.path || '') && /^(Apache-2\.0|CC-BY-SA 4\.0|CC0 \+ CC-BY-SA 4\.0)\b/i.test(e.license || '');
@@ -56,7 +56,8 @@ if (process.argv.includes('--fix')) {
     if (end < 0) { console.log(`::warning title=Asset check::${g}: credits box has no button row - cannot add the credit for ${e.maker}`); continue; }
     const ind = '      ';
     h = h.slice(0, end).replace(/\s*<\/div>\s*$/, '\n' + ind + line + '\n    </div>\n    ') + h.slice(end);
-    fs.writeFileSync(g, h); fixed++; console.log(`FIXED credit: ${e.maker} -> ${g}`);
+    fs.writeFileSync(g, h); fixed++;
+    try { let a = fs.readFileSync('ASSETS.md', 'utf8'); const i = a.indexOf('## ASSET: ' + e.path); if (i >= 0) { const j = a.indexOf('\n## ', i + 5); const blk = a.slice(i, j < 0 ? a.length : j); const nb = blk.replace(/^- used in:.*$/m, `- used in: ${g} (credits screen names ${e.maker})`); a = a.slice(0, i) + nb + a.slice(i + blk.length); fs.writeFileSync('ASSETS.md', a); } } catch (x) { console.log('ledger not updated: ' + x.message); } console.log(`FIXED credit: ${e.maker} -> ${g}`);
   }
   if (fixed) process.exit(0);
 }
