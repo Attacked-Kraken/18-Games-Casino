@@ -58,7 +58,12 @@ const sample = () => page.evaluate(() => {
   const R = window.__reality || {}; const o = {};
   try { o.t = typeof R.time === 'function' ? R.time() : null; } catch (e) {}
   try { o.speed = typeof R.speed === 'function' ? R.speed() : null; } catch (e) {}
-  const cam = window.__renderCam || R.camera || (window.__cams || []).slice(-1)[0];
+  // First real run (Oct 25 11:45 PM): the render hook never fired and the last trapped camera sat at 0,0,0 (a cube/ortho helper).
+  // The game's own camera = a PerspectiveCamera whose aspect matches the screen and that is not parked at the origin.
+  const aspect = innerWidth / innerHeight;
+  const isMain = c => { try { c.updateMatrixWorld(true); const e = c.matrixWorld.elements; return c.type === 'PerspectiveCamera' && Math.abs(c.aspect - aspect) < 0.06 && (Math.abs(e[12]) + Math.abs(e[13]) + Math.abs(e[14])) > 0.01; } catch (x) { return false; } };
+  const cands = (window.__cams || []).filter(isMain);
+  const cam = (window.__renderCam && isMain(window.__renderCam) ? window.__renderCam : null) || (R.camera && isMain(R.camera) ? R.camera : null) || cands.slice(-1)[0];
   const pl = R.player;
   if (cam && pl) try {
     cam.updateMatrixWorld && cam.updateMatrixWorld(true); pl.updateMatrixWorld && pl.updateMatrixWorld(true);
