@@ -3,9 +3,9 @@
  "name": "Exotic Racer Club",
  "seconds": 60,
  "gameSecondsReached": 59.9,
- "wallSeconds": 97.1,
- "at": "2026-10-26T04:45:22.740Z",
- "samples": 261,
+ "wallSeconds": 89.6,
+ "at": "2026-10-26T04:49:53.267Z",
+ "samples": 209,
  "video": "video.webm",
  "frames": [
   "t00.jpg",
@@ -21,36 +21,40 @@
  },
  "camera": {
   "distance": {
-   "min": 0,
-   "mean": 219.99,
-   "max": 286.84
+   "min": 8.36,
+   "mean": 102.22,
+   "max": 167.93
   },
   "height": {
-   "min": 0,
-   "mean": 0,
-   "max": 0
+   "min": 2.3,
+   "mean": 2.54,
+   "max": 3.56
   },
   "aimErrorDeg": {
-   "min": 0.35,
-   "mean": 83.1,
-   "max": 179.78
+   "min": 0.48,
+   "mean": 5.08,
+   "max": 27.85
   },
-  "followLagMetresPerMps": -0.002
+  "followLagMetresPerMps": -0.08
  },
- "playerOnScreenPct": 22,
+ "playerOnScreenPct": 100,
  "speed": {
   "min": 0,
-  "mean": 47.23,
-  "max": 78.73
+  "mean": 50.13,
+  "max": 80.77
  },
- "metresMoved": 186.4,
+ "metresMoved": 192.4,
  "moments": [
   {
-   "at": 3.6,
+   "at": 9,
    "words": "#st/# LAP #/# TIME BEST GO!"
+  },
+  {
+   "at": 17,
+   "words": "NEAR MISS! +NITRO"
   }
  ],
- "momentCount": 1,
+ "momentCount": 2,
  "camDebug": [
   {
    "type": "OrthographicCamera",
@@ -74,12 +78,12 @@
   },
   {
    "type": "PerspectiveCamera",
-   "fov": 74.67144524109143,
+   "fov": 71.33955312124903,
    "aspect": 2.164102564102564,
    "pos": [
-    -35.3,
+    -26.1,
     2.6,
-    -173
+    -171.8
    ],
    "isRender": false,
    "parent": null
