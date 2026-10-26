@@ -230,3 +230,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-26 help desk
 - A test that adds a long full-lap census to a game's suite can push its play step past the 35-min limit: say so in a HELP-VP: robot line with the run times, do not keep re-pushing.
+
+## Oct 26 2026 help desk
+- A robot HELP line about a time limit in a workflow file: check whether a VP PR (vp- branch) already covers it before anything else; a .github/ PR is merged by a Claude by hand, never by the merge robot or the help desk, so tell the window to wait for it instead of shrinking its test.
