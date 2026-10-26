@@ -70,3 +70,16 @@ resetInputs (play test play-stick-never-stays-stuck).
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
+
+## REFERENCES (G-358)
+- Broadcast angle: Red Bull Air Race as television - cameras on the tails of the race planes, in the cockpits, in helicopters and below the pylons: https://generalaviationnews.com/2018/11/29/red-bull-air-racing-reality-vs-tv/
+- Athlete gear: fighter pilot in helmet and flight suit, visible in the cockpit of an F-35 on the runway: https://rare-gallery.com/4555321-military-military-aircraft-us-air-force-lockheed-martin-f-35-lightning-ii.html
+- Stance: pilot seated in the cockpit at the controls, hands on the stick (Cochran in a P-40): https://www.gettyimages.in/detail/news-photo/pilot-jacqueline-cochran-sits-in-the-cockpit-of-a-p-40-news-photo/514867614
+- Venue: Red Bull Air Race over the river at Porto, city behind the course: https://commons.wikimedia.org/wiki/File:Red_Bull_Air_Race_2_(Porto).jpg
+- Best game example of this kind: Ace Combat 7: Skies Unknown (console) - photorealistic skies, full 360-degree movement, arcade jet handling: https://www.xbox.com/en-NZ/games/store/ace-combat-7-skies-unknown/BZ45MMFWZP7F/0001
+
+## MUST MATCH (G-358, written from the links above)
+- Proportions: single-seat low-wing jet, wingspan clearly shorter than fuselage length, tall tail fin, gear set wide under the wings.
+- Camera height: chase view just above and behind the jet, looking slightly down at the runway, matching the tail-camera and helicopter broadcast angles.
+- Gear silhouette: wide three-point gear under the fuselage, nose slightly up on final, gear clearly readable against the runway.
+- Motion weight: banking turns carry momentum and bleed speed, rolls take time, touchdown sinks with weight rather than snapping flat.
