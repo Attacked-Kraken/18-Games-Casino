@@ -2,12 +2,10 @@
 
 **Every helper: read AGENTS.md first** (it lists the laws: CLAIMS, FAMILY-RULES, ASSET-LAW, STORE-READY).
 
-Two separate worlds live in this repo. Keep them separate.
-
-**The casino** (index.html): the entrance hides a secret door. Behind it
-are the hallways, the casino floor with its 19 games (Velvet 21 blackjack,
-Steelfront, slots, roulette, poker and more - fun chips only), and the
-vault. The casino is finished and sealed: do not add games to it.
+**The casino was removed on Oct 26 2026** (owner's order). The 19 casino game
+pages, the casino floor, the wallet and their scripts are gone from main (git
+history keeps them). index.html is now only the entrance: the code rain, the
+owner's hidden doors and vault, and the red GAME DEVELOPMENT circle.
 
 **Game Development** (sports.html - "Apex Arcade Game Development"):
 where every new game we build and upgrade lives. It is reached from the
@@ -20,10 +18,8 @@ from the start; that is the standard for this library.
 
 ## Where new games go
 
-New built games go on the Game Development page (sports.html) - NOT the
-casino floor. Add the game's tab + ALL TITLES card to sports.html and point its
-PLAY button at the game's .html. Never register a new game in
-games.json, the lobby registry in index.html, or the hallway tabs.
+New built games go on the Game Development page (sports.html) - Add the game's tab + ALL TITLES card to sports.html and point its
+PLAY button at the game's .html. Never register a new game in a lobby or hallway - there is none now.
 A game's back button returns to sports.html. See CLAIMS.md for the
 full rule and the claims board every worker must check before building.
 
