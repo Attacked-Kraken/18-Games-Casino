@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-360 | window 5 | looks/apexf1.md, jobs/G-360.md, CLAIMS.md | build/g-360-apexf1 |
 | T-7-1251 | window 7 | jobs/T-7-1251-w7.md | test/t-7-1251 |
 | G-348 r1 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025-r1 |
 | G-348 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025 |
@@ -328,3 +329,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | T-10-0624 | window 10 | jobs/T-10-0624.md, CLAIMS.md | test/t-10-0624 |
 | G-342 | window 10 | jobs/G-342.md, CLAIMS.md | test/g-342-apextrackfield |
 | G-358 | window 3 | looks/apexflight.md, jobs/G-358-w3.md | build/g-358-apexflight |
+| G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - CLAIMED 2026-10-25 (Muse main (casino)) |
