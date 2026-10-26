@@ -6,9 +6,28 @@ export default [
     id: 'not-frozen-on-start',
     ask: 'Gameplay picture frozen for 1.5 seconds',
     async test(page, h) {
-      // Start the game, then verify the picture changes over 1.5s (plane moves)
+      // Start the game, throttle up through the real lever, then verify the
+      // picture changes over 1.5s (plane moves). Takeoff is manual since the
+      // lever replaced buttons (G-280 gone, lever live): a parked jet at 0%
+      // throttle moves nothing, so pressing start alone can never prove the
+      // picture moves - the old test measured a parked jet, not a frozen game.
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(500);
+      const engaged = await h.eval(() => document.getElementById('startOv').hidden);
+      if (!engaged) return 'menu did not engage after FREE FLIGHT press (test setup, not the game)';
+      const lever = await h.eval(() => {
+        const lev = document.getElementById('thrLever');
+        if (!lev) return 'no throttle lever on the page';
+        const r = lev.getBoundingClientRect();
+        if (r.width < 44 || r.height < 100) return 'throttle lever too small to drag';
+        const yFor = (pct) => r.top + (1 - pct) * r.height;
+        lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        return true;
+      });
+      if (lever !== true) return lever;
+      await h.wait(1000);
       const a = await h.shot();
       await h.wait(1500);
       const b = await h.shot();
