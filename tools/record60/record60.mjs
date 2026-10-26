@@ -80,7 +80,8 @@ const sample = () => page.evaluate(() => {
   o.text = (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 400);
   return o;
 }).catch(() => ({}));
-const go = async on => { try { await page.evaluate(v => window.__reality && window.__reality.go && window.__reality.go(v), on); } catch (e) {}
+const FAITHFUL = process.env.FAITHFUL !== '0';   // Oct 26 2026 12:00 AM: run 2 showed the camera trailing the car by 100+ m - the hook's go() fast-forwards the sim 3 steps per tick but this software-GL browser draws ~2 frames/s, so the camera never caught up. FAITHFUL = keys only, the game's own loop, so camera + car stay in step (slower, true).
+const go = async on => { if (!FAITHFUL) try { await page.evaluate(v => window.__reality && window.__reality.go && window.__reality.go(v), on); } catch (e) {}
   for (const k of ['ArrowUp', 'KeyW']) { try { on ? await page.keyboard.down(k) : await page.keyboard.up(k); } catch (e) {} } };
 await go(true);
 const samples = []; const t0 = Date.now(); let lastTxt = ''; const moments = []; let nextShot = 0;
@@ -106,7 +107,8 @@ const raw = await page.video().path().catch(() => null);
 await ctx.close(); await browser.close();
 let video = null;
 if (raw && fs.existsSync(raw)) { const mp4 = path.join(dir, 'video.mp4');
-  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-an', mp4]);
+  const wallTotal = (Date.now() - t0) / 1000, sp = FAITHFUL && wallTotal > SECONDS * 1.3 ? SECONDS / wallTotal : 1;
+  const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-vf', 'setpts=' + sp.toFixed(4) + '*PTS', '-r', '25', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-an', mp4]);
   if (r.status === 0) video = 'video.mp4';
   else { try { fs.copyFileSync(raw, path.join(dir, 'video.webm')); video = 'video.webm'; } catch (e) {} } }
 fs.rmSync(path.join(dir, 'raw'), { recursive: true, force: true });
