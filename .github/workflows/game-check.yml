@@ -165,7 +165,7 @@ jobs:
           else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
 
       - name: Auto-undo a merge that newly broke a game
-        if: always() && github.event_name == 'push'
+        if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')   # VP Oct 26 2026 (audit P0): the merge robot starts this check by workflow_dispatch (its own key starts no push run), so auto-undo never fired for robot merges
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
@@ -185,28 +185,31 @@ jobs:
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
           [ -n "$GAMES" ] || { echo "it was a fluke - nothing undone"; exit 0; }
-          # only undo THIS merge if it actually touched what broke (the game, its tests, or shared 3D/kit files)
-          CH=$(git diff --name-only $GITHUB_SHA^1 $GITHUB_SHA)
-          HIT=""
-          for G in $(echo "$GAMES" | tr ',' ' '); do
-            SL=${G%.html}
-            if echo "$CH" | grep -qE "^($SL\.|tools/game-check/fixes/$SL\.|characters/|models/|venues/|kit/|vendor/|three\.module|look-presets|apex-gfx|audio\.js|sports\.html)"; then HIT="$HIT$G,"; fi
-          done
-          [ -n "$HIT" ] || { echo "broken ($GAMES) but this merge didn't touch it - not undoing (an earlier merge did it)"; exit 0; }
+          # VP Oct 26 2026 (audit P0): a run dispatched by the merge robot covers EVERY merge since the last good report, not only the newest one -
+          # find the newest merge on main that touched what broke (tools/game-check/pick-culprit.sh) and undo THAT one. None touched it = an earlier
+          # change did it, nothing is undone. The run's own commit is the fallback when the last report is not on main.
+          P=$(node -e "try{console.log(require('./prev-results.json').sha||'')}catch(e){console.log('')}")
+          git fetch -q origin main
+          [ "$(git rev-parse origin/main)" = "$(git rev-parse HEAD)" ] || echo "main moved on since this run started - judging the commits this run tested"
+          T=$(bash tools/game-check/pick-culprit.sh "$P" "$GAMES" "$GITHUB_SHA")
+          [ -n "$T" ] || { echo "broken ($GAMES) but no merge since the last report touched it - not undoing (an earlier merge did it)"; exit 0; }
+          git merge-base --is-ancestor "$T" origin/main || { echo "$T is no longer on main - nothing to undo"; exit 0; }
+          MSG=$(git log -1 --format=%s $T)
+          HIT="$GAMES,"
           GAMES=${HIT%,}
           git config user.name "auto-undo bot"; git config user.email "auto-undo-bot@users.noreply.github.com"
           git fetch -q origin main
-          B="auto-undo-${GITHUB_SHA::7}"
+          B="auto-undo-${T::7}"
           git checkout -q -B "$B" origin/main
-          if [ $(git rev-list --parents -n1 $GITHUB_SHA | wc -w) -gt 2 ]; then R="-m 1"; else R=""; fi
-          if ! git revert --no-edit $R $GITHUB_SHA; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
-          git commit --amend -q -m "AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
+          if [ $(git rev-list --parents -n1 $T | wc -w) -gt 2 ]; then R="-m 1"; else R=""; fi
+          if ! git revert --no-edit $R $T; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
+          git commit --amend -q -m "AUTO-UNDO: ${T::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
           git push -q origin "$B"
-          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${GITHUB_SHA::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${T::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
           # owner Oct 21 2026: main is protected - the undo merges through the merge robot once its own check is green
           gh workflow run game-check-pr.yml --ref "$B" || true
-          echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${GITHUB_SHA::7} - merges when its check is green"
-          { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${GITHUB_SHA::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
+          echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${T::7} - merges when its check is green"
+          { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${T::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
           gh workflow run game-check-pr.yml --ref main || true
 
       - name: Turn the gameplay flip-books into phone videos
