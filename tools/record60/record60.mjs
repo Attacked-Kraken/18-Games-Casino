@@ -16,7 +16,7 @@ import { spawnSync } from 'child_process';
 const base = process.argv[2] || 'http://127.0.0.1:8811/';
 const out = process.argv[3] || 'rec-out';
 const GAME = process.env.GAME || 'apexracer.html';
-const SECONDS = +(process.env.SECONDS || 60);
+const SECONDS = +(process.env.REC_SECONDS || process.env.SECONDS || 60);
 const cfg = JSON.parse(fs.readFileSync('tools/game-check/games.json', 'utf8'));
 const g = cfg.games.find(x => x.file === GAME);
 if (!g) { console.error('game not in games.json: ' + GAME); process.exit(2); }
@@ -95,13 +95,15 @@ while ((Date.now() - t0) / 1000 < WALLCAP) {
 const gameSeconds = samples.length ? samples.at(-1).at : 0;
 await go(false);
 const fpsNow = await page.evaluate(() => new Promise(res => { let n = 0; const a = performance.now(); const f = () => { n++; performance.now() - a < 1000 ? requestAnimationFrame(f) : res(n); }; requestAnimationFrame(f); })).catch(() => 0);
+const camDebug = await page.evaluate(() => (window.__cams || []).slice(-6).map(c => { try { c.updateMatrixWorld(true); const e = c.matrixWorld.elements; return { type: c.type, fov: c.fov, aspect: c.aspect, pos: [e[12], e[13], e[14]].map(v => +v.toFixed(1)), isRender: c === window.__renderCam, parent: c.parent && c.parent.type }; } catch (x) { return { err: String(x) }; } })).catch(() => []);
 const endText = await page.evaluate(() => (document.body.innerText || '').slice(0, 1500)).catch(() => '');
 const raw = await page.video().path().catch(() => null);
 await ctx.close(); await browser.close();
 let video = null;
 if (raw && fs.existsSync(raw)) { const mp4 = path.join(dir, 'video.mp4');
   const r = spawnSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', raw, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-an', mp4]);
-  if (r.status === 0) video = 'video.mp4'; }
+  if (r.status === 0) video = 'video.mp4';
+  else { try { fs.copyFileSync(raw, path.join(dir, 'video.webm')); video = 'video.webm'; } catch (e) {} } }
 fs.rmSync(path.join(dir, 'raw'), { recursive: true, force: true });
 
 // ---- numbers
@@ -121,8 +123,9 @@ const m = {
   playerOnScreenPct: withCam.length ? Math.round(100 * withCam.filter(s => s.on).length / withCam.length) : null,
   speed: st(sp), metresMoved: moved === null ? null : +moved.toFixed(1),
   moments: moments.slice(0, 40), momentCount: moments.length,
-  endedWithResultWords: finishWords.test(endText), fpsAtEnd: fpsNow, scriptErrors: errors.slice(0, 5),
+  camDebug, endedWithResultWords: finishWords.test(endText), fpsAtEnd: fpsNow, scriptErrors: errors.slice(0, 5),
 };
+fs.writeFileSync(path.join(dir, 'samples.json'), JSON.stringify(samples.map(({ text, ...r }) => r)));
 fs.writeFileSync(path.join(dir, 'measures.json'), JSON.stringify(m, null, 1));
 
 // ---- compare with the blessed spec (looks/<game>/spec60.json)
