@@ -18,7 +18,8 @@ for (const line of fs.readFileSync('ASSETS.md', 'utf8').split('\n')) {
   const kv = line.match(/^\s*-\s*([a-z ]+):\s*(.*)$/i);
   if (cur && kv) cur[kv[1].trim().toLowerCase()] = kv[2].trim();
 }
-const problems = [];
+const problems = [], missing = [];
+const creditLine = e => `<div style="margin-top:6px"><b>"${(e.title || e.path).replace(/"/g, '')}"</b> by ${e.maker}, ${e.license || 'CC-BY 4.0'}, via Sketchfab. Shrunk for phones.</div>`;
 for (const e of ledger) {
   // sounds may also be Apache-2.0 (Kokoro voices) or CC-BY-SA 4.0 (one commentary voice, credited) - owner Oct 19
   const okSound = /^sounds\//.test(e.path || '') && /^(Apache-2\.0|CC-BY-SA 4\.0|CC0 \+ CC-BY-SA 4\.0)\b/i.test(e.license || '');
@@ -34,8 +35,30 @@ for (const e of ledger.filter(e => /^CC-BY/i.test(e.license || ''))) {
   for (const g of games) {
     const t = gameText(g);
     const uses = t.includes(e.path) || (e['used in'] || '').includes(g);
-    if (uses && !t.includes(e.maker)) problems.push(`${g} uses CC-BY "${e.title || e.path}" but its credits don't name the maker "${e.maker}"`);
+    if (uses && !t.includes(e.maker)) {
+      const line = creditLine(e);
+      problems.push(`${g} uses CC-BY "${e.title || e.path}" but its credits don't name the maker "${e.maker}". Add this line inside the credits box: ${line}`);
+      missing.push({ g, e, line });
+    }
   }
+}
+// VP Oct 26 2026 ("make sure credits are always locked in"): the credit line is built from the ASSETS.md entry itself, and
+// `node tools/asset-check.mjs --fix` writes it into the game's credits box (after the last credit line). The merge robot runs --fix on a PR
+// whose ONLY failing check is this one, so a forgotten credit never holds a PR (it held #1870/#1877/#1881 for 1-2 h).
+if (process.argv.includes('--fix')) {
+  let fixed = 0;
+  for (const { g, e, line } of missing) {
+    let h = fs.readFileSync(g, 'utf8');
+    if (h.includes(e.maker)) continue;
+    const at = h.indexOf('id="credits"');
+    if (at < 0) { console.log(`::warning title=Asset check::${g} has no credits box (id="credits") - cannot add the credit for ${e.maker}`); continue; }
+    const end = h.indexOf('<div class="row">', at);      // the credits box ends with its Back button row
+    if (end < 0) { console.log(`::warning title=Asset check::${g}: credits box has no button row - cannot add the credit for ${e.maker}`); continue; }
+    const ind = '      ';
+    h = h.slice(0, end).replace(/\s*<\/div>\s*$/, '\n' + ind + line + '\n    </div>\n    ') + h.slice(end);
+    fs.writeFileSync(g, h); fixed++; console.log(`FIXED credit: ${e.maker} -> ${g}`);
+  }
+  if (fixed) process.exit(0);
 }
 // owner Oct 21 2026: every robot says WHY where it can be seen - run annotations + the run summary + a PR comment (yml)
 for (const x of problems) console.log('::error title=Asset check::' + x.replace(/\n/g, ' ').slice(0, 300));
