@@ -353,7 +353,10 @@ def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
     revisit, looked = False, 0   # revisit = some PR still needs the robot to look again soon
-    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []
+    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO)
+    if open_prs is None:        # GitHub could not be read: that is NOT 'no open PRs' (ChatGPT audit Oct 26 2026)
+        print("::warning title=Merge robot API_ERROR::could not list open PRs (%s) - nothing decided this round, looking again soon" % LAST_ERR[0][:120])
+        open_prs, revisit = [], True
     try:
         if approve_waiting(open_prs):
             revisit = True      # their check runs now; look again when it finishes
