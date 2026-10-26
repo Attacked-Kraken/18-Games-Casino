@@ -31,6 +31,12 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - https://www.singaporegp.sg - the night street circuit: barriers, floodlights, city venue
 - https://www.imsa.com - North American endurance and street racing: venues and car presentation
 - Best console example: https://www.gran-turismo.com/us/products/gt7/ - the garage and showroom standard for car and wheel presentation
+- Direct pictures (the Mac mini downloads these to compare with the robot's recordings; also in looks/refs/apexracer.md):
+- Broadcast / chase-camera view - Formula E race action at trackside, cars at speed in a pack - https://upload.wikimedia.org/wikipedia/commons/1/19/EFLT_PueblaEPrix2021-7.jpg
+- True-proportion side view - a sports car in pure side profile, wheels and stance at real scale - https://upload.wikimedia.org/wikipedia/commons/e/e1/1968_AMC_AMX_silver_red_interior_343_V8_console_auto_at_2025_AMO_3of6.jpg
+- Gear close-up - an alloy wheel face in close-up, spokes and barrel as real 3D shape - https://upload.wikimedia.org/wikipedia/commons/2/23/BMW_Alpina_alloy_wheel.jpg
+- Venue - a night street circuit under city lights (Singapore Grand Prix) - https://upload.wikimedia.org/wikipedia/commons/f/f0/1_singapore_f1_night_race_2012_city_skyline.jpg
+- Best-in-class game example - Gran Turismo 7 official key art, the console bar for car presentation - https://www.gran-turismo.com/images/c/i101nzxi8307fO.jpg
 
 ## MUST MATCH
 - proportions: real car and wheel proportions - the wheel diameter reads true against the body, no cartoon stretch
