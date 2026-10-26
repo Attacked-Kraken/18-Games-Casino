@@ -186,4 +186,4 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: for the Rims tab style Monoblock. Robot pictures are good: a white solid rally rim with a vented face, reads clearly in the robot's set. 91,838 triangles. Fifteen52 Inspired rally rim by JPepe, CC-BY - 'inspired' is the maker's title credit; there is no brand logo on the model itself (checked in G-361).
-- status: WAITING OWNER
+- status: LOCKED (owner \uD83D\uDC4D Mon Oct 26 2026 - nobody may swap it without the owner)

@@ -35,7 +35,7 @@ jobs:
             const fs=require('fs');const out=require('child_process').execSync(\"find . -name '*.accept.json' -not -path './node_modules/*'\").toString().split('\\n').filter(Boolean).map(f=>JSON.parse(fs.readFileSync(f)));
             fs.writeFileSync('audit.json',JSON.stringify(out.map(r=>({file:r.file,ok:r.ok,why:r.why,tris:r.facts&&r.facts.tris,size:r.facts&&r.facts.size,pictures:r.pictures})),null,1));"
       - name: Reject failed fetched models and ask for replacements
-        if: github.event.inputs.fix != ''
+        if: github.event.inputs.fix == '1' || github.event.inputs.fix == 'true'   # a run started with fix=0 or empty only measures + publishes (VP Oct 26 2026: '0' counted as fix and opened a duplicate fetch PR)
         env:
           GH_TOKEN: ${{ github.token }}
           PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
