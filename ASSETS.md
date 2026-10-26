@@ -347,3 +347,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-25 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "jack.wake04" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/animated-baseball-player-6b39fc.glb
+- title: Animated baseball player
+- maker: JohnyxTR
+- source: https://sketchfab.com/3d-models/animated-baseball-player-6b39fcafd2204b9fa9317f7b926807df
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "JohnyxTR" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
