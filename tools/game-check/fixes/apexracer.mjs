@@ -1497,5 +1497,36 @@ export default [
       if (unchecked.length) return { inconclusive: 'G-365 garage sweep - tabs that could not be checked: ' + unchecked.join(', ') };
       return true;
     }
-  }
+  },
+{ id: 'never-deepdish-locked', cat: 'never', name: 'the LOCKED deep dish wheel is the real fetched wheel in its own finish',
+    ask: "Owner approved the Deep Dish artist wheel (MODELS.md erc-rim-deepdish, LOCKED Oct 26 2026): the Deep Dish rim style must be the real fetched wheel exactly as it looks in the viewer - its own copper finish, never repainted by Rim Color, never swapped without the owner",
+    async test(page, h) {
+      const fs = await import('node:fs'); const path = await import('node:path');
+      try { const md = fs.readFileSync(path.join(repoRoot, 'MODELS.md'), 'utf8'); const i = md.indexOf('- id: erc-rim-deepdish'); if (i < 0) return 'MODELS.md has no erc-rim-deepdish entry'; const sec = md.slice(i, i + 1600); if (!/- status: LOCKED/.test(sec)) return 'the deep dish wheel is not LOCKED in MODELS.md'; } catch (e) { return 'MODELS.md unreadable: ' + e.message; }
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy' };
+        const savedRim = E.S.cars.goblin.rim, savedCol = E.S.cars.goblin.rimCol;
+        E.S.cars.goblin.rim = 3; E.S.cars.goblin.rimCol = '#00ff00'; E.S.cur = 'goblin';
+        for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+        const prev = E.R; E.startRace(E.PLACES[0], 3);
+        for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+        if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return 'deep dish race did not rebuild';
+        const car = E.R.P.car; car.root.updateMatrixWorld(true);
+        const faces = [];
+        car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const v = q.position.clone(); q.getWorldPosition(v); faces.push({ c: [v.x, v.y, v.z], verts: q.geometry.attributes.position.count }); } });
+        let clusterVerts = 0, copper = 0, green = 0;
+        car.root.traverse((q) => { if (!q.isMesh) return; const v = q.position.clone(); q.getWorldPosition(v); if (!faces.some((f) => Math.hypot(v.x - f.c[0], v.y - f.c[1], v.z - f.c[2]) < 0.45)) return; clusterVerts += q.geometry.attributes.position.count; const cc = q.material && q.material.color; if (cc && cc.getHexString() === '00ff00') green++; if (cc && cc.r > 0.45 && cc.r - cc.g > 0.15) copper++; });
+        E.S.cars.goblin.rim = savedRim; E.S.cars.goblin.rimCol = savedCol;
+        return JSON.stringify({ faces: faces.length, minVerts: faces.length ? Math.min.apply(null, faces.map((f) => f.verts)) : 0, clusterVerts, copper, green }); });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.faces !== 4) return 'the deep dish car has ' + d.faces + '/4 rim faces';
+      if (d.minVerts < 3000) return 'a deep dish rim face has only ' + d.minVerts + ' vertices - that is the built stand-in, not the fetched wheel (15,684 measured)';
+      if (d.clusterVerts < 40000) return 'the four wheels carry only ' + d.clusterVerts + ' vertices - the fetched deep dish is not fitted';
+      if (d.green > 0) return 'Rim Color repainted the LOCKED deep dish wheel (' + d.green + ' parts took the colour) - it keeps its own finish';
+      if (d.copper < 4) return 'the deep dish copper finish is missing from the wheels (found ' + d.copper + ' copper parts)';
+      return true;
+    } },
 ];
