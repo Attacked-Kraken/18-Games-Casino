@@ -57,6 +57,7 @@ jobs:
         if: github.event.inputs.clean == ''
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN }}
         run: |
           set -e
           cat fetch-report.txt >> "$GITHUB_STEP_SUMMARY" || true
@@ -108,6 +109,7 @@ jobs:
           # request and starts the game check on it; the merge robot merges it when green. No direct push to main.
           B="robot/sketchfab-${{ github.run_number }}"
           git checkout -q -b "$B" && git push -q origin "$B"
-          N=$(gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
+          # VP Oct 25 2026 8:40 PM (ChatGPT audit finding, verified: run 40253111030 "GitHub Actions is not permitted to create or approve pull requests" HTTP 403): the repo setting is off, so the PR is opened with the robot merge token (a PR it opens also starts the check itself).
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="Sketchfab fetch robot: new models (run ${{ github.run_number }})" -f body="$(cat fetch-report.txt | head -40)" --jq .number)
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::notice title=Sketchfab robot::opened pull request #$N - the merge robot merges it when the game check is green"
