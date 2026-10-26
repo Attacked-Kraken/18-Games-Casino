@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/bbs-rs16-tuner-car-wheel-188d0d.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 13786,
+  "size": [
+   2.093,
+   0.68,
+   2.192
+  ],
+  "mainSize": [
+   2.093,
+   0.68,
+   2.192
+  ],
+  "stray": 1,
+  "bytes": 290756
+ },
+ "pictures": [
+  {
+   "pic": "bbs-rs16-tuner-car-wheel-188d0d-front.jpg",
+   "pct": 17.2
+  },
+  {
+   "pic": "bbs-rs16-tuner-car-wheel-188d0d-side.jpg",
+   "pct": 19.6
+  },
+  {
+   "pic": "bbs-rs16-tuner-car-wheel-188d0d-back.jpg",
+   "pct": 11.8
+  },
+  {
+   "pic": "bbs-rs16-tuner-car-wheel-188d0d-top.jpg",
+   "pct": 32.8
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-10-26T14:49:04.597Z"
+}
