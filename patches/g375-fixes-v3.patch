@@ -1,0 +1,542 @@
+--- a/tools/game-check/fixes/apexracer.mjs
++++ b/tools/game-check/fixes/apexracer.mjs
+@@ -1779,11 +1779,9 @@
+       for (const pi of [0, 1, 2, 3, 4]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -1805,11 +1803,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -1826,11 +1823,9 @@
+       for (const pi of [5, 6, 7, 8, 9]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -1852,11 +1847,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -1873,11 +1867,9 @@
+       for (const pi of [10, 11, 12, 13, 14]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -1899,11 +1891,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -1920,11 +1911,9 @@
+       for (const pi of [15, 16, 17, 18, 19]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -1946,11 +1935,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -1967,11 +1955,9 @@
+       for (const pi of [20, 21, 22, 23, 24]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -1993,11 +1979,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2014,11 +1999,9 @@
+       for (const pi of [25, 26, 27, 28, 29]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2040,11 +2023,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2061,11 +2043,9 @@
+       for (const pi of [30, 31, 32, 33, 34]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2087,11 +2067,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2108,11 +2087,9 @@
+       for (const pi of [35, 36, 37, 38, 39]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2134,11 +2111,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2155,11 +2131,9 @@
+       for (const pi of [40, 41, 42, 43, 44]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2181,11 +2155,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2202,11 +2175,9 @@
+       for (const pi of [45, 46, 47, 48, 49]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2228,11 +2199,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2249,11 +2219,9 @@
+       for (const pi of [50, 51, 52, 53, 54]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2275,11 +2243,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2296,11 +2263,9 @@
+       for (const pi of [55, 56, 57, 58, 59]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2322,11 +2287,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2343,11 +2307,9 @@
+       for (const pi of [60, 61, 62, 63, 64]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2369,11 +2331,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2390,11 +2351,9 @@
+       for (const pi of [65, 66, 67, 68, 69]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2416,11 +2375,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2437,11 +2395,9 @@
+       for (const pi of [70, 71, 72, 73, 74]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2463,11 +2419,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2484,11 +2439,9 @@
+       for (const pi of [75, 76, 77, 78, 79]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2510,11 +2463,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2531,11 +2483,9 @@
+       for (const pi of [80, 81, 82, 83, 84]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2557,11 +2507,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2578,11 +2527,9 @@
+       for (const pi of [85, 86, 87, 88, 89]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2604,11 +2551,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2625,11 +2571,9 @@
+       for (const pi of [90, 91, 92, 93, 94]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2651,11 +2595,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
+@@ -2672,11 +2615,9 @@
+       for (const pi of [95, 96, 97, 98, 99]) {
+         const city = await h.eval((k) => window.__erc.PLACES[k].city, pi);
+         const err0 = errs.length;
+-        await h.eval(() => { const E = window.__erc; if (E.toMenu) E.toMenu(); });
+-        await h.wait(250);
+         await h.eval((k) => { const E = window.__erc; E.startRace(E.PLACES[k], 2); }, pi);
+         let ready = false;
+-        for (let i = 0; i < 150 && !ready; i++) { ready = await h.eval(() => !!(window.__erc.R && window.__erc.R.skids && window.__erc.R.P && window.__erc.R.W)); if (!ready) await h.wait(200); }
++        for (let i = 0; i < 200 && !ready; i++) { ready = await h.eval((k) => { const R = window.__erc.R; return !!(R && R.skids && R.P && R.W && R.place && R.place.city === k && R.t < 30); }, city); if (!ready) await h.wait(150); }
+         if (!ready) { fails.push(city + ': the race never finished building'); continue; }
+         const info = await h.eval(() => { const R = window.__erc.R, W = R.W; let kids = 0; W.scene.traverse(() => kids++); return { city: R.place.city, kids, sky: !!(W.sky || W.scene.background), fog: !!W.scene.fog, N: R.T.N }; });
+         if (!info || info.city !== city) { fails.push(city + ': the loaded race is for ' + (info && info.city)); continue; }
+@@ -2698,11 +2639,10 @@
+             if ((P.lapT || []).length >= 1) break;
+           }
+           E.K.gas = 0; E.K.sx = 0;
+-          const hud = (document.getElementById('lapT') || {}).textContent || '';
+-          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog), hud: hud.replace(/\s+/g, ' ').slice(0, 60) };
++          return { lapT: (P.lapT || []).length, prog: Math.round(P.prog) };
+         });
+         if (!drive || drive.lapT < 1) { fails.push(city + ': the car never finished a lap (prog ' + (drive && drive.prog) + ' of ' + info.N + ') - the lap counter never moved'); }
+-        else { await h.wait(450); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
++        else { await h.wait(300); const hud2 = await h.eval(() => ((document.getElementById('lapT') || {}).textContent || '').replace(/\s+/g, ' ')); if (!/LAP 2\/2/.test(hud2 || '')) fails.push(city + ': the lap counter did not advance on screen (HUD reads "' + hud2 + '")'); }
+         const newErrs = errs.slice(err0);
+         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
+       }
