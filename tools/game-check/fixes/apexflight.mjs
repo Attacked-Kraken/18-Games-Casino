@@ -7,7 +7,7 @@ export default [
     ask: 'Gameplay picture frozen for 1.5 seconds',
     async test(page, h) {
       // Start the game, then verify the picture changes over 1.5s (plane moves)
-      try { await h.press('#btnStart'); } catch (e) {}
+      try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(500);
       const a = await h.shot();
       await h.wait(1500);
