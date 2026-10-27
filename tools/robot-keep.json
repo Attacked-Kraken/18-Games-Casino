@@ -43,12 +43,12 @@
     },
     {
       "file": ".github/workflows/game-check.yml",
-      "needle": "apexracer.html@1of3",
+      "needle": "apexracer.html@1of6",
       "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
     },
     {
       "file": ".github/workflows/game-check-pr.yml",
-      "needle": "apexracer.html@1of3",
+      "needle": "apexracer.html@1of6",
       "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
     }
   ]
