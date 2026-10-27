@@ -232,6 +232,19 @@ for (const g of games) {
   const r = { file: g.file, name: g.name, fail: [], check: [], ok: [], img: {}, startedAt: new Date().toISOString() };
   const tGame0 = Date.now();        // owner Oct 21 7:49 PM: the robot records how long it really played each game
   const phases = []; let tPh = Date.now(); let curStep = 'at boot (page load, before any test)'; const mark = n => { phases.push({ phase: n, ms: Date.now() - tPh }); tPh = Date.now(); curStep = 'after the "' + n + '" step'; };   // owner Oct 24 2026 item 6: robot prints the time of each step
+  // W-001 (window 13, Oct 27 2026): TEST_PART is parsed HERE, not only in the play-test block below.
+  // Count-based splitting alone does not save a part: every part redid the same non-play work
+  // (extra pictures, virtual clock, reality, close-up, mobile, upright), and the old 20-min cap
+  // started only at the play tests, so pre-play (~10.4 min on the daily Racer run: 21.9s + 493.7s + 106.5s,
+  // results.json on branch game-checks, apexracer.html playMs 972394) + 20 min play + ~2.9 min post-play
+  // = ~33 min, at the 35-min job limit in .github/workflows/game-check-pr.yml. Part 1 is the only part
+  // whose img / reality / phases merge-results.mjs keeps, so other parts can skip those phases safely.
+  const TP_EARLY = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
+  const partK = TP_EARLY ? +TP_EARLY[1] : 0;
+  const partOnlyPlay = partK > 1; // part 1 (and a whole, unsplit run) does everything; other parts only play
+  const wholeCapMs = TP_EARLY ? 15 * 60 * 1000 : 0; // PR parts only: whole-game deadline, not just play tests
+  const overWholeCap = () => wholeCapMs && Date.now() - tGame0 > wholeCapMs;
+  const skippedCap = (what) => { r.check.push(`SKIPPED (whole-game cap, robot side, not a game result): ${what} - this part ran past ${Math.round(wholeCapMs / 60000)} min, so this phase was not run instead of letting the job hit the 35-min limit with no results`); };
   { const sl = g.file.replace('.html', ''); if (VENUE_OF[sl] && !lockedVenues.has(g.file))
       r.check.push(`No owner-approved venue - build it from venues/${VENUE_OF[sl]}.md (real sizes, stands all around, crowd) with venues/kit in tools/venue-viewer.html, add it to MODELS.md as WAITING OWNER`); }
   if (g.notOnHub) r.fail.push('Not on the Game Development page - add its ALL TITLES card to sports.html (every game in development must be playable there)');
@@ -346,7 +359,7 @@ for (const g of games) {
   const TPK = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || ''); const firstPart = !TPK || +TPK[1] === 1;
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
-  if (firstPart) try {
+  if (firstPart && !partOnlyPlay) try {
     const cdir = path.join(out, 'clips', slug); fs.mkdirSync(cdir, { recursive: true });
     const t0 = Date.now(); let k = 0;
     while (Date.now() - t0 < 8000 && k < 40) {
@@ -365,8 +378,12 @@ for (const g of games) {
   // EXTRA PICTURES (owner Oct 19, Gemini idea): games.json "pictures": [{"name":"garage","steps":["#mGarage"]}] - each one
   // opens the game fresh, presses its steps and saves img/<game>-pic-<name>.jpg, shown on the owner's job card
   // (e.g. the car in the garage next to the race picture: color, size and which way it points at a glance)
+  // W-001: extra pictures are the bulk of the 493.7s idle phase above (each one loads the game fresh);
+  // part 1 covers them in the merged result, and part 1 stops adding them once the game is 8 min in.
+  const extraPicsSkipped = !partOnlyPlay && TP_EARLY && Date.now() - tGame0 > 8 * 60 * 1000;
+  if (extraPicsSkipped) skippedCap('extra pictures');
   mark('timing: play pictures');
-  for (const pc of (firstPart ? (g.pictures || []) : []).slice(0, 3)) {
+  for (const pc of (!firstPart || partOnlyPlay || extraPicsSkipped ? [] : (g.pictures || []).slice(0, 3))) {
     try {
       const pp = await ctx.newPage();
       await pp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await pp.waitForTimeout(7000);
@@ -399,7 +416,9 @@ for (const g of games) {
   } catch (e) {}
   try { const idleB = await idleRead(page); for (const m of idleJudge(idleA, idleB, g, (Date.now() - idleT0) / 1000)) { if (m.startsWith('WARN|')) r.check.push(m.slice(5) + ' (yellow for now: this game is on the warning list until its AI defends an untouched team)'); else r.fail.push(m); } } catch (e) {}
   mark('idle watch + first pictures');
-  try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
+  if (partOnlyPlay) { /* part 1 covers the virtual clock */ }
+  else if (overWholeCap()) skippedCap('virtual clock check');
+  else try { const vf = await virtualClockFail(ctx, base, g); if (vf) r.fail.push(vf); } catch (e) {}
   // ---------- CLEAN SCREEN (owner, 2026-10-17): during play only the buttons you need - long words only behind "How to play"
   const words = await page.evaluate(() => {
     let n = 0, keys = '', biggest = '', bigN = 0;
@@ -481,10 +500,13 @@ for (const g of games) {
     // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
     // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
-    const GAME_CAP_MS = 20 * 60 * 1000, tGame = Date.now(); let notRun = [];
+    // W-001: on PR parts the play cap is measured from the GAME start, not the play-test start,
+    // and stops 2 min before the whole-game cap so post-play / results still fit. A test that was
+    // not run stays inconclusive (play tests) or red (owner/never tests) below - never silently passed.
+    const GAME_CAP_MS = TP_EARLY ? wholeCapMs - 2 * 60 * 1000 : 20 * 60 * 1000, tGame = TP_EARLY ? tGame0 : Date.now(); let notRun = [];
     for (const fx of list) {
       curStep = 'during play test ' + (fx && fx.id);
-      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
+      if (Date.now() - tGame > GAME_CAP_MS) { notRun.push(fx.id); r.fixes.push({ id: fx.id, ask: askOf(fx), ok: false, note: TP_EARLY ? 'not run - whole-game cap (15 min per part, robot side)' : 'not run - robot time cap (20 min per game)', inconclusive: true, ms: 0, mode: fx.mode || '' }); continue; }
       let ok = false, note = '', dead = false;
       // the time limit really STOPS the test: after 30 s every call it makes on the page throws
       const live = new Proxy(page, { get(t, k) { if (dead) throw new Error('test stopped (time limit)'); const v = t[k]; return typeof v === 'function' ? v.bind(t) : v; } });
@@ -541,11 +563,12 @@ for (const g of games) {
       else if (/thinkT|__standSpots|freeze|\.pos\.set\(/.test(String(fx.test))) await freshGame();
     }
     if (notRun.length) {
-      r.check.push('ROBOT TIME CAP: ' + slug + ' play tests stopped after 20 min - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
+      r.check.push((TP_EARLY ? 'WHOLE-GAME CAP: ' : 'ROBOT TIME CAP: ') + slug + ' play tests stopped after ' + (TP_EARLY ? '13 min of this part' : '20 min') + ' - ' + notRun.length + ' test(s) NOT RUN this time (' + notRun.slice(0, 6).join(', ') + (notRun.length > 6 ? ', ...' : '') + ') - robot side, not a game result');
       // owner Oct 23 7:47 PM "if any can count as passed, that is a false green": an owner / never / keep test that was NOT RUN is NOT proven -
       // it stays red (robot side, named), so no job can be called done on a test the robot never ran.
       for (const id of notRun) { const fx = list.find(x => x.id === id) || {}; if (!/^(play|tester)-/.test(id)) r.fail.push(`NOT RUN (robot time cap, robot side) - owner's fix not proven: "${askOf(fx) || id}"`); }
     }
+    mark('play tests');
     if (r.fixes.length) {
       const fixJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
       fs.writeFileSync(path.join(out, 'img', slug + '-4-fixes.jpg'), fixJpg); r.img.fixes = 'img/' + slug + '-4-fixes.jpg';
@@ -588,7 +611,9 @@ for (const g of games) {
     else if (!(r.fixes || []).some(x => /^play-friend/.test(x.id || ''))) r.check.push(`Friend codes have no 'play-friend-code' test yet (STORE-READY.md "Friend codes")`);
   } catch (e) {}
   // REALITY robot (owner Oct 20): direction, real sizes, ground contact - measured in the running game (reality.mjs)
-  try {
+  if (partOnlyPlay) { /* part 1 covers reality / close-up / phone layout */ }
+  else if (overWholeCap()) skippedCap('reality + close-up + phone layout');
+  else try {
     await page.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await page.waitForTimeout(2500);
     for (const step of g.start || []) await pressStep(page, step);
     await page.waitForTimeout(2500);
@@ -613,10 +638,14 @@ for (const g of games) {
   if (yourName) r.fail.push(`"${yourName}" box - it must say "Player nickname" (store rule: no real names from kids)`);
   for (const h of outside) r.fail.push('Calls the outside internet (games must work fully offline): ' + h);
   if (f1.rotate || f2.rotate) r.fail.push(`Shows a rotate sign sideways: "${f1.rotate || f2.rotate}"`);
+  mark('reality + close-up + mobile');
   await ctx.close();
 
   // ---------- upright (landscape law: no rotate sign, game still presented sideways)
   // deviceScaleFactor 2 like a real iPhone, so the robot also catches BLURRY games (drawn at low sharpness, owner 2026-10-17)
+  if (partOnlyPlay) { /* part 1 covers the upright check */ }
+  else if (overWholeCap()) skippedCap('upright phone check');
+  else {
   const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, userAgent: IPHONE_UA });
   const p2 = await ctx2.newPage();
   try { await p2.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); } catch (e) {}
@@ -660,6 +689,7 @@ for (const g of games) {
   }
   await ctx2.close();
 
+  } // end upright (part 1 only, inside the whole-game cap)
   for (const m of missing) r.fail.push('Missing file: ' + m);
   for (const e of [...shaderErr].slice(0, 2)) r.fail.push('Broken 3D shader (models using it are invisible): ' + e);
   // owner Oct 19 9:53 PM: a script error (the red "Game error caught" bar on his phone) BLOCKS the merge - only NEW ones a PR
@@ -688,8 +718,9 @@ for (const g of games) {
       r.fail = keep;
     }
   } catch (e) {}
-  mark('play tests + the rest'); r.phases = phases;
+  mark('upright + rest'); r.phases = phases;
   r.playMs = Date.now() - tGame0; r.endedAt = new Date().toISOString();
+  console.log(`TIMING ${g.file} part=${r.part || 'all'} total=${Math.round(r.playMs / 1000)}s phases=${phases.map(p => p.phase + ':' + Math.round(p.ms / 1000) + 's').join(', ')}`);
   r.status = r.fail.length ? 'FAIL' : r.check.length ? 'CHECK' : 'PASS';
   results.push(r);
   console.log(`${r.status.padEnd(5)} ${g.file}  ${[...r.fail, ...r.check].join(' | ')}`);

@@ -248,3 +248,9 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A red line that blames your PR for something your diff does not touch (here the Save-name button #nmB, 31 px tall, on main since #1910) can come from a robot baseline that is stale: if the Check status says "NEW" but `git diff origin/main...your-branch` has no such element, file `HELP-VP: robot` with the element and main's commit instead of changing unrelated game code in a PR that must stay one-fix.
+
+## Oct 27 2026 help desk
+- A PR that changes the robot auditor or .github/ never merges itself: file ONE "HELP-VP: robot" line naming the PR so a Claude hand-merges it once green (T-222 and T-225 both asked about #1972 - a line saves the second wake).
+
+## Oct 27 2026 help desk
+- A stuck PR that is behind main and red on LAYOUT / old-baseline lines: merge main in first (window's job), then read the Check status again - only lines still red after that are the window's own.
