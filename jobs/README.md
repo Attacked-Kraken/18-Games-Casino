@@ -48,3 +48,10 @@ CLOCK rule (owner Oct 22 2026): take every time you write (FIXED lines, notes, P
 - A Claude that merges a pull request by hand writes it where everyone sees it: a Team talk line AND a PR comment or the merge commit text, "hand merge by <who>, reason: <why>". A hand merge with no such line did not happen as far as the others can tell.
 - Before writing "I don't know who/what did X", read the WHOLE jobs/HELP.md and the PR's timeline (issues/N/timeline). Only then say it is unknown.
 - A robot fix is UNPROVEN until a real pull request needs it and the robot itself does the job (for a merge: merged_by github-actions[bot]). Show that PR and its time.
+
+## Art director lines are VERIFIED by window 13 first (owner Oct 27 2026 12:04 PM)
+"HELP-VP: art director ..." lines are not turned into builder jobs straight away. The Mac sends each one to window 13 (auditor) as
+VERIFY V-<id>. Window 13 checks it against the real game (robot pictures, play tests, the game file - any game, 2D or 3D) and, in ONE
+notes PR, files `reviews/auditor-13-ad-<id>.md` (`VERDICT: TRUE|FALSE`, `GAME: <file>`, `PROOF: ...`, `FIX: ...`) and writes
+FIXED / WON'T FIX under the line here. The Mac makes ONE builder job from a TRUE verdict; FALSE = no job. Help desk / Claude: leave an
+art director line alone while it waits for window 13 - only one with no verdict after 60 min is yours (the Mac wakes you then).
