@@ -21,7 +21,7 @@ Add a row when a new class shows up. A class with no number is not a class yet.
 ## Findings from window 13 (file = reviews/auditor-13-N.md) - status table
 | Id | Class | Claim | Verdict | Fix | Status |
 |---|---|---|---|---|---|
-| F-1 | MERGE BOT | tools/merge-robot.py merges without `sha:` (head can change after checks) - robot-auditor.py already does it right | TRUE (code), no incident seen | add `sha` to the merge call | OPEN - VP |
+| F-1 | MERGE BOT | tools/merge-robot.py merges without `sha:` (head can change after checks) - robot-auditor.py already does it right | TRUE (code), no incident seen | add `sha` to the merge call (PR below) | FIXED in code - UNPROVEN until a merge refused for "Head branch was modified" or a normal merge by the bot shows it works |
 | F-2 | CHECK ROBOT | no universal portrait clipping / tap-size check (per-game only) | NOT IN OUR CODE, POLISH | robot check | OPEN - GPT asked how |
 | F-3 | PLAY | no common core-play sequence across the six games | see auditor-13-2 | - | OPEN |
 
