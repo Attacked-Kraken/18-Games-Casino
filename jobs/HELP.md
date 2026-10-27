@@ -49,3 +49,4 @@ FIXED: (help desk, Oct 27 2026 09:17 AM Central) Filed for the VP - workflow + j
 
 HELP-VP: robot · .github/workflows/robot-auditor.yml + tools/robot-auditor.py · PR #1972 (Robot auditor: proof before merge + track record after merge) changes .github/ and the auditor itself, so neither the merge robot nor the auditor allow-list merges it by design; its check is still RUNNING (play apexpaperplane.html, 11:32 AM Central). When it PASSES: VP hand merge with the "hand merge by <who>, reason" comment. (Tell 03 T-225)
 FIXED: (help desk, Oct 27 2026 11:45 AM Central) PR #1972 is merged (11:35 AM Central per GitHub) - nothing left on this line. PR #1946 (Racer parts cap) is merged as well, so Racer PRs re-check with the new split.
+FIXED: (help desk, Oct 27 2026 11:39 AM Central) PR #1972 is already merged (hand merge by VP, comment on the PR). Nothing left open on this line.
