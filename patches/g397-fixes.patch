@@ -1,0 +1,22 @@
+--- a/tools/game-check/fixes/apexracer.mjs
++++ b/tools/game-check/fixes/apexracer.mjs
+@@ -2781,4 +2781,19 @@
+       return true;
+     },
+   },
++,
++  {
++    id: 'play-menu-save-button-onscreen',
++    ask: 'Is the menu Save button (#nmB) at least 44 px and fully on screen?',
++    async test(page, h) {
++      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
++      const raw = await h.poll(() => h.eval(() => { const b = document.getElementById('nmB'); if (!b) return ''; const r = b.getBoundingClientRect(); return JSON.stringify({ x: r.x, y: r.y, w: r.width, h: r.height, right: r.right, bottom: r.bottom, vw: innerWidth, vh: innerHeight }); }).catch(() => ''), (v) => !!v, 10000);
++      if (!raw) return { inconclusive: 'no #nmB on the menu (a racer name is already saved in this profile)' };
++      let d = null; try { d = JSON.parse(raw); } catch (e) {}
++      if (!d) return 'could not read the Save button rect';
++      if (d.h < 44 || d.w < 44) return 'the menu Save button measures ' + Math.round(d.w) + 'x' + Math.round(d.h) + ' px - under the 44 px minimum';
++      if (d.x < -1 || d.y < -1 || d.right > d.vw + 1 || d.bottom > d.vh + 1) return 'the menu Save button is cut off at the screen edge (rect ' + JSON.stringify(d) + ')';
++      return true;
++    },
++  },
+ ];
