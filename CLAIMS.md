@@ -164,6 +164,9 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-376 | window 7 | jobs/G-376-w7.md | test/g-376-w7 |
+| G-373 | window 7 | jobs/G-373-w7.md | test/g-373-apexbaseball |
+| G-373 grades | window 7 | SCORES.md, jobs/G-373.md | test/grades-1026 |
 | G-356 | window 1 | looks/apexbaseball.md, jobs/G-356.md | build/g-356-apexbaseball |
 | T-7-1251 | window 7 | jobs/T-7-1251-w7.md | test/t-7-1251 |
 | G-348 r1 | window 7 | SCORES.md, jobs/G-348-w7.md | test/grades-1025-r1 |
@@ -337,4 +340,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
 | G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
 | G-368 | window 6 | MODELS.md, jobs/G-368-w6.md, CLAIMS.md | notes/g-368-models - DONE PR #1861 merged 51c01594 (Muse algre141) |
+| G-372 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-372-w6.md, CLAIMS.md | build/g-372-apexracer - CLAIMED Muse algre141 Oct 26 10:08 AM CDT (MAC tag) |
 | OWNER deep dish lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-deepdish-apexracer - CLAIMED Muse algre141 Oct 26 8:06 AM CDT (MAC tag) |
