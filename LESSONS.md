@@ -239,3 +239,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-26 help desk
 - A play-test split that deals every n-th test evenly by COUNT is not even by TIME: a census of 20 slow group tests can leave two parts at the 35-min cap while the third passes. Split by cost, or use more parts, never raise the cap to fit.
+
+## Oct 27 2026 help desk
+- Two robot PRs that edit the same block of tools/game-check/check.mjs make the second one conflict as soon as the first merges (#1945 then #1946). A merge robot cannot merge a conflicting PR, so "check PASSED but not merged" means read mergeable_state first. Rule: robot PRs touching the same file go one after the other, or the second one is rebased right after the first merges.
