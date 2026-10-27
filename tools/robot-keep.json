@@ -100,6 +100,11 @@
    "file": "tools/game-check/status-comment.sh",
    "needle": "not writing $STATE from a superseded run",
    "rule": "a cancelled, superseded run never writes FAILED"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "report + auto-undo now come FIRST, videos are extra",
+   "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
   }
  ]
 }
