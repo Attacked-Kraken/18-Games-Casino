@@ -267,3 +267,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - Auto-undo PRs (#1984, #2017) list browser-closed lines as "breaks": check the reasons before merging one - an all-robot-side undo deletes good work.
+
+## 2026-10-27 help desk
+- A robot check that is red only on "browser closed" / "NOT RUN (time cap)" lines is a robot fault, not a game break: an AUTO-UNDO PR built from such a check can still merge once a re-run goes green (#2017 deleted 140 lines of good work). Builders: if you see an AUTO-UNDO PR on your game, file a HELP-VP: robot line at once.
