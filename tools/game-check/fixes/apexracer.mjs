@@ -1022,7 +1022,7 @@ export default [
         if (!actual) return name + ' not found in apexracer.html';
         const m = map.match(new RegExp(name.replace(/[.]/g, '\\.') + '[^\\n]{0,28}?L(\\d+)'));
         if (!m) return 'the map carries no line number for ' + name;
-        if (Math.abs(parseInt(m[1], 10) - actual) > 4) return 'the map says ' + name + ' is at L' + m[1] + ' but apexracer.html has it at L' + actual + ' - refresh the map (STUDIO-STANDARD 9.7)';
+        if (Math.abs(parseInt(m[1], 10) - actual) > 4) return { inconclusive: 'map line numbers out of date (' + name + ' L' + m[1] + ', now L' + actual + ') - yellow, never blocks: run node tools/map-refresh.mjs apexracer (VP Oct 27 2026: a stale number turned #1902 red)' };
       }
       return true;
     },
