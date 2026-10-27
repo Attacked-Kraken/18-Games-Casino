@@ -67,6 +67,8 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
 - A jobs/QUEUE.md line that was sent once but never done can come back to you marked RE-OPENED (24+ h later, at most twice). If it is
   already done on main, write NO CHANGE with the commit or test that proves it, so it gets ticked.
 
-## HELP-OWNER IS ONLY FOR TASTE, MONEY, KEYS (owner Oct 27 2026 - LOCKED)
-- Write HELP-OWNER only when the owner alone can answer: how it looks / feels, which model or style he likes, money, keys, passwords, sign-ins.
-- Anything a robot can measure or a Muse can fix (feet under the ground, sizes, speeds, red lines, conflicts) is NEVER a question for him: fix it, or write HELP-VP. The Mac turns a HELP-OWNER fix into HELP-VP by itself.
+## NOTHING GOES TO THE OWNER EXCEPT A 3D MODEL OR AN APPROVAL CARD (owner Oct 27 2026 - LOCKED)
+- Write HELP-OWNER only to have him pick a 3D model or approve a card (proven work for his thumb). Nothing else.
+- Everything else - measured defects (feet under the ground, sizes, speeds), red lines, conflicts, keys, sign-ins, robot faults,
+  questions - is fixed through the system: fix it yourself, or write HELP-VP. The Mac turns any other HELP-OWNER line into HELP-VP
+  and never sends it to his phone. Every builder, tester, auditor, robot and Claude follows this.
