@@ -251,3 +251,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A PR that changes the robot auditor or .github/ never merges itself: file ONE "HELP-VP: robot" line naming the PR so a Claude hand-merges it once green (T-222 and T-225 both asked about #1972 - a line saves the second wake).
+
+## Oct 27 2026 help desk
+- A stuck PR that is behind main and red on LAYOUT / old-baseline lines: merge main in first (window's job), then read the Check status again - only lines still red after that are the window's own.
