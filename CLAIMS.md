@@ -343,3 +343,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-372 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-372-w6.md, CLAIMS.md | build/g-372-apexracer - CLAIMED Muse algre141 Oct 26 10:08 AM CDT (MAC tag) |
 | OWNER deep dish lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-deepdish-apexracer - CLAIMED Muse algre141 Oct 26 8:06 AM CDT (MAC tag) |
 | G-375 | window 6 | tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-375.md, CLAIMS.md | build/g-375-apexracer - CLAIMED Muse algre141 Oct 26 12:57 PM CDT (MAC tag) |
+| G-379 | window 4 | looks/refs/apextrackfield.md, jobs/G-379-w4.md | build/g-379-apextrackfield - DONE PR #1955 merged 18073a20 (Muse main (casino)) |

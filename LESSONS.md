@@ -245,3 +245,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-27 help desk
 - A Racer play job 'CANCELLED after 1 min' on a PR is the OLD run replaced by a newer dispatched check; read the newest run's jobs before treating it as a failure. Only a cancel at the 35-min cap is the real robot-side budget problem (HELP-VP robot line, PR #1946).
+
+## Oct 27 2026 help desk
+- A red line that blames your PR for something your diff does not touch (here the Save-name button #nmB, 31 px tall, on main since #1910) can come from a robot baseline that is stale: if the Check status says "NEW" but `git diff origin/main...your-branch` has no such element, file `HELP-VP: robot` with the element and main's commit instead of changing unrelated game code in a PR that must stay one-fix.
