@@ -260,3 +260,4 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-27 help desk
 - A green clean PR can wait ~10 min when the merge robot's single run is busy in the known-fault re-run step: waiting runs beyond one are cancelled by design (cancel-in-progress false = one pending slot). Check the run's current step before calling a PR 'skipped'. (PR #1987)
+- A PR whose play parts ALL pass but whose `check` says "NOT RUN (robot time cap)" is a robot split bug (owner tests dealt to no part), not a time-out: read the part runs' durations before blaming the cap.
