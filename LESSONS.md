@@ -254,3 +254,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A stuck PR that is behind main and red on LAYOUT / old-baseline lines: merge main in first (window's job), then read the Check status again - only lines still red after that are the window's own.
+
+## Oct 27 2026 help desk
+- A FIXER 'pr-owner-idle' case on a PR with a game-code red line (touch targets under 32 px) goes to that game's builder as a one-fix job; the help desk never edits game code. Robot-side NOT RUN caps go as a HELP-VP: robot line.
