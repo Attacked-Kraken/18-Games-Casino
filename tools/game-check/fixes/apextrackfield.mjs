@@ -3563,5 +3563,96 @@ async test(page, h) {
       if (bad.length) return 'the men\'s high jump offers bar heights outside 2.0-2.4 m: ' + bad.join(',') + ' (full list ' + m.heights.join(',') + ') (G-326)';
       return true;
     }
-  },
+  },{
+    id: 'never-g-393-p1',
+    ask: 'NEVER (G-393): the sprinter sole sits on the track in run and start poses - no sole reading more than 1 cm under in the set crouch or the sprint',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv', '__g393drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } return true; }).catch(() => false);
+      await page.goto(page.url().split('?')[0] + '?test=100m', { waitUntil: 'load' }).catch(() => {});
+      // Wait for the race engine (humans load first; the race starts on its own).
+      let eng = false;
+      for (let i = 0; i < 80 && !eng; i++) {
+        eng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false);
+        if (!eng) await h.wait(500);
+      }
+      if (!eng) return 'the 100m engine never appeared';
+      // Sole gaps by the REALITY method: lowest posed skinned vertex (weight > 0.5)
+      // under each contact foot bone, cached per bone like never-g-139-p2.
+      const gaps = () => h.eval(() => {
+        const R = window.__reality; if (!R || !R.player) return null;
+        const P = R.player; P.updateMatrixWorld(true);
+        const out = [];
+        for (const c of R.contact) {
+          if (!c.__soleIdx) {
+            const ids = new Set(); c.traverse(x => { if (x.isBone) ids.add(x.uuid); });
+            const list = [];
+            P.traverse(m => {
+              if (!m.isSkinnedMesh || !m.skeleton) return;
+              const bi = m.skeleton.bones.map((bn, i2) => ids.has(bn.uuid) ? i2 : -1).filter(x => x >= 0);
+              if (!bi.length) return;
+              const si = m.geometry.attributes.skinIndex, sw = m.geometry.attributes.skinWeight, vs = [];
+              for (let i2 = 0; i2 < si.count; i2++) { let w = 0; for (let k = 0; k < 4; k++) if (bi.includes(si.getComponent(i2, k))) w += sw.getComponent(i2, k); if (w > 0.5) vs.push(i2); }
+              const step = Math.max(1, Math.ceil(vs.length / 500));
+              list.push({ m, vs: vs.filter((_, i2) => i2 % step === 0) });
+            });
+            c.__soleIdx = list;
+          }
+          let sole = null;
+          for (const { m, vs } of c.__soleIdx) {
+            const V = Object.getPrototypeOf(P.position).constructor;
+            for (const i2 of vs) { const vv = new V(); m.getVertexPosition(i2, vv); m.localToWorld(vv); if (sole === null || vv.y < sole) sole = vv.y; }
+          }
+          out.push(sole === null ? null : +sole.toFixed(3));
+        }
+        return out;
+      }).catch(() => null);
+      const phase = () => h.eval(() => { const e = window.__tf && window.__tf.eng(); return e ? { phase: e.phase, done: !!e.done } : null; }).catch(() => null);
+      // SET crouch: poll until the phase arrives, then sample it while it lasts.
+      let setSeen = false;
+      for (let i = 0; i < 60 && !setSeen; i++) {
+        const s = await phase();
+        if (s && s.phase === 'set') setSeen = true;
+        else if (s && s.phase === 'run') break;
+        else await h.wait(250);
+      }
+      const setGaps = [];
+      if (setSeen) {
+        for (let i = 0; i < 8; i++) {
+          const s = await phase();
+          if (!s || s.phase !== 'set') break;
+          const g = await gaps();
+          if (Array.isArray(g)) setGaps.push(...g.filter(v => v !== null));
+          await h.wait(200);
+        }
+      }
+      if (setGaps.length < 2) return 'the set crouch was never sampled';
+      const setMin = Math.min(...setGaps);
+      if (setMin < -0.01) return 'the set crouch sole dips ' + (-setMin * 100).toFixed(1) + ' cm under the track - it must sit on the track (0-1 cm)';
+      // SPRINT: stride-drive the run, then sample the sole through it.
+      await h.eval(() => { if (!window.__g393drv) { window.__g393alt = false; window.__g393drv = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (e && e.stride && e.phase === 'run' && !e.done) { window.__g393alt = !window.__g393alt; e.stride(window.__g393alt ? 'L' : 'R'); } }, 110); } return true; }).catch(() => false);
+      let runSeen = false;
+      for (let i = 0; i < 60 && !runSeen; i++) {
+        const s = await phase();
+        if (s && s.phase === 'run') runSeen = true;
+        else if (s && s.done) break;
+        else await h.wait(250);
+      }
+      const runGaps = [];
+      if (runSeen) {
+        for (let i = 0; i < 12; i++) {
+          const s = await phase();
+          if (!s || s.phase !== 'run') break;
+          const g = await gaps();
+          if (Array.isArray(g)) runGaps.push(...g.filter(v => v !== null));
+          await h.wait(300);
+        }
+      }
+      await h.eval(() => { if (window.__g393drv) { clearInterval(window.__g393drv); window.__g393drv = null; } return true; }).catch(() => false);
+      try { await page.goto(page.url().split('?')[0], { waitUntil: 'load' }); await h.wait(1500); } catch (e) {}
+      if (runGaps.length < 4) return 'the sprint was never sampled';
+      const runMin = Math.min(...runGaps);
+      if (runMin < -0.01) return 'the sprint sole dips ' + (-runMin * 100).toFixed(1) + ' cm under the track - it must sit on the track (0-1 cm)';
+      return true;
+    }
+  }
 ];
