@@ -76,3 +76,5 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 ## Reference pictures
 - The owner's photo / Gemini picture for this game (sent in chat by the approver) is the target.
 - Approved 3D models: see MODELS.md (LOCKED ones may not be swapped).
+
+- Oct 27 2026 (window 6): re-run push ordered by MAC after PR #2048 merged the 8-part Racer check - no game change in this line; it exists so the robot plays PR #1906 again and the monoblock guard runs.
