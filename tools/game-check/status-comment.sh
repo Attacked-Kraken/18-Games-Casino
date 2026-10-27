@@ -6,6 +6,15 @@
 set -u
 PR="$1"; STATE="$2"; FILE="${3:-}"; EVID="${4:-}"
 [ -n "$PR" ] && [ "$PR" != "null" ] || exit 0
+# Oct 27 2026 (04 + VP): a run that another run on the same commit cancelled must never write FAILED / ROBOT - only the run that is
+# still current may speak (turbine PR: 5 false FAILED comments from superseded runs).
+if [ "$STATE" = "FAILED" ] || [ "$STATE" = "ROBOT" ]; then
+  HSHA=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR" -q .head.sha 2>/dev/null || true)
+  if [ -n "$HSHA" ] && [ -n "${GITHUB_RUN_ID:-}" ]; then
+    NEWER=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$HSHA&per_page=30" -q "[.workflow_runs[]|select(.name==\"Game check (PR)\" and .id!=($GITHUB_RUN_ID) and .id>($GITHUB_RUN_ID))]|length" 2>/dev/null || echo 0)
+    if [ "${NEWER:-0}" -gt 0 ]; then echo "::notice::status-comment: a newer check run exists for this commit - not writing $STATE from a superseded run"; exit 0; fi
+  fi
+fi
 case "$STATE" in
   RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (about 8-10 min). Wait; do not re-ask to merge yet." ;;
   RETRYING) ICON="🟠"; WORDS="RETRYING - the robot is re-running this check by itself (the reason is below: a robot setup problem, or a known robot fault added after your check ran). It is not your game. Wait about 8-10 min; do not push, do not re-ask to merge." ;;

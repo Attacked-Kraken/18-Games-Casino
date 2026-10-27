@@ -164,19 +164,6 @@ jobs:
           if [ -z "${{ needs.plan.outputs.full }}" ]; then SKIP_MODELS=1 node tools/game-check/carry.mjs prev-results.json game-check-out old-checks;
           else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
 
-      - name: Turn the gameplay flip-books into phone videos
-        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        run: |
-          [ -d game-check-out/clips ] || exit 0
-          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
-          for d in game-check-out/clips/*/; do
-            s=$(basename "$d")
-            ls "$d"*.jpg >/dev/null 2>&1 || continue
-            ffmpeg -loglevel error -y -framerate 4 -pattern_type glob -i "$d*.jpg" -vf "scale=844:-2" \
-              -c:v libx264 -pix_fmt yuv420p -movflags +faststart "game-check-out/img/$s-clip.mp4" || true
-          done
-          rm -rf game-check-out/clips
-
       - name: Post the report to the game-checks branch
         if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
@@ -187,6 +174,7 @@ jobs:
           git config user.name "game-check bot"
           git config user.email "game-check-bot@users.noreply.github.com"
           git add -A
+          git rm -r -q --cached --ignore-unmatch clips   # the flip-book frames become videos in a later step
           git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
 
@@ -250,3 +238,31 @@ jobs:
           echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${T::7} - merges when its check is green"
           { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${T::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
           gh workflow run game-check-pr.yml --ref main || true
+
+      - name: Turn the gameplay flip-books into phone videos
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        timeout-minutes: 8        # VP Oct 27 2026: this step (apt + ffmpeg) ate the whole job time limit and main's report was never posted for 25 h - report + auto-undo now come FIRST, videos are extra
+        continue-on-error: true
+        run: |
+          [ -d game-check-out/clips ] || exit 0
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
+          for d in game-check-out/clips/*/; do
+            s=$(basename "$d")
+            ls "$d"*.jpg >/dev/null 2>&1 || continue
+            ffmpeg -loglevel error -y -framerate 4 -pattern_type glob -i "$d*.jpg" -vf "scale=844:-2" \
+              -c:v libx264 -pix_fmt yuv420p -movflags +faststart "game-check-out/img/$s-clip.mp4" || true
+          done
+          rm -rf game-check-out/clips
+
+      - name: Post the report again with the phone videos
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          [ -f game-check-out/README.md ] || exit 0
+          cd game-check-out
+          git init -q
+          git checkout -q -B game-checks
+          git config user.name "game-check bot"
+          git config user.email "game-check-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Game check for main @ ${GITHUB_SHA::7} (+ videos)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
