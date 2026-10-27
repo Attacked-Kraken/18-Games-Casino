@@ -1,0 +1,218 @@
+{
+ "game": "apexf1.html",
+ "name": "Apex F1 Racing",
+ "seconds": 60,
+ "gameSecondsReached": 59.8,
+ "wallSeconds": 62.3,
+ "at": "2026-10-27T13:29:04.628Z",
+ "samples": 252,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": false
+ },
+ "camera": {
+  "distance": {
+   "min": 12.31,
+   "mean": 52.65,
+   "max": 254.65
+  },
+  "height": {
+   "min": 2.79,
+   "mean": 3.24,
+   "max": 3.65
+  },
+  "aimErrorDeg": {
+   "min": 0.39,
+   "mean": 28.52,
+   "max": 167.61
+  },
+  "followLagMetresPerMps": null
+ },
+ "playerOnScreenPct": 85,
+ "speed": null,
+ "metresMoved": 893.8,
+ "moments": [
+  {
+   "at": 2.2,
+   "words": "JUMP START second penalty"
+  },
+  {
+   "at": 7.9,
+   "words": "GAP +#s NYX PENALTY LIGHTS OUT!"
+  },
+  {
+   "at": 10,
+   "words": "ECHO"
+  },
+  {
+   "at": 15.5,
+   "words": "KODA"
+  },
+  {
+   "at": 16.7,
+   "words": "KAI"
+  },
+  {
+   "at": 24.4,
+   "words": "LYX"
+  },
+  {
+   "at": 24.9,
+   "words": "KODA"
+  },
+  {
+   "at": 25.8,
+   "words": "DASH"
+  },
+  {
+   "at": 26.3,
+   "words": "HAVOC"
+  },
+  {
+   "at": 27.2,
+   "words": "ZED"
+  },
+  {
+   "at": 28.8,
+   "words": "GHOST"
+  },
+  {
+   "at": 33.3,
+   "words": "JAX TRACK LIMITS Warning"
+  },
+  {
+   "at": 34.5,
+   "words": "NYX"
+  },
+  {
+   "at": 35,
+   "words": "ECHO"
+  },
+  {
+   "at": 35.9,
+   "words": "CONTACT! You got turned around"
+  },
+  {
+   "at": 36.4,
+   "words": "VEX"
+  },
+  {
+   "at": 37.5,
+   "words": "were hit from behind"
+  },
+  {
+   "at": 39.1,
+   "words": "ORO"
+  },
+  {
+   "at": 43.3,
+   "words": "VEX got turned around"
+  },
+  {
+   "at": 46.9,
+   "words": "TRACK LIMITS Warning"
+  },
+  {
+   "at": 48.3,
+   "words": "ORO"
+  },
+  {
+   "at": 53.3,
+   "words": "Too many track-limit violations"
+  }
+ ],
+ "momentCount": 22,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 3,
+ "scriptErrors": []
+}
