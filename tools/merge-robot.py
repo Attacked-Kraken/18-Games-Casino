@@ -92,6 +92,29 @@ def play_test_file_ok(path, main_text=""):
     return _dup_ids(open(path, encoding="utf-8", errors="replace").read()) <= _dup_ids(main_text)
 
 
+def conflict_hunks(files, max_files=3, max_hunks=3, max_lines=6):
+    """Oct 26 2026 (Racer PRs #1877/#1884/#1902 sat hours on game-file conflicts): after a failed merge the files hold git's
+    markers - quote where each conflict is (line number) and the first lines of both sides, so the Muse starts at the spot.
+    Never resolves anything; a failure here returns '' and the old message is sent unchanged."""
+    out = []
+    try:
+        import re as _re
+        for f in files[:max_files]:
+            txt = open(f, encoding="utf-8", errors="replace").read()
+            n_found = 0
+            for m in _re.finditer(r"<<<<<<< [^\n]*\n(.*?)=======\n(.*?)>>>>>>> [^\n]*\n", txt, flags=_re.S):
+                if n_found >= max_hunks:
+                    break
+                n_found += 1
+                line = txt.count("\n", 0, m.start()) + 1
+                mine = "\n".join(m.group(1).splitlines()[:max_lines])[:600]
+                main_ = "\n".join(m.group(2).splitlines()[:max_lines])[:600]
+                out.append("\n\n%s line %d - YOUR side:\n%s\nMAIN side:\n%s\nKeep BOTH changes; main's side is newer work that is already merged." % (f, line, mine, main_))
+    except Exception:
+        return ""
+    return "".join(out)[:3000]
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -114,10 +137,11 @@ def fix_notes_conflict(pr):
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
         if left and not all(auto_resolvable(x) for x in left):
+            hunks = conflict_hunks(left)      # Oct 26 2026: say WHERE the conflict is so the Muse fixes it in minutes (read BEFORE the abort)
             git("merge", "--abort")
             # Oct 24 2026 (PR #1355 got 960 of these): ONE comment per PR, edited in place - never a new post each round
             tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
-                    "this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5]))
+                    "this pull request conflicts with main in %s - merge main into your branch and push again.%s" % (", ".join(left[:5]), hunks))
             print("#%d: conflict in %s - left for the Muse" % (n, ", ".join(left[:5]))); return False
         for f in left:   # a notes / look-board / play-test file the union driver did not catch
             if f.startswith("tools/game-check/fixes/") and f.endswith(".mjs"):
@@ -171,6 +195,34 @@ def fix_notes_conflict(pr):
 
 
 WAIT_UNTIL = time.time() + 120   # total seconds this run may spend waiting for GitHub to work out 'mergeable'
+
+
+def fix_credits(pr):
+    """Owner Oct 26 2026 (Racer PRs #1870/#1877/#1881 sat 1-2 h: a CC-BY maker was missing on the credits screen, the ONLY failed
+    check was 'assets', and nothing wrote the line). When `assets` is the only failed check on our own branch, merge main in, run
+    `node tools/asset-check.mjs --fix` (writes the credit line + ledger 'used in'), push, and restart the game check. Proof = the tool
+    printing 'FIXED credit'. A conflict or no fix = nothing pushed. Returns True when it pushed a fix."""
+    n, branch = pr["number"], pr["head"]["ref"]
+    if not branch.startswith(("build/", "fix/", "test/", "vp-", "robot/")) or pr["head"]["repo"]["full_name"] != REPO:
+        return False
+    def g(*a):
+        return subprocess.run(["git", "-c", "user.name=merge robot", "-c", "user.email=merge-robot@users.noreply.github.com"] + list(a), capture_output=True, text=True)
+    g("fetch", "origin", "main", branch)
+    if g("checkout", "-q", "-B", "creditfix-%d" % n, "origin/" + branch).returncode:
+        return False
+    if g("merge", "--no-edit", "origin/main").returncode:
+        g("merge", "--abort"); print("fix_credits #%d: conflict with main, left alone" % n); return False
+    out = subprocess.run(["node", "tools/asset-check.mjs", "--fix"], capture_output=True, text=True).stdout
+    if "FIXED credit" not in out:
+        print("fix_credits #%d: nothing fixed (%s)" % (n, out.strip()[:150])); return False
+    g("add", "-A", "--", "*.html", "ASSETS.md")
+    if g("commit", "-m", "Credits are automatic: robot wrote the missing credit line(s) (asset-check --fix)").returncode:
+        return False
+    if g("push", "origin", "HEAD:refs/heads/" + branch).returncode:
+        print("fix_credits #%d: push refused" % n); return False
+    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    print("::notice title=Merge robot::PR #%d: robot wrote the missing credit line(s) and restarted the check. %s" % (n, " | ".join(l for l in out.splitlines() if "FIXED credit" in l)))
+    return True
 
 
 def settle_pr(n):
@@ -325,7 +377,10 @@ def main():
     now = datetime.datetime.now(datetime.timezone.utc)
     merged, follow = [], set()
     revisit, looked = False, 0   # revisit = some PR still needs the robot to look again soon
-    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO) or []
+    open_prs = gh("repos/%s/pulls?state=open&per_page=50" % REPO)
+    if open_prs is None:        # GitHub could not be read: that is NOT 'no open PRs' (ChatGPT audit Oct 26 2026)
+        print("::warning title=Merge robot API_ERROR::could not list open PRs (%s) - nothing decided this round, looking again soon" % LAST_ERR[0][:120])
+        open_prs, revisit = [], True
     try:
         if approve_waiting(open_prs):
             revisit = True      # their check runs now; look again when it finishes
@@ -435,13 +490,19 @@ def main():
             say("#%d skipped: the robot's game check hasn't run yet" % n); continue
         busy = [k for k, r in newest.items() if r.get("status") != "completed"]
         bad = [k for k, r in newest.items() if r.get("status") == "completed" and r.get("conclusion") not in OK]
+        if bad == ["assets"] and not busy:
+            try:
+                if fix_credits(pr):
+                    revisit = True; continue
+            except Exception as e:
+                print("::warning title=Merge robot::credit fix failed on #%d: %s" % (n, e))
         if busy or bad:
             say("#%d skipped: checks %s" % (n, ("running: " + ", ".join(busy)) if busy else ("FAILED: " + ", ".join(bad))))
             if bad:
                 tell_pr(n, pr["head"]["sha"], "not merged - these checks FAILED: %s. Their own comment above says what to fix; push a fix and the check re-runs." % ", ".join(bad))
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
-                 fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+                 fields={"merge_method": "squash", "sha": pr["head"]["sha"], "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if not (res and res.get("merged")):
             revisit = True
             why = (res or {}).get("message") or LAST_ERR[0] or "no answer"

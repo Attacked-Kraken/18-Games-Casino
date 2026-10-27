@@ -65,5 +65,9 @@ if (process.argv.includes('--fix')) {
 for (const x of problems) console.log('::error title=Asset check::' + x.replace(/\n/g, ' ').slice(0, 300));
 try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY || '/dev/null', problems.length ? '## 🔴 Asset check\n' + problems.map(x => '- ' + x).join('\n') + '\n' : '## ✅ Asset check: ok\n'); } catch (e) {}
 try { fs.writeFileSync('asset-problems.txt', problems.join('\n')); } catch (e) {}
+// LOCKED robot rules: tools/robot-keep.json lists text that must stay in the robot files (owner Oct 26 2026).
+try { const K = JSON.parse(fs.readFileSync('tools/robot-keep.json', 'utf8')).keep || [];
+  for (const k of K) { const t = fs.existsSync(k.file) ? fs.readFileSync(k.file, 'utf8') : ''; if (!t.includes(k.needle)) problems.push(`ROBOT-KEEP: ${k.file} lost "${k.needle}" (${k.rule}) - a locked robot rule; only the owner may remove it`); } }
+catch (x) { problems.push('ROBOT-KEEP: tools/robot-keep.json missing or unreadable - ' + x.message); }
 if (problems.length) { console.log('ASSET CHECK - problems:\n- ' + problems.join('\n- ')); process.exit(1); }
 console.log(`ASSET CHECK - ok: ${files.length} 3D files, ${ledger.length} ledger entries, every one allowed and credited.`);
