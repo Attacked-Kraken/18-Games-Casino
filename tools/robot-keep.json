@@ -65,6 +65,16 @@
       "file": "tools/map-refresh.mjs",
       "needle": "export function defLine",
       "rule": "map line numbers refresh themselves"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "undone on the first result",
+      "rule": "auto-undo never skips: a recheck that runs out of time acts on the first result (owner Oct 27 2026)"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "process.env.ONLY_TESTS",
+      "rule": "auto-undo replays only the broken play tests (seconds, not a whole game)"
     }
   ]
 }
