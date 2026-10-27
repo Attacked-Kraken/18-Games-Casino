@@ -2686,4 +2686,18 @@ export default [
       return true;
     },
   },
+,
+  {
+    id: 'play-menu-save-button-size',
+    ask: 'Is the racer-name Save button (#nmB) at least 44x44 px on the menu?',
+    async test(page, h) {
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
+      const r = await h.poll(() => h.eval(() => { const b = document.getElementById('nmB'); if (!b) return null; const x = b.getBoundingClientRect(); return x.height > 0 ? JSON.stringify({ w: x.width, hh: x.height }) : null; }), (v) => !!v, 10000).catch(() => null);
+      if (!r) return { inconclusive: 'no #nmB button on the menu (a racer name is already saved in this profile)' };
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return 'menu save button: could not read the button box';
+      if (d.hh < 44 || d.w < 44) return 'menu Save button #nmB measures ' + d.w.toFixed(0) + 'x' + d.hh.toFixed(0) + ' px - under the 44 px minimum';
+      return true;
+    },
+  },
 ];
