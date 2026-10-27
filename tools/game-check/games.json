@@ -55,11 +55,19 @@
         "#plist .pl",
         "#shGo"
       ],
+      "partGuardFrom": "2026-10-28T06:00:00Z",
       "parts": [
-        { "name": "menu", "part": "menu", "steps": [] },
-        { "name": "garage", "part": "garage", "steps": ["#mGarage"], "ok": ["rims", "rimcolor", "wraps", "body", "paint", "wheels", "garage"] },
-        { "name": "garage-rims", "part": "rims", "steps": ["#mGarage", ".gt[data-t=\"rim\"]", ".go[data-rim=\"3\"]"], "ok": ["wheels"] },
-        { "name": "garage-rimred", "part": "rimcolor", "steps": ["#mGarage", ".gt[data-t=\"rimCol\"]", ".go[data-rc=\"#d4142a\"]"], "ok": ["rims", "wheels"] }
+        { "part": "menu", "regions": ["^(refreshMenu|toMenu|show)$", "#menu|#mcol|#mbtns|#who"] },
+        { "part": "garage", "regions": ["^(openGarage|renderGarage|updateGarage|clearPrev|flashG|setGarageCar)$"] },
+        { "part": "rims", "regions": ["^(rimGeo|procRim|showRims|hideRims)$", "rimShow|turbTpl|monoTpl|rimTpl|rimScale|rimHalf|rimDone|rimface"], "with": ["wheels"] },
+        { "part": "wheels", "regions": ["^(tireGeo|poseWheels)$"], "with": ["rims"] },
+        { "part": "wraps", "regions": ["^(wrapTex|wrapMats|addNameWrap|addStripeWrap|addPanelWrap|nameWrapTex)$", "cfg\\.wrap|wrapCol"] },
+        { "part": "paint", "regions": ["^paintMat$"] },
+        { "part": "body", "regions": ["^(bodyGeo|ownerKit|detailGeo|mockupBodyGeo|mockupDetails)$"] },
+        { "part": "sound", "regions": ["^(setSnd|refreshMute|kitLive|kitShot|engKitStart|engineSnd|musicStart|musicStop|musSting|musStopLayer)$"] },
+        { "part": "ai", "regions": ["^stepAI$"] },
+        { "part": "hud", "regions": ["^drawHud$"] },
+        { "part": "track", "regions": ["^makeTrack$"] }
       ],
       "pictures": [
         {

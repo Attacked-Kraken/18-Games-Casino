@@ -108,18 +108,32 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
 
 }
 
-// PART GUARD verdict. pg = parts-guard.json from parts.mjs. A part counts as CHANGED when its picture differs from main's by more than
-// PART_DIFF_MIN percent of the picture (noise floor measured on identical code: see tools/game-check/parts-noise.json).
-export function partGuard(pg, title = '', min = 3) {
-  const out = [], m = String(title).match(/\bPART:\s*([A-Za-z0-9_-]+)/i), named = m ? m[1].toLowerCase() : '';
-  const rows = (pg.pictures || []).filter(r => typeof r.diff === 'number');
-  const changed = rows.filter(r => r.diff > min);
-  const link = (r) => `before ${r.base} / after ${r.head}`;
-  if (changed.length && !named) out.push(`PART GUARD: this pull request changes the look of ${[...new Set(changed.map(r => r.part))].join(', ')} but its title names no part - put "PART: <part>" in the title (one part per job)`);
-  else for (const r of changed) if (r.part.toLowerCase() !== named && !(r.ok || []).map(x => String(x).toLowerCase()).includes(named)) out.push(`PART GUARD: ${pg.game} - the "${r.part}" picture changed ${r.diff}% (${link(r)}) but your job is PART: ${named}. Undo the ${r.part} change, or open a separate job for it.`);
-  if ((pg.inner || []).length) out.push(`PART GUARD: game code reshaped a model's inner pieces (${pg.inner.slice(0, 4).join('; ')}) - a model's parts are never changed by the game (STUDIO-STANDARD 3b rule 10)`);
-  const c = pg.cover || {}; if (typeof c.head === 'number' && typeof c.base === 'number' && c.head - c.base > 10) out.push(`PART GUARD: game-made shapes now cover ${c.head}% of the model (main: ${c.base}%) in the "${c.picture}" picture - a shell or wrap is drawn over the model`);
-  return out;
+// PART GUARD (owner Oct 27 2026 3:11 PM, all games): every builder job names ONE part ("PART: rims" in the PR title). games.json lists a game's
+// "parts", each with "regions" = regexes for the names of the functions (or text on a changed line) that belong to it. The robot reads the
+// pull request's own diff, finds which part every changed line sits in, and FAILS a PR that changed a part it did not name - the Racer
+// garage case, where a wheel job's change tore the car body. A game without "parts" is not guarded yet. No browser, no pictures: it is exact.
+export function partOfLines(parts, headSrc, ranges) {
+  const lines = headSrc.split('\n'), starts = [];
+  lines.forEach((t, i) => { const m = t.match(/^(?:async\s+)?function\s+([A-Za-z0-9_$]+)/); if (m) starts.push([i + 1, m[1]]); });
+  const fnAt = (n) => { let name = ''; for (const [l, nm] of starts) { if (l <= n) name = nm; else break; } return name; };
+  const res = parts.map(p => ({ part: p.part, re: (p.regions || []).map(r => new RegExp(r)), hits: [] }));
+  for (const [a, b] of ranges) for (let n = a; n <= Math.max(a, b); n++) {
+    const fn = fnAt(n), text = lines[n - 1] || '';
+    for (const r of res) if (r.re.some(re => re.test(fn) || (re.source.includes('^') ? false : re.test(text)))) { r.hits.push(`${fn || 'top of file'} (line ${n})`); break; }
+  }
+  return res.filter(r => r.hits.length).map(r => ({ part: r.part, where: [...new Set(r.hits)].slice(0, 4) }));
+}
+export function partGuard(game, touched, title = '', branch = '') {
+  if (!game || !(game.parts || []).length || /^(vp-|claude-|0[345]-|robot\/|test\/)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
+  const names = game.parts.map(p => p.part), m = String(title).match(/\bPART:\s*([A-Za-z0-9_-]+)/i), named = m ? m[1].toLowerCase() : '';
+  if (!touched.length) return [];
+  const list = touched.map(t => `${t.part} (${t.where.join(', ')})`).join('; ');
+  if (!named) return [`PART GUARD: ${game.file} - this pull request changes ${list} but its title names no part. One part per job: put "PART: <one of ${names.join(', ')}>" in the PR title and keep the change inside that part.`];
+  const def = game.parts.find(p => p.part.toLowerCase() === named);
+  if (!def) return [`PART GUARD: ${game.file} - "PART: ${named}" is not a part of this game. Parts: ${names.join(', ')}.`];
+  const ok = new Set([named, ...(def.with || []).map(x => x.toLowerCase())]);
+  const bad = touched.filter(t => !ok.has(t.part.toLowerCase()));
+  return bad.map(t => `PART GUARD: ${game.file} - your job is PART: ${named}, but this pull request also changes the "${t.part}" part: ${t.where.join(', ')}. Undo that change (or put it in its own job) - one part per job so a fix cannot break another part.`);
 }
 
 if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
@@ -158,13 +172,19 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
     }
   } catch (e) { console.log('::warning title=missing-reason::' + String(e).slice(0, 200)); }
   for (const m of (data.missing || [])) blockers.push(`${m}: ${why[m] || 'the robot could not play it (its run failed or timed out; the run could not be read)'}`);
-  // PART GUARD (owner Oct 27 2026 3:11 PM, all games): the parts job (tools/game-check/parts.mjs) photographed every listed part on main and
-  // on this PR; a part that changed but was not named in the PR title ("PART: rims") is a blocker, with both pictures.
+  // PART GUARD: read this pull request's own diff against its base and judge which parts it touched
   try {
-    const pj = process.env.PARTS_JSON || 'parts-guard/parts-guard.json';
-    if (fs.existsSync(pj)) {
-      const pg = JSON.parse(fs.readFileSync(pj, 'utf8')), title = process.env.PR_TITLE || '';
-      for (const b of partGuard(pg, title)) blockers.push(b);
+    const gj = JSON.parse(fs.readFileSync('tools/game-check/games.json', 'utf8')), games = Array.isArray(gj) ? gj : gj.games || [];
+    const base = process.env.BASE_SHA || '';
+    for (const f of changed.filter(x => /^apex[a-z0-9]*\.html$/.test(x))) {
+      const g = games.find(x => x.file === f); if (!g || !(g.parts || []).length || !base) continue;
+      if (g.partGuardFrom && process.env.PR_CREATED && Date.parse(process.env.PR_CREATED) < Date.parse(g.partGuardFrom)) { console.log(`Part guard ${f}: skipped - this pull request was opened before the guard started (${g.partGuardFrom})`); continue; }
+      const d = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', f], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
+      const ranges = [...d.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)].map(h => [+h[1], +h[1] + Math.max(0, (h[2] === undefined ? 1 : +h[2]) - 1)]);
+      const touched = partOfLines(g.parts, fs.readFileSync(f, 'utf8'), ranges);
+      const bl = partGuard(g, touched, process.env.PR_TITLE || '', process.env.PR_BRANCH || '');
+      console.log(`Part guard ${f}: touched ${touched.map(t => t.part).join(', ') || 'no listed part'} - ${bl.length ? 'BLOCKED' : 'ok'}`);
+      for (const x of bl) blockers.push(x);
     }
   } catch (e) { console.log('::warning title=part-guard::' + String(e).slice(0, 200)); }
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
