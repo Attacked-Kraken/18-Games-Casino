@@ -502,7 +502,7 @@ def main():
                 tell_pr(n, pr["head"]["sha"], "not merged - these checks FAILED: %s. Their own comment above says what to fix; push a fix and the check re-runs." % ", ".join(bad))
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
-                 fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+                 fields={"merge_method": "squash", "sha": pr["head"]["sha"], "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if not (res and res.get("merged")):
             revisit = True
             why = (res or {}).get("message") or LAST_ERR[0] or "no answer"
