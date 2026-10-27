@@ -1,0 +1,11 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -1296,7 +1296,7 @@
+   tilt.add(model);
+   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
+   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
+-  if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
++  else if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
+   else if (cfg.wrap && cfg.wrap !== 'none') addPanelWrap(tilt, bodyMat, cfg).forEach((m) => ownMats.push(m.material)); /* G-372: the other nine wraps get surface panels */
+   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
+   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
