@@ -270,3 +270,5 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-27 help desk
 - A G-number the Mac shows for a tester window may exist only on the Mac (no file on GitHub): the tester treats it as stale and runs its next checklist item instead of searching.
+
+- A model PR blocked only by the assets check ("no entry in ASSETS.md") is fixed by one ASSETS.md entry (title, maker, exact Sketchfab source, license) from the MODEL-REQUESTS line - PR #2036 sat because a rejected-then-refetched model lost its ledger line.
