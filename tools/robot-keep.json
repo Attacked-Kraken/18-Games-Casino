@@ -102,6 +102,11 @@
    "rule": "a cancelled, superseded run never writes FAILED"
   },
   {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "report + auto-undo now come FIRST, videos are extra",
+   "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
+  },
+  {
    "file": "tools/robot-auditor.py",
    "needle": "proof_pr(",
    "rule": "the auditor proves every changed robot file before it merges"
