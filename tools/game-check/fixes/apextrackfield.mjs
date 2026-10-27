@@ -549,12 +549,38 @@ export default [
     id: 'discus-one-action',
     ask: 'DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, like a real thrower; at most 2 taps) and the camera must show the thrower clearly from behind/side, never hidden behind the power bar',
     async test(page, h) {
+      // G-401: fresh page, not the shared page's leftover race. The old entry
+      // inherited whatever the previous test left running and fast-forwarded it
+      // with __tfdrv5; a leftover throw in flight/mark runs on game time, which
+      // crawls on the slow robot, so the budget died before discus ever started
+      // ("the discus event never loaded" on main 371bd48, two checks running).
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv', '__g393drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      // NEW-PAGE-READY GATE (G-289 r1 pattern): wait for the NEW page (menu,
+      // not playing) before navigating - the old page is still playing its race
+      // for seconds after reload on a slow load.
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      let nav = null;
+      for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
+        if (attempt > 0) { await h.eval(() => location.reload()).catch(() => {}); for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); } }
+        nav = await h.eval(() => new Promise(res => {
+          let n = 0;
+          const iv = setInterval(() => {
+            const on = document.querySelector('.screen.on');
+            const e = window.__tf && window.__tf.eng();
+            if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === 'dt') { clearInterval(iv); res('racing'); return; }
+            if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
+            else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => /Discus/i.test(x.textContent)); if (b) b.click(); else { clearInterval(iv); res('no Discus button'); } }
+            else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
+            else if (on && on.id === 'results') { const b = document.getElementById('bResMenu'); if (b) b.click(); }
+            if (++n > 120) { clearInterval(iv); res('stuck'); }
+          }, 150);
+        })).catch(() => null);
+        if (nav !== 'racing') await h.wait(1200);
+      }
+      if (nav !== 'racing') return 'could not start the Discus Throw: ' + nav;
       const t0 = Date.now();
       const budget = () => Date.now() - t0 < 27000;
       const state = () => h.eval(() => { const on = document.querySelector('.screen.on'); const e = window.__tf && window.__tf.eng(); const i = window.__tf && window.__tf.input ? window.__tf.input() : null; return { screen: on ? on.id : null, ev: e ? (e.ev || {}).id : null, phase: e ? e.phase : null, attempts: e && e.attempts ? e.attempts.length : 0, done: e ? !!e.done : false, act: i ? i.act : 0 }; });
-      await h.eval(() => { ['__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__drv'].forEach(k => { if (window[k]) { clearInterval(window[k]); window[k] = null; } }); return true; });
-      // fast-forward any race already running so we can reach the menu
-      await h.eval(() => { if (!window.__tfdrv5) { window.__tfdrv5 = setInterval(() => { const e = window.__tf && window.__tf.eng(); if (!e || e.done) return; const ev = e.ev || {}; if (ev.eng === 'throw' && (ev.throwType || ev.id) !== 'discus' && ev.id !== 'dt') { if (e.action) e.action(); } else if (ev.eng !== 'throw' && e.r) { const d = ev.dist || 400; e.r.pos = Math.min(e.r.pos + d * 0.3, d - 0.2); e.r.speed = Math.max(e.r.speed || 0, 9.5); } }, 200); } return true; });
       const phasesSeen = new Set();
       let started = false, holding = false, holdAt = 0, actAtHold = 0, maxActPerAttempt = 0, camChecked = false, guard = 0;
       while (budget() && guard++ < 160) {
@@ -2806,14 +2832,21 @@ async test(page, h) {
     ask: 'CHECKLIST T05 (G-260): a tailwind over +2.0 m/s means the time does not count as a record, shown as "w" (rules/trackfield.md) - the sprint results screen must show a wind reading, and a wind-aided time must carry the "w" mark instead of counting as a best',
     async test(page, h) {
       await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
-      await h.wait(1500);
+      // G-401: NEW-PAGE-READY GATE (G-289 r1 pattern) replaces the fixed 1500 ms
+      // wait after reload. On a slow load the old page is still playing its race
+      // when the nav runs, and the old nav accepted ANY playing race as the 100m
+      // - so the drive below stepped a leftover distance/throw engine that can
+      // never finish in 6000 steps ("never finished in game-time stepping" on
+      // main 371bd48, twice). The gate waits for the NEW page (menu, not playing).
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
       let nav = null;
       for (let attempt = 0; attempt < 3 && nav !== 'racing'; attempt++) {
       nav = await h.eval(() => new Promise(res => {
         let n = 0;
         const iv = setInterval(() => {
           const on = document.querySelector('.screen.on');
-          if (document.body.classList.contains('playing')) { clearInterval(iv); res('racing'); return; }
+          const e = window.__tf && window.__tf.eng();
+          if (document.body.classList.contains('playing') && e && e.ev && e.ev.id === '100m') { clearInterval(iv); res('racing'); return; }
           if (on && on.id === 'menu') { const b = document.getElementById('bFree'); if (b) b.click(); }
           else if (on && on.id === 'grid') { const b = [...document.querySelectorAll('#gridEvents button')].find(x => x.textContent.trim() === '100m'); if (b) b.click(); else { clearInterval(iv); res('no 100m button'); } }
           else if (on && on.id === 'card') { const b = document.getElementById('bCardStart'); if (b) b.click(); }
