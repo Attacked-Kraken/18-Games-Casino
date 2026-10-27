@@ -164,6 +164,7 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-394 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, jobs/G-394-w1.md | build/g-394-apexbaseball |
 | G-381 | window 1 | looks/refs/apexbaseball.md, jobs/G-381.md | build/g-381-apexbaseball |
 | G-376 | window 7 | jobs/G-376-w7.md | test/g-376-w7 |
 | G-373 | window 7 | jobs/G-373-w7.md | test/g-373-apexbaseball |
@@ -348,6 +349,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-393 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs | build/g-393-apextrackfield - DONE PR #1992 merged 0d240390 |
 | G-391 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-391.md, CLAIMS.md | build/g-391-apexflight |
 | G-388 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, jobs/G-388.md, CLAIMS.md | build/g-388-apexracer - CLAIMED Muse algre141 Oct 27 12:40 PM CDT (MAC tag) |
-| G-403 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-403.md, CLAIMS.md | build/g-403-apexflight |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
-| G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
