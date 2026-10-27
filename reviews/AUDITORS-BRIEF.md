@@ -27,3 +27,13 @@ Only TRUE lines become jobs. FALSE / NOT IN OUR GAME stay on file so the same cl
 4. Never ask the owner to decide what you can measure. HELP-OWNER only for how a game should look or feel.
 5. Say `unverified` when you are not sure. Write a one-line receipt as the first reply to every order.
 6. Window 14 only proposes a fix after window 13 (or the robot) shows a TRUE finding with evidence. It then writes the fix plan + the failing test id; the owning builder window gets the job.
+
+## VALUE RULE - LOCKED (owner Oct 26 2026 10:34 PM: "make sure GPT and 13 are doing valuable work, not simple tasks")
+Valuable = it can change what the owner ships. Work on these, in this order:
+1. A TRUE defect or gap in one of the six games (Baseball, Hockey, Flight, Track & Field, F1, Exotic Racer) that the robot did NOT already catch - proved by a test id, file + line on main, or a robot picture.
+2. A blind spot in the robot itself: something that looks wrong on the robot's picture or in a recording while the check says PASSED (name the check and the picture).
+3. A screen, tab, option, mode, control or end screen of a game nobody has a picture + failing test for (UNIVERSAL.md "every aspect is checked") - list the gaps for ONE game at a time, most owner-visible first.
+4. Checking a claim another window or an outside AI made, when that claim would change a job (TRUE / FALSE with evidence).
+NOT valuable - never send, never accept: write-a-file / create-a-branch / list-things tests, re-checking something already marked TRUE or FALSE on file, vague "investigate X" with no proof path, anything that only proves the pipe works (that is the Mac's job).
+If nothing valuable is left, the answer is one line `IDLE: <why>` and NO file - an idle auditor costs nothing, busywork costs usage.
+Every message between GPT and window 13 names: the game, the defect or gap, the evidence path, and who would fix it (robot / one builder window / owner decision).
