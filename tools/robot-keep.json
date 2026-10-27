@@ -105,6 +105,26 @@
    "file": ".github/workflows/game-check.yml",
    "needle": "report + auto-undo now come FIRST, videos are extra",
    "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "proof_pr(",
+   "rule": "the auditor proves every changed robot file before it merges"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "watch_pass(",
+   "rule": "the auditor measures every merge again after 10 branches and reverts a clearly worse one"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def decide",
+   "rule": "the track-record decision"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def proof_text",
+   "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
   }
  ]
 }
