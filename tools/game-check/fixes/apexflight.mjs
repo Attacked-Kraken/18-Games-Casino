@@ -1508,4 +1508,25 @@ export default [
       });
     },
   },
+  {
+    id: 'play-qualityBtn-on-screen',
+    ask: 'G-391: the QUALITY button sits fully on screen (upright and sideways), at least 44 px tall',
+    async test(page, h) {
+      // Menu state is shared-page fragile: reload the bare URL to a known menu first.
+      try {
+        const url = await h.eval(() => location.href.split('?')[0]);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+      } catch (e) {}
+      return h.eval(() => {
+        const b = document.getElementById('qualityBtn');
+        if (!b) return 'no #qualityBtn element';
+        if (document.getElementById('startOv').hidden) return 'menu did not engage (test setup, not the game)';
+        const r = b.getBoundingClientRect();
+        if (r.height < 44) return 'QUALITY button is only ' + Math.round(r.height) + 'px tall (want >= 44)';
+        if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) return 'QUALITY button cut off: rect [' + [r.left, r.top, r.right, r.bottom].map((v) => Math.round(v)).join(',') + '] in ' + innerWidth + 'x' + innerHeight;
+        return true;
+      });
+    },
+  },
 ];
