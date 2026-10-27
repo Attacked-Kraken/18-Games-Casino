@@ -75,11 +75,11 @@
   #gstats .s { margin:3px 0 7px; } #gstats .bar { height:7px; border-radius:9px; background:#ffffff1a; overflow:hidden; margin-top:3px; }
   #gstats .bar b { display:block; height:100%; border-radius:9px; background:linear-gradient(90deg,#19e6ff,#ff2bd6); }
   #gpanel { position:absolute; left:8px; right:8px; bottom:calc(8px + var(--sab)); padding:8px; }
-  #gtabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:7px; scrollbar-width:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
+  #gtabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:7px; scrollbar-width:none; touch-action:pan-x; }
   #gtabs::-webkit-scrollbar, #gopts::-webkit-scrollbar { display:none; }
   .gt { flex:none; border:0; border-radius:11px; padding:8px 12px; font:800 13px system-ui; color:#cfd3ff; background:#ffffff10; }
   .gt.on { color:#fff; background:linear-gradient(135deg,#ff2bd6,#8a5cff); }
-  #gopts { display:flex; gap:7px; overflow-x:auto; min-height:76px; align-items:stretch; scrollbar-width:none; touch-action:pan-x pan-y; -webkit-overflow-scrolling:touch; }
+  #gopts { display:flex; gap:7px; overflow-x:auto; min-height:76px; align-items:stretch; scrollbar-width:none; touch-action:pan-x; }
   .go { flex:none; min-width:92px; border:1px solid #ffffff22; border-radius:14px; background:#ffffff0c; color:#fff; padding:8px 9px; font:800 12px system-ui; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
   .go.pv { border-color:#ffd23a; box-shadow:0 0 0 2px #ffd23a inset, 0 0 18px #ffd23a88; } .go.pv .p { color:#ffd23a; }
   .go.on { border-color:#19e6ff; box-shadow:0 0 0 1px #19e6ff inset, 0 0 16px #19e6ff55; }
@@ -1129,27 +1129,6 @@ function procRim(style, fr, w, latheMat) {
   cap.rotation.x = Math.PI / 2; cap.position.z = faceZ; grp.add(cap);
   return grp;
 }
-/* OWNER FIX (Oct 26): the model's own tyres grow about their hub centres when a bigger Wheel Size is
-   fitted - the lift alone raised the whole model, tyres included, so the car floated by the full lift. */
-function growTyres(tilt, model, tireMat, hubs, rimScale) {
-  tilt.updateWorldMatrix(true, true);
-  const invT = new THREE.Matrix4().copy(tilt.matrixWorld).invert(), v = new THREE.Vector3();
-  model.traverse((q) => {
-    if (!q.isMesh || q.material !== tireMat || !q.geometry || !q.geometry.attributes.position) return;
-    q.geometry = q.geometry.clone();
-    const A = new THREE.Matrix4().multiplyMatrices(invT, q.matrixWorld);
-    const B = new THREE.Matrix4().multiplyMatrices(new THREE.Matrix4().copy(q.matrixWorld).invert(), tilt.matrixWorld);
-    const pa = q.geometry.attributes.position;
-    for (let i = 0; i < pa.count; i++) {
-      v.fromBufferAttribute(pa, i).applyMatrix4(A);
-      let hb = hubs[0], bd = Infinity;
-      for (const h2 of hubs) { const d = (v.x - h2.x) * (v.x - h2.x) + (v.z - h2.z) * (v.z - h2.z); if (d < bd) { bd = d; hb = h2; } }
-      v.set(hb.x + (v.x - hb.x) * rimScale, hb.y + (v.y - hb.y) * rimScale, hb.z + (v.z - hb.z) * rimScale).applyMatrix4(B);
-      pa.setXYZ(i, v.x, v.y, v.z);
-    }
-    pa.needsUpdate = true; q.geometry.computeVertexNormals(); q.geometry.computeBoundingSphere();
-  });
-}
 /* G-372: the other nine wraps on a real 3D model - surface panels that follow the body's own shape
    (sampled in tilt space like addStripeWrap), textured with the same wrapTex canvases the procedural
    cars use, so Flames, Shards, Lightning, Checker Fade, Race #88, Apex Livery, Urban Camo, Two-Tone
@@ -1332,7 +1311,7 @@ function makeGlbCar(id, cfg, o = {}) {
     ownMats.push(latheMat);
     /* G-345 fix 2 (owner): a bigger wheel size lifts the car - the body rises by the extra radius and the hubs rise with it, so the bigger wheels stay grounded */
     const rimScale = [1, 1.15, 1.3][clamp(cfg.wheel || 0, 0, 2)];
-    if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; growTyres(tilt, model, tireMat, hubs, rimScale); model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
+    if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
     /* G-345 fix 2 (owner: 'wheel options don't work'): the Rims styles are real 3D rims on real cars now.
        Mesh (style 4) is the owner's LOCKED fetched wheel in its own finish; the other five are turned
        barrels with real spokes in each design, wearing the chosen rim colour. One barrel per wheel
@@ -2090,19 +2069,10 @@ function musBuild() {
   const mk = () => { const g = c.createGain(); g.gain.value = 0; g.connect(AU.music); return { g, src: null }; };
   MUS.els = { menu: mk(), low: mk(), mid: mk(), high: mk() };
 }
-function musSyncRace() { /* OWNER FIX (Oct 26): the three race stems start together at ONE context time - starting each as its decode landed left them offset against each other, and the speed crossfade smeared the offset into static that came and went */
-  if (!MUS.els || !MUS.bufs) return; const c = AU.ctx; if (!c) return;
-  const ks = ['low', 'mid', 'high'];
-  if (ks.some((k) => !MUS.bufs[k])) return; /* wait until every stem is decoded */
-  if (ks.some((k) => MUS.els[k].src)) return;
-  const when = c.currentTime + 0.06;
-  for (const k of ks) { const s = c.createBufferSource(); s.buffer = MUS.bufs[k]; s.loop = true; s.connect(MUS.els[k].g); s.start(when); MUS.els[k].src = s; }
-}
 function musStartLayer(k) { /* start layer k's looping buffer source once its decode has landed and the current mode wants it */
   if (!MUS.mode || !MUS.els || !MUS.bufs || !MUS.bufs[k]) return;
   if (MUS.mode === 'menu' && k !== 'menu') return;
   if (MUS.mode === 'race' && k === 'menu') return;
-  if (MUS.mode === 'race') { musSyncRace(); return; }
   const E = MUS.els[k]; if (E.src) return;
   const s = AU.ctx.createBufferSource(); s.buffer = MUS.bufs[k]; s.loop = true; s.connect(E.g); s.start(); E.src = s;
 }
@@ -2113,7 +2083,7 @@ function musicStart(mode) {
   if (!MUS.els) musBuild();
   MUS.mode = mode; const t = c.currentTime, E = MUS.els;
   if (mode === 'menu') { for (const k of ['low', 'mid', 'high']) { E[k].g.gain.setTargetAtTime(0, t, 0.3); musStopLayer(k); } musStartLayer('menu'); E.menu.g.gain.setTargetAtTime(0.85, t, 0.4); }
-  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); musStopLayer('menu'); musSyncRace(); MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
+  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); musStopLayer('menu'); for (const k of ['low', 'mid', 'high']) musStartLayer(k); MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
 }
 function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); musStopLayer(k); } }
 function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
@@ -2524,14 +2494,6 @@ function renderGarage() {
   $('gstats').innerHTML = bar('Top speed', Math.round(s.top * MPH) + ' mph', (s.top * MPH) / 260) + bar('Power', (s.acc).toFixed(1), s.acc / 26) + bar('Grip', (s.grip * 100 | 0) + '%', s.grip / 1.9) + bar('Nitro', 'x' + s.nosCap.toFixed(2), s.nosCap / 2.1);
   $('gtabs').innerHTML = TABS.concat(GAR_ID === 'titan' ? [['quad', '⚡ Motors'], ['rocket', '🚀 Boosters'], ['susp', '🏎️ Suspension']] : []).map(([t, n]) => `<button class="gt ${t === G.tab ? 'on' : ''}" data-t="${t}">${n}</button>`).join('');
   $('gtabs').querySelectorAll('.gt').forEach((b) => { b.onclick = () => { clearPrev(true); G.tab = b.dataset.t; sfx('tap'); renderGarage(); }; });
-  /* OWNER FIX (Oct 26): the strips only scrolled on the strip's own axis, which a portrait phone
-     (the whole page is rotated 90 degrees) cannot pan - drag them with pointer events instead,
-     mapping the drag along whichever screen axis the strip lies on. */
-  const dragScroll = (el) => { if (!el || el.__dragWired) return; el.__dragWired = 1; let dn = null;
-    el.addEventListener('pointerdown', (e) => { const r = el.getBoundingClientRect(); dn = { p: r.height > r.width ? e.clientY : e.clientX, s: el.scrollLeft }; });
-    el.addEventListener('pointermove', (e) => { if (!dn) return; const r = el.getBoundingClientRect(); const now = r.height > r.width ? e.clientY : e.clientX; const d = now - dn.p; if (Math.abs(d) > 5) el.scrollLeft = dn.s - d; /* drag the content with the finger: local +x runs down-screen when rotated, right when not - either way content follows the drag */ });
-    addEventListener('pointerup', () => { dn = null; }); };
-  dragScroll($('gtabs')); dragScroll($('gopts'));
   const V = VIEW[G.tab] || [0.75, 0.26, 8.2]; gOrb.tt = V; if (G.tab !== 'cars') gOrb.auto = 0;
   const price = (p, own) => `<span class="p ${own ? 'own' : p > S.cash ? 'no' : ''}">${own ? own : p ? fmt$(p) : 'Free'}</span>`;
   let h = '';
