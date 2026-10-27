@@ -1,13 +1,55 @@
 {
   "_about": "LOCKED robot rules (owner Oct 26 2026). asset-check fails any PR that removes one of these needles. Removing one on purpose = the owner says so, then edit this file in the same PR.",
   "keep": [
-    {"file": "tools/merge-robot.py", "needle": "def fix_credits", "rule": "credits are fixed by the robot"},
-    {"file": "tools/merge-robot.py", "needle": "FIXED credit", "rule": "credit fix must be proven by the tool's own output"},
-    {"file": "tools/merge-robot.py", "needle": "API_ERROR", "rule": "unreadable GitHub is an error, not an empty list"},
-    {"file": "tools/asset-check.mjs", "needle": "--fix", "rule": "asset-check can write the credit line"},
-    {"file": "tools/asset-check.mjs", "needle": "creditLine", "rule": "credit line builder"},
-    {"file": "tools/game-check/pick-culprit.sh", "needle": "AUTO-UNDO", "rule": "auto-undo finds the culprit merge"},
-    {"file": ".github/workflows/game-check.yml", "needle": "github.event_name == 'workflow_dispatch'", "rule": "auto-undo also covers robot merges"},
-    {"file": ".github/workflows/game-check.yml", "needle": "pick-culprit.sh", "rule": "auto-undo uses the culprit picker"}
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "def fix_credits",
+      "rule": "credits are fixed by the robot"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "FIXED credit",
+      "rule": "credit fix must be proven by the tool's own output"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "API_ERROR",
+      "rule": "unreadable GitHub is an error, not an empty list"
+    },
+    {
+      "file": "tools/asset-check.mjs",
+      "needle": "--fix",
+      "rule": "asset-check can write the credit line"
+    },
+    {
+      "file": "tools/asset-check.mjs",
+      "needle": "creditLine",
+      "rule": "credit line builder"
+    },
+    {
+      "file": "tools/game-check/pick-culprit.sh",
+      "needle": "AUTO-UNDO",
+      "rule": "auto-undo finds the culprit merge"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "github.event_name == 'workflow_dispatch'",
+      "rule": "auto-undo also covers robot merges"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "pick-culprit.sh",
+      "rule": "auto-undo uses the culprit picker"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "apexracer.html@1of6",
+      "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "apexracer.html@1of6",
+      "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+    }
   ]
 }
