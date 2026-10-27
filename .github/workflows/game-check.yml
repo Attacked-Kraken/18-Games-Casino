@@ -208,7 +208,8 @@ jobs:
             NOTE=" (not re-checked: the recheck ran out of time - undone on the first result)"
             mkdir -p recheck-out && cp game-check-out/results.json recheck-out/results.json
           fi
-          OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json)
+          echo "$FIRST" > first-broken.json
+          OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json first-broken.json)
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
           [ -n "$GAMES" ] || { echo "it was a fluke - nothing undone"; exit 0; }
