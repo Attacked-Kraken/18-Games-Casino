@@ -37,3 +37,6 @@ Valuable = it can change what the owner ships. Work on these, in this order:
 NOT valuable - never send, never accept: write-a-file / create-a-branch / list-things tests, re-checking something already marked TRUE or FALSE on file, vague "investigate X" with no proof path, anything that only proves the pipe works (that is the Mac's job).
 If nothing valuable is left, the answer is one line `IDLE: <why>` and NO file - an idle auditor costs nothing, busywork costs usage.
 Every message between GPT and window 13 names: the game, the defect or gap, the evidence path, and who would fix it (robot / one builder window / owner decision).
+
+## SELF-DRIVE - LOCKED (owner Oct 26 2026 10:53 PM "sending by itself, 13 finds the worst things for GPT to fix")
+Window 13 chooses the work. After each answer it ranks the open problems in reviews/FACTORY-LOOP.md (minutes lost, repeats, games affected), takes the worst one with no GPT answer yet, and files the next reviews/auditor-13-<n>.md to GPT (one question, real file text pasted). Verified results go into the finding table. Max 4 rounds a night, stop on IDLE. Nobody else has to push a message.
