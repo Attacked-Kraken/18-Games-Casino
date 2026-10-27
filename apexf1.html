@@ -1793,7 +1793,8 @@ const Race = {
       Aud.cheer(true);
     }
   },
-  beginRace(){ this._holdT=rand(0.4,1.8); this.startLights();
+  async beginRace(){ await GPAttach(); // G-400: the race never starts counter-less if SKIP beat the kit attach
+    this._holdT=rand(0.4,1.8); this.startLights();
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -2340,10 +2341,10 @@ async function startWeekend(){
   sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam, tournament:tourn||null };
   show(null);
   initGL._done||(initGL(),RainFX.init(),HUD.initMinimap(),initInput(),initGL._done=true);
-  await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
+  runQuali(); // G-400: SKIP is up before the kit attach finishes, so the quali-to-race path is reachable on slow pages
+  await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   CKAttach(); // G-48: the kit cockpit rides in the player's car
-  runQuali();
 }
 /* ---- qualifying: one flying lap ---- */
 function runQuali(){

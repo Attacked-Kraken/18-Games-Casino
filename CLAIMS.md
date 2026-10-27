@@ -165,6 +165,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 
 ## Board
 | G-384 | window 7 | tools/game-check/fixes/apexbaseball.mjs, jobs/G-384-w7.md, jobs/QUEUE.md | test/g-384-w7 |
+| G-400 | window 5 | apexf1.html, tools/game-check/fixes/apexf1.mjs, looks/apexf1.md, jobs/G-400.md, CLAIMS.md | build/g-400-apexf1 |
 | G-394 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, jobs/G-394-w1.md | build/g-394-apexbaseball |
 | G-381 | window 1 | looks/refs/apexbaseball.md, jobs/G-381.md | build/g-381-apexbaseball |
 | G-376 | window 7 | jobs/G-376-w7.md | test/g-376-w7 |
