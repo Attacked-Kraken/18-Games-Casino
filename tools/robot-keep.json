@@ -50,6 +50,21 @@
       "file": ".github/workflows/game-check-pr.yml",
       "needle": "apexracer.html@1of6",
       "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "\"sha\": pr[\"head\"][\"sha\"]",
+      "rule": "the merge robot merges ONLY the commit it checked (window 13 finding F-1, Oct 26 2026)"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer.mjs",
+      "needle": "yellow, never blocks: run node tools/map-refresh.mjs",
+      "rule": "stale map line numbers are yellow, never red (Oct 27 2026)"
+    },
+    {
+      "file": "tools/map-refresh.mjs",
+      "needle": "export function defLine",
+      "rule": "map line numbers refresh themselves"
     }
   ]
 }
