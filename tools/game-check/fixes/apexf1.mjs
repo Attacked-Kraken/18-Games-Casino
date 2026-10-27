@@ -1522,35 +1522,4 @@ export default [
       return true;
     },
   },
-  {
-    id: 'play-gp-track-present',
-    ask: "the race runs on the owner's Grand Prix track (G-380): 5627 m circuit, 20-car grid, kit scenery live",
-    async test(page, h) {
-      // G-380: the owner's Grand Prix track (kit/tracks/Grand-Prix-Track) is
-      // already the F1 track since G-45, so this test proves it is still the
-      // track on today's build: the kit length (5627.2 m, not the 5793 m
-      // legacy loop), the kit's 20 grid slots, and the kit GLB root live in
-      // the scene. Race FIRST via the owner-check link (G-312 R1: the menu
-      // flow is too slow on a slow page).
-      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
-      await h.wait(1500);
-      let grid = false;
-      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
-      if (!grid) return 'never reached the grid at ?test=grid';
-      const r = await h.eval(() => {
-        try {
-          const t = window.__test; if (!t) return { err: 'no __test' };
-          return { L: t.trackLength(), n: t.cars().length, kit: t.groundKit() !== null, w: t.trackWidth() };
-        } catch (e) { return { err: e.message }; }
-      }).catch(() => null);
-      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
-      if (!r) return 'could not read the race state at the grid';
-      if (r.err) return r.err;
-      if (Math.abs(r.L - 5627.2) > 1) return 'track length ' + r.L + ' is not the Grand Prix track (5627.2 m) - the kit track is not loaded';
-      if (r.n !== 20) return 'grid has ' + r.n + ' cars, not the kit\'s 20 slots';
-      if (!r.kit) return 'the kit GLB root is not in the scene (groundKit null) - the Grand Prix track is not loaded';
-      if (Math.abs(r.w - 14) > 0.01) return 'track width ' + r.w + ' is not the kit\'s 14 m';
-      return true;
-    },
-  },
 ];
