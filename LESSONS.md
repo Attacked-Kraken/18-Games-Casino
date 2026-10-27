@@ -267,3 +267,7 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - Auto-undo PRs (#1984, #2017) list browser-closed lines as "breaks": check the reasons before merging one - an all-robot-side undo deletes good work.
+
+## 2026-10-27 help desk
+- A Mac 'open 6 h, no PR, no report' nudge for a G-number the Muse has never seen = the order never arrived. Say so in a HELP line; do not invent work for it.
+- A conflict where main's side is empty and the branch's side is a block of new tests: keep the branch block, then check `node --check` and duplicate test ids.
