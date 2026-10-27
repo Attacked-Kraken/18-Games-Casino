@@ -1448,11 +1448,12 @@ export default [
       await h.eval(() => { document.getElementById('btnPit').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); });
       await h.wait(500);
       // drive flat-out to the line and sample the first 50 m of the pit lane
-      let maxV = 0, seen = false;
-      for (let i = 0; i < 200; i++) {
+      // 04 Oct 27 2026 (Grok plan): bounded by WALL TIME (a slow robot page ran out of 200 steps before the car reached the line), and the failure says where the car got to
+      let maxV = 0, seen = false, last = null; const tEnd = Date.now() + 75000;
+      for (let i = 0; Date.now() < tEnd; i++) {
         const st = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
           return { s: p.s, d: p.d, v: p.v }; });
-        const sN = ((st.s % pit.L) + pit.L) % pit.L;
+        const sN = ((st.s % pit.L) + pit.L) % pit.L; last = { toEntry: Math.round(pit.pitIn - sN), v: +st.v.toFixed(1), d: +st.d.toFixed(1) };
         if (sN < pit.pitIn - 40) {
           await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer);
             t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
@@ -1461,7 +1462,7 @@ export default [
         } else if (sN > pit.pitIn + 50) break;
         await h.wait(100);
       }
-      if (!seen) return 'never reached the pit entry after arming PIT';
+      if (!seen) return 'never reached the pit entry after arming PIT (75 s wall time; last: ' + (last ? last.toEntry + ' m short of the entry, ' + last.v + ' m/s, ' + last.d + ' m off the line' : 'no reading') + ')';
       await h.eval(() => { location.href = location.pathname; });
       if (maxV > 22.5) return 'pit-lane speed hit ' + (maxV * 3.6).toFixed(0) + ' km/h past the entry line (limit 80)';
       return true;
@@ -1552,5 +1553,31 @@ export default [
       if (Math.abs(r.w - 14) > 0.01) return 'track width ' + r.w + ' is not the kit\'s 14 m';
       return true;
     },
+  },
+  {
+    id: 'play-race-start-after-quali',
+    ask: 'from the menu, qualifying can be skipped and the race starts (SKIP is up before the kit attach finishes)',
+    test: async (page, h) => {
+      if (!await g33Reset(page, h, null)) return 'reset failed';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      await h.press('#raceBtn');
+      let m = '?';
+      for (let i = 0; i < 16; i++) {
+        await h.wait(600);
+        m = await h.eval(() => { const t = window.__test; return t ? t.race().mode : '?'; }).catch(() => '?');
+        if (m === 'race') break;
+      }
+      if (m !== 'race') return 'race never started (mode ' + m + ')';
+      await h.eval(() => { const t = window.__test; if (t) t.setInput({ gas: true }); }).catch(() => {});
+      await h.wait(3000);
+      const mv = await h.eval(() => { const t = window.__test; if (!t) return null; const cs = t.cars(); const p = cs.find(c => c.isPlayer); return { pv: p ? p.v : -1, mov: cs.filter(c => c.v > 1).length }; }).catch(() => null);
+      if (!mv || mv.pv <= 0 || mv.mov < 15) return 'race started but field not moving: ' + JSON.stringify(mv);
+      return true;
+    }
   },
 ];
