@@ -544,7 +544,7 @@ export default [
     id: 'never-g-270-p1',
     ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
     async test(page, h) {
-      await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
+      await h.eval(() => { const E = window.__erc; if (E) { E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); } }); /* the test says STOCK player: pin the stock car so a car picked by an earlier test in the same page (Kestrel = 81 m/s) cannot fake a red line */
       let ready = false;
       for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
       if (!ready) return 'the race never finished building';
