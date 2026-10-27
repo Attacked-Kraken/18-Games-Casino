@@ -2751,7 +2751,6 @@ export default [
       return true;
     },
   },
-,
   {
     id: 'never-name-wrap-no-panels',
     ask: 'Does the APEX ARCADE name wrap stand alone (letters only, no panel shell over the car)?',
