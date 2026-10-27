@@ -92,6 +92,29 @@ def play_test_file_ok(path, main_text=""):
     return _dup_ids(open(path, encoding="utf-8", errors="replace").read()) <= _dup_ids(main_text)
 
 
+def conflict_hunks(files, max_files=3, max_hunks=3, max_lines=6):
+    """Oct 26 2026 (Racer PRs #1877/#1884/#1902 sat hours on game-file conflicts): after a failed merge the files hold git's
+    markers - quote where each conflict is (line number) and the first lines of both sides, so the Muse starts at the spot.
+    Never resolves anything; a failure here returns '' and the old message is sent unchanged."""
+    out = []
+    try:
+        import re as _re
+        for f in files[:max_files]:
+            txt = open(f, encoding="utf-8", errors="replace").read()
+            n_found = 0
+            for m in _re.finditer(r"<<<<<<< [^\n]*\n(.*?)=======\n(.*?)>>>>>>> [^\n]*\n", txt, flags=_re.S):
+                if n_found >= max_hunks:
+                    break
+                n_found += 1
+                line = txt.count("\n", 0, m.start()) + 1
+                mine = "\n".join(m.group(1).splitlines()[:max_lines])[:600]
+                main_ = "\n".join(m.group(2).splitlines()[:max_lines])[:600]
+                out.append("\n\n%s line %d - YOUR side:\n%s\nMAIN side:\n%s\nKeep BOTH changes; main's side is newer work that is already merged." % (f, line, mine, main_))
+    except Exception:
+        return ""
+    return "".join(out)[:3000]
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -114,10 +137,11 @@ def fix_notes_conflict(pr):
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
         if left and not all(auto_resolvable(x) for x in left):
+            hunks = conflict_hunks(left)      # Oct 26 2026: say WHERE the conflict is so the Muse fixes it in minutes (read BEFORE the abort)
             git("merge", "--abort")
             # Oct 24 2026 (PR #1355 got 960 of these): ONE comment per PR, edited in place - never a new post each round
             tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
-                    "this pull request conflicts with main in %s - merge main into your branch and push again." % ", ".join(left[:5]))
+                    "this pull request conflicts with main in %s - merge main into your branch and push again.%s" % (", ".join(left[:5]), hunks))
             print("#%d: conflict in %s - left for the Muse" % (n, ", ".join(left[:5]))); return False
         for f in left:   # a notes / look-board / play-test file the union driver did not catch
             if f.startswith("tools/game-check/fixes/") and f.endswith(".mjs"):
@@ -478,7 +502,7 @@ def main():
                 tell_pr(n, pr["head"]["sha"], "not merged - these checks FAILED: %s. Their own comment above says what to fix; push a fix and the check re-runs." % ", ".join(bad))
             continue
         res = gh("repos/%s/pulls/%d/merge" % (REPO, n), method="PUT",
-                 fields={"merge_method": "squash", "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
+                 fields={"merge_method": "squash", "sha": pr["head"]["sha"], "commit_title": "%s (#%d) - merged by the merge robot (green)" % (title, n)})
         if not (res and res.get("merged")):
             revisit = True
             why = (res or {}).get("message") or LAST_ERR[0] or "no answer"
