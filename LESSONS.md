@@ -239,3 +239,12 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-26 help desk
 - A play-test split that deals every n-th test evenly by COUNT is not even by TIME: a census of 20 slow group tests can leave two parts at the 35-min cap while the third passes. Split by cost, or use more parts, never raise the cap to fit.
+
+## Oct 27 2026 help desk
+- Two robot PRs that edit the same block of tools/game-check/check.mjs make the second one conflict as soon as the first merges (#1945 then #1946). A merge robot cannot merge a conflicting PR, so "check PASSED but not merged" means read mergeable_state first. Rule: robot PRs touching the same file go one after the other, or the second one is rebased right after the first merges.
+
+## 2026-10-27 help desk
+- A Racer play job 'CANCELLED after 1 min' on a PR is the OLD run replaced by a newer dispatched check; read the newest run's jobs before treating it as a failure. Only a cancel at the 35-min cap is the real robot-side budget problem (HELP-VP robot line, PR #1946).
+
+## Oct 27 2026 help desk
+- A red line that blames your PR for something your diff does not touch (here the Save-name button #nmB, 31 px tall, on main since #1910) can come from a robot baseline that is stale: if the Check status says "NEW" but `git diff origin/main...your-branch` has no such element, file `HELP-VP: robot` with the element and main's commit instead of changing unrelated game code in a PR that must stay one-fix.

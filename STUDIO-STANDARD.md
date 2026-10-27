@@ -243,6 +243,8 @@ to be made 11 times, and shared parts (characters/) broke other games.
 7. **WHERE THINGS ARE (owner, Oct 21 2026 - faster builders).** The top of `looks/<game>.md` holds a short map of the
    game file: each part (menus, controls, camera, players/cars, AI, rules, HUD, sounds, venue) with its line numbers.
    The builder updates it in every pull request that moves things. The robot posts a yellow line when it is missing.
+   Line numbers update themselves: `node tools/map-refresh.mjs <game>` rewrites every `(name) L123` to today's line. A stale
+   number is a YELLOW line, never a red one (VP Oct 27 2026: #1902 sat red on a stale map number).
 8. **QUICK CHECK before every pull request.** `tools/quick-check.sh apex<game>.html` runs the robot on ONE game
    (1-3 min) and prints every red line and where the pictures are. Fix the red lines first, then open the PR. (Or run
    the "Quick check" workflow on GitHub with your branch and game.)

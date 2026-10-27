@@ -55,3 +55,18 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
 - You do not have to remember: `node tools/asset-check.mjs --fix` writes the credit line (title, maker, licence, source link, changes) into the credits box from the ASSETS.md entry and updates its "used in" line. The merge robot runs it by itself on a build/fix/test/robot PR whose ONLY failed check is `assets`, pushes the line to the PR branch and restarts the check (tools/merge-robot.py `fix_credits`).
 - The asset check's red line now carries the exact line to paste, so a Muse can also add it by hand. Never weaken the check, and never skip the credit - it is the licence.
 - A new game needs a credits box with id="credits" (the fixer cannot add one - it says so in a warning and the PR stays red).
+
+## ONE OPEN PULL REQUEST PER GAME PAGE (VP, owner Oct 27 2026 - LOCKED)
+- A window keeps at most ONE open pull request that changes its game page (apex<game>.html). A new fix the owner types while that
+  PR is open goes onto THE SAME branch (push again), never a second PR - two PRs on one page is how Racer #1877/#1884/#1902/#1906
+  ended up conflicting with each other for a day.
+- A conflicted PR is joined by WINDOW 14 by itself (the laptop courier types it a "CONFLICT FIX C-<PR>" order after 10 min).
+  The owning window does not need to wait for it; it keeps working on its open PR.
+- Applies to EVERY window 1-14, builders and testers alike (owner Oct 27 8:38 AM). Every Mac order now carries this line, and the Mac
+  tells any window with 2+ open PRs on one page to finish the oldest first (approver v2026.10.27-6).
+- A jobs/QUEUE.md line that was sent once but never done can come back to you marked RE-OPENED (24+ h later, at most twice). If it is
+  already done on main, write NO CHANGE with the commit or test that proves it, so it gets ticked.
+
+## HELP-OWNER IS ONLY FOR TASTE, MONEY, KEYS (owner Oct 27 2026 - LOCKED)
+- Write HELP-OWNER only when the owner alone can answer: how it looks / feels, which model or style he likes, money, keys, passwords, sign-ins.
+- Anything a robot can measure or a Muse can fix (feet under the ground, sizes, speeds, red lines, conflicts) is NEVER a question for him: fix it, or write HELP-VP. The Mac turns a HELP-OWNER fix into HELP-VP by itself.
