@@ -141,7 +141,7 @@ jobs:
     needs: [plan, play]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30      # VP Oct 27 2026: post report + bounded auto-undo recheck (was 20 - the job died before posting)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -164,6 +164,32 @@ jobs:
           if [ -z "${{ needs.plan.outputs.full }}" ]; then SKIP_MODELS=1 node tools/game-check/carry.mjs prev-results.json game-check-out old-checks;
           else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
 
+      - name: Turn the gameplay flip-books into phone videos
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          [ -d game-check-out/clips ] || exit 0
+          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
+          for d in game-check-out/clips/*/; do
+            s=$(basename "$d")
+            ls "$d"*.jpg >/dev/null 2>&1 || continue
+            ffmpeg -loglevel error -y -framerate 4 -pattern_type glob -i "$d*.jpg" -vf "scale=844:-2" \
+              -c:v libx264 -pix_fmt yuv420p -movflags +faststart "game-check-out/img/$s-clip.mp4" || true
+          done
+          rm -rf game-check-out/clips
+
+      - name: Post the report to the game-checks branch
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          [ -f game-check-out/README.md ] || exit 0
+          cd game-check-out
+          git init -q
+          git checkout -q -b game-checks
+          git config user.name "game-check bot"
+          git config user.email "game-check-bot@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
+
       - name: Auto-undo a merge that newly broke a game
         if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')   # VP Oct 26 2026 (audit P0): the merge robot starts this check by workflow_dispatch (its own key starts no push run), so auto-undo never fired for robot merges
         env:
@@ -180,7 +206,11 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 8813 >/dev/null 2>&1 &
           sleep 2
-          ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          # VP Oct 27 2026 (hidden finder: main had NO published results for 24 h): this recheck replayed whole games (Racer 18-27 min) and
+          # the check job died at its time limit EVERY run since #1895, before the report was posted. Now the report is posted FIRST (this
+          # step runs last) and the recheck gets at most 9 minutes - no answer in time = treated as a fluke, nothing undone.
+          timeout 540 env ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          [ -f recheck-out/results.json ] || { echo "recheck did not finish in 9 min - nothing undone"; exit 0; }
           OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json)
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
@@ -211,29 +241,3 @@ jobs:
           echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${T::7} - merges when its check is green"
           { echo; echo "## ⏪ AUTO-UNDO"; echo; echo "Merge \`${T::7}\` (\"$MSG\") was undone because it newly broke: $WHY"; } >> game-check-out/README.md
           gh workflow run game-check-pr.yml --ref main || true
-
-      - name: Turn the gameplay flip-books into phone videos
-        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        run: |
-          [ -d game-check-out/clips ] || exit 0
-          command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
-          for d in game-check-out/clips/*/; do
-            s=$(basename "$d")
-            ls "$d"*.jpg >/dev/null 2>&1 || continue
-            ffmpeg -loglevel error -y -framerate 4 -pattern_type glob -i "$d*.jpg" -vf "scale=844:-2" \
-              -c:v libx264 -pix_fmt yuv420p -movflags +faststart "game-check-out/img/$s-clip.mp4" || true
-          done
-          rm -rf game-check-out/clips
-
-      - name: Post the report to the game-checks branch
-        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        run: |
-          [ -f game-check-out/README.md ] || exit 0
-          cd game-check-out
-          git init -q
-          git checkout -q -b game-checks
-          git config user.name "game-check bot"
-          git config user.email "game-check-bot@users.noreply.github.com"
-          git add -A
-          git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
-          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
