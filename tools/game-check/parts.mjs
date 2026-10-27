@@ -46,7 +46,7 @@ const TIME_TRAP = () => { let frames = 0, cap = 1e9;   // time runs free while t
 async function adv(pg, ms) {   // moves game time forward by whole frames and waits until they were drawn
   const n = Math.max(1, Math.round(ms / 500));   // the page draws ~0.5 frames a second on the robot's software GL, so a frame is worth 100 ms of game time and we wait for few of them
   const cap = await pg.evaluate((n) => window.__pgCap(n), n);
-  const t0 = Date.now(); while (Date.now() - t0 < 60000) { if (await pg.evaluate((c) => window.__pgFrames() >= c, cap)) return; await pg.waitForTimeout(100); } }
+  const t0 = Date.now(); while (Date.now() - t0 < 15000) { if (await pg.evaluate((c) => window.__pgFrames() >= c, cap)) return; await pg.waitForTimeout(100); } }
 const SCENE_TRAP = () => { window.__pgScenes = []; try { Object.defineProperty(Object.prototype, 'isScene', { configurable: true, set(v) {
   Object.defineProperty(this, 'isScene', { value: v, writable: true, enumerable: true, configurable: true }); try { if (v) window.__pgScenes.push(this); } catch (e) {} } }); } catch (e) {} };
 async function press(pg, sel) {
@@ -122,13 +122,14 @@ const out = { game: GAME, pictures: [], inner: [], cover: {}, errs: [], at: new 
 for (const pt of PARTS.filter(x => !process.env.PARTS_ONLY || x.name === process.env.PARTS_ONLY).slice(0, 24)) {
   const nm = String(pt.name).replace(/[^a-z0-9-]/gi, '');
   try {
-    const h = await shoot(browser, 'http://127.0.0.1:8841/' + GAME + (pt.query || ''), pt.steps);
+    // main and this pull request are photographed AT THE SAME TIME (two pages, same robot)
+    const [h, b] = await Promise.all([shoot(browser, 'http://127.0.0.1:8841/' + GAME + (pt.query || ''), pt.steps),
+      sBase ? shoot(browser, 'http://127.0.0.1:8842/' + GAME + (pt.query || ''), pt.steps) : Promise.resolve(null)]);
     fs.writeFileSync(path.join(OUT, 'img', 'parts', slug + '-' + nm + '-head.jpg'), h.jpg);
     const row = { name: pt.name, part: pt.part || pt.name, ok: pt.ok || [], head: 'img/parts/' + slug + '-' + nm + '-head.jpg' };
     if (h.errs.length) out.errs.push(pt.name + ': ' + h.errs.join('; '));
     for (const x of h.inner) if (!out.inner.includes(x)) out.inner.push(x);
     if (sBase) {
-      const b = await shoot(browser, 'http://127.0.0.1:8842/' + GAME + (pt.query || ''), pt.steps);
       fs.writeFileSync(path.join(OUT, 'img', 'parts', slug + '-' + nm + '-base.jpg'), b.jpg); row.base = 'img/parts/' + slug + '-' + nm + '-base.jpg';
       const [d] = await diffs(browser, [{ kind: 'diff', a: b.jpg.toString('base64'), b: h.jpg.toString('base64') }]); row.diff = d;
       if (pt.cover !== false && h.cover && b.cover && out.cover.head === undefined) {
