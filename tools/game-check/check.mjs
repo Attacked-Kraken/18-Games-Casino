@@ -249,13 +249,27 @@ for (const g of games) {
   // owner Oct 24 2026 9:12 PM (window 6 spent an hour re-creating #1614's script error by hand): on the FIRST script error the robot keeps
   // the evidence - full stack (file, line, function), the last 20 console lines, and 3 pictures (just before / at / just after).
   // Saved to <out>/evidence/<game>/ ; the check job pushes it to the pr-evidence branch and the Check status comment links it.
-  const consoleTail = []; let lastFrame = null, frameBusy = false, evidenceDone = false;
+  const consoleTail = []; let lastFrame = null, frameBusy = false, evidenceDone = false, frameHold = false, frameHoldUntil = 0;
   page.on('console', m => { consoleTail.push(m.type() + ': ' + m.text().replace(/\s+/g, ' ').slice(0, 220)); if (consoleTail.length > 20) consoleTail.shift(); });
   const frameTimer = setInterval(async () => {   // a small picture every 2 s, so "just before" exists when the error comes
-    if (frameBusy || evidenceDone) return; frameBusy = true;
-    try { lastFrame = await page.screenshot({ timeout: 4000, type: 'jpeg', quality: 45 }); } catch (e) {}
+    if (frameBusy || evidenceDone || frameHold || Date.now() < frameHoldUntil) return; frameBusy = true;
+    // VP Oct 27 2026 (known faults G-105 / G-122 / 'Held upright' on Track & Field): with the old 4 s timeout a slow frame let
+    // Playwright give up while Chromium's capture was STILL pending; a play test's setViewportSize(390x844) landing during that
+    // pending capture was lost - the page stayed 844x390 (landscape layout: CHAMPIONSHIP x126, CAREER MODE x427) for the rest of
+    // the game. Reproduced locally (upright resize + reload: stuck in 3 of 5 rounds with the old timer, 0 of 5 with no timer, 0 of 6 with this fix). The capture is now
+    // allowed to finish (30 s), so frameBusy is true for as long as Chromium is really capturing.
+    try { lastFrame = await page.screenshot({ timeout: 30000, type: 'jpeg', quality: 45 }); } catch (e) {}
     frameBusy = false;
   }, 2000); frameTimer.unref();
+  // ...and a viewport change never overlaps a capture: wait for the one in flight, hold the timer while the page is not the
+  // base 844x390 (a play test's upright excursion) and 3 s after it comes back.
+  { const _svs = page.setViewportSize.bind(page);
+    page.setViewportSize = async (v) => {
+      frameHold = true;
+      for (let i = 0; i < 700 && frameBusy; i++) await new Promise(rs => setTimeout(rs, 50));
+      try { return await _svs(v); }
+      finally { frameHold = !(v && v.width === 844 && v.height === 390); frameHoldUntil = Date.now() + 3000; }
+    }; }
   page.on('pageerror', async e => {
     if (evidenceDone) return; evidenceDone = true; clearInterval(frameTimer);
     try {
