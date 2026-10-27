@@ -233,3 +233,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 26 2026 help desk
 - A robot HELP line about a time limit in a workflow file: check whether a VP PR (vp- branch) already covers it before anything else; a .github/ PR is merged by a Claude by hand, never by the merge robot or the help desk, so tell the window to wait for it instead of shrinking its test.
+
+## Oct 26 2026 help desk
+- A robot merge must pin the exact head it checked (`sha` on the merge call). Auditor 13 found the merge robot did not; filed as a robot HELP line.
