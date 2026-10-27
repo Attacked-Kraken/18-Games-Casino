@@ -207,10 +207,19 @@ jobs:
           python3 -m http.server 8813 >/dev/null 2>&1 &
           sleep 2
           # VP Oct 27 2026 (hidden finder: main had NO published results for 24 h): this recheck replayed whole games (Racer 18-27 min) and
-          # the check job died at its time limit EVERY run since #1895, before the report was posted. Now the report is posted FIRST (this
-          # step runs last) and the recheck gets at most 9 minutes - no answer in time = treated as a fluke, nothing undone.
-          timeout 540 env ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
-          [ -f recheck-out/results.json ] || { echo "recheck did not finish in 9 min - nothing undone"; exit 0; }
+          # the check job died at its time limit EVERY run since #1895, before the report was posted. Now: the report is posted FIRST (this
+          # step runs last); when only play tests newly broke, ONLY those tests are replayed (seconds); a whole-game recheck gets 9 min, and
+          # if it cannot answer in time the FIRST result counts - the merge IS undone (owner: never skip), the PR says it was not re-checked.
+          TESTS=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.other?'':(j.tests||[]).join(','))})")
+          FIRST="$OUT"
+          if [ -n "$TESTS" ]; then echo "only play tests broke ($TESTS) - replaying just those"; fi
+          timeout 540 env ONLY="$GAMES" ONLY_TESTS="$TESTS" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          NOTE=""
+          if [ ! -f recheck-out/results.json ]; then
+            echo "::warning title=AUTO-UNDO::recheck could not answer in 9 min - acting on the first result"
+            NOTE=" (not re-checked: the recheck ran out of time - undone on the first result)"
+            mkdir -p recheck-out && cp game-check-out/results.json recheck-out/results.json
+          fi
           OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json)
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
@@ -235,7 +244,7 @@ jobs:
           if ! git revert --no-edit $R $T; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
           git commit --amend -q -m "AUTO-UNDO: ${T::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
           git push -q origin "$B"
-          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${T::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${T::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY.$NOTE Fix it and merge again - see LESSONS.md." --jq .number)
           # owner Oct 21 2026: main is protected - the undo merges through the merge robot once its own check is green
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${T::7} - merges when its check is green"
