@@ -1050,12 +1050,12 @@ function updateHUD(dt) {
     $('hBandState').textContent = st;
     bb.classList.toggle('in', st === 'IN BAND');
   } else bb.style.display = 'none';
-  // takeoff coaching during the ground roll (contextual by state; yields to the off-runway reason)
-  if (phase === 'fly' && P.ground && msgTimer <= 0 && !stallNow && !offRwyMsg) {
-    const kt = v * MS2KT;
-    if (kt < 45) setMsg('FULL THROTTLE - BUILD SPEED', false);
-    else if (kt < VROT * MS2KT + 3) setMsg('STICK UP - CLIMB', false);
-  }
+  // G-403: no live coaching during the ground roll (Clean screen) - the
+  // takeoff steps live in the menu text, not on the play screen, so the
+  // roll shows only the game, the score line and the buttons. Removed:
+  // 'FULL THROTTLE - BUILD SPEED' (kt < 45) and 'STICK UP - CLIMB'
+  // (kt < rotate + 3). Stall, off-runway, crash and touchdown messages
+  // are untouched - they are feedback, not instructions.
 }
 
 /* ================= procedural music (WebAudio, no files) =================

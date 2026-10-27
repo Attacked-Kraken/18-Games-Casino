@@ -1529,4 +1529,42 @@ export default [
       });
     },
   },
+  {
+    id: 'play-no-coaching-during-roll',
+    ask: 'G-403: no live coaching instructions during the ground roll (Clean screen) - the roll shows only the game, the score and the buttons',
+    async test(page, h) {
+      // Reload the bare URL to a known menu first (shared-page trap).
+      try {
+        const url = await h.eval(() => location.href.split('?')[0]);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      const engaged = await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+      if (!engaged) return 'menu did not engage (test setup, not the game)';
+      const lever = await h.eval(() => { const lev = document.getElementById('thrLever'); if (!lev) return 'no throttle lever on the page'; const r = lev.getBoundingClientRect(); const yFor = (pct) => r.top + (1 - pct) * r.height;
+        lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(1), bubbles: true })); return true; }).catch(() => 'lever eval failed');
+      if (lever !== true) return lever;
+      // Judge in GAME time (rAF delta-sum): the start flash lasts 2.6 game-s,
+      // so a wall-clock wait reads the flash, not the coaching - poll the
+      // message across game-s 0-8 and fail if coaching ever shows.
+      return h.eval(() => {
+        return new Promise((res) => {
+          let gt = 0, last = performance.now();
+          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 8) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+          const w0 = Date.now();
+          let saw = '';
+          const iv = setInterval(() => {
+            const txt = (document.getElementById('msg') || {}).textContent || '';
+            if (/FULL THROTTLE|STICK UP/i.test(txt)) saw = txt;
+            if (gt >= 8) { clearInterval(iv); return res(saw ? 'live coaching showed during the roll: "' + saw + '"' : true); }
+            if (Date.now() - w0 > 240000) { clearInterval(iv); return res('ran out of wall time waiting 8 game-s (gt ' + gt.toFixed(1) + ')'); }
+          }, 100);
+        });
+      });
+    },
+  },
 ];
