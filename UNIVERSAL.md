@@ -70,3 +70,8 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
 ## HELP-OWNER IS ONLY FOR TASTE, MONEY, KEYS (owner Oct 27 2026 - LOCKED)
 - Write HELP-OWNER only when the owner alone can answer: how it looks / feels, which model or style he likes, money, keys, passwords, sign-ins.
 - Anything a robot can measure or a Muse can fix (feet under the ground, sizes, speeds, red lines, conflicts) is NEVER a question for him: fix it, or write HELP-VP. The Mac turns a HELP-OWNER fix into HELP-VP by itself.
+
+## TEST PARTS ARE BALANCED BY MEASURED SECONDS (04, Oct 27 2026 - LOCKED, game PR #1996)
+- A game split into parts (`@1of6`..) gives each robot the tests by greedy balance on `tools/game-check/test-times.json` (seconds per test id, measured from the robot's results), never round-robin by position. Round-robin put the ~2-minute census tests on one robot and Racer PRs #1906 / #1902 failed with "NOT RUN (robot time cap)" on parts that ran 54-563 s.
+- A new test with no measured time is weighed at the median. When a game's parts run uneven (a part over ~10 min while another is under 2), refresh test-times.json from the newest game-checks results.json; locked in tools/robot-keep.json.
+- STILL UNPROVEN until a Racer PR check finishes with no NOT RUN part.

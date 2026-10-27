@@ -261,3 +261,4 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 ## 2026-10-27 help desk
 - A green clean PR can wait ~10 min when the merge robot's single run is busy in the known-fault re-run step: waiting runs beyond one are cancelled by design (cancel-in-progress false = one pending slot). Check the run's current step before calling a PR 'skipped'. (PR #1987)
 - A PR whose play parts ALL pass but whose `check` says "NOT RUN (robot time cap)" is a robot split bug (owner tests dealt to no part), not a time-out: read the part runs' durations before blaming the cap.
+- When the model audit replaces a fetched file that an open PR already uses, the file's ASSETS.md entry is removed with it and the PR's `assets` check goes red ("has no entry in ASSETS.md") although the check itself passes. Re-add the entry (title, maker, source, license) from `git log -S<file id> -- ASSETS.md`; the robot should do this itself (PR #1884 case).
