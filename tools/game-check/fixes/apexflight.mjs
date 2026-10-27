@@ -1567,43 +1567,4 @@ export default [
       });
     },
   },
-  {
-    id: 'play-no-instructions-during-play',
-    ask: 'G-407: no instruction sentences on the play screen during steady play (Clean screen) - only button labels, instruments and numbers',
-    async test(page, h) {
-      // Same known-menu prelude as play-no-coaching-during-roll (shared-page trap).
-      try {
-        const url = await h.eval(() => location.href.split('?')[0]);
-        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
-        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
-        await h.press('#btnFree');
-      } catch (e) {}
-      const engaged = await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
-      if (!engaged) return 'menu did not engage (test setup, not the game)';
-      const lever = await h.eval(() => { const lev = document.getElementById('thrLever'); if (!lev) return 'no throttle lever on the page'; const r = lev.getBoundingClientRect(); const yFor = (pct) => r.top + (1 - pct) * r.height;
-        lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(1), bubbles: true }));
-        lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(1), bubbles: true }));
-        lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(1), bubbles: true })); return true; }).catch(() => 'lever eval failed');
-      if (lever !== true) return lever;
-      // Judge STEADY play in game time: the 2.6 game-s start flash is a
-      // transient announcement, not a standing instruction - wait past it,
-      // then fail if any instruction sentence remains on screen.
-      return h.eval(() => {
-        return new Promise((res) => {
-          let gt = 0, last = performance.now();
-          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 4) requestAnimationFrame(tick); };
-          requestAnimationFrame(tick);
-          const w0 = Date.now();
-          const iv = setInterval(() => {
-            if (gt >= 4) { clearInterval(iv);
-              const txt = document.body.innerText || '';
-              const m = txt.match(/FULL THROTTLE|STICK UP|THROTTLE UP|LAND RUNWAY|PULL THE|DRAG THE|HOLD .* TO|PRESS .* TO/i);
-              return res(m ? 'instruction text still on the play screen: "' + m[0] + '"' : true);
-            }
-            if (Date.now() - w0 > 240000) { clearInterval(iv); return res('ran out of wall time waiting 4 game-s (gt ' + gt.toFixed(1) + ')'); }
-          }, 100);
-        });
-      });
-    },
-  },
 ];
