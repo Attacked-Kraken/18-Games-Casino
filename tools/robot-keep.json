@@ -125,6 +125,16 @@
    "file": "tools/robot-proof.py",
    "needle": "def proof_text",
    "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "def resolve_binary",
+   "rule": "a binary conflict keeps the PR's file when its own check passed"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "pr_check_passed(pr)",
+   "rule": "a binary conflict is settled only for a PR the robot already passed"
   }
  ]
 }
