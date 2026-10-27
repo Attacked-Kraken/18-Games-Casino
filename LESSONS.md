@@ -267,3 +267,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - Auto-undo PRs (#1984, #2017) list browser-closed lines as "breaks": check the reasons before merging one - an all-robot-side undo deletes good work.
+
+## 2026-10-27 help desk
+- A G-number the Mac shows for a tester window may exist only on the Mac (no file on GitHub): the tester treats it as stale and runs its next checklist item instead of searching.
