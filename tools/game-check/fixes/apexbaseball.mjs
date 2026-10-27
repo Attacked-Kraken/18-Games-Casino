@@ -1536,4 +1536,26 @@ export default [
       return true;
     }
   },
+  {
+    id: 'tester-menu-mute-blocked',
+    ask: 'On the menu screen, tap the mute (speaker) button: it should toggle mute. See it: load the game, tap the speaker icon top-right before starting - the tap is swallowed by the start overlay and mute never toggles (in-game mute works).',
+    async test(page, h) {
+      await page.waitForSelector('#startBtn', { timeout: 15000 }).catch(() => null);
+      const r = await page.evaluate(() => {
+        const el = document.querySelector('#muteBtn');
+        if (!el) return null;
+        const b = el.getBoundingClientRect();
+        return { x: b.left + b.width / 2, y: b.top + b.height / 2, text: el.innerText };
+      }).catch(() => null);
+      if (!r) return 'menu mute button not found';
+      await page.mouse.click(r.x, r.y).catch(() => null);
+      await new Promise(res => setTimeout(res, 800));
+      const after = await page.evaluate(() => {
+        const el = document.querySelector('#muteBtn');
+        return el ? el.innerText : null;
+      }).catch(() => null);
+      if (after !== r.text) return true;
+      return 'menu mute button does not toggle: tap on the speaker icon is swallowed by the start overlay (mute works in-game)';
+    }
+  },
 ];
