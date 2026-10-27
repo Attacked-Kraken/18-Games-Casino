@@ -8,6 +8,27 @@ import { fileURLToPath } from 'url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export default [
   {
+    id: 'play-menu-buttons-44px',
+    ask: 'Menu buttons: Race Friends, Garage, Graphics and Sound are each at least 44 px tall on a sideways phone (844x390) and the menu still fits without scrolling',
+    async test(page, h) {
+      const old = page.viewportSize();
+      await page.setViewportSize({ width: 844, height: 390 });
+      await page.waitForTimeout(300);
+      const r = await h.eval(() => {
+        const out = [];
+        for (const id of ['mFriends', 'mGarage', 'mQ', 'mSnd']) {
+          const e = document.getElementById(id);
+          if (!e) { out.push(id + ' missing'); continue; }
+          const mh = parseFloat(getComputedStyle(e).minHeight) || 0;
+          if (mh < 44) out.push(id + ' min-height ' + mh + ' px (needs 44)');
+        }
+        return out.length ? out.join('; ') : true;
+      });
+      if (old) await page.setViewportSize(old);
+      return r;
+    }
+  },
+  {
     id: 'play-race-starts',
     ask: 'Race starts: starting a race creates the race, the player car and a full grid',
     async test(page, h) {

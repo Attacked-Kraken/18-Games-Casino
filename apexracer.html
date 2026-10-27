@@ -168,6 +168,8 @@
   #menu #who { text-align:left; font-size:12px; }
   #menu #who { display:flex; gap:6px; align-items:center; } #menu #who input { flex:1 1 0; min-width:0; width:auto; padding:7px 9px; }
   @media (max-height:500px), (orientation:portrait) { #mcol { gap:3px; top:calc(100px + var(--sat)); } #menu #mbtns { gap:3px; } #menu #mbtns .neo { padding-top:7px; padding-bottom:7px; } }
+  /* master #94 / Grok Oct 27 2026: menu buttons are at least 44 px tall (thumb) - fits 844x390 without scrolling */
+  #menu #mbtns .neo { min-height:44px; padding-top:4px; padding-bottom:4px; } #menu #mbtns { gap:1px; }
 </style>
 </head>
 <body>
