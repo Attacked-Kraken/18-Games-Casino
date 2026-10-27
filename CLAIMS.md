@@ -164,7 +164,6 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
-| G-381 | window 1 | looks/refs/apexbaseball.md, jobs/G-381.md | build/g-381-apexbaseball |
 | G-376 | window 7 | jobs/G-376-w7.md | test/g-376-w7 |
 | G-373 | window 7 | jobs/G-373-w7.md | test/g-373-apexbaseball |
 | G-373 grades | window 7 | SCORES.md, jobs/G-373.md | test/grades-1026 |
@@ -346,3 +345,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-375 | window 6 | tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-375.md, CLAIMS.md | build/g-375-apexracer - CLAIMED Muse algre141 Oct 26 12:57 PM CDT (MAC tag) |
 | G-379 | window 4 | looks/refs/apextrackfield.md, jobs/G-379-w4.md | build/g-379-apextrackfield - DONE PR #1955 merged 18073a20 (Muse main (casino)) |
 | G-393 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs | build/g-393-apextrackfield - CLAIMED |
+| G-391 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-391.md, CLAIMS.md | build/g-391-apexflight |
