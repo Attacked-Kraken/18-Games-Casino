@@ -8,7 +8,8 @@ let prev = {}, now = {};
 try { prev = JSON.parse(fs.readFileSync(prevFile, 'utf8')); } catch (e) {}
 try { now = JSON.parse(fs.readFileSync(nowFile, 'utf8')); } catch (e) {}
 const P = Object.fromEntries((prev.results || []).map(r => [r.file, r]));
-const games = [], why = [];
+const games = [], why = [], tests = [];
+let other = 0;   // VP Oct 27 2026: new problems that are NOT play tests (load, script error, reality...) - those need the whole game re-played
 for (const r of now.results || []) {
   const p = P[r.file];
   if (!p) continue;                                       // new game: nothing to compare with
@@ -18,9 +19,9 @@ for (const r of now.results || []) {
   for (const f of r.fail || []) {
     if (before.has(f)) continue;
     if (/^Owner's fix NOT done yet/.test(f)) continue;    // judged by id below
-    bad.push(f);
+    bad.push(f); other++;
   }
-  for (const x of r.fixes || []) if (!x.ok && okBefore.has(x.id)) bad.push(`Owner's fix broke again: "${x.ask}"`);
+  for (const x of r.fixes || []) if (!x.ok && okBefore.has(x.id)) { bad.push(`Owner's fix broke again: "${x.ask}"`); tests.push(x.id); }
   if (bad.length) { games.push(r.file); why.push(`${r.name}: ${bad.slice(0, 3).join('; ')}`); }
 }
-console.log(JSON.stringify({ games, why }));
+console.log(JSON.stringify({ games, why, tests, other }));

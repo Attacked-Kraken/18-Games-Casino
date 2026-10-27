@@ -227,3 +227,24 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-25 help desk
 - Sketchfab fetch robot runs can pile up duplicate PRs for one model (#1800 vs #1805). Before waiting on a robot/sketchfab-* PR that conflicts, check whether the same models/fetched file is already on main; if so it is superseded, not stuck.
+
+## 2026-10-26 help desk
+- A test that adds a long full-lap census to a game's suite can push its play step past the 35-min limit: say so in a HELP-VP: robot line with the run times, do not keep re-pushing.
+
+## Oct 26 2026 help desk
+- A robot HELP line about a time limit in a workflow file: check whether a VP PR (vp- branch) already covers it before anything else; a .github/ PR is merged by a Claude by hand, never by the merge robot or the help desk, so tell the window to wait for it instead of shrinking its test.
+
+## Oct 26 2026 help desk
+- A robot merge must pin the exact head it checked (`sha` on the merge call). Auditor 13 found the merge robot did not; filed as a robot HELP line.
+
+## 2026-10-26 help desk
+- A play-test split that deals every n-th test evenly by COUNT is not even by TIME: a census of 20 slow group tests can leave two parts at the 35-min cap while the third passes. Split by cost, or use more parts, never raise the cap to fit.
+
+## Oct 27 2026 help desk
+- Two robot PRs that edit the same block of tools/game-check/check.mjs make the second one conflict as soon as the first merges (#1945 then #1946). A merge robot cannot merge a conflicting PR, so "check PASSED but not merged" means read mergeable_state first. Rule: robot PRs touching the same file go one after the other, or the second one is rebased right after the first merges.
+
+## 2026-10-27 help desk
+- A Racer play job 'CANCELLED after 1 min' on a PR is the OLD run replaced by a newer dispatched check; read the newest run's jobs before treating it as a failure. Only a cancel at the 35-min cap is the real robot-side budget problem (HELP-VP robot line, PR #1946).
+
+## Oct 27 2026 help desk
+- A red line that blames your PR for something your diff does not touch (here the Save-name button #nmB, 31 px tall, on main since #1910) can come from a robot baseline that is stale: if the Check status says "NEW" but `git diff origin/main...your-branch` has no such element, file `HELP-VP: robot` with the element and main's commit instead of changing unrelated game code in a PR that must stay one-fix.

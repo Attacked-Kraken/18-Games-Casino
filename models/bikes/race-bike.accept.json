@@ -1,0 +1,24 @@
+{
+ "file": "models/bikes/race-bike.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 30,
+  "tris": 58135,
+  "size": [
+   2.5,
+   1.42,
+   0.794
+  ],
+  "mainSize": [
+   2.5,
+   1.412,
+   0.794
+  ],
+  "stray": 1,
+  "bytes": 2660736
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:43:58.896Z"
+}

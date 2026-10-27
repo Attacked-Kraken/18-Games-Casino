@@ -1,0 +1,24 @@
+{
+ "file": "models/fetched/patriot-p10-xr-d87ddc.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 38,
+  "tris": 72454,
+  "size": [
+   2.624,
+   1.555,
+   4.944
+  ],
+  "mainSize": [
+   2.18,
+   1.381,
+   4.944
+  ],
+  "stray": 1,
+  "bytes": 2358928
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:44:00.425Z"
+}

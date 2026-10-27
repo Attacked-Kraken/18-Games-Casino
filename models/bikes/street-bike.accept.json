@@ -1,0 +1,24 @@
+{
+ "file": "models/bikes/street-bike.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 8,
+  "tris": 69908,
+  "size": [
+   0.632,
+   1.487,
+   2.404
+  ],
+  "mainSize": [
+   0.632,
+   1.487,
+   2.404
+  ],
+  "stray": 1,
+  "bytes": 4466548
+ },
+ "pictures": null,
+ "asked": null,
+ "at": "2026-10-26T12:43:58.898Z"
+}

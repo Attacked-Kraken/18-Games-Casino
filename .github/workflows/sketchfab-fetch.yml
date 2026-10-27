@@ -6,6 +6,13 @@ on:
   push:
     branches: [main]
     paths: ['MODEL-REQUESTS.md', 'MODEL-SEARCH.md', 'models/picks/**']
+  # VP Oct 26 2026 (nothing holds silently): a run that finds another fetch PR open fetches nothing, and a PR that is CLOSED instead of
+  # merged started no next run (the wheels asked at 8:49 AM sat open until the VP noticed). Now a closed/merged fetch PR re-runs the
+  # robot, and a 30-minute timer is the safety net (a run with no OPEN line costs about a minute and changes nothing).
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       dry:
@@ -30,7 +37,7 @@ permissions:
   actions: write
 jobs:
   fetch:
-    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino' && (github.event_name != 'pull_request' || startsWith(github.head_ref, 'robot/sketchfab-'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

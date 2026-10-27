@@ -155,17 +155,6 @@ Format (one section per model — keep the keys exactly like this):
 - notes: replaces the flat canvas-texture rim faces (owner 2026-10-25: rims look small and fake, like a sticker; measured 0.000 m thick, 30 vertices per face) with a real 3D alloy wheel: Car Wheel/Rim by jack.wake04, CC-BY, 54k tris / 26.9k verts, https://sketchfab.com/3d-models/car-wheelrim-f6f2600358744d928f9b6afc4aabc004 - download file size unverified until the fetch robot lands it
 - status: LOCKED (owner 👍 Sun Oct 25 2026 - nobody may swap it without the owner)
 
-## MODEL: Exotic Racer rim - Split 10 (artist wheel)
-- id: erc-rim-split10
-- game: apexracer.html
-- file: models/fetched/wheel-9905f1.glb
-- look: night
-- view: tools/model-viewer.html?m=models/fetched/wheel-9905f1.glb&look=night
-- by: algre141@gmail.com
-- version: 1
-- notes: for the Rims tab style Split 10. FETCH CAME BACK EMPTY - the robot's file is 384 bytes with 0 meshes (measured from the file itself) and all four robot pictures show an empty stage (0 triangles, 0.00 m tall), so there is nothing to judge yet: this one needs re-fetching before the owner can rule on it. The Sketchfab model itself is Wheel by prasetyoheru10, CC-BY, 202k tris, a true split-5 chrome design (verified from its Sketchfab pictures in G-361).
-- status: WAITING OWNER
-
 ## MODEL: Exotic Racer rim - Turbine (artist wheel)
 - id: erc-rim-turbine
 - game: apexracer.html
@@ -208,4 +197,4 @@ Format (one section per model — keep the keys exactly like this):
 - by: algre141@gmail.com
 - version: 1
 - notes: for the Rims tab style Monoblock. Robot pictures are good: a white solid rally rim with a vented face, reads clearly in the robot's set. 91,838 triangles. Fifteen52 Inspired rally rim by JPepe, CC-BY - 'inspired' is the maker's title credit; there is no brand logo on the model itself (checked in G-361).
-- status: WAITING OWNER
+- status: LOCKED (owner \uD83D\uDC4D Mon Oct 26 2026 - nobody may swap it without the owner)
