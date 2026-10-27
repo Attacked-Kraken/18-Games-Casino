@@ -273,3 +273,5 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - A G-number the Mac shows for a tester window may exist only on the Mac (no file on GitHub): the tester treats it as stale and runs its next checklist item instead of searching.
 
 - A model PR blocked only by the assets check ("no entry in ASSETS.md") is fixed by one ASSETS.md entry (title, maker, exact Sketchfab source, license) from the MODEL-REQUESTS line - PR #2036 sat because a rejected-then-refetched model lost its ledger line.
+- A Mac 'open 6 h, no PR, no report' nudge for a G-number the Muse has never seen = the order never arrived. Say so in a HELP line; do not invent work for it.
+- A conflict where main's side is empty and the branch's side is a block of new tests: keep the branch block, then check `node --check` and duplicate test ids.
