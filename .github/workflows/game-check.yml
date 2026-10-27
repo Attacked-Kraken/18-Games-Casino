@@ -141,7 +141,7 @@ jobs:
     needs: [plan, play]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30      # VP Oct 27 2026: post report + bounded auto-undo recheck (was 20 - the job died before posting)
     steps:
       - uses: actions/checkout@v4
         with:
@@ -164,6 +164,20 @@ jobs:
           if [ -z "${{ needs.plan.outputs.full }}" ]; then SKIP_MODELS=1 node tools/game-check/carry.mjs prev-results.json game-check-out old-checks;
           else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
 
+      - name: Post the report to the game-checks branch
+        if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: |
+          [ -f game-check-out/README.md ] || exit 0
+          cd game-check-out
+          git init -q
+          git checkout -q -b game-checks
+          git config user.name "game-check bot"
+          git config user.email "game-check-bot@users.noreply.github.com"
+          git add -A
+          git rm -r -q --cached --ignore-unmatch clips   # the flip-book frames become videos in a later step
+          git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
+
       - name: Auto-undo a merge that newly broke a game
         if: always() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')   # VP Oct 26 2026 (audit P0): the merge robot starts this check by workflow_dispatch (its own key starts no push run), so auto-undo never fired for robot merges
         env:
@@ -180,7 +194,20 @@ jobs:
           npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
           python3 -m http.server 8813 >/dev/null 2>&1 &
           sleep 2
-          ONLY="$GAMES" node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          # VP Oct 27 2026 (hidden finder: main had NO published results for 24 h): this recheck replayed whole games (Racer 18-27 min) and
+          # the check job died at its time limit EVERY run since #1895, before the report was posted. Now: the report is posted FIRST (this
+          # step runs last); when only play tests newly broke, ONLY those tests are replayed (seconds); a whole-game recheck gets 9 min, and
+          # if it cannot answer in time the FIRST result counts - the merge IS undone (owner: never skip), the PR says it was not re-checked.
+          TESTS=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.other?'':(j.tests||[]).join(','))})")
+          FIRST="$OUT"
+          if [ -n "$TESTS" ]; then echo "only play tests broke ($TESTS) - replaying just those"; fi
+          timeout 540 env ONLY="$GAMES" ONLY_TESTS="$TESTS" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
+          NOTE=""
+          if [ ! -f recheck-out/results.json ]; then
+            echo "::warning title=AUTO-UNDO::recheck could not answer in 9 min - acting on the first result"
+            NOTE=" (not re-checked: the recheck ran out of time - undone on the first result)"
+            mkdir -p recheck-out && cp game-check-out/results.json recheck-out/results.json
+          fi
           OUT=$(node tools/game-check/undo.mjs prev-results.json recheck-out/results.json)
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
@@ -205,7 +232,7 @@ jobs:
           if ! git revert --no-edit $R $T; then git revert --abort || true; echo "couldn't undo cleanly - leaving it for the Muses"; exit 0; fi
           git commit --amend -q -m "AUTO-UNDO: ${T::7} newly broke $GAMES" -m "$WHY" -m "Undone by the game check robot. Fix it on your branch and merge again. (\"$MSG\")"
           git push -q origin "$B"
-          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${T::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY. Checked twice. Fix it and merge again - see LESSONS.md." --jq .number)
+          N=$(GH_TOKEN="${PR_TOKEN:-$GH_TOKEN}" gh api repos/${{ github.repository }}/pulls -f head="$B" -f base=main -f title="AUTO-UNDO: ${T::7} newly broke $GAMES" -f body="The game check robot undid this merge because it newly broke: $WHY.$NOTE Fix it and merge again - see LESSONS.md." --jq .number)
           # owner Oct 21 2026: main is protected - the undo merges through the merge robot once its own check is green
           gh workflow run game-check-pr.yml --ref "$B" || true
           echo "::warning title=AUTO-UNDO::opened pull request #$N to undo ${T::7} - merges when its check is green"
@@ -214,6 +241,8 @@ jobs:
 
       - name: Turn the gameplay flip-books into phone videos
         if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        timeout-minutes: 8        # VP Oct 27 2026: this step (apt + ffmpeg) ate the whole job time limit and main's report was never posted for 25 h - report + auto-undo now come FIRST, videos are extra
+        continue-on-error: true
         run: |
           [ -d game-check-out/clips ] || exit 0
           command -v ffmpeg >/dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null; }
@@ -225,15 +254,15 @@ jobs:
           done
           rm -rf game-check-out/clips
 
-      - name: Post the report to the game-checks branch
+      - name: Post the report again with the phone videos
         if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           [ -f game-check-out/README.md ] || exit 0
           cd game-check-out
           git init -q
-          git checkout -q -b game-checks
+          git checkout -q -B game-checks
           git config user.name "game-check bot"
           git config user.email "game-check-bot@users.noreply.github.com"
           git add -A
-          git commit -q -m "Game check for main @ ${GITHUB_SHA::7}"
+          git commit -q -m "Game check for main @ ${GITHUB_SHA::7} (+ videos)"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks

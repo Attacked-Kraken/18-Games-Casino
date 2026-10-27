@@ -57,8 +57,7 @@ jobs:
             printf '%s\n' "Failed in setup, not in the game: $INFRA" "The robot's setup was fixed on main since this check started - the robot merged main into your branch and is checking it again on the newest setup. Pull before you push." > /tmp/why.txt
             bash tools/game-check/status-comment.sh "$PR" RETRYING /tmp/why.txt || true
             if gh api -X PUT "repos/$GITHUB_REPOSITORY/pulls/$PR/update-branch" >/dev/null; then
-              sleep 20
-              gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/game-check-pr.yml/dispatches" -f ref="$BR" && echo "::notice::ROBOT RETRY (fresh setup): merged main into #$PR ($BR) and started a new check ($INFRA)"
+              python3 tools/game-check/start-check.py "$BR" 25 && echo "::notice::ROBOT RETRY (fresh setup): merged main into #$PR ($BR) and started a new check ($INFRA)"
               exit 0
             fi
             echo "::warning::could not merge main into #$PR - re-running the old jobs instead"

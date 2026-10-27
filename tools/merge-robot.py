@@ -40,6 +40,14 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
+def start_check(branch, wait=25):
+    """Oct 27 2026: ONE way to start the PR check - only when GitHub has not already started one for this commit (tools/game-check/start-check.py).
+    Two runs on one branch cancel each other (shared concurrency group) and the cancelled one wrote a false FAILED comment."""
+    r = subprocess.run(["python3", "tools/game-check/start-check.py", branch, str(wait)], capture_output=True, text=True)
+    print((r.stdout or "").strip()[:300])
+    return r.returncode == 0
+
+
 NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: both the window and the help desk append - see auto_resolvable
 
 
@@ -115,6 +123,33 @@ def conflict_hunks(files, max_files=3, max_hunks=3, max_lines=6):
     return "".join(out)[:3000]
 
 
+BINARY_EXT = (".glb", ".png", ".jpg", ".jpeg", ".webp", ".wav", ".mp3", ".ogg", ".mp4", ".ktx2", ".bin")
+
+
+def is_binary(path):
+    return path.lower().endswith(BINARY_EXT)
+
+
+def resolve_binary(git, f):
+    """Oct 27 2026 (04 + VP; #1884 sat 'dirty' a day on a .glb the model-audit robot deleted on main while the PR re-made it): lines
+    cannot be combined in a binary file. Merging main INTO the PR branch, the PR side is 'ours': keep the PR's file (modify/delete,
+    both modified, both added) or, when the PR itself deleted it, keep it deleted. Only called when the PR's own robot check passed.
+    Returns True when the file is resolved and staged."""
+    has_ours = git("cat-file", "-e", ":2:" + f).returncode == 0
+    if has_ours:
+        r = git("checkout", "--ours", "--", f)
+        if r.returncode != 0:
+            return False
+        return git("add", f).returncode == 0
+    return git("rm", "-q", "--", f).returncode == 0
+
+
+def pr_check_passed(pr):
+    """The PR's own 'check' run on its newest commit succeeded (a binary conflict is only settled for a PR the robot already passed)."""
+    runs = (gh("repos/%s/commits/%s/check-runs?per_page=100" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
+    return any(r.get("name") == "check" and r.get("conclusion") == "success" for r in runs)
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -136,6 +171,21 @@ def fix_notes_conflict(pr):
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
+        bins = [x for x in left if is_binary(x)]
+        if bins and all(auto_resolvable(x) or is_binary(x) for x in left):
+            if pr_check_passed(pr):
+                left_text = [x for x in left if not is_binary(x)]
+                if all(resolve_binary(git, x) for x in bins):
+                    print("::notice title=Merge robot::#%d: binary conflict kept the PR's side: %s" % (n, ", ".join(bins[:4])))
+                    left = left_text           # the text files (if any) go through the normal loop below
+                else:
+                    left = left_text + bins    # could not resolve - falls into the 'left for the Muse' branch
+            else:
+                git("merge", "--abort")
+                tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                        "this pull request conflicts with main in the binary file(s) %s - lines cannot be combined in a binary. "
+                        "Once the robot check passes on your branch, the robot keeps YOUR version of the file by itself; until then pull main and keep the version you want." % ", ".join(bins[:4]))
+                print("#%d: binary conflict in %s - check not passed yet, left" % (n, ", ".join(bins[:4]))); return False
         if left and not all(auto_resolvable(x) for x in left):
             hunks = conflict_hunks(left)      # Oct 26 2026: say WHERE the conflict is so the Muse fixes it in minutes (read BEFORE the abort)
             git("merge", "--abort")
@@ -189,7 +239,7 @@ def fix_notes_conflict(pr):
     r = git("push", "-q", "origin", branch)
     if r.returncode != 0:
         return warn("could not push the merge to %s" % branch, r)
-    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    start_check(branch)
     print("::notice title=Merge robot::#%d: merged main into %s (notes kept from both sides), check restarted" % (n, branch))
     return True
 
@@ -220,7 +270,7 @@ def fix_credits(pr):
         return False
     if g("push", "origin", "HEAD:refs/heads/" + branch).returncode:
         print("fix_credits #%d: push refused" % n); return False
-    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    start_check(branch)
     print("::notice title=Merge robot::PR #%d: robot wrote the missing credit line(s) and restarted the check. %s" % (n, " | ".join(l for l in out.splitlines() if "FIXED credit" in l)))
     return True
 
@@ -283,7 +333,7 @@ def restart_cancelled(pr):
     when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
     how = "re-ran it"
     if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
-        if gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch}) is None:
+        if not start_check(branch):
             print("::warning title=Merge robot::#%d: the check run %s was cancelled and could not be restarted" % (n, newest["id"]))
             return False
         how = "started a new run"
@@ -453,7 +503,7 @@ def main():
         if behind > 0:
             res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
             if res is not None:
-                gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": pr["head"]["ref"]})
+                start_check(pr["head"]["ref"])
                 print("::notice title=Merge robot::#%d was %d commit(s) behind main - merged main into %s and restarted its check; merges next round if green" % (n, behind, pr["head"]["ref"]))
             else:
                 print("#%d: behind main by %d but could not update the branch" % (n, behind))

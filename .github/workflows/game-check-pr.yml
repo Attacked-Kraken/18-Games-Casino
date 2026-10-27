@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 35      # owner Oct 26 2026 11:10 AM: lowered from 55 ("so we are not waiting hours"); Racer normally takes 18-27 min, other games 8-19
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 5      # VP Oct 27 2026: 3 Racer PRs x 8 used all 20 free runners and main's check sat queued 20+ min - 5 per PR leaves room for main
       matrix:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
