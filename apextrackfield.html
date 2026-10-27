@@ -2343,8 +2343,8 @@ try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
 // origin - the idle clip stands 0.05 m under the track, the SET crouch reaches -0.115 m
 // and a running stance foot dives to -0.16 m (REALITY SINK). Round 1 (the robot still
 // read 16 of 24 sunk on the run-only trim): a constant 0.065 m trim grounds every
-// clip, plus 0.03 m more while a run clip plays, so no sampled stance reads under.
-const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0);
+// clip, plus 0.03 m more while a run clip plays. G-393: +0.06 m in the SET crouch, +0.20 x lean (sprint lean drops the foot ~0.07 m).
+const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0)+((this.startPhase==='set')?0.06:0)+leanT*0.20;
 rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
 try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);
