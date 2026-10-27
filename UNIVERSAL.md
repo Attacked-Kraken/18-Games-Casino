@@ -62,3 +62,7 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
   ended up conflicting with each other for a day.
 - A conflicted PR is joined by WINDOW 14 by itself (the laptop courier types it a "CONFLICT FIX C-<PR>" order after 10 min).
   The owning window does not need to wait for it; it keeps working on its open PR.
+- Applies to EVERY window 1-14, builders and testers alike (owner Oct 27 8:38 AM). Every Mac order now carries this line, and the Mac
+  tells any window with 2+ open PRs on one page to finish the oldest first (approver v2026.10.27-6).
+- A jobs/QUEUE.md line that was sent once but never done can come back to you marked RE-OPENED (24+ h later, at most twice). If it is
+  already done on main, write NO CHANGE with the commit or test that proves it, so it gets ticked.
