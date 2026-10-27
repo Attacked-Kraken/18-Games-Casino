@@ -85,6 +85,46 @@
    "file": ".github/workflows/play-testers.yml",
    "needle": "needs.night.outputs.go == '1'",
    "rule": "play testers run only at night - a late GitHub start in the daytime skips"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "tools/game-check/start-check.py",
+   "rule": "robots start a PR check only if GitHub has not already started one for that commit (no cancelled pairs)"
+  },
+  {
+   "file": "tools/game-check/start-check.py",
+   "needle": "def existing_run",
+   "rule": "one shared start-check helper for every robot"
+  },
+  {
+   "file": "tools/game-check/status-comment.sh",
+   "needle": "not writing $STATE from a superseded run",
+   "rule": "a cancelled, superseded run never writes FAILED"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "report + auto-undo now come FIRST, videos are extra",
+   "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "proof_pr(",
+   "rule": "the auditor proves every changed robot file before it merges"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "watch_pass(",
+   "rule": "the auditor measures every merge again after 10 branches and reverts a clearly worse one"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def decide",
+   "rule": "the track-record decision"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def proof_text",
+   "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
   }
  ]
 }
