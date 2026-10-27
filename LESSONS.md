@@ -257,3 +257,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A FIXER 'pr-owner-idle' case on a PR with a game-code red line (touch targets under 32 px) goes to that game's builder as a one-fix job; the help desk never edits game code. Robot-side NOT RUN caps go as a HELP-VP: robot line.
+
+## 2026-10-27 help desk
+- A green clean PR can wait ~10 min when the merge robot's single run is busy in the known-fault re-run step: waiting runs beyond one are cancelled by design (cancel-in-progress false = one pending slot). Check the run's current step before calling a PR 'skipped'. (PR #1987)
