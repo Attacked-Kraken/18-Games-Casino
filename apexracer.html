@@ -207,11 +207,11 @@
       <div style="margin-top:6px"><b>"Patriot P10-XR"</b> by Swiss_Fox, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
       <div style="margin-top:6px"><b>"Tokii Abyss GT.7 V12"</b> by Glas'kavin, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
       <div style="margin-top:6px"><b>"SHC MC Free Promotion Car"</b> by denniswoo1993, CC-BY 4.0, via Sketchfab. Used for race cars.</div>
-      <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, via Sketchfab. Used for city traffic cars.</div>
       <div style="margin-top:6px"><b>"Car Wheel/Rim"</b> by jack.wake04, CC-BY 4.0, via Sketchfab. Used for the garage rim wheels.</div>
       <div style="margin-top:6px"><b>"Smokehaus Racing - Turbine M2 Alloy Wheel"</b> by Smokahontas, CC-BY 4.0, via Sketchfab. Shrunk for phones. Used for the garage rim wheels.</div>
       <div style="margin-top:6px"><b>"Car Rim"</b> by pira.midale, CC-BY 4.0, via Sketchfab. Shrunk for phones. Used for the garage rim wheels.</div>
       <div style="margin-top:6px"><b>"Fifteen52 Inspired rally rim"</b> by JPepe, CC-BY 4.0, via Sketchfab. Shrunk for phones. Used for the garage rim wheels.</div>
+      <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
     </div>
     <div class="row"><button class="neo alt" id="crBack">Back</button></div>
   </div>
@@ -345,6 +345,18 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-rac
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); turbWidN = dims[axle] / diaRaw; turbTpl = hold;
 } catch (e) { turbTpl = null; }
+/* the owner's LOCKED deep dish wheel (MODELS.md erc-rim-deepdish, approved Oct 26 2026): baked once at load -
+   centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
+let dishTpl = null, dishWidN = 0.54;
+try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf1.glb')).scene;
+  const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+  const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
+  sc.position.set(-ctr.x, -ctr.y, -ctr.z);
+  const hold = new THREE.Group(); hold.add(sc);
+  if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
+  const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
+  hold.scale.setScalar(1 / diaRaw); dishWidN = dims[axle] / diaRaw; dishTpl = hold;
+} catch (e) { dishTpl = null; }
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -1129,6 +1141,59 @@ function procRim(style, fr, w, latheMat) {
   cap.rotation.x = Math.PI / 2; cap.position.z = faceZ; grp.add(cap);
   return grp;
 }
+/* G-372: the other nine wraps on a real 3D model - surface panels that follow the body's own shape
+   (sampled in tilt space like addStripeWrap), textured with the same wrapTex canvases the procedural
+   cars use, so Flames, Shards, Lightning, Checker Fade, Race #88, Apex Livery, Urban Camo, Two-Tone
+   and Neon Lines show on the real cars too, tinted by Wrap Color as sold. */
+function addPanelWrap(tilt, bodyMat, cfg) {
+  tilt.updateWorldMatrix(false, true);
+  const inv = new THREE.Matrix4().copy(tilt.matrixWorld).invert();
+  const v = new THREE.Vector3(), raw = [];
+  let bx0 = 1e9, bx1 = -1e9, by0 = 1e9, by1 = -1e9, bz0 = 1e9, bz1 = -1e9;
+  tilt.traverse((q) => {
+    if (!q.isMesh || q.material !== bodyMat) return;
+    const p = q.geometry && q.geometry.attributes && q.geometry.attributes.position; if (!p) return;
+    for (let i = 0; i < p.count; i += 2) {
+      v.fromBufferAttribute(p, i).applyMatrix4(q.matrixWorld).applyMatrix4(inv);
+      raw.push(v.x, v.y, v.z);
+      if (v.x < bx0) bx0 = v.x; if (v.x > bx1) bx1 = v.x;
+      if (v.y < by0) by0 = v.y; if (v.y > by1) by1 = v.y;
+      if (v.z < bz0) bz0 = v.z; if (v.z > bz1) bz1 = v.z;
+    }
+  });
+  const H = by1 - by0, L = bx1 - bx0, W = bz1 - bz0;
+  if (!(H > 0.5 && L > 2) || !raw.length) return [];
+  const NB = 36, NH = 6, NZ = 10, yLo = by0 + H * 0.10, yHi = by0 + H * 0.94;
+  const side = [new Float32Array(NB * NH).fill(-1), new Float32Array(NB * NH).fill(-1)];
+  const topG = new Float32Array(NB * NZ).fill(-1e9);
+  for (let i = 0; i < raw.length; i += 3) {
+    const x = raw[i], y = raw[i + 1], z = raw[i + 2];
+    const b = Math.min(NB - 1, Math.max(0, Math.floor((x - bx0) / L * NB)));
+    if (y >= yLo && y <= yHi) { const r = Math.min(NH - 1, Math.floor((y - yLo) / (yHi - yLo) * NH)), sd = z >= 0 ? 0 : 1, a = Math.abs(z), ix = b * NH + r; if (a > side[sd][ix]) side[sd][ix] = a; }
+    const zi = Math.min(NZ - 1, Math.max(0, Math.floor((z - bz0) / W * NZ))), tx = b * NZ + zi; if (y > topG[tx]) topG[tx] = y;
+  }
+  for (const sd of [0, 1]) for (let r = 0; r < NH; r++) { let last = -1; for (let b = 0; b < NB; b++) { const ix = b * NH + r; if (side[sd][ix] < 0) side[sd][ix] = last; else last = side[sd][ix]; } last = -1; for (let b = NB - 1; b >= 0; b--) { const ix = b * NH + r; if (side[sd][ix] < 0) side[sd][ix] = last < 0 ? W * 0.45 : last; else last = side[sd][ix]; } }
+  for (let zi = 0; zi < NZ; zi++) { let last = -1e9; for (let b = 0; b < NB; b++) { const ix = b * NZ + zi; if (topG[ix] < -1e8) topG[ix] = last; else last = topG[ix]; } last = -1e9; for (let b = NB - 1; b >= 0; b--) { const ix = b * NZ + zi; if (topG[ix] < -1e8) topG[ix] = last < -1e8 ? by1 : last; else last = topG[ix]; } }
+  const acc = cfg.wrapCol || '#ffffff';
+  const mkMat = (part) => { const t = wrapTex(cfg.wrap, cfg.paint, acc, part).clone(); t.needsUpdate = true; const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.38, metalness: 0.12, polygonOffset: true, polygonOffsetFactor: -2, side: THREE.DoubleSide });
+    if (cfg.wrap === 'neon') { const e = wrapTex('neon', cfg.paint, acc, 'e').clone(); e.needsUpdate = true; m.emissiveMap = e; m.emissive = new THREE.Color(acc).multiplyScalar(2.5); } return m; };
+  const out = [];
+  for (const sd of [0, 1]) {
+    const sign = sd === 0 ? 1 : -1, pos = [], uv = [], idx = [];
+    for (let b = 0; b < NB; b++) { const x = bx0 + (b + 0.5) / NB * L;
+      for (let r = 0; r < NH; r++) { const y = yLo + (r + 0.5) / NH * (yHi - yLo); pos.push(x, y, sign * (side[sd][b * NH + r] + 0.006)); uv.push(sign > 0 ? (x - bx0) / L : 1 - (x - bx0) / L, clamp(y / 2, 0, 1)); } }
+    for (let b = 0; b < NB - 1; b++) for (let r = 0; r < NH - 1; r++) { const a = b * NH + r, c = a + NH; if (sign > 0) idx.push(a, c, a + 1, a + 1, c, c + 1); else idx.push(a, a + 1, c, a + 1, c + 1, c); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mkMat('s')); m.name = 'apexwrap'; m.renderOrder = 3; tilt.add(m); out.push(m);
+  }
+  { const pos = [], uv = [], idx = [];
+    for (let b = 0; b < NB; b++) { const x = bx0 + (b + 0.5) / NB * L;
+      for (let zi = 0; zi < NZ; zi++) { const z = bz0 + (zi + 0.5) / NZ * W; pos.push(x, topG[b * NZ + zi] + 0.006, z); uv.push((x - bx0) / L, clamp(0.5 + z / 2, 0, 1)); } }
+    for (let b = 0; b < NB - 1; b++) for (let zi = 0; zi < NZ - 1; zi++) { const a = b * NZ + zi, c = a + NZ; idx.push(a, a + 1, c, a + 1, c + 1, c); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mkMat('t')); m.name = 'apexwrap'; m.renderOrder = 3; tilt.add(m); out.push(m); }
+  return out;
+}
 function makeGlbCar(id, cfg, o = {}) {
   const P = PROF[o.prof || CAR[id].prof];
   const root = new THREE.Group(), yaw = new THREE.Group(), tilt = new THREE.Group();
@@ -1211,6 +1276,7 @@ function makeGlbCar(id, cfg, o = {}) {
   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
   if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
+  else if (cfg.wrap && cfg.wrap !== 'none') addPanelWrap(tilt, bodyMat, cfg).forEach((m) => ownMats.push(m.material)); /* G-372: the other nine wraps get surface panels */
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
   /* garage fix (owner): the shop options were sold but never reached the real cars - wire them in.
@@ -1268,6 +1334,16 @@ function makeGlbCar(id, cfg, o = {}) {
       const fr = hb.h / 2 * 0.68 * rimScale;
       const style = clamp(cfg.rim || 0, 0, 5);
       let rimDone = false, rimHalf = 0.1;
+      if (style === 3 && dishTpl) { /* the LOCKED deep dish wheel in its own copper finish - never repainted, exactly as approved in the viewer */
+        const cl = dishTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
+        const wrap = new THREE.Group(); wrap.add(cl);
+        wrap.scale.z = clamp((hb.w * 1.04) / (dishWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = dishWidN * hb.h * rimScale * wrap.scale.z / 2;
+        if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
+        wrap.position.set(hb.x, hb.y, hb.z);
+        let best = null, bestA = -1;
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+      }
       if (style === 4 && rimTpl) { /* the LOCKED fetched wheel, its own finish exactly as the owner approved it in the viewer - never repainted */
         const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h * rimScale / rimDia0;
         cl.rotation.y = th; cl.scale.setScalar(sc2);
