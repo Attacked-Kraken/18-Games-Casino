@@ -350,3 +350,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-388 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, jobs/G-388.md, CLAIMS.md | build/g-388-apexracer - CLAIMED Muse algre141 Oct 27 12:40 PM CDT (MAC tag) |
 | G-403 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-403.md, CLAIMS.md | build/g-403-apexflight |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
+| G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
