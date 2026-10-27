@@ -36,7 +36,11 @@ const PROBE = () => {
     const w = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left), h = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
     if (w > 6 && h > 6) over.push(`${a.n} + ${b.n}`);
   }
-  return { off: [...new Set(off)].slice(0, 4), over: [...new Set(over)].slice(0, 4), n: R.length,
+  // TAP SIZE (owner Oct 27 2026 "how don't we have a robot for this"): a button under 32 px either way is hard to hit with a thumb
+  // (Apple asks 44 pt). Only buttons fully on screen are measured - a cut-off one is already in 'off'.
+  const small = R.filter(o => !/stick|joy/i.test(String(o.e.id) + ' ' + String(o.e.className)) && o.r.right <= vw + 2 && o.r.bottom <= vh + 2 && o.r.left >= -2 && o.r.top >= -2
+    && Math.min(o.r.width, o.r.height) < 32).map(o => `${o.n} (${Math.round(o.r.width)}x${Math.round(o.r.height)})`);
+  return { off: [...new Set(off)].slice(0, 4), over: [...new Set(over)].slice(0, 4), small: [...new Set(small)].slice(0, 4), n: R.length,
            stick: R.some(o => /stick|joy/i.test(String(o.e.id) + ' ' + String(o.e.className))) };
 };
 
@@ -53,13 +57,17 @@ function gameSource(file) {
   return all;
 }
 
-export async function mobileCheck(page, file) {
+export async function mobileCheck(page, file, where = 'in play', opts = {}) {
   const out = { fail: [], check: [], data: null };
+  const scr = /upright/.test(where) ? 'a phone held upright (390x844)' : 'a sideways phone (844x390)';
   let p = null;
   try { p = await page.evaluate(PROBE); } catch (e) { out.check.push('Phone layout check could not run: ' + String(e.message).slice(0, 80)); return out; }
   out.data = p;
-  if (p.over.length) out.fail.push(`LAYOUT: buttons on top of each other on a sideways phone - ${p.over.join(', ')} - move or shrink them so every button can be pressed`);
-  if (p.off.length) out.fail.push(`LAYOUT: buttons cut off by the screen edge on a sideways phone (844x390) - ${p.off.join(', ')} - every control must sit fully on screen`);
+  const at = where === 'in play' ? '' : ' (' + where + ')';
+  if (p.over.length) out.fail.push(`LAYOUT: buttons on top of each other on ${scr}${at} - ${p.over.join(', ')} - move or shrink them so every button can be pressed`);
+  if (p.off.length) out.fail.push(`LAYOUT: buttons cut off by the screen edge on ${scr}${at} - ${p.off.join(', ')} - every control must sit fully on screen`);
+  if ((p.small || []).length) out.fail.push(`LAYOUT: buttons too small to tap on ${scr}${at} - ${p.small.join(', ')} - make each at least 32 px (Apple asks 44) so a thumb hits it`);
+  if (opts.noStick) return out;
   const src = gameSource(file);
   const touches = /touchstart|pointerdown/i.test(src);
   if (touches && src) {
