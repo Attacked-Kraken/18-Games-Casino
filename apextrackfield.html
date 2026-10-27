@@ -2343,9 +2343,10 @@ try{ rig.h.object.rotation.x=-(rig._lean||0); }catch(e){}
 // origin - the idle clip stands 0.05 m under the track, the SET crouch reaches -0.115 m
 // and a running stance foot dives to -0.16 m (REALITY SINK). Round 1 (the robot still
 // read 16 of 24 sunk on the run-only trim): a constant 0.065 m trim grounds every
-// clip, plus 0.03 m more while a run clip plays. G-393: +0.06 m in the SET crouch, +0.20 x lean (sprint lean drops the foot ~0.07 m).
-const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0)+((this.startPhase==='set')?0.06:0)+leanT*0.20;
-rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*7.2);
+// clip, plus 0.03 m more while a run clip plays. G-393: +0.06 m in the SET crouch, +0.20 x lean (sprint lean drops the foot ~0.07 m). G-393 r1: the crouch-exit blend dips the rear foot ~0.04 m on the first run frame, so a 0.11 m hold covers the 0.3 s blend, and trim falls slow (never faster than the pose rises).
+if(this.startPhase==='set')rig._setHold=0.11;else if(this.startPhase==='marks')rig._setHold=0;else rig._setHold=Math.max(0,(rig._setHold||0)-(this._dt||1/60)*0.367);
+const trimT=0.065+((mode==='run'&&(speedFrac||0)>=0.04)?0.03:0)+(this.startPhase==='set'?0.06:(rig._setHold||0))+leanT*0.20;
+rig._trim=(rig._trim||0)+(trimT-(rig._trim||0))*Math.min(1,(this._dt||1/60)*(trimT>(rig._trim||0)?7.2:2.5));
 try{ rig.h.object.position.y=rig._trim; }catch(e){}
 const t2=clamp(ts,0.5,2.4);
 rig.h.ts=t2; if(rig.h.act) rig.h.act.timeScale=t2;
