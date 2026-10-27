@@ -1419,10 +1419,10 @@ export default [
     }
   },
   {
-    id: "play-garage-sweep",
-    ask: "Owner Oct 25 10:18 PM: check EVERY garage tab so each option really changes the car into a nice new look - one test that opens the garage, goes through all 17 tabs, applies each option and takes a robot picture of the car for each tab, failing with the tab and option named when an option changes nothing or looks broken (floating, black, wrong colour, parts missing)",
+    id: "play-garage-sweep-a",
+    ask: "G-372 (extends the G-365 sweep, PR #1857, split so each group fits the robot per-test clock): garage looks: Cars, Paint, Wraps, Wrap Color, Finish - opens the garage, applies each option on these tabs and takes a robot picture per tab, failing with the tab and option named when an option changes nothing or looks broken (floating, black, wrong colour, parts missing)",
     async test(page, h) {
-      const TABS17 = [['cars', 'Cars'], ['paint', 'Paint'], ['wrap', 'Wraps'], ['wrapCol', 'Wrap Color'], ['fin', 'Finish'], ['rim', 'Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['tire', 'Tires'], ['eng', 'Engine'], ['turbo', 'Turbo'], ['nos', 'Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', 'Underglow'], ['tint', 'Tint'], ['cal', 'Calipers']];
+      const TABS17 = [['cars', 'Cars'], ['paint', 'Paint'], ['wrap', 'Wraps'], ['wrapCol', 'Wrap Color'], ['fin', 'Finish']];
       /* the whole tab runs page-side in one call: every option click rebuilds the car synchronously,
          so the census after each click is exact and the test stays inside the robot's per-test clock */
       const runTab = (tab) => {
@@ -1493,12 +1493,283 @@ export default [
         for (const f of r.fails || []) fails.push(f.replace(tab + ' >', tname + ' >'));
       }
       await h.eval(() => { const E = window.__erc, s = window.__sweepSave; if (s) { const o = JSON.parse(s); E.S.cars = o.cars; E.S.cur = o.cur; E.S.cash = o.cash; delete window.__sweepSave; delete window.__sweepHome; const key = Object.keys(localStorage).find((k) => k.indexOf('apexracer1_') === 0); if (key) try { localStorage.setItem(key, JSON.stringify(E.S)); } catch (e) {} } try { E.openGarage(); } catch (e) {} });
-      if (fails.length) return 'G-365 garage sweep: ' + [...new Set(fails)].slice(0, 6).join(' | ') + (fails.length > 6 ? ' | +' + (fails.length - 6) + ' more' : '');
-      if (unchecked.length) return { inconclusive: 'G-365 garage sweep - tabs that could not be checked: ' + unchecked.join(', ') };
+      if (fails.length) return 'G-372 garage sweep a: ' + [...new Set(fails)].slice(0, 6).join(' | ') + (fails.length > 6 ? ' | +' + (fails.length - 6) + ' more' : '');
+      if (unchecked.length) return { inconclusive: 'G-372 garage sweep a - tabs that could not be checked: ' + unchecked.join(', ') };
       return true;
     }
   },
-  { id: 'never-turbine-locked', cat: 'never', name: 'the LOCKED turbine wheel is the real fetched wheel in its own finish',
+  {
+    id: "play-garage-sweep-b",
+    ask: "G-372 (extends the G-365 sweep, PR #1857, split so each group fits the robot per-test clock): garage wheels: Rims, Rim Color, Wheel Size, Calipers, Tint - opens the garage, applies each option on these tabs and takes a robot picture per tab, failing with the tab and option named when an option changes nothing or looks broken (floating, black, wrong colour, parts missing)",
+    async test(page, h) {
+      const TABS17 = [['rim', 'Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['cal', 'Calipers'], ['tint', 'Tint']];
+      /* the whole tab runs page-side in one call: every option click rebuilds the car synchronously,
+         so the census after each click is exact and the test stays inside the robot's per-test clock */
+      const runTab = (tab) => {
+        const PERF = { tire: 1, eng: 1, turbo: 1, nos: 1 };
+        const E = window.__erc, R = window.__reality;
+        const census = () => { const root = R && R.player; const S = E.S, G = E.G; const acc = {}, mats = new Set(), pos = []; let meshes = 0, rimHex = null, calHex = null;
+          const hashTex = (img) => { try { const cx = img.getContext('2d'); const d = cx.getImageData(0, 0, Math.min(64, img.width), Math.min(8, img.height)).data; let s = 0; for (let i = 0; i < d.length; i += 16) s = (s * 31 + d[i] + d[i + 1] * 7 + d[i + 2] * 13) >>> 0; return img.width + 'x' + img.height + ':' + s; } catch (e) { return 'tex'; } };
+          if (root) root.traverse((q) => { if (q.userData && q.userData.acc) { const a = q.userData.acc; acc[a] = (acc[a] || 0) + 1; const p = q.getWorldPosition(q.position.clone()); pos.push(a + '@' + p.x.toFixed(2) + ',' + p.y.toFixed(2) + ',' + p.z.toFixed(2)); } if (!q.isMesh) return; meshes++; const ms = q.material ? (Array.isArray(q.material) ? q.material : [q.material]) : []; for (const mm of ms) mats.add((mm.color ? mm.color.getHexString() : '-') + '/' + (mm.roughness ?? '-') + '/' + (mm.metalness ?? '-') + '/' + (mm.envMapIntensity ?? '-') + '/' + (mm.clearcoat ?? '-') + '/' + (mm.iridescence ?? '-') + '/' + (mm.sheen ?? '-') + '/' + (mm.map ? (mm.map.image && mm.map.image.getContext ? hashTex(mm.map.image) : 'map') : ''));
+            if (q.userData && q.userData.acc) { if (q.userData.acc === 'rimface' && ms[0] && ms[0].color) rimHex = ms[0].color.getHexString(); if (q.userData.acc === 'caliper' && ms[0] && ms[0].color) calHex = ms[0].color.getHexString(); } });
+          const st = document.getElementById('gstats');
+          return { gSel: E.G.gSel, cfg: JSON.stringify(E.S.cars[E.G.gSel] || {}), acc, mats: [...mats].sort().join(';'), pos: pos.sort().join(';'), meshes, stats: st ? st.textContent : '', rimHex, calHex }; };
+        const opts = () => [...document.querySelectorAll('#gopts .go')].map((el, i) => ({ i, on: el.classList.contains('on'), pv: el.classList.contains('pv'), input: !!el.querySelector('input'), label: ((el.querySelector('b') || {}).textContent || el.dataset.paint || el.dataset.rc || el.dataset.cal || el.dataset.wc || el.dataset.glow || el.dataset.fin || el.dataset.wrap || el.dataset.car || el.textContent.trim().replace(/\s+/g, ' ')).slice(0, 26), data: Object.assign({}, el.dataset) }));
+        const fails = [];
+        const tname = tab;
+        const partCheck = (label, now) => {
+          for (const p of (now.pos ? now.pos.split(';') : [])) { if (!p) continue; const m = p.split('@')[1].split(',').map(Number); if (Math.abs(m[0]) > 1.3 || m[1] < -0.25 || m[1] > 2.2 || Math.abs(m[2]) > 3.2) fails.push(tname + ' > ' + label + ': a fitted part floats off the car at ' + p); }
+          if (tab === 'rim' && now.acc.rimface !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.rimface || 0) + ' rim faces on the car, not 4');
+          if (tab === 'cal' && now.acc.caliper !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.caliper || 0) + ' calipers on the car, not 4');
+        };
+        const tb = document.querySelector('.gt[data-t="' + tab + '"]');
+        if (!tb) return { fails, checked: 0, total: 0, noTab: true };
+        tb.click();
+        let base = census();
+        const list = opts();
+        let checked = 0;
+        const sig = (c) => c.mats + '|' + c.pos + '|' + c.meshes + '|' + JSON.stringify(c.acc) + '|' + c.gSel;
+        const isNeutral = (o) => o.data.wrap === 'none' || o.data.glow === '' || o.data.up === '0';
+        let neutral = null;
+        if (list.length && isNeutral(list[0]) && list[0].on) neutral = base;
+        for (const o of list) {
+          if (o.input) continue;
+          const cur = opts(); const btnNow = cur[o.i] || {};
+          if (btnNow.on) { checked++; if (isNeutral(o)) neutral = base; partCheck(o.label + ' (fitted)', base); continue; }
+          const before = base;
+          const el = document.querySelectorAll('#gopts .go')[o.i];
+          if (!el) continue;
+          el.click();
+          const now = census();
+          const after = opts(); const btn = after[o.i] || {};
+          const applied = !!(btn.on || btn.pv || now.cfg !== before.cfg);
+          const lookDiff = now.mats !== before.mats || now.pos !== before.pos || now.meshes !== before.meshes || now.gSel !== before.gSel || JSON.stringify(now.acc) !== JSON.stringify(before.acc);
+          const statDiff = now.stats !== before.stats;
+          checked++;
+          if (isNeutral(o)) neutral = now;
+          if (!applied) fails.push(tname + ' > ' + o.label + ': the option did not apply when tapped');
+          else if (neutral && !isNeutral(o)) { const dead = PERF[tab] ? now.stats === neutral.stats : sig(now) === sig(neutral); if (dead) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car')); }
+          else if (PERF[tab] ? !statDiff : !lookDiff) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car'));
+          if (tab === 'rimCol' && o.data.rc && now.rimHex) { const want = o.data.rc.slice(1).toLowerCase(); if (now.rimHex !== want) fails.push(tname + ' > ' + o.label + ': the rim reads ' + now.rimHex + ', not the picked ' + want); }
+          if (tab === 'cal' && o.data.cal && now.calHex) { const want = o.data.cal.slice(1).toLowerCase(); if (now.calHex !== want) fails.push(tname + ' > ' + o.label + ': the caliper reads ' + now.calHex + ', not the picked ' + want); }
+          if (tab === 'glow') { const want = o.data.glow ? 1 : 0; if ((now.acc.underglow || 0) !== want) fails.push(tname + ' > ' + o.label + ': underglow parts read ' + (now.acc.underglow || 0) + ', expected ' + want); }
+          if (tab === 'aero' && +(o.data.up || 0) > 0 && !(now.acc.wing >= 1)) fails.push(tname + ' > ' + o.label + ': no spoiler wing on the car');
+          if (tab === 'kit' && +(o.data.up || 0) > 0 && !(now.acc.bodykit >= 1)) fails.push(tname + ' > ' + o.label + ': no body kit parts on the car');
+          partCheck(o.label, now);
+          base = now;
+        }
+        if (tab === 'cars') { const home = window.__sweepHome; const b = [...document.querySelectorAll('#gopts .go')].find((el) => el.dataset.car === home); if (b && E.G.gSel !== home) b.click(); }
+        return { fails, checked, total: list.length };
+      };
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      await h.eval(() => { const E = window.__erc; window.__sweepSave = JSON.stringify({ cars: E.S.cars, cur: E.S.cur, cash: E.S.cash }); E.S.cash = 99999999; if (!E.S.cars[E.S.cur]) { const ids = Object.keys(E.S.cars); if (ids.length) E.S.cur = ids[0]; } window.__sweepHome = E.S.cur; E.openGarage(); });
+      await h.wait(400);
+      const fails = [], unchecked = [];
+      for (const [tab, tname] of TABS17) {
+        const r = await h.eval(runTab, tab);
+        await h.shot();
+        if (!r || r.noTab || !r.total) { unchecked.push(tname); continue; }
+        if (!r.checked) unchecked.push(tname);
+        for (const f of r.fails || []) fails.push(f.replace(tab + ' >', tname + ' >'));
+      }
+      await h.eval(() => { const E = window.__erc, s = window.__sweepSave; if (s) { const o = JSON.parse(s); E.S.cars = o.cars; E.S.cur = o.cur; E.S.cash = o.cash; delete window.__sweepSave; delete window.__sweepHome; const key = Object.keys(localStorage).find((k) => k.indexOf('apexracer1_') === 0); if (key) try { localStorage.setItem(key, JSON.stringify(E.S)); } catch (e) {} } try { E.openGarage(); } catch (e) {} });
+      if (fails.length) return 'G-372 garage sweep b: ' + [...new Set(fails)].slice(0, 6).join(' | ') + (fails.length > 6 ? ' | +' + (fails.length - 6) + ' more' : '');
+      if (unchecked.length) return { inconclusive: 'G-372 garage sweep b - tabs that could not be checked: ' + unchecked.join(', ') };
+      return true;
+    }
+  },
+  {
+    id: "play-garage-sweep-c",
+    ask: "G-372 (extends the G-365 sweep, PR #1857, split so each group fits the robot per-test clock): garage body: Spoiler, Body Kit, Underglow - opens the garage, applies each option on these tabs and takes a robot picture per tab, failing with the tab and option named when an option changes nothing or looks broken (floating, black, wrong colour, parts missing)",
+    async test(page, h) {
+      const TABS17 = [['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', 'Underglow']];
+      /* the whole tab runs page-side in one call: every option click rebuilds the car synchronously,
+         so the census after each click is exact and the test stays inside the robot's per-test clock */
+      const runTab = (tab) => {
+        const PERF = { tire: 1, eng: 1, turbo: 1, nos: 1 };
+        const E = window.__erc, R = window.__reality;
+        const census = () => { const root = R && R.player; const S = E.S, G = E.G; const acc = {}, mats = new Set(), pos = []; let meshes = 0, rimHex = null, calHex = null;
+          const hashTex = (img) => { try { const cx = img.getContext('2d'); const d = cx.getImageData(0, 0, Math.min(64, img.width), Math.min(8, img.height)).data; let s = 0; for (let i = 0; i < d.length; i += 16) s = (s * 31 + d[i] + d[i + 1] * 7 + d[i + 2] * 13) >>> 0; return img.width + 'x' + img.height + ':' + s; } catch (e) { return 'tex'; } };
+          if (root) root.traverse((q) => { if (q.userData && q.userData.acc) { const a = q.userData.acc; acc[a] = (acc[a] || 0) + 1; const p = q.getWorldPosition(q.position.clone()); pos.push(a + '@' + p.x.toFixed(2) + ',' + p.y.toFixed(2) + ',' + p.z.toFixed(2)); } if (!q.isMesh) return; meshes++; const ms = q.material ? (Array.isArray(q.material) ? q.material : [q.material]) : []; for (const mm of ms) mats.add((mm.color ? mm.color.getHexString() : '-') + '/' + (mm.roughness ?? '-') + '/' + (mm.metalness ?? '-') + '/' + (mm.envMapIntensity ?? '-') + '/' + (mm.clearcoat ?? '-') + '/' + (mm.iridescence ?? '-') + '/' + (mm.sheen ?? '-') + '/' + (mm.map ? (mm.map.image && mm.map.image.getContext ? hashTex(mm.map.image) : 'map') : ''));
+            if (q.userData && q.userData.acc) { if (q.userData.acc === 'rimface' && ms[0] && ms[0].color) rimHex = ms[0].color.getHexString(); if (q.userData.acc === 'caliper' && ms[0] && ms[0].color) calHex = ms[0].color.getHexString(); } });
+          const st = document.getElementById('gstats');
+          return { gSel: E.G.gSel, cfg: JSON.stringify(E.S.cars[E.G.gSel] || {}), acc, mats: [...mats].sort().join(';'), pos: pos.sort().join(';'), meshes, stats: st ? st.textContent : '', rimHex, calHex }; };
+        const opts = () => [...document.querySelectorAll('#gopts .go')].map((el, i) => ({ i, on: el.classList.contains('on'), pv: el.classList.contains('pv'), input: !!el.querySelector('input'), label: ((el.querySelector('b') || {}).textContent || el.dataset.paint || el.dataset.rc || el.dataset.cal || el.dataset.wc || el.dataset.glow || el.dataset.fin || el.dataset.wrap || el.dataset.car || el.textContent.trim().replace(/\s+/g, ' ')).slice(0, 26), data: Object.assign({}, el.dataset) }));
+        const fails = [];
+        const tname = tab;
+        const partCheck = (label, now) => {
+          for (const p of (now.pos ? now.pos.split(';') : [])) { if (!p) continue; const m = p.split('@')[1].split(',').map(Number); if (Math.abs(m[0]) > 1.3 || m[1] < -0.25 || m[1] > 2.2 || Math.abs(m[2]) > 3.2) fails.push(tname + ' > ' + label + ': a fitted part floats off the car at ' + p); }
+          if (tab === 'rim' && now.acc.rimface !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.rimface || 0) + ' rim faces on the car, not 4');
+          if (tab === 'cal' && now.acc.caliper !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.caliper || 0) + ' calipers on the car, not 4');
+        };
+        const tb = document.querySelector('.gt[data-t="' + tab + '"]');
+        if (!tb) return { fails, checked: 0, total: 0, noTab: true };
+        tb.click();
+        let base = census();
+        const list = opts();
+        let checked = 0;
+        const sig = (c) => c.mats + '|' + c.pos + '|' + c.meshes + '|' + JSON.stringify(c.acc) + '|' + c.gSel;
+        const isNeutral = (o) => o.data.wrap === 'none' || o.data.glow === '' || o.data.up === '0';
+        let neutral = null;
+        if (list.length && isNeutral(list[0]) && list[0].on) neutral = base;
+        for (const o of list) {
+          if (o.input) continue;
+          const cur = opts(); const btnNow = cur[o.i] || {};
+          if (btnNow.on) { checked++; if (isNeutral(o)) neutral = base; partCheck(o.label + ' (fitted)', base); continue; }
+          const before = base;
+          const el = document.querySelectorAll('#gopts .go')[o.i];
+          if (!el) continue;
+          el.click();
+          const now = census();
+          const after = opts(); const btn = after[o.i] || {};
+          const applied = !!(btn.on || btn.pv || now.cfg !== before.cfg);
+          const lookDiff = now.mats !== before.mats || now.pos !== before.pos || now.meshes !== before.meshes || now.gSel !== before.gSel || JSON.stringify(now.acc) !== JSON.stringify(before.acc);
+          const statDiff = now.stats !== before.stats;
+          checked++;
+          if (isNeutral(o)) neutral = now;
+          if (!applied) fails.push(tname + ' > ' + o.label + ': the option did not apply when tapped');
+          else if (neutral && !isNeutral(o)) { const dead = PERF[tab] ? now.stats === neutral.stats : sig(now) === sig(neutral); if (dead) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car')); }
+          else if (PERF[tab] ? !statDiff : !lookDiff) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car'));
+          if (tab === 'rimCol' && o.data.rc && now.rimHex) { const want = o.data.rc.slice(1).toLowerCase(); if (now.rimHex !== want) fails.push(tname + ' > ' + o.label + ': the rim reads ' + now.rimHex + ', not the picked ' + want); }
+          if (tab === 'cal' && o.data.cal && now.calHex) { const want = o.data.cal.slice(1).toLowerCase(); if (now.calHex !== want) fails.push(tname + ' > ' + o.label + ': the caliper reads ' + now.calHex + ', not the picked ' + want); }
+          if (tab === 'glow') { const want = o.data.glow ? 1 : 0; if ((now.acc.underglow || 0) !== want) fails.push(tname + ' > ' + o.label + ': underglow parts read ' + (now.acc.underglow || 0) + ', expected ' + want); }
+          if (tab === 'aero' && +(o.data.up || 0) > 0 && !(now.acc.wing >= 1)) fails.push(tname + ' > ' + o.label + ': no spoiler wing on the car');
+          if (tab === 'kit' && +(o.data.up || 0) > 0 && !(now.acc.bodykit >= 1)) fails.push(tname + ' > ' + o.label + ': no body kit parts on the car');
+          partCheck(o.label, now);
+          base = now;
+        }
+        if (tab === 'cars') { const home = window.__sweepHome; const b = [...document.querySelectorAll('#gopts .go')].find((el) => el.dataset.car === home); if (b && E.G.gSel !== home) b.click(); }
+        return { fails, checked, total: list.length };
+      };
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      await h.eval(() => { const E = window.__erc; window.__sweepSave = JSON.stringify({ cars: E.S.cars, cur: E.S.cur, cash: E.S.cash }); E.S.cash = 99999999; if (!E.S.cars[E.S.cur]) { const ids = Object.keys(E.S.cars); if (ids.length) E.S.cur = ids[0]; } window.__sweepHome = E.S.cur; E.openGarage(); });
+      await h.wait(400);
+      const fails = [], unchecked = [];
+      for (const [tab, tname] of TABS17) {
+        const r = await h.eval(runTab, tab);
+        await h.shot();
+        if (!r || r.noTab || !r.total) { unchecked.push(tname); continue; }
+        if (!r.checked) unchecked.push(tname);
+        for (const f of r.fails || []) fails.push(f.replace(tab + ' >', tname + ' >'));
+      }
+      await h.eval(() => { const E = window.__erc, s = window.__sweepSave; if (s) { const o = JSON.parse(s); E.S.cars = o.cars; E.S.cur = o.cur; E.S.cash = o.cash; delete window.__sweepSave; delete window.__sweepHome; const key = Object.keys(localStorage).find((k) => k.indexOf('apexracer1_') === 0); if (key) try { localStorage.setItem(key, JSON.stringify(E.S)); } catch (e) {} } try { E.openGarage(); } catch (e) {} });
+      if (fails.length) return 'G-372 garage sweep c: ' + [...new Set(fails)].slice(0, 6).join(' | ') + (fails.length > 6 ? ' | +' + (fails.length - 6) + ' more' : '');
+      if (unchecked.length) return { inconclusive: 'G-372 garage sweep c - tabs that could not be checked: ' + unchecked.join(', ') };
+      return true;
+    }
+  },
+  {
+    id: "play-garage-sweep-d",
+    ask: "G-372 (extends the G-365 sweep, PR #1857, split so each group fits the robot per-test clock): garage performance: Tires, Engine, Turbo, Nitro - opens the garage, applies each option on these tabs and takes a robot picture per tab, failing with the tab and option named when an option changes nothing or looks broken (floating, black, wrong colour, parts missing)",
+    async test(page, h) {
+      const TABS17 = [['tire', 'Tires'], ['eng', 'Engine'], ['turbo', 'Turbo'], ['nos', 'Nitro']];
+      /* the whole tab runs page-side in one call: every option click rebuilds the car synchronously,
+         so the census after each click is exact and the test stays inside the robot's per-test clock */
+      const runTab = (tab) => {
+        const PERF = { tire: 1, eng: 1, turbo: 1, nos: 1 };
+        const E = window.__erc, R = window.__reality;
+        const census = () => { const root = R && R.player; const S = E.S, G = E.G; const acc = {}, mats = new Set(), pos = []; let meshes = 0, rimHex = null, calHex = null;
+          const hashTex = (img) => { try { const cx = img.getContext('2d'); const d = cx.getImageData(0, 0, Math.min(64, img.width), Math.min(8, img.height)).data; let s = 0; for (let i = 0; i < d.length; i += 16) s = (s * 31 + d[i] + d[i + 1] * 7 + d[i + 2] * 13) >>> 0; return img.width + 'x' + img.height + ':' + s; } catch (e) { return 'tex'; } };
+          if (root) root.traverse((q) => { if (q.userData && q.userData.acc) { const a = q.userData.acc; acc[a] = (acc[a] || 0) + 1; const p = q.getWorldPosition(q.position.clone()); pos.push(a + '@' + p.x.toFixed(2) + ',' + p.y.toFixed(2) + ',' + p.z.toFixed(2)); } if (!q.isMesh) return; meshes++; const ms = q.material ? (Array.isArray(q.material) ? q.material : [q.material]) : []; for (const mm of ms) mats.add((mm.color ? mm.color.getHexString() : '-') + '/' + (mm.roughness ?? '-') + '/' + (mm.metalness ?? '-') + '/' + (mm.envMapIntensity ?? '-') + '/' + (mm.clearcoat ?? '-') + '/' + (mm.iridescence ?? '-') + '/' + (mm.sheen ?? '-') + '/' + (mm.map ? (mm.map.image && mm.map.image.getContext ? hashTex(mm.map.image) : 'map') : ''));
+            if (q.userData && q.userData.acc) { if (q.userData.acc === 'rimface' && ms[0] && ms[0].color) rimHex = ms[0].color.getHexString(); if (q.userData.acc === 'caliper' && ms[0] && ms[0].color) calHex = ms[0].color.getHexString(); } });
+          const st = document.getElementById('gstats');
+          return { gSel: E.G.gSel, cfg: JSON.stringify(E.S.cars[E.G.gSel] || {}), acc, mats: [...mats].sort().join(';'), pos: pos.sort().join(';'), meshes, stats: st ? st.textContent : '', rimHex, calHex }; };
+        const opts = () => [...document.querySelectorAll('#gopts .go')].map((el, i) => ({ i, on: el.classList.contains('on'), pv: el.classList.contains('pv'), input: !!el.querySelector('input'), label: ((el.querySelector('b') || {}).textContent || el.dataset.paint || el.dataset.rc || el.dataset.cal || el.dataset.wc || el.dataset.glow || el.dataset.fin || el.dataset.wrap || el.dataset.car || el.textContent.trim().replace(/\s+/g, ' ')).slice(0, 26), data: Object.assign({}, el.dataset) }));
+        const fails = [];
+        const tname = tab;
+        const partCheck = (label, now) => {
+          for (const p of (now.pos ? now.pos.split(';') : [])) { if (!p) continue; const m = p.split('@')[1].split(',').map(Number); if (Math.abs(m[0]) > 1.3 || m[1] < -0.25 || m[1] > 2.2 || Math.abs(m[2]) > 3.2) fails.push(tname + ' > ' + label + ': a fitted part floats off the car at ' + p); }
+          if (tab === 'rim' && now.acc.rimface !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.rimface || 0) + ' rim faces on the car, not 4');
+          if (tab === 'cal' && now.acc.caliper !== 4) fails.push(tname + ' > ' + label + ': only ' + (now.acc.caliper || 0) + ' calipers on the car, not 4');
+        };
+        const tb = document.querySelector('.gt[data-t="' + tab + '"]');
+        if (!tb) return { fails, checked: 0, total: 0, noTab: true };
+        tb.click();
+        let base = census();
+        const list = opts();
+        let checked = 0;
+        const sig = (c) => c.mats + '|' + c.pos + '|' + c.meshes + '|' + JSON.stringify(c.acc) + '|' + c.gSel;
+        const isNeutral = (o) => o.data.wrap === 'none' || o.data.glow === '' || o.data.up === '0';
+        let neutral = null;
+        if (list.length && isNeutral(list[0]) && list[0].on) neutral = base;
+        for (const o of list) {
+          if (o.input) continue;
+          const cur = opts(); const btnNow = cur[o.i] || {};
+          if (btnNow.on) { checked++; if (isNeutral(o)) neutral = base; partCheck(o.label + ' (fitted)', base); continue; }
+          const before = base;
+          const el = document.querySelectorAll('#gopts .go')[o.i];
+          if (!el) continue;
+          el.click();
+          const now = census();
+          const after = opts(); const btn = after[o.i] || {};
+          const applied = !!(btn.on || btn.pv || now.cfg !== before.cfg);
+          const lookDiff = now.mats !== before.mats || now.pos !== before.pos || now.meshes !== before.meshes || now.gSel !== before.gSel || JSON.stringify(now.acc) !== JSON.stringify(before.acc);
+          const statDiff = now.stats !== before.stats;
+          checked++;
+          if (isNeutral(o)) neutral = now;
+          if (!applied) fails.push(tname + ' > ' + o.label + ': the option did not apply when tapped');
+          else if (neutral && !isNeutral(o)) { const dead = PERF[tab] ? now.stats === neutral.stats : sig(now) === sig(neutral); if (dead) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car')); }
+          else if (PERF[tab] ? !statDiff : !lookDiff) fails.push(tname + ' > ' + o.label + (PERF[tab] ? ': applies but the car stats do not move' : ': applies but changes nothing on the car'));
+          if (tab === 'rimCol' && o.data.rc && now.rimHex) { const want = o.data.rc.slice(1).toLowerCase(); if (now.rimHex !== want) fails.push(tname + ' > ' + o.label + ': the rim reads ' + now.rimHex + ', not the picked ' + want); }
+          if (tab === 'cal' && o.data.cal && now.calHex) { const want = o.data.cal.slice(1).toLowerCase(); if (now.calHex !== want) fails.push(tname + ' > ' + o.label + ': the caliper reads ' + now.calHex + ', not the picked ' + want); }
+          if (tab === 'glow') { const want = o.data.glow ? 1 : 0; if ((now.acc.underglow || 0) !== want) fails.push(tname + ' > ' + o.label + ': underglow parts read ' + (now.acc.underglow || 0) + ', expected ' + want); }
+          if (tab === 'aero' && +(o.data.up || 0) > 0 && !(now.acc.wing >= 1)) fails.push(tname + ' > ' + o.label + ': no spoiler wing on the car');
+          if (tab === 'kit' && +(o.data.up || 0) > 0 && !(now.acc.bodykit >= 1)) fails.push(tname + ' > ' + o.label + ': no body kit parts on the car');
+          partCheck(o.label, now);
+          base = now;
+        }
+        if (tab === 'cars') { const home = window.__sweepHome; const b = [...document.querySelectorAll('#gopts .go')].find((el) => el.dataset.car === home); if (b && E.G.gSel !== home) b.click(); }
+        return { fails, checked, total: list.length };
+      };
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      await h.eval(() => { const E = window.__erc; window.__sweepSave = JSON.stringify({ cars: E.S.cars, cur: E.S.cur, cash: E.S.cash }); E.S.cash = 99999999; if (!E.S.cars[E.S.cur]) { const ids = Object.keys(E.S.cars); if (ids.length) E.S.cur = ids[0]; } window.__sweepHome = E.S.cur; E.openGarage(); });
+      await h.wait(400);
+      const fails = [], unchecked = [];
+      for (const [tab, tname] of TABS17) {
+        const r = await h.eval(runTab, tab);
+        await h.shot();
+        if (!r || r.noTab || !r.total) { unchecked.push(tname); continue; }
+        if (!r.checked) unchecked.push(tname);
+        for (const f of r.fails || []) fails.push(f.replace(tab + ' >', tname + ' >'));
+      }
+      await h.eval(() => { const E = window.__erc, s = window.__sweepSave; if (s) { const o = JSON.parse(s); E.S.cars = o.cars; E.S.cur = o.cur; E.S.cash = o.cash; delete window.__sweepSave; delete window.__sweepHome; const key = Object.keys(localStorage).find((k) => k.indexOf('apexracer1_') === 0); if (key) try { localStorage.setItem(key, JSON.stringify(E.S)); } catch (e) {} } try { E.openGarage(); } catch (e) {} });
+      if (fails.length) return 'G-372 garage sweep d: ' + [...new Set(fails)].slice(0, 6).join(' | ') + (fails.length > 6 ? ' | +' + (fails.length - 6) + ' more' : '');
+      if (unchecked.length) return { inconclusive: 'G-372 garage sweep d - tabs that could not be checked: ' + unchecked.join(', ') };
+      return true;
+    }
+  },
+{ id: 'never-deepdish-locked', cat: 'never', name: 'the LOCKED deep dish wheel is the real fetched wheel in its own finish',
+    ask: "Owner approved the Deep Dish artist wheel (MODELS.md erc-rim-deepdish, LOCKED Oct 26 2026): the Deep Dish rim style must be the real fetched wheel exactly as it looks in the viewer - its own copper finish, never repainted by Rim Color, never swapped without the owner",
+    async test(page, h) {
+      const fs = await import('node:fs'); const path = await import('node:path');
+      try { const md = fs.readFileSync(path.join(repoRoot, 'MODELS.md'), 'utf8'); const i = md.indexOf('- id: erc-rim-deepdish'); if (i < 0) return 'MODELS.md has no erc-rim-deepdish entry'; const sec = md.slice(i, i + 1600); if (!/- status: LOCKED/.test(sec)) return 'the deep dish wheel is not LOCKED in MODELS.md'; } catch (e) { return 'MODELS.md unreadable: ' + e.message; }
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy' };
+        const savedRim = E.S.cars.goblin.rim, savedCol = E.S.cars.goblin.rimCol;
+        E.S.cars.goblin.rim = 3; E.S.cars.goblin.rimCol = '#00ff00'; E.S.cur = 'goblin';
+        for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+        const prev = E.R; E.startRace(E.PLACES[0], 3);
+        for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+        if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return 'deep dish race did not rebuild';
+        const car = E.R.P.car; car.root.updateMatrixWorld(true);
+        const faces = [];
+        car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const v = q.position.clone(); q.getWorldPosition(v); faces.push({ c: [v.x, v.y, v.z], verts: q.geometry.attributes.position.count }); } });
+        let clusterVerts = 0, copper = 0, green = 0;
+        car.root.traverse((q) => { if (!q.isMesh) return; const v = q.position.clone(); q.getWorldPosition(v); if (!faces.some((f) => Math.hypot(v.x - f.c[0], v.y - f.c[1], v.z - f.c[2]) < 0.45)) return; clusterVerts += q.geometry.attributes.position.count; const cc = q.material && q.material.color; if (cc && cc.getHexString() === '00ff00') green++; if (cc && cc.r > 0.45 && cc.r - cc.g > 0.15) copper++; });
+        E.S.cars.goblin.rim = savedRim; E.S.cars.goblin.rimCol = savedCol;
+        return JSON.stringify({ faces: faces.length, minVerts: faces.length ? Math.min.apply(null, faces.map((f) => f.verts)) : 0, clusterVerts, copper, green }); });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.faces !== 4) return 'the deep dish car has ' + d.faces + '/4 rim faces';
+      if (d.minVerts < 3000) return 'a deep dish rim face has only ' + d.minVerts + ' vertices - that is the built stand-in, not the fetched wheel (15,684 measured)';
+      if (d.clusterVerts < 40000) return 'the four wheels carry only ' + d.clusterVerts + ' vertices - the fetched deep dish is not fitted';
+      if (d.green > 0) return 'Rim Color repainted the LOCKED deep dish wheel (' + d.green + ' parts took the colour) - it keeps its own finish';
+      if (d.copper < 4) return 'the deep dish copper finish is missing from the wheels (found ' + d.copper + ' copper parts)';
+      return true;
+    } },
+{ id: 'never-turbine-locked', cat: 'never', name: 'the LOCKED turbine wheel is the real fetched wheel in its own finish',
     ask: "Owner approved the Turbine artist wheel (MODELS.md erc-rim-turbine, LOCKED Oct 26 2026): the Turbine rim style must be the real fetched wheel exactly as it looks in the viewer - its own red finish and its own tyre, never repainted by Rim Color, never swapped without the owner",
     async test(page, h) {
       const fs = await import('node:fs'); const path = await import('node:path');
