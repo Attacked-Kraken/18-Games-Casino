@@ -324,9 +324,12 @@ for (const g of games) {
   for (const o of offSteps.slice(0, 2)) r.fail.push(`Start button off the screen: "${o.label}" is ${o.px}px below the bottom of a sideways phone - the owner has to scroll to press it. Every menu must fit 844x390 with NO scrolling: shrink/scale the menu panel or put the PLAY button at the top (STUDIO-STANDARD.md "Fits the screen")`);
   if (!(g.start || []).length) { try { await page.touchscreen.tap(422, 195); } catch (e) {} }
   mark('load + menu + start'); const idleA = await idleRead(page); const idleT0 = Date.now();
+  // VP Oct 27 2026 7:15 AM: on Racer main the phase 'idle watch + first pictures' takes 494 s of a 972 s run, and it ran on EVERY test part, so a
+  // 3- or 6-way split never got under the 35-min cap (#1906/#1908). Only part 1 takes the clip + extra pictures (merge-results keeps part 1's); marks below time each piece.
+  const TPK = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || ''); const firstPart = !TPK || +TPK[1] === 1;
   // GAMEPLAY CLIP (owner, Oct 18): the first ~8 s after start as a flip-book (one frame every ~0.4 s) - the workflow turns
   // it into img/<game>-clip.mp4 so the owner SEES motion (countdown camera, crowd, players) on his board, not a still.
-  try {
+  if (firstPart) try {
     const cdir = path.join(out, 'clips', slug); fs.mkdirSync(cdir, { recursive: true });
     const t0 = Date.now(); let k = 0;
     while (Date.now() - t0 < 8000 && k < 40) {
@@ -336,6 +339,7 @@ for (const g of games) {
     if (k >= 6) r.img.clip = 'img/' + slug + '-clip.mp4';
     const left = 8000 - (Date.now() - t0); if (left > 0) await page.waitForTimeout(left);
   } catch (e) { await page.waitForTimeout(8000); }
+  mark('timing: clip');
   const playJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   await page.waitForTimeout(1500);
   const play2Jpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
@@ -344,7 +348,8 @@ for (const g of games) {
   // EXTRA PICTURES (owner Oct 19, Gemini idea): games.json "pictures": [{"name":"garage","steps":["#mGarage"]}] - each one
   // opens the game fresh, presses its steps and saves img/<game>-pic-<name>.jpg, shown on the owner's job card
   // (e.g. the car in the garage next to the race picture: color, size and which way it points at a glance)
-  for (const pc of (g.pictures || []).slice(0, 3)) {
+  mark('timing: play pictures');
+  for (const pc of (firstPart ? (g.pictures || []) : []).slice(0, 3)) {
     try {
       const pp = await ctx.newPage();
       await pp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await pp.waitForTimeout(7000);
@@ -356,6 +361,7 @@ for (const g of games) {
       await pp.close();
     } catch (e) { r.check.push('Extra picture "' + pc.name + '" failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
   }
+  mark('timing: extra pictures');
   const f2 = await pageFacts(page).catch(() => ({ casino: '', rotate: '' }));
   if (play.dark > 0.93 || play.std < 6) r.fail.push('Gameplay screen is black or blank');
   if (!(g.start || []).length) r.check.push('No start steps in games.json yet - only the menu was checked');
