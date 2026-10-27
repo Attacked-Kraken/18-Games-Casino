@@ -40,6 +40,14 @@ def gh(*args, method="GET", fields=None):
     return json.loads(r.stdout) if r.stdout.strip() else {}
 
 
+def start_check(branch, wait=25):
+    """Oct 27 2026: ONE way to start the PR check - only when GitHub has not already started one for this commit (tools/game-check/start-check.py).
+    Two runs on one branch cancel each other (shared concurrency group) and the cancelled one wrote a false FAILED comment."""
+    r = subprocess.run(["python3", "tools/game-check/start-check.py", branch, str(wait)], capture_output=True, text=True)
+    print((r.stdout or "").strip()[:300])
+    return r.returncode == 0
+
+
 NOTES_UNION = ("jobs/QUEUE.md", "CLAIMS.md", "jobs/HELP.md")  # needs/window-N.md: both the window and the help desk append - see auto_resolvable
 
 
@@ -189,7 +197,7 @@ def fix_notes_conflict(pr):
     r = git("push", "-q", "origin", branch)
     if r.returncode != 0:
         return warn("could not push the merge to %s" % branch, r)
-    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    start_check(branch)
     print("::notice title=Merge robot::#%d: merged main into %s (notes kept from both sides), check restarted" % (n, branch))
     return True
 
@@ -220,7 +228,7 @@ def fix_credits(pr):
         return False
     if g("push", "origin", "HEAD:refs/heads/" + branch).returncode:
         print("fix_credits #%d: push refused" % n); return False
-    gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch})
+    start_check(branch)
     print("::notice title=Merge robot::PR #%d: robot wrote the missing credit line(s) and restarted the check. %s" % (n, " | ".join(l for l in out.splitlines() if "FIXED credit" in l)))
     return True
 
@@ -283,7 +291,7 @@ def restart_cancelled(pr):
     when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
     how = "re-ran it"
     if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
-        if gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": branch}) is None:
+        if not start_check(branch):
             print("::warning title=Merge robot::#%d: the check run %s was cancelled and could not be restarted" % (n, newest["id"]))
             return False
         how = "started a new run"
@@ -453,7 +461,7 @@ def main():
         if behind > 0:
             res = gh("repos/%s/pulls/%d/update-branch" % (REPO, n), method="PUT")
             if res is not None:
-                gh("repos/%s/actions/workflows/game-check-pr.yml/dispatches" % REPO, method="POST", fields={"ref": pr["head"]["ref"]})
+                start_check(pr["head"]["ref"])
                 print("::notice title=Merge robot::#%d was %d commit(s) behind main - merged main into %s and restarted its check; merges next round if green" % (n, behind, pr["head"]["ref"]))
             else:
                 print("#%d: behind main by %d but could not update the branch" % (n, behind))

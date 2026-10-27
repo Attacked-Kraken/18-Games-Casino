@@ -4,7 +4,7 @@ name: Play testers
 # Overnight: 10 PM, 1 AM, 4 AM Central, plus by hand. Report: the "playtests" branch (README.md + results.json).
 on:
   schedule:
-    - cron: '13 3,6,9 * * *'
+    - cron: '13 2,4,6,8 * * *'   # VP Oct 27 2026: 4 tries a night (9 PM-3 AM Central); a late start after 6 AM is skipped
   workflow_dispatch:
 
 permissions:
@@ -15,7 +15,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # VP Oct 27 2026 (owner "fix overnight play tester"): GitHub starts scheduled runs hours late (the 4 AM run started 10:22 AM),
+  # so the 4 testers took daytime robot machines from the builders' checks. A scheduled run that starts outside 9 PM - 6 AM
+  # Central now stops at once; a hand-started run always goes.
+  night:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      go: ${{ steps.t.outputs.go }}
+    steps:
+      - id: t
+        run: |
+          H=$(TZ=America/Chicago date +%-H)
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$H" -ge 21 ] || [ "$H" -lt 6 ]; then echo "go=1" >> $GITHUB_OUTPUT; echo "go (hour $H Central)"
+          else echo "go=0" >> $GITHUB_OUTPUT; echo "::notice title=Play testers::scheduled run started late at hour $H Central (daytime) - skipped so builders keep the robot machines"; fi
   play:
+    needs: night
+    if: needs.night.outputs.go == '1'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -55,8 +71,8 @@ jobs:
           retention-days: 3
 
   report:
-    needs: play
-    if: always()
+    needs: [night, play]
+    if: always() && needs.night.outputs.go == '1'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
