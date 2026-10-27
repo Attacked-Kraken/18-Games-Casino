@@ -145,6 +145,11 @@
    "file": "tools/game-check/check.mjs",
    "needle": "load[b] += t.w",
    "rule": "greedy balance of tests across TEST_PART robots"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "if (crashed) { skipped.push(r.file); continue; }",
+   "rule": "a game the robot's own browser could not finish checking never counts as broken for AUTO-UNDO (VP Oct 27 2026, #1984/#2009)"
   }
  ]
 }
