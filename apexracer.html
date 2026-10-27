@@ -167,6 +167,7 @@
   #menu #mbtns .wide { grid-column:auto; font-size:19px; padding:14px; background:linear-gradient(135deg,#ff2bd6,#8a5cff 55%,#19e6ff); border-color:transparent; box-shadow:0 6px 22px rgba(255,43,214,.35), 0 0 30px rgba(25,230,255,.2); }
   #menu #who { text-align:left; font-size:12px; }
   #menu #who { display:flex; gap:6px; align-items:center; } #menu #who input { flex:1 1 0; min-width:0; width:auto; padding:7px 9px; }
+  @media (max-height:500px), (orientation:portrait) { #mcol { gap:3px; top:calc(100px + var(--sat)); } #menu #mbtns { gap:3px; } #menu #mbtns .neo { padding-top:7px; padding-bottom:7px; } }
 </style>
 </head>
 <body>
