@@ -251,3 +251,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A PR that changes the robot auditor or .github/ never merges itself: file ONE "HELP-VP: robot" line naming the PR so a Claude hand-merges it once green (T-222 and T-225 both asked about #1972 - a line saves the second wake).
+
+## 2026-10-27 help desk
+- A PR whose check shows cancelled Racer parts is a robot cap problem, not a game problem: read its Check status Reason lines first; only real red lines (e.g. never-g-270-p1 top speed) belong to the builder.
