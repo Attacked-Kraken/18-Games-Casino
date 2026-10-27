@@ -1553,4 +1553,30 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-race-start-after-quali',
+    ask: 'from the menu, qualifying can be skipped and the race starts (SKIP is up before the kit attach finishes)',
+    test: async (page, h) => {
+      if (!await g33Reset(page, h, null)) return 'reset failed';
+      await h.press('#careerBtn');
+      await h.press('#toTeamBtn');
+      await h.press('#startBtn');
+      await h.wait(1200);
+      await h.press('#qualiSkip');
+      await h.wait(800);
+      await h.press('#raceBtn');
+      let m = '?';
+      for (let i = 0; i < 16; i++) {
+        await h.wait(600);
+        m = await h.eval(() => { const t = window.__test; return t ? t.race().mode : '?'; }).catch(() => '?');
+        if (m === 'race') break;
+      }
+      if (m !== 'race') return 'race never started (mode ' + m + ')';
+      await h.eval(() => { const t = window.__test; if (t) t.setInput({ gas: true }); }).catch(() => {});
+      await h.wait(3000);
+      const mv = await h.eval(() => { const t = window.__test; if (!t) return null; const cs = t.cars(); const p = cs.find(c => c.isPlayer); return { pv: p ? p.v : -1, mov: cs.filter(c => c.v > 1).length }; }).catch(() => null);
+      if (!mv || mv.pv <= 0 || mv.mov < 15) return 'race started but field not moving: ' + JSON.stringify(mv);
+      return true;
+    }
+  },
 ];
