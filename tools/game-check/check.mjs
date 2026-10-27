@@ -496,7 +496,18 @@ for (const g of games) {
     // VP Oct 27 2026: ONLY_TESTS=id1,id2 replays just those play tests (the auto-undo recheck - seconds, not a whole 20-min game)
     if (process.env.ONLY_TESTS) { const want = process.env.ONLY_TESTS.split(','); list = list.filter(fx => want.includes(fx.id)); }
     const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
-    if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
+    if (TP) {
+      const k = +TP[1], n = +TP[2];
+      // VP Oct 27 2026: every-n-th test left Racer's census tests (~2 min each) in a few parts (54 s vs 563 s) -> parts hit the 35-min cap. Now balanced by measured seconds
+      // (tools/game-check/test-times.json, unknown ids = median); all robots compute the same split from the same list + file.
+      let times = {}; try { times = JSON.parse(fs.readFileSync(new URL('./test-times.json', import.meta.url), 'utf8')); } catch {}
+      const known = Object.values(times).sort((a, b) => a - b), med = known.length ? known[known.length >> 1] : 30;
+      const w = fx => times[fx.id] ?? med;
+      const order = list.map((fx, i) => ({ fx, i, w: w(fx) })).sort((a, b) => b.w - a.w || a.i - b.i);
+      const load = Array(n).fill(0), mine = new Set();
+      for (const t of order) { let b = 0; for (let j = 1; j < n; j++) if (load[j] < load[b]) b = j; load[b] += t.w; if (b === k - 1) mine.add(t.i); }
+      list = list.filter((_, i) => mine.has(i)); r.part = k + '/' + n;
+    }
     // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
     // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.
