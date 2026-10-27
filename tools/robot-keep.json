@@ -135,6 +135,21 @@
    "file": "tools/merge-robot.py",
    "needle": "pr_check_passed(pr)",
    "rule": "a binary conflict is settled only for a PR the robot already passed"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "test-times.json",
+   "rule": "test parts are balanced by measured seconds, not round-robin (Racer NOT RUN cap, 04 Oct 27 2026)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "load[b] += t.w",
+   "rule": "greedy balance of tests across TEST_PART robots"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "if (crashed) { skipped.push(r.file); continue; }",
+   "rule": "a game the robot's own browser could not finish checking never counts as broken for AUTO-UNDO (VP Oct 27 2026, #1984/#2009)"
   }
  ]
 }
