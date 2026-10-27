@@ -143,9 +143,41 @@ jobs:
           path: game-check-out
           if-no-files-found: ignore
 
+  # PART GUARD (owner Oct 27 2026 3:11 PM): photographs every part of a game listed in games.json "parts" on main AND on this pull
+  # request (same robot, game time held still), and tools/game-check/judge.mjs fails a PR whose picture of a part it did NOT name
+  # ("PART: rims" in the title) changed. Today only games that list "parts" are guarded; it never blocks on a robot hiccup (continue-on-error).
+  parts:
+    needs: plan
+    if: contains(needs.plan.outputs.list, 'apexracer.html')
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha || 'main' }}
+          path: base-copy
+      - name: Photograph the parts on main and on this pull request
+        continue-on-error: true
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: |
+          npm install --no-save --no-package-lock playwright@1.48.2
+          mkdir -p parts-guard
+          node tools/game-check/parts.mjs base-copy . apexracer.html parts-guard
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parts-guard
+          path: parts-guard
+          if-no-files-found: ignore
+
   check:
     name: check
-    needs: [plan, play]
+    needs: [plan, play, parts]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -167,6 +199,11 @@ jobs:
         with:
           pattern: play-*
           path: parts
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: parts-guard
+          path: parts-guard
       - name: Put the results together and judge
         env:
           PR_BRANCH: ${{ github.head_ref || github.ref_name }}

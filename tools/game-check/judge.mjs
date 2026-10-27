@@ -108,6 +108,20 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
 
 }
 
+// PART GUARD verdict. pg = parts-guard.json from parts.mjs. A part counts as CHANGED when its picture differs from main's by more than
+// PART_DIFF_MIN percent of the picture (noise floor measured on identical code: see tools/game-check/parts-noise.json).
+export function partGuard(pg, title = '', min = 3) {
+  const out = [], m = String(title).match(/\bPART:\s*([A-Za-z0-9_-]+)/i), named = m ? m[1].toLowerCase() : '';
+  const rows = (pg.pictures || []).filter(r => typeof r.diff === 'number');
+  const changed = rows.filter(r => r.diff > min);
+  const link = (r) => `before ${r.base} / after ${r.head}`;
+  if (changed.length && !named) out.push(`PART GUARD: this pull request changes the look of ${[...new Set(changed.map(r => r.part))].join(', ')} but its title names no part - put "PART: <part>" in the title (one part per job)`);
+  else for (const r of changed) if (r.part.toLowerCase() !== named && !(r.ok || []).map(x => String(x).toLowerCase()).includes(named)) out.push(`PART GUARD: ${pg.game} - the "${r.part}" picture changed ${r.diff}% (${link(r)}) but your job is PART: ${named}. Undo the ${r.part} change, or open a separate job for it.`);
+  if ((pg.inner || []).length) out.push(`PART GUARD: game code reshaped a model's inner pieces (${pg.inner.slice(0, 4).join('; ')}) - a model's parts are never changed by the game (STUDIO-STANDARD 3b rule 10)`);
+  const c = pg.cover || {}; if (typeof c.head === 'number' && typeof c.base === 'number' && c.head - c.base > 10) out.push(`PART GUARD: game-made shapes now cover ${c.head}% of the model (main: ${c.base}%) in the "${c.picture}" picture - a shell or wrap is drawn over the model`);
+  return out;
+}
+
 if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
   const [resFile, baseFile, changedFile, outDir] = process.argv.slice(2);
   let data = {}; try { data = JSON.parse(fs.readFileSync(resFile || 'game-check-out/results.json', 'utf8')); } catch (e) {}
@@ -144,6 +158,15 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
     }
   } catch (e) { console.log('::warning title=missing-reason::' + String(e).slice(0, 200)); }
   for (const m of (data.missing || [])) blockers.push(`${m}: ${why[m] || 'the robot could not play it (its run failed or timed out; the run could not be read)'}`);
+  // PART GUARD (owner Oct 27 2026 3:11 PM, all games): the parts job (tools/game-check/parts.mjs) photographed every listed part on main and
+  // on this PR; a part that changed but was not named in the PR title ("PART: rims") is a blocker, with both pictures.
+  try {
+    const pj = process.env.PARTS_JSON || 'parts-guard/parts-guard.json';
+    if (fs.existsSync(pj)) {
+      const pg = JSON.parse(fs.readFileSync(pj, 'utf8')), title = process.env.PR_TITLE || '';
+      for (const b of partGuard(pg, title)) blockers.push(b);
+    }
+  } catch (e) { console.log('::warning title=part-guard::' + String(e).slice(0, 200)); }
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
   for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));

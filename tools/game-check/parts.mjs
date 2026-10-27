@@ -35,23 +35,35 @@ function serve(root, port) {
       if (/GLTFLoader\.js$/.test(p)) d = Buffer.from(d.toString() + LOADER_ADDON);
       r.writeHead(200, { 'Content-Type': T[path.extname(f).toLowerCase()] || 'application/octet-stream' }); r.end(d); }); }).listen(port, '127.0.0.1', () => ok(s)); });
 }
+// SAME TIME ON BASE AND HEAD without Playwright's clock (page.clock hangs the Racer page): game time = frame number.
+// performance.now / Date.now / the rAF timestamp all come from a frame counter that only moves when we let it
+// (adv() below), so a turntable is at the same angle on both runs and stops dead while we take the picture.
+const TIME_TRAP = () => { let frames = 0, cap = 1e9;   // time runs free while the page loads (a game that never sees time pass never starts), then __pgSnap pins it const dt = 100, t0 = Date.parse('2026-01-01T12:00:00Z');
+  window.__pgFrames = () => frames; window.__pgSnap = (n) => { frames = n; cap = n; }; window.__pgCap = (n) => { cap = frames + n; return cap; };
+  performance.now = () => frames * dt; const D = Date.now; Date.now = () => t0 + frames * dt;
+  const R = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (cb) => R(() => { if (frames < cap) frames++; try { cb(frames * dt); } catch (e) { setTimeout(() => { throw e; }); } }); };
+async function adv(pg, ms) {   // moves game time forward by whole frames and waits until they were drawn
+  const n = Math.max(1, Math.round(ms / 500));   // the page draws ~0.5 frames a second on the robot's software GL, so a frame is worth 100 ms of game time and we wait for few of them
+  const cap = await pg.evaluate((n) => window.__pgCap(n), n);
+  const t0 = Date.now(); while (Date.now() - t0 < 60000) { if (await pg.evaluate((c) => window.__pgFrames() >= c, cap)) return; await pg.waitForTimeout(100); } }
 const SCENE_TRAP = () => { window.__pgScenes = []; try { Object.defineProperty(Object.prototype, 'isScene', { configurable: true, set(v) {
   Object.defineProperty(this, 'isScene', { value: v, writable: true, enumerable: true, configurable: true }); try { if (v) window.__pgScenes.push(this); } catch (e) {} } }); } catch (e) {} };
 async function press(pg, sel) {
   try { const el = pg.locator(sel).first(); await el.scrollIntoViewIfNeeded({ timeout: 3000 }).catch(() => {}); await el.click({ timeout: 5000, force: true }); }
   catch (e) { return 'step ' + sel + ' not found'; }
-  await pg.clock.runFor(1500); return '';
+  await adv(pg, 1500); return '';
 }
 async function shoot(browser, url, steps) {
   const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 1 });
-  const pg = await ctx.newPage(); await pg.addInitScript(SCENE_TRAP);
-  await pg.clock.install({ time: new Date('2026-01-01T12:00:00Z') });     // same frozen time on base and head = same turntable angle
-  const errs = [];
+  const pg = await ctx.newPage(); await pg.addInitScript(SCENE_TRAP); await pg.addInitScript(TIME_TRAP);
+  const errs = []; const mark = (m) => { if (process.env.PARTS_DEBUG) console.error(new Date().toISOString().slice(11, 19), m); };
   await pg.goto(url, { waitUntil: 'load', timeout: 60000 });
-  for (let i = 0; i < 16; i++) { await pg.clock.runFor(500); await pg.waitForTimeout(150); }   // let the models load (real network) while game time is ours
+  mark('loaded page'); await pg.waitForTimeout(12000); await pg.evaluate(() => window.__pgSnap(200)); await adv(pg, 1000); mark('after load frames');      // game time stands still while the models load (real seconds), then two frames   // let the models load (real network) while game time is ours
   for (const st of steps || []) { const e = await press(pg, st); if (e) errs.push(e); }
-  await pg.clock.runFor(2500); await pg.waitForTimeout(400);
+  mark('steps done'); await adv(pg, 2500); await pg.waitForTimeout(400); mark('settled');
   const jpg = await pg.screenshot({ type: 'jpeg', quality: 70, timeout: 60000 });
+  mark('jpg taken');
   const facts = await pg.evaluate(() => {
     const out = { inner: [], cover: null };
     try {
@@ -69,13 +81,14 @@ async function shoot(browser, url, steps) {
     } catch (e) { out.err = String(e).slice(0, 120); }
     return out;
   });
+  mark('facts read');
   // COVER: picture with the game-made meshes inside the model holders hidden vs shown, compared only where the model is
   let cover = null;
   if (facts.roots) {
     const set = async (mode) => { await pg.evaluate((mode) => { for (const h of window.__pgRoots || []) h.traverse(q => { if (!q.isMesh) return;
       const glb = !!(q.userData && q.userData.__pgGlb); if (q.userData.__pgVis === undefined) q.userData.__pgVis = q.visible;
       q.visible = mode === 'all' ? q.userData.__pgVis : mode === 'glb' ? (glb && q.userData.__pgVis) : false; }); }, mode);
-      await pg.clock.runFor(100); await pg.waitForTimeout(150); return pg.screenshot({ type: 'png', timeout: 60000 }); };
+      await adv(pg, 100); await pg.waitForTimeout(150); return pg.screenshot({ type: 'png', timeout: 60000 }); };
     const none = await set('none'), glb = await set('glb'), all = await set('all');
     cover = { none, glb, all };
   }
@@ -106,12 +119,12 @@ const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable
 const sHead = await serve(HEAD, 8841), sBase = BASE && BASE !== '-' ? await serve(BASE, 8842) : null;
 const slug = GAME.replace(/\.html$/, '');
 const out = { game: GAME, pictures: [], inner: [], cover: {}, errs: [], at: new Date().toISOString() };
-for (const pt of PARTS.slice(0, 24)) {
+for (const pt of PARTS.filter(x => !process.env.PARTS_ONLY || x.name === process.env.PARTS_ONLY).slice(0, 24)) {
   const nm = String(pt.name).replace(/[^a-z0-9-]/gi, '');
   try {
     const h = await shoot(browser, 'http://127.0.0.1:8841/' + GAME + (pt.query || ''), pt.steps);
     fs.writeFileSync(path.join(OUT, 'img', 'parts', slug + '-' + nm + '-head.jpg'), h.jpg);
-    const row = { name: pt.name, part: pt.part || pt.name, head: 'img/parts/' + slug + '-' + nm + '-head.jpg' };
+    const row = { name: pt.name, part: pt.part || pt.name, ok: pt.ok || [], head: 'img/parts/' + slug + '-' + nm + '-head.jpg' };
     if (h.errs.length) out.errs.push(pt.name + ': ' + h.errs.join('; '));
     for (const x of h.inner) if (!out.inner.includes(x)) out.inner.push(x);
     if (sBase) {
