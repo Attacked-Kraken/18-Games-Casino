@@ -166,7 +166,7 @@
   #menu #mbtns #mCredits { order:6; }
   #menu #mbtns .wide { grid-column:auto; font-size:19px; padding:14px; background:linear-gradient(135deg,#ff2bd6,#8a5cff 55%,#19e6ff); border-color:transparent; box-shadow:0 6px 22px rgba(255,43,214,.35), 0 0 30px rgba(25,230,255,.2); }
   #menu #who { text-align:left; font-size:12px; }
-  #menu #who input { width:128px; padding:7px 9px; }
+  #menu #who { display:flex; gap:6px; align-items:center; } #menu #who input { flex:1 1 0; min-width:0; width:auto; padding:7px 9px; }
 </style>
 </head>
 <body>
@@ -2444,7 +2444,7 @@ function show(...ids) { SCR.forEach((i) => { $(i).style.display = 'none'; }); id
 const esc = (s) => String(s).replace(/[<>&"]/g, '');
 function refreshMenu() {
   $('mstat').innerHTML = (GIFT3 ? `<span style="background:linear-gradient(135deg,#ffd23a,#ff8a00);color:#2a1600">👑 Owner gift +${fmt$(3000000)} added!</span>` : '') + (GIFT ? `<span style="background:linear-gradient(135deg,#ffd23a,#ff8a00);color:#2a1600">🎁 Gift +${fmt$(200000)} added!</span>` : '') + (WELCOME ? `<span style="background:linear-gradient(135deg,#7dffb0,#19e6ff);color:#032">🎁 Welcome bonus ${fmt$(200000)}!</span>` : '') + `<span>🪙 ${fmt$(S.cash)}</span><span>⭐ ${S.rep.toLocaleString()} rep</span><span>🏆 ${S.wins} wins</span><span>🚗 ${CAR[S.cur].name}</span>`;
-  $('who').innerHTML = user ? `Racer: <b>${esc(user)}</b>` : `<input id="nm" maxlength="16" placeholder="Your racer name" /> <button class="neo alt" id="nmB" style="padding:9px 12px;font-size:13px;min-height:44px;min-width:44px">Save</button>`;
+  $('who').innerHTML = user ? `Racer: <b>${esc(user)}</b>` : `<input id="nm" maxlength="16" placeholder="Your racer name" /> <button class="neo alt" id="nmB" style="padding:9px 12px;font-size:13px;min-height:44px;min-width:44px;flex:none">Save</button>`;
   if (!user) $('nmB').onclick = () => { const n = ($('nm').value || '').replace(/[^a-zA-Z0-9_\- ]/g, '').trim().slice(0, 16); if (!n) return; try { localStorage.setItem('apexracer_username', n); } catch (e) {} user = n; load(); refreshMenu(); };
   $('mQ').textContent = '✨ Graphics: ' + { ultra: 'Ultra', high: 'High', fast: 'Fast' }[S.q];
   refreshMute();
