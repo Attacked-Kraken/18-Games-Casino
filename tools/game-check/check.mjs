@@ -16,6 +16,7 @@ import fs from 'fs';
 import path from 'path';
 import { realityCheck, playerScreenBox, playerCloseUp } from './reality.mjs';
 import { mobileCheck } from './mobile.mjs';
+const firstPartOf = () => { const m = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || ''); return !m || +m[1] === 1; };
 
 // a play test written without `ask:` (e.g. only `title:` or just an id) must still print a real name, never "undefined"
 const askOf = (fx) => String((fx && (fx.ask || fx.title || fx.name || fx.id)) || 'unnamed test');
@@ -289,6 +290,8 @@ for (const g of games) {
   const menuJpg = await page.screenshot({ timeout: 90000, type: 'jpeg', quality: 62 });
   fs.writeFileSync(path.join(out, 'img', slug + '-1-menu.jpg'), menuJpg); r.img.menu = 'img/' + slug + '-1-menu.jpg';
   const menu = await measure(menuJpg);
+  // PHONE LAYOUT on the MENU too (owner Oct 27 2026: cut-off / too-small buttons in menus, not only in play) - part 1 only
+  if (firstPartOf()) { try { const mm = await mobileCheck(page, g.file, 'menu', { noStick: true }); r.layoutMenu = mm.data; r.fail.push(...mm.fail); } catch (e) {} }
   const f1 = await pageFacts(page).catch(() => ({ title: '', casino: '', rotate: '', overflow: 0 }));
   r.title = f1.title;
   if (menu.dark > 0.93 || menu.std < 6) r.fail.push('Opening screen is black or blank');
@@ -606,6 +609,8 @@ for (const g of games) {
   fs.writeFileSync(path.join(out, 'img', slug + '-3-upright.jpg'), upJpg); r.img.upright = 'img/' + slug + '-3-upright.jpg';
   const up = await measure(upJpg);
   const f3 = await pageFacts(p2).catch(() => ({ rotate: '' }));
+  // PHONE LAYOUT held upright (owner Oct 27 2026, window 13 finding F-2: portrait clipping / tap size had no robot)
+  if (firstPartOf()) { try { const mu = await mobileCheck(p2, g.file, 'upright menu', { noStick: true }); r.layoutUpright = mu.data; r.fail.push(...mu.fail); } catch (e) {} }
   if (f3.rotate) r.fail.push(`Shows a rotate sign upright (landscape law says none): "${f3.rotate}"`);
   if (up.dark > 0.93 || up.std < 6) r.fail.push('Upright screen is black or blank');
   // SHARPNESS (owner: "get them to not make blurry players"): the 3D picture must be drawn at 1.5x or more on a 2x phone

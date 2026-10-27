@@ -40,3 +40,9 @@ Every message between GPT and window 13 names: the game, the defect or gap, the 
 
 ## SELF-DRIVE - LOCKED (owner Oct 26 2026 10:53 PM "sending by itself, 13 finds the worst things for GPT to fix")
 Window 13 chooses the work. After each answer it ranks the open problems in reviews/FACTORY-LOOP.md (minutes lost, repeats, games affected), takes the worst one with no GPT answer yet, and files the next reviews/auditor-13-<n>.md to GPT (one question, real file text pasted). Verified results go into the finding table. Max 4 rounds a night, stop on IDLE. Nobody else has to push a message.
+
+## WINDOW 14 STANDING JOB - JOIN CONFLICTED PULL REQUESTS (VP, owner Oct 27 2026)
+When the laptop courier types "CONFLICT FIX C-<N>": check out that PR's branch, merge origin/main into it, keep BOTH sides'
+intent at every conflicted spot (never just take one side), `node --check` every changed .js/.mjs, push to the SAME branch, and
+comment on the PR "conflict joined by window 14, C-<N>". The robot re-checks and merges it. If the two sides truly contradict,
+reply IDLE with the exact lines and file one HELP-VP line. The courier follows each order until the PR is clean or merged.

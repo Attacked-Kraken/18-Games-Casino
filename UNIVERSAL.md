@@ -55,3 +55,10 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
 - You do not have to remember: `node tools/asset-check.mjs --fix` writes the credit line (title, maker, licence, source link, changes) into the credits box from the ASSETS.md entry and updates its "used in" line. The merge robot runs it by itself on a build/fix/test/robot PR whose ONLY failed check is `assets`, pushes the line to the PR branch and restarts the check (tools/merge-robot.py `fix_credits`).
 - The asset check's red line now carries the exact line to paste, so a Muse can also add it by hand. Never weaken the check, and never skip the credit - it is the licence.
 - A new game needs a credits box with id="credits" (the fixer cannot add one - it says so in a warning and the PR stays red).
+
+## ONE OPEN PULL REQUEST PER GAME PAGE (VP, owner Oct 27 2026 - LOCKED)
+- A window keeps at most ONE open pull request that changes its game page (apex<game>.html). A new fix the owner types while that
+  PR is open goes onto THE SAME branch (push again), never a second PR - two PRs on one page is how Racer #1877/#1884/#1902/#1906
+  ended up conflicting with each other for a day.
+- A conflicted PR is joined by WINDOW 14 by itself (the laptop courier types it a "CONFLICT FIX C-<PR>" order after 10 min).
+  The owning window does not need to wait for it; it keeps working on its open PR.
