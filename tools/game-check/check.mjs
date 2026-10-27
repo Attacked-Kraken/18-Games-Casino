@@ -460,6 +460,8 @@ for (const g of games) {
     }
     // owner Oct 23 2026 7:47 PM: TEST_PART=k/n plays only every n-th play test starting at k (Hockey's 56 tests on 3 robots side by side);
     // merge-results puts the parts back together. Part 1 also does everything else (pictures, reality, Safari).
+    // VP Oct 27 2026: ONLY_TESTS=id1,id2 replays just those play tests (the auto-undo recheck - seconds, not a whole 20-min game)
+    if (process.env.ONLY_TESTS) { const want = process.env.ONLY_TESTS.split(','); list = list.filter(fx => want.includes(fx.id)); }
     const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
     if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
     // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
