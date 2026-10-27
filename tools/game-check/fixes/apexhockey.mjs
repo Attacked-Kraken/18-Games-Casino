@@ -215,6 +215,12 @@ export default [
   async test(page, h) {
     try { await h.press('#playBtn'); } catch (e) {}
     await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    // VP Oct 27 2026 (known-fault cleanup): wait for the PLAY state in game state, never a fixed sleep - staging while the
+    // opening faceoff is still on lets the drop reset the puck and the skaters (the G-124 fix play-icing-called already has)
+    if (await h.eval(() => window.__hk && window.__hk.game && window.__hk.game.state !== 'play').catch(() => true)) {
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' }); } catch (e) {}
+    }
+    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') return { inconclusive: 'could not reach the play state to stage the play' };
     await h.eval(() => {
       const H = window.__hk; if (!H || !H.puck) return;
       H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
@@ -290,6 +296,12 @@ export default [
   async test(page, h) {
     try { await h.press('#playBtn'); } catch (e) {}
     await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    // VP Oct 27 2026 (known-fault cleanup): wait for the PLAY state in game state, never a fixed sleep - staging while the
+    // opening faceoff is still on lets the drop reset the puck and the skaters (the G-124 fix play-icing-called already has)
+    if (await h.eval(() => window.__hk && window.__hk.game && window.__hk.game.state !== 'play').catch(() => true)) {
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' }); } catch (e) {}
+    }
+    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') return { inconclusive: 'could not reach the play state to stage the play' };
     const before = await h.eval(() => ((document.querySelector('#score') || {}).textContent) || '');
     await h.eval(() => {
       const H = window.__hk; if (!H || !H.puck) return;

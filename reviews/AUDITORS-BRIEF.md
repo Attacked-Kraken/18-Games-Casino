@@ -46,3 +46,11 @@ When the laptop courier types "CONFLICT FIX C-<N>": check out that PR's branch, 
 intent at every conflicted spot (never just take one side), `node --check` every changed .js/.mjs, push to the SAME branch, and
 comment on the PR "conflict joined by window 14, C-<N>". The robot re-checks and merges it. If the two sides truly contradict,
 reply IDLE with the exact lines and file one HELP-VP line. The courier follows each order until the PR is clean or merged.
+
+## TEAM - who does what, 24 hours a day (owner Oct 27 2026 12:00 PM)
+- **ChatGPT (window 15, laptop square 3)** - outside thinker. The Mac sends it LIVE factory problems (hidden finder, Fixer cases) with measured facts, hourly, and the GPT-QUEUE.md questions every 3 h when nothing is live. It answers in ONE block `from: GPT / to: window 13`.
+- **Window 13 (auditor, laptop square 4)** - verifies every art director line (VERIFY V-<id>, see jobs/README.md) before a builder gets a job, and checks every ChatGPT answer against this repo (TRUE / FALSE / UNTESTED, with file + line or a test), fixes or files the TRUE ones, and asks ChatGPT follow-ups as reviews/auditor-13-<n>.md `to: GPT`.
+- **Window 14 (verified fixer, laptop square 5)** - joins conflicted / stuck pull requests (merge origin/main in, keep both sides, push to the SAME branch, comment) and builds the fixes window 13 marks TRUE.
+- **Claude** - last resort. **The owner** - only 3D models and approval cards.
+- Only real defects with proof. No busywork: nothing to do = write `IDLE: <why>`.
+
