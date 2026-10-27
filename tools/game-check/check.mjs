@@ -505,6 +505,9 @@ for (const g of games) {
       const w = fx => times[fx.id] ?? med;
       const order = list.map((fx, i) => ({ fx, i, w: w(fx) })).sort((a, b) => b.w - a.w || a.i - b.i);
       const load = Array(n).fill(0), mine = new Set();
+      // VP-backup Oct 27 2026 (master #42): part 1 also does the pictures/reality/Safari work (Racer: ~800 s before its first test, whole-game cap 15 min),
+      // so a part-1 share of tests was never reached ('NOT RUN' on main, 23 tests). Part 1 starts with that work as load - it only gets tests if the others pass it.
+      if (n > 1 && /apexracer/.test(String(g.file || process.env.ONLY || ''))) load[0] = 800;
       for (const t of order) { let b = 0; for (let j = 1; j < n; j++) if (load[j] < load[b]) b = j; load[b] += t.w; if (b === k - 1) mine.add(t.i); }
       list = list.filter((_, i) => mine.has(i)); r.part = k + '/' + n;
     }
