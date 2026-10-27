@@ -262,13 +262,27 @@ for (const g of games) {
   // owner Oct 24 2026 9:12 PM (window 6 spent an hour re-creating #1614's script error by hand): on the FIRST script error the robot keeps
   // the evidence - full stack (file, line, function), the last 20 console lines, and 3 pictures (just before / at / just after).
   // Saved to <out>/evidence/<game>/ ; the check job pushes it to the pr-evidence branch and the Check status comment links it.
-  const consoleTail = []; let lastFrame = null, frameBusy = false, evidenceDone = false;
+  const consoleTail = []; let lastFrame = null, frameBusy = false, evidenceDone = false, frameHold = false, frameHoldUntil = 0;
   page.on('console', m => { consoleTail.push(m.type() + ': ' + m.text().replace(/\s+/g, ' ').slice(0, 220)); if (consoleTail.length > 20) consoleTail.shift(); });
   const frameTimer = setInterval(async () => {   // a small picture every 2 s, so "just before" exists when the error comes
-    if (frameBusy || evidenceDone) return; frameBusy = true;
-    try { lastFrame = await page.screenshot({ timeout: 4000, type: 'jpeg', quality: 45 }); } catch (e) {}
+    if (frameBusy || evidenceDone || frameHold || Date.now() < frameHoldUntil) return; frameBusy = true;
+    // VP Oct 27 2026 (known faults G-105 / G-122 / 'Held upright' on Track & Field): with the old 4 s timeout a slow frame let
+    // Playwright give up while Chromium's capture was STILL pending; a play test's setViewportSize(390x844) landing during that
+    // pending capture was lost - the page stayed 844x390 (landscape layout: CHAMPIONSHIP x126, CAREER MODE x427) for the rest of
+    // the game. Reproduced locally (upright resize + reload: stuck in 3 of 5 rounds with the old timer, 0 of 5 with no timer, 0 of 6 with this fix). The capture is now
+    // allowed to finish (30 s), so frameBusy is true for as long as Chromium is really capturing.
+    try { lastFrame = await page.screenshot({ timeout: 30000, type: 'jpeg', quality: 45 }); } catch (e) {}
     frameBusy = false;
   }, 2000); frameTimer.unref();
+  // ...and a viewport change never overlaps a capture: wait for the one in flight, hold the timer while the page is not the
+  // base 844x390 (a play test's upright excursion) and 3 s after it comes back.
+  { const _svs = page.setViewportSize.bind(page);
+    page.setViewportSize = async (v) => {
+      frameHold = true;
+      for (let i = 0; i < 700 && frameBusy; i++) await new Promise(rs => setTimeout(rs, 50));
+      try { return await _svs(v); }
+      finally { frameHold = !(v && v.width === 844 && v.height === 390); frameHoldUntil = Date.now() + 3000; }
+    }; }
   page.on('pageerror', async e => {
     if (evidenceDone) return; evidenceDone = true; clearInterval(frameTimer);
     try {
@@ -482,7 +496,18 @@ for (const g of games) {
     // VP Oct 27 2026: ONLY_TESTS=id1,id2 replays just those play tests (the auto-undo recheck - seconds, not a whole 20-min game)
     if (process.env.ONLY_TESTS) { const want = process.env.ONLY_TESTS.split(','); list = list.filter(fx => want.includes(fx.id)); }
     const TP = /^(\d+)\/(\d+)$/.exec(process.env.TEST_PART || '');
-    if (TP) { const k = +TP[1], n = +TP[2]; list = list.filter((_, i) => i % n === k - 1); r.part = k + '/' + n; }
+    if (TP) {
+      const k = +TP[1], n = +TP[2];
+      // VP Oct 27 2026: every-n-th test left Racer's census tests (~2 min each) in a few parts (54 s vs 563 s) -> parts hit the 35-min cap. Now balanced by measured seconds
+      // (tools/game-check/test-times.json, unknown ids = median); all robots compute the same split from the same list + file.
+      let times = {}; try { times = JSON.parse(fs.readFileSync(new URL('./test-times.json', import.meta.url), 'utf8')); } catch {}
+      const known = Object.values(times).sort((a, b) => a - b), med = known.length ? known[known.length >> 1] : 30;
+      const w = fx => times[fx.id] ?? med;
+      const order = list.map((fx, i) => ({ fx, i, w: w(fx) })).sort((a, b) => b.w - a.w || a.i - b.i);
+      const load = Array(n).fill(0), mine = new Set();
+      for (const t of order) { let b = 0; for (let j = 1; j < n; j++) if (load[j] < load[b]) b = j; load[b] += t.w; if (b === k - 1) mine.add(t.i); }
+      list = list.filter((_, i) => mine.has(i)); r.part = k + '/' + n;
+    }
     // owner Oct 23 2026 5:24 PM: Hockey's play run went 52 min and the runner died ("lost communication"). Caps so a hung game
     // fails fast with a readable line: one test never runs longer than 90 s (x2 on its retry) whatever the runner speed, and a
     // game's play tests stop after 20 min - the rest are listed as NOT RUN (yellow, robot side), never a dead runner.

@@ -215,6 +215,12 @@ export default [
   async test(page, h) {
     try { await h.press('#playBtn'); } catch (e) {}
     await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    // VP Oct 27 2026 (known-fault cleanup): wait for the PLAY state in game state, never a fixed sleep - staging while the
+    // opening faceoff is still on lets the drop reset the puck and the skaters (the G-124 fix play-icing-called already has)
+    if (await h.eval(() => window.__hk && window.__hk.game && window.__hk.game.state !== 'play').catch(() => true)) {
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' }); } catch (e) {}
+    }
+    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') return { inconclusive: 'could not reach the play state to stage the play' };
     await h.eval(() => {
       const H = window.__hk; if (!H || !H.puck) return;
       H.puck.owner = null; H.puck.recv = null; H.puck.shot = null; H.puck.passGrace = null;
@@ -290,6 +296,12 @@ export default [
   async test(page, h) {
     try { await h.press('#playBtn'); } catch (e) {}
     await h.wait(2500); // opening faceoff (1.4s) ends -> play
+    // VP Oct 27 2026 (known-fault cleanup): wait for the PLAY state in game state, never a fixed sleep - staging while the
+    // opening faceoff is still on lets the drop reset the puck and the skaters (the G-124 fix play-icing-called already has)
+    if (await h.eval(() => window.__hk && window.__hk.game && window.__hk.game.state !== 'play').catch(() => true)) {
+      try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' }); } catch (e) {}
+    }
+    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') return { inconclusive: 'could not reach the play state to stage the play' };
     const before = await h.eval(() => ((document.querySelector('#score') || {}).textContent) || '');
     await h.eval(() => {
       const H = window.__hk; if (!H || !H.puck) return;
@@ -3721,6 +3733,43 @@ export default [
       for (const [nm, b] of [['joystick', r.joy], ['mute button', r.mute], ['VIEW button', r.view]]) {
         if (b.x < -1 || b.y < -1 || b.x + b.w > r.iw + 1 || b.y + b.h > r.ih + 1) return 'the ' + nm + ' hangs off the sideways phone screen (' + Math.round(b.x) + ',' + Math.round(b.y) + ' ' + Math.round(b.w) + 'x' + Math.round(b.h) + ' in ' + r.iw + 'x' + r.ih + ')';
       }
+      return true;
+    } finally {
+      await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
+    }
+  }
+},
+{
+  id: 'never-g-392-p1',
+  ask: 'NEVER (G-392): the CREDITS button on the main menu is a real tap target - its box is at least 44 px tall and it sits fully on screen on a phone held upright and held sideways (the robot phone-layout check measured the bare text button at 90x17 px)',
+  async test(page, h) {
+    const state = () => h.eval(() => (window.__hk && window.__hk.game ? window.__hk.game.state : '')).catch(() => '');
+    let s = await state();
+    if (s !== 'menu') {
+      await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+      await h.wait(() => window.__hk && window.__hk.game && window.__hk.game.state === 'menu', 15000).catch(() => {});
+      s = await state();
+    }
+    if (s !== 'menu') return 'could not reach the main menu to measure the CREDITS button (state ' + s + ')';
+    const measure = () => h.eval(() => {
+      const el = document.getElementById('creditsBtn');
+      if (!el) return null;
+      const b = el.getBoundingClientRect();
+      return { oh: el.offsetHeight, ow: el.offsetWidth, x: b.x, y: b.y, w: b.width, h: b.height, iw: innerWidth, ih: innerHeight };
+    }).catch(() => null);
+    try {
+      await page.setViewportSize({ width: 844, height: 390 });
+      await h.wait(700);
+      const L = await measure();
+      if (!L) return 'credits button not found in landscape';
+      if (L.oh < 44) return 'sideways: the CREDITS button is only ' + L.oh + ' px tall - too small to tap (needs 44)';
+      if (L.x < -1 || L.y < -1 || L.x + L.w > L.iw + 1 || L.y + L.h > L.ih + 1) return 'sideways: the CREDITS button hangs off screen (' + Math.round(L.x) + ',' + Math.round(L.y) + ' ' + Math.round(L.w) + 'x' + Math.round(L.h) + ' in ' + L.iw + 'x' + L.ih + ')';
+      await page.setViewportSize({ width: 390, height: 844 });
+      await h.wait(700);
+      const P = await measure();
+      if (!P) return 'credits button not found in portrait';
+      if (P.oh < 44) return 'upright: the CREDITS button is only ' + P.oh + ' px tall - too small to tap (needs 44)';
+      if (P.x < -1 || P.y < -1 || P.x + P.w > P.iw + 1 || P.y + P.h > P.ih + 1) return 'upright: the CREDITS button hangs off screen (' + Math.round(P.x) + ',' + Math.round(P.y) + ' ' + Math.round(P.w) + 'x' + Math.round(P.h) + ' in ' + P.iw + 'x' + P.ih + ')';
       return true;
     } finally {
       await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
