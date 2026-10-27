@@ -351,3 +351,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-388 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, jobs/G-388.md, CLAIMS.md | build/g-388-apexracer - CLAIMED Muse algre141 Oct 27 12:40 PM CDT (MAC tag) |
 | G-397 | window 6 | menu button #nmB at least 44 px and fully on screen, upright and sideways | build/owner-turbine-apexracer (rides PR #1877 per MAC) - CLAIMED Muse algre141 Oct 27 2:36 PM CDT (MAC tag) |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
+| G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
