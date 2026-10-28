@@ -195,6 +195,11 @@
    "file": "tools/game-check/games.json",
    "needle": "\"partGuardFrom\"",
    "rule": "games carry a parts list (guard is on for them)"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "partsExempt",
+   "rule": "a game page without a parts list is blocked (any 2D or 3D game)"
   }
  ]
 }

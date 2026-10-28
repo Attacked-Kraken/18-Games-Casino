@@ -243,7 +243,8 @@
       "name": "Apex Monster Truck",
       "start": [
         "#playBtn"
-      ]
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexracer.html",
@@ -362,7 +363,8 @@
       "start": [
         "#btnStart"
       ],
-      "people": true
+      "people": true,
+      "partsExempt": true
     },
     {
       "file": "apextrackfield.html",
@@ -425,21 +427,24 @@
       "name": "Apex Moto",
       "start": [
         "#raceBtn"
-      ]
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexpaperplane.html",
       "name": "Paper Plane",
       "start": [
         "\u221e Endless"
-      ]
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexreefdash.html",
       "name": "Reef Dash",
       "start": [
         "\u221e Endless"
-      ]
+      ],
+      "partsExempt": true
     }
   ]
 }

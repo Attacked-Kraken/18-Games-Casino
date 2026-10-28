@@ -177,7 +177,10 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
     const gj = JSON.parse(fs.readFileSync('tools/game-check/games.json', 'utf8')), games = Array.isArray(gj) ? gj : gj.games || [];
     const base = process.env.BASE_SHA || '';
     for (const f of changed.filter(x => /^apex[a-z0-9]*\.html$/.test(x))) {
-      const g = games.find(x => x.file === f); if (!g || !(g.parts || []).length || !base) continue;
+      const g = games.find(x => x.file === f);
+      // LOCKED (owner Oct 27 2026 9:38 PM): part guard is for ANY game, 2D or 3D. A game page with no parts list (and not one of the old exempt games) is blocked.
+      if (g && !(g.parts || []).length && !g.partsExempt) { blockers.push(`PART GUARD: ${f} has no "parts" list in tools/game-check/games.json. Every game (2D or 3D) must list its parts (name + function-name regexes) so one job cannot break another part. Add it in this PR.`); continue; }
+      if (!g || !(g.parts || []).length || !base) continue;
       if (g.partGuardFrom && process.env.PR_CREATED && Date.parse(process.env.PR_CREATED) < Date.parse(g.partGuardFrom)) { console.log(`Part guard ${f}: skipped - this pull request was opened before the guard started (${g.partGuardFrom})`); continue; }
       const d = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', f], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
       const ranges = [...d.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)].map(h => [+h[1], +h[1] + Math.max(0, (h[2] === undefined ? 1 : +h[2]) - 1)]);
