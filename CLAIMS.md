@@ -355,3 +355,4 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-403 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-403.md, CLAIMS.md | build/g-403-apexflight |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
+| CAR CENSUS | window 6 | apexracer.html (one-slot wrap table), tools/game-check/fixes/apexracer.mjs (9 play-car-census tests), jobs/CENSUS-w6.md | build/census-apexracer - CLAIMED Muse algre141 (ordered Oct 27 9:47 PM CDT, MAC tag) |
