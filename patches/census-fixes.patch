@@ -1,0 +1,73 @@
+--- a/tools/game-check/fixes/apexracer.mjs
++++ b/tools/game-check/fixes/apexracer.mjs
+@@ -6,6 +6,64 @@
+ import path from 'path';
+ import { fileURLToPath } from 'url';
+ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
++// census test bodies appended to main's fixes for benching
++const CAR_IDS = ['goblin', 'vanta', 'kestrel', 'brute', 'nova', 'zenith', 'phantom', 'titan', 'vortex'];
++const WRAPS = ['none', 'name', 'stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'apex', 'camo', 'split', 'neon'];
++function censusTest(carId) {
++  return {
++    id: 'play-car-census-' + carId,
++    ask: 'Does the ' + carId + ' build with exactly one wrap system, four rim faces and the wing as chosen, for every wrap and rim?',
++    async test(page, h) {
++      const out = await h.eval(async (args) => {
++        const [carId, WRAPS] = args;
++        const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
++        if (!E) return 'no __erc hook';
++        const saved = JSON.stringify({ cars: E.S.cars, cur: E.S.cur });
++        const base = Object.assign({}, (E.S.cars && E.S.cars[carId]) || {});
++        const build = async (cfg) => {
++          const prev = window.__reality && window.__reality.player;
++          E.S.cars[carId] = Object.assign({}, base, cfg); E.S.cur = carId;
++          E.openGarage();
++          for (let i = 0; i < 40; i++) { const p = window.__reality && window.__reality.player; if (p && p !== prev) break; await wait(150); }
++          const root = window.__reality && window.__reality.player;
++          if (!root) return null;
++          const c = { wrap: 0, name: 0, stripes: 0, rimface: 0, wing: 0, meshes: 0 };
++          root.traverse((q) => { if (q.isMesh) { c.meshes++; if (q.name === 'apexwrap') c.wrap++; if (q.name === 'apexname') c.name++; if (q.name === 'apexstripes') c.stripes++; } if (q.userData && q.userData.acc === 'rimface') c.rimface++; if (q.userData && q.userData.acc === 'wing') c.wing++; });
++          return c;
++        };
++        const fails = [];
++        const data = {};
++        for (const wrap of WRAPS) {
++          data[wrap] = [];
++          for (let rim = 0; rim < 6; rim++) {
++            const c = await build({ wrap, rim, fin: 0, aero: 0 });
++            if (!c) { fails.push(wrap + '/rim' + rim + ': car did not build'); data[wrap].push(null); continue; }
++            data[wrap].push(c);
++            if (c.rimface !== 4) fails.push(wrap + '/rim' + rim + ': ' + c.rimface + '/4 rim faces');
++            if (c.wing !== 0) fails.push(wrap + '/rim' + rim + ': wing present with aero 0');
++            const fams = (c.wrap > 0 ? 1 : 0) + (c.name > 0 ? 1 : 0) + (c.stripes > 0 ? 1 : 0);
++            if (fams > 1) fails.push(wrap + '/rim' + rim + ': ' + fams + ' wrap systems at once (wrap ' + c.wrap + ', name ' + c.name + ', stripes ' + c.stripes + ')');
++          }
++        }
++        const PANELS = WRAPS.filter((w) => w !== 'none' && w !== 'name' && w !== 'stripes');
++        const capName = data.name.some((c) => c && c.name > 0), capStripes = data.stripes.some((c) => c && c.stripes > 0), capPanel = PANELS.some((w) => data[w].some((c) => c && c.wrap > 0));
++        for (const wrap of WRAPS) for (let rim = 0; rim < 6; rim++) {
++          const c = data[wrap][rim]; if (!c) continue;
++          if (wrap === 'none' && (c.wrap || c.name || c.stripes)) fails.push('none/rim' + rim + ': wrap meshes on a no-wrap car');
++          if (wrap === 'name' && (c.wrap || c.stripes || (capName && !c.name))) fails.push('name/rim' + rim + ': name wrap must be letters only');
++          if (wrap === 'stripes' && (c.name || c.wrap || (capStripes && !c.stripes))) fails.push('stripes/rim' + rim + ': stripes must stand alone');
++          if (PANELS.includes(wrap) && (c.name || c.stripes || (capPanel && !c.wrap))) fails.push(wrap + '/rim' + rim + ': panel wrap must stand alone');
++        }
++        const cw = await build({ wrap: 'none', rim: 0, fin: 0, aero: 3 });
++        if (cw && cw.wing === 0) fails.push('aero 3: no wing built');
++        try { const o = JSON.parse(saved); E.S.cars = o.cars; E.S.cur = o.cur; E.openGarage(); } catch (e) {}
++        return fails.length ? fails.slice(0, 4).join(' | ') : 'OK';
++      }, [carId, WRAPS]).catch((e) => 'eval failed: ' + String(e).slice(0, 120));
++      return out === 'OK' ? true : out;
++    },
++  };
++}
++
+ export default [
+   {
+     id: 'play-menu-buttons-44px',
+@@ -2870,4 +2928,5 @@
+       return true;
+     },
+   },
++  ...CAR_IDS.map(censusTest),
+ ];
