@@ -59,3 +59,9 @@ still passed. So every game also gets **at least 5 play tests** in the same file
 An entry must have `id`, `ask` and a method named `test` (`async test(page, h)`). An entry that uses `run:` / `fn:` / `check:` instead
 (window 6, PR #1282: "fx.test is not a function") now fails the PR check with `PLAY-TEST FORMAT: ... right shape: ...` naming
 the file, the entry and what is wrong.
+
+## One file per job (master #124, window 6, Oct 27 2026)
+Instead of editing the shared `fixes/<game>.mjs` (two PRs editing it collide), add your tests as their own file:
+`tools/game-check/fixes/<game>/<job>.mjs` (e.g. `fixes/apexracer/g-399.mjs`) with `export default [ { id, ask, async test(page, h) {...} } ];`.
+The robot loads the shared file first, then every file in the folder (sorted). A file that will not load fails by its name; the rest still run.
+Tested locally on Paper Plane (the folder test ran and passed).
