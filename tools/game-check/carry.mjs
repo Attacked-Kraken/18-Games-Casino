@@ -26,15 +26,5 @@ if (process.env.SKIP_MODELS && Array.isArray(prev.models)) {
   for (const m of prev.models) for (const v of Object.values(m.img || {})) copyImg(v);
 }
 fs.writeFileSync(resFile, JSON.stringify(cur, null, 1));
-if (carried.length) {
-  let md = `\n# Not changed since the last check\n\nThese games' files didn't change, so the robot kept their last result ` +
-    `(played at main @ \`${prev.sha || '?'}\`). A full check of every game runs every 4 hours.\n\n`;
-  for (const r of carried) {
-    md += `## ${{ PASS: '✅ PASS', CHECK: '🟡 CHECK', FAIL: '🔴 FAIL' }[r.status] || r.status} — ${r.name}\n\n\`${r.file}\`\n\n`;
-    for (const x of r.fail || []) md += `- 🔴 ${x}\n`;
-    for (const x of r.check || []) md += `- 🟡 ${x}\n`;
-    if (r.img) md += `\n<img src="${r.img.menu}" width="300"> <img src="${r.img.play}" width="300">\n\n`;
-  }
-  fs.appendFileSync(path.join(out, 'README.md'), md);
-}
+// The README is written by report.mjs AFTER this runs (it lists carried games under "Not changed since the last check").
 console.log(`re-played ${have.size}, kept ${carried.length}: ${carried.map(r => r.file).join(', ') || '-'}`);
