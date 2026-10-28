@@ -2580,6 +2580,28 @@ window.__test = {
     return out; },
   trackLength: () => Track.length,
   setInput: (inp) => { Object.assign(Input, inp); },
+  // BALANCE ROBOT (master #11, owner Oct 28 2026): step the race with NO drawing. bot = null (nobody touches the controls) or {skill:'good'|'beginner'} - the bot steers the player car
+  // by the game's own racing line (the same law the play tests' driver uses). Returns Race.mode so a caller can stop when the race ends.
+  simStep: (dt, bot) => {
+    const p = Race.player;
+    if (bot && p && (Race.mode === 'race' || Race.mode === 'lights')) {
+      const good = bot.skill === 'good';
+      const look = p.s + p.v * 0.5 + 18, ref = Track.rlDAt ? Track.rlDAt(look) : 0;
+      bot.t = (bot.t || 0) + dt; bot.n = (bot.n || 0) + 1;
+      if (bot.n % (good ? 1 : 8) === 0) {
+        let st = (ref - p.d) * (good ? 0.5 : 0.28) - p.headAngle * (good ? 1.1 : 0.6);
+        if (!good) st += (Math.random() - 0.5) * 0.35;
+        bot.st = Math.max(-1, Math.min(1, st));
+      }
+      const maxV = Track.maxSpeedAt(look, p.gripNow());
+      Input.steer = bot.st || 0;
+      Input.gas = good ? true : (p.v < maxV * 0.8 && (bot.n % 60) < 52);
+      Input.brake = good ? false : p.v > maxV * 0.95;
+    } else { Input.gas = false; Input.brake = false; Input.steer = 0; }
+    Race.update(dt);
+    return Race.mode;
+  },
+  simState: () => { const p = Race.player; if (!p) return null; const order = Race.positions(); return { mode: Race.mode, t: Race.raceT || 0, dist: p.raceDist, v: p.v, place: order.indexOf(p) + 1, of: order.length, finished: !!p.finished, lap: p.lap }; },
   // Test helper: place a car near the finish line to fast-forward lap tests
   // idx: car index in Race.cars, s: distance along track
   setCarS: (idx, s) => {
