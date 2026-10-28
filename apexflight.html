@@ -180,6 +180,7 @@ const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
 /* ================= state ================= */
 let phase = 'menu';            // menu | fly | crashed | scored
 let mode = 'free';
+let simHold = false;   // balance robot (master #11): while true the render loop does not step the world, the test steps it itself
 let scoredThisAttempt = false;
 let offRwyMsg = false;          // G-121 fix round: an off-runway challenge touchdown owes the player its reason until the attempt changes
 let cockpit = false;
@@ -1203,7 +1204,13 @@ window.__flight = { P, inp, jetInput, jet, aiJets: traffic, get stallNow() { ret
     strength: () => friendGame ? friendGame.str : 0,
     clear: () => { friendGame = null; },
   } }; // test hook (FIX LIST)
-window.__test = { friend: window.__flight.friend };
+window.__test = { friend: window.__flight.friend,
+  /* balance robot hooks: start a run, step the world by hand with no rendering, read the result */
+  simStart(m) { mode = m; respawn(); simHold = true; },
+  simStep(dt) { if (phase !== 'fly') return false; step(dt); return phase === 'fly'; },
+  simEnd() { simHold = false; mode = 'free'; respawn(); },
+  simState() { return { phase, ground: P.ground, y: P.pos.y, z: P.pos.z, x: P.pos.x, vy: P.vel.y, v: P.vel.length(), pitch: P.pitch, roll: P.roll, yaw: P.yaw, ranked: $('rank').textContent, why: $('crashWhy').textContent }; },
+};
 /* REALITY robot hook (REALITY.md "Robot hook"): the robot measures the plane's
    size, facing vs travel, and that the wheels touch the ground. Flight is not
    a race, so there is no track direction; the computer traffic jets (G-247) are the others. */
@@ -1256,7 +1263,7 @@ function loop(now) {
     if (jetInput.throttle !== thrWas) P.thr = jetInput.throttle;
     else if (P.thr !== thrWas) jetInput.throttle = P.thr;
     syncThrLever();
-    step(dt);
+    if (!simHold) step(dt);
     const toff = trickOffsets(dt);
     if (toff) { trickE.set(toff.pe, 0, toff.re); trickQ.setFromEuler(trickE); plane.quaternion.multiply(trickQ); }
   }
