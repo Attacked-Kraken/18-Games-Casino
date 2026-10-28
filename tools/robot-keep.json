@@ -215,6 +215,11 @@
    "file": "tools/game-check/check.mjs",
    "needle": "did not finish in 2 min",
    "rule": "an extra picture never takes more than 2 min"
+  },
+  {
+   "file": ".github/workflows/game-check-pr.yml",
+   "needle": "tools/game-check/scope.mjs",
+   "rule": "scoped checks (master 122): a PR plays only the tests its touched part can affect"
   }
  ]
 }
