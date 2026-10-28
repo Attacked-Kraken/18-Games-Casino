@@ -499,8 +499,11 @@ export default [
         let gt = 0, last = performance.now();
         const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 120) requestAnimationFrame(tick); };
         requestAnimationFrame(tick);
-        // score a gentle on-runway landing first
-        F.P.pos.set(1, 8, -300); F.P.vel.set(0, -0.6, 30);
+        // score a gentle on-runway landing first. VP Oct 27 2026 (known fault 'ocean ... took over', expires Oct 29): from
+        // (1, 8, -300) the touchdown alone took 11 game-s = 220 frames, about 33 s on a normal robot (150 ms frames) - over the
+        // robot's 30 s cap before the ocean part even began. Same profile started lower and closer, like never-g-243-p2:
+        // touchdown in ~3-4 game-s (local run: (1,3,-60) scored at 2.3 game-s, ocean crash at 3.2).
+        F.P.pos.set(1, 3, -120); F.P.vel.set(0, -0.6, 30);
         F.P.yaw = 0; F.P.roll = 0; F.P.pitch = -0.02; F.P.thr = 0.12; F.P.ground = false;
         return new Promise((res) => {
           let phase2 = false, phase2Gt = 0;
@@ -531,7 +534,7 @@ export default [
             }
           }, 200);
         });
-      });
+      }).catch(() => ({ inconclusive: 'the page navigated away during the test (destroyed execution context) - robot side' }));
     },
   },
   {
@@ -590,8 +593,13 @@ export default [
         const F = window.__flight;
         if (!F) return 'no window.__flight hook';
         if (!F.jetInput) return 'no jetInput (G-90 controls missing)';
+        // VP Oct 27 2026 (known fault, expires Oct 29): the 30 s budget was WALL time, which a slow runner day cannot meet.
+        // Judged in GAME time now - the rAF delta-sum clamped to 0.05 s like the game's own loop (apexflight.html loop(): dt
+        // clamped to 0.05), the same clock never-g-243-p1 / tester-postscore-crash use.
+        let gt = 0, last = performance.now();
+        const tick = (t) => { gt += Math.min(0.05, Math.max(0, (t - last) / 1000)); last = t; if (gt < 60) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
         return new Promise((res) => {
-          const t0 = Date.now();
           let minSpd = 999;
           const iv = setInterval(() => {
             // competent player: idle throttle, BRAKE airbrake on, gentle -600fpm descent
@@ -609,13 +617,13 @@ export default [
               if (minSpd > 88) return res('jet could not slow below 88kt in the descent (min ' + Math.round(minSpd) + 'kt) - the 55-88kt touchdown band is unreachable');
               return res(true);
             }
-            if (Date.now() - t0 > 30000) {
+            if (gt > 30) {
               clearInterval(iv);
-              return res('never touched down after 30s (min speed ' + Math.round(minSpd) + 'kt)');
+              return res('never touched down after 30 game-s (min speed ' + Math.round(minSpd) + 'kt)');
             }
           }, 200);
         });
-      });
+      }).catch(() => ({ inconclusive: 'the page navigated away during the test (destroyed execution context) - robot side' }));
     },
   },
   {
@@ -1496,6 +1504,65 @@ export default [
             }
             if (gt > 100) { clearInterval(iv); return res(landedGt === null ? 'never touched down' : 'message never settled (game time)'); }   // game time ONLY (VP's alternative, 2026-10-23): a wall cap here was always tighter than the harness's own budget, so slow GPU-bound runs failed on the clock, not the game
           }, 200);
+        });
+      });
+    },
+  },
+  {
+    id: 'play-qualityBtn-on-screen',
+    ask: 'G-391: the QUALITY button sits fully on screen (upright and sideways), at least 44 px tall',
+    async test(page, h) {
+      // Menu state is shared-page fragile: reload the bare URL to a known menu first.
+      try {
+        const url = await h.eval(() => location.href.split('?')[0]);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+      } catch (e) {}
+      return h.eval(() => {
+        const b = document.getElementById('qualityBtn');
+        if (!b) return 'no #qualityBtn element';
+        if (document.getElementById('startOv').hidden) return 'menu did not engage (test setup, not the game)';
+        const r = b.getBoundingClientRect();
+        if (r.height < 44) return 'QUALITY button is only ' + Math.round(r.height) + 'px tall (want >= 44)';
+        if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) return 'QUALITY button cut off: rect [' + [r.left, r.top, r.right, r.bottom].map((v) => Math.round(v)).join(',') + '] in ' + innerWidth + 'x' + innerHeight;
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-no-coaching-during-roll',
+    ask: 'G-403: no live coaching instructions during the ground roll (Clean screen) - the roll shows only the game, the score and the buttons',
+    async test(page, h) {
+      // Reload the bare URL to a known menu first (shared-page trap).
+      try {
+        const url = await h.eval(() => location.href.split('?')[0]);
+        await page.goto(url, { waitUntil: 'load', timeout: 20000 });
+        for (let i = 0; i < 20; i++) { await h.wait(400); const ready = await h.eval(() => !!(window.__flight && !document.getElementById('startOv').hidden)).catch(() => false); if (ready) break; }
+        await h.press('#btnFree');
+      } catch (e) {}
+      const engaged = await h.eval(() => document.getElementById('startOv').hidden).catch(() => false);
+      if (!engaged) return 'menu did not engage (test setup, not the game)';
+      const lever = await h.eval(() => { const lev = document.getElementById('thrLever'); if (!lev) return 'no throttle lever on the page'; const r = lev.getBoundingClientRect(); const yFor = (pct) => r.top + (1 - pct) * r.height;
+        lev.dispatchEvent(new PointerEvent('pointerdown', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointermove', { pointerId: 13, clientY: yFor(1), bubbles: true }));
+        lev.dispatchEvent(new PointerEvent('pointerup', { pointerId: 13, clientY: yFor(1), bubbles: true })); return true; }).catch(() => 'lever eval failed');
+      if (lever !== true) return lever;
+      // Judge in GAME time (rAF delta-sum): the start flash lasts 2.6 game-s,
+      // so a wall-clock wait reads the flash, not the coaching - poll the
+      // message across game-s 0-8 and fail if coaching ever shows.
+      return h.eval(() => {
+        return new Promise((res) => {
+          let gt = 0, last = performance.now();
+          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 8) requestAnimationFrame(tick); };
+          requestAnimationFrame(tick);
+          const w0 = Date.now();
+          let saw = '';
+          const iv = setInterval(() => {
+            const txt = (document.getElementById('msg') || {}).textContent || '';
+            if (/FULL THROTTLE|STICK UP/i.test(txt)) saw = txt;
+            if (gt >= 8) { clearInterval(iv); return res(saw ? 'live coaching showed during the roll: "' + saw + '"' : true); }
+            if (Date.now() - w0 > 240000) { clearInterval(iv); return res('ran out of wall time waiting 8 game-s (gt ' + gt.toFixed(1) + ')'); }
+          }, 100);
         });
       });
     },

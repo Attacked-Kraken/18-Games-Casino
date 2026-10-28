@@ -43,7 +43,7 @@ jobs:
           echo "$CH"
           G=""
           for f in $(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$'); do G="$G$f,"; done
-          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
+          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*(/[A-Za-z0-9_.-]+)?\.mjs$'); do G="$G$(echo $f | sed -E 's#^tools/game-check/fixes/(apex[a-z0-9]*).*#\1#').html,"; done
           MODE="touched"
           # PERMANENT FIX (VP, Oct 26 2026, owner "why do checks take so long"): a model-audit PR that only added measuring sidecars
           # (models/*.accept.json, pictures, ledgers) and removed two UNUSED wheels played Hockey x4 + Track & Field x3 + Baseball x2 + Soccer
@@ -80,7 +80,7 @@ jobs:
           LIST=$(echo "$LIST" | sed 's/\bapexhockey\.html\b/apexhockey.html@1of4,apexhockey.html@2of4,apexhockey.html@3of4,apexhockey.html@4of4/')
           # owner Oct 24 2026 (item 6, per-step times: the 'Play <game>' step is 8-19 min, 55-75% of it is that game's play tests):
           # the long games are split like Hockey - part 1 plays everything else, the other parts only their share of the tests
-          LIST=$(echo "$LIST" | sed 's/\bapexflight\.html\b/apexflight.html@1of3,apexflight.html@2of3,apexflight.html@3of3/; s/\bapexf1\.html\b/apexf1.html@1of3,apexf1.html@2of3,apexf1.html@3of3/; s/\bapextrackfield\.html\b/apextrackfield.html@1of3,apextrackfield.html@2of3,apextrackfield.html@3of3/; s/\bapexbaseball\.html\b/apexbaseball.html@1of2,apexbaseball.html@2of2/; s/\bapexracer\.html\b/apexracer.html@1of6,apexracer.html@2of6,apexracer.html@3of6,apexracer.html@4of6,apexracer.html@5of6,apexracer.html@6of6/')
+          LIST=$(echo "$LIST" | sed 's/\bapexflight\.html\b/apexflight.html@1of3,apexflight.html@2of3,apexflight.html@3of3/; s/\bapexf1\.html\b/apexf1.html@1of3,apexf1.html@2of3,apexf1.html@3of3/; s/\bapextrackfield\.html\b/apextrackfield.html@1of3,apextrackfield.html@2of3,apextrackfield.html@3of3/; s/\bapexbaseball\.html\b/apexbaseball.html@1of2,apexbaseball.html@2of2/; s/\bapexracer\.html\b/apexracer.html@1of8,apexracer.html@2of8,apexracer.html@3of8,apexracer.html@4of8,apexracer.html@5of8,apexracer.html@6of8,apexracer.html@7of8,apexracer.html@8of8/')
           JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
           echo "games=$JSON" >> $GITHUB_OUTPUT
           echo "list=$LIST" >> $GITHUB_OUTPUT
@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 35      # owner Oct 26 2026 11:10 AM: lowered from 55 ("so we are not waiting hours"); Racer normally takes 18-27 min, other games 8-19
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 5      # VP Oct 27 2026: 3 Racer PRs x 8 used all 20 free runners and main's check sat queued 20+ min - 5 per PR leaves room for main
       matrix:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
@@ -126,8 +126,29 @@ jobs:
           else
             M="${{ matrix.game }}"; GAME="${M%@*}"; PART=""
             case "$M" in *@*of*) P="${M#*@}"; PART="${P%of*}/${P#*of}";; esac
-            ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+            # SCOPED CHECKS (master #122): a PR that changes one tagged part of a game plays only the tests that part can affect + always-on tests
+            SCOPE=""
+            if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ needs.plan.outputs.mode }}" = "touched" ]; then
+              git fetch -q --depth=2 origin "${{ github.sha }}" 2>/dev/null || true
+              SCOPE=$(node tools/game-check/scope.mjs "$GAME" "$(git rev-parse HEAD^1 2>/dev/null)" 2>/dev/null || true)
+              [ -n "$SCOPE" ] && echo "Scoped check: playing only $SCOPE"
+            fi
+            ONLY_TESTS="$SCOPE" ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
+      - name: Resume tests the time cap left unplayed (master 123)
+        if: always() && matrix.game != 'models'
+        continue-on-error: true
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          IDS=$(node tools/game-check/resume-merge.mjs game-check-out/results.json --ids)
+          [ -n "$IDS" ] || exit 0
+          echo "Resuming only the tests the cap left unplayed: $IDS"
+          pkill -f "serve.mjs 8811" || true
+          node tools/game-check/serve.mjs 8813 >/dev/null 2>&1 &
+          sleep 2
+          M="${{ matrix.game }}"; GAME="${M%@*}"
+          ONLY_TESTS="$IDS" ONLY="$GAME" SKIP_MODELS=1 timeout 720 node tools/game-check/check.mjs http://127.0.0.1:8813/ game-check-resume || true
+          node tools/game-check/resume-merge.mjs game-check-out/results.json game-check-resume/results.json
       - name: iPhone Safari pass
         if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of') && !contains(matrix.game, '@4of') && !contains(matrix.game, '@5of') && !contains(matrix.game, '@6of')
         continue-on-error: true
@@ -156,6 +177,8 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # PART GUARD reads this pull request's diff against its base commit
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -171,6 +194,8 @@ jobs:
         env:
           PR_BRANCH: ${{ github.head_ref || github.ref_name }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_CREATED: ${{ github.event.pull_request.created_at }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"

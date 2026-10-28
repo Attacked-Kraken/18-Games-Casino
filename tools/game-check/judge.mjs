@@ -6,6 +6,9 @@
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+// per-job play-test files (master #124): tools/game-check/fixes/<game>.mjs (shared) OR tools/game-check/fixes/<game>/<job>.mjs (one file per job, no collisions)
+export const FIXF = /^tools\/game-check\/fixes\/apex[a-z0-9]*(\/[A-Za-z0-9_.-]+)?\.mjs$/;
+export const fixGameOf = f => (/^tools\/game-check\/fixes\/(apex[a-z0-9]*)/.exec(f) || [])[1] + '.html';
 
 export function judge({ results = [], models = [], base0 = {}, changed = [], branch = '', title = '' }) {
   const norm = (x) => x.replace(/\d+/g, '#');
@@ -22,7 +25,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   // blocks only if the PR changed that model's own files. (Baseball #515 and Pebble #517 were blocked for Soccer marking
   // and a Monster Truck model crash they never touched.)
   const direct = new Set(changed.filter(f => /^apex[a-z0-9]*\.html$/.test(f))
-    .concat(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html')));
+    .concat(changed.filter(f => FIXF.test(f)).map(fixGameOf)));
   const hard = /script error|black or blank|did not load|missing file|shader|not real 3d bodies|outside internet|casino wording|real brand/i;
   // TESTER PRs (owner Oct 20 10:10 PM, Claude 03's catch): a tester (windows 7-10) only adds play tests that FAIL today +
   // QUEUE lines - the red test IS the finding, the builder fixes the game next. A PR that changes ONLY test files, QUEUE.md,
@@ -45,7 +48,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
     const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
-    const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
+    const isFix = f => FIXF.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
     const games = [...new Set(changed.filter(isGame))];
     const fixes = changed.filter(isFix);
@@ -53,7 +56,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const other = changed.filter(f => !NOTES.test(f) && !isGame(f) && !isFix(f) && !isShared(f));
     const guard = [];
     if (games.length > 1) guard.push(`FILE GUARD: this PR changes ${games.length} games (${games.join(', ')}) - ONE game per PR`);
-    const fixGames = [...new Set(fixes.map(f => path.basename(f, '.mjs') + '.html'))];
+    const fixGames = [...new Set(fixes.map(fixGameOf))];
     if (games.length === 1 && fixGames.some(g => g !== games[0])) guard.push(`FILE GUARD: play tests of another game changed (${fixGames.filter(g => g !== games[0]).join(', ')}) - only your game's tests`);
     if (games.length === 0 && fixGames.length > 1) guard.push(`FILE GUARD: play tests of ${fixGames.length} games changed - one game per PR`);
     if (games.length && sharedF.length) guard.push(`FILE GUARD: shared parts (${sharedF.slice(0, 3).join(', ')}) changed together with a game page - shared folders change in their OWN pull request (STUDIO-STANDARD 9.4)`);
@@ -70,12 +73,21 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
       if (r.status) blockers.push('CHECKLIST: ' + String(r.stdout || '').split('\n').filter(l => l.startsWith('CHECKLIST FAIL')).slice(0, 5).join(' | '));
     } catch (e) { console.log('checklist lint could not run: ' + e.message); }
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  // owner Oct 27 2026 10:08 PM (permanent repair 4): a file left with merge-conflict markers is never merged, whoever pushed it
+  {
+    const bad = [];
+    for (const f of changed) {
+      if (!/\.(md|txt|json|mjs|js|py|yml|yaml|html|css|sh)$/i.test(f)) continue;
+      try { if (/^(<{7} |>{7} )/m.test(fs.readFileSync(f, 'utf8'))) bad.push(f); } catch (e) {}
+    }
+    if (bad.length) blockers.push(`CONFLICT MARKERS: ${bad.slice(0, 5).join(', ')} still has merge-conflict lines (<<<<<<< / >>>>>>>) - join the two sides and remove the marker lines`);
+  }
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
     const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).filter(Boolean).map(f => f.id))]));
-    const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
+    const touchedFix = new Set(changed.filter(f => FIXF.test(f)).map(fixGameOf));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
       const fresh = (r.fixes || []).filter(Boolean).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)
@@ -106,6 +118,34 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   }
   return blockers;
 
+}
+
+// PART GUARD (owner Oct 27 2026 3:11 PM, all games): every builder job names ONE part ("PART: rims" in the PR title). games.json lists a game's
+// "parts", each with "regions" = regexes for the names of the functions (or text on a changed line) that belong to it. The robot reads the
+// pull request's own diff, finds which part every changed line sits in, and FAILS a PR that changed a part it did not name - the Racer
+// garage case, where a wheel job's change tore the car body. A game without "parts" is not guarded yet. No browser, no pictures: it is exact.
+export function partOfLines(parts, headSrc, ranges) {
+  const lines = headSrc.split('\n'), starts = [];
+  lines.forEach((t, i) => { const m = t.match(/^(?:async\s+)?function\s+([A-Za-z0-9_$]+)/); if (m) starts.push([i + 1, m[1]]); });
+  const fnAt = (n) => { let name = ''; for (const [l, nm] of starts) { if (l <= n) name = nm; else break; } return name; };
+  const res = parts.map(p => ({ part: p.part, re: (p.regions || []).map(r => new RegExp(r)), hits: [] }));
+  for (const [a, b] of ranges) for (let n = a; n <= Math.max(a, b); n++) {
+    const fn = fnAt(n), text = lines[n - 1] || '';
+    for (const r of res) if (r.re.some(re => re.test(fn) || (re.source.includes('^') ? false : re.test(text)))) { r.hits.push(`${fn || 'top of file'} (line ${n})`); break; }
+  }
+  return res.filter(r => r.hits.length).map(r => ({ part: r.part, where: [...new Set(r.hits)].slice(0, 4) }));
+}
+export function partGuard(game, touched, title = '', branch = '') {
+  if (!game || !(game.parts || []).length || /^(vp-|claude-|0[345]-|robot\/|test\/)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
+  const names = game.parts.map(p => p.part), m = String(title).match(/\bPART:\s*([A-Za-z0-9_-]+)/i), named = m ? m[1].toLowerCase() : '';
+  if (!touched.length) return [];
+  const list = touched.map(t => `${t.part} (${t.where.join(', ')})`).join('; ');
+  if (!named) return [`PART GUARD: ${game.file} - this pull request changes ${list} but its title names no part. One part per job: put "PART: <one of ${names.join(', ')}>" in the PR title and keep the change inside that part.`];
+  const def = game.parts.find(p => p.part.toLowerCase() === named);
+  if (!def) return [`PART GUARD: ${game.file} - "PART: ${named}" is not a part of this game. Parts: ${names.join(', ')}.`];
+  const ok = new Set([named, ...(def.with || []).map(x => x.toLowerCase())]);
+  const bad = touched.filter(t => !ok.has(t.part.toLowerCase()));
+  return bad.map(t => `PART GUARD: ${game.file} - your job is PART: ${named}, but this pull request also changes the "${t.part}" part: ${t.where.join(', ')}. Undo that change (or put it in its own job) - one part per job so a fix cannot break another part.`);
 }
 
 if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
@@ -144,6 +184,24 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
     }
   } catch (e) { console.log('::warning title=missing-reason::' + String(e).slice(0, 200)); }
   for (const m of (data.missing || [])) blockers.push(`${m}: ${why[m] || 'the robot could not play it (its run failed or timed out; the run could not be read)'}`);
+  // PART GUARD: read this pull request's own diff against its base and judge which parts it touched
+  try {
+    const gj = JSON.parse(fs.readFileSync('tools/game-check/games.json', 'utf8')), games = Array.isArray(gj) ? gj : gj.games || [];
+    const base = process.env.BASE_SHA || '';
+    for (const f of changed.filter(x => /^apex[a-z0-9]*\.html$/.test(x))) {
+      const g = games.find(x => x.file === f);
+      // LOCKED (owner Oct 27 2026 9:38 PM): part guard is for ANY game, 2D or 3D. A game page with no parts list (and not one of the old exempt games) is blocked.
+      if (g && !(g.parts || []).length && !g.partsExempt) { blockers.push(`PART GUARD: ${f} has no "parts" list in tools/game-check/games.json. Every game (2D or 3D) must list its parts (name + function-name regexes) so one job cannot break another part. Add it in this PR.`); continue; }
+      if (!g || !(g.parts || []).length || !base) continue;
+      if (g.partGuardFrom && process.env.PR_CREATED && Date.parse(process.env.PR_CREATED) < Date.parse(g.partGuardFrom)) { console.log(`Part guard ${f}: skipped - this pull request was opened before the guard started (${g.partGuardFrom})`); continue; }
+      const d = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', f], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
+      const ranges = [...d.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)].map(h => [+h[1], +h[1] + Math.max(0, (h[2] === undefined ? 1 : +h[2]) - 1)]);
+      const touched = partOfLines(g.parts, fs.readFileSync(f, 'utf8'), ranges);
+      const bl = partGuard(g, touched, process.env.PR_TITLE || '', process.env.PR_BRANCH || '');
+      console.log(`Part guard ${f}: touched ${touched.map(t => t.part).join(', ') || 'no listed part'} - ${bl.length ? 'BLOCKED' : 'ok'}`);
+      for (const x of bl) blockers.push(x);
+    }
+  } catch (e) { console.log('::warning title=part-guard::' + String(e).slice(0, 200)); }
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
   for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));

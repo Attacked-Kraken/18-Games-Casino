@@ -26,6 +26,8 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # the revert path (tools/robot-proof.py) needs the merged commit
       - name: Read the published status branch
         run: |
           git fetch origin robot-status:robot-status 2>/dev/null && git show robot-status:auditor.json > /tmp/old.json 2>/dev/null || true

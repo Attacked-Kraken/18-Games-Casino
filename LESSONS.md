@@ -248,3 +248,42 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 27 2026 help desk
 - A red line that blames your PR for something your diff does not touch (here the Save-name button #nmB, 31 px tall, on main since #1910) can come from a robot baseline that is stale: if the Check status says "NEW" but `git diff origin/main...your-branch` has no such element, file `HELP-VP: robot` with the element and main's commit instead of changing unrelated game code in a PR that must stay one-fix.
+
+## Oct 27 2026 help desk
+- A PR that changes the robot auditor or .github/ never merges itself: file ONE "HELP-VP: robot" line naming the PR so a Claude hand-merges it once green (T-222 and T-225 both asked about #1972 - a line saves the second wake).
+
+## Oct 27 2026 help desk
+- A stuck PR that is behind main and red on LAYOUT / old-baseline lines: merge main in first (window's job), then read the Check status again - only lines still red after that are the window's own.
+
+## Oct 27 2026 help desk
+- A FIXER 'pr-owner-idle' case on a PR with a game-code red line (touch targets under 32 px) goes to that game's builder as a one-fix job; the help desk never edits game code. Robot-side NOT RUN caps go as a HELP-VP: robot line.
+
+## 2026-10-27 help desk
+- A green clean PR can wait ~10 min when the merge robot's single run is busy in the known-fault re-run step: waiting runs beyond one are cancelled by design (cancel-in-progress false = one pending slot). Check the run's current step before calling a PR 'skipped'. (PR #1987)
+- A PR whose play parts ALL pass but whose `check` says "NOT RUN (robot time cap)" is a robot split bug (owner tests dealt to no part), not a time-out: read the part runs' durations before blaming the cap.
+- When the model audit replaces a fetched file that an open PR already uses, the file's ASSETS.md entry is removed with it and the PR's `assets` check goes red ("has no entry in ASSETS.md") although the check itself passes. Re-add the entry (title, maker, source, license) from `git log -S<file id> -- ASSETS.md`; the robot should do this itself (PR #1884 case).
+- **AUTO-UNDO never acts on the robot's own crash** (VP Oct 27 2026): #1984 undid window 6's G-375 (only Racer tests) and #2009 wanted to undo G-380 (only an F1 test) because the robot's browser died ("could not finish checking", "browser has been closed") in 4-8 games at once. tools/game-check/undo.mjs now skips any game whose check crashed - not evidence of a break. jobs/G-375.md (deleted by #1984) restored.
+- **AUTO-UNDO needs two agreeing results** (VP Oct 27 2026): the re-check inside the check job (no test container, killed by its 9-min timeout) produced the crash lines and Baseball owner-test "breaks" the play robots never saw. undo.mjs now counts a game only when the play robots' FIRST result and the re-check both found it newly broken.
+
+## Oct 27 2026 help desk
+- Auto-undo PRs (#1984, #2017) list browser-closed lines as "breaks": check the reasons before merging one - an all-robot-side undo deletes good work.
+
+## 2026-10-27 help desk
+- A robot check that is red only on "browser closed" / "NOT RUN (time cap)" lines is a robot fault, not a game break: an AUTO-UNDO PR built from such a check can still merge once a re-run goes green (#2017 deleted 140 lines of good work). Builders: if you see an AUTO-UNDO PR on your game, file a HELP-VP: robot line at once.
+- A G-number the Mac shows for a tester window may exist only on the Mac (no file on GitHub): the tester treats it as stale and runs its next checklist item instead of searching.
+
+- A model PR blocked only by the assets check ("no entry in ASSETS.md") is fixed by one ASSETS.md entry (title, maker, exact Sketchfab source, license) from the MODEL-REQUESTS line - PR #2036 sat because a rejected-then-refetched model lost its ledger line.
+- A Mac 'open 6 h, no PR, no report' nudge for a G-number the Muse has never seen = the order never arrived. Say so in a HELP line; do not invent work for it.
+- A conflict where main's side is empty and the branch's side is a block of new tests: keep the branch block, then check `node --check` and duplicate test ids.
+
+## 2026-10-27 help desk
+- A controller Claude branch must start vp-, claude-, 03-, 04- or 05- (judge.mjs exempt list is vp-|claude-|0[345]-); "vp04-" matches none, so UNIVERSAL.md failed FILE GUARD (#2074 -> #2075).
+
+## 2026-10-27 help desk
+- A red line that main's own check also shows must not be blamed on a PR that touches no game page; Fixer case pr-owner-idle should skip such PRs and let the VP judge the line 'also on main'.
+
+## 2026-10-28 help desk
+- After merging main into a branch that adds a play test, grep tools/game-check/fixes/<game>.mjs for a lone ',' line between entries before pushing - it makes the whole PR red on "PLAY-TEST FORMAT entry '?'" (happened on #1877 and #2080).
+
+## 2026-10-28 help desk
+- A stacked set of .github PRs (#2083 -> #2084 -> #2085) waits as one hand merge: say so in the HELP line so the VP merges the top PR once and closes the rest, not three tickets.

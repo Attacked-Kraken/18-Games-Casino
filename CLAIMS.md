@@ -164,6 +164,8 @@ While you work on a G-job, keep ONE row below (delete it when the owner 👍s): 
 Two Muses never touch the same file - if a file you need is in someone else's row, wait.
 
 ## Board
+| G-394 | window 1 | apexbaseball.html, tools/game-check/fixes/apexbaseball.mjs, jobs/G-394-w1.md | build/g-394-apexbaseball |
+| G-381 | window 1 | looks/refs/apexbaseball.md, jobs/G-381.md | build/g-381-apexbaseball |
 | G-376 | window 7 | jobs/G-376-w7.md | test/g-376-w7 |
 | G-373 | window 7 | jobs/G-373-w7.md | test/g-373-apexbaseball |
 | G-373 grades | window 7 | SCORES.md, jobs/G-373.md | test/grades-1026 |
@@ -336,11 +338,21 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - DONE PR #1818 merged e661d9dc (Muse main (casino)) |
 | G-363 | window 3 | looks/refs/apexflight.md, jobs/G-363-w3.md | build/g-363-apexflight |
 | G-364 | window 6 | jobs/G-364.md, CLAIMS.md | build/g-364-apexracer - DONE PR #1848 merged 4df36f0c (Muse algre141) |
-| G-365 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-365.md, CLAIMS.md | build/g-365-apexracer - CLAIMED Muse algre141 Oct 26 12:01 AM CDT (MAC tag) |
+| G-365 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-365.md, CLAIMS.md | build/g-365-apexracer - DONE PR #1857 merged 6a3c60e60 (report PR #1858) |
+| G-371 | window 6 | apexracer.html (rims lab ?test=rims), tools/game-check/fixes/apexracer.mjs (play-rims-showcase), jobs/G-371.md | shipped inside PR #1881 merged bfc3e6883 - DONE (PR #1870 closed unmerged in the queue clearing) |
 | G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
 | G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
 | G-368 | window 6 | MODELS.md, jobs/G-368-w6.md, CLAIMS.md | notes/g-368-models - DONE PR #1861 merged 51c01594 (Muse algre141) |
+| OWNER turbine lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-turbine-apexracer - CLAIMED Muse algre141 Oct 26 7:19 AM CDT (MAC tag) |
 | G-372 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-372-w6.md, CLAIMS.md | build/g-372-apexracer - CLAIMED Muse algre141 Oct 26 10:08 AM CDT (MAC tag) |
 | OWNER deep dish lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-deepdish-apexracer - CLAIMED Muse algre141 Oct 26 8:06 AM CDT (MAC tag) |
 | G-375 | window 6 | tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-375.md, CLAIMS.md | build/g-375-apexracer - CLAIMED Muse algre141 Oct 26 12:57 PM CDT (MAC tag) |
 | G-379 | window 4 | looks/refs/apextrackfield.md, jobs/G-379-w4.md | build/g-379-apextrackfield - DONE PR #1955 merged 18073a20 (Muse main (casino)) |
+| G-393 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs | build/g-393-apextrackfield - DONE PR #1992 merged 0d240390 |
+| G-391 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-391.md, CLAIMS.md | build/g-391-apexflight |
+| G-388 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, jobs/G-388.md, CLAIMS.md | build/g-388-apexracer - CLAIMED Muse algre141 Oct 27 12:40 PM CDT (MAC tag) |
+| G-397 | window 6 | menu button #nmB at least 44 px and fully on screen, upright and sideways | build/owner-turbine-apexracer (rides PR #1877 per MAC) - CLAIMED Muse algre141 Oct 27 2:36 PM CDT (MAC tag) |
+| G-403 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-403.md, CLAIMS.md | build/g-403-apexflight |
+| G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
+| G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
+| CAR CENSUS | window 6 | apexracer.html (one-slot wrap table), tools/game-check/fixes/apexracer.mjs (9 play-car-census tests), jobs/CENSUS-w6.md | build/census-apexracer - DONE PR #2091 merged b53e1430 |
