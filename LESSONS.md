@@ -281,3 +281,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-27 help desk
 - A red line that main's own check also shows must not be blamed on a PR that touches no game page; Fixer case pr-owner-idle should skip such PRs and let the VP judge the line 'also on main'.
+
+## 2026-10-28 help desk
+- After merging main into a branch that adds a play test, grep tools/game-check/fixes/<game>.mjs for a lone ',' line between entries before pushing - it makes the whole PR red on "PLAY-TEST FORMAT entry '?'" (happened on #1877 and #2080).
