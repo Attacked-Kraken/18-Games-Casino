@@ -1,0 +1,85 @@
+/* G-413 (Oct 28 2026): the VP's wrap paste - the wrap is painted on the car's own
+   bodyMat (applyRealCarWrap), never as added meshes. Proof: for every one of the
+   12 wraps the garage car's mesh count and bounding box equal the No-wrap build,
+   and every real wrap leaves its texture on the body material. */
+const WRAPS12 = ['none', 'name', 'stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'apex', 'camo', 'split', 'neon'];
+async function install(page, h) {
+  await h.eval((src) => { window.__ww = eval('(' + src + ')'); return true; }, (() => {
+    const E = window.__erc;
+    const root = window.__reality && window.__reality.player;
+    if (!root || !E) return null;
+    let meshes = 0, bodyMap = false, bodyTex = 0;
+    const box = { min: [1e9, 1e9, 1e9], max: [-1e9, -1e9, -1e9] };
+    const v = { x: 0, y: 0, z: 0 };
+    root.updateWorldMatrix(true, true);
+    const inv = root.matrixWorld.elements;
+    root.traverse((q) => {
+      if (!q.isMesh) return;
+      meshes++;
+      if (q.material && q.material.map && q.material.userData && q.material.userData.body) { bodyMap = true; bodyTex = q.material.map.id; }
+      const g = q.geometry; if (!g || !g.attributes.position) return;
+      const p = g.attributes.position, mw = q.matrixWorld.elements;
+      const pt = (i) => {
+        const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+        const wx = mw[0] * x + mw[4] * y + mw[8] * z + mw[12], wy = mw[1] * x + mw[5] * y + mw[9] * z + mw[13], wz = mw[2] * x + mw[6] * y + mw[10] * z + mw[14];
+        return [inv[0] * wx + inv[4] * wy + inv[8] * wz + inv[12], inv[1] * wx + inv[5] * wy + inv[9] * wz + inv[13], inv[2] * wx + inv[6] * wy + inv[10] * wz + inv[14]];
+      };
+      for (let i = 0; i < p.count; i += 7) { const w = pt(i); for (let a = 0; a < 3; a++) { if (w[a] < box.min[a]) box.min[a] = w[a]; if (w[a] > box.max[a]) box.max[a] = w[a]; } }
+    });
+    return { meshes, box, bodyMap, bodyTex };
+  }).toString()).catch(() => false);
+}
+async function buildWrap(page, h, wrap) {
+  return h.eval(async (w) => {
+    const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+    try {
+      const cfg = { ...(E.S.cars.goblin || {}), wrap: w, rim: 0, fin: 'metal', aero: 0, wheel: 0 };
+      E.S.cars.goblin = cfg; E.S.cur = 'goblin';
+      try { if (E.R && E.toMenu) E.toMenu(); } catch (e) {}
+      for (let i = 0; i < 60 && E.G.mode === 'loading'; i++) await wait(200);
+      const prev = window.__reality && window.__reality.player;
+      E.openGarage();
+      for (let i = 0; i < 40 && window.__reality.player === prev; i++) await wait(150);
+      return E.G.mode === 'garage' && !!window.__reality.player;
+    } catch (e) { return false; }
+  }, wrap).catch(() => false);
+}
+export default [
+  {
+    id: 'never-wrap-adds-no-meshes',
+    ask: 'Does every wrap paint on the body material with the same mesh count and bounding box as No wrap?',
+    async test(page, h) {
+      await install(page, h);
+      /* tag the body material so the census can recognise it: bodyMat is the paint material (metalness from paintMat) */
+      const tag = () => h.eval(() => {
+        const E = window.__erc, root = window.__reality && window.__reality.player;
+        if (!root) return false;
+        let n = 0;
+        root.traverse((q) => { if (q.isMesh && q.material && q.material.isMeshPhysicalMaterial) { q.material.userData.body = 1; n++; } });
+        return n > 0;
+      }).catch(() => false);
+      if (!await buildWrap(page, h, 'none')) return 'garage car did not build for No wrap';
+      await tag();
+      const base = await h.eval(() => window.__ww()).catch(() => null);
+      if (!base) return 'census failed for No wrap';
+      if (base.bodyMap) return 'No wrap already carries a body texture map';
+      const seen = {};
+      for (const w of WRAPS12.slice(1)) {
+        if (!await buildWrap(page, h, w)) return 'garage car did not build for wrap ' + w;
+        await tag();
+        const c = await h.eval(() => window.__ww()).catch(() => null);
+        if (!c) return 'census failed for wrap ' + w;
+        if (c.meshes !== base.meshes) return 'wrap ' + w + ': ' + c.meshes + ' meshes vs No wrap ' + base.meshes + ' - the wrap added geometry';
+        for (let a = 0; a < 3; a++) {
+          if (Math.abs(c.box.min[a] - base.box.min[a]) > 0.01 || Math.abs(c.box.max[a] - base.box.max[a]) > 0.01) return 'wrap ' + w + ': bounding box differs from No wrap on axis ' + a;
+        }
+        if (!c.bodyMap) return 'wrap ' + w + ': no texture on the body material - the wrap is invisible';
+        seen[w] = c.bodyTex;
+        await h.shot('wrap-' + w);
+      }
+      const distinct = new Set(Object.values(seen)).size;
+      if (distinct < 8) return 'only ' + distinct + ' distinct wrap textures across 11 wraps - wraps are not painting their own art';
+      return true;
+    },
+  },
+];
