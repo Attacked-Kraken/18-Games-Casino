@@ -53,10 +53,10 @@ async function buildWrap(page, h, wrap) {
   lastWhy = JSON.stringify(r2.why || '');
   return !!r2.ok;
 }
-export default [
-  {
-    id: 'never-wrap-adds-no-meshes',
-    ask: 'Does every wrap paint on the body material with the same mesh count and bounding box as No wrap?',
+/* the robot caps one test at 60 s and each garage build takes ~5 s on its slow runner, so the 11 wraps are checked in 3 short tests (4 + 4 + 3), each against its own No-wrap build */
+const wrapTest = (id, list) => ({
+    id,
+    ask: 'Do the wraps ' + list.join(', ') + ' paint on the body material with the same mesh count and bounding box as No wrap?',
     async test(page, h) {
       await install(page, h);
       /* tag the body material so the census can recognise it: bodyMat is the paint material (metalness from paintMat) */
@@ -73,7 +73,7 @@ export default [
       if (!base) return 'census failed for No wrap';
       if (base.bodyMap) return 'No wrap already carries a body texture map';
       const seen = {};
-      for (const w of WRAPS12.slice(1)) {
+      for (const w of list) {
         if (!await buildWrap(page, h, w)) return 'garage car did not build for wrap ' + w + ' [' + lastWhy + ']';
         await tag();
         const c = await h.eval(() => window.__ww()).catch(() => null);
@@ -87,8 +87,12 @@ export default [
         await h.shot('wrap-' + w);
       }
       const distinct = new Set(Object.values(seen)).size;
-      if (distinct < 8) return 'only ' + distinct + ' distinct wrap textures across 11 wraps - wraps are not painting their own art';
+      if (distinct < list.length) return 'only ' + distinct + ' distinct wrap textures across ' + list.length + ' wraps (' + list.join(', ') + ') - wraps are not painting their own art';
       return true;
     },
-  },
+});
+export default [
+  wrapTest('never-wrap-adds-no-meshes', ['name', 'stripes', 'flames', 'shards']),
+  wrapTest('never-wrap-adds-no-meshes-b', ['bolt', 'checker', 'race', 'apex']),
+  wrapTest('never-wrap-adds-no-meshes-c', ['camo', 'split', 'neon']),
 ];
