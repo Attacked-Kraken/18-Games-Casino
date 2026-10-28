@@ -166,7 +166,12 @@
   #menu #mbtns #mCredits { order:6; }
   #menu #mbtns .wide { grid-column:auto; font-size:19px; padding:14px; background:linear-gradient(135deg,#ff2bd6,#8a5cff 55%,#19e6ff); border-color:transparent; box-shadow:0 6px 22px rgba(255,43,214,.35), 0 0 30px rgba(25,230,255,.2); }
   #menu #who { text-align:left; font-size:12px; }
-  #menu #who input { width:128px; padding:7px 9px; }
+  #menu #who { display:flex; gap:6px; align-items:center; } #menu #who input { flex:1 1 0; min-width:0; width:auto; padding:7px 9px; }
+  @media (max-height:500px), (orientation:portrait) { #mcol { gap:3px; top:calc(100px + var(--sat)); } #menu #mbtns { gap:3px; } }
+  /* master #94 / Grok Oct 27 2026: menu buttons are at least 44 px tall (thumb) - fits 844x390 without scrolling */
+  #menu #mbtns .neo { min-height:44px; padding-top:4px; padding-bottom:4px; } #menu #mbtns { gap:1px; }
+  /* Oct 27 2026 VP: short sideways phone (844x390) - six 44 px buttons + the name row do not fit in one column (Save was 26 px off the screen), so the column becomes two columns: every control stays 44 px and fully on screen */
+  @media (max-height:500px) { #mcol { width:min(340px,46vw); top:calc(96px + var(--sat)); } #menu #mbtns { display:grid; grid-template-columns:1fr 1fr; gap:4px; } #menu #mbtns .wide { grid-column:1/3; order:0; padding:6px; font-size:17px; } #menu #mbtns #mRace { order:0; } #menu #mbtns #mCredits { grid-column:1/3; } #menu #who { margin-top:4px; } }
 </style>
 </head>
 <body>
@@ -345,6 +350,18 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); dishWidN = dims[axle] / diaRaw; dishTpl = hold;
 } catch (e) { dishTpl = null; }
+/* the owner's LOCKED monoblock wheel (MODELS.md erc-rim-monoblock, approved Oct 26 2026): baked once at load -
+   centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
+let monoTpl = null, monoWidN = 0.48;
+try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb')).scene;
+  const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+  const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
+  sc.position.set(-ctr.x, -ctr.y, -ctr.z);
+  const hold = new THREE.Group(); hold.add(sc);
+  if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
+  const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
+  hold.scale.setScalar(1 / diaRaw); monoWidN = dims[axle] / diaRaw; monoTpl = hold;
+} catch (e) { monoTpl = null; }
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -1326,6 +1343,16 @@ function makeGlbCar(id, cfg, o = {}) {
         const cl = dishTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
         const wrap = new THREE.Group(); wrap.add(cl);
         wrap.scale.z = clamp((hb.w * 1.04) / (dishWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = dishWidN * hb.h * rimScale * wrap.scale.z / 2;
+        if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
+        wrap.position.set(hb.x, hb.y, hb.z);
+        let best = null, bestA = -1;
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+      }
+      if (style === 5 && monoTpl) { /* the LOCKED monoblock wheel in its own white rally finish - never repainted, exactly as approved in the viewer */
+        const cl = monoTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
+        const wrap = new THREE.Group(); wrap.add(cl);
+        wrap.scale.z = clamp((hb.w * 1.04) / (monoWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = monoWidN * hb.h * rimScale * wrap.scale.z / 2;
         if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
@@ -2392,7 +2419,7 @@ function show(...ids) { SCR.forEach((i) => { $(i).style.display = 'none'; }); id
 const esc = (s) => String(s).replace(/[<>&"]/g, '');
 function refreshMenu() {
   $('mstat').innerHTML = (GIFT3 ? `<span style="background:linear-gradient(135deg,#ffd23a,#ff8a00);color:#2a1600">👑 Owner gift +${fmt$(3000000)} added!</span>` : '') + (GIFT ? `<span style="background:linear-gradient(135deg,#ffd23a,#ff8a00);color:#2a1600">🎁 Gift +${fmt$(200000)} added!</span>` : '') + (WELCOME ? `<span style="background:linear-gradient(135deg,#7dffb0,#19e6ff);color:#032">🎁 Welcome bonus ${fmt$(200000)}!</span>` : '') + `<span>🪙 ${fmt$(S.cash)}</span><span>⭐ ${S.rep.toLocaleString()} rep</span><span>🏆 ${S.wins} wins</span><span>🚗 ${CAR[S.cur].name}</span>`;
-  $('who').innerHTML = user ? `Racer: <b>${esc(user)}</b>` : `<input id="nm" maxlength="16" placeholder="Your racer name" /> <button class="neo alt" id="nmB" style="padding:9px 12px;font-size:13px">Save</button>`;
+  $('who').innerHTML = user ? `Racer: <b>${esc(user)}</b>` : `<input id="nm" maxlength="16" placeholder="Your racer name" /> <button class="neo alt" id="nmB" style="padding:9px 12px;font-size:13px;min-height:44px;min-width:44px;flex:none">Save</button>`;
   if (!user) $('nmB').onclick = () => { const n = ($('nm').value || '').replace(/[^a-zA-Z0-9_\- ]/g, '').trim().slice(0, 16); if (!n) return; try { localStorage.setItem('apexracer_username', n); } catch (e) {} user = n; load(); refreshMenu(); };
   $('mQ').textContent = '✨ Graphics: ' + { ultra: 'Ultra', high: 'High', fast: 'Fast' }[S.q];
   refreshMute();

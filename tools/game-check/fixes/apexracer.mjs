@@ -8,6 +8,27 @@ import { fileURLToPath } from 'url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export default [
   {
+    id: 'play-menu-buttons-44px',
+    ask: 'Menu buttons: Race Friends, Garage, Graphics and Sound are each at least 44 px tall on a sideways phone (844x390) and the menu still fits without scrolling',
+    async test(page, h) {
+      const old = page.viewportSize();
+      await page.setViewportSize({ width: 844, height: 390 });
+      await page.waitForTimeout(300);
+      const r = await h.eval(() => {
+        const out = [];
+        for (const id of ['mFriends', 'mGarage', 'mQ', 'mSnd']) {
+          const e = document.getElementById(id);
+          if (!e) { out.push(id + ' missing'); continue; }
+          const mh = parseFloat(getComputedStyle(e).minHeight) || 0;
+          if (mh < 44) out.push(id + ' min-height ' + mh + ' px (needs 44)');
+        }
+        return out.length ? out.join('; ') : true;
+      });
+      if (old) await page.setViewportSize(old);
+      return r;
+    }
+  },
+  {
     id: 'play-race-starts',
     ask: 'Race starts: starting a race creates the race, the player car and a full grid',
     async test(page, h) {
@@ -2647,6 +2668,56 @@ export default [
         if (newErrs.length) fails.push(city + ': script error while racing: ' + newErrs[0]);
       }
       return fails.length ? fails.join(' | ') : true;
+    },
+  },
+  {
+    id: "never-monoblock-locked",
+    cat: "never",
+    name: "the LOCKED monoblock wheel is the real fetched wheel in its own finish",
+    ask: "Owner approved the Monoblock rally wheel (MODELS.md erc-rim-monoblock, LOCKED Oct 26 2026): the Monoblock rim style must be the real fetched wheel exactly as it looks in the viewer - its own white finish, never repainted by Rim Color, never swapped without the owner",
+    async test(page, h) {
+      const fs = await import('node:fs'); const path = await import('node:path');
+      try { const md = fs.readFileSync(path.join(repoRoot, 'MODELS.md'), 'utf8'); const i = md.indexOf('- id: erc-rim-monoblock'); if (i < 0) return 'MODELS.md has no erc-rim-monoblock entry'; const sec = md.slice(i, i + 1600); if (!/- status: LOCKED/.test(sec)) return 'the monoblock wheel is not LOCKED in MODELS.md'; } catch (e) { return 'MODELS.md unreadable: ' + e.message; }
+      const html = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!html.includes('fifteen52-inspired-rally-rim-a0c9aa.glb')) return 'the game no longer loads the locked monoblock wheel file';
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy' };
+        const savedRim = E.S.cars.goblin.rim, savedCol = E.S.cars.goblin.rimCol;
+        E.S.cars.goblin.rim = 5; E.S.cars.goblin.rimCol = '#00ff00'; E.S.cur = 'goblin';
+        for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+        const prev = E.R; E.startRace(E.PLACES[0], 3);
+        for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+        if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return 'monoblock race did not rebuild';
+        const car = E.R.P.car; car.root.updateMatrixWorld(true);
+        const faces = [];
+        car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const v = q.position.clone(); q.getWorldPosition(v); faces.push({ c: [v.x, v.y, v.z], verts: q.geometry.attributes.position.count }); } });
+        let clusterVerts = 0, white = 0, green = 0;
+        car.root.traverse((q) => { if (!q.isMesh) return; const v = q.position.clone(); q.getWorldPosition(v); if (!faces.some((f) => Math.hypot(v.x - f.c[0], v.y - f.c[1], v.z - f.c[2]) < 0.45)) return; clusterVerts += q.geometry.attributes.position.count; const cc = q.material && q.material.color; if (cc && cc.getHexString() === '00ff00') green++; if (cc && cc.r > 0.7 && cc.g > 0.7 && cc.b > 0.7) white++; });
+        E.S.cars.goblin.rim = savedRim; E.S.cars.goblin.rimCol = savedCol;
+        return JSON.stringify({ faces: faces.length, minVerts: faces.length ? Math.min.apply(null, faces.map((f) => f.verts)) : 0, clusterVerts, white, green }); });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.faces !== 4) return 'the monoblock car has ' + d.faces + '/4 rim faces';
+      if (d.minVerts < 30000) return 'a monoblock rim face has only ' + d.minVerts + ' vertices - that is the built stand-in, not the fetched wheel (42,560 measured)';
+      if (d.clusterVerts < 150000) return 'the four wheels carry only ' + d.clusterVerts + ' vertices - the fetched monoblock is not fitted';
+      if (d.green > 0) return 'Rim Color repainted the LOCKED monoblock wheel (' + d.green + ' parts took the colour) - it keeps its own finish';
+      if (d.white < 4) return 'the monoblock white finish is missing from the wheels (found ' + d.white + ' white parts)';
+      return true;
+    },
+  },
+  {
+    id: "play-menu-save-button-size",
+    ask: "Is the racer-name Save button (#nmB) at least 44x44 px on the menu?",
+    async test(page, h) {
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
+      const r = await h.poll(() => h.eval(() => { const b = document.getElementById('nmB'); if (!b) return null; const x = b.getBoundingClientRect(); return x.height > 0 ? JSON.stringify({ w: x.width, hh: x.height }) : null; }), (v) => !!v, 10000).catch(() => null);
+      if (!r) return { inconclusive: 'no #nmB button on the menu (a racer name is already saved in this profile)' };
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return 'menu save button: could not read the button box';
+      if (d.hh < 44 || d.w < 44) return 'menu Save button #nmB measures ' + d.w.toFixed(0) + 'x' + d.hh.toFixed(0) + ' px - under the 44 px minimum';
+      return true;
     },
   },
 ];
