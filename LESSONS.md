@@ -284,3 +284,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-28 help desk
 - After merging main into a branch that adds a play test, grep tools/game-check/fixes/<game>.mjs for a lone ',' line between entries before pushing - it makes the whole PR red on "PLAY-TEST FORMAT entry '?'" (happened on #1877 and #2080).
+
+## 2026-10-28 help desk
+- A stacked set of .github PRs (#2083 -> #2084 -> #2085) waits as one hand merge: say so in the HELP line so the VP merges the top PR once and closes the rest, not three tickets.
