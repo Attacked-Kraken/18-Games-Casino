@@ -338,7 +338,8 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-359 | window 4 | looks/apextrackfield.md, jobs/G-359-w4.md | build/g-359-apextrackfield - DONE PR #1818 merged e661d9dc (Muse main (casino)) |
 | G-363 | window 3 | looks/refs/apexflight.md, jobs/G-363-w3.md | build/g-363-apexflight |
 | G-364 | window 6 | jobs/G-364.md, CLAIMS.md | build/g-364-apexracer - DONE PR #1848 merged 4df36f0c (Muse algre141) |
-| G-365 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-365.md, CLAIMS.md | build/g-365-apexracer - CLAIMED Muse algre141 Oct 26 12:01 AM CDT (MAC tag) |
+| G-365 | window 6 | tools/game-check/fixes/apexracer.mjs, jobs/G-365.md, CLAIMS.md | build/g-365-apexracer - DONE PR #1857 merged 6a3c60e60 (report PR #1858) |
+| G-371 | window 6 | apexracer.html (rims lab ?test=rims), tools/game-check/fixes/apexracer.mjs (play-rims-showcase), jobs/G-371.md | shipped inside PR #1881 merged bfc3e6883 - DONE (PR #1870 closed unmerged in the queue clearing) |
 | G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
 | G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
 | G-368 | window 6 | MODELS.md, jobs/G-368-w6.md, CLAIMS.md | notes/g-368-models - DONE PR #1861 merged 51c01594 (Muse algre141) |
