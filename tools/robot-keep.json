@@ -252,6 +252,21 @@
    "rule": "balance robot: beginner podium, skill pays, idle car does not win"
   },
   {
+   "file": "tools/game-check/pick-culprit.sh",
+   "needle": "a red test is the test's fault",
+   "rule": "auto-undo never blames a merge that touched only a game's tests/notes (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/game-check/pick-culprit.sh",
+   "needle": "that game's page (as of the merge) names the file",
+   "rule": "a shared model/kit file blames only games whose page names it (owner Oct 28 2026)"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "robot fault, NOT undoing",
+   "rule": "3+ games newly broken at once = robot fault, re-run, never undo (owner Oct 28 2026)"
+  },
+  {
    "file": "tools/merge-robot.py",
    "needle": "held for the hourly notes batch",
    "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
