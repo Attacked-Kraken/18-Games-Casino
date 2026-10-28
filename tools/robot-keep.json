@@ -265,6 +265,16 @@
    "file": ".github/workflows/game-check.yml",
    "needle": "robot fault, NOT undoing",
    "rule": "3+ games newly broken at once = robot fault, re-run, never undo (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "held for the hourly notes batch",
+   "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/notes-batch.py",
+   "needle": "NOTES BATCH",
+   "rule": "one notes pull request an hour (owner Oct 28 2026)"
   }
  ]
 }

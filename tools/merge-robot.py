@@ -461,6 +461,13 @@ def main():
             say("#%d skipped: from another repo" % n); continue
         files = gh("repos/%s/pulls/%d/files?per_page=100" % (REPO, n)) or []
         looked += 1
+        # VP Oct 28 2026 (owner PR pile-up order): reports / audits / claims on needs/ report/ claim/ branches that change ONLY notes files wait for
+        # the hourly notes batch (tools/notes-batch.py, one PR). After 80 min with no batch they merge on their own - never stuck.
+        _br = pr["head"]["ref"]
+        if _br.startswith(("needs/", "report/", "claim/")) and files and \
+                all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md)$", f["filename"]) for f in files) and \
+                (now - made).total_seconds() < 80 * 60:
+            say("#%d held for the hourly notes batch" % n); continue
         if any(f["filename"].startswith(".github/") for f in files):
             say("#%d skipped: changes the robots (.github/) - owner/Claude merges those" % n); continue
         full = settle_pr(n)
