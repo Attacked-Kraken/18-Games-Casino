@@ -374,6 +374,35 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-ins
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); monoWidN = dims[axle] / diaRaw; monoTpl = hold;
 } catch (e) { monoTpl = null; }
+/* OWNER rim-fit (Oct 28 2026): if a fetched wheel's model failed to load at boot, retry it when a car
+   actually asks for it - and when it lands, rebuild the garage car so the real wheel swaps in.
+   A fetched wheel is NEVER replaced by a coloured stand-in. */
+const WHEEL_URLS = { 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
+const wheelRetry = {};
+function bakeWheelTpl(style, sc) {
+  if (style === 4) { const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; return; }
+  const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+  const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
+  sc.position.set(-ctr.x, -ctr.y, -ctr.z);
+  const hold = new THREE.Group(); hold.add(sc);
+  if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
+  const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
+  hold.scale.setScalar(1 / diaRaw);
+  if (style === 2) { turbWidN = dims[axle] / diaRaw; turbTpl = hold; }
+  else if (style === 3) { dishWidN = dims[axle] / diaRaw; dishTpl = hold; }
+  else { monoWidN = dims[axle] / diaRaw; monoTpl = hold; }
+}
+async function retryWheel(style) {
+  if (wheelRetry[style] || !WHEEL_URLS[style]) return;
+  wheelRetry[style] = true;
+  try {
+    const sc = (await new GLTFLoader().loadAsync(WHEEL_URLS[style])).scene;
+    bakeWheelTpl(style, sc);
+    const gar = document.getElementById('garage');
+    if (gar && getComputedStyle(gar).display !== 'none' && typeof GAR_ID === 'string' && S && S.cars && S.cars[GAR_ID]) setGarageCar(GAR_ID, S.cars[GAR_ID]);
+  } catch (e) { /* still missing - the car keeps its own wheels; the next build asks again */ }
+  wheelRetry[style] = false;
+}
 const $ = (id) => document.getElementById(id);
 const TAU = Math.PI * 2, clamp = (v, a, b) => (v < a ? a : v > b ? b : v), lerp = (a, b, t) => a + (b - a) * t;
 function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -1347,54 +1376,67 @@ function makeGlbCar(id, cfg, o = {}) {
        carries the rimface tag. */
     const carbon = new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 0.42, metalness: 0.6 });
     ownMats.push(carbon);
+    const brakeMat = new THREE.MeshStandardMaterial({ color: 0x2a2d33, roughness: 0.5, metalness: 0.7 });
+    ownMats.push(brakeMat);
+    const FITD = 0.74; /* OWNER rim-fit (Oct 28 2026): a bare fetched rim's diameter as a share of the tyre's - a real low-profile proportion, so the rim fits IN the tyre */
     for (const hb of hubs) {
       const fr = hb.h / 2 * 0.68 * rimScale;
       const style = clamp(cfg.rim || 0, 0, 5);
-      let rimDone = false, rimHalf = 0.1;
+      let rimDone = false, rimHalf = 0.1, rimWrap = null;
       if (style === 3 && dishTpl) { /* the LOCKED deep dish wheel in its own copper finish - never repainted, exactly as approved in the viewer */
-        const cl = dishTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
+        const cl = dishTpl.clone(true); cl.scale.multiplyScalar(hb.h * FITD * rimScale); /* the template is baked at diameter 1 */
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (dishWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = dishWidN * hb.h * rimScale * wrap.scale.z / 2;
+        wrap.scale.z = clamp((hb.w * 1.04) / (dishWidN * hb.h * FITD * rimScale), 0.45, 1.0); rimHalf = dishWidN * hb.h * FITD * rimScale * wrap.scale.z / 2;
         if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
-        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
       if (style === 5 && monoTpl) { /* the LOCKED monoblock wheel in its own white rally finish - never repainted, exactly as approved in the viewer */
-        const cl = monoTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
+        const cl = monoTpl.clone(true); cl.scale.multiplyScalar(hb.h * FITD * rimScale); /* the template is baked at diameter 1 */
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (monoWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = monoWidN * hb.h * rimScale * wrap.scale.z / 2;
+        wrap.scale.z = clamp((hb.w * 1.04) / (monoWidN * hb.h * FITD * rimScale), 0.45, 1.0); rimHalf = monoWidN * hb.h * FITD * rimScale * wrap.scale.z / 2;
         if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
-        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
       if (style === 4 && rimTpl) { /* the LOCKED fetched wheel, its own finish exactly as the owner approved it in the viewer - never repainted */
-        const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h * rimScale / rimDia0;
+        const cl = rimTpl.clone(true), th = (hb.z > 0 ? -Math.PI / 2 : Math.PI / 2), sc2 = hb.h * FITD * rimScale / rimDia0;
         cl.rotation.y = th; cl.scale.setScalar(sc2);
         cl.position.copy(rimCtr.clone().multiplyScalar(-sc2).applyEuler(new THREE.Euler(0, th, 0)));
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5); rimHalf = rimWid0 * sc2 * wrap.scale.z / 2;
+        wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.0); rimHalf = rimWid0 * sc2 * wrap.scale.z / 2;
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
-        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
       if (style === 2 && turbTpl) { /* the LOCKED turbine wheel in its own red finish, its own tyre included - never repainted, exactly as approved in the viewer */
         const cl = turbTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (turbWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = turbWidN * hb.h * rimScale * wrap.scale.z / 2;
+        wrap.scale.z = clamp((hb.w * 1.04) / (turbWidN * hb.h * rimScale), 0.45, 1.0); rimHalf = turbWidN * hb.h * rimScale * wrap.scale.z / 2;
         if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
-        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
-      if (!rimDone) { const w2 = Math.max(0.09, hb.w * 0.34); rimHalf = w2 / 2; const grp = procRim(style, fr, w2, latheMat); grp.position.set(hb.x, hb.y, hb.z); if (hb.z < 0) grp.rotation.y = Math.PI; tilt.add(grp); }
-      const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.5, fr * 0.72, 0.05), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
-      cal3.position.set(hb.x - fr * 0.42, hb.y + fr * 0.18, hb.z + Math.sign(hb.z) * (rimHalf > 0.12 ? rimHalf * 0.60 : rimHalf * 0.16)); /* G-355: the caliper sits behind the rim's face plane (measured from the fitted rim's own depth, not the tyre) - on the tyre-based depth it floated on the wheel face in the owner's screenshot */
+      if (rimDone && rimWrap) { /* OWNER rim-fit: seat the face flush at the tyre's outer surface - measured on the fitted wheel itself, so the rim lands IN the tyre, never buried behind the sidewall */
+        tilt.updateWorldMatrix(true, true);
+        const wb = new THREE.Box3().setFromObject(rimWrap).applyMatrix4(inv);
+        const outer = hb.z > 0 ? wb.max.z : wb.min.z;
+        rimWrap.position.z += (hb.z + Math.sign(hb.z) * hb.w / 2) - outer;
+      }
+      if (!rimDone && style <= 1) { const w2 = Math.max(0.09, hb.w * 0.34); rimHalf = w2 / 2; const grp = procRim(style, fr, w2, latheMat); grp.position.set(hb.x, hb.y, hb.z); if (hb.z < 0) grp.rotation.y = Math.PI; tilt.add(grp); }
+      if (!rimDone && style >= 2) retryWheel(style); /* a fetched wheel is never faked with a coloured stand-in - the car keeps its own wheels until the real model lands, then the garage rebuilds with it */
+      const bz = hb.z + Math.sign(hb.z) * (rimDone ? Math.max(0.02, hb.w / 2 - 0.055) : rimHalf * 0.5); /* fetched rims are deep: brakes sit just inboard of the tyre surface; turned rims are shallow: brakes sit behind the face, inside the barrel (G-355) */ /* OWNER rim-fit: the brakes sit just inboard of the rim face, measured from the tyre - the old rim-depth position floated a billboard in the wheel */
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(fr * 0.52, fr * 0.52, 0.028, 24), brakeMat);
+      disc.rotation.x = Math.PI / 2; disc.position.set(hb.x, hb.y, bz); disc.userData.acc = 'brake'; tilt.add(disc);
+      const cal3 = new THREE.Mesh(new THREE.BoxGeometry(fr * 0.30, fr * 0.38, 0.045), new THREE.MeshStandardMaterial({ color: cfg.cal || '#e01b2b', roughness: 0.4, metalness: 0.3 }));
+      cal3.position.set(hb.x - fr * 0.40, hb.y + fr * 0.16, bz); /* G-355: the caliper sits behind the rim's face plane (measured from the fitted rim's own depth, not the tyre) - on the tyre-based depth it floated on the wheel face in the owner's screenshot */
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
     }
     if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -2722,7 +2764,7 @@ resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
 { const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); if (tq === 'rim') setTimeout(() => { try { S.cars[S.cur].rim = 3; S.cars[S.cur].rimCol = '#e8252f'; G.tab = 'rim'; openGarage(); } catch (e) {} }, 2500); if (tq === 'rims') setTimeout(() => { try { G.tab = 'rim'; openGarage(); showRims(); } catch (e) {} }, 2500); } /* G-364: owner check link - the garage with every rim style side by side, names under each */ /* G-355: owner check link - opens straight at the garage Rims tab, Deep Dish style, red rim colour */ /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
-window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, simStep: (n, dt) => { for (let i = 0; i < n; i++) simRace(dt); }, standings, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
+window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, simStep: (n, dt) => { for (let i = 0; i < n; i++) simRace(dt); }, standings, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam, wheelState: () => ({ 2: !!turbTpl, 3: !!dishTpl, 4: !!rimTpl, 5: !!monoTpl }), dropWheel: (style) => { if (style === 2) turbTpl = null; else if (style === 3) dishTpl = null; else if (style === 4) rimTpl = null; else if (style === 5) monoTpl = null; } };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
    running game - its size, that it faces the way it travels along the track direction, and that
    its wheels touch the ground. Everything resolves LIVE on every read: the garage car and the
