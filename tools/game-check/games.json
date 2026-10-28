@@ -7,7 +7,70 @@
       "start": [
         "#startBtn"
       ],
-      "people": true
+      "people": true,
+      "parts": [
+        {
+          "part": "pitching",
+          "regions": [
+            "^(startPlayerPitch|beginAim|beginWindup|autoPitch|lockAccuracy|plateCrossing|deliverPitch|ballPosAt|cpuChoosePitch|startCpuPitch)$"
+          ]
+        },
+        {
+          "part": "batting",
+          "regions": [
+            "^(doSwing|resolveContact|playerSwing|updateAimDot|aimFromEvent|aimRelease|resetInput|stepBatter|startBattedBall|decideBattedBall|buildBipAnim|animBallPos)$"
+          ]
+        },
+        {
+          "part": "rules",
+          "regions": [
+            "^(ensureInn|addRuns|resetCount|calledPitch|nextPitchSoon|onBall|onStrike|onFoul|swingingStrike|countText|onWalk|onStrikeout|forced|afterPlay|endHalfInning|nextPitch|applyHitResult|applyOutResult|endGame|umpireCall|setPhase|startGame)$"
+          ]
+        },
+        {
+          "part": "fielding",
+          "regions": [
+            "^(nearestFielder|dirVec|dressDefense|animFigure|resetFigure)$"
+          ]
+        },
+        {
+          "part": "players",
+          "regions": [
+            "^(makePlayer|place|dress|attachAthlete|fitAthletes|fitAthletesPump|athleteTick|soleTrim|athletePose|buildSoleSets|realityTrotTick|pickSkin)$"
+          ]
+        },
+        {
+          "part": "hud",
+          "regions": [
+            "^(renderScoreboard|renderCount|renderHUD|banner|revealMenu)$"
+          ]
+        },
+        {
+          "part": "camera",
+          "regions": [
+            "^(applyCam|targetCam|setCam|fitGame)$"
+          ]
+        },
+        {
+          "part": "park",
+          "regions": [
+            "^(buildGrandstands|buildDugouts|buildLightTowers|crowdTick|crowdExcite|pickCrowdColor|parkWave|drawParkVB|kitFieldOnPark|tickPark)$"
+          ]
+        },
+        {
+          "part": "sound",
+          "regions": [
+            "^musPhase$"
+          ]
+        },
+        {
+          "part": "career",
+          "regions": [
+            "^(fLoad|fSave|myFriendStr|myFriendCode|parseFriendCode)$"
+          ]
+        }
+      ],
+      "partGuardFrom": "2026-10-28T06:00:00Z"
     },
     {
       "file": "apexf1.html",
@@ -18,7 +81,46 @@
         "#startBtn",
         "#qualiSkip",
         "#raceBtn"
-      ]
+      ],
+      "parts": [
+        {
+          "part": "car",
+          "regions": [
+            "^(buildCarMesh|wheelInst[A-Za-z]*|mergeCarBody|liveryTexture|carContact|CKBoot|CKAttach)$"
+          ]
+        },
+        {
+          "part": "ai",
+          "regions": [
+            "^(aiDrive|aiPit|driverSkill)$"
+          ]
+        },
+        {
+          "part": "input",
+          "regions": [
+            "^(bindHold|initInput|readInput)$"
+          ]
+        },
+        {
+          "part": "track",
+          "regions": [
+            "^(buildSkyDome|initGL|trackGroundY|GPBoot|GPAttach|applyGroundKit|GPSetLights|GPPlay)$"
+          ]
+        },
+        {
+          "part": "menus",
+          "regions": [
+            "^(banner|show|initMenus|updateForecast|renderMenuCode|renderHub|showResults|fmtTime)$"
+          ]
+        },
+        {
+          "part": "weekend",
+          "regions": [
+            "^(startWeekend|runQuali|updateQuali|finishQuali|newCareer|friendCode|parseFriend)$"
+          ]
+        }
+      ],
+      "partGuardFrom": "2026-10-28T06:00:00Z"
     },
     {
       "file": "apexflight.html",
@@ -29,7 +131,46 @@
         "#thrUp",
         "#thrUp",
         "#thrUp"
-      ]
+      ],
+      "parts": [
+        {
+          "part": "traffic",
+          "regions": [
+            "^(crowdTick|updateTraffic)$"
+          ]
+        },
+        {
+          "part": "hud",
+          "regions": [
+            "^(drawAH|setMsg|flashMsg|updateHUD)$"
+          ]
+        },
+        {
+          "part": "controls",
+          "regions": [
+            "^(pollKeys|syncThrLever|resetInputs|toggleView|cyclePaint|trickOffsets)$"
+          ]
+        },
+        {
+          "part": "flight",
+          "regions": [
+            "^(step|respawn|crash|onTouchdown)$"
+          ]
+        },
+        {
+          "part": "camera",
+          "regions": [
+            "^(updateCamera|fitGame|applyQuality)$"
+          ]
+        },
+        {
+          "part": "career",
+          "regions": [
+            "^(fRec|fSave|myBestVs|friendSkill|friendCode|parseFriend)$"
+          ]
+        }
+      ],
+      "partGuardFrom": "2026-10-28T06:00:00Z"
     },
     {
       "file": "apexhockey.html",
@@ -38,14 +179,72 @@
       "start": [
         "#playBtn"
       ],
-      "people": true
+      "people": true,
+      "parts": [
+        {
+          "part": "ai",
+          "regions": [
+            "^(aiSkater|aiPass|aiGoalie)$"
+          ]
+        },
+        {
+          "part": "sound",
+          "regions": [
+            "^(kitSfx|puckSfx|skateSfx|horn|hornResume|commSay|commSyncMute)$"
+          ]
+        },
+        {
+          "part": "puck",
+          "regions": [
+            "^(stepPuck|bouncePuck|clearPuck|pokeCheck|shootFrom|doShoot|doPass|startCharge|releaseShot|doCheck)$"
+          ]
+        },
+        {
+          "part": "rules",
+          "regions": [
+            "^(rules|applyPenalty|callPenalty|endPenalty|fmtPen|whistle|faceoff|setupFaceoffPositions|nearestDot|onGoal|goalieSaves|possessionWatch|otBenchRank|otLines|maybeSwapLines|gameOver)$"
+          ]
+        },
+        {
+          "part": "hud",
+          "regions": [
+            "^(updateHUD|banner|showStatCard|hideStatCard|showShotTag|fmtClock|drawTag|goalFx|flash)$"
+          ]
+        },
+        {
+          "part": "camera",
+          "regions": [
+            "^(cycleView|stepCamera|fitGame)$"
+          ]
+        },
+        {
+          "part": "skaters",
+          "regions": [
+            "^(makeSkater|buildTeam|teamMats|attachAthletes|placeSkater|stepSkater|snapSkatesToIce|bladeIdx|levelBlades|nearestSkater|switchControl)$"
+          ]
+        },
+        {
+          "part": "ice",
+          "regions": [
+            "^(makeIceTexture|roundedRectSegs|spray|stepSpray)$"
+          ]
+        },
+        {
+          "part": "career",
+          "regions": [
+            "^(cLoad|cSave|mLoad|mSave|newCareer|starOVR|starSkater|userOpp|applyResult|simScore|simGame|ranked|simWeekOthers|careerPending|defOf|careerOnGoal|careerAfterGame|friendCode|parseFriendCode|friendDef|careerShowcase|fmtRecord|renderMenu|disarmReset|renderHub)$"
+          ]
+        }
+      ],
+      "partGuardFrom": "2026-10-28T06:00:00Z"
     },
     {
       "file": "apexmonstertruck.html",
       "name": "Apex Monster Truck",
       "start": [
         "#playBtn"
-      ]
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexracer.html",
@@ -57,17 +256,81 @@
       ],
       "partGuardFrom": "2026-10-28T06:00:00Z",
       "parts": [
-        { "part": "menu", "regions": ["^(refreshMenu|toMenu|show)$", "#menu|#mcol|#mbtns|#who"] },
-        { "part": "garage", "regions": ["^(openGarage|renderGarage|updateGarage|clearPrev|flashG|setGarageCar)$"] },
-        { "part": "rims", "regions": ["^(rimGeo|procRim|showRims|hideRims)$", "rimShow|turbTpl|monoTpl|rimTpl|rimScale|rimHalf|rimDone|rimface"], "with": ["wheels"] },
-        { "part": "wheels", "regions": ["^(tireGeo|poseWheels)$"], "with": ["rims"] },
-        { "part": "wraps", "regions": ["^(wrapTex|wrapMats|addNameWrap|addStripeWrap|addPanelWrap|nameWrapTex)$", "cfg\\.wrap|wrapCol"] },
-        { "part": "paint", "regions": ["^paintMat$"] },
-        { "part": "body", "regions": ["^(bodyGeo|ownerKit|detailGeo|mockupBodyGeo|mockupDetails)$"] },
-        { "part": "sound", "regions": ["^(setSnd|refreshMute|kitLive|kitShot|engKitStart|engineSnd|musicStart|musicStop|musSting|musStopLayer)$"] },
-        { "part": "ai", "regions": ["^stepAI$"] },
-        { "part": "hud", "regions": ["^drawHud$"] },
-        { "part": "track", "regions": ["^makeTrack$"] }
+        {
+          "part": "menu",
+          "regions": [
+            "^(refreshMenu|toMenu|show)$",
+            "#menu|#mcol|#mbtns|#who"
+          ]
+        },
+        {
+          "part": "garage",
+          "regions": [
+            "^(openGarage|renderGarage|updateGarage|clearPrev|flashG|setGarageCar)$"
+          ]
+        },
+        {
+          "part": "rims",
+          "regions": [
+            "^(rimGeo|procRim|showRims|hideRims)$",
+            "rimShow|turbTpl|monoTpl|rimTpl|rimScale|rimHalf|rimDone|rimface"
+          ],
+          "with": [
+            "wheels"
+          ]
+        },
+        {
+          "part": "wheels",
+          "regions": [
+            "^(tireGeo|poseWheels)$"
+          ],
+          "with": [
+            "rims"
+          ]
+        },
+        {
+          "part": "wraps",
+          "regions": [
+            "^(wrapTex|wrapMats|addNameWrap|addStripeWrap|addPanelWrap|nameWrapTex)$",
+            "cfg\\.wrap|wrapCol"
+          ]
+        },
+        {
+          "part": "paint",
+          "regions": [
+            "^paintMat$"
+          ]
+        },
+        {
+          "part": "body",
+          "regions": [
+            "^(bodyGeo|ownerKit|detailGeo|mockupBodyGeo|mockupDetails)$"
+          ]
+        },
+        {
+          "part": "sound",
+          "regions": [
+            "^(setSnd|refreshMute|kitLive|kitShot|engKitStart|engineSnd|musicStart|musicStop|musSting|musStopLayer)$"
+          ]
+        },
+        {
+          "part": "ai",
+          "regions": [
+            "^stepAI$"
+          ]
+        },
+        {
+          "part": "hud",
+          "regions": [
+            "^drawHud$"
+          ]
+        },
+        {
+          "part": "track",
+          "regions": [
+            "^makeTrack$"
+          ]
+        }
       ],
       "pictures": [
         {
@@ -100,7 +363,8 @@
       "start": [
         "#btnStart"
       ],
-      "people": true
+      "people": true,
+      "partsExempt": true
     },
     {
       "file": "apextrackfield.html",
@@ -110,28 +374,77 @@
         "#grid button",
         "#bCardStart"
       ],
-      "people": true
+      "people": true,
+      "parts": [
+        {
+          "part": "events",
+          "regions": [
+            "^create[A-Za-z]*Engine$",
+            "^(updateRunner|applyStride|jumpPhys|newRunner|makeLiveRival|updateLiveRival|mkTeam|updReceiver|stepSpent|passBaton|makeEngine|buildRelayZones|aiWin)$"
+          ]
+        },
+        {
+          "part": "hud",
+          "regions": [
+            "^(drawPowerMeter|drawAngleMeter|drawTimingBar|meterBox|throwMeterBox|centerText|bannerText|clearOverlay|overlayPhaseText|bannerTex|updateHUD|barFill|canvasTex)$"
+          ]
+        },
+        {
+          "part": "camera",
+          "regions": [
+            "^(followCam|clampCamXZ|fitGame)$"
+          ]
+        },
+        {
+          "part": "athletes",
+          "regions": [
+            "^(styleRig|styleRigsFor|disposeRig|attachDriver3D|easeRigsToIdle|dustAt)$"
+          ]
+        },
+        {
+          "part": "track",
+          "regions": [
+            "^(lanePoint|straightX|straightZ|stagFor|startSFor|visS|placeStraight|placeOval|centerline)$"
+          ]
+        },
+        {
+          "part": "career",
+          "regions": [
+            "^(saveBests|recordBest|newCareer|saveCareer|careerMods|pointsFor|bestDisplay|fillField|freeRivals|champRivals|rivalMark|makeFriendCode|parseFriendCode|playerRating|seasonRivals|meetsIn|isChampMeet|career[A-Za-z]*|meet[A-Za-z]*|startCareerMeet|startChamp|startTournament|tourn[A-Za-z]*|medalTable|startCeremony|stopCeremony|kitFor)$"
+          ]
+        },
+        {
+          "part": "menus",
+          "regions": [
+            "^(showScreen|showCard|startPlay|refreshSkip|devSkipLevel|finishEvent|finishCommon|showFinal|refreshMenuRival|buildGrid|buildBests|wireButton|wireMenu|boot|live|endStick|resetStick|frame|firstGesture)$"
+          ]
+        }
+      ],
+      "partGuardFrom": "2026-10-28T06:00:00Z"
     },
     {
       "file": "apexmoto.html",
       "name": "Apex Moto",
       "start": [
         "#raceBtn"
-      ]
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexpaperplane.html",
       "name": "Paper Plane",
       "start": [
-        "∞ Endless"
-      ]
+        "\u221e Endless"
+      ],
+      "partsExempt": true
     },
     {
       "file": "apexreefdash.html",
       "name": "Reef Dash",
       "start": [
-        "∞ Endless"
-      ]
+        "\u221e Endless"
+      ],
+      "partsExempt": true
     }
   ]
 }

@@ -175,6 +175,31 @@
    "file": ".github/workflows/game-check-pr.yml",
    "needle": "BASE_SHA",
    "rule": "PART GUARD reads the PR diff against its base"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "export function partGuard",
+   "rule": "PART GUARD: a PR must name ONE part and may not change another (all games)"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "export function partOfLines",
+   "rule": "PART GUARD reads which part every changed line sits in"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "PART GUARD: read this pull request's own diff",
+   "rule": "PART GUARD runs on every PR"
+  },
+  {
+   "file": "tools/game-check/games.json",
+   "needle": "\"partGuardFrom\"",
+   "rule": "games carry a parts list (guard is on for them)"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "partsExempt",
+   "rule": "a game page without a parts list is blocked (any 2D or 3D game)"
   }
  ]
 }
