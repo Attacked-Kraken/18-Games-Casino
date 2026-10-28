@@ -1,0 +1,64 @@
+--- a/apexracer.html
++++ b/apexracer.html
+@@ -813,6 +813,47 @@
+     if (cfg.wrap === 'neon') { const e = wrapTex('neon', cfg.paint, acc, 'e').clone(); e.needsUpdate = true; e.repeat.copy(t.repeat); e.offset.copy(t.offset); m.emissiveMap = e; m.emissive = new THREE.Color(acc).multiplyScalar(2.5); } return m; };
+   return [mk('s'), mk('t')];
+ }
++function applyRealCarWrap(model, bodyMat, cfg) {
++  if (!cfg.wrap || cfg.wrap === 'none') return;
++  const acc = cfg.wrapCol || '#ffffff';
++  const key = cfg.wrap + cfg.paint + acc + 'combined';
++  let tex = WC[key];
++  if (!tex) {
++    const ts = wrapTex(cfg.wrap, cfg.paint, acc, 's'), tt = wrapTex(cfg.wrap, cfg.paint, acc, 't');
++    tex = ctex(1024, 1024, (g, w, h) => { g.drawImage(tt.image, 0, 0, w, h * 0.5); g.drawImage(ts.image, 0, h * 0.5, w, h * 0.5); });
++    WC[key] = tex;
++  }
++  bodyMat.map = tex; bodyMat.color.set(0xffffff);
++  if (cfg.wrap === 'neon') {
++    const ek = key + 'e'; let etex = WC[ek];
++    if (!etex) { const es = wrapTex('neon', cfg.paint, acc, 'e'); etex = ctex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(es.image, 0, h * 0.5, w, h * 0.5); }); WC[ek] = etex; }
++    bodyMat.emissiveMap = etex; bodyMat.emissive = new THREE.Color(acc).multiplyScalar(2.5);
++  }
++  bodyMat.needsUpdate = true;
++  /* ONE box for the whole body, in the model's own space (so stripes line up across bumper, door, roof) */
++  model.updateWorldMatrix(true, true);
++  const inv = new THREE.Matrix4().copy(model.matrixWorld).invert(), v = new THREE.Vector3(), n = new THREE.Vector3(), nm = new THREE.Matrix3();
++  const box = new THREE.Box3(), meshes = [];
++  model.traverse((q) => {
++    if (!q.isMesh || q.material !== bodyMat || !q.geometry || !q.geometry.attributes.position || !q.geometry.attributes.normal) return;
++    meshes.push(q); const p = q.geometry.attributes.position, m = new THREE.Matrix4().multiplyMatrices(inv, q.matrixWorld);
++    for (let i = 0; i < p.count; i++) box.expandByPoint(v.fromBufferAttribute(p, i).applyMatrix4(m));
++  });
++  if (!meshes.length) return;
++  const L = box.max.x - box.min.x || 1, H = box.max.y - box.min.y || 1, W = box.max.z - box.min.z || 1;
++  for (const q of meshes) {
++    const geo = q.geometry; if (!geo.userData.uv0) geo.userData.uv0 = geo.attributes.uv ? geo.attributes.uv.clone() : null;
++    const p = geo.attributes.position, nr = geo.attributes.normal, m = new THREE.Matrix4().multiplyMatrices(inv, q.matrixWorld); nm.getNormalMatrix(m);
++    const uvs = new Float32Array(p.count * 2);
++    for (let i = 0; i < p.count; i++) {
++      v.fromBufferAttribute(p, i).applyMatrix4(m); n.fromBufferAttribute(nr, i).applyMatrix3(nm).normalize();
++      const ux = (v.x - box.min.x) / L, uy = (v.y - box.min.y) / H, uz = (v.z - box.min.z) / W;
++      if (n.y > 0.35) { uvs[i * 2] = ux; uvs[i * 2 + 1] = 0.5 + 0.5 * uz; }
++      else { uvs[i * 2] = v.z < 0 ? 1 - ux : ux; uvs[i * 2 + 1] = 0.5 * uy; }   /* -z side flipped so text reads right */
++    }
++    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
++  }
++}
+ function topY(P, x) { const b = P.body.slice().sort((a, c) => a[0] - c[0]); let y = b[0][1]; for (const [bx2, by] of b) if (bx2 <= x) y = by; for (let i = 0; i < b.length - 1; i++) if (x >= b[i][0] && x <= b[i + 1][0]) { const t = (x - b[i][0]) / (b[i + 1][0] - b[i][0]); return lerp(b[i][1], b[i + 1][1], t); } return y; }
+ /* body surface helpers: every add-on is positioned from these so it stays rooted in the shell (no floating parts) */
+ function sideZ(P, x, y) {
+@@ -1320,9 +1361,10 @@
+   pool.rotation.order = 'YXZ'; pool.rotation.x = -Math.PI / 2; pool.visible = false; pool.userData.pool = 1; pool.userData.off = ls.x / 2 + 2.7; pool.renderOrder = 2; /* G-163: NOT added to the car - the reality robot measures the car's own box, so setupRace parks the pool in the night scene and posePool follows the car with it */ /* G-206: pool energy cut (color 1.1 -> 0.7, opacity 0.38 -> 0.15) - measured on the night grid, the additive pool was the term blowing the centre car out to a pink/white blob (blown-white share 1.41% -> 0.37% with the pool off) */
+   tilt.add(model);
+   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
+-  const WRAP_SLOTS = { name: () => { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }, stripes: () => addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material)) };
+-  const wrapSlot = WRAP_SLOTS[cfg.wrap] || ((cfg.wrap && cfg.wrap !== 'none') ? () => addPanelWrap(tilt, bodyMat, cfg).forEach((m) => ownMats.push(m.material)) : null); /* one slot only - exactly one wrap builder can ever run (the double-wrap wreck, Oct 27 2026) */
+-  if (wrapSlot) wrapSlot();
++  const WRAP_SLOTS = { none: () => {} };
++  for (const k of ['name','stripes','flames','shards','bolt','checker','race','apex','camo','split','neon']) WRAP_SLOTS[k] = () => applyRealCarWrap(model, bodyMat, cfg);
++  const wrapSlot = WRAP_SLOTS[cfg.wrap] || (() => {});
++  wrapSlot(); /* ONE wrap path: paint the wrap on the car's own bodyMat. addPanelWrap / addNameWrap / addStripeWrap are no longer called. */
+   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
+   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
+   /* garage fix (owner): the shop options were sold but never reached the real cars - wire them in.
