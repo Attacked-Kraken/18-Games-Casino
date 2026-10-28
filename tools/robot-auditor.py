@@ -24,7 +24,9 @@ REPO = os.environ.get("GITHUB_REPOSITORY", "Attacked-Kraken/18-Games-Casino")
 MERGE_TOKEN = os.environ.get("MERGE_TOKEN", "")
 DRY = bool(os.environ.get("DRY"))
 ALLOW = {".github/workflows/sketchfab-fetch.yml", "tools/sketchfab-fetch.mjs", "tools/glb-clean.mjs", "tools/model-shots.mjs",
-         "tools/game-check/known-faults.json"}
+         "tools/game-check/known-faults.json",
+         # owner Oct 27 2026 10:08 PM: Part Guard files - a green PR touching only these merges without a Claude
+         "tools/game-check/judge.mjs", "tools/game-check/games.json", "tools/robot-keep.json"}
 NOTES = re.compile(r"^(jobs/[^/]+\.md|UNIVERSAL\.md|LESSONS\.md|NEWS\.md|TOOLS\.md|ASSETS\.md|MODEL-REQUESTS\.md|team/[^/]+\.md|needs/[^/]+\.md)$")
 NEVER = re.compile(r"(robot-auditor|robot-proof|merge-robot|known-fault-rerun)")
 BAD_ADD = re.compile(r"(\bpermissions\s*:|pull_request_target|ROBOT_MERGE_TOKEN|secrets\.(?!SKETCHFAB_TOKEN\b|GITHUB_TOKEN\b))")
