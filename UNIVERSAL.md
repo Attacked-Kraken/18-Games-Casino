@@ -96,10 +96,14 @@ Asked "what's a permanent fix that would help" and "what can help make things fa
 - Faster 6 - cheap tests by design (the census builds cars in the garage, ~0.15 s each, 648 builds in seconds, not full races). BUILT on window 6's side.
 
 ## RACER GARAGE LESSONS (04, Oct 28 2026 - LOCKED, every game with an options screen)
-- Owner-visible options were COUNTED, never LOOKED at: wraps tore the body, rims never changed, most options did nothing, suspension floated the car, and a bought option charged again on every switch. Rule: every tab and option gets a robot picture of the real screen plus a test that fails when choosing it changes nothing (tests/garage-census.mjs: play-garage-every-option-changes, play-garage-no-rebuy). BUILT, merged #2104.
+- Owner-visible options were COUNTED, never LOOKED at: wraps tore the body, rims never changed, most options did nothing, suspension floated the car, and a bought option charged again on every switch. Rule: every tab and option gets a robot picture of the real screen plus a test that fails when choosing it changes nothing (tools/game-check/fixes/apexracer/garage-census.mjs: play-garage-every-option-changes, play-garage-no-rebuy). BUILT, merged #2104.
 - Ownership: every upgrade tab keeps its own owned list (c.own[tab]); switching back to a bought option is free. Paint/wrap/rim/fin/cal/glow used a flat price per switch (the re-buy bug). QUEUED in the 16 GARAGE TAB lines of jobs/QUEUE.md.
 - Wraps paint the body's OWN material (looks/apexracer/wrap-fix/), never a grid shell laid over the model. One wrap slot only. BUILT as paste code (#2105); the paste PR is window 6's, not merged yet.
 - Suspension lifts the BODY; the tyres stay on the floor. QUEUED.
 - Process: when code is tricky, Claude writes it once and the Muse pastes it exactly (nothing else changed). Muses are free but slip on complex work; Claude is exact but costs usage.
 - A window at automation level 0 holds every automatic message and queued step. Check the level before blaming the window (window 6 sat at 0 overnight).
 - Not adopted without the owner's go: splitting apexracer.html into small files (LATER.md item 1, master #66).
+
+## AUTO-UNDO CROSS-CHECK (04, Oct 28 2026 - LOCKED)
+- An auto-undo PR can come from a check run that started BEFORE a blame fix merged (#2118 vs #2117) and blame a game the merge never touched. Before judging one, read: (1) which robot version made it (run start vs the fix's merge time), (2) whether the culprit passed its own PR check, (3) whether the games named were touched by it. A Check status of RUNNING can also mean parts queued behind the 5-runner cap - read the run's jobs before calling it stuck.
+- A hand close of an auto-undo needs a PR comment saying why (hand merge/close rule).
