@@ -206,14 +206,14 @@ jobs:
           # A results.json file can exist even when a timed-out/partial recheck did not return every targeted game.
           # An incomplete recheck is not evidence that the remaining failures were a fluke: fall back to the first result.
           if [ -f recheck-out/results.json ]; then
-            MISSING=$(node -e '
+            MISSING=$(FIRST_JSON="$FIRST" node -e '
               const fs=require("fs");
               const first=JSON.parse(process.env.FIRST_JSON);
               const now=JSON.parse(fs.readFileSync("recheck-out/results.json","utf8"));
               const expected=new Set((first.games||[]).split(",").filter(Boolean));
               const got=new Set((now.results||[]).map(r=>r.file));
               console.log([...expected].filter(f=>!got.has(f)).join(","));
-            ' FIRST_JSON="$FIRST" 2>/dev/null || echo "unknown")
+            ' 2>/dev/null || echo "unknown")
             if [ -n "$MISSING" ]; then
               echo "::warning title=AUTO-UNDO::recheck was incomplete for $MISSING - acting on the first result"
               rm -f recheck-out/results.json
