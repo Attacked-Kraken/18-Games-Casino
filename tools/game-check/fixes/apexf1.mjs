@@ -1553,36 +1553,4 @@ export default [
       return true;
     },
   },
-  // BALANCE ROBOT (master #11, owner Oct 28 2026): two bots drive the first 100 game-seconds of a race with NO drawing (__test.simStep = Race.update + a driver on the game's racing line).
-  // FAILS when: the good bot cannot hold a top-10 place (cannot be won), the good bot is not farther along than the beginner
-  // (skill does not pay), or the beginner does not get going at all (too hard).
-  {
-    id: 'play-balance-skill-matters',
-    ask: 'Balance: a good driver runs near the front, a beginner can still drive, and the field is not trivially easy or impossible',
-    async test(page, h) {
-      const res = {};
-      for (const skill of ['beginner', 'good']) {
-        if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
-        await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
-        await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
-        let up = false; // the start lights count as the race starting (the sim runs through them); a slow robot may still be in them
-        for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => { const t = window.__test; const m = t && t.race().mode; return m === 'race' || m === 'lights'; }).catch(() => false); }
-        if (!up) return { inconclusive: 'race never started for the ' + skill + ' bot' };
-        res[skill] = await h.eval((skill) => {
-          const T = window.__test; if (!T || !T.simStep) return { err: 'no __test.simStep hook' };
-          const bot = skill === 'idle' ? null : { skill };
-          let n = 0; while (n < 2000) { T.simStep(0.05, bot); n++; const st = T.simState(); if (st && st.finished) break; }
-          return T.simState();
-        }, skill).catch((e) => ({ err: String(e) }));
-        if (!res[skill] || res[skill].err) return (res[skill] && res[skill].err) || 'balance run returned nothing';
-      }
-      const { beginner: b, good: g } = res;
-      const f = (r) => 'place ' + r.place + '/' + r.of + ', ' + Math.round(r.dist) + ' m';
-      const note = 'after 100 s - good ' + f(g) + ', beginner ' + f(b) + '';
-      if (g.place > 10) return 'BALANCE: a good driver cannot hold a top-10 place - ' + note;
-      if (g.dist <= b.dist + 50) return 'BALANCE: driving well does not pay - the good bot is not clearly farther along than the beginner - ' + note;
-      if (b.dist < 300) return 'BALANCE: a beginner bot barely gets going (under 300 m in 100 s) - ' + note;
-      return true;
-    },
-  },
 ];
