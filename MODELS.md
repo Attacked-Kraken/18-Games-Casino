@@ -187,3 +187,16 @@ Format (one section per model — keep the keys exactly like this):
 - version: 1
 - notes: for the Rims tab style Monoblock. Robot pictures are good: a white solid rally rim with a vented face, reads clearly in the robot's set. 91,838 triangles. Fifteen52 Inspired rally rim by JPepe, CC-BY - 'inspired' is the maker's title credit; there is no brand logo on the model itself (checked in G-361).
 - status: LOCKED (owner \uD83D\uDC4D Mon Oct 26 2026 - nobody may swap it without the owner)
+
+---
+
+## MODEL: Exotic Racer rim - Tuner mesh (rebuilt)
+- id: erc-rim-mesh
+- game: apexracer.html
+- file: models/fetched/tuner-wheel-8ea8e1.glb
+- look: night
+- view: tools/model-viewer.html?m=models/fetched/tuner-wheel-8ea8e1.glb&look=night
+- by: algre141@gmail.com
+- version: 2
+- notes: Re-filed after the fleet auto-undo robot reverted PR #2036 and PR #1884 over unrelated games failures; the wheel itself is unchanged - the lab-rebuilt tuner mesh wheel (BBS RS-style multi-spoke by ZenuuxOfficiel, CC-BY; recentred and re-assembled, 1,187,240 bytes). Candidate for the Rims tab if the owner wants this wheel back as a style.
+- status: WAITING OWNER
