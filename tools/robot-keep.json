@@ -160,6 +160,21 @@
    "file": ".github/workflows/game-check.yml",
    "needle": "undo.mjs prev-results.json recheck-out/results.json first-broken.json",
    "rule": "the re-check is judged together with the first result"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "export function partGuard",
+   "rule": "PART GUARD: a PR that changes a part its title does not name fails"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "PART GUARD",
+   "rule": "PART GUARD blocker text"
+  },
+  {
+   "file": ".github/workflows/game-check-pr.yml",
+   "needle": "BASE_SHA",
+   "rule": "PART GUARD reads the PR diff against its base"
   }
  ]
 }
