@@ -84,3 +84,13 @@ OUTSIDE PLAN #3 - "golden frame" (ChatGPT, forwarded by the owner Oct 25 2026 10
 - Why: the Racer garage (Oct 27) - one job's change reached the car body and the menu, and two pull requests both edited the same menu lines. Real case on the robot's first run: #1877 touched rims + wraps + menu, #1906 touched menu + rims.
 - A game with no `parts` list is not guarded yet; a new game gets its parts list in the same PR that adds it to games.json. A game's `partGuardFrom` date means pull requests opened before it are not judged. Not guarded: claude/vp/robot/test branches.
 - Not built (the picture method): photographing every part before and after. The robot's software 3D could not load the Racer page the same way twice (100% noise), so the guard reads the code change instead. Pictures stay an option once the robot's own garage pictures hold still.
+
+## Window 6's answers, Oct 27 2026 10:29 PM (owner video; filed the same night)
+Asked "what's a permanent fix that would help" and "what can help make things faster". Status: BUILT / QUEUED / PARKED.
+- Permanent fix: a CAR CENSUS that runs on every change before merge - build every car with every wrap and rim, count the pieces (one wrap system, four rim faces, wing as chosen, nothing extra). Tonight's double wrap would have failed it (3 shell pieces where 0 belong). Every owner complaint becomes a guard test that must FAIL on the broken build first. QUEUED: sent to window 6 as a job at 9:47 PM (census + one-slot wrap switch, fail-first numbers before and after). Same idea for every game: a census of what exists, run on every change.
+- Faster 1 - check only what a change touches (affected tests + always-on guards, full replay only nightly on main; a one-line fix replays ~90 tests today). QUEUED, robot side (CLAUDE robot).
+- Faster 2 - resume a cancelled check: keep finished parts' results, re-run only the part that hit the cap. QUEUED, robot side.
+- Faster 3 - per-job test files: every PR appends to one shared fixes file, which causes the conflicts and hand-joins. QUEUED, robot side (the robot-fix queue already holds a similar item).
+- Faster 4 - a PR that touches only jobs/reports merges without playing the game. QUEUED; check what the merge robot already skips before building.
+- Faster 5 - a direct push lane (a git credential for window 6 so pushes take seconds). PARKED, NOT ADOPTED: it needs a key, and the owner never wants to manage keys.
+- Faster 6 - cheap tests by design (the census builds cars in the garage, ~0.15 s each, 648 builds in seconds, not full races). BUILT on window 6's side.
