@@ -565,6 +565,7 @@ for (const g of games) {
       // in 29 s, so the reset could not be checked") did not find a bug - it found nothing. Such an answer is
       // INCONCLUSIVE: the test gets one more try on a fresh game; still nothing = a yellow line, never "NOT done yet".
       // A test says it by returning { inconclusive: 'why' }, or a sentence with "could not be checked" / "never happened".
+      const BROWSER_DEAD = /Target page, context or browser has been closed|browser has been closed|Browser has been closed|Target closed|Protocol error[^\n]{0,80}closed/i;
       const INCON = /could not be checked|couldn'?t be checked|could not be tested|never happened|did not happen in|no .{0,40} happened in \d+ ?s/i;
       // Oct 22 9:20 PM (window 2 HELP, PR #1177): on a slow runner a tester test errored "took over 30 s" in 3 runs - the robot's
       // clock, not a game bug. A test that only TIMED OUT gets one more try on a fresh game with DOUBLE the time; a test that
@@ -579,8 +580,10 @@ for (const g of games) {
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
           else { note = typeof res === 'string' ? res : ''; inc = !ok && INCON.test(note); }
+          // Oct 28 2026 (VP, HELP line PR #2100: never-rim-fake red 5 times on "[threw: page.evaluate: Target page, context or browser has been closed]"): the ROBOT's browser died inside the test - not a measured game fault. INCONCLUSIVE: one retry on a fresh game, then a yellow line, never "NOT done yet".
+          if (!ok && !inc && BROWSER_DEAD.test(note)) { inc = true; note = 'robot browser closed during the test - ' + note.slice(0, 120); }
           timedOut = false;
-        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 400); timedOut = /^took over \d+ s/.test(String(e.message)); }
+        } catch (e) { note = 'test error: ' + String(e.message).split('\n')[0].slice(0, 400); timedOut = /^took over \d+ s/.test(String(e.message)); if (BROWSER_DEAD.test(note)) { inc = true; note = 'robot browser closed during the test - ' + note.slice(0, 120); } }
         clearTimeout(timer); dead = true;
         if (timedOut && attempt === 1) { await freshGame(); continue; }
         if (!inc || attempt === 2) break;
