@@ -406,6 +406,8 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/tuner-wheel-8ea8e1.glb
+- title: BBS RS16 Tuner Car Wheel (rebuilt)
+- maker: ZenuuxOfficiel
 - source: rebuilt in the lab from https://sketchfab.com/3d-models/bbs-rs16-tuner-car-wheel-188d0d33ca424524b10dcf34409e97f8
 - license: CC-BY 4.0
 - downloaded: 2026-10-26 by the Sketchfab fetch robot; rebuilt (recentred, re-assembled) by window 6
