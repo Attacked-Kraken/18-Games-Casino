@@ -278,3 +278,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-27 help desk
 - A controller Claude branch must start vp-, claude-, 03-, 04- or 05- (judge.mjs exempt list is vp-|claude-|0[345]-); "vp04-" matches none, so UNIVERSAL.md failed FILE GUARD (#2074 -> #2075).
+
+## 2026-10-27 help desk
+- A red line that main's own check also shows must not be blamed on a PR that touches no game page; Fixer case pr-owner-idle should skip such PRs and let the VP judge the line 'also on main'.
