@@ -290,3 +290,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-28 help desk
 - A known fault that expires needs an owner and a next step on its line the day it is filed; the Mac warns 48 h ahead, so renew or cure before then.
+
+## 2026-10-28 help desk
+- A robot fix that adds a step to the PR workflow must also reach main's workflow (game-check.yml); check both files for the step before calling a cap/NOT RUN problem fixed (#2085 resume step was PR-only).

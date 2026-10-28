@@ -240,6 +240,16 @@
    "file": "tools/quick-check.sh",
    "needle": "quick-lint.mjs",
    "rule": "quick-check runs the no-browser lint first"
+  },
+  {
+   "file": "apexracer.html",
+   "needle": "function simRace(",
+   "rule": "render-free race logic for the balance robot (master #11)"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer.mjs",
+   "needle": "play-balance-skill-matters",
+   "rule": "balance robot: beginner podium, skill pays, idle car does not win"
   }
  ]
 }
