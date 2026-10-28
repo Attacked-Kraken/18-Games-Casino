@@ -43,13 +43,13 @@
   },
   {
    "file": ".github/workflows/game-check.yml",
-   "needle": "apexracer.html@1of6",
-   "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+   "needle": "apexracer.html@1of8",
+   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
   },
   {
    "file": ".github/workflows/game-check-pr.yml",
-   "needle": "apexracer.html@1of6",
-   "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+   "needle": "apexracer.html@1of8",
+   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
   },
   {
    "file": "tools/merge-robot.py",
