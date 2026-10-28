@@ -1288,6 +1288,10 @@ export default [
     ask: 'G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); return true; });
+      /* startRace drops the call while the game is loading (apexracer.html: it returns early when G.mode is 'loading'), and the sheet's own races are 8+ laps - so this guard can end up driving an 8-lap race and read '3/8' instead of '1/3'. Wait until a 3-lap race with a player exists, re-issuing the start only when not loading. */
+      let ok3 = false;
+      for (let i = 0; i < 40 && !ok3; i++) { await h.wait(500); ok3 = await h.eval(() => { const E = window.__erc, R = E.R; if (R && R.laps === 3 && R.P) return true; if (E.G && E.G.mode !== 'loading') E.startRace(E.PLACES[0], 3); return false; }); }
+      if (!ok3) return 'no 3-lap race started: the 3-lap start was dropped while loading';
       let s0 = null;
       for (let i = 0; i < 40 && !s0; i++) { await h.wait(500); s0 = await h.eval(() => { const R = window.__erc.R; return R && R.P ? R.signTxt : null; }); }
       if (s0 !== 'START') return 'on lap 1 the finish-line sign says ' + JSON.stringify(s0) + ', not START';

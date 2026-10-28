@@ -29,8 +29,9 @@ async function install(page, h) {
     return { meshes, box, bodyMap, bodyTex };
   }).toString()).catch(() => false);
 }
+let lastWhy = '';
 async function buildWrap(page, h, wrap) {
-  return h.eval(async (w) => {
+  const attempt = () => h.eval(async (w) => {
     const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
     try {
       const cfg = { ...(E.S.cars.goblin || {}), wrap: w, rim: 0, fin: 'metal', aero: 0, wheel: 0 };
@@ -38,11 +39,19 @@ async function buildWrap(page, h, wrap) {
       try { if (E.R && E.toMenu) E.toMenu(); } catch (e) {}
       for (let i = 0; i < 60 && E.G.mode === 'loading'; i++) await wait(200);
       const prev = window.__reality && window.__reality.player;
-      E.openGarage();
+      try { E.openGarage(); } catch (e) { return { ok: false, why: 'openGarage: ' + String(e).slice(0, 90) }; }
       for (let i = 0; i < 40 && window.__reality.player === prev; i++) await wait(150);
-      return E.G.mode === 'garage' && !!window.__reality.player;
-    } catch (e) { return false; }
-  }, wrap).catch(() => false);
+      const ok = E.G.mode === 'garage' && !!window.__reality.player;
+      return { ok, why: ok ? '' : 'mode=' + E.G.mode + ' same=' + (window.__reality.player === prev) + ' player=' + !!window.__reality.player };
+    } catch (e) { return { ok: false, why: 'build: ' + String(e).slice(0, 90) }; }
+  }, wrap).catch((e) => ({ ok: false, why: 'eval: ' + String(e).slice(0, 90) }));
+  const r1 = await attempt();
+  lastWhy = JSON.stringify(r1.why || '');
+  if (r1.ok) return true;
+  /* one retry, as the rim guard does: the first garage build in a session can be slow on cold loads, and a closed browser on the first try is the robot's, not the wrap's - the retry runs on a warm page, and a surfaced closed-browser note lets the robot mark it inconclusive instead of red */
+  const r2 = await attempt();
+  lastWhy = JSON.stringify(r2.why || '');
+  return !!r2.ok;
 }
 export default [
   {
@@ -58,14 +67,14 @@ export default [
         root.traverse((q) => { if (q.isMesh && q.material && q.material.isMeshPhysicalMaterial) { q.material.userData.body = 1; n++; } });
         return n > 0;
       }).catch(() => false);
-      if (!await buildWrap(page, h, 'none')) return 'garage car did not build for No wrap';
+      if (!await buildWrap(page, h, 'none')) return 'garage car did not build for No wrap [' + lastWhy + ']';
       await tag();
       const base = await h.eval(() => window.__ww()).catch(() => null);
       if (!base) return 'census failed for No wrap';
       if (base.bodyMap) return 'No wrap already carries a body texture map';
       const seen = {};
       for (const w of WRAPS12.slice(1)) {
-        if (!await buildWrap(page, h, w)) return 'garage car did not build for wrap ' + w;
+        if (!await buildWrap(page, h, w)) return 'garage car did not build for wrap ' + w + ' [' + lastWhy + ']';
         await tag();
         const c = await h.eval(() => window.__ww()).catch(() => null);
         if (!c) return 'census failed for wrap ' + w;
