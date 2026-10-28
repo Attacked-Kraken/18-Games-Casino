@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # QUICK CHECK (owner Oct 21 2026): run the game check robot on ONE game, before every pull request.
 #   tools/quick-check.sh apexhockey.html
+# tools/quick-check.sh apexhockey.html --fast   = only the 2-second no-browser lint (syntax, test files, PART GUARD) - use it when the browser cannot start.
 # Prints every red line the robot would post, and where the pictures are (quick-out/img/). Takes 1-3 minutes.
 set -u
 G="${1:-}"
 [ -n "$G" ] || { echo "usage: tools/quick-check.sh apex<game>.html"; exit 2; }
 [ -f "$G" ] || { echo "no such game page: $G"; exit 2; }
 cd "$(dirname "$0")/.."
+# master #6: the no-browser lint runs FIRST (2 seconds, works in any Muse sandbox). "--fast" stops there.
+node tools/game-check/quick-lint.mjs "$G" "${PR_TITLE:-}" || exit 1
+[ "${2:-}" = "--fast" ] && exit 0
 if ! node -e "require('playwright')" 2>/dev/null; then
   echo "installing the test browser once (~1 min)..."
   npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1

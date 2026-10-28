@@ -230,6 +230,16 @@
    "file": ".github/workflows/game-check-pr.yml",
    "needle": "resume-merge.mjs",
    "rule": "tests the time cap left unplayed are resumed on their own (master 123)"
+  },
+  {
+   "file": "tools/game-check/quick-lint.mjs",
+   "needle": "export async function quickLint",
+   "rule": "the 2-second no-browser quick check exists (master #6)"
+  },
+  {
+   "file": "tools/quick-check.sh",
+   "needle": "quick-lint.mjs",
+   "rule": "quick-check runs the no-browser lint first"
   }
  ]
 }

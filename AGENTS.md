@@ -42,7 +42,7 @@ your chat as "ANSWER to your HELP line". Never wait silently.
 `test/...`, only tests + `jobs/QUEUE.md` + `jobs/G-NN.md` + `reviews/` + `CLAIMS.md`, never game code; the robot
 passes it when your NEW `tester-` tests FAIL on today's game (that is the proof) and it merges by itself. Windows 1-6
 BUILD: title `BUILD G-NN: ...`, branch `build/...`, only the files your job lists, fully green before it merges.
-Before every PR: `tools/quick-check.sh apex<game>.html`. Table: STUDIO-STANDARD.md 9.7-9.12.
+Before every PR: `tools/quick-check.sh apex<game>.html`. If the browser cannot start in your sandbox: `tools/quick-check.sh apex<game>.html --fast` (2 seconds, no browser: syntax, test files, PART GUARD with `PR_TITLE="... PART: x"`). Table: STUDIO-STANDARD.md 9.7-9.12.
 
 **FILE GUARD (owner, 2026-10-21):** your job order says `FILES YOU MAY CHANGE: ...`. A pull request may change ONE
 game (its page, its play tests `tools/game-check/fixes/<game>.mjs`, its `looks/<game>/`) plus notes (`jobs/G-NN.md`,
