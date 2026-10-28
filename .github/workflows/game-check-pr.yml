@@ -135,6 +135,20 @@ jobs:
             fi
             ONLY_TESTS="$SCOPE" ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
+      - name: Resume tests the time cap left unplayed (master 123)
+        if: always() && matrix.game != 'models'
+        continue-on-error: true
+        run: |
+          [ -f game-check-out/results.json ] || exit 0
+          IDS=$(node tools/game-check/resume-merge.mjs game-check-out/results.json --ids)
+          [ -n "$IDS" ] || exit 0
+          echo "Resuming only the tests the cap left unplayed: $IDS"
+          pkill -f "serve.mjs 8811" || true
+          node tools/game-check/serve.mjs 8813 >/dev/null 2>&1 &
+          sleep 2
+          M="${{ matrix.game }}"; GAME="${M%@*}"
+          ONLY_TESTS="$IDS" ONLY="$GAME" SKIP_MODELS=1 timeout 720 node tools/game-check/check.mjs http://127.0.0.1:8813/ game-check-resume || true
+          node tools/game-check/resume-merge.mjs game-check-out/results.json game-check-resume/results.json
       - name: iPhone Safari pass
         if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of') && !contains(matrix.game, '@4of') && !contains(matrix.game, '@5of') && !contains(matrix.game, '@6of')
         continue-on-error: true

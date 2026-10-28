@@ -225,6 +225,11 @@
    "file": "tools/game-check/check.mjs",
    "needle": "PER-JOB TEST FILES",
    "rule": "per-job play-test files in fixes/<game>/ are loaded (master 124)"
+  },
+  {
+   "file": ".github/workflows/game-check-pr.yml",
+   "needle": "resume-merge.mjs",
+   "rule": "tests the time cap left unplayed are resumed on their own (master 123)"
   }
  ]
 }
