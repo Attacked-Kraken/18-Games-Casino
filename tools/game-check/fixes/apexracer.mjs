@@ -2856,7 +2856,6 @@ export default [
       return true;
     },
   },
-,
   {
     id: 'play-menu-save-button-onscreen',
     ask: 'Is the menu Save button (#nmB) at least 44 px and fully on screen?',
