@@ -1695,9 +1695,16 @@ function makeStick(id, onMove) {
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
   el.addEventListener('contextmenu', (e) => e.preventDefault());
+  // LET GO ON INTERRUPTION (robot STICK rule): a call / notification / hidden tab must never leave the truck steering or driving by itself
+  const letGo = () => { pid = null; setKnob(0, 0); apply(0, 0); };
+  window.addEventListener('blur', letGo);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) letGo(); });
 }
 makeStick('stickL', (x) => { input.steerA = -x; }); // stick left = turn left on screen
 makeStick('stickR', (x, y) => { input.throttleA = -y; }); // push up = gas, down = brake/reverse
+function releaseKeys() { for (const k of new Set(Object.values(keyMap))) input[k] = false; }
+window.addEventListener('blur', releaseKeys);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseKeys(); });
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 /* ================= flow: menu -> countdown -> play -> over ================= */
