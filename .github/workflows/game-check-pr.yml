@@ -126,7 +126,14 @@ jobs:
           else
             M="${{ matrix.game }}"; GAME="${M%@*}"; PART=""
             case "$M" in *@*of*) P="${M#*@}"; PART="${P%of*}/${P#*of}";; esac
-            ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
+            # SCOPED CHECKS (master #122): a PR that changes one tagged part of a game plays only the tests that part can affect + always-on tests
+            SCOPE=""
+            if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ needs.plan.outputs.mode }}" = "touched" ]; then
+              git fetch -q --depth=2 origin "${{ github.sha }}" 2>/dev/null || true
+              SCOPE=$(node tools/game-check/scope.mjs "$GAME" "$(git rev-parse HEAD^1 2>/dev/null)" 2>/dev/null || true)
+              [ -n "$SCOPE" ] && echo "Scoped check: playing only $SCOPE"
+            fi
+            ONLY_TESTS="$SCOPE" ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
       - name: iPhone Safari pass
         if: always() && matrix.game != 'models' && !contains(matrix.game, '@2of') && !contains(matrix.game, '@3of') && !contains(matrix.game, '@4of') && !contains(matrix.game, '@5of') && !contains(matrix.game, '@6of')

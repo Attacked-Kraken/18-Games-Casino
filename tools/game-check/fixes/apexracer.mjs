@@ -204,7 +204,7 @@ export default [
     },
   },
   {
-    id: 'play-paint-own-colors',
+    id: 'play-paint-own-colors', parts: ['paint'],
     ask: 'Every car shows its own paint: each real 3D model body material is replaced by that car paint, and grid paints are not all the same',
     async test(page, h) {
       return h.eval(() => {
@@ -241,7 +241,7 @@ export default [
     },
   },
   {
-    id: 'play-paint-covers-car',
+    id: 'play-paint-covers-car', parts: ['paint'],
     ask: 'G-46 fix: proper shiny paint covers every racer car - the clearcoat paint is on the whole body shell, not a small slice, so no car can vanish into dark factory materials',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
@@ -270,7 +270,7 @@ export default [
     },
   },
   {
-    id: 'play-goblin-name-wrap',
+    id: 'play-goblin-name-wrap', parts: ['wraps'],
     ask: "APEX ARCADE name wrap: on the V12 Goblin by default, letters riding on both sides of the body",
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
@@ -640,7 +640,7 @@ export default [
     },
   },
   {
-    id: 'play-sound-kit',
+    id: 'play-sound-kit', parts: ['sound'],
     ask: 'G-80: the game uses the owner sound packs - every music and UI file it plays is in the repo at the path the code asks for',
     async test(page, h) {
       const files = [
@@ -710,7 +710,7 @@ export default [
     },
   },
   {
-    id: 'play-engine-kit',
+    id: 'play-engine-kit', parts: ['sound'],
     ask: 'G-240 (owner): the engine sound is the supercar kit in sounds/engines/supercar/ - idle + accel loops crossfaded by throttle, shift and backfire one-shots, tire squeal - decoded as buffers, and every kit file is in the repo',
     async test(page, h) {
       const fs = await import('node:fs');
@@ -725,7 +725,7 @@ export default [
     },
   },
   {
-    id: 'play-music-buffers',
+    id: 'play-music-buffers', parts: ['sound'],
     ask: 'Owner fix (Oct 23): the music plays as decoded buffers, never through media elements (the static-and-skipping pipeline on phones), and all four pack tracks are in the repo',
     async test(page, h) {
       const fs = await import('node:fs');
@@ -790,7 +790,7 @@ export default [
     },
   },
   {
-    id: 'play-wrap-on-door',
+    id: 'play-wrap-on-door', parts: ['wraps'],
     ask: 'G-149 point 1: the APEX ARCADE name wrap sits on the door - its strip never reaches the wheel zones at either end',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
@@ -820,7 +820,7 @@ export default [
     },
   },
   {
-    id: 'play-no-light-bars',
+    id: 'play-no-light-bars', parts: ['body','track'],
     ask: 'G-145 point 2: no car wears a light bar - the G-70 bumper bars are gone from the garage car, the race grid and traffic',
     async test(page, h) {
       const gBars = await h.eval(() => { const H = window.__reality; let n = 0; if (H && H.player) H.player.traverse((q) => { if (q.userData.lamp) n++; }); return n; });
@@ -840,7 +840,7 @@ export default [
     },
   },
   {
-    id: 'play-headlights-bright',
+    id: 'play-headlights-bright', parts: ['body','track'],
     ask: 'G-163: every car shines from its own headlights and tail lights - lamp meshes plus a soft glow front and rear, nothing solid',
     async test(page, h) {
       await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
@@ -864,7 +864,7 @@ export default [
     },
   },
   {
-    id: 'play-lights-no-solids',
+    id: 'play-lights-no-solids', parts: ['body','track'],
     ask: 'G-163 point 1 + owner glow fix: no solid light blocks, and the glow sits ON the lens - no glow quad reaches past the nose or the tail, nothing floats in front of the car',
     async test(page, h) {
       await h.eval(() => { window.__erc.startRace(window.__erc.PLACES[0], 3); });
@@ -893,7 +893,7 @@ export default [
     },
   },
   {
-    id: 'play-headlight-pool',
+    id: 'play-headlight-pool', parts: ['body','track'],
     ask: 'G-163 point 2: at night the headlights throw a pool of light on the road ahead of the car',
     async test(page, h) {
       const started = await h.eval(() => { const E = window.__erc; const ni = E.PLACES.findIndex((p) => p.tod === 'n'); if (ni < 0) return 'no night place exists'; E.S.cur = 'goblin'; E.startRace(E.PLACES[ni], 3); return 'ok'; });
@@ -922,7 +922,7 @@ export default [
     },
   },
   {
-    id: 'play-brake-lights',
+    id: 'play-brake-lights', parts: ['body','track'],
     ask: 'G-163 point 3: brake lights - the rear lamps and glows flare bright red while the brake is held',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
@@ -949,7 +949,7 @@ export default [
     },
   },
   {
-    id: 'play-wrap-both-doors',
+    id: 'play-wrap-both-doors', parts: ['wraps'],
     ask: 'G-176: the APEX ARCADE name wrap is on BOTH doors of the Goblin - a strip on each side, each inside the door span between the axles',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); });
@@ -2828,7 +2828,7 @@ export default [
   },
 
   {
-    id: 'never-name-wrap-no-panels',
+    id: 'never-name-wrap-no-panels', parts: ['wraps'],
     ask: 'Does the APEX ARCADE name wrap stand alone (letters only, no panel shell over the car)?',
     async test(page, h) {
       const census = async (wrap) => {
