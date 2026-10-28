@@ -23,19 +23,10 @@ jobs:
             --jq '.workflow_runs[] | select(.head_repository.full_name=="${{ github.repository }}") | .id' | while read id; do
             gh api -X POST "repos/${{ github.repository }}/actions/runs/$id/approve" && echo "approved run $id" || echo "could not approve $id"
           done
-      - name: Re-run a failed pull-request check ONCE (flaky tests)
-        # owner Oct 18: "auto-retry flaky robot checks" - a check that failed on its FIRST try is run again once before
-        # the Muse is blamed. A second failure stands. Own-repo branches only.
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api "repos/${{ github.repository }}/actions/workflows/game-check.yml/runs?event=pull_request&status=failure&per_page=20" \
-            --jq '.workflow_runs[] | select(.run_attempt==1 and .head_repository.full_name=="${{ github.repository }}") | "\(.id) \(.updated_at) \(.head_branch)"' |
-          while read id upd br; do
-            age=$(( $(date +%s) - $(date -d "$upd" +%s) ))
-            [ "$age" -lt 7200 ] || continue
-            gh api -X POST "repos/${{ github.repository }}/actions/runs/$id/rerun-failed-jobs" && echo "re-ran $id ($br)" || echo "could not re-run $id"
-          done
+      # (Oct 28 2026, found by ChatGPT's audit) The old step here re-ran failed runs of game-check.yml with event=pull_request.
+      # Since the side-by-side split, pull requests are checked by game-check-pr.yml and game-check.yml is main-only, so that step
+      # matched nothing. Failed PR checks are retried by game-check-retry.yml (setup failures, once per run) and known-fault-rerun.py;
+      # pointing this step at game-check-pr.yml would retry the same run a second time, so it was removed, not repointed.
       - name: Restart a stale main check
         env:
           GH_TOKEN: ${{ github.token }}
