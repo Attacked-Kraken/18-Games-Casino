@@ -52,7 +52,7 @@ jobs:
           # owner Oct 23 2026 6:19 PM: a re-run of an OLD run re-uses that run's OLD robot setup (#1326 needed main merged in by hand).
           # When main's robot files are newer than the PR's, the retry merges main into the PR branch and starts a FRESH check on the
           # newest robot setup; otherwise it re-runs the failed jobs (same setup as main anyway).
-          ROBOT_NEW=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SHA...main" -q '[.files[]?.filename|select(startswith(".github/workflows/")|startswith("tools/game-check/"))]|length' 2>/dev/null || echo 0)
+          ROBOT_NEW=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SHA...main" -q '[.files[]?.filename | select(startswith(".github/workflows/") or startswith("tools/game-check/"))] | length' 2>/dev/null || echo 0)
           if [ -n "$PR" ] && [ "${ROBOT_NEW:-0}" -gt 0 ]; then
             printf '%s\n' "Failed in setup, not in the game: $INFRA" "The robot's setup was fixed on main since this check started - the robot merged main into your branch and is checking it again on the newest setup. Pull before you push." > /tmp/why.txt
             bash tools/game-check/status-comment.sh "$PR" RETRYING /tmp/why.txt || true
