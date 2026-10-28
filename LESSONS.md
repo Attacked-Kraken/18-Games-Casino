@@ -293,3 +293,8 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-28 help desk
 - A robot fix that adds a step to the PR workflow must also reach main's workflow (game-check.yml); check both files for the step before calling a cap/NOT RUN problem fixed (#2085 resume step was PR-only).
+
+## 2026-10-28 help desk
+- A red owner/never test whose only evidence is "browser/context has been closed" is a robot crash, not a game fault: file HELP-VP: robot, do not ask the window to change the game.
+- A green notes-only REPORT/NEEDS PR (report/, needs/ branch) waits up to 80 min for the hourly notes batch by design - it is not stuck.
+
