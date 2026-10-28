@@ -285,6 +285,16 @@
    "file": ".github/workflows/game-check.yml",
    "needle": "blame ONLY the games this merge itself touched",
    "rule": "auto-undo names only games the culprit merge touched (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/game-check/progress-update.mjs",
+   "needle": "<!-- progress -->",
+   "rule": "the Check status comment shows live progress (finished / running / queued with minutes) - owner Oct 28 2026"
+  },
+  {
+   "file": ".github/workflows/game-check-pr.yml",
+   "needle": "progress line (this part finished)",
+   "rule": "every play part refreshes the progress line when it finishes"
   }
  ]
 }

@@ -32,6 +32,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash tools/game-check/status-comment.sh "${{ github.event.pull_request.number }}" RUNNING
+      - name: Check status - progress line (first look)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/game-check/progress-update.mjs
       - name: Pick what this pull request needs played
         id: pick
         run: |
@@ -111,6 +117,12 @@ jobs:
         game: ${{ fromJson(needs.plan.outputs.games) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check status - progress line (this part started)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/game-check/progress-update.mjs
       - name: Test browser (already in the image)
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
@@ -163,6 +175,12 @@ jobs:
           name: play-${{ matrix.game }}
           path: game-check-out
           if-no-files-found: ignore
+      - name: Check status - progress line (this part finished)
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/game-check/progress-update.mjs
 
   check:
     name: check

@@ -16,7 +16,7 @@ if [ "$STATE" = "FAILED" ] || [ "$STATE" = "ROBOT" ]; then
   fi
 fi
 case "$STATE" in
-  RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (about 8-10 min). Wait; do not re-ask to merge yet." ;;
+  RUNNING) ICON="🟡"; WORDS="RUNNING - the robot is playing the games this pull request touches (10-45 min: a big game like Racer runs 8 parts, only 5 at a time - read the Progress line below, it is refreshed by every part). Wait; do not re-ask to merge yet." ;;
   RETRYING) ICON="🟠"; WORDS="RETRYING - the robot is re-running this check by itself (the reason is below: a robot setup problem, or a known robot fault added after your check ran). It is not your game. Wait about 8-10 min; do not push, do not re-ask to merge." ;;
   ROBOT)   ICON="🟠"; WORDS="ROBOT PROBLEM - the robot could not play the game (setup / runner failure, 0 games played). This is NOT your game. The robot re-runs the failed part ONCE by itself - do NOT push, do not re-ask to merge; wait for this comment to change." ;;
   PASSED)  ICON="🟢"; WORDS="PASSED - nothing new is broken. Ask to merge (the merge robot merges green pull requests by itself)." ;;
