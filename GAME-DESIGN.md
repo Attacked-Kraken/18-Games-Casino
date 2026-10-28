@@ -23,3 +23,6 @@ Before a new game gets a tester it needs `checklists/<game>.md` (format: checkli
 rules/<sport>.md and venue/REALITY sheets - every number copied word for word from a named source file (no number from
 memory), every item measurable by a failing robot test. The Mac sends the tester a DRAFT round when the file is missing;
 the robot lints it (tools/game-check/checklist-lint.mjs). The tester does one item per round and stops when the list is done.
+
+## PART GUARD for every game, 2D or 3D (LOCKED, owner Oct 27 2026 9:38 PM)
+Every game in tools/game-check/games.json carries a `parts` list (name + function-name regions: menu, rules, hud, camera, sound, players/car/skaters, track/park/ice, career...) and a `partGuardFrom` time. The robot FAILS a pull request that changes a part its title does not name (`PART: <part>`), so a fix cannot break another part. A NEW game (2D or 3D) gets its `parts` list in the same PR that first adds it to games.json - a game without one is not finished. Rule lives in tools/game-check/judge.mjs (partGuard) and is locked in tools/robot-keep.json.
