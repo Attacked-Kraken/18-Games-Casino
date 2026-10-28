@@ -404,3 +404,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-26 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/tuner-wheel-8ea8e1.glb
+- title: Tuner Wheel
+- maker: Martin Trafas
+- source: https://sketchfab.com/3d-models/tuner-wheel-8ea8e18f0c9a4044a694e2a03fc4beb1
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Martin Trafas" on its credits screen)
+- changes: re-centred and re-assembled part transforms only (about 56k triangles)
