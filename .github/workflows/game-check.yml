@@ -213,6 +213,14 @@ jobs:
           GAMES=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).games.join(',')))")
           WHY=$(echo "$OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).why.join(' | ')))")
           [ -n "$GAMES" ] || { echo "it was a fluke - nothing undone"; exit 0; }
+          # VP Oct 28 2026 (owner PR pile-up): three or more games "newly broken" at once is the ROBOT failing (#2009 / #2017 / #1984 blamed
+          # one merge for 5-6 games), never a merge. Nothing is undone; the check just runs again.
+          NG=$(echo "$GAMES" | tr ',' '\n' | grep -c .)
+          if [ "$NG" -ge 3 ]; then
+            echo "::warning title=AUTO-UNDO::$NG games 'newly broke' at once ($GAMES) - robot fault, NOT undoing; re-running the check"
+            gh workflow run game-check.yml --ref main || true
+            exit 0
+          fi
           # VP Oct 26 2026 (audit P0): a run dispatched by the merge robot covers EVERY merge since the last good report, not only the newest one -
           # find the newest merge on main that touched what broke (tools/game-check/pick-culprit.sh) and undo THAT one. None touched it = an earlier
           # change did it, nothing is undone. The run's own commit is the fallback when the last report is not on main.
