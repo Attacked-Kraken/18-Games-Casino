@@ -43,13 +43,13 @@
   },
   {
    "file": ".github/workflows/game-check.yml",
-   "needle": "apexracer.html@1of6",
-   "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+   "needle": "apexracer.html@1of8",
+   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
   },
   {
    "file": ".github/workflows/game-check-pr.yml",
-   "needle": "apexracer.html@1of6",
-   "rule": "Exotic Racer's play tests run on 3 robots (72 tests outgrew one robot's cap)"
+   "needle": "apexracer.html@1of8",
+   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
   },
   {
    "file": "tools/merge-robot.py",
@@ -105,6 +105,61 @@
    "file": ".github/workflows/game-check.yml",
    "needle": "report + auto-undo now come FIRST, videos are extra",
    "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "proof_pr(",
+   "rule": "the auditor proves every changed robot file before it merges"
+  },
+  {
+   "file": "tools/robot-auditor.py",
+   "needle": "watch_pass(",
+   "rule": "the auditor measures every merge again after 10 branches and reverts a clearly worse one"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def decide",
+   "rule": "the track-record decision"
+  },
+  {
+   "file": "tools/robot-proof.py",
+   "needle": "def proof_text",
+   "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "def resolve_binary",
+   "rule": "a binary conflict keeps the PR's file when its own check passed"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "pr_check_passed(pr)",
+   "rule": "a binary conflict is settled only for a PR the robot already passed"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "test-times.json",
+   "rule": "test parts are balanced by measured seconds, not round-robin (Racer NOT RUN cap, 04 Oct 27 2026)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "load[b] += t.w",
+   "rule": "greedy balance of tests across TEST_PART robots"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "if (crashed) { skipped.push(r.file); continue; }",
+   "rule": "a game the robot's own browser could not finish checking never counts as broken for AUTO-UNDO (VP Oct 27 2026, #1984/#2009)"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "if (firstBroken && !firstBroken.has(r.file))",
+   "rule": "AUTO-UNDO needs the first result AND the re-check to agree a game broke (VP Oct 27 2026)"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "undo.mjs prev-results.json recheck-out/results.json first-broken.json",
+   "rule": "the re-check is judged together with the first result"
   }
  ]
 }

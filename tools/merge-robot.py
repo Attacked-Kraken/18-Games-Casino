@@ -27,6 +27,12 @@ FOLLOW = [("sound-robot.yml", ("sounds/recipes/", "sounds/rejects/", "tools/soun
 LAST_ERR = [""]
 
 
+def _retry_policy():
+    import importlib.util
+    sp = importlib.util.spec_from_file_location("retry_policy", os.path.join(os.path.dirname(os.path.abspath(__file__)), "game-check", "retry-policy.py"))
+    m = importlib.util.module_from_spec(sp); sp.loader.exec_module(m); return m
+
+
 def gh(*args, method="GET", fields=None):
     LAST_ERR[0] = ""
     cmd = ["gh", "api", "-X", method] + list(args)
@@ -123,6 +129,33 @@ def conflict_hunks(files, max_files=3, max_hunks=3, max_lines=6):
     return "".join(out)[:3000]
 
 
+BINARY_EXT = (".glb", ".png", ".jpg", ".jpeg", ".webp", ".wav", ".mp3", ".ogg", ".mp4", ".ktx2", ".bin")
+
+
+def is_binary(path):
+    return path.lower().endswith(BINARY_EXT)
+
+
+def resolve_binary(git, f):
+    """Oct 27 2026 (04 + VP; #1884 sat 'dirty' a day on a .glb the model-audit robot deleted on main while the PR re-made it): lines
+    cannot be combined in a binary file. Merging main INTO the PR branch, the PR side is 'ours': keep the PR's file (modify/delete,
+    both modified, both added) or, when the PR itself deleted it, keep it deleted. Only called when the PR's own robot check passed.
+    Returns True when the file is resolved and staged."""
+    has_ours = git("cat-file", "-e", ":2:" + f).returncode == 0
+    if has_ours:
+        r = git("checkout", "--ours", "--", f)
+        if r.returncode != 0:
+            return False
+        return git("add", f).returncode == 0
+    return git("rm", "-q", "--", f).returncode == 0
+
+
+def pr_check_passed(pr):
+    """The PR's own 'check' run on its newest commit succeeded (a binary conflict is only settled for a PR the robot already passed)."""
+    runs = (gh("repos/%s/commits/%s/check-runs?per_page=100" % (REPO, pr["head"]["sha"])) or {}).get("check_runs", [])
+    return any(r.get("name") == "check" and r.get("conclusion") == "success" for r in runs)
+
+
 def fix_notes_conflict(pr):
     """Merge main into the PR branch; conflicts in notes files are resolved by keeping both sides' lines."""
     n, branch = pr["number"], pr["head"]["ref"]
@@ -144,6 +177,21 @@ def fix_notes_conflict(pr):
     r = git("merge", "--no-edit", "origin/main")
     if r.returncode != 0:
         left = [x for x in git("diff", "--name-only", "--diff-filter=U").stdout.split() if x]
+        bins = [x for x in left if is_binary(x)]
+        if bins and all(auto_resolvable(x) or is_binary(x) for x in left):
+            if pr_check_passed(pr):
+                left_text = [x for x in left if not is_binary(x)]
+                if all(resolve_binary(git, x) for x in bins):
+                    print("::notice title=Merge robot::#%d: binary conflict kept the PR's side: %s" % (n, ", ".join(bins[:4])))
+                    left = left_text           # the text files (if any) go through the normal loop below
+                else:
+                    left = left_text + bins    # could not resolve - falls into the 'left for the Muse' branch
+            else:
+                git("merge", "--abort")
+                tell_pr(n, git("rev-parse", "origin/main").stdout.strip() or "main",
+                        "this pull request conflicts with main in the binary file(s) %s - lines cannot be combined in a binary. "
+                        "Once the robot check passes on your branch, the robot keeps YOUR version of the file by itself; until then pull main and keep the version you want." % ", ".join(bins[:4]))
+                print("#%d: binary conflict in %s - check not passed yet, left" % (n, ", ".join(bins[:4]))); return False
         if left and not all(auto_resolvable(x) for x in left):
             hunks = conflict_hunks(left)      # Oct 26 2026: say WHERE the conflict is so the Muse fixes it in minutes (read BEFORE the abort)
             git("merge", "--abort")
@@ -282,12 +330,11 @@ def restart_cancelled(pr):
         return False                      # still running, finished, or a newer run already replaced it
     # Oct 24 2026 3:10 PM (PR #1542: its 'plan' job was cancelled twice in a row by GitHub - runner starvation 12:00-12:30 PM - and the
     # robot's ONE restart per run left it red for 3 h): up to 3 restarts per commit, each for a new attempt, at least 8 min apart.
-    marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], newest["id"], newest.get("run_attempt") or 1)
+    RP = _retry_policy()                  # ONE retry rule (tools/game-check/retry-policy.py, master list #16)
+    marker = RP.marker(sha, newest["id"], newest.get("run_attempt"))
     comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
-    if any(marker in (c.get("body") or "") for c in comments):
-        return False                      # this attempt was already restarted
-    if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
-        return False                      # 3 restarts of this commit already - left for a human (the Mac speaks at 45 min)
+    if not RP.may_restart(comments, sha, newest["id"], newest.get("run_attempt"))[0]:
+        return False                      # already restarted, or 3 restarts of this commit - left for a human (the Mac speaks at 45 min)
     when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
     how = "re-ran it"
     if gh("repos/%s/actions/runs/%d/rerun" % (REPO, newest["id"]), method="POST") is None:
@@ -331,10 +378,9 @@ def restart_cancelled_other(pr):
             continue
         if comments is None:
             comments = gh("repos/%s/issues/%d/comments?per_page=100" % (REPO, n)) or []
-        marker = "<!-- robot-restart:%s:%s:%s -->" % (sha[:7], r["id"], r.get("run_attempt") or 1)
-        if any(marker in (c.get("body") or "") for c in comments):
-            continue
-        if sum(1 for c in comments if "<!-- robot-restart:%s:" % sha[:7] in (c.get("body") or "")) >= 3:
+        RP = _retry_policy()              # ONE retry rule (tools/game-check/retry-policy.py, master list #16)
+        marker = RP.marker(sha, r["id"], r.get("run_attempt"))
+        if not RP.may_restart(comments, sha, r["id"], r.get("run_attempt"))[0]:
             continue
         when = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
         if gh("repos/%s/actions/runs/%d/rerun" % (REPO, r["id"]), method="POST") is None:
