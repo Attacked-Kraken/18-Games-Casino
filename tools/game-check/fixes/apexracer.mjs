@@ -8,6 +8,27 @@ import { fileURLToPath } from 'url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export default [
   {
+    id: 'play-menu-buttons-44px',
+    ask: 'Menu buttons: Race Friends, Garage, Graphics and Sound are each at least 44 px tall on a sideways phone (844x390) and the menu still fits without scrolling',
+    async test(page, h) {
+      const old = page.viewportSize();
+      await page.setViewportSize({ width: 844, height: 390 });
+      await page.waitForTimeout(300);
+      const r = await h.eval(() => {
+        const out = [];
+        for (const id of ['mFriends', 'mGarage', 'mQ', 'mSnd']) {
+          const e = document.getElementById(id);
+          if (!e) { out.push(id + ' missing'); continue; }
+          const mh = parseFloat(getComputedStyle(e).minHeight) || 0;
+          if (mh < 44) out.push(id + ' min-height ' + mh + ' px (needs 44)');
+        }
+        return out.length ? out.join('; ') : true;
+      });
+      if (old) await page.setViewportSize(old);
+      return r;
+    }
+  },
+  {
     id: 'play-race-starts',
     ask: 'Race starts: starting a race creates the race, the player car and a full grid',
     async test(page, h) {
@@ -2650,72 +2671,56 @@ export default [
     },
   },
   {
-    id: "play-wheel-size-grounded",
-    ask: "Owner Oct 26 2026: 'Bigger rims only make car float' - at Wheel Size Plus and Max the whole car (its own tyres included) rose by the lift and hovered; the tyres must grow with the lift so the car rides higher AND stays on the ground",
+    id: "never-monoblock-locked",
+    cat: "never",
+    name: "the LOCKED monoblock wheel is the real fetched wheel in its own finish",
+    ask: "Owner approved the Monoblock rally wheel (MODELS.md erc-rim-monoblock, LOCKED Oct 26 2026): the Monoblock rim style must be the real fetched wheel exactly as it looks in the viewer - its own white finish, never repainted by Rim Color, never swapped without the owner",
     async test(page, h) {
-      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
-      const res = await h.eval(async () => {
-        const E = window.__erc, sleep = (ms) => new Promise((s) => setTimeout(s, ms)), out = [];
-        for (let w = 0; w <= 2; w++) {
-          E.S.cars[E.S.cur] = Object.assign({}, E.S.cars[E.S.cur], { wheel: w });
-          E.openGarage(); await sleep(600);
-          const root = window.__reality.player; if (!root) return 'no garage car';
-          const tilt = root.children[0]; let best = null, bestN = 0;
-          for (const c of tilt.children) { let n = 0; c.traverse((q) => { if (q.isMesh) n++; }); if (n > bestN) { bestN = n; best = c; } }
-          let min = 1e9, top = -1e9; const v = new root.position.constructor();
-          best.traverse((q) => { if (!q.isMesh || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; for (let i = 0; i < pa.count; i += 2) { v.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); if (v.y < min) min = v.y; if (v.y > top) top = v.y; } });
-          out.push({ w, bottom: min, top });
-        }
-        return out;
-      });
-      if (typeof res === 'string') return res;
-      if (!res || res.length !== 3) return 'wheel size census did not run';
-      if (Math.abs(res[1].bottom - res[0].bottom) > 0.03 || Math.abs(res[2].bottom - res[0].bottom) > 0.03) return 'bigger wheel sizes float the car: bottoms stock/plus/max = ' + res.map((r) => r.bottom.toFixed(3)).join('/');
-      if (res[2].top - res[0].top < 0.05) return 'the car no longer rides higher at Max (body top rises only ' + (res[2].top - res[0].top).toFixed(3) + ' m) - the owner wants the higher ride, grounded';
+      const fs = await import('node:fs'); const path = await import('node:path');
+      try { const md = fs.readFileSync(path.join(repoRoot, 'MODELS.md'), 'utf8'); const i = md.indexOf('- id: erc-rim-monoblock'); if (i < 0) return 'MODELS.md has no erc-rim-monoblock entry'; const sec = md.slice(i, i + 1600); if (!/- status: LOCKED/.test(sec)) return 'the monoblock wheel is not LOCKED in MODELS.md'; } catch (e) { return 'MODELS.md unreadable: ' + e.message; }
+      const html = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
+      if (!html.includes('fifteen52-inspired-rally-rim-a0c9aa.glb')) return 'the game no longer loads the locked monoblock wheel file';
+      const r = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        if (!E) return 'no __erc hook';
+        if (!E.S.cars) E.S.cars = {};
+        if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy' };
+        const savedRim = E.S.cars.goblin.rim, savedCol = E.S.cars.goblin.rimCol;
+        E.S.cars.goblin.rim = 5; E.S.cars.goblin.rimCol = '#00ff00'; E.S.cur = 'goblin';
+        for (let i = 0; i < 100 && E.G && E.G.mode === 'loading'; i++) await wait(200);
+        const prev = E.R; E.startRace(E.PLACES[0], 3);
+        for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
+        if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return 'monoblock race did not rebuild';
+        const car = E.R.P.car; car.root.updateMatrixWorld(true);
+        const faces = [];
+        car.root.traverse((q) => { if (q.userData && q.userData.acc === 'rimface') { const v = q.position.clone(); q.getWorldPosition(v); faces.push({ c: [v.x, v.y, v.z], verts: q.geometry.attributes.position.count }); } });
+        let clusterVerts = 0, white = 0, green = 0;
+        car.root.traverse((q) => { if (!q.isMesh) return; const v = q.position.clone(); q.getWorldPosition(v); if (!faces.some((f) => Math.hypot(v.x - f.c[0], v.y - f.c[1], v.z - f.c[2]) < 0.45)) return; clusterVerts += q.geometry.attributes.position.count; const cc = q.material && q.material.color; if (cc && cc.getHexString() === '00ff00') green++; if (cc && cc.r > 0.7 && cc.g > 0.7 && cc.b > 0.7) white++; });
+        E.S.cars.goblin.rim = savedRim; E.S.cars.goblin.rimCol = savedCol;
+        return JSON.stringify({ faces: faces.length, minVerts: faces.length ? Math.min.apply(null, faces.map((f) => f.verts)) : 0, clusterVerts, white, green }); });
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return r;
+      if (d.faces !== 4) return 'the monoblock car has ' + d.faces + '/4 rim faces';
+      if (d.minVerts < 30000) return 'a monoblock rim face has only ' + d.minVerts + ' vertices - that is the built stand-in, not the fetched wheel (42,560 measured)';
+      if (d.clusterVerts < 150000) return 'the four wheels carry only ' + d.clusterVerts + ' vertices - the fetched monoblock is not fitted';
+      if (d.green > 0) return 'Rim Color repainted the LOCKED monoblock wheel (' + d.green + ' parts took the colour) - it keeps its own finish';
+      if (d.white < 4) return 'the monoblock white finish is missing from the wheels (found ' + d.white + ' white parts)';
       return true;
     },
   },
   {
-    id: "play-garage-tabs-drag",
-    ask: "Owner Oct 26 2026: 'Still tabs don't scroll or work' - on a portrait phone the page is rotated 90 degrees and the tab strip could not be panned, so the lower tabs (Turbo onward) were unreachable; the strips must drag-scroll on either screen axis",
+    id: "play-menu-save-button-size",
+    ask: "Is the racer-name Save button (#nmB) at least 44x44 px on the menu?",
     async test(page, h) {
-      const src = await h.eval(() => document.documentElement.innerHTML);
-      if (!src.includes('pan-x pan-y')) return 'the tab strips still restrict touch panning to one axis';
-      if (!src.includes('dragScroll')) return 'the strips have no drag-scroll wiring';
-      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
-      const r = await h.eval(async () => {
-        const E = window.__erc; E.openGarage();
-        await new Promise((s) => setTimeout(s, 600));
-        const el = document.getElementById('gtabs'); if (!el) return 'no tab strip';
-        if (el.scrollWidth <= el.clientWidth) return { inconclusive: 'the tab strip fits without scrolling at this viewport' };
-        const rect = el.getBoundingClientRect(), cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2;
-        const fire = (type, x, y) => el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, pointerId: 7, isPrimary: true }));
-        fire('pointerdown', cx, cy);
-        for (let i = 1; i <= 8; i++) fire('pointermove', cx - i * 30, cy);
-        fire('pointerup', cx - 240, cy);
-        if (el.scrollLeft < 30) return 'dragging the tab strip did not scroll it (scrollLeft ' + el.scrollLeft + ')';
-        el.scrollLeft = el.scrollWidth;
-        const last = el.children[el.children.length - 1]; last.click();
-        await new Promise((s) => setTimeout(s, 300));
-        return E.G.tab === last.dataset.t ? true : 'the last tab (' + last.dataset.t + ') did not open after scrolling to it';
-      });
-      return r === true || (r && r.inconclusive) ? r : (typeof r === 'string' ? r : 'tab drag check failed');
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
+      const r = await h.poll(() => h.eval(() => { const b = document.getElementById('nmB'); if (!b) return null; const x = b.getBoundingClientRect(); return x.height > 0 ? JSON.stringify({ w: x.width, hh: x.height }) : null; }), (v) => !!v, 10000).catch(() => null);
+      if (!r) return { inconclusive: 'no #nmB button on the menu (a racer name is already saved in this profile)' };
+      let d = null; try { d = JSON.parse(r); } catch (e) {}
+      if (!d) return 'menu save button: could not read the button box';
+      if (d.hh < 44 || d.w < 44) return 'menu Save button #nmB measures ' + d.w.toFixed(0) + 'x' + d.hh.toFixed(0) + ' px - under the 44 px minimum';
+      return true;
     },
   },
-  {
-    id: "play-music-sync-start",
-    ask: "Owner Oct 26 2026: 'music static in and out' - the three race music stems each started the moment their own decode landed, leaving them offset against each other; the speed crossfade smeared the offset into static. The stems must start together at one context time",
-    async test(page, h) {
-      const fs = await import('node:fs');
-      const path = await import('node:path');
-      for (const f of ['menu', 'gameplay_low', 'gameplay_mid', 'gameplay_high']) if (!fs.existsSync(path.join(repoRoot, 'sounds/pack/music/sports_arena/sports_arena_' + f + '.mp3'))) return 'music file missing from the repo: sports_arena_' + f + '.mp3';
-      return h.eval((needles) => {
-        const src = document.documentElement.innerHTML;
-        for (const n of needles) if (!src.includes(n)) return 'the race music stems do not start together (missing ' + n + ')';
-        return true;
-      }, ['musSyncRace', 'c.currentTime + 0.06', 's.start(when)']);
-    },
-  },
+
   {
     id: "never-turbine-locked",
     cat: "never",
@@ -2751,6 +2756,77 @@ export default [
       return true;
     },
   },
+
+  {
+    id: "play-garage-tabs-drag",
+    ask: "Owner Oct 26 2026: 'Still tabs don't scroll or work' - on a portrait phone the page is rotated 90 degrees and the tab strip could not be panned, so the lower tabs (Turbo onward) were unreachable; the strips must drag-scroll on either screen axis",
+    async test(page, h) {
+      const src = await h.eval(() => document.documentElement.innerHTML);
+      if (!src.includes('pan-x pan-y')) return 'the tab strips still restrict touch panning to one axis';
+      if (!src.includes('dragScroll')) return 'the strips have no drag-scroll wiring';
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      const r = await h.eval(async () => {
+        const E = window.__erc; E.openGarage();
+        await new Promise((s) => setTimeout(s, 600));
+        const el = document.getElementById('gtabs'); if (!el) return 'no tab strip';
+        if (el.scrollWidth <= el.clientWidth) return { inconclusive: 'the tab strip fits without scrolling at this viewport' };
+        const rect = el.getBoundingClientRect(), cx = rect.x + rect.width / 2, cy = rect.y + rect.height / 2;
+        const fire = (type, x, y) => el.dispatchEvent(new PointerEvent(type, { clientX: x, clientY: y, bubbles: true, pointerId: 7, isPrimary: true }));
+        fire('pointerdown', cx, cy);
+        for (let i = 1; i <= 8; i++) fire('pointermove', cx - i * 30, cy);
+        fire('pointerup', cx - 240, cy);
+        if (el.scrollLeft < 30) return 'dragging the tab strip did not scroll it (scrollLeft ' + el.scrollLeft + ')';
+        el.scrollLeft = el.scrollWidth;
+        const last = el.children[el.children.length - 1]; last.click();
+        await new Promise((s) => setTimeout(s, 300));
+        return E.G.tab === last.dataset.t ? true : 'the last tab (' + last.dataset.t + ') did not open after scrolling to it';
+      });
+      return r === true || (r && r.inconclusive) ? r : (typeof r === 'string' ? r : 'tab drag check failed');
+    },
+  },
+
+  {
+    id: "play-music-sync-start",
+    ask: "Owner Oct 26 2026: 'music static in and out' - the three race music stems each started the moment their own decode landed, leaving them offset against each other; the speed crossfade smeared the offset into static. The stems must start together at one context time",
+    async test(page, h) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      for (const f of ['menu', 'gameplay_low', 'gameplay_mid', 'gameplay_high']) if (!fs.existsSync(path.join(repoRoot, 'sounds/pack/music/sports_arena/sports_arena_' + f + '.mp3'))) return 'music file missing from the repo: sports_arena_' + f + '.mp3';
+      return h.eval((needles) => {
+        const src = document.documentElement.innerHTML;
+        for (const n of needles) if (!src.includes(n)) return 'the race music stems do not start together (missing ' + n + ')';
+        return true;
+      }, ['musSyncRace', 'c.currentTime + 0.06', 's.start(when)']);
+    },
+  },
+
+  {
+    id: "play-wheel-size-grounded",
+    ask: "Owner Oct 26 2026: 'Bigger rims only make car float' - at Wheel Size Plus and Max the whole car (its own tyres included) rose by the lift and hovered; the tyres must grow with the lift so the car rides higher AND stays on the ground",
+    async test(page, h) {
+      await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000);
+      const res = await h.eval(async () => {
+        const E = window.__erc, sleep = (ms) => new Promise((s) => setTimeout(s, ms)), out = [];
+        for (let w = 0; w <= 2; w++) {
+          E.S.cars[E.S.cur] = Object.assign({}, E.S.cars[E.S.cur], { wheel: w });
+          E.openGarage(); await sleep(600);
+          const root = window.__reality.player; if (!root) return 'no garage car';
+          const tilt = root.children[0]; let best = null, bestN = 0;
+          for (const c of tilt.children) { let n = 0; c.traverse((q) => { if (q.isMesh) n++; }); if (n > bestN) { bestN = n; best = c; } }
+          let min = 1e9, top = -1e9; const v = new root.position.constructor();
+          best.traverse((q) => { if (!q.isMesh || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; for (let i = 0; i < pa.count; i += 2) { v.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); if (v.y < min) min = v.y; if (v.y > top) top = v.y; } });
+          out.push({ w, bottom: min, top });
+        }
+        return out;
+      });
+      if (typeof res === 'string') return res;
+      if (!res || res.length !== 3) return 'wheel size census did not run';
+      if (Math.abs(res[1].bottom - res[0].bottom) > 0.03 || Math.abs(res[2].bottom - res[0].bottom) > 0.03) return 'bigger wheel sizes float the car: bottoms stock/plus/max = ' + res.map((r) => r.bottom.toFixed(3)).join('/');
+      if (res[2].top - res[0].top < 0.05) return 'the car no longer rides higher at Max (body top rises only ' + (res[2].top - res[0].top).toFixed(3) + ' m) - the owner wants the higher ride, grounded';
+      return true;
+    },
+  },
+
   {
     id: 'never-name-wrap-no-panels',
     ask: 'Does the APEX ARCADE name wrap stand alone (letters only, no panel shell over the car)?',
@@ -2777,20 +2853,6 @@ export default [
       const b = await census('shards');
       if (typeof b === 'string') return b;
       if (b.panels < 1) return 'the shards wrap built no panel shell - the panel wraps are broken';
-      return true;
-    },
-  },
-  {
-    id: 'play-menu-save-button-onscreen',
-    ask: 'Is the menu Save button (#nmB) at least 44 px and fully on screen?',
-    async test(page, h) {
-      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
-      const raw = await h.poll(() => h.eval(() => { const b = document.getElementById('nmB'); if (!b) return ''; const r = b.getBoundingClientRect(); return JSON.stringify({ x: r.x, y: r.y, w: r.width, h: r.height, right: r.right, bottom: r.bottom, vw: innerWidth, vh: innerHeight }); }).catch(() => ''), (v) => !!v, 10000);
-      if (!raw) return { inconclusive: 'no #nmB on the menu (a racer name is already saved in this profile)' };
-      let d = null; try { d = JSON.parse(raw); } catch (e) {}
-      if (!d) return 'could not read the Save button rect';
-      if (d.h < 44 || d.w < 44) return 'the menu Save button measures ' + Math.round(d.w) + 'x' + Math.round(d.h) + ' px - under the 44 px minimum';
-      if (d.x < -1 || d.y < -1 || d.right > d.vw + 1 || d.bottom > d.vh + 1) return 'the menu Save button is cut off at the screen edge (rect ' + JSON.stringify(d) + ')';
       return true;
     },
   },

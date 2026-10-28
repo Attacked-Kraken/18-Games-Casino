@@ -896,6 +896,24 @@ export default [
     },
   },
   {
+    id: 'play-feet-on-ground',
+    ask: 'BUILD G-394: every player sole rests on the ground - lowest posed sole vertex within 2 cm under or over the ground (ground 0, mound 0.3) for every rigged player, standing',
+    async test(page, h) {
+      await page.goto(page.url().split('?')[0], { waitUntil: 'load' });
+      let ready = false;
+      for (let i = 0; i < 40 && !ready; i++) { ready = await h.eval(() => !!(window.__reality && window.__reality.player && window.__test && window.__test.stadium && window.__test.stadium.loaded && window.__test.soles && window.__test.soles.length)); if (!ready) await h.wait(500); }
+      if (!ready) return 'the ballpark / players / soles exposure never became ready';
+      const bad = [];
+      for (let s = 0; s < 3; s++) {
+        const res = await h.eval(() => window.__test.soles);
+        for (const p of (res || [])) if (Math.abs(p.diffM) > 0.02) bad.push(p.name + ' sole ' + p.diffM.toFixed(3) + ' m');
+        await h.wait(700);
+      }
+      if (bad.length) return [...new Set(bad)].join('; ') + ' — outside the 2 cm band';
+      return true;
+    },
+  },
+  {
     id: 'play-daylight-batter-crowd',
     ask: 'BUILD G-151 (art director): the play picture is a DAY scene - bright frame, the stands full of visible crowd people, and the batter big and lit above the bottom bar in the pitching view and with the ball in play',
     async test(page, h) {

@@ -177,6 +177,17 @@ Format (one section per model — keep the keys exactly like this):
 - notes: for the Rims tab style Deep Dish. Robot pictures are good: a deep copper barrel with thin multi-spokes - the face reads clearly in the side picture (the front picture caught the wheel's back). 26,108 triangles, the lightest of the five. Car Rim by pira.midale, CC-BY.
 - status: LOCKED (owner 👍 Mon Oct 26 2026 - nobody may swap it without the owner)
 
+## MODEL: Exotic Racer rim - Mesh, gold cross-hatch (artist wheel)
+- id: erc-rim-mesh
+- game: apexracer.html
+- file: models/fetched/tuner-wheel-8ea8e1.glb
+- look: night
+- view: tools/model-viewer.html?m=models/fetched/tuner-wheel-8ea8e1.glb&look=night
+- by: algre141@gmail.com
+- version: 1
+- notes: for the Rims tab style Mesh. REBUILT by window 6 (Oct 26 2026): as fetched, the file's parts sat at broken scales - the gold rim measured 0.164 m across inside a flat-lying 1.6 m tyre, centres 0.24 m apart, so the robot's pictures showed a speck. The four parts were re-assembled into one wheel exactly as designed (gold cross-hatch rim, 0.42 m, in its own 0.68 m tyre, everything centred on the origin) with only the part transforms corrected - geometry, textures and maker unchanged: Tuner Wheel by Martin Trafas, CC-BY, 55,958 triangles. Ready for the owner's thumbs-up. Note: the Mesh slot today runs the LOCKED erc-sport-rim (Car Wheel/Rim by jack.wake04) - putting this one in that slot needs the owner's word on both models.
+- status: WAITING OWNER
+
 ## MODEL: Exotic Racer rim - Monoblock rally (artist wheel)
 - id: erc-rim-monoblock
 - game: apexracer.html
