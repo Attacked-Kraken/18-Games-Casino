@@ -12,12 +12,13 @@ if (sha) j.sha = sha;
 j.when = j.when || when;
 fs.writeFileSync(path.join(out, 'results.json'), JSON.stringify(j, null, 1));
 const count = s => results.filter(r => r.status === s).length;
+const played = results.filter(r => !r.carried), kept = results.filter(r => r.carried);
 let md = `# Game check\n\n**${when} (Central)**${sha ? ` · main @ \`${sha}\`` : ''} · played side by side\n\n`;
-md += `**${count('PASS')} pass · ${count('CHECK')} to check · ${count('FAIL')} fail** out of ${results.length} games.\n\n`;
+md += `**${count('PASS')} pass · ${count('CHECK')} to check · ${count('FAIL')} fail** out of ${results.length} games (${played.length} played this run, ${kept.length} kept from the last check).\n\n`;
 if ((j.missing || []).length) md += `⚠️ The robot could not finish: ${j.missing.join(', ')} (kept their last result if there was one).\n\n`;
 const order = { FAIL: 0, CHECK: 1, PASS: 2 };
-for (const r of results.slice().sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3))) {
-  md += `## ${{ PASS: '✅ PASS', CHECK: '🟡 CHECK', FAIL: '🔴 FAIL' }[r.status] || r.status} — ${r.name}\n\n\`${r.file}\`\n\n`;
+const renderGame = (r) => {
+  let md = `## ${{ PASS: '✅ PASS', CHECK: '🟡 CHECK', FAIL: '🔴 FAIL' }[r.status] || r.status} — ${r.name}\n\n\`${r.file}\`\n\n`;
   for (const x of r.fail || []) md += `- 🔴 ${x}\n`;
   for (const x of r.check || []) md += `- 🟡 ${x}\n`;
   if (r.status === 'PASS') md += `- Loaded, started and moving. Nothing flagged.\n`;
@@ -27,6 +28,13 @@ for (const r of results.slice().sort((a, b) => (order[a.status] ?? 3) - (order[b
   }
   const im = r.img || {};
   md += `\n${[im.menu && `<img src="${im.menu}" width="300">`, im.play && `<img src="${im.play}" width="300">`, im.upright && `<img src="${im.upright}" width="90">`, im.face && `<img src="${im.face}" width="120">`].filter(Boolean).join(' ')}\n\n`;
+  return md;
+};
+const byStatus = (a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3);
+for (const r of played.slice().sort(byStatus)) md += renderGame(r);
+if (kept.length) {
+  md += `\n# Not changed since the last check\n\nThese games' files didn't change, so the robot kept their last result (played at main @ \`${[...new Set(kept.map(r => r.carried))].join(', ') || '?'}\`). A full check of every game runs every 4 hours.\n\n`;
+  for (const r of kept.slice().sort(byStatus)) md += renderGame(r);
 }
 const shown = models.filter(m => m.img);
 if (shown.length) {

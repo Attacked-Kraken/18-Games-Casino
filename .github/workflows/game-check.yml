@@ -160,9 +160,11 @@ jobs:
           mkdir -p old-checks
           git archive origin/game-checks 2>/dev/null | tar -x -C old-checks 2>/dev/null || true
           node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
-          node tools/game-check/report.mjs game-check-out
+          # Carry the unchanged games' last results in FIRST, then write the report, so its headline counts every game
+          # (before: the report was written first and said "0 games" on a run that played none).
           if [ -z "${{ needs.plan.outputs.full }}" ]; then SKIP_MODELS=1 node tools/game-check/carry.mjs prev-results.json game-check-out old-checks;
           else node tools/game-check/carry.mjs prev-results.json game-check-out old-checks; fi
+          node tools/game-check/report.mjs game-check-out
 
       - name: Post the report to the game-checks branch
         if: always() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
