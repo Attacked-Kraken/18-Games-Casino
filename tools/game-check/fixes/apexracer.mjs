@@ -1288,6 +1288,10 @@ export default [
     ask: 'G-207 fix 1 (owner): the finish-line sign says START on lap 1, the completed/total count on the laps between, and Finish only on the last lap',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; E.startRace(E.PLACES[0], 3); return true; });
+      /* startRace drops the call while the game is loading (apexracer.html: it returns early when G.mode is 'loading'), and the sheet's own races are 8+ laps - so this guard can end up driving an 8-lap race and read '3/8' instead of '1/3'. Wait until a 3-lap race with a player exists, re-issuing the start only when not loading. */
+      let ok3 = false;
+      for (let i = 0; i < 40 && !ok3; i++) { await h.wait(500); ok3 = await h.eval(() => { const E = window.__erc, R = E.R; if (R && R.laps === 3 && R.P) return true; if (E.G && E.G.mode !== 'loading') E.startRace(E.PLACES[0], 3); return false; }); }
+      if (!ok3) return 'no 3-lap race started: the 3-lap start was dropped while loading';
       let s0 = null;
       for (let i = 0; i < 40 && !s0; i++) { await h.wait(500); s0 = await h.eval(() => { const R = window.__erc.R; return R && R.P ? R.signTxt : null; }); }
       if (s0 !== 'START') return 'on lap 1 the finish-line sign says ' + JSON.stringify(s0) + ', not START';
@@ -2933,7 +2937,7 @@ export default [
 
   {
     id: 'never-name-wrap-no-panels', parts: ['wraps'],
-    ask: 'Does the APEX ARCADE name wrap stand alone (letters only, no panel shell over the car)?',
+    ask: 'Is the wrap painted on the body (no panel shells, no letter meshes - the G-413 paste)?',
     async test(page, h) {
       const census = async (wrap) => {
         const r = await h.eval(async (w) => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
@@ -2944,19 +2948,21 @@ export default [
           const prev = E.R; E.startRace(E.PLACES[0], 2);
           for (let i = 0; i < 150; i++) { if (E.R && E.R !== prev && E.R.skids && E.R.P && E.R.P.car) break; await wait(200); }
           if (!E.R || E.R === prev || !E.R.P || !E.R.P.car) return 'race did not rebuild for wrap ' + w;
-          let panels = 0, letters = 0;
-          E.R.P.car.root.traverse((q) => { if (q.isMesh && q.name === 'apexwrap') panels++; if (q.isMesh && q.name === 'apexname') letters++; });
-          return JSON.stringify({ panels, letters }); }, wrap);
+          let panels = 0, letters = 0, meshes = 0, bodyMap = false;
+          E.R.P.car.root.traverse((q) => { if (q.isMesh) { meshes++; if (q.name === 'apexwrap') panels++; if (q.name === 'apexname') letters++; if (q.material && q.material.map && q.material.isMeshPhysicalMaterial) bodyMap = true; } });
+          return JSON.stringify({ panels, letters, meshes, bodyMap }); }, wrap).catch((e) => 'eval failed: ' + String(e).slice(0, 80));
         let d = null; try { d = JSON.parse(r); } catch (e) {}
         return d || r;
       };
-      const a = await census('name');
-      if (typeof a === 'string') return a;
-      if (a.panels !== 0) return 'the name wrap car carries ' + a.panels + ' panel-shell meshes over its letters - the wrap dispatch built both wraps (the crumpled double skin)';
-      if (a.letters !== 2) return 'the name wrap car has ' + a.letters + '/2 APEX ARCADE letter panels';
-      const b = await census('shards');
-      if (typeof b === 'string') return b;
-      if (b.panels < 1) return 'the shards wrap built no panel shell - the panel wraps are broken';
+      const base = await census('none');
+      if (typeof base === 'string') return base;
+      for (const w of ['name', 'shards']) {
+        const a = await census(w);
+        if (typeof a === 'string') return a;
+        if (a.panels !== 0 || a.letters !== 0) return 'wrap ' + w + ' built ' + a.panels + ' panel shells and ' + a.letters + ' letter meshes - wraps must paint on the body, not add geometry (G-413)';
+        if (a.meshes !== base.meshes) return 'wrap ' + w + ': ' + a.meshes + ' meshes vs No wrap ' + base.meshes + ' in a race build';
+        if (!a.bodyMap) return 'wrap ' + w + ': no texture on the body material in a race build - the wrap is invisible';
+      }
       return true;
     },
   },
