@@ -1554,4 +1554,27 @@ export default [
       return true;
     }
   },
+  // BALANCE ROBOT (master #11, owner Oct 28 2026): 400 plate appearances per skill against the CPU pitcher, NO drawing (__test.balancePA = the game's own pitch chooser,
+  // zone, umpire, swing and contact rules, one pitch at a time). FAILS when: a good batter cannot make hard contact (cannot be won), a batter who never swings does as well as a good one
+  // (skill does not matter), a good batter strikes out nearly always, or a beginner never puts a ball in play (too hard).
+  {
+    id: 'play-balance-skill-matters',
+    ask: 'Balance: a batter who times it well makes hard contact, a batter who never swings does not, and a beginner can still hit',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const T = window.__test; if (!T || !T.balancePA) return { err: 'no __test.balancePA hook' };
+        return { idle: T.balancePA('idle', 400), beginner: T.balancePA('beginner', 400), good: T.balancePA('good', 400) };
+      }).catch((e) => ({ err: String(e) }));
+      if (!out || out.err) return (out && out.err) || 'balance run returned nothing';
+      const pc = (a, b) => Math.round(100 * a / Math.max(1, b));
+      const { idle: i, beginner: b, good: g } = out;
+      const note = 'per 400 plate appearances - good: hard contact ' + pc(g.hard, g.pa) + '%, strikeouts ' + pc(g.k, g.pa) + '%, walks ' + pc(g.bb, g.pa) + '%; beginner: hard contact ' + pc(b.hard, b.pa) + '%, in play ' + pc(b.inplay, b.pa) + '%, strikeouts ' + pc(b.k, b.pa) + '%; never swings: hard contact ' + pc(i.hard, i.pa) + '%, strikeouts ' + pc(i.k, i.pa) + '%';
+      if (g.hard < 0.15 * g.pa) return 'BALANCE: a batter who times it well makes hard contact in under 15% of plate appearances - ' + note;
+      if (i.hard > 0 || i.inplay > 0) return 'BALANCE: a batter who never swings put a ball in play - ' + note;
+      if (g.k > 0.5 * g.pa) return 'BALANCE: a good batter strikes out in over half of plate appearances - ' + note;
+      if (b.inplay < 0.1 * b.pa) return 'BALANCE: a beginner puts a ball in play in under 10% of plate appearances (too hard) - ' + note;
+      if (b.hard >= g.hard) return 'BALANCE: timing does not pay - the beginner makes as much hard contact as the good batter - ' + note;
+      return true;
+    },
+  },
 ];

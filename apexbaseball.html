@@ -1025,25 +1025,35 @@ function doSwing(dt){ // dt: seconds early(-)/late(+) vs arrival; null = take
   swingAnim.who = batterMesh;                     // batterMesh is always the hitter
   if (dt===null){ calledPitch(); return; }
   const [, ay] = plateCrossing();
-  const heightPenalty = Math.abs(ay-2.2) > 1.2 ? 0.05 : 0;
-  const eff = Math.abs(dt) + heightPenalty;
-  if (eff > 0.17){ swingingStrike(); return; }
+  const sv = swingVerdict(dt, ay);
+  if (sv.miss){ swingingStrike(); return; }
   // contact!
-  const q = 1 - eff/0.17;                    // 0..1 quality
+  const q = sv.q;                            // 0..1 quality
   try{ Mus.crack(); }catch(e){} fx.emit('hit', { pos: [-2.4, 2, 0.6] }); resolveContact(q, dt, F.type);
 }
 function resolveContact(q, dt, pitchType){
-  const early = dt < 0;
+  const c = contactRoll(q, dt);
+  if (c.foul){ onFoul(); return; }
+  startBattedBall({kind:c.kind, ang:c.ang, dist:c.dist, q});
+}
+/* BALANCE ROBOT (master #11): the contact rule as one pure function - resolveContact uses it, so the balance test measures the game's own numbers */
+function contactRoll(q, dt){
   const ang = clamp(-dt*3.2, -0.95, 0.95) + rnd(-0.06,0.06); // rad from straightaway; early->pull(-x)
   const foul = Math.abs(ang) > 0.80 || (q < 0.32 && Math.random() < 0.55);
-  if (foul){ onFoul(); return; }
+  if (foul) return { foul:true };
   let kind, dist;
   const r = Math.random();
   if (q > 0.78){ kind = r<0.55?'fly':(r<0.8?'line':'grounder'); dist = rnd(88, kind==='grounder'?60:128); }
   else if (q > 0.55){ kind = r<0.4?'fly':(r<0.65?'line':'grounder'); dist = rnd(45,105); }
   else if (q > 0.32){ kind = r<0.6?'grounder':'fly'; dist = rnd(18,70); }
   else { kind = 'grounder'; dist = rnd(6,32); }
-  startBattedBall({kind, ang, dist, q});
+  return { foul:false, kind, ang, dist };
+}
+/* BALANCE ROBOT: one swing's verdict (dt early(-)/late(+) seconds, ay = height the pitch crosses at) - doSwing uses it too */
+function swingVerdict(dt, ay){
+  const heightPenalty = Math.abs(ay-2.2) > 1.2 ? 0.05 : 0;
+  const eff = Math.abs(dt) + heightPenalty;
+  return eff > 0.17 ? { miss:true } : { miss:false, q: 1 - eff/0.17 };
 }
 
 /* ---------- count events ---------- */
@@ -2189,6 +2199,34 @@ try {
 
 /* PLAY TESTS (JOB J22): read-only snapshot for the game-check robot. */
 window.__test = {
+  // BALANCE ROBOT (master #11, owner Oct 28 2026): plays n plate appearances against the CPU pitcher with NO drawing and NO waiting - the game's own pitch chooser,
+  // zone, umpire, swing and contact rules, one pitch at a time. skill: 'idle' (never swings), 'beginner' (swings at most pitches, sloppy timing), 'good' (swings at strikes, tight timing).
+  balancePA(skill, n){
+    const sd = skill === 'good' ? 0.05 : 0.11, gauss = () => (Math.random()+Math.random()+Math.random()-1.5)/1.5;
+    const saved = { type: flight.type, p1: flight.p1.slice(), bd: flight.breakDir };
+    const R = { pa:0, k:0, bb:0, inplay:0, hard:0, foul:0, pitches:0, swings:0, misses:0 };
+    for (let i = 0; i < n; i++) {
+      let balls = 0, strikes = 0, done = false;
+      for (let guard = 0; guard < 30 && !done; guard++) {
+        const c = cpuChoosePitch();
+        flight.type = c.type; flight.p1 = [c.tx, c.ty, 0.4]; flight.breakDir = c.tx >= 0 ? -1 : 1;
+        const [ax, ay] = plateCrossing(); R.pitches++;
+        const inZone = Math.abs(ax) <= ZONE.x && ay >= ZONE.lo && ay <= ZONE.hi;
+        const swing = skill === 'idle' ? false : skill === 'good' ? (Math.abs(ax) <= ZONE.x + 0.3 && ay >= ZONE.lo - 0.3 && ay <= ZONE.hi + 0.3) : Math.random() < 0.7;
+        if (!swing) { if (umpireCall()) strikes++; else balls++; }
+        else {
+          R.swings++;
+          const sdt = gauss() * sd * 2.4, v = swingVerdict(sdt, ay);
+          if (v.miss) { strikes++; R.misses++; }
+          else { const k = contactRoll(v.q, sdt); if (k.foul) { R.foul++; if (strikes < 2) strikes++; } else { R.inplay++; if (v.q > 0.55) R.hard++; done = true; } }
+        }
+        if (strikes >= 3) { R.k++; done = true; } else if (balls >= 4) { R.bb++; done = true; }
+      }
+      R.pa++;
+    }
+    flight.type = saved.type; flight.p1 = saved.p1; flight.breakDir = saved.bd;
+    return R;
+  },
   get phase(){ return G.phase; },
   get score(){ return [G.home, G.away]; },
   get inning(){ return G.inning; },
