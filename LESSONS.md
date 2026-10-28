@@ -287,3 +287,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-28 help desk
 - A stacked set of .github PRs (#2083 -> #2084 -> #2085) waits as one hand merge: say so in the HELP line so the VP merges the top PR once and closes the rest, not three tickets.
+
+## 2026-10-28 help desk
+- A known fault that expires needs an owner and a next step on its line the day it is filed; the Mac warns 48 h ahead, so renew or cure before then.
