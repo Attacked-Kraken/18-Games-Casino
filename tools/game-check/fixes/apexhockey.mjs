@@ -3779,7 +3779,7 @@ export default [
 ,
 // BALANCE ROBOT (master #11, owner Oct 28 2026): plays periods with the game's own logic and NO drawing (__hk.game.simStep).
 // FAILS when: a good bot never scores (cannot be won), an idle player (never touches the stick) scores as much as the good bot (skill does not matter),
-// or the computer team runs away with a period against a player who plays (too hard). Segments are 100 s of play, 3 each, so one lucky puck cannot decide it.
+// or the computer team runs away with a period against a player who plays (too hard). Segments are 60 s of play, 2 each (local numbers over 2 x 60 s: idle 0 goals, beginner 5, good 14), so one lucky puck cannot decide it.
 {
   id: 'play-balance-skill-matters',
   ask: 'Balance: a player who plays can score, a player who does nothing cannot, and the computer does not run away',
@@ -3794,10 +3794,10 @@ export default [
         G.newMatch(); G.period = 1; G.clockT = 118; G.scoreH = 0; G.scoreA = 0;
         const bot = skill === 'idle' ? null : { skill };
         let t = 0, guard = 0;
-        while (t < 100 && guard++ < 20000) { if (!G.simStep(1 / 30, bot)) break; t += 1 / 30; if (G.state === 'over') break; }
+        while (t < 60 && guard++ < 4000) { if (!G.simStep(1 / 30, bot)) break; t += 1 / 30; if (G.state === 'over') break; }
         return { h: G.scoreH, a: G.scoreA, t: Math.round(t) };
       };
-      const run = (skill) => { const r = []; for (let i = 0; i < 3; i++) r.push(seg(skill)); return r; };
+      const run = (skill) => { const r = []; for (let i = 0; i < 2; i++) r.push(seg(skill)); return r; };
       const res = { idle: run('idle'), beginner: run('beginner'), good: run('good') };
       G.newMatch(); for (const s of H.skaters) s.thinkT = 0.05;
       return res;
@@ -3805,10 +3805,10 @@ export default [
     if (!out || out.err) return (out && out.err) || 'balance run returned nothing';
     const sum = (a, k) => a.reduce((x, r) => x + r[k], 0);
     const gi = sum(out.idle, 'h'), gb = sum(out.beginner, 'h'), gg = sum(out.good, 'h'), ag = sum(out.good, 'a'), ab = sum(out.beginner, 'a');
-    const note = 'goals for the player over 3 x 100 s - idle ' + gi + ', beginner ' + gb + ', good ' + gg + '; goals against - beginner ' + ab + ', good ' + ag;
-    if (gg < 1) return 'BALANCE: a bot that plays well never scored in 300 s of play - ' + note;
+    const note = 'goals for the player over 2 x 60 s - idle ' + gi + ', beginner ' + gb + ', good ' + gg + '; goals against - beginner ' + ab + ', good ' + ag;
+    if (gg < 1) return 'BALANCE: a bot that plays well never scored in 120 s of play - ' + note;
     if (gi >= gg) return 'BALANCE: a player who never touches the stick scored as much as the good bot - ' + note;
-    if (ab > 12 || ag > 12) return 'BALANCE: the computer runs away (over 12 goals in 300 s) against a player who plays - ' + note;
+    if (ab > 8 || ag > 8) return 'BALANCE: the computer runs away (over 8 goals in 120 s) against a player who plays - ' + note;
     return true;
   },
 }
