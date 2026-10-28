@@ -85,4 +85,17 @@ export default [
         const miss = ['Silas6', 'Tahseen', 'JonnyMANSON'].filter(n => !t.includes(n)); return miss.length ? 'credits missing ' + miss.join(', ') : true; });
     },
   },
+  {
+    id: 'play-controls-let-go-on-interruption',
+    ask: 'A call, notification or hidden tab never leaves the bike steering or driving by itself (sticks, keys and held buttons go back to 0)',
+    async test(page, h) {
+      return h.eval(() => {
+        const I = window.__moto && window.__moto.input; if (!I) return 'no window.__moto.input';
+        I.steerA = 0.8; I.throttleA = -0.9; I.gas = true; I.right = true;
+        window.dispatchEvent(new Event('blur'));
+        const a = [I.steerA, I.throttleA, I.gas, I.right];
+        return a[0] === 0 && a[1] === 0 && !a[2] && !a[3] ? true : 'still held after blur: ' + JSON.stringify(a);
+      });
+    },
+  },
 ];

@@ -335,4 +335,19 @@ export default [
       });
     },
   },
+  {
+    id: 'play-controls-let-go-on-interruption',
+    ask: 'A call, notification or hidden tab lets go of the stick, keys, sprint and a charged shot (the shot is cancelled, never fired)',
+    async test(page, h) {
+      return h.eval(() => {
+        const T = window.__test; if (!T || !T.setHeld) return 'no window.__test.setHeld';
+        const score0 = JSON.stringify(T.score);
+        T.setHeld();
+        window.dispatchEvent(new Event('blur'));
+        const a = T.held;
+        if (a.joyX !== 0 || a.joyY !== 0 || a.joyActive || a.keys || a.sprint || a.charging) return 'still held after blur: ' + JSON.stringify(a);
+        return JSON.stringify(T.score) === score0 ? true : 'score changed - the charged shot was fired';
+      });
+    },
+  },
 ];

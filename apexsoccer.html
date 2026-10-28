@@ -398,6 +398,17 @@ function bindBtn(id,down,up){ const el=document.getElementById(id);
   if(up) el.addEventListener('mouseup',up);
 }
 const H={ player:null, sprintHeld:false, charging:false, charge:0 };
+// LET GO ON INTERRUPTION (robot STICK rule): a call / notification / hidden tab lets go of the stick, every key and every held button.
+// A charged shot is CANCELLED, never fired.
+function letGoAll(){
+  joy.id=null; joy.active=false; joy.x=joy.y=0; stick.style.transform='translate(-50%,-50%)';
+  for(const k in keys) keys[k]=false;
+  H.sprintHeld=false;
+  if(H.charging){ H.charging=false; H.charge=0; document.getElementById('chg').style.display='none'; document.getElementById('btnShoot').classList.remove('charge'); }
+  for(const id of ['btnPass','btnShoot','btnSprint','btnTack']){ const b=document.getElementById(id); if(b) b.classList.remove('on'); }
+}
+addEventListener('blur',letGoAll);
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) letGoAll(); });
 bindBtn('btnPass',()=>doPass());
 bindBtn('btnShoot',()=>startCharge(),()=>releaseShot());
 bindBtn('btnSprint',()=>{H.sprintHeld=true;},()=>{H.sprintHeld=false;});
@@ -1126,6 +1137,8 @@ async function initAthletes(){
 window.__sc.players=allPlayers; window.__sc.teams=teams; window.__sc.ball=B; window.__sc.G=G; window.__sc.H=H;
 /* PLAY TESTS (owner, JOB J6): read-only snapshot for the game-check robot. */
 window.__test={
+  get held(){ return { joyX: joy.x, joyY: joy.y, joyActive: joy.active, keys: Object.keys(keys).filter(k=>keys[k]).length, sprint: H.sprintHeld, charging: H.charging }; },
+  setHeld(){ joy.x=0.7; joy.y=-0.5; joy.active=true; keys.ArrowUp=true; H.sprintHeld=true; H.charging=true; H.charge=0.6; },
   get score(){ return [teams[0].score, teams[1].score]; },
   get state(){ return G.st; },
   get half(){ return G.half; },
