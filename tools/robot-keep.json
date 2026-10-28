@@ -205,6 +205,16 @@
    "file": "tools/game-check/judge.mjs",
    "needle": "CONFLICT MARKERS:",
    "rule": "a PR with merge-conflict markers in any file fails the check"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "const withDeadline =",
+   "rule": "every pressStep and every extra picture has a hard time limit (master #9: 30 min lost in one picture phase)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "did not finish in 2 min",
+   "rule": "an extra picture never takes more than 2 min"
   }
  ]
 }
