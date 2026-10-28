@@ -3687,5 +3687,47 @@ async test(page, h) {
       if (runMin < -0.01) return 'the sprint sole dips ' + (-runMin * 100).toFixed(1) + ' cm under the track - it must sit on the track (0-1 cm)';
       return true;
     }
-  }
+  },
+  // BALANCE ROBOT (master #11, owner Oct 28 2026): the real sprint and distance engines, NO drawing (__tf.engines, 1/60 s steps), three players per event at the SAME tap rate:
+  // idle (never taps), masher (one side only) and rhythm (alternating left/right). Local numbers: 100m rhythm 10.2 s (1st) vs masher 14.2 s (7th); 800m rhythm 87 s vs masher 123 s. FINDING: a player who never taps still finishes the 800m (last, 138 s).
+  // FAILS when: a rhythm tapper cannot finish in the medals, a masher beats the rhythm tapper (skill does not pay), a player who never taps reaches the medals, or a masher cannot finish (too hard).
+  {
+    id: 'play-balance-skill-matters',
+    ask: 'Balance: tapping with a rhythm wins medals, mashing one side is slower, and doing nothing does not reach the medals',
+    async test(page, h) {
+      const out = await h.eval(() => {
+        const X = window.__tf && window.__tf.engines && window.__tf.engines(); if (!X) return { err: 'no __tf.engines hook' };
+        const run = (id, kind, mode, hz, cap) => {
+          const e = X[kind](X.EV_BY_ID[id], X.freeRivals());
+          let t = 0, k = 0, last = -1;
+          while (!e.done && t < cap) {
+            t += 1 / 60;
+            if (mode !== 'idle' && e.phase !== 'marks' && e.phase !== 'set') {
+              const beat = Math.floor(t * hz);
+              if (beat !== last) { last = beat; e.stride(mode === 'masher' ? 'L' : ((k ^= 1) ? 'L' : 'R')); }
+            }
+            e.update(1 / 60);
+          }
+          return { done: !!e.done, dq: !!e.dq, place: e.place, time: +(e.time || 0).toFixed(2), of: (e.ai ? e.ai.length : 0) + 1 };
+        };
+        const out = {};
+        for (const [id, kind, cap] of [['100m', 'sprint', 60], ['800m', 'distance', 400]]) {
+          out[id] = { idle: run(id, kind, 'idle', 0, cap), masher: run(id, kind, 'masher', id === '100m' ? 6 : 4, cap), rhythm: run(id, kind, 'rhythm', id === '100m' ? 6 : 4, cap) };
+        }
+        return out;
+      }).catch((e) => ({ err: String(e) }));
+      if (!out || out.err) return (out && out.err) || 'balance run returned nothing';
+      const f = (r) => (r.done ? r.time + ' s, place ' + r.place + '/' + r.of : 'did not finish');
+      const note = Object.keys(out).map((id) => id + ': rhythm ' + f(out[id].rhythm) + ', masher ' + f(out[id].masher) + ', idle ' + f(out[id].idle)).join(' | ');
+      for (const id of Object.keys(out)) {
+        const o = out[id];
+        if (!o.rhythm.done || o.rhythm.dq) return 'BALANCE: the ' + id + ' cannot be finished by a player tapping with a rhythm - ' + note;
+        if (o.rhythm.place > 3) return 'BALANCE: the ' + id + ' - a player tapping with a rhythm cannot reach the medals (place ' + o.rhythm.place + ') - ' + note;
+        if (o.idle.done && !o.idle.dq && o.idle.place <= 3) return 'BALANCE: the ' + id + ' - a player who never taps reaches the medals (place ' + o.idle.place + ') - ' + note;
+        if (!o.masher.done) return 'BALANCE: the ' + id + ' - a masher cannot finish at all (too hard) - ' + note;
+        if (o.masher.time <= o.rhythm.time + 1) return 'BALANCE: the ' + id + ' - mashing one side is not clearly slower than tapping with a rhythm at the same tap rate (skill does not pay) - ' + note;
+      }
+      return true;
+    },
+  },
 ];

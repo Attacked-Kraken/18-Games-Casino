@@ -250,6 +250,41 @@
    "file": "tools/game-check/fixes/apexracer.mjs",
    "needle": "play-balance-skill-matters",
    "rule": "balance robot: beginner podium, skill pays, idle car does not win"
+  },
+  {
+   "file": "tools/game-check/pick-culprit.sh",
+   "needle": "a red test is the test's fault",
+   "rule": "auto-undo never blames a merge that touched only a game's tests/notes (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/game-check/pick-culprit.sh",
+   "needle": "that game's page (as of the merge) names the file",
+   "rule": "a shared model/kit file blames only games whose page names it (owner Oct 28 2026)"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "robot fault, NOT undoing",
+   "rule": "3+ games newly broken at once = robot fault, re-run, never undo (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "held for the hourly notes batch",
+   "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/notes-batch.py",
+   "needle": "NOTES BATCH",
+   "rule": "one notes pull request an hour (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "the robot's machine was too slow, not",
+   "rule": "3+ slowness-worded test fails in one game = overloaded robot, never an undo (owner Oct 28 2026, #2115)"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "blame ONLY the games this merge itself touched",
+   "rule": "auto-undo names only games the culprit merge touched (owner Oct 28 2026)"
   }
  ]
 }

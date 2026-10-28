@@ -25,6 +25,13 @@ for (const r of now.results || []) {
   // results are not evidence, so the game is NOT counted as broken. The next full check judges it again.
   const crashed = (r.fail || []).some(f => ROBOT_CRASH.test(f));
   if (crashed) { skipped.push(r.file); continue; }
+  // VP Oct 28 2026 (#2115 blamed an F1-only merge for Baseball + F1 while the robot was overloaded: 'race never started', 'no out in 29 s of real
+  // play', 'game too slow'): three or more play tests of ONE game failing with slowness wording at once = the robot's machine was too slow, not
+  // a merge. The game is not counted; the next check judges it again.
+  const SLOW = /never started|real play|too slow|slow|settled frames|never reached|froze/i;
+  const okB = new Set((p.fixes || []).filter(x => x.ok).map(x => x.id));
+  const slowFails = (r.fixes || []).filter(x => !x.ok && okB.has(x.id) && SLOW.test(String(x.note || '')));
+  if (slowFails.length >= 3) { skipped.push(r.file); continue; }
   const before = new Set(p.fail || []);
   const okBefore = new Set((p.fixes || []).filter(x => x.ok).map(x => x.id));
   const bad = [];
