@@ -107,3 +107,9 @@ Asked "what's a permanent fix that would help" and "what can help make things fa
 ## AUTO-UNDO CROSS-CHECK (04, Oct 28 2026 - LOCKED)
 - An auto-undo PR can come from a check run that started BEFORE a blame fix merged (#2118 vs #2117) and blame a game the merge never touched. Before judging one, read: (1) which robot version made it (run start vs the fix's merge time), (2) whether the culprit passed its own PR check, (3) whether the games named were touched by it. A Check status of RUNNING can also mean parts queued behind the 5-runner cap - read the run's jobs before calling it stuck.
 - A hand close of an auto-undo needs a PR comment saying why (hand merge/close rule).
+
+## WINDOW 6 LESSONS (Oct 28 2026 2:20 PM report - LOCKED, filed same day)
+- DUPLICATE PRs: #2128 came from window 6's own queue driver (tuner step checked only the wheel file's size/checksum). Guard now in the driver: before any tuner PR, check for an open PR from the tuner branch AND the wheel already on main; either hit = open nothing. A real re-file still works if an auto-undo pulls the wheel off main. UNPROVEN until the 2:25 PM run (first live test) shows no duplicate PR.
+- WHEN THE OWNER SAYS IT LOOKS WRONG, QUESTION THE APPROACH, NOT JUST THE SETTINGS. Wrap miss: the bug in front was fixed instead of re-asking what a wrap should be. A wrap is paint on the car's own body material (box-projected coordinates), never extra shell geometry - that removes doubling, faceting and floating shells as a class.
+- Measure first and let the number argue (rim fit, brake slab, floating wheels all came out that way). Never write the owner's complaint down as "accepted design"; his eye is the spec.
+- An edit that installs a guard can overwrite a freeze: read back after every edit (window 6 caught #2100's freeze overwritten at 2:14 PM and re-applied it).
