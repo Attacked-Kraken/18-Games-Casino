@@ -43,16 +43,20 @@ async function install(page, h) {
 }
 async function buildCar(page, h, rim, extra) {
   await install(page, h);
-  return h.eval(async (arg) => {
+  const attempt = () => h.eval(async (arg) => {
     const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+    if (E.toMenu) E.toMenu();
+    for (let i = 0; i < 40 && E.G.mode === 'loading'; i++) await wait(150);
     const cfg = { ...(E.S.cars.goblin || {}), rim: arg.rim, rimCol: '#ff00ff', cal: '#e01b2b', wrap: 'name', fin: 0, aero: 0, wheel: 0, ...(arg.extra || {}) };
     E.S.cars.goblin = cfg; E.S.cur = 'goblin';
     const prev = window.__reality && window.__reality.player;
     E.openGarage();
-    for (let i = 0; i < 50 && window.__reality.player === prev; i++) await wait(150);
+    for (let i = 0; i < 60 && window.__reality.player === prev; i++) await wait(150);
     await wait(350);
-    return !!window.__reality.player;
+    return !!window.__reality.player && E.G.mode === 'garage';
   }, { rim, extra: extra || null }).catch(() => false);
+  if (await attempt()) return true;
+  return attempt();
 }
 export default [
   {
@@ -65,10 +69,9 @@ export default [
         if (!c) return 'no car';
         if (c.cals.length !== 4) return 'expected 4 calipers, found ' + c.cals.length;
         for (const k of c.cals) {
-          const dx = k.b.max[0] - k.b.min[0], dy = k.b.max[1] - k.b.min[1], dz = k.b.max[2] - k.b.min[2];
-          const face = Math.max(dx, dy);
-          if (face > 0.13) return 'caliper face is ' + face.toFixed(2) + ' m - a billboard, not a caliper';
-          if (dz > 0.09) return 'caliper is ' + dz.toFixed(2) + ' m thick - a slab, not a caliper';
+          const ex = [k.b.max[0] - k.b.min[0], k.b.max[1] - k.b.min[1], k.b.max[2] - k.b.min[2]].sort((a, b) => a - b);
+          if (ex[2] > 0.13) return 'caliper face is ' + ex[2].toFixed(2) + ' m - a billboard, not a caliper';
+          if (ex[0] > 0.09) return 'caliper is ' + ex[0].toFixed(2) + ' m thick - a slab, not a caliper';
         }
         if (c.brakes.length !== 4) return 'expected a brake disc at all 4 wheels, found ' + c.brakes.length;
         return true;
@@ -88,11 +91,11 @@ export default [
           if (!c || c.faces.length !== 4) return 'style ' + st + ': expected 4 rim faces, found ' + (c ? c.faces.length : 0);
           const rows = [];
           for (const f of c.faces) {
-            const side = f.cz >= 0 ? 1 : -1;
-            const pts = c.tyrePts.filter((p) => Math.abs(p[0] - f.cx) < 0.5 && Math.abs(p[1] - f.cy) < 0.5 && Math.sign(p[2]) === side);
+            const side = f.cx >= 0 ? 1 : -1; /* root space: the car's length lies along z, its width along x - the seat is measured on x */
+            const pts = c.tyrePts.filter((p) => Math.abs(p[1] - f.cy) < 0.5 && Math.abs(p[2] - f.cz) < 0.55 && Math.sign(p[0]) === side);
             if (pts.length < 20) return 'style ' + st + ': too few tyre points near a wheel (' + pts.length + ')';
-            const tyreOuter = side > 0 ? Math.max(...pts.map((p) => p[2])) : Math.min(...pts.map((p) => p[2]));
-            const rimOuter = side > 0 ? f.b.max[2] : f.b.min[2];
+            const tyreOuter = side > 0 ? Math.max(...pts.map((p) => p[0])) : Math.min(...pts.map((p) => p[0]));
+            const rimOuter = side > 0 ? f.b.max[0] : f.b.min[0];
             rows.push({ rimD: f.b.max[1] - f.b.min[1], seat: (rimOuter - tyreOuter) * side });
           }
           return rows;
