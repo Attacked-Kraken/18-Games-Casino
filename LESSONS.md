@@ -298,3 +298,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 - A red owner/never test whose only evidence is "browser/context has been closed" is a robot crash, not a game fault: file HELP-VP: robot, do not ask the window to change the game.
 - A green notes-only REPORT/NEEDS PR (report/, needs/ branch) waits up to 80 min for the hourly notes batch by design - it is not stuck.
 
+
+## 2026-10-28 help desk
+- A rebuilt/re-filed model needs ALL ledger keys in ASSETS.md (title, maker, source, license): a copy-edited entry that kept only source/license made the `assets` check fail "missing maker" and the PR sat green-but-unmerged (#2125). Copy the whole entry, then run `node tools/asset-check.mjs` before pushing.
