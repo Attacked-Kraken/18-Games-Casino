@@ -1,0 +1,39 @@
+{
+ "game": "apexreefdash.html",
+ "name": "Reef Dash",
+ "seconds": 60,
+ "gameSecondsReached": 59.9,
+ "wallSeconds": 61.6,
+ "at": "2026-10-28T14:08:08.245Z",
+ "samples": 349,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": false,
+  "speed": false
+ },
+ "camera": null,
+ "playerOnScreenPct": null,
+ "speed": null,
+ "metresMoved": null,
+ "moments": [],
+ "momentCount": 0,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [],
+ "endedWithResultWords": false,
+ "fpsAtEnd": 15,
+ "scriptErrors": []
+}
