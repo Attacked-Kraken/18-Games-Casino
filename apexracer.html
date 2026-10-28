@@ -338,6 +338,18 @@ for (const k of Object.keys(GLB_MODELS)) {
 /* G-345 fix 1: the real garage wheel (Car Wheel/Rim by jack.wake04, CC-BY 4.0, fetched by the robot) - preloaded like the cars; its raw file stands 109 m tall with the axle on X, the game wrapper normalizes it per hub */
 let rimTpl = null, rimDia0 = 1, rimWid0 = 1; const rimCtr = new THREE.Vector3();
 for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } }
+/* the owner's LOCKED turbine wheel (MODELS.md erc-rim-turbine, approved Oct 26 2026): baked once at load -
+   centred, axle turned onto Z, diameter 1 - so the hub fit stands it exactly as it looks in the viewer */
+let turbTpl = null, turbWidN = 0.27;
+try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb')).scene;
+  const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+  const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
+  sc.position.set(-ctr.x, -ctr.y, -ctr.z);
+  const hold = new THREE.Group(); hold.add(sc);
+  if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
+  const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
+  hold.scale.setScalar(1 / diaRaw); turbWidN = dims[axle] / diaRaw; turbTpl = hold;
+} catch (e) { turbTpl = null; }
 /* the owner's LOCKED deep dish wheel (MODELS.md erc-rim-deepdish, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
 let dishTpl = null, dishWidN = 0.54;
@@ -1280,7 +1292,7 @@ function makeGlbCar(id, cfg, o = {}) {
   tilt.add(model);
   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
   if (cfg.wrap === 'name') { const dm = addNameWrap(tilt, bodyMat, cfg.wrapCol || '#ffffff'); if (dm) ownMats.push(dm); }
-  if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
+  else if (cfg.wrap === 'stripes') addStripeWrap(tilt, bodyMat, glassMat, cfg.wrapCol || '#ffffff').forEach((m) => ownMats.push(m.material));
   else if (cfg.wrap && cfg.wrap !== 'none') addPanelWrap(tilt, bodyMat, cfg).forEach((m) => ownMats.push(m.material)); /* G-372: the other nine wraps get surface panels */
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
@@ -1365,6 +1377,16 @@ function makeGlbCar(id, cfg, o = {}) {
         cl.position.copy(rimCtr.clone().multiplyScalar(-sc2).applyEuler(new THREE.Euler(0, th, 0)));
         const wrap = new THREE.Group(); wrap.add(cl);
         wrap.scale.z = clamp((hb.w * 1.04) / (rimWid0 * sc2), 0.45, 1.5); rimHalf = rimWid0 * sc2 * wrap.scale.z / 2;
+        wrap.position.set(hb.x, hb.y, hb.z);
+        let best = null, bestA = -1;
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; }
+      }
+      if (style === 2 && turbTpl) { /* the LOCKED turbine wheel in its own red finish, its own tyre included - never repainted, exactly as approved in the viewer */
+        const cl = turbTpl.clone(true); cl.scale.multiplyScalar(hb.h * rimScale); /* the template is baked at diameter 1 */
+        const wrap = new THREE.Group(); wrap.add(cl);
+        wrap.scale.z = clamp((hb.w * 1.04) / (turbWidN * hb.h * rimScale), 0.45, 1.5); rimHalf = turbWidN * hb.h * rimScale * wrap.scale.z / 2;
+        if (hb.z < 0) wrap.rotation.y = Math.PI; /* the face points out on both sides */
         wrap.position.set(hb.x, hb.y, hb.z);
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });

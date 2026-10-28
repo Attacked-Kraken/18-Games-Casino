@@ -342,6 +342,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-367 | window 6 | looks/apexracer.md, jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - CLAIMED Muse algre141 Oct 26 3:18 AM CDT (MAC tag) |
 | G-367 | window 6 | jobs/G-367.md, CLAIMS.md | build/g-367-apexracer - DONE PR #1859 merged 1249df7d (Muse algre141) |
 | G-368 | window 6 | MODELS.md, jobs/G-368-w6.md, CLAIMS.md | notes/g-368-models - DONE PR #1861 merged 51c01594 (Muse algre141) |
+| OWNER turbine lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-turbine-apexracer - CLAIMED Muse algre141 Oct 26 7:19 AM CDT (MAC tag) |
 | G-372 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-372-w6.md, CLAIMS.md | build/g-372-apexracer - CLAIMED Muse algre141 Oct 26 10:08 AM CDT (MAC tag) |
 | OWNER deep dish lock-in | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, CLAIMS.md | build/owner-deepdish-apexracer - CLAIMED Muse algre141 Oct 26 8:06 AM CDT (MAC tag) |
 | G-375 | window 6 | tools/game-check/fixes/apexracer.mjs, looks/apexracer.md, jobs/G-375.md, CLAIMS.md | build/g-375-apexracer - CLAIMED Muse algre141 Oct 26 12:57 PM CDT (MAC tag) |
@@ -349,5 +350,7 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-393 | window 4 | apextrackfield.html, tools/game-check/fixes/apextrackfield.mjs | build/g-393-apextrackfield - DONE PR #1992 merged 0d240390 |
 | G-391 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-391.md, CLAIMS.md | build/g-391-apexflight |
 | G-388 | window 6 | apexracer.html, tools/game-check/fixes/apexracer.mjs, jobs/G-388.md, CLAIMS.md | build/g-388-apexracer - CLAIMED Muse algre141 Oct 27 12:40 PM CDT (MAC tag) |
+| G-397 | window 6 | menu button #nmB at least 44 px and fully on screen, upright and sideways | build/owner-turbine-apexracer (rides PR #1877 per MAC) - CLAIMED Muse algre141 Oct 27 2:36 PM CDT (MAC tag) |
+| G-403 | window 3 | apexflight.html, tools/game-check/fixes/apexflight.mjs, jobs/G-403.md, CLAIMS.md | build/g-403-apexflight |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
