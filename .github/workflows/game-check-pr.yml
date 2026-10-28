@@ -156,6 +156,8 @@ jobs:
       issues: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # PART GUARD reads this pull request's diff against its base commit
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -171,6 +173,8 @@ jobs:
         env:
           PR_BRANCH: ${{ github.head_ref || github.ref_name }}
           PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_CREATED: ${{ github.event.pull_request.created_at }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
