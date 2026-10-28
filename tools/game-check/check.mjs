@@ -169,7 +169,11 @@ async function slowFactor(page) {
     const f = ms / base; return { ms: Math.round(ms), base, factor: f < 1.5 ? 1 : Math.min(4, Math.round(f * 10) / 10) };
   } catch (e) { return { ms: 0, base, factor: 1 }; }
 }
-async function pressStep(page, step) {
+// VP Oct 27 2026 (master #9): main's Racer part 1 spent 30 min in 'extra pictures' - a click/visibility/screenshot call on a page
+// whose main thread was busy never returned, and no deadline was around it. Every caller of pressStep and every picture now has one.
+const withDeadline = (p, ms, fallback) => Promise.race([Promise.resolve(p), new Promise((res) => setTimeout(() => res(fallback), ms))]);
+async function pressStep(page, step) { return withDeadline(pressStepRaw(page, step), 15000, false); }
+async function pressStepRaw(page, step) {
   const loc = step.startsWith('text=') ? page.getByText(step.slice(5), { exact: false }).first() : page.locator(step).first();
   try {
     if (!(await loc.count())) return false;
@@ -384,16 +388,25 @@ for (const g of games) {
   if (extraPicsSkipped) skippedCap('extra pictures');
   mark('timing: play pictures');
   for (const pc of (!firstPart || partOnlyPlay || extraPicsSkipped ? [] : (g.pictures || []).slice(0, 3))) {
+    if (overWholeCap()) { skippedCap('extra picture ' + pc.name); break; }
+    let pp = null;
     try {
-      const pp = await ctx.newPage();
-      await pp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await pp.waitForTimeout(7000);
-      for (const st of pc.steps || []) await pressStep(pp, st);
-      await pp.waitForTimeout(pc.wait || 2500);
-      const nm = String(pc.name || 'pic').replace(/[^a-z0-9-]/gi, '');
-      fs.writeFileSync(path.join(out, 'img', slug + '-pic-' + nm + '.jpg'), await pp.screenshot({ timeout: 90000, type: 'jpeg', quality: 66 }));
-      (r.img.pics = r.img.pics || []).push({ name: pc.name, src: 'img/' + slug + '-pic-' + nm + '.jpg' });
-      await pp.close();
+      const t0 = Date.now();
+      const done = await withDeadline((async () => {   // one picture never takes more than 2 min, whatever the page does
+        pp = await ctx.newPage();
+        await pp.goto(base + g.file, { waitUntil: 'load', timeout: 45000 }); await pp.waitForTimeout(7000);
+        for (const st of pc.steps || []) await pressStep(pp, st);
+        await pp.waitForTimeout(pc.wait || 2500);
+        const nm = String(pc.name || 'pic').replace(/[^a-z0-9-]/gi, '');
+        fs.writeFileSync(path.join(out, 'img', slug + '-pic-' + nm + '.jpg'), await pp.screenshot({ timeout: 60000, type: 'jpeg', quality: 66 }));
+        (r.img.pics = r.img.pics || []).push({ name: pc.name, src: 'img/' + slug + '-pic-' + nm + '.jpg' });
+        return true;
+      })(), 120000, false);
+      if (!done) r.check.push('SKIPPED (robot side, not a game result): extra picture "' + pc.name + '" did not finish in 2 min');
+      if (pp) { await withDeadline(pp.close().catch(() => {}), 5000, null); pp = null; }
+      if (Date.now() - t0 > 90000) r.check.push('SLOW: extra picture "' + pc.name + '" took ' + Math.round((Date.now() - t0) / 1000) + ' s (robot side)');
     } catch (e) { r.check.push('Extra picture "' + pc.name + '" failed: ' + String(e.message).split('\n')[0].slice(0, 80)); }
+    if (pp) await withDeadline(pp.close().catch(() => {}), 5000, null);
   }
   mark('timing: extra pictures');
   const f2 = await pageFacts(page).catch(() => ({ casino: '', rotate: '' }));
