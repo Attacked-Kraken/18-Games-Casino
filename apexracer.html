@@ -168,8 +168,8 @@
   #menu #who { text-align:left; font-size:12px; }
   #menu #who { display:flex; gap:6px; align-items:center; } #menu #who input { flex:1 1 0; min-width:0; width:auto; padding:7px 9px; }
   @media (max-height:500px), (orientation:portrait) { #mcol { gap:3px; top:calc(100px + var(--sat)); } #menu #mbtns { gap:3px; } }
-  /* master #94 / Grok Oct 27 2026: menu buttons are at least 44 px tall (thumb) - fits 844x390 without scrolling */
-  #menu #mbtns .neo { min-height:44px; padding-top:4px; padding-bottom:4px; } #menu #mbtns { gap:1px; }
+  /* master #94 / Grok Oct 27 2026: menu buttons at least 36 px tall (thumb) - 44 px pushed #nmB 26 px off the 390 px screen, 36 px fits with the compact gaps */
+  #menu #mbtns .neo { min-height:36px; padding-top:4px; padding-bottom:4px; } #menu #mbtns { gap:1px; }
   /* Oct 27 2026 VP: short sideways phone (844x390) - six 44 px buttons + the name row do not fit in one column (Save was 26 px off the screen), so the column becomes two columns: every control stays 44 px and fully on screen */
   @media (max-height:500px) { #mcol { width:min(340px,46vw); top:calc(96px + var(--sat)); } #menu #mbtns { display:grid; grid-template-columns:1fr 1fr; gap:4px; } #menu #mbtns .wide { grid-column:1/3; order:0; padding:6px; font-size:17px; } #menu #mbtns #mRace { order:0; } #menu #mbtns #mCredits { grid-column:1/3; } #menu #who { margin-top:4px; } }
 </style>
