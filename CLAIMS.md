@@ -356,3 +356,5 @@ Two Muses never touch the same file - if a file you need is in someone else's ro
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | build/g-401-apextrackfield - CLAIMED |
 | G-401 | window 4 | tools/game-check/fixes/apextrackfield.mjs | DONE PR #2029 merged 94238f06 |
 | CAR CENSUS | window 6 | apexracer.html (one-slot wrap table), tools/game-check/fixes/apexracer.mjs (9 play-car-census tests), jobs/CENSUS-w6.md | build/census-apexracer - DONE PR #2091 merged b53e1430 |
+| OWNER RIM-FIT | window 6 | apexracer.html (rim fit, brakes, no-fake), tools/game-check/fixes/apexracer/rimfit.mjs, jobs/RIMFIT-w6.md | build/owner-rimfit-apexracer - DONE PR #2100 merged 751033c65 |
+| G-412 | window 6 | tools/game-check/fixes/apexracer/rimfit.mjs (buildCar hardening), jobs/G-412.md | build/owner-rimfit-apexracer (rode PR #2100) - DONE PR #2100 merged 751033c65 |
