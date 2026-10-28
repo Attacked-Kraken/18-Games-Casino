@@ -203,9 +203,26 @@ jobs:
           if [ -n "$TESTS" ]; then echo "only play tests broke ($TESTS) - replaying just those"; fi
           timeout 540 env ONLY="$GAMES" ONLY_TESTS="$TESTS" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8813/ recheck-out || true
           NOTE=""
+          # A results.json file can exist even when a timed-out/partial recheck did not return every targeted game.
+          # An incomplete recheck is not evidence that the remaining failures were a fluke: fall back to the first result.
+          if [ -f recheck-out/results.json ]; then
+            MISSING=$(node -e '
+              const fs=require("fs");
+              const first=JSON.parse(process.env.FIRST_JSON);
+              const now=JSON.parse(fs.readFileSync("recheck-out/results.json","utf8"));
+              const expected=new Set((first.games||[]).split(",").filter(Boolean));
+              const got=new Set((now.results||[]).map(r=>r.file));
+              console.log([...expected].filter(f=>!got.has(f)).join(","));
+            ' FIRST_JSON="$FIRST" 2>/dev/null || echo "unknown")
+            if [ -n "$MISSING" ]; then
+              echo "::warning title=AUTO-UNDO::recheck was incomplete for $MISSING - acting on the first result"
+              rm -f recheck-out/results.json
+              NOTE=" (not re-checked for all affected games: $MISSING - undone on the first result)"
+            fi
+          fi
           if [ ! -f recheck-out/results.json ]; then
-            echo "::warning title=AUTO-UNDO::recheck could not answer in 9 min - acting on the first result"
-            NOTE=" (not re-checked: the recheck ran out of time - undone on the first result)"
+            echo "::warning title=AUTO-UNDO::recheck could not provide complete results in 9 min - acting on the first result"
+            NOTE="${NOTE:- (not re-checked: the recheck ran out of time - undone on the first result)}"
             mkdir -p recheck-out && cp game-check-out/results.json recheck-out/results.json
           fi
           echo "$FIRST" > first-broken.json
