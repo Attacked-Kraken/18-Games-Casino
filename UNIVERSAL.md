@@ -103,3 +103,7 @@ Asked "what's a permanent fix that would help" and "what can help make things fa
 - Process: when code is tricky, Claude writes it once and the Muse pastes it exactly (nothing else changed). Muses are free but slip on complex work; Claude is exact but costs usage.
 - A window at automation level 0 holds every automatic message and queued step. Check the level before blaming the window (window 6 sat at 0 overnight).
 - Not adopted without the owner's go: splitting apexracer.html into small files (LATER.md item 1, master #66).
+
+## AUTO-UNDO CROSS-CHECK (04, Oct 28 2026 - LOCKED)
+- An auto-undo PR can come from a check run that started BEFORE a blame fix merged (#2118 vs #2117) and blame a game the merge never touched. Before judging one, read: (1) which robot version made it (run start vs the fix's merge time), (2) whether the culprit passed its own PR check, (3) whether the games named were touched by it. A Check status of RUNNING can also mean parts queued behind the 5-runner cap - read the run's jobs before calling it stuck.
+- A hand close of an auto-undo needs a PR comment saying why (hand merge/close rule).
