@@ -1,1 +1,193 @@
-LyogT1dORVIgcmltLWZpdCBqb2IgKE9jdCAyOCAyMDI2KTogcmltcyBmaXQgSU4gdGhlIHR5cmUsIGV2ZXJ5IHByZXNzIHN3aXRjaGVzIHRoZSByaW1zLAogICBubyBmYWtlIGZldGNoZWQgd2hlZWxzLCBicmFrZXMgbG9vayBsaWtlIGJyYWtlcy4gV2luZG93IDYuICovCmNvbnN0IExPVUQgPSAnI2ZmMDBmZic7CmZ1bmN0aW9uIHdoZWVsQ2Vuc3VzKCkgewogIGNvbnN0IHJvb3QgPSB3aW5kb3cuX19yZWFsaXR5LnBsYXllcjsgaWYgKCFyb290KSByZXR1cm4gbnVsbDsKICByb290LnVwZGF0ZU1hdHJpeFdvcmxkKHRydWUpOwogIGNvbnN0IGludiA9IHJvb3QubWF0cml4V29ybGQuY2xvbmUoKS5pbnZlcnQoKSwgZSA9IGludi5lbGVtZW50czsKICBjb25zdCB0b1Jvb3QgPSAoYikgPT4gewogICAgY29uc3QgcHRzID0gW107CiAgICBmb3IgKGNvbnN0IHggb2YgW2IubWluLngsIGIubWF4LnhdKSBmb3IgKGNvbnN0IHkgb2YgW2IubWluLnksIGIubWF4LnldKSBmb3IgKGNvbnN0IHogb2YgW2IubWluLnosIGIubWF4LnpdKQogICAgICBwdHMucHVzaChbZVswXSAqIHggKyBlWzRdICogeSArIGVbOF0gKiB6ICsgZVsxMl0sIGVbMV0gKiB4ICsgZVs1XSAqIHkgKyBlWzldICogeiArIGVbMTNdLCBlWzJdICogeCArIGVbNl0gKiB5ICsgZVsxMF0gKiB6ICsgZVsxNF1dKTsKICAgIHJldHVybiB7IG1pbjogWzAsIDEsIDJdLm1hcCgoaSkgPT4gTWF0aC5taW4oLi4ucHRzLm1hcCgocCkgPT4gcFtpXSkpKSwgbWF4OiBbMCwgMSwgMl0ubWFwKChpKSA9PiBNYXRoLm1heCguLi5wdHMubWFwKChwKSA9PiBwW2ldKSkpIH07CiAgfTsKICBjb25zdCBmYWNlcyA9IFtdLCBjYWxzID0gW10sIGJyYWtlcyA9IFtdLCBvdGhlcnMgPSBbXTsKICByb290LnRyYXZlcnNlKChxKSA9PiB7CiAgICBpZiAoIXEuaXNNZXNoIHx8ICFxLmdlb21ldHJ5KSByZXR1cm47CiAgICBjb25zdCBnID0gcS5nZW9tZXRyeTsgaWYgKCFnLmJvdW5kaW5nQm94KSBnLmNvbXB1dGVCb3VuZGluZ0JveCgpOwogICAgY29uc3Qgd2IgPSBnLmJvdW5kaW5nQm94LmNsb25lKCkuYXBwbHlNYXRyaXg0KHEubWF0cml4V29ybGQpOwogICAgY29uc3QgYiA9IHRvUm9vdCh3Yik7CiAgICBjb25zdCByZWMgPSB7IGIsIGN4OiAoYi5taW5bMF0gKyBiLm1heFswXSkgLyAyLCBjeTogKGIubWluWzFdICsgYi5tYXhbMV0pIC8gMiwgY3o6IChiLm1pblsyXSArIGIubWF4WzJdKSAvIDIsIHZlcnRzOiBnLmF0dHJpYnV0ZXMucG9zaXRpb24gPyBnLmF0dHJpYnV0ZXMucG9zaXRpb24uY291bnQgOiAwLCBjb2w6IHEubWF0ZXJpYWwgJiYgcS5tYXRlcmlhbC5jb2xvciA/ICcjJyArIHEubWF0ZXJpYWwuY29sb3IuZ2V0SGV4U3RyaW5nKCkgOiAnPycsIG1hcDogISEocS5tYXRlcmlhbCAmJiBxLm1hdGVyaWFsLm1hcCkgfTsKICAgIGlmIChxLnVzZXJEYXRhLmFjYyA9PT0gJ3JpbWZhY2UnKSBmYWNlcy5wdXNoKHJlYyk7CiAgICBlbHNlIGlmIChxLnVzZXJEYXRhLmFjYyA9PT0gJ2NhbGlwZXInKSBjYWxzLnB1c2gocmVjKTsKICAgIGVsc2UgaWYgKHEudXNlckRhdGEuYWNjID09PSAnYnJha2UnKSBicmFrZXMucHVzaChyZWMpOwogICAgZWxzZSBvdGhlcnMucHVzaChyZWMpOwogIH0pOwogIGNvbnN0IHR5cmVQdHMgPSBbXTsKICByb290LnRyYXZlcnNlKChxKSA9PiB7CiAgICBpZiAoIXEuaXNNZXNoIHx8ICFxLmdlb21ldHJ5IHx8IHEudXNlckRhdGEuYWNjKSByZXR1cm47CiAgICBjb25zdCBwID0gcS5nZW9tZXRyeS5hdHRyaWJ1dGVzLnBvc2l0aW9uOwogICAgaWYgKCFwIHx8IHAuY291bnQgPCAzMDAwKSByZXR1cm47CiAgICBjb25zdCBlMiA9IHEubWF0cml4V29ybGQuZWxlbWVudHMsIHN0ZXAgPSBNYXRoLm1heCgxLCBNYXRoLmZsb29yKHAuY291bnQgLyA0MDAwKSk7CiAgICBmb3IgKGxldCBpID0gMDsgaSA8IHAuY291bnQ7IGkgKz0gc3RlcCkgewogICAgICBjb25zdCB4ID0gcC5nZXRYKGkpLCB5ID0gcC5nZXRZKGkpLCB6ID0gcC5nZXRaKGkpOwogICAgICBjb25zdCB3eCA9IGUyWzBdICogeCArIGUyWzRdICogeSArIGUyWzhdICogeiArIGUyWzEyXSwgd3kgPSBlMlsxXSAqIHggKyBlMls1XSAqIHkgKyBlMls5XSAqIHogKyBlMlsxM10sIHd6ID0gZTJbMl0gKiB4ICsgZTJbNl0gKiB5ICsgZTJbMTBdICogeiArIGUyWzE0XTsKICAgICAgdHlyZVB0cy5wdXNoKFtlWzBdICogd3ggKyBlWzRdICogd3kgKyBlWzhdICogd3ogKyBlWzEyXSwgZVsxXSAqIHd4ICsgZVs1XSAqIHd5ICsgZVs5XSAqIHd6ICsgZVsxM10sIGVbMl0gKiB3eCArIGVbNl0gKiB3eSArIGVbMTBdICogd3ogKyBlWzE0XV0pOwogICAgfQogIH0pOwogIHJldHVybiB7IGZhY2VzLCBjYWxzLCBicmFrZXMsIG90aGVycywgdHlyZVB0cyB9Owp9CmNvbnN0IENFTlNVU19TUkMgPSB3aGVlbENlbnN1cy50b1N0cmluZygpOwphc3luYyBmdW5jdGlvbiBpbnN0YWxsKHBhZ2UsIGgpIHsKICByZXR1cm4gaC5ldmFsKChzcmMpID0+IHsgd2luZG93Ll9fd2MgPSBldmFsKCcoJyArIHNyYyArICcpJyk7IHJldHVybiB0eXBlb2Ygd2luZG93Ll9fd2MgPT09ICdmdW5jdGlvbic7IH0sIENFTlNVU19TUkMpLmNhdGNoKCgpID0+IGZhbHNlKTsKfQpsZXQgbGFzdFdoeSA9ICcnOwphc3luYyBmdW5jdGlvbiBidWlsZENhcihwYWdlLCBoLCByaW0sIGV4dHJhKSB7CiAgYXdhaXQgaW5zdGFsbChwYWdlLCBoKTsKICBjb25zdCBhdHRlbXB0ID0gKCkgPT4gaC5ldmFsKGFzeW5jIChhcmcpID0+IHsKICAgIGNvbnN0IEUgPSB3aW5kb3cuX19lcmMsIHdhaXQgPSAobXMpID0+IG5ldyBQcm9taXNlKChycykgPT4gc2V0VGltZW91dChycywgbXMpKTsKICAgIGNvbnN0IGRpYWcgPSB7IG1vZGU6IEUuRyAmJiBFLkcubW9kZSwgY3VyOiBFLlMgJiYgRS5TLmN1ciwgdGhyZXc6ICcnIH07CiAgICB0cnkgewogICAgICBjb25zdCBjZmcgPSB7IC4uLihFLlMuY2Fycy5nb2JsaW4gfHwge30pLCByaW06IGFyZy5yaW0sIHJpbUNvbDogJyNmZjAwZmYnLCBjYWw6ICcjZTAxYjJiJywgd3JhcDogJ25hbWUnLCBmaW46ICdtZXRhbCcsIGFlcm86IDAsIHdoZWVsOiAwLCAuLi4oYXJnLmV4dHJhIHx8IHt9KSB9OwogICAgICBFLlMuY2Fycy5nb2JsaW4gPSBjZmc7IEUuUy5jdXIgPSAnZ29ibGluJzsKICAgICAgdHJ5IHsgaWYgKEUuUiAmJiBFLnRvTWVudSkgRS50b01lbnUoKTsgfSBjYXRjaCAoZSkgeyBkaWFnLnRocmV3ID0gJ3RvTWVudTogJyArIFN0cmluZyhlKS5zbGljZSgwLCA5MCk7IH0KICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCA2MCAmJiBFLkcubW9kZSA9PT0gJ2xvYWRpbmcnOyBpKyspIGF3YWl0IHdhaXQoMjAwKTsKICAgICAgZGlhZy5tb2RlID0gRS5HLm1vZGU7CiAgICAgIGNvbnN0IHByZXYgPSB3aW5kb3cuX19yZWFsaXR5ICYmIHdpbmRvdy5fX3JlYWxpdHkucGxheWVyOwogICAgICB0cnkgeyBFLm9wZW5HYXJhZ2UoKTsgfSBjYXRjaCAoZSkgeyBkaWFnLnRocmV3ID0gKGRpYWcudGhyZXcgPyBkaWFnLnRocmV3ICsgJyB8ICcgOiAnJykgKyAnb3BlbkdhcmFnZTogJyArIFN0cmluZyhlKS5zbGljZSgwLCA5MCk7IH0KICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCA0MCAmJiB3aW5kb3cuX19yZWFsaXR5LnBsYXllciA9PT0gcHJldjsgaSsrKSBhd2FpdCB3YWl0KDE1MCk7CiAgICAgIGRpYWcubW9kZSA9IEUuRy5tb2RlOyBkaWFnLnNhbWUgPSB3aW5kb3cuX19yZWFsaXR5LnBsYXllciA9PT0gcHJldjsgZGlhZy5wbGF5ZXIgPSAhIXdpbmRvdy5fX3JlYWxpdHkucGxheWVyOwogICAgICByZXR1cm4geyBvazogRS5HLm1vZGUgPT09ICdnYXJhZ2UnICYmICEhd2luZG93Ll9fcmVhbGl0eS5wbGF5ZXIsIGRpYWcgfTsKICAgIH0gY2F0Y2ggKGUpIHsgZGlhZy50aHJldyA9IChkaWFnLnRocmV3ID8gZGlhZy50aHJldyArICcgfCAnIDogJycpICsgJ2J1aWxkOiAnICsgU3RyaW5nKGUpLnNsaWNlKDAsIDkwKTsgcmV0dXJuIHsgb2s6IGZhbHNlLCBkaWFnIH07IH0KICB9LCB7IHJpbSwgZXh0cmE6IGV4dHJhIHx8IG51bGwgfSkuY2F0Y2goKGUpID0+ICh7IG9rOiBmYWxzZSwgZGlhZzogeyB0aHJldzogJ2V2YWw6ICcgKyBTdHJpbmcoZSkuc2xpY2UoMCwgOTApIH0gfSkpOwogIGNvbnN0IHIxID0gYXdhaXQgYXR0ZW1wdCgpOwogIGlmIChyMSAmJiByMS5vaykgcmV0dXJuIHRydWU7CiAgbGFzdFdoeSA9IEpTT04uc3RyaW5naWZ5KHIxICYmIHIxLmRpYWcgfHwge30pOwogIGNvbnN0IHIyID0gYXdhaXQgYXR0ZW1wdCgpOwogIGlmIChyMiAmJiByMi5vaykgcmV0dXJuIHRydWU7CiAgbGFzdFdoeSA9IEpTT04uc3RyaW5naWZ5KHIyICYmIHIyLmRpYWcgfHwge30pOwogIHJldHVybiBmYWxzZTsKfQpleHBvcnQgZGVmYXVsdCBbCiAgewogICAgaWQ6ICduZXZlci1jYWxpcGVyLWJpbGxib2FyZCcsCiAgICBhc2s6ICdJcyB0aGUgYnJha2UgY2FsaXBlciBhIHNtYWxsIGJsb2NrIG9uIGEgcmVhbCBicmFrZSBkaXNjLCBub3QgYSByZWQgYmlsbGJvYXJkIGluIHRoZSB3aGVlbD8nLAogICAgYXN5bmMgdGVzdChwYWdlLCBoKSB7CiAgICAgIGlmICghYXdhaXQgYnVpbGRDYXIocGFnZSwgaCwgMykpIHJldHVybiAnZ2FyYWdlIGNhciBkaWQgbm90IGJ1aWxkIFsnICsgbGFzdFdoeSArICddJzsKICAgICAgcmV0dXJuIGguZXZhbCgoKSA9PiB7CiAgICAgICAgY29uc3QgYyA9IHdpbmRvdy5fX3djKCk7CiAgICAgICAgaWYgKCFjKSByZXR1cm4gJ25vIGNhcic7CiAgICAgICAgaWYgKGMuY2Fscy5sZW5ndGggIT09IDQpIHJldHVybiAnZXhwZWN0ZWQgNCBjYWxpcGVycywgZm91bmQgJyArIGMuY2Fscy5sZW5ndGg7CiAgICAgICAgZm9yIChjb25zdCBrIG9mIGMuY2FscykgewogICAgICAgICAgY29uc3QgZXggPSBbay5iLm1heFswXSAtIGsuYi5taW5bMF0sIGsuYi5tYXhbMV0gLSBrLmIubWluWzFdLCBrLmIubWF4WzJdIC0gay5iLm1pblsyXV0uc29ydCgoYSwgYikgPT4gYSAtIGIpOwogICAgICAgICAgaWYgKGV4WzJdID4gMC4xMykgcmV0dXJuICdjYWxpcGVyIGZhY2UgaXMgJyArIGV4WzJdLnRvRml4ZWQoMikgKyAnIG0gLSBhIGJpbGxib2FyZCwgbm90IGEgY2FsaXBlcic7CiAgICAgICAgICBpZiAoZXhbMF0gPiAwLjA5KSByZXR1cm4gJ2NhbGlwZXIgaXMgJyArIGV4WzBdLnRvRml4ZWQoMikgKyAnIG0gdGhpY2sgLSBhIHNsYWIsIG5vdCBhIGNhbGlwZXInOwogICAgICAgIH0KICAgICAgICBpZiAoYy5icmFrZXMubGVuZ3RoICE9PSA0KSByZXR1cm4gJ2V4cGVjdGVkIGEgYnJha2UgZGlzYyBhdCBhbGwgNCB3aGVlbHMsIGZvdW5kICcgKyBjLmJyYWtlcy5sZW5ndGg7CiAgICAgICAgcmV0dXJuIHRydWU7CiAgICAgIH0pLmNhdGNoKChlcnIpID0+ICdldmFsIGZhaWxlZDogJyArIGVycik7CiAgICB9LAogIH0sCiAgewogICAgaWQ6ICduZXZlci1yaW0tc2VhdC1zaXplJywKICAgIGFzazogJ0RvIHRoZSBmZXRjaGVkIHJpbXMgZml0IElOIHRoZSB0eXJlOiBiYXJlIHJpbXMgYXQgYSByZWFsIGRpYW1ldGVyLCBmYWNlIHNlYXRlZCBhdCB0aGUgdHlyZSBzdXJmYWNlPycsCiAgICBhc3luYyB0ZXN0KHBhZ2UsIGgpIHsKICAgICAgY29uc3QgYmFuZHMgPSB7IDM6IFswLjYwLCAwLjg2XSwgNDogWzAuNjAsIDAuODZdLCA1OiBbMC42MCwgMC44Nl0gfTsKICAgICAgbGV0IHJlZiA9IG51bGw7CiAgICAgIGZvciAoY29uc3Qgc3R5bGUgb2YgWzIsIDMsIDQsIDVdKSB7CiAgICAgICAgaWYgKCFhd2FpdCBidWlsZENhcihwYWdlLCBoLCBzdHlsZSkpIHJldHVybiAnZ2FyYWdlIGNhciBkaWQgbm90IGJ1aWxkIGZvciBzdHlsZSAnICsgc3R5bGUgKyAnIFsnICsgbGFzdFdoeSArICddJzsKICAgICAgICBjb25zdCByID0gYXdhaXQgaC5ldmFsKChzdCkgPT4gewogICAgICAgICAgY29uc3QgYyA9IHdpbmRvdy5fX3djKCk7CiAgICAgICAgICBpZiAoIWMgfHwgYy5mYWNlcy5sZW5ndGggIT09IDQpIHJldHVybiAnc3R5bGUgJyArIHN0ICsgJzogZXhwZWN0ZWQgNCByaW0gZmFjZXMsIGZvdW5kICcgKyAoYyA/IGMuZmFjZXMubGVuZ3RoIDogMCk7CiAgICAgICAgICBjb25zdCByb3dzID0gW107CiAgICAgICAgICBmb3IgKGNvbnN0IGYgb2YgYy5mYWNlcykgewogICAgICAgICAgICBjb25zdCBzaWRlID0gZi5jeCA+PSAwID8gMSA6IC0xOyAvKiByb290IHNwYWNlOiB0aGUgY2FyJ3MgbGVuZ3RoIGxpZXMgYWxvbmcgeiwgaXRzIHdpZHRoIGFsb25nIHggLSB0aGUgc2VhdCBpcyBtZWFzdXJlZCBvbiB4ICovCiAgICAgICAgICAgIGNvbnN0IHB0cyA9IGMudHlyZVB0cy5maWx0ZXIoKHApID0+IE1hdGguYWJzKHBbMV0gLSBmLmN5KSA8IDAuNSAmJiBNYXRoLmFicyhwWzJdIC0gZi5jeikgPCAwLjU1ICYmIE1hdGguc2lnbihwWzBdKSA9PT0gc2lkZSk7CiAgICAgICAgICAgIGlmIChwdHMubGVuZ3RoIDwgMjApIHJldHVybiAnc3R5bGUgJyArIHN0ICsgJzogdG9vIGZldyB0eXJlIHBvaW50cyBuZWFyIGEgd2hlZWwgKCcgKyBwdHMubGVuZ3RoICsgJyknOwogICAgICAgICAgICBjb25zdCB0eXJlT3V0ZXIgPSBzaWRlID4gMCA/IE1hdGgubWF4KC4uLnB0cy5tYXAoKHApID0+IHBbMF0pKSA6IE1hdGgubWluKC4uLnB0cy5tYXAoKHApID0+IHBbMF0pKTsKICAgICAgICAgICAgY29uc3QgcmltT3V0ZXIgPSBzaWRlID4gMCA/IGYuYi5tYXhbMF0gOiBmLmIubWluWzBdOwogICAgICAgICAgICByb3dzLnB1c2goeyByaW1EOiBmLmIubWF4WzFdIC0gZi5iLm1pblsxXSwgc2VhdDogKHJpbU91dGVyIC0gdHlyZU91dGVyKSAqIHNpZGUgfSk7CiAgICAgICAgICB9CiAgICAgICAgICByZXR1cm4gcm93czsKICAgICAgICB9LCBzdHlsZSkuY2F0Y2goKCkgPT4gbnVsbCk7CiAgICAgICAgaWYgKCFyKSByZXR1cm4gJ3NlYXQgY2Vuc3VzIGZhaWxlZCBmb3Igc3R5bGUgJyArIHN0eWxlOwogICAgICAgIGlmICh0eXBlb2YgciA9PT0gJ3N0cmluZycpIHJldHVybiByOwogICAgICAgIGlmIChzdHlsZSA9PT0gMikgeyByZWYgPSByLm1hcCgoeCkgPT4geC5yaW1EKTsgY29udGludWU7IH0KICAgICAgICBjb25zdCBbbG8sIGhpXSA9IGJhbmRzW3N0eWxlXTsKICAgICAgICBmb3IgKGxldCBpID0gMDsgaSA8IDQ7IGkrKykgewogICAgICAgICAgY29uc3QgcmF0aW8gPSByW2ldLnJpbUQgLyByZWZbaV07CiAgICAgICAgICBpZiAocmF0aW8gPCBsbyB8fCByYXRpbyA+IGhpKSByZXR1cm4gJ3N0eWxlICcgKyBzdHlsZSArICc6IHJpbSBkaWFtZXRlciBpcyAnICsgcmF0aW8udG9GaXhlZCgyKSArICd4IHRoZSB0eXJlIC0gZG9lcyBub3QgZml0IGluIHRoZSB0eXJlJzsKICAgICAgICAgIGlmIChyW2ldLnNlYXQgPCAtMC4wMjUgfHwgcltpXS5zZWF0ID4gMC4wMykgcmV0dXJuICdzdHlsZSAnICsgc3R5bGUgKyAnOiByaW0gZmFjZSBzaXRzICcgKyByW2ldLnNlYXQudG9GaXhlZCgyKSArICcgbSBmcm9tIHRoZSB0eXJlIHN1cmZhY2UgLSBidXJpZWQgb3IgcG9raW5nIG91dCc7CiAgICAgICAgfQogICAgICB9CiAgICAgIHJldHVybiB0cnVlOwogICAgfSwKICB9LAogIHsKICAgIGlkOiAnbmV2ZXItcmltLWZha2UnLAogICAgYXNrOiAnSXMgYSBmZXRjaGVkIHJpbSBuZXZlciBmYWtlZDogcmVhbCB2ZXJ0cyBhbmQgY29sb3VycyB3aGVuIGxvYWRlZCwgYW5kIG5vIHJlZCBzdGFuZC1pbiBpZiBpdHMgbW9kZWwgZHJvcHM/JywKICAgIGFzeW5jIHRlc3QocGFnZSwgaCkgewogICAgICBjb25zdCBiYW5kcyA9IHsgMjogMjAwMDAsIDM6IDQwMDAwLCA0OiAxMDAwMDAsIDU6IDEwMDAwMCB9OwogICAgICBmb3IgKGNvbnN0IHN0eWxlIG9mIFsyLCAzLCA0LCA1XSkgewogICAgICAgIGlmICghYXdhaXQgYnVpbGRDYXIocGFnZSwgaCwgc3R5bGUpKSByZXR1cm4gJ2dhcmFnZSBjYXIgZGlkIG5vdCBidWlsZCBmb3Igc3R5bGUgJyArIHN0eWxlICsgJyBbJyArIGxhc3RXaHkgKyAnXSc7CiAgICAgICAgY29uc3QgciA9IGF3YWl0IGguZXZhbCgoKSA9PiB7CiAgICAgICAgICBjb25zdCBjID0gd2luZG93Ll9fd2MoKTsKICAgICAgICAgIGlmICghYykgcmV0dXJuIG51bGw7CiAgICAgICAgICByZXR1cm4geyB2ZXJ0czogYy5mYWNlcy5yZWR1Y2UoKGEsIGYpID0+IGEgKyBmLnZlcnRzLCAwKSwgbG91ZDogYy5mYWNlcy5maWx0ZXIoKGYpID0+IGYuY29sID09PSAnI2ZmMDBmZicpLmxlbmd0aCwgbjogYy5mYWNlcy5sZW5ndGggfTsKICAgICAgICB9KS5jYXRjaCgoKSA9PiBudWxsKTsKICAgICAgICBpZiAoIXIpIHJldHVybiAnY2Vuc3VzIGZhaWxlZCBmb3Igc3R5bGUgJyArIHN0eWxlOwogICAgICAgIGlmIChyLmxvdWQpIHJldHVybiAnc3R5bGUgJyArIHN0eWxlICsgJzogYSByaW0gZmFjZSB3ZWFycyB0aGUgcmltIGNvbG91ciAtIGEgZmFrZSBzdGFuZC1pbic7CiAgICAgICAgaWYgKHIudmVydHMgPCBiYW5kc1tzdHlsZV0pIHJldHVybiAnc3R5bGUgJyArIHN0eWxlICsgJzogb25seSAnICsgci52ZXJ0cyArICcgcmltIHZlcnRzIC0gbm90IHRoZSByZWFsIG1vZGVsJzsKICAgICAgfQogICAgICBjb25zdCByZWFkeSA9IGF3YWl0IGguZXZhbCgoKSA9PiAod2luZG93Ll9fZXJjLndoZWVsU3RhdGUgPyB3aW5kb3cuX19lcmMud2hlZWxTdGF0ZSgpIDogbnVsbCkpLmNhdGNoKCgpID0+IG51bGwpOwogICAgICBpZiAoIXJlYWR5KSByZXR1cm4gJ3RoZSBnYW1lIGV4cG9zZXMgbm8gd2hlZWxTdGF0ZSBob29rIC0gY2Fubm90IHByb3ZlIHRoZSBuby1mYWtlIHBhdGgnOwogICAgICBjb25zdCBkcm9wcGVkID0gYXdhaXQgaC5ldmFsKCgpID0+ICh0eXBlb2Ygd2luZG93Ll9fZXJjLmRyb3BXaGVlbCA9PT0gJ2Z1bmN0aW9uJyA/ICh3aW5kb3cuX19lcmMuZHJvcFdoZWVsKDQpLCB0cnVlKSA6IGZhbHNlKSkuY2F0Y2goKCkgPT4gZmFsc2UpOwogICAgICBpZiAoIWRyb3BwZWQpIHJldHVybiAndGhlIGdhbWUgZXhwb3NlcyBubyBkcm9wV2hlZWwgaG9vayAtIGNhbm5vdCBwcm92ZSB0aGUgbm8tZmFrZSBwYXRoJzsKICAgICAgaWYgKCFhd2FpdCBidWlsZENhcihwYWdlLCBoLCA0KSkgcmV0dXJuICdnYXJhZ2UgY2FyIGRpZCBub3QgcmVidWlsZCBhZnRlciB0aGUgTWVzaCBtb2RlbCBkcm9wcGVkIFsnICsgbGFzdFdoeSArICddJzsKICAgICAgY29uc3QgbWlkID0gYXdhaXQgaC5ldmFsKCgpID0+IHsKICAgICAgICBjb25zdCBjID0gd2luZG93Ll9fd2MoKTsKICAgICAgICBpZiAoIWMpIHJldHVybiBudWxsOwogICAgICAgIHJldHVybiB7IHZlcnRzOiBjLmZhY2VzLnJlZHVjZSgoYSwgZikgPT4gYSArIGYudmVydHMsIDApLCBsb3VkOiBjLmZhY2VzLmZpbHRlcigoZikgPT4gZi5jb2wgPT09ICcjZmYwMGZmJykubGVuZ3RoIH07CiAgICAgIH0pLmNhdGNoKCgpID0+IG51bGwpOwogICAgICBpZiAobWlkICYmIG1pZC5sb3VkKSByZXR1cm4gJ3dpdGggdGhlIE1lc2ggbW9kZWwgZHJvcHBlZCwgYSByZWQgZmFrZSBhcHBlYXJlZCAoJyArIG1pZC52ZXJ0cyArICcgdmVydHMgaW4gcmltIGNvbG91ciknOwogICAgICBjb25zdCBiYWNrID0gYXdhaXQgaC5wb2xsKCgpID0+IGguZXZhbCgoKSA9PiB7CiAgICAgICAgY29uc3QgYyA9IHdpbmRvdy5fX3djKCk7CiAgICAgICAgcmV0dXJuIGMgPyBjLmZhY2VzLnJlZHVjZSgoYSwgZikgPT4gYSArIGYudmVydHMsIDApIDogMDsKICAgICAgfSkuY2F0Y2goKCkgPT4gMCksICh2KSA9PiB2ID49IDEwMDAwMCwgMzAwMDApLmNhdGNoKCgpID0+IGZhbHNlKTsKICAgICAgaWYgKCFiYWNrKSByZXR1cm4gJ3RoZSByZWFsIE1lc2ggd2hlZWwgbmV2ZXIgc3dhcHBlZCBpbiBhZnRlciBpdHMgbW9kZWwgcmUtbG9hZGVkJzsKICAgICAgcmV0dXJuIHRydWU7CiAgICB9LAogIH0sCiAgewogICAgaWQ6ICdwbGF5LXJpbXMtc3dpdGNoLXByZXNzZXMnLAogICAgYXNrOiAnRG9lcyBldmVyeSBSaW1zIHByZXNzIHZpc2libHkgc3dpdGNoIHRoZSByaW1zIG9uIHRoZSBjYXI/JywKICAgIGFzeW5jIHRlc3QocGFnZSwgaCkgewogICAgICBhd2FpdCBpbnN0YWxsKHBhZ2UsIGgpOwogICAgICBhd2FpdCBoLmV2YWwoKCkgPT4geyBpZiAod2luZG93Ll9fZXJjKSB3aW5kb3cuX19lcmMudG9NZW51KCk7IHJldHVybiB0cnVlOyB9KS5jYXRjaCgoKSA9PiB7fSk7CiAgICAgIGF3YWl0IGgud2FpdCgzMDApOwogICAgICBsZXQgb3BlbmVkID0gYXdhaXQgaC5wcmVzcygnI21HYXJhZ2UnKS5jYXRjaCgoKSA9PiBmYWxzZSk7CiAgICAgIGlmICghb3BlbmVkKSBvcGVuZWQgPSBhd2FpdCBoLmV2YWwoKCkgPT4geyBjb25zdCBiID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ21HYXJhZ2UnKTsgaWYgKGIpIHsgYi5jbGljaygpOyByZXR1cm4gdHJ1ZTsgfSByZXR1cm4gZmFsc2U7IH0pLmNhdGNoKCgpID0+IGZhbHNlKTsKICAgICAgaWYgKCFvcGVuZWQpIHJldHVybiAnR2FyYWdlIGJ1dHRvbiBjb3VsZCBub3QgYmUgcHJlc3NlZCc7CiAgICAgIGF3YWl0IGgud2FpdCg4MDApOwogICAgICByZXR1cm4gaC5ldmFsKGFzeW5jICgpID0+IHsKICAgICAgICBjb25zdCB3YWl0ID0gKG1zKSA9PiBuZXcgUHJvbWlzZSgocnMpID0+IHNldFRpbWVvdXQocnMsIG1zKSk7CiAgICAgICAgY29uc3QgdGFiID0gWy4uLmRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoJyNndGFicyBidXR0b24sICNndGFicyAuZ3QnKV0uZmluZCgoYikgPT4gL1JpbXMvLnRlc3QoYi50ZXh0Q29udGVudCB8fCAnJykpOwogICAgICAgIGlmICghdGFiKSByZXR1cm4gJ25vIFJpbXMgdGFiJzsKICAgICAgICB0YWIuY2xpY2soKTsgYXdhaXQgd2FpdCg2MDApOwogICAgICAgIGxldCBwcmV2U2lnID0gJyc7CiAgICAgICAgZm9yIChsZXQgc3R5bGUgPSAwOyBzdHlsZSA8PSA1OyBzdHlsZSsrKSB7CiAgICAgICAgICBjb25zdCBjYXJkID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcignW2RhdGEtcmltPSInICsgc3R5bGUgKyAnIl0nKTsKICAgICAgICAgIGlmICghY2FyZCkgcmV0dXJuICdubyByaW0gY2FyZCBmb3Igc3R5bGUgJyArIHN0eWxlOwogICAgICAgICAgY2FyZC5jbGljaygpOyBhd2FpdCB3YWl0KDE0MDApOwogICAgICAgICAgY29uc3QgYyA9IHdpbmRvdy5fX3djKCk7CiAgICAgICAgICBpZiAoIWMgfHwgIWMuZmFjZXMubGVuZ3RoKSByZXR1cm4gJ3N0eWxlICcgKyBzdHlsZSArICc6IG5vIHJpbSBmYWNlcyBhZnRlciBwcmVzc2luZyBpdHMgY2FyZCc7CiAgICAgICAgICBjb25zdCBjbHVzdGVyID0gYy5vdGhlcnMuZmlsdGVyKChvKSA9PiBjLmZhY2VzLnNvbWUoKGYpID0+IE1hdGguYWJzKG8uY3ggLSBmLmN4KSA8IDAuNTUgJiYgTWF0aC5hYnMoby5jeSAtIGYuY3kpIDwgMC41NSAmJiBNYXRoLmFicyhvLmN6IC0gZi5jeikgPCAwLjU1KSk7CiAgICAgICAgICBjb25zdCBzaWcgPSBjLmZhY2VzLnJlZHVjZSgoYSwgZikgPT4gYSArIGYudmVydHMsIDApICsgJysnICsgY2x1c3Rlci5yZWR1Y2UoKGEsIG8pID0+IGEgKyBvLnZlcnRzLCAwKSArICd8JyArIGMuZmFjZXMubWFwKChmKSA9PiBmLmNvbCArIChmLm1hcCA/ICdUJyA6ICcnKSkuam9pbignLCcpOwogICAgICAgICAgaWYgKHNpZyA9PT0gcHJldlNpZykgcmV0dXJuICdzdHlsZSAnICsgc3R5bGUgKyAnOiBwcmVzc2luZyBpdHMgY2FyZCBjaGFuZ2VkIG5vdGhpbmcgb24gdGhlIGNhcic7CiAgICAgICAgICBwcmV2U2lnID0gc2lnOwogICAgICAgIH0KICAgICAgICByZXR1cm4gdHJ1ZTsKICAgICAgfSkuY2F0Y2goKGVycikgPT4gJ2V2YWwgZmFpbGVkOiAnICsgZXJyKTsKICAgIH0sCiAgfSwKXTsK
+/* OWNER rim-fit job (Oct 28 2026): rims fit IN the tyre, every press switches the rims,
+   no fake fetched wheels, brakes look like brakes. Window 6. */
+const LOUD = '#ff00ff';
+function wheelCensus() {
+  const root = window.__reality.player; if (!root) return null;
+  root.updateMatrixWorld(true);
+  const inv = root.matrixWorld.clone().invert(), e = inv.elements;
+  const toRoot = (b) => {
+    const pts = [];
+    for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z])
+      pts.push([e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]]);
+    return { min: [0, 1, 2].map((i) => Math.min(...pts.map((p) => p[i]))), max: [0, 1, 2].map((i) => Math.max(...pts.map((p) => p[i]))) };
+  };
+  const faces = [], cals = [], brakes = [], others = [];
+  root.traverse((q) => {
+    if (!q.isMesh || !q.geometry) return;
+    const g = q.geometry; if (!g.boundingBox) g.computeBoundingBox();
+    const wb = g.boundingBox.clone().applyMatrix4(q.matrixWorld);
+    const b = toRoot(wb);
+    const rec = { b, cx: (b.min[0] + b.max[0]) / 2, cy: (b.min[1] + b.max[1]) / 2, cz: (b.min[2] + b.max[2]) / 2, verts: g.attributes.position ? g.attributes.position.count : 0, col: q.material && q.material.color ? '#' + q.material.color.getHexString() : '?', map: !!(q.material && q.material.map) };
+    if (q.userData.acc === 'rimface') faces.push(rec);
+    else if (q.userData.acc === 'caliper') cals.push(rec);
+    else if (q.userData.acc === 'brake') brakes.push(rec);
+    else others.push(rec);
+  });
+  const tyrePts = [];
+  root.traverse((q) => {
+    if (!q.isMesh || !q.geometry || q.userData.acc) return;
+    const p = q.geometry.attributes.position;
+    if (!p || p.count < 3000) return;
+    const e2 = q.matrixWorld.elements, step = Math.max(1, Math.floor(p.count / 4000));
+    for (let i = 0; i < p.count; i += step) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+      const wx = e2[0] * x + e2[4] * y + e2[8] * z + e2[12], wy = e2[1] * x + e2[5] * y + e2[9] * z + e2[13], wz = e2[2] * x + e2[6] * y + e2[10] * z + e2[14];
+      tyrePts.push([e[0] * wx + e[4] * wy + e[8] * wz + e[12], e[1] * wx + e[5] * wy + e[9] * wz + e[13], e[2] * wx + e[6] * wy + e[10] * wz + e[14]]);
+    }
+  });
+  return { faces, cals, brakes, others, tyrePts };
+}
+const CENSUS_SRC = wheelCensus.toString();
+async function install(page, h) {
+  return h.eval((src) => { window.__wc = eval('(' + src + ')'); return typeof window.__wc === 'function'; }, CENSUS_SRC).catch(() => false);
+}
+let lastWhy = '';
+async function buildCar(page, h, rim, extra) {
+  await install(page, h);
+  const attempt = () => h.eval(async (arg) => {
+    const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+    const diag = { mode: E.G && E.G.mode, cur: E.S && E.S.cur, threw: '' };
+    try {
+      const cfg = { ...(E.S.cars.goblin || {}), rim: arg.rim, rimCol: '#ff00ff', cal: '#e01b2b', wrap: 'name', fin: 'metal', aero: 0, wheel: 0, ...(arg.extra || {}) };
+      E.S.cars.goblin = cfg; E.S.cur = 'goblin';
+      try { if (E.R && E.toMenu) E.toMenu(); } catch (e) { diag.threw = 'toMenu: ' + String(e).slice(0, 90); }
+      for (let i = 0; i < 60 && E.G.mode === 'loading'; i++) await wait(200);
+      diag.mode = E.G.mode;
+      const prev = window.__reality && window.__reality.player;
+      try { E.openGarage(); } catch (e) { diag.threw = (diag.threw ? diag.threw + ' | ' : '') + 'openGarage: ' + String(e).slice(0, 90); }
+      for (let i = 0; i < 40 && window.__reality.player === prev; i++) await wait(150);
+      diag.mode = E.G.mode; diag.same = window.__reality.player === prev; diag.player = !!window.__reality.player;
+      return { ok: E.G.mode === 'garage' && !!window.__reality.player, diag };
+    } catch (e) { diag.threw = (diag.threw ? diag.threw + ' | ' : '') + 'build: ' + String(e).slice(0, 90); return { ok: false, diag }; }
+  }, { rim, extra: extra || null }).catch((e) => ({ ok: false, diag: { threw: 'eval: ' + String(e).slice(0, 90) } }));
+  const r1 = await attempt();
+  if (r1 && r1.ok) return true;
+  lastWhy = JSON.stringify(r1 && r1.diag || {});
+  const r2 = await attempt();
+  if (r2 && r2.ok) return true;
+  lastWhy = JSON.stringify(r2 && r2.diag || {});
+  return false;
+}
+export default [
+  {
+    id: 'never-caliper-billboard',
+    ask: 'Is the brake caliper a small block on a real brake disc, not a red billboard in the wheel?',
+    async test(page, h) {
+      if (!await buildCar(page, h, 3)) return 'garage car did not build [' + lastWhy + ']';
+      return h.eval(() => {
+        const c = window.__wc();
+        if (!c) return 'no car';
+        if (c.cals.length !== 4) return 'expected 4 calipers, found ' + c.cals.length;
+        for (const k of c.cals) {
+          const ex = [k.b.max[0] - k.b.min[0], k.b.max[1] - k.b.min[1], k.b.max[2] - k.b.min[2]].sort((a, b) => a - b);
+          if (ex[2] > 0.13) return 'caliper face is ' + ex[2].toFixed(2) + ' m - a billboard, not a caliper';
+          if (ex[0] > 0.09) return 'caliper is ' + ex[0].toFixed(2) + ' m thick - a slab, not a caliper';
+        }
+        if (c.brakes.length !== 4) return 'expected a brake disc at all 4 wheels, found ' + c.brakes.length;
+        return true;
+      }).catch((err) => 'eval failed: ' + err);
+    },
+  },
+  {
+    id: 'never-rim-seat-size',
+    ask: 'Do the fetched rims fit IN the tyre: bare rims at a real diameter, face seated at the tyre surface?',
+    async test(page, h) {
+      const bands = { 3: [0.60, 0.86], 4: [0.60, 0.86], 5: [0.60, 0.86] };
+      let ref = null;
+      for (const style of [2, 3, 4, 5]) {
+        if (!await buildCar(page, h, style)) return 'garage car did not build for style ' + style + ' [' + lastWhy + ']';
+        const r = await h.eval((st) => {
+          const c = window.__wc();
+          if (!c || c.faces.length !== 4) return 'style ' + st + ': expected 4 rim faces, found ' + (c ? c.faces.length : 0);
+          const rows = [];
+          for (const f of c.faces) {
+            const side = f.cx >= 0 ? 1 : -1; /* root space: the car's length lies along z, its width along x - the seat is measured on x */
+            const pts = c.tyrePts.filter((p) => Math.abs(p[1] - f.cy) < 0.5 && Math.abs(p[2] - f.cz) < 0.55 && Math.sign(p[0]) === side);
+            if (pts.length < 20) return 'style ' + st + ': too few tyre points near a wheel (' + pts.length + ')';
+            const tyreOuter = side > 0 ? Math.max(...pts.map((p) => p[0])) : Math.min(...pts.map((p) => p[0]));
+            const rimOuter = side > 0 ? f.b.max[0] : f.b.min[0];
+            rows.push({ rimD: f.b.max[1] - f.b.min[1], seat: (rimOuter - tyreOuter) * side });
+          }
+          return rows;
+        }, style).catch(() => null);
+        if (!r) return 'seat census failed for style ' + style;
+        if (typeof r === 'string') return r;
+        if (style === 2) { ref = r.map((x) => x.rimD); continue; }
+        const [lo, hi] = bands[style];
+        for (let i = 0; i < 4; i++) {
+          const ratio = r[i].rimD / ref[i];
+          if (ratio < lo || ratio > hi) return 'style ' + style + ': rim diameter is ' + ratio.toFixed(2) + 'x the tyre - does not fit in the tyre';
+          if (r[i].seat < -0.025 || r[i].seat > 0.03) return 'style ' + style + ': rim face sits ' + r[i].seat.toFixed(2) + ' m from the tyre surface - buried or poking out';
+        }
+      }
+      return true;
+    },
+  },
+  {
+    id: 'never-rim-fake',
+    ask: 'Is a fetched rim never faked: real verts and colours when loaded, and no red stand-in if its model drops?',
+    async test(page, h) {
+      const bands = { 2: 20000, 3: 40000, 4: 100000, 5: 100000 };
+      for (const style of [2, 3, 4, 5]) {
+        if (!await buildCar(page, h, style)) return 'garage car did not build for style ' + style + ' [' + lastWhy + ']';
+        const r = await h.eval(() => {
+          const c = window.__wc();
+          if (!c) return null;
+          return { verts: c.faces.reduce((a, f) => a + f.verts, 0), loud: c.faces.filter((f) => f.col === '#ff00ff').length, n: c.faces.length };
+        }).catch(() => null);
+        if (!r) return 'census failed for style ' + style;
+        if (r.loud) return 'style ' + style + ': a rim face wears the rim colour - a fake stand-in';
+        if (r.verts < bands[style]) return 'style ' + style + ': only ' + r.verts + ' rim verts - not the real model';
+      }
+      const ready = await h.eval(() => (window.__erc.wheelState ? window.__erc.wheelState() : null)).catch(() => null);
+      if (!ready) return 'the game exposes no wheelState hook - cannot prove the no-fake path';
+      const dropped = await h.eval(() => (typeof window.__erc.dropWheel === 'function' ? (window.__erc.dropWheel(4), true) : false)).catch(() => false);
+      if (!dropped) return 'the game exposes no dropWheel hook - cannot prove the no-fake path';
+      if (!await buildCar(page, h, 4)) return 'garage car did not rebuild after the Mesh model dropped [' + lastWhy + ']';
+      const mid = await h.eval(() => {
+        const c = window.__wc();
+        if (!c) return null;
+        return { verts: c.faces.reduce((a, f) => a + f.verts, 0), loud: c.faces.filter((f) => f.col === '#ff00ff').length };
+      }).catch(() => null);
+      if (mid && mid.loud) return 'with the Mesh model dropped, a red fake appeared (' + mid.verts + ' verts in rim colour)';
+      const back = await h.poll(() => h.eval(() => {
+        const c = window.__wc();
+        return c ? c.faces.reduce((a, f) => a + f.verts, 0) : 0;
+      }).catch(() => 0), (v) => v >= 100000, 30000).catch(() => false);
+      if (!back) return 'the real Mesh wheel never swapped in after its model re-loaded';
+      return true;
+    },
+  },
+  {
+    id: 'play-rims-switch-presses',
+    ask: 'Does every Rims press visibly switch the rims on the car?',
+    async test(page, h) {
+      await install(page, h);
+      await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
+      await h.wait(300);
+      let opened = await h.press('#mGarage').catch(() => false);
+      if (!opened) opened = await h.eval(() => { const b = document.getElementById('mGarage'); if (b) { b.click(); return true; } return false; }).catch(() => false);
+      if (!opened) return 'Garage button could not be pressed';
+      await h.wait(800);
+      return h.eval(async () => {
+        const wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
+        const tab = [...document.querySelectorAll('#gtabs button, #gtabs .gt')].find((b) => /Rims/.test(b.textContent || ''));
+        if (!tab) return 'no Rims tab';
+        tab.click(); await wait(600);
+        let prevSig = '';
+        for (let style = 0; style <= 5; style++) {
+          const card = document.querySelector('[data-rim="' + style + '"]');
+          if (!card) return 'no rim card for style ' + style;
+          card.click(); await wait(1400);
+          const c = window.__wc();
+          if (!c || !c.faces.length) return 'style ' + style + ': no rim faces after pressing its card';
+          const cluster = c.others.filter((o) => c.faces.some((f) => Math.abs(o.cx - f.cx) < 0.55 && Math.abs(o.cy - f.cy) < 0.55 && Math.abs(o.cz - f.cz) < 0.55));
+          const sig = c.faces.reduce((a, f) => a + f.verts, 0) + '+' + cluster.reduce((a, o) => a + o.verts, 0) + '|' + c.faces.map((f) => f.col + (f.map ? 'T' : '')).join(',');
+          if (sig === prevSig) return 'style ' + style + ': pressing its card changed nothing on the car';
+          prevSig = sig;
+        }
+        return true;
+      }).catch((err) => 'eval failed: ' + err);
+    },
+  },
+];
