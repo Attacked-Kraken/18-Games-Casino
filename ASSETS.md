@@ -404,3 +404,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-26 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/tuner-wheel-8ea8e1.glb
+- title: BBS RS16 Tuner Car Wheel (rebuilt)
+- maker: ZenuuxOfficiel
+- source: rebuilt in the lab from https://sketchfab.com/3d-models/bbs-rs16-tuner-car-wheel-188d0d33ca424524b10dcf34409e97f8
+- license: CC-BY 4.0
+- downloaded: 2026-10-26 by the Sketchfab fetch robot; rebuilt (recentred, re-assembled) by window 6
+- used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
+- changes: recentred on the axle and re-assembled into one clean wheel; re-filed 2026-10-28 after the auto-undo robot reverted PR #2036
