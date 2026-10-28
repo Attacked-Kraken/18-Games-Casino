@@ -250,6 +250,16 @@
    "file": "tools/game-check/fixes/apexracer.mjs",
    "needle": "play-balance-skill-matters",
    "rule": "balance robot: beginner podium, skill pays, idle car does not win"
+  },
+  {
+   "file": "tools/merge-robot.py",
+   "needle": "held for the hourly notes batch",
+   "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/notes-batch.py",
+   "needle": "NOTES BATCH",
+   "rule": "one notes pull request an hour (owner Oct 28 2026)"
   }
  ]
 }

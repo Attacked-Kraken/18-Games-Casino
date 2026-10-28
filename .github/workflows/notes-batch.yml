@@ -1,0 +1,24 @@
+name: Notes batch
+# Owner PR pile-up order Oct 28 2026: reports, audits and claims go in ONE pull request an hour (tools/notes-batch.py).
+on:
+  schedule:
+    - cron: '50 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+jobs:
+  batch:
+    if: github.repository == 'Attacked-Kraken/18-Games-Casino'
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.ROBOT_MERGE_TOKEN || secrets.GITHUB_TOKEN }}
+      - name: Join waiting notes into one pull request
+        env:
+          GH_TOKEN: ${{ secrets.ROBOT_MERGE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: python3 tools/notes-batch.py
