@@ -2361,6 +2361,23 @@ function updateRace(dt) {
   if (R.popT > 0) { R.popT -= dt; if (R.popT <= 0) $('pop').style.opacity = 0; }
   $('wrong').style.display = R.wrongT > 1 ? 'block' : 'none';
 }
+/* BALANCE ROBOT (master #11): the race LOGIC with no drawing, sound, messages or particles - the robot's bots drive whole races in seconds with it.
+   Same physics calls as updateRace (stepPlayer, stepAI, collide, pace keeping, laps, finish times); nothing is posed or drawn. Test-only: the game never calls it. */
+function simRace(dt) {
+  if (!R || !R.skids) return;
+  const T = R.T, P = R.P; R.t += dt;
+  const sub = 3, h = dt / sub;
+  for (let k = 0; k < sub; k++) {
+    stepPlayer(P, h);
+    for (const e of R.cars) { if (e.ai) stepAI(e, h); }
+    for (const t of R.traffic) stepTraffic(t, h);
+    for (const e of R.cars) if (e !== P) collide(P, e, e.ai ? 'ai' : 'remote');
+    for (const t of R.traffic) collide(P, t, 'traffic');
+  }
+  if (R.t > 0 && !P.fin) { const inst = clamp((P.prog - (R.pProg === undefined ? P.prog : R.pProg)) * T.ds / Math.max(dt, 1e-4), 0, P.st.top * 1.3); R.pPace = R.pPace === undefined ? inst : R.pPace + (inst - R.pPace) * Math.min(1, dt / 5); }
+  R.pProg = P.prog;
+  for (const e of R.cars) { const pr = e.isP ? e.prog : e.s; e.lap = Math.floor(pr / T.N); if (!e.fin && !e.remote && pr >= R.laps * T.N) e.fin = R.t; }
+}
 function playerFinished() {
   const place = standings().findIndex((e) => e.isP) + 1; R.myPlace = place;
   bigMsg(place === 1 ? '🏆 1ST!' : ord(place)); setTimeout(() => { $('msg').style.opacity = 0; }, 2500);
@@ -2705,7 +2722,7 @@ resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
 { const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); if (tq === 'rim') setTimeout(() => { try { S.cars[S.cur].rim = 3; S.cars[S.cur].rimCol = '#e8252f'; G.tab = 'rim'; openGarage(); } catch (e) {} }, 2500); if (tq === 'rims') setTimeout(() => { try { G.tab = 'rim'; openGarage(); showRims(); } catch (e) {} }, 2500); } /* G-364: owner check link - the garage with every rim style side by side, names under each */ /* G-355: owner check link - opens straight at the garage Rims tab, Deep Dish style, red rim colour */ /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
-window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
+window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, simStep: (n, dt) => { for (let i = 0; i < n; i++) simRace(dt); }, standings, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
    running game - its size, that it faces the way it travels along the track direction, and that
    its wheels touch the ground. Everything resolves LIVE on every read: the garage car and the

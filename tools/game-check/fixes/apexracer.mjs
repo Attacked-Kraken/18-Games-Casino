@@ -7,6 +7,52 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 // census test bodies appended to main's fixes for benching
+
+// BALANCE ROBOT (master #11, owner Oct 28 2026): bots drive whole races with the game's own logic and NO drawing (E.simStep, ~15 s a race).
+// FAILS when: a beginner bot cannot finish the race or never reaches the podium (too hard); an idle car (never touches the gas) wins or ties the good bot (skill does not matter);
+// the good bot does not beat the beginner's time (driving well must pay). The AI pace cap (G-270, owner: "player gains a lap on them") is NOT judged here - the numbers are in the note.
+function balanceTest() {
+  return {
+    id: 'play-balance-skill-matters',
+    ask: 'Balance: a beginner bot finishes on the podium, a good bot is faster, and a car that never drives does not win',
+    parts: ['all'],
+    async test(page, h) {
+      const out = await h.eval(async () => {
+        const E = window.__erc; if (!E || !E.simStep) return { err: 'no __erc.simStep hook' };
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), TAU = Math.PI * 2;
+        const race = (skill, seed) => new Promise((res) => {
+          E.startRace(E.PLACES[seed % E.PLACES.length], 2);
+          let tries = 0;
+          const go = () => {
+            const R = E.R; if (!R || !R.skids) { if (++tries < 40) return setTimeout(go, 250); return res(null); }
+            R.t = 0; const P = R.P, T = R.T; let rnd = seed * 9301 + 49297; const rand = () => (rnd = (rnd * 9301 + 49297) % 233280) / 233280;
+            const good = skill === 'good', idle = skill === 'idle', gain = good ? 2.5 : 1.1, look = good ? 14 : 6, every = good ? 1 : 22, noise = good ? 0 : 0.35;
+            let n = 0, st = 0; const cap = idle ? 60 * 60 : 60 * 600;
+            while (!P.fin && n < cap) {
+              if (n % every === 0) { const i = (P.idx + look) % T.N; let dh = Math.atan2(T.px[i] - P.x, T.pz[i] - P.z) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; st = clamp(-dh * gain + (rand() - 0.5) * noise, -1, 1); }
+              E.K.sx = idle ? 0 : st; E.K.gas = idle ? 0 : (good ? 1 : (n % 90 < 70 ? 1 : 0)); E.simStep(1, 1 / 60); n++;
+            }
+            E.K.sx = 0; E.K.gas = 0;
+            const order = E.standings();
+            res({ skill, fin: !!P.fin, secs: n / 60, place: order.indexOf(P) + 1, of: order.length });
+          };
+          setTimeout(go, 500);
+        });
+        return { b: await race('beginner', 2), g: await race('good', 2), i: await race('idle', 2) };
+      });
+      if (!out || out.err) return (out && out.err) || 'balance run returned nothing';
+      const { b, g, i } = out;
+      if (!b || !g || !i) return 'balance: a race did not start';
+      const note = 'beginner ' + (b.fin ? b.secs.toFixed(0) + ' s, place ' + b.place : 'did not finish') + '/' + b.of + ', good ' + (g.fin ? g.secs.toFixed(0) + ' s, place ' + g.place : 'did not finish') + ', idle car place ' + i.place;
+      if (!b.fin) return 'BALANCE: a beginner bot could not finish the race in 10 minutes - ' + note;
+      if (b.place > 3) return 'BALANCE: a beginner bot finished outside the podium - ' + note;
+      if (!g.fin || g.secs >= b.secs - 3) return 'BALANCE: driving well does not pay - the good bot was not faster than the beginner - ' + note;
+      if (i.fin || i.place <= g.place) return 'BALANCE: a car that never drives finished as well as the good bot - ' + note;
+      return true;
+    },
+  };
+}
+
 const CAR_IDS = ['goblin', 'vanta', 'kestrel', 'brute', 'nova', 'zenith', 'phantom', 'titan', 'vortex'];
 const WRAPS = ['none', 'name', 'stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'apex', 'camo', 'split', 'neon'];
 function censusTest(carId) {
@@ -2928,5 +2974,6 @@ export default [
       return true;
     },
   },
+  balanceTest(),
   ...CAR_IDS.map(censusTest),
 ];
