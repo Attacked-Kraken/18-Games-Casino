@@ -200,6 +200,11 @@
    "file": "tools/game-check/judge.mjs",
    "needle": "partsExempt",
    "rule": "a game page without a parts list is blocked (any 2D or 3D game)"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "CONFLICT MARKERS:",
+   "rule": "a PR with merge-conflict markers in any file fails the check"
   }
  ]
 }

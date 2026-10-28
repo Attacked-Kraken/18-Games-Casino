@@ -70,6 +70,15 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
       if (r.status) blockers.push('CHECKLIST: ' + String(r.stdout || '').split('\n').filter(l => l.startsWith('CHECKLIST FAIL')).slice(0, 5).join(' | '));
     } catch (e) { console.log('checklist lint could not run: ' + e.message); }
   }
+  // owner Oct 27 2026 10:08 PM (permanent repair 4): a file left with merge-conflict markers is never merged, whoever pushed it
+  {
+    const bad = [];
+    for (const f of changed) {
+      if (!/\.(md|txt|json|mjs|js|py|yml|yaml|html|css|sh)$/i.test(f)) continue;
+      try { if (/^(<{7} |>{7} )/m.test(fs.readFileSync(f, 'utf8'))) bad.push(f); } catch (e) {}
+    }
+    if (bad.length) blockers.push(`CONFLICT MARKERS: ${bad.slice(0, 5).join(', ')} still has merge-conflict lines (<<<<<<< / >>>>>>>) - join the two sides and remove the marker lines`);
+  }
   const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
