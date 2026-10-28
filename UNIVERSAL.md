@@ -96,7 +96,7 @@ Asked "what's a permanent fix that would help" and "what can help make things fa
 - Faster 6 - cheap tests by design (the census builds cars in the garage, ~0.15 s each, 648 builds in seconds, not full races). BUILT on window 6's side.
 
 ## RACER GARAGE LESSONS (04, Oct 28 2026 - LOCKED, every game with an options screen)
-- Owner-visible options were COUNTED, never LOOKED at: wraps tore the body, rims never changed, most options did nothing, suspension floated the car, and a bought option charged again on every switch. Rule: every tab and option gets a robot picture of the real screen plus a test that fails when choosing it changes nothing (tests/garage-census.mjs: play-garage-every-option-changes, play-garage-no-rebuy). BUILT, merged #2104.
+- Owner-visible options were COUNTED, never LOOKED at: wraps tore the body, rims never changed, most options did nothing, suspension floated the car, and a bought option charged again on every switch. Rule: every tab and option gets a robot picture of the real screen plus a test that fails when choosing it changes nothing (tools/game-check/fixes/apexracer/garage-census.mjs: play-garage-every-option-changes, play-garage-no-rebuy). BUILT, merged #2104.
 - Ownership: every upgrade tab keeps its own owned list (c.own[tab]); switching back to a bought option is free. Paint/wrap/rim/fin/cal/glow used a flat price per switch (the re-buy bug). QUEUED in the 16 GARAGE TAB lines of jobs/QUEUE.md.
 - Wraps paint the body's OWN material (looks/apexracer/wrap-fix/), never a grid shell laid over the model. One wrap slot only. BUILT as paste code (#2105); the paste PR is window 6's, not merged yet.
 - Suspension lifts the BODY; the tyres stay on the floor. QUEUED.
