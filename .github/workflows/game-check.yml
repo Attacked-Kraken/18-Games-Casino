@@ -231,8 +231,13 @@ jobs:
           [ -n "$T" ] || { echo "broken ($GAMES) but no merge since the last report touched it - not undoing (an earlier merge did it)"; exit 0; }
           git merge-base --is-ancestor "$T" origin/main || { echo "$T is no longer on main - nothing to undo"; exit 0; }
           MSG=$(git log -1 --format=%s $T)
-          HIT="$GAMES,"
-          GAMES=${HIT%,}
+          # VP Oct 28 2026 (#2115): blame ONLY the games this merge itself touched; another game that broke was broken by something else
+          MINE=""
+          for G1 in $(echo "$GAMES" | tr ',' ' '); do
+            [ "$(bash tools/game-check/pick-culprit.sh "$P" "$G1" "$GITHUB_SHA")" = "$T" ] && MINE="$MINE,$G1"
+          done
+          GAMES=${MINE#,}
+          [ -n "$GAMES" ] || { echo "no broken game was touched by $T - not undoing"; exit 0; }
           git config user.name "auto-undo bot"; git config user.email "auto-undo-bot@users.noreply.github.com"
           git fetch -q origin main
           B="auto-undo-${T::7}"

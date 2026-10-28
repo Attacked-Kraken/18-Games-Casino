@@ -275,6 +275,16 @@
    "file": "tools/notes-batch.py",
    "needle": "NOTES BATCH",
    "rule": "one notes pull request an hour (owner Oct 28 2026)"
+  },
+  {
+   "file": "tools/game-check/undo.mjs",
+   "needle": "the robot's machine was too slow, not",
+   "rule": "3+ slowness-worded test fails in one game = overloaded robot, never an undo (owner Oct 28 2026, #2115)"
+  },
+  {
+   "file": ".github/workflows/game-check.yml",
+   "needle": "blame ONLY the games this merge itself touched",
+   "rule": "auto-undo names only games the culprit merge touched (owner Oct 28 2026)"
   }
  ]
 }
