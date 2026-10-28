@@ -43,7 +43,7 @@ jobs:
           echo "$CH"
           G=""
           for f in $(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$'); do G="$G$f,"; done
-          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*\.mjs$'); do G="$G$(basename $f .mjs).html,"; done
+          for f in $(echo "$CH" | grep -E '^tools/game-check/fixes/apex[a-z0-9]*(/[A-Za-z0-9_.-]+)?\.mjs$'); do G="$G$(echo $f | sed -E 's#^tools/game-check/fixes/(apex[a-z0-9]*).*#\1#').html,"; done
           MODE="touched"
           # PERMANENT FIX (VP, Oct 26 2026, owner "why do checks take so long"): a model-audit PR that only added measuring sidecars
           # (models/*.accept.json, pictures, ledgers) and removed two UNUSED wheels played Hockey x4 + Track & Field x3 + Baseball x2 + Soccer

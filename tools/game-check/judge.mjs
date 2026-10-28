@@ -6,6 +6,9 @@
 import fs from 'fs';
 import path from 'path';
 import { spawnSync } from 'child_process';
+// per-job play-test files (master #124): tools/game-check/fixes/<game>.mjs (shared) OR tools/game-check/fixes/<game>/<job>.mjs (one file per job, no collisions)
+export const FIXF = /^tools\/game-check\/fixes\/apex[a-z0-9]*(\/[A-Za-z0-9_.-]+)?\.mjs$/;
+export const fixGameOf = f => (/^tools\/game-check\/fixes\/(apex[a-z0-9]*)/.exec(f) || [])[1] + '.html';
 
 export function judge({ results = [], models = [], base0 = {}, changed = [], branch = '', title = '' }) {
   const norm = (x) => x.replace(/\d+/g, '#');
@@ -22,7 +25,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   // blocks only if the PR changed that model's own files. (Baseball #515 and Pebble #517 were blocked for Soccer marking
   // and a Monster Truck model crash they never touched.)
   const direct = new Set(changed.filter(f => /^apex[a-z0-9]*\.html$/.test(f))
-    .concat(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html')));
+    .concat(changed.filter(f => FIXF.test(f)).map(fixGameOf)));
   const hard = /script error|black or blank|did not load|missing file|shader|not real 3d bodies|outside internet|casino wording|real brand/i;
   // TESTER PRs (owner Oct 20 10:10 PM, Claude 03's catch): a tester (windows 7-10) only adds play tests that FAIL today +
   // QUEUE lines - the red test IS the finding, the builder fixes the game next. A PR that changes ONLY test files, QUEUE.md,
@@ -45,7 +48,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
     const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
-    const isFix = f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f);
+    const isFix = f => FIXF.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
     const games = [...new Set(changed.filter(isGame))];
     const fixes = changed.filter(isFix);
@@ -53,7 +56,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const other = changed.filter(f => !NOTES.test(f) && !isGame(f) && !isFix(f) && !isShared(f));
     const guard = [];
     if (games.length > 1) guard.push(`FILE GUARD: this PR changes ${games.length} games (${games.join(', ')}) - ONE game per PR`);
-    const fixGames = [...new Set(fixes.map(f => path.basename(f, '.mjs') + '.html'))];
+    const fixGames = [...new Set(fixes.map(fixGameOf))];
     if (games.length === 1 && fixGames.some(g => g !== games[0])) guard.push(`FILE GUARD: play tests of another game changed (${fixGames.filter(g => g !== games[0]).join(', ')}) - only your game's tests`);
     if (games.length === 0 && fixGames.length > 1) guard.push(`FILE GUARD: play tests of ${fixGames.length} games changed - one game per PR`);
     if (games.length && sharedF.length) guard.push(`FILE GUARD: shared parts (${sharedF.slice(0, 3).join(', ')}) changed together with a game page - shared folders change in their OWN pull request (STUDIO-STANDARD 9.4)`);
@@ -79,12 +82,12 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     }
     if (bad.length) blockers.push(`CONFLICT MARKERS: ${bad.slice(0, 5).join(', ')} still has merge-conflict lines (<<<<<<< / >>>>>>>) - join the two sides and remove the marker lines`);
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
     const baseIds = new Map((base0.results || []).map(r => [r.file, new Set((r.fixes || []).filter(Boolean).map(f => f.id))]));
-    const touchedFix = new Set(changed.filter(f => /^tools\/game-check\/fixes\/apex[a-z0-9]*\.mjs$/.test(f)).map(f => path.basename(f, '.mjs') + '.html'));
+    const touchedFix = new Set(changed.filter(f => FIXF.test(f)).map(fixGameOf));
     for (const r of results) {
       if (!touchedFix.has(r.file)) continue;
       const fresh = (r.fixes || []).filter(Boolean).filter(f => /^tester-/.test(f.id) && !/^tester-recheck-/.test(f.id) && !(baseIds.get(r.file) || new Set()).has(f.id));   // owner Oct 21 11:45 PM: a tester-recheck-* test GUARDS a builder's fix, so it passes by design (PRs #985, #1002 were blocked for it)

@@ -31,6 +31,7 @@ if (process.argv[1] && /scope\.mjs$/.test(process.argv[1])) {
     const slug = file.replace(/\.html$/, '');
     const fx = `tools/game-check/fixes/${slug}.mjs`;
     if (!game || !(game.parts || []).length || !fs.existsSync(fx) || !base) process.exit(0);
+    if (fs.existsSync(`tools/game-check/fixes/${slug}`)) process.exit(0);   // per-job test files in a folder: play all (their tags are not read here yet)
     const names = spawnSync('git', ['diff', '--name-only', base, 'HEAD'], { encoding: 'utf8' }).stdout.split('\n');
     // the page itself must be the only game code that changed (other code, kit, shared folders = play all)
     const other = names.filter(n => n && !/^(jobs|reviews|plans|looks|ideas|team|notes|checklists)\/|\.md$/.test(n) && n !== file && !n.startsWith('tools/game-check/fixes/'));

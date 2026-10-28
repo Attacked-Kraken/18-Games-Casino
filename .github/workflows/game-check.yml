@@ -60,7 +60,7 @@ jobs:
             for f in $CH; do
               case "$f" in
                 apex*.html) G="$G$f,";;
-                tools/game-check/fixes/apex*.mjs) G="$G$(basename $f .mjs).html,";;
+                tools/game-check/fixes/apex*.mjs) G="$G$(echo $f | sed -E 's#^tools/game-check/fixes/(apex[a-z0-9]*).*#\1#').html,";;
                 MODELS.md) FULL="MODELS.md changed";;
                 *.md|jobs/*|plans/*|reviews/*|looks/*|ideas/*|team/*|notes/*|needs/*) ;;
                 .github/workflows/game-check.yml) FULL="robot changed";;

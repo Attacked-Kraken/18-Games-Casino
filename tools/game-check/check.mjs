@@ -471,15 +471,27 @@ for (const g of games) {
   // ---------- the owner's FIX LIST for this game (tested while the game is running, sideways)
   r.fixes = [];
   const fixFile = path.join(here, 'fixes', slug + '.mjs');
-  if (fs.existsSync(fixFile)) {
+  const fixDir = path.join(here, 'fixes', slug);
+  if (fs.existsSync(fixFile) || fs.existsSync(fixDir)) {
     let list = [];
     mark('pictures + reality + checks');
+    if (fs.existsSync(fixFile)) {
     try { list = (await import('file://' + fixFile + '?t=' + Date.now())).default || []; }
     catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '.mjs - it does not load, so NONE of its tests ran: ' + String(e.message).split('\n')[0].slice(0, 140)); }
+    }
+    // PER-JOB TEST FILES (master #124, window 6): every job may add its own tools/game-check/fixes/<game>/<job>.mjs (export default [ ... ] or one entry)
+    // so two PRs never edit the same file. A file that does not load fails by NAME; the others still run.
+    if (fs.existsSync(fixDir) && fs.statSync(fixDir).isDirectory()) {
+      if (!Array.isArray(list)) list = [];
+      for (const fn of fs.readdirSync(fixDir).filter(x => /\.mjs$/.test(x)).sort()) {
+        try { const d = (await import('file://' + path.join(fixDir, fn) + '?t=' + Date.now())).default; for (const e of (Array.isArray(d) ? d : [d])) list.push(e); }
+        catch (e) { r.fail.push('Script error in the play-test file tools/game-check/fixes/' + slug + '/' + fn + ' - it does not load, so its tests did not run: ' + String(e.message).split('\n')[0].slice(0, 140)); }
+      }
+    }
     // Oct 25 2026 (window 5 idea): lint the play-test file for h.eval calls that navigate / wait / poll without .catch (yellow only)
     try {
       const { lintFixes } = await import('./fixes-lint.mjs');
-      const hits = lintFixes(fs.readFileSync(fixFile, 'utf8'));
+      const hits = lintFixes(fs.existsSync(fixFile) ? fs.readFileSync(fixFile, 'utf8') : '');
       if (hits.length) r.check.push(`LINT fixes/${slug}.mjs: ${hits.length} h.eval call(s) navigate / wait / poll with no .catch (a destroyed execution context fails the test on the robot only) - first ones: ${hits.slice(0, 3).map(x => (x.id || '?') + ' line ' + x.line).join(', ')}. Add .catch(() => false) or try/catch. Run: node tools/game-check/fixes-lint.mjs tools/game-check/fixes/${slug}.mjs`);
     } catch (e) { /* the lint never breaks a check */ }
     // Tests written for Puppeteer: the same calls in Playwright (Grok review Oct 17 - Track & Field tests crashed on these)
