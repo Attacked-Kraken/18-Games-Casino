@@ -834,7 +834,7 @@ function updateAI(dt){
     if(oppHas){
       if(!t._markT||nowMs-t._markT>400||!t._marks){
         t._markT=nowMs; marks=new Map();
-        const atts=opp(t).players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==B.owner&&(q.pos.x-B.pos.x)*-ad>-12); // JOB J6: mark more attackers
+        const atts=opp(t).players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==B.owner); // JOB J6: assign a marker to every outfield attacker, not only those near the ball
         coverP=(atts.length<=4)?chaseOrder[1]:null; // a spare man covers the lane; if every man needs a marker, he marks too
         t._cover=coverP;
         const defs=t.players.filter(q=>q.role!=='GK'&&!q.sentOff&&q!==chaseOrder[0]&&q!==coverP);
