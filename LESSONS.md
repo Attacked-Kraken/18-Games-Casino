@@ -304,3 +304,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## Oct 28 2026 help desk
 - A red owner test that passes on main and sits on a PR that does not touch that behaviour is a robot flake: file a HELP-VP: robot line (retry on a fresh page / seed the AI), do not edit the game.
+
+## 2026-10-29 help desk
+- When a NO CHANGE report proves a QUEUE.md line is already on main, tick the line and cite the report, or the Mac re-sends it.
