@@ -71,11 +71,11 @@ was already sent. Muses: don't edit this file.
 - [x] TESTER: On an upright phone (390x844) 8 of the 9 main-menu buttons are off the screen - only CHAMPIONSHIP can be tapped; FREE PLAY / CAREER MODE / TOURNAMENT are unreachable. Measured in the game; proof test tester-portrait-menu-fits-screen.
 - [x] TESTER: Main-menu buttons are only 30-36 px tall (CHAMPIONSHIP 291x36, TOURNAMENT 140x30) - DONE.md asks for 44x44 touch targets. Measured in the game; proof test tester-menu-buttons-44px.
 - [x] TESTER: Hurdles are 1.07 m tall in every hurdles race — real heights are 100mH 0.84 m and 300mH/400mH 0.91 m (110mH 1.07 m is correct). Measured in the game; proof tests tester-hurdle-height-100m / -300m / -400m.
-- [ ] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now.
-- [ ] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now.
-- [ ] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker.
-- [ ] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps).
-- [ ] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1.
+- [x] Holding the stick must never block TAP RUN / HURDLE - two thumbs at once, in every race. Keep everything else as now. (NO CHANGE, jobs/G-379-w4.md)
+- [x] Painted running lanes on the track, so every runner stays in his own lane. Keep everything else as now. (NO CHANGE, jobs/G-383-w4.md)
+- [x] 1500 m and every long race: the camera stays LOW behind the player runner and follows him around the track. Discus, shot put and javelin: after the throw the camera follows it through the air to its landing marker. (NO CHANGE, jobs/G-386-w4.md)
+- [x] DISCUS: too many steps - make it ONE simple action (hold to spin, release to throw, at most 2 taps). (NO CHANGE, jobs/G-387-w4.md)
+- [x] A dev-only "Skip level" button: only with dev=1 in the address, career mode shows a small Skip level button that wins the level and moves on, saving like a real win. It must never show without dev=1. (NO CHANGE, jobs/G-389-w4.md)
 - [ ] Use the owner's new kits (TOOLS.md): starting gun, crowd and footstep sounds from sounds/stadium/track/, and the running_track texture from kit/ground/512/. Keep the look and play the same.
 
 ## window 5 · apexf1.html
