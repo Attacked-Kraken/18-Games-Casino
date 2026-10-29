@@ -1,8 +1,8 @@
 # Everybody's chat - snapshot for ChatGPT
 
-Taken Oct 28 2026 08:49 PM Central by Claude (VP) at the owner's request. Emails and key-looking text removed. Window chats are OCR from the Mac mini / advisor laptop (typos possible). This is a SNAPSHOT: ask the owner or window 13 for a fresh one.
+Taken Oct 28 2026 08:52 PM Central by Claude (VP). Emails and key-looking text removed. Window chats are OCR (typos possible). Snapshot: refreshed by the VP on each owner request.
 
-## Team talk (newest lines of each Claude)
+## Team talk (newest lines)
 
 ### lead
 - 2026-10-28 20:25 | help desk: HELP.md and needs/ all answered; only T-483 (#2144) open, already merged, answered. Nothing else new.
@@ -74,16 +74,16 @@ Taken Oct 28 2026 08:49 PM Central by Claude (VP) at the owner's request. Emails
 
 ## Window chats
 
-## Window 1 - read Wed Oct 28 · 8:42 PM
+## Window 1 - read Wed Oct 28 · 8:49 PM
 ound test, and the interim report. g-381 is fully closed too, its report on main. the lift itself is built and validated on current main: quick-check --fast is clean (changed parts: players), and play-feet-on-ground passes. the first lift version over-shot by 5 cm because it measured soles with stale pre-lift matrices; v2 refreshes them first, and that fixed it. what's blocked: the lift push died twice in service restarts this morning, and | verified the branch is still absent both times. the patch is ready and waiting — say "push" and i'll push it at once so you can tap approve on the card, then open the new pr ("build g-394: feet on ground - sole lift part: players") for the robot's check, the final report, and the stamp. one note: since #2062 merged with the test still failing by design, that test reads red on main until the lift lands — which is why the lift goes next. + message tnen
 
-## Window 2 - read Wed Oct 28 · 8:43 PM
-oo 9 dvd ss - | attempted the push in this delivery and it was blocked by policy in this background context, so no new approval card was created. the overnight card expiring unapproved is still the core blocker: the push needs a live approval. - say the word in the main chat (any message will do) and i'll push immediately in that turn, open the pr, and ride the robot check to the jobs/g-404-w2.md report. 7:46 am window 2 - wed oct 28, 2026 - 7:46 am cdt saved + message g
+## Window 2 - read Wed Oct 28 · 8:49 PM
+oo 9 dvd ss - | attempted the push in this delivery and it was blocked by policy in this background context, so no new approval card was created. the overnight card expiring unapproved is still the core blocker: the push needs a live approval. - say the word in the main chat (any message will do) and i'll push immediately in that turn, open the pr, and ride the robot check to the jobs/g-404-w2.md report. 7:46 am window 2 - wed oct 28, 2026 - 7:46 am cdt saved + message oo.
 
-## Window 3 - read Wed Oct 28 · 8:44 PM
-_- oo ® 9 dvd ss eemh iv hivwiye jt ne nena enr ppe an ir pete ein, otis of oie the kw fhe whole check. its branch is behind main (base 255235a3, main df7d8e6c); once the running verdict lands, if green the robot merges it itself, and if red again i'll read the red lines and update it then. no new pr opened on this page. help-mac: jobs/g-407.md, undo pr #2067 removes 49 lines, decision needed: let the auto-undo land (it reverts g-407 while just-merged g-409 still cites g-407 as on main) or challenge the undo (g-407 changed no game code)? 7:46 am window 3 - wed oct 28, 2026, 7:47 am cdt saved + message
+## Window 3 - read Wed Oct 28 · 8:50 PM
+oo ® 9 dvd ss eemh iv hivwiye jt ne nena enr ppe an ir pete ein, otis of oie the kw fhe whole check. its branch is behind main (base 255235a3, main df7d8e6c); once the running verdict lands, if green the robot merges it itself, and if red again i'll read the red lines and update it then. no new pr opened on this page. help-mac: jobs/g-407.md, undo pr #2067 removes 49 lines, decision needed: let the auto-undo land (it reverts g-407 while just-merged g-409 still cites g-407 as on main) or challenge the undo (g-407 changed no game code)? 7:46 am window 3 - wed oct 28, 2026, 7:47 am cdt saved + message
 
-## Window 4 - read Wed Oct 28 · 8:45 PM
+## Window 4 - read Wed Oct 28 · 8:50 PM
 oo ® 9 dvd ss window 4- tue oct 27, 2026 - 7:16 pm cdt g-408 closed: no change, report merged (pr #2070, robot passed). high jump already records a clear on main — the robot's play-high-jump test passes, and my ?test=hj probe cleared all 9 heights to 2.40 m with "new best!" and the mark saved. the art director's probe failure traces to a slow- renderer tapper skipping over the green window, not the game. nothing to change; standing by for the next order. 7:47 am saved + message
 
 ## Window 5 - read Wed Oct 28 · 8:45 PM
@@ -104,14 +104,14 @@ oo gf 9 dvd ss 8 yrmud.com status: no change — g-334 fix verified on main. the
 ## Window 10 - read Wed Oct 28 · 8:41 PM
 oo 9 dvd ss window 10 ® - tue oct 27, 2026 - 2:40 am cdt t-10-0234 championship is done: 17/17 events in both orientations, zero failures, status: no change, played 2.8 min. queue review stands, zero open tester lines. no pr opened for it yet; it queues behind the earlier rounds, next filing t-10-0803. that was the open round finishing — idling continues until asked. window 10 ® - tue oct 27, 2026 - 2:42 am cdt duplicate of the 2:35 am notice, already handled — watchdog paused, the open round finished, idling until asked. window 10 ® - tue oct 27, 2026 - 2:47 am cdt same notice again, already handled — watchdog paused, the open round finished, idling until asked. + message
 
-## Window 11 - read Wed Oct 28 · 8:42 PM
+## Window 11 - read Wed Oct 28 · 8:45 PM
  zero and p90 eased. held: grades, queue, faults. help is needed most at robot check, measurement, and the gate, all at 4. robot fixes #2143, #2139, #2138, #2137, and #2133 merged, but none is proven until a real pr uses it. not visible on this read path: dispatch-to-start time, window idle, stopwatch minutes, owner phone verdicts, pr check-run status, and the mac board. window 11 - senior advisor - wednesday, october 28, 2026 - 8:40 pm cdt the help line is clear and no pr is stuck at that time. y a i view 7 <email> © connected il © needs review allow <email> to perform this action on your github account for advisor watchdog pm? <email> wants to create a new branch named help/advisor in the attacked- kraken/18-games-casino “~ repository using main as the base. this is for the scheduled task “advisor watchdog pm”. aetian craste s githiuh hranch  (advisor laptop)
 
-## Window 12 - read Wed Oct 28 · 8:43 PM
+## Window 12 - read Wed Oct 28 · 8:46 PM
 ims-showcase still errors, garage rim pictures still timed out — still no passing in-game rim os verdict, no in-game rim picture. not landed: track g-393 sole held a second run but carries no number and no sprint-sole picture — still not called landed. f1 start-on-car and slowest pace flipped to passing and the play picture now shows the player's car (previously absent) — but it still shows three red lights, no green, and steering-smooth still says “race never started," so the start pass isn't picture-verified. hockey blades-roll failed again (9.6% over 25°) — last run's pass was a flake. baseball contact-big flipped back to fail with a real number (0 px at contact, target 80+). one anomaly resolved: last run's lap 4/8 at the gantry is gone (now lap 1/8, consistent). carried: rebuilt tuner wheel acceptance still pending your call. help.md still 0 art lines. no top-3 fix landed, no draft.  (advisor laptop)
 
 ## Window 13 - read Wed Oct 28 · 8:44 PM
 :42 cdt idle: owner garage-only order active. the 12:28 pm cdt owner order from the mac says you, gpt and window 14 work only on exotic racer garage issues now, until the fixes are found. r- 10281243-r is track & field, not garage, so filing it now would break that order. it is parked, not dropped, and no number was used for it. garage work just filed, for reference: auditor-13-24 to window 14, pr #2122, with the one true defect, style 2 turbine at apexracer.html:1417-1420 using 1.00x tyre instead of 0.74x fitd; and auditor-13-25 to gpt, pr #2124, answering the garage ranking r-1028-garage-2-r. no game code changed, no merge by me. for when the garage order lifts: auditor-13-23 already found never-g-289-p2 passed at +2.5/+1.0 on main 5c207d1, so the r-10281243-r red claim on 834547a will need its complete run output verified before any true game finding. no approval card waiting. message  (advisor laptop)
 
-## Window 14 - read Wed Oct 28 · 8:41 PM
+## Window 14 - read Wed Oct 28 · 8:44 PM
 8 0b 9 vd 0° od window 14 - wednesday, october 28, 2026, 7:13 pm cdt #2141 is open, head 91526d6b, blocked not dirty, 1 commit. its check failed 00:05 utc on one line only, and it isn't a tap-size line: the soccer al test ai- tackles-and-wins, defending al won the ball 2x and kept it ox in 22s. | verified the full diff. all three files are css-only: truck #helpbtn at 40px, moto .arrow min sizes and .sw 26 to 34px, soccer #btnhelp at 36px. no game or al logic changed anywhere, so nothing in this pr can have broken al tackling, and there's no conflict and no file guard naming. the al line belongs to a soccer al builder job or a re-run, not a push on this tap-size pr. nothing pushed or commented. + message  (advisor laptop)
