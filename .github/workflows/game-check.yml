@@ -297,5 +297,8 @@ jobs:
           git config user.name "game-check bot"
           git config user.email "game-check-bot@users.noreply.github.com"
           git add -A
+          # VP Oct 29 2026: when no game was re-played there are no videos, the report is already posted by the step above and
+          # there is nothing new to commit - "git commit" then exits 1 and main's Game check showed red (runs of 1:44, 2:11, 3:59 AM)
+          git diff --cached --quiet && { echo "no videos to add - report already posted"; exit 0; }
           git commit -q -m "Game check for main @ ${GITHUB_SHA::7} (+ videos)"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" game-checks
