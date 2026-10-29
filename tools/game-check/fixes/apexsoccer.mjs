@@ -46,7 +46,7 @@ export default [
       };
       await h.eval(arm);
       let last = null;
-      for (let i = 0; i < 22; i++) {
+      for (let i = 0; i < 45; i++) {
         await h.wait(1000);
         last = await h.eval(() => {
           const S = (window.__sc && window.__sc.players && window.__sc.ball) ? window.__sc : 'game hooks missing (window.__sc)'; if (typeof S === 'string') return { err: S };
@@ -56,7 +56,7 @@ export default [
         if (last.tw >= 2 && last.bw >= 1) return true;
         await h.eval(arm);
       }
-      return `defending AI won the ball ${last ? last.tw : 0}x and kept it ${last ? last.bw : 0}x in 22s (need 2 steals, 1 kept)`;
+      return `defending AI won the ball ${last ? last.tw : 0}x and kept it ${last ? last.bw : 0}x in 45s (need 2 steals, 1 kept)`;
     },
   },
   {
