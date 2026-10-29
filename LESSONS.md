@@ -301,3 +301,6 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-28 help desk
 - A rebuilt/re-filed model needs ALL ledger keys in ASSETS.md (title, maker, source, license): a copy-edited entry that kept only source/license made the `assets` check fail "missing maker" and the PR sat green-but-unmerged (#2125). Copy the whole entry, then run `node tools/asset-check.mjs` before pushing.
+
+## Oct 28 2026 help desk
+- A red owner test that passes on main and sits on a PR that does not touch that behaviour is a robot flake: file a HELP-VP: robot line (retry on a fresh page / seed the AI), do not edit the game.
