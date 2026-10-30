@@ -26,7 +26,7 @@ When the owner gives a 👎, his exact words are added under NEVER (or MUST) and
 - Skaters/AI: aiSkater 1161; faceoff positions in setupFaceoffPositions (above faceoff).
 - Shooting: shootFrom() 993, shot record at 1003 (statShots counted there).
 - Puck: stepPuck() 1431; the icing gate inside stepPuck (crossing detectors, hybrid race, BOARDSTOP, the shorthanded gate from G-228).
-- Goalies: goalieSaves() 1563 (statSaves counted in its save branch); the crease push lives nearby.
+- Goalies: goalieSaves() 1645 (statSaves counted in its save branch); G-404: ONE save roll per shot (gl._triedShot stamps the shot object - a failed roll no longer re-rolls every frame); the crease push lives nearby.
 - Camera: stepCamera() 1627 - broadcast/chase/close/face views.
 - Blades: levelBlades() 1679 (per-foot measure + counter-rotate, two passes), snapSkatesToIce() 1711.
 - Main loop: tick() ends 1744; the intermission branch (period end, showStatCard, 6 s break) 1769-1778.

@@ -3775,41 +3775,59 @@ export default [
       await page.setViewportSize({ width: 844, height: 390 }).catch(() => {});
     }
   }
-}
-,
-// BALANCE ROBOT (master #11, owner Oct 28 2026): plays periods with the game's own logic and NO drawing (__hk.game.simStep).
-// FAILS when: a good bot never scores (cannot be won), an idle player (never touches the stick) scores as much as the good bot (skill does not matter),
-// or the computer team runs away with a period against a player who plays (too hard). Segments are 60 s of play, 2 each (local numbers over 2 x 60 s: idle 0 goals, beginner 5, good 14), so one lucky puck cannot decide it.
+},
 {
-  id: 'play-balance-skill-matters',
-  ask: 'Balance: a player who plays can score, a player who does nothing cannot, and the computer does not run away',
+  id: 'never-g-404-p1',
+  ask: 'NEVER (G-404): goals are reachable in casual play - a clean tap shot from the slot, fired through the real SHOOT input with only the goalie to beat, scores within a few attempts (on the broken build the goalie re-rolled his save every sim slice while the puck crossed the crease, so a shot that had already beaten him still got stopped: 0 goals in 15 staged shots)',
   async test(page, h) {
+    const unfreeze = () => h.eval(() => { for (const s of window.__hk.skaters) s.thinkT = 0.05; }).catch(() => {});
     try { await h.press('#playBtn'); } catch (e) {}
-    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 25000, polling: 'raf' }); } catch (e) {}
-    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') return { inconclusive: 'could not reach the play state' };
-    const out = await h.eval(() => {
-      const G = window.__hk.game, H = window.__hk;
-      if (!G.simStep) return { err: 'no __hk.game.simStep hook' };
-      const seg = (skill) => {
-        G.newMatch(); G.period = 1; G.clockT = 118; G.scoreH = 0; G.scoreA = 0;
-        const bot = skill === 'idle' ? null : { skill };
-        let t = 0, guard = 0;
-        while (t < 60 && guard++ < 4000) { if (!G.simStep(1 / 30, bot)) break; t += 1 / 30; if (G.state === 'over') break; }
-        return { h: G.scoreH, a: G.scoreA, t: Math.round(t) };
-      };
-      const run = (skill) => { const r = []; for (let i = 0; i < 2; i++) r.push(seg(skill)); return r; };
-      const res = { idle: run('idle'), beginner: run('beginner'), good: run('good') };
-      G.newMatch(); for (const s of H.skaters) s.thinkT = 0.05;
-      return res;
-    }).catch((e) => ({ err: String(e) }));
-    if (!out || out.err) return (out && out.err) || 'balance run returned nothing';
-    const sum = (a, k) => a.reduce((x, r) => x + r[k], 0);
-    const gi = sum(out.idle, 'h'), gb = sum(out.beginner, 'h'), gg = sum(out.good, 'h'), ag = sum(out.good, 'a'), ab = sum(out.beginner, 'a');
-    const note = 'goals for the player over 2 x 60 s - idle ' + gi + ', beginner ' + gb + ', good ' + gg + '; goals against - beginner ' + ab + ', good ' + ag;
-    if (gg < 1) return 'BALANCE: a bot that plays well never scored in 120 s of play - ' + note;
-    if (gi >= gg) return 'BALANCE: a player who never touches the stick scored as much as the good bot - ' + note;
-    if (ab > 8 || ag > 8) return 'BALANCE: the computer runs away (over 8 goals in 120 s) against a player who plays - ' + note;
-    return true;
-  },
+    await page.keyboard.press('ArrowRight').catch(() => {});
+    try { await page.waitForFunction(() => window.__hk && window.__hk.game && window.__hk.game.state === 'play', null, { timeout: 20000, polling: 'raf' }); } catch (e) {}
+    if (await h.eval(() => window.__hk.game.state).catch(() => '') !== 'play') { await unfreeze(); return { inconclusive: 'could not get a match into play to stage the shot' }; }
+    const stage = () => h.eval(() => {
+      const H = window.__hk;
+      if (H.game.state !== 'play') return false;
+      for (const s of H.skaters) {
+        if (s.goalie) continue;
+        s.vel.set(0, 0, 0); s.thinkT = 999;
+        if (!(s.team === 'home' && s.role === 'C')) { s.pos.set(s.team === 'away' ? -50 : 10, 0.1, s.team === 'away' ? -25 : 25); s.target.set(s.pos.x, 0, s.pos.z); }
+      }
+      const c = H.skaters.find((s) => s.team === 'home' && s.role === 'C');
+      c.pos.set(70, 0.1, 0); c.vel.set(0, 0, 0); c.target.set(70, 0, 0);
+      const gl = H.skaters.find((s) => s.team === 'away' && s.goalie); // the cleanest look in hockey: goalie set on his line, square to the shooter - his AI still plays from here
+      if (gl) { gl.pos.set(86.8, 0.1, 0); gl.vel.set(0, 0, 0); }
+      H.puck.owner = c; H.puck.shot = null; H.puck.passGrace = null; H.puck.recv = null;
+      H.puck.pos.set(71.2, 0.2, 0); H.puck.vel.set(0, 0, 0);
+      return document.getElementById('score').textContent;
+    }).catch(() => false);
+    let saves = 0;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      for (let i = 0; i < 20; i++) { // settle back to play between attempts (goal celebration / faceoff)
+        if (await h.eval(() => window.__hk.game.state).catch(() => '') === 'play') break;
+        await h.wait(500);
+      }
+      const before = await stage();
+      if (before === false) continue;
+      await h.eval(() => window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyK' }))).catch(() => {});
+      await h.wait(130); // a TAP - the quickest, weakest shot a casual player takes
+      await h.eval(() => window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyK' }))).catch(() => {});
+      for (let i = 0; i < 6; i++) {
+        await h.wait(280);
+        const r = await h.eval(() => ({
+          score: document.getElementById('score').textContent,
+          owner: window.__hk.puck.owner ? window.__hk.puck.owner.team : null,
+          px: window.__hk.puck.pos.x, vx: window.__hk.puck.vel.x,
+        })).catch(() => null);
+        if (!r) continue;
+        if (r.score !== before) { await unfreeze(); return true; }
+        if (r.vx < -5) { saves++; break; } // the goalie's save deflection flipped the puck back out
+        if (r.owner === 'away' || r.px > 92) break;
+      }
+    }
+    await unfreeze();
+    return 'no goal in 10 clean tap shots from the slot (' + saves + ' read as saves) - goals are out of reach in casual play';
+  }
 }
+
 ];

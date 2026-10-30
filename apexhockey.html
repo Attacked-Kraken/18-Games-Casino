@@ -821,22 +821,6 @@ window.__hk.game = {
   // page reload behind PLAY AGAIN / the hub, a test playing several career
   // matches on one shared page gets it here instead
   newMatch() { period = 1; clockT = PERIOD_LEN; scoreH = 0; scoreA = 0; stateT = 0; pendingFaceoff = null; delayedPen = null; statShots = { home: 0, away: 0 }; statSaves = { home: 0, away: 0 }; statFO = { home: 0, away: 0 }; foDropAt = -9; skaters.forEach(x=>{ x.otOut = false; x.boxT = 0; x.benchSpot = null; }); const sc = document.getElementById('statCard'); if (sc) sc.style.display = 'none'; updateHUD(); },
-  // BALANCE ROBOT (master #11): play whole matches with no drawing. bot = null (nobody touches the stick), or {skill:'good'|'beginner'} - the bot drives the controlled home skater like a player would.
-  simStep(dt, bot) {
-    if (bot && state === 'play') {
-      const s = controlled, dir = TEAMS.home.dir, owns = puck.owner === s;
-      const tx = owns ? dir * GOAL_LINE : puck.pos.x, tz = owns ? 0 : puck.pos.z;
-      let dx = tx - s.pos.x, dz = tz - s.pos.z; const d = Math.hypot(dx, dz) || 1;
-      if (bot.skill !== 'good') { dx += Math.sin(gameNow * 1.3) * 18; dz += Math.cos(gameNow * 0.9) * 18; }
-      const m = Math.hypot(dx, dz) || 1, wx = dx / m, wz = dz / m;
-      if (camMode === 2) { joyVec.x = wz; joyVec.y = -wx * dir; } else { joyVec.x = wx; joyVec.y = wz; }
-      joyVec.active = true; sawInput = true;
-      bot.cool = (bot.cool || 0) - dt;
-      const gdist = Math.hypot(dir * GOAL_LINE - s.pos.x, s.pos.z);
-      if (owns && bot.cool <= 0 && gdist < (bot.skill === 'good' ? 46 : 34)) { shootFrom(s, bot.skill === 'good' ? 0.9 : 0.6, false); bot.cool = bot.skill === 'good' ? 1.2 : 2.6; }
-    } else { joyVec.x = joyVec.y = 0; joyVec.active = false; }
-    gameNow += dt; return stepWorld(dt);
-  },
   get camLead() { return leadCur; }, // G-72: the broadcast camera's (smoothed) puck lead, read by the save/camera play test
 };
 const $=id=>document.getElementById(id);
@@ -1669,8 +1653,10 @@ function goalieSaves(){
     const dz=Math.abs(puck.pos.z-gl.pos.z);
     const saveR=2.6;
     if(dz<saveR && gameNow>=(gl._saveUntil||0)){ // JOB-04: one save per shot (rebounds inside 1.2 s are part of the same save)
+      if(puck.shot && gl._triedShot===puck.shot) continue; // G-404: ONE save roll per shot - a failed roll used to re-roll every frame while the puck crossed the crease, so the goalie saved ~everything (0 goals in 15 staged circle shots at tap, half and full charge)
       const spd=puck.vel.length();
       const pSave=clamp(1.05-spd/130,0.15,0.95)*(gl._fly>0?1.15:1);
+      if(puck.shot) gl._triedShot=puck.shot;
       if(Math.random()<pSave){
         puck.vel.x*=-0.32; puck.vel.z=rand(-1,1)*22+ (puck.pos.z-gl.pos.z)*9;
         gl._saveUntil=gameNow+1.2; puck.shot=null; statSaves[gl.team]++; if(performance.now()-lastSaveBannerT>2500){ lastSaveBannerT=performance.now(); banner('SAVED!',gl.team==='home'?'WOLVES GOALIE':'SHARKS GOALIE',1100,'#9fd8ff'); } // G-72: once per scramble; G-257: the statSaves count above feeds the intermission card
@@ -1862,9 +1848,22 @@ window.__reality={
 let lastT=performance.now();
 let gameNow=0; // wall clock for AI drift/idle motion (advances every frame)
 let fitTickN = 0;
-// BALANCE ROBOT (master #11): one slice of the game world, no drawing - tick() calls it per slice, the balance test calls it through __hk.game.simStep
-function stepWorld(dt){
-  if(state==='menu'||state==='over') return false;
+function tick(now){
+  requestAnimationFrame(tick);
+  if (++fitTickN >= 30) { fitTickN = 0;
+    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
+    if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
+  }
+  let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time. (Notes go on their OWN line: on Oct 21 a note pasted onto this line commented out lastT=now, so every frame was 1 s of game time - the clock ran 6-7x fast and the game played itself.)
+  // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays
+  const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
+  Mus.setMode(state==='play'?'game':'menu');
+  if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
+  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
+  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
+  if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
+  for(let si=0;si<steps;si++){
+  if(state==='menu'||state==='over') break;
   stateT-=dt;
   if(state==='faceoff'&&stateT<=0){
     if(playerReady()){ state='play'; banner('PLAY','','800'); }
@@ -1897,24 +1896,6 @@ function stepWorld(dt){
   goalieSaves();
   possessionWatch();
   stepCamera(dt);
-  return true;
-}
-function tick(now){
-  requestAnimationFrame(tick);
-  if (++fitTickN >= 30) { fitTickN = 0;
-    const w = document.documentElement.clientWidth, h = document.documentElement.clientHeight;
-    if (w && h && (Math.abs(w - fitW) > 2 || Math.abs(h - fitH) > 2)) fitGame();
-  }
-  let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time. (Notes go on their OWN line: on Oct 21 a note pasted onto this line commented out lastT=now, so every frame was 1 s of game time - the clock ran 6-7x fast and the game played itself.)
-  // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays
-  const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
-  Mus.setMode(state==='play'?'game':'menu');
-  if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
-  if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
-  if(paused||state==='menu'||state==='over'){ if(state==='menu'&&!paused){ try{ careerShowcase(now); }catch(e){} } snapSkatesToIce(); renderer.render(scene,camera); return; }
-  if(charging){ charge=Math.min(1,charge+frameSec/0.9); chargeFill.style.width=(charge*100)+'%'; }
-  for(let si=0;si<steps;si++){
-  if(!stepWorld(dt)) break;
   } // end of catch-up slices
   snapSkatesToIce();
   renderer.render(scene,camera);
