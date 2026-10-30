@@ -858,9 +858,11 @@ const quat = new THREE.Quaternion();
 const F = new THREE.Vector3(), U = new THREE.Vector3(), R = new THREE.Vector3();
 const ACC = new THREE.Vector3();
 let lastDt = 0.016;
+let gameClock = 0;   // game seconds: sum of every step(dt) - the robot's time() (REALITY.md), never wall-clock
 
 function step(dt) {
   lastDt = dt;
+  gameClock += dt;
   const v = P.vel.length();
   const auth = clamp(v / 26, 0.32, 1);
   stallNow = false;
@@ -1221,6 +1223,8 @@ window.__reality = {
   others: traffic.map(t => t.jet.group),
   contact: gearWheels,
   ground: (x, z) => 0,
+  time: () => gameClock,            // game seconds (grows only when the physics steps)
+  speed: () => P.vel.length(),       // m/s
   go: (on) => {
     if (on) {
       // A plane at full throttle takes off, and then its wheels are metres

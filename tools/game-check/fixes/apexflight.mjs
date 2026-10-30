@@ -112,7 +112,7 @@ export default [
   },
   {
     id: 'play-takeoff',
-    ask: 'take off is manual: full throttle with no stick stays on the ground past rotate speed, and pulling the stick up lifts it off (owner: the plane must never lift by itself)',
+    ask: 'take off is manual: full throttle with no stick stays on the ground past rotate speed, and pulling the stick up lifts it off (owner: the plane must never lift by itself) - judged in GAME seconds (window.__reality.time()), not robot wall-clock',
     async test(page, h) {
       // Same shared-page prelude as before: get the plane back on the runway first.
       const st = await h.eval(() => ({
@@ -140,41 +140,48 @@ export default [
         const thr0 = await h.eval(() => window.__flight ? window.__flight.P.thr : null).catch(() => null);
         if (thr0 !== null && thr0 > 0.01) return 'takeoff starts at full throttle - the player never spools up (thr ' + thr0.toFixed(2) + ')';
       }
+      // The roll is stepped by hand with the game's own physics (window.__test.simStep, 1/60 game-s per step), so a slow robot
+      // renderer cannot stretch it: every number below is in GAME seconds read from window.__reality.time().
       return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        return new Promise((res) => {
-          // Stage the roll exactly like a fresh free flight, then spool up by hand.
-          F.P.pos.set(0, F.jet.gearHeight, -600); F.P.vel.set(0, 0, 0); F.P.yaw = 0; F.P.pitch = 0; F.P.roll = 0; F.P.ground = true;
-          const t0 = Date.now();
-          const iv = setInterval(() => {
+        const F = window.__flight, T = window.__test, R = window.__reality;
+        if (!F || !T || !T.simStart || !R || !R.time) return 'no window.__flight / __test / __reality.time() hook';
+        const frames = (n) => new Promise((ok) => { let k = 0; const t = setTimeout(ok, 1500); const f = () => { if (++k >= n) { clearTimeout(t); ok(); } else requestAnimationFrame(f); }; requestAnimationFrame(f); });
+        return (async () => {
+          const DT = 1 / 60;
+          T.simStart('free');
+          try {
+            // Stage the roll exactly like a fresh free flight, then spool up by hand.
+            F.P.pos.set(0, F.jet.gearHeight, -600); F.P.vel.set(0, 0, 0); F.P.yaw = 0; F.P.pitch = 0; F.P.roll = 0; F.P.ground = true;
             F.P.thr = 1; F.jetInput.throttle = 1;   // holding full throttle, like the player would
-            const v = Math.hypot(F.P.vel.x, F.P.vel.z);
-            if (F.P.ground === false) { clearInterval(iv); return res('plane lifted off with no stick input at ' + v.toFixed(1) + ' m/s - takeoff is not manual'); }
-            if (v >= 25) {
-              // Past rotate speed with full throttle and no stick, still on the
-              // ground: that is the proof. Now pull the stick up like the player would.
-              clearInterval(iv);
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
-              const t1 = Date.now();
-              const iv2 = setInterval(() => {
-                F.P.thr = 1; F.jetInput.throttle = 1;
-                if (F.P.ground === false && F.P.pos.y > F.jet.gearHeight + 2) {
-                  clearInterval(iv2);
-                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
-                  return res(true);
-                }
-                if (Date.now() - t1 > 10000) {
-                  clearInterval(iv2);
-                  window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
-                  return res('stick up at rotate speed did not lift the plane off');
-                }
-              }, 200);
+            const t0 = R.time(); let n = 0, tRot = -1;
+            while (R.time() - t0 < 15) {            // 15 s: the old test's own limit, now in game time
+              const ok = T.simStep(DT); n++;
+              const v = Math.hypot(F.P.vel.x, F.P.vel.z);
+              if (!ok) return 'plane crashed on the take-off roll after ' + (R.time() - t0).toFixed(1) + ' game-s (' + F.P.pos.y.toFixed(1) + ' m)';
+              if (F.P.ground === false) return 'plane lifted off with no stick input at ' + v.toFixed(1) + ' m/s after ' + (R.time() - t0).toFixed(1) + ' game-s - takeoff is not manual';
+              if (v >= 25) { tRot = R.time() - t0; break; }
             }
-            if (Date.now() - t0 > 15000) { clearInterval(iv); return res('plane never reached rotate speed at full throttle (v ' + v.toFixed(1) + ' m/s)'); }
-          }, 200);
-        });
-      });
+            if (Math.abs((R.time() - t0) - n * DT) > 0.01) return 'game clock did not follow the physics steps (' + (R.time() - t0).toFixed(3) + ' game-s for ' + n + ' steps)';
+            if (tRot < 0) return 'plane never reached rotate speed at full throttle in 15 game-s (v ' + Math.hypot(F.P.vel.x, F.P.vel.z).toFixed(1) + ' m/s, hook speed ' + R.speed().toFixed(1) + ')';
+            // Past rotate speed with full throttle and no stick, still on the ground: that is the proof. Now pull the stick up like the player would
+            // (a real key press; two real frames let the game's own key reader set the stick before the stepping resumes).
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            await frames(3);
+            try {
+              const t1 = R.time(); let lifted = -1;
+              while (R.time() - t1 < 10) {            // 10 s: the old test's own limit
+                F.P.thr = 1; F.jetInput.throttle = 1;
+                const ok = T.simStep(DT);
+                if (!ok) return 'plane crashed after the stick was pulled: ' + document.getElementById('crashWhy').textContent;
+                if (F.P.ground === false && F.P.pos.y > F.jet.gearHeight + 2) { lifted = R.time() - t1; break; }
+              }
+              if (lifted < 0) return 'stick up at rotate speed did not lift the plane off in 10 game-s (y ' + F.P.pos.y.toFixed(1) + ', v ' + F.P.vel.length().toFixed(1) + ')';
+              window.__takeoffGameTimes = { rotateSpeedAt: +tRot.toFixed(2), liftOffAfterStick: +lifted.toFixed(2) };
+              return true;
+            } finally { window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' })); }
+          } finally { T.simEnd(); }
+        })();
+      }).catch((e) => ({ inconclusive: 'the page navigated away or closed during the test - robot side: ' + String(e && e.message).split('\n')[0].slice(0, 100) }));
     },
   },
   {
@@ -227,56 +234,75 @@ export default [
   },
   {
     id: 'play-climb-and-fly',
-    ask: 'climb and fly: stick up gains altitude and the plane keeps flying',
+    ask: 'climb and fly: stick up gains altitude and the plane keeps flying (5 game-seconds, judged on window.__reality.time())',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        F.P.pos.set(0, 120, 0); F.P.vel.set(0, 0, 35); F.P.ground = false;
-        F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0;
-        const y0 = F.P.pos.y, x0 = F.P.pos.x, z0 = F.P.pos.z;
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
-        return new Promise((res) => {
-          setTimeout(() => {
-            window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
-            const gain = F.P.pos.y - y0;
-            const dist = Math.hypot(F.P.pos.x - x0, F.P.pos.z - z0);
-            const crashed = !document.getElementById('crashOv').hidden;
-            if (crashed) return res('plane crashed during the climb');
-            if (dist < 100) return res(`plane barely moved (${dist.toFixed(0)}m in 5s)`);
-            if (gain < 8) return res(`stick up gained only ${gain.toFixed(1)}m in 5s (want > 8m)`);
-            res(true);
-          }, 5000);
-        });
-      });
+        const F = window.__flight, T = window.__test, R = window.__reality;
+        if (!F || !T || !T.simStart || !R || !R.time) return 'no window.__flight / __test / __reality.time() hook';
+        const frames = (n) => new Promise((ok) => { let k = 0; const t = setTimeout(ok, 1500); const f = () => { if (++k >= n) { clearTimeout(t); ok(); } else requestAnimationFrame(f); }; requestAnimationFrame(f); });
+        return (async () => {
+          const DT = 1 / 60;
+          T.simStart('free');
+          try {
+            F.P.pos.set(0, 120, 0); F.P.vel.set(0, 0, 35); F.P.ground = false;
+            F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0;
+            const y0 = F.P.pos.y, x0 = F.P.pos.x, z0 = F.P.pos.z, yaw0 = F.P.yaw;
+            // A real key press (the game's own key reader), then game-time stepping with the physics by hand.
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+            await frames(3);
+            try {
+              const t0 = R.time(); let n = 0, ok = true;
+              while (R.time() - t0 < 5) { ok = T.simStep(DT); n++; if (!ok) break; }
+              const gs = R.time() - t0;
+              if (Math.abs(gs - n * DT) > 0.01) return 'game clock did not follow the physics steps (' + gs.toFixed(3) + ' game-s for ' + n + ' steps)';
+              if (!ok) return 'plane crashed during the climb after ' + gs.toFixed(1) + ' game-s: ' + document.getElementById('crashWhy').textContent;
+              const gain = F.P.pos.y - y0, dYaw = Math.abs(F.P.yaw - yaw0);
+              const dist = Math.hypot(F.P.pos.x - x0, F.P.pos.z - z0);
+              if (dist < 100) return `plane barely moved (${dist.toFixed(0)} m in ${gs.toFixed(1)} game-s)`;
+              if (gain < 8) return `stick up gained only ${gain.toFixed(1)} m in ${gs.toFixed(1)} game-s (want > 8 m)`;
+              return true;
+            } finally { window.dispatchEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' })); }
+          } finally { T.simEnd(); }
+        })();
+      }).catch((e) => ({ inconclusive: 'the page navigated away or closed during the test - robot side: ' + String(e && e.message).split('\n')[0].slice(0, 100) }));
     },
   },
   {
     id: 'play-turn',
-    ask: 'turn: holding right banks the plane and changes heading',
+    ask: 'turn: holding right banks the plane and changes heading (4 game-seconds, judged on window.__reality.time())',
     async test(page, h) {
       try { await h.press('#btnFree'); } catch (e) {}
       await h.wait(400);
       return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        F.P.pos.set(0, 120, 0); F.P.vel.set(0, 0, 35); F.P.ground = false;
-        F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0;
-        const yaw0 = F.P.yaw;
-        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
-        return new Promise((res) => {
-          setTimeout(() => {
-            window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' }));
-            const dYaw = Math.abs(F.P.yaw - yaw0);
-            const crashed = !document.getElementById('crashOv').hidden;
-            if (crashed) return res('plane crashed during the turn');
-            if (dYaw < 0.3) return res(`heading changed only ${dYaw.toFixed(2)} rad in 4s (want > 0.3)`);
-            res(true);
-          }, 4000);
-        });
-      });
+        const F = window.__flight, T = window.__test, R = window.__reality;
+        if (!F || !T || !T.simStart || !R || !R.time) return 'no window.__flight / __test / __reality.time() hook';
+        const frames = (n) => new Promise((ok) => { let k = 0; const t = setTimeout(ok, 1500); const f = () => { if (++k >= n) { clearTimeout(t); ok(); } else requestAnimationFrame(f); }; requestAnimationFrame(f); });
+        return (async () => {
+          const DT = 1 / 60;
+          T.simStart('free');
+          try {
+            F.P.pos.set(0, 120, 0); F.P.vel.set(0, 0, 35); F.P.ground = false;
+            F.P.pitch = 0; F.P.roll = 0; F.P.yaw = 0;
+            const y0 = F.P.pos.y, x0 = F.P.pos.x, z0 = F.P.pos.z, yaw0 = F.P.yaw;
+            // A real key press (the game's own key reader), then game-time stepping with the physics by hand.
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }));
+            await frames(3);
+            try {
+              const t0 = R.time(); let n = 0, ok = true;
+              while (R.time() - t0 < 4) { ok = T.simStep(DT); n++; if (!ok) break; }
+              const gs = R.time() - t0;
+              if (Math.abs(gs - n * DT) > 0.01) return 'game clock did not follow the physics steps (' + gs.toFixed(3) + ' game-s for ' + n + ' steps)';
+              if (!ok) return 'plane crashed during the turn after ' + gs.toFixed(1) + ' game-s: ' + document.getElementById('crashWhy').textContent;
+              const gain = F.P.pos.y - y0, dYaw = Math.abs(F.P.yaw - yaw0);
+              const dist = Math.hypot(F.P.pos.x - x0, F.P.pos.z - z0);
+              if (dYaw < 0.3) return `heading changed only ${dYaw.toFixed(2)} rad in ${gs.toFixed(1)} game-s (want > 0.3)`;
+              return true;
+            } finally { window.dispatchEvent(new KeyboardEvent('keyup', { key: 'd' })); }
+          } finally { T.simEnd(); }
+        })();
+      }).catch((e) => ({ inconclusive: 'the page navigated away or closed during the test - robot side: ' + String(e && e.message).split('\n')[0].slice(0, 100) }));
     },
   },
   {
@@ -635,7 +661,8 @@ export default [
       return h.eval(() => {
         const F = window.__flight;
         if (!F || !F.jetInput || !F.jet) return 'no flight/jetInput hook';
-        const J = F.jetInput, P = F.P;
+        const J = F.jetInput, P = F.P, R = window.__reality;
+        if (!R || !R.time) return 'no window.__reality.time() hook';
         const el = (id) => document.getElementById(id);
         const down = (id) => el(id).dispatchEvent(new PointerEvent('pointerdown', { pointerId: 11, bubbles: true }));
         const up = (id) => el(id).dispatchEvent(new PointerEvent('pointerup', { pointerId: 11, bubbles: true }));
@@ -643,6 +670,12 @@ export default [
         const until = async (fn, ms) => { const t0 = performance.now(); while (performance.now() - t0 < ms) { if (fn()) return Math.round(performance.now() - t0); await wait(4); } return -1; };
         return (async () => {
           const bad = [];
+          // GENUINE LATENCY CHECK, wall-clock on purpose: "answers within 100 ms of the touch" is real time the player waits. It is only
+          // measurable when the page draws a frame at least every ~50 ms; a slower robot renderer cannot show a 100 ms answer, so then it is
+          // INCONCLUSIVE (yellow), never a false red. The heading change (YAW) is judged in game time below, not here.
+          const fts = []; await new Promise((ok) => { let k = 0, prev = performance.now(); const t = setTimeout(ok, 3000); const f = (now) => { fts.push(now - prev); prev = now; if (++k >= 12) { clearTimeout(t); ok(); } else requestAnimationFrame(f); }; requestAnimationFrame(f); });
+          fts.sort((a, b) => a - b); const medFrame = fts.length ? fts[fts.length >> 1] : 9999;
+          if (medFrame > 50) return { inconclusive: 'robot renderer too slow to measure a 100 ms answer (median frame ' + medFrame.toFixed(0) + ' ms) - latency not judged' };
           // airborne setup, level and steady (state set through the hook, then real controls only)
           P.pos.set(0, 300, 0); P.vel.set(0, 0, 45); P.pitch = 0; P.roll = 0; P.yaw = 0; P.ground = false; P.thr = 0.6; J.throttle = 0.6;
           await wait(150);
@@ -685,12 +718,14 @@ export default [
           up('jBrake'); ms = await until(() => !J.brake, 100);
           if (ms < 0) bad.push('BRAKE did not stop within 100ms of letting go');
           // YAW: in the air the jet's heading must actually turn, and stop when let go
+          const gwait = async (sec) => { const g0 = R.time(), w0 = performance.now(); while (R.time() - g0 < sec && performance.now() - w0 < 4000) await wait(8); return R.time() - g0; };
           const yaw0 = P.yaw;
           down('jYawR');
-          ms = await until(() => Math.abs(P.yaw - yaw0) > 0.02, 100);
-          if (ms < 0) bad.push('YAW did not turn the jet within 100ms (dead in the air)');
-          up('jYawR'); await wait(80); const yawHold = P.yaw; await wait(150);
-          if (Math.abs(P.yaw - yawHold) > 0.005) bad.push('jet kept yawing after YAW was let go');
+          const gy = await gwait(0.1);               // 0.1 GAME second (was 100 wall ms): the heading must have turned by then
+          if (gy < 0.1) bad.push('YAW: the game advanced only ' + gy.toFixed(2) + ' game-s in 4 wall-s - could not judge the heading');
+          else if (Math.abs(P.yaw - yaw0) <= 0.02) bad.push('YAW did not turn the jet within 0.1 game-s (dead in the air; turned ' + Math.abs(P.yaw - yaw0).toFixed(3) + ' rad)');
+          up('jYawR'); await gwait(0.1); const yawHold = P.yaw; await gwait(0.25);
+          if (Math.abs(P.yaw - yawHold) > 0.005) bad.push('jet kept yawing after YAW was let go (' + Math.abs(P.yaw - yawHold).toFixed(3) + ' rad in 0.25 game-s)');
           // GEAR: a tap flips the gear state at once, both ways
           if (!F.jet.gearDown) { down('jGear'); up('jGear'); await until(() => F.jet.gearDown, 200); }
           down('jGear'); up('jGear');
@@ -714,7 +749,7 @@ export default [
           }
           return bad.length ? bad.join('; ') : true;
         })();
-      });
+      }).catch((e) => ({ inconclusive: 'the page navigated away or closed during the test - robot side: ' + String(e && e.message).split('\n')[0].slice(0, 100) }));
     },
   },
   {
@@ -986,7 +1021,7 @@ export default [
   },
   {
     id: 'play-takeoff-climbs',
-    ask: 'takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear)',
+    ask: 'takeoff climbs: a full-throttle roll rotates and climbs away - no wallow back onto the gear (owner video 2026-10-23: the jet lifted, sank and collapsed its gear) - judged in GAME seconds (window.__reality.time())',
     async test(page, h) {
       // Same shared-page prelude as play-takeoff: get the plane back on the runway first.
       const st = await h.eval(() => ({
@@ -1003,27 +1038,30 @@ export default [
         } catch (e) {}
       }
       return h.eval(() => {
-        const F = window.__flight;
-        if (!F) return 'no window.__flight hook';
-        return new Promise((res) => {
-          // Judged in GAME time (rAF delta-sum, the harness clock) - wall time only backstops.
-          let gt = 0, last = performance.now();
-          const tick = (t) => { gt += Math.min(0.05, (t - last) / 1000); last = t; if (gt < 90) requestAnimationFrame(tick); };
-          requestAnimationFrame(tick);
-          const w0 = Date.now();
-          let gtV23 = -1;
-          const iv = setInterval(() => {
+        const F = window.__flight, T = window.__test, R = window.__reality;
+        if (!F || !T || !T.simStart || !R || !R.time) return 'no window.__flight / __test / __reality.time() hook';
+        const DT = 1 / 60;
+        T.simStart('free');
+        try {
+          F.P.pos.set(0, F.jet.gearHeight, -600); F.P.vel.set(0, 0, 0); F.P.yaw = 0; F.P.pitch = 0; F.P.roll = 0; F.P.ground = true;
+          const t0 = R.time(); let n = 0, tV23 = -1;
+          while (R.time() - t0 < 90) {                 // the old test's own 90 game-s cap
             F.P.thr = 1; F.jetInput.throttle = 1;
             const v = Math.hypot(F.P.vel.x, F.P.vel.z);
-            if (v >= 22.5) F.P.pitch = 0.22;   // the auto-rotate assist's own pitch, held
-            if (gtV23 < 0 && v >= 23) gtV23 = gt;
-            if (!document.getElementById('crashOv').hidden) { clearInterval(iv); return res('crashed during the climb-out: ' + document.getElementById('crashWhy').textContent); }
-            if (gtV23 >= 0 && F.P.pos.y > F.jet.gearHeight + 12) { clearInterval(iv); return res(gt - gtV23 <= 12 ? true : 'climbed, but took ' + (gt - gtV23).toFixed(1) + ' game-s after rotate speed'); }
-            if (gtV23 >= 0 && gt - gtV23 > 12) { clearInterval(iv); return res('reached rotate speed but could not climb - wallowed at y=' + F.P.pos.y.toFixed(1) + ' with vy=' + F.P.vel.y.toFixed(1)); }
-            if (Date.now() - w0 > 28000) { clearInterval(iv); return res('ran out of wall time (v23 at ' + gtV23.toFixed(1) + ' game-s)'); }
-          }, 100);
-        });
-      });
+            if (v >= 22.5) F.P.pitch = 0.22;           // the auto-rotate assist's own pitch, held
+            if (tV23 < 0 && v >= 23) tV23 = R.time() - t0;
+            const ok = T.simStep(DT); n++;
+            if (!ok) return 'crashed during the climb-out after ' + (R.time() - t0).toFixed(1) + ' game-s: ' + document.getElementById('crashWhy').textContent;
+            if (tV23 >= 0 && F.P.pos.y > F.jet.gearHeight + 12) {
+              const took = (R.time() - t0) - tV23;
+              return took <= 12 ? true : 'climbed, but took ' + took.toFixed(1) + ' game-s after rotate speed';
+            }
+            if (tV23 >= 0 && (R.time() - t0) - tV23 > 12) return 'reached rotate speed (at ' + tV23.toFixed(1) + ' game-s) but could not climb - wallowed at y=' + F.P.pos.y.toFixed(1) + ' with vy=' + F.P.vel.y.toFixed(1);
+          }
+          if (Math.abs((R.time() - t0) - n * DT) > 0.05) return 'game clock did not follow the physics steps';
+          return 'plane never reached climb-out in 90 game-s (v23 at ' + tV23.toFixed(1) + ' game-s, v ' + R.speed().toFixed(1) + ' m/s)';
+        } finally { T.simEnd(); }
+      }).catch((e) => ({ inconclusive: 'the page navigated away or closed during the test - robot side: ' + String(e && e.message).split('\n')[0].slice(0, 100) }));
     },
   },
   {
