@@ -1,0 +1,139 @@
+{
+ "game": "apexracer.html",
+ "name": "Exotic Racer Club",
+ "seconds": 60,
+ "gameSecondsReached": 21.4,
+ "wallSeconds": 1504.4,
+ "at": "2026-10-30T14:42:02.602Z",
+ "samples": 9296,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": true
+ },
+ "camera": {
+  "distance": {
+   "min": 6.63,
+   "mean": 13.37,
+   "max": 34.48
+  },
+  "height": {
+   "min": 2.06,
+   "mean": 3.79,
+   "max": 17.63
+  },
+  "aimErrorDeg": {
+   "min": 4.67,
+   "mean": 7.88,
+   "max": 13.56
+  },
+  "followLagMetresPerMps": -0.002
+ },
+ "playerOnScreenPct": 100,
+ "speed": {
+  "min": 0,
+  "mean": 39.26,
+  "max": 95.64
+ },
+ "metresMoved": 189.3,
+ "moments": [
+  {
+   "at": 1.5,
+   "words": "#rd/#"
+  },
+  {
+   "at": 2,
+   "words": "#nd/#"
+  },
+  {
+   "at": 2.1,
+   "words": "#st/#"
+  },
+  {
+   "at": 15,
+   "words": "NEAR MISS! +NITRO"
+  }
+ ],
+ "momentCount": 4,
+ "humanLog": {
+  "steer": 1388,
+  "brake": 0,
+  "nitro": 87,
+  "drift": 0,
+  "lapses": 535
+ },
+ "camDebug": [
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 78.4778237985744,
+   "aspect": 2.164102564102564,
+   "pos": [
+    -80.1,
+    2.5,
+    -174.9
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 1,
+ "scriptErrors": []
+}
