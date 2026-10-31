@@ -31,7 +31,7 @@ if (process.argv[1] && /scope\.mjs$/.test(process.argv[1])) {
     const slug = file.replace(/\.html$/, '');
     const fx = `tools/game-check/fixes/${slug}.mjs`;
     if (!game || !(game.parts || []).length || !fs.existsSync(fx) || !base) process.exit(0);
-    if (fs.existsSync(`tools/game-check/fixes/${slug}`)) process.exit(0);   // per-job test files in a folder: play all (their tags are not read here yet)
+    const fdir = `tools/game-check/fixes/${slug}`;   // VP Oct 31 2026: per-job test files in the folder are read too (Racer has one, so scoping never ran and every PR played all 58 tests incl. 20 two-minute place tests)
     const names = spawnSync('git', ['diff', '--name-only', base, 'HEAD'], { encoding: 'utf8' }).stdout.split('\n');
     // the page itself must be the only game code that changed (other code, kit, shared folders = play all)
     const other = names.filter(n => n && !/^(jobs|reviews|plans|looks|ideas|team|notes|checklists)\/|\.md$/.test(n) && n !== file && !n.startsWith('tools/game-check/fixes/'));
@@ -40,8 +40,9 @@ if (process.argv[1] && /scope\.mjs$/.test(process.argv[1])) {
     const ranges = [...d.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)].map(h => [+h[1], +h[1] + Math.max(0, (h[2] === undefined ? 1 : +h[2]) - 1)]);
     const touched = ranges.length ? partOfLines(game.parts, fs.readFileSync(file, 'utf8'), ranges).map(t => t.part) : [];
     if (ranges.length && !touched.length) process.exit(0);
-    const tests = (await import(pathToFileURL(path.resolve(fx)).href)).default || [];
-    const fd = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', fx], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
+    const tests = [...((await import(pathToFileURL(path.resolve(fx)).href)).default || [])];
+    if (fs.existsSync(fdir)) for (const f of fs.readdirSync(fdir).filter(x => x.endsWith('.mjs')).sort()) { const m = (await import(pathToFileURL(path.resolve(fdir, f)).href)).default; if (Array.isArray(m)) tests.push(...m); }
+    const fd = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', fx, ...(fs.existsSync(fdir) ? [fdir] : [])], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
     const changedIds = new Set([...fd.matchAll(/^\+.*\bid:\s*'([^']+)'/gm)].map(m => m[1]));
     const ids = scopeIds({ game, tests, touchedParts: ranges.length ? touched : (changedIds.size ? ['__tests_only__'] : []), changedIds });
     if (ids) console.log(ids.join(','));

@@ -1899,7 +1899,7 @@ export default [
       return true;
     } },
   {
-    id: 'play-places-census-01',
+    id: 'play-places-census-01', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: New York, Los Angeles, Chicago, Miami, Las Vegas: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -1943,7 +1943,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-02',
+    id: 'play-places-census-02', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Houston, Dallas, Austin, San Antonio, El Paso: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -1987,7 +1987,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-03',
+    id: 'play-places-census-03', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: San Francisco, Seattle, Atlanta, Detroit, Denver: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2031,7 +2031,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-04',
+    id: 'play-places-census-04', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Phoenix, Boston, Washington DC, Philadelphia, New Orleans: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2075,7 +2075,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-05',
+    id: 'play-places-census-05', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Nashville, Orlando, Tampa, San Diego, Portland: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2119,7 +2119,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-06',
+    id: 'play-places-census-06', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Minneapolis, Salt Lake City, Honolulu, Anchorage, Charlotte: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2163,7 +2163,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-07',
+    id: 'play-places-census-07', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Kansas City, St. Louis, Baltimore, Pittsburgh, Memphis: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2207,7 +2207,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-08',
+    id: 'play-places-census-08', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Oklahoma City, Toronto, Vancouver, Montreal, Mexico City: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2251,7 +2251,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-09',
+    id: 'play-places-census-09', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Cancún, Rio de Janeiro, São Paulo, Buenos Aires, Santiago: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2295,7 +2295,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-10',
+    id: 'play-places-census-10', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Lima, Medellín, London, Manchester, Edinburgh: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2339,7 +2339,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-11',
+    id: 'play-places-census-11', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Paris, Nice, Monte Carlo, Venice, Rome: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2383,7 +2383,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-12',
+    id: 'play-places-census-12', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Milan, Barcelona, Madrid, Lisbon, Berlin: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2427,7 +2427,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-13',
+    id: 'play-places-census-13', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Munich, Hamburg, Amsterdam, Rotterdam, Zurich: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2471,7 +2471,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-14',
+    id: 'play-places-census-14', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Oslo, Stockholm, Reykjavik, Athens, Istanbul: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2515,7 +2515,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-15',
+    id: 'play-places-census-15', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Dubai, Abu Dhabi, Doha, Cairo, Cape Town: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2559,7 +2559,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-16',
+    id: 'play-places-census-16', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Johannesburg, Marrakesh, Tokyo, Osaka, Kyoto: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2603,7 +2603,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-17',
+    id: 'play-places-census-17', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Yokohama, Seoul, Busan, Shanghai, Beijing: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2647,7 +2647,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-18',
+    id: 'play-places-census-18', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Shenzhen, Hong Kong, Singapore, Bangkok, Mumbai: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2691,7 +2691,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-19',
+    id: 'play-places-census-19', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Delhi, Bali, Manila, Sydney, Melbourne: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
@@ -2735,7 +2735,7 @@ export default [
     },
   },
   {
-    id: 'play-places-census-20',
+    id: 'play-places-census-20', parts: ['track'],
     ask: 'G-375 (owner): every race place loads and races - this group: Gold Coast, Auckland, Queenstown, Kuala Lumpur, Taipei: for each place the robot starts the race there, the car drives forward along the track until the lap counter advances (LAP 2/2), no script error, no black screen, venue and sky draw, one picture per place. A failing place is named in the red line.',
     async test(page, h) {
       const errs = [];
