@@ -127,3 +127,6 @@ Asked "what's a permanent fix that would help" and "what can help make things fa
 - Stacked PRs are how this fleet has tangled before (#2159 carries #2158's change; merge order matters). Open the base PR first, the next one only after it merges, unless the owner says otherwise.
 - Standard: "window 6 runs without waits or stumble" is declared by the OWNER after a real window 6 PR goes open-to-merge cleanly - never by a green badge.
 - Status: Window 6's own build (round 7) and the rim job wait on the owner's picture thumbs-up (direct route); the rim-look job waits behind it. All five other games stay frozen.
+
+## LOOK PICTURE RULE (VP, Oct 31 2026 - LOCKED, master #70)
+A pull request that changes how a game LOOKS (rims, wheels, wraps, paint, body, HUD, menu, camera, venue, lights...) must carry in its description three lines: `BEFORE: <picture link>` (what main looks like), `AFTER: <picture link>` (what it looks like now - the robot's own picture on the PR counts) and `FIXES: <the owner point or robot line it fixes>`. The robot warns until Nov 2 2026 1 AM Central and blocks after. Window 6: start putting the three lines in your next PR description now. Muse BUILD PRs only; TEST and Claude branches are exempt.

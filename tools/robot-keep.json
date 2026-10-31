@@ -1,325 +1,330 @@
 {
- "_about": "LOCKED robot rules (owner Oct 26 2026). asset-check fails any PR that removes one of these needles. Removing one on purpose = the owner says so, then edit this file in the same PR.",
- "keep": [
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "def fix_credits",
-   "rule": "credits are fixed by the robot"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "FIXED credit",
-   "rule": "credit fix must be proven by the tool's own output"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "API_ERROR",
-   "rule": "unreadable GitHub is an error, not an empty list"
-  },
-  {
-   "file": "tools/asset-check.mjs",
-   "needle": "--fix",
-   "rule": "asset-check can write the credit line"
-  },
-  {
-   "file": "tools/asset-check.mjs",
-   "needle": "creditLine",
-   "rule": "credit line builder"
-  },
-  {
-   "file": "tools/game-check/pick-culprit.sh",
-   "needle": "AUTO-UNDO",
-   "rule": "auto-undo finds the culprit merge"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "github.event_name == 'workflow_dispatch'",
-   "rule": "auto-undo also covers robot merges"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "pick-culprit.sh",
-   "rule": "auto-undo uses the culprit picker"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "apexracer.html@1of8",
-   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "apexracer.html@1of8",
-   "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "\"sha\": pr[\"head\"][\"sha\"]",
-   "rule": "the merge robot merges ONLY the commit it checked (window 13 finding F-1, Oct 26 2026)"
-  },
-  {
-   "file": "tools/game-check/fixes/apexracer.mjs",
-   "needle": "yellow, never blocks: run node tools/map-refresh.mjs",
-   "rule": "stale map line numbers are yellow, never red (Oct 27 2026)"
-  },
-  {
-   "file": "tools/map-refresh.mjs",
-   "needle": "export function defLine",
-   "rule": "map line numbers refresh themselves"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "undone on the first result",
-   "rule": "auto-undo never skips: a recheck that runs out of time acts on the first result (owner Oct 27 2026)"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "process.env.ONLY_TESTS",
-   "rule": "auto-undo replays only the broken play tests (seconds, not a whole game)"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "max-parallel: 5",
-   "rule": "a PR check uses at most 5 of the 20 free runners so main's check never sits queued"
-  },
-  {
-   "file": ".github/workflows/play-testers.yml",
-   "needle": "needs.night.outputs.go == '1'",
-   "rule": "play testers run only at night - a late GitHub start in the daytime skips"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "tools/game-check/start-check.py",
-   "rule": "robots start a PR check only if GitHub has not already started one for that commit (no cancelled pairs)"
-  },
-  {
-   "file": "tools/game-check/start-check.py",
-   "needle": "def existing_run",
-   "rule": "one shared start-check helper for every robot"
-  },
-  {
-   "file": "tools/game-check/status-comment.sh",
-   "needle": "not writing $STATE from a superseded run",
-   "rule": "a cancelled, superseded run never writes FAILED"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "report + auto-undo now come FIRST, videos are extra",
-   "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
-  },
-  {
-   "file": "tools/robot-auditor.py",
-   "needle": "proof_pr(",
-   "rule": "the auditor proves every changed robot file before it merges"
-  },
-  {
-   "file": "tools/robot-auditor.py",
-   "needle": "watch_pass(",
-   "rule": "the auditor measures every merge again after 10 branches and reverts a clearly worse one"
-  },
-  {
-   "file": "tools/robot-proof.py",
-   "needle": "def decide",
-   "rule": "the track-record decision"
-  },
-  {
-   "file": "tools/robot-proof.py",
-   "needle": "def proof_text",
-   "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "def resolve_binary",
-   "rule": "a binary conflict keeps the PR's file when its own check passed"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "pr_check_passed(pr)",
-   "rule": "a binary conflict is settled only for a PR the robot already passed"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "test-times.json",
-   "rule": "test parts are balanced by measured seconds, not round-robin (Racer NOT RUN cap, 04 Oct 27 2026)"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "load[b] += t.w",
-   "rule": "greedy balance of tests across TEST_PART robots"
-  },
-  {
-   "file": "tools/game-check/undo.mjs",
-   "needle": "if (crashed) { skipped.push(r.file); continue; }",
-   "rule": "a game the robot's own browser could not finish checking never counts as broken for AUTO-UNDO (VP Oct 27 2026, #1984/#2009)"
-  },
-  {
-   "file": "tools/game-check/undo.mjs",
-   "needle": "if (firstBroken && !firstBroken.has(r.file))",
-   "rule": "AUTO-UNDO needs the first result AND the re-check to agree a game broke (VP Oct 27 2026)"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "undo.mjs prev-results.json recheck-out/results.json first-broken.json",
-   "rule": "the re-check is judged together with the first result"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "export function partGuard",
-   "rule": "PART GUARD: a PR that changes a part its title does not name fails"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "PART GUARD",
-   "rule": "PART GUARD blocker text"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "BASE_SHA",
-   "rule": "PART GUARD reads the PR diff against its base"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "export function partGuard",
-   "rule": "PART GUARD: a PR must name ONE part and may not change another (all games)"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "export function partOfLines",
-   "rule": "PART GUARD reads which part every changed line sits in"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "PART GUARD: read this pull request's own diff",
-   "rule": "PART GUARD runs on every PR"
-  },
-  {
-   "file": "tools/game-check/games.json",
-   "needle": "\"partGuardFrom\"",
-   "rule": "games carry a parts list (guard is on for them)"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "partsExempt",
-   "rule": "a game page without a parts list is blocked (any 2D or 3D game)"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "CONFLICT MARKERS:",
-   "rule": "a PR with merge-conflict markers in any file fails the check"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "const withDeadline =",
-   "rule": "every pressStep and every extra picture has a hard time limit (master #9: 30 min lost in one picture phase)"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "did not finish in 2 min",
-   "rule": "an extra picture never takes more than 2 min"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "tools/game-check/scope.mjs",
-   "rule": "scoped checks (master 122): a PR plays only the tests its touched part can affect"
-  },
-  {
-   "file": "tools/game-check/check.mjs",
-   "needle": "PER-JOB TEST FILES",
-   "rule": "per-job play-test files in fixes/<game>/ are loaded (master 124)"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "resume-merge.mjs",
-   "rule": "tests the time cap left unplayed are resumed on their own (master 123)"
-  },
-  {
-   "file": "tools/game-check/quick-lint.mjs",
-   "needle": "export async function quickLint",
-   "rule": "the 2-second no-browser quick check exists (master #6)"
-  },
-  {
-   "file": "tools/quick-check.sh",
-   "needle": "quick-lint.mjs",
-   "rule": "quick-check runs the no-browser lint first"
-  },
-  {
-   "file": "apexracer.html",
-   "needle": "function simRace(",
-   "rule": "render-free race logic for the balance robot (master #11)"
-  },
-  {
-   "file": "tools/game-check/fixes/apexracer.mjs",
-   "needle": "play-balance-skill-matters",
-   "rule": "balance robot: beginner podium, skill pays, idle car does not win"
-  },
-  {
-   "file": "tools/game-check/pick-culprit.sh",
-   "needle": "a red test is the test's fault",
-   "rule": "auto-undo never blames a merge that touched only a game's tests/notes (owner Oct 28 2026)"
-  },
-  {
-   "file": "tools/game-check/pick-culprit.sh",
-   "needle": "that game's page (as of the merge) names the file",
-   "rule": "a shared model/kit file blames only games whose page names it (owner Oct 28 2026)"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "robot fault, NOT undoing",
-   "rule": "3+ games newly broken at once = robot fault, re-run, never undo (owner Oct 28 2026)"
-  },
-  {
-   "file": "tools/merge-robot.py",
-   "needle": "held for the hourly notes batch",
-   "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
-  },
-  {
-   "file": "tools/notes-batch.py",
-   "needle": "NOTES BATCH",
-   "rule": "one notes pull request an hour (owner Oct 28 2026)"
-  },
-  {
-   "file": "tools/game-check/undo.mjs",
-   "needle": "the robot's machine was too slow, not",
-   "rule": "3+ slowness-worded test fails in one game = overloaded robot, never an undo (owner Oct 28 2026, #2115)"
-  },
-  {
-   "file": ".github/workflows/game-check.yml",
-   "needle": "blame ONLY the games this merge itself touched",
-   "rule": "auto-undo names only games the culprit merge touched (owner Oct 28 2026)"
-  },
-  {
-   "file": "tools/game-check/progress-update.mjs",
-   "needle": "<!-- progress -->",
-   "rule": "the Check status comment shows live progress (finished / running / queued with minutes) - owner Oct 28 2026"
-  },
-  {
-   "file": ".github/workflows/game-check-pr.yml",
-   "needle": "progress line (this part finished)",
-   "rule": "every play part refreshes the progress line when it finishes"
-  },
-  {
-   "file": "tools/game-check/judge.mjs",
-   "needle": "universalLane",
-   "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
-  },
-  {
-   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
-   "needle": "never-rim-tyre-takes-rim-colour",
-   "rule": "a tyre must stay dark rubber - never the rim colour"
-  },
-  {
-   "file": "tools/game-check/scope.mjs",
-   "needle": "VP Oct 31 2026: per-job test files in the folder are read too",
-   "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
-  },
-  {
-   "file": "tools/game-check/fixes/apexracer/places.mjs",
-   "needle": "'play-place-census-' + String(PI)",
-   "rule": "race places are tested one per test (~24 s), tagged track - never 5 per test again (110 s vs the 60 s cap)"
-  },
-  {
-   "file": "tools/game-check/fixes/apexracer.mjs",
-   "needle": "id: 'play-race-starts', parts: ['track', 'ai'],",
-   "rule": "Racer tests that a rims/wheels/garage change cannot break are tagged by part, so a rims PR plays ~44 of 182 tests, not all - never untag them to 'be safe' (main's full check is the safety net)"
-  }
- ]
+  "_about": "LOCKED robot rules (owner Oct 26 2026). asset-check fails any PR that removes one of these needles. Removing one on purpose = the owner says so, then edit this file in the same PR.",
+  "keep": [
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "def fix_credits",
+      "rule": "credits are fixed by the robot"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "FIXED credit",
+      "rule": "credit fix must be proven by the tool's own output"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "API_ERROR",
+      "rule": "unreadable GitHub is an error, not an empty list"
+    },
+    {
+      "file": "tools/asset-check.mjs",
+      "needle": "--fix",
+      "rule": "asset-check can write the credit line"
+    },
+    {
+      "file": "tools/asset-check.mjs",
+      "needle": "creditLine",
+      "rule": "credit line builder"
+    },
+    {
+      "file": "tools/game-check/pick-culprit.sh",
+      "needle": "AUTO-UNDO",
+      "rule": "auto-undo finds the culprit merge"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "github.event_name == 'workflow_dispatch'",
+      "rule": "auto-undo also covers robot merges"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "pick-culprit.sh",
+      "rule": "auto-undo uses the culprit picker"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "apexracer.html@1of8",
+      "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "apexracer.html@1of8",
+      "rule": "Exotic Racer's play tests run on 8 robots side by side (master #9: 6 parts overran a 13-min slice; never put back into fewer parts)"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "\"sha\": pr[\"head\"][\"sha\"]",
+      "rule": "the merge robot merges ONLY the commit it checked (window 13 finding F-1, Oct 26 2026)"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer.mjs",
+      "needle": "yellow, never blocks: run node tools/map-refresh.mjs",
+      "rule": "stale map line numbers are yellow, never red (Oct 27 2026)"
+    },
+    {
+      "file": "tools/map-refresh.mjs",
+      "needle": "export function defLine",
+      "rule": "map line numbers refresh themselves"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "undone on the first result",
+      "rule": "auto-undo never skips: a recheck that runs out of time acts on the first result (owner Oct 27 2026)"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "process.env.ONLY_TESTS",
+      "rule": "auto-undo replays only the broken play tests (seconds, not a whole game)"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "max-parallel: 5",
+      "rule": "a PR check uses at most 5 of the 20 free runners so main's check never sits queued"
+    },
+    {
+      "file": ".github/workflows/play-testers.yml",
+      "needle": "needs.night.outputs.go == '1'",
+      "rule": "play testers run only at night - a late GitHub start in the daytime skips"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "tools/game-check/start-check.py",
+      "rule": "robots start a PR check only if GitHub has not already started one for that commit (no cancelled pairs)"
+    },
+    {
+      "file": "tools/game-check/start-check.py",
+      "needle": "def existing_run",
+      "rule": "one shared start-check helper for every robot"
+    },
+    {
+      "file": "tools/game-check/status-comment.sh",
+      "needle": "not writing $STATE from a superseded run",
+      "rule": "a cancelled, superseded run never writes FAILED"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "report + auto-undo now come FIRST, videos are extra",
+      "rule": "main's report and auto-undo run before the phone videos; videos have their own 8-min limit"
+    },
+    {
+      "file": "tools/robot-auditor.py",
+      "needle": "proof_pr(",
+      "rule": "the auditor proves every changed robot file before it merges"
+    },
+    {
+      "file": "tools/robot-auditor.py",
+      "needle": "watch_pass(",
+      "rule": "the auditor measures every merge again after 10 branches and reverts a clearly worse one"
+    },
+    {
+      "file": "tools/robot-proof.py",
+      "needle": "def decide",
+      "rule": "the track-record decision"
+    },
+    {
+      "file": "tools/robot-proof.py",
+      "needle": "def proof_text",
+      "rule": "the registered proofs (python, node, yaml, sh, known-faults expiry)"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "def resolve_binary",
+      "rule": "a binary conflict keeps the PR's file when its own check passed"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "pr_check_passed(pr)",
+      "rule": "a binary conflict is settled only for a PR the robot already passed"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "test-times.json",
+      "rule": "test parts are balanced by measured seconds, not round-robin (Racer NOT RUN cap, 04 Oct 27 2026)"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "load[b] += t.w",
+      "rule": "greedy balance of tests across TEST_PART robots"
+    },
+    {
+      "file": "tools/game-check/undo.mjs",
+      "needle": "if (crashed) { skipped.push(r.file); continue; }",
+      "rule": "a game the robot's own browser could not finish checking never counts as broken for AUTO-UNDO (VP Oct 27 2026, #1984/#2009)"
+    },
+    {
+      "file": "tools/game-check/undo.mjs",
+      "needle": "if (firstBroken && !firstBroken.has(r.file))",
+      "rule": "AUTO-UNDO needs the first result AND the re-check to agree a game broke (VP Oct 27 2026)"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "undo.mjs prev-results.json recheck-out/results.json first-broken.json",
+      "rule": "the re-check is judged together with the first result"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "export function partGuard",
+      "rule": "PART GUARD: a PR that changes a part its title does not name fails"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "PART GUARD",
+      "rule": "PART GUARD blocker text"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "BASE_SHA",
+      "rule": "PART GUARD reads the PR diff against its base"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "export function partGuard",
+      "rule": "PART GUARD: a PR must name ONE part and may not change another (all games)"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "export function partOfLines",
+      "rule": "PART GUARD reads which part every changed line sits in"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "PART GUARD: read this pull request's own diff",
+      "rule": "PART GUARD runs on every PR"
+    },
+    {
+      "file": "tools/game-check/games.json",
+      "needle": "\"partGuardFrom\"",
+      "rule": "games carry a parts list (guard is on for them)"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "partsExempt",
+      "rule": "a game page without a parts list is blocked (any 2D or 3D game)"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "CONFLICT MARKERS:",
+      "rule": "a PR with merge-conflict markers in any file fails the check"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "const withDeadline =",
+      "rule": "every pressStep and every extra picture has a hard time limit (master #9: 30 min lost in one picture phase)"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "did not finish in 2 min",
+      "rule": "an extra picture never takes more than 2 min"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "tools/game-check/scope.mjs",
+      "rule": "scoped checks (master 122): a PR plays only the tests its touched part can affect"
+    },
+    {
+      "file": "tools/game-check/check.mjs",
+      "needle": "PER-JOB TEST FILES",
+      "rule": "per-job play-test files in fixes/<game>/ are loaded (master 124)"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "resume-merge.mjs",
+      "rule": "tests the time cap left unplayed are resumed on their own (master 123)"
+    },
+    {
+      "file": "tools/game-check/quick-lint.mjs",
+      "needle": "export async function quickLint",
+      "rule": "the 2-second no-browser quick check exists (master #6)"
+    },
+    {
+      "file": "tools/quick-check.sh",
+      "needle": "quick-lint.mjs",
+      "rule": "quick-check runs the no-browser lint first"
+    },
+    {
+      "file": "apexracer.html",
+      "needle": "function simRace(",
+      "rule": "render-free race logic for the balance robot (master #11)"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer.mjs",
+      "needle": "play-balance-skill-matters",
+      "rule": "balance robot: beginner podium, skill pays, idle car does not win"
+    },
+    {
+      "file": "tools/game-check/pick-culprit.sh",
+      "needle": "a red test is the test's fault",
+      "rule": "auto-undo never blames a merge that touched only a game's tests/notes (owner Oct 28 2026)"
+    },
+    {
+      "file": "tools/game-check/pick-culprit.sh",
+      "needle": "that game's page (as of the merge) names the file",
+      "rule": "a shared model/kit file blames only games whose page names it (owner Oct 28 2026)"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "robot fault, NOT undoing",
+      "rule": "3+ games newly broken at once = robot fault, re-run, never undo (owner Oct 28 2026)"
+    },
+    {
+      "file": "tools/merge-robot.py",
+      "needle": "held for the hourly notes batch",
+      "rule": "notes-only needs/report/claim PRs wait for the hourly batch, 80 min at most (owner Oct 28 2026)"
+    },
+    {
+      "file": "tools/notes-batch.py",
+      "needle": "NOTES BATCH",
+      "rule": "one notes pull request an hour (owner Oct 28 2026)"
+    },
+    {
+      "file": "tools/game-check/undo.mjs",
+      "needle": "the robot's machine was too slow, not",
+      "rule": "3+ slowness-worded test fails in one game = overloaded robot, never an undo (owner Oct 28 2026, #2115)"
+    },
+    {
+      "file": ".github/workflows/game-check.yml",
+      "needle": "blame ONLY the games this merge itself touched",
+      "rule": "auto-undo names only games the culprit merge touched (owner Oct 28 2026)"
+    },
+    {
+      "file": "tools/game-check/progress-update.mjs",
+      "needle": "<!-- progress -->",
+      "rule": "the Check status comment shows live progress (finished / running / queued with minutes) - owner Oct 28 2026"
+    },
+    {
+      "file": ".github/workflows/game-check-pr.yml",
+      "needle": "progress line (this part finished)",
+      "rule": "every play part refreshes the progress line when it finishes"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "universalLane",
+      "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
+      "needle": "never-rim-tyre-takes-rim-colour",
+      "rule": "a tyre must stay dark rubber - never the rim colour"
+    },
+    {
+      "file": "tools/game-check/scope.mjs",
+      "needle": "VP Oct 31 2026: per-job test files in the folder are read too",
+      "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer/places.mjs",
+      "needle": "'play-place-census-' + String(PI)",
+      "rule": "race places are tested one per test (~24 s), tagged track - never 5 per test again (110 s vs the 60 s cap)"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer.mjs",
+      "needle": "id: 'play-race-starts', parts: ['track', 'ai'],",
+      "rule": "Racer tests that a rims/wheels/garage change cannot break are tagged by part, so a rims PR plays ~44 of 182 tests, not all - never untag them to 'be safe' (main's full check is the safety net)"
+    },
+    {
+      "file": "tools/game-check/judge.mjs",
+      "needle": "export function lookPictureRule(",
+      "rule": "LOOK PICTURE rule (master #70): a Muse BUILD PR that changes how a game looks must carry BEFORE:/AFTER: picture links + a FIXES: line in its description; warning until Nov 2 2026, then a block - never remove or loosen it"
+    }
+  ]
 }
