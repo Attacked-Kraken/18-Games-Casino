@@ -112,7 +112,7 @@ function censusTest(carId) {
 
 export default [
   {
-    id: 'play-menu-buttons-44px',
+    id: 'play-menu-buttons-44px', parts: ['menu'],
     ask: 'Menu buttons: Race Friends, Garage, Graphics and Sound are each at least 44 px tall on a sideways phone (844x390) and the menu still fits without scrolling',
     async test(page, h) {
       const old = page.viewportSize();
@@ -133,7 +133,7 @@ export default [
     }
   },
   {
-    id: 'play-race-starts',
+    id: 'play-race-starts', parts: ['track', 'ai'],
     ask: 'Race starts: starting a race creates the race, the player car and a full grid',
     async test(page, h) {
       return h.eval(() => {
@@ -154,7 +154,7 @@ export default [
     },
   },
   {
-    id: 'play-cars-drive-forward',
+    id: 'play-cars-drive-forward', parts: ['track', 'ai'],
     ask: 'Cars drive forward once the race runs',
     async test(page, h) {
       return h.eval(() => {
@@ -179,7 +179,7 @@ export default [
     },
   },
   {
-    id: 'play-lap-goes-up',
+    id: 'play-lap-goes-up', parts: ['track', 'ai'],
     ask: 'Lap counter goes up as cars complete laps',
     async test(page, h) {
       return h.eval(() => {
@@ -202,7 +202,7 @@ export default [
     },
   },
   {
-    id: 'play-race-finishes',
+    id: 'play-race-finishes', parts: ['track', 'ai'],
     ask: 'Race finishes with a results screen',
     async test(page, h) {
       return h.eval(() => {
@@ -266,7 +266,7 @@ export default [
     },
   },
   {
-    id: 'play-friend-code',
+    id: 'play-friend-code', parts: ['track', 'ai'],
     ask: "Friend code: entering a friend's RACE- code puts their car in your race",
     async test(page, h) {
       // a player saves a racer name first (Race Friends asks for one), then taps Race Friends
@@ -405,7 +405,7 @@ export default [
     },
   },
   {
-    id: 'play-race-start-fast',
+    id: 'play-race-start-fast', parts: ['track', 'ai'],
     ask: 'Lap choices show on the race sheet and the race starts promptly - twice in a row (staged start, cached environment)',
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
@@ -441,7 +441,7 @@ export default [
     },
   },
   {
-    id: 'play-menu-turntable',
+    id: 'play-menu-turntable', parts: ['menu'],
     ask: 'Home screen: slim left tile column (RACE, Garage, Race Friends, Graphics, Sound, Credits in that order), thin top stat bar with the coins, everything fits the sideways phone, and the car keeps turning on its turntable',
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; });
@@ -480,7 +480,7 @@ export default [
     },
   },
   {
-    id: 'play-traffic-glb',
+    id: 'play-traffic-glb', parts: ['ai', 'track'],
     ask: 'G-50: city traffic cars are real fetched 3D models, each in its own paint',
     async test(page, h) {
       const setup = await h.eval(() => {
@@ -526,7 +526,7 @@ export default [
     },
   },
   {
-    id: 'play-colliders-visible',
+    id: 'play-colliders-visible', parts: ['ai', 'track'],
     ask: 'G-145: every car that can be hit is drawn and visible - in the scene, real car size, at its road position, with its own bright headlights and no light bars',
     async test(page, h) {
       return h.eval(() => {
@@ -573,7 +573,7 @@ export default [
     },
   },
   {
-    id: 'play-ai-models',
+    id: 'play-ai-models', parts: ['ai', 'track'],
     ask: 'G-70: every AI racer and traffic car is a real fetched 3D model, never the blob mockup',
     async test(page, h) {
       return h.eval(() => {
@@ -604,7 +604,7 @@ export default [
     },
   },
   {
-    id: 'play-ai-pace',
+    id: 'play-ai-pace', parts: ['ai', 'track'],
     ask: 'G-270 fix 1 (owner, supersedes G-70/G-123): the player is far faster than the field - every AI best lap is at least 25% slower than the player best, so the player laps them',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; if (E) E.startRace(E.PLACES[0], 3); });
@@ -636,7 +636,7 @@ export default [
     },
   },
   {
-    id: 'tester-chk-r01',
+    id: 'tester-chk-r01', parts: ['track', 'ai'],
     cat: 'play',
     name: 'checklist R01: the race starts with a countdown and no car moves before GO',
     ask: 'G-300 checklist R01: with the gas held through the whole countdown, the player and every rival stay on their grid spots while R.t < 0 (before the fix the worst rival slid 4.15 m sideways at speed 0 - the AI lane logic walked it to its lane), and the player drives away once GO lands',
@@ -699,7 +699,7 @@ export default [
     },
   },
   {
-    id: 'play-steering-feel',
+    id: 'play-steering-feel', parts: ['track'],
     ask: 'G-76: better steering - the car answers the stick quickly, turns where it points without sliding wide, and never snaps',
     async test(page, h) {
       // start the race from here and wait until the build has fully finished before stepping it:
@@ -778,7 +778,7 @@ export default [
     },
   },
   {
-    id: 'play-checklist',
+    id: 'play-checklist', parts: ['track'],
     ask: 'G-270 self-audit: checklists/apexracer.md exists with at least 20 lint-shaped items, and every NUMBERS token appears word for word in its SOURCE file',
     async test(page, h) {
       const fs = await import('node:fs');
@@ -843,7 +843,7 @@ export default [
     },
   },
   {
-    id: 'play-reality-go',
+    id: 'play-reality-go', parts: ['track'],
     ask: 'G-137: the REALITY robot can drive the car - go(true) really moves the player (over 0.3 m between samples)',
     async test(page, h) {
       const out = await h.eval(() => {
@@ -866,7 +866,7 @@ export default [
     },
   },
   {
-    id: 'play-reality-time-speed',
+    id: 'play-reality-time-speed', parts: ['track'],
     ask: 'G-143: the REALITY hook reports game time and player speed - time() advances in race seconds and speed() reads the car in m/s',
     async test(page, h) {
       const out = await h.eval(() => {
@@ -1082,7 +1082,7 @@ export default [
     },
   },
   {
-    id: 'play-glow-on-surface',
+    id: 'play-glow-on-surface', parts: ['body'],
     ask: 'Lamp glow sits on the measured body surface, lamp-sized - no floating white dots (owner, G-163 follow-up)',
     async test(page, h) {
       const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
@@ -1153,7 +1153,7 @@ export default [
     },
   },
   {
-    id: 'play-cars-visible',
+    id: 'play-cars-visible', parts: ['ai', 'track'],
     ask: 'Owner Oct 22 2026: every computer car SHOWS in every city - a real model and a paint bright enough to read at dusk/night, never near-black',
     async test(page, h) {
       const rows = await h.eval(async () => {
@@ -1180,7 +1180,7 @@ export default [
     },
   },
   {
-    id: 'play-mountains-clear',
+    id: 'play-mountains-clear', parts: ['track'],
     ask: 'Owner Oct 22 2026: mountains out of the road - no tall scenery (mountains, volcano, mesas) comes within 25 m of the road',
     async test(page, h) {
       const res = await h.eval(async () => {
@@ -1207,7 +1207,7 @@ export default [
     },
   },
   {
-    id: 'play-night-no-blob',
+    id: 'play-night-no-blob', parts: ['ai', 'track'],
     ask: 'G-206: at night no car blows out to a pink/white blob - the headlight pool stays low-energy on every car, pools still exist, and the ?test=night owner link is in the game',
     async test(page, h) {
       const src = fs.readFileSync(path.join(repoRoot, 'apexracer.html'), 'utf8');
@@ -1238,7 +1238,7 @@ export default [
     },
   },
   {
-    id: 'play-cars-grounded',
+    id: 'play-cars-grounded', parts: ['ai', 'track'],
     ask: 'G-207 (owner): every computer car in every city sits ON the road for the whole race - the skinned Tokii model shared one skeleton across all its cars and rendered sunk under the road (invisible cars); the pose is baked at load now, so no car may contain a skinned mesh or ride below the road while driving',
     async test(page, h) {
       const nights = [];
@@ -1936,7 +1936,7 @@ export default [
     },
   },
   {
-    id: "play-menu-save-button-size",
+    id: "play-menu-save-button-size", parts: ['menu'],
     ask: "Is the racer-name Save button (#nmB) at least 44x44 px on the menu?",
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
@@ -2014,7 +2014,7 @@ export default [
   },
 
   {
-    id: "play-music-sync-start",
+    id: "play-music-sync-start", parts: ['sound'],
     ask: "Owner Oct 26 2026: 'music static in and out' - the three race music stems each started the moment their own decode landed, leaving them offset against each other; the speed crossfade smeared the offset into static. The stems must start together at one context time",
     async test(page, h) {
       const fs = await import('node:fs');
@@ -2087,7 +2087,7 @@ export default [
     },
   },
   {
-    id: 'play-menu-save-button-onscreen',
+    id: 'play-menu-save-button-onscreen', parts: ['menu'],
     ask: 'Is the menu Save button (#nmB) at least 44 px and fully on screen?',
     async test(page, h) {
       await h.eval(() => { if (window.__erc) window.__erc.toMenu(); return true; }).catch(() => {});
