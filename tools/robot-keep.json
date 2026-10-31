@@ -295,6 +295,11 @@
    "file": ".github/workflows/game-check-pr.yml",
    "needle": "progress line (this part finished)",
    "rule": "every play part refreshes the progress line when it finishes"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "universalLane",
+   "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
   }
  ]
 }
