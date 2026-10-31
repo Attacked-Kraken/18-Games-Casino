@@ -315,9 +315,9 @@
    "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
   },
   {
-   "file": "tools/game-check/fixes/apexracer.mjs",
-   "needle": "id: 'play-places-census-01', parts: ['track']",
-   "rule": "the 20 two-minute race-place tests only run for PRs that touch the track part"
+   "file": "tools/game-check/fixes/apexracer/places.mjs",
+   "needle": "'play-place-census-' + String(PI)",
+   "rule": "race places are tested one per test (~24 s), tagged track - never 5 per test again (110 s vs the 60 s cap)"
   }
  ]
 }
