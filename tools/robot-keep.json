@@ -325,6 +325,11 @@
       "file": "tools/game-check/judge.mjs",
       "needle": "export function lookPictureRule(",
       "rule": "LOOK PICTURE rule (master #70): a Muse BUILD PR that changes how a game looks must carry BEFORE:/AFTER: picture links + a FIXES: line in its description; warning until Nov 2 2026, then a block - never remove or loosen it"
+    },
+    {
+      "file": "tools/game-check/fixes/apexracer/garage-tabs.mjs",
+      "needle": "id: 'play-garage-tab-'",
+      "rule": "Racer garage census runs one tab per test (17 tests ~9 s each, tagged by part), never as one 100 s sweep"
     }
   ]
 }
