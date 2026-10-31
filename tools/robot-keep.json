@@ -302,6 +302,14 @@
    "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
   },
   {
+   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
+   "needle": "never-rim-tyre-takes-rim-colour",
+   "rule": "a tyre must stay dark rubber - never the rim colour"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
+   "needle": "never-rim-colour-ignored",
+   "rule": "every rim style follows the Rim Color tab",
    "file": "tools/game-check/scope.mjs",
    "needle": "VP Oct 31 2026: per-job test files in the folder are read too",
    "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
