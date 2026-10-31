@@ -307,9 +307,6 @@
    "rule": "a tyre must stay dark rubber - never the rim colour"
   },
   {
-   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
-   "needle": "never-rim-colour-ignored",
-   "rule": "every rim style follows the Rim Color tab",
    "file": "tools/game-check/scope.mjs",
    "needle": "VP Oct 31 2026: per-job test files in the folder are read too",
    "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
@@ -318,6 +315,11 @@
    "file": "tools/game-check/fixes/apexracer/places.mjs",
    "needle": "'play-place-census-' + String(PI)",
    "rule": "race places are tested one per test (~24 s), tagged track - never 5 per test again (110 s vs the 60 s cap)"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer.mjs",
+   "needle": "id: 'play-race-starts', parts: ['track', 'ai'],",
+   "rule": "Racer tests that a rims/wheels/garage change cannot break are tagged by part, so a rims PR plays ~44 of 182 tests, not all - never untag them to 'be safe' (main's full check is the safety net)"
   }
  ]
 }
