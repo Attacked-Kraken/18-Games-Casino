@@ -1,0 +1,381 @@
+{
+ "when": "Oct 31, 2026, 3:42 AM",
+ "sha": "47aa83e",
+ "results": [
+  {
+   "file": "apexf1.html",
+   "name": "Apex F1 Racing",
+   "start": [
+    "#quickBtn",
+    "#toTeamBtn",
+    "#startBtn",
+    "#qualiSkip",
+    "#raceBtn"
+   ],
+   "problems": [
+    {
+     "what": "gas: slow - under 15 fps several times"
+    }
+   ],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 3
+    },
+    "masher": {
+     "motion": 50,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 2
+    },
+    "swiper": {
+     "motion": 80,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 2
+    }
+   },
+   "errors": [],
+   "end": "img/apexf1-gas-end.jpg",
+   "status": "ISSUES"
+  },
+  {
+   "file": "apexflight.html",
+   "name": "Apex Flight",
+   "start": [
+    "text=FREE FLIGHT",
+    "#thrUp",
+    "#thrUp",
+    "#thrUp",
+    "#thrUp"
+   ],
+   "problems": [
+    {
+     "what": "gas: playing it changed the screen only 20% of the time (controls may not respond)",
+     "img": "img/apexflight-gas-dull.jpg"
+    }
+   ],
+   "styles": {
+    "gas": {
+     "motion": 20,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 2
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "swiper": {
+     "motion": 63,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    }
+   },
+   "errors": [],
+   "end": "img/apexflight-gas-end.jpg",
+   "status": "ISSUES"
+  },
+  {
+   "file": "apexmonstertruck.html",
+   "name": "Apex Monster Truck",
+   "start": [
+    "#playBtn"
+   ],
+   "problems": [
+    {
+     "what": "masher: the robot couldn't take a picture (the game may have frozen the phone)"
+    }
+   ],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 67,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexmonstertruck-gas-end.jpg",
+   "status": "ISSUES"
+  },
+  {
+   "file": "apexracer.html",
+   "name": "Exotic Racer Club",
+   "start": [
+    "#mRace",
+    "#plist .pl",
+    "#shGo"
+   ],
+   "problems": [
+    {
+     "what": "swiper: the robot couldn't take a picture (the game may have frozen the phone)"
+    },
+    {
+     "what": "swiper: playing it changed the screen only 0% of the time (controls may not respond)",
+     "img": ""
+    }
+   ],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 0,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexracer-gas-end.jpg",
+   "status": "ISSUES"
+  },
+  {
+   "file": "apexbaseball.html",
+   "name": "Apex Baseball",
+   "start": [
+    "#startBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 71,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 2
+    }
+   },
+   "errors": [],
+   "end": "img/apexbaseball-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexhockey.html",
+   "name": "Apex Ice Hockey",
+   "start": [
+    "#playBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexhockey-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexmoto.html",
+   "name": "Apex Moto",
+   "start": [
+    "#raceBtn"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 67,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexmoto-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexpaperplane.html",
+   "name": "Paper Plane",
+   "start": [
+    "∞ Endless"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 96,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 73,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexpaperplane-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexreefdash.html",
+   "name": "Reef Dash",
+   "start": [
+    "∞ Endless"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 1,
+     "againOk": 1,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 3,
+     "againOk": 3,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 5,
+     "againOk": 5,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "firstOverS": 23,
+   "end": "img/apexreefdash-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apexsoccer.html",
+   "name": "Apex Soccer",
+   "start": [
+    "#btnStart"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 0
+    }
+   },
+   "errors": [],
+   "end": "img/apexsoccer-gas-end.jpg",
+   "status": "CLEAN"
+  },
+  {
+   "file": "apextrackfield.html",
+   "name": "Apex Track & Field",
+   "start": [
+    "#bFree",
+    "#grid button",
+    "#bCardStart"
+   ],
+   "problems": [],
+   "styles": {
+    "gas": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "masher": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    },
+    "swiper": {
+     "motion": 100,
+     "overs": 0,
+     "againOk": 0,
+     "lowFps": 1
+    }
+   },
+   "errors": [],
+   "end": "img/apextrackfield-gas-end.jpg",
+   "status": "CLEAN"
+  }
+ ]
+}

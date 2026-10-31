@@ -1,0 +1,76 @@
+[
+ {
+  "file": "apexracer.html",
+  "name": "Exotic Racer Club",
+  "start": [
+   "#mRace",
+   "#plist .pl",
+   "#shGo"
+  ],
+  "problems": [
+   {
+    "what": "swiper: the robot couldn't take a picture (the game may have frozen the phone)"
+   },
+   {
+    "what": "swiper: playing it changed the screen only 0% of the time (controls may not respond)",
+    "img": ""
+   }
+  ],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "masher": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   },
+   "swiper": {
+    "motion": 0,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 0
+   }
+  },
+  "errors": [],
+  "end": "img/apexracer-gas-end.jpg",
+  "status": "ISSUES"
+ },
+ {
+  "file": "apextrackfield.html",
+  "name": "Apex Track & Field",
+  "start": [
+   "#bFree",
+   "#grid button",
+   "#bCardStart"
+  ],
+  "problems": [],
+  "styles": {
+   "gas": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "masher": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   },
+   "swiper": {
+    "motion": 100,
+    "overs": 0,
+    "againOk": 0,
+    "lowFps": 1
+   }
+  },
+  "errors": [],
+  "end": "img/apextrackfield-gas-end.jpg",
+  "status": "CLEAN"
+ }
+]
