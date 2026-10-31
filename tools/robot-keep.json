@@ -300,6 +300,16 @@
    "file": "tools/game-check/judge.mjs",
    "needle": "universalLane",
    "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
+   "needle": "never-rim-tyre-takes-rim-colour",
+   "rule": "a tyre must stay dark rubber - never the rim colour"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer/rimlook.mjs",
+   "needle": "never-rim-colour-ignored",
+   "rule": "every rim style follows the Rim Color tab"
   }
  ]
 }
