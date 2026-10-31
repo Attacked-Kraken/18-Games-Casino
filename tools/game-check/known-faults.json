@@ -1,30 +1,37 @@
 {
-  "_what": "Owner Oct 21 2026 7:08 PM, item 2: a red line that comes from a KNOWN ROBOT FAULT never blocks a builder's job - the robot side (VP) owns it. Each entry: match = a regular expression tested against the robot's FAIL line (and the game it is for, or any), why = the fault in plain words, since = date, until = optional date the entry expires. check.mjs turns a matching FAIL into a yellow 'KNOWN ROBOT FAULT' line, so judge.mjs, the Mac's proof and the merge gate all ignore it. A Muse that thinks a red line is the robot's fault writes HELP-VP: ... 'robot fault' and the VP adds the line here (robot/ or vp- branch, PR).",
-  "faults": [
-    {
-      "game": "apexhockey.html",
-      "match": "no defender took the puck|play-defender-takes-puck",
-      "why": "play-defender-takes-puck: the test now stages the rush from fixed spots (no random faceoff), but it still fails on main e49fcdc (Oct 26: 'no defender took the puck within 20 game-seconds') and 1 of 3 local runs (Oct 27: 'the away rush scored'). Left: the poke-check is Math.random (apexhockey.html 'Math.random()<chance'), so the robot cannot yet tell a weak defence (game, window 2) from bad luck - next step: seed Math.random in the test and replay 5x. Note: play- tests print a YELLOW 'Play test failing' line, so this entry never hides a red line. Renewed Oct 27 2026 (VP).",
-      "since": "2026-10-21",
-      "until": "2026-10-31"
-    },
-    {
-      "game": "apextrackfield.html",
-      "match": "REALITY: wheels/feet/skates SINK into the ground",
-      "why": "REAL GAME BUG, not the robot (VP Oct 27 2026): measuring EVERY skinned vertex of the sprinter (not the robot's 500-vertex sample) in a local 100m run, the lowest sole point dips to -0.048 m (4.8 cm under the track) in the run cycle (-0.039 / -0.044 in other frames); main's checks read -0.04 to -0.10 m. The robot's posed-sole reading is right (it can only read HIGHER than the full scan). The bar (20% of readings under -5 cm) flips because the real dip sits right at 5 cm with only 24 readings. Needs a Track & Field builder job (window 4): lift the run-cycle sole so no posed foot vertex goes under y=0. Renewed 3 days so the job can land.",
-      "until": "2026-10-31",
-      "since": "2026-10-24"
-    }
-  ],
-  "_fixed_robot_side": [
-    "aborted downloads (ERR_ABORTED / page reload) - retried once, only a real 4xx is a missing file - PR #929",
-    "ground contact - the foot's LOWEST point, game time not the robot's clock - PR #929; no toe bones = 0.08 m sole assumed - PR #967",
-    "sprint vs walking - first steps of a sprint from a standstill are running steps; optional gait() hook - PR #953",
-    "the strikeout / count test (tester-count-resets-each-batter) - a test that waits for a random event and never sees it is INCONCLUSIVE (retried once, then yellow), never 'NOT done yet' - PR #953",
-    "play-defender-takes-puck had no 'ask' text, so its red line read 'undefined' - fixed in the same PR as this list",
-    "Track & Field upright menu read un-rotated (G-105, G-122, 'Held upright ... fills the WHOLE screen'): the robot's own 2-s evidence screenshot timed out at 4 s while Chromium's capture was still pending, and a play test's setViewportSize(390x844) during it was lost - the page stayed 844x390 for the rest of the game. check.mjs now lets the capture finish (30 s) and never resizes during one (frame timer held while upright + 3 s) - VP Oct 27 2026",
-    "Hockey play-icing-called / play-goal-restarts-centre / play-offside-called: staged with the AI frozen and (goal, offside) now wait for the PLAY state instead of a fixed 2.5 s sleep; all pass on main e49fcdc - VP Oct 27 2026",
-    "Flight tester-challenge-can-slow-to-band: 30 s WALL budget -> 30 game-s (rAF sum, 0.05 clamp like the game loop); tester-postscore-crash: touchdown staged from (1,3,-120) like never-g-243-p2 (was 11 game-s = ~33 s wall, over the 30 s cap); never-g-243-p1 already judged in game time (no wall cap left); tester-recheck-g117-controls no longer exists - VP Oct 27 2026"
-  ],
-  "_owner": "The robot side (the VP Claude) owns every flaky test here - never the builder. Each entry expires on 'until'; by then the test is fixed (staged, not random) or the entry is renewed with a reason."
+ "_what": "Owner Oct 21 2026 7:08 PM, item 2: a red line that comes from a KNOWN ROBOT FAULT never blocks a builder's job - the robot side (VP) owns it. Each entry: match = a regular expression tested against the robot's FAIL line (and the game it is for, or any), why = the fault in plain words, since = date, until = optional date the entry expires. check.mjs turns a matching FAIL into a yellow 'KNOWN ROBOT FAULT' line, so judge.mjs, the Mac's proof and the merge gate all ignore it. A Muse that thinks a red line is the robot's fault writes HELP-VP: ... 'robot fault' and the VP adds the line here (robot/ or vp- branch, PR).",
+ "faults": [
+  {
+   "game": "apexhockey.html",
+   "match": "no defender took the puck|play-defender-takes-puck",
+   "why": "play-defender-takes-puck: the test now stages the rush from fixed spots (no random faceoff), but it still fails on main e49fcdc (Oct 26: 'no defender took the puck within 20 game-seconds') and 1 of 3 local runs (Oct 27: 'the away rush scored'). Left: the poke-check is Math.random (apexhockey.html 'Math.random()<chance'), so the robot cannot yet tell a weak defence (game, window 2) from bad luck - next step: seed Math.random in the test and replay 5x. Note: play- tests print a YELLOW 'Play test failing' line, so this entry never hides a red line. Renewed Oct 27 2026 (VP).",
+   "since": "2026-10-21",
+   "until": "2026-10-31"
+  },
+  {
+   "game": "apextrackfield.html",
+   "match": "REALITY: wheels/feet/skates SINK into the ground",
+   "why": "REAL GAME BUG, not the robot (VP Oct 27 2026): measuring EVERY skinned vertex of the sprinter (not the robot's 500-vertex sample) in a local 100m run, the lowest sole point dips to -0.048 m (4.8 cm under the track) in the run cycle (-0.039 / -0.044 in other frames); main's checks read -0.04 to -0.10 m. The robot's posed-sole reading is right (it can only read HIGHER than the full scan). The bar (20% of readings under -5 cm) flips because the real dip sits right at 5 cm with only 24 readings. Needs a Track & Field builder job (window 4): lift the run-cycle sole so no posed foot vertex goes under y=0. Renewed 3 days so the job can land.",
+   "until": "2026-10-31",
+   "since": "2026-10-24"
+  },
+  {
+   "game": "apexracer.html",
+   "match": "never-rim-tyre-takes-rim-colour|never-rim-colour-ignored|turns the rim colour instead|Rim Color tab is ignored",
+   "why": "NEW rim LOOK tests (Oct 31 2026): today's main fails them for real (Turbine tyre turns the rim colour, Deep Dish and Mesh ignore Rim Color). Yellow until Nov 7 so no PR is blocked while window 6 fixes it; then red.",
+   "since": "2026-10-31",
+   "until": "2026-11-07"
+  }
+ ],
+ "_fixed_robot_side": [
+  "aborted downloads (ERR_ABORTED / page reload) - retried once, only a real 4xx is a missing file - PR #929",
+  "ground contact - the foot's LOWEST point, game time not the robot's clock - PR #929; no toe bones = 0.08 m sole assumed - PR #967",
+  "sprint vs walking - first steps of a sprint from a standstill are running steps; optional gait() hook - PR #953",
+  "the strikeout / count test (tester-count-resets-each-batter) - a test that waits for a random event and never sees it is INCONCLUSIVE (retried once, then yellow), never 'NOT done yet' - PR #953",
+  "play-defender-takes-puck had no 'ask' text, so its red line read 'undefined' - fixed in the same PR as this list",
+  "Track & Field upright menu read un-rotated (G-105, G-122, 'Held upright ... fills the WHOLE screen'): the robot's own 2-s evidence screenshot timed out at 4 s while Chromium's capture was still pending, and a play test's setViewportSize(390x844) during it was lost - the page stayed 844x390 for the rest of the game. check.mjs now lets the capture finish (30 s) and never resizes during one (frame timer held while upright + 3 s) - VP Oct 27 2026",
+  "Hockey play-icing-called / play-goal-restarts-centre / play-offside-called: staged with the AI frozen and (goal, offside) now wait for the PLAY state instead of a fixed 2.5 s sleep; all pass on main e49fcdc - VP Oct 27 2026",
+  "Flight tester-challenge-can-slow-to-band: 30 s WALL budget -> 30 game-s (rAF sum, 0.05 clamp like the game loop); tester-postscore-crash: touchdown staged from (1,3,-120) like never-g-243-p2 (was 11 game-s = ~33 s wall, over the 30 s cap); never-g-243-p1 already judged in game time (no wall cap left); tester-recheck-g117-controls no longer exists - VP Oct 27 2026"
+ ],
+ "_owner": "The robot side (the VP Claude) owns every flaky test here - never the builder. Each entry expires on 'until'; by then the test is fixed (staged, not random) or the entry is renewed with a reason."
 }
