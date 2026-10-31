@@ -53,7 +53,10 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const games = [...new Set(changed.filter(isGame))];
     const fixes = changed.filter(isFix);
     const sharedF = changed.filter(isShared);
-    const other = changed.filter(f => !NOTES.test(f) && !isGame(f) && !isFix(f) && !isShared(f));
+    // UNIVERSAL LANE (owner Oct 31 2026 10:10 AM, window 6's #2154 sat blocked): a Muse may file a correction to the
+    // shared rules list from ANY branch, but only as a PR that changes UNIVERSAL.md and nothing else, titled "UNIVERSAL: ...".
+    const universalLane = changed.length > 0 && changed.every(f => f === 'UNIVERSAL.md') && /^\s*UNIVERSAL:/i.test(prTitle);
+    const other = changed.filter(f => !NOTES.test(f) && !isGame(f) && !isFix(f) && !isShared(f) && !(universalLane && f === 'UNIVERSAL.md'));
     const guard = [];
     if (games.length > 1) guard.push(`FILE GUARD: this PR changes ${games.length} games (${games.join(', ')}) - ONE game per PR`);
     const fixGames = [...new Set(fixes.map(fixGameOf))];
