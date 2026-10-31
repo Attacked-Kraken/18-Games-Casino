@@ -151,6 +151,23 @@ export function partGuard(game, touched, title = '', branch = '') {
   return bad.map(t => `PART GUARD: ${game.file} - your job is PART: ${named}, but this pull request also changes the "${t.part}" part: ${t.where.join(', ')}. Undo that change (or put it in its own job) - one part per job so a fix cannot break another part.`);
 }
 
+// LOOK PICTURE RULE (master #70, owner Oct 25 2026 "every owner-visible part must be checked by looking"): a BUILD pull request that changes how a game LOOKS
+// must carry, in its description, a BEFORE: and an AFTER: picture (an image link or ![](..)) and a FIXES: line naming the owner point it fixes. Warning until
+// LOOK_PIC_FROM, a block after. Muse BUILD PRs only (vp-/claude-/03-05/robot/test branches and TEST titles are exempt, like the part guard).
+function prBody() { try { return process.env.PR_BODY || JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).pull_request.body || ''; } catch (e) { return ''; } }   // the PR description comes from the run's own event file - no workflow change needed
+export const LOOK_PIC_FROM = '2026-11-02T06:00:00Z';
+const LOOK_PART_RE = /rim|wheel|wrap|paint|body|hud|skin|look|colou?r|model|camera|stadium|park|venue|menu|glow|light/i;
+export function lookPictureRule(game, touched, title = '', branch = '', body = '') {
+  if (!game || /^(vp-|claude-|0[345]-|robot\/|test\/)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
+  const looks = (touched || []).filter(t => (game.lookParts || []).length ? game.lookParts.includes(t.part) : LOOK_PART_RE.test(t.part));
+  if (!looks.length) return [];
+  const pic = (label) => new RegExp('(^|\\n)\\s*[*_>-]*\\s*' + label + '\\s*[*_]*\\s*:?[^\\n]*(https?://\\S+|!\\[[^\\]]*\\]\\([^)]+\\))', 'i');
+  const miss = [];
+  if (!pic('BEFORE').test(body || '')) miss.push('a "BEFORE:" line with the picture link (what it looked like on main)');
+  if (!pic('AFTER').test(body || '')) miss.push('an "AFTER:" line with the picture link (what it looks like now)');
+  if (!/(^|\n)\s*[*_>-]*\s*FIXES\s*[*_]*\s*:\s*\S[^\n]{5,}/i.test(body || '')) miss.push('a "FIXES:" line naming the owner point or robot line this fixes');
+  return miss.length ? [`LOOK PICTURE: ${game.file} - this pull request changes how the game looks (${looks.map(t => t.part).join(', ')}) but its description lacks ${miss.join(' and ')}. Put these lines in the PR description. The robot's own picture on this PR can be the AFTER.`] : [];
+}
 if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
   const [resFile, baseFile, changedFile, outDir] = process.argv.slice(2);
   let data = {}; try { data = JSON.parse(fs.readFileSync(resFile || 'game-check-out/results.json', 'utf8')); } catch (e) {}
@@ -203,6 +220,10 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
       const bl = partGuard(g, touched, process.env.PR_TITLE || '', process.env.PR_BRANCH || '');
       console.log(`Part guard ${f}: touched ${touched.map(t => t.part).join(', ') || 'no listed part'} - ${bl.length ? 'BLOCKED' : 'ok'}`);
       for (const x of bl) blockers.push(x);
+      const lp = lookPictureRule(g, touched, process.env.PR_TITLE || '', process.env.PR_BRANCH || '', prBody());
+      const lpOn = process.env.PR_CREATED && Date.parse(process.env.PR_CREATED) >= Date.parse(LOOK_PIC_FROM);
+      console.log(`Look picture ${f}: ${lp.length ? (lpOn ? 'BLOCKED' : 'warning only until ' + LOOK_PIC_FROM) : 'ok'}`);
+      for (const x of lp) { if (lpOn) blockers.push(x); else console.log('::warning title=Look picture (blocks from Nov 2)::' + x.slice(0, 300)); }
     }
   } catch (e) { console.log('::warning title=part-guard::' + String(e).slice(0, 200)); }
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
