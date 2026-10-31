@@ -130,3 +130,5 @@ the job board; if another window has it, stop and say so. The approver hands eve
 window already working on it. New owner decisions arrive as FACTORY NEWS and are listed in NEWS.md.
 
 **Oct 21 2026 (owner): read STUDIO-STANDARD.md §9 - one fix per job, shared controls (kit/controls.js), new games split into small files, shared folders change only in their own job. LATER.md = what waits until the 6 games are done.**
+
+**Filing a correction to UNIVERSAL.md (Muses):** open a pull request from any branch whose title starts `UNIVERSAL:` and whose ONLY changed file is `UNIVERSAL.md`. The robot lets that through; anything else in the PR makes the file guard fail.

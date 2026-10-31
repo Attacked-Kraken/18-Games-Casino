@@ -413,3 +413,21 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-26 by the Sketchfab fetch robot; rebuilt (recentred, re-assembled) by window 6
 - used in: (not in a game yet - the game that uses it must name "ZenuuxOfficiel" on its credits screen)
 - changes: recentred on the axle and re-assembled into one clean wheel; re-filed 2026-10-28 after the auto-undo robot reverted PR #2036
+
+## ASSET: models/fetched/stance-wheel-r13x10-6c8a9d.glb
+- title: Stance Wheel R13x10"
+- maker: Terllok
+- source: https://sketchfab.com/3d-models/stance-wheel-r13x10-6c8a9dc226b64454a3af8dc37f7359ec
+- license: CC-BY 4.0
+- downloaded: 2026-10-31 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Terllok" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/car-wheel-45ae01.glb
+- title: Car Wheel
+- maker: zerk.dim7
+- source: https://sketchfab.com/3d-models/car-wheel-45ae0119d174405fac1acbce3e76dac7
+- license: CC-BY 4.0
+- downloaded: 2026-10-31 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "zerk.dim7" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
