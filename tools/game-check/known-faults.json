@@ -21,6 +21,13 @@
    "why": "NEW rim LOOK tests (Oct 31 2026): today's main fails them for real (Turbine tyre turns the rim colour, Deep Dish and Mesh ignore Rim Color). Yellow until Nov 7 so no PR is blocked while window 6 fixes it; then red.",
    "since": "2026-10-31",
    "until": "2026-11-07"
+  },
+  {
+   "game": "apexracer.html",
+   "match": "(never-wrap-adds-no-meshes[a-z-]*|play-garage-every-option-changes|play-garage-no-rebuy)[^\\n]*took over 60 s",
+   "why": "ROBOT SIDE (Oct 31 2026): the Racer wrap/garage tests each build the garage car several times and the robot's 60 s cap now cuts them off on main too (main results show the same 'took over 60 s'); it is a time cap, not a game result. Real fix = split the tests or raise the cap (queued for the robot), until then yellow.",
+   "since": "2026-10-31",
+   "until": "2026-11-04"
   }
  ],
  "_fixed_robot_side": [
