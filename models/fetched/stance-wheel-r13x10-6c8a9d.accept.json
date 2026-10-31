@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/stance-wheel-r13x10-6c8a9d.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 17212,
+  "size": [
+   0.722,
+   0.722,
+   0.289
+  ],
+  "mainSize": [
+   0.722,
+   0.722,
+   0.289
+  ],
+  "stray": 1,
+  "bytes": 792984
+ },
+ "pictures": [
+  {
+   "pic": "stance-wheel-r13x10-6c8a9d-front.jpg",
+   "pct": 15.9
+  },
+  {
+   "pic": "stance-wheel-r13x10-6c8a9d-side.jpg",
+   "pct": 11.8
+  },
+  {
+   "pic": "stance-wheel-r13x10-6c8a9d-back.jpg",
+   "pct": 16
+  },
+  {
+   "pic": "stance-wheel-r13x10-6c8a9d-top.jpg",
+   "pct": 14
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-31T03:37:23.974Z"
+}

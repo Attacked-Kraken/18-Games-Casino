@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/car-wheel-45ae01.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 2,
+  "tris": 91848,
+  "size": [
+   14.444,
+   12.874,
+   13.227
+  ],
+  "mainSize": [
+   14.444,
+   11.674,
+   13.227
+  ],
+  "stray": 1,
+  "bytes": 4014572
+ },
+ "pictures": [
+  {
+   "pic": "car-wheel-45ae01-front.jpg",
+   "pct": 41.3
+  },
+  {
+   "pic": "car-wheel-45ae01-side.jpg",
+   "pct": 34.6
+  },
+  {
+   "pic": "car-wheel-45ae01-back.jpg",
+   "pct": 41.9
+  },
+  {
+   "pic": "car-wheel-45ae01-top.jpg",
+   "pct": 61.2
+  }
+ ],
+ "asked": null,
+ "at": "2026-10-31T03:37:23.477Z"
+}
