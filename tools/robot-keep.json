@@ -300,6 +300,16 @@
    "file": "tools/game-check/judge.mjs",
    "needle": "universalLane",
    "rule": "a Muse may file UNIVERSAL.md alone with a 'UNIVERSAL:' title from any branch"
+  },
+  {
+   "file": "tools/game-check/scope.mjs",
+   "needle": "VP Oct 31 2026: per-job test files in the folder are read too",
+   "rule": "scoped checks read the per-job folder tests too, so a Racer PR does not replay all 58 tests"
+  },
+  {
+   "file": "tools/game-check/fixes/apexracer.mjs",
+   "needle": "id: 'play-places-census-01', parts: ['track']",
+   "rule": "the 20 two-minute race-place tests only run for PRs that touch the track part"
   }
  ]
 }
