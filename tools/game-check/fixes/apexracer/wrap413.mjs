@@ -2,7 +2,7 @@
    bodyMat (applyRealCarWrap), never as added meshes. Proof: for every one of the
    12 wraps the garage car's mesh count and bounding box equal the No-wrap build,
    and every real wrap leaves its texture on the body material. */
-const WRAPS12 = ['none', 'circuit', 'dragon', 'shardcamo', 'graffiti'];
+const WRAPS12 = ['none', 'circuit', 'dragon', 'shardcamo', 'graffiti', 'apexlg'];
 async function install(page, h) {
   await h.eval((src) => { window.__ww = eval('(' + src + ')'); return true; }, (() => {
     const E = window.__erc;
@@ -95,5 +95,5 @@ const wrapTest = (id, list) => ({
 });
 export default [
   wrapTest('never-wrap-adds-no-meshes', ['circuit', 'dragon']),
-  wrapTest('never-wrap-adds-no-meshes-b', ['shardcamo', 'graffiti']),
+  wrapTest('never-wrap-adds-no-meshes-b', ['shardcamo', 'graffiti', 'apexlg']),
 ];
