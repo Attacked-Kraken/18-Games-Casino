@@ -2,13 +2,13 @@
    bodyMat (applyRealCarWrap), never as added meshes. Proof: for every one of the
    12 wraps the garage car's mesh count and bounding box equal the No-wrap build,
    and every real wrap leaves its texture on the body material. */
-const WRAPS12 = ['none', 'name', 'stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'apex', 'camo', 'split', 'neon'];
+const WRAPS12 = ['none', 'circuit', 'dragon', 'shardcamo', 'graffiti'];
 async function install(page, h) {
   await h.eval((src) => { window.__ww = eval('(' + src + ')'); return true; }, (() => {
     const E = window.__erc;
     const root = window.__reality && window.__reality.player;
     if (!root || !E) return null;
-    let meshes = 0, bodyMap = false, bodyTex = 0;
+    let meshes = 0, bodyMap = false, bodyTex = 0, plain = 0;
     const box = { min: [1e9, 1e9, 1e9], max: [-1e9, -1e9, -1e9] };
     const v = { x: 0, y: 0, z: 0 };
     root.updateWorldMatrix(true, true);
@@ -18,6 +18,7 @@ async function install(page, h) {
       meshes++;
       if (q.material && q.material.map && q.material.userData && q.material.userData.body) { bodyMap = true; bodyTex = q.material.map.id; }
       const g = q.geometry; if (!g || !g.attributes.position) return;
+      if (q.material && q.material.map && q.material.userData && q.material.userData.body && g.attributes.uv) { const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) if (uv.getX(i) < 0.01 && uv.getY(i) < 0.01) plain++; } /* vertices sent to the plain-paint patch = the wheels */
       const p = g.attributes.position, mw = q.matrixWorld.elements;
       const pt = (i) => {
         const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
@@ -26,7 +27,7 @@ async function install(page, h) {
       };
       for (let i = 0; i < p.count; i += 7) { const w = pt(i); for (let a = 0; a < 3; a++) { if (w[a] < box.min[a]) box.min[a] = w[a]; if (w[a] > box.max[a]) box.max[a] = w[a]; } }
     });
-    return { meshes, box, bodyMap, bodyTex };
+    return { meshes, box, bodyMap, bodyTex, plain };
   }).toString()).catch(() => false);
 }
 let lastWhy = '';
@@ -82,6 +83,7 @@ const wrapTest = (id, list) => ({
         for (let a = 0; a < 3; a++) {
           if (Math.abs(c.box.min[a] - base.box.min[a]) > 0.01 || Math.abs(c.box.max[a] - base.box.max[a]) > 0.01) return 'wrap ' + w + ': bounding box differs from No wrap on axis ' + a;
         }
+        if (c.bodyMap && c.plain < 300) return 'wrap ' + w + ': only ' + c.plain + ' body vertices sit on the plain-paint patch - the wheels are not excluded, so the wrap paints the rims';
         if (!c.bodyMap) return 'wrap ' + w + ': no texture on the body material - the wrap is invisible';
         seen[w] = c.bodyTex;
         await h.shot('wrap-' + w);
@@ -92,7 +94,6 @@ const wrapTest = (id, list) => ({
     },
 });
 export default [
-  wrapTest('never-wrap-adds-no-meshes', ['name', 'stripes', 'flames', 'shards']),
-  wrapTest('never-wrap-adds-no-meshes-b', ['bolt', 'checker', 'race', 'apex']),
-  wrapTest('never-wrap-adds-no-meshes-c', ['camo', 'split', 'neon']),
+  wrapTest('never-wrap-adds-no-meshes', ['circuit', 'dragon']),
+  wrapTest('never-wrap-adds-no-meshes-b', ['shardcamo', 'graffiti']),
 ];

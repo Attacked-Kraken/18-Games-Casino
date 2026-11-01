@@ -5,7 +5,7 @@
    scene (no pictures), they cannot hang the robot. */
 const SETUP = async (st, rimCol) => {
   const E = window.__erc, wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const cfg = { ...(E.S.cars.goblin || {}), rim: st, rimCol, cal: '#e01b2b', wrap: 'name', fin: 'metal', aero: 0, wheel: 0 };
+  const cfg = { ...(E.S.cars.goblin || {}), rim: st, rimCol, cal: '#e01b2b', wrap: 'shardcamo', fin: 'metal', aero: 0, wheel: 0 };
   E.S.cars.goblin = cfg; E.S.cur = 'goblin';
   const prev = window.__reality && window.__reality.player;
   try { E.openGarage(); } catch (e) { return null; }

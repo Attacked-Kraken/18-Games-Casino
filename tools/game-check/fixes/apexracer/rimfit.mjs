@@ -48,7 +48,7 @@ async function buildCar(page, h, rim, extra) {
     const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
     const diag = { mode: E.G && E.G.mode, cur: E.S && E.S.cur, threw: '' };
     try {
-      const cfg = { ...(E.S.cars.goblin || {}), rim: arg.rim, rimCol: '#ff00ff', cal: '#e01b2b', wrap: 'name', fin: 'metal', aero: 0, wheel: 0, ...(arg.extra || {}) };
+      const cfg = { ...(E.S.cars.goblin || {}), rim: arg.rim, rimCol: '#ff00ff', cal: '#e01b2b', wrap: 'shardcamo', fin: 'metal', aero: 0, wheel: 0, ...(arg.extra || {}) };
       E.S.cars.goblin = cfg; E.S.cur = 'goblin';
       try { if (E.R && E.toMenu) E.toMenu(); } catch (e) { diag.threw = 'toMenu: ' + String(e).slice(0, 90); }
       for (let i = 0; i < 60 && E.G.mode === 'loading'; i++) await wait(200);
