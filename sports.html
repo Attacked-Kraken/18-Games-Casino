@@ -328,7 +328,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     if (row.classList.contains('live')) return;
     remember(row);
     var f = document.createElement('iframe');
-    f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=' + (window.__hubStamp || (window.__hubStamp = Date.now()));   /* dev=1: Game Development tools (career skip) - never in the Arcade */ f.title = row._game.name;
+    f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=' + (window.__hubStamp || (window.__hubStamp = Math.floor(Date.now() / 300000)));   /* dev=1: Game Development tools (career skip) - never in the Arcade */ f.title = row._game.name;
     f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock; microphone');
     f.setAttribute('allowfullscreen', '');
     f.addEventListener('load', function () {
@@ -403,7 +403,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     /* owner 2026-10-22: scrolling got stuck - every box that passed 60% in view built a whole 3D game in the
        middle of the swipe. Now a game starts only after the box has stayed in view and the finger has stopped for
        SETTLE_MS; a box that scrolls away first never starts. */
-    var SETTLE_MS = 900, lastScroll = 0, wait = new WeakMap();
+    var SETTLE_MS = 300, lastScroll = 0, wait = new WeakMap();
     ['scroll', 'touchmove'].forEach(function (ev) { window.addEventListener(ev, function () { lastScroll = Date.now(); }, { passive: true }); });
     function tryStart(row) {
       wait.delete(row);
@@ -411,7 +411,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
       var r = row.querySelector('.stage').getBoundingClientRect(), vh = window.innerHeight || 700;
       var vis = Math.min(r.bottom, vh) - Math.max(r.top, 0);
       if (vis < 0.6 * r.height) return;                                /* scrolled away meanwhile */
-      if (Date.now() - lastScroll < SETTLE_MS) { wait.set(row, setTimeout(function () { tryStart(row); }, 300)); return; }   /* still moving */
+      if (Date.now() - lastScroll < SETTLE_MS) { wait.set(row, setTimeout(function () { tryStart(row); }, 120)); return; }   /* still moving */
       start(row);
     }
     var seen = new IntersectionObserver(function (entries) {
