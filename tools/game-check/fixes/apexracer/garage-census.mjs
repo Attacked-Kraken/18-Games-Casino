@@ -10,8 +10,8 @@ const SETUP = async (args) => {
   E.openGarage();
   return true;
 };
-const LOOK_TABS = ['paint', 'wrap', 'fin', 'rim', 'rimCol', 'cal', 'glow', 'kit', 'aero', 'tint'];
-const STAT_TABS = ['eng', 'turbo', 'nos', 'tire', 'wheel'];
+const LOOK_TABS = ['paint', 'wrap', 'fin', 'rim', 'rimCol', 'glow', 'aero'];
+const STAT_TABS = ['eng', 'turbo', 'nos'];
 async function openTab(h, tab) {
   return h.eval(async (t) => { const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     const b = document.querySelector('#gtabs .gt[data-t="' + t + '"]'); if (!b) return -1; b.click(); await wait(250);
@@ -66,7 +66,7 @@ export default [
     async test(page, h) {
       const ok = await h.eval(SETUP); if (ok !== true) return String(ok);
       const bad = [];
-      for (const tab of ['paint', 'wrap', 'fin', 'rim', 'rimCol', 'cal', 'glow']) {
+      for (const tab of ['paint', 'wrap', 'fin', 'rim', 'rimCol', 'glow']) {
         const n = await openTab(h, tab); if (n < 3) continue;
         const cash = () => h.eval(() => window.__erc.S.cash);
         await tapOption(h, 1, 2);            // buy option 2

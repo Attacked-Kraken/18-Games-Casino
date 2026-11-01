@@ -1589,11 +1589,13 @@ function makeGlbCar(id, cfg, o = {}) {
           if (rm && cfg.rimKeep === 0 && rm.test(q.material.name || '')) { q.material.map = null; q.material.color.set(cfg.rimCol || '#c9cdd6'); q.material.metalness = 0.85; q.material.roughness = 0.3; q.material.needsUpdate = true; q.userData.rimPaint = 1; }
           const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
         if (best) { tilt.add(wrap); rimDone = true; rimWrap = wrap;
+          /* OWNER Nov 1 5:24 PM ('make sure car is not floating'): measure the fitted wheel and put its lowest point exactly where the stock tyre touched the ground */
+          tilt.updateWorldMatrix(true, true); { const wb0 = new THREE.Box3().setFromObject(wrap).applyMatrix4(inv); wrap.position.y += (hb.y - hb.h / 2) - wb0.min.y; } wrap.userData.wheelPick = 1;
           /* OWNER Nov 1 5:03 PM ('add a proper inner wheel well plastic cover piece'): a moulded plastic liner - an arch shell that hugs the tyre from the inboard wall to the fender face (never past it), and an inner wall; dark matte plastic */
           const tR = hb.h * rimScale * WF / 2, cy = hb.y + (WF - 1) * hb.h * rimScale / 2, sg = Math.sign(hb.z);
           const linMat = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.92, metalness: 0.02, side: THREE.DoubleSide }); ownMats.push(linMat);
-          const zIn = hb.z - sg * hb.w * 0.80, zOut = hb.z + sg * hb.w * 0.42; /* inboard wall .. just inside the fender face */
-          const arch = new THREE.Mesh(new THREE.CylinderGeometry(tR * 1.05, tR * 1.05, Math.abs(zOut - zIn), 40, 1, true, Math.PI * 0.42, Math.PI * 1.16), linMat);
+          const zIn = hb.z - sg * hb.w * 0.80, zOut = hb.z - sg * hb.w * 0.05; /* OWNER Nov 1 5:23 PM: the liner stays in the inner half of the wheel well - its edge was showing outside the fenders */
+          const arch = new THREE.Mesh(new THREE.CylinderGeometry(tR * 1.02, tR * 1.02, Math.abs(zOut - zIn), 40, 1, true, Math.PI * 0.42, Math.PI * 1.16), linMat);
           arch.rotation.x = Math.PI / 2; arch.rotation.y = 0; arch.rotation.z = 0; arch.position.set(hb.x, cy, (zIn + zOut) / 2); arch.userData.acc = 'liner'; tilt.add(arch);
           const wall = new THREE.Mesh(new THREE.CircleGeometry(tR * 1.05, 40, -Math.PI * 0.08, Math.PI * 1.16), linMat); wall.position.set(hb.x, cy, zIn); wall.userData.acc = 'liner'; tilt.add(wall);
           const lip = new THREE.Mesh(new THREE.TorusGeometry(tR * 1.05, 0.012, 6, 40, Math.PI * 1.16), linMat); lip.rotation.z = -Math.PI * 0.08; lip.position.set(hb.x, cy, zOut); lip.userData.acc = 'liner'; tilt.add(lip); }
@@ -1635,6 +1637,11 @@ function makeGlbCar(id, cfg, o = {}) {
       tilt.add(kitG); }
     if (cfg.susp) model.position.y += [0, 0.1, -0.03, 0][clamp(cfg.susp, 0, 3)] || 0; /* Titan suspension: the stance shows it */
   } catch (e) { /* accessories must never break the car */ }
+  try { /* OWNER Nov 1 5:24 PM ('make sure car is not floating'): GROUND SNAP - measured on the finished car: the lowest point of the picked wheels is put at y = 0 */
+    const picks = []; tilt.traverse((q) => { if (q.userData && q.userData.wheelPick) picks.push(q); });
+    if (picks.length) { root.updateMatrixWorld(true); let lo = Infinity; for (const w of picks) { const bb = new THREE.Box3().setFromObject(w); if (bb.min.y < lo) lo = bb.min.y; }
+      if (isFinite(lo) && Math.abs(lo) > 0.002) { tilt.position.y -= lo; } }
+  } catch (e) {}
 const car = { root, yaw, tilt, wheels: [], paint: bodyMat, flames: [], P, glow: accGlow, roll: 0, spinA: 0, glbKey: key, pool,
     setBrake(b) { lampMatR.color.copy(hdr('#ff2418', b ? 7.5 : 3.2)); glowMatR.opacity = b ? 1 : 0.6; for (const s of glowR) s.scale.set(b ? 1.35 : 1, b ? 1.35 : 1, 1); }, /* G-163: brake lights flare while braking */
     dispose() { root.traverse((q) => { if (q.isMesh && q.geometry) q.geometry.dispose(); }); ownMats.forEach((m) => m.dispose()); } };
@@ -2757,7 +2764,7 @@ const UP = { eng: { lv: ['Stock', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'], p
 const GLOWS = ['', '#19e6ff', '#ff2bd6', '#8a5cff', '#7dff6a', '#ff3b30', '#ffd23a', '#ffffff', '#2438ff'];
 const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a'];
 const CALS = ['#e01b2b', '#ffd23a', '#19e6ff', '#16d07a', '#ff2bd6', '#ff8a00', '#2a2c30', '#f2f2f2'];
-const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['tire', 'Tires'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', '💡 Underglow'], ['tint', '🕶 Tint'], ['cal', 'Calipers']];
+const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Dust Cover Color'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['glow', '💡 Underglow']]; /* OWNER Nov 1 5:29 PM: Wheel Size, Tires, Body Kit, Tint, Calipers tabs removed; Rim Color renamed */
 const VIEW = { wrap: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };
 function openGarage() { preloadNewWheels(); clearPrev(); G.mode = 'garage'; G.gSel = S.cur; gOrb.auto = 1; setGarageCar(S.cur, S.cars[S.cur]); show('garage'); renderGarage(); }
 const gCfg = () => S.cars[G.gSel] || defCfg(G.gSel);
