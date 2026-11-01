@@ -75,6 +75,7 @@ const wrapTest = (id, list) => ({
       if (base.bodyMap) return 'No wrap already carries a body texture map';
       const seen = {};
       for (const w of list) {
+        await h.eval(() => { window.__wrapDoor = null; return true; }).catch(() => false);
         if (!await buildWrap(page, h, w)) return 'garage car did not build for wrap ' + w + ' [' + lastWhy + ']';
         await tag();
         const c = await h.eval(() => window.__ww()).catch(() => null);
@@ -85,6 +86,7 @@ const wrapTest = (id, list) => ({
         }
         if (c.bodyMap && c.plain < 300) return 'wrap ' + w + ': only ' + c.plain + ' body vertices sit on the plain-paint patch - the wheels are not excluded, so the wrap paints the rims';
         if (!c.bodyMap) return 'wrap ' + w + ': no texture on the body material - the wrap is invisible';
+        if (w === 'apexlg') { const D = await h.eval(() => window.__wrapDoor || null).catch(() => null); if (!D || D.white < 15) return 'wrap apexlg: only ' + (D ? D.white : 0) + ' of ' + (D ? D.total : 0) + ' side-facing body points land on the APEX ARCADE letters - the name is not on the car\'s doors'; }
         seen[w] = c.bodyTex;
         await h.shot('wrap-' + w);
       }
