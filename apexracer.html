@@ -402,7 +402,7 @@ const NEW_WHEELS = {
   9: { name: 'Tuner 5-Spoke', url: 'models/fetched/tuner-car-wheel-free-02c9dc.glb', mats: /^disk$/i },
   10: { name: 'Sci-Fi Pod', url: 'models/fetched/sci-fi-wheel-7b9867.glb', mats: null } };
 const newTpl = {};
-const WHEEL_HAS_TYRE = { 6: 1, 7: 1, 8: 1, 9: 0, 10: 0 };
+const WHEEL_HAS_TYRE = { 6: 1, 7: 1, 8: 1, 9: 0, 10: 1 }; /* OWNER Nov 1 3:45 PM: the Sci-Fi Pod is a whole wheel (white ring = its tyre) - full size, 3D, poking out of the body */
 const WHEEL_FIT = (st) => (WHEEL_HAS_TYRE[st] ? 1 : 0.84);
 const WHEEL_WIDE = 1.32; /* OWNER Nov 1 3:21 PM 'make rim + tire wider': picks are 32% wider than the car's own tyre */
 const WHEEL_URLS = { 6: NEW_WHEELS[6].url, 7: NEW_WHEELS[7].url, 8: NEW_WHEELS[8].url, 9: NEW_WHEELS[9].url, 10: NEW_WHEELS[10].url, 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
@@ -2899,7 +2899,7 @@ function updateGarage(dt, now) {
     gu.floorMat.color.set(menu ? 0x232733 : 0x8c929c); gu.wallMat.color.set(menu ? 0x11131d : 0xb4bac4);
     GS.background.set(menu ? 0x07080f : 0xa9b0bc); GS.fog.color.set(menu ? 0x07080f : 0xa9b0bc); }
   if (gOrb.tt && !gOrb.drag) { const [th, ph, d] = gOrb.tt; let dth = th - (gOrb.th % TAU); if (dth > Math.PI) dth -= TAU; if (dth < -Math.PI) dth += TAU; gOrb.th += dth * Math.min(1, dt * 3); gOrb.ph += (ph - gOrb.ph) * Math.min(1, dt * 3); gOrb.d += (d - gOrb.d) * Math.min(1, dt * 3); }
-  const tall = false, port = innerWidth < innerHeight, d = gOrb.d * (port ? 1.25 : 1) * (tall ? 1.22 : 1), ty = (G.mode === 'menu' ? (port ? 0.2 : 0.2) : (port ? -0.35 : -1.1)) + (tall ? 0.45 : 0);
+  const tall = false, port = innerWidth < innerHeight, d = gOrb.d * 1.25 * (tall ? 1.22 : 1), ty = (G.mode === 'menu' ? 0.2 : -0.35) /* OWNER Nov 1 3:45 PM: landscape keeps the same pulled-back garage view as portrait */ + (tall ? 0.45 : 0);
   gcam.position.set(Math.sin(gOrb.th) * Math.cos(gOrb.ph) * d, 0.55 + Math.sin(gOrb.ph) * d, Math.cos(gOrb.th) * Math.cos(gOrb.ph) * d);
   if (menu) { _gt.set(0, ty, 0); _gf.copy(_gt).sub(gcam.position).normalize(); _gr.crossVectors(_gf, _UP).normalize(); _gt.addScaledVector(_gr, -0.30 * d * Math.tan(gcam.fov * Math.PI / 360) * gcam.aspect); gcam.lookAt(_gt); }
   else gcam.lookAt(0, ty, 0);
