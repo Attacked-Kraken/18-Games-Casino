@@ -175,7 +175,7 @@ export default [
         if (!tab) return 'no Rims tab';
         tab.click(); await wait(600);
         let prevSig = '';
-        for (let style = 0; style <= 5; style++) {
+        for (const style of [0]) {   /* owner Nov 1 2026: only Stock + the 5 picked rims are in the tab; the old styles 1-5 have no card now (the picked ones are checked by rimnew.mjs) */
           const card = document.querySelector('[data-rim="' + style + '"]');
           if (!card) return 'no rim card for style ' + style;
           card.click(); await wait(1400);
