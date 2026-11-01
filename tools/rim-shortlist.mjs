@@ -6,7 +6,7 @@ const seen = new Set(), out = [];
 fs.mkdirSync('out', { recursive: true });
 for (const q of Q) {
   const r = await fetch(`${API}/search?type=models&q=${encodeURIComponent(q)}&downloadable=true&sort_by=-likeCount&count=30`).then(x => x.json()).catch(e => ({ err: String(e) }));
-  console.log(q, '->', (r.results || []).length, r.err || '');
+  const m0 = (r.results || [])[0]; console.log('::notice title=search::' + q + ' -> ' + (r.results || []).length + ' ' + (r.err || '') + ' ' + (r.detail || '') + ' first=' + JSON.stringify(m0 ? { n: m0.name, l: m0.license, f: m0.faceCount, d: m0.isDownloadable } : null));
   let n = 0;
   for (const m of r.results || []) {
     if (seen.has(m.uid) || n >= 4) continue;
