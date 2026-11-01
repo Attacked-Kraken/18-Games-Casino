@@ -1502,7 +1502,7 @@ function makeGlbCar(id, cfg, o = {}) {
     const latheMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.85, roughness: 0.3 });
     ownMats.push(latheMat);
     /* G-345 fix 2 (owner): a bigger wheel size lifts the car - the body rises by the extra radius and the hubs rise with it, so the bigger wheels stay grounded */
-    const rimScale = [1, 1.15, 1.3][clamp(cfg.wheel || 0, 0, 2)];
+    const rimScale = 1; /* OWNER Nov 1 5:41 PM 'wheels are too big': the Wheel Size tab is gone (5:29 PM) but a bought size kept scaling the picks up to 1.3x on top of their own 1.18x - size now comes only from the pick */
     if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
     /* OWNER Nov 1 2026 ("the stock rims have to disappear when trying other rims on"): a fetched rim+tyre swap is seen through the car's OWN wheel - its stock rim triangles sit inside the hub's cylinder (inside the tyre's inner radius, between the tyre walls). Cut those triangles out of the (cloned) meshes so only the new rim shows; tyres and the body are untouched. */
     window.__stockHidden = 0;
