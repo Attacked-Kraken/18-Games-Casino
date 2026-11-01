@@ -1,7 +1,7 @@
 // Rim + tyre shortlist (owner Nov 1 2026: "bring me new ones to pick rims and tire combos"). Search only - downloads nothing but small pictures.
 import fs from 'fs';
 const API = 'https://api.sketchfab.com/v3', Q = ['wheel tire', 'car wheel with tyre', 'alloy wheel tire', 'racing wheel tire', 'sports car wheel rim tyre', 'supercar wheel', 'drift wheel', 'forged wheel tire', 'rim and tire', 'multi spoke rim tyre'];
-const lic = (l) => { const s = ((l && (l.slug || l.label)) || '').toLowerCase(); return /cc0|public domain/.test(s) ? 'CC0' : (s === 'by' || /attribution 4|attribution 3|^cc by( |$)/.test(s) ? 'CC-BY' : ''); };
+const lic = (l) => { const s = ((l && (l.slug || l.label)) || '').toLowerCase().trim(); return /cc0|public domain|zero/.test(s) ? 'CC0' : (s === 'by' || s === 'cc attribution') ? 'CC-BY' : ''; };
 const seen = new Set(), out = [];
 fs.mkdirSync('out', { recursive: true });
 for (const q of Q) {
@@ -11,6 +11,7 @@ for (const q of Q) {
   for (const m of r.results || []) {
     if (seen.has(m.uid) || n >= 4) continue;
     const L = lic(m.license), f = m.faceCount || 0;
+    if (!/wheel|rim|tire|tyre/i.test(m.name) || /steering|bike|bicycle|motorcycle|truck|tractor|forklift|cart\b/i.test(m.name)) continue;
     if (!L || f < 3000 || f > 150000) continue;
     const t = (m.thumbnails && m.thumbnails.images || []).slice().sort((a, b) => Math.abs(a.width - 500) - Math.abs(b.width - 500))[0];
     if (!t) continue;
