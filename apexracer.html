@@ -229,6 +229,10 @@
       <div style="margin-top:6px"><b>"Car Rim"</b> by pira.midale, CC-BY 4.0, via Sketchfab. Shrunk for phones. Used for the garage rim wheels.</div>
       <div style="margin-top:6px"><b>"Fifteen52 Inspired rally rim"</b> by JPepe, CC-BY 4.0, via Sketchfab. Shrunk for phones. Used for the garage rim wheels.</div>
       <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"(FREE) Wheels SDC - Pure Performance"</b> by SDC PERFORMANCE™️, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/free-wheels-sdc-pure-performance-eebae2592aa94ffabc886694bb6d096c" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"Sci-Fi Wheel"</b> by gorzi, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"Tuner car wheel FREE"</b> by NLM, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"car tyre game ready p zero"</b> by Iftekhar.Tushar, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
     </div>
     <div class="row"><button class="neo alt" id="crBack">Back</button></div>
   </div>
@@ -389,9 +393,22 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-ins
 /* OWNER rim-fit (Oct 28 2026): if a fetched wheel's model failed to load at boot, retry it when a car
    actually asks for it - and when it lands, rebuild the garage car so the real wheel swaps in.
    A fetched wheel is NEVER replaced by a coloured stand-in. */
-const WHEEL_URLS = { 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
+/* owner Nov 1 2026: six more wheel+tyre swaps picked from the catalogue (#3 #4 #5 #11 #12; #2 Lamborghini SC20 is still being fetched). Each is one piece (rim + tyre) fetched by the robot, loaded when first needed.
+   mats = names of the materials that are the RIM only, so Rim Color can recolour them; null = the model is one textured piece and keeps its stock look. */
+const NEW_WHEELS = {
+  6: { name: 'Pure Sport', url: 'models/fetched/free-wheels-sdc-pure-performance-eebae2.glb', mats: /jante/i },
+  7: { name: 'Carbon Disc', url: 'models/fetched/free-wheels-rst-carbon-sdc-72d881.glb', mats: /jante/i },
+  8: { name: 'Pirelli Spoke', url: 'models/fetched/car-tyre-game-ready-p-zero-49aa3e.glb', mats: null },
+  9: { name: 'Tuner 5-Spoke', url: 'models/fetched/tuner-car-wheel-free-02c9dc.glb', mats: /^disk$/i },
+  10: { name: 'Sci-Fi Pod', url: 'models/fetched/sci-fi-wheel-7b9867.glb', mats: null } };
+const newTpl = {};
+const WHEEL_URLS = { 6: NEW_WHEELS[6].url, 7: NEW_WHEELS[7].url, 8: NEW_WHEELS[8].url, 9: NEW_WHEELS[9].url, 10: NEW_WHEELS[10].url, 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
 const wheelRetry = {};
 function bakeWheelTpl(style, sc) {
+  if (style >= 6) { const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
+    const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims)); sc.position.set(-ctr.x, -ctr.y, -ctr.z);
+    const hold = new THREE.Group(); hold.add(sc); if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
+    const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1; hold.scale.setScalar(1 / diaRaw); newTpl[style] = { hold, widN: dims[axle] / diaRaw }; return; }
   if (style === 4) { const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; return; }
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
@@ -744,7 +761,9 @@ function cabGeo(k) {
   smoothN(g, P.tb ? 40 : 30); return (GC['c' + k] = g);
 }
 const RIMS = ['Classic 5', 'Split 10', 'Turbine', 'Deep Dish', 'Mesh', 'Monoblock'];
+const RIMS_ALL = RIMS.concat([6, 7, 8, 9, 10].map((k) => NEW_WHEELS[k].name)); /* the garage Rims tab lists these; the showcase (RIMS) stays the original six */
 function rimGeo(st, rr, tw) {
+  if (st > 5) st = 2; /* the new fetched wheels have no procedural twin: cars without real hubs use the turbine barrel */
   const key = 'r' + st + '_' + rr.toFixed(3); if (GC[key]) return GC[key];
   const L = [], z0 = st === 3 ? tw * 0.12 : tw * 0.34;
   L.push([new THREE.CylinderGeometry(rr, rr, tw * 0.86, 28, 1, true), M4(0, 0, 0, Math.PI / 2)]);
@@ -1278,6 +1297,7 @@ function addStripeWrap(tilt, bodyMat, glassMat, col) {
    multiplayer all work unchanged. Model: Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0. */
 /* G-364: the rim builder lives at module level so the garage rim showcase (?test=rims) builds its wheels with the exact same code as the cars - one builder, no drift */
 function procRim(style, fr, w, latheMat) {
+  if (style > 5) style = 2;
   const grp = new THREE.Group();
   const deep = style === 3, mono = style === 5;
   const prof = mono ? [[0.02, -0.5], [0.7, -0.5], [0.97, -0.34], [1.0, -0.1], [0.99, 0.2], [0.9, 0.42], [0.55, 0.5], [0.3, 0.5]] : [[0.03, -0.5], [0.86, -0.5], [0.99, -0.3], [1.0, -0.16], [0.62, -0.05], [0.58, 0.06], [0.97, 0.22], [1.0, 0.38], [0.9, 0.5], [0.3, 0.5]];
@@ -1489,7 +1509,7 @@ function makeGlbCar(id, cfg, o = {}) {
     const FITD = 0.74; /* OWNER rim-fit (Oct 28 2026): a bare fetched rim's diameter as a share of the tyre's - a real low-profile proportion, so the rim fits IN the tyre */
     for (const hb of hubs) {
       const fr = hb.h / 2 * 0.68 * rimScale;
-      const style = clamp(cfg.rim || 0, 0, 5);
+      const style = clamp(cfg.rim || 0, 0, 10);
       let rimDone = false, rimHalf = 0.1, rimWrap = null;
       if (style === 3 && dishTpl) { /* the LOCKED deep dish wheel in its own copper finish - never repainted, exactly as approved in the viewer */
         const cl = dishTpl.clone(true); cl.scale.multiplyScalar(hb.h * FITD * rimScale); /* the template is baked at diameter 1 */
@@ -1531,6 +1551,17 @@ function makeGlbCar(id, cfg, o = {}) {
         let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material); const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
         if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
+      }
+      if (style >= 6 && newTpl[style]) { /* owner Nov 1 2026: a fetched rim+tyre swap - fitted like the Turbine; Rim Color recolours only the model's rim material, or the stock look stays */
+        const T = newTpl[style], cl = T.hold.clone(true); cl.scale.multiplyScalar(hb.h * rimScale);
+        const wrap = new THREE.Group(); wrap.add(cl);
+        wrap.scale.z = clamp((hb.w * 1.04) / (T.widN * hb.h * rimScale), 0.45, 1.0); rimHalf = T.widN * hb.h * rimScale * wrap.scale.z / 2;
+        if (hb.z < 0) wrap.rotation.y = Math.PI; wrap.position.set(hb.x, hb.y, hb.z);
+        const rm = NEW_WHEELS[style].mats; let best = null, bestA = -1;
+        cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material);
+          if (rm && cfg.rimKeep === 0 && rm.test(q.material.name || '')) { q.material.map = null; q.material.color.set(cfg.rimCol || '#c9cdd6'); q.material.metalness = 0.85; q.material.roughness = 0.3; q.material.needsUpdate = true; q.userData.rimPaint = 1; }
+          const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
+        if (best) { tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
       if (rimDone && rimWrap) { /* OWNER rim-fit: seat the face flush at the tyre's outer surface - measured on the fitted wheel itself, so the rim lands IN the tyre, never buried behind the sidewall */
         tilt.updateWorldMatrix(true, true);
@@ -2723,8 +2754,8 @@ function renderGarage() {
   else if (G.tab === 'paint') h = PAINTS.map((p) => `<button class="go ${p === c.paint ? 'on' : ''}" data-paint="${p}"><span class="sw" style="background:${p}"></span>${price(500, p === c.paint ? 'On' : OWN(S.cars[G.gSel], 'paint', p) ? 'Owned' : '')}</button>`).join('') + `<label class="go"><input type="color" id="pc" value="${c.paint}" style="width:40px;height:34px;border:0;background:none"/>Custom<span class="p">🪙500</span></label>`;
   else if (G.tab === 'wrap') h = Object.entries(WRAPS).map(([k, v]) => `<button class="go ${k === (c.wrap || 'none') ? 'on' : ''}" data-wrap="${k}"><b>${v[0]}</b>${price(v[1], k === (c.wrap || 'none') ? 'On' : OWN(S.cars[G.gSel], 'wrap', k) ? 'Owned' : '')}</button>`).join('');
   else if (G.tab === 'fin') h = Object.entries(FIN).map(([f, v]) => `<button class="go ${f === c.fin ? 'on' : ''}" data-fin="${f}"><b>${v.n}</b>${price(v.p, f === c.fin ? 'On' : OWN(S.cars[G.gSel], 'fin', f) ? 'Owned' : '')}</button>`).join('');
-  else if (G.tab === 'rim') h = RIMS.map((n, i) => `<button class="go ${i === (c.rim || 0) ? 'on' : ''}" data-rim="${i}"><b>${n}</b>${price(i ? 2500 : 0, i === (c.rim || 0) ? 'On' : OWN(S.cars[G.gSel], 'rim', i) ? 'Owned' : '')}</button>`).join('');
-  else if (G.tab === 'rimCol' || G.tab === 'cal') { const L = G.tab === 'cal' ? CALS : RIMC, cur = G.tab === 'cal' ? c.cal : c.rimCol; h = L.map((p) => `<button class="go ${p === cur ? 'on' : ''}" data-${G.tab === 'cal' ? 'cal' : 'rc'}="${p}"><span class="sw" style="background:${p}"></span>${price(G.tab === 'cal' ? 400 : 800, p === cur ? 'On' : OWN(S.cars[G.gSel], G.tab === 'cal' ? 'cal' : 'rc', p) ? 'Owned' : '')}</button>`).join(''); }
+  else if (G.tab === 'rim') h = RIMS_ALL.map((n, i) => `<button class="go ${i === (c.rim || 0) ? 'on' : ''}" data-rim="${i}"><b>${n}</b>${price(i ? 2500 : 0, i === (c.rim || 0) ? 'On' : OWN(S.cars[G.gSel], 'rim', i) ? 'Owned' : '')}</button>`).join('');
+  else if (G.tab === 'rimCol' || G.tab === 'cal') { const L = G.tab === 'cal' ? CALS : RIMC, cur = G.tab === 'cal' ? c.cal : c.rimCol; h = L.map((p) => `<button class="go ${p === cur && !(G.tab === 'rimCol' && c.rimKeep !== 0 && (c.rim || 0) >= 6) ? 'on' : ''}" data-${G.tab === 'cal' ? 'cal' : 'rc'}="${p}"><span class="sw" style="background:${p}"></span>${price(G.tab === 'cal' ? 400 : 800, p === cur ? 'On' : '')}</button>`).join('') + (G.tab === 'rimCol' && (c.rim || 0) >= 6 ? `<button class="go ${c.rimKeep !== 0 ? 'on' : ''}" data-rkeep="1"><b>Stock</b>${c.rimKeep !== 0 ? 'On' : 'Free'}</button>` : ''); }
   else if (G.tab === 'glow') h = GLOWS.map((p) => `<button class="go ${p === (c.glow || '') ? 'on' : ''}" data-glow="${p}"><span class="sw" style="background:${p || 'repeating-linear-gradient(45deg,#333 0 6px,#555 6px 12px)'};box-shadow:0 0 14px ${p || 'transparent'}"></span>${p ? '' : 'None'}${price(p ? 3000 : 0, p === (c.glow || '') ? 'On' : OWN(S.cars[G.gSel], 'glow', p) ? 'Owned' : '')}</button>`).join('');
   else if (UP[G.tab]) { const u = UP[G.tab], cur = c[G.tab] || 0, own = Math.max(cur, (c.own || {})[G.tab] || 0);
     h = u.lv.map((n, i) => { let cost = 0; for (let j = own + 1; j <= i; j++) cost += u.only && isOwner() ? 0 : u.p[j]; return `<button class="go ${i === cur ? 'on' : ''}" data-up="${i}"><b>${n}</b>${price(cost, i === cur ? 'On' : i <= own ? 'Owned' : '')}</button>`; }).join(''); }
@@ -2740,7 +2771,8 @@ function renderGarage() {
   Q('[data-wrap]', (b) => { const k = b.dataset.wrap; if (k !== (c.wrap || 'none')) buy(WRAPS[k][1], (x) => { x.wrap = k; }, 'wrap', k); });
   Q('[data-fin]', (b) => { if (b.dataset.fin !== c.fin) buy(FIN[b.dataset.fin].p, (x) => { x.fin = b.dataset.fin; }, 'fin', b.dataset.fin); });
   Q('[data-rim]', (b) => { const i = +b.dataset.rim; if (i !== (c.rim || 0)) buy(i ? 2500 : 0, (x) => { x.rim = i; }, 'rim', i); });
-  Q('[data-rc]', (b) => { if (b.dataset.rc !== c.rimCol) buy(800, (x) => { x.rimCol = b.dataset.rc; }, 'rc', b.dataset.rc); });
+  Q('[data-rc]', (b) => { if (b.dataset.rc !== c.rimCol || c.rimKeep !== 0) buy(800, (x) => { x.rimCol = b.dataset.rc; x.rimKeep = 0; }, 'rc', b.dataset.rc); });
+  Q('[data-rkeep]', (b) => { if (c.rimKeep === 0) { c.rimKeep = 1; save(); setGarageCar(GAR_ID, c); renderGarage(); } });
   Q('[data-cal]', (b) => { if (b.dataset.cal !== c.cal) buy(400, (x) => { x.cal = b.dataset.cal; }, 'cal', b.dataset.cal); });
   Q('[data-glow]', (b) => { const g = b.dataset.glow; if (g !== (c.glow || '')) buy(g ? 3000 : 0, (x) => { x.glow = g; }, 'glow', g); });
   Q('[data-up]', (b) => { const i = +b.dataset.up, u = UP[G.tab], cur = c[G.tab] || 0, own = Math.max(cur, (c.own || {})[G.tab] || 0); if (i === cur) return; let cost = 0; for (let j = own + 1; j <= i; j++) cost += u.only && isOwner() ? 0 : u.p[j];
