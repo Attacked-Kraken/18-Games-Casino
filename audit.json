@@ -1,0 +1,658 @@
+[
+ {
+  "file": "models/bikes/apex-superbike.glb",
+  "ok": true,
+  "why": [],
+  "tris": 41196,
+  "size": [
+   0.718,
+   1.09,
+   2.134
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/bikes/street-bike.glb",
+  "ok": true,
+  "why": [],
+  "tris": 69908,
+  "size": [
+   0.632,
+   1.487,
+   2.404
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/bikes/race-bike.glb",
+  "ok": true,
+  "why": [],
+  "tris": 58135,
+  "size": [
+   2.5,
+   1.42,
+   0.794
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/bikes/phantom-bike.glb",
+  "ok": false,
+  "why": [
+   "HUGE: 95434.6 m across - not a real-world size"
+  ],
+  "tris": 89994,
+  "size": [
+   27805.909,
+   37061.913,
+   95434.619
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-fighter.glb",
+  "ok": true,
+  "why": [],
+  "tris": 22168,
+  "size": [
+   10.477,
+   5.011,
+   15.394
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-delta.glb",
+  "ok": true,
+  "why": [],
+  "tris": 20880,
+  "size": [
+   9.777,
+   5.65,
+   16.094
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-sport.glb",
+  "ok": true,
+  "why": [],
+  "tris": 21920,
+  "size": [
+   11.883,
+   4.741,
+   13.933
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-fwdswept.glb",
+  "ok": true,
+  "why": [],
+  "tris": 21816,
+  "size": [
+   10.977,
+   5.04,
+   14.894
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-canard.glb",
+  "ok": true,
+  "why": [],
+  "tris": 20108,
+  "size": [
+   8.777,
+   4.791,
+   13.494
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/apex-jet/glb/apex-jet-stealth.glb",
+  "ok": true,
+  "why": [],
+  "tris": 5666,
+  "size": [
+   13.96,
+   2.504,
+   8.85
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/sci-fi-wheel-7b9867.glb",
+  "ok": true,
+  "why": [],
+  "tris": 9696,
+  "size": [
+   0.68,
+   0.68,
+   0.493
+  ],
+  "pictures": [
+   {
+    "pic": "sci-fi-wheel-7b9867-front.jpg",
+    "pct": 33.1
+   },
+   {
+    "pic": "sci-fi-wheel-7b9867-side.jpg",
+    "pct": 27.6
+   },
+   {
+    "pic": "sci-fi-wheel-7b9867-back.jpg",
+    "pct": 33.3
+   },
+   {
+    "pic": "sci-fi-wheel-7b9867-top.jpg",
+    "pct": 27.6
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/le-mans-race-car.glb",
+  "ok": true,
+  "why": [],
+  "tris": 89888,
+  "size": [
+   13.828,
+   3.477,
+   5.761
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/stance-wheel-r13x10-6c8a9d.glb",
+  "ok": true,
+  "why": [],
+  "tris": 17212,
+  "size": [
+   0.722,
+   0.722,
+   0.289
+  ],
+  "pictures": [
+   {
+    "pic": "stance-wheel-r13x10-6c8a9d-front.jpg",
+    "pct": 15.9
+   },
+   {
+    "pic": "stance-wheel-r13x10-6c8a9d-side.jpg",
+    "pct": 11.8
+   },
+   {
+    "pic": "stance-wheel-r13x10-6c8a9d-back.jpg",
+    "pct": 16
+   },
+   {
+    "pic": "stance-wheel-r13x10-6c8a9d-top.jpg",
+    "pct": 14
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/tuner-car-wheel-free-02c9dc.glb",
+  "ok": true,
+  "why": [],
+  "tris": 80886,
+  "size": [
+   0.276,
+   0.68,
+   0.68
+  ],
+  "pictures": [
+   {
+    "pic": "tuner-car-wheel-free-02c9dc-front.jpg",
+    "pct": 19
+   },
+   {
+    "pic": "tuner-car-wheel-free-02c9dc-side.jpg",
+    "pct": 29.1
+   },
+   {
+    "pic": "tuner-car-wheel-free-02c9dc-back.jpg",
+    "pct": 18
+   },
+   {
+    "pic": "tuner-car-wheel-free-02c9dc-top.jpg",
+    "pct": 19.2
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/bbs-rs16-tuner-car-wheel-188d0d.glb",
+  "ok": true,
+  "why": [],
+  "tris": 13786,
+  "size": [
+   2.093,
+   0.68,
+   2.192
+  ],
+  "pictures": [
+   {
+    "pic": "bbs-rs16-tuner-car-wheel-188d0d-front.jpg",
+    "pct": 17.2
+   },
+   {
+    "pic": "bbs-rs16-tuner-car-wheel-188d0d-side.jpg",
+    "pct": 19.6
+   },
+   {
+    "pic": "bbs-rs16-tuner-car-wheel-188d0d-back.jpg",
+    "pct": 11.8
+   },
+   {
+    "pic": "bbs-rs16-tuner-car-wheel-188d0d-top.jpg",
+    "pct": 32.8
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/tuner-wheel-8ea8e1.glb",
+  "ok": false,
+  "why": [
+   "STRAY: a far-off piece makes the whole box 1.92x the size of the model itself - it shows as a speck; needs recentring"
+  ],
+  "tris": 55958,
+  "size": [
+   0.286,
+   0.68,
+   0.68
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/car-wheel-45ae01.glb",
+  "ok": true,
+  "why": [],
+  "tris": 91848,
+  "size": [
+   14.444,
+   12.874,
+   13.227
+  ],
+  "pictures": [
+   {
+    "pic": "car-wheel-45ae01-front.jpg",
+    "pct": 41.3
+   },
+   {
+    "pic": "car-wheel-45ae01-side.jpg",
+    "pct": 34.6
+   },
+   {
+    "pic": "car-wheel-45ae01-back.jpg",
+    "pct": 41.9
+   },
+   {
+    "pic": "car-wheel-45ae01-top.jpg",
+    "pct": 61.2
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/animated-baseball-player-6b39fc.glb",
+  "ok": true,
+  "why": [],
+  "tris": 1950,
+  "size": [
+   0.031,
+   0.031,
+   0.019
+  ],
+  "pictures": [
+   {
+    "pic": "animated-baseball-player-6b39fc-front.jpg",
+    "pct": 11.1
+   },
+   {
+    "pic": "animated-baseball-player-6b39fc-side.jpg",
+    "pct": 9.3
+   },
+   {
+    "pic": "animated-baseball-player-6b39fc-back.jpg",
+    "pct": 8.6
+   },
+   {
+    "pic": "animated-baseball-player-6b39fc-top.jpg",
+    "pct": 3.3
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/free-wheels-sdc-pure-performance-eebae2.glb",
+  "ok": true,
+  "why": [],
+  "tris": 90039,
+  "size": [
+   0.789,
+   0.789,
+   0.324
+  ],
+  "pictures": [
+   {
+    "pic": "free-wheels-sdc-pure-performance-eebae2-front.jpg",
+    "pct": 23.8
+   },
+   {
+    "pic": "free-wheels-sdc-pure-performance-eebae2-side.jpg",
+    "pct": 15.8
+   },
+   {
+    "pic": "free-wheels-sdc-pure-performance-eebae2-back.jpg",
+    "pct": 22.2
+   },
+   {
+    "pic": "free-wheels-sdc-pure-performance-eebae2-top.jpg",
+    "pct": 21
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb",
+  "ok": true,
+  "why": [],
+  "tris": 89923,
+  "size": [
+   0.68,
+   0.68,
+   0.184
+  ],
+  "pictures": [
+   {
+    "pic": "smokehaus-racing-turbine-m2-alloy--800149-front.jpg",
+    "pct": 29.1
+   },
+   {
+    "pic": "smokehaus-racing-turbine-m2-alloy--800149-side.jpg",
+    "pct": 12
+   },
+   {
+    "pic": "smokehaus-racing-turbine-m2-alloy--800149-back.jpg",
+    "pct": 28.7
+   },
+   {
+    "pic": "smokehaus-racing-turbine-m2-alloy--800149-top.jpg",
+    "pct": 21.2
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/car-wheelrim-f6f260.glb",
+  "ok": false,
+  "why": [
+   "PICTURES: the model fills only 0% / 0% / 0% / 0% of the robot's pictures - the owner could not judge it"
+  ],
+  "tris": 54044,
+  "size": [
+   0.343,
+   0.68,
+   0.68
+  ],
+  "pictures": [
+   {
+    "pic": "car-wheelrim-f6f260-front.jpg",
+    "pct": 0
+   },
+   {
+    "pic": "car-wheelrim-f6f260-side.jpg",
+    "pct": 0
+   },
+   {
+    "pic": "car-wheelrim-f6f260-back.jpg",
+    "pct": 0
+   },
+   {
+    "pic": "car-wheelrim-f6f260-top.jpg",
+    "pct": 0
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/free-wheels-rst-carbon-sdc-72d881.glb",
+  "ok": true,
+  "why": [],
+  "tris": 89960,
+  "size": [
+   0.334,
+   0.68,
+   0.674
+  ],
+  "pictures": [
+   {
+    "pic": "free-wheels-rst-carbon-sdc-72d881-front.jpg",
+    "pct": 21
+   },
+   {
+    "pic": "free-wheels-rst-carbon-sdc-72d881-side.jpg",
+    "pct": 31.3
+   },
+   {
+    "pic": "free-wheels-rst-carbon-sdc-72d881-back.jpg",
+    "pct": 20
+   },
+   {
+    "pic": "free-wheels-rst-carbon-sdc-72d881-top.jpg",
+    "pct": 21.6
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/fictional-supercar-v12-goblin-0a20e4.glb",
+  "ok": false,
+  "why": [
+   "STRAY: a far-off piece makes the whole box 2.09x the size of the model itself - it shows as a speck; needs recentring"
+  ],
+  "tris": 86623,
+  "size": [
+   0.247,
+   0.033,
+   0.247
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb",
+  "ok": true,
+  "why": [],
+  "tris": 91838,
+  "size": [
+   1.405,
+   0.68,
+   1.405
+  ],
+  "pictures": [
+   {
+    "pic": "fifteen52-inspired-rally-rim-a0c9aa-front.jpg",
+    "pct": 21.9
+   },
+   {
+    "pic": "fifteen52-inspired-rally-rim-a0c9aa-side.jpg",
+    "pct": 22
+   },
+   {
+    "pic": "fifteen52-inspired-rally-rim-a0c9aa-back.jpg",
+    "pct": 20.6
+   },
+   {
+    "pic": "fifteen52-inspired-rally-rim-a0c9aa-top.jpg",
+    "pct": 29.9
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/tokii-abyss-gt-7-v12-c39956.glb",
+  "ok": true,
+  "why": [],
+  "tris": 90304,
+  "size": [
+   2,
+   2,
+   2
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/shc-mc-free-promotion-car-cfaabd.glb",
+  "ok": false,
+  "why": [
+   "HUGE: 476.2 m across - not a real-world size"
+  ],
+  "tris": 42035,
+  "size": [
+   476.244,
+   137.857,
+   227.388
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/car-rim-c66cf1.glb",
+  "ok": true,
+  "why": [],
+  "tris": 26108,
+  "size": [
+   0.37,
+   0.68,
+   0.68
+  ],
+  "pictures": [
+   {
+    "pic": "car-rim-c66cf1-front.jpg",
+    "pct": 25.3
+   },
+   {
+    "pic": "car-rim-c66cf1-side.jpg",
+    "pct": 24.5
+   },
+   {
+    "pic": "car-rim-c66cf1-back.jpg",
+    "pct": 25.6
+   },
+   {
+    "pic": "car-rim-c66cf1-top.jpg",
+    "pct": 25.3
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/patriot-p10-xr-d87ddc.glb",
+  "ok": true,
+  "why": [],
+  "tris": 72454,
+  "size": [
+   2.624,
+   1.555,
+   4.944
+  ],
+  "pictures": null
+ },
+ {
+  "file": "models/fetched/car-tyre-game-ready-p-zero-49aa3e.glb",
+  "ok": true,
+  "why": [],
+  "tris": 21624,
+  "size": [
+   0.358,
+   0.68,
+   0.707
+  ],
+  "pictures": [
+   {
+    "pic": "car-tyre-game-ready-p-zero-49aa3e-front.jpg",
+    "pct": 18.5
+   },
+   {
+    "pic": "car-tyre-game-ready-p-zero-49aa3e-side.jpg",
+    "pct": 25.5
+   },
+   {
+    "pic": "car-tyre-game-ready-p-zero-49aa3e-back.jpg",
+    "pct": 17.9
+   },
+   {
+    "pic": "car-tyre-game-ready-p-zero-49aa3e-top.jpg",
+    "pct": 18.4
+   }
+  ]
+ },
+ {
+  "file": "models/fetched/medieval-fantasy-book-06d5a8.glb",
+  "ok": true,
+  "why": [],
+  "tris": 54781,
+  "size": [
+   1.51,
+   0.68,
+   1.06
+  ],
+  "pictures": [
+   {
+    "pic": "medieval-fantasy-book-06d5a8-front.jpg",
+    "pct": 11.7
+   },
+   {
+    "pic": "medieval-fantasy-book-06d5a8-side.jpg",
+    "pct": 9.6
+   },
+   {
+    "pic": "medieval-fantasy-book-06d5a8-back.jpg",
+    "pct": 11.5
+   },
+   {
+    "pic": "medieval-fantasy-book-06d5a8-top.jpg",
+    "pct": 22
+   }
+  ]
+ },
+ {
+  "file": "people.glb",
+  "ok": true,
+  "why": [],
+  "tris": 13744,
+  "size": [
+   2,
+   1.881,
+   0.38
+  ],
+  "pictures": null
+ },
+ {
+  "file": "kit/tracks/Grand-Prix-Track/grand-prix-track.glb",
+  "ok": true,
+  "why": [],
+  "tris": 409310,
+  "size": [
+   2420,
+   38.459,
+   1330
+  ],
+  "pictures": null
+ },
+ {
+  "file": "kit/cockpit/cockpit.glb",
+  "ok": true,
+  "why": [],
+  "tris": 38296,
+  "size": [
+   2.06,
+   1.296,
+   5.63
+  ],
+  "pictures": null
+ },
+ {
+  "file": "kit/stadiums/Night-Ballpark/stadium.glb",
+  "ok": true,
+  "why": [],
+  "tris": 77975,
+  "size": [
+   340,
+   63.691,
+   370.186
+  ],
+  "pictures": null
+ }
+]
