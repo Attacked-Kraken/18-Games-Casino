@@ -1589,10 +1589,14 @@ function makeGlbCar(id, cfg, o = {}) {
           if (rm && cfg.rimKeep === 0 && rm.test(q.material.name || '')) { q.material.map = null; q.material.color.set(cfg.rimCol || '#c9cdd6'); q.material.metalness = 0.85; q.material.roughness = 0.3; q.material.needsUpdate = true; q.userData.rimPaint = 1; }
           const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
         if (best) { tilt.add(wrap); rimDone = true; rimWrap = wrap;
-          /* OWNER Nov 1 4:27 PM ('make inner fender wheels cover black' / 'add fender wheel cover'): a black wheel-well liner - a disc behind the wheel and a half tube over it - so nothing shows through the arch */
-          const linR = hb.h * rimScale * WF / 2, linMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }); ownMats.push(linMat);
-          const back = new THREE.Mesh(new THREE.CircleGeometry(linR * 0.98, 32), linMat); back.position.set(hb.x, hb.y + (WF - 1) * hb.h * rimScale / 2 + linR * 0.30, hb.z - Math.sign(hb.z) * hb.w * 0.80) /* OWNER Nov 1 4:55 PM: the disc was wider than the wheel and its bottom poked out under the floor as a dark shape; now it sits up in the arch, never below the tyre */; back.userData.acc = 'liner'; tilt.add(back);
-          /* OWNER Nov 1 4:41 PM: the half-tube liner stuck out of the fenders as a black band - removed; only the flat back disc stays, inside the body */ }
+          /* OWNER Nov 1 5:03 PM ('add a proper inner wheel well plastic cover piece'): a moulded plastic liner - an arch shell that hugs the tyre from the inboard wall to the fender face (never past it), and an inner wall; dark matte plastic */
+          const tR = hb.h * rimScale * WF / 2, cy = hb.y + (WF - 1) * hb.h * rimScale / 2, sg = Math.sign(hb.z);
+          const linMat = new THREE.MeshStandardMaterial({ color: 0x15171a, roughness: 0.92, metalness: 0.02, side: THREE.DoubleSide }); ownMats.push(linMat);
+          const zIn = hb.z - sg * hb.w * 0.80, zOut = hb.z + sg * hb.w * 0.42; /* inboard wall .. just inside the fender face */
+          const arch = new THREE.Mesh(new THREE.CylinderGeometry(tR * 1.05, tR * 1.05, Math.abs(zOut - zIn), 40, 1, true, Math.PI * 0.42, Math.PI * 1.16), linMat);
+          arch.rotation.x = Math.PI / 2; arch.rotation.y = 0; arch.rotation.z = 0; arch.position.set(hb.x, cy, (zIn + zOut) / 2); arch.userData.acc = 'liner'; tilt.add(arch);
+          const wall = new THREE.Mesh(new THREE.CircleGeometry(tR * 1.05, 40, -Math.PI * 0.08, Math.PI * 1.16), linMat); wall.position.set(hb.x, cy, zIn); wall.userData.acc = 'liner'; tilt.add(wall);
+          const lip = new THREE.Mesh(new THREE.TorusGeometry(tR * 1.05, 0.012, 6, 40, Math.PI * 1.16), linMat); lip.rotation.z = -Math.PI * 0.08; lip.position.set(hb.x, cy, zOut); lip.userData.acc = 'liner'; tilt.add(lip); }
       }
       if (rimDone && rimWrap && !(style >= 6 && WHEEL_HAS_TYRE[style])) { /* a pick with its own tyre is centred so its extra width pokes out; rim-only picks seat flush in the car's tyre */ /* OWNER rim-fit: seat the face flush at the tyre's outer surface - measured on the fitted wheel itself, so the rim lands IN the tyre, never buried behind the sidewall */
         tilt.updateWorldMatrix(true, true);
