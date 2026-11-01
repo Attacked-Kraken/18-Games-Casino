@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/sci-fi-wheel-7b9867.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 9696,
+  "size": [
+   0.68,
+   0.68,
+   0.493
+  ],
+  "mainSize": [
+   0.68,
+   0.68,
+   0.493
+  ],
+  "stray": 1,
+  "bytes": 800748
+ },
+ "pictures": [
+  {
+   "pic": "sci-fi-wheel-7b9867-front.jpg",
+   "pct": 33.1
+  },
+  {
+   "pic": "sci-fi-wheel-7b9867-side.jpg",
+   "pct": 27.6
+  },
+  {
+   "pic": "sci-fi-wheel-7b9867-back.jpg",
+   "pct": 33.3
+  },
+  {
+   "pic": "sci-fi-wheel-7b9867-top.jpg",
+   "pct": 27.6
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-11-01T13:28:09.988Z"
+}

@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/car-tyre-game-ready-p-zero-49aa3e.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 21624,
+  "size": [
+   0.358,
+   0.68,
+   0.707
+  ],
+  "mainSize": [
+   0.358,
+   0.68,
+   0.707
+  ],
+  "stray": 1,
+  "bytes": 782144
+ },
+ "pictures": [
+  {
+   "pic": "car-tyre-game-ready-p-zero-49aa3e-front.jpg",
+   "pct": 18.5
+  },
+  {
+   "pic": "car-tyre-game-ready-p-zero-49aa3e-side.jpg",
+   "pct": 25.5
+  },
+  {
+   "pic": "car-tyre-game-ready-p-zero-49aa3e-back.jpg",
+   "pct": 17.9
+  },
+  {
+   "pic": "car-tyre-game-ready-p-zero-49aa3e-top.jpg",
+   "pct": 18.4
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-11-01T13:28:08.874Z"
+}

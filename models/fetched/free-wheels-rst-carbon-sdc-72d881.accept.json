@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/free-wheels-rst-carbon-sdc-72d881.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 4,
+  "tris": 89960,
+  "size": [
+   0.334,
+   0.68,
+   0.674
+  ],
+  "mainSize": [
+   0.334,
+   0.68,
+   0.674
+  ],
+  "stray": 1,
+  "bytes": 2868448
+ },
+ "pictures": [
+  {
+   "pic": "free-wheels-rst-carbon-sdc-72d881-front.jpg",
+   "pct": 21
+  },
+  {
+   "pic": "free-wheels-rst-carbon-sdc-72d881-side.jpg",
+   "pct": 31.3
+  },
+  {
+   "pic": "free-wheels-rst-carbon-sdc-72d881-back.jpg",
+   "pct": 20
+  },
+  {
+   "pic": "free-wheels-rst-carbon-sdc-72d881-top.jpg",
+   "pct": 21.6
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-11-01T13:28:09.426Z"
+}
