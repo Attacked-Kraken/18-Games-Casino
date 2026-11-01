@@ -76,7 +76,7 @@ const makeTest = (tabs, label) =>     async (page, h) => {
       if (unchecked.length) return { inconclusive: 'G-372 garage tab ' + label + ' - tabs that could not be checked: ' + unchecked.join(', ') };
       return true;
     };
-const TABS = [["cars", "Cars"], ["paint", "Paint"], ["wrap", "Wraps"], ["fin", "Finish"], ["rim", "Rims"], ["rimCol", "Rim Color"], ["wheel", "Wheel Size"], ["cal", "Calipers"], ["tint", "Tint"], ["aero", "Spoiler"], ["kit", "Body Kit"], ["glow", "Underglow"], ["tire", "Tires"], ["eng", "Engine"], ["turbo", "Turbo"], ["nos", "Nitro"]];
+const TABS = [["cars", "Cars"], ["paint", "Paint"], ["wrap", "Wraps"], ["fin", "Finish"], ["rim", "Rims"], ["rimCol", "Dust Cover Color"], ["aero", "Spoiler"], ["glow", "Underglow"], ["eng", "Engine"], ["turbo", "Turbo"], ["nos", "Nitro"]];
 const PARTS = {"cars": ["garage"], "paint": ["garage", "paint"], "wrap": ["garage", "wraps"], "fin": ["garage", "wraps", "paint"], "rim": ["garage", "rims", "wheels"], "rimCol": ["garage", "rims", "wheels"], "wheel": ["garage", "rims", "wheels"], "cal": ["garage", "rims", "wheels"], "tint": ["garage", "body"], "aero": ["garage", "body"], "kit": ["garage", "body"], "glow": ["garage", "body"], "tire": ["garage"], "eng": ["garage"], "turbo": ["garage"], "nos": ["garage"]};
 export default TABS.map(([tab, name]) => ({
   id: 'play-garage-tab-' + tab, parts: PARTS[tab],
