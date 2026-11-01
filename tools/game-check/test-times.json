@@ -475,5 +475,16 @@
  "play-garage-tab-tire": 9,
  "play-garage-tab-eng": 9,
  "play-garage-tab-turbo": 9,
- "play-garage-tab-nos": 9
+ "play-garage-tab-nos": 9,
+ "play-screen-menu-labels": 17,
+ "play-screen-menu-race": 3,
+ "play-screen-menu-garage": 4,
+ "play-screen-menu-friends": 10,
+ "play-screen-pause-open": 40,
+ "play-screen-pause-restart": 30,
+ "play-screen-pause-quit": 20,
+ "play-screen-result-shows": 42,
+ "play-screen-result-garage": 20,
+ "play-screen-result-again": 28,
+ "play-screen-result-next": 22
 }
