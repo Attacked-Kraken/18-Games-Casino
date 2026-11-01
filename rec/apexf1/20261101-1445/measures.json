@@ -1,0 +1,194 @@
+{
+ "game": "apexf1.html",
+ "name": "Apex F1 Racing",
+ "seconds": 60,
+ "gameSecondsReached": 60,
+ "wallSeconds": 62.3,
+ "at": "2026-11-01T14:22:00.695Z",
+ "samples": 249,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": false
+ },
+ "camera": {
+  "distance": {
+   "min": 13.07,
+   "mean": 34,
+   "max": 240.2
+  },
+  "height": {
+   "min": 2.79,
+   "mean": 3.32,
+   "max": 3.38
+  },
+  "aimErrorDeg": {
+   "min": 0.96,
+   "mean": 18.66,
+   "max": 166.01
+  },
+  "followLagMetresPerMps": null
+ },
+ "playerOnScreenPct": 92,
+ "speed": null,
+ "metresMoved": 635.5,
+ "moments": [
+  {
+   "at": 2.8,
+   "words": "JUMP START second penalty"
+  },
+  {
+   "at": 6,
+   "words": "GAP +#s GHOST PENALTY LIGHTS OUT!"
+  },
+  {
+   "at": 6.9,
+   "words": "KAI"
+  },
+  {
+   "at": 8,
+   "words": "JAX"
+  },
+  {
+   "at": 15.5,
+   "words": "ORO"
+  },
+  {
+   "at": 16.4,
+   "words": "VEX"
+  },
+  {
+   "at": 18.6,
+   "words": "ECHO"
+  },
+  {
+   "at": 19.1,
+   "words": "HAVOC CONTACT! You got turned around"
+  },
+  {
+   "at": 23.2,
+   "words": "BLITZ"
+  },
+  {
+   "at": 27.8,
+   "words": "FLINT"
+  },
+  {
+   "at": 33.4,
+   "words": "ECHO"
+  },
+  {
+   "at": 38.1,
+   "words": "FLINT"
+  },
+  {
+   "at": 43.3,
+   "words": "HAVOC"
+  },
+  {
+   "at": 44,
+   "words": "FLINT"
+  },
+  {
+   "at": 46.4,
+   "words": "BLITZ"
+  },
+  {
+   "at": 52.7,
+   "words": "FLINT"
+  }
+ ],
+ "momentCount": 16,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 90,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 3,
+ "scriptErrors": []
+}

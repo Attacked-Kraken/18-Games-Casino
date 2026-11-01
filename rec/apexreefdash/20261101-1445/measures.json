@@ -1,0 +1,44 @@
+{
+ "game": "apexreefdash.html",
+ "name": "Reef Dash",
+ "seconds": 60,
+ "gameSecondsReached": 59.9,
+ "wallSeconds": 61.5,
+ "at": "2026-11-01T14:23:53.146Z",
+ "samples": 357,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": false,
+  "speed": false
+ },
+ "camera": null,
+ "playerOnScreenPct": null,
+ "speed": null,
+ "metresMoved": null,
+ "moments": [
+  {
+   "at": 37.5,
+   "words": "Game over You dove and grabbed"
+  }
+ ],
+ "momentCount": 1,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [],
+ "endedWithResultWords": true,
+ "fpsAtEnd": 23,
+ "scriptErrors": []
+}
