@@ -142,8 +142,13 @@ jobs:
             SCOPE=""
             if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ needs.plan.outputs.mode }}" = "touched" ]; then
               git fetch -q --depth=2 origin "${{ github.sha }}" 2>/dev/null || true
-              SCOPE=$(node tools/game-check/scope.mjs "$GAME" "$(git rev-parse HEAD^1 2>/dev/null)" 2>/dev/null || true)
-              [ -n "$SCOPE" ] && echo "Scoped check: playing only $SCOPE"
+              SBASE=$(git rev-parse HEAD^1 2>/dev/null || true)
+              # VP Oct 31 2026: Racer PR #2166 ran all 8 parts into the 15-min cap although scope.mjs picks 60 tests (~7 min) locally -
+              # the base was probably empty on the shallow checkout. Fall back to the PR's base branch, and SAY what happened (annotation).
+              if [ -z "$SBASE" ]; then git fetch -q --depth=50 origin "${{ github.base_ref }}" 2>/dev/null || true; SBASE=$(git rev-parse FETCH_HEAD 2>/dev/null || true); fi
+              SCOPE=$(node tools/game-check/scope.mjs "$GAME" "$SBASE" 2>/tmp/scope.err || true)
+              if [ -n "$SCOPE" ]; then echo "Scoped check: playing only $SCOPE"; echo "::notice title=scope $GAME::scoped to $(echo "$SCOPE" | tr ',' '\n' | wc -l) tests (base ${SBASE:0:7})"
+              else echo "::notice title=scope $GAME::NOT scoped - plays every test (base '${SBASE:0:7}', mode ${{ needs.plan.outputs.mode }}) $(head -c 200 /tmp/scope.err | tr '\n' ' ')"; fi
             fi
             ONLY_TESTS="$SCOPE" ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
