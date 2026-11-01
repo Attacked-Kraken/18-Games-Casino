@@ -34,7 +34,7 @@ if (process.argv[1] && /scope\.mjs$/.test(process.argv[1])) {
     const fdir = `tools/game-check/fixes/${slug}`;   // VP Oct 31 2026: per-job test files in the folder are read too (Racer has one, so scoping never ran and every PR played all 58 tests incl. 20 two-minute place tests)
     const names = spawnSync('git', ['diff', '--name-only', base, 'HEAD'], { encoding: 'utf8' }).stdout.split('\n');
     // the page itself must be the only game code that changed (other code, kit, shared folders = play all)
-    const other = names.filter(n => n && !/^(jobs|reviews|plans|looks|ideas|team|notes|checklists)\/|\.md$/.test(n) && n !== file && !n.startsWith('tools/game-check/fixes/'));
+    const other = names.filter(n => n && !/^(jobs|reviews|plans|looks|ideas|team|notes|checklists)\/|\.md$/.test(n) && n !== file && !n.startsWith('tools/game-check/fixes/') && !/^tools\/(robot-keep\.json|game-check\/test-times\.json)$/.test(n));  // VP Oct 31 2026: the lock list + timing list are not game code - #2163 touched them and so played all 8 Racer parts (44+ min)
     if (other.length) process.exit(0);
     const d = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', file], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
     const ranges = [...d.matchAll(/^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/gm)].map(h => [+h[1], +h[1] + Math.max(0, (h[2] === undefined ? 1 : +h[2]) - 1)]);
@@ -44,6 +44,8 @@ if (process.argv[1] && /scope\.mjs$/.test(process.argv[1])) {
     if (fs.existsSync(fdir)) for (const f of fs.readdirSync(fdir).filter(x => x.endsWith('.mjs')).sort()) { const m = (await import(pathToFileURL(path.resolve(fdir, f)).href)).default; if (Array.isArray(m)) tests.push(...m); }
     const fd = spawnSync('git', ['diff', '-U0', base, 'HEAD', '--', fx, ...(fs.existsSync(fdir) ? [fdir] : [])], { encoding: 'utf8', maxBuffer: 64 << 20 }).stdout || '';
     const changedIds = new Set([...fd.matchAll(/^\+.*\bid:\s*'([^']+)'/gm)].map(m => m[1]));
+    // a test FILE touched in this PR plays all its own tests (generated ids like 'play-garage-tab-' + tab are not literal in the diff)
+    for (const n of names) { if (!n || !n.startsWith(fdir + '/') || !n.endsWith('.mjs') || !fs.existsSync(n)) continue; const m = (await import(pathToFileURL(path.resolve(n)).href)).default; if (Array.isArray(m)) for (const t of m) changedIds.add(t.id); }
     const ids = scopeIds({ game, tests, touchedParts: ranges.length ? touched : (changedIds.size ? ['__tests_only__'] : []), changedIds });
     if (ids) console.log(ids.join(','));
   } catch (e) { console.error('scope: ' + e.message + ' - playing everything'); }
