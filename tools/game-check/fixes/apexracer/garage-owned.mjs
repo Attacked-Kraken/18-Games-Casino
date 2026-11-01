@@ -14,6 +14,7 @@ export default [{
         const opt = (a, v) => [...document.querySelectorAll('#gopts .go')].find((e) => e.dataset[a] === v);
         const buyOpt = async (a, v) => { const el = opt(a, v); if (!el) throw new Error('no option ' + a + '=' + v); el.click(); await wait(120); const el2 = opt(a, v); if (el2) el2.click(); await wait(120); };
         const out = {};
+        { const cf = E.S.cars[E.S.cur]; cf.wrap = 'none'; cf.owns = {}; } /* start from a clean car so earlier tests cannot have bought it already */
         tab('wrap'); await wait(150);
         const c0 = E.S.cash; await buyOpt('wrap', 'circuit'); out.paid1 = c0 - E.S.cash;
         await buyOpt('wrap', 'none'); const c1 = E.S.cash;
