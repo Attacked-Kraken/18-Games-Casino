@@ -439,7 +439,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/free-wheels-sdc-pure-performance-eebae2592aa94ffabc886694bb6d096c
 - license: CC-BY 4.0
 - downloaded: 2026-11-01 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "SDC PERFORMANCE™️" on its credits screen)
+- used in: apexracer.html (credits screen names SDC PERFORMANCE™️)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/sci-fi-wheel-7b9867.glb
@@ -448,7 +448,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989
 - license: CC-BY 4.0
 - downloaded: 2026-11-01 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "gorzi" on its credits screen)
+- used in: apexracer.html (credits screen names gorzi)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/tuner-car-wheel-free-02c9dc.glb
@@ -457,7 +457,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb
 - license: CC-BY 4.0
 - downloaded: 2026-11-01 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "NLM" on its credits screen)
+- used in: apexracer.html (credits screen names NLM)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/free-wheels-rst-carbon-sdc-72d881.glb
@@ -475,5 +475,5 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3
 - license: CC-BY 4.0
 - downloaded: 2026-11-01 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "Iftekhar.Tushar" on its credits screen)
+- used in: apexracer.html (credits screen names Iftekhar.Tushar)
 - changes: shrunk for phones (textures max 1024 px, WebP)
