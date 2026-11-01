@@ -669,9 +669,9 @@ export default [
     id: 'never-g-270-p1',
     ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
     async test(page, h) {
-      await h.eval(() => { const E = window.__erc; if (E) { E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); } }); /* the test says STOCK player: pin the stock car so a car picked by an earlier test in the same page (Kestrel = 81 m/s) cannot fake a red line */
+      await h.eval(() => { const E = window.__erc; if (E) { window.__g270prev = E.R; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); } }); /* VP Oct 31 2026 (PR #2166): wait for the NEW race below - the previous test's race also has skids and was read as the player (Kestrel 81 m/s) */ /* the test says STOCK player: pin the stock car so a car picked by an earlier test in the same page (Kestrel = 81 m/s) cannot fake a red line */
       let ready = false;
-      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
+      for (let i = 0; i < 60 && !ready; i++) { ready = await h.eval(() => !!(window.__erc && window.__erc.R && window.__erc.R !== window.__g270prev && window.__erc.R.skids && window.__erc.R.P)); if (!ready) await h.wait(200); }
       if (!ready) return 'the race never finished building';
       return h.eval(() => {
         const E = window.__erc;
@@ -1756,7 +1756,7 @@ export default [
       };
       const base = await census('none');
       if (typeof base === 'string') return base;
-      for (const w of ['name', 'shards']) {
+      for (const w of ['circuit', 'apexlg']) {
         const a = await census(w);
         if (typeof a === 'string') return a;
         if (a.panels !== 0 || a.letters !== 0) return 'wrap ' + w + ' built ' + a.panels + ' panel shells and ' + a.letters + ' letter meshes - wraps must paint on the body, not add geometry (G-413)';
