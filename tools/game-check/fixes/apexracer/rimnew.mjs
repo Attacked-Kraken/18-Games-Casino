@@ -7,7 +7,7 @@ const READ = async (st, rimCol) => {
   E.S.cars.goblin = cfg; E.S.cur = 'goblin';
   try { E.openGarage(); } catch (e) { return null; }
   let last = null;
-  for (let i = 0; i < 160; i++) { /* the model loads in the background; wait until the count settles (max 24 s) */
+  for (let i = 0; i < 300; i++) { /* the model loads in the background; wait until the count settles (max 45 s) */
     await wait(150);
     const root = window.__reality && window.__reality.player; if (!root) continue;
     root.updateMatrixWorld(true);
