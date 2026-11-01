@@ -402,6 +402,8 @@ const NEW_WHEELS = {
   9: { name: 'Tuner 5-Spoke', url: 'models/fetched/tuner-car-wheel-free-02c9dc.glb', mats: /^disk$/i },
   10: { name: 'Sci-Fi Pod', url: 'models/fetched/sci-fi-wheel-7b9867.glb', mats: null } };
 const newTpl = {};
+const WHEEL_HAS_TYRE = { 6: 1, 7: 1, 8: 1, 9: 0, 10: 0 };
+const WHEEL_FIT = (st) => (WHEEL_HAS_TYRE[st] ? 1 : 0.76);
 const WHEEL_URLS = { 6: NEW_WHEELS[6].url, 7: NEW_WHEELS[7].url, 8: NEW_WHEELS[8].url, 9: NEW_WHEELS[9].url, 10: NEW_WHEELS[10].url, 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
 const wheelRetry = {};
 function bakeWheelTpl(style, sc) {
@@ -1503,6 +1505,7 @@ function makeGlbCar(id, cfg, o = {}) {
     if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
     /* OWNER Nov 1 2026 ("the stock rims have to disappear when trying other rims on"): a fetched rim+tyre swap is seen through the car's OWN wheel - its stock rim triangles sit inside the hub's cylinder (inside the tyre's inner radius, between the tyre walls). Cut those triangles out of the (cloned) meshes so only the new rim shows; tyres and the body are untouched. */
     window.__stockHidden = 0;
+    /* OWNER Nov 1: Pure Sport, Carbon Disc and Road Spoke are rim+TYRE models (the stock tyre goes too); Tuner 5-Spoke and Sci-Fi Pod are rims only (sized to the rim, the car keeps its own tyre) */
     if (clamp(cfg.rim || 0, 0, 10) >= 6 && hubs.length) {
       model.updateWorldMatrix(true, true);
       const vv = new THREE.Vector3();
@@ -1510,7 +1513,7 @@ function makeGlbCar(id, cfg, o = {}) {
         const pa = q.geometry.attributes.position, idx = q.geometry.index, nTri = idx ? idx.count / 3 : pa.count / 3;
         const inside = new Uint8Array(pa.count);
         for (let i = 0; i < pa.count; i++) { vv.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); toTilt(vv);
-          for (const hb of hubs) { const R = hb.h / 2 * 0.86 * rimScale, dz = (vv.z - hb.z) * Math.sign(hb.z); if (Math.hypot(vv.x - hb.x, vv.y - hb.y) < R && dz > -hb.w * 0.62 && dz < hb.w * 1.3) { inside[i] = 1; break; } } }
+          for (const hb of hubs) { const R = hb.h / 2 * (WHEEL_HAS_TYRE[clamp(cfg.rim || 0, 0, 10)] ? 1.03 : 0.70) * rimScale, dz = (vv.z - hb.z) * Math.sign(hb.z); if (Math.hypot(vv.x - hb.x, vv.y - hb.y) < R && dz > -hb.w * 1.5 && dz < hb.w * 1.3) { inside[i] = 1; break; } } }
         const keep = []; let cut = 0;
         for (let t = 0; t < nTri; t++) { const a0 = idx ? idx.getX(t * 3) : t * 3, b0 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, c0 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
           if (inside[a0] && inside[b0] && inside[c0]) cut++; else keep.push(a0, b0, c0); }
@@ -1572,9 +1575,9 @@ function makeGlbCar(id, cfg, o = {}) {
         if (best) { best.userData.acc = 'rimface'; tilt.add(wrap); rimDone = true; rimWrap = wrap; }
       }
       if (style >= 6 && newTpl[style]) { /* owner Nov 1 2026: a fetched rim+tyre swap - fitted like the Turbine; Rim Color recolours only the model's rim material, or the stock look stays */
-        const T = newTpl[style], cl = T.hold.clone(true); cl.scale.multiplyScalar(hb.h * rimScale);
+        const T = newTpl[style], WF = WHEEL_FIT(style), cl = T.hold.clone(true); cl.scale.multiplyScalar(hb.h * rimScale * WF);
         const wrap = new THREE.Group(); wrap.add(cl);
-        wrap.scale.z = clamp((hb.w * 1.04) / (T.widN * hb.h * rimScale), 0.45, 1.0); rimHalf = T.widN * hb.h * rimScale * wrap.scale.z / 2;
+        wrap.scale.z = clamp((hb.w * 1.04) / (T.widN * hb.h * rimScale * WF), 0.45, 1.0); rimHalf = T.widN * hb.h * rimScale * WF * wrap.scale.z / 2;
         if (hb.z < 0) wrap.rotation.y = Math.PI; wrap.position.set(hb.x, hb.y, hb.z);
         const rm = NEW_WHEELS[style].mats; let best = null, bestA = -1;
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material);
