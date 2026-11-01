@@ -402,8 +402,8 @@ const NEW_WHEELS = {
   9: { name: 'Tuner 5-Spoke', url: 'models/fetched/tuner-car-wheel-free-02c9dc.glb', mats: /^disk$/i, flip: 1 }, /* OWNER Nov 1 3:57 PM: was backwards (open barrel faced out) */
   10: { name: 'Sci-Fi Pod', url: 'models/fetched/sci-fi-wheel-7b9867.glb', mats: null } };
 const newTpl = {};
-const WHEEL_HAS_TYRE = { 6: 1, 7: 1, 8: 1, 9: 0, 10: 1 }; /* OWNER Nov 1 3:45 PM: the Sci-Fi Pod is a whole wheel (white ring = its tyre) - full size, 3D, poking out of the body */
-const WHEEL_FIT = (st) => (st === 10 ? 1.22 : WHEEL_HAS_TYRE[st] ? 1.10 : 0.84); /* OWNER Nov 1 3:57 PM: tyre picks 10% bigger so the raised fenders sit on them; Sci-Fi Pod bigger still */
+const WHEEL_HAS_TYRE = { 6: 1, 7: 1, 8: 1, 9: 1, 10: 1 }; /* OWNER Nov 1 4:28 PM: Tuner 5-Spoke has its own lettered tyre too - every pick is a whole wheel now */ /* OWNER Nov 1 3:45 PM: the Sci-Fi Pod is a whole wheel (white ring = its tyre) - full size, 3D, poking out of the body */
+const WHEEL_FIT = (st) => (st === 10 ? 1.22 : WHEEL_HAS_TYRE[st] ? 1.18 : 0.84); /* OWNER Nov 1 4:27 PM: every pick bigger */ /* OWNER Nov 1 3:57 PM: tyre picks 10% bigger so the raised fenders sit on them; Sci-Fi Pod bigger still */
 const WHEEL_WIDE = 1.32; /* OWNER Nov 1 3:21 PM 'make rim + tire wider': picks are 32% wider than the car's own tyre */
 const WHEEL_URLS = { 6: NEW_WHEELS[6].url, 7: NEW_WHEELS[7].url, 8: NEW_WHEELS[8].url, 9: NEW_WHEELS[9].url, 10: NEW_WHEELS[10].url, 2: 'models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb', 3: 'models/fetched/car-rim-c66cf1.glb', 4: 'models/fetched/car-wheelrim-f6f260.glb', 5: 'models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb' };
 const wheelRetry = {};
@@ -1588,7 +1588,11 @@ function makeGlbCar(id, cfg, o = {}) {
         cl.traverse((q) => { if (q.isMesh) { q.material = q.material.clone(); ownMats.push(q.material);
           if (rm && cfg.rimKeep === 0 && rm.test(q.material.name || '')) { q.material.map = null; q.material.color.set(cfg.rimCol || '#c9cdd6'); q.material.metalness = 0.85; q.material.roughness = 0.3; q.material.needsUpdate = true; q.userData.rimPaint = 1; }
           const szq = new THREE.Box3().setFromObject(q).getSize(new THREE.Vector3()), aq = Math.abs(szq.x * szq.y * szq.z); if (aq > bestA) { bestA = aq; best = q; } } });
-        if (best) { tilt.add(wrap); rimDone = true; rimWrap = wrap; }
+        if (best) { tilt.add(wrap); rimDone = true; rimWrap = wrap;
+          /* OWNER Nov 1 4:27 PM ('make inner fender wheels cover black' / 'add fender wheel cover'): a black wheel-well liner - a disc behind the wheel and a half tube over it - so nothing shows through the arch */
+          const linR = hb.h * rimScale * WF / 2, linMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.95, metalness: 0, side: THREE.DoubleSide }); ownMats.push(linMat);
+          const back = new THREE.Mesh(new THREE.CircleGeometry(linR * 1.02, 32), linMat); back.position.set(hb.x, hb.y + (WF - 1) * hb.h * rimScale / 2, hb.z - Math.sign(hb.z) * hb.w * 0.55); back.userData.acc = 'liner'; tilt.add(back);
+          const tube = new THREE.Mesh(new THREE.CylinderGeometry(linR * 1.10, linR * 1.10, hb.w * 1.2, 32, 1, true, Math.PI / 2, Math.PI), linMat); tube.rotation.x = Math.PI / 2; tube.rotation.y = 0; tube.position.set(hb.x, hb.y + (WF - 1) * hb.h * rimScale / 2, hb.z - Math.sign(hb.z) * hb.w * 0.05); tube.userData.acc = 'liner'; tilt.add(tube); }
       }
       if (rimDone && rimWrap && !(style >= 6 && WHEEL_HAS_TYRE[style])) { /* a pick with its own tyre is centred so its extra width pokes out; rim-only picks seat flush in the car's tyre */ /* OWNER rim-fit: seat the face flush at the tyre's outer surface - measured on the fitted wheel itself, so the rim lands IN the tyre, never buried behind the sidewall */
         tilt.updateWorldMatrix(true, true);
