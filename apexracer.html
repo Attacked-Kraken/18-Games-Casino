@@ -794,13 +794,14 @@ function wrapTex(kind, paint, acc, part) {
       if (side) { for (let k = 0; k < 6; k++) { const yc = h * (0.34 + k * 0.1); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.16 + rnd() * 0.14) * (1 - 0.15 * j), 20 + rnd() * 10, 1, fl[j]); }
         for (let k = 0; k < 4; k++) tongue(0, h * (0.4 + k * 0.12), w * (0.08 + rnd() * 0.06), 18, -1, fl[0]);
         /* gold dragon head on the door */
-        g.save(); g.translate(w * 0.34, h * 0.52); g.scale(0.85, 0.85);
+        g.save(); g.translate(w * 0.5, h * 0.36); g.scale(0.42, 0.42);
         poly([[-95, 30], [-60, -10], [-70, -52], [-30, -30], [10, -62], [20, -28], [64, -34], [100, -8], [70, 10], [96, 30], [40, 38], [-10, 62], [-50, 52]], '#e8a020', '#3a1400', 4);
         poly([[-10, -20], [30, -14], [44, -2], [10, 4]], '#ffd870'); poly([[-4, -12], [14, -8], [8, -2]], '#1a0a00');
         poly([[-30, -30], [-8, -78], [4, -34]], '#c97a10', '#3a1400', 3); poly([[34, -30], [66, -66], [58, -26]], '#c97a10', '#3a1400', 3);
         g.restore();
-        g.save(); g.font = 'italic 900 58px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#2a0c00'; g.fillStyle = '#ffc233'; /* owner Nov 1 2026: the words ran into the tail light - they now sit whole on the door, between the wheels */
-        g.strokeText('DRAGON', w * 0.57, h * 0.44); g.fillText('DRAGON', w * 0.57, h * 0.44); g.strokeText('FLAME', w * 0.57, h * 0.58); g.fillText('FLAME', w * 0.57, h * 0.58); g.restore();
+        g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#2a0c00'; g.fillStyle = '#ffc233'; /* owner Nov 1 2026: the words must sit inside the DOOR (x 0.33-0.67 of the side picture) and be easy to read */
+        const dw = (t, y) => { let px = 64; g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; const m = g.measureText(t).width; if (m > w * 0.33) { px = Math.floor(px * w * 0.33 / m); g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; } g.strokeText(t, w * 0.5, y); g.fillText(t, w * 0.5, y); };
+        dw('DRAGON', h * 0.54); dw('FLAME', h * 0.7); g.restore();
       } else { for (let k = 0; k < 7; k++) { const yc = h * (0.1 + k * 0.13); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.20 + rnd() * 0.16) * (1 - 0.15 * j), 22 + rnd() * 10, 1, fl[j]); } }
     }
     if (kind === 'circuit') { /* black-purple body, electric-blue circuit lines that glow, violet panels, NEON RACING */
@@ -813,7 +814,7 @@ function wrapTex(kind, paint, acc, part) {
       g.shadowBlur = 0;
       if (side) { g.lineWidth = 8; g.strokeStyle = '#22d8ff'; g.shadowColor = '#22d8ff'; g.shadowBlur = em ? 0 : 16; line([[0, h * 0.94], [w, h * 0.94]]); g.shadowBlur = 0;
         g.font = 'italic 900 70px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = em ? '#22d8ff' : '#e9fbff'; g.strokeStyle = '#22d8ff'; g.lineWidth = 3;
-        g.fillText('NEON', w * 0.5, h * 0.46); g.strokeText('NEON', w * 0.5, h * 0.46); g.fillText('RACING', w * 0.5, h * 0.62); g.strokeText('RACING', w * 0.5, h * 0.62); }
+        const nw = (t, y) => { let px = 70; g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; const m = g.measureText(t).width; if (m > w * 0.33) { px = Math.floor(px * w * 0.33 / m); g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; } g.save(); g.lineWidth = 12; g.strokeStyle = '#06041a'; g.strokeText(t, w * 0.5, y); g.restore(); g.fillText(t, w * 0.5, y); g.strokeText(t, w * 0.5, y); }; nw('NEON', h * 0.52); nw('RACING', h * 0.69); }
     }
     if (kind === 'apexlg') { /* navy-purple body, lightning, orange + cyan streaks, big APEX ARCADE name, sponsor words, small A logos */
       const AA = ['APEX', 'ARC' + 'ADE'];
@@ -828,9 +829,9 @@ function wrapTex(kind, paint, acc, part) {
       const word = (t, x, y, px, fill, stroke, lw) => { g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(t, x, y); g.fillStyle = fill; g.fillText(t, x, y); };
       if (side) {
         /* the door band of the car is the LOWER part of this picture (it is squeezed onto the body height), so the name sits low */
-        word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.66, 66, '#e6f0ff', '#ff9a1a', 8); logo(w * 0.5, h * 0.84, 40);
-        word('RACING LEAGUE', w * 0.36, h * 0.84, 24, '#ffffff', '#101040', 5); word('GAMING ZONE', w * 0.66, h * 0.84, 24, '#ffb23a', '#101040', 5);
-        word('DRIFTTECH', w * 0.2, h * 0.5, 34, '#ffffff', '#101040', 6); word('DRIFT CUP', w * 0.28, h * 0.9, 26, '#ffffff', '#101040', 5); word('EST. 2023', w * 0.88, h * 0.5, 24, '#ffffff', '#101040', 5);
+        const fitw = (t, y, px, fill, stroke, lw) => { g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; const m = g.measureText(t).width; if (m > w * 0.33) px = Math.floor(px * w * 0.33 / m); word(t, w * 0.5, y, px, fill, stroke, lw); };
+        /* owner Nov 1 2026: every word stays inside the door (x 0.33-0.67), stacked big so it reads */
+        fitw(AA[0], h * 0.54, 70, '#e6f0ff', '#ff9a1a', 8); fitw(AA[1], h * 0.7, 70, '#e6f0ff', '#ff9a1a', 8); fitw('GAMING ZONE', h * 0.83, 30, '#ffb23a', '#101040', 5);
       } /* owner Nov 1 2026: no name or logo on the roof (it came out blurred and mirrored) - the roof keeps the plain streaks */
     }
     if (kind === 'graffiti') { /* paint splatter + bubble tags in every colour */
