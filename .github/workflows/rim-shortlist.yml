@@ -1,0 +1,20 @@
+name: Rim shortlist (scratch)
+on:
+  push:
+    branches: ['scratch/rim-shortlist']
+permissions:
+  contents: write
+jobs:
+  go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: node tools/rim-shortlist.mjs
+      - name: publish to branch rim-shortlist
+        run: |
+          git config user.name github-actions; git config user.email actions@github.com
+          git checkout --orphan rim-shortlist-out; git rm -rf . -q 2>/dev/null || true
+          mv out/* . ; rm -rf out
+          git add -A; git commit -q -m "rim shortlist $(date -u +%H:%M)"
+          git push -f origin HEAD:rim-shortlist
