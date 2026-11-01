@@ -86,6 +86,18 @@
   .go .p { font:800 11px system-ui; color:#7dffb0; } .go .p.own { color:#9aa3d8; } .go .p.no { color:#ff7a8a; }
   .go .sw { width:34px; height:34px; border-radius:50%; box-shadow:0 0 0 2px #fff4 inset, 0 3px 8px #0008; }
   #gbtm { display:flex; gap:8px; margin-top:8px; } #gbtm button { flex:1; }
+  /* owner Nov 1 2026: "make tabs smaller, can't even see the car when fitting accessories" - on a phone stage (landscape, or portrait shown rotated) the garage panel is slim so the car stays in view */
+  @media (max-height:520px), (orientation:portrait) {
+    #gpanel { padding:4px 6px; left:6px; right:6px; bottom:calc(4px + var(--sab)); }
+    #gtabs { gap:4px; padding-bottom:4px; }
+    .gt { padding:4px 9px; font:800 11px system-ui; border-radius:9px; }
+    #gopts { min-height:0; gap:5px; }
+    .go { min-width:70px; padding:4px 6px; font:800 10px system-ui; gap:2px; border-radius:10px; }
+    .go .p { font:800 9px system-ui; } .go .sw { width:20px; height:20px; }
+    #gbtm { margin-top:4px; gap:6px; } #gbtm button { padding:6px 8px; font-size:12px; }
+    #gstats { width:130px; top:calc(44px + var(--sat)); padding:6px 8px; font-size:9px; } #gstats .s { margin:1px 0 4px; } #gstats .bar { height:5px; }
+    #gname { font-size:16px; } .cash { font-size:13px; padding:5px 10px; }
+  }
   /* ---------- hud */
   #hud { pointer-events:none; z-index:15; }
   #hud .tl { position:absolute; top:calc(52px + var(--sat)); left:calc(12px + var(--sal)); display:flex; gap:12px; align-items:flex-start; }
@@ -2717,10 +2729,15 @@ const gCfg = () => S.cars[G.gSel] || defCfg(G.gSel);
 /* owner: "give option to see what the car would look like before purchase" - first tap previews on the car (and its stats), second tap buys */
 const keyOf = (b) => G.tab + '|' + Object.entries(b.dataset).map(([k, v]) => k + ':' + v).join(',');
 function clearPrev(redraw) { if (!G.prev) return; G.prev = null; G.prevCfg = null; if (redraw && S.cars[G.gSel]) setGarageCar(G.gSel, S.cars[G.gSel]); }
-function buy(cost, fn) {
+/* what the car already owns: what it wears now + everything it ever bought (S.cars[id].owns[category][key]) - so switching away and back never charges twice */
+const OWNCUR = (x, cat) => ({ paint: x.paint, wrap: x.wrap || 'none', fin: x.fin, rim: x.rim || 0, rc: x.rimCol, cal: x.cal, glow: x.glow || '' })[cat];
+const ownMark = (x, cat, k) => { x.owns = x.owns || {}; x.owns[cat] = x.owns[cat] || {}; x.owns[cat][String(k)] = 1; };
+const OWN = (x, cat, k) => { if (!x) return false; return String(OWNCUR(x, cat)) === String(k) || !!(x.owns && x.owns[cat] && x.owns[cat][String(k)]); };
+function buy(cost, fn, cat, key) {
+  if (cat && OWN(S.cars[G.gSel], cat, key)) cost = 0;
   if (cost > 0 && G.prev !== G.tapKey) { G.prev = G.tapKey; G.prevCfg = JSON.parse(JSON.stringify(S.cars[G.gSel])); fn(G.prevCfg); setGarageCar(G.gSel, G.prevCfg); renderGarage(); sfx('tap'); return; }
   G.prev = null; G.prevCfg = null;
-if (cost > S.cash) { flashG('Not enough coins, win some races!'); sfx('crash'); return; } S.cash -= cost; fn(S.cars[G.gSel]); save(); setGarageCar(G.gSel, S.cars[G.gSel]); renderGarage(); if (cost) sfx('levelup'); else sfx('tap'); /* G-80: a bought part levels the car up */ }
+if (cost > S.cash) { flashG('Not enough coins, win some races!'); sfx('crash'); return; } S.cash -= cost; if (cat) ownMark(S.cars[G.gSel], cat, OWNCUR(S.cars[G.gSel], cat)); fn(S.cars[G.gSel]); if (cat) ownMark(S.cars[G.gSel], cat, key); save(); setGarageCar(G.gSel, S.cars[G.gSel]); renderGarage(); if (cost) sfx('levelup'); else sfx('tap'); /* G-80: a bought part levels the car up */ }
 function flashG(t) { const e = $('gname'); const o = e.textContent; e.textContent = t; e.style.color = '#ff8a9a'; setTimeout(() => { e.style.color = ''; renderGarage(); }, 1400); }
 function renderGarage() {
   const id = G.gSel, owned = !!S.cars[id], c = gCfg(), s = stats(id, G.prevCfg || c), k = CAR[id];
@@ -2734,12 +2751,12 @@ function renderGarage() {
   let h = '';
   if (G.tab === 'cars') h = CARS.map((q) => { const o = !!S.cars[q.id]; return `<button class="go ${q.id === id ? 'on' : ''}" data-car="${q.id}"><b>${q.name}</b><span style="opacity:.7">Class ${q.cls} · ${Math.round(q.top * MPH)} mph</span>${q.owner ? `<span class="p own" style="color:#ffd23a">👑 ${isOwner() ? 'OWNER · BUILT IT' : 'Owner exclusive'}</span>` : ''}${price(q.price, q.id === S.cur ? 'Driving' : o ? (q.owner && isOwner() ? 'Free · Owned' : 'Owned') : '')}${!o && q.id === id ? '<span class="p">Tap again to buy</span>' : ''}</button>`; }).join('');
   else if (!owned) h = `<div class="go" style="min-width:240px">Buy this car first (Cars tab)</div>`;
-  else if (G.tab === 'paint') h = PAINTS.map((p) => `<button class="go ${p === c.paint ? 'on' : ''}" data-paint="${p}"><span class="sw" style="background:${p}"></span>${price(500, p === c.paint ? 'On' : '')}</button>`).join('') + `<label class="go"><input type="color" id="pc" value="${c.paint}" style="width:40px;height:34px;border:0;background:none"/>Custom<span class="p">🪙500</span></label>`;
-  else if (G.tab === 'wrap') h = Object.entries(WRAPS).map(([k, v]) => `<button class="go ${k === (c.wrap || 'none') ? 'on' : ''}" data-wrap="${k}"><b>${v[0]}</b>${price(v[1], k === (c.wrap || 'none') ? 'On' : '')}</button>`).join('');
-  else if (G.tab === 'fin') h = Object.entries(FIN).map(([f, v]) => `<button class="go ${f === c.fin ? 'on' : ''}" data-fin="${f}"><b>${v.n}</b>${price(v.p, f === c.fin ? 'On' : '')}</button>`).join('');
-  else if (G.tab === 'rim') h = RIMS_ALL.map((n, i) => `<button class="go ${i === (c.rim || 0) ? 'on' : ''}" data-rim="${i}"><b>${n}</b>${price(i ? 2500 : 0, i === (c.rim || 0) ? 'On' : '')}</button>`).join('');
+  else if (G.tab === 'paint') h = PAINTS.map((p) => `<button class="go ${p === c.paint ? 'on' : ''}" data-paint="${p}"><span class="sw" style="background:${p}"></span>${price(500, p === c.paint ? 'On' : OWN(S.cars[G.gSel], 'paint', p) ? 'Owned' : '')}</button>`).join('') + `<label class="go"><input type="color" id="pc" value="${c.paint}" style="width:40px;height:34px;border:0;background:none"/>Custom<span class="p">🪙500</span></label>`;
+  else if (G.tab === 'wrap') h = Object.entries(WRAPS).map(([k, v]) => `<button class="go ${k === (c.wrap || 'none') ? 'on' : ''}" data-wrap="${k}"><b>${v[0]}</b>${price(v[1], k === (c.wrap || 'none') ? 'On' : OWN(S.cars[G.gSel], 'wrap', k) ? 'Owned' : '')}</button>`).join('');
+  else if (G.tab === 'fin') h = Object.entries(FIN).map(([f, v]) => `<button class="go ${f === c.fin ? 'on' : ''}" data-fin="${f}"><b>${v.n}</b>${price(v.p, f === c.fin ? 'On' : OWN(S.cars[G.gSel], 'fin', f) ? 'Owned' : '')}</button>`).join('');
+  else if (G.tab === 'rim') h = RIMS_ALL.map((n, i) => `<button class="go ${i === (c.rim || 0) ? 'on' : ''}" data-rim="${i}"><b>${n}</b>${price(i ? 2500 : 0, i === (c.rim || 0) ? 'On' : OWN(S.cars[G.gSel], 'rim', i) ? 'Owned' : '')}</button>`).join('');
   else if (G.tab === 'rimCol' || G.tab === 'cal') { const L = G.tab === 'cal' ? CALS : RIMC, cur = G.tab === 'cal' ? c.cal : c.rimCol; h = L.map((p) => `<button class="go ${p === cur && !(G.tab === 'rimCol' && c.rimKeep !== 0 && (c.rim || 0) >= 6) ? 'on' : ''}" data-${G.tab === 'cal' ? 'cal' : 'rc'}="${p}"><span class="sw" style="background:${p}"></span>${price(G.tab === 'cal' ? 400 : 800, p === cur ? 'On' : '')}</button>`).join('') + (G.tab === 'rimCol' && (c.rim || 0) >= 6 ? `<button class="go ${c.rimKeep !== 0 ? 'on' : ''}" data-rkeep="1"><b>Stock</b>${c.rimKeep !== 0 ? 'On' : 'Free'}</button>` : ''); }
-  else if (G.tab === 'glow') h = GLOWS.map((p) => `<button class="go ${p === (c.glow || '') ? 'on' : ''}" data-glow="${p}"><span class="sw" style="background:${p || 'repeating-linear-gradient(45deg,#333 0 6px,#555 6px 12px)'};box-shadow:0 0 14px ${p || 'transparent'}"></span>${p ? '' : 'None'}${price(p ? 3000 : 0, p === (c.glow || '') ? 'On' : '')}</button>`).join('');
+  else if (G.tab === 'glow') h = GLOWS.map((p) => `<button class="go ${p === (c.glow || '') ? 'on' : ''}" data-glow="${p}"><span class="sw" style="background:${p || 'repeating-linear-gradient(45deg,#333 0 6px,#555 6px 12px)'};box-shadow:0 0 14px ${p || 'transparent'}"></span>${p ? '' : 'None'}${price(p ? 3000 : 0, p === (c.glow || '') ? 'On' : OWN(S.cars[G.gSel], 'glow', p) ? 'Owned' : '')}</button>`).join('');
   else if (UP[G.tab]) { const u = UP[G.tab], cur = c[G.tab] || 0, own = Math.max(cur, (c.own || {})[G.tab] || 0);
     h = u.lv.map((n, i) => { let cost = 0; for (let j = own + 1; j <= i; j++) cost += u.only && isOwner() ? 0 : u.p[j]; return `<button class="go ${i === cur ? 'on' : ''}" data-up="${i}"><b>${n}</b>${price(cost, i === cur ? 'On' : i <= own ? 'Owned' : '')}</button>`; }).join(''); }
   $('gopts').innerHTML = h;
@@ -2749,15 +2766,15 @@ function renderGarage() {
     if (G.gSel !== q.id) { G.gSel = q.id; setGarageCar(q.id, defCfg(q.id)); renderGarage(); sfx('tap'); return; }
     if (q.price > S.cash) { flashG(`Need ${fmt$(q.price - S.cash)} more`); return; }
     if (!confirm(`Buy the ${q.name} for ${fmt$(q.price)}?`)) return; S.cash -= q.price; S.cars[q.id] = defCfg(q.id); S.cur = q.id; save(); setGarageCar(q.id, S.cars[q.id]); renderGarage(); sfx('unlock'); }); /* G-80: a bought car unlocks */
-  Q('[data-paint]', (b) => { if (b.dataset.paint !== c.paint) buy(500, (x) => { x.paint = b.dataset.paint; }); });
-  const pc = $('pc'); if (pc) pc.onchange = () => buy(500, (x) => { x.paint = pc.value; });
-  Q('[data-wrap]', (b) => { const k = b.dataset.wrap; if (k !== (c.wrap || 'none')) buy(WRAPS[k][1], (x) => { x.wrap = k; }); });
-  Q('[data-fin]', (b) => { if (b.dataset.fin !== c.fin) buy(FIN[b.dataset.fin].p, (x) => { x.fin = b.dataset.fin; }); });
-  Q('[data-rim]', (b) => { const i = +b.dataset.rim; if (i !== (c.rim || 0)) buy(i ? 2500 : 0, (x) => { x.rim = i; }); });
-  Q('[data-rc]', (b) => { if (b.dataset.rc !== c.rimCol || c.rimKeep !== 0) buy(800, (x) => { x.rimCol = b.dataset.rc; x.rimKeep = 0; }); });
+  Q('[data-paint]', (b) => { if (b.dataset.paint !== c.paint) buy(500, (x) => { x.paint = b.dataset.paint; }, 'paint', b.dataset.paint); });
+  const pc = $('pc'); if (pc) pc.onchange = () => buy(500, (x) => { x.paint = pc.value; }, 'paint', pc.value);
+  Q('[data-wrap]', (b) => { const k = b.dataset.wrap; if (k !== (c.wrap || 'none')) buy(WRAPS[k][1], (x) => { x.wrap = k; }, 'wrap', k); });
+  Q('[data-fin]', (b) => { if (b.dataset.fin !== c.fin) buy(FIN[b.dataset.fin].p, (x) => { x.fin = b.dataset.fin; }, 'fin', b.dataset.fin); });
+  Q('[data-rim]', (b) => { const i = +b.dataset.rim; if (i !== (c.rim || 0)) buy(i ? 2500 : 0, (x) => { x.rim = i; }, 'rim', i); });
+  Q('[data-rc]', (b) => { if (b.dataset.rc !== c.rimCol || c.rimKeep !== 0) buy(800, (x) => { x.rimCol = b.dataset.rc; x.rimKeep = 0; }, 'rc', b.dataset.rc); });
   Q('[data-rkeep]', (b) => { if (c.rimKeep === 0) { c.rimKeep = 1; save(); setGarageCar(GAR_ID, c); renderGarage(); } });
-  Q('[data-cal]', (b) => { if (b.dataset.cal !== c.cal) buy(400, (x) => { x.cal = b.dataset.cal; }); });
-  Q('[data-glow]', (b) => { const g = b.dataset.glow; if (g !== (c.glow || '')) buy(g ? 3000 : 0, (x) => { x.glow = g; }); });
+  Q('[data-cal]', (b) => { if (b.dataset.cal !== c.cal) buy(400, (x) => { x.cal = b.dataset.cal; }, 'cal', b.dataset.cal); });
+  Q('[data-glow]', (b) => { const g = b.dataset.glow; if (g !== (c.glow || '')) buy(g ? 3000 : 0, (x) => { x.glow = g; }, 'glow', g); });
   Q('[data-up]', (b) => { const i = +b.dataset.up, u = UP[G.tab], cur = c[G.tab] || 0, own = Math.max(cur, (c.own || {})[G.tab] || 0); if (i === cur) return; let cost = 0; for (let j = own + 1; j <= i; j++) cost += u.only && isOwner() ? 0 : u.p[j];
     const t = G.tab; buy(cost, (x) => { x.own = x.own || {}; x.own[t] = Math.max(own, i); x[t] = i; }); });
 }
@@ -2820,8 +2837,10 @@ $('bPause').onclick = () => pause();
 const KM = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'nos', ShiftLeft: 'drift', ShiftRight: 'drift' };
 addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (KM[e.code]) { K[KM[e.code]] = 1; e.preventDefault(); audioInit(); } if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
 addEventListener('keyup', (e) => { if (KM[e.code]) K[KM[e.code]] = 0; });
+/* owner Nov 1 2026: "an easier way to rotate the car, it doesn't spin correctly" - on a portrait phone the stage is turned 90 degrees, so a finger sweep along the screen has to be turned the same way (like the stick), and a sweep now turns the car faster */
+function dragStage(e, d) { let x = e.clientX - d.x, y = e.clientY - d.y; if (window.innerHeight > window.innerWidth) { const t = x; x = y; y = -t; } return { x, y }; }
 canvas.addEventListener('pointerdown', (e) => { if (G.mode !== 'garage' && G.mode !== 'menu') return; gOrb.drag = { x: e.clientX, y: e.clientY, th: gOrb.th, ph: gOrb.ph }; gOrb.auto = 0; audioInit(); });
-addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; if (G.mode === 'menu') { const dx = e.clientX - d.x; d.x = e.clientX; d.y = e.clientY; G.mSpin = (G.mSpin || 0) + dx * 0.012; G.mSpinV = clamp(dx * 0.9, -9, 9); return; } gOrb.th = d.th - (e.clientX - d.x) * 0.008; gOrb.ph = clamp(d.ph + (e.clientY - d.y) * 0.004, 0.03, 0.9); gOrb.tt = null; });
+addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; if (G.mode === 'menu') { const dx = dragStage(e, d).x; d.x = e.clientX; d.y = e.clientY; G.mSpin = (G.mSpin || 0) + dx * 0.012; G.mSpinV = clamp(dx * 0.9, -9, 9); return; } const ds = dragStage(e, d); gOrb.th = d.th - ds.x * 0.012; gOrb.ph = clamp(d.ph + ds.y * 0.005, 0.03, 0.9); gOrb.tt = null; });
 addEventListener('pointerup', () => { gOrb.drag = null; });
 $('mRace').onclick = () => { audioInit(); sfx('tap'); openWorld(); };
 $('mFriends').onclick = () => { audioInit(); sfx('tap'); openFriend(); };
@@ -2890,7 +2909,7 @@ resize(); toMenu();
 { const q = new URLSearchParams(location.search).get('friend'); if (q && parseFriendCode(q)) openFriend(q); }
 { const tq = new URLSearchParams(location.search).get('test'); if (tq === 'night') setTimeout(() => startRace(PLACES[0], 3), 400); if (tq === 'rim') setTimeout(() => { try { S.cars[S.cur].rim = 3; S.cars[S.cur].rimCol = '#e8252f'; G.tab = 'rim'; openGarage(); } catch (e) {} }, 2500); if (tq === 'rims') setTimeout(() => { try { G.tab = 'rim'; openGarage(); showRims(); } catch (e) {} }, 2500); } /* G-364: owner check link - the garage with every rim style side by side, names under each */ /* G-355: owner check link - opens straight at the garage Rims tab, Deep Dish style, red rim colour */ /* G-206: owner check link - opens straight at the changed spot, the New York night grid */
 requestAnimationFrame(frame);
-window.__erc = { step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, simStep: (n, dt) => { for (let i = 0; i < n; i++) simRace(dt); }, standings, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam, wheelState: () => ({ 2: !!turbTpl, 3: !!dishTpl, 4: !!rimTpl, 5: !!monoTpl }), dropWheel: (style) => { if (style === 2) turbTpl = null; else if (style === 3) dishTpl = null; else if (style === 4) rimTpl = null; else if (style === 5) monoTpl = null; } };
+window.__erc = { gOrb, step: (n, dt) => { for (let i = 0; i < n; i++) updateRace(dt); }, simStep: (n, dt) => { for (let i = 0; i < n; i++) simRace(dt); }, standings, showRims, hideRims, showResults, get R() { return R; }, get S() { return S; }, get G() { return G; }, PLACES, startRace, setupRace, K, show, toMenu, openGarage, openWorld, renderer, post, cam, wheelState: () => ({ 2: !!turbTpl, 3: !!dishTpl, 4: !!rimTpl, 5: !!monoTpl }), dropWheel: (style) => { if (style === 2) turbTpl = null; else if (style === 3) dishTpl = null; else if (style === 4) rimTpl = null; else if (style === 5) monoTpl = null; } };
 /* G-74 · REALITY robot hook (REALITY.md "Robot hook"): the robot measures the REAL player in the
    running game - its size, that it faces the way it travels along the track direction, and that
    its wheels touch the ground. Everything resolves LIVE on every read: the garage car and the
