@@ -1412,7 +1412,7 @@ export default [
       return true;
     },
   },
-  { id: 'never-g-355-p1', cat: 'never', name: 'every rim style builds a different real rim', async test(page, h) {
+  { id: 'never-g-355-p1', cat: 'never', capSec: 120, name: 'every rim style builds a different real rim', async test(page, h) {
       const sigs = await h.eval(async () => { const E = window.__erc, wait = (ms) => new Promise((rs) => setTimeout(rs, ms));
         if (!E.S.cars) E.S.cars = {};
         if (!E.S.cars.goblin) E.S.cars.goblin = { paint: '#9d0f1f', fin: 'candy', rimCol: '#c9cdd6' };

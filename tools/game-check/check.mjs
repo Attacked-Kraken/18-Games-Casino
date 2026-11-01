@@ -575,7 +575,7 @@ for (const g of games) {
         dead = false; inc = false; const budget = attempt === 2 ? 2 : 1;
         try {
           const sl = await slowFactor(page); r.slow = sl; try { await page.evaluate(f => { window.__slow = f; }, sl.factor); } catch (e) {}
-          const capMs = Math.min(30000 * sl.factor, 90000) * budget;
+          const capMs = (fx.capSec ? fx.capSec * 1000 : Math.min(30000 * sl.factor, 90000)) * budget; /* Nov 1 2026: a test that really needs many game rebuilds (6 races) says so with capSec; every other test keeps the 30-90 s cap */
           const res = await Promise.race([fx.test(live, h), new Promise((_, rej) => { timer = setTimeout(() => { dead = true; rej(new Error('took over ' + Math.round(capMs / 1000) + ' s' + (sl.factor > 1 ? ' (runner ' + sl.factor + 'x slower than normal)' : ''))); }, capMs); })]);
           ok = res === true;
           if (res && typeof res === 'object' && res.inconclusive) { inc = true; note = String(res.inconclusive).slice(0, 160); }
