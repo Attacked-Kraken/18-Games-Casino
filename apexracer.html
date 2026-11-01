@@ -794,13 +794,13 @@ function wrapTex(kind, paint, acc, part) {
       if (side) { for (let k = 0; k < 6; k++) { const yc = h * (0.34 + k * 0.1); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.16 + rnd() * 0.14) * (1 - 0.15 * j), 20 + rnd() * 10, 1, fl[j]); }
         for (let k = 0; k < 4; k++) tongue(0, h * (0.4 + k * 0.12), w * (0.08 + rnd() * 0.06), 18, -1, fl[0]);
         /* gold dragon head on the door */
-        g.save(); g.translate(w * 0.5, h * 0.52); g.scale(1.25, 1.25);
+        g.save(); g.translate(w * 0.34, h * 0.52); g.scale(0.85, 0.85);
         poly([[-95, 30], [-60, -10], [-70, -52], [-30, -30], [10, -62], [20, -28], [64, -34], [100, -8], [70, 10], [96, 30], [40, 38], [-10, 62], [-50, 52]], '#e8a020', '#3a1400', 4);
         poly([[-10, -20], [30, -14], [44, -2], [10, 4]], '#ffd870'); poly([[-4, -12], [14, -8], [8, -2]], '#1a0a00');
         poly([[-30, -30], [-8, -78], [4, -34]], '#c97a10', '#3a1400', 3); poly([[34, -30], [66, -66], [58, -26]], '#c97a10', '#3a1400', 3);
         g.restore();
-        g.save(); g.font = 'italic 900 76px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 9; g.strokeStyle = '#2a0c00'; g.fillStyle = '#ffc233';
-        g.strokeText('DRAGON', w * 0.7, h * 0.42); g.fillText('DRAGON', w * 0.7, h * 0.42); g.strokeText('FLAME', w * 0.7, h * 0.58); g.fillText('FLAME', w * 0.7, h * 0.58); g.restore();
+        g.save(); g.font = 'italic 900 58px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 7; g.strokeStyle = '#2a0c00'; g.fillStyle = '#ffc233'; /* owner Nov 1 2026: the words ran into the tail light - they now sit whole on the door, between the wheels */
+        g.strokeText('DRAGON', w * 0.57, h * 0.44); g.fillText('DRAGON', w * 0.57, h * 0.44); g.strokeText('FLAME', w * 0.57, h * 0.58); g.fillText('FLAME', w * 0.57, h * 0.58); g.restore();
       } else { for (let k = 0; k < 7; k++) { const yc = h * (0.1 + k * 0.13); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.20 + rnd() * 0.16) * (1 - 0.15 * j), 22 + rnd() * 10, 1, fl[j]); } }
     }
     if (kind === 'circuit') { /* black-purple body, electric-blue circuit lines that glow, violet panels, NEON RACING */
@@ -831,7 +831,7 @@ function wrapTex(kind, paint, acc, part) {
         word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.66, 66, '#e6f0ff', '#ff9a1a', 8); logo(w * 0.5, h * 0.84, 40);
         word('RACING LEAGUE', w * 0.36, h * 0.84, 24, '#ffffff', '#101040', 5); word('GAMING ZONE', w * 0.66, h * 0.84, 24, '#ffb23a', '#101040', 5);
         word('DRIFTTECH', w * 0.2, h * 0.5, 34, '#ffffff', '#101040', 6); word('DRIFT CUP', w * 0.28, h * 0.9, 26, '#ffffff', '#101040', 5); word('EST. 2023', w * 0.88, h * 0.5, 24, '#ffffff', '#101040', 5);
-      } else { word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.5, 84, '#e6f0ff', '#ff9a1a', 9); logo(w * 0.12, h * 0.5, 80); logo(w * 0.88, h * 0.5, 80); }
+      } /* owner Nov 1 2026: no name or logo on the roof (it came out blurred and mirrored) - the roof keeps the plain streaks */
     }
     if (kind === 'graffiti') { /* paint splatter + bubble tags in every colour */
       g.fillStyle = '#0c3fa8'; g.fillRect(0, 0, w, h);
@@ -861,7 +861,7 @@ function applyRealCarWrap(model, bodyMat, cfg, tireMat) {
   let tex = WC[key];
   if (!tex) {
     const ts = wrapTex(cfg.wrap, cfg.paint, acc, 's'), tt = wrapTex(cfg.wrap, cfg.paint, acc, 't');
-    tex = ctex(1024, 1024, (g, w, h) => { g.drawImage(tt.image, 0, 0, w, h * 0.5); g.drawImage(ts.image, 0, h * 0.5, w, h * 0.5); g.fillStyle = cfg.paint || '#888'; g.fillRect(0, h - 12, 12, 12); /* plain paint patch: the wheels point here so no wrap paints over a rim */ });
+    tex = ctex(1024, 1024, (g, w, h) => { g.drawImage(tt.image, 0, 0, w, h * 0.5); g.drawImage(ts.image, 0, h * 0.5, w, h * 0.5); const a1 = document.createElement('canvas'); a1.width = a1.height = 1; const c1 = a1.getContext('2d'); c1.drawImage(ts.image, 0, 0, 1, 1); const pd = c1.getImageData(0, 0, 1, 1).data; g.fillStyle = 'rgb(' + pd[0] + ',' + pd[1] + ',' + pd[2] + ')'; g.fillRect(0, h - 12, 12, 12); /* patch under the wheels: the wrap's own average colour (owner Nov 1 2026: the old body-paint colour showed as red edges round the arches) */ });
     WC[key] = tex;
   }
   bodyMat.map = tex; bodyMat.color.set(0xffffff); bodyMat.metalness = Math.min(bodyMat.metalness, 0.12); bodyMat.roughness = Math.max(bodyMat.roughness, 0.42); bodyMat.envMapIntensity = Math.min(bodyMat.envMapIntensity === undefined ? 1 : bodyMat.envMapIntensity, 0.45); bodyMat.clearcoat = Math.min(bodyMat.clearcoat || 0, 0.25); bodyMat.sheen = 0; bodyMat.iridescence = 0; /* a printed wrap shows its own colours, not a mirror of the garage lights */
