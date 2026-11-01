@@ -147,8 +147,8 @@ jobs:
               # the base was probably empty on the shallow checkout. Fall back to the PR's base branch, and SAY what happened (annotation).
               if [ -z "$SBASE" ]; then git fetch -q --depth=50 origin "${{ github.base_ref }}" 2>/dev/null || true; SBASE=$(git rev-parse FETCH_HEAD 2>/dev/null || true); fi
               SCOPE=$(node tools/game-check/scope.mjs "$GAME" "$SBASE" 2>/tmp/scope.err || true)
-              if [ -n "$SCOPE" ]; then echo "Scoped check: playing only $SCOPE"; echo "::notice title=scope $GAME::scoped to $(echo "$SCOPE" | tr ',' '\n' | wc -l) tests (base ${SBASE:0:7})"
-              else echo "::notice title=scope $GAME::NOT scoped - plays every test (base '${SBASE:0:7}', mode ${{ needs.plan.outputs.mode }}) $(head -c 200 /tmp/scope.err | tr '\n' ' ')"; fi
+              if [ -n "$SCOPE" ]; then echo "Scoped check: playing only $SCOPE"; echo "::notice title=scope $GAME::scoped to $(echo "$SCOPE" | tr ',' '\n' | wc -l) tests (base $(echo "$SBASE" | cut -c1-7))"
+              else echo "::notice title=scope $GAME::NOT scoped - plays every test (base '$(echo "$SBASE" | cut -c1-7)', mode ${{ needs.plan.outputs.mode }}) $(head -c 200 /tmp/scope.err | tr '\n' ' ')"; fi
             fi
             ONLY_TESTS="$SCOPE" ONLY="$GAME" TEST_PART="$PART" SKIP_MODELS=1 node tools/game-check/check.mjs http://127.0.0.1:8811/ game-check-out
           fi
