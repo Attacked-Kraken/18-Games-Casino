@@ -827,10 +827,10 @@ function wrapTex(kind, paint, acc, part) {
       const logo = (x, y, sz) => { g.save(); g.translate(x, y); poly([[-sz * 0.5, sz * 0.5], [0, -sz * 0.55], [sz * 0.5, sz * 0.5], [sz * 0.28, sz * 0.5], [0, -sz * 0.05], [-sz * 0.28, sz * 0.5]], '#e9f4ff', '#ff9a1a', 3); g.restore(); };
       const word = (t, x, y, px, fill, stroke, lw) => { g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(t, x, y); g.fillStyle = fill; g.fillText(t, x, y); };
       if (side) {
-        word(AA[0], w * 0.5, h * 0.36, 132, '#e6f0ff', '#ff9a1a', 12); word(AA[1], w * 0.5, h * 0.58, 112, '#e6f0ff', '#ff9a1a', 11);
-        logo(w * 0.86, h * 0.4, 110);
-        word('RACING LEAGUE', w * 0.5, h * 0.74, 38, '#ffffff', '#101040', 7); word('GAMING ZONE', w * 0.74, h * 0.83, 30, '#ffb23a', '#101040', 6);
-        word('DRIFTTECH', w * 0.2, h * 0.16, 40, '#ffffff', '#101040', 7); word('DRIFT CUP', w * 0.2, h * 0.9, 34, '#ffffff', '#101040', 6); logo(w * 0.06, h * 0.55, 46); word('EST. 2023', w * 0.88, h * 0.16, 26, '#ffffff', '#101040', 5);
+        /* the door band of the car is the LOWER part of this picture (it is squeezed onto the body height), so the name sits low */
+        word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.66, 66, '#e6f0ff', '#ff9a1a', 8); logo(w * 0.5, h * 0.84, 40);
+        word('RACING LEAGUE', w * 0.36, h * 0.84, 24, '#ffffff', '#101040', 5); word('GAMING ZONE', w * 0.66, h * 0.84, 24, '#ffb23a', '#101040', 5);
+        word('DRIFTTECH', w * 0.2, h * 0.5, 34, '#ffffff', '#101040', 6); word('DRIFT CUP', w * 0.28, h * 0.9, 26, '#ffffff', '#101040', 5); word('EST. 2023', w * 0.88, h * 0.5, 24, '#ffffff', '#101040', 5);
       } else { word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.5, 84, '#e6f0ff', '#ff9a1a', 9); logo(w * 0.12, h * 0.5, 80); logo(w * 0.88, h * 0.5, 80); }
     }
     if (kind === 'graffiti') { /* paint splatter + bubble tags in every colour */
@@ -882,6 +882,7 @@ function applyRealCarWrap(model, bodyMat, cfg, tireMat) {
   });
   if (!meshes.length) return;
   const L = box.max.x - box.min.x || 1, H = box.max.y - box.min.y || 1, W = box.max.z - box.min.z || 1;
+  const alongZ = W > L;
   /* the Goblin's wheels share the body material: find each wheel from its tire (centre + radius in the model's own space) and send every body vertex inside a wheel to a plain-paint patch, so no wrap ever paints a rim */
   const wheels = [];
   if (tireMat) { const quad = {}; const bcx = (box.min.x + box.max.x) / 2, bcz = (box.min.z + box.max.z) / 2; model.traverse((q) => { if (!q.isMesh || q.material !== tireMat || !q.geometry || !q.geometry.attributes.position) return; const p = q.geometry.attributes.position, m = new THREE.Matrix4().multiplyMatrices(inv, q.matrixWorld); for (let i = 0; i < p.count; i += 2) { v.fromBufferAttribute(p, i).applyMatrix4(m); const k = (v.x > bcx ? 1 : 0) + (v.z > bcz ? 2 : 0); (quad[k] = quad[k] || new THREE.Box3()).expandByPoint(v); } });
@@ -893,12 +894,17 @@ function applyRealCarWrap(model, bodyMat, cfg, tireMat) {
     const uvs = new Float32Array(p.count * 2);
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i).applyMatrix4(m); n.fromBufferAttribute(nr, i).applyMatrix3(nm).normalize();
-      const ux = (v.x - box.min.x) / L, uy = (v.y - box.min.y) / H, uz = (v.z - box.min.z) / W;
+      /* the Goblin file is built nose-to-tail along z, so 'length' is whichever horizontal axis is longer (otherwise the name lands on the front) */
+      const ux = alongZ ? (v.z - box.min.z) / W : (v.x - box.min.x) / L, uy = (v.y - box.min.y) / H, uz = alongZ ? (v.x - box.min.x) / L : (v.z - box.min.z) / W, sideNeg = alongZ ? v.x < (box.min.x + box.max.x) / 2 : v.z < 0;
       if (wheels.length && inWheel(v.x, v.y, v.z)) { uvs[i * 2] = 0.004; uvs[i * 2 + 1] = 0.004; }
-      else if (n.y > 0.35) { uvs[i * 2] = ux; uvs[i * 2 + 1] = 0.5 + 0.5 * uz; }
-      else { uvs[i * 2] = v.z < 0 ? 1 - ux : ux; uvs[i * 2 + 1] = 0.5 * uy; }   /* -z side flipped so text reads right */
+      else if (n.y > 0.62) { uvs[i * 2] = ux; uvs[i * 2 + 1] = 0.5 + 0.5 * uz; }
+      else { uvs[i * 2] = sideNeg ? ux : 1 - ux; uvs[i * 2 + 1] = 0.5 * uy; }   /* -z side flipped so text reads right */
     }
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    /* proof for the robot: how many side-facing body points land on a white letter pixel of the wrap picture */
+    if (cfg.wrap === 'apexlg' && tex.image && tex.image.getContext) { const cg = tex.image.getContext('2d'), D = window.__wrapDoor || (window.__wrapDoor = { white: 0, total: 0 });
+      for (let i = 0; i < p.count; i += 5) { v.fromBufferAttribute(p, i).applyMatrix4(m); n.fromBufferAttribute(nr, i).applyMatrix3(nm).normalize(); const sideFace = Math.abs(alongZ ? n.x : n.z) > 0.75; if (!sideFace || (wheels.length && inWheel(v.x, v.y, v.z))) continue;
+        const px = cg.getImageData(Math.min(1023, Math.floor(uvs[i * 2] * 1024)), Math.min(1023, Math.floor((1 - uvs[i * 2 + 1]) * 1024)), 1, 1).data; D.total++; if (px[0] > 215 && px[1] > 225 && px[2] > 240) D.white++; } }
   }
 }
 function topY(P, x) { const b = P.body.slice().sort((a, c) => a[0] - c[0]); let y = b[0][1]; for (const [bx2, by] of b) if (bx2 <= x) y = by; for (let i = 0; i < b.length - 1; i++) if (x >= b[i][0] && x <= b[i + 1][0]) { const t = (x - b[i][0]) / (b[i + 1][0] - b[i][0]); return lerp(b[i][1], b[i + 1][1], t); } return y; }
