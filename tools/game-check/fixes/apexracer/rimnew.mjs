@@ -47,4 +47,22 @@ export default [
       return bad.length ? bad.join('; ') : true;
     },
   },
+  {
+    id: 'play-garage-stock-rim-hidden',
+    ask: 'Owner Nov 1: when a new rim is on, the car\'s own stock rim must be gone - never seen through the new rim.',
+    async test(page, h) {
+      const bad = [];
+      for (let st = 6; st <= 10; st++) {
+        const n = await h.eval(async (st2) => {
+          const E = window.__erc, wait = (ms) => new Promise((r) => setTimeout(r, ms));
+          E.S.cars.goblin = { ...(E.S.cars.goblin || {}), rim: st2, rimKeep: 1, wrap: 'shardcamo', aero: 0, wheel: 0 }; E.S.cur = 'goblin';
+          try { E.openGarage(); } catch (e) { return -1; }
+          for (let i = 0; i < 120; i++) { await wait(150); if (window.__stockHidden > 0) return window.__stockHidden; }
+          return 0;
+        }, st).catch(() => -1);
+        if (n <= 0) bad.push('style ' + st + ': the car\'s own stock rim is still on (0 stock-rim triangles removed)');
+      }
+      return bad.length ? bad.join('; ') : true;
+    },
+  },
 ];

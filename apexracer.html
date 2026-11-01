@@ -1498,6 +1498,22 @@ function makeGlbCar(id, cfg, o = {}) {
     /* G-345 fix 2 (owner): a bigger wheel size lifts the car - the body rises by the extra radius and the hubs rise with it, so the bigger wheels stay grounded */
     const rimScale = [1, 1.15, 1.3][clamp(cfg.wheel || 0, 0, 2)];
     if (rimScale > 1 && hubs.length) { const lift = (rimScale - 1) * (hubs.reduce((a2, hb) => a2 + hb.h, 0) / hubs.length) / 2; model.position.y += lift; for (const hb of hubs) hb.y += lift; model.updateWorldMatrix(true, true); }
+    /* OWNER Nov 1 2026 ("the stock rims have to disappear when trying other rims on"): a fetched rim+tyre swap is seen through the car's OWN wheel - its stock rim triangles sit inside the hub's cylinder (inside the tyre's inner radius, between the tyre walls). Cut those triangles out of the (cloned) meshes so only the new rim shows; tyres and the body are untouched. */
+    window.__stockHidden = 0;
+    if (clamp(cfg.rim || 0, 0, 10) >= 6 && hubs.length) {
+      model.updateWorldMatrix(true, true);
+      const vv = new THREE.Vector3();
+      model.traverse((q) => { if (!q.isMesh || q.material === tireMat || !q.geometry || !q.geometry.attributes.position) return;
+        const pa = q.geometry.attributes.position, idx = q.geometry.index, nTri = idx ? idx.count / 3 : pa.count / 3;
+        const inside = new Uint8Array(pa.count);
+        for (let i = 0; i < pa.count; i++) { vv.fromBufferAttribute(pa, i).applyMatrix4(q.matrixWorld); toTilt(vv);
+          for (const hb of hubs) { const R = hb.h / 2 * 0.80 * rimScale; if (Math.hypot(vv.x - hb.x, vv.y - hb.y) < R && Math.abs(vv.z - hb.z) < hb.w * 0.5) { inside[i] = 1; break; } } }
+        const keep = []; let cut = 0;
+        for (let t = 0; t < nTri; t++) { const a0 = idx ? idx.getX(t * 3) : t * 3, b0 = idx ? idx.getX(t * 3 + 1) : t * 3 + 1, c0 = idx ? idx.getX(t * 3 + 2) : t * 3 + 2;
+          if (inside[a0] && inside[b0] && inside[c0]) cut++; else keep.push(a0, b0, c0); }
+        if (!cut) return;
+        q.geometry = q.geometry.clone(); q.geometry.setIndex(keep); window.__stockHidden += cut; });
+    }
     /* G-345 fix 2 (owner: 'wheel options don't work'): the Rims styles are real 3D rims on real cars now.
        Mesh (style 4) is the owner's LOCKED fetched wheel in its own finish; the other five are turned
        barrels with real spokes in each design, wearing the chosen rim colour. One barrel per wheel
