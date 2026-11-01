@@ -10,7 +10,7 @@ const SETUP = async (args) => {
   E.openGarage();
   return true;
 };
-const LOOK_TABS = ['paint', 'wrap', 'wrapCol', 'fin', 'rim', 'rimCol', 'cal', 'glow', 'kit', 'aero', 'tint'];
+const LOOK_TABS = ['paint', 'wrap', 'fin', 'rim', 'rimCol', 'cal', 'glow', 'kit', 'aero', 'tint'];
 const STAT_TABS = ['eng', 'turbo', 'nos', 'tire', 'wheel'];
 async function openTab(h, tab) {
   return h.eval(async (t) => { const wait = (ms) => new Promise((r) => setTimeout(r, ms));

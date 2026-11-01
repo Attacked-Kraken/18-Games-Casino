@@ -427,7 +427,7 @@ const CARS = [
   { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
-const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: id === 'goblin' ? 'name' : (id === 'vanta' ? 'stripes' : 'none'), wrapCol: '#ffffff' });
+const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
 const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
 let S = DEF();
@@ -436,9 +436,9 @@ let WELCOME = false;
 function load() { try { const raw = localStorage.getItem(skey()); WELCOME = !raw; S = Object.assign(DEF(), JSON.parse(raw || '{}')); } catch (e) { S = DEF(); } if (!S.cars.goblin) { S.cars.goblin = defCfg('goblin'); S.cur = 'goblin'; }
   else { const g = S.cars.goblin; if (g.paint === '#e8e8ee') { g.paint = '#9d0f1f'; g.fin = 'candy'; } if (g.rimCol === '#c9cdd6') g.rimCol = '#d4142a'; } if (!S.cars[S.cur]) S.cur = Object.keys(S.cars)[0] || 'goblin'; if (!S.cars.vanta && !Object.keys(S.cars).length) S.cars.vanta = defCfg('vanta');
   /* G-23: APEX ARCADE name wrap ON by default for the owner's Goblin - one time only, later choices stick */
-  if (!S.nameWrap1) { S.nameWrap1 = 1; const g23 = S.cars.goblin; if (g23 && (!g23.wrap || g23.wrap === 'none')) { g23.wrap = 'name'; save(); } }
+  if (!S.wrapNew1) { S.wrapNew1 = 1; S.nameWrap1 = 1; for (const k of Object.keys(S.cars)) { const cw = S.cars[k]; if (cw && cw.wrap && !['circuit', 'dragon', 'shardcamo', 'graffiti', 'apexlg'].includes(cw.wrap)) cw.wrap = 'none'; } save(); }
   /* Vanta GT S7 look (owner, 2026-10-21): a Vanta still on the old factory spec gets white rims + racing stripes once; anything the player changed stays */
-  if (!S.vantaS7) { S.vantaS7 = 1; const v7 = S.cars.vanta; if (v7) { if (v7.rimCol === '#c9cdd6') v7.rimCol = '#f4f6f8'; if (!v7.wrap || v7.wrap === 'none') v7.wrap = 'stripes'; save(); } }
+  if (!S.vantaS7) { S.vantaS7 = 1; const v7 = S.cars.vanta; if (v7) { if (v7.rimCol === '#c9cdd6') v7.rimCol = '#f4f6f8'; save(); } }
   /* owner: "give me a 200,000 bonus on my Cruz username profile for the racer" - one time only */
   if (isOwner()) for (const q of CARS) if (q.owner && !S.cars[q.id]) { S.cars[q.id] = defCfg(q.id); if (q.id === 'titan') { S.cars.titan.fin = 'chrome'; S.cars.titan.glow = '#19e6ff'; } }
   if (isOwner() && !S.gift3m) { S.gift3m = 1; S.cash += 3000000; GIFT3 = true; save(); } /* owner: "give me another 🪙3million in account to race with" */
@@ -764,44 +764,85 @@ function paintMat(hex, fin) {
   return m;
 }
 /* owner: "put graphic wraps on cars" - drawn here: the side panels and the top get their own art over the paint */
-const WRAPS = { none: ['No wrap', 0], name: ['APEX ARCADE', 6000], stripes: ['Racing Stripes', 4000], flames: ['Flames', 5000], shards: ['Shards', 5000], bolt: ['Lightning', 5000], checker: ['Checker Fade', 4500], race: ['Race #88', 6000], apex: ['Apex Livery', 8000], camo: ['Urban Camo', 4500], split: ['Two-Tone', 3500], neon: ['Neon Lines', 7000] };
+const WRAPS = { none: ['No wrap', 0], circuit: ['Neon Cyberpunk', 7000], dragon: ['Dragon & Flame', 8000], shardcamo: ['Geometric Camo', 6000], graffiti: ['Urban Graffiti', 7000], apexlg: ['Apex ' + 'Arcade', 9000] };
+const EMIT_WRAPS = { circuit: '#ffffff' };
 const WC = {};
 function wrapTex(kind, paint, acc, part) {
-  const key = kind + paint + acc + part; if (WC[key]) return WC[key];
+  const key = kind + part; if (WC[key]) return WC[key];
   const t = ctex(1024, 512, (g, w, h) => {
-    g.fillStyle = kind === 'neon' && part === 'e' ? '#000' : paint; g.fillRect(0, 0, w, h);
     const side = part === 's', em = part === 'e';
-    if (em && kind !== 'neon') return;
-    const A = acc, dark = new THREE.Color(paint).multiplyScalar(0.45).getStyle();
-    const sy = (m) => h * (1 - m / 2);   /* side: height in meters -> canvas y */
-    const ty = (m) => h * 0.5 - m * h / 2; /* top: meters across the car from the center -> canvas y */
-    g.lineJoin = 'round';
-    if (kind === 'stripes') { g.fillStyle = A; if (side) g.fillRect(0, sy(0.62), w, h * 0.035); else { g.fillRect(0, ty(0.22), w, h * 0.09); g.fillRect(0, ty(-0.04), w, h * 0.09); } }
-    if (kind === 'split') { g.fillStyle = A; g.beginPath(); if (side) { g.moveTo(0, sy(0.75)); g.lineTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); g.lineTo(0, h); } else { g.moveTo(0, 0); g.lineTo(w * 0.35, 0); g.lineTo(w * 0.25, h); g.lineTo(0, h); } g.fill(); }
-    if (kind === 'flames') { for (let k = 0; k < 9; k++) { const y0 = side ? sy(0.35 + k * 0.06) : h * (0.18 + k * 0.08), len = w * (0.25 + Math.random() * 0.3), x0 = w * 0.98;
-        const gr = g.createLinearGradient(x0, 0, x0 - len, 0); gr.addColorStop(0, '#fff6a0'); gr.addColorStop(0.35, '#ffb000'); gr.addColorStop(0.75, '#ff3d00'); gr.addColorStop(1, 'rgba(180,0,0,0)'); g.fillStyle = gr;
-        g.beginPath(); g.moveTo(x0, y0 - 18); g.bezierCurveTo(x0 - len * 0.4, y0 - 40, x0 - len * 0.7, y0 + 10, x0 - len, y0 - 6); g.bezierCurveTo(x0 - len * 0.6, y0 + 30, x0 - len * 0.3, y0 + 20, x0, y0 + 18); g.fill(); } }
-    if (kind === 'shards') { g.fillStyle = A; for (let k = 0; k < 7; k++) { const x = w * (0.12 + k * 0.12), y = side ? sy(0.45 + (k % 3) * 0.1) : h * (0.3 + (k % 3) * 0.2); g.beginPath(); g.moveTo(x, y); g.lineTo(x + 120, y - 40); g.lineTo(x + 60, y + 10); g.lineTo(x + 150, y + 26); g.lineTo(x - 20, y + 30); g.closePath(); g.fill(); } }
-    if (kind === 'bolt' || kind === 'neon') { g.strokeStyle = kind === 'neon' ? (em ? acc : acc) : A; g.lineWidth = kind === 'neon' ? 7 : 26; if (kind === 'neon') { g.shadowColor = acc; g.shadowBlur = 14; }
-      const rows = kind === 'neon' ? (side ? [0.42, 0.7] : [-0.3, 0.3]) : [side ? 0.55 : 0];
-      for (const r0 of rows) { g.beginPath(); let x = 0, y = side ? sy(r0) : ty(r0); g.moveTo(x, y); while (x < w) { x += 70 + Math.random() * 60; y += (kind === 'neon' ? (Math.random() < 0.5 ? 0 : (Math.random() - 0.5) * 40) : (Math.random() - 0.5) * 120); g.lineTo(x, y); } g.stroke(); } g.shadowBlur = 0; }
-    if (kind === 'checker') { const cs = 32; for (let x = 0; x < w * 0.6; x += cs) for (let y = side ? sy(1.0) : 0; y < (side ? sy(0.2) : h); y += cs) { if (((x + y) / cs) % 2 === 0 && Math.random() < 1 - x / (w * 0.6)) { g.fillStyle = A; g.fillRect(x, y, cs, cs); } } }
-    if (kind === 'camo') { for (let k = 0; k < 160; k++) { g.fillStyle = [dark, A, new THREE.Color(paint).multiplyScalar(0.7).getStyle()][k % 3]; g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 50, 12 + Math.random() * 30, Math.random() * 3, 0, TAU); g.fill(); } }
-    if (kind === 'race') { g.fillStyle = A; if (side) { g.fillRect(0, sy(0.36), w, h * 0.05); g.beginPath(); g.arc(w * 0.56, sy(0.6), 64, 0, TAU); g.fillStyle = '#ffffff'; g.fill(); g.fillStyle = '#111'; g.font = '900 78px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('88', w * 0.56, sy(0.6) + 4); }
-      else { g.fillRect(0, ty(0.12), w, h * 0.12); g.fillStyle = '#fff'; g.fillRect(0, ty(0.14), w, h * 0.012); g.fillRect(0, ty(-0.14), w, h * 0.012); } }
-    if (kind === 'apex') { /* Apex Arcade race livery: dark base, checkered band, big sponsor text, number roundel */
-      const AC = '#0d1026'; g.fillStyle = AC; g.fillRect(0, 0, w, h);
+    let sd = 11; for (const ch of kind) sd = (sd * 31 + ch.charCodeAt(0)) >>> 0;
+    const rnd = () => { sd = (sd + 0x6D2B79F5) >>> 0; let x = sd; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    const poly = (pts, fill, stroke, lw) => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 3; g.stroke(); } };
+    if (kind === 'shardcamo') { /* matte black, crimson and metallic silver angular shards */
+      g.fillStyle = '#0c0c10'; g.fillRect(0, 0, w, h);
+      const pal = ['#c8101c', '#9a0a14', '#c8101c', '#0a0a0e', '#14141a', '#0a0a0e', '#22222a', '#6a6d75', '#b4b8c0'];
+      for (let pass = 0; pass < 3; pass++) { const n = [70, 110, 150][pass], sz = [230, 140, 80][pass];
+        for (let k = 0; k < n; k++) { const cx = rnd() * w, cy = rnd() * h, a = -0.5 + rnd() * 1.0, np = 3 + Math.floor(rnd() * 2), pts = [];
+          for (let i = 0; i < np; i++) { const ang = a + (i / np) * TAU + (rnd() - 0.5) * 0.9, r = sz * (0.45 + rnd() * 0.65); pts.push([cx + Math.cos(ang) * r * 1.6, cy + Math.sin(ang) * r * 0.7]); }
+          poly(pts, pal[Math.floor(rnd() * pal.length)]); } }
+      for (let k = 0; k < 40; k++) { const x = rnd() * w, y = rnd() * h, l = 60 + rnd() * 160; g.strokeStyle = rnd() < 0.5 ? 'rgba(232,234,238,0.8)' : 'rgba(0,0,0,0.6)'; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + l * 0.8, y - l * 0.3); g.stroke(); }
+    }
+    if (kind === 'dragon') { /* deep navy base, flames sweeping back from the nose, a gold dragon + DRAGON FLAME on the door */
+      const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#0b1a52'); bg.addColorStop(1, '#16328a'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(80,150,255,0.18)'; g.lineWidth = 2; for (let y = 8; y < h; y += 26) for (let x = ((y / 26) & 1) * 18; x < w; x += 36) { g.beginPath(); g.arc(x, y, 18, 0, Math.PI); g.stroke(); }
+      const tongue = (x0, yc, len, th, dir, cols) => { const gr = g.createLinearGradient(x0, 0, x0 - dir * len, 0); gr.addColorStop(0, cols[0]); gr.addColorStop(0.5, cols[1]); gr.addColorStop(1, cols[2]);
+        g.beginPath(); g.moveTo(x0, yc - th); g.bezierCurveTo(x0 - dir * len * 0.3, yc - th * 1.3, x0 - dir * len * 0.6, yc - th * 0.1 + (rnd() - 0.5) * 40, x0 - dir * len, yc + (rnd() - 0.5) * 30);
+        g.bezierCurveTo(x0 - dir * len * 0.55, yc + th * 0.9, x0 - dir * len * 0.3, yc + th * 0.6, x0, yc + th); g.closePath(); g.fillStyle = gr; g.fill(); g.strokeStyle = 'rgba(30,6,0,0.8)'; g.lineWidth = 3; g.stroke(); };
+      const fl = [['#ffe27a', '#ff9a1a', '#e2420a'], ['#ffd24a', '#ff6a10', '#b3200a']];
+      if (side) { for (let k = 0; k < 6; k++) { const yc = h * (0.34 + k * 0.1); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.16 + rnd() * 0.14) * (1 - 0.15 * j), 20 + rnd() * 10, 1, fl[j]); }
+        for (let k = 0; k < 4; k++) tongue(0, h * (0.4 + k * 0.12), w * (0.08 + rnd() * 0.06), 18, -1, fl[0]);
+        /* gold dragon head on the door */
+        g.save(); g.translate(w * 0.5, h * 0.52); g.scale(1.25, 1.25);
+        poly([[-95, 30], [-60, -10], [-70, -52], [-30, -30], [10, -62], [20, -28], [64, -34], [100, -8], [70, 10], [96, 30], [40, 38], [-10, 62], [-50, 52]], '#e8a020', '#3a1400', 4);
+        poly([[-10, -20], [30, -14], [44, -2], [10, 4]], '#ffd870'); poly([[-4, -12], [14, -8], [8, -2]], '#1a0a00');
+        poly([[-30, -30], [-8, -78], [4, -34]], '#c97a10', '#3a1400', 3); poly([[34, -30], [66, -66], [58, -26]], '#c97a10', '#3a1400', 3);
+        g.restore();
+        g.save(); g.font = 'italic 900 76px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 9; g.strokeStyle = '#2a0c00'; g.fillStyle = '#ffc233';
+        g.strokeText('DRAGON', w * 0.7, h * 0.42); g.fillText('DRAGON', w * 0.7, h * 0.42); g.strokeText('FLAME', w * 0.7, h * 0.58); g.fillText('FLAME', w * 0.7, h * 0.58); g.restore();
+      } else { for (let k = 0; k < 7; k++) { const yc = h * (0.1 + k * 0.13); for (let j = 0; j < 2; j++) tongue(w * 1.0, yc + j * 10, w * (0.20 + rnd() * 0.16) * (1 - 0.15 * j), 22 + rnd() * 10, 1, fl[j]); } }
+    }
+    if (kind === 'circuit') { /* black-purple body, electric-blue circuit lines that glow, violet panels, NEON RACING */
+      if (em) { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); } else { const bg = g.createLinearGradient(0, 0, w, h); bg.addColorStop(0, '#120a30'); bg.addColorStop(1, '#2a0f5c'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+        for (let k = 0; k < 14; k++) { const x = rnd() * w, y = rnd() * h, ww = 80 + rnd() * 180, hh = 30 + rnd() * 70; poly([[x, y], [x + ww, y], [x + ww - 30, y + hh], [x - 20, y + hh]], k % 2 ? '#4a1fb0' : '#321380'); } }
+      const line = (pts, lw) => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.stroke(); };
+      g.shadowColor = '#22d8ff'; g.shadowBlur = em ? 0 : 14; g.strokeStyle = '#22d8ff'; g.lineWidth = 6;
+      for (let k = 0; k < 11; k++) { let x = rnd() * w * 0.2, y = h * (0.08 + rnd() * 0.84); const pts = [[x, y]]; for (let s = 0; s < 6; s++) { x += 70 + rnd() * 120; pts.push([x, y]); const dy = (rnd() < 0.5 ? -1 : 1) * (35 + rnd() * 70); y = Math.max(20, Math.min(h - 20, y + dy)); pts.push([x + Math.abs(dy) * 0.6, y]); x += Math.abs(dy) * 0.6; } line(pts);
+        g.fillStyle = '#9af0ff'; g.beginPath(); g.arc(pts[pts.length - 1][0], pts[pts.length - 1][1], 8, 0, TAU); g.fill(); }
+      g.shadowBlur = 0;
+      if (side) { g.lineWidth = 8; g.strokeStyle = '#22d8ff'; g.shadowColor = '#22d8ff'; g.shadowBlur = em ? 0 : 16; line([[0, h * 0.94], [w, h * 0.94]]); g.shadowBlur = 0;
+        g.font = 'italic 900 70px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = em ? '#22d8ff' : '#e9fbff'; g.strokeStyle = '#22d8ff'; g.lineWidth = 3;
+        g.fillText('NEON', w * 0.5, h * 0.46); g.strokeText('NEON', w * 0.5, h * 0.46); g.fillText('RACING', w * 0.5, h * 0.62); g.strokeText('RACING', w * 0.5, h * 0.62); }
+    }
+    if (kind === 'apexlg') { /* navy-purple body, lightning, orange + cyan streaks, big APEX ARCADE name, sponsor words, small A logos */
+      const AA = ['APEX', 'ARC' + 'ADE'];
+      const bg = g.createLinearGradient(0, 0, w, h); bg.addColorStop(0, '#0a1450'); bg.addColorStop(0.55, '#2a1a8a'); bg.addColorStop(1, '#4a1a9a'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      for (let k = 0; k < 16; k++) { const x = rnd() * w, y = rnd() * h, ww = 90 + rnd() * 200, hh = 25 + rnd() * 60; poly([[x, y], [x + ww, y - 20], [x + ww - 25, y + hh], [x - 20, y + hh + 15]], k % 3 === 0 ? '#101040' : k % 3 === 1 ? '#3a24a8' : '#1a2a8a'); }
+      const streak = (y0, y1, col, lw) => { g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.moveTo(0, y0); g.bezierCurveTo(w * 0.3, y0 - 30, w * 0.6, y1 + 30, w, y1); g.stroke(); };
+      streak(h * 0.78, h * 0.62, '#ff9a1a', 9); streak(h * 0.84, h * 0.7, '#19d8ff', 6); streak(h * 0.2, h * 0.3, '#ff9a1a', 6); streak(h * 0.12, h * 0.22, '#c07aff', 5);
+      g.shadowColor = '#bfefff'; g.shadowBlur = 12; g.strokeStyle = '#e8fbff'; g.lineWidth = 3;
+      for (let k = 0; k < (side ? 7 : 10); k++) { let x = rnd() * w, y = rnd() * h * 0.5; g.beginPath(); g.moveTo(x, y); for (let sgm = 0; sgm < 5; sgm++) { x += (rnd() - 0.4) * 60; y += 25 + rnd() * 40; g.lineTo(x, y); } g.stroke(); }
+      g.shadowBlur = 0;
+      const logo = (x, y, sz) => { g.save(); g.translate(x, y); poly([[-sz * 0.5, sz * 0.5], [0, -sz * 0.55], [sz * 0.5, sz * 0.5], [sz * 0.28, sz * 0.5], [0, -sz * 0.05], [-sz * 0.28, sz * 0.5]], '#e9f4ff', '#ff9a1a', 3); g.restore(); };
+      const word = (t, x, y, px, fill, stroke, lw) => { g.font = 'italic 900 ' + px + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = lw; g.strokeStyle = stroke; g.strokeText(t, x, y); g.fillStyle = fill; g.fillText(t, x, y); };
       if (side) {
-        for (let x = 0; x < w; x += 40) for (let k = 0; k < 2; k++) { g.fillStyle = ((x / 40) + k) & 1 ? '#e8e8e8' : '#141414'; g.fillRect(x, h - 96 + k * 40, 40, 40); }
-        g.save(); g.transform(1, 0, -0.1, 1, 0, 0); g.font = 'italic 900 118px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.lineWidth = 10; g.strokeStyle = '#000'; g.strokeText('APEX ARCADE', w * 0.58, h * 0.5); g.fillStyle = A; g.fillText('APEX ARCADE', w * 0.58, h * 0.5); g.restore();
-        g.fillStyle = '#ffffff'; g.beginPath(); g.arc(w * 0.18, h * 0.4, 64, 0, TAU); g.fill();
-        g.fillStyle = '#111'; g.font = '900 80px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('07', w * 0.18, h * 0.4 + 4);
-      } else {
-        g.fillStyle = A; g.fillRect(0, ty(0.2), w, h * 0.1); g.fillRect(0, ty(-0.02), w, h * 0.1);
-        for (let x = 0; x < w; x += 40) { g.fillStyle = (x / 40) & 1 ? '#e8e8e8' : '#141414'; g.fillRect(x, 0, 40, 40); g.fillRect(x, h - 40, 40, 40); }
-        g.font = 'italic 900 64px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#ffffff'; g.fillText('APEX ARCADE', w / 2, h / 2);
-      }
+        word(AA[0], w * 0.5, h * 0.36, 132, '#e6f0ff', '#ff9a1a', 12); word(AA[1], w * 0.5, h * 0.58, 112, '#e6f0ff', '#ff9a1a', 11);
+        logo(w * 0.86, h * 0.4, 110);
+        word('RACING LEAGUE', w * 0.5, h * 0.74, 38, '#ffffff', '#101040', 7); word('GAMING ZONE', w * 0.74, h * 0.83, 30, '#ffb23a', '#101040', 6);
+        word('DRIFTTECH', w * 0.2, h * 0.16, 40, '#ffffff', '#101040', 7); word('DRIFT CUP', w * 0.2, h * 0.9, 34, '#ffffff', '#101040', 6); logo(w * 0.06, h * 0.55, 46); word('EST. 2023', w * 0.88, h * 0.16, 26, '#ffffff', '#101040', 5);
+      } else { word(AA[0] + ' ' + AA[1], w * 0.5, h * 0.5, 84, '#e6f0ff', '#ff9a1a', 9); logo(w * 0.12, h * 0.5, 80); logo(w * 0.88, h * 0.5, 80); }
+    }
+    if (kind === 'graffiti') { /* paint splatter + bubble tags in every colour */
+      g.fillStyle = '#0c3fa8'; g.fillRect(0, 0, w, h);
+      const cols = ['#e85a00', '#e8b000', '#d0106e', '#00a896', '#6a20d8', '#0c3fa8', '#46b800', '#d01e18'];
+      for (let k = 0; k < 70; k++) { g.fillStyle = cols[Math.floor(rnd() * cols.length)]; g.globalAlpha = 0.95; g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 30 + rnd() * 80, 20 + rnd() * 50, rnd() * 3, 0, TAU); g.fill(); }
+      g.globalAlpha = 1;
+      for (let k = 0; k < 120; k++) { const x = rnd() * w, y = rnd() * h; g.fillStyle = cols[Math.floor(rnd() * cols.length)]; g.beginPath(); g.arc(x, y, 3 + rnd() * 9, 0, TAU); g.fill(); if (k % 4 === 0) g.fillRect(x - 2, y, 4, 20 + rnd() * 40); }
+      const words = ['HYPER', 'NITRO', 'RAZE', 'DRIFT', 'SPEED', 'WILD', 'RACE', 'FLY'];
+      for (let k = 0; k < (side ? 9 : 6); k++) { const x = w * (0.08 + rnd() * 0.84), y = h * (0.12 + rnd() * 0.76), rot = (rnd() - 0.5) * 0.6, c1 = cols[Math.floor(rnd() * cols.length)], c2 = cols[Math.floor(rnd() * cols.length)];
+        g.save(); g.translate(x, y); g.rotate(rot); g.font = 'italic 900 ' + (60 + rnd() * 40) + 'px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; const wd = words[Math.floor(rnd() * words.length)];
+        g.lineWidth = 16; g.strokeStyle = '#0a0a14'; g.strokeText(wd, 0, 0); g.lineWidth = 6; g.strokeStyle = c2; g.strokeText(wd, 0, 0); g.fillStyle = c1; g.fillText(wd, 0, 0); g.restore(); }
     }
   });
   return (WC[key] = t);
@@ -810,24 +851,24 @@ function wrapMats(cfg, P, base) {
   if (!cfg.wrap || cfg.wrap === 'none') return base;
   const acc = cfg.wrapCol || '#ffffff', mk = (part) => { const m = base.clone(); m.color = new THREE.Color(0xffffff); const t = wrapTex(cfg.wrap, cfg.paint, acc, part).clone(); t.needsUpdate = true;
     t.repeat.set(1 / P.L, part === 's' ? 0.5 : 1 / P.W); t.offset.set(0.5, part === 's' ? 0 : 0.5 - (1 - (P.W / 2 - 0.12)) / P.W); m.map = t; m.userData.own = 1;
-    if (cfg.wrap === 'neon') { const e = wrapTex('neon', cfg.paint, acc, 'e').clone(); e.needsUpdate = true; e.repeat.copy(t.repeat); e.offset.copy(t.offset); m.emissiveMap = e; m.emissive = new THREE.Color(acc).multiplyScalar(2.5); } return m; };
+    if (EMIT_WRAPS[cfg.wrap]) { const e = wrapTex(cfg.wrap, cfg.paint, acc, 'e').clone(); e.needsUpdate = true; e.repeat.copy(t.repeat); e.offset.copy(t.offset); m.emissiveMap = e; m.emissive = new THREE.Color(EMIT_WRAPS[cfg.wrap]).multiplyScalar(1.6); } return m; };
   return [mk('s'), mk('t')];
 }
-function applyRealCarWrap(model, bodyMat, cfg) {
+function applyRealCarWrap(model, bodyMat, cfg, tireMat) {
   if (!cfg.wrap || cfg.wrap === 'none') return;
   const acc = cfg.wrapCol || '#ffffff';
-  const key = cfg.wrap + cfg.paint + acc + 'combined';
+  const key = cfg.wrap + cfg.paint + 'combined';
   let tex = WC[key];
   if (!tex) {
     const ts = wrapTex(cfg.wrap, cfg.paint, acc, 's'), tt = wrapTex(cfg.wrap, cfg.paint, acc, 't');
-    tex = ctex(1024, 1024, (g, w, h) => { g.drawImage(tt.image, 0, 0, w, h * 0.5); g.drawImage(ts.image, 0, h * 0.5, w, h * 0.5); });
+    tex = ctex(1024, 1024, (g, w, h) => { g.drawImage(tt.image, 0, 0, w, h * 0.5); g.drawImage(ts.image, 0, h * 0.5, w, h * 0.5); g.fillStyle = cfg.paint || '#888'; g.fillRect(0, h - 12, 12, 12); /* plain paint patch: the wheels point here so no wrap paints over a rim */ });
     WC[key] = tex;
   }
-  bodyMat.map = tex; bodyMat.color.set(0xffffff);
-  if (cfg.wrap === 'neon') {
+  bodyMat.map = tex; bodyMat.color.set(0xffffff); bodyMat.metalness = Math.min(bodyMat.metalness, 0.12); bodyMat.roughness = Math.max(bodyMat.roughness, 0.42); bodyMat.envMapIntensity = Math.min(bodyMat.envMapIntensity === undefined ? 1 : bodyMat.envMapIntensity, 0.45); bodyMat.clearcoat = Math.min(bodyMat.clearcoat || 0, 0.25); bodyMat.sheen = 0; bodyMat.iridescence = 0; /* a printed wrap shows its own colours, not a mirror of the garage lights */
+  if (EMIT_WRAPS[cfg.wrap]) {
     const ek = key + 'e'; let etex = WC[ek];
-    if (!etex) { const es = wrapTex('neon', cfg.paint, acc, 'e'); etex = ctex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(es.image, 0, h * 0.5, w, h * 0.5); }); WC[ek] = etex; }
-    bodyMat.emissiveMap = etex; bodyMat.emissive = new THREE.Color(acc).multiplyScalar(2.5);
+    if (!etex) { const es = wrapTex(cfg.wrap, cfg.paint, acc, 'e'); etex = ctex(1024, 1024, (g, w, h) => { g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.drawImage(es.image, 0, h * 0.5, w, h * 0.5); }); WC[ek] = etex; }
+    bodyMat.emissiveMap = etex; bodyMat.emissive = new THREE.Color(EMIT_WRAPS[cfg.wrap]).multiplyScalar(1.6);
   }
   bodyMat.needsUpdate = true;
   /* ONE box for the whole body, in the model's own space (so stripes line up across bumper, door, roof) */
@@ -841,6 +882,11 @@ function applyRealCarWrap(model, bodyMat, cfg) {
   });
   if (!meshes.length) return;
   const L = box.max.x - box.min.x || 1, H = box.max.y - box.min.y || 1, W = box.max.z - box.min.z || 1;
+  /* the Goblin's wheels share the body material: find each wheel from its tire (centre + radius in the model's own space) and send every body vertex inside a wheel to a plain-paint patch, so no wrap ever paints a rim */
+  const wheels = [];
+  if (tireMat) { const quad = {}; const bcx = (box.min.x + box.max.x) / 2, bcz = (box.min.z + box.max.z) / 2; model.traverse((q) => { if (!q.isMesh || q.material !== tireMat || !q.geometry || !q.geometry.attributes.position) return; const p = q.geometry.attributes.position, m = new THREE.Matrix4().multiplyMatrices(inv, q.matrixWorld); for (let i = 0; i < p.count; i += 2) { v.fromBufferAttribute(p, i).applyMatrix4(m); const k = (v.x > bcx ? 1 : 0) + (v.z > bcz ? 2 : 0); (quad[k] = quad[k] || new THREE.Box3()).expandByPoint(v); } });
+    for (const k of Object.keys(quad)) { const tb = quad[k]; wheels.push({ x: (tb.min.x + tb.max.x) / 2, y: (tb.min.y + tb.max.y) / 2, z: (tb.min.z + tb.max.z) / 2, r: Math.max(tb.max.y - tb.min.y, tb.max.x - tb.min.x) / 2, hw: (tb.max.z - tb.min.z) / 2 }); } } /* one box per corner: the four tires may be one mesh */
+  const inWheel = (x, y, z) => { for (const q of wheels) { if (q.r > H * 0.45 || q.r < H * 0.12) continue; if (Math.hypot(x - q.x, y - q.y) < q.r * 0.93 && Math.abs(z - q.z) < q.hw * 1.15) return true; } return false; };
   for (const q of meshes) {
     const geo = q.geometry; if (!geo.userData.uv0) geo.userData.uv0 = geo.attributes.uv ? geo.attributes.uv.clone() : null;
     const p = geo.attributes.position, nr = geo.attributes.normal, m = new THREE.Matrix4().multiplyMatrices(inv, q.matrixWorld); nm.getNormalMatrix(m);
@@ -848,7 +894,8 @@ function applyRealCarWrap(model, bodyMat, cfg) {
     for (let i = 0; i < p.count; i++) {
       v.fromBufferAttribute(p, i).applyMatrix4(m); n.fromBufferAttribute(nr, i).applyMatrix3(nm).normalize();
       const ux = (v.x - box.min.x) / L, uy = (v.y - box.min.y) / H, uz = (v.z - box.min.z) / W;
-      if (n.y > 0.35) { uvs[i * 2] = ux; uvs[i * 2 + 1] = 0.5 + 0.5 * uz; }
+      if (wheels.length && inWheel(v.x, v.y, v.z)) { uvs[i * 2] = 0.004; uvs[i * 2 + 1] = 0.004; }
+      else if (n.y > 0.35) { uvs[i * 2] = ux; uvs[i * 2 + 1] = 0.5 + 0.5 * uz; }
       else { uvs[i * 2] = v.z < 0 ? 1 - ux : ux; uvs[i * 2 + 1] = 0.5 * uy; }   /* -z side flipped so text reads right */
     }
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
@@ -1362,7 +1409,7 @@ function makeGlbCar(id, cfg, o = {}) {
   tilt.add(model);
   /* G-23: APEX ARCADE name wrap on both sides when chosen (default on the Goblin) */
   const WRAP_SLOTS = { none: () => {} };
-  for (const k of ['name','stripes','flames','shards','bolt','checker','race','apex','camo','split','neon']) WRAP_SLOTS[k] = () => applyRealCarWrap(model, bodyMat, cfg);
+  for (const k of ['circuit', 'dragon', 'shardcamo', 'graffiti', 'apexlg']) WRAP_SLOTS[k] = () => applyRealCarWrap(model, bodyMat, cfg, tireMat);
   const wrapSlot = WRAP_SLOTS[cfg.wrap] || (() => {});
   wrapSlot(); /* ONE wrap path: paint the wrap on the car's own bodyMat. addPanelWrap / addNameWrap / addStripeWrap are no longer called. */
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
@@ -2242,7 +2289,7 @@ const tmpA = { x: 0, z: 0, h: 0, i: 0 };
 function randCfg(r, carId, tier) {
   const c = defCfg(carId); c.paint = brightPaint(PAINTS, r); c.fin = ['gloss', 'metal', 'metal', 'pearl', 'candy', 'matte'][Math.floor(r() * 6)]; c.rim = Math.floor(r() * 6);
   c.rimCol = ['#c9cdd6', '#2a2c30', '#d4a640', '#f2f2f2', '#c9cdd6'][Math.floor(r() * 5)]; c.aero = Math.floor(r() * 4); c.kit = r() < 0.4 ? 1 : 0; c.glow = r() < 0.4 ? PAINTS[Math.floor(r() * 12)] : '';
-  c.eng = Math.min(4, Math.floor(tier * 0.8)); if (r() < 0.55) { c.wrap = ['stripes', 'flames', 'shards', 'bolt', 'checker', 'race', 'split', 'neon'][Math.floor(r() * 8)]; c.wrapCol = ['#ffffff', '#111111', '#ffd23a', '#19e6ff', '#ff2bd6'][Math.floor(r() * 5)]; } return c;
+  c.eng = Math.min(4, Math.floor(tier * 0.8)); if (r() < 0.55) { c.wrap = ['circuit', 'dragon', 'shardcamo', 'graffiti', 'apexlg'][Math.floor(r() * 5)]; c.wrapCol = ['#ffffff', '#111111', '#ffd23a', '#19e6ff', '#ff2bd6'][Math.floor(r() * 5)]; } return c;
 }
 function addEnt(o) {
   const car = makeCar(o.carId, o.cfg); R.W.scene.add(car.root);
@@ -2625,8 +2672,8 @@ const UP = { eng: { lv: ['Stock', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'], p
 const GLOWS = ['', '#19e6ff', '#ff2bd6', '#8a5cff', '#7dff6a', '#ff3b30', '#ffd23a', '#ffffff', '#2438ff'];
 const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a'];
 const CALS = ['#e01b2b', '#ffd23a', '#19e6ff', '#16d07a', '#ff2bd6', '#ff8a00', '#2a2c30', '#f2f2f2'];
-const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['wrapCol', 'Wrap Color'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['tire', 'Tires'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', '💡 Underglow'], ['tint', '🕶 Tint'], ['cal', 'Calipers']];
-const VIEW = { wrap: [1.0, 0.22, 7.6], wrapCol: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };
+const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Rim Color'], ['wheel', 'Wheel Size'], ['tire', 'Tires'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['kit', 'Body Kit'], ['glow', '💡 Underglow'], ['tint', '🕶 Tint'], ['cal', 'Calipers']];
+const VIEW = { wrap: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };
 function openGarage() { clearPrev(); G.mode = 'garage'; G.gSel = S.cur; gOrb.auto = 1; setGarageCar(S.cur, S.cars[S.cur]); show('garage'); renderGarage(); }
 const gCfg = () => S.cars[G.gSel] || defCfg(G.gSel);
 /* owner: "give option to see what the car would look like before purchase" - first tap previews on the car (and its stats), second tap buys */
@@ -2651,7 +2698,6 @@ function renderGarage() {
   else if (!owned) h = `<div class="go" style="min-width:240px">Buy this car first (Cars tab)</div>`;
   else if (G.tab === 'paint') h = PAINTS.map((p) => `<button class="go ${p === c.paint ? 'on' : ''}" data-paint="${p}"><span class="sw" style="background:${p}"></span>${price(500, p === c.paint ? 'On' : '')}</button>`).join('') + `<label class="go"><input type="color" id="pc" value="${c.paint}" style="width:40px;height:34px;border:0;background:none"/>Custom<span class="p">🪙500</span></label>`;
   else if (G.tab === 'wrap') h = Object.entries(WRAPS).map(([k, v]) => `<button class="go ${k === (c.wrap || 'none') ? 'on' : ''}" data-wrap="${k}"><b>${v[0]}</b>${price(v[1], k === (c.wrap || 'none') ? 'On' : '')}</button>`).join('');
-  else if (G.tab === 'wrapCol') h = ['#ffffff', '#111111', '#ffd23a', '#19e6ff', '#ff2bd6', '#16d07a', '#ff3b30', '#8a5cff', '#ff8a00', '#c9cdd6'].map((p) => `<button class="go ${p === (c.wrapCol || '#ffffff') ? 'on' : ''}" data-wc="${p}"><span class="sw" style="background:${p}"></span>${price(600, p === (c.wrapCol || '#ffffff') ? 'On' : '')}</button>`).join('');
   else if (G.tab === 'fin') h = Object.entries(FIN).map(([f, v]) => `<button class="go ${f === c.fin ? 'on' : ''}" data-fin="${f}"><b>${v.n}</b>${price(v.p, f === c.fin ? 'On' : '')}</button>`).join('');
   else if (G.tab === 'rim') h = RIMS.map((n, i) => `<button class="go ${i === (c.rim || 0) ? 'on' : ''}" data-rim="${i}"><b>${n}</b>${price(i ? 2500 : 0, i === (c.rim || 0) ? 'On' : '')}</button>`).join('');
   else if (G.tab === 'rimCol' || G.tab === 'cal') { const L = G.tab === 'cal' ? CALS : RIMC, cur = G.tab === 'cal' ? c.cal : c.rimCol; h = L.map((p) => `<button class="go ${p === cur ? 'on' : ''}" data-${G.tab === 'cal' ? 'cal' : 'rc'}="${p}"><span class="sw" style="background:${p}"></span>${price(G.tab === 'cal' ? 400 : 800, p === cur ? 'On' : '')}</button>`).join(''); }
@@ -2668,7 +2714,6 @@ function renderGarage() {
   Q('[data-paint]', (b) => { if (b.dataset.paint !== c.paint) buy(500, (x) => { x.paint = b.dataset.paint; }); });
   const pc = $('pc'); if (pc) pc.onchange = () => buy(500, (x) => { x.paint = pc.value; });
   Q('[data-wrap]', (b) => { const k = b.dataset.wrap; if (k !== (c.wrap || 'none')) buy(WRAPS[k][1], (x) => { x.wrap = k; }); });
-  Q('[data-wc]', (b) => { if (b.dataset.wc !== (c.wrapCol || '#ffffff')) buy(600, (x) => { x.wrapCol = b.dataset.wc; }); });
   Q('[data-fin]', (b) => { if (b.dataset.fin !== c.fin) buy(FIN[b.dataset.fin].p, (x) => { x.fin = b.dataset.fin; }); });
   Q('[data-rim]', (b) => { const i = +b.dataset.rim; if (i !== (c.rim || 0)) buy(i ? 2500 : 0, (x) => { x.rim = i; }); });
   Q('[data-rc]', (b) => { if (b.dataset.rc !== c.rimCol) buy(800, (x) => { x.rimCol = b.dataset.rc; }); });
