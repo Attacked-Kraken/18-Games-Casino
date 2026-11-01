@@ -783,10 +783,10 @@ function wrapTex(kind, paint, acc, part) {
     if (kind === 'split') { g.fillStyle = A; g.beginPath(); if (side) { g.moveTo(0, sy(0.75)); g.lineTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); g.lineTo(0, h); } else { g.moveTo(0, 0); g.lineTo(w * 0.35, 0); g.lineTo(w * 0.25, h); g.lineTo(0, h); } g.fill();
       g.strokeStyle = '#05060c'; g.lineWidth = 6; g.beginPath(); if (side) { g.moveTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); } else { g.moveTo(w * 0.35, 0); g.lineTo(w * 0.25, h); } g.stroke(); }
     if (kind === 'flames') { const x0 = w * 0.99, layers = [['#b3000f', '#ff3d00', 1.0, 1.0], ['#ff5a00', '#ffb000', 0.74, 0.8], ['#ffd33a', '#fff6b0', 0.46, 0.6]];
-      for (const [c0, c1, sc, hh] of layers) for (let k = 0; k < 7; k++) { const yc = side ? sy(0.30 + k * 0.095) : h * (0.10 + k * 0.13), len = w * (0.30 + rnd() * 0.30) * sc, th = (side ? 54 : 46) * hh, wob = (rnd() - 0.5) * 30;
-        const gr = g.createLinearGradient(x0, 0, x0 - len, 0); gr.addColorStop(0, c1); gr.addColorStop(0.55, c0); gr.addColorStop(1, 'rgba(120,0,0,0)'); g.fillStyle = gr;
+      for (const [c0, c1, sc, hh] of layers) for (let k = 0; k < 7; k++) { const yc = side ? sy(0.30 + k * 0.095) : h * (0.10 + k * 0.13), len = w * (0.42 + rnd() * 0.34) * sc, th = (side ? 54 : 46) * hh, wob = (rnd() - 0.5) * 30;
+        const gr = g.createLinearGradient(x0, 0, x0 - len, 0); gr.addColorStop(0, c1); gr.addColorStop(0.6, c0); gr.addColorStop(1, c0); g.fillStyle = gr;
         g.beginPath(); g.moveTo(x0, yc - th); g.bezierCurveTo(x0 - len * 0.3, yc - th * 1.1, x0 - len * 0.55, yc - th * 0.2 + wob, x0 - len, yc + wob * 0.5);
-        g.bezierCurveTo(x0 - len * 0.55, yc + th * 0.9, x0 - len * 0.3, yc + th * 0.5, x0, yc + th); g.closePath(); g.fill(); } }
+        g.bezierCurveTo(x0 - len * 0.55, yc + th * 0.9, x0 - len * 0.3, yc + th * 0.5, x0, yc + th); g.closePath(); g.fill(); if (sc === 1.0) { g.strokeStyle = 'rgba(5,6,12,0.85)'; g.lineWidth = 5; g.stroke(); } } }
     if (kind === 'shards') { for (let k = 0; k < 9; k++) { const x = w * (0.04 + k * 0.105), y = side ? sy(0.42 + (k % 3) * 0.13) : h * (0.18 + (k % 3) * 0.26), sc = 1.2 + (k % 4) * 0.28;
         g.fillStyle = A; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 150 * sc, y - 46 * sc); g.lineTo(x + 84 * sc, y + 8 * sc); g.lineTo(x + 190 * sc, y + 30 * sc); g.lineTo(x - 10 * sc, y + 44 * sc); g.closePath(); g.fill();
         g.fillStyle = 'rgba(0,0,0,0.28)'; g.beginPath(); g.moveTo(x - 10 * sc, y + 44 * sc); g.lineTo(x + 84 * sc, y + 8 * sc); g.lineTo(x + 190 * sc, y + 30 * sc); g.closePath(); g.fill();
