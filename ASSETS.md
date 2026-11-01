@@ -431,3 +431,49 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-10-31 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "zerk.dim7" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+
+## ASSET: models/fetched/free-wheels-sdc-pure-performance-eebae2.glb
+- title: (FREE) Wheels SDC - Pure Performance
+- maker: SDC PERFORMANCE™️
+- source: https://sketchfab.com/3d-models/free-wheels-sdc-pure-performance-eebae2592aa94ffabc886694bb6d096c
+- license: CC-BY 4.0
+- downloaded: 2026-11-01 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "SDC PERFORMANCE™️" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/sci-fi-wheel-7b9867.glb
+- title: Sci-Fi Wheel
+- maker: gorzi
+- source: https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989
+- license: CC-BY 4.0
+- downloaded: 2026-11-01 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "gorzi" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/tuner-car-wheel-free-02c9dc.glb
+- title: Tuner car wheel FREE
+- maker: NLM
+- source: https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb
+- license: CC-BY 4.0
+- downloaded: 2026-11-01 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "NLM" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/free-wheels-rst-carbon-sdc-72d881.glb
+- title: (FREE) Wheels - RST-Carbon SDC
+- maker: SDC PERFORMANCE™️
+- source: https://sketchfab.com/3d-models/free-wheels-rst-carbon-sdc-72d881058d4b490c8b408c655e962801
+- license: CC-BY 4.0
+- downloaded: 2026-11-01 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "SDC PERFORMANCE™️" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/car-tyre-game-ready-p-zero-49aa3e.glb
+- title: car tyre game ready p zero
+- maker: Iftekhar.Tushar
+- source: https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3
+- license: CC-BY 4.0
+- downloaded: 2026-11-01 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Iftekhar.Tushar" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)

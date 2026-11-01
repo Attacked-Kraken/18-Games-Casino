@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/tuner-car-wheel-free-02c9dc.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 2,
+  "tris": 80886,
+  "size": [
+   0.276,
+   0.68,
+   0.68
+  ],
+  "mainSize": [
+   0.276,
+   0.68,
+   0.68
+  ],
+  "stray": 1,
+  "bytes": 3002328
+ },
+ "pictures": [
+  {
+   "pic": "tuner-car-wheel-free-02c9dc-front.jpg",
+   "pct": 19
+  },
+  {
+   "pic": "tuner-car-wheel-free-02c9dc-side.jpg",
+   "pct": 29.1
+  },
+  {
+   "pic": "tuner-car-wheel-free-02c9dc-back.jpg",
+   "pct": 18
+  },
+  {
+   "pic": "tuner-car-wheel-free-02c9dc-top.jpg",
+   "pct": 19.2
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-11-01T13:28:10.289Z"
+}

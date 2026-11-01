@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/free-wheels-sdc-pure-performance-eebae2.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 4,
+  "tris": 90039,
+  "size": [
+   0.789,
+   0.789,
+   0.324
+  ],
+  "mainSize": [
+   0.68,
+   0.68,
+   0.311
+  ],
+  "stray": 1.16,
+  "bytes": 2895456
+ },
+ "pictures": [
+  {
+   "pic": "free-wheels-sdc-pure-performance-eebae2-front.jpg",
+   "pct": 23.8
+  },
+  {
+   "pic": "free-wheels-sdc-pure-performance-eebae2-side.jpg",
+   "pct": 15.8
+  },
+  {
+   "pic": "free-wheels-sdc-pure-performance-eebae2-back.jpg",
+   "pct": 22.2
+  },
+  {
+   "pic": "free-wheels-sdc-pure-performance-eebae2-top.jpg",
+   "pct": 21
+  }
+ ],
+ "asked": {
+  "kind": "height",
+  "m": 0.68
+ },
+ "at": "2026-11-01T13:28:09.691Z"
+}
