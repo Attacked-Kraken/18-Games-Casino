@@ -776,17 +776,28 @@ function wrapTex(kind, paint, acc, part) {
     const sy = (m) => h * (1 - m / 2);   /* side: height in meters -> canvas y */
     const ty = (m) => h * 0.5 - m * h / 2; /* top: meters across the car from the center -> canvas y */
     g.lineJoin = 'round';
-    if (kind === 'stripes') { g.fillStyle = A; if (side) g.fillRect(0, sy(0.62), w, h * 0.035); else { g.fillRect(0, ty(0.22), w, h * 0.09); g.fillRect(0, ty(-0.04), w, h * 0.09); } }
-    if (kind === 'split') { g.fillStyle = A; g.beginPath(); if (side) { g.moveTo(0, sy(0.75)); g.lineTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); g.lineTo(0, h); } else { g.moveTo(0, 0); g.lineTo(w * 0.35, 0); g.lineTo(w * 0.25, h); g.lineTo(0, h); } g.fill(); }
-    if (kind === 'flames') { for (let k = 0; k < 9; k++) { const y0 = side ? sy(0.35 + k * 0.06) : h * (0.18 + k * 0.08), len = w * (0.25 + Math.random() * 0.3), x0 = w * 0.98;
-        const gr = g.createLinearGradient(x0, 0, x0 - len, 0); gr.addColorStop(0, '#fff6a0'); gr.addColorStop(0.35, '#ffb000'); gr.addColorStop(0.75, '#ff3d00'); gr.addColorStop(1, 'rgba(180,0,0,0)'); g.fillStyle = gr;
-        g.beginPath(); g.moveTo(x0, y0 - 18); g.bezierCurveTo(x0 - len * 0.4, y0 - 40, x0 - len * 0.7, y0 + 10, x0 - len, y0 - 6); g.bezierCurveTo(x0 - len * 0.6, y0 + 30, x0 - len * 0.3, y0 + 20, x0, y0 + 18); g.fill(); } }
-    if (kind === 'shards') { g.fillStyle = A; for (let k = 0; k < 7; k++) { const x = w * (0.12 + k * 0.12), y = side ? sy(0.45 + (k % 3) * 0.1) : h * (0.3 + (k % 3) * 0.2); g.beginPath(); g.moveTo(x, y); g.lineTo(x + 120, y - 40); g.lineTo(x + 60, y + 10); g.lineTo(x + 150, y + 26); g.lineTo(x - 20, y + 30); g.closePath(); g.fill(); } }
-    if (kind === 'bolt' || kind === 'neon') { g.strokeStyle = kind === 'neon' ? (em ? acc : acc) : A; g.lineWidth = kind === 'neon' ? 7 : 26; if (kind === 'neon') { g.shadowColor = acc; g.shadowBlur = 14; }
-      const rows = kind === 'neon' ? (side ? [0.42, 0.7] : [-0.3, 0.3]) : [side ? 0.55 : 0];
-      for (const r0 of rows) { g.beginPath(); let x = 0, y = side ? sy(r0) : ty(r0); g.moveTo(x, y); while (x < w) { x += 70 + Math.random() * 60; y += (kind === 'neon' ? (Math.random() < 0.5 ? 0 : (Math.random() - 0.5) * 40) : (Math.random() - 0.5) * 120); g.lineTo(x, y); } g.stroke(); } g.shadowBlur = 0; }
-    if (kind === 'checker') { const cs = 32; for (let x = 0; x < w * 0.6; x += cs) for (let y = side ? sy(1.0) : 0; y < (side ? sy(0.2) : h); y += cs) { if (((x + y) / cs) % 2 === 0 && Math.random() < 1 - x / (w * 0.6)) { g.fillStyle = A; g.fillRect(x, y, cs, cs); } } }
-    if (kind === 'camo') { for (let k = 0; k < 160; k++) { g.fillStyle = [dark, A, new THREE.Color(paint).multiplyScalar(0.7).getStyle()][k % 3]; g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 20 + Math.random() * 50, 12 + Math.random() * 30, Math.random() * 3, 0, TAU); g.fill(); } }
+    let sd = 7; for (const ch of kind) sd = (sd * 31 + ch.charCodeAt(0)) >>> 0; const rnd = () => { sd = (sd + 0x6D2B79F5) >>> 0; let x = sd; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+    if (kind === 'stripes') { const band = (y, th) => { g.fillStyle = '#05060c'; g.fillRect(0, y - th * 0.18, w, th * 1.36); g.fillStyle = A; g.fillRect(0, y, w, th); };
+      if (side) { band(sy(0.62), h * 0.075); g.fillStyle = A; g.fillRect(0, sy(0.62) + h * 0.115, w, h * 0.012); g.fillRect(0, sy(0.62) - h * 0.04, w, h * 0.012); }
+      else { band(ty(0.22), h * 0.09); band(ty(-0.04), h * 0.09); } }
+    if (kind === 'split') { g.fillStyle = A; g.beginPath(); if (side) { g.moveTo(0, sy(0.75)); g.lineTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); g.lineTo(0, h); } else { g.moveTo(0, 0); g.lineTo(w * 0.35, 0); g.lineTo(w * 0.25, h); g.lineTo(0, h); } g.fill();
+      g.strokeStyle = '#05060c'; g.lineWidth = 6; g.beginPath(); if (side) { g.moveTo(w * 0.55, sy(0.75)); g.lineTo(w * 0.42, h); } else { g.moveTo(w * 0.35, 0); g.lineTo(w * 0.25, h); } g.stroke(); }
+    if (kind === 'flames') { const x0 = w * 0.99, layers = [['#b3000f', '#ff3d00', 1.0, 1.0], ['#ff5a00', '#ffb000', 0.74, 0.8], ['#ffd33a', '#fff6b0', 0.46, 0.6]];
+      for (const [c0, c1, sc, hh] of layers) for (let k = 0; k < 7; k++) { const yc = side ? sy(0.30 + k * 0.095) : h * (0.10 + k * 0.13), len = w * (0.30 + rnd() * 0.30) * sc, th = (side ? 54 : 46) * hh, wob = (rnd() - 0.5) * 30;
+        const gr = g.createLinearGradient(x0, 0, x0 - len, 0); gr.addColorStop(0, c1); gr.addColorStop(0.55, c0); gr.addColorStop(1, 'rgba(120,0,0,0)'); g.fillStyle = gr;
+        g.beginPath(); g.moveTo(x0, yc - th); g.bezierCurveTo(x0 - len * 0.3, yc - th * 1.1, x0 - len * 0.55, yc - th * 0.2 + wob, x0 - len, yc + wob * 0.5);
+        g.bezierCurveTo(x0 - len * 0.55, yc + th * 0.9, x0 - len * 0.3, yc + th * 0.5, x0, yc + th); g.closePath(); g.fill(); } }
+    if (kind === 'shards') { for (let k = 0; k < 9; k++) { const x = w * (0.04 + k * 0.105), y = side ? sy(0.42 + (k % 3) * 0.13) : h * (0.18 + (k % 3) * 0.26), sc = 1.2 + (k % 4) * 0.28;
+        g.fillStyle = A; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 150 * sc, y - 46 * sc); g.lineTo(x + 84 * sc, y + 8 * sc); g.lineTo(x + 190 * sc, y + 30 * sc); g.lineTo(x - 10 * sc, y + 44 * sc); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(0,0,0,0.28)'; g.beginPath(); g.moveTo(x - 10 * sc, y + 44 * sc); g.lineTo(x + 84 * sc, y + 8 * sc); g.lineTo(x + 190 * sc, y + 30 * sc); g.closePath(); g.fill();
+        g.strokeStyle = '#05060c'; g.lineWidth = 4; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 150 * sc, y - 46 * sc); g.lineTo(x + 84 * sc, y + 8 * sc); g.lineTo(x + 190 * sc, y + 30 * sc); g.lineTo(x - 10 * sc, y + 44 * sc); g.closePath(); g.stroke(); } }
+    if (kind === 'bolt' || kind === 'neon') { const neon = kind === 'neon'; const rows = neon ? (side ? [0.42, 0.7] : [-0.3, 0.3]) : [side ? 0.55 : 0];
+      for (const r0 of rows) { const pts = []; let x = 0, y = side ? sy(r0) : ty(r0); pts.push([x, y]); while (x < w) { x += 70 + rnd() * 60; y += neon ? (rnd() < 0.5 ? 0 : (rnd() - 0.5) * 40) : (y > (side ? sy(r0) : ty(r0)) ? -1 : 1) * (50 + rnd() * 50); pts.push([x, y]); }
+        const path = () => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (const q of pts) g.lineTo(q[0], q[1]); };
+        if (neon) { g.strokeStyle = acc; g.lineWidth = 7; g.shadowColor = acc; g.shadowBlur = 14; path(); g.stroke(); g.shadowBlur = 0; }
+        else { g.lineCap = 'round'; g.strokeStyle = '#05060c'; g.lineWidth = 40; path(); g.stroke(); g.strokeStyle = A; g.lineWidth = 26; path(); g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 7; path(); g.stroke(); } } }
+    if (kind === 'checker') { const cs = 32, cw = w * 0.65; for (let x = 0; x < cw; x += cs) for (let y = side ? sy(1.0) : 0; y < (side ? sy(0.2) : h); y += cs) { if (((x + y) / cs) % 2 === 0) { const sc = 1 - x / cw; const sz = cs * Math.max(0.25, sc); g.fillStyle = A; g.fillRect(x + (cs - sz) / 2, y + (cs - sz) / 2, sz, sz); } } }
+    if (kind === 'camo') { for (let k = 0; k < 160; k++) { g.fillStyle = [dark, A, new THREE.Color(paint).multiplyScalar(0.7).getStyle()][k % 3]; g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 20 + rnd() * 50, 12 + rnd() * 30, rnd() * 3, 0, TAU); g.fill(); } }
     if (kind === 'race') { g.fillStyle = A; if (side) { g.fillRect(0, sy(0.36), w, h * 0.05); g.beginPath(); g.arc(w * 0.56, sy(0.6), 64, 0, TAU); g.fillStyle = '#ffffff'; g.fill(); g.fillStyle = '#111'; g.font = '900 78px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('88', w * 0.56, sy(0.6) + 4); }
       else { g.fillRect(0, ty(0.12), w, h * 0.12); g.fillStyle = '#fff'; g.fillRect(0, ty(0.14), w, h * 0.012); g.fillRect(0, ty(-0.14), w, h * 0.012); } }
     if (kind === 'apex') { /* Apex Arcade race livery: dark base, checkered band, big sponsor text, number roundel */
