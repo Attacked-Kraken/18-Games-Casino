@@ -74,3 +74,4 @@ reported, never replaced. The nightly Model audit (3:47 AM Central) measures eve
 - DONE (robot 2026-11-01: models/fetched/car-tyre-game-ready-p-zero-49aa3e.glb) · Exotic Racer Club garage rim+tyre swap option (owner picked #12 Oct 31-Nov 1 2026; wheel+tyre as one piece, rim part must be separate so rim colour can change) · car tyre game ready p zero by Iftekhar.Tushar · https://sketchfab.com/3d-models/none-49aa3ef66a6045ce9f72f6bbad0418a3 · CC-BY · 21k tris · height 0.68 m
 
 - CANCELLED (owner Nov 1 2026 11:49 AM: never fetch a name-branded wheel): Lamborghini SC20 wheel not fetched. RULE: no wheel, tyre or part that carries a brand name or logo (car-maker, tyre-maker, wheel-maker); use plain unbranded models only.
+- REJECTED (owner Nov 1 2026: no name-branded wheels) · Lamborghini SC20 wheel · do NOT fetch. RULE: never fetch a wheel/rim/part carrying a real brand or maker name (Lamborghini, BBS, OZ, Ferrari...); pick generic ones.
