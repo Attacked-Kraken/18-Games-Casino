@@ -477,3 +477,39 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-01 by the Sketchfab fetch robot
 - used in: apexracer.html (credits screen names Iftekhar.Tushar)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/futuristic-sci-fi-car-525bb5.glb
+- title: Futuristic Sci-Fi Car
+- maker: dylanheyes
+- source: https://sketchfab.com/3d-models/futuristic-sci-fi-car-525bb5ad44d34ad1b74aca686ea836a4
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "dylanheyes" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/formula-one-lp-830-sdc-aeebdf.glb
+- title: ( FREE ) Formula One LP-830 SDC
+- maker: SDC PERFORMANCE™️
+- source: https://sketchfab.com/3d-models/free-formula-one-lp-830-sdc-aeebdfa53e294e0390f3c2e8bbfe31b6
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "SDC PERFORMANCE™️" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/fairheaven-sw-84-aa0bec.glb
+- title: Fairheaven SW '84 - Low poly model
+- maker: Daniel Zhabotinsky
+- source: https://sketchfab.com/3d-models/fairheaven-sw-84-low-poly-model-aa0becb6e854422596cac6b21bf79787
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Daniel Zhabotinsky" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/duke-69-46fed7.glb
+- title: Duke '69 - Low Poly Model
+- maker: Daniel Zhabotinsky
+- source: https://sketchfab.com/3d-models/duke-69-low-poly-model-46fed79f600c4fc69e060991f9e3e4f9
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Daniel Zhabotinsky" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
