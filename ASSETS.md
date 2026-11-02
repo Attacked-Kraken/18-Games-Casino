@@ -513,3 +513,30 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "Daniel Zhabotinsky" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb
+- title: Futuristic Muscle car (Launch Control Ready)
+- maker: Jungle Jim
+- source: https://sketchfab.com/3d-models/futuristic-muscle-car-launch-control-ready-47d7ffa796d84d1bbdebe9a007028e0e
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Jungle Jim" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/phoenix-455-71-955edc.glb
+- title: Phoenix 455 '71 - Low poly model
+- maker: Daniel Zhabotinsky
+- source: https://sketchfab.com/3d-models/phoenix-455-71-low-poly-model-955edc733c6d44fabc0ad7c246a15896
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Daniel Zhabotinsky" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb
+- title: Hover-Car - Low-Poly, Sci-Fi, Game-Ready
+- maker: Mert Tetik
+- source: https://sketchfab.com/3d-models/hover-car-low-poly-sci-fi-game-ready-95fc47d2715247f89c8e359dc1838b14
+- license: CC-BY 4.0
+- downloaded: 2026-11-02 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Mert Tetik" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
