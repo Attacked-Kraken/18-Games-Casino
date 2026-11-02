@@ -103,17 +103,17 @@ jobs:
           # (models/fetched/<name>-front.jpg ...) - the job card shows them for the owner's approval before any game uses it
           NEW=$( (git ls-files --others --exclude-standard models/fetched; git ls-files -m models/fetched) | grep '\.glb$' | sort -u || true)   # VP backup Oct 25: a re-fetched model that is already on main is MODIFIED, not new - its pictures were never retaken (G-345 rim)
           if [ -n "$NEW" ]; then
-            npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1 || true
+            timeout 420 npm install --no-save --no-package-lock playwright@1.48.2 >/dev/null 2>&1 && timeout 420 npx playwright install --with-deps chromium >/dev/null 2>&1 || true   # VP Nov 1 2026: every picture / measuring command has its own time cap - a hang on one heavy model (the Futuristic Muscle car, 90k triangles, ran past the 20-min job cap twice) never blocks the save
             python3 -m http.server 8814 >/dev/null 2>&1 &
             sleep 2
-            for f in $NEW; do node tools/model-shots.mjs http://127.0.0.1:8814/ "$f" || echo "::warning title=Sketchfab robot::no pictures for $f"; done
+            for f in $NEW; do timeout 300 node tools/model-shots.mjs http://127.0.0.1:8814/ "$f" || echo "::warning title=Sketchfab robot::no pictures for $f (failed or over 5 min)"; done
           fi
           # owner Oct 26 2026 "make sure I'm looking at what I will get": MODEL ACCEPTANCE. Every new model is measured from the file and its
           # pictures; one that is empty / off-centre / wrong size / unreadable in its pictures NEVER reaches the owner - the retry robot
           # rejects it, removes it and asks for the next-best model by itself (3 tries, then one HELP line).
           if [ -n "$NEW" ]; then
-            node tools/model-accept.mjs --write --pics $NEW | tee -a fetch-report.txt || true
-            node tools/model-retry.mjs $NEW | tee -a fetch-report.txt || true
+            timeout 300 node tools/model-accept.mjs --write --pics $NEW | tee -a fetch-report.txt || echo "::warning title=Sketchfab robot::acceptance did not finish (failed or over 5 min)"
+            timeout 300 node tools/model-retry.mjs $NEW | tee -a fetch-report.txt || echo "::warning title=Sketchfab robot::retry robot did not finish (failed or over 5 min)"
           fi
           rm -f models/fetched/*.ask
           git diff --quiet && [ -z "$(git ls-files --others --exclude-standard models MODEL-SEARCH.md)" ] && { echo "nothing to save"; exit 0; }
