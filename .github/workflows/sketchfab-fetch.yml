@@ -39,7 +39,7 @@ jobs:
   fetch:
     if: github.repository == 'Attacked-Kraken/18-Games-Casino' && (github.event_name != 'pull_request' || startsWith(github.head_ref, 'robot/sketchfab-'))
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
