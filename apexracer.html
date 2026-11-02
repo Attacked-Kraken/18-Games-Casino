@@ -41,6 +41,7 @@
   #who { font:700 13px system-ui; opacity:.85; text-align:center; }
   #who input { font:700 15px system-ui; padding:8px 10px; border-radius:10px; border:1px solid #ffffff44; background:#0008; color:#fff; width:150px; }
   /* ---------- world */
+  /* OWNER Nov 1 8:59 PM: the race list + laps sheet flashed on the intro (their CSS said display:flex before the game hid them) - they start hidden inline now */
   #world { display:flex; flex-direction:column; padding:calc(52px + var(--sat)) 10px calc(8px + var(--sab)); background:radial-gradient(ellipse at top,#2a0f4a,#07040f 70%); }
   #world h2 { margin:0 0 6px 4px; font:900 22px system-ui; letter-spacing:.04em; background:linear-gradient(90deg,#ff2bd6,#19e6ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #wsub { font:700 12px system-ui; opacity:.7; margin:0 0 8px 4px; }
@@ -242,14 +243,14 @@
   </div>
 </div>
 
-<div id="world" class="scr">
+<div id="world" class="scr" style="display:none">
   <h2 id="wTitle">PICK A COUNTRY &amp; CITY</h2>
   <div id="wsub">100 race places · 8 laps minimum</div>
   <div id="ctys"></div>
   <div id="plist"></div>
 </div>
 
-<div id="sheet" class="scr"><div class="box glass">
+<div id="sheet" class="scr" style="display:none"><div class="box glass">
   <h3 id="shT"></h3><div class="sub" id="shS"></div>
   <div style="font:800 12px system-ui;opacity:.8">LAPS</div>
   <div class="chips" id="shLaps"></div>
