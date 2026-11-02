@@ -329,7 +329,7 @@ const GLB_MODELS = {
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
   /* OWNER Nov 1 2026 6:38 PM: four picked cars (fetch robot run 139). Measured here: Duke / Fairheaven nose +X (plate at -X), Formula + Sci-Fi nose -Z (nose cone / headlights at -Z). The Sci-Fi car has no tyres (hover) */
   phoenix: { url: 'models/fetched/phoenix-455-71-955edc.glb', body: ['phoenix445_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
-  hover: { url: 'models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb', body: ['car.001'], tire: [], rim: [], glass: [], rot: Math.PI / 2, noWheels: 1 }, /* hover car, no wheels; nose at +Z (engines at -Z) */
+  hover: { url: 'models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb', body: [] /* OWNER Nov 1 9:13 PM 'looks like a blob': keep the maker's own painted texture (panel lines, red/black detail) - flat game paint wiped it out */, tire: [], rim: [], glass: [], rot: Math.PI / 2, noWheels: 1 }, /* hover car, no wheels; nose at +Z (engines at -Z) */
   muscle: { url: 'models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb', body: ['body_gameasset_mat_1'], tire: ['wheel_fl_gameasset_mat_1'], rim: [], glass: ['material_0'], rot: -Math.PI / 2 }, /* owner's $1,000,000 car; orange accent + white trim materials keep their own look */
   duke: { url: 'models/fetched/duke-69-46fed7.glb', body: ['duke69_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
 };
@@ -2784,7 +2784,7 @@ const UP = { eng: { lv: ['Stock', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'], p
   quad: { only: 'titan', lv: ['Dual Motor', 'Tri Motor', 'Quad Motor', '⚡ Hyperdrive'], p: [0, 250000, 600000, 1500000] }, rocket: { only: 'titan', lv: ['None', 'Twin Boosters', 'Quad Boosters', '🔥 Afterburner'], p: [0, 200000, 500000, 1200000] },
   susp: { only: 'titan', lv: ['Stock', 'Lifted', 'Race Drop', 'Active Air'], p: [0, 120000, 300000, 700000] }, kit: { lv: ['Stock', 'Carbon Kit'], p: [0, 9000] }, tint: { lv: ['Light', 'Dark', 'Limo'], p: [0, 600, 1200] }, wheel: { lv: ['Stock', 'Plus', 'Max'], p: [0, 4500, 11000] } };
 const GLOWS = ['', '#19e6ff', '#ff2bd6', '#8a5cff', '#7dff6a', '#ff3b30', '#ffd23a', '#ffffff', '#2438ff'];
-const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a'];
+const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a', '#ff7a00', '#ffe600', '#39ff14', '#00a86b', '#1e5aff', '#7a2bff', '#ff4f8b', '#8b0000', '#5a6270', '#e5c9a0', '#00d1c1']; /* OWNER Nov 1 9:13 PM: more dust cover colours */
 const CALS = ['#e01b2b', '#ffd23a', '#19e6ff', '#16d07a', '#ff2bd6', '#ff8a00', '#2a2c30', '#f2f2f2'];
 const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Dust Cover Color'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['glow', '💡 Underglow']]; /* OWNER Nov 1 5:29 PM: Wheel Size, Tires, Body Kit, Tint, Calipers tabs removed; Rim Color renamed */
 const VIEW = { wrap: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };
