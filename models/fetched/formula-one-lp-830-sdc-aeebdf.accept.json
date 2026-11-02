@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/formula-one-lp-830-sdc-aeebdf.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 6,
+  "tris": 31176,
+  "size": [
+   2.109,
+   1.238,
+   5.5
+  ],
+  "mainSize": [
+   2.077,
+   1.238,
+   5.5
+  ],
+  "stray": 1,
+  "bytes": 914656
+ },
+ "pictures": [
+  {
+   "pic": "formula-one-lp-830-sdc-aeebdf-front.jpg",
+   "pct": 5.9
+  },
+  {
+   "pic": "formula-one-lp-830-sdc-aeebdf-side.jpg",
+   "pct": 8.6
+  },
+  {
+   "pic": "formula-one-lp-830-sdc-aeebdf-back.jpg",
+   "pct": 6.2
+  },
+  {
+   "pic": "formula-one-lp-830-sdc-aeebdf-top.jpg",
+   "pct": 10.5
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 5.5
+ },
+ "at": "2026-11-02T00:42:33.027Z"
+}

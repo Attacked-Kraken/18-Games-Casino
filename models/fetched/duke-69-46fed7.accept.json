@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/duke-69-46fed7.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 8,
+  "tris": 18555,
+  "size": [
+   4.9,
+   1.31,
+   1.838
+  ],
+  "mainSize": [
+   4.9,
+   1.31,
+   1.838
+  ],
+  "stray": 1,
+  "bytes": 1898304
+ },
+ "pictures": [
+  {
+   "pic": "duke-69-46fed7-front.jpg",
+   "pct": 9.4
+  },
+  {
+   "pic": "duke-69-46fed7-side.jpg",
+   "pct": 6
+  },
+  {
+   "pic": "duke-69-46fed7-back.jpg",
+   "pct": 9.4
+  },
+  {
+   "pic": "duke-69-46fed7-top.jpg",
+   "pct": 14.6
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 4.9
+ },
+ "at": "2026-11-02T00:42:32.481Z"
+}

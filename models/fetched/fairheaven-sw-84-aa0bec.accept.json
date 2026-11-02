@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/fairheaven-sw-84-aa0bec.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 8,
+  "tris": 19461,
+  "size": [
+   5.03,
+   1.622,
+   1.856
+  ],
+  "mainSize": [
+   5.03,
+   1.401,
+   1.856
+  ],
+  "stray": 1,
+  "bytes": 2140560
+ },
+ "pictures": [
+  {
+   "pic": "fairheaven-sw-84-aa0bec-front.jpg",
+   "pct": 9.7
+  },
+  {
+   "pic": "fairheaven-sw-84-aa0bec-side.jpg",
+   "pct": 6.6
+  },
+  {
+   "pic": "fairheaven-sw-84-aa0bec-back.jpg",
+   "pct": 9.5
+  },
+  {
+   "pic": "fairheaven-sw-84-aa0bec-top.jpg",
+   "pct": 13.6
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 5
+ },
+ "at": "2026-11-02T00:42:32.775Z"
+}
