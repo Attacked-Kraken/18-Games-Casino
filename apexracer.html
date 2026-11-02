@@ -357,17 +357,18 @@ function bakeSkins(rootObj) {
   }
 }
 const glbTpl = {};
-for (const k of Object.keys(GLB_MODELS)) {
+/* OWNER Nov 1 2026 9:33 PM ('no delay on the intro, it doesn't load fast enough'): every car model downloads AT THE SAME TIME (was one after another - 9 models in a row) */
+await Promise.all(Object.keys(GLB_MODELS).map(async (k) => {
   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
   for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
-}
+}));
 /* G-345 fix 1: the real garage wheel (Car Wheel/Rim by jack.wake04, CC-BY 4.0, fetched by the robot) - preloaded like the cars; its raw file stands 109 m tall with the axle on X, the game wrapper normalizes it per hub */
 let rimTpl = null, rimDia0 = 1, rimWid0 = 1; const rimCtr = new THREE.Vector3();
-for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } }
+(async () => { for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED turbine wheel (MODELS.md erc-rim-turbine, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1 - so the hub fit stands it exactly as it looks in the viewer */
 let turbTpl = null, turbWidN = 0.27;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -375,11 +376,11 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-rac
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); turbWidN = dims[axle] / diaRaw; turbTpl = hold;
-} catch (e) { turbTpl = null; }
+} catch (e) { turbTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED deep dish wheel (MODELS.md erc-rim-deepdish, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
 let dishTpl = null, dishWidN = 0.54;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf1.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf1.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -387,11 +388,11 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); dishWidN = dims[axle] / diaRaw; dishTpl = hold;
-} catch (e) { dishTpl = null; }
+} catch (e) { dishTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED monoblock wheel (MODELS.md erc-rim-monoblock, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
 let monoTpl = null, monoWidN = 0.48;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -399,7 +400,7 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-ins
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); monoWidN = dims[axle] / diaRaw; monoTpl = hold;
-} catch (e) { monoTpl = null; }
+} catch (e) { monoTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* OWNER rim-fit (Oct 28 2026): if a fetched wheel's model failed to load at boot, retry it when a car
    actually asks for it - and when it lands, rebuild the garage car so the real wheel swaps in.
    A fetched wheel is NEVER replaced by a coloured stand-in. */
@@ -466,7 +467,7 @@ const CARS = [
   { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
   { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.66, top: 118, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.48, top: 106, grip: 1.16, /* OWNER Nov 1 9:33 PM: Goblin throttled down a little (pw 1.62 top 113 grip 1.22) */ prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* OWNER Nov 1 2026 6:38 PM: the picked cars, priced as a ladder - free Vanta, then up to the $1,000,000 Sci-Fi at 320 mph */
   { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
   { id: 'hover', name: 'Hover Racer', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
@@ -2513,6 +2514,10 @@ function stepAI(e, dt) {
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));
   e.nosOn = e.v > 20 && T.cs[i] > e.top * 0.95 && ((R.t * 0.7 + e.top) % 9) < 1.6;
+  if (P && !e.fin && R.t > 0) { /* OWNER Nov 1 9:33 PM: skimming past a rival car counts as a near miss too (+nitro) */
+    let g2 = (e.s - P.prog) % N; if (g2 < -N / 2) g2 += N; if (g2 > N / 2) g2 -= N; g2 *= T.ds; const side = Math.abs(e.d - P.d);
+    if (e.pAhead && g2 < -1 && side < 4.2 && side > 2.1 && P.spd > 24 && !e.nearDone) { e.nearDone = 1; R.near++; P.nos = Math.min(1, P.nos + 0.18); pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); }
+    if (g2 > 3) e.nearDone = 0; e.pAhead = g2 > 0; }
   if (e.nosOn) e.v = Math.min(e.v + 9 * dt, e.top * 1.24); /* OWNER Nov 1 2026: rivals' nitro really pushes them, like the player's (x1.24 top) */
   /* lanes: get around slower cars */
   let blocked = false; const others = R.cars.concat(R.traffic);
@@ -2544,7 +2549,7 @@ function stepTraffic(t, dt) {
   else t.v += clamp(t.v0 - t.v, -6 * dt, 3 * dt);
   t.s += (t.v * dt) / T.ds; T.at(t.s, t.d, tmpA); t.x = tmpA.x; t.z = tmpA.z; t.h = tmpA.h + (t.spin || 0);
   const g = (t.s - P.prog) * T.ds;
-  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.07); pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); /* G-80: near misses chain into the kit's combo sounds */ }
+  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.18) /* OWNER Nov 1 9:33 PM: near misses really fill nitro (was +0.07) */; pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); /* G-80: near misses chain into the kit's combo sounds */ }
   t.ahead = g > 0;
   if (g < -70 || g > 900) { t.s = P.prog + (220 + Math.random() * 360) / T.ds; t.d = LANES[Math.floor(Math.random() * 4)]; t.v = t.v0; t.hit = 0; t.spin = 0; t.ahead = true; }
 }
