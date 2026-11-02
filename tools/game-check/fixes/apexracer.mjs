@@ -667,7 +667,7 @@ export default [
   },
   {
     id: 'never-g-270-p1',
-    ask: 'G-270 fix 1 (owner): all cars fast and the player laps the whole field - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
+    ask: 'G-270 fix 1, changed by the owner Nov 1 2026 ("I still lap them easy, make other cars fast"): all cars fast and every rival keeps up - never lapped - stock player top at least 110 m/s, every rival top at least 60 m/s, and in a driven 3-lap New York race every rival is at least 0.9 of a lap behind when the player finishes lap 3',
     async test(page, h) {
       await h.eval(() => { const E = window.__erc; if (E) { window.__g270prev = E.R; E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 3); } }); /* VP Oct 31 2026 (PR #2166): wait for the NEW race below - the previous test's race also has skids and was read as the player (Kestrel 81 m/s) */ /* the test says STOCK player: pin the stock car so a car picked by an earlier test in the same page (Kestrel = 81 m/s) cannot fake a red line */
       let ready = false;
@@ -693,7 +693,7 @@ export default [
         }
         E.K.gas = 0; E.K.sx = 0;
         if ((P.lapT || []).length < 3) return 'the player did not finish 3 laps in the drive window';
-        for (const e2 of ais) { const prog = e2.s / T.N; if (prog > 2.1) return 'a rival is only ' + (3 - prog).toFixed(2) + ' laps behind after the player\'s 3 laps - the player must lap the whole field'; }
+        for (const e2 of ais) { const prog = e2.s / T.N; if (prog < 2.6) return 'a rival is ' + (3 - prog).toFixed(2) + ' laps behind after the player\'s 3 laps - owner Nov 1 2026: the rivals must keep up (no lapping them easy)'; }
         return true;
       });
     },
