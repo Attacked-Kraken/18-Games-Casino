@@ -1,0 +1,29 @@
+{
+ "words": "sports coupe game ready",
+ "for": "",
+ "date": "2026-11-02",
+ "results": [
+  {
+   "uid": "4211a47e766d4c71b3a9fd94295f4d08",
+   "name": "Free Pack - Car",
+   "maker": "PolyOne Studio",
+   "license": "CC-BY 4.0",
+   "mb": 4.3,
+   "faces": 5545,
+   "likes": 27,
+   "link": "https://sketchfab.com/3d-models/none-4211a47e766d4c71b3a9fd94295f4d08",
+   "thumb": "https://media.sketchfab.com/models/4211a47e766d4c71b3a9fd94295f4d08/thumbnails/cb778bb6ca034ed2b3963df748577b27/ae21e9cc1bdb436b94647a0123d2e9f5.jpeg"
+  },
+  {
+   "uid": "31c0f68f6e754cbf915a42ee89df2838",
+   "name": "Teal Widebody Drift Coupe",
+   "maker": "Kitso_3d",
+   "license": "CC-BY 4.0",
+   "mb": 16.8,
+   "faces": 164920,
+   "likes": 2,
+   "link": "https://sketchfab.com/3d-models/none-31c0f68f6e754cbf915a42ee89df2838",
+   "thumb": "https://media.sketchfab.com/models/31c0f68f6e754cbf915a42ee89df2838/thumbnails/d62b1b4184334a6ebcea4796f264e8d1/ea7166ad2de1490c8f162b1aaa1b56e5.jpeg"
+  }
+ ]
+}
