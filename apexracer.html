@@ -233,6 +233,7 @@
       <div style="margin-top:6px"><b>"Sci-Fi Wheel"</b> by gorzi, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"Phoenix 455 '71 - Low poly model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/phoenix-455-71-low-poly-model-955edc733c6d44fabc0ad7c246a15896" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Hover-Car - Low-Poly, Sci-Fi, Game-Ready"</b> by Mert Tetik, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/hover-car-low-poly-sci-fi-game-ready-95fc47d2715247f89c8e359dc1838b14" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
+      <div style="margin-top:6px"><b>"Futuristic Muscle car (Launch Control Ready)"</b> by Jungle Jim, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/futuristic-muscle-car-launch-control-ready-47d7ffa796d84d1bbdebe9a007028e0e" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Duke '69 - Low Poly Model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/duke-69-low-poly-model-46fed79f600c4fc69e060991f9e3e4f9" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Tuner car wheel FREE"</b> by NLM, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"car tyre game ready p zero"</b> by Iftekhar.Tushar, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
@@ -328,6 +329,7 @@ const GLB_MODELS = {
   /* OWNER Nov 1 2026 6:38 PM: four picked cars (fetch robot run 139). Measured here: Duke / Fairheaven nose +X (plate at -X), Formula + Sci-Fi nose -Z (nose cone / headlights at -Z). The Sci-Fi car has no tyres (hover) */
   phoenix: { url: 'models/fetched/phoenix-455-71-955edc.glb', body: ['phoenix445_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
   hover: { url: 'models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb', body: ['car.001'], tire: [], rim: [], glass: [], rot: Math.PI / 2, noWheels: 1 }, /* hover car, no wheels; nose at +Z (engines at -Z) */
+  muscle: { url: 'models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb', body: ['body_gameasset_mat_1'], tire: ['wheel_fl_gameasset_mat_1'], rim: [], glass: ['material_0'], rot: -Math.PI / 2 }, /* owner's $1,000,000 car; orange accent + white trim materials keep their own look */
   duke: { url: 'models/fetched/duke-69-46fed7.glb', body: ['duke69_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
 };
 function bakeSkins(rootObj) {
@@ -468,6 +470,7 @@ const CARS = [
   { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
   { id: 'hover', name: 'Hover Racer', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
   { id: 'duke', name: 'Duke 69', cls: 'S', price: 500000, pw: 1.75, top: 134, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
+  { id: 'muscle', name: 'Futuristic Muscle', cls: 'X', price: 1000000, pw: 2.0, top: 143, grip: 1.35, prof: 'muscle', col: '#272c2e', glb: 'muscle' }, /* OWNER Nov 1 2026: the $1,000,000 top car, 320 mph */
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
   { id: 'vortex', hidden: 1, name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
