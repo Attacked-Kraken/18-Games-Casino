@@ -450,10 +450,10 @@ const MPH = 2.237;
 let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const CARS = [
   { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 75, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
-  { id: 'kestrel', name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 81, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
-  { id: 'brute', name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
-  { id: 'nova', name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
-  { id: 'zenith', name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
+  { id: 'kestrel', hidden: 1, name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 81, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
+  { id: 'brute', hidden: 1, name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
+  { id: 'nova', hidden: 1, name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
+  { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
   { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 113, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
   { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
@@ -462,6 +462,8 @@ const CARS = [
   { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
+/* OWNER Nov 1 6:04 PM: Kestrel, Brute, Nova, Zenith are the same three models as the others - gone from the garage list (kept in the data so old saves and AI cars still load) */
+const GARAGE_CARS = CARS.filter((c) => !c.hidden);
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
 const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
@@ -1615,7 +1617,7 @@ function makeGlbCar(id, cfg, o = {}) {
       cal3.position.set(hb.x - fr * 0.40, hb.y + fr * 0.16, bz); /* G-355: the caliper sits behind the rim's face plane (measured from the fitted rim's own depth, not the tyre) - on the tyre-based depth it floated on the wheel face in the owner's screenshot */
       cal3.userData.acc = 'caliper'; ownMats.push(cal3.material); tilt.add(cal3);
     }
-    if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    if (cfg.glow) { accGlow = new THREE.Mesh(new THREE.PlaneGeometry(ls.x * 0.92, ls.z * 0.92) /* inside the body box: the REALITY robot measures the whole car - at 1.16x the glow read as a 6.47 m car */, new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 6.5) /* OWNER Nov 1 6:04 PM: underglow brighter on all colours */, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
       accGlow.rotation.x = -Math.PI / 2; accGlow.position.y = 0.055; accGlow.renderOrder = 2; accGlow.userData.acc = 'underglow'; tilt.add(accGlow); }
     const aero = cfg.aero || 0;
     if (aero > 0) {
@@ -1679,7 +1681,7 @@ function makeCar(id, cfg, o = {}) {
   const blob = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.18, P.W * 1.4), new THREE.MeshBasicMaterial({ map: TX.blob, transparent: true, depthWrite: false, opacity: 0.85 }));
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.035; blob.userData.blob = 1; blob.renderOrder = 1; yaw.add(blob);
   let glow = null;
-  if (cfg.glow && !simple) { glow = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.55, P.W * 2.4), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 2.6), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  if (cfg.glow && !simple) { glow = new THREE.Mesh(new THREE.PlaneGeometry(P.L * 1.55, P.W * 2.4), new THREE.MeshBasicMaterial({ map: TX.glow, color: hdr(cfg.glow, 6.5), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
     glow.rotation.x = -Math.PI / 2; glow.position.y = 0.06; glow.renderOrder = 2; yaw.add(glow); }
   const flames = [];
   if (!simple) for (const s of [-1, 1]) { const f = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.9, 10, 1, true), new THREE.MeshBasicMaterial({ color: hdr('#58c8ff', 5), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
@@ -2791,7 +2793,7 @@ function renderGarage() {
   const V = VIEW[G.tab] || [0.75, 0.26, 8.2]; gOrb.tt = V; if (G.tab !== 'cars') gOrb.auto = 0;
   const price = (p, own) => `<span class="p ${own ? 'own' : p > S.cash ? 'no' : ''}">${own ? own : p ? fmt$(p) : 'Free'}</span>`;
   let h = '';
-  if (G.tab === 'cars') h = CARS.map((q) => { const o = !!S.cars[q.id]; return `<button class="go ${q.id === id ? 'on' : ''}" data-car="${q.id}"><b>${q.name}</b><span style="opacity:.7">Class ${q.cls} · ${Math.round(q.top * MPH)} mph</span>${q.owner ? `<span class="p own" style="color:#ffd23a">👑 ${isOwner() ? 'OWNER · BUILT IT' : 'Owner exclusive'}</span>` : ''}${price(q.price, q.id === S.cur ? 'Driving' : o ? (q.owner && isOwner() ? 'Free · Owned' : 'Owned') : '')}${!o && q.id === id ? '<span class="p">Tap again to buy</span>' : ''}</button>`; }).join('');
+  if (G.tab === 'cars') h = GARAGE_CARS.map((q) => { const o = !!S.cars[q.id]; return `<button class="go ${q.id === id ? 'on' : ''}" data-car="${q.id}"><b>${q.name}</b><span style="opacity:.7">Class ${q.cls} · ${Math.round(q.top * MPH)} mph</span>${q.owner ? `<span class="p own" style="color:#ffd23a">👑 ${isOwner() ? 'OWNER · BUILT IT' : 'Owner exclusive'}</span>` : ''}${price(q.price, q.id === S.cur ? 'Driving' : o ? (q.owner && isOwner() ? 'Free · Owned' : 'Owned') : '')}${!o && q.id === id ? '<span class="p">Tap again to buy</span>' : ''}</button>`; }).join('');
   else if (!owned) h = `<div class="go" style="min-width:240px">Buy this car first (Cars tab)</div>`;
   else if (G.tab === 'paint') h = PAINTS.map((p) => `<button class="go ${p === c.paint ? 'on' : ''}" data-paint="${p}"><span class="sw" style="background:${p}"></span>${price(500, p === c.paint ? 'On' : OWN(S.cars[G.gSel], 'paint', p) ? 'Owned' : '')}</button>`).join('') + `<label class="go"><input type="color" id="pc" value="${c.paint}" style="width:40px;height:34px;border:0;background:none"/>Custom<span class="p">🪙500</span></label>`;
   else if (G.tab === 'wrap') h = Object.entries(WRAPS).map(([k, v]) => `<button class="go ${k === (c.wrap || 'none') ? 'on' : ''}" data-wrap="${k}"><b>${v[0]}</b>${price(v[1], k === (c.wrap || 'none') ? 'On' : OWN(S.cars[G.gSel], 'wrap', k) ? 'Owned' : '')}</button>`).join('');
