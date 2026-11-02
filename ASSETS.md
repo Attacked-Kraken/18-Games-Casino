@@ -484,7 +484,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/futuristic-sci-fi-car-525bb5ad44d34ad1b74aca686ea836a4
 - license: CC-BY 4.0
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "dylanheyes" on its credits screen)
+- used in: apexracer.html (credits screen names dylanheyes)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/formula-one-lp-830-sdc-aeebdf.glb
@@ -502,7 +502,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/fairheaven-sw-84-low-poly-model-aa0becb6e854422596cac6b21bf79787
 - license: CC-BY 4.0
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "Daniel Zhabotinsky" on its credits screen)
+- used in: apexracer.html (credits screen names Daniel Zhabotinsky)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/duke-69-46fed7.glb
