@@ -454,15 +454,15 @@ const CARS = [
   { id: 'brute', hidden: 1, name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
   { id: 'nova', hidden: 1, name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
   { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
-  { id: 'phantom', name: 'Phantom X', cls: 'S', price: 380000, pw: 1.62, top: 113, grip: 1.22, prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
+  { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.66, top: 118, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
   { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
-  { id: 'titan', name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
-  { id: 'vortex', name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
+  { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
+  { id: 'vortex', hidden: 1, name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
-/* OWNER Nov 1 6:04 PM: Kestrel, Brute, Nova, Zenith are the same three models as the others - gone from the garage list (kept in the data so old saves and AI cars still load) */
+/* OWNER Nov 1 6:38 PM: CRUZ Titan / Vortex removed from the lineup too. 6:04 PM: Kestrel, Brute, Nova, Zenith are the same three models as the others - gone from the garage list (kept in the data so old saves and AI cars still load) */
 const GARAGE_CARS = CARS.filter((c) => !c.hidden);
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
