@@ -1857,20 +1857,20 @@ const BIO = {
   neon: { gr: 'asphalt', walk: 1, bar: 'wall', lamps: 'street', bld: { k: 'office', h: [25, 120], cl: 14, dens: 0.92 }, signs: 0.45, sky: 1, traffic: 1, x: ['cross', 'steam'] },
   terrace: { gr: 'asphalt', elev: 26, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [70, 230], cl: 10, dens: 0.85 }, signs: 0.1, sky: 1, traffic: 1, x: [] },
   bridge: { gr: 'none', water: 'all', elev: 14, bar: 'rail', lamps: 'modern', sky: 1, traffic: 1, x: ['cables', 'solar'] },
-  cavern: { gr: 'rock', bar: 'posts', lamps: 'none', cave: 1, traffic: 0, x: ['crystals'] },
-  canal: { gr: 'stone', walk: 1, bar: 'stone', lamps: 'old', bld: { k: 'euro', h: [12, 28], cl: 22, dens: 0.95 }, signs: 0.05, traffic: 0, x: ['canal', 'towers'] },
+  cavern: { gr: 'rock', bar: 'posts', lamps: 'none', cave: 1, traffic: 1, x: ['crystals'] },
+  canal: { gr: 'stone', walk: 1, bar: 'stone', lamps: 'old', bld: { k: 'euro', h: [12, 28], cl: 22, dens: 0.95 }, signs: 0.05, traffic: 1, x: ['canal', 'towers'] },
   plaza: { gr: 'marble', walk: 1, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [50, 200], cl: 30, dens: 0.55 }, signs: 0.05, sky: 1, traffic: 1, x: ['planters', 'holo'] },
-  cloud: { gr: 'none', bar: 'glass', lamps: 'modern', traffic: 0, x: ['clouds', 'saucers'] },
+  cloud: { gr: 'none', bar: 'glass', lamps: 'modern', traffic: 1, x: ['clouds', 'saucers'] },
   aero: { gr: 'asphalt', bar: 'wall', lamps: 'street', bld: { k: 'office', h: [15, 70], cl: 34, dens: 0.45 }, signs: 0.1, sky: 1, traffic: 1, x: ['planes', 'overpass'] },
-  zen: { gr: 'grass', bar: 'stone', lamps: 'lantern', traffic: 0, x: ['pagodas', 'pines', 'torii', 'cherry'] },
-  volcano: { gr: 'rock', bar: 'rail', lamps: 'none', traffic: 0, x: ['volcano', 'mountains', 'rocks', 'embers'] },
+  zen: { gr: 'grass', bar: 'stone', lamps: 'lantern', traffic: 1, x: ['pagodas', 'pines', 'torii', 'cherry'] },
+  volcano: { gr: 'rock', bar: 'rail', lamps: 'none', traffic: 1, x: ['volcano', 'mountains', 'rocks', 'embers'] },
   port: { gr: 'concrete', bar: 'wall', lamps: 'sodium', traffic: 2, x: ['containers', 'cranes'] },
-  ice: { gr: 'ice', road: 'ice', bar: 'posts', lamps: 'none', sky: 1, grip: 0.62, traffic: 0, x: ['snow'] },
+  ice: { gr: 'ice', road: 'ice', bar: 'posts', lamps: 'none', sky: 1, grip: 0.62, traffic: 1, x: ['snow'] },
   tunnel: { gr: 'asphalt', walk: 1, bar: 'wall', lamps: 'street', bld: { k: 'office', h: [25, 110], cl: 14, dens: 0.85 }, signs: 0.35, sky: 1, traffic: 1, x: ['tunnels', 'cross'] },
   rings: { gr: 'asphalt', walk: 1, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [40, 160], cl: 16, dens: 0.8 }, signs: 0.3, sky: 1, traffic: 1, x: ['rings', 'spires'] },
   desert: { gr: 'sand', bar: 'rail', lamps: 'none', grip: 0.95, traffic: 1, x: ['mesas', 'cactus', 'mountains'] },
   beach: { gr: 'sand', water: 'side', bar: 'rail', lamps: 'modern', bld: { k: 'low', h: [10, 45], cl: 26, dens: 0.5 }, traffic: 1, x: ['palms'] },
-  gallery: { gr: 'marble', bar: 'glass', lamps: 'none', hall: 1, traffic: 0, x: ['hall'] },
+  gallery: { gr: 'marble', bar: 'glass', lamps: 'none', hall: 1, traffic: 1, x: ['hall'] },
   forest: { gr: 'grass', bar: 'rail', lamps: 'none', traffic: 1, x: ['pines', 'mountains'] },
 };
 const SKYV = 'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.); gl_Position=p.xyww; }';
@@ -1917,7 +1917,7 @@ async function buildWorld(place) {
   const bio = BIO[place.biome], r = rng(place.seed * 7 + 3), T = makeTrack(place.seed, 1);
   const tp = bio.cave ? TODP.cave : bio.hall ? TODP.hall : TODP[place.tod], night = place.tod === 'n' && !bio.hall, Y = bio.elev || 0; T.y = Y;
   const scene = new THREE.Scene(), anim = [], lampPts = [], streak = [];
-  const W = { scene, T, anim, bio, tp, night, grip: bio.grip || 1, traffic: bio.traffic, place };
+  const W = { scene, T, anim, bio, tp, night, grip: bio.grip || 1, traffic: bio.traffic || 1 /* OWNER Nov 1 9:23 PM: traffic in every city */, place };
   const sunD = new THREE.Vector3(...tp.sun).normalize();
   /* sky, fog, lights, reflections */
   const fogC = new THREE.Color(tp.fog);
@@ -2422,7 +2422,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.94 + r() * 0.10); e.ak = 0.36 + r() * 0.08; /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (1.02 + r() * 0.12); e.ak = 0.52 + r() * 0.12; /* OWNER Nov 1 9:23 PM 'still very slow': rivals 102-114% of the player's top, corner near the limit, and use nitro like the player */ /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -2507,12 +2507,13 @@ function stepAI(e, dt) {
   const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
-  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.15; else if (gap < -120) vt *= 1.07; } /* G-70: gentle two-way pace keeping - the field stays with the player */
-  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 1.0, 10)); /* OWNER Nov 1 2026: the field may match the player's own pace (was 58%) */ /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
+  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 500) vt *= 0.7; else if (gap > 250) vt *= 0.9; /* close racing both ways: far-ahead rivals ease off, behind ones push */ else if (gap < -300) vt *= 1.15; else if (gap < -120) vt *= 1.07; } /* G-70: gentle two-way pace keeping - the field stays with the player */
+  /* OWNER Nov 1 9:23 PM 'still very slow': the cap that held rivals to the player's own pace is gone - they race at their own speed */ /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));
   e.nosOn = e.v > 20 && T.cs[i] > e.top * 0.95 && ((R.t * 0.7 + e.top) % 9) < 1.6;
+  if (e.nosOn) e.v = Math.min(e.v + 9 * dt, e.top * 1.24); /* OWNER Nov 1 2026: rivals' nitro really pushes them, like the player's (x1.24 top) */
   /* lanes: get around slower cars */
   let blocked = false; const others = R.cars.concat(R.traffic);
   for (const o of others) { if (o === e) continue; const os = o.isP ? o.prog : o.s, od = o.isP ? o.d : o.d; let g = (os - e.s) % N; if (g < -N / 2) g += N; if (g > N / 2) g -= N; g *= T.ds;
