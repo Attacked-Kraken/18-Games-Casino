@@ -2422,7 +2422,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.60 + r() * 0.05); e.ak = 0.22 + r() * 0.06; /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.55 + r() * 0.1); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.94 + r() * 0.10); e.ak = 0.36 + r() * 0.08; /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -2507,8 +2507,8 @@ function stepAI(e, dt) {
   const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
-  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.08; else if (gap < -120) vt *= 1.04; } /* G-70: gentle two-way pace keeping - the field stays with the player */
-  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 0.58, 10)); /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
+  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.15; else if (gap < -120) vt *= 1.07; } /* G-70: gentle two-way pace keeping - the field stays with the player */
+  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 1.0, 10)); /* OWNER Nov 1 2026: the field may match the player's own pace (was 58%) */ /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));
