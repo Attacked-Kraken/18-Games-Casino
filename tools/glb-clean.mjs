@@ -16,7 +16,8 @@ for (const node of doc.getRoot().listNodes()) {
   const b = getBounds(node); const s = b.max.map((v, i) => v - b.min[i]);
   const flat = s[1] < span * 0.01 && Math.max(s[0], s[2]) > span * 0.3;           // a thin flat sheet
   const named = /shadow|ground|floor|backdrop|plane0|^plane/i.test(node.getName() + ' ' + node.getMesh().getName());
-  if (flat || named) { removed.push(node.getName() || '(no name)'); node.dispose(); }
+  const keep = /body|chassis|hull|car|wheel|tire|tyre|seat|door|hood|roof/i.test(node.getName() + ' ' + node.getMesh().getName()); /* owner Nov 1 2026: the Futuristic Muscle car's body panels are named Plane_Body_... - a name alone never removes a real part; only a truly flat sheet goes */
+  if (flat || (named && !keep)) { removed.push(node.getName() || '(no name)'); node.dispose(); }
 }
 await doc.transform(prune());
 // owner Oct 21 2026 (Sketchfab robot upgrade a): the MODEL-REQUESTS line may say a real size - "length 4.6 m", "height 1.8 m"

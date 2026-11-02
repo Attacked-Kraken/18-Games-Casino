@@ -231,6 +231,8 @@
       <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"(FREE) Wheels SDC - Pure Performance"</b> by SDC PERFORMANCE™️, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/free-wheels-sdc-pure-performance-eebae2592aa94ffabc886694bb6d096c" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"Sci-Fi Wheel"</b> by gorzi, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"Phoenix 455 '71 - Low poly model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/phoenix-455-71-low-poly-model-955edc733c6d44fabc0ad7c246a15896" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
+      <div style="margin-top:6px"><b>"Hover-Car - Low-Poly, Sci-Fi, Game-Ready"</b> by Mert Tetik, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/hover-car-low-poly-sci-fi-game-ready-95fc47d2715247f89c8e359dc1838b14" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Duke '69 - Low Poly Model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/duke-69-low-poly-model-46fed79f600c4fc69e060991f9e3e4f9" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Tuner car wheel FREE"</b> by NLM, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"car tyre game ready p zero"</b> by Iftekhar.Tushar, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
@@ -324,6 +326,8 @@ const GLB_MODELS = {
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
   /* OWNER Nov 1 2026 6:38 PM: four picked cars (fetch robot run 139). Measured here: Duke / Fairheaven nose +X (plate at -X), Formula + Sci-Fi nose -Z (nose cone / headlights at -Z). The Sci-Fi car has no tyres (hover) */
+  phoenix: { url: 'models/fetched/phoenix-455-71-955edc.glb', body: ['phoenix445_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
+  hover: { url: 'models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb', body: ['car.001'], tire: [], rim: [], glass: [], rot: Math.PI / 2, noWheels: 1 }, /* hover car, no wheels; nose at +Z (engines at -Z) */
   duke: { url: 'models/fetched/duke-69-46fed7.glb', body: ['duke69_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
 };
 function bakeSkins(rootObj) {
@@ -461,6 +465,8 @@ const CARS = [
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
   { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* OWNER Nov 1 2026 6:38 PM: the picked cars, priced as a ladder - free Vanta, then up to the $1,000,000 Sci-Fi at 320 mph */
+  { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
+  { id: 'hover', name: 'Hover Racer', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
   { id: 'duke', name: 'Duke 69', cls: 'S', price: 500000, pw: 1.75, top: 134, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
@@ -1397,7 +1403,7 @@ function makeGlbCar(id, cfg, o = {}) {
   model.traverse((q) => { if (q.isMesh && /shadow/i.test(q.name)) kill.push(q); });
   kill.forEach((q) => q.parent && q.parent.remove(q));
   const lampCand = [];
-  const isLampName = (s) => !!s && !/casing|body_glass|glass_driver|window/.test(s) /* Nov 1: the Duke / Fairheaven windows are named ..._Lights_and_Glass... - windows, not lamps */ && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
+  const isLampName = (s) => !!s && !/casing|body_glass|glass_driver|glass_passenger|glass_front|glass_rear|glass_side|window/.test(s) /* Nov 1: the Duke / Fairheaven windows are named ..._Lights_and_Glass... - windows, not lamps */ && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
   model.traverse((q) => {
     if (!q.isMesh) return;
     q.castShadow = true;
@@ -1421,6 +1427,10 @@ function makeGlbCar(id, cfg, o = {}) {
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
   model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
+  { /* owner Nov 1 2026 (Phoenix 455 floated): a model whose lowest point is not its tyres (a part hanging below) stands on its TYRES - measured from the tyre meshes */
+    model.updateWorldMatrix(true, true); const tb = new THREE.Box3(); let anyT = false;
+    model.traverse((q) => { if (q.isMesh && q.material === tireMat) { tb.expandByObject(q); anyT = true; } });
+    if (anyT && isFinite(tb.min.y) && Math.abs(tb.min.y) > 0.01) model.position.y -= tb.min.y; }
   /* G-145 (owner): the G-70 light bars are GONE - the cars' OWN headlights, brighter.
      Light-named meshes (Patriot Lights, Tokii Headlight/TailLight, SHC Led_light) get
      lamp-glow materials, split front/rear by where they sit. */
@@ -1503,7 +1513,7 @@ function makeGlbCar(id, cfg, o = {}) {
           hubs.push({ x: cx, y: (y0 + y1) / 2, z: (z0 + z1) / 2, h: y1 - y0, w: z1 - z0 });
         }
       }
-      if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
+      if (MC.noWheels) hubs = []; else if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
     }
 
     const latheMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.85, roughness: 0.3 });
@@ -2700,7 +2710,9 @@ const BGC = { neon: ['#ff2bd6', '#2a0f4a'], terrace: ['#7ab4ff', '#24346a'], bri
   cloud: ['#ffd0e8', '#7ab8ff'], aero: ['#8fc8ff', '#3a5a8a'], zen: ['#ffb7d0', '#2a5a3a'], volcano: ['#ff6a20', '#3a1a10'], port: ['#ff7a3a', '#1a3a6a'], ice: ['#bfefff', '#1a4a8a'],
   tunnel: ['#19e6ff', '#1a1a3a'], rings: ['#19e6ff', '#ff2bd6'], desert: ['#ffc27a', '#a8582e'], beach: ['#ffe08a', '#1fa0c8'], gallery: ['#ffffff', '#9aa8ba'], forest: ['#7ac86a', '#1f4a2a'] };
 const TODI = { n: '🌙', s: '🌅', d: '☀️' };
-function openWorld(pick) { G.mode = 'world'; G.pick = pick || null; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
+function openWorld(pick) { /* OWNER Nov 1 2026 7:27 PM ('remove this screen'): no country / city / laps screen - Race starts at once at the next place, 8 laps (or the laps last chosen) */
+  G.pick = pick || null; const nxt = PLACES[((S.lastPlace == null ? -1 : S.lastPlace) + 1) % PLACES.length]; S.cty = Math.max(0, COUNTRIES.findIndex((c) => c.name === nxt.country)); startRace(nxt, Math.max(8, S.laps || 8)); return;
+  G.mode = 'world'; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
 function renderCountries() {
   $('ctys').innerHTML = COUNTRIES.map((c, i) => `<button class="cty ${i === S.cty ? 'on' : ''}" data-i="${i}">${c.flag} ${esc(c.name)} <span style="opacity:.6">${c.places.length}</span></button>`).join('');
   $('ctys').querySelectorAll('.cty').forEach((b) => { b.onclick = () => { S.cty = +b.dataset.i; save(); sfx('tap'); renderCountries(); renderPlaces(); }; });
@@ -2756,7 +2768,7 @@ function showResults() {
 }
 $('rGar').onclick = () => { endRace(); openGarage(); };
 $('rAgain').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
-$('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length]; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); openSheet(p); };
+$('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length], l = R.laps; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); startRace(p, l); }; /* OWNER Nov 1: straight into the next race, no sheet */
 function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
 $('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
 $('pRe').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
