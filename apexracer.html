@@ -322,6 +322,11 @@ const GLB_MODELS = {
   tokii: { url: 'models/fetched/tokii-abyss-gt-7-v12-c39956.glb', body: ['palettematerial003', 'palettematerial002', 'palettematerial009', 'palettematerial010'], tire: ['tiretread'], rim: [], glass: [], rot: Math.PI / 2 }, /* G-46 fix: 009/010 are the big body panels (12k verts) - they kept their dark factory material */
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
+  /* OWNER Nov 1 2026 6:38 PM: four picked cars (fetch robot run 139). Measured here: Duke / Fairheaven nose +X (plate at -X), Formula + Sci-Fi nose -Z (nose cone / headlights at -Z). The Sci-Fi car has no tyres (hover) */
+  scifi: { url: 'models/fetched/futuristic-sci-fi-car-525bb5.glb', body: ['palettematerial001'], tire: [], rim: [], glass: ['palettematerial005'], rot: -Math.PI / 2, noWheels: 1 },
+  duke: { url: 'models/fetched/duke-69-46fed7.glb', body: ['duke69_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
+  formula: { url: 'models/fetched/formula-one-lp-830-sdc-aeebdf.glb', body: ['material.001'], tire: ['palettematerial003'], rim: ['material.008'], glass: [], rot: Math.PI / 2 },
+  fairheaven: { url: 'models/fetched/fairheaven-sw-84-aa0bec.glb', body: ['fairheaven_lt80_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
 };
 function bakeSkins(rootObj) {
   /* The Tokii is a SKINNED model (88 skinned meshes on one skeleton) and every car is a plain clone of the template - plain clones SHARE the template's skeleton (measured: two Tokii cars report the same skeleton object, its bones live in no car), and mid-race Tokii cars render sunk ~0.6 m under the road (the owner's invisible cars). The game plays no animations, so bake the bind pose into plain geometry once at load: no skeletons, no sharing, nothing left to drift. */
@@ -456,7 +461,12 @@ const CARS = [
   { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
   { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.66, top: 118, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'S', price: 0, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  /* OWNER Nov 1 2026 6:38 PM: the picked cars, priced as a ladder - free Vanta, then up to the $1,000,000 Sci-Fi at 320 mph */
+  { id: 'fairheaven', name: 'Fairheaven SW', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#324e55', glb: 'fairheaven' },
+  { id: 'formula', name: 'LP-830 Formula', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#1e4fd8', glb: 'formula' },
+  { id: 'duke', name: 'Duke 69', cls: 'S', price: 500000, pw: 1.75, top: 134, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
+  { id: 'scifi', name: 'Futuristic Sci-Fi', cls: 'X', price: 1000000, pw: 2.0, top: 143, grip: 1.35, prof: 'hyper', col: '#b8c4ff', fin: 'chrome', glb: 'scifi' },
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
   { id: 'vortex', hidden: 1, name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
@@ -1392,7 +1402,7 @@ function makeGlbCar(id, cfg, o = {}) {
   model.traverse((q) => { if (q.isMesh && /shadow/i.test(q.name)) kill.push(q); });
   kill.forEach((q) => q.parent && q.parent.remove(q));
   const lampCand = [];
-  const isLampName = (s) => !!s && !/casing/.test(s) && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
+  const isLampName = (s) => !!s && !/casing|body_glass|glass_driver|window/.test(s) /* Nov 1: the Duke / Fairheaven windows are named ..._Lights_and_Glass... - windows, not lamps */ && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
   model.traverse((q) => {
     if (!q.isMesh) return;
     q.castShadow = true;
