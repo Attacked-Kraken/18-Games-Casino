@@ -2710,9 +2710,8 @@ const BGC = { neon: ['#ff2bd6', '#2a0f4a'], terrace: ['#7ab4ff', '#24346a'], bri
   cloud: ['#ffd0e8', '#7ab8ff'], aero: ['#8fc8ff', '#3a5a8a'], zen: ['#ffb7d0', '#2a5a3a'], volcano: ['#ff6a20', '#3a1a10'], port: ['#ff7a3a', '#1a3a6a'], ice: ['#bfefff', '#1a4a8a'],
   tunnel: ['#19e6ff', '#1a1a3a'], rings: ['#19e6ff', '#ff2bd6'], desert: ['#ffc27a', '#a8582e'], beach: ['#ffe08a', '#1fa0c8'], gallery: ['#ffffff', '#9aa8ba'], forest: ['#7ac86a', '#1f4a2a'] };
 const TODI = { n: '🌙', s: '🌅', d: '☀️' };
-function openWorld(pick) { /* OWNER Nov 1 2026 7:27 PM ('remove this screen'): no country / city / laps screen - Race starts at once at the next place, 8 laps (or the laps last chosen) */
-  G.pick = pick || null; const nxt = PLACES[((S.lastPlace == null ? -1 : S.lastPlace) + 1) % PLACES.length]; S.cty = Math.max(0, COUNTRIES.findIndex((c) => c.name === nxt.country)); startRace(nxt, Math.max(8, S.laps || 8)); return;
-  G.mode = 'world'; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
+function openWorld(pick) { /* OWNER Nov 1 2026 7:54 PM: the country + city list STAYS (all 100 places available) - put back after a wrong removal at 7:27 PM */
+  G.mode = 'world'; G.pick = pick || null; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
 function renderCountries() {
   $('ctys').innerHTML = COUNTRIES.map((c, i) => `<button class="cty ${i === S.cty ? 'on' : ''}" data-i="${i}">${c.flag} ${esc(c.name)} <span style="opacity:.6">${c.places.length}</span></button>`).join('');
   $('ctys').querySelectorAll('.cty').forEach((b) => { b.onclick = () => { S.cty = +b.dataset.i; save(); sfx('tap'); renderCountries(); renderPlaces(); }; });
@@ -2768,7 +2767,7 @@ function showResults() {
 }
 $('rGar').onclick = () => { endRace(); openGarage(); };
 $('rAgain').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
-$('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length], l = R.laps; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); startRace(p, l); }; /* OWNER Nov 1: straight into the next race, no sheet */
+$('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length]; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); openSheet(p); };
 function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
 $('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
 $('pRe').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
