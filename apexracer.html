@@ -2478,10 +2478,10 @@ function stepPlayer(P, dt) {
   let a = 0;
   if (gas) a = (st.acc * (1 - Math.min(1, Math.pow(Math.max(0, vF) / top, 2))) + (nosOn ? 13 * (st.nosK || 1) : 0)) * thr;
   if (brake) a = vF > 1 ? -34 : vF > -11 ? -8 : 0;
-  if (!gas && !brake) a = -1.8 - vF * 0.015;
+  if (!gas && !brake) a = vF > 0 ? -1.8 - vF * 0.015 : vF < 0 ? Math.min(6, -vF * 4) : 0; /* OWNER Nov 1 9:36 PM: the car rolled BACKWARDS by itself with no gas (coast drag stayed -1.8 at a standstill) - coasting now only slows the car to a stop, never past it */
   if (vF > top) a = Math.min(a, -(vF - top) * 1.5);
   if (R.t < 0) { a = 0; vF *= 0.9; }
-  vF += a * dt;
+  { const vF0 = vF; vF += a * dt; if (!gas && !brake && vF0 >= 0 && vF < 0) vF = 0; }
   const gk = (drift ? 1.8 : 12.5 * st.grip) * (W.grip < 1 ? 0.45 : W.grip); /* G-76: firmer side grip while driving normally, so the car tracks its nose through the turn - the drift branch keeps its loose 1.8, untouched */
   vL *= Math.exp(-gk * dt); if (Math.abs(vL) > 2) vF -= Math.abs(vL) * 0.06 * dt * Math.sign(vF);
   P.vx = fx * vF + rx * vL; P.vz = fz * vF + rz * vL; P.x += P.vx * dt; P.z += P.vz * dt;
