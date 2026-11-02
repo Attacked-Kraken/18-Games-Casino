@@ -39,6 +39,9 @@ for (const t of todo) {
       }
       url = j.next || '';
     }
+    /* owner Nov 1 2026 ('drop me screenshots'): the pictures are saved next to the results so a Claude can show them without reaching Sketchfab */
+    fs.mkdirSync('models/search/thumbs', { recursive: true });
+    for (const m of found) { try { const p = `models/search/thumbs/${m.uid}.jpg`; if (!fs.existsSync(p) && m.thumb) { const r = await fetch(m.thumb); if (r.ok) fs.writeFileSync(p, Buffer.from(await r.arrayBuffer())); } } catch {} }
     fs.writeFileSync(`models/search/${slug}.json`, JSON.stringify({ words: t.words, for: t.for, date: today, results: found }, null, 1) + '\n');
     index = index.filter(x => x.slug !== slug); index.unshift({ slug, words: t.words, for: t.for, date: today, count: found.length });
     say(`SEARCH "${t.words}": ${found.length} free models (CC-BY / CC0, under ${MAX_MB} MB)`);
