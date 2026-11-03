@@ -10,7 +10,7 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { width:100%; height:100%; overflow:hidden; background:#04070d; font-family:'Segoe UI',system-ui,-apple-system,sans-serif; color:#eaf2ff; }
   #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; }
-  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:40; background:radial-gradient(ellipse at 50% 30%, rgba(10,18,34,.88), rgba(3,6,12,.96)); backdrop-filter:blur(6px); padding:20px; overflow-y:auto; }
+  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:40; background:radial-gradient(ellipse at 50% 30%, rgba(44,58,82,.86), rgba(16,22,34,.94)); backdrop-filter:blur(6px); padding:20px; overflow-y:auto; }
   /* G-03: sideways phones (short landscape) - menus must FIT 844x390 with NO scrolling:
      compact cards/picks/buttons so CONTINUE and START WEEKEND sit on screen */
   @media (orientation:landscape) and (max-height:500px) {
@@ -1287,10 +1287,21 @@ function wrapTexture(id){
 function makeStudio(canvas, big){
   const S={ canvas, r:null, scene:null, cam:null, car:null, on:false, big:!!big, t:0 };
   try{ S.r=new THREE.WebGLRenderer({canvas, antialias:true, alpha:false, powerPreference:'low-power'}); S.r.setPixelRatio(Math.min(big?1.5:2,devicePixelRatio||1)); S.r.outputColorSpace=THREE.SRGBColorSpace; }catch(e){ return S; }
-  S.scene=new THREE.Scene(); S.scene.background=new THREE.Color(big?0x05070d:0x07090f); if(big) S.scene.fog=new THREE.Fog(0x05070d, 14, 40);
+  S.scene=new THREE.Scene(); S.scene.background=new THREE.Color(big?0x232a36:0x2c3442); if(big) S.scene.fog=new THREE.Fog(0x232a36, 18, 46);
   S.cam=new THREE.PerspectiveCamera(big?34:30, 2, 0.1, 120);
-  S.scene.add(new THREE.HemisphereLight(0xdde8ff,0x202030,big?0.9:1.2)); const k=new THREE.DirectionalLight(0xffffff,2.2); k.position.set(5,8,4); S.scene.add(k); const f=new THREE.DirectionalLight(0x9fd8ff,0.9); f.position.set(-6,3,-4); S.scene.add(f);
-  const floor=new THREE.Mesh(new THREE.CircleGeometry(big?40:6,64), new THREE.MeshStandardMaterial({color:0x0e1220, roughness:0.4, metalness:0.35})); floor.rotation.x=-Math.PI/2; S.scene.add(floor);
+  S.scene.add(new THREE.HemisphereLight(0xeef4ff,0x5a6270,big?1.5:1.7)); const k=new THREE.DirectionalLight(0xffffff,2.2); k.position.set(5,8,4); S.scene.add(k); const f=new THREE.DirectionalLight(0x9fd8ff,0.9); f.position.set(-6,3,-4); S.scene.add(f);
+  // owner Nov 3 2026: "background too dark in menus - give a show room floor look and let car spin on platform"
+  const tc=document.createElement('canvas'); tc.width=tc.height=256; const tx=tc.getContext('2d'); tx.fillStyle='#9aa4b2'; tx.fillRect(0,0,256,256); tx.fillStyle='#8a94a3'; tx.fillRect(0,0,128,128); tx.fillRect(128,128,128,128); tx.strokeStyle='#6d7684'; tx.lineWidth=3; tx.strokeRect(0,0,128,128); tx.strokeRect(128,128,128,128); tx.strokeRect(128,0,128,128); tx.strokeRect(0,128,128,128);
+  const tt=new THREE.CanvasTexture(tc); tt.wrapS=tt.wrapT=THREE.RepeatWrapping; tt.repeat.set(big?20:4,big?20:4); tt.colorSpace=THREE.SRGBColorSpace; tt.anisotropy=8;
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(big?40:9,64), new THREE.MeshStandardMaterial({map:tt, roughness:0.18, metalness:0.25})); floor.rotation.x=-Math.PI/2; S.scene.add(floor);
+  const wc=document.createElement('canvas'); wc.width=512; wc.height=128; const wx=wc.getContext('2d'); const wg=wx.createLinearGradient(0,0,0,128); wg.addColorStop(0,'#2a3242'); wg.addColorStop(1,'#4a5568'); wx.fillStyle=wg; wx.fillRect(0,0,512,128); wx.fillStyle='#dff6ff'; for(let i=0;i<8;i++) wx.fillRect(i*64+28,18,6,70);
+  const wt2=new THREE.CanvasTexture(wc); wt2.wrapS=THREE.RepeatWrapping; wt2.repeat.set(4,1); wt2.colorSpace=THREE.SRGBColorSpace;
+  const wall=new THREE.Mesh(new THREE.CylinderGeometry(big?26:11, big?26:11, big?12:7, 64, 1, true), new THREE.MeshStandardMaterial({map:wt2, emissive:0xffffff, emissiveMap:wt2, emissiveIntensity:0.35, roughness:0.7, side:THREE.BackSide})); wall.position.y=big?6:3.5; S.scene.add(wall);
+  S.plate=new THREE.Group(); S.scene.add(S.plate);
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(3.45,3.6,0.2,64), new THREE.MeshStandardMaterial({color:0x22262e, roughness:0.4, metalness:0.8})); base.position.y=0.1; S.plate.add(base);
+  const top=new THREE.Mesh(new THREE.CylinderGeometry(3.3,3.3,0.04,64), new THREE.MeshStandardMaterial({color:0xc4ccd8, roughness:0.28, metalness:0.85})); top.position.y=0.22; S.plate.add(top);
+  const edge=new THREE.Mesh(new THREE.TorusGeometry(3.4,0.04,8,96), new THREE.MeshBasicMaterial({color:0x19e6ff})); edge.rotation.x=Math.PI/2; edge.position.y=0.2; S.plate.add(edge);
+  const over=new THREE.SpotLight(0xffffff, big?90:70, 22, 0.6, 0.5, 1.2); over.position.set(0,9,1); over.target.position.set(0,0,0); S.scene.add(over); S.scene.add(over.target);
   const ring=new THREE.Mesh(new THREE.RingGeometry(4.6,4.8,64), new THREE.MeshBasicMaterial({color:0x19e6ff})); ring.rotation.x=-Math.PI/2; ring.position.y=0.01; S.scene.add(ring);
   if(big){ // pit-lane stage: grid lines, neon light bars, a pit wall, a gantry
     const grid=new THREE.GridHelper(80, 40, 0x1a2a44, 0x121a2c); grid.position.y=0.005; S.scene.add(grid);
@@ -1303,21 +1314,21 @@ function makeStudio(canvas, big){
   return S;
 }
 function studioBuild(S){
-  if(!S.scene) return; if(S.car){ S.scene.remove(S.car); S.car=null; }
-  CMBoot().then(()=>{ if(!S.on) return; if(S.car){ S.scene.remove(S.car); }
+  if(!S.scene) return; if(S.car){ S.car.removeFromParent(); S.car=null; }
+  CMBoot().then(()=>{ if(!S.on) return; if(S.car){ S.car.removeFromParent(); }
     const shape=localStorage.getItem('f1_shape')||'modern', wrap=localStorage.getItem('f1_wrap')||'team';
     const body=cmBody(shape, selTeam.color, selTeam.accent, wrap); const g=new THREE.Group();
     if(body){ g.add(body); for(const [wx,wz,wr] of CM[shape].wheelSpec){ const w=new THREE.Group(); const t=new THREE.Mesh(new THREE.CylinderGeometry(wr,wr,0.5,20), new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85})); t.rotation.x=Math.PI/2; w.add(t); const cv2=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,20), new THREE.MeshStandardMaterial({color:selTeam.color,roughness:0.12,metalness:0.88})); cv2.rotation.x=Math.PI/2; w.add(cv2); for(const sz of [0.255,-0.255]){ const st=new THREE.Mesh(new THREE.TorusGeometry(0.375,0.028,8,28), new THREE.MeshStandardMaterial({color:new THREE.Color(selTeam.accent||'#ffd700'),roughness:0.35,metalness:0.35})); st.position.z=sz; w.add(st);} w.position.set(wx,wr,wz); g.add(w); } }
     else { const b=buildBoxBody(selTeam.color, selTeam.name, 1, selTeam.accent); g.add(b); }
-    S.car=g; S.scene.add(g); });
+    g.position.y=0.24; S.car=g; (S.plate||S.scene).add(g); });
 }
 function studioTick(S){
   if(!S.on || !S.r || !S.car) return;
   const cv=S.canvas; const w=cv.clientWidth|0, h=cv.clientHeight|0; const pr=S.r.getPixelRatio();
   if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ S.r.setSize(w,h,false); S.cam.aspect=w/h; S.cam.updateProjectionMatrix(); }
-  S.t+=0.006;
+  S.t+=0.006; if(S.plate) S.plate.rotation.y+=S.big?0.004:0.006;
   if(S.big){ const port=h>w; const a=0.55+Math.sin(S.t*0.35)*0.5; const R=port?14:7.6; S.cam.position.set(Math.cos(a)*R+(port?0:1.8), port?3.2:1.7, Math.sin(a)*R); S.cam.lookAt(port?0:-2.2, port?-2.4:0.55, 0); S.car.rotation.y=-0.3; }
-  else { S.car.rotation.y+=0.006; const d=S.canvas.id==='teamPrev'?4.7:6.2; S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
+  else { const d=S.canvas.id==='teamPrev'?4.7:6.2; S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
   S.r.render(S.scene, S.cam);
 }
 const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }, TP = { s:null }; window.__st = ST; window.__cp = CP;
