@@ -1,5 +1,7 @@
 **PHASE 2 (owner, Nov 3 2026): read PHASE-2.md FIRST. Muses do SMALL jobs only - no 3D, cameras, physics, scenery or kit/ files. Those go to Claude with one HELP-VP line.**
 
+**PHASE 2 CREWS (owner, Nov 3 2026 4:35 PM): every window is a TESTER or an AUDITOR of ONE game (table in PHASE-2.md). A problem is filed as ONE finding file - `findings/README.md` says exactly how; the auditor sorts it SMALL (fixes it) or FOR-CLAUDE (Claude fixes it). Each game's live status page is `library/open/<game>.md`.**
+
 **FRESH START (owner, Oct 19 2026): all old J-jobs are gone. Work ONLY on G-jobs the owner sends - read jobs/README.md first.**
 
 # Read this first (every AI helper and person working in this repo)
