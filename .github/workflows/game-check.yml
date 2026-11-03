@@ -42,6 +42,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none   # Nov 3 2026: full download of every branch now takes 5-8+ min and timed checks out (PR #2248's plan job, the merge robot)
       - name: Pick what main needs re-played (only the games that changed, or every game)
         id: pick
         run: |
@@ -146,6 +147,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none   # Nov 3 2026: full download of every branch now takes 5-8+ min and timed checks out (PR #2248's plan job, the merge robot)
       - uses: actions/setup-node@v4
         with:
           node-version: 20
