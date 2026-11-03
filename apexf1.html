@@ -1226,8 +1226,8 @@ let __apexWord=null;
 function apexWordTex(){ // the lettering lives on its own sheet so the car only shows it on its flat outer sides
   if(__apexWord) return __apexWord;
   const c=document.createElement('canvas'); c.width=2048; c.height=512; const x=c.getContext('2d');
-  x.fillStyle='rgba(5,8,16,.55)'; x.fillRect(520,250,760,100);
-  x.font='900 92px Arial Black, Arial, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round'; x.lineWidth=14; x.strokeStyle='rgba(5,8,16,.92)'; x.strokeText('APEX ARCADE',900,300); x.fillStyle='#ffffff'; x.fillText('APEX ARCADE',900,300);
+  x.fillStyle='rgba(5,8,16,.55)'; x.fillRect(535,338,520,64); // owner Nov 3 2026 6:03 AM: smaller, low on the side
+  x.font='900 54px Arial Black, Arial, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round'; x.lineWidth=9; x.strokeStyle='rgba(5,8,16,.92)'; x.strokeText('APEX ARCADE',795,370); x.fillStyle='#ffffff'; x.fillText('APEX ARCADE',795,370);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; __apexWord=t; return t;
 }
 function liveryMaterial(M, color, accent, wrap){
