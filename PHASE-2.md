@@ -45,3 +45,36 @@ You MAY NOT touch (write ONE line in jobs/HELP.md instead: `HELP-VP: window N ·
 owner notes -> Claude sorts them -> 3D/engine work: Claude fixes and shows pictures ->
 small work: one-line job to a Muse -> robot merges -> owner plays -> thumbs up or next notes.
 One game at a time until it is done.
+
+## Crews (owner Nov 3 2026 4:35 PM, LOCKED) - 5 testers, 5 auditors, Claude fixes
+| Game | Tester (plays + measures) | Auditor (checks + sorts) |
+|---|---|---|
+| Exotic Racer Club | window 8 | window 6 |
+| Apex F1 Racing | window 7 | window 5 |
+| Apex Ice Hockey | window 9 | window 2 |
+| Apex Track & Field | window 10 | window 4 |
+| Apex Baseball | window 3 | window 1 |
+| Apex Flight | rests until a pair is free | - |
+
+**TESTER** - plays its ONE game on main, one checklist item or one mode per round, measures with real numbers, and files
+each problem as ONE finding file (findings/README.md). Never changes game code. Re-checks fixed findings.
+**AUDITOR** - reads every NEW finding for its game, opens the game on main and follows the steps, writes TRUE / FALSE /
+DUPLICATE with what it measured, sorts it: SMALL (text, menu/HUD layout or colour, a number, a sound, a test) = fixes it
+itself in a one-part PR; everything 3D / engine / camera / physics / shared / multi-part = FOR-CLAUDE. Keeps
+`library/open/<game>.md` current. Never builds 3D.
+**CLAUDE (VP)** - fixes every FOR-CLAUDE finding and the owner's notes, with pictures; answers HELP lines; closes games
+into `library/closed/` on the owner's word.
+**OWNER** - plays, pictures, thumbs, picks models. Nothing else reaches him.
+
+## The pipeline never waits on one window (owner: "asymmetric")
+Testers keep measuring whether or not the auditor has read the last finding. Auditors audit whatever is NEW whenever they
+are free. Claude works FOR-CLAUDE findings by severity (BLOCKER > BAD > SMALL), the owner's notes first. Each window has
+ONE open pull request at a time and opens the next the minute it merges. No window asks another window for anything; the
+files on main are the hand-off (findings/, library/, jobs/HELP.md).
+
+## Paperwork that keeps PRs from piling up
+- Findings, audits and library pages are notes: the merge robot merges them at once (no robot play, no batch wait).
+- An AUTO-UNDO pull request nobody merged in 6 h is closed by the robot with a note (the next red check opens a fresh one).
+- A SMALL fix is one part, one change, one play test, title `FIX F-<L>-<NNN> (PART: <part>): ...`.
+- The Mac mini sends only role work: a tester round, an audit round, a re-check - one at a time, when the window is free.
+  No nudges, no reminders, no re-sends.

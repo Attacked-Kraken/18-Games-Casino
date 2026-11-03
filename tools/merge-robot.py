@@ -448,9 +448,20 @@ def main():
             # owner Oct 23 2026 7:46 AM: help lines + notes PRs older than 12 h were never touched again (window 3's HELP
             # lines sat 13 h in PR #1152). A PR that changes ONLY notes files is never 'too old'.
             _nf = gh("repos/%s/pulls/%d/files?per_page=100" % (REPO, n)) or []
-            if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
+            if not (_nf and all(re.match(r"^(jobs/[^/]+\.md|needs/[^/]+\.md|reviews/[^/]+\.md|findings/.+|library/.+|CLAIMS\.md|LESSONS\.md|team/[^/]+\.md)$", f["filename"]) for f in _nf)):
                 continue
         low = title.lower()
+        # Owner Nov 3 2026 ("make sure PRs don't pile up for no reason"): an AUTO-UNDO pull request is never merged by this robot
+        # (its branch is not a Muse/Claude branch) - two sat open for 19 h. One nobody merged in 6 h is closed with a note; the next
+        # red check on main opens a fresh one if the break is still there.
+        if title.startswith("AUTO-UNDO") and (now - made).total_seconds() > 6 * 3600:
+            try:
+                gh("repos/%s/issues/%d/comments" % (REPO, n), method="POST", fields={"body": "Closed by the merge robot: this AUTO-UNDO was not merged within 6 h (main has moved on). If the game is still red on main's newest check, the robot opens a fresh undo; the red lines also reach Claude through findings/ and the Mac mini."})
+                gh("repos/%s/pulls/%d" % (REPO, n), method="PATCH", fields={"state": "closed"})
+                say("#%d closed: stale AUTO-UNDO (6 h+, never merged)" % n)
+            except Exception as e:
+                say("#%d could not close stale AUTO-UNDO: %s" % (n, e))
+            continue
         # Oct 23 2026 6:05 PM: window 9's "TEST G-231: DRAFT checklist apexflight" (#1293) sat green 4.5 h - the word 'draft' ANYWHERE in
         # the title counted as 'do not merge' (it means a first-draft checklist). Hold only on GitHub's draft flag, a 'hold' label,
         # or a title that STARTS with WIP / DRAFT / HOLD / [..] or says 'do not merge'.
