@@ -507,6 +507,23 @@ const TRACKS = [
 { id:'grandprix', name:'GRAND PRIX', country:'Apex Circuit', lapKm:5.63,
   tag:'The Apex Grand Prix circuit - 16 corners, two long straights, race day in full.',
   drs:[[0.005,0.115],[0.295,0.370]], pitIn:0.9414, pitOut:0.1137, gp:true },
+/* owner Nov 2 2026 8:06 PM: "I get no choices at course - add more" - four more circuits, each its own place (built by the game's own track builder; themes = sky, ground, night) */
+{ id:'harbour', name:'HARBOUR NIGHT', country:'Apex Marina · night', lapKm:6.2,
+  tag:'Night race on the waterfront - 1.1 km pit straight under the floodlights, a climb over the marina hill, the ocean-view bends, a hairpin, fast esses and a chicane.',
+  drs:[[0.0,0.15],[0.50,0.60]], pitIn:0.945, pitOut:0.08, theme:{ kind:'harbour', sky:0x0e1733, ground:0x3a4152, night:true },
+  pts:[[0,0,0],[1100,0,0],[1500,6,-200],[1800,21,-450],[1900,18,-850],[1600,0,-1400],[1000,0,-1600],[300,0,-1500],[-300,0,-1750],[-700,0,-1450],[-1100,0,-950],[-1300,0,-250],[-1100,0,300],[-700,0,550],[-400,0,500],[-100,0,300]] },
+{ id:'mesa', name:'RED MESA GP', country:'Apex Desert', lapKm:6.4,
+  tag:'Grand Prix layout in the desert - 1 km pit straight, a 30 m climb over a blind crest, a long downhill, a hairpin, the flat-out back straight, esses and a chicane.',
+  drs:[[0.0,0.14],[0.52,0.62]], pitIn:0.945, pitOut:0.08, theme:{ kind:'desert', sky:0xa9cdf0, skyTop:0x2a66c8, skyBot:0xf3dcb0, ground:0xc6a269 },
+  pts:[[0,0,0],[1000,0,0],[1400,10,-150],[1700,29,-350],[1900,26,-700],[1800,13,-1300],[1300,0,-1600],[700,0,-1700],[400,0,-1400],[-200,0,-1800],[-800,0,-1700],[-1300,0,-1200],[-1400,0,-500],[-1200,0,100],[-900,0,300],[-600,0,200],[-400,0,600],[-200,0,550],[-100,0,300]] },
+{ id:'pinewood', name:'PINEWOOD HILLS', country:'Apex Forest', lapKm:5.21,
+  tag:'Flowing hill circuit through the pines - climbs, blind crests, a downhill esses.',
+  drs:[[0.0,0.15],[0.52,0.60]], pitIn:0.94, pitOut:0.08, theme:{ kind:'forest', sky:0x8fbce8, ground:0x2f6b35 },
+  pts:[[-200,0,-60],[-80,2,-62],[60,6,-66],[170,10,-60],[230,14,-20],[220,18,40],[170,16,70],[120,10,60],[90,6,90],[110,4,140],[70,2,170],[0,0,160],[-40,4,120],[-30,8,70],[-70,10,40],[-130,8,60],[-170,4,100],[-230,2,80],[-250,0,20],[-240,0,-30]] },
+{ id:'capital', name:'CAPITAL RING', country:'Apex City', lapKm:5.7,
+  tag:'City ring - main straight into a sweeper, esses, a fast back section, a heavy-braking hairpin and a chicane onto the final curve.',
+  drs:[[0.0,0.16],[0.44,0.54]], pitIn:0.94, pitOut:0.08, theme:{ kind:'city', sky:0x9fb8d8, ground:0x55606a },
+  pts:[[0,0,0],[400,0,0],[550,0,-100],[600,0,-300],[450,0,-450],[300,0,-350],[100,0,-500],[-300,0,-500],[-500,0,-350],[-550,0,-150],[-450,0,100],[-300,0,250],[-150,0,200],[-50,0,350],[150,0,300]] },
 ];
 const SEASON_ROUNDS=5; // career season length in rounds (all rounds run at the Grand Prix circuit)
 // Emergency fallback only (never in the menu): if the Grand Prix kit files cannot load,
@@ -569,8 +586,8 @@ function initGL(){
   scene.background = new THREE.Color(0x87b5e0);
   scene.fog = new THREE.Fog(0x87b5e0, 300, 1150); // G-239: horizon haze - the owner's frames show a hard line where the grass meets a flat sky; distance now melts into the sky colour well before the scenery edge
   camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, 0.5, 4000);
-  const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x3a5f3a, 0.9); scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xfff2dd, 1.6); sun.position.set(200,300,120);
+  const hemi = new THREE.HemisphereLight(0xcfe8ff, 0x3a5f3a, 0.9); scene.add(hemi); THEME.hemi=hemi;
+  const sun = new THREE.DirectionalLight(0xfff2dd, 1.6); sun.position.set(200,300,120); THEME.sun=sun;
   if(!isTouch){ sun.castShadow=true; sun.shadow.mapSize.set(1024,1024);
     sun.shadow.camera.left=-160; sun.shadow.camera.right=160; sun.shadow.camera.top=160; sun.shadow.camera.bottom=-160; }
   scene.add(sun); scene.userData.sun = sun;
@@ -641,6 +658,13 @@ function buildSkyDome(){
   scene.add(dome); scene.userData.skyDome = dome;
 }
 
+/* circuit themes (owner Nov 2 2026): sky + fog colour, ground colour, night lighting */
+const THEME = { sky:0x87b5e0, hemi:null, sun:null };
+function applyTheme(t){ t=t||{}; THEME.sky=t.sky||0x87b5e0; if(scene){ scene.background.setHex(THEME.sky); if(scene.fog) scene.fog.color.setHex(THEME.sky); }
+  if(THEME.hemi){ THEME.hemi.intensity = t.night?1.25:0.9; THEME.hemi.color.setHex(t.night?0x9fb4ff:0xcfe8ff); THEME.hemi.groundColor.setHex(t.ground||0x3a5f3a); }
+  if(THEME.sun){ THEME.sun.intensity = t.night?1.5:1.6; THEME.sun.color.setHex(t.night?0xcfd8ff:0xfff2dd); }
+  if(skyMat){ const u=skyMat.uniforms; if(t.night){ u.topColor.value.setHex(0x05081a); u.midColor.value.setHex(t.sky||0x0e1733); u.botColor.value.setHex(0x1a2244); u.sunColor.value.setHex(0x334466); }
+    else { u.topColor.value.setHex(t.skyTop||0x2f6fd0); u.midColor.value.setHex(t.sky||0x87b5e0); u.botColor.value.setHex(t.skyBot||0xd8e8f5); u.sunColor.value.setHex(0xfff3d6); } } }
 const Track = {
   pts:[], sLen:0, length:0, width:13, cfg:null, samples:[],
   build(cfg){
@@ -762,10 +786,12 @@ const Track = {
     let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9,minY=1e9;
     for(const p of this.samples){ minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z);minY=Math.min(minY,p.y); }
     this.bounds={minX,maxX,minZ,maxZ};
-    const pad=160;
+    const th=(this.cfg&&this.cfg.theme)||{};
+    const pad=th.kind?2600:160; // a themed world needs ground out to the horizon
     const grass=new THREE.Mesh(new THREE.PlaneGeometry(maxX-minX+pad*2,maxZ-minZ+pad*2),
-      new THREE.MeshLambertMaterial({color:0x3f7a3a}));
-    grass.rotation.x=-Math.PI/2; grass.position.set((minX+maxX)/2,minY-0.4,(minZ+maxZ)/2); // G-27: ground below the whole loop, never over it grass.receiveShadow=true; g.add(grass);
+      new THREE.MeshLambertMaterial({color:th.ground||0x3f7a3a}));
+    grass.rotation.x=-Math.PI/2; grass.position.set((minX+maxX)/2,minY-0.4,(minZ+maxZ)/2); // G-27: ground below the whole loop, never over it
+    grass.receiveShadow=true; g.add(grass); // Nov 2 2026: this line had been swallowed by the comment above - the built-in circuits had NO ground (the pale void under the cars)
     // asphalt ribbon
     const verts=[], idx=[], uvs=[];
     for(let i=0;i<=N;i++){ const p=this.samples[i%N];
@@ -818,7 +844,49 @@ const Track = {
       dg.setAttribute('position', new THREE.Float32BufferAttribute(dv,3)); dg.setIndex(di);
       g.add(new THREE.Mesh(dg, drsMat));
     }
-    this.buildStands(g); this.buildPits(g); this.buildScenery(g); this.buildSponsorBoards(g);
+    this.buildStands(g); this.buildPits(g); if(!(th.kind)) this.buildScenery(g); this.buildSponsorBoards(g);
+    if(th.kind) this.buildEnvironment(g, th);
+  },
+  /* owner Nov 2 2026 9:10 PM "use the layout but we need an environment": each circuit gets its own world - instanced, cheap on phones */
+  buildEnvironment(g, th){
+    const W=this.width, N=this.samples.length, R=(a,b)=>a+Math.random()*(b-a);
+    const spot=(minOff,maxOff,tries)=>{ for(let k=0;k<(tries||4);k++){ const p=this.samples[(Math.random()*N)|0], side=Math.random()<0.5?1:-1, off=R(minOff,maxOff); const x=p.x+p.nx*off*side, z=p.z+p.nz*off*side; if(this.distToLoop(x,z)>=W/2+minOff*0.6) return {x,z,y:p.y}; } return null; };
+    const inst=(geo,mat,n,place)=>{ const im=new THREE.InstancedMesh(geo,mat,n); const m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pos=new THREE.Vector3(); let c=0; for(let i=0;i<n;i++){ const t=place(i); if(!t) continue; pos.set(t.x,t.y,t.z); q.setFromAxisAngle(new THREE.Vector3(0,1,0), t.rot||0); sc.set(t.sx||1,t.sy||1,t.sz||1); m.compose(pos,q,sc); im.setMatrixAt(c++,m); if(t.col) im.setColorAt(c-1, t.col); } im.count=c; im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.frustumCulled=false; g.add(im); return im; };
+    const gravelMat=new THREE.MeshLambertMaterial({color:0xc9b99a});
+    for(let i=0;i<N;i+=40){ const p=this.samples[i]; if(Math.abs(p.curv)<0.004) continue; const side=p.curv>0?-1:1; const patch=new THREE.Mesh(new THREE.PlaneGeometry(26,16), gravelMat); patch.rotation.x=-Math.PI/2; patch.rotation.z=-Math.atan2(p.tx,p.tz); patch.position.set(p.x+p.nx*(W/2+9)*side, p.y+0.01, p.z+p.nz*(W/2+9)*side); g.add(patch); }
+    if(th.kind==='desert'){
+      const mesaMat=new THREE.MeshLambertMaterial({color:0xb5633c}); const mesaGeo=new THREE.CylinderGeometry(1,1.35,1,7);
+      inst(mesaGeo, mesaMat, 34, ()=>{ const t=spot(220,650,6); if(!t) return null; const h=R(25,90), w=R(40,140); return {x:t.x,y:h/2-1,z:t.z,sx:w,sy:h,sz:w*R(0.6,1.2),rot:R(0,6.3)}; });
+      const rockGeo=new THREE.DodecahedronGeometry(1,0); const rockMat=new THREE.MeshLambertMaterial({color:0x9c6b4a});
+      inst(rockGeo, rockMat, 120, ()=>{ const t=spot(40,200,4); if(!t) return null; const s=R(1.5,6); return {x:t.x,y:t.y+s*0.3,z:t.z,sx:s,sy:s*R(0.5,0.9),sz:s,rot:R(0,6.3)}; });
+      const cacGeo=new THREE.CylinderGeometry(0.35,0.45,1,7); const cacMat=new THREE.MeshLambertMaterial({color:0x3f7d3a});
+      inst(cacGeo, cacMat, 160, ()=>{ const t=spot(30,160,4); if(!t) return null; const h=R(2.5,6); return {x:t.x,y:t.y+h/2,z:t.z,sy:h,sx:R(0.8,1.3),sz:R(0.8,1.3)}; });
+    } else if(th.kind==='city' || th.kind==='harbour'){
+      const night=!!th.night; const cv=document.createElement('canvas'); cv.width=64; cv.height=128; const x=cv.getContext('2d'); x.fillStyle=night?'#0d1118':'#8a94a6'; x.fillRect(0,0,64,128); for(let yy=4;yy<128;yy+=8) for(let xx=4;xx<64;xx+=8){ x.fillStyle=night?(Math.random()<0.55?'#ffe9a8':'#1a2030'):(Math.random()<0.5?'#cfe3ff':'#5a6472'); x.fillRect(xx,yy,4,5); }
+      const wtex=new THREE.CanvasTexture(cv); wtex.wrapS=wtex.wrapT=THREE.RepeatWrapping; wtex.colorSpace=THREE.SRGBColorSpace;
+      const bMat=new THREE.MeshLambertMaterial({map:wtex, color:night?0xffffff:0xdde3ea}); if(night){ bMat.emissive=new THREE.Color(0xffffff); bMat.emissiveMap=wtex; bMat.emissiveIntensity=0.55; }
+      const bGeo=new THREE.BoxGeometry(1,1,1); bGeo.translate(0,0.5,0);
+      inst(bGeo, bMat, 220, ()=>{ const t=spot(th.kind==='harbour'?36:40, th.kind==='harbour'?260:420, 6); if(!t) return null; const w=R(14,38), h=R(18,th.kind==='harbour'?70:120); return {x:t.x,y:t.y-0.5,z:t.z,sx:w,sy:h,sz:R(14,38),rot:R(0,6.3)}; });
+      const poleGeo=new THREE.CylinderGeometry(0.12,0.16,9,6); poleGeo.translate(0,4.5,0); const poleMat=new THREE.MeshLambertMaterial({color:0x3a4250});
+      inst(poleGeo, poleMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y,z:p.z+p.nz*(W/2+6)*side}; });
+      if(night){ const lampGeo=new THREE.BoxGeometry(2.2,0.5,1.2); const lampMat=new THREE.MeshBasicMaterial({color:0xfff2c0}); inst(lampGeo, lampMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y+9,z:p.z+p.nz*(W/2+6)*side}; }); }
+      if(th.kind==='harbour'){ const b=this.bounds;
+        // palms along the coast side, yachts moored in the marina
+        const ptrunk=new THREE.CylinderGeometry(0.22,0.35,7,6); ptrunk.translate(0,3.5,0); const pMat=new THREE.MeshLambertMaterial({color:0x6b4a2e});
+        const pleaf=new THREE.ConeGeometry(2.8,1.2,7); pleaf.translate(0,7.2,0); const lMat=new THREE.MeshLambertMaterial({color:0x2f8a3a});
+        const pl=[]; for(let i=0;i<140;i++){ const t=spot(14,60,4); if(t) pl.push({x:t.x,y:t.y,z:t.z,sx:R(0.8,1.3),sy:R(0.9,1.5),sz:R(0.8,1.3)}); }
+        inst(ptrunk, pMat, pl.length, (i)=>pl[i]); inst(pleaf, lMat, pl.length, (i)=>pl[i]);
+        const hull=new THREE.BoxGeometry(1,1,1); hull.translate(0,0.5,0); const hMat=new THREE.MeshLambertMaterial({color:0xf4f6f8});
+        inst(hull, hMat, 40, ()=>{ const bb=this.bounds; return {x:R(bb.minX-200,bb.maxX+200), y:-0.3, z:bb.maxZ+170+R(30,500), sx:R(10,26), sy:R(2.5,5), sz:R(4,8), rot:R(0,6.3)}; }); const water=new THREE.Mesh(new THREE.PlaneGeometry(3000,1200), new THREE.MeshStandardMaterial({color:night?0x0a1a33:0x2a6fa8, roughness:0.15, metalness:0.6})); water.rotation.x=-Math.PI/2; water.position.set((b.minX+b.maxX)/2, -0.35, b.maxZ+170+600); g.add(water);
+        const quay=new THREE.Mesh(new THREE.BoxGeometry(3000,2,8), new THREE.MeshLambertMaterial({color:0x6a6f78})); quay.position.set((b.minX+b.maxX)/2, 0.6, b.maxZ+170); g.add(quay); }
+    } else if(th.kind==='forest'){
+      const hillMat=new THREE.MeshLambertMaterial({color:0x2a5a2e}); const hillGeo=new THREE.SphereGeometry(1,10,7);
+      inst(hillGeo, hillMat, 26, ()=>{ const t=spot(260,700,6); if(!t) return null; const r=R(120,320); return {x:t.x,y:-r*0.72,z:t.z,sx:r,sy:r*R(0.35,0.6),sz:r*R(0.7,1.3)}; });
+      const trunkGeo=new THREE.CylinderGeometry(0.25,0.4,6,5); trunkGeo.translate(0,3,0); const trunkMat=new THREE.MeshLambertMaterial({color:0x4a3728});
+      const coneGeo=new THREE.ConeGeometry(2.6,9,7); coneGeo.translate(0,9.5,0); const coneMat=new THREE.MeshLambertMaterial({color:0x1f5a2a});
+      const place=[]; for(let i=0;i<420;i++){ const t=spot(22,230,4); if(t){ const s=R(0.8,1.6); place.push({x:t.x,y:t.y,z:t.z,sx:s,sy:s,sz:s}); } }
+      inst(trunkGeo, trunkMat, place.length, (i)=>place[i]); inst(coneGeo, coneMat, place.length, (i)=>{ const t=place[i]; return {...t, col:new THREE.Color().setHSL(0.33,0.5,R(0.18,0.3))}; });
+    }
   },
   buildStands(g){ const W=this.width; // track width (lost in a refactor)
     // grandstands ringing the main straight + a few corners, with animated crowd
@@ -1036,8 +1104,8 @@ const Track = {
   },
   setWeather(wet01){ // darken track + fog when wet
     if(this.asphaltMat && !this.gp) this.asphaltMat.color.setHex(wet01>0.5?0x5a5e66:0x9a9da2);
-    scene.fog.color.setHex(wet01>0.5?0x6a7d90:0x87b5e0);
-    scene.background.setHex(wet01>0.5?0x6a7d90:0x87b5e0);
+    scene.fog.color.setHex(wet01>0.5?0x6a7d90:THEME.sky);
+    scene.background.setHex(wet01>0.5?0x6a7d90:THEME.sky);
     if(skyMat) skyMat.uniforms.gloom.value = wet01; // overcast greys the sky dome
   }
 };
@@ -1887,6 +1955,9 @@ const Race = {
     this.track=TRACKS.find(t=>t.id===cfg.track);
     this.laps=cfg.laps; this.cheatLevel=cfg.cheat;
     if(this.track.gp && GP.data) Track.buildGP(GP.data, GP.lt); else Track.build(this.track.gp?LEGACY_TRACK:this.track);
+    applyTheme(this.track.theme||null);
+    if(GP.lt && GP.lt.root) GP.lt.root.visible = !!this.track.gp; // the Grand Prix kit's world (ground, stands, buildings) only on its own circuit
+    const evRoot=scene.getObjectByName('grand_prix_event'); if(evRoot) evRoot.visible = !!this.track.gp;
     this.buildWeather(cfg.wxSeed);
     // clear old cars
     for(const c of this.cars) scene.remove(c.mesh);
@@ -2878,7 +2949,7 @@ if(!$('menu').classList.contains('hidden')) stageShow(true);
 requestAnimationFrame(loop);
 // G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
 // with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
-(function(){ try{ const q=new URLSearchParams(location.search).get('test'); if(q!=='grid') return;
+(function(){ try{ const qs=new URLSearchParams(location.search), q=qs.get('test'); const tr=qs.get('track'); if(tr && TRACKS.find(t=>t.id===tr)) selTrack=tr; /* ?track=<id> opens a given circuit (owner check links) */ if(q!=='grid') return;
   CMBoot().then(()=>startWeekend()).then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
 }catch(e){} })();
 </script>
