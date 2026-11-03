@@ -578,7 +578,7 @@ function initGL(){
   if(glOK) return;
   const canvas = $('c');
   try{
-    renderer = new THREE.WebGLRenderer({ canvas, antialias:!isTouch, powerPreference:'high-performance' });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias:true, powerPreference:'high-performance' }); // owner Nov 3 2026: phones too - without it the Grand Prix kerbs, lines and fences crawl when the car moves
   }catch(err){
     glError='3D could not start on this device ('+(err&&err.message||'WebGL unavailable')+'). Menus still work — try a different browser.';
     const b=$('banner'); if(b){ b.innerHTML='<div class="b1" style="font-size:20px">⚠️ '+glError+'</div>'; b.classList.add('show'); }
@@ -2962,8 +2962,12 @@ function applyGroundKit(){
     const mk=(url,name)=>{ const tx=loader.load(url); tx.wrapS=tx.wrapT=THREE.RepeatWrapping; tx.colorSpace=THREE.SRGBColorSpace; tx.name=name; return tx; };
     const asphalt=mk('kit/ground/512/asphalt_plain.png','kit-ground-asphalt');
     const kerb=mk('kit/ground/512/kerb_red_white.png','kit-ground-kerb');
-    const done=new Set();
+    const done=new Set(), aniso=Math.min(16, renderer.capabilities.getMaxAnisotropy()||1);
+    asphalt.anisotropy=aniso; kerb.anisotropy=aniso;
     GP.lt.root.traverse(o=>{
+      if(o.isMesh && o.material){ const m=o.material; // sharp textures at a low angle (they shimmered as the camera moved) + keep the run-off / pit / kerbs over the grass 2-3 cm below them
+        for(const k of ['map','normalMap','roughnessMap']) if(m[k] && m[k].anisotropy<aniso){ m[k].anisotropy=aniso; m[k].needsUpdate=true; }
+        if(!m.polygonOffset && ['asphalt_runoff','pit_lane','kerb','concrete'].includes(m.name)){ m.polygonOffset=true; m.polygonOffsetFactor=-1; m.polygonOffsetUnits=-1; } }
       if(!o.isMesh || !o.material || done.has(o.material)) return;
       const n=o.material.name;
       if(n==='asphalt' || n==='asphalt_runoff' || n==='pit_lane'){ o.material.map=asphalt; o.material.needsUpdate=true; done.add(o.material); }
