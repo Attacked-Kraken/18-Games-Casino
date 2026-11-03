@@ -37,6 +37,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0          # the conflict fix merges main into a PR branch: it needs the full history (a 1-commit checkout cannot merge)
+          filter: blob:none       # Nov 3 2026: the full download (every picture/model branch) grew past the 8-min limit - 3 runs in a row were cancelled inside checkout and green PR #2246 sat 45 min. Full history, file contents fetched only when a merge needs them.
       - name: Merge green pull requests
         id: robot
         env:
