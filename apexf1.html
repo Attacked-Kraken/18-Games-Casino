@@ -1179,28 +1179,28 @@ function cmSoften(m){ // keeps the model's colours but makes printed brand words
 }
 function cmTyre(m){ // repaints the model's own tyre picture: no smudges, our name on the sidewall in yellow
   const img=m.map&&m.map.image; if(!img||!img.width) return m; const name=m.name||'';
-  const W=1024, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.drawImage(img,0,0,W,W);
+  const W=2048, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.imageSmoothingQuality='high'; x.drawImage(img,0,0,W,W); // owner Nov 3 2026: sharper tyre name - big sheet, bold letters with a dark edge
   const YEL='#f4d21c', FONT=(px)=>'900 '+px+'px Arial Black, Arial, sans-serif';
   const mirror=(fn)=>{ x.save(); x.translate(W,0); x.scale(-1,1); fn(); x.restore(); }; // the model's tyre picture is stored mirrored
   if(/Meshpart6/i.test(name)){ // modern car: a round sidewall picture with the rim in the middle
     const cx=W/2, cy=W/2, k=W/256;
     x.save(); x.beginPath(); x.rect(0,0,W,W); x.arc(cx,cy,77*k,0,Math.PI*2,true); x.fillStyle='#0c0c0c'; x.fill('evenodd'); x.restore();
     x.strokeStyle=YEL; x.lineWidth=3.5*k; x.beginPath(); x.arc(cx,cy,105*k,0,Math.PI*2); x.stroke();
-    const arcText=(str,r,bottom)=>{ x.font=FONT(15*k); x.fillStyle=YEL; x.textAlign='center'; x.textBaseline='middle';
+    const arcText=(str,r,bottom)=>{ x.font=FONT(19*k); x.fillStyle=YEL; x.strokeStyle='#000'; x.lineWidth=1.6*k; x.lineJoin='round'; x.textAlign='center'; x.textBaseline='middle';
       const chars=[...str], widths=chars.map(ch=>x.measureText(ch).width), total=widths.reduce((a,b)=>a+b,0)+ (chars.length-1)*1.2*k;
       let a=(bottom? Math.PI/2 : -Math.PI/2) + (bottom? 1:-1)*(total/2)/r;
       for(let i=0;i<chars.length;i++){ const step=(widths[i]/2)/r; a += (bottom?-1:1)*step;
-        x.save(); x.translate(cx+Math.cos(a)*r, cy+Math.sin(a)*r); x.rotate(bottom? a-Math.PI/2 : a+Math.PI/2); x.fillText(chars[i],0,0); x.restore();
+        x.save(); x.translate(cx+Math.cos(a)*r, cy+Math.sin(a)*r); x.rotate(bottom? a-Math.PI/2 : a+Math.PI/2); x.strokeText(chars[i],0,0); x.fillText(chars[i],0,0); x.restore();
         a += (bottom?-1:1)*(step + 1.2*k/r); } };
-    x.save(); x.translate(0,W); x.scale(1,-1); arcText('APEX ARCADE', 91*k, false); arcText('APEX ARCADE', 91*k, true); x.restore(); // this picture is stored upside down on the model
+    x.save(); x.translate(0,W); x.scale(1,-1); arcText('APEX ARCADE', 90.5*k, false); arcText('APEX ARCADE', 90.5*k, true); x.restore(); // this picture is stored upside down on the model
   } else if(/Wheel/i.test(name)){ // classic car: the sidewalls are long strips
     const k=W/1024; const band=x.getImageData(4,Math.round(254*k),1,1).data, bandCol=`rgb(${band[0]},${band[1]},${band[2]})`;
     x.fillStyle='#161616'; x.fillRect(0,48*k,W,70*k); x.fillRect(0,458*k,W,66*k);
     x.fillStyle=bandCol; x.fillRect(0,226*k,W,56*k); x.fillRect(0,644*k,W,55*k);
-    x.font=FONT(40*k); x.fillStyle=YEL; x.textAlign='center'; x.textBaseline='middle';
-    mirror(()=>{ for(const y of [82,490]) for(const cxp of [260,770]) x.fillText('APEX ARCADE', W-cxp*k, y*k); });
+    x.font=FONT(50*k); x.fillStyle=YEL; x.strokeStyle='#000'; x.lineWidth=5*k; x.lineJoin='round'; x.textAlign='center'; x.textBaseline='middle';
+    mirror(()=>{ for(const y of [83,491]) for(const cxp of [260,770]){ x.strokeText('APEX ARCADE', W-cxp*k, y*k); x.fillText('APEX ARCADE', W-cxp*k, y*k); } });
   } else return m; // plain tread - nothing printed on it
-  const t=new THREE.CanvasTexture(c); t.flipY=m.map.flipY; t.colorSpace=m.map.colorSpace; t.wrapS=m.map.wrapS; t.wrapT=m.map.wrapT; t.anisotropy=8;
+  const t=new THREE.CanvasTexture(c); t.flipY=m.map.flipY; t.colorSpace=m.map.colorSpace; t.wrapS=m.map.wrapS; t.wrapT=m.map.wrapT; t.anisotropy=16;
   const n=m.clone(); n.map=t; return n;
 }
 function cmWheelMeshes(kind, castShadow){ const M=CM[kind]; return (M&&M.wheelParts||[]).map(W=>{ const g=new THREE.Group(); for(const pt of W.parts){ const me=new THREE.Mesh(pt.geo, pt.mat); me.castShadow=castShadow; g.add(me); } g.userData.c=W.c; return g; }); }
