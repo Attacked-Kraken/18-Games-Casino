@@ -52,6 +52,9 @@
     #teamMenu input[type=text] { padding:7px 10px; margin-bottom:2px; }
   }
   .hidden { display:none !important; }
+  #trackRow .pick .tmap { display:block; width:100%; height:auto; aspect-ratio:11/6; margin:0 0 3px; border-radius:6px; background:#0b1222; }
+  #trackRow .pick .tlen { font-size:11px; font-weight:700; color:#ffd76a; margin-top:2px; }
+  @media (orientation:portrait) { #trackRow .pick { flex:1 1 30%; min-width:0; max-width:33%; padding:4px; } #trackRow .pick .s { display:none; } #trackRow .pick .t { font-size:12px; } #trackRow .pick .tlen { font-size:10px; } }
   #stageCv { position:fixed; inset:0; width:100%; height:100%; display:none; z-index:39; }
   body.onstage #stageCv { display:block; }
   body.onstage #menu { background:linear-gradient(90deg, rgba(3,6,12,.94) 0, rgba(3,6,12,.90) 36%, rgba(3,6,12,.35) 52%, rgba(3,6,12,0) 68%); backdrop-filter:none; -webkit-backdrop-filter:none; align-items:flex-start; justify-content:center; padding-left:max(18px, env(safe-area-inset-left)); }
@@ -1174,6 +1177,32 @@ function cmSoften(m){ // keeps the model's colours but makes printed brand words
   const c2=document.createElement('canvas'); c2.width=c2.height=256; const x2=c2.getContext('2d'); x2.imageSmoothingEnabled=true; x2.drawImage(c,0,0,256,256);
   const t=new THREE.CanvasTexture(c2); t.flipY=m.map.flipY; t.colorSpace=m.map.colorSpace; t.wrapS=m.map.wrapS; t.wrapT=m.map.wrapT; const n=m.clone(); n.map=t; return n;
 }
+function cmTyre(m){ // repaints the model's own tyre picture: no smudges, our name on the sidewall in yellow
+  const img=m.map&&m.map.image; if(!img||!img.width) return m; const name=m.name||'';
+  const W=1024, c=document.createElement('canvas'); c.width=c.height=W; const x=c.getContext('2d'); x.drawImage(img,0,0,W,W);
+  const YEL='#f4d21c', FONT=(px)=>'900 '+px+'px Arial Black, Arial, sans-serif';
+  const mirror=(fn)=>{ x.save(); x.translate(W,0); x.scale(-1,1); fn(); x.restore(); }; // the model's tyre picture is stored mirrored
+  if(/Meshpart6/i.test(name)){ // modern car: a round sidewall picture with the rim in the middle
+    const cx=W/2, cy=W/2, k=W/256;
+    x.save(); x.beginPath(); x.rect(0,0,W,W); x.arc(cx,cy,77*k,0,Math.PI*2,true); x.fillStyle='#0c0c0c'; x.fill('evenodd'); x.restore();
+    x.strokeStyle=YEL; x.lineWidth=3.5*k; x.beginPath(); x.arc(cx,cy,105*k,0,Math.PI*2); x.stroke();
+    const arcText=(str,r,bottom)=>{ x.font=FONT(15*k); x.fillStyle=YEL; x.textAlign='center'; x.textBaseline='middle';
+      const chars=[...str], widths=chars.map(ch=>x.measureText(ch).width), total=widths.reduce((a,b)=>a+b,0)+ (chars.length-1)*1.2*k;
+      let a=(bottom? Math.PI/2 : -Math.PI/2) + (bottom? 1:-1)*(total/2)/r;
+      for(let i=0;i<chars.length;i++){ const step=(widths[i]/2)/r; a += (bottom?-1:1)*step;
+        x.save(); x.translate(cx+Math.cos(a)*r, cy+Math.sin(a)*r); x.rotate(bottom? a-Math.PI/2 : a+Math.PI/2); x.fillText(chars[i],0,0); x.restore();
+        a += (bottom?-1:1)*(step + 1.2*k/r); } };
+    x.save(); x.translate(0,W); x.scale(1,-1); arcText('APEX ARCADE', 91*k, false); arcText('APEX ARCADE', 91*k, true); x.restore(); // this picture is stored upside down on the model
+  } else if(/Wheel/i.test(name)){ // classic car: the sidewalls are long strips
+    const k=W/1024; const band=x.getImageData(4,Math.round(254*k),1,1).data, bandCol=`rgb(${band[0]},${band[1]},${band[2]})`;
+    x.fillStyle='#161616'; x.fillRect(0,48*k,W,70*k); x.fillRect(0,458*k,W,66*k);
+    x.fillStyle=bandCol; x.fillRect(0,226*k,W,56*k); x.fillRect(0,644*k,W,55*k);
+    x.font=FONT(40*k); x.fillStyle=YEL; x.textAlign='center'; x.textBaseline='middle';
+    mirror(()=>{ for(const y of [82,490]) for(const cxp of [260,770]) x.fillText('APEX ARCADE', W-cxp*k, y*k); });
+  } else return m; // plain tread - nothing printed on it
+  const t=new THREE.CanvasTexture(c); t.flipY=m.map.flipY; t.colorSpace=m.map.colorSpace; t.wrapS=m.map.wrapS; t.wrapT=m.map.wrapT; t.anisotropy=8;
+  const n=m.clone(); n.map=t; return n;
+}
 function cmWheelMeshes(kind, castShadow){ const M=CM[kind]; return (M&&M.wheelParts||[]).map(W=>{ const g=new THREE.Group(); for(const pt of W.parts){ const me=new THREE.Mesh(pt.geo, pt.mat); me.castShadow=castShadow; g.add(me); } g.userData.c=W.c; return g; }); }
 function CMBoot(){
   if(CM._boot) return CM._boot;
@@ -1222,7 +1251,7 @@ function CMBoot(){
         const pa=g2.attributes.position, na=g2.attributes.normal, ua=g2.attributes.uv; const buckets=[0,1,2,3].map(()=>({P:[],N:[],U:[]}));
         for(let t=0;t<pa.count;t+=3){ const cx=(pa.getX(t)+pa.getX(t+1)+pa.getX(t+2))/3, cz=(pa.getZ(t)+pa.getZ(t+1)+pa.getZ(t+2))/3; const k2=(cx>midX?0:2)+(cz>0?0:1);
           for(let q=t;q<t+3;q++){ buckets[k2].P.push(pa.getX(q),pa.getY(q),pa.getZ(q)); if(na) buckets[k2].N.push(na.getX(q),na.getY(q),na.getZ(q)); if(ua) buckets[k2].U.push(ua.getX(q),ua.getY(q)); } }
-        const mat = o.material.map ? cmSoften(o.material) : o.material;
+        const mat = o.material.map ? cmTyre(o.material) : o.material; // owner Nov 3 2026 8:07 AM: clean tyres, APEX ARCADE in yellow as the tyre brand
         buckets.forEach((bk,k2)=>{ if(!bk.P.length) return; const gg=new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(bk.P,3)); if(bk.N.length) gg.setAttribute('normal', new THREE.Float32BufferAttribute(bk.N,3)); else gg.computeVertexNormals(); if(bk.U.length) gg.setAttribute('uv', new THREE.Float32BufferAttribute(bk.U,2)); M.wheelParts[k2].parts.push({geo:gg, mat}); });
         o.parent.remove(o); }
       for(const W of M.wheelParts){ const bx=new THREE.Box3(); for(const pt of W.parts){ pt.geo.computeBoundingBox(); bx.union(pt.geo.boundingBox); } bx.getCenter(W.c); for(const pt of W.parts) pt.geo.translate(-W.c.x,-W.c.y,-W.c.z); }
@@ -2559,12 +2588,35 @@ function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixe
 /* ================= MENU FLOW ================= */
 let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
 function show(id){ carPreviewShow(id==='carMenu'); teamPrevShow(id==='teamMenu'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+/* owner Nov 3 2026 8:07 AM: "make track course visible to see it and how long it is" - a map of each circuit on its button */
+let __gpLine=null;
+function trackOutline(t){
+  if(t.gp){ if(!__gpLine) __gpLine=fetch('kit/tracks/Grand-Prix-Track/track-data.json').then(r=>r.json()).then(d=>d.centerline.map(p=>[p.x,p.z])).catch(()=>[]); return __gpLine; }
+  const P=t.pts||[], n=P.length, out=[];
+  for(let i=0;i<n;i++){ const p0=P[(i-1+n)%n], p1=P[i], p2=P[(i+1)%n], p3=P[(i+2)%n];
+    for(let j=0;j<12;j++){ const u=j/12, u2=u*u, u3=u2*u; const f=(a,b,c,d)=>0.5*((2*b)+(-a+c)*u+(2*a-5*b+4*c-d)*u2+(-a+3*b-3*c+d)*u3);
+      out.push([f(p0[0],p1[0],p2[0],p3[0]), f(p0[2],p1[2],p2[2],p3[2])]); } }
+  return Promise.resolve(out);
+}
+function trackMap(t, cv){
+  trackOutline(t).then(pts=>{ if(!pts.length) return; const x=cv.getContext('2d'), W=cv.width, H=cv.height, pad=12;
+    let a=1e9,b=-1e9,c=1e9,d=-1e9; for(const [px,pz] of pts){ a=Math.min(a,px); b=Math.max(b,px); c=Math.min(c,pz); d=Math.max(d,pz); }
+    const k=Math.min((W-2*pad)/((b-a)||1),(H-2*pad)/((d-c)||1)), ox=(W-(b-a)*k)/2, oy=(H-(d-c)*k)/2;
+    const X=p=>ox+(p[0]-a)*k, Y=p=>oy+(p[1]-c)*k;
+    x.clearRect(0,0,W,H); x.lineJoin='round'; x.lineCap='round';
+    x.strokeStyle='rgba(0,0,0,.55)'; x.lineWidth=7; x.beginPath(); pts.forEach((p,i)=>i?x.lineTo(X(p),Y(p)):x.moveTo(X(p),Y(p))); x.closePath(); x.stroke();
+    x.strokeStyle='#e9eef7'; x.lineWidth=3.5; x.stroke();
+    const s0=pts[0], s1=pts[Math.min(3,pts.length-1)]; x.fillStyle='#ff3b3b'; x.beginPath(); x.arc(X(s0),Y(s0),5,0,Math.PI*2); x.fill(); // start / finish
+    const dx=X(s1)-X(s0), dy=Y(s1)-Y(s0), L=Math.hypot(dx,dy)||1; x.strokeStyle='#ffd76a'; x.lineWidth=2.5; x.beginPath(); x.moveTo(X(s0),Y(s0)); x.lineTo(X(s0)+dx/L*16,Y(s0)+dy/L*16); x.stroke(); // which way you drive
+  });
+}
 function initMenus(){
   // tracks
   const tr=$('trackRow'); tr.innerHTML='';
   for(const t of TRACKS){
     const d=document.createElement('div'); d.className='pick'+(t.id===selTrack?' sel':'');
-    d.innerHTML=`<div class="t">${t.name}</div><div class="s">${t.country} · ${t.lapKm.toFixed(2)} km</div><div class="s" style="color:#6f87a8">${t.tag}</div>`;
+    d.innerHTML=`<canvas class="tmap" width="220" height="120"></canvas><div class="t">${t.name}</div><div class="tlen">${t.lapKm.toFixed(2)} km lap · ${(t.lapKm*0.621371).toFixed(2)} mi</div><div class="s">${t.country}</div><div class="s" style="color:#6f87a8">${t.tag}</div>`;
+    trackMap(t, d.querySelector('canvas'));
     d.onclick=()=>{ selTrack=t.id; [...tr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); updateForecast(); };
     tr.appendChild(d);
   }
