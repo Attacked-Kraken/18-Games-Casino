@@ -1,0 +1,190 @@
+{
+ "game": "apexhockey.html",
+ "name": "Apex Ice Hockey",
+ "seconds": 60,
+ "gameSecondsReached": 59.8,
+ "wallSeconds": 93.9,
+ "at": "2026-11-03T15:17:16.834Z",
+ "samples": 302,
+ "video": "video.webm",
+ "frames": [
+  "t00.jpg",
+  "t10.jpg",
+  "t20.jpg",
+  "t30.jpg",
+  "t40.jpg",
+  "t50.jpg"
+ ],
+ "hook": {
+  "camera": true,
+  "speed": true
+ },
+ "camera": {
+  "distance": {
+   "min": 53.04,
+   "mean": 80.07,
+   "max": 97.89
+  },
+  "height": {
+   "min": 21.42,
+   "mean": 23.24,
+   "max": 24.79
+  },
+  "aimErrorDeg": {
+   "min": 4.41,
+   "mean": 13.66,
+   "max": 39.95
+  },
+  "followLagMetresPerMps": 2.849
+ },
+ "playerOnScreenPct": 100,
+ "speed": {
+  "min": 0,
+  "mean": 4.57,
+  "max": 7.27
+ },
+ "metresMoved": 45.9,
+ "moments": [
+  {
+   "at": 4.9,
+   "words": "PLAY"
+  },
+  {
+   "at": 10.3,
+   "words": "SAVED! GOALIE"
+  },
+  {
+   "at": 11.1,
+   "words": "PLAY"
+  },
+  {
+   "at": 26.7,
+   "words": "SAVED! GOALIE"
+  },
+  {
+   "at": 45.7,
+   "words": "WHISTLE OFFSIDE"
+  },
+  {
+   "at": 45.7,
+   "words": "FACEOFF"
+  },
+  {
+   "at": 46.3,
+   "words": "PLAY"
+  },
+  {
+   "at": 48.9,
+   "words": "WHISTLE OFFSIDE"
+  },
+  {
+   "at": 48.9,
+   "words": "FACEOFF"
+  },
+  {
+   "at": 49.5,
+   "words": "PLAY"
+  },
+  {
+   "at": 53.1,
+   "words": "OFFSIDE FACEOFF"
+  },
+  {
+   "at": 53.6,
+   "words": "PLAY"
+  },
+  {
+   "at": 57.2,
+   "words": "WHISTLE OFFSIDE"
+  },
+  {
+   "at": 57.2,
+   "words": "FACEOFF"
+  },
+  {
+   "at": 58.1,
+   "words": "PLAY"
+  }
+ ],
+ "momentCount": 15,
+ "humanLog": {
+  "steer": 0,
+  "brake": 0,
+  "nitro": 0,
+  "drift": 0,
+  "lapses": 0
+ },
+ "camDebug": [
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 50,
+   "aspect": 1,
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "PerspectiveCamera",
+   "fov": 57,
+   "aspect": 2.164102564102564,
+   "pos": [
+    -21.2,
+    23.5,
+    42.9
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  },
+  {
+   "type": "OrthographicCamera",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "isRender": false,
+   "parent": null
+  }
+ ],
+ "endedWithResultWords": false,
+ "fpsAtEnd": 2,
+ "scriptErrors": []
+}
