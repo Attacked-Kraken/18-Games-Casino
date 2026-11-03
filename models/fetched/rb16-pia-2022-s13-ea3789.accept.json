@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/rb16-pia-2022-s13-ea3789.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 14,
+  "tris": 78784,
+  "size": [
+   1.957,
+   1.114,
+   5
+  ],
+  "mainSize": [
+   1.957,
+   1.114,
+   5
+  ],
+  "stray": 1,
+  "bytes": 2116144
+ },
+ "pictures": [
+  {
+   "pic": "rb16-pia-2022-s13-ea3789-front.jpg",
+   "pct": 6.1
+  },
+  {
+   "pic": "rb16-pia-2022-s13-ea3789-side.jpg",
+   "pct": 8
+  },
+  {
+   "pic": "rb16-pia-2022-s13-ea3789-back.jpg",
+   "pct": 5.9
+  },
+  {
+   "pic": "rb16-pia-2022-s13-ea3789-top.jpg",
+   "pct": 11.6
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 5
+ },
+ "at": "2026-11-02T21:13:30.361Z"
+}

@@ -41,6 +41,7 @@
   #who { font:700 13px system-ui; opacity:.85; text-align:center; }
   #who input { font:700 15px system-ui; padding:8px 10px; border-radius:10px; border:1px solid #ffffff44; background:#0008; color:#fff; width:150px; }
   /* ---------- world */
+  /* OWNER Nov 1 8:59 PM: the race list + laps sheet flashed on the intro (their CSS said display:flex before the game hid them) - they start hidden inline now */
   #world { display:flex; flex-direction:column; padding:calc(52px + var(--sat)) 10px calc(8px + var(--sab)); background:radial-gradient(ellipse at top,#2a0f4a,#07040f 70%); }
   #world h2 { margin:0 0 6px 4px; font:900 22px system-ui; letter-spacing:.04em; background:linear-gradient(90deg,#ff2bd6,#19e6ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #wsub { font:700 12px system-ui; opacity:.7; margin:0 0 8px 4px; }
@@ -165,7 +166,7 @@
   #menu #mstat span { padding:0; border-radius:0; background:none; border:0; white-space:nowrap; }
   #mtop #recW { font:800 12px system-ui; }
   #mtop #presented { margin-left:auto; font-size:11px !important; white-space:nowrap; }
-  #menu #logo { position:absolute; left:calc(14px + var(--sal)); top:calc(42px + var(--sat)); width:178px; max-height:56px; z-index:5; }
+  #menu #logo { position:absolute; left:calc(14px + var(--sal)); top:calc(42px + var(--sat)); width:216px; max-height:60px; z-index:5; }
   #mcol { position:absolute; left:calc(14px + var(--sal)); top:calc(104px + var(--sat)); width:248px; display:flex; flex-direction:column; gap:7px; z-index:5; }
   #menu #mbtns { display:flex; flex-direction:column; gap:6px; width:100%; }
   #menu #mbtns .neo { order:6; text-align:left; padding:9px 13px; font-size:13.5px; border-radius:12px; color:#fff; background:linear-gradient(135deg,rgba(23,25,46,.88),rgba(10,11,24,.85)); border:1px solid rgba(255,255,255,.18); box-shadow:0 4px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.13); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
@@ -191,15 +192,15 @@
 <button id="back" type="button">‹ Back</button>
 
 <div id="menu" class="scr">
-  <svg id="logo" viewBox="0 0 380 128" role="img" aria-label="Exotic Racer Club">
+  <svg id="logo" viewBox="0 0 460 128" role="img" aria-label="Exotic Racer Club"><!-- owner Nov 2 2026: "the name looks cut out" - the words were wider than the box; box widened, letters centred -->
     <g font-family="system-ui,sans-serif" font-style="italic" font-weight="900">
-      <text x="190" y="60" text-anchor="middle" font-size="50" fill="#19e6ff" transform="translate(4,3)">EXOTIC RACER</text>
-      <text x="190" y="60" text-anchor="middle" font-size="50" fill="#ff2bd6" transform="translate(-4,-3)">EXOTIC RACER</text>
-      <text x="190" y="60" text-anchor="middle" font-size="50" fill="#ffffff">EXOTIC RACER</text>
-      <text x="190" y="108" text-anchor="middle" font-size="42" fill="#ffd23a" letter-spacing="16">CLUB</text>
+      <text x="230" y="60" text-anchor="middle" font-size="50" fill="#19e6ff" transform="translate(4,3)">EXOTIC RACER</text>
+      <text x="230" y="60" text-anchor="middle" font-size="50" fill="#ff2bd6" transform="translate(-4,-3)">EXOTIC RACER</text>
+      <text x="230" y="60" text-anchor="middle" font-size="50" fill="#ffffff">EXOTIC RACER</text>
+      <text x="230" y="108" text-anchor="middle" font-size="42" fill="#ffd23a" letter-spacing="16">CLUB</text>
     </g>
     <g><rect x="8" y="8" width="14" height="14" fill="#f2f2f2"/><rect x="22" y="8" width="14" height="14" fill="#141414"/><rect x="8" y="22" width="14" height="14" fill="#141414"/><rect x="22" y="22" width="14" height="14" fill="#f2f2f2"/></g>
-    <g><rect x="344" y="8" width="14" height="14" fill="#141414"/><rect x="358" y="8" width="14" height="14" fill="#f2f2f2"/><rect x="344" y="22" width="14" height="14" fill="#f2f2f2"/><rect x="358" y="22" width="14" height="14" fill="#141414"/></g>
+    <g><rect x="424" y="8" width="14" height="14" fill="#141414"/><rect x="438" y="8" width="14" height="14" fill="#f2f2f2"/><rect x="424" y="22" width="14" height="14" fill="#f2f2f2"/><rect x="438" y="22" width="14" height="14" fill="#141414"/></g>
   </svg>
   <div id="mtop"><div id="mstat"></div><div id="recW"></div><div id="presented" style="font:800 13px system-ui;letter-spacing:.14em;color:#cfd3ff;text-shadow:0 0 12px #19e6ff88">PRESENTED BY <b style="color:#ffd23a">APEX ARCADE</b> 🏁</div></div>
   <div id="mcol">
@@ -231,6 +232,10 @@
       <div style="margin-top:6px"><b>"Le Mans Race Car"</b> by Naudaff3D, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/le-mans-race-car-95898a30f3544c0a93c60c1aecef154a" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"(FREE) Wheels SDC - Pure Performance"</b> by SDC PERFORMANCE™️, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/free-wheels-sdc-pure-performance-eebae2592aa94ffabc886694bb6d096c" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"Sci-Fi Wheel"</b> by gorzi, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/sci-fi-wheel-7b98674cd9cb409ca01fbf1a9715f989" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
+      <div style="margin-top:6px"><b>"Phoenix 455 '71 - Low poly model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/phoenix-455-71-low-poly-model-955edc733c6d44fabc0ad7c246a15896" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
+      <div style="margin-top:6px"><b>"Hover-Car - Low-Poly, Sci-Fi, Game-Ready"</b> by Mert Tetik, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/hover-car-low-poly-sci-fi-game-ready-95fc47d2715247f89c8e359dc1838b14" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
+      <div style="margin-top:6px"><b>"Futuristic Muscle car (Launch Control Ready)"</b> by Jungle Jim, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/futuristic-muscle-car-launch-control-ready-47d7ffa796d84d1bbdebe9a007028e0e" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
+      <div style="margin-top:6px"><b>"Duke '69 - Low Poly Model"</b> by Daniel Zhabotinsky, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/duke-69-low-poly-model-46fed79f600c4fc69e060991f9e3e4f9" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones, repainted in the garage.</div>
       <div style="margin-top:6px"><b>"Tuner car wheel FREE"</b> by NLM, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/tuner-car-wheel-free-02c9dc10a6b04b41a562848f95c232eb" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
       <div style="margin-top:6px"><b>"car tyre game ready p zero"</b> by Iftekhar.Tushar, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-tyre-game-ready-p-zero-49aa3ef66a6045ce9f72f6bbad0418a3" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP).</div>
     </div>
@@ -238,14 +243,14 @@
   </div>
 </div>
 
-<div id="world" class="scr">
+<div id="world" class="scr" style="display:none">
   <h2 id="wTitle">PICK A COUNTRY &amp; CITY</h2>
   <div id="wsub">100 race places · 8 laps minimum</div>
   <div id="ctys"></div>
   <div id="plist"></div>
 </div>
 
-<div id="sheet" class="scr"><div class="box glass">
+<div id="sheet" class="scr" style="display:none"><div class="box glass">
   <h3 id="shT"></h3><div class="sub" id="shS"></div>
   <div style="font:800 12px system-ui;opacity:.8">LAPS</div>
   <div class="chips" id="shLaps"></div>
@@ -323,10 +328,10 @@ const GLB_MODELS = {
   shc: { url: 'models/fetched/shc-mc-free-promotion-car-cfaabd.glb', body: ['palettematerial001'], tire: ['tire'], rim: [], glass: [], rot: Math.PI },
   lemans: { url: 'models/fetched/le-mans-race-car.glb', body: ['palettematerial001'], tire: ['palettematerial007'], rim: [], glass: [], rot: 0 },
   /* OWNER Nov 1 2026 6:38 PM: four picked cars (fetch robot run 139). Measured here: Duke / Fairheaven nose +X (plate at -X), Formula + Sci-Fi nose -Z (nose cone / headlights at -Z). The Sci-Fi car has no tyres (hover) */
-  scifi: { url: 'models/fetched/futuristic-sci-fi-car-525bb5.glb', body: ['palettematerial001'], tire: [], rim: [], glass: ['palettematerial005'], rot: -Math.PI / 2, noWheels: 1 },
+  phoenix: { url: 'models/fetched/phoenix-455-71-955edc.glb', body: ['phoenix445_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
+  hover: { url: 'models/fetched/hover-car-low-poly-sci-fi-game-rea-95fc47.glb', body: [] /* OWNER Nov 1 9:13 PM 'looks like a blob': keep the maker's own painted texture (panel lines, red/black detail) - flat game paint wiped it out */, tire: [], rim: [], glass: [], rot: Math.PI / 2, noWheels: 1 }, /* hover car, no wheels; nose at +Z (engines at -Z) */
+  muscle: { url: 'models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb', body: ['body_gameasset_mat_1'], tire: ['wheel_fl_gameasset_mat_1'], rim: [], glass: ['material_0'], rot: -Math.PI / 2 }, /* owner's $1,000,000 car; orange accent + white trim materials keep their own look */
   duke: { url: 'models/fetched/duke-69-46fed7.glb', body: ['duke69_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
-  formula: { url: 'models/fetched/formula-one-lp-830-sdc-aeebdf.glb', body: ['material.001'], tire: ['palettematerial003'], rim: ['material.008'], glass: [], rot: Math.PI / 2 },
-  fairheaven: { url: 'models/fetched/fairheaven-sw-84-aa0bec.glb', body: ['fairheaven_lt80_bodymat'], tire: ['rb1c_tire_1k'], rim: [], glass: ['ucb_lights_and_glass_transperent'], rot: 0 },
 };
 function bakeSkins(rootObj) {
   /* The Tokii is a SKINNED model (88 skinned meshes on one skeleton) and every car is a plain clone of the template - plain clones SHARE the template's skeleton (measured: two Tokii cars report the same skeleton object, its bones live in no car), and mid-race Tokii cars render sunk ~0.6 m under the road (the owner's invisible cars). The game plays no animations, so bake the bind pose into plain geometry once at load: no skeletons, no sharing, nothing left to drift. */
@@ -352,17 +357,18 @@ function bakeSkins(rootObj) {
   }
 }
 const glbTpl = {};
-for (const k of Object.keys(GLB_MODELS)) {
+/* OWNER Nov 1 2026 9:33 PM ('no delay on the intro, it doesn't load fast enough'): every car model downloads AT THE SAME TIME (was one after another - 9 models in a row) */
+await Promise.all(Object.keys(GLB_MODELS).map(async (k) => {
   /* G-70: one failed download must not leave a car a blob for the whole session - try twice */
   for (let att = 0; att < 2 && !glbTpl[k]; att++) { try { const sc = (await new GLTFLoader().loadAsync(GLB_MODELS[k].url)).scene; bakeSkins(sc); glbTpl[k] = sc; } catch (e) { glbTpl[k] = null; } }
-}
+}));
 /* G-345 fix 1: the real garage wheel (Car Wheel/Rim by jack.wake04, CC-BY 4.0, fetched by the robot) - preloaded like the cars; its raw file stands 109 m tall with the axle on X, the game wrapper normalizes it per hub */
 let rimTpl = null, rimDia0 = 1, rimWid0 = 1; const rimCtr = new THREE.Vector3();
-for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } }
+(async () => { for (let att = 0; att < 2 && !rimTpl; att++) { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-wheelrim-f6f260.glb')).scene; const bb2 = new THREE.Box3().setFromObject(sc), sz2 = bb2.getSize(new THREE.Vector3()); rimDia0 = Math.max(sz2.y, sz2.z) || 1; rimWid0 = sz2.x || 1; bb2.getCenter(rimCtr); rimTpl = sc; } catch (e) { rimTpl = null; } } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED turbine wheel (MODELS.md erc-rim-turbine, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1 - so the hub fit stands it exactly as it looks in the viewer */
 let turbTpl = null, turbWidN = 0.27;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-racing-turbine-m2-alloy--800149.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -370,11 +376,11 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/smokehaus-rac
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); turbWidN = dims[axle] / diaRaw; turbTpl = hold;
-} catch (e) { turbTpl = null; }
+} catch (e) { turbTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED deep dish wheel (MODELS.md erc-rim-deepdish, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
 let dishTpl = null, dishWidN = 0.54;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf1.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf1.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -382,11 +388,11 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/car-rim-c66cf
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); dishWidN = dims[axle] / diaRaw; dishTpl = hold;
-} catch (e) { dishTpl = null; }
+} catch (e) { dishTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* the owner's LOCKED monoblock wheel (MODELS.md erc-rim-monoblock, approved Oct 26 2026): baked once at load -
    centred, axle turned onto Z, diameter 1, face out +Z as measured in the lab - exactly as in the viewer */
 let monoTpl = null, monoWidN = 0.48;
-try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb')).scene;
+(async () => { try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-inspired-rally-rim-a0c9aa.glb')).scene;
   const bb = new THREE.Box3().setFromObject(sc), sz = bb.getSize(new THREE.Vector3()), ctr = bb.getCenter(new THREE.Vector3());
   const dims = [sz.x, sz.y, sz.z], axle = dims.indexOf(Math.min.apply(null, dims));
   sc.position.set(-ctr.x, -ctr.y, -ctr.z);
@@ -394,7 +400,7 @@ try { const sc = (await new GLTFLoader().loadAsync('models/fetched/fifteen52-ins
   if (axle === 0) hold.rotation.y = Math.PI / 2; else if (axle === 1) hold.rotation.x = Math.PI / 2;
   const diaRaw = Math.max.apply(null, dims.filter((d0, i) => i !== axle)) || 1;
   hold.scale.setScalar(1 / diaRaw); monoWidN = dims[axle] / diaRaw; monoTpl = hold;
-} catch (e) { monoTpl = null; }
+} catch (e) { monoTpl = null; } })(); /* OWNER Nov 1 9:33 PM: old rim styles load in the background - never hold the intro */
 /* OWNER rim-fit (Oct 28 2026): if a fetched wheel's model failed to load at boot, retry it when a car
    actually asks for it - and when it lands, rebuild the garage car so the real wheel swaps in.
    A fetched wheel is NEVER replaced by a coloured stand-in. */
@@ -461,12 +467,12 @@ const CARS = [
   { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
   { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.66, top: 118, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.62, top: 113, grip: 1.22, prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.48, top: 106, grip: 1.16, /* OWNER Nov 1 9:33 PM: Goblin throttled down a little (pw 1.62 top 113 grip 1.22) */ prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* OWNER Nov 1 2026 6:38 PM: the picked cars, priced as a ladder - free Vanta, then up to the $1,000,000 Sci-Fi at 320 mph */
-  { id: 'fairheaven', name: 'Fairheaven SW', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#324e55', glb: 'fairheaven' },
-  { id: 'formula', name: 'LP-830 Formula', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#1e4fd8', glb: 'formula' },
+  { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
+  { id: 'hover', name: 'Hover Racer', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
   { id: 'duke', name: 'Duke 69', cls: 'S', price: 500000, pw: 1.75, top: 134, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
-  { id: 'scifi', name: 'Futuristic Sci-Fi', cls: 'X', price: 1000000, pw: 2.0, top: 143, grip: 1.35, prof: 'hyper', col: '#b8c4ff', fin: 'chrome', glb: 'scifi' },
+  { id: 'muscle', name: 'Futuristic Muscle', cls: 'X', price: 1000000, pw: 2.0, top: 143, grip: 1.35, prof: 'muscle', col: '#272c2e', glb: 'muscle' }, /* OWNER Nov 1 2026: the $1,000,000 top car, 320 mph */
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
   { id: 'vortex', hidden: 1, name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
@@ -1402,7 +1408,7 @@ function makeGlbCar(id, cfg, o = {}) {
   model.traverse((q) => { if (q.isMesh && /shadow/i.test(q.name)) kill.push(q); });
   kill.forEach((q) => q.parent && q.parent.remove(q));
   const lampCand = [];
-  const isLampName = (s) => !!s && !/casing|body_glass|glass_driver|window/.test(s) /* Nov 1: the Duke / Fairheaven windows are named ..._Lights_and_Glass... - windows, not lamps */ && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
+  const isLampName = (s) => !!s && !/casing|body_glass|glass_driver|glass_passenger|glass_front|glass_rear|glass_side|window/.test(s) /* Nov 1: the Duke / Fairheaven windows are named ..._Lights_and_Glass... - windows, not lamps */ && (/headlight|tail.?light|reverse.?light|led_light|rear_light|(^|_)lights(_|$)|lightstransparent/.test(s)); /* G-145 */
   model.traverse((q) => {
     if (!q.isMesh) return;
     q.castShadow = true;
@@ -1426,6 +1432,10 @@ function makeGlbCar(id, cfg, o = {}) {
   box = new THREE.Box3().setFromObject(model);
   const c = box.getCenter(new THREE.Vector3());
   model.position.x -= c.x; model.position.z -= c.z; model.position.y -= box.min.y;
+  { /* owner Nov 1 2026 (Phoenix 455 floated): a model whose lowest point is not its tyres (a part hanging below) stands on its TYRES - measured from the tyre meshes */
+    model.updateWorldMatrix(true, true); const tb = new THREE.Box3(); let anyT = false;
+    model.traverse((q) => { if (q.isMesh && q.material === tireMat) { tb.expandByObject(q); anyT = true; } });
+    if (anyT && isFinite(tb.min.y) && Math.abs(tb.min.y) > 0.01) model.position.y -= tb.min.y; }
   /* G-145 (owner): the G-70 light bars are GONE - the cars' OWN headlights, brighter.
      Light-named meshes (Patriot Lights, Tokii Headlight/TailLight, SHC Led_light) get
      lamp-glow materials, split front/rear by where they sit. */
@@ -1508,7 +1518,7 @@ function makeGlbCar(id, cfg, o = {}) {
           hubs.push({ x: cx, y: (y0 + y1) / 2, z: (z0 + z1) / 2, h: y1 - y0, w: z1 - z0 });
         }
       }
-      if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
+      if (MC.noWheels) hubs = []; else if (hubs.length < 4) hubs = [1, -1].flatMap((fx) => [1, -1].map((fz) => ({ x: fx * ls.x * 0.32, y: ls.y * 0.30, z: fz * (ls.z / 2 - 0.3), h: ls.y * 0.58, w: 0.3 })));
     }
 
     const latheMat = new THREE.MeshStandardMaterial({ color: cfg.rimCol || '#c9cdd6', metalness: 0.85, roughness: 0.3 });
@@ -1848,20 +1858,20 @@ const BIO = {
   neon: { gr: 'asphalt', walk: 1, bar: 'wall', lamps: 'street', bld: { k: 'office', h: [25, 120], cl: 14, dens: 0.92 }, signs: 0.45, sky: 1, traffic: 1, x: ['cross', 'steam'] },
   terrace: { gr: 'asphalt', elev: 26, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [70, 230], cl: 10, dens: 0.85 }, signs: 0.1, sky: 1, traffic: 1, x: [] },
   bridge: { gr: 'none', water: 'all', elev: 14, bar: 'rail', lamps: 'modern', sky: 1, traffic: 1, x: ['cables', 'solar'] },
-  cavern: { gr: 'rock', bar: 'posts', lamps: 'none', cave: 1, traffic: 0, x: ['crystals'] },
-  canal: { gr: 'stone', walk: 1, bar: 'stone', lamps: 'old', bld: { k: 'euro', h: [12, 28], cl: 22, dens: 0.95 }, signs: 0.05, traffic: 0, x: ['canal', 'towers'] },
+  cavern: { gr: 'rock', bar: 'posts', lamps: 'none', cave: 1, traffic: 1, x: ['crystals'] },
+  canal: { gr: 'stone', walk: 1, bar: 'stone', lamps: 'old', bld: { k: 'euro', h: [12, 28], cl: 22, dens: 0.95 }, signs: 0.05, traffic: 1, x: ['canal', 'towers'] },
   plaza: { gr: 'marble', walk: 1, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [50, 200], cl: 30, dens: 0.55 }, signs: 0.05, sky: 1, traffic: 1, x: ['planters', 'holo'] },
-  cloud: { gr: 'none', bar: 'glass', lamps: 'modern', traffic: 0, x: ['clouds', 'saucers'] },
+  cloud: { gr: 'none', bar: 'glass', lamps: 'modern', traffic: 1, x: ['clouds', 'saucers'] },
   aero: { gr: 'asphalt', bar: 'wall', lamps: 'street', bld: { k: 'office', h: [15, 70], cl: 34, dens: 0.45 }, signs: 0.1, sky: 1, traffic: 1, x: ['planes', 'overpass'] },
-  zen: { gr: 'grass', bar: 'stone', lamps: 'lantern', traffic: 0, x: ['pagodas', 'pines', 'torii', 'cherry'] },
-  volcano: { gr: 'rock', bar: 'rail', lamps: 'none', traffic: 0, x: ['volcano', 'mountains', 'rocks', 'embers'] },
+  zen: { gr: 'grass', bar: 'stone', lamps: 'lantern', traffic: 1, x: ['pagodas', 'pines', 'torii', 'cherry'] },
+  volcano: { gr: 'rock', bar: 'rail', lamps: 'none', traffic: 1, x: ['volcano', 'mountains', 'rocks', 'embers'] },
   port: { gr: 'concrete', bar: 'wall', lamps: 'sodium', traffic: 2, x: ['containers', 'cranes'] },
-  ice: { gr: 'ice', road: 'ice', bar: 'posts', lamps: 'none', sky: 1, grip: 0.62, traffic: 0, x: ['snow'] },
+  ice: { gr: 'ice', road: 'ice', bar: 'posts', lamps: 'none', sky: 1, grip: 0.62, traffic: 1, x: ['snow'] },
   tunnel: { gr: 'asphalt', walk: 1, bar: 'wall', lamps: 'street', bld: { k: 'office', h: [25, 110], cl: 14, dens: 0.85 }, signs: 0.35, sky: 1, traffic: 1, x: ['tunnels', 'cross'] },
   rings: { gr: 'asphalt', walk: 1, bar: 'glass', lamps: 'modern', bld: { k: 'glass', h: [40, 160], cl: 16, dens: 0.8 }, signs: 0.3, sky: 1, traffic: 1, x: ['rings', 'spires'] },
   desert: { gr: 'sand', bar: 'rail', lamps: 'none', grip: 0.95, traffic: 1, x: ['mesas', 'cactus', 'mountains'] },
   beach: { gr: 'sand', water: 'side', bar: 'rail', lamps: 'modern', bld: { k: 'low', h: [10, 45], cl: 26, dens: 0.5 }, traffic: 1, x: ['palms'] },
-  gallery: { gr: 'marble', bar: 'glass', lamps: 'none', hall: 1, traffic: 0, x: ['hall'] },
+  gallery: { gr: 'marble', bar: 'glass', lamps: 'none', hall: 1, traffic: 1, x: ['hall'] },
   forest: { gr: 'grass', bar: 'rail', lamps: 'none', traffic: 1, x: ['pines', 'mountains'] },
 };
 const SKYV = 'varying vec3 vD; void main(){ vD=normalize(position); vec4 p=projectionMatrix*modelViewMatrix*vec4(position,1.); gl_Position=p.xyww; }';
@@ -1908,7 +1918,7 @@ async function buildWorld(place) {
   const bio = BIO[place.biome], r = rng(place.seed * 7 + 3), T = makeTrack(place.seed, 1);
   const tp = bio.cave ? TODP.cave : bio.hall ? TODP.hall : TODP[place.tod], night = place.tod === 'n' && !bio.hall, Y = bio.elev || 0; T.y = Y;
   const scene = new THREE.Scene(), anim = [], lampPts = [], streak = [];
-  const W = { scene, T, anim, bio, tp, night, grip: bio.grip || 1, traffic: bio.traffic, place };
+  const W = { scene, T, anim, bio, tp, night, grip: bio.grip || 1, traffic: bio.traffic || 1 /* OWNER Nov 1 9:23 PM: traffic in every city */, place };
   const sunD = new THREE.Vector3(...tp.sun).normalize();
   /* sky, fog, lights, reflections */
   const fogC = new THREE.Color(tp.fog);
@@ -2413,7 +2423,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (0.60 + r() * 0.05); e.ak = 0.22 + r() * 0.06; /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.55 + r() * 0.1); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (1.02 + r() * 0.12); e.ak = 0.52 + r() * 0.12; /* OWNER Nov 1 9:23 PM 'still very slow': rivals 102-114% of the player's top, corner near the limit, and use nitro like the player */ /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -2468,10 +2478,10 @@ function stepPlayer(P, dt) {
   let a = 0;
   if (gas) a = (st.acc * (1 - Math.min(1, Math.pow(Math.max(0, vF) / top, 2))) + (nosOn ? 13 * (st.nosK || 1) : 0)) * thr;
   if (brake) a = vF > 1 ? -34 : vF > -11 ? -8 : 0;
-  if (!gas && !brake) a = -1.8 - vF * 0.015;
+  if (!gas && !brake) a = vF > 0 ? -1.8 - vF * 0.015 : vF < 0 ? Math.min(6, -vF * 4) : 0; /* OWNER Nov 1 9:36 PM: the car rolled BACKWARDS by itself with no gas (coast drag stayed -1.8 at a standstill) - coasting now only slows the car to a stop, never past it */
   if (vF > top) a = Math.min(a, -(vF - top) * 1.5);
   if (R.t < 0) { a = 0; vF *= 0.9; }
-  vF += a * dt;
+  { const vF0 = vF; vF += a * dt; if (!gas && !brake && vF0 >= 0 && vF < 0) vF = 0; }
   const gk = (drift ? 1.8 : 12.5 * st.grip) * (W.grip < 1 ? 0.45 : W.grip); /* G-76: firmer side grip while driving normally, so the car tracks its nose through the turn - the drift branch keeps its loose 1.8, untouched */
   vL *= Math.exp(-gk * dt); if (Math.abs(vL) > 2) vF -= Math.abs(vL) * 0.06 * dt * Math.sign(vF);
   P.vx = fx * vF + rx * vL; P.vz = fz * vF + rz * vL; P.x += P.vx * dt; P.z += P.vz * dt;
@@ -2498,12 +2508,17 @@ function stepAI(e, dt) {
   const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
-  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 300) vt *= 0.94; else if (gap > 120) vt *= 0.97; else if (gap < -300) vt *= 1.08; else if (gap < -120) vt *= 1.04; } /* G-70: gentle two-way pace keeping - the field stays with the player */
-  if (R.pPace > 0 && !e.fin) vt = Math.min(vt, Math.max(R.pPace * 0.58, 10)); /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
+  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 500) vt *= 0.7; else if (gap > 250) vt *= 0.9; /* close racing both ways: far-ahead rivals ease off, behind ones push */ else if (gap < -300) vt *= 1.15; else if (gap < -120) vt *= 1.07; } /* G-70: gentle two-way pace keeping - the field stays with the player */
+  /* OWNER Nov 1 9:23 PM 'still very slow': the cap that held rivals to the player's own pace is gone - they race at their own speed */ /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;
   e.v += clamp(vt - e.v, -26 * dt, e.acc * dt * Math.max(0.2, 1 - e.v / (e.top * 1.2)));
   e.nosOn = e.v > 20 && T.cs[i] > e.top * 0.95 && ((R.t * 0.7 + e.top) % 9) < 1.6;
+  if (P && !e.fin && R.t > 0) { /* OWNER Nov 1 9:33 PM: skimming past a rival car counts as a near miss too (+nitro) */
+    let g2 = (e.s - P.prog) % N; if (g2 < -N / 2) g2 += N; if (g2 > N / 2) g2 -= N; g2 *= T.ds; const side = Math.abs(e.d - P.d);
+    if (e.pAhead && g2 < -1 && side < 4.2 && side > 2.1 && P.spd > 24 && !e.nearDone) { e.nearDone = 1; R.near++; P.nos = Math.min(1, P.nos + 0.18); pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); }
+    if (g2 > 3) e.nearDone = 0; e.pAhead = g2 > 0; }
+  if (e.nosOn) e.v = Math.min(e.v + 9 * dt, e.top * 1.24); /* OWNER Nov 1 2026: rivals' nitro really pushes them, like the player's (x1.24 top) */
   /* lanes: get around slower cars */
   let blocked = false; const others = R.cars.concat(R.traffic);
   for (const o of others) { if (o === e) continue; const os = o.isP ? o.prog : o.s, od = o.isP ? o.d : o.d; let g = (os - e.s) % N; if (g < -N / 2) g += N; if (g > N / 2) g -= N; g *= T.ds;
@@ -2534,7 +2549,7 @@ function stepTraffic(t, dt) {
   else t.v += clamp(t.v0 - t.v, -6 * dt, 3 * dt);
   t.s += (t.v * dt) / T.ds; T.at(t.s, t.d, tmpA); t.x = tmpA.x; t.z = tmpA.z; t.h = tmpA.h + (t.spin || 0);
   const g = (t.s - P.prog) * T.ds;
-  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.07); pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); /* G-80: near misses chain into the kit's combo sounds */ }
+  if (t.ahead && g < -1 && Math.abs(t.d - P.d) < 4.2 && Math.abs(t.d - P.d) > 2.1 && P.spd > 24 && !t.hit) { R.near++; P.nos = Math.min(1, P.nos + 0.18) /* OWNER Nov 1 9:33 PM: near misses really fill nitro (was +0.07) */; pop('NEAR MISS!  +NITRO'); R.nearChain = (R.t - (R.nearT || -9) < 4) ? (R.nearChain || 0) + 1 : 1; R.nearT = R.t; sfx('near' + clamp(R.nearChain + 1, 2, 5)); /* G-80: near misses chain into the kit's combo sounds */ }
   t.ahead = g > 0;
   if (g < -70 || g > 900) { t.s = P.prog + (220 + Math.random() * 360) / T.ds; t.d = LANES[Math.floor(Math.random() * 4)]; t.v = t.v0; t.hit = 0; t.spin = 0; t.ahead = true; }
 }
@@ -2705,7 +2720,8 @@ const BGC = { neon: ['#ff2bd6', '#2a0f4a'], terrace: ['#7ab4ff', '#24346a'], bri
   cloud: ['#ffd0e8', '#7ab8ff'], aero: ['#8fc8ff', '#3a5a8a'], zen: ['#ffb7d0', '#2a5a3a'], volcano: ['#ff6a20', '#3a1a10'], port: ['#ff7a3a', '#1a3a6a'], ice: ['#bfefff', '#1a4a8a'],
   tunnel: ['#19e6ff', '#1a1a3a'], rings: ['#19e6ff', '#ff2bd6'], desert: ['#ffc27a', '#a8582e'], beach: ['#ffe08a', '#1fa0c8'], gallery: ['#ffffff', '#9aa8ba'], forest: ['#7ac86a', '#1f4a2a'] };
 const TODI = { n: '🌙', s: '🌅', d: '☀️' };
-function openWorld(pick) { G.mode = 'world'; G.pick = pick || null; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
+function openWorld(pick) { /* OWNER Nov 1 2026 7:54 PM: the country + city list STAYS (all 100 places available) - put back after a wrong removal at 7:27 PM */
+  G.mode = 'world'; G.pick = pick || null; show('world'); $('wTitle').textContent = pick ? 'PICK THE RACE PLACE' : 'PICK A COUNTRY & CITY'; renderCountries(); renderPlaces(); }
 function renderCountries() {
   $('ctys').innerHTML = COUNTRIES.map((c, i) => `<button class="cty ${i === S.cty ? 'on' : ''}" data-i="${i}">${c.flag} ${esc(c.name)} <span style="opacity:.6">${c.places.length}</span></button>`).join('');
   $('ctys').querySelectorAll('.cty').forEach((b) => { b.onclick = () => { S.cty = +b.dataset.i; save(); sfx('tap'); renderCountries(); renderPlaces(); }; });
@@ -2774,7 +2790,7 @@ const UP = { eng: { lv: ['Stock', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'], p
   quad: { only: 'titan', lv: ['Dual Motor', 'Tri Motor', 'Quad Motor', '⚡ Hyperdrive'], p: [0, 250000, 600000, 1500000] }, rocket: { only: 'titan', lv: ['None', 'Twin Boosters', 'Quad Boosters', '🔥 Afterburner'], p: [0, 200000, 500000, 1200000] },
   susp: { only: 'titan', lv: ['Stock', 'Lifted', 'Race Drop', 'Active Air'], p: [0, 120000, 300000, 700000] }, kit: { lv: ['Stock', 'Carbon Kit'], p: [0, 9000] }, tint: { lv: ['Light', 'Dark', 'Limo'], p: [0, 600, 1200] }, wheel: { lv: ['Stock', 'Plus', 'Max'], p: [0, 4500, 11000] } };
 const GLOWS = ['', '#19e6ff', '#ff2bd6', '#8a5cff', '#7dff6a', '#ff3b30', '#ffd23a', '#ffffff', '#2438ff'];
-const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a'];
+const RIMC = ['#c9cdd6', '#2a2c30', '#0b0c10', '#d4a640', '#f2f2f2', '#b87333', '#19e6ff', '#ff2bd6', '#d4142a', '#ff7a00', '#ffe600', '#39ff14', '#00a86b', '#1e5aff', '#7a2bff', '#ff4f8b', '#8b0000', '#5a6270', '#e5c9a0', '#00d1c1']; /* OWNER Nov 1 9:13 PM: more dust cover colours */
 const CALS = ['#e01b2b', '#ffd23a', '#19e6ff', '#16d07a', '#ff2bd6', '#ff8a00', '#2a2c30', '#f2f2f2'];
 const TABS = [['cars', '🚗 Cars'], ['paint', '🎨 Paint'], ['wrap', '🖌 Wraps'], ['fin', '✨ Finish'], ['rim', '🛞 Rims'], ['rimCol', 'Dust Cover Color'], ['eng', '⚙️ Engine'], ['turbo', '🌀 Turbo'], ['nos', '💨 Nitro'], ['aero', 'Spoiler'], ['glow', '💡 Underglow']]; /* OWNER Nov 1 5:29 PM: Wheel Size, Tires, Body Kit, Tint, Calipers tabs removed; Rim Color renamed */
 const VIEW = { wrap: [1.0, 0.22, 7.6], rim: [1.2, 0.1, 5.4], rimCol: [1.2, 0.1, 5.4], tire: [1.2, 0.1, 5.4], cal: [1.3, 0.06, 4.8], aero: [2.55, 0.3, 7.6], glow: [0.6, 0.1, 7.4] };

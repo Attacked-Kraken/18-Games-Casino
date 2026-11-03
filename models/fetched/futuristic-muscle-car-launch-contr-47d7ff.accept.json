@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/futuristic-muscle-car-launch-contr-47d7ff.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 5,
+  "tris": 89947,
+  "size": [
+   2.617,
+   1.558,
+   5.02
+  ],
+  "mainSize": [
+   2.617,
+   1.558,
+   5.02
+  ],
+  "stray": 1,
+  "bytes": 1933276
+ },
+ "pictures": [
+  {
+   "pic": "futuristic-muscle-car-launch-contr-47d7ff-front.jpg",
+   "pct": 5.8
+  },
+  {
+   "pic": "futuristic-muscle-car-launch-contr-47d7ff-side.jpg",
+   "pct": 7.4
+  },
+  {
+   "pic": "futuristic-muscle-car-launch-contr-47d7ff-back.jpg",
+   "pct": 6.1
+  },
+  {
+   "pic": "futuristic-muscle-car-launch-contr-47d7ff-top.jpg",
+   "pct": 5.6
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 5
+ },
+ "at": "2026-11-02T02:30:28.905Z"
+}

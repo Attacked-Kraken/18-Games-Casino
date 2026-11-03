@@ -1,0 +1,44 @@
+{
+ "file": "models/fetched/phoenix-455-71-955edc.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 8,
+  "tris": 25943,
+  "size": [
+   5.118,
+   2.654,
+   2.139
+  ],
+  "mainSize": [
+   5.118,
+   2.654,
+   2.139
+  ],
+  "stray": 1,
+  "bytes": 2181264
+ },
+ "pictures": [
+  {
+   "pic": "phoenix-455-71-955edc-front.jpg",
+   "pct": 8.3
+  },
+  {
+   "pic": "phoenix-455-71-955edc-side.jpg",
+   "pct": 7
+  },
+  {
+   "pic": "phoenix-455-71-955edc-back.jpg",
+   "pct": 7.5
+  },
+  {
+   "pic": "phoenix-455-71-955edc-top.jpg",
+   "pct": 15.1
+  }
+ ],
+ "asked": {
+  "kind": "length",
+  "m": 5
+ },
+ "at": "2026-11-02T01:22:49.123Z"
+}
