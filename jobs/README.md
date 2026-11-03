@@ -1,3 +1,5 @@
+**OLD WORK TRASHED + NO MORE G-NUMBERS (owner, Nov 3 2026 5:17 PM): every old G-job, jobs/QUEUE.md line and jobs/G-NN.md report is archive - never finish, restructure or report it. Rounds come from MAC as T<window>-<n> (tester) / A<window>-<n> (auditor). The ONLY paperwork is findings/<game>/F-x-NNN.md + library/open/<game>.md (findings/README.md). No report files: end a round with one chat line 'ROUND DONE <round id>: <finding ids or none>'.**
+
 # G-jobs - the owner's job system (fresh start, Oct 19 2026)
 
 **All old jobs are gone.** Forget every J-number, old order, reminder and CLAIMS row. The owner sends G-jobs

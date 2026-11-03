@@ -1,5 +1,6 @@
 # FINDINGS - how a tester reports a problem so Claude can fix it (owner Nov 3 2026, LOCKED)
 
+No G-numbers and no jobs/ report files (owner Nov 3 2026 5:18 PM) - this folder is the paperwork.
 One problem = one file: `findings/<game>/F-<L>-<NNN>.md` (L = R Racer, F F1, H Hockey, T Track & Field, B Baseball, A Flight;
 NNN = the next free number in that folder, three digits). Copy `findings/TEMPLATE.md`. A picture goes next to it as
 `findings/<game>/pics/F-<L>-<NNN>.jpg` (the robot's picture link is fine too). Never two problems in one file, never a file
