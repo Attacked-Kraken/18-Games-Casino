@@ -55,6 +55,17 @@
   #trackRow .pick .tmap { display:block; width:100%; height:auto; aspect-ratio:11/6; margin:0 0 3px; border-radius:6px; background:#0b1222; }
   #trackRow .pick .tlen { font-size:11px; font-weight:700; color:#ffd76a; margin-top:2px; }
   @media (orientation:portrait) { #trackRow .pick { flex:1 1 30%; min-width:0; max-width:33%; padding:4px; } #trackRow .pick .s { display:none; } #trackRow .pick .t { font-size:12px; } #trackRow .pick .tlen { font-size:10px; } }
+  #hub #hubHead { text-align:center; margin:0 0 4px; } #hub #hubHead .h1 { font:900 26px/1.05 system-ui; letter-spacing:2px; color:#ff5a5a; text-shadow:0 0 18px rgba(255,60,60,.45); } #hub #hubHead .h2 { font-size:13px; letter-spacing:3px; color:#ffd76a; font-weight:800; }
+  #hub #hubGrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:min(900px,96vw); }
+  #hub .card { margin:0 !important; padding:8px 10px; width:auto !important; max-width:none !important; min-width:0; box-sizing:border-box; } #hub .hubCar { grid-row:span 1; padding:4px; } #hub #hubPrev { display:block; width:100%; height:150px; border-radius:10px; }
+  #hub #hubWho { text-align:center; font-weight:800; font-size:14px; margin-top:4px; } #hub .hk { font-size:11px; letter-spacing:2px; color:#9fd8ff; font-weight:800; }
+  #hub #hubMap { display:block; width:100%; height:auto; aspect-ratio:2/1; border-radius:8px; background:#0b1222; margin:4px 0; } #hub #hubNextTxt { text-align:center; font-size:13px; }
+  #hub .hubStats { grid-column:1 / span 2; } #hub #hubTiles { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:6px; }
+  #hub .tile { background:#101a2e; border:1px solid #233150; border-radius:10px; padding:6px; text-align:center; } #hub .tile b { display:block; font-size:20px; color:#ffd76a; } #hub .tile span { font-size:10px; letter-spacing:1px; color:#9fb6d8; }
+  #hub #hubCal { margin-bottom:6px; } #hub #hubCal span { display:inline-block; margin:2px 4px 2px 0; padding:3px 8px; border-radius:8px; font-size:11px; font-weight:700; }
+  #hub .bigbtn { width:min(420px,92vw); }
+  @media (orientation:landscape) and (max-height:520px) { #hub { justify-content:flex-start; padding:6px 10px; } #hub #hubHead .h1 { font-size:20px; } #hub #hubGrid { grid-template-columns:1.1fr 1fr 1.3fr; } #hub .hubStats { grid-column:auto; } #hub #hubPrev { height:132px; } #hub #hubTiles { grid-template-columns:repeat(4,1fr); gap:4px; margin-bottom:4px; } #hub .tile { padding:3px 2px; } #hub .tile b { font-size:15px; } #hub .tile span { font-size:8px; letter-spacing:0; } #hub #hubCal { margin-bottom:3px; } #hub #hubCal span { font-size:9px; padding:2px 5px; margin:1px 2px 1px 0; } #hub .stand td, #hub .stand th { padding:1px 4px !important; font-size:11px; } #hub .stand tr:nth-child(n+5) { display:none; } #hub #hubGrid { align-items:start; } #hub #hubMap { aspect-ratio:2.4/1; } #hub .bigbtn { margin:4px auto 0; padding:6px 12px; font-size:13px; } #hub #hubHead .h2 { font-size:11px; } #hub { gap:0; } }
+  @media (orientation:portrait) { #hub { justify-content:flex-start; } #hub #hubGrid { grid-template-columns:1fr 1fr; } #hub .hubStats { grid-column:1 / span 2; } #hub #hubPrev { height:120px; } #hub #hubMap { aspect-ratio:1.4/1; } }
   #stageCv { position:fixed; inset:0; width:100%; height:100%; display:none; z-index:39; }
   body.onstage #stageCv { display:block; }
   body.onstage #menu { background:linear-gradient(90deg, rgba(3,6,12,.94) 0, rgba(3,6,12,.90) 36%, rgba(3,6,12,.35) 52%, rgba(3,6,12,0) 68%); backdrop-filter:none; -webkit-backdrop-filter:none; align-items:flex-start; justify-content:center; padding-left:max(18px, env(safe-area-inset-left)); }
@@ -300,8 +311,13 @@ setTimeout(function(){
 
 <!-- CAREER HUB -->
 <div class="overlay hidden" id="hub">
-  <h1 class="title" style="font-size:30px">CAREER</h1>
-  <div class="card"><div id="hubBody" style="font-size:14px"></div></div>
+  <!-- owner Nov 3 2026: "career menu looks welcoming" - your car on the turntable, the next race with its map, your numbers -->
+  <div id="hubHead"></div>
+  <div id="hubGrid">
+    <div class="card hubCar"><canvas id="hubPrev"></canvas><div id="hubWho"></div></div>
+    <div class="card hubNextCard"><div class="hk">NEXT RACE</div><canvas id="hubMap" width="300" height="150"></canvas><div id="hubNextTxt"></div></div>
+    <div class="card hubStats"><div id="hubTiles"></div><div id="hubCal"></div><div id="hubBody"></div></div>
+  </div>
   <button class="bigbtn gold" id="hubNext">NEXT RACE →</button>
   <button class="bigbtn alt" id="hubMenu">MAIN MENU</button>
 </div>
@@ -1394,11 +1410,13 @@ function studioTick(S){
   S.r.render(S.scene, S.cam);
 }
 const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }, TP = { s:null }; window.__st = ST; window.__cp = CP;
+const HP = { s:null };
+function hubPrevShow(on){ if(!HP.s && on) HP.s=makeStudio($('hubPrev'), false); if(HP.s){ HP.s.on=on; if(on) studioBuild(HP.s); } }
 function teamPrevShow(on){ if(!TP.s && on) TP.s=makeStudio($('teamPrev'), false); if(TP.s){ TP.s.on=on; if(on) studioBuild(TP.s); } }
 function carPreviewShow(on){ if(!CP.s && on) CP.s=makeStudio($('carPrev'), false); if(CP.s){ CP.s.on=on; if(on) studioBuild(CP.s); } }
 function carPreviewBuild(){ if(TP.s && TP.s.on) studioBuild(TP.s); if(CP.s && CP.s.on) studioBuild(CP.s); if(ST.s && ST.s.on) studioBuild(ST.s); }
 function stageShow(on){ document.body.classList.toggle('onstage', !!on); if(!ST.s && on) ST.s=makeStudio($('stageCv'), true); if(ST.s){ ST.s.on=on; if(on) studioBuild(ST.s); } }
-function carPreviewTick(){ if(TP.s) studioTick(TP.s); if(CP.s) studioTick(CP.s); if(ST.s) studioTick(ST.s); }
+function carPreviewTick(){ if(HP.s) studioTick(HP.s); if(TP.s) studioTick(TP.s); if(CP.s) studioTick(CP.s); if(ST.s) studioTick(ST.s); }
 function buildCarMesh(color, teamName, carNumber, accent, shape, wrap){
   shape = shape || (carNumber % 2 ? 'modern' : 'classic');
   const m3 = cmBody(shape, color, accent, wrap);
@@ -2587,7 +2605,7 @@ function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixe
 
 /* ================= MENU FLOW ================= */
 let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
-function show(id){ carPreviewShow(id==='carMenu'); teamPrevShow(id==='teamMenu'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+function show(id){ if(id && Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; } /* never leave SKIP QUALI over a menu */ carPreviewShow(id==='carMenu'); teamPrevShow(id==='teamMenu'); hubPrevShow(id==='hub'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 /* owner Nov 3 2026 8:07 AM: "make track course visible to see it and how long it is" - a map of each circuit on its button */
 let __gpLine=null;
 function trackOutline(t){
@@ -2736,16 +2754,23 @@ function updateForecast(){
 }
 function renderMenuCode(){ const fc=friendCode(); if(fc) $('myCode').textContent='MY FRIEND CODE: '+fc; }
 function renderHub(){
-  const t=TRACKS[career.round%TRACKS.length];
-  const rows=Object.entries(career.table||{}).sort((a,b)=>b[1]-a[1]).slice(0,8)
-    .map(([k,v])=>`<tr${k===career.name.toUpperCase().slice(0,14)?' class="me"':''}><td>${k}</td><td>${v}</td></tr>`).join('');
-  $('hubBody').innerHTML=`<b style="color:#ffd76a">${career.name}</b> · ${TEAMS.find(x=>x.id===career.team)?.name||''} · Rating ${Math.round(career.rating)}<br>
-  Season ${career.season} · Round ${career.round+1}/${SEASON_ROUNDS} · Next: <b>${t.name}</b> (${t.country})<br>
-  Wins: ${career.wins} · Titles: ${career.champs} · vs friends: ${career.friends.w}–${career.friends.l}
-  <div style="margin:6px 0;font-size:12px">${TRACKS.slice(0,SEASON_ROUNDS).map((x,i)=>`<span style="display:inline-block;margin:1px 4px 1px 0;padding:2px 6px;border-radius:6px;background:${i<career.round?'#1f6b3a':i===career.round?'#6b551f':'#1a2436'}">${i<career.round?'✓ ':i===career.round?'▶ ':''}R${i+1} ${x.name}</span>`).join('')}</div>
-  ${(career.history||[]).length?'<div style="font-size:12px;color:#9fb6d8">Past seasons: '+career.history.slice(-4).map(h=>'S'+h.season+' P'+h.pos+' ('+h.pts+' pts)').join(' · ')+'</div>':''}
-  <table class="stand"><tr><th>DRIVER</th><th>PTS</th></tr>${rows||'<tr><td colspan=2>Season just started</td></tr>'}</table>
-  <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'—'}</div>`;
+  const t=TRACKS[career.round%TRACKS.length], team=TEAMS.find(x=>x.id===career.team)||TEAMS[0];
+  selTeam=team; // the hub shows YOUR car
+  const me=career.name.toUpperCase().slice(0,14), table=Object.entries(career.table||{}).sort((a,b)=>b[1]-a[1]);
+  const myPos=table.findIndex(([k])=>k===me)+1, myPts=(career.table||{})[me]||0;
+  const done=career.round>=SEASON_ROUNDS;
+  $('hubHead').innerHTML=`<div class="h1">${career.round===0&&career.season===1?'WELCOME TO THE PADDOCK':'CAREER'}</div><div class="h2">SEASON ${career.season} · ROUND ${Math.min(career.round+1,SEASON_ROUNDS)} OF ${SEASON_ROUNDS}</div>`;
+  $('hubWho').innerHTML=`<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${team.accent};margin-right:6px"></span>${career.name} · ${team.name}`;
+  $('hubNextTxt').innerHTML=`<b style="font-size:15px">${t.name}</b><br><span style="color:#ffd76a;font-weight:700">${t.lapKm.toFixed(2)} km lap</span> · ${t.country}`;
+  trackMap(t, $('hubMap'));
+  const tile=(v,l)=>`<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+  $('hubTiles').innerHTML=tile(myPos?('P'+myPos):'—','STANDINGS')+tile(myPts,'POINTS')+tile(career.wins,'WINS')+tile(career.champs,'TITLES');
+  $('hubCal').innerHTML=TRACKS.slice(0,SEASON_ROUNDS).map((x,i)=>`<span style="background:${i<career.round?'#1f6b3a':i===career.round?'#8a6a12':'#1a2436'}">${i<career.round?'✓ ':i===career.round?'▶ ':''}R${i+1} ${x.name}</span>`).join('');
+  const rows=table.slice(0,5).map(([k,v],i)=>`<tr${k===me?' class="me"':''}><td>P${i+1}</td><td>${k}</td><td>${v}</td></tr>`).join('');
+  $('hubBody').innerHTML=`<table class="stand"><tr><th></th><th>DRIVER</th><th>PTS</th></tr>${rows||'<tr><td colspan=3>Season just started - every point counts!</td></tr>'}</table>
+  ${(career.history||[]).length?'<div style="font-size:11px;color:#9fb6d8;margin-top:4px">Past seasons: '+career.history.slice(-4).map(h=>'S'+h.season+' P'+h.pos+' ('+h.pts+' pts)').join(' · ')+'</div>':''}
+  <div style="margin-top:4px;font-size:10px;color:#6f87a8;word-break:break-all">Rating ${Math.round(career.rating)} · vs friends ${career.friends.w}–${career.friends.l}</div>`;
+  $('hubNext').textContent = career.round===0&&career.season===1 ? '🏁 START YOUR FIRST RACE →' : 'NEXT RACE →';
 }
 async function startWeekend(){
   try{ await CMBoot(); }catch(e){} // the owner's car shapes (a few MB, usually loaded while he was in the menus)
