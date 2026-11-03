@@ -34,6 +34,10 @@
     #menu .bigbtn { flex:0 0 46%; margin:3px; }
   }
   /* G-265 R1: the upright phone (390x844) gets the same no-scroll fit the sideways phone has - teamMenu's stack measured 976 px tall, 132 px over the fold, START WEEKEND 43 px below it; tighten only this menu */
+  #carMenu .pick.wrap { min-height:44px; } #carMenu .pick.wrap .s { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } #carMenu .pick .sw { display:block; height:16px; border-radius:6px; margin-bottom:3px; border:1px solid #ffffff33; }
+  @media (orientation:landscape) and (max-height:520px) { #carMenu { display:grid; grid-template-columns:52% 1fr; grid-template-rows:auto auto auto auto auto; column-gap:8px; align-content:start; padding:6px 10px; overflow:hidden; box-sizing:border-box; } #carMenu .card, #carMenu .bigbtn { width:auto; max-width:none; min-width:0; box-sizing:border-box; }
+    #carMenu .title { grid-column:1/3; font-size:20px !important; margin:0 0 2px; } #carMenu #carPrevCard { grid-row:2/6; grid-column:1; margin:0; } #carMenu #carPrev { height:100% !important; min-height:240px; }
+    #carMenu .card { margin:2px 0; padding:6px 8px; } #carMenu .bigbtn { margin:2px 0; padding:7px 10px; } #carMenu .pick { min-width:60px; padding:3px 4px; } #carMenu .pick .s { font-size:10px; line-height:1.1; } #carMenu .pick .sw { height:12px; margin-bottom:2px; } }
   @media (orientation:portrait) {
     #teamMenu { justify-content:flex-start; padding:8px 12px; }
     #teamMenu .title { font-size:20px !important; margin:2px 0 4px; }
@@ -240,8 +244,18 @@ setTimeout(function(){
   <div class="card"><div class="row" id="teamRow"></div></div>
   <div class="card"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
   <div class="card"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
-  <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
+  <button class="bigbtn gold" id="toCarBtn">NEXT · YOUR CAR ›</button>
   <button class="bigbtn alt" id="teamBack">‹ BACK</button>
+</div>
+
+<!-- YOUR CAR (owner Nov 2 2026: "an option to see what car you will pick and customize") -->
+<div class="overlay hidden" id="carMenu">
+  <h1 class="title" style="font-size:30px">YOUR CAR</h1>
+  <div class="card" id="carPrevCard" style="padding:6px"><canvas id="carPrev" style="display:block;width:100%;height:190px;border-radius:12px;background:#07090f"></canvas></div>
+  <div class="card"><h3>SHAPE</h3><div class="row" id="shapeRow"></div></div>
+  <div class="card"><h3>WRAP</h3><div class="row" id="wrapRow"></div></div>
+  <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
+  <button class="bigbtn alt" id="carBack">‹ BACK</button>
 </div>
 
 <!-- QUALI RESULT / GRID -->
@@ -300,6 +314,12 @@ setTimeout(function(){
   <b style="color:#ffd76a">WEATHER:</b> it can rain mid-race. Wrong tires in the wet = ice rink.<br>
   <b style="color:#ffd76a">POINTS:</b> 25-18-15-12-10-8-6-4-2-1, +1 for fastest lap (top 10).<br>
   <b style="color:#ffd76a">RIVALS:</b> the AI cheats a little — rubber-band pace and hard defending when you're near. That's the game.
+  </div>
+  <div class="card" id="credits" style="font-size:11px;line-height:1.5;opacity:.85">
+    <b style="color:#ffd76a">CREDITS</b> · car shapes from Sketchfab (CC-BY), repainted in our own colours:
+    <div style="margin-top:6px"><b>"Rb16 (PIA 2022 s13)"</b> by formula models maker, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/rb16-pia-2022-s13-ea3789cc2b7c46d18864945fc8ec87f1" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
+    <div style="margin-top:6px"><b>"Williams FW16 + Ayrton Senna"</b> by GRIP420, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/williams-fw16-ayrton-senna-ba86f97de7184b6b836458815897156f" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
+    <div class="row"></div>
   </div>
   <button class="bigbtn alt" id="howClose">CLOSE</button>
 </div>
@@ -1052,7 +1072,130 @@ function liveryTexture(color, teamName, carNumber){
   t.anisotropy = 4;
   __liveryCache[key]=t; return t;
 }
-function buildCarMesh(color, teamName, carNumber, accent){
+/* ================= OWNER Nov 2 2026 8:06 PM: "change the F1 cars to the Sketchfab ones" =================
+   Two fetched shapes (CC-BY, credits on the credits screen): 'modern' = models/fetched/rb16-pia-2022-s13-ea3789.glb,
+   'classic' = models/fetched/williams-fw16-ayrton-senna-ba86f9.glb. SHAPES ONLY: every baked livery / sponsor / tyre-brand
+   texture is dropped and the body wears our own paint (team colour now, the wrap picker next). The model's own wheels and
+   the driver figure are removed - the game's instanced wheels (spin, steer, REALITY contact) stay as they were.
+   Loaded once at boot; a car built before the model is ready keeps the code-built body (fallback). */
+const CM = { modern:{ file:'models/fetched/rb16-pia-2022-s13-ea3789.glb', drop:/Meshpart2Mtl|Meshpart6Mtl/, body:/Paint|Palette|FrontWing|Meshpart16|Meshpart7/ },
+             classic:{ file:'models/fetched/williams-fw16-ayrton-senna-ba86f9.glb', drop:/Wheel|Senna_/, body:/Body/ }, _boot:null };
+function CMBoot(){
+  if(CM._boot) return CM._boot;
+  CM._boot = (async()=>{
+    const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
+    for(const kind of ['modern','classic']){ const M = CM[kind]; try{
+      const buf = await fetch(M.file).then(r=>r.arrayBuffer());
+      const gltf = await new GLTFLoader().parseAsync(buf, '');
+      const root = gltf.scene; root.updateMatrixWorld(true);
+      // drop the model's own wheels + driver, find the tyres' size and axle positions from the wheel meshes first
+      const wheels = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'') && /Wheel|Meshpart2Mtl|Meshpart6Mtl/.test(o.material.name||'')) wheels.push(o); });
+      const wb = new THREE.Box3(); for(const w of wheels) wb.expandByObject(w);
+      const box = new THREE.Box3().setFromObject(root), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      // nose = the end whose highest point is LOWER (the rear wing stands tall at the back)
+      let yA=0,yB=0, v=new THREE.Vector3();
+      root.traverse(o=>{ if(!o.isMesh) return; const pa=o.geometry.attributes.position; for(let i=0;i<pa.count;i+=4){ v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld); const rz=(v.z-c.z)/sz.z; if(rz>0.35) yA=Math.max(yA,v.y-box.min.y); else if(rz<-0.35) yB=Math.max(yB,v.y-box.min.y); } });
+      const noseZ = yA < yB ? 1 : -1;
+      // axle positions along the car from the wheel vertices (front group / rear group)
+      let fz=0,fn=0,rz=0,rn=0, ymax=0, xmax=0;
+      for(const w of wheels){ const pa=w.geometry.attributes.position; for(let i=0;i<pa.count;i+=3){ v.fromBufferAttribute(pa,i).applyMatrix4(w.matrixWorld); const z=(v.z-c.z)*noseZ; if(z>0){fz+=z;fn++;} else {rz+=z;rn++;} ymax=Math.max(ymax,v.y-box.min.y); xmax=Math.max(xmax,Math.abs(v.x-c.x)); } }
+      const groundY = wheels.length ? wb.min.y : box.min.y; // the tyres' bottom is the ground (a stray bit below the car must not count)
+      const tyreR = (wheels.length? (wb.max.y-wb.min.y)/2 : 0.44) || 0.44, k = 0.44/tyreR; // every car gets the game's 0.44 tyre
+      const axF = fn? fz/fn*k : 2.35, axR = rn? rz/rn*k : -1.65, track = (xmax? xmax - 0.25*k : 1.02);
+      const tmp = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'')) tmp.push(o); }); for(const o of tmp) o.parent.remove(o);
+      // normalise: centre, nose along +x, ground at y=0, tyre radius 0.44
+      const body = new THREE.Group(); const inner = new THREE.Group();
+      root.traverse(o=>{ if(o.isMesh){ o.castShadow=!isTouch; o.userData.cmRole = M.body.test(o.material.name||'') ? 'body' : (/Glass/i.test(o.material.name||'') ? 'glass' : 'dark'); } });
+      inner.add(root); root.position.set(-c.x, -groundY, -c.z); inner.rotation.y = noseZ>0 ? Math.PI/2 : -Math.PI/2; body.add(inner); body.scale.setScalar(k);
+      M.body3d = body; M.wheelSpec = [[axF,track,0.44],[axF,-track,0.44],[axR,track,0.44],[axR,-track,0.44]]; M.ready = true;
+    }catch(e){ console.warn('car model', kind, e); } }
+    return CM;
+  })();
+  return CM._boot;
+}
+CMBoot(); window.__cm = CM;
+function cmBody(kind, color, accent, wrap){
+  const M = CM[kind]; if(!M || !M.ready) return null;
+  const wt = wrapTexture(wrap);
+  const paint = new THREE.MeshStandardMaterial({ color: wt ? 0xffffff : color, map: wt || null, roughness: wt ? 0.3 : 0.22, metalness: wt ? 0.45 : 0.7 });
+  const dark = new THREE.MeshStandardMaterial({ color:0x15171c, roughness:0.5, metalness:0.5 });
+  const glass = new THREE.MeshStandardMaterial({ color:0x0b1020, roughness:0.05, metalness:0.9, transparent:true, opacity:0.85 });
+  const b = M.body3d.clone(true);
+  b.traverse(o=>{ if(o.isMesh) o.material = o.userData.cmRole==='body' ? paint : o.userData.cmRole==='glass' ? glass : dark; });
+  b.userData.paint = paint; b.userData.accent = accent;
+  return b;
+}
+/* ================= WRAPS (owner Nov 2 2026, from his two livery pictures) =================
+   Painted by code, tileable, so they read on any model's UV layout. No real brands - our own words only. */
+const WRAPS = [
+  { id:'team',   name:'Team Paint' },
+  { id:'neon',   name:'Neon Cyberpunk',  sw:'linear-gradient(90deg,#0b0a2a,#7a3cff,#1ad1ff)' },
+  { id:'gold',   name:'Gold & Carbon',   sw:'linear-gradient(90deg,#d9a520,#1a1a1a)' },
+  { id:'rose',   name:'Rose Gold Hex',   sw:'linear-gradient(90deg,#e4a79a,#b86b5e)' },
+  { id:'retro',  name:'Retro-Wave',      sw:'linear-gradient(90deg,#ff2bd6,#8a5cff,#19e6ff)' },
+  { id:'stealth',name:'Stealth Camo',    sw:'linear-gradient(90deg,#1b2a2f,#2f5a5a,#1b2a2f)' },
+  { id:'acid',   name:'Acid-Wave',       sw:'linear-gradient(90deg,#5a1fa8,#b6ff2e)' },
+  { id:'grid',   name:'Cyber-Grid',      sw:'linear-gradient(90deg,#0a0a14,#6a3cff)' },
+  { id:'flame',  name:'Volcanic Flame',  sw:'linear-gradient(90deg,#141a5e,#ff6a00,#ffd23a)' },
+];
+const __wrapCache = {};
+function wrapTexture(id){
+  if(id==='team' || !id) return null;
+  if(__wrapCache[id]) return __wrapCache[id];
+  const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d'); const W=512;
+  let seed=7; const r=(a,b)=>{ seed=(seed*16807)%2147483647; return a+(seed/2147483647)*(b-a); };
+  if(id==='neon'){ x.fillStyle='#0b0a2a'; x.fillRect(0,0,W,W); x.lineWidth=3; for(let i=0;i<34;i++){ x.strokeStyle=i%2?'#7a3cff':'#1ad1ff'; x.shadowColor=x.strokeStyle; x.shadowBlur=8; x.beginPath(); let px=r(0,W),py=r(0,W); x.moveTo(px,py); for(let k=0;k<4;k++){ if(k%2) px=r(0,W); else py=r(0,W); x.lineTo(px,py);} x.stroke(); } x.shadowBlur=0; x.fillStyle='#e6ff00'; x.font='bold 40px sans-serif'; x.fillText('G-SPEED',30,470); x.fillText('TECHNOBASE',230,70); }
+  else if(id==='gold'){ x.fillStyle='#1a1a1a'; x.fillRect(0,0,W,W); for(let yy=0;yy<W;yy+=8) for(let xx=0;xx<W;xx+=8){ x.fillStyle=((xx+yy)/8)%2?'#242424':'#111'; x.fillRect(xx,yy,8,8);} x.fillStyle='#d9a520'; x.beginPath(); x.moveTo(0,0); x.lineTo(W,0); x.lineTo(W,170); x.lineTo(0,330); x.closePath(); x.fill(); x.fillStyle='#f5d77a'; x.fillRect(0,330,W,10); x.fillStyle='#1a1a1a'; x.font='bold 44px sans-serif'; x.fillText('AURUM',40,100); x.fillStyle='#d9a520'; x.font='bold 30px sans-serif'; x.fillText('VELOCITY',300,440); }
+  else if(id==='rose'){ x.fillStyle='#d99a8c'; x.fillRect(0,0,W,W); x.strokeStyle='#8f4d42'; x.lineWidth=2; const h=22; for(let yy=0;yy<W+h;yy+=h*1.5) for(let xx=0;xx<W+h;xx+=h*1.732){ const ox=((yy/(h*1.5))|0)%2? h*0.866:0; x.beginPath(); for(let k=0;k<6;k++){ const a=Math.PI/3*k+Math.PI/6; const px=xx+ox+h*Math.cos(a), py=yy+h*Math.sin(a); k?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); x.stroke(); } x.fillStyle='#5a2a24'; x.font='bold 36px sans-serif'; x.fillText('HEX-RACELAB',90,270); }
+  else if(id==='retro'){ const g=x.createLinearGradient(0,0,W,W); g.addColorStop(0,'#ff2bd6'); g.addColorStop(0.5,'#8a5cff'); g.addColorStop(1,'#19e6ff'); x.fillStyle=g; x.fillRect(0,0,W,W); x.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<12;i++) x.fillRect(0,i*44,W,8); x.fillStyle='#ffe34a'; x.font='bold 46px sans-serif'; x.fillText('APEX',40,120); x.fillStyle='#fff'; x.font='bold 34px sans-serif'; x.fillText('DRIFTTECH',200,400); }
+  else if(id==='stealth'){ x.fillStyle='#1b2a2f'; x.fillRect(0,0,W,W); for(let i=0;i<70;i++){ x.fillStyle=['#2f5a5a','#243f46','#3a7068','#15202a'][i%4]; x.beginPath(); const cx=r(0,W),cy=r(0,W); x.moveTo(cx,cy); for(let k=0;k<7;k++) x.lineTo(cx+r(-70,70),cy+r(-45,45)); x.closePath(); x.fill(); } x.fillStyle='#9fd8c8'; x.font='bold 34px sans-serif'; x.fillText('STEALTH',60,300); }
+  else if(id==='acid'){ x.fillStyle='#5a1fa8'; x.fillRect(0,0,W,W); x.lineWidth=14; x.lineCap='round'; for(let i=0;i<9;i++){ x.strokeStyle=i%2?'#b6ff2e':'#2ee6c8'; x.beginPath(); for(let xx=0;xx<=W;xx+=16){ const yy=i*60+Math.sin(xx/40+i)*28; xx?x.lineTo(xx,yy):x.moveTo(xx,yy);} x.stroke(); } x.fillStyle='#0b0b1a'; x.font='bold 40px sans-serif'; x.fillText('ACID',380,480); }
+  else if(id==='grid'){ x.fillStyle='#0a0a14'; x.fillRect(0,0,W,W); x.strokeStyle='#6a3cff'; x.lineWidth=2; for(let i=0;i<=W;i+=32){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,W); x.stroke(); x.beginPath(); x.moveTo(0,i); x.lineTo(W,i); x.stroke(); } x.strokeStyle='#19e6ff'; x.lineWidth=4; x.strokeRect(64,64,160,96); x.fillStyle='#d8c8ff'; x.font='bold 32px sans-serif'; x.fillText('CYBER-GRID',260,440); }
+  else if(id==='flame'){ x.fillStyle='#141a5e'; x.fillRect(0,0,W,W); for(let i=0;i<26;i++){ const g=x.createLinearGradient(0,W,0,W*0.3); g.addColorStop(0,'#ff6a00'); g.addColorStop(0.6,'#ff2a00'); g.addColorStop(1,'rgba(255,210,58,0)'); x.fillStyle=g; x.beginPath(); const bx=i*22; x.moveTo(bx,W); x.quadraticCurveTo(bx+r(-30,30),W*0.55,bx+r(-10,10),W*r(0.15,0.4)); x.quadraticCurveTo(bx+r(10,40),W*0.6,bx+28,W); x.closePath(); x.fill(); } x.fillStyle='#ffd23a'; x.font='bold 36px sans-serif'; x.fillText('VOLCANIC',40,80); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; __wrapCache[id]=t; return t;
+}
+/* the car preview on the YOUR CAR screen: its own small renderer, the chosen shape slowly turning on a lit stage */
+const CP = { r:null, scene:null, cam:null, car:null, on:false };
+function carPreviewShow(on){
+  CP.on=on; if(!on) return;
+  const cv=$('carPrev'); if(!CP.r){ try{ CP.r=new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:false}); CP.r.setPixelRatio(Math.min(2,devicePixelRatio||1)); CP.r.outputColorSpace=THREE.SRGBColorSpace; }catch(e){ return; }
+    CP.scene=new THREE.Scene(); CP.scene.background=new THREE.Color(0x07090f);
+    CP.cam=new THREE.PerspectiveCamera(30, 2, 0.1, 100); CP.cam.position.set(6.2,2.2,6.2);
+    CP.scene.add(new THREE.HemisphereLight(0xdde8ff,0x202030,1.2)); const k=new THREE.DirectionalLight(0xffffff,2.2); k.position.set(5,8,4); CP.scene.add(k); const f=new THREE.DirectionalLight(0x9fd8ff,0.9); f.position.set(-6,3,-4); CP.scene.add(f);
+    const floor=new THREE.Mesh(new THREE.CircleGeometry(6,48), new THREE.MeshStandardMaterial({color:0x0e1220, roughness:0.35, metalness:0.4})); floor.rotation.x=-Math.PI/2; CP.scene.add(floor);
+    const ring=new THREE.Mesh(new THREE.RingGeometry(4.6,4.8,64), new THREE.MeshBasicMaterial({color:0x19e6ff})); ring.rotation.x=-Math.PI/2; ring.position.y=0.01; CP.scene.add(ring); }
+  carPreviewBuild();
+}
+function carPreviewBuild(){
+  if(!CP.scene) return; if(CP.car){ CP.scene.remove(CP.car); CP.car=null; }
+  CMBoot().then(()=>{ if(!CP.on) return; if(CP.car){ CP.scene.remove(CP.car); }
+    const shape=localStorage.getItem('f1_shape')||'modern', wrap=localStorage.getItem('f1_wrap')||'team';
+    const body=cmBody(shape, selTeam.color, selTeam.accent, wrap); const g=new THREE.Group();
+    if(body){ g.add(body); for(const [wx,wz,wr] of CM[shape].wheelSpec){ const w=new THREE.Group(); const t=new THREE.Mesh(new THREE.CylinderGeometry(wr,wr,0.5,20), new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85})); t.rotation.x=Math.PI/2; w.add(t); const cv2=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,20), new THREE.MeshStandardMaterial({color:selTeam.color,roughness:0.12,metalness:0.88})); cv2.rotation.x=Math.PI/2; w.add(cv2); for(const sz of [0.255,-0.255]){ const st=new THREE.Mesh(new THREE.TorusGeometry(0.375,0.028,8,28), new THREE.MeshStandardMaterial({color:new THREE.Color(selTeam.accent||'#ffd700'),roughness:0.35,metalness:0.35})); st.position.z=sz; w.add(st);} w.position.set(wx,wr,wz); g.add(w); } }
+    else { const b=buildBoxBody(selTeam.color, selTeam.name, 1, selTeam.accent); g.add(b); }
+    CP.car=g; CP.scene.add(g); });
+}
+function carPreviewTick(){
+  if(!CP.on || !CP.r || !CP.car) return;
+  const cv=$('carPrev'); const w=cv.clientWidth|0, h=cv.clientHeight|0; const pr=CP.r.getPixelRatio();
+  if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ CP.r.setSize(w,h,false); CP.cam.aspect=w/h; CP.cam.updateProjectionMatrix(); }
+  CP.car.rotation.y+=0.006; CP.cam.lookAt(0,0.5,0); CP.r.render(CP.scene, CP.cam);
+}
+
+function buildCarMesh(color, teamName, carNumber, accent, shape, wrap){
+  shape = shape || (carNumber % 2 ? 'modern' : 'classic');
+  const m3 = cmBody(shape, color, accent, wrap);
+  if(m3) return buildCarFromModel(m3, CM[shape].wheelSpec, color, accent, buildBoxBody(color, teamName, carNumber, accent));
+  const g=new THREE.Group();
+  const box = buildBoxBody(color, teamName, carNumber, accent); g.add(box);
+  buildCarWheels(g, color, accent, null);
+  mergeCarBody(box); // G-54: ~60 body parts become one mesh per material
+  wheelInstRegister(g); // G-54: wheel parts render through 4 shared instanced meshes
+  scene.add(g); // put the car on the track (lost in the car rebuild)
+  return g;
+}
+/* the code-built body (the car every F1 player saw before Nov 2 2026) - now also the FAR level of detail behind a model car */
+function buildBoxBody(color, teamName, carNumber, accent){
   accent = accent || '#ffd700';
   teamName = teamName||'APEX'; carNumber = carNumber||1;
   const g=new THREE.Group();
@@ -1217,14 +1360,28 @@ function buildCarMesh(color, teamName, carNumber, accent){
   }
 
   // === WHEELS with sidewall stripes ===
-  const tireGeo=new THREE.CylinderGeometry(0.44,0.44,0.5,20);
+  return g;
+}
+/* LOD: 20 model cars are ~1.4 M triangles - too many for a phone - so only cars within CAR_LOD_NEAR of the camera
+   show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
+const CAR_LOD_NEAR = 70;
+function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; L.near.visible=near; L.far.visible=!near; } }
+function buildCarFromModel(body, spec, color, accent, box){
+  const g=new THREE.Group(); g.add(body);
+  if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
+  buildCarWheels(g, color, accent, spec);
+  wheelInstRegister(g);
+  scene.add(g);
+  return g;
+}
+function buildCarWheels(g, color, accent, spec){
   const tireMat=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85});
   const stripeGeo=new THREE.TorusGeometry(0.375,0.028,8,28);
   const stripeMat=new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.35,metalness:0.35});
   const coverGeo=new THREE.CylinderGeometry(0.27,0.27,0.52,20);
   const coverMat=new THREE.MeshStandardMaterial({color,roughness:0.12,metalness:0.88});
   g.userData.wheels=[];
-  for(const [wx,wz,wr] of [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]]){
+  for(const [wx,wz,wr] of (spec || [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]])){
     const w=new THREE.Group();
     const tg=new THREE.CylinderGeometry(wr,wr,0.5,20);
     const tire=new THREE.Mesh(tg,tireMat); tire.rotation.x=Math.PI/2; tire.userData.instType='tire'; w.add(tire);
@@ -1236,12 +1393,8 @@ function buildCarMesh(color, teamName, carNumber, accent){
       new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.2,metalness:0.7}));
     cap.userData.instType='cap'; cap.position.z=0.261; w.add(cap);
     const cap2=cap.clone(); cap2.position.z=-0.261; cap2.rotation.y=Math.PI; w.add(cap2);
-    w.position.set(wx,0.44,wz); g.add(w); g.userData.wheels.push(w);
+    w.position.set(wx,wr,wz); g.add(w); g.userData.wheels.push(w);
   }
-  mergeCarBody(g); // G-54: ~60 body parts become one mesh per material
-  wheelInstRegister(g); // G-54: wheel parts render through 4 shared instanced meshes
-  scene.add(g); // put the car on the track (lost in the car rebuild)
-  return g;
 }
 
 /* ================= G-54: draw-call diet (identical picture, far fewer meshes) =================
@@ -1333,7 +1486,7 @@ class Car {
   constructor(name, team, isPlayer, skill){
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
-    this.mesh=buildCarMesh(team.color, team.name, 1, team.accent);
+    this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'), isPlayer ? (localStorage.getItem('f1_wrap')||'team') : 'team');
     this.mesh.scale.setScalar(1.416); // G-73: the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
@@ -2012,6 +2165,7 @@ const Race = {
       lk.set(pp.x+fwd.x*40, pp.y+0.9, pp.z+fwd.z*40);
     }
     const k=1-Math.exp(-dt/(this.camMode===3?0.045:this.camMode===2?0.45:0.16)); // G-239: frame-rate-independent easing (the old dt*rate ran 3x hotter on a slow frame); broadcast gets the long, calm ease
+    if(window.__camLock){ const L=window.__camLock, pl=Race.player.mesh, pos=pl.getWorldPosition(new THREE.Vector3()), f=new THREE.Vector3(1,0,0).applyQuaternion(pl.quaternion), r=new THREE.Vector3(0,0,1).applyQuaternion(pl.quaternion); camera.position.set(pos.x+f.x*L[0]+r.x*L[2], pos.y+L[1], pos.z+f.z*L[0]+r.z*L[2]); camera.lookAt(pos.x,pos.y+0.6,pos.z); return; } // robot close-up look (REALITY camera checks)
     camera.position.lerp(cp,k);
     // shake (never in broadcast - G-239: that camera stays steady, full stop)
     if(this.shake>0 && this.camMode!==2){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
@@ -2196,7 +2350,7 @@ function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixe
 
 /* ================= MENU FLOW ================= */
 let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
-function show(id){ ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+function show(id){ carPreviewShow(id==='carMenu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 function initMenus(){
   // tracks
   const tr=$('trackRow'); tr.innerHTML='';
@@ -2283,6 +2437,11 @@ function initMenus(){
   $('teamBack').onclick=()=>show('trackMenu');
   $('toTeamBtn').onclick=()=>show('teamMenu');
   $('startBtn').onclick=startWeekend;
+  $('toCarBtn').onclick=()=>show('carMenu'); $('carBack').onclick=()=>show('teamMenu');
+  const sr=$('shapeRow'); sr.innerHTML='';
+  for(const [id,name,sub] of [['modern','MODERN','2022-style, wide body'],['classic','CLASSIC','1994-style, low nose']]){ const d=document.createElement('div'); d.className='pick'+((localStorage.getItem('f1_shape')||'modern')===id?' sel':''); d.innerHTML=`<div class="t">${name}</div><div class="s">${sub}</div>`; d.onclick=()=>{ localStorage.setItem('f1_shape',id); [...sr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); }; sr.appendChild(d); }
+  const wr=$('wrapRow'); wr.innerHTML='';
+  for(const w of WRAPS){ const d=document.createElement('div'); d.className='pick wrap'+((localStorage.getItem('f1_wrap')||'team')===w.id?' sel':''); d.innerHTML=`<span class="sw" style="background:${w.sw||'#8a96a8'}"></span><div class="s">${w.name}</div>`; d.onclick=()=>{ localStorage.setItem('f1_wrap',w.id); [...wr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); }; wr.appendChild(d); }
   $('raceBtn').onclick=()=>{ $('gridMenu').classList.add('hidden'); HUD.show(true); Race.beginRace(); };
   $('resMenu').onclick=()=>{ show('menu'); renderMenuCode(); };
   $('resNext').onclick=()=>{
@@ -2325,6 +2484,7 @@ function renderHub(){
   <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'—'}</div>`;
 }
 async function startWeekend(){
+  try{ await CMBoot(); }catch(e){} // the owner's car shapes (a few MB, usually loaded while he was in the menus)
   const name=($('driverName').value||'YOU').toUpperCase().slice(0,16)||'YOU';
   const cheat={ROOKIE:0.3,PRO:1.0,CHEAT:1.8}[selDiff];
   const aiDelta={ROOKIE:-0.12,PRO:0,CHEAT:0.06}[selDiff];
@@ -2460,7 +2620,8 @@ function loop(t){
     if(Race.mode==='race' && Math.random()<frameSec) GP.ev.order = Race.positions().map(c=>c.name);
   }
   // draw the 3D world (was missing — black screen)
-  if(glOK&&renderer&&scene&&camera){ wheelInstUpdate(); renderer.render(scene,camera); }
+  if(glOK&&renderer&&scene&&camera){ carLodUpdate(); wheelInstUpdate(); renderer.render(scene,camera); }
+  carPreviewTick();
 }
 /* ================= G-48: the owner's cockpit kit (kit/cockpit) =================
    Parsed at boot like the track. Rides inside the player's car (hidden unless
@@ -2666,6 +2827,7 @@ function _realitySD(x, z){ // nearest track point -> arclength s + lateral d of 
 }
 window.__reality={
   kind: 'f1',
+  get camera(){ return camera; },
   get player(){ return (Race.player && Race.player.mesh) || null; },
   get others(){ return Race.cars ? Race.cars.filter(c=>!c.isPlayer && c.mesh).map(c=>c.mesh) : []; },
   get contact(){ return Race.player ? _realityAnchors : []; },
@@ -2688,7 +2850,7 @@ requestAnimationFrame(loop);
 // G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
 // with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
 (function(){ try{ const q=new URLSearchParams(location.search).get('test'); if(q!=='grid') return;
-  startWeekend().then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
+  CMBoot().then(()=>startWeekend()).then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
 }catch(e){} })();
 </script>
 </body>
