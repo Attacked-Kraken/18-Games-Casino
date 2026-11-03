@@ -331,7 +331,28 @@ document.getElementById('grid').addEventListener('click', function (e) {
     if (row.classList.contains('live')) return;
     remember(row);
     var f = document.createElement('iframe');
-    f.src = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=' + (window.__hubStamp || (window.__hubStamp = Math.floor(Date.now() / 300000)));   /* dev=1: Game Development tools (career skip) - never in the Arcade */ f.title = row._game.name;
+    /* owner Nov 3 2026 "when I refresh, everything new needs to be on there the second it's merged": the old ?v= changed only every
+       5 minutes, so a game merged a minute ago could load the cached old copy. Now the page first asks the site for the game file's
+       CURRENT fingerprint (ETag - a never-cached ask with a random tail) and loads the game with that fingerprint, so a new version
+       always loads fresh and an unchanged one comes from the phone's cache. No answer in 4 s = load with a fresh stamp anyway. */
+    var base = row._game.href + (row._game.href.indexOf('?') < 0 ? '?' : '&') + 'dev=1&v=';   /* dev=1: Game Development tools (career skip) - never in the Arcade */
+    f.title = row._game.name;
+    (function (f) {
+      var done = false, x = new XMLHttpRequest();
+      function go(tag) {
+        if (done) return; done = true;
+        if (!f.isConnected) return;   /* stopped meanwhile */
+        f.src = base + encodeURIComponent(String(tag || Date.now()).replace(/[^\w]/g, '').slice(-24));
+      }
+      try {
+        x.open('HEAD', row._game.href.split('?')[0] + '?fresh=' + Date.now() + Math.floor(Math.random() * 1e6), true);
+        x.timeout = 4000;
+        x.onload = function () { go(x.getResponseHeader('ETag') || x.getResponseHeader('Last-Modified')); };
+        x.onerror = x.ontimeout = function () { go(''); };
+        x.send();
+      } catch (e) { go(''); }
+      setTimeout(function () { go(''); }, 4500);
+    })(f);
     f.setAttribute('allow', 'fullscreen; autoplay; screen-wake-lock; microphone');
     f.setAttribute('allowfullscreen', '');
     f.addEventListener('load', function () {
@@ -440,5 +461,24 @@ document.addEventListener('error', function (e) {
 }, true);
 </script>
 <script src="feedback.js"></script>
+<script>/* owner Nov 3 2026: a refresh must show what was just merged. Phones keep this page cached ~10 minutes, so after loading it asks
+the site for a never-cached copy; if that copy's code is not the code running now, the page reloads itself once onto the new copy. */
+(function () {
+  try {
+    var K = 'apexHubFresh', last = +sessionStorage.getItem(K) || 0;
+    if (Date.now() - last < 20000) return;   /* just reloaded for this - never loop */
+    var mine = Array.prototype.map.call(document.querySelectorAll('script:not([src])'), function (x) { return x.text; })
+      .reduce(function (a, b) { return b.length > a.length ? b : a; }, '');
+    var x = new XMLHttpRequest();
+    x.open('GET', location.pathname + '?fresh=' + Date.now() + Math.floor(Math.random() * 1e6), true);
+    x.timeout = 6000;
+    x.onload = function () {
+      if (x.status !== 200 || !mine || x.responseText.indexOf(mine) >= 0) return;
+      try { sessionStorage.setItem(K, String(Date.now())); } catch (e) {}
+      location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+    };
+    x.send();
+  } catch (e) {}
+})();</script>
 </body>
 </html>
