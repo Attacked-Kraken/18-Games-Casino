@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
+(function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
+function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
+try{new MutationObserver(all).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}document.addEventListener('DOMContentLoaded',all);})();</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Apex F1 Racing</title>
@@ -245,7 +249,7 @@ setTimeout(function(){
   <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
   <button class="bigbtn alt" id="tournBtn">🏁 TOURNAMENT</button>
   <button class="bigbtn alt" id="taBtn">⏱ TIME ATTACK</button>
-  <button class="bigbtn alt" id="friendBtn">👥 RACE A FRIEND (ENTER CODE)</button>
+  <button class="bigbtn alt" id="friendBtn">👥 PLAY WITH FRIENDS</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
   <div class="card"><h3>MY FRIEND CODE</h3><div id="myCode" style="font:600 13px ui-monospace,Menlo,monospace;color:#9fd8ff">Finish a race to earn your code</div>
@@ -324,7 +328,7 @@ setTimeout(function(){
 
 <!-- FRIEND -->
 <div class="overlay hidden" id="friendOv">
-  <h1 class="title" style="font-size:30px">RACE A FRIEND</h1>
+  <h1 class="title" style="font-size:30px">PLAY WITH FRIENDS</h1>
   <div class="menuSub">Paste a friend's code. Their driver joins your grid, AI-driven at their rating. Beat them and it goes on your record.</div>
   <input type="text" id="friendIn" placeholder="F1APEX-XXXX-XXXX-...">
   <div class="err" id="friendErr"></div>
