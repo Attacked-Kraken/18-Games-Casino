@@ -38,14 +38,23 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     #menu .bigbtn { flex:0 0 46%; margin:3px; }
   }
   /* G-265 R1: the upright phone (390x844) gets the same no-scroll fit the sideways phone has - teamMenu's stack measured 976 px tall, 132 px over the fold, START WEEKEND 43 px below it; tighten only this menu */
-  #carMenu .pick.wrap { min-height:44px; } #carMenu .pick.wrap .s { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } #carMenu .pick .sw { display:block; height:16px; border-radius:6px; margin-bottom:3px; border:1px solid #ffffff33; }
-  @media (orientation:landscape) and (max-height:520px) { #carMenu { display:grid; grid-template-columns:52% 1fr; grid-template-rows:auto auto auto auto auto; column-gap:8px; align-content:start; padding:6px 10px; overflow:hidden; box-sizing:border-box; } #carMenu .card, #carMenu .bigbtn { width:auto; max-width:none; min-width:0; box-sizing:border-box; }
-    #carMenu .title { grid-column:1/3; font-size:20px !important; margin:0 0 2px; } #carMenu #carPrevCard { grid-row:2/6; grid-column:1; margin:0; } #carMenu #carPrev { height:100% !important; min-height:240px; }
-    #carMenu .card { margin:2px 0; padding:6px 8px; } #carMenu .bigbtn { margin:2px 0; padding:7px 10px; } #carMenu .pick { min-width:60px; padding:3px 4px; } #carMenu .pick .s { font-size:10px; line-height:1.1; } #carMenu .pick .sw { height:12px; margin-bottom:2px; } }
-  #carMenu .pick.wrap .s { display:block !important; font-size:10px; }
-  @media (orientation:landscape) and (max-height:520px) { #teamMenu { display:grid; grid-template-columns:46% 1fr; grid-template-rows:auto auto auto auto auto auto; column-gap:8px; align-content:start; padding:6px 10px; overflow:hidden; }
-    #teamMenu .title { grid-column:1/3; margin:0 0 2px; } #teamMenu #teamPrevCard { grid-row:2/7; grid-column:1; margin:0; width:auto; } #teamMenu #teamPrev { height:100% !important; min-height:230px; }
-    #teamMenu .card { margin:2px 0; padding:5px 8px; width:auto; } #teamMenu .bigbtn { margin:2px 0; padding:7px 10px; } #teamMenu .pick { min-width:58px; flex-basis:58px; } }
+  /* owner Nov 3 2026: ONE team + car page */
+  #teamMenu .pick.wrap { min-height:40px; } #teamMenu .pick.wrap .s { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:10px; }
+  #teamMenu .pick .sw { display:block; height:12px; border-radius:6px; margin-bottom:2px; border:1px solid #ffffff33; }
+  #teamMenu h3 { margin:0 0 3px; font-size:11px; }
+  @media (orientation:landscape) and (max-height:520px) {
+    #teamMenu { display:grid; grid-template-columns:38% 1fr; grid-template-areas:"t t" "p team" "p shape" "p wrap" "n wrap" "d go" "d back"; column-gap:8px; row-gap:0; align-content:start; padding:4px 10px; overflow:hidden; box-sizing:border-box; }
+    #teamMenu .card, #teamMenu .bigbtn { width:auto; max-width:none; min-width:0; box-sizing:border-box; margin:2px 0; }
+    #teamMenu .title { grid-area:t; font-size:18px !important; margin:0 0 1px; }
+    #teamMenu #teamPrevCard { grid-area:p; margin:2px 0; } #teamMenu #teamPrev { height:100% !important; min-height:150px; }
+    #teamMenu #teamCard { grid-area:team; } #teamMenu #shapeCard { grid-area:shape; } #teamMenu #wrapCard { grid-area:wrap; }
+    #teamMenu #nameCard { grid-area:n; } #teamMenu #diffCard { grid-area:d; align-self:start; } #teamMenu #startBtn { grid-area:go; } #teamMenu #teamBack { grid-area:back; }
+    #teamMenu .card { padding:4px 7px; } #teamMenu .bigbtn { padding:6px 10px; min-height:34px; font-size:13px; }
+    #teamMenu .row { gap:3px; } #teamMenu .pick { min-width:0; flex:1 1 17%; padding:2px 3px; } #teamMenu .pick .t { font-size:10px; } #teamMenu .pick .s { font-size:9px; line-height:1.1; }
+    #teamMenu #teamRow .pick .s { display:none; } #teamMenu #teamRow .pick .swatch { height:5px; margin-bottom:1px; }
+    #teamMenu #wrapRow .pick { flex:1 1 30%; min-height:30px; } #teamMenu #shapeRow .pick .s { display:none; }
+    #teamMenu input[type=text] { padding:4px 8px; font-size:12px; margin:0; } }
+  @media (orientation:portrait) { #teamMenu { overflow-y:auto; -webkit-overflow-scrolling:touch; } #teamMenu #wrapRow .pick { flex:1 1 30%; min-width:0; } #teamMenu #teamRow .pick .s { display:none; } }
   @media (orientation:portrait) { #teamMenu #teamPrev { height:120px !important; } #teamMenu #teamRow .pick { flex:1 1 30%; min-width:0; padding:4px 3px; } #teamMenu #teamRow .pick .t { font-size:12px; } #teamMenu #teamRow .pick .s { font-size:10px; margin-top:1px; } }
   @media (orientation:portrait) {
     #teamMenu { justify-content:flex-start; padding:8px 12px; }
@@ -277,24 +286,17 @@ setTimeout(function(){
 </div>
 
 <!-- TEAM SELECT -->
+<!-- owner Nov 3 2026 5:35 PM: team colours, car shape and wraps on ONE page (was two: CHOOSE YOUR TEAM + YOUR CAR); every pick is saved -->
 <div class="overlay hidden" id="teamMenu">
-  <h1 class="title" style="font-size:34px">CHOOSE YOUR TEAM</h1>
-  <div class="card" id="teamPrevCard" style="padding:6px"><canvas id="teamPrev" style="display:block;width:100%;height:170px;border-radius:12px;background:#07090f"></canvas></div><!-- owner Nov 3 2026: see the car you are picking -->
-  <div class="card"><div class="row" id="teamRow"></div></div>
-  <div class="card"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
-  <div class="card"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
-  <button class="bigbtn gold" id="toCarBtn">NEXT · YOUR CAR ›</button>
-  <button class="bigbtn alt" id="teamBack">‹ BACK</button>
-</div>
-
-<!-- YOUR CAR (owner Nov 2 2026: "an option to see what car you will pick and customize") -->
-<div class="overlay hidden" id="carMenu">
-  <h1 class="title" style="font-size:30px">YOUR CAR</h1>
-  <div class="card" id="carPrevCard" style="padding:6px"><canvas id="carPrev" style="display:block;width:100%;height:190px;border-radius:12px;background:#07090f"></canvas></div>
-  <div class="card"><h3>SHAPE</h3><div class="row" id="shapeRow"></div></div>
-  <div class="card"><h3>WRAP</h3><div class="row" id="wrapRow"></div></div>
+  <h1 class="title" style="font-size:30px">YOUR TEAM &amp; CAR <span id="carSaved" style="font-size:12px;color:#7dffb0;letter-spacing:1px;vertical-align:middle;opacity:0;transition:opacity .3s">✓ SAVED</span></h1>
+  <div class="card" id="teamPrevCard" style="padding:6px"><canvas id="teamPrev" style="display:block;width:100%;height:170px;border-radius:12px;background:#07090f"></canvas></div>
+  <div class="card" id="teamCard"><h3>TEAM COLOURS</h3><div class="row" id="teamRow"></div></div>
+  <div class="card" id="shapeCard"><h3>SHAPE</h3><div class="row" id="shapeRow"></div></div>
+  <div class="card" id="wrapCard"><h3>WRAP</h3><div class="row" id="wrapRow"></div></div>
+  <div class="card" id="nameCard"><h3>DRIVER NAME</h3><input type="text" id="driverName" maxlength="16" placeholder="Player nickname" style="width:100%"></div>
+  <div class="card" id="diffCard"><h3>AI DIFFICULTY</h3><div class="row" id="diffRow"></div></div>
   <button class="bigbtn gold" id="startBtn">🏁 START WEEKEND</button>
-  <button class="bigbtn alt" id="carBack">‹ BACK</button>
+  <button class="bigbtn alt" id="teamBack">‹ BACK</button>
 </div>
 
 <!-- QUALI RESULT / GRID -->
@@ -2609,7 +2611,11 @@ function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixe
 
 /* ================= MENU FLOW ================= */
 let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
-function show(id){ if(id && Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; } /* never leave SKIP QUALI over a menu */ carPreviewShow(id==='carMenu'); teamPrevShow(id==='teamMenu'); hubPrevShow(id==='hub'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+/* owner Nov 3 2026 5:35 PM "make sure the car can be saved and shows at the start menu every time": team, shape, wrap, difficulty and
+   driver name are saved on every tap and read back at load - the start-menu showroom builds from them */
+try{ const st=localStorage.getItem('f1_team'); const ft=st&&TEAMS.find(t=>t.id===st); if(ft) selTeam=ft; const sd=localStorage.getItem('f1_diff'); if(sd&&['ROOKIE','PRO','CHEAT'].includes(sd)) selDiff=sd; }catch(e){}
+function carSavedFlash(){ const e=document.getElementById('carSaved'); if(!e) return; e.style.opacity=1; clearTimeout(e._t); e._t=setTimeout(()=>{ e.style.opacity=0; },1200); }
+function show(id){ if(id && Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; } /* never leave SKIP QUALI over a menu */ teamPrevShow(id==='teamMenu'); hubPrevShow(id==='hub'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 /* owner Nov 3 2026 8:07 AM: "make track course visible to see it and how long it is" - a map of each circuit on its button */
 let __gpLine=null;
 function trackOutline(t){
@@ -2653,7 +2659,7 @@ function initMenus(){
   for(const t of TEAMS){
     const d=document.createElement('div'); d.className='pick'+(t.id===selTeam.id?' sel':'');
     d.innerHTML=`<div class="swatch" style="background:${t.accent}"></div><div class="t">${t.name}</div><div class="s">${t.pace===0?'Top pace':t.pace===-0.15?'Midfield':'Backmarker'}</div>`;
-    d.onclick=()=>{ selTeam=t; [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); };
+    d.onclick=()=>{ selTeam=t; try{ localStorage.setItem('f1_team',t.id); }catch(e){} [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); carSavedFlash(); };
     tm.appendChild(d);
   }
   // difficulty = how much the AI cheats
@@ -2661,7 +2667,7 @@ function initMenus(){
   for(const [id,label,sub] of [['ROOKIE','ROOKIE','Gentle rivals'],['PRO','PRO','They fight hard'],['CHEAT','RUTHLESS','Full cheat mode']]){
     const d=document.createElement('div'); d.className='pick'+(id===selDiff?' sel':'');
     d.innerHTML=`<div class="t">${label}</div><div class="s">${sub}</div>`;
-    d.onclick=()=>{ selDiff=id; [...dr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); };
+    d.onclick=()=>{ selDiff=id; try{ localStorage.setItem('f1_diff',id); }catch(e){} [...dr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carSavedFlash(); };
     dr.appendChild(d);
   }
   updateForecast();
@@ -2720,11 +2726,11 @@ function initMenus(){
   $('teamBack').onclick=()=>show('trackMenu');
   $('toTeamBtn').onclick=()=>show('teamMenu');
   $('startBtn').onclick=startWeekend;
-  $('toCarBtn').onclick=()=>show('carMenu'); $('carBack').onclick=()=>show('teamMenu');
   const sr=$('shapeRow'); sr.innerHTML='';
-  for(const [id,name,sub] of [['modern','MODERN','2022-style, wide body'],['classic','CLASSIC','1994-style, low nose']]){ const d=document.createElement('div'); d.className='pick'+((localStorage.getItem('f1_shape')||'modern')===id?' sel':''); d.innerHTML=`<div class="t">${name}</div><div class="s">${sub}</div>`; d.onclick=()=>{ localStorage.setItem('f1_shape',id); [...sr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); }; sr.appendChild(d); }
+  for(const [id,name,sub] of [['modern','MODERN','2022-style, wide body'],['classic','CLASSIC','1994-style, low nose']]){ const d=document.createElement('div'); d.className='pick'+((localStorage.getItem('f1_shape')||'modern')===id?' sel':''); d.innerHTML=`<div class="t">${name}</div><div class="s">${sub}</div>`; d.onclick=()=>{ localStorage.setItem('f1_shape',id); [...sr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); carSavedFlash(); }; sr.appendChild(d); }
+  try{ const dn=$('driverName'); const sv=localStorage.getItem('f1_name'); if(sv && !dn.value) dn.value=sv; dn.addEventListener('input',()=>{ try{ localStorage.setItem('f1_name',dn.value.slice(0,16)); }catch(e){} carSavedFlash(); }); }catch(e){}
   const wr=$('wrapRow'); wr.innerHTML='';
-  for(const w of WRAPS){ const d=document.createElement('div'); d.className='pick wrap'+((localStorage.getItem('f1_wrap')||'team')===w.id?' sel':''); d.innerHTML=`<span class="sw" style="background:${w.sw||'#8a96a8'}"></span><div class="s">${w.name}</div>`; d.onclick=()=>{ localStorage.setItem('f1_wrap',w.id); [...wr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); }; wr.appendChild(d); }
+  for(const w of WRAPS){ const d=document.createElement('div'); d.className='pick wrap'+((localStorage.getItem('f1_wrap')||'team')===w.id?' sel':''); d.innerHTML=`<span class="sw" style="background:${w.sw||'#8a96a8'}"></span><div class="s">${w.name}</div>`; d.onclick=()=>{ localStorage.setItem('f1_wrap',w.id); [...wr.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); carSavedFlash(); }; wr.appendChild(d); }
   $('raceBtn').onclick=()=>{ $('gridMenu').classList.add('hidden'); HUD.show(true); Race.beginRace(); };
   $('resMenu').onclick=()=>{ show('menu'); renderMenuCode(); };
   $('resNext').onclick=()=>{
