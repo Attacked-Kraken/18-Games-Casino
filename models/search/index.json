@@ -1,61 +1,5 @@
 [
  {
-  "slug": "race-track-game-ready",
-  "words": "race track game ready",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 12
- },
- {
-  "slug": "grand-prix-track",
-  "words": "grand prix track",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 9
- },
- {
-  "slug": "kart-track",
-  "words": "kart track",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 12
- },
- {
-  "slug": "street-circuit-city",
-  "words": "street circuit city",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 1
- },
- {
-  "slug": "speedway-track",
-  "words": "speedway track",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 11
- },
- {
-  "slug": "race-circuit-low-poly",
-  "words": "race circuit low poly",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 4
- },
- {
-  "slug": "racing-circuit",
-  "words": "racing circuit",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 12
- },
- {
-  "slug": "race-track",
-  "words": "race track",
-  "for": "",
-  "date": "2026-11-03",
-  "count": 12
- },
- {
   "slug": "sci-fi-hover-car",
   "words": "sci-fi hover car",
   "for": "",
@@ -262,6 +206,13 @@
   "slug": "formula-race-car",
   "words": "formula race car",
   "for": "F1 cars",
+  "date": "2026-10-19",
+  "count": 12
+ },
+ {
+  "slug": "race-track",
+  "words": "race track",
+  "for": "F1 / Exotic Racer / Apex Moto circuits",
   "date": "2026-10-19",
   "count": 12
  },
