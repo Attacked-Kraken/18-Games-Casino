@@ -78,6 +78,7 @@
       "start": [
         "#quickBtn",
         "#toTeamBtn",
+        "#toCarBtn",
         "#startBtn",
         "#qualiSkip",
         "#raceBtn"
