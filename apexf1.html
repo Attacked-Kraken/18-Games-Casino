@@ -301,6 +301,12 @@ setTimeout(function(){
   <b style="color:#ffd76a">POINTS:</b> 25-18-15-12-10-8-6-4-2-1, +1 for fastest lap (top 10).<br>
   <b style="color:#ffd76a">RIVALS:</b> the AI cheats a little — rubber-band pace and hard defending when you're near. That's the game.
   </div>
+  <div class="card" id="credits" style="font-size:11px;line-height:1.5;opacity:.85">
+    <b style="color:#ffd76a">CREDITS</b> · car shapes from Sketchfab (CC-BY), repainted in our own colours:
+    <div style="margin-top:6px"><b>"Rb16 (PIA 2022 s13)"</b> by formula models maker, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/rb16-pia-2022-s13-ea3789cc2b7c46d18864945fc8ec87f1" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
+    <div style="margin-top:6px"><b>"Williams FW16 + Ayrton Senna"</b> by GRIP420, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/williams-fw16-ayrton-senna-ba86f97de7184b6b836458815897156f" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
+    <div class="row"></div>
+  </div>
   <button class="bigbtn alt" id="howClose">CLOSE</button>
 </div>
 
@@ -1052,7 +1058,72 @@ function liveryTexture(color, teamName, carNumber){
   t.anisotropy = 4;
   __liveryCache[key]=t; return t;
 }
-function buildCarMesh(color, teamName, carNumber, accent){
+/* ================= OWNER Nov 2 2026 8:06 PM: "change the F1 cars to the Sketchfab ones" =================
+   Two fetched shapes (CC-BY, credits on the credits screen): 'modern' = models/fetched/rb16-pia-2022-s13-ea3789.glb,
+   'classic' = models/fetched/williams-fw16-ayrton-senna-ba86f9.glb. SHAPES ONLY: every baked livery / sponsor / tyre-brand
+   texture is dropped and the body wears our own paint (team colour now, the wrap picker next). The model's own wheels and
+   the driver figure are removed - the game's instanced wheels (spin, steer, REALITY contact) stay as they were.
+   Loaded once at boot; a car built before the model is ready keeps the code-built body (fallback). */
+const CM = { modern:{ file:'models/fetched/rb16-pia-2022-s13-ea3789.glb', drop:/Meshpart2Mtl|Meshpart6Mtl/, body:/Paint|Palette|FrontWing|Meshpart16|Meshpart7/ },
+             classic:{ file:'models/fetched/williams-fw16-ayrton-senna-ba86f9.glb', drop:/Wheel|Senna_/, body:/Body/ }, _boot:null };
+function CMBoot(){
+  if(CM._boot) return CM._boot;
+  CM._boot = (async()=>{
+    const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
+    for(const kind of ['modern','classic']){ const M = CM[kind]; try{
+      const buf = await fetch(M.file).then(r=>r.arrayBuffer());
+      const gltf = await new GLTFLoader().parseAsync(buf, '');
+      const root = gltf.scene; root.updateMatrixWorld(true);
+      // drop the model's own wheels + driver, find the tyres' size and axle positions from the wheel meshes first
+      const wheels = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'') && /Wheel|Meshpart2Mtl|Meshpart6Mtl/.test(o.material.name||'')) wheels.push(o); });
+      const wb = new THREE.Box3(); for(const w of wheels) wb.expandByObject(w);
+      const box = new THREE.Box3().setFromObject(root), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+      // nose = the end whose highest point is LOWER (the rear wing stands tall at the back)
+      let yA=0,yB=0, v=new THREE.Vector3();
+      root.traverse(o=>{ if(!o.isMesh) return; const pa=o.geometry.attributes.position; for(let i=0;i<pa.count;i+=4){ v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld); const rz=(v.z-c.z)/sz.z; if(rz>0.35) yA=Math.max(yA,v.y-box.min.y); else if(rz<-0.35) yB=Math.max(yB,v.y-box.min.y); } });
+      const noseZ = yA < yB ? 1 : -1;
+      // axle positions along the car from the wheel vertices (front group / rear group)
+      let fz=0,fn=0,rz=0,rn=0, ymax=0, xmax=0;
+      for(const w of wheels){ const pa=w.geometry.attributes.position; for(let i=0;i<pa.count;i+=3){ v.fromBufferAttribute(pa,i).applyMatrix4(w.matrixWorld); const z=(v.z-c.z)*noseZ; if(z>0){fz+=z;fn++;} else {rz+=z;rn++;} ymax=Math.max(ymax,v.y-box.min.y); xmax=Math.max(xmax,Math.abs(v.x-c.x)); } }
+      const groundY = wheels.length ? wb.min.y : box.min.y; // the tyres' bottom is the ground (a stray bit below the car must not count)
+      const tyreR = (wheels.length? (wb.max.y-wb.min.y)/2 : 0.44) || 0.44, k = 0.44/tyreR; // every car gets the game's 0.44 tyre
+      const axF = fn? fz/fn*k : 2.35, axR = rn? rz/rn*k : -1.65, track = (xmax? xmax - 0.25*k : 1.02);
+      const tmp = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'')) tmp.push(o); }); for(const o of tmp) o.parent.remove(o);
+      // normalise: centre, nose along +x, ground at y=0, tyre radius 0.44
+      const body = new THREE.Group(); const inner = new THREE.Group();
+      root.traverse(o=>{ if(o.isMesh){ o.castShadow=!isTouch; o.userData.cmRole = M.body.test(o.material.name||'') ? 'body' : (/Glass/i.test(o.material.name||'') ? 'glass' : 'dark'); } });
+      inner.add(root); root.position.set(-c.x, -groundY, -c.z); inner.rotation.y = noseZ>0 ? Math.PI/2 : -Math.PI/2; body.add(inner); body.scale.setScalar(k);
+      M.body3d = body; M.wheelSpec = [[axF,track,0.44],[axF,-track,0.44],[axR,track,0.44],[axR,-track,0.44]]; M.ready = true;
+    }catch(e){ console.warn('car model', kind, e); } }
+    return CM;
+  })();
+  return CM._boot;
+}
+CMBoot(); window.__cm = CM;
+function cmBody(kind, color, accent){
+  const M = CM[kind]; if(!M || !M.ready) return null;
+  const paint = new THREE.MeshStandardMaterial({ color, roughness:0.22, metalness:0.7 });
+  const dark = new THREE.MeshStandardMaterial({ color:0x15171c, roughness:0.5, metalness:0.5 });
+  const glass = new THREE.MeshStandardMaterial({ color:0x0b1020, roughness:0.05, metalness:0.9, transparent:true, opacity:0.85 });
+  const b = M.body3d.clone(true);
+  b.traverse(o=>{ if(o.isMesh) o.material = o.userData.cmRole==='body' ? paint : o.userData.cmRole==='glass' ? glass : dark; });
+  b.userData.paint = paint; b.userData.accent = accent;
+  return b;
+}
+function buildCarMesh(color, teamName, carNumber, accent, shape){
+  shape = shape || (carNumber % 2 ? 'modern' : 'classic');
+  const m3 = cmBody(shape, color, accent);
+  if(m3) return buildCarFromModel(m3, CM[shape].wheelSpec, color, accent, buildBoxBody(color, teamName, carNumber, accent));
+  const g=new THREE.Group();
+  const box = buildBoxBody(color, teamName, carNumber, accent); g.add(box);
+  buildCarWheels(g, color, accent, null);
+  mergeCarBody(box); // G-54: ~60 body parts become one mesh per material
+  wheelInstRegister(g); // G-54: wheel parts render through 4 shared instanced meshes
+  scene.add(g); // put the car on the track (lost in the car rebuild)
+  return g;
+}
+/* the code-built body (the car every F1 player saw before Nov 2 2026) - now also the FAR level of detail behind a model car */
+function buildBoxBody(color, teamName, carNumber, accent){
   accent = accent || '#ffd700';
   teamName = teamName||'APEX'; carNumber = carNumber||1;
   const g=new THREE.Group();
@@ -1217,14 +1288,28 @@ function buildCarMesh(color, teamName, carNumber, accent){
   }
 
   // === WHEELS with sidewall stripes ===
-  const tireGeo=new THREE.CylinderGeometry(0.44,0.44,0.5,20);
+  return g;
+}
+/* LOD: 20 model cars are ~1.4 M triangles - too many for a phone - so only cars within CAR_LOD_NEAR of the camera
+   show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
+const CAR_LOD_NEAR = 70;
+function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; L.near.visible=near; L.far.visible=!near; } }
+function buildCarFromModel(body, spec, color, accent, box){
+  const g=new THREE.Group(); g.add(body);
+  if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
+  buildCarWheels(g, color, accent, spec);
+  wheelInstRegister(g);
+  scene.add(g);
+  return g;
+}
+function buildCarWheels(g, color, accent, spec){
   const tireMat=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85});
   const stripeGeo=new THREE.TorusGeometry(0.375,0.028,8,28);
   const stripeMat=new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.35,metalness:0.35});
   const coverGeo=new THREE.CylinderGeometry(0.27,0.27,0.52,20);
   const coverMat=new THREE.MeshStandardMaterial({color,roughness:0.12,metalness:0.88});
   g.userData.wheels=[];
-  for(const [wx,wz,wr] of [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]]){
+  for(const [wx,wz,wr] of (spec || [[2.35,1.02,0.44],[2.35,-1.02,0.44],[-1.65,1.02,0.46],[-1.65,-1.02,0.46]])){
     const w=new THREE.Group();
     const tg=new THREE.CylinderGeometry(wr,wr,0.5,20);
     const tire=new THREE.Mesh(tg,tireMat); tire.rotation.x=Math.PI/2; tire.userData.instType='tire'; w.add(tire);
@@ -1236,12 +1321,8 @@ function buildCarMesh(color, teamName, carNumber, accent){
       new THREE.MeshStandardMaterial({color:new THREE.Color(accent),roughness:0.2,metalness:0.7}));
     cap.userData.instType='cap'; cap.position.z=0.261; w.add(cap);
     const cap2=cap.clone(); cap2.position.z=-0.261; cap2.rotation.y=Math.PI; w.add(cap2);
-    w.position.set(wx,0.44,wz); g.add(w); g.userData.wheels.push(w);
+    w.position.set(wx,wr,wz); g.add(w); g.userData.wheels.push(w);
   }
-  mergeCarBody(g); // G-54: ~60 body parts become one mesh per material
-  wheelInstRegister(g); // G-54: wheel parts render through 4 shared instanced meshes
-  scene.add(g); // put the car on the track (lost in the car rebuild)
-  return g;
 }
 
 /* ================= G-54: draw-call diet (identical picture, far fewer meshes) =================
@@ -1333,7 +1414,7 @@ class Car {
   constructor(name, team, isPlayer, skill){
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
-    this.mesh=buildCarMesh(team.color, team.name, 1, team.accent);
+    this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'));
     this.mesh.scale.setScalar(1.416); // G-73: the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
@@ -2012,6 +2093,7 @@ const Race = {
       lk.set(pp.x+fwd.x*40, pp.y+0.9, pp.z+fwd.z*40);
     }
     const k=1-Math.exp(-dt/(this.camMode===3?0.045:this.camMode===2?0.45:0.16)); // G-239: frame-rate-independent easing (the old dt*rate ran 3x hotter on a slow frame); broadcast gets the long, calm ease
+    if(window.__camLock){ const L=window.__camLock, pl=Race.player.mesh, pos=pl.getWorldPosition(new THREE.Vector3()), f=new THREE.Vector3(1,0,0).applyQuaternion(pl.quaternion), r=new THREE.Vector3(0,0,1).applyQuaternion(pl.quaternion); camera.position.set(pos.x+f.x*L[0]+r.x*L[2], pos.y+L[1], pos.z+f.z*L[0]+r.z*L[2]); camera.lookAt(pos.x,pos.y+0.6,pos.z); return; } // robot close-up look (REALITY camera checks)
     camera.position.lerp(cp,k);
     // shake (never in broadcast - G-239: that camera stays steady, full stop)
     if(this.shake>0 && this.camMode!==2){ camera.position.x+=rand(-1,1)*this.shake*0.35; camera.position.y+=rand(-1,1)*this.shake*0.25; }
@@ -2325,6 +2407,7 @@ function renderHub(){
   <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'—'}</div>`;
 }
 async function startWeekend(){
+  try{ await CMBoot(); }catch(e){} // the owner's car shapes (a few MB, usually loaded while he was in the menus)
   const name=($('driverName').value||'YOU').toUpperCase().slice(0,16)||'YOU';
   const cheat={ROOKIE:0.3,PRO:1.0,CHEAT:1.8}[selDiff];
   const aiDelta={ROOKIE:-0.12,PRO:0,CHEAT:0.06}[selDiff];
@@ -2460,7 +2543,7 @@ function loop(t){
     if(Race.mode==='race' && Math.random()<frameSec) GP.ev.order = Race.positions().map(c=>c.name);
   }
   // draw the 3D world (was missing — black screen)
-  if(glOK&&renderer&&scene&&camera){ wheelInstUpdate(); renderer.render(scene,camera); }
+  if(glOK&&renderer&&scene&&camera){ carLodUpdate(); wheelInstUpdate(); renderer.render(scene,camera); }
 }
 /* ================= G-48: the owner's cockpit kit (kit/cockpit) =================
    Parsed at boot like the track. Rides inside the player's car (hidden unless
@@ -2666,6 +2749,7 @@ function _realitySD(x, z){ // nearest track point -> arclength s + lateral d of 
 }
 window.__reality={
   kind: 'f1',
+  get camera(){ return camera; },
   get player(){ return (Race.player && Race.player.mesh) || null; },
   get others(){ return Race.cars ? Race.cars.filter(c=>!c.isPlayer && c.mesh).map(c=>c.mesh) : []; },
   get contact(){ return Race.player ? _realityAnchors : []; },
@@ -2688,7 +2772,7 @@ requestAnimationFrame(loop);
 // G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
 // with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
 (function(){ try{ const q=new URLSearchParams(location.search).get('test'); if(q!=='grid') return;
-  startWeekend().then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
+  CMBoot().then(()=>startWeekend()).then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
 }catch(e){} })();
 </script>
 </body>

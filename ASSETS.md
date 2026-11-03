@@ -547,7 +547,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/williams-fw16-ayrton-senna-ba86f97de7184b6b836458815897156f
 - license: CC-BY 4.0
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "GRIP420" on its credits screen)
+- used in: apexf1.html (credits on its Rules & Controls screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/rb16-pia-2022-s13-ea3789.glb
@@ -556,5 +556,5 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/rb16-pia-2022-s13-ea3789cc2b7c46d18864945fc8ec87f1
 - license: CC-BY 4.0
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "formula models maker" on its credits screen)
+- used in: apexf1.html (credits on its Rules & Controls screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
