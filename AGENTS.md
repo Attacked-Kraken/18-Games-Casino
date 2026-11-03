@@ -1,3 +1,5 @@
+**OLD WORK TRASHED + NO MORE G-NUMBERS (owner, Nov 3 2026 5:17 PM): every old G-job, jobs/QUEUE.md line and jobs/G-NN.md report is archive - never finish, restructure or report it. Rounds come from MAC as T<window>-<n> (tester) / A<window>-<n> (auditor). The ONLY paperwork is findings/<game>/F-x-NNN.md + library/open/<game>.md (findings/README.md). No report files: end a round with one chat line 'ROUND DONE <round id>: <finding ids or none>'.**
+
 **PHASE 2 (owner, Nov 3 2026): read PHASE-2.md FIRST. Muses do SMALL jobs only - no 3D, cameras, physics, scenery or kit/ files. Those go to Claude with one HELP-VP line.**
 
 **PHASE 2 CREWS (owner, Nov 3 2026 4:35 PM): every window is a TESTER or an AUDITOR of ONE game (table in PHASE-2.md). A problem is filed as ONE finding file - `findings/README.md` says exactly how; the auditor sorts it SMALL (fixes it) or FOR-CLAUDE (Claude fixes it). Each game's live status page is `library/open/<game>.md`.**

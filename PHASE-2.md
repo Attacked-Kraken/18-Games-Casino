@@ -46,6 +46,8 @@ owner notes -> Claude sorts them -> 3D/engine work: Claude fixes and shows pictu
 small work: one-line job to a Muse -> robot merges -> owner plays -> thumbs up or next notes.
 One game at a time until it is done.
 
+**OLD WORK TRASHED + NO MORE G-NUMBERS (owner, Nov 3 2026 5:17 PM): every old G-job, jobs/QUEUE.md line and jobs/G-NN.md report is archive - never finish, restructure or report it. Rounds come from MAC as T<window>-<n> (tester) / A<window>-<n> (auditor). The ONLY paperwork is findings/<game>/F-x-NNN.md + library/open/<game>.md (findings/README.md). No report files: end a round with one chat line 'ROUND DONE <round id>: <finding ids or none>'.**
+
 ## Crews (owner Nov 3 2026 4:35 PM, LOCKED) - 5 testers, 5 auditors, Claude fixes
 | Game | Tester (plays + measures) | Auditor (checks + sorts) |
 |---|---|---|
