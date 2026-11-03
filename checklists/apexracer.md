@@ -3,7 +3,7 @@
 Builder window 6, G-270 (Oct 24 2026). One measurable item per line, numbers word for word from the source file.
 Units: the game world is 1 unit = 1 metre (no unitsPerMetre declared in its REALITY hook), so readings compare directly.
 
-- [ ] R01 | The race starts with a countdown and no car moves before GO | SOURCE: rules/racer.md | NUMBERS: 3-2-1-GO, no moving before GO | MEASURE: __erc.startRace a race; while R.t < 0 hold gas via __reality.go(true) - the player position is unchanged; after R.t >= 0 the player moves | TEST: tester-chk-r01
+- [x] R01 | The race starts with a countdown and no car moves before GO | SOURCE: rules/racer.md | NUMBERS: 3-2-1-GO, no moving before GO | MEASURE: __erc.startRace a race; while R.t < 0 hold gas via __reality.go(true) - the player position is unchanged; after R.t >= 0 the player moves | TEST: tester-chk-r01 | RESULT: OK (measured 0.000 m before GO, 126 samples x 2 runs; 31.9 m after GO)
 - [ ] R02 | Laps count only when the checkpoints are passed in order - a partial loop never counts | SOURCE: rules/racer.md | NUMBERS: must be passed in order, doesn't count | MEASURE: drive the player less than one full track length (R.T.N of progress) - the lap count rises by 0; one full length - it rises by exactly 1 | TEST: tester-chk-r02
 - [ ] R03 | Traffic cars drive in their lanes | SOURCE: rules/racer.md | NUMBERS: drive in their lanes | MEASURE: census R.traffic while driving: each traffic car's lateral offset from the track centre line stays inside the road half-width | TEST: tester-chk-r03
 - [ ] R04 | Traffic cars stop at lights | SOURCE: rules/racer.md | NUMBERS: stop at lights | MEASURE: at a red traffic light on the course a traffic car's speed reads 0 until the light changes | TEST: tester-chk-r04
