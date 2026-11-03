@@ -1,3 +1,5 @@
+**PHASE 2 (owner, Nov 3 2026): read PHASE-2.md FIRST. Muses do SMALL jobs only - no 3D, cameras, physics, scenery or kit/ files. Those go to Claude with one HELP-VP line.**
+
 **FRESH START (owner, Oct 19 2026): all old J-jobs are gone. Work ONLY on G-jobs the owner sends - read jobs/README.md first.**
 
 # Read this first (every AI helper and person working in this repo)
