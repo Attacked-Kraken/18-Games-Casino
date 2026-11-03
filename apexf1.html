@@ -47,6 +47,19 @@
     #teamMenu input[type=text] { padding:7px 10px; margin-bottom:2px; }
   }
   .hidden { display:none !important; }
+  #stageCv { position:fixed; inset:0; width:100%; height:100%; display:none; z-index:39; }
+  body.onstage #stageCv { display:block; }
+  body.onstage #menu { background:linear-gradient(90deg, rgba(3,6,12,.94) 0, rgba(3,6,12,.90) 36%, rgba(3,6,12,.35) 52%, rgba(3,6,12,0) 68%); backdrop-filter:none; -webkit-backdrop-filter:none; align-items:flex-start; justify-content:center; padding-left:max(18px, env(safe-area-inset-left)); }
+  body.onstage #menu .title, body.onstage #menu .menuSub, body.onstage #menu .bigbtn, body.onstage #menu .card { width:min(360px, 40vw); margin-left:0; margin-right:0; text-align:left; }
+  body.onstage #menu .title { text-align:left; font-size:clamp(26px,4.2vw,44px); margin:0 0 2px; }
+  body.onstage #menu .title small { letter-spacing:5px; }
+  body.onstage #menu .menuSub { font-size:12px; margin:2px 0 8px; }
+  body.onstage #menu .bigbtn { margin:3px 0; padding:9px 14px; text-align:left; }
+  body.onstage #menu .card { margin:6px 0 0; padding:8px 10px; }
+  @media (orientation:portrait) { body.onstage #menu { background:linear-gradient(180deg, rgba(3,6,12,0) 0, rgba(3,6,12,.2) 30%, rgba(3,6,12,.94) 44%, rgba(3,6,12,.96) 100%); align-items:center; justify-content:flex-end; padding-bottom:calc(10px + env(safe-area-inset-bottom)); }
+    body.onstage #menu .title, body.onstage #menu .menuSub, body.onstage #menu .bigbtn, body.onstage #menu .card { width:min(420px, 92vw); text-align:center; } body.onstage #menu .title { text-align:center; } body.onstage #menu .bigbtn { text-align:center; } }
+  @media (orientation:landscape) and (max-height:500px) { body.onstage #menu { flex-direction:column; flex-wrap:nowrap; justify-content:center; align-content:flex-start; padding:6px 12px; }
+    body.onstage #menu .title, body.onstage #menu .menuSub, body.onstage #menu .card { flex:none; } body.onstage #menu .title { font-size:22px !important; margin:0 0 2px; } body.onstage #menu .title small { font-size:9px; letter-spacing:4px; margin-top:0; } body.onstage #menu .menuSub { display:none; } body.onstage #menu .bigbtn { flex:none; margin:2px 0; padding:5px 12px; font-size:13px; width:min(300px,38vw); min-height:30px; } body.onstage #menu .card { width:min(300px,38vw); padding:4px 8px; margin-top:3px; } body.onstage #menu .card h3 { display:inline; margin-right:6px; } body.onstage #menu .card div { display:inline; font-size:11px !important; } body.onstage #menu .card div + div { display:none; } }
   h1.title { font-size:clamp(30px,6vw,58px); font-weight:900; letter-spacing:2px; background:linear-gradient(180deg,#fff,#ff5a5a 55%,#c00); -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; }
   h1.title small { display:block; font-size:clamp(11px,2vw,15px); letter-spacing:8px; color:#9fb6d8; -webkit-text-fill-color:#9fb6d8; margin-top:4px; }
   .menuSub { color:#8fa8c8; font-size:14px; margin:8px 0 18px; text-align:center; max-width:520px; }
@@ -162,6 +175,7 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<canvas id="stageCv"></canvas><!-- owner Nov 2 2026: the F1 start screen shows YOUR car on a lit pit-lane stage behind the menu -->
 <script>
 // Boot watchdog: if the game module fails (e.g. three.module.min.js blocked), explain instead of black screen.
 setTimeout(function(){
@@ -1154,34 +1168,48 @@ function wrapTexture(id){
   else if(id==='flame'){ x.fillStyle='#141a5e'; x.fillRect(0,0,W,W); for(let i=0;i<26;i++){ const g=x.createLinearGradient(0,W,0,W*0.3); g.addColorStop(0,'#ff6a00'); g.addColorStop(0.6,'#ff2a00'); g.addColorStop(1,'rgba(255,210,58,0)'); x.fillStyle=g; x.beginPath(); const bx=i*22; x.moveTo(bx,W); x.quadraticCurveTo(bx+r(-30,30),W*0.55,bx+r(-10,10),W*r(0.15,0.4)); x.quadraticCurveTo(bx+r(10,40),W*0.6,bx+28,W); x.closePath(); x.fill(); } x.fillStyle='#ffd23a'; x.font='bold 36px sans-serif'; x.fillText('VOLCANIC',40,80); }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; __wrapCache[id]=t; return t;
 }
-/* the car preview on the YOUR CAR screen: its own small renderer, the chosen shape slowly turning on a lit stage */
-const CP = { r:null, scene:null, cam:null, car:null, on:false };
-function carPreviewShow(on){
-  CP.on=on; if(!on) return;
-  const cv=$('carPrev'); if(!CP.r){ try{ CP.r=new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:false}); CP.r.setPixelRatio(Math.min(2,devicePixelRatio||1)); CP.r.outputColorSpace=THREE.SRGBColorSpace; }catch(e){ return; }
-    CP.scene=new THREE.Scene(); CP.scene.background=new THREE.Color(0x07090f);
-    CP.cam=new THREE.PerspectiveCamera(30, 2, 0.1, 100); CP.cam.position.set(6.2,2.2,6.2);
-    CP.scene.add(new THREE.HemisphereLight(0xdde8ff,0x202030,1.2)); const k=new THREE.DirectionalLight(0xffffff,2.2); k.position.set(5,8,4); CP.scene.add(k); const f=new THREE.DirectionalLight(0x9fd8ff,0.9); f.position.set(-6,3,-4); CP.scene.add(f);
-    const floor=new THREE.Mesh(new THREE.CircleGeometry(6,48), new THREE.MeshStandardMaterial({color:0x0e1220, roughness:0.35, metalness:0.4})); floor.rotation.x=-Math.PI/2; CP.scene.add(floor);
-    const ring=new THREE.Mesh(new THREE.RingGeometry(4.6,4.8,64), new THREE.MeshBasicMaterial({color:0x19e6ff})); ring.rotation.x=-Math.PI/2; ring.position.y=0.01; CP.scene.add(ring); }
-  carPreviewBuild();
+/* STUDIOS: the YOUR CAR preview and the start-screen stage are the same thing - a small renderer, lights, a floor, the chosen car turning */
+function makeStudio(canvas, big){
+  const S={ canvas, r:null, scene:null, cam:null, car:null, on:false, big:!!big, t:0 };
+  try{ S.r=new THREE.WebGLRenderer({canvas, antialias:true, alpha:false, powerPreference:'low-power'}); S.r.setPixelRatio(Math.min(big?1.5:2,devicePixelRatio||1)); S.r.outputColorSpace=THREE.SRGBColorSpace; }catch(e){ return S; }
+  S.scene=new THREE.Scene(); S.scene.background=new THREE.Color(big?0x05070d:0x07090f); if(big) S.scene.fog=new THREE.Fog(0x05070d, 14, 40);
+  S.cam=new THREE.PerspectiveCamera(big?34:30, 2, 0.1, 120);
+  S.scene.add(new THREE.HemisphereLight(0xdde8ff,0x202030,big?0.9:1.2)); const k=new THREE.DirectionalLight(0xffffff,2.2); k.position.set(5,8,4); S.scene.add(k); const f=new THREE.DirectionalLight(0x9fd8ff,0.9); f.position.set(-6,3,-4); S.scene.add(f);
+  const floor=new THREE.Mesh(new THREE.CircleGeometry(big?40:6,64), new THREE.MeshStandardMaterial({color:0x0e1220, roughness:0.4, metalness:0.35})); floor.rotation.x=-Math.PI/2; S.scene.add(floor);
+  const ring=new THREE.Mesh(new THREE.RingGeometry(4.6,4.8,64), new THREE.MeshBasicMaterial({color:0x19e6ff})); ring.rotation.x=-Math.PI/2; ring.position.y=0.01; S.scene.add(ring);
+  if(big){ // pit-lane stage: grid lines, neon light bars, a pit wall, a gantry
+    const grid=new THREE.GridHelper(80, 40, 0x1a2a44, 0x121a2c); grid.position.y=0.005; S.scene.add(grid);
+    for(let i=0;i<8;i++){ const bar=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,6), new THREE.MeshBasicMaterial({color:i%2?0xff2bd6:0x19e6ff})); bar.position.set(-14+i*4, 3.4, -10.5); S.scene.add(bar); const pole=new THREE.Mesh(new THREE.BoxGeometry(0.1,3.4,0.1), new THREE.MeshStandardMaterial({color:0x222a38})); pole.position.set(-14+i*4,1.7,-13.3); S.scene.add(pole); }
+    const wall=new THREE.Mesh(new THREE.BoxGeometry(60,1.1,0.4), new THREE.MeshStandardMaterial({color:0x1b2436, roughness:0.8})); wall.position.set(0,0.55,-13.5); S.scene.add(wall);
+    const stripe=new THREE.Mesh(new THREE.BoxGeometry(60,0.12,0.42), new THREE.MeshBasicMaterial({color:0xffd76a})); stripe.position.set(0,1.0,-13.5); S.scene.add(stripe);
+    for(let i=0;i<3;i++){ const sp=new THREE.SpotLight(i===1?0xffffff:0x9fd8ff, 60, 30, 0.5, 0.6, 1.2); sp.position.set(-6+i*6, 7, 4); sp.target.position.set(0,0,0); S.scene.add(sp); S.scene.add(sp.target); }
+    const glow=new THREE.Mesh(new THREE.CircleGeometry(5.2,64), new THREE.MeshBasicMaterial({color:0x19e6ff, transparent:true, opacity:0.08})); glow.rotation.x=-Math.PI/2; glow.position.y=0.02; S.scene.add(glow);
+  }
+  return S;
 }
-function carPreviewBuild(){
-  if(!CP.scene) return; if(CP.car){ CP.scene.remove(CP.car); CP.car=null; }
-  CMBoot().then(()=>{ if(!CP.on) return; if(CP.car){ CP.scene.remove(CP.car); }
+function studioBuild(S){
+  if(!S.scene) return; if(S.car){ S.scene.remove(S.car); S.car=null; }
+  CMBoot().then(()=>{ if(!S.on) return; if(S.car){ S.scene.remove(S.car); }
     const shape=localStorage.getItem('f1_shape')||'modern', wrap=localStorage.getItem('f1_wrap')||'team';
     const body=cmBody(shape, selTeam.color, selTeam.accent, wrap); const g=new THREE.Group();
     if(body){ g.add(body); for(const [wx,wz,wr] of CM[shape].wheelSpec){ const w=new THREE.Group(); const t=new THREE.Mesh(new THREE.CylinderGeometry(wr,wr,0.5,20), new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85})); t.rotation.x=Math.PI/2; w.add(t); const cv2=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,20), new THREE.MeshStandardMaterial({color:selTeam.color,roughness:0.12,metalness:0.88})); cv2.rotation.x=Math.PI/2; w.add(cv2); for(const sz of [0.255,-0.255]){ const st=new THREE.Mesh(new THREE.TorusGeometry(0.375,0.028,8,28), new THREE.MeshStandardMaterial({color:new THREE.Color(selTeam.accent||'#ffd700'),roughness:0.35,metalness:0.35})); st.position.z=sz; w.add(st);} w.position.set(wx,wr,wz); g.add(w); } }
     else { const b=buildBoxBody(selTeam.color, selTeam.name, 1, selTeam.accent); g.add(b); }
-    CP.car=g; CP.scene.add(g); });
+    S.car=g; S.scene.add(g); });
 }
-function carPreviewTick(){
-  if(!CP.on || !CP.r || !CP.car) return;
-  const cv=$('carPrev'); const w=cv.clientWidth|0, h=cv.clientHeight|0; const pr=CP.r.getPixelRatio();
-  if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ CP.r.setSize(w,h,false); CP.cam.aspect=w/h; CP.cam.updateProjectionMatrix(); }
-  CP.car.rotation.y+=0.006; CP.cam.lookAt(0,0.5,0); CP.r.render(CP.scene, CP.cam);
+function studioTick(S){
+  if(!S.on || !S.r || !S.car) return;
+  const cv=S.canvas; const w=cv.clientWidth|0, h=cv.clientHeight|0; const pr=S.r.getPixelRatio();
+  if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ S.r.setSize(w,h,false); S.cam.aspect=w/h; S.cam.updateProjectionMatrix(); }
+  S.t+=0.006;
+  if(S.big){ const port=h>w; const a=0.55+Math.sin(S.t*0.35)*0.5; const R=port?14:7.6; S.cam.position.set(Math.cos(a)*R+(port?0:1.8), port?3.2:1.7, Math.sin(a)*R); S.cam.lookAt(port?0:-2.2, port?-2.4:0.55, 0); S.car.rotation.y=-0.3; }
+  else { S.car.rotation.y+=0.006; S.cam.position.set(6.2,2.2,6.2); S.cam.lookAt(0,0.5,0); }
+  S.r.render(S.scene, S.cam);
 }
-
+const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }; window.__st = ST;
+function carPreviewShow(on){ if(!CP.s && on) CP.s=makeStudio($('carPrev'), false); if(CP.s){ CP.s.on=on; if(on) studioBuild(CP.s); } }
+function carPreviewBuild(){ if(CP.s && CP.s.on) studioBuild(CP.s); if(ST.s && ST.s.on) studioBuild(ST.s); }
+function stageShow(on){ document.body.classList.toggle('onstage', !!on); if(!ST.s && on) ST.s=makeStudio($('stageCv'), true); if(ST.s){ ST.s.on=on; if(on) studioBuild(ST.s); } }
+function carPreviewTick(){ if(CP.s) studioTick(CP.s); if(ST.s) studioTick(ST.s); }
 function buildCarMesh(color, teamName, carNumber, accent, shape, wrap){
   shape = shape || (carNumber % 2 ? 'modern' : 'classic');
   const m3 = cmBody(shape, color, accent, wrap);
@@ -2350,7 +2378,7 @@ function fmtTime(t){ const m=Math.floor(t/60), s=t-m*60; return `${m}:${s.toFixe
 
 /* ================= MENU FLOW ================= */
 let selTrack='grandprix', selLaps=5, selTeam=TEAMS[0], selDiff='PRO';
-function show(id){ carPreviewShow(id==='carMenu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
+function show(id){ carPreviewShow(id==='carMenu'); stageShow(id==='menu'); ['menu','trackMenu','teamMenu','carMenu','gridMenu','resultMenu','hub','friendOv','howMenu','tournMenu'].forEach(x=>$(x).classList.add('hidden')); if(id)$(id).classList.remove('hidden'); }
 function initMenus(){
   // tracks
   const tr=$('trackRow'); tr.innerHTML='';
@@ -2846,6 +2874,7 @@ window.__reality={
 window.__apexBoot=true;
 initMenus();
 renderMenuCode();
+if(!$('menu').classList.contains('hidden')) stageShow(true);
 requestAnimationFrame(loop);
 // G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
 // with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
