@@ -1169,6 +1169,12 @@ function liveryTexture(color, teamName, carNumber){
    Loaded once at boot; a car built before the model is ready keeps the code-built body (fallback). */
 const CM = { modern:{ file:'models/fetched/rb16-pia-2022-s13-ea3789.glb', drop:/Meshpart2Mtl|Meshpart6Mtl/, body:/Paint|Palette|FrontWing|Meshpart16|Meshpart7/ },
              classic:{ file:'models/fetched/williams-fw16-ayrton-senna-ba86f9.glb', drop:/Wheel|Senna_/, body:/Body/ }, _boot:null };
+function cmSoften(m){ // keeps the model's colours but makes printed brand words on tyres / suits unreadable
+  const img=m.map&&m.map.image; if(!img||!img.width) return m; const c=document.createElement('canvas'); c.width=c.height=20; const x=c.getContext("2d"); x.drawImage(img,0,0,20,20);
+  const c2=document.createElement('canvas'); c2.width=c2.height=256; const x2=c2.getContext('2d'); x2.imageSmoothingEnabled=true; x2.drawImage(c,0,0,256,256);
+  const t=new THREE.CanvasTexture(c2); t.flipY=m.map.flipY; t.colorSpace=m.map.colorSpace; t.wrapS=m.map.wrapS; t.wrapT=m.map.wrapT; const n=m.clone(); n.map=t; return n;
+}
+function cmWheelMeshes(kind, castShadow){ const M=CM[kind]; return (M&&M.wheelParts||[]).map(W=>{ const g=new THREE.Group(); for(const pt of W.parts){ const me=new THREE.Mesh(pt.geo, pt.mat); me.castShadow=castShadow; g.add(me); } g.userData.c=W.c; return g; }); }
 function CMBoot(){
   if(CM._boot) return CM._boot;
   CM._boot = (async()=>{
@@ -1191,10 +1197,13 @@ function CMBoot(){
       const groundY = wheels.length ? wb.min.y : box.min.y; // the tyres' bottom is the ground (a stray bit below the car must not count)
       const tyreR = (wheels.length? (wb.max.y-wb.min.y)/2 : 0.44) || 0.44, k = 0.44/tyreR; // every car gets the game's 0.44 tyre
       const axF = fn? fz/fn*k : 2.35, axR = rn? rz/rn*k : -1.65, track = (xmax? xmax - 0.25*k : 1.02);
-      const tmp = []; root.traverse(o=>{ if(o.isMesh && M.drop.test(o.material.name||'')) tmp.push(o); }); for(const o of tmp) o.parent.remove(o);
+      // owner Nov 3 2026 6:44 AM: the cars look exactly like the Sketchfab ones he picked - their own wheels, driver and parts stay; only the paint takes the wrap
+      const wheelMeshes = wheels.slice();
       // normalise: centre, nose along +x, ground at y=0, tyre radius 0.44
       const body = new THREE.Group(); const inner = new THREE.Group();
-      root.traverse(o=>{ if(o.isMesh){ o.castShadow=!isTouch; o.userData.cmRole = M.body.test(o.material.name||'') ? 'body' : (/Glass/i.test(o.material.name||'') ? 'glass' : 'dark'); } });
+      root.traverse(o=>{ if(o.isMesh){ o.castShadow=!isTouch; const mn=o.material.name||''; o.userData.cmRole = wheelMeshes.includes(o) ? 'wheel' : M.body.test(mn) ? 'body' : 'own';
+        if(/Helmet/i.test(mn)) o.material=new THREE.MeshStandardMaterial({color:0xf2f2f2, roughness:0.25, metalness:0.15}); // no real driver's helmet design
+        else if(/Senna_Body/i.test(mn) && o.material.map) o.material=cmSoften(o.material); } });
       inner.add(root); root.position.set(-c.x, -groundY, -c.z); inner.rotation.y = noseZ>0 ? Math.PI/2 : -Math.PI/2; body.add(inner); body.scale.setScalar(k);
       body.updateMatrixWorld(true); const bb = new THREE.Box3(), nm3 = new THREE.Matrix3();
       body.traverse(o=>{ if(!o.isMesh || o.userData.cmRole!=='body') return; o.geometry = o.geometry.clone(); const g=o.geometry, pa=g.attributes.position, na=g.attributes.normal; if(!na) g.computeVertexNormals();
@@ -1203,6 +1212,22 @@ function CMBoot(){
         const Wh=new Float32Array(pa.count); for(let i=0;i<pa.count;i++){ const px=P[i*3],py=P[i*3+1],pz=Math.abs(P[i*3+2]); for(const ax of [axF,axR]) if(Math.abs(px-ax)<0.62 && Math.abs(pz-track)<0.45 && py<1.05) Wh[i]=1; }
         g.setAttribute('bodyPos', new THREE.BufferAttribute(P,3)); g.setAttribute('bodyNrm', new THREE.BufferAttribute(N,3)); g.setAttribute('bodyWheel', new THREE.BufferAttribute(Wh,1)); });
       M.bmin = bb.min.clone(); M.bsize = bb.getSize(new THREE.Vector3());
+      // the model's own wheels, split into the four corners so each one can spin and steer like a real wheel
+      const midX=(axF+axR)/2, corners=[[1,1],[1,-1],[-1,1],[-1,-1]].map(()=>({P:[],N:[],U:[],mats:[]}));
+      M.wheelParts=[0,1,2,3].map(()=>({c:new THREE.Vector3(), parts:[]}));
+      for(const o of wheelMeshes){ const g2=o.geometry.index? o.geometry.toNonIndexed() : o.geometry.clone();
+        { const sp=g2.attributes.position, sn=g2.attributes.normal, F=new Float32Array(sp.count*3), FN=sn?new Float32Array(sp.count*3):null, m3=new THREE.Matrix3().getNormalMatrix(o.matrixWorld); // quantised files: work in plain floats
+          for(let i=0;i<sp.count;i++){ v.fromBufferAttribute(sp,i).applyMatrix4(o.matrixWorld); F[i*3]=v.x;F[i*3+1]=v.y;F[i*3+2]=v.z; if(FN){ v.fromBufferAttribute(sn,i).applyMatrix3(m3).normalize(); FN[i*3]=v.x;FN[i*3+1]=v.y;FN[i*3+2]=v.z; } }
+          g2.setAttribute('position', new THREE.BufferAttribute(F,3)); if(FN) g2.setAttribute('normal', new THREE.BufferAttribute(FN,3)); }
+        const pa=g2.attributes.position, na=g2.attributes.normal, ua=g2.attributes.uv; const buckets=[0,1,2,3].map(()=>({P:[],N:[],U:[]}));
+        for(let t=0;t<pa.count;t+=3){ const cx=(pa.getX(t)+pa.getX(t+1)+pa.getX(t+2))/3, cz=(pa.getZ(t)+pa.getZ(t+1)+pa.getZ(t+2))/3; const k2=(cx>midX?0:2)+(cz>0?0:1);
+          for(let q=t;q<t+3;q++){ buckets[k2].P.push(pa.getX(q),pa.getY(q),pa.getZ(q)); if(na) buckets[k2].N.push(na.getX(q),na.getY(q),na.getZ(q)); if(ua) buckets[k2].U.push(ua.getX(q),ua.getY(q)); } }
+        const mat = o.material.map ? cmSoften(o.material) : o.material;
+        buckets.forEach((bk,k2)=>{ if(!bk.P.length) return; const gg=new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.Float32BufferAttribute(bk.P,3)); if(bk.N.length) gg.setAttribute('normal', new THREE.Float32BufferAttribute(bk.N,3)); else gg.computeVertexNormals(); if(bk.U.length) gg.setAttribute('uv', new THREE.Float32BufferAttribute(bk.U,2)); M.wheelParts[k2].parts.push({geo:gg, mat}); });
+        o.parent.remove(o); }
+      for(const W of M.wheelParts){ const bx=new THREE.Box3(); for(const pt of W.parts){ pt.geo.computeBoundingBox(); bx.union(pt.geo.boundingBox); } bx.getCenter(W.c); for(const pt of W.parts) pt.geo.translate(-W.c.x,-W.c.y,-W.c.z); }
+      body.traverse(o=>{ const g=o.isMesh&&o.geometry, P=g&&g.attributes.bodyPos; if(!P) return; const Wh=g.attributes.bodyWheel.array; // paint stays off the parts inside the real wheels
+        for(let i=0;i<P.count;i++){ Wh[i]=0; for(const W of M.wheelParts){ const dx=P.getX(i)-W.c.x, dy=P.getY(i)-W.c.y; if(dx*dx+dy*dy<0.46*0.46 && Math.abs(P.getZ(i)-W.c.z)<0.3) Wh[i]=1; } } g.attributes.bodyWheel.needsUpdate=true; });
       M.body3d = body; M.wheelSpec = [[axF,track,0.44],[axF,-track,0.44],[axR,track,0.44],[axR,-track,0.44]]; M.ready = true;
     }catch(e){ console.warn('car model', kind, e); } }
     return CM;
@@ -1258,7 +1283,7 @@ function cmBody(kind, color, accent, wrap){
   const dark = new THREE.MeshStandardMaterial({ color:0x15171c, roughness:0.5, metalness:0.5 });
   const glass = new THREE.MeshStandardMaterial({ color:0x0b1020, roughness:0.05, metalness:0.9, transparent:true, opacity:0.85 });
   const b = M.body3d.clone(true);
-  b.traverse(o=>{ if(o.isMesh) o.material = o.userData.cmRole==='body' ? paint : o.userData.cmRole==='glass' ? glass : dark; });
+  b.traverse(o=>{ if(o.isMesh && o.userData.cmRole==='body') o.material = paint; }); b.userData.kind = kind; // every other part keeps the model's own look
   b.userData.paint = paint; b.userData.accent = accent;
   return b;
 }
@@ -1326,7 +1351,7 @@ function studioBuild(S){
   CMBoot().then(()=>{ if(!S.on) return; if(S.car){ S.car.removeFromParent(); }
     const shape=localStorage.getItem('f1_shape')||'modern', wrap=localStorage.getItem('f1_wrap')||'team';
     const body=cmBody(shape, selTeam.color, selTeam.accent, wrap); const g=new THREE.Group();
-    if(body){ g.add(body); for(const [wx,wz,wr] of CM[shape].wheelSpec){ const w=new THREE.Group(); const t=new THREE.Mesh(new THREE.CylinderGeometry(wr,wr,0.5,20), new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:0.85})); t.rotation.x=Math.PI/2; w.add(t); const cv2=new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.27,0.52,20), new THREE.MeshStandardMaterial({color:selTeam.color,roughness:0.12,metalness:0.88})); cv2.rotation.x=Math.PI/2; w.add(cv2); for(const sz of [0.255,-0.255]){ const st=new THREE.Mesh(new THREE.TorusGeometry(0.375,0.028,8,28), new THREE.MeshStandardMaterial({color:new THREE.Color(selTeam.accent||'#ffd700'),roughness:0.35,metalness:0.35})); st.position.z=sz; w.add(st);} w.position.set(wx,wr,wz); g.add(w); } }
+    if(body){ g.add(body); for(const wm of cmWheelMeshes(shape,false)){ wm.position.copy(wm.userData.c); g.add(wm); } }
     else { const b=buildBoxBody(selTeam.color, selTeam.name, 1, selTeam.accent); g.add(b); }
     g.position.y=0.24; S.car=g; (S.plate||S.scene).add(g); });
 }
@@ -1348,7 +1373,9 @@ function carPreviewTick(){ if(TP.s) studioTick(TP.s); if(CP.s) studioTick(CP.s);
 function buildCarMesh(color, teamName, carNumber, accent, shape, wrap){
   shape = shape || (carNumber % 2 ? 'modern' : 'classic');
   const m3 = cmBody(shape, color, accent, wrap);
-  if(m3) return buildCarFromModel(m3, CM[shape].wheelSpec, color, accent, buildBoxBody(color, teamName, carNumber, accent));
+  if(m3){ const car=buildCarFromModel(m3, CM[shape].wheelSpec, color, accent, buildBoxBody(color, teamName, carNumber, accent));
+    const mw=cmWheelMeshes(shape, !isTouch); (car.userData.wheels||[]).forEach((w,i)=>{ const wm=mw[i]; if(!wm) return; w.position.copy(wm.userData.c); wm.position.set(0,0,0); w.add(wm); w.userData.mw=wm; w.userData.hideInst=true; });
+    return car; }
   const g=new THREE.Group();
   const box = buildBoxBody(color, teamName, carNumber, accent); g.add(box);
   buildCarWheels(g, color, accent, null);
@@ -1528,7 +1555,7 @@ function buildBoxBody(color, teamName, carNumber, accent){
 /* LOD: 20 model cars are ~1.4 M triangles - too many for a phone - so only cars within CAR_LOD_NEAR of the camera
    show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
 const CAR_LOD_NEAR = 70;
-function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; L.near.visible=near; L.far.visible=!near; } }
+function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; L.near.visible=near; L.far.visible=!near; for(const w of c.mesh.userData.wheels||[]) if(w.userData.mw){ w.userData.mw.visible=near; w.userData.hideInst=near; } } }
 function buildCarFromModel(body, spec, color, accent, box){
   const g=new THREE.Group(); g.add(body);
   if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
@@ -1604,6 +1631,7 @@ function wheelInstReset(){
   WHEEL_INST.parts={tire:[],stripe:[],cover:[],cap:[]};
   WHEEL_INST.extra={tire:[],stripe:[],cover:[],cap:[]};
 }
+const _wZero = new THREE.Matrix4().makeScale(0,0,0);
 function wheelInstUpdate(){
   if(!WHEEL_INST.meshes.tire) return;
   scene.updateMatrixWorld();
@@ -1612,7 +1640,8 @@ function wheelInstUpdate(){
     im.count = list.length;
     for(let i=0;i<list.length;i++){
       const ex = WHEEL_INST.extra[type][i];
-      if(ex){ _wm4.multiplyMatrices(list[i].matrixWorld, ex); im.setMatrixAt(i, _wm4); }
+      if(list[i].parent && list[i].parent.userData.hideInst) im.setMatrixAt(i, _wZero); // the model's own wheel is showing
+      else if(ex){ _wm4.multiplyMatrices(list[i].matrixWorld, ex); im.setMatrixAt(i, _wm4); }
       else im.setMatrixAt(i, list[i].matrixWorld);
     }
     im.instanceMatrix.needsUpdate = true;
