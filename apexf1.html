@@ -1200,7 +1200,8 @@ function CMBoot(){
       body.traverse(o=>{ if(!o.isMesh || o.userData.cmRole!=='body') return; o.geometry = o.geometry.clone(); const g=o.geometry, pa=g.attributes.position, na=g.attributes.normal; if(!na) g.computeVertexNormals();
         const P=new Float32Array(pa.count*3), N=new Float32Array(pa.count*3), nn=g.attributes.normal; nm3.getNormalMatrix(o.matrixWorld);
         for(let i=0;i<pa.count;i++){ v.fromBufferAttribute(pa,i).applyMatrix4(o.matrixWorld); P[i*3]=v.x;P[i*3+1]=v.y;P[i*3+2]=v.z; bb.expandByPoint(v); v.fromBufferAttribute(nn,i).applyMatrix3(nm3).normalize(); N[i*3]=v.x;N[i*3+1]=v.y;N[i*3+2]=v.z; }
-        g.setAttribute('bodyPos', new THREE.BufferAttribute(P,3)); g.setAttribute('bodyNrm', new THREE.BufferAttribute(N,3)); });
+        const Wh=new Float32Array(pa.count); for(let i=0;i<pa.count;i++){ const px=P[i*3],py=P[i*3+1],pz=Math.abs(P[i*3+2]); for(const ax of [axF,axR]) if(Math.abs(px-ax)<0.62 && Math.abs(pz-track)<0.45 && py<1.05) Wh[i]=1; }
+        g.setAttribute('bodyPos', new THREE.BufferAttribute(P,3)); g.setAttribute('bodyNrm', new THREE.BufferAttribute(N,3)); g.setAttribute('bodyWheel', new THREE.BufferAttribute(Wh,1)); });
       M.bmin = bb.min.clone(); M.bsize = bb.getSize(new THREE.Vector3());
       M.body3d = body; M.wheelSpec = [[axF,track,0.44],[axF,-track,0.44],[axR,track,0.44],[axR,-track,0.44]]; M.ready = true;
     }catch(e){ console.warn('car model', kind, e); } }
@@ -1219,28 +1220,35 @@ function apexLivTex(color, accent, wrap){
     if(wt){ for(let tx=0;tx<2048;tx+=512) x.drawImage(wt.image, tx, y0, 512, 512); }
     else { x.fillStyle=base; x.fillRect(0,y0,2048,512); x.fillStyle=acc; x.beginPath(); x.moveTo(0,y0+330); x.lineTo(2048,y0+250); x.lineTo(2048,y0+300); x.lineTo(0,y0+400); x.closePath(); x.fill(); x.fillStyle='rgba(255,255,255,.85)'; x.beginPath(); x.moveTo(0,y0+405); x.lineTo(2048,y0+305); x.lineTo(2048,y0+318); x.lineTo(0,y0+418); x.closePath(); x.fill(); }
   }
-  const word=(t,cx,cy,px)=>{ x.font='900 '+px+'px Arial Black, Arial, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round'; x.lineWidth=px*0.16; x.strokeStyle='rgba(5,8,16,.92)'; x.strokeText(t,cx,cy); x.fillStyle='#ffffff'; x.fillText(t,cx,cy); };
-  // SIDE (top half, tail on the left): big APEX ARCADE on the sidepods, APEX up on the rear-wing endplate, ARCADE on the nose
-  if(wt){ x.fillStyle='rgba(5,8,16,.62)'; x.fillRect(500,240,800,120); x.fillRect(320,705,880,126); }
-  word('APEX ARCADE', 900, 300, 100); word('APEX', 120, 120, 92); word('ARCADE', 1720, 360, 64);
-  // TOP (bottom half, tail on the left): APEX ARCADE along the engine cover and the nose
-  word('APEX ARCADE', 760, 768, 104); word('APEX', 1640, 768, 84);
   const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; __livCache[key]=t; return t;
+}
+let __apexWord=null;
+function apexWordTex(){ // the lettering lives on its own sheet so the car only shows it on its flat outer sides
+  if(__apexWord) return __apexWord;
+  const c=document.createElement('canvas'); c.width=2048; c.height=512; const x=c.getContext('2d');
+  x.fillStyle='rgba(5,8,16,.55)'; x.fillRect(520,250,760,100);
+  x.font='900 92px Arial Black, Arial, sans-serif'; x.textAlign='center'; x.textBaseline='middle'; x.lineJoin='round'; x.lineWidth=14; x.strokeStyle='rgba(5,8,16,.92)'; x.strokeText('APEX ARCADE',900,300); x.fillStyle='#ffffff'; x.fillText('APEX ARCADE',900,300);
+  const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=8; __apexWord=t; return t;
 }
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
   const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
   m.customProgramCacheKey = ()=>'apexLivery';
   m.onBeforeCompile = sh=>{
-    sh.uniforms.livTex={value:tex}; sh.uniforms.bMin={value:M.bmin}; sh.uniforms.bSize={value:M.bsize};
-    sh.vertexShader = sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 bodyPos; attribute vec3 bodyNrm; varying vec3 vBP; varying vec3 vBN;').replace('#include <begin_vertex>','#include <begin_vertex>\nvBP=bodyPos; vBN=bodyNrm;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D livTex; uniform vec3 bMin; uniform vec3 bSize; varying vec3 vBP; varying vec3 vBN;')
+    sh.uniforms.livTex={value:tex}; sh.uniforms.wordTex={value:apexWordTex()}; sh.uniforms.bMin={value:M.bmin}; sh.uniforms.bSize={value:M.bsize};
+    sh.vertexShader = sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 bodyPos; attribute vec3 bodyNrm; attribute float bodyWheel; varying vec3 vBP; varying vec3 vBN; varying float vWh;').replace('#include <begin_vertex>','#include <begin_vertex>\nvBP=bodyPos; vBN=bodyNrm; vWh=bodyWheel;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>','#include <common>\nuniform sampler2D livTex; uniform sampler2D wordTex; uniform vec3 bMin; uniform vec3 bSize; varying vec3 vBP; varying vec3 vBN; varying float vWh;')
       .replace('#include <map_fragment>',`#include <map_fragment>
         vec3 lq = clamp((vBP-bMin)/bSize, 0.0, 1.0); vec3 ln = normalize(vBN); vec3 lw = pow(abs(ln), vec3(6.0)); lw /= (lw.x+lw.y+lw.z+1e-5);
         vec4 cS = texture2D(livTex, vec2(ln.z<0.0 ? 1.0-lq.x : lq.x, 0.5+0.5*lq.y));
         vec4 cT = texture2D(livTex, vec2(lq.x, 0.5*lq.z));
         vec4 cF = texture2D(livTex, vec2(lq.z, 0.5+0.5*lq.y));
-        diffuseColor.rgb *= (cS*lw.z + cT*lw.y + cF*lw.x).rgb;`);
+        diffuseColor.rgb *= (cS*lw.z + cT*lw.y + cF*lw.x).rgb;
+        // owner Nov 3 2026 5:45 AM: APEX ARCADE only once on each side - only on flat outer side panels, never the nose, wings, top or by the tyres
+        vec4 cW = texture2D(wordTex, vec2(ln.z<0.0 ? 1.0-lq.x : lq.x, lq.y));
+        float sideOnly = smoothstep(0.6, 0.75, abs(ln.z)) * step(0.15, abs(lq.z-0.5));
+        diffuseColor.rgb = mix(diffuseColor.rgb, cW.rgb, cW.a*sideOnly);
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.03,0.035,0.045), step(0.5, vWh)); // owner Nov 3 2026: no paint or letters on the tyres - parts by the wheels stay carbon black`);
   };
   return m;
 }
@@ -1273,14 +1281,14 @@ function wrapTexture(id){
   if(__wrapCache[id]) return __wrapCache[id];
   const c=document.createElement('canvas'); c.width=c.height=512; const x=c.getContext('2d'); const W=512;
   let seed=7; const r=(a,b)=>{ seed=(seed*16807)%2147483647; return a+(seed/2147483647)*(b-a); };
-  if(id==='neon'){ x.fillStyle='#0b0a2a'; x.fillRect(0,0,W,W); x.lineWidth=3; for(let i=0;i<34;i++){ x.strokeStyle=i%2?'#7a3cff':'#1ad1ff'; x.shadowColor=x.strokeStyle; x.shadowBlur=8; x.beginPath(); let px=r(0,W),py=r(0,W); x.moveTo(px,py); for(let k=0;k<4;k++){ if(k%2) px=r(0,W); else py=r(0,W); x.lineTo(px,py);} x.stroke(); } x.shadowBlur=0; x.fillStyle='#e6ff00'; x.font='bold 40px sans-serif'; x.fillText('G-SPEED',30,470); x.fillText('TECHNOBASE',230,70); }
-  else if(id==='gold'){ x.fillStyle='#1a1a1a'; x.fillRect(0,0,W,W); for(let yy=0;yy<W;yy+=8) for(let xx=0;xx<W;xx+=8){ x.fillStyle=((xx+yy)/8)%2?'#242424':'#111'; x.fillRect(xx,yy,8,8);} x.fillStyle='#d9a520'; x.beginPath(); x.moveTo(0,0); x.lineTo(W,0); x.lineTo(W,170); x.lineTo(0,330); x.closePath(); x.fill(); x.fillStyle='#f5d77a'; x.fillRect(0,330,W,10); x.fillStyle='#1a1a1a'; x.font='bold 44px sans-serif'; x.fillText('AURUM',40,100); x.fillStyle='#d9a520'; x.font='bold 30px sans-serif'; x.fillText('VELOCITY',300,440); }
-  else if(id==='rose'){ x.fillStyle='#d99a8c'; x.fillRect(0,0,W,W); x.strokeStyle='#8f4d42'; x.lineWidth=2; const h=22; for(let yy=0;yy<W+h;yy+=h*1.5) for(let xx=0;xx<W+h;xx+=h*1.732){ const ox=((yy/(h*1.5))|0)%2? h*0.866:0; x.beginPath(); for(let k=0;k<6;k++){ const a=Math.PI/3*k+Math.PI/6; const px=xx+ox+h*Math.cos(a), py=yy+h*Math.sin(a); k?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); x.stroke(); } x.fillStyle='#5a2a24'; x.font='bold 36px sans-serif'; x.fillText('HEX-RACELAB',90,270); }
-  else if(id==='retro'){ const g=x.createLinearGradient(0,0,W,W); g.addColorStop(0,'#ff2bd6'); g.addColorStop(0.5,'#8a5cff'); g.addColorStop(1,'#19e6ff'); x.fillStyle=g; x.fillRect(0,0,W,W); x.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<12;i++) x.fillRect(0,i*44,W,8); x.fillStyle='#ffe34a'; x.font='bold 46px sans-serif'; x.fillText('APEX',40,120); x.fillStyle='#fff'; x.font='bold 34px sans-serif'; x.fillText('DRIFTTECH',200,400); }
-  else if(id==='stealth'){ x.fillStyle='#1b2a2f'; x.fillRect(0,0,W,W); for(let i=0;i<70;i++){ x.fillStyle=['#2f5a5a','#243f46','#3a7068','#15202a'][i%4]; x.beginPath(); const cx=r(0,W),cy=r(0,W); x.moveTo(cx,cy); for(let k=0;k<7;k++) x.lineTo(cx+r(-70,70),cy+r(-45,45)); x.closePath(); x.fill(); } x.fillStyle='#9fd8c8'; x.font='bold 34px sans-serif'; x.fillText('STEALTH',60,300); }
-  else if(id==='acid'){ x.fillStyle='#5a1fa8'; x.fillRect(0,0,W,W); x.lineWidth=14; x.lineCap='round'; for(let i=0;i<9;i++){ x.strokeStyle=i%2?'#b6ff2e':'#2ee6c8'; x.beginPath(); for(let xx=0;xx<=W;xx+=16){ const yy=i*60+Math.sin(xx/40+i)*28; xx?x.lineTo(xx,yy):x.moveTo(xx,yy);} x.stroke(); } x.fillStyle='#0b0b1a'; x.font='bold 40px sans-serif'; x.fillText('ACID',380,480); }
-  else if(id==='grid'){ x.fillStyle='#0a0a14'; x.fillRect(0,0,W,W); x.strokeStyle='#6a3cff'; x.lineWidth=2; for(let i=0;i<=W;i+=32){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,W); x.stroke(); x.beginPath(); x.moveTo(0,i); x.lineTo(W,i); x.stroke(); } x.strokeStyle='#19e6ff'; x.lineWidth=4; x.strokeRect(64,64,160,96); x.fillStyle='#d8c8ff'; x.font='bold 32px sans-serif'; x.fillText('CYBER-GRID',260,440); }
-  else if(id==='flame'){ x.fillStyle='#141a5e'; x.fillRect(0,0,W,W); for(let i=0;i<26;i++){ const g=x.createLinearGradient(0,W,0,W*0.3); g.addColorStop(0,'#ff6a00'); g.addColorStop(0.6,'#ff2a00'); g.addColorStop(1,'rgba(255,210,58,0)'); x.fillStyle=g; x.beginPath(); const bx=i*22; x.moveTo(bx,W); x.quadraticCurveTo(bx+r(-30,30),W*0.55,bx+r(-10,10),W*r(0.15,0.4)); x.quadraticCurveTo(bx+r(10,40),W*0.6,bx+28,W); x.closePath(); x.fill(); } x.fillStyle='#ffd23a'; x.font='bold 36px sans-serif'; x.fillText('VOLCANIC',40,80); }
+  if(id==='neon'){ x.fillStyle='#0b0a2a'; x.fillRect(0,0,W,W); x.lineWidth=3; for(let i=0;i<34;i++){ x.strokeStyle=i%2?'#7a3cff':'#1ad1ff'; x.shadowColor=x.strokeStyle; x.shadowBlur=8; x.beginPath(); let px=r(0,W),py=r(0,W); x.moveTo(px,py); for(let k=0;k<4;k++){ if(k%2) px=r(0,W); else py=r(0,W); x.lineTo(px,py);} x.stroke(); } x.shadowBlur=0; x.fillStyle='#e6ff00'; x.font='bold 40px sans-serif'; }
+  else if(id==='gold'){ x.fillStyle='#1a1a1a'; x.fillRect(0,0,W,W); for(let yy=0;yy<W;yy+=8) for(let xx=0;xx<W;xx+=8){ x.fillStyle=((xx+yy)/8)%2?'#242424':'#111'; x.fillRect(xx,yy,8,8);} x.fillStyle='#d9a520'; x.beginPath(); x.moveTo(0,0); x.lineTo(W,0); x.lineTo(W,170); x.lineTo(0,330); x.closePath(); x.fill(); x.fillStyle='#f5d77a'; x.fillRect(0,330,W,10); x.fillStyle='#1a1a1a'; x.font='bold 44px sans-serif'; x.fillStyle='#d9a520'; x.font='bold 30px sans-serif'; }
+  else if(id==='rose'){ x.fillStyle='#d99a8c'; x.fillRect(0,0,W,W); x.strokeStyle='#8f4d42'; x.lineWidth=2; const h=22; for(let yy=0;yy<W+h;yy+=h*1.5) for(let xx=0;xx<W+h;xx+=h*1.732){ const ox=((yy/(h*1.5))|0)%2? h*0.866:0; x.beginPath(); for(let k=0;k<6;k++){ const a=Math.PI/3*k+Math.PI/6; const px=xx+ox+h*Math.cos(a), py=yy+h*Math.sin(a); k?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); x.stroke(); } x.fillStyle='#5a2a24'; x.font='bold 36px sans-serif'; }
+  else if(id==='retro'){ const g=x.createLinearGradient(0,0,W,W); g.addColorStop(0,'#ff2bd6'); g.addColorStop(0.5,'#8a5cff'); g.addColorStop(1,'#19e6ff'); x.fillStyle=g; x.fillRect(0,0,W,W); x.fillStyle='rgba(0,0,0,.35)'; for(let i=0;i<12;i++) x.fillRect(0,i*44,W,8); x.fillStyle='#ffe34a'; x.font='bold 46px sans-serif'; x.fillStyle='#fff'; x.font='bold 34px sans-serif'; }
+  else if(id==='stealth'){ x.fillStyle='#1b2a2f'; x.fillRect(0,0,W,W); for(let i=0;i<70;i++){ x.fillStyle=['#2f5a5a','#243f46','#3a7068','#15202a'][i%4]; x.beginPath(); const cx=r(0,W),cy=r(0,W); x.moveTo(cx,cy); for(let k=0;k<7;k++) x.lineTo(cx+r(-70,70),cy+r(-45,45)); x.closePath(); x.fill(); } x.fillStyle='#9fd8c8'; x.font='bold 34px sans-serif'; }
+  else if(id==='acid'){ x.fillStyle='#5a1fa8'; x.fillRect(0,0,W,W); x.lineWidth=14; x.lineCap='round'; for(let i=0;i<9;i++){ x.strokeStyle=i%2?'#b6ff2e':'#2ee6c8'; x.beginPath(); for(let xx=0;xx<=W;xx+=16){ const yy=i*60+Math.sin(xx/40+i)*28; xx?x.lineTo(xx,yy):x.moveTo(xx,yy);} x.stroke(); } x.fillStyle='#0b0b1a'; x.font='bold 40px sans-serif'; }
+  else if(id==='grid'){ x.fillStyle='#0a0a14'; x.fillRect(0,0,W,W); x.strokeStyle='#6a3cff'; x.lineWidth=2; for(let i=0;i<=W;i+=32){ x.beginPath(); x.moveTo(i,0); x.lineTo(i,W); x.stroke(); x.beginPath(); x.moveTo(0,i); x.lineTo(W,i); x.stroke(); } x.strokeStyle='#19e6ff'; x.lineWidth=4; x.strokeRect(64,64,160,96); x.fillStyle='#d8c8ff'; x.font='bold 32px sans-serif'; }
+  else if(id==='flame'){ x.fillStyle='#141a5e'; x.fillRect(0,0,W,W); for(let i=0;i<26;i++){ const g=x.createLinearGradient(0,W,0,W*0.3); g.addColorStop(0,'#ff6a00'); g.addColorStop(0.6,'#ff2a00'); g.addColorStop(1,'rgba(255,210,58,0)'); x.fillStyle=g; x.beginPath(); const bx=i*22; x.moveTo(bx,W); x.quadraticCurveTo(bx+r(-30,30),W*0.55,bx+r(-10,10),W*r(0.15,0.4)); x.quadraticCurveTo(bx+r(10,40),W*0.6,bx+28,W); x.closePath(); x.fill(); } x.fillStyle='#ffd23a'; x.font='bold 36px sans-serif'; }
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); t.colorSpace=THREE.SRGBColorSpace; t.anisotropy=4; __wrapCache[id]=t; return t;
 }
 /* STUDIOS: the YOUR CAR preview and the start-screen stage are the same thing - a small renderer, lights, a floor, the chosen car turning */
