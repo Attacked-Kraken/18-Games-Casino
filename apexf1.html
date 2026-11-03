@@ -225,6 +225,7 @@ setTimeout(function(){
   <button class="bigbtn" id="quickBtn">⚡ QUICK RACE</button>
   <button class="bigbtn alt" id="careerBtn">🏆 CAREER MODE</button>
   <button class="bigbtn alt" id="tournBtn">🏁 TOURNAMENT</button>
+  <button class="bigbtn alt" id="taBtn">⏱ TIME ATTACK</button>
   <button class="bigbtn alt" id="friendBtn">👥 RACE A FRIEND (ENTER CODE)</button>
   <button class="bigbtn alt" id="howBtn">📖 RULES &amp; CONTROLS</button>
   <button class="bigbtn alt" id="backBtn">‹ APEX ARCADE</button>
@@ -283,7 +284,7 @@ setTimeout(function(){
 <div class="overlay hidden" id="resultMenu">
   <h1 class="title" style="font-size:32px" id="resTitle">RACE COMPLETE</h1>
   <div class="card"><h3>CLASSIFICATION</h3><table class="stand" id="resTable"></table></div>
-  <div class="card"><h3>CHAMPIONSHIP</h3><table class="stand" id="champTable"></table></div>
+  <div class="card"><h3 id="champHead">CHAMPIONSHIP</h3><table class="stand" id="champTable"></table></div>
   <button class="bigbtn gold" id="resNext">CONTINUE →</button>
   <button class="bigbtn alt" id="resMenu">MAIN MENU</button>
 </div>
@@ -525,7 +526,7 @@ const TRACKS = [
   drs:[[0.0,0.16],[0.44,0.54]], pitIn:0.94, pitOut:0.08, theme:{ kind:'city', sky:0x9fb8d8, ground:0x55606a },
   pts:[[0,0,0],[400,0,0],[550,0,-100],[600,0,-300],[450,0,-450],[300,0,-350],[100,0,-500],[-300,0,-500],[-500,0,-350],[-550,0,-150],[-450,0,100],[-300,0,250],[-150,0,200],[-50,0,350],[150,0,300]] },
 ];
-const SEASON_ROUNDS=5; // career season length in rounds (all rounds run at the Grand Prix circuit)
+const SEASON_ROUNDS=5; // owner Nov 2 2026: a season visits every circuit once (5 circuits = 5 rounds); keep this equal to TRACKS.length
 // Emergency fallback only (never in the menu): if the Grand Prix kit files cannot load,
 // the game still starts on this built-in loop instead of a black screen.
 const LEGACY_TRACK = { id:'legacy', name:'LEGACY', country:'', lapKm:5.793, drs:[[0.02,0.14],[0.52,0.66]], pitIn:0.90, pitOut:0.06,
@@ -1969,7 +1970,7 @@ const Race = {
     // AI grid: 19 drivers
     const names=[...AI_NAMES];
     if(cfg.friend) names[0]='FRI';
-    for(let i=0;i<19;i++){
+    for(let i=0;i<(cfg.solo?0:19);i++){
       const nm = cfg.friend&&i===0 ? cfg.friend.tag : names[i%names.length]+(i>=names.length?' '+(Math.floor(i/names.length)+1):'');
       const tm=TEAMS[i%TEAMS.length];
       const skill = cfg.friend&&i===0 ? cfg.friend.str/100 : clamp(rand(0.86,0.97)+cfg.aiDelta,0.4,0.99); // G-66: the whole field is quick now - the old 0.62 floor left the back cars 20%+ off the player's pace
@@ -2385,6 +2386,11 @@ function parseFriend(txt){
   }catch(e){ return null; }
 }
 
+/* ================= TIME ATTACK records (per circuit, this phone) ================= */
+const TA = { key:'apexf1_timeattack',
+  all(){ try{ return JSON.parse(localStorage.getItem(this.key))||{}; }catch(e){ return {}; } },
+  best(id){ const v=this.all()[id]; return v&&v.t>0?v.t:0; },
+  put(id,t){ if(!(t>0)) return false; const a=this.all(); const old=a[id]&&a[id].t; if(old&&old<=t) return false; a[id]={t, at:Date.now()}; try{ localStorage.setItem(this.key,JSON.stringify(a)); }catch(e){} return true; } };
 /* ================= RESULTS ================= */
 function showResults(R){
   $('hud').classList.add('hidden'); $('touch').classList.add('hidden');
@@ -2397,7 +2403,12 @@ function showResults(R){
   });
   $('resTable').innerHTML=html;
   // championship update
-  let champHtml='';
+  let champHtml=''; $('champHead').textContent='CHAMPIONSHIP';
+  if(sessionCfg&&sessionCfg.timeAttack){ const best=R.player.bestLap, id=R.track.id, nb=TA.put(id,best);
+    $('resTitle').textContent = nb ? '⏱ NEW RECORD!' : '⏱ TIME ATTACK'; $('champHead').textContent='YOUR RECORDS';
+    $('resTable').innerHTML='<tr><th>LAP</th><th>TIME</th></tr>'+(R.player.lapTimes||[]).map((t,i)=>`<tr${t===best?' class="me"':''}><td>${i+1}</td><td>${fmtTime(t)}</td></tr>`).join('');
+    const rec=TA.all(); champHtml='<tr><th>CIRCUIT</th><th>YOUR BEST LAP</th></tr>'+TRACKS.map(t=>`<tr${t.id===id?' class="me"':''}><td>${t.name}</td><td>${rec[t.id]?fmtTime(rec[t.id].t):'—'}</td></tr>`).join('');
+    $('champTable').innerHTML=champHtml; $('resNext').textContent='TRY AGAIN ↻'; $('resultMenu').classList.remove('hidden'); return; }
   const isCareer=sessionCfg&&sessionCfg.career;
   if(career&&isCareer){
     const me=career.name.toUpperCase().slice(0,14);
@@ -2407,7 +2418,10 @@ function showResults(R){
     career.rating=clamp(career.rating+(11-R.player.position)*2,0,100);
     if(sessionCfg.friend){ if(R.player.position<2)career.friends.w++; else career.friends.l++; }
     career.round++;
-    if(career.round>=SEASON_ROUNDS){ career.champs++; career.round=0; career.table={}; banner('CHAMPION!','',2000); }
+    if(career.round>=SEASON_ROUNDS){ const st=Object.entries(career.table).sort((a,b)=>b[1]-a[1]); const myPos=st.findIndex(([k])=>k===me)+1;
+      if(myPos===1){ career.champs++; banner('WORLD CHAMPION!','Season '+career.season+' is yours',2600,'#ffd76a'); } else banner('SEASON '+career.season+' OVER','You finished P'+myPos+' in the championship',2600,'#9fd8ff');
+      (career.history=career.history||[]).push({season:career.season, pos:myPos, pts:(career.table[me]||0)});
+      career.season++; career.round=0; career.table={}; }
     Save.save(career);
     const rows=Object.entries(career.table).sort((a,b)=>b[1]-a[1]).slice(0,10);
     champHtml='<tr><th>DRIVER</th><th>PTS</th></tr>'+rows.map(([k,v])=>`<tr${k===me?' class="me"':''}><td>${k}</td><td>${v}</td></tr>`).join('');
@@ -2491,6 +2505,7 @@ function initMenus(){
   $('friendBtn').onclick=()=>{ $('friendErr').textContent=''; show('friendOv'); };
   // tournament: pick 3 circuits
   let tournTracks=[];
+  $('taBtn').onclick=()=>{ pendingFriend=null; sessionCfg={timeAttack:true}; selLaps=3; show('trackMenu'); };
   $('tournBtn').onclick=()=>{
     tournTracks=[]; renderTournPicker(); show('tournMenu');
   };
@@ -2544,6 +2559,7 @@ function initMenus(){
   $('raceBtn').onclick=()=>{ $('gridMenu').classList.add('hidden'); HUD.show(true); Race.beginRace(); };
   $('resMenu').onclick=()=>{ show('menu'); renderMenuCode(); };
   $('resNext').onclick=()=>{
+    if(sessionCfg&&sessionCfg.timeAttack){ $('resultMenu').classList.add('hidden'); startWeekend(); return; }
     $('resultMenu').classList.add('hidden');
     const tourn=sessionCfg&&sessionCfg.tournament;
     if(tourn&&tourn.raceIdx<3){
@@ -2579,6 +2595,8 @@ function renderHub(){
   $('hubBody').innerHTML=`<b style="color:#ffd76a">${career.name}</b> · ${TEAMS.find(x=>x.id===career.team)?.name||''} · Rating ${Math.round(career.rating)}<br>
   Season ${career.season} · Round ${career.round+1}/${SEASON_ROUNDS} · Next: <b>${t.name}</b> (${t.country})<br>
   Wins: ${career.wins} · Titles: ${career.champs} · vs friends: ${career.friends.w}–${career.friends.l}
+  <div style="margin:6px 0;font-size:12px">${TRACKS.slice(0,SEASON_ROUNDS).map((x,i)=>`<span style="display:inline-block;margin:1px 4px 1px 0;padding:2px 6px;border-radius:6px;background:${i<career.round?'#1f6b3a':i===career.round?'#6b551f':'#1a2436'}">${i<career.round?'✓ ':i===career.round?'▶ ':''}R${i+1} ${x.name}</span>`).join('')}</div>
+  ${(career.history||[]).length?'<div style="font-size:12px;color:#9fb6d8">Past seasons: '+career.history.slice(-4).map(h=>'S'+h.season+' P'+h.pos+' ('+h.pts+' pts)').join(' · ')+'</div>':''}
   <table class="stand"><tr><th>DRIVER</th><th>PTS</th></tr>${rows||'<tr><td colspan=2>Season just started</td></tr>'}</table>
   <div style="margin-top:6px;font-size:12px;color:#9fd8ff">MY CODE: ${friendCode()||'—'}</div>`;
 }
@@ -2590,18 +2608,20 @@ async function startWeekend(){
   const isNew=sessionCfg&&sessionCfg.career==='new';
   const isCareer=isNew||(sessionCfg&&sessionCfg.career===true);
   const tourn=sessionCfg&&sessionCfg.tournament;
+  const ta=!!(sessionCfg&&sessionCfg.timeAttack); // owner Nov 2 2026: TIME ATTACK - you alone, best lap per circuit saved
   if(isNew) newCareer(name,selTeam.id);
   if(tourn) selTrack=tourn.tracks[tourn.raceIdx]; // tournament dictates the circuit
   const friend=pendingFriend; pendingFriend=null;
   const cfg={ track:selTrack, laps:selLaps, team:selTeam, driver:name,
-    skill:driverSkill(), cheat, aiDelta, friend,
+    skill:driverSkill(), cheat, aiDelta, friend, solo:ta,
     wxSeed:(Math.random()*1e9)|0 };
-  sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam, tournament:tourn||null };
+  sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam, tournament:tourn||null, timeAttack:ta };
   show(null);
   initGL._done||(initGL(),RainFX.init(),HUD.initMinimap(),initInput(),initGL._done=true);
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
   CKAttach(); // G-48: the kit cockpit rides in the player's car
+  if(ta){ Race.player.qualiTime=0; Race.placeGrid(false); Race.mode='grid'; HUD.show(true); Race.beginRace(); try{ Race.updateCamera(1); }catch(e){} banner('TIME ATTACK', (TA.best(selTrack)?'Best: '+fmtTime(TA.best(selTrack)):'Set the first time')+' · '+selLaps+' laps', 2400, '#9fd8ff'); return; }
   runQuali();
 }
 /* ---- qualifying: one flying lap ---- */
@@ -2927,6 +2947,7 @@ function _realitySD(x, z){ // nearest track point -> arclength s + lateral d of 
 window.__reality={
   kind: 'f1',
   get camera(){ return camera; },
+  finish:(best)=>{ try{ const pl=Race.player; if(!pl) return; if(best>0){ pl.bestLap=best; pl.lapTimes=[best]; } pl.finished=true; pl.finishTime=Race.raceT; Race.onPlayerFinish(Race.positions()); }catch(e){} }, // robot: end the race now (results screen checks)
   get player(){ return (Race.player && Race.player.mesh) || null; },
   get others(){ return Race.cars ? Race.cars.filter(c=>!c.isPlayer && c.mesh).map(c=>c.mesh) : []; },
   get contact(){ return Race.player ? _realityAnchors : []; },
