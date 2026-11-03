@@ -94,6 +94,9 @@
   .stage iframe { position: absolute; left: 0; top: 0; width: 844px; height: 475px; border: 0; display: block; background: #000;
     transform-origin: 0 0; }
   .stage.fs iframe { width: 100%; height: 100%; transform: none !important; }
+  /* owner Nov 2 2026 (Exotic Racer): "straight landscape, no flipping from portrait-style landscape when the game opens" - in portrait the
+     full-screen frame is kept LANDSCAPE by the hub (turned 90 degrees here), so the game sees landscape from the box to full screen and never re-lays out */
+  @media (orientation: portrait) { .stage.fs iframe { width: 100vh; width: 100dvh; height: 100vw; transform-origin: left top; transform: rotate(90deg) translateY(-100vw) !important; } }
   .poster { position: absolute; inset: 0; width: 100%; appearance: none; border: 0; cursor: pointer; color: #fff;
     background: #0b0f16;
     background: radial-gradient(90% 120% at 50% 30%, color-mix(in srgb, var(--acc) 30%, #0b0f16), #05070a 75%);
