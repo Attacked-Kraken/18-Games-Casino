@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
+(function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
+function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
+try{new MutationObserver(all).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}document.addEventListener('DOMContentLoaded',all);})();</script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -206,7 +210,7 @@
   <div id="mcol">
     <div id="mbtns">
       <button class="neo wide" id="mRace">🏁 Race · 100 Places</button>
-      <button class="neo alt" id="mFriends">👥 Race Friends</button>
+      <button class="neo alt" id="mFriends">👥 Play with Friends</button>
       <button class="neo alt" id="mGarage">🔧 Garage</button>
       <button class="neo alt" id="mQ">✨ Graphics: Ultra</button>
       <button class="neo alt" id="mSnd">🔊 Sound On</button>
@@ -301,7 +305,7 @@
 </div></div>
 
 <div id="friend" class="scr"><div class="box glass col">
-  <h3 style="margin:0;text-align:center;font:900 24px system-ui">👥 Race Friends</h3>
+  <h3 style="margin:0;text-align:center;font:900 24px system-ui">👥 Play with Friends</h3>
   <div style="text-align:center;font:800 13px;opacity:.8">YOUR FRIEND CODE</div>
   <div id="fCode"></div>
   <div class="row"><button class="neo alt" id="fCopy">📋 Copy my code</button><button class="neo alt" id="fMuteB">🔊 Sound On</button></div>

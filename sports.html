@@ -322,7 +322,7 @@ document.getElementById('grid').addEventListener('click', function (e) {
     go(); setTimeout(go, 120); setTimeout(go, 450); setTimeout(go, 1000);
   }
   ['touchstart', 'wheel'].forEach(function (ev) { window.addEventListener(ev, function () { userMoved = true; }, { passive: true }); });
-  var MAX_LIVE = 2;   /* phones can only run a couple of 3D games at once: the ones on screen run, the rest rest */
+  var MAX_LIVE = 1;   /* owner Nov 3 2026: two 3D games at once ran the phone out of graphics memory = black screens; one at a time */ //   /* phones can only run a couple of 3D games at once: the ones on screen run, the rest rest */
   var liveOrder = [];
   function start(row) {
     liveOrder = liveOrder.filter(function (r) { return r !== row && r.classList.contains('live'); });
