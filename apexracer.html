@@ -1,6 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
+(function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
+function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
+try{new MutationObserver(all).observe(document.documentElement,{childList:true,subtree:true});}catch(_){}document.addEventListener('DOMContentLoaded',all);})();</script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <meta name="mobile-web-app-capable" content="yes" />
@@ -206,7 +210,7 @@
   <div id="mcol">
     <div id="mbtns">
       <button class="neo wide" id="mRace">🏁 Race · 100 Places</button>
-      <button class="neo alt" id="mFriends">👥 Race Friends</button>
+      <button class="neo alt" id="mFriends">👥 Play with Friends</button>
       <button class="neo alt" id="mGarage">🔧 Garage</button>
       <button class="neo alt" id="mQ">✨ Graphics: Ultra</button>
       <button class="neo alt" id="mSnd">🔊 Sound On</button>
@@ -301,7 +305,7 @@
 </div></div>
 
 <div id="friend" class="scr"><div class="box glass col">
-  <h3 style="margin:0;text-align:center;font:900 24px system-ui">👥 Race Friends</h3>
+  <h3 style="margin:0;text-align:center;font:900 24px system-ui">👥 Play with Friends</h3>
   <div style="text-align:center;font:800 13px;opacity:.8">YOUR FRIEND CODE</div>
   <div id="fCode"></div>
   <div class="row"><button class="neo alt" id="fCopy">📋 Copy my code</button><button class="neo alt" id="fMuteB">🔊 Sound On</button></div>
@@ -460,26 +464,26 @@ const MPH = 2.237;
 /* ------------------------------------------------------------------ player save */
 let user = (() => { try { return (localStorage.getItem('apexracer_username') || '').replace(/[^a-zA-Z0-9_\- ]/g, '').slice(0, 16); } catch (e) { return ''; } })();
 const CARS = [
-  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 75, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
+  { id: 'vanta', name: 'Vanta GT', cls: 'D', price: 0, pw: 1.0, top: 99 /* OWNER Nov 3 2026: 221 mph */, grip: 1.0, prof: 'coupe', col: '#d4142a', rimCol: '#f4f6f8', glb: 'patriot' },
   { id: 'kestrel', hidden: 1, name: 'Kestrel RS', cls: 'C', price: 28000, pw: 1.1, top: 81, grip: 1.08, prof: 'hatch', col: '#1e8bff', glb: 'tokii' },
   { id: 'brute', hidden: 1, name: 'Brute 69', cls: 'C', price: 42000, pw: 1.24, top: 85, grip: 0.96, prof: 'muscle', col: '#ff8a00', glb: 'shc' },
   { id: 'nova', hidden: 1, name: 'Nova Spyder', cls: 'B', price: 85000, pw: 1.3, top: 93, grip: 1.12, prof: 'roadster', col: '#16d07a', glb: 'patriot' },
   { id: 'zenith', hidden: 1, name: 'Zenith V12', cls: 'A', price: 170000, pw: 1.45, top: 103, grip: 1.16, prof: 'wedge', col: '#8a2be2', glb: 'tokii' },
-  { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.66, top: 118, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
+  { id: 'phantom', name: 'Phantom X', cls: 'A', price: 180000, pw: 1.6, top: 124, grip: 1.22, /* OWNER Nov 1 6:38 PM: lower prices, keeps a challenge over the Goblin */ prof: 'hyper', col: '#1e5aa8', glb: 'shc' },
   /* G-01: owner's player car - real 3D model (Fictional supercar - V12 Goblin by ollitei, CC-BY 4.0, Sketchfab) */
-  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.48, top: 106, grip: 1.16, /* OWNER Nov 1 9:33 PM: Goblin throttled down a little (pw 1.62 top 113 grip 1.22) */ prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
+  { id: 'goblin', name: 'V12 Goblin', cls: 'B', price: 120000, pw: 1.48, top: 116, grip: 1.16, /* OWNER Nov 1 9:33 PM: Goblin throttled down a little (pw 1.62 top 113 grip 1.22) */ prof: 'wedge', col: '#9d0f1f', fin: 'candy', rimCol: '#d4142a', glb: 'goblin' },
   /* OWNER Nov 1 2026 6:38 PM: the picked cars, priced as a ladder - free Vanta, then up to the $1,000,000 Sci-Fi at 320 mph */
-  { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 95, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
-  { id: 'hover', name: 'Hover Racer', cls: 'A', price: 300000, pw: 1.7, top: 128, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
-  { id: 'duke', name: 'Duke 69', cls: 'S', price: 500000, pw: 1.75, top: 134, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
-  { id: 'muscle', name: 'Futuristic Muscle', cls: 'X', price: 1000000, pw: 2.0, top: 143, grip: 1.35, prof: 'muscle', col: '#272c2e', glb: 'muscle' }, /* OWNER Nov 1 2026: the $1,000,000 top car, 320 mph */
+  { id: 'phoenix', name: 'Phoenix 455', cls: 'C', price: 60000, pw: 1.25, top: 108, grip: 1.05, prof: 'muscle', col: '#0e0e0e', glb: 'phoenix' },
+  { id: 'hover', name: 'Hover Racer', cls: 'X', price: 1000000, pw: 2.0, top: 150, grip: 1.4, prof: 'wedge', col: '#b01420', glb: 'hover' },
+  { id: 'duke', name: 'Duke 69', cls: 'S', price: 300000, pw: 1.7, top: 133, grip: 1.2, prof: 'muscle', col: '#2b2b27', glb: 'duke' },
+  { id: 'muscle', name: 'Futuristic Muscle', cls: 'S', price: 500000, pw: 1.8, top: 141, grip: 1.35, prof: 'muscle', col: '#272c2e', glb: 'muscle' }, /* OWNER Nov 3 2026: ladder by speed + price - Muscle 315 mph / 500,000; the Hover Racer is now the top car (336 mph, 1,000,000) */
   /* own1 2026-10-04: owner-exclusive exotics - 🪙1,000,000,000 for everyone else, free on the Cruz username ("I get it free cause I built it") */
   { id: 'titan', hidden: 1, name: 'CRUZ Titan GT', cls: 'X', price: 1e9, owner: 1, pw: 1.8, top: 123, grip: 1.2, prof: 'titan', col: '#1f6f6b', glb: 'tokii' },
   { id: 'vortex', hidden: 1, name: 'CRUZ Vortex GT', cls: 'X', price: 1e9, owner: 1, pw: 1.76, top: 126, grip: 1.3, prof: 'vortex', col: '#0d0e12', glb: 'patriot' },
 ];
 const CAR = Object.fromEntries(CARS.map((c) => [c.id, c]));
 /* OWNER Nov 1 6:38 PM: CRUZ Titan / Vortex removed from the lineup too. 6:04 PM: Kestrel, Brute, Nova, Zenith are the same three models as the others - gone from the garage list (kept in the data so old saves and AI cars still load) */
-const GARAGE_CARS = CARS.filter((c) => !c.hidden);
+const GARAGE_CARS = CARS.filter((c) => !c.hidden).sort((a, b) => a.price - b.price); /* OWNER Nov 3 2026: cars listed in order - free Vanta first, Hover Racer (fastest) last */
 const defCfg = (id) => ({ paint: CAR[id].col, fin: CAR[id].fin || 'metal', rim: 0, rimCol: CAR[id].rimCol || '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' });
 /* owner: "give a bonus start of 🪙200,000 to new usernames" */
 const DEF = () => ({ cash: 200000, rep: 0, wins: 0, races: 0, cars: { goblin: defCfg('goblin') }, cur: 'goblin', best: {}, laps: 8, q: 'ultra', autoGas: 0, snd: 1, cam: 0, cty: 0 });
@@ -494,6 +498,7 @@ function load() { try { const raw = localStorage.getItem(skey()); WELCOME = !raw
   if (!S.vantaS7) { S.vantaS7 = 1; const v7 = S.cars.vanta; if (v7) { if (v7.rimCol === '#c9cdd6') v7.rimCol = '#f4f6f8'; save(); } }
   /* owner: "give me a 200,000 bonus on my Cruz username profile for the racer" - one time only */
   if (isOwner()) for (const q of CARS) if (q.owner && !S.cars[q.id]) { S.cars[q.id] = defCfg(q.id); if (q.id === 'titan') { S.cars.titan.fin = 'chrome'; S.cars.titan.glow = '#19e6ff'; } }
+  if ((isOwner() || new URLSearchParams(location.search).get('dev') === '1') && !S.gift5m) { S.gift5m = 1; S.cash += 5000000; save(); } /* OWNER Nov 3 2026 4:11 PM: 5,000,000 test coins once, on the Game Development page (dev=1) or the Cruz profile - never for arcade players */
   if (isOwner() && !S.gift3m) { S.gift3m = 1; S.cash += 3000000; GIFT3 = true; save(); } /* owner: "give me another 🪙3million in account to race with" */
   if ((user || '').toLowerCase() === 'cruz' && !S.gift200k) { S.gift200k = 1; if (!WELCOME) { S.cash += 200000; GIFT = true; } save(); } }
 let GIFT = false, GIFT3 = false;
@@ -2423,7 +2428,7 @@ async function setupRace(place, laps, friend) {
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
-  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (1.02 + r() * 0.12); e.ak = 0.52 + r() * 0.12; /* OWNER Nov 1 9:23 PM 'still very slow': rivals 102-114% of the player's top, corner near the limit, and use nitro like the player */ /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
+  R.cars.forEach((e) => { if (e.ai) { e.top = P.st.top * (1.02 + r() * 0.12); e.ak = 0.85 + r() * 0.1; /* OWNER Nov 3 2026 'make the race close and winnable': rivals corner much closer to the limit (was 0.52-0.64 - a good driver won by 10-12 s in 2 laps) */ /* OWNER Nov 1 9:23 PM 'still very slow': rivals 102-114% of the player's top, corner near the limit, and use nitro like the player */ /* OWNER Nov 1 2026 9:13 PM ('I still lap them easy, my Goblin is way too fast - make other cars fast'): rivals run 94-104% of the player's top and corner much harder */ /* G-270 fix 1: the owner laps the field - rivals run at ~60% of the player's top and corner slower; every car is still fast (rivals 68-74 m/s) because the whole table went up */ e.acc = P.st.acc * (0.88 + r() * 0.14); /* G-270 fix 1: rivals also pull away slower - the pace gap has to come from corners and acceleration, not just top speed */ e.react = r() * 0.3; e.v = 0;
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
@@ -2508,7 +2513,7 @@ function stepAI(e, dt) {
   const T = R.T, N = T.N, P = R.P; if (R.t < 0) { e.v = 0; e.spd = 0; return; } /* G-300 (checklist R01): the countdown freezes the whole AI step, not just its target speed - the lane logic below walked a stationary car sideways up to 3.9 m across the grid before GO */
   const i = ((Math.floor(e.s) + Math.round((e.v * 0.7) / T.ds) + 4) % N + N) % N;
   let vt = Math.min(e.top, T.cs[i] * Math.sqrt(e.ak)) * (R.W.grip < 1 ? 0.82 : 1);
-  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; if (gap > 500) vt *= 0.7; else if (gap > 250) vt *= 0.9; /* close racing both ways: far-ahead rivals ease off, behind ones push */ else if (gap < -300) vt *= 1.15; else if (gap < -120) vt *= 1.07; } /* G-70: gentle two-way pace keeping - the field stays with the player */
+  if (P && !e.fin) { const gap = (e.s - P.prog) * T.ds; vt *= gap > 0 ? 1 - clamp(gap / 400, 0, 1) * 0.4 : 1 + clamp(-gap / 250, 0, 1) * 0.4; } /* OWNER Nov 3 2026: smooth two-way pace keeping - a rival ahead of you eases off the further ahead it is (up to 40% at 400 m), one behind you pushes the further back it is (up to +40% at 250 m). Race robot, 2 laps, 4 tracks: good driver wins by 0.5-1.1 s, expert by 0.6-4.9 s (was 10-12 s) */ /* G-70: gentle two-way pace keeping - the field stays with the player */
   /* OWNER Nov 1 9:23 PM 'still very slow': the cap that held rivals to the player's own pace is gone - they race at their own speed */ /* G-270 fix 1: cap the field at 72% of the player's demonstrated pace (was 104% - G-123), so the player gains a lap on them */ /* G-123: the field is capped to the pace the player is actually lapping at, so its lap times land within a few percent of the player's - nobody just drives away */
   if (e.fin) vt = Math.min(vt, 28);
   if (R.t < e.react) vt = 0;

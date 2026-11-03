@@ -28,6 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0      # the revert path (tools/robot-proof.py) needs the merged commit
+          filter: blob:none   # Nov 3 2026: full download of every branch now takes 5-8+ min and timed checks out (PR #2248's plan job, the merge robot)
       - name: Read the published status branch
         run: |
           git fetch origin robot-status:robot-status 2>/dev/null && git show robot-status:auditor.json > /tmp/old.json 2>/dev/null || true

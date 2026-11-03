@@ -46,7 +46,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
   {
     const branch = prBranch;
     const claudeBranch = /^(vp|claude|c?0[3-9])[-\/]/i.test(branch);
-    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
+    const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|findings\/.+|library\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
     const isFix = f => FIXF.test(f);
     const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
@@ -64,7 +64,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     if (games.length === 0 && fixGames.length > 1) guard.push(`FILE GUARD: play tests of ${fixGames.length} games changed - one game per PR`);
     if (games.length && sharedF.length) guard.push(`FILE GUARD: shared parts (${sharedF.slice(0, 3).join(', ')}) changed together with a game page - shared folders change in their OWN pull request (STUDIO-STANDARD 9.4)`);
     if (other.length && !claudeBranch) guard.push(`FILE GUARD: not yours to change: ${other.slice(0, 5).join(', ')} - a job may change only its game, its play tests, its looks/ folder, notes, or (alone) a shared folder`);
-    if (testerPR && (games.length || sharedF.length)) guard.push(`FILE GUARD: a TEST pull request changed game code (${games.concat(sharedF).slice(0, 3).join(', ')}) - testers change only tests, notes, jobs/QUEUE.md, jobs/G-NN.md, reviews/ and CLAIMS.md`);
+    if (testerPR && (games.length || sharedF.length)) guard.push(`FILE GUARD: a TEST pull request changed game code (${games.concat(sharedF).slice(0, 3).join(', ')}) - testers change only tests, notes, findings/, library/, jobs/QUEUE.md, jobs/G-NN.md, reviews/ and CLAIMS.md`);
     if (guard.length && !claudeBranch) { blockers.push(...guard); }
     else if (guard.length) console.log('File guard (Claude branch, not blocking):\n- ' + guard.join('\n- '));
     else if (changed.length) console.log('File guard: OK (' + (games[0] || (sharedF.length ? 'shared parts' : 'notes/tests')) + ')');
@@ -85,7 +85,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     }
     if (bad.length) blockers.push(`CONFLICT MARKERS: ${bad.slice(0, 5).join(', ')} still has merge-conflict lines (<<<<<<< / >>>>>>>) - join the two sides and remove the marker lines`);
   }
-  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
+  const testOnly = changed.length && changed.every(f => /^tools\/game-check\/fixes\/[a-z0-9-]+(\/[A-Za-z0-9_.-]+)?\.mjs$|^jobs\/(QUEUE|HELP|G-\d+)\.md$|^needs\/window-\d+\.md$|^reviews\/|^findings\/|^library\/|^checklists\/[a-z0-9-]+\.md$|^CLAIMS\.md$|^LESSONS\.md$/.test(f)) || (testerPR && !blockers.length);
   if (testOnly) console.log('Tester PR (only tests / QUEUE / reports / CLAIMS changed): its failing play tests are findings for the builder, not blockers.');
   if (testOnly || testerPR) {
     // owner Oct 21 2:25 PM: a tester's NEW test must FAIL on today's game - a new test that passes proves nothing
