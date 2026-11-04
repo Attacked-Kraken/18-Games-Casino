@@ -48,10 +48,17 @@ button:disabled{opacity:.45}
 #empty ol{margin:0;padding-left:20px;color:var(--muted)}
 #empty li{margin:2px 0}
 
-.stage{position:relative;background:var(--stage);border-radius:10px;overflow:hidden;width:100%;max-height:68vh;display:flex;justify-content:center}
-.frame{position:relative;max-width:100%;max-height:68vh;display:block;line-height:0}
-video{display:block;max-width:100%;max-height:68vh;background:var(--stage)}
-#ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.dock-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding-bottom:8px;display:flex;flex-direction:column;gap:8px}
+.stage{position:relative;background:var(--stage);border-radius:10px;overflow:hidden;width:100%;max-height:36vh;display:flex;justify-content:center}
+.frame{position:relative;max-width:100%;max-height:36vh;display:block;line-height:0}
+video{display:block;max-width:100%;max-height:36vh;background:var(--stage);pointer-events:none;-webkit-user-select:none;user-select:none}
+#ov{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.dock-top .panel{padding:8px 10px;gap:4px}
+.dock-top .scrub{padding:10px 0 2px}
+.dock-bot{position:sticky;bottom:0;z-index:6;padding-bottom:max(8px,env(safe-area-inset-bottom,0px));background:var(--bg)}
+.dock-bot .panel{padding:8px 10px;gap:6px;box-shadow:0 -6px 14px color-mix(in srgb,var(--bg) 80%,transparent)}
+#rot{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);color:var(--fg);align-items:center;justify-content:center;text-align:center;padding:24px;font:700 22px/1.2 var(--f-ui)}
+@media (orientation:landscape) and (max-height:600px){#rot{display:flex}}
 .tc{font:500 15px var(--f-mono);font-variant-numeric:tabular-nums}
 .scrub{position:relative;padding:14px 0 6px}
 input[type=range]{width:100%;margin:0;accent-color:var(--accent);height:28px}
@@ -78,6 +85,7 @@ textarea{min-height:64px;resize:vertical}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style></head><body>
 
+<div id="rot">Turn your phone upright. Clip Notes works in portrait only.</div>
 <div class="wrap">
   <div class="top">
     <div>
@@ -100,12 +108,13 @@ textarea{min-height:64px;resize:vertical}
   </section>
 
   <section id="editor" hidden>
+    <div class="dock-top">
     <div class="stage"><div class="frame">
       <video id="vid" playsinline muted preload="auto"></video>
       <canvas id="ov"></canvas>
     </div></div>
 
-    <div class="panel" style="margin-top:14px">
+    <div class="panel">
       <div class="row" style="justify-content:space-between">
         <span class="tc" id="tc">0:00.0 / 0:00.0</span>
         <span class="hint" id="fname"></span>
@@ -123,9 +132,9 @@ textarea{min-height:64px;resize:vertical}
         <button id="spd" aria-label="Playback speed">1x</button>
       </div>
     </div>
+    </div>
 
-    <div class="panel tools" style="margin-top:14px">
-      <span class="label">Draw on this frame</span>
+    <div class="dock-bot"><div class="panel tools">
       <div class="row">
         <button data-tool="pen" aria-pressed="true">Pen</button>
         <button data-tool="arrow" aria-pressed="false">Arrow</button>
@@ -144,7 +153,7 @@ textarea{min-height:64px;resize:vertical}
       <div id="lblrow" hidden>
         <input id="lbl" type="text" placeholder="Type the words, then tap the frame to place them" aria-label="Words to place on the frame">
       </div>
-    </div>
+    </div></div>
 
     <div class="panel" style="margin-top:14px">
       <span class="label" id="fhead">New finding at this moment</span>
@@ -193,7 +202,7 @@ textarea{min-height:64px;resize:vertical}
 (function(){
   var $=function(s){return document.querySelector(s)};
   var v=$('#vid'), ov=$('#ov'), octx=ov.getContext('2d');
-  var shapes=[], findings=[], editing=null, tool='pen', color='#ff3b30', drawing=null, nextId=1;
+  var draftT=0, draftImg=null, dirty=true, lastT=-1, shapes=[], findings=[], editing=null, tool='pen', color='#ff3b30', drawing=null, nextId=1;
   var trim={a:0,b:0}, fileName='video', dl=null, speeds=[1,.5,.25], si=0, recording=false, cancelRec=false;
 
   function fmt(t){ if(!isFinite(t)) t=0; var m=Math.floor(t/60), s=t-m*60; return m+':'+(s<10?'0':'')+s.toFixed(1); }
@@ -206,7 +215,8 @@ textarea{min-height:64px;resize:vertical}
     var f=e.target.files && e.target.files[0]; if(!f) return;
     if(v.src) { try{URL.revokeObjectURL(v.src);}catch(_){} }
     fileName=f.name||'video'; $('#fname').textContent=fileName;
-    shapes=[]; findings=[]; editing=null; renderList(); redraw();
+    shapes=[]; findings=[]; editing=null; draftImg=null; renderList(); redraw();
+    try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(_){}
     v.src=URL.createObjectURL(f); v.load();
     $('#empty').hidden=true; $('#editor').hidden=false; say('');
   });
@@ -262,18 +272,29 @@ textarea{min-height:64px;resize:vertical}
     }
     ctx.restore();
   }
+  var HOLD=2.5, FADE=.6;
+  function alphaFor(ft,t){ var d=t-ft; if(d<-.07) return 0; if(d<=HOLD) return 1; if(d<=HOLD+FADE) return 1-(d-HOLD)/FADE; return 0; }
   function redraw(){
-    octx.clearRect(0,0,ov.width,ov.height);
-    shapes.forEach(function(s){drawShape(octx,s,1,ov.width,ov.height)});
-    if(drawing) drawShape(octx,drawing,1,ov.width,ov.height);
+    dirty=true;
   }
+  function paint(){
+    var t=v.currentTime; octx.clearRect(0,0,ov.width,ov.height);
+    findings.forEach(function(f){ if(f.id===editing) return; var a=alphaFor(f.t,t); if(a<=0) return; octx.globalAlpha=a; f.shapes.forEach(function(s){drawShape(octx,s,1,ov.width,ov.height)}); });
+    var da=drawing?1:alphaFor(draftT,t);
+    if(da>0){ octx.globalAlpha=da; shapes.forEach(function(s){drawShape(octx,s,1,ov.width,ov.height)}); if(drawing) drawShape(octx,drawing,1,ov.width,ov.height); }
+    octx.globalAlpha=1;
+  }
+  (function loop(){ var t=v.currentTime; if(dirty||t!==lastT){ lastT=t; dirty=false; paint(); } requestAnimationFrame(loop); })();
+  function refreshDraftImg(){ draftImg = shapes.length ? snap(1280,shapes).toDataURL('image/jpeg',.88) : null; }
   function pt(e){ var r=ov.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*ov.width,(e.clientY-r.top)/r.height*ov.height]; }
   ov.addEventListener('pointerdown', function(e){
     if(!v.duration) return; e.preventDefault(); if(!v.paused) v.pause();
     var p=pt(e);
+    if(!shapes.length) draftT=v.currentTime;
+    else if(Math.abs(v.currentTime-draftT)>.25) autoCommit();
     if(tool==='text'){
       var s=$('#lbl').value.trim(); if(!s){ $('#lbl').focus(); say('Type the words first, then tap the frame.'); return; }
-      shapes.push({t:'text',c:color,p:[p],s:s}); redraw(); return;
+      shapes.push({t:'text',c:color,p:[p],s:s}); refreshDraftImg(); redraw(); return;
     }
     try{ ov.setPointerCapture(e.pointerId); }catch(_){}
     drawing={t:tool,c:color,p:[p]};
@@ -282,7 +303,8 @@ textarea{min-height:64px;resize:vertical}
     if(!drawing) return; e.preventDefault(); var p=pt(e);
     if(tool==='pen') drawing.p.push(p); else drawing.p[1]=p; redraw();
   });
-  function end(){ if(!drawing) return; shapes.push(drawing); drawing=null; redraw(); }
+  function end(){ if(!drawing) return; shapes.push(drawing); drawing=null; refreshDraftImg(); redraw(); }
+  ov.addEventListener('contextmenu',function(e){e.preventDefault()}); v.addEventListener('contextmenu',function(e){e.preventDefault()});
   ov.addEventListener('pointerup', end); ov.addEventListener('pointercancel', end);
   document.querySelectorAll('[data-tool]').forEach(function(b){ b.addEventListener('click', function(){
     tool=b.dataset.tool; document.querySelectorAll('[data-tool]').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
@@ -291,8 +313,8 @@ textarea{min-height:64px;resize:vertical}
   document.querySelectorAll('.sw').forEach(function(b){ b.addEventListener('click', function(){
     color=b.dataset.c; document.querySelectorAll('.sw').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
   });});
-  $('#undo').onclick=function(){ shapes.pop(); redraw(); };
-  $('#clear').onclick=function(){ shapes=[]; redraw(); };
+  $('#undo').onclick=function(){ shapes.pop(); refreshDraftImg(); redraw(); };
+  $('#clear').onclick=function(){ shapes=[]; draftImg=null; redraw(); };
 
   /* ---------- findings ---------- */
   function snap(maxW,list,withShapes){
@@ -306,14 +328,19 @@ textarea{min-height:64px;resize:vertical}
     if(!v.duration) return; v.pause();
     var note=$('#note').value.trim();
     if(!shapes.length && !note){ say('Draw on the frame or write a note first.'); return; }
-    var c=snap(1280,shapes), img=c.toDataURL('image/jpeg',.88);
-    var rec={id:editing||nextId++, t:v.currentTime, note:note, shapes:JSON.parse(JSON.stringify(shapes)), img:img};
+    var img=shapes.length&&draftImg?draftImg:snap(1280,shapes).toDataURL('image/jpeg',.88);
+    var rec={id:editing||nextId++, t:shapes.length?draftT:v.currentTime, note:note, shapes:JSON.parse(JSON.stringify(shapes)), img:img};
     var ix=findings.findIndex(function(f){return f.id===rec.id});
     if(ix>=0) findings[ix]=rec; else findings.push(rec);
     findings.sort(function(a,b){return a.t-b.t});
     leaveEdit(); renderList(); marks(); say('Finding saved at '+fmt(rec.t)+'.');
   };
-  function leaveEdit(){ editing=null; shapes=[]; $('#note').value=''; $('#cancel').hidden=true; $('#fhead').textContent='New finding at this moment'; redraw(); }
+  function autoCommit(){
+    var rec={id:editing||nextId++, t:draftT, note:$('#note').value.trim(), shapes:JSON.parse(JSON.stringify(shapes)), img:draftImg||snap(1280,shapes).toDataURL('image/jpeg',.88)};
+    var ix=findings.findIndex(function(f){return f.id===rec.id}); if(ix>=0) findings[ix]=rec; else findings.push(rec);
+    findings.sort(function(a,b){return a.t-b.t}); leaveEdit(); renderList(); marks(); say('Marks at '+fmt(rec.t)+' saved as a finding.');
+  }
+  function leaveEdit(){ editing=null; draftImg=null; shapes=[]; $('#note').value=''; $('#cancel').hidden=true; $('#fhead').textContent='New finding at this moment'; redraw(); }
   $('#cancel').onclick=leaveEdit;
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
   function renderList(){
@@ -327,7 +354,7 @@ textarea{min-height:64px;resize:vertical}
     var b=e.target.closest('button'); if(!b) return;
     var id=+b.closest('li').dataset.id, f=findings.find(function(x){return x.id===id}); if(!f) return;
     if(b.dataset.a==='del'){ findings=findings.filter(function(x){return x.id!==id}); if(editing===id) leaveEdit(); renderList(); marks(); }
-    else { v.pause(); v.currentTime=f.t; editing=id; shapes=JSON.parse(JSON.stringify(f.shapes)); $('#note').value=f.note;
+    else { v.pause(); v.currentTime=f.t; editing=id; draftT=f.t; draftImg=f.img; shapes=JSON.parse(JSON.stringify(f.shapes)); $('#note').value=f.note;
       $('#cancel').hidden=false; $('#fhead').textContent='Editing finding at '+fmt(f.t); redraw(); window.scrollTo({top:0,behavior:'smooth'}); }
   });
 
@@ -420,7 +447,6 @@ textarea{min-height:64px;resize:vertical}
   };
 
   /* marked-up video */
-  var HOLD=2.5;
   $('#vcancel').onclick=function(){ cancelRec=true; };
   $('#vidx').onclick=async function(){
     if(recording||!v.duration) return;
