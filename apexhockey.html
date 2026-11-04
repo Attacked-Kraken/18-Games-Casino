@@ -1252,7 +1252,12 @@ function aiSkater(s,dt){
   mates.sort((a,b)=>((a.pos.x-puck.pos.x)**2+(a.pos.z-puck.pos.z)**2)-((b.pos.x-puck.pos.x)**2+(b.pos.z-puck.pos.z)**2));
   const carrier=puck.owner;
   if(carrier===s){ // I have the puck (any AI carrier uses the same brain)
-    if(isControlled){ s.target.copy(s.pos); s._chasing=false; return; } // G-135: a puck the idle human's skater wins is held for the human - he never attacks for him
+    if(isControlled){ // F-H-001 (owner Nov 4): an idle human does not freeze the team - after ~1 s with the puck and no input his skater passes it to the best open teammate, who plays on with the normal brain
+      s._idleHoldT=(s._idleHoldT||0)+0.3;
+      if(s._idleHoldT>=1.0){ s._idleHoldT=0; aiPass(s); }
+      else { s.target.copy(s.pos); }
+      s._chasing=false; return; }
+    s._idleHoldT=0;
     const gx=dir*GOAL_LINE, dGoal=Math.hypot(gx-s.pos.x, s.pos.z);
     let nearestOpp=1e9;
     for(const o of (isHome?awaySkaters:homeSkaters)) nearestOpp=Math.min(nearestOpp,Math.hypot(o.pos.x-s.pos.x,o.pos.z-s.pos.z));
