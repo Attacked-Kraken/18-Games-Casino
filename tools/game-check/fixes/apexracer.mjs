@@ -2018,4 +2018,210 @@ export default [
       return true;
     },
   },
+// DRAFT — tester-chk-r15 (T8-15, checklist R15: wheels on the road).
+// INSERT as a new object at the end of the exported array in
+// tools/game-check/fixes/apexracer.mjs (after tester-chk-r13), adjusting
+// commas. Follows this file's convention: return a failure string on
+// failure, return true on pass (same as tester-chk-r11/r12/r13).
+// Gate: RESTING states only (garage + race grid). Driving transients
+// (wheel dips/lifts while driving) do not fail this test.
+{
+  id: 'tester-chk-r15',
+  parts: ['wheels'],
+  cat: 'play',
+  name: 'R15: every car has wheels and each wheel sits on the road',
+  ask: 'Garage census of all 13 car models + New York race grid census: every wheel quadrant (vertex-based) within [0, 0.03] m of the road at rest.',
+  async test(page, h) {
+    // VERTEX-based on purpose, NOT bounding-box corners. These GLB
+    // models' geometry bounding boxes are inflated vs their vertices
+    // (e.g. Goblin tyre bbox-corner min 0, vertex min 0.077 m; Patriot
+    // door bbox-corner -0.0977 m, vertex +0.3061 m — T8-15). A bbox-based
+    // test false-passes floating tokii/goblin wheels and false-fails
+    // patriot doors. Vertices x matrixWorld are what the GPU renders
+    // (no morphs, no skinning on tyre/door/casing meshes, verified T8-15).
+    const BAND = 0.03, EPS = 0.001;
+    const IDS = ['vanta', 'kestrel', 'brute', 'nova', 'zenith', 'phantom', 'goblin', 'phoenix', 'hover', 'duke', 'muscle', 'titan', 'vortex'];
+    const CFGS = {
+      vanta: { paint: '#d4142a', fin: 'metal', rimCol: '#f4f6f8' },
+      kestrel: { paint: '#1e8bff', fin: 'metal', rimCol: '#c9cdd6' },
+      brute: { paint: '#ff8a00', fin: 'metal', rimCol: '#c9cdd6' },
+      nova: { paint: '#16d07a', fin: 'metal', rimCol: '#c9cdd6' },
+      zenith: { paint: '#8a2be2', fin: 'metal', rimCol: '#c9cdd6' },
+      phantom: { paint: '#1e5aa8', fin: 'metal', rimCol: '#c9cdd6' },
+      goblin: { paint: '#9d0f1f', fin: 'candy', rimCol: '#d4142a' },
+      phoenix: { paint: '#0e0e0e', fin: 'metal', rimCol: '#c9cdd6' },
+      hover: { paint: '#b01420', fin: 'metal', rimCol: '#c9cdd6' },
+      duke: { paint: '#2b2b27', fin: 'metal', rimCol: '#c9cdd6' },
+      muscle: { paint: '#272c2e', fin: 'metal', rimCol: '#c9cdd6' },
+      titan: { paint: '#1f6f6b', fin: 'metal', rimCol: '#c9cdd6' },
+      vortex: { paint: '#0d0e12', fin: 'metal', rimCol: '#c9cdd6' },
+    };
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const clickText = async (sel, text) => {
+      const ok = await h.eval((o) => {
+        for (const b of document.querySelectorAll(o.sel)) {
+          if ((b.textContent || '').includes(o.text)) { b.click(); return true; }
+        }
+        return false;
+      }, { sel, text }).catch(() => false);
+      return ok;
+    };
+    // In-page quadrant census for one car root. Quadrants by root-local
+    // signs: forward = root +Z axis (the nose), right = root +X axis.
+    // The fake shadow blob (a perfectly flat plane spanning the car) is
+    // excluded so it cannot mask a real wheel float.
+    await h.eval(() => {
+      window.__r15quads = (root) => {
+        if (!root) return null;
+        root.updateMatrixWorld(true);
+        const e = root.matrixWorld.elements;
+        const px = e[12], py = e[13], pz = e[14];
+        const fx = e[8], fy = e[9], fz = e[10];
+        const rx = e[0], ry = e[1], rz = e[2];
+        const meshes = [];
+        root.traverse((q) => { if (q.geometry && q.geometry.attributes && q.geometry.attributes.position) meshes.push(q); });
+        const stats = meshes.map((m) => {
+          const p = m.geometry.attributes.position, mw = m.matrixWorld.elements;
+          let mnY = 1e9, mxY = -1e9, mnX = 1e9, mxX = -1e9, mnZ = 1e9, mxZ = -1e9;
+          for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+            const wx = mw[0] * x + mw[4] * y + mw[8] * z + mw[12];
+            const wy = mw[1] * x + mw[5] * y + mw[9] * z + mw[13];
+            const wz = mw[2] * x + mw[6] * y + mw[10] * z + mw[14];
+            if (wy < mnY) mnY = wy; if (wy > mxY) mxY = wy;
+            if (wx < mnX) mnX = wx; if (wx > mxX) mxX = wx;
+            if (wz < mnZ) mnZ = wz; if (wz > mxZ) mxZ = wz;
+          }
+          return { m, mnY, mxY, mnX, mxX, mnZ, mxZ, flatPlane: (mxY - mnY) < 0.002 && (mxX - mnX) > 1 && (mxZ - mnZ) > 1 };
+        });
+        const quads = { LF: null, RF: null, LRr: null, RRr: null };
+        let wheelNamed = 0;
+        for (const s of stats) {
+          if (/wheel|tyre|tire/i.test(s.m.name || '')) wheelNamed++;
+          if (s.flatPlane) continue;
+          const p = s.m.geometry.attributes.position, mw = s.m.matrixWorld.elements;
+          for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+            const wx = mw[0] * x + mw[4] * y + mw[8] * z + mw[12];
+            const wy = mw[1] * x + mw[5] * y + mw[9] * z + mw[13];
+            const wz = mw[2] * x + mw[6] * y + mw[10] * z + mw[14];
+            const ox = wx - px, oy = wy - py, oz = wz - pz;
+            const f = ox * fx + oy * fy + oz * fz;
+            const r = ox * rx + oy * ry + oz * rz;
+            const q = (f >= 0 ? (r < 0 ? 'LF' : 'RF') : (r < 0 ? 'LRr' : 'RRr'));
+            if (quads[q] === null || wy < quads[q]) quads[q] = wy;
+          }
+        }
+        return { quads, wheelNamed, meshes: meshes.length };
+      };
+    });
+    const countMeshes = async () => h.eval(() => {
+      const root = window.__reality ? window.__reality.player : null;
+      if (!root) return 0;
+      let c = 0; root.traverse((q) => { if (q.geometry) c++; });
+      return c;
+    }).catch(() => 0);
+    const waitStable = async () => {
+      let prev = -1, stable = 0;
+      for (let i = 0; i < 90 && stable < 2; i++) {
+        const n = await countMeshes();
+        if (n > 0 && n === prev) stable++; else { stable = 0; prev = n; }
+        await sleep(1000);
+      }
+      return prev > 0;
+    };
+    const failures = [];
+    const check = (label, res) => {
+      if (!res) { failures.push(label + ': no root'); return; }
+      const bad = [];
+      for (const q of ['LF', 'RF', 'LRr', 'RRr']) {
+        const v = res.quads[q];
+        if (v === null || v < -EPS || v > BAND) bad.push(q + '=' + (v === null ? 'none' : v.toFixed(4)));
+      }
+      if (bad.length) failures.push(label + ' (wheel-named meshes: ' + res.wheelNamed + '): ' + bad.join(' '));
+    };
+    // ---- Garage census: all 13 models via the game's own openGarage ----
+    for (const id of IDS) {
+      const cfg = CFGS[id];
+      await h.eval((o) => {
+        const E = window.__erc;
+        E.S.cur = o.id;
+        if (!E.S.cars[o.id]) {
+          E.S.cars[o.id] = { paint: o.cfg.paint, fin: o.cfg.fin, rim: 0, rimCol: o.cfg.rimCol, tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none', wrapCol: '#ffffff' };
+        }
+        E.openGarage();
+      }, { id, cfg });
+      if (!(await waitStable())) return 'r15: no garage meshes loaded for ' + id;
+      const res = await h.eval(() => window.__r15quads(window.__reality ? window.__reality.player : null));
+      check('garage:' + id, res);
+    }
+    // ---- Race grid census: New York Circuit 8 laps, cars still ----
+    await h.eval(() => { window.__erc.toMenu(); });
+    await h.poll(async () => {
+      const b = await h.eval(() => {
+        const m = document.querySelector('#menu');
+        return m && getComputedStyle(m).display !== 'none' ? true : null;
+      }).catch(() => null);
+      return b;
+    }, (v) => v === true, 30000).catch(() => {});
+    if (!(await clickText('#mRace', 'RACE'))) {
+      await h.eval(() => { const b = document.querySelector('#mRace'); if (b) b.click(); });
+    }
+    await h.poll(async () => {
+      const b = await h.eval(() => {
+        const w = document.querySelector('#world');
+        return w && getComputedStyle(w).display !== 'none' ? true : null;
+      }).catch(() => null);
+      return b;
+    }, (v) => v === true, 30000);
+    if (!(await clickText('#world button', 'New York'))) return 'r15: New York place button not found';
+    await h.poll(async () => {
+      const b = await h.eval(() => {
+        const s = document.querySelector('#sheet');
+        return s && getComputedStyle(s).display !== 'none' ? true : null;
+      }).catch(() => null);
+      return b;
+    }, (v) => v === true, 30000);
+    if (!(await clickText('#shType .chip', 'Circuit'))) return 'r15: Circuit chip not found';
+    if (!(await clickText('#shLaps .chip', '8 laps'))) return 'r15: 8 laps chip not found';
+    const sheetOk = await h.eval(() => {
+      let typeOn = '', lapOn = '';
+      document.querySelectorAll('#shType .chip').forEach((b) => { if (b.classList.contains('on')) typeOn = (b.textContent || '').trim(); });
+      document.querySelectorAll('#shLaps .chip').forEach((b) => { if (b.classList.contains('on')) lapOn = (b.textContent || '').trim(); });
+      return { typeOn, lapOn };
+    });
+    if (sheetOk.typeOn !== 'Circuit' || sheetOk.lapOn !== '8 laps') {
+      return 'r15: sheet state not Circuit/8 laps: ' + JSON.stringify(sheetOk);
+    }
+    await h.eval(() => { const b = document.querySelector('#shGo'); if (b) b.click(); });
+    const gridBuilt = await h.poll(async () => {
+      const b = await h.eval(() => {
+        const E = window.__erc;
+        if (!E || !E.R || !E.R.P || !E.R.cars || E.R.cars.length !== 8 || !E.R.traffic) return null;
+        if (E.R.type !== 'circuit' || E.R.laps !== 8) return 'WRONGTYPE:' + E.R.type + '/' + E.R.laps;
+        return { ok: true };
+      }).catch(() => null);
+      return b;
+    }, (v) => v && v.ok === true, 300000).catch(() => null);
+    if (!gridBuilt) return 'r15: grid race never built';
+    const grid = await h.eval(() => {
+      const E = window.__erc, R = E.R, out = [];
+      const seen = new Set();
+      const push = (label, root) => {
+        if (!root || seen.has(root)) return;
+        seen.add(root);
+        out.push({ label, res: window.__r15quads(root) });
+      };
+      push('race:player', window.__reality ? window.__reality.player : null);
+      R.cars.forEach((e, i) => push('race:' + (e.name || ('car' + i)), e.car ? e.car.root : null));
+      R.traffic.forEach((t, i) => push('race:traffic' + i, t.car ? t.car.root : null));
+      return out;
+    });
+    for (const g of grid) check(g.label, g.res);
+    if (failures.length) {
+      return 'R15 FAIL — wheels off the road at rest (vertex minima, band [0, 0.03] m): ' + failures.join(' | ');
+    }
+    return true;
+  },
+},
 ];
