@@ -1857,6 +1857,36 @@ export default [
     },
   },
   {
+    id: 'play-race-type-trial-par-hud', parts: ['hud'],
+    cat: 'play',
+    name: 'F-R-001: the Time trial HUD shows the par time from the countdown on, before GO',
+    ask: 'F-R-001: start a Time trial: the HUD (lap/time box) must show the par time (m:ss.cc) during the countdown and at GO, not only on the results screen',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+      const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+      if (!hasErc) return 'no __erc';
+      await h.eval(() => { document.querySelector('#mRace').click(); });
+      const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+      if (!hasPl) return 'no place button in #plist';
+      await h.eval(() => { document.querySelector('#plist .pl').click(); });
+      const chip = await h.poll(() => h.eval(() => !!document.querySelector('#shType [data-t="trial"]')), (v) => !!v, 10000).catch(() => false);
+      if (!chip) return 'F-R-001: no Time trial chip on the race sheet';
+      await h.eval(() => { document.querySelector('#shType [data-t="trial"]').click(); document.querySelector('#shGo').click(); });
+      const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 80000).catch(() => false);
+      if (!inRace) return 'F-R-001: the time trial start never reached the race';
+      await h.eval(() => { window.__erc.step(2, 0.016); return true; });
+      return await h.eval(() => {
+        const R = window.__erc.R, txt = document.getElementById('lapT').textContent;
+        if (!(R.t < 0)) return 'expected the countdown (t<0), got t=' + R.t;
+        const m = /PAR\s*(\d+:\d\d\.\d\d)/.exec(txt);
+        if (!m) return 'F-R-001: HUD at countdown t=' + R.t.toFixed(2) + ' s shows no par time: "' + txt.replace(/\s+/g, ' ') + '"';
+        const want = Math.floor(R.par / 60) + ':' + (R.par % 60).toFixed(2).padStart(5, '0');
+        if (m[1] !== want) return 'HUD par ' + m[1] + ' != R.par ' + want;
+        return true;
+      });
+    },
+  },
+  {
     id: 'tester-chk-r12', parts: ['body'],
     cat: 'play',
     name: 'checklist R12: the player car measures 4.5-4.8 long, 1.95 wide, 1.1-1.4 high (metres, +-15%) in the garage and on the grid',
