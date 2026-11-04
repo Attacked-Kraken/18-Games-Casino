@@ -7,9 +7,11 @@ NNN = the next free number in that folder, three digits). Copy `findings/TEMPLAT
 without the HOW TO SEE IT steps - a finding that cannot be seen again is not a finding.
 
 ## Who writes which part
-1. **Tester** (the window that plays the game) fills every line from FINDING down to `STATUS: NEW`. Pull request on branch
-   `test/<game>-F-<L>-<NNN>`, title `FIND <game>: F-<L>-<NNN> - <one line>`. Notes + a failing play test only; the merge robot
-   merges it by itself.
+1. **Tester** (the window that plays the game) fills every line from FINDING down to `STATUS: NEW`. **Findings go out in BATCHES**
+   (owner Nov 3 2026 6:46 PM): every finding of one round (one file each) + its failing play tests + checklist ticks sit on ONE branch
+   `test/<game>-batch-<round id>`, and ONE pull request opens at the end of the round, title
+   `FIND <game>: F-<L>-<NNN>, F-<L>-<NNN>, ... - <round id>`. Notes + failing play tests only; the merge robot merges it by itself.
+   The Mac sends the auditor ONE audit round with the whole batch once it has landed (no new finding for 10 min).
 2. **Auditor** (the window that checks that game) adds the AUDIT block. It opens the game on main, follows HOW TO SEE IT, and
    writes what it really saw. TRUE / FALSE / DUPLICATE, then the KIND:
    - `SMALL` = words, menu/HUD layout or colour, a game number, a sound, a test. The auditor fixes it itself: branch
@@ -55,6 +57,6 @@ STATUS: FOR-CLAUDE | FIXED PR #N | CLOSED-FALSE | DUPLICATE
 ## Rules
 - Numbers come from the running game (the REALITY hook, Box3, the clock, the DOM), never from memory.
 - A finding on a game that is CLOSED in `library/closed/` is not filed here - that game lives in the Apex Arcade now.
-- One open pull request per window at a time. File the next finding after the first one merged (minutes, not hours).
+- One open pull request per window at a time: ONE batch PR per tester round, never one PR per finding.
 - A play test that FAILS on main is the strongest proof; add it when the problem can be measured.
 - The owner's own notes are findings too: Claude files them as `F-<L>-<NNN>` with `BY: owner` - they go first.
