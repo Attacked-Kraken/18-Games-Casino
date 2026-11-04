@@ -3730,4 +3730,79 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'tester-mute-btn-44px',
+    mode: 'f-t-001',
+    ask: 'FIND F-T-001 (T10-1): the MUTE button is 34 px in one dimension on every screen - DONE.md says touch targets are >= 44x44 CSS px. The MUTE button must measure at least 44x44 px.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      const m = await h.eval(() => {
+        const b = document.getElementById('muteBtn');
+        if (!b) return { err: 'MUTE button (#muteBtn) is missing from the page' };
+        const cs = getComputedStyle(b);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return { err: 'MUTE button is hidden on the menu' };
+        const r = b.getBoundingClientRect();
+        return { w: Math.round(r.width), h: Math.round(r.height) };
+      }).catch(() => null);
+      if (!m) return 'could not measure the MUTE button (F-T-001)';
+      if (m.err) return m.err;
+      if (m.w < 44 || m.h < 44) return 'MUTE button measures ' + m.w + 'x' + m.h + ' px but DONE.md says touch targets are >= 44x44 px (F-T-001)';
+      return true;
+    },
+  },
+  {
+    id: 'tester-results-btns-viewport',
+    mode: 'f-t-002',
+    ask: 'FIND F-T-002 (T10-1): the results MENU and NEXT EVENT buttons stick out past the viewport and are cut in half by the results panel - DONE.md says no interactive element is off-screen. Both buttons must sit fully inside the viewport on the results screen.',
+    async test(page, h) {
+      await h.eval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(document.getElementById('bFree') && getComputedStyle(document.getElementById('bFree')).display !== 'none')).catch(() => false); if (ready) break; await h.wait(500); }
+      const entered = await h.eval(() => { const b = document.getElementById('bFree'); if (!b) return false; b.click(); return true; }).catch(() => false);
+      if (!entered) return 'could not open free play (F-T-002)';
+      await h.wait(800);
+      const started = await h.eval(() => { const bs = document.querySelectorAll('#gridEvents button'); if (!bs[0]) return false; bs[0].click(); return true; }).catch(() => false);
+      if (!started) return 'could not open the first grid event (F-T-002)';
+      await h.wait(700);
+      await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+      let hasEng = false;
+      for (let i = 0; i < 60 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(500); }
+      if (!hasEng) return 'no live engine after card start (F-T-002)';
+      await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, n = 0;
+        while (!e.done && n < 60 * 40) {
+          e.update(1 / 60); n++;
+          const t = n / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { if (typeof e.stride === 'function') e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        return e.done;
+      }).catch(() => false);
+      let shown = false;
+      for (let i = 0; i < 150 && !shown; i++) {
+        shown = await h.eval(() => { const el = document.getElementById('results'); if (!el) return false; const cs = getComputedStyle(el); const r = el.getBoundingClientRect(); return cs.display !== 'none' && r.width > 0; }).catch(() => false);
+        if (!shown) await h.wait(500);
+      }
+      if (!shown) return 'results overlay never appeared after finishing the race (F-T-002)';
+      const m = await h.eval(() => {
+        const vw = innerWidth, vh = innerHeight;
+        const out = { vw, vh, btns: [] };
+        for (const id of ['bResMenu', 'bResNext']) {
+          const b = document.getElementById(id);
+          if (!b) { out.btns.push({ id, missing: true }); continue; }
+          const r = b.getBoundingClientRect();
+          out.btns.push({ id, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) });
+        }
+        return out;
+      }).catch(() => null);
+      if (!m) return 'could not measure the results buttons (F-T-002)';
+      for (const b of m.btns) {
+        if (b.missing) return 'results button ' + b.id + ' is missing (F-T-002)';
+        if (b.x < 0 || b.y < 0 || b.x + b.w > m.vw || b.y + b.h > m.vh) return 'results button ' + b.id + ' measures ' + b.w + 'x' + b.h + ' px at ' + b.x + ',' + b.y + ' in a ' + m.vw + 'x' + m.vh + ' viewport - it sticks out past the screen edge (F-T-002)';
+      }
+      return true;
+    },
+  },
 ];
