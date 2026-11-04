@@ -1782,4 +1782,35 @@ export default [
   },
   balanceTest(),
   ...CAR_IDS.map(censusTest),
+  {
+    id: 'tester-chk-r11', parts: ['menu'],
+    cat: 'play',
+    name: 'checklist R11: the race/mode picker offers circuit, sprint and time trial, each starting its own kind of run',
+    ask: 'R11: the race setup sheet offers circuit, sprint and time trial as selectable options (on main it offers only lap counts, so the test fails naming the missing types; the distinct-runs half cannot be exercised until a picker exists — once one lands, extend this test to select each type, start the run, and compare run structure)',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+      const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+      if (!hasErc) return 'no __erc';
+      const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+      if (!hasRace) return 'no #mRace button';
+      await h.eval(() => { document.querySelector('#mRace').click(); });
+      const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+      if (!hasPl) return 'no place button in #plist';
+      await h.eval(() => { document.querySelector('#plist .pl').click(); });
+      const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+      if (!hasSheet) return 'race setup sheet did not open';
+      const r = await h.eval(() => {
+        const sheet = document.querySelector('#sheet');
+        const offered = [...sheet.querySelectorAll('button, select option, [role="option"]')]
+          .map((el) => (el.innerText || el.textContent || '').trim().toLowerCase())
+          .filter(Boolean);
+        const has = (t) => offered.some((o) => new RegExp('\\b' + t.replace(' ', '[\\s-]?') + '\\b').test(o));
+        const missing = ['circuit', 'sprint', 'time trial'].filter((t) => !has(t));
+        if (missing.length) return 'R11: race-type picker is missing ' + missing.join(', ') + ' — sheet offers only: ' + offered.join(' | ');
+        return true;
+      });
+      if (r !== true) return r;
+      return true;
+    },
+  },
 ];
