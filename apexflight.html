@@ -157,6 +157,7 @@
   </div>
 </div>
 
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { createApexJet, createJetControls, JET_STYLE_KEYS, JET_PAINTS, JET_STYLES } from './models/apex-jet/apexJet.js';
@@ -1146,6 +1147,7 @@ const Mus = (function () {
   function sched() {
     try {
       if (!M.ctx) return;
+      if (M.pack && M.pack.playing()) { M.nextT = M.ctx.currentTime + 0.1; return; } // gapless ogg pack is playing
       const fly = M.mode === 'fly';
       const spb = 60 / (fly ? 120 : 84) / 4;
       while (M.nextT < M.ctx.currentTime + 0.15) {
@@ -1174,9 +1176,10 @@ const Mus = (function () {
   window.addEventListener('pointerdown', function initAudio() {
     if (ensure()) window.removeEventListener('pointerdown', initAudio);
   }, { capture: true });
-  return { ensure, update, setMuted,
+  return { _m: M, ensure, update, setMuted,
     get muted() { return M.muted; }, get mode() { return M.mode; }, get ctx() { return M.ctx; } };
 })();
+if (window.ApexMusic) Mus._m.pack = ApexMusic.follow({ ctx: () => Mus.ctx, dest: () => Mus._m.master, mode: () => Mus.mode === 'fly' ? 'play' : 'menu', intensity: () => 0.5 }); // shared gapless ogg pack
 window.__mus = Mus;
 /* step 6 LOW quality option: a menu toggle - LOW drops the shadow sun and
    caps the pixel ratio at 1.25 for slower phones; remembered across visits */
