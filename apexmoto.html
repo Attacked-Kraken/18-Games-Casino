@@ -135,6 +135,7 @@
 <div id="loading">LOADING BIKES&hellip;</div>
 
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
@@ -450,7 +451,7 @@ const Music = { off: false, step: 0, timer: null,
     const C = S.ctx, spb = 60 / 128 / 4; let next = C.currentTime + 0.1;
     const tick = () => { while (next < C.currentTime + 0.15) { this.note(this.step, next, spb); next += spb; this.step = (this.step + 1) % 64; } this.timer = setTimeout(tick, 40); }; tick(); },
   level() { if (!this.S || !this.S.mus) return; this.S.mus.gain.setTargetAtTime(this.off ? 0 : (state === 'race' ? 0.16 : 0.26), this.S.ctx.currentTime, 0.3); },
-  note(s, t, spb) { const C = this.S.ctx, out = this.S.mus, q = s % 16, bar = (s >> 4) % 4;
+  note(s, t, spb) { if (this.pack && this.pack.playing()) return; /* gapless ogg pack is playing */ const C = this.S.ctx, out = this.S.mus, q = s % 16, bar = (s >> 4) % 4;
     const nz = (len, f, v) => { const n = C.sampleRate * len | 0, b = C.createBuffer(1, n, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n) ** 2;
       const src = C.createBufferSource(), fl = C.createBiquadFilter(), g = C.createGain(); src.buffer = b; fl.type = 'highpass'; fl.frequency.value = f; g.gain.value = v; src.connect(fl); fl.connect(g); g.connect(out); src.start(t); };
     if (q % 4 === 0) { const o = C.createOscillator(), g = C.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.1); g.gain.setValueAtTime(0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18); o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.2); }
@@ -461,6 +462,7 @@ const Music = { off: false, step: 0, timer: null,
       g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + spb * 1.8); o.connect(f); f.connect(g); g.connect(out); o.start(t); o.stop(t + spb * 2); }
     if (q === 0 || q === 8) { const o = C.createOscillator(), g = C.createGain(); o.type = 'triangle'; o.frequency.value = root; g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + spb * 7); o.connect(g); g.connect(out); o.start(t); o.stop(t + spb * 8); } },
 };
+if (window.ApexMusic) Music.pack = ApexMusic.follow({ ctx: () => Music.S && Music.S.ctx, dest: () => Music.S && Music.S.mus, mode: () => Music.off ? 'off' : (typeof state !== 'undefined' && state === 'race' ? 'play' : 'menu'), intensity: () => 0.5 }); // shared gapless ogg pack
 $('muteBtn').addEventListener('click', () => { Snd.setMuted(!Snd.muted); $('muteIcon').textContent = Snd.muted ? 'OFF' : 'ON'; });
 $('musicBtn').addEventListener('click', () => { Music.off = !Music.off; try { localStorage.setItem('moto-music-off', Music.off ? '1' : ''); } catch (e) {} $('musicIcon').textContent = Music.off ? 'OFF' : 'ON'; Music.level(); });
 
