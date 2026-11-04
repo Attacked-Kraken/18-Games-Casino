@@ -186,9 +186,41 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     body.touch #btnERS { right:88px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
     body.touch #speedo { right:12px; bottom:calc(184px + env(safe-area-inset-bottom, 0px)); }
   }
+  /* owner Nov 4 2026 4:05 PM (green marks on his F1 photos): EXIT at the top, map under the position box, CAM + PIT top-right, the ERS bar no longer sits on the speed readout. Same on every track. */
+  #exitRace { left:112px; top:12px; }
+  body.touch #minimap { left:12px; top:112px; bottom:auto; width:84px; height:84px; }
+  body.touch #gapbox { top:76px; }
+  body.touch #btnCam { left:auto; right:12px; top:136px; bottom:auto; width:64px; height:48px; }
+  body.touch #btnPit { left:auto; right:84px; top:136px; bottom:auto; width:64px; height:48px; }
+  body.touch #ersbar { right:112px; top:auto; bottom:calc(196px + env(safe-area-inset-bottom, 0px)); width:104px; }
+  body.touch #speedo { bottom:calc(184px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #gapbox { top:82px; }
+  body.touch #minimap { top:116px; }
+  @media (pointer:coarse) and (orientation:landscape) {
+    body.touch #speedo { left:50%; right:auto; transform:translateX(-50%); bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
+    body.touch #ersbar { left:calc(50% + 58px); right:auto; top:auto; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); width:88px; }
+    body.touch #drsTag { bottom:112px; }
+  }
+  /* owner Nov 4 2026 4:52 PM (his drawing): EXIT in the top-left corner, map at the top beside it, position + gap boxes under EXIT, CAM + PIT at the top left of the tyre box, ERS bar right above the ERS / DRS buttons (off the speed readout). Every track. */
+  #exitRace { left:12px; top:12px; }
+  body.touch #minimap { left:112px; top:12px; bottom:auto; width:84px; height:84px; }
+  #lapbox { top:56px; }
+  body.touch #gapbox { top:132px; }
+  body.touch #btnCam { left:auto; right:136px; top:12px; bottom:auto; width:64px; height:48px; }
+  body.touch #btnPit { left:auto; right:208px; top:12px; bottom:auto; width:64px; height:48px; }
+  body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
+  @media (pointer:coarse) and (orientation:landscape) {
+    body.touch #ersbar { left:auto; right:12px; top:auto; bottom:calc(178px + env(safe-area-inset-bottom, 0px)); width:140px; }
+  }
+  @media (pointer:coarse) and (orientation:portrait) {
+    body.touch #minimap { left:112px; top:60px; }
+    body.touch #ersbar { right:84px; width:120px; }
+  }
+  #tirebox .tcap { font-size:9px; letter-spacing:2px; color:#8fa8c8; font-weight:800; }
   /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
+  #lapPop { position:fixed; top:9%; left:0; right:0; text-align:center; font:italic 900 clamp(22px,4.5vw,34px) system-ui; color:#fff; text-shadow:0 0 16px #ff3b3b, 0 2px 0 #000; opacity:0; transform:scale(1); transition:opacity .25s, transform .25s; pointer-events:none; z-index:36; }
   #banner { position:fixed; left:50%; top:24%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(16px,3.2vw,26px); font-weight:900; letter-spacing:2px; text-shadow:0 2px 10px #000; } /* owner Nov 3 2026: PENALTY / CONTACT signs were too big - they covered the road */
@@ -226,7 +258,7 @@ setTimeout(function(){
 <div id="hud" class="hidden">
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
   <div id="gapbox">GAP —</div>
-  <div id="tirebox"><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
+  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
@@ -250,6 +282,7 @@ setTimeout(function(){
 
 <div id="vignette"></div>
 
+<div id="lapPop"></div>
 <div id="banner"><div class="b1"></div><div class="b2"></div></div>
 <div id="lights" class="hidden"></div>
 <div id="countdown" class="hidden"></div>
@@ -432,15 +465,20 @@ const Aud = {
     const kit=this.kit;
     if(kit && kit.ready){ // G-107: kit loops - crossfade by throttle, playbackRate 0.9-1.25 by speed (TOOLS.md)
       if(this.engineGain) this.engineGain.gain.setTargetAtTime(0,t,0.05); // synth engine off, the kit carries it
-      const x=Math.max(0,Math.min(1,throttle*0.7+rpm01*0.3)); // engine load
-      const level=0.08+0.12*x, centers={ idle:0, low:0.34, mid:0.67, high:1 }, order=['idle','low','mid','high'];
-      let band=0, bandW=-1;
-      for(const k of order){
-        const w=Math.max(0,1-Math.abs(x-centers[k])/0.36);
-        if(kit.gains[k]) kit.gains[k].gain.setTargetAtTime(w*level,t,0.06);
-        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.85+rpm01*0.3,t,0.1);
-        if(w>bandW){ bandW=w; band=order.indexOf(k); }
-      }
+      // owner Nov 4 2026 'turn off that helicopter sound': the F1 mix is now the Exotic Racer's own engine formula (G-240 deep growl): rate 0.6-0.8 (never the old
+      // 0.85-1.15 whine that beat against itself), idle + three accel layers crossfaded by load and rpm with the Racer's band shape, every layer through one 1.5 kHz low-pass.
+      const clampN=(v,a,b2)=>Math.max(a,Math.min(b2,v)); if(!isFinite(rpm01)) rpm01=0; if(!isFinite(throttle)) throttle=0;
+      const load=clampN(throttle,0,1), rpm=clampN(rpm01,0,1), x=load*0.7+rpm*0.3;
+      const bandF=(v,a,b2,c,d)=>v<a?0:v<b2?(v-a)/(b2-a):v<c?1:v<d?1-(v-c)/(d-c):0;
+      const rate=0.6+0.2*rpm;
+      if(kit.bus) kit.bus.frequency.setTargetAtTime(1500,t,0.05);
+      for(const k of ['low','mid','high']) if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(rate,t,0.05);
+      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime(0.8+0.04*rpm,t,0.05);
+      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(0.5*(1-load*0.8),t,0.07);
+      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
+      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
+      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
+      const band=x<0.17?0:x<0.5?1:x<0.84?2:3;
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
         this._kitShiftT=t; this.kitShifts++;
         const buf=band>this.kitBand?kit.bufs.shiftUp:kit.bufs.shiftDn;
@@ -473,7 +511,7 @@ const Aud = {
           if(!kit.bufs[k]) continue;
           const s=this.ctx.createBufferSource(); s.buffer=kit.bufs[k]; s.loop=true;
           const g=this.ctx.createGain(); g.gain.value=0;
-          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=3200; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
+          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=1500; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
           s.connect(g); g.connect(k==='squeal'?this.master:kit.bus); s.start();
           kit.srcs[k]=s; kit.gains[k]=g;
         }
@@ -1684,9 +1722,21 @@ function buildBoxBody(color, teamName, carNumber, accent){
    show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
 const CAR_LOD_NEAR = 70;
 function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; const ckHide=c.isPlayer && CK._bodyHidden; L.near.visible=near && !ckHide; L.far.visible=!near && !ckHide; /* owner Nov 3 2026: in COCKPIT cam the player's own body stays hidden (this per-frame LOD switch used to show it again) */ for(const w of c.mesh.userData.wheels||[]) if(w.userData.mw){ w.userData.mw.visible=near; w.userData.hideInst=near; } } }
+// owner Nov 4 2026 'my car is way small compared to others and it zooms big and small when people get close': the close-up model and the far box were different sizes
+// (the far box was 28% taller), and the classic cars were 9% longer than the modern ones. Now the far box is scaled onto the close-up's size, and every car is scaled to one length.
+const CAR_REF_LEN=5.247; // metres at scale 1 = the modern close-up model (7.43 m on the road with the game's 1.416)
+function matchCarSizes(g){ const L=g.userData.lod; if(!L||!L.near||!L.far) return; try{
+  g.updateMatrixWorld(true); const V=THREE.Vector3, bb=o=>new THREE.Box3().setFromObject(o);
+  const n=bb(L.near), f=bb(L.far), ns=n.getSize(new V()), fs=f.getSize(new V()); if(!(ns.x>0.5&&fs.x>0.5&&ns.y>0.2&&fs.y>0.2&&ns.z>0.2&&fs.z>0.2)) return;
+  L.far.scale.set(L.far.scale.x*ns.x/fs.x, L.far.scale.y*ns.y/fs.y, L.far.scale.z*ns.z/fs.z); L.far.updateMatrixWorld(true);
+  const f2=bb(L.far), nc=n.getCenter(new V()), fc=f2.getCenter(new V());
+  L.far.position.x+=nc.x-fc.x; L.far.position.z+=nc.z-fc.z; L.far.position.y+=n.min.y-f2.min.y;
+  g.userData.sizeK=CAR_REF_LEN/ns.x;
+}catch(e){} }
 function buildCarFromModel(body, spec, color, accent, box){
   const g=new THREE.Group(); g.add(body);
   if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
+  if(box) matchCarSizes(g);
   buildCarWheels(g, color, accent, spec);
   wheelInstRegister(g);
   scene.add(g);
@@ -1807,7 +1857,7 @@ class Car {
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'), isPlayer ? (localStorage.getItem('f1_wrap')||'team') : 'team');
-    this.mesh.scale.setScalar(1.416); // G-73: the car about 20% bigger again (1.18 x 1.2)
+    this.mesh.scale.setScalar(1.416*(this.mesh.userData.sizeK||1)); // G-73 (x sizeK, Nov 4 2026: every car the same length): the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
     this.ers=100; this.drsOpen=false; this.drsCount=0;
@@ -2074,13 +2124,16 @@ function aiDrive(car, dt){
   // pack fix: traffic - a car right ahead in the lane sets the speed early, so
   // arrivals inside the contact box happen matched instead of at full closing speed
   if(!car.inPits){ let vCap=Infinity;
-    for(const o of Race.cars){ if(o===car||o.finished) continue;
+    for(const o of Race.cars){ if(o===car||o.finished||o.inPits||car._free>0) continue; // Nov 4 2026: a car in the pits / a car being freed never holds the field
       let ds=(o.s-car.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
       if(ds>0 && ds<12 && Math.abs(o.d-car.d)<3.4) vCap=Math.min(vCap, o.v+(ds<6?0:(ds-6)*0.5)); }
     if(vCap<vt) vt=Math.max(vCap,0);
   }
   // rain mistakes: lift a touch more
   if(Race.weather.wet>0.3) vt*= (1-0.05*Race.weather.wet);
+  // Nov 4 2026 owner 'two racers just fighting each other stuck the whole race': a car crawling (<4 m/s) for 4 s on the road is FREED - for 3 s it ignores traffic and contact so the pair drives apart
+  if(!car.inPits && car.spin<=0 && Race.mode==='race' && car.v<4){ car._crawlT=(car._crawlT||0)+dt; if(car._crawlT>4){ car._free=3; car._crawlT=0; car.v=Math.max(car.v,6); window.__f1freed=(window.__f1freed||0)+1; } } else car._crawlT=0;
+  if(car._free>0) car._free-=dt;
   car.throttle = car.v<vt*1.18?1:0; // G-66: stay on the throttle into the corner like the player does - cutting it at vt coasted away the entry speed
   car.brake = car.v>vt*1.18?1:0; // G-66: brake later - at 1.05 the AI braked for corners far too early and the player just drove away
   // ERS: AI uses on straights
@@ -2136,6 +2189,7 @@ function carContact(cars, dt){
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
+    if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
@@ -2392,7 +2446,7 @@ const Race = {
         c._lc.update(c.mesh.position, this.time);
         if(c._lc.lap>before && before>0){ // before==0->1 is the grid crossing off the start line
           c.lapCrossed();
-          if(c.isPlayer){ this.lap=c.lap; Aud.cheer(false); }
+          if(c.isPlayer){ this.lap=c.lap; Aud.cheer(false); lapPop(c.lap,this.laps); }
           if(c.lap>this.laps){ c.finished=true; c.finishTime=this.raceT+c.penalty;
             if(c.isPlayer){ this.onPlayerFinish(order); } }
         }
@@ -2402,7 +2456,7 @@ const Race = {
           if(c._gridCross){ c._gridCross=false; } // race start crossing, not a lap
           else {
             c.lapCrossed();
-            if(c.isPlayer){ this.lap=c.lap; Aud.cheer(false); }
+            if(c.isPlayer){ this.lap=c.lap; Aud.cheer(false); lapPop(c.lap,this.laps); }
             if(c.lap>this.laps){ c.finished=true; c.finishTime=this.raceT+c.penalty;
               if(c.isPlayer){ this.onPlayerFinish(order); } }
           }
@@ -2528,6 +2582,17 @@ const RainFX={
 };
 
 /* ================= HUD ================= */
+/* owner Nov 4 2026: big LAP sign at the top each time the player crosses the line (same as Exotic Racer) */
+function lapPop(lap,total){
+  if(lap>total) return;
+  const e=$('lapPop'); if(!e) return;
+  e.textContent = lap===total ? 'FINAL LAP!' : `LAP ${lap}/${total}`;
+  e.style.opacity=1; e.style.transform='scale(1.15)';
+  clearTimeout(lapPop._a); clearTimeout(lapPop._b);
+  lapPop._a=setTimeout(()=>{ e.style.transform='scale(1)'; },120);
+  lapPop._b=setTimeout(()=>{ e.style.opacity=0; },1600);
+  window.__f1lappop=(window.__f1lappop||0)+1; window.__f1lappopTxt=e.textContent;
+}
 function banner(t,sub,dur,color){
   const b=$('banner'); b.querySelector('.b1').textContent=t; b.querySelector('.b1').style.color=color||'#fff';
   b.querySelector('.b2').textContent=sub||'';
@@ -2892,6 +2957,10 @@ async function startWeekend(){
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
   CKAttach(); // G-48: the kit cockpit rides in the player's car
+  // owner Nov 4 2026 'so much delay on menu starting, and every time you pass the lap sign it freezes a second': three.js uploads a mesh's buffers + textures
+  // the first time it is DRAWN, so every grandstand / gantry / crowd near the start line uploaded the moment it came into view (measured: 109 buffer uploads,
+  // 6 textures in the first frame after the line). ONE warm-up frame with culling off, under the loading cover, pays all of that before the race starts.
+  try{ const off=[]; scene.traverse(o=>{ if(o.frustumCulled){ o.frustumCulled=false; off.push(o); } }); renderer.compile(scene,camera); renderer.render(scene,camera); for(const o of off) o.frustumCulled=true; window.__f1warm={ objects:off.length, t:performance.now() }; }catch(e){}
   ldOff();
   if(ta){ Race.player.qualiTime=0; Race.placeGrid(false); Race.mode='grid'; HUD.show(true); Race.beginRace(); try{ Race.updateCamera(1); }catch(e){} banner('TIME ATTACK', (TA.best(selTrack)?'Best: '+fmtTime(TA.best(selTrack)):'Set the first time')+' · '+selLaps+' laps', 2400, '#9fd8ff'); return; }
   runQuali();
@@ -3137,6 +3206,7 @@ window.__test = {
     const f=Track.frameAt(c.s);
     return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
   trackside: () => Track.trackside || null, // Nov 4 2026: counts of the trackside accessories built
+  carSizes: () => Race.cars.map(c => { c.mesh.updateMatrixWorld(true); const L = c.mesh.userData.lod, m = o => { if(!o) return null; const q = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); return [q.x, q.y, q.z]; }; return { name: c.name, isPlayer: c.isPlayer, near: m(L && L.near), far: m(L && L.far) }; }), // Nov 4 2026: world size of each car's close-up model and far box
   trackWidth: () => Track.width,
   kitAudio: () => (Aud && Aud.kitState) ? Aud.kitState() : null, // G-107 probes
   groundKit: () => { if(!GP.lt || !GP.lt.root) return null; const out={};
@@ -3165,6 +3235,9 @@ window.__test = {
     Race.update(dt);
     return Race.mode;
   },
+  stickPair: () => { const ai=Race.cars.filter(c=>!c.isPlayer&&!c.inPits); if(ai.length<2) return false; const A=ai[0],B=ai[1]; B.s=A.s; B.d=A.d+0.3; A.v=B.v=0; A.spin=B.spin=0; window.__f1freed=0; window.__f1pair=[A,B]; return true; }, // test hook: two AI cars sitting on each other, stopped
+  freedCount: () => window.__f1freed||0,
+  pairSpeeds: () => (window.__f1pair||[]).map(c=>+c.v.toFixed(1)),
   simState: () => { const p = Race.player; if (!p) return null; const order = Race.positions(); return { mode: Race.mode, t: Race.raceT || 0, dist: p.raceDist, v: p.v, place: order.indexOf(p) + 1, of: order.length, finished: !!p.finished, lap: p.lap }; },
   // Test helper: place a car near the finish line to fast-forward lap tests
   // idx: car index in Race.cars, s: distance along track

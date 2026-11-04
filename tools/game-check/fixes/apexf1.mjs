@@ -738,10 +738,11 @@ export default [
       const t0 = Date.now();
       while (Date.now() - t0 < 9000) {
         const st = await h.eval(`window.__test.kitAudio()`);
-        if (st && st.band >= 2 && st.rate > 1.0) { hot = st; break; }
+        if (st && st.band >= 2 && st.rate > 0.81) { hot = st; break; } // Nov 4 2026: the Racer's deep-growl rates (idle layer 0.8-0.84, accel layers 0.6-0.8) - never the old 0.85-1.15 whine
         await h.wait(400);
       }
       if (!hot) return 'the engine kit never sang under throttle: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
+      if (hot.rate > 0.9) return 'the engine kit is running too fast (rate ' + hot.rate + ') - that is the whine / helicopter sound: ' + JSON.stringify(hot);
       if (!(hot.shifts >= 1)) return 'no gear-shift sound fired while accelerating: ' + JSON.stringify(hot);
       await h.eval(`window.__test.setInput({ gas:true, steer:1 })`);
       let squeal = 0;
@@ -1612,6 +1613,111 @@ export default [
         if (!r.k || !r.k.poly) rep.push(tr + ': start/finish strip has no chequer / depth offset (z-fighting flicker)');
       }
       return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
+    },
+  },
+  {
+    id: 'play-f1-warm-start',
+    ask: 'Owner Nov 4 2026: the menu start is slow and the car freezes a second at the lap line - every mesh must be uploaded to the GPU under the loading cover (one warm-up frame), not when it first comes into view.',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid'; }).catch(() => {});
+      let w = null;
+      for (let i = 0; i < 40 && !w; i++) { await h.wait(500); w = await h.eval(() => window.__f1warm || null).catch(() => null); }
+      if (!w) return 'F1 WARM START: no warm-up frame ran before the race (first sight of the grandstands will freeze)';
+      return w.objects > 50 ? true : 'F1 WARM START: the warm-up frame touched only ' + w.objects + ' objects';
+    },
+  },
+  {
+    id: "play-f1-stuck-pair-freed",
+    ask: "F1: two AI cars stopped on top of each other are freed within a few seconds and drive on - never stuck the whole race (owner Nov 4 2026)",
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => window.__test.race().mode === 'race').catch(() => false); }
+      if (!up) return { inconclusive: 'race never reached the racing state' };
+      const r = await h.eval(() => {
+        const T = window.__test; for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // get past the pack start
+        if (!T.stickPair) return { err: 'no stickPair hook' };
+        if (!T.stickPair()) return { err: 'no two AI cars to stick' };
+        for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // 20 game seconds
+        return { speeds: T.pairSpeeds(), freed: T.freedCount() };
+      });
+      if (!r || r.err) return (r && r.err) || 'no result';
+      return (r.speeds.length === 2 && r.speeds.every(v => v > 15)) ? true : 'two AI cars stopped on each other were still crawling after 20 s: speeds ' + JSON.stringify(r.speeds) + ' (stuck pair)';
+    },
+  },
+  {
+    id: "play-f1-car-sizes-match",
+    ask: "F1: every car is the same size as the player (length within 4%), and a car does not change size when it swaps between close-up and far model (owner Nov 4 2026: my car is small and zooms big/small)",
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      let sizes = null;
+      for (let i = 0; i < 40 && !sizes; i++) { await h.wait(500); sizes = await h.eval(() => (window.__test && window.__test.carSizes && window.__test.race().mode === 'grid') ? window.__test.carSizes() : null).catch(() => null); }
+      if (!sizes || !sizes.length) return { inconclusive: 'grid never loaded' };
+      const me = sizes.find(c => c.isPlayer); if (!me || !me.near) return { inconclusive: 'player model not built' };
+      const bad = [];
+      for (const c of sizes) {
+        if (!c.near || !c.far) continue;
+        if (Math.abs(c.near[0] - me.near[0]) / me.near[0] > 0.04) bad.push(c.name + ' is ' + c.near[0].toFixed(2) + ' m long, you are ' + me.near[0].toFixed(2));
+        for (let k = 0; k < 3; k++) if (Math.abs(c.far[k] - c.near[k]) / c.near[k] > 0.08) { bad.push(c.name + ' changes size when far (axis ' + k + ': ' + c.near[k].toFixed(2) + ' to ' + c.far[k].toFixed(2) + ' m)'); break; }
+      }
+      return bad.length ? 'F1 CAR SIZE: ' + bad.slice(0, 4).join('; ') : true;
+    },
+  },
+  {
+    id: "play-f1-hud-clear",
+    ask: "F1: no HUD box sits on another (ERS bar vs speed readout, map vs position box, CAM/PIT vs weather) on the sideways and upright phone, and EXIT is at the top (owner Nov 4 2026)",
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return { inconclusive: 'never reached the grid' }; }
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 40 && !racing; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); racing = (md === 'lights' || md === 'race'); if (!racing) await h.wait(300); }
+      if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return { inconclusive: 'race never started' }; }
+      const bad = [];
+      for (const [name, w, hh] of [['sideways', 844, 390], ['upright', 390, 844]]) {
+        await h.page.setViewportSize({ width: w, height: hh }).catch(() => {});
+        await h.wait(800);
+        const r = await h.eval(() => { const ids = ['lapbox', 'gapbox', 'minimap', 'exitRace', 'tirebox', 'wxTag', 'btnCam', 'btnPit', 'ersbar', 'speedo', 'btnDRS', 'btnERS', 'btnGas', 'btnBrake', 'stick'];
+          const rs = []; for (const id of ids) { const e = document.getElementById(id); if (!e) continue; const b = e.getBoundingClientRect(); if (b.width < 2) continue; rs.push([id, b.left, b.top, b.right, b.bottom]); }
+          const ov = []; for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) { const a = rs[i], b = rs[j]; if (a[1] < b[3] - 1 && b[1] < a[3] - 1 && a[2] < b[4] - 1 && b[2] < a[4] - 1) ov.push(a[0] + ' on ' + b[0]); }
+          const ex = rs.find(x => x[0] === 'exitRace'); return { ov, exitTop: ex ? ex[2] : null }; }).catch(() => null);
+        if (!r) continue;
+        if (r.ov.length) bad.push(name + ': ' + r.ov.join(', '));
+        if (r.exitTop !== null && r.exitTop > 60) bad.push(name + ': EXIT is not at the top (top ' + Math.round(r.exitTop) + ' px)');
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return bad.length ? 'F1 HUD: ' + bad.join(' | ') : true;
+    },
+  },
+  {
+    id: 'play-f1-lap-sign',
+    ask: 'F1: crossing the start/finish line to begin a new lap shows a big LAP n/N sign at the top (like Exotic Racer) - owner Nov 4 2026',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => { const t = window.__test; const m = t && t.race().mode; return m === 'race' || m === 'lights'; }).catch(() => false); }
+      if (!up) return { inconclusive: 'race never started' };
+      const r = await h.eval(() => {
+        const T = window.__test; if (!T || !T.simStep) return { err: 'no simStep' };
+        let n = 0; while (n < 9000 && !window.__f1lappop) { T.simStep(0.05, { skill: 'good' }); n++; }
+        const e = document.getElementById('lapPop');
+        return { n, count: window.__f1lappop || 0, txt: window.__f1lappopTxt || '', shown: e ? e.style.opacity : null, top: e ? e.getBoundingClientRect().top : null, h: innerHeight, lap: T.race().lap };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (!r.count) return { inconclusive: 'no lap finished in ' + (r.n * 0.05).toFixed(0) + ' game-seconds' };
+      if (!/^(LAP \d+\/\d+|FINAL LAP!)$/.test(r.txt)) return 'F1 LAP SIGN: shows "' + r.txt + '"';
+      if (String(r.shown) !== '1') return 'F1 LAP SIGN: not visible after crossing the line';
+      if (r.top > r.h * 0.2) return 'F1 LAP SIGN: sits at ' + Math.round(r.top) + ' px of ' + r.h + ' - not at the top';
+      return true;
     },
   },
   {
