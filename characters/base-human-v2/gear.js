@@ -132,6 +132,7 @@ function makeStance(THREE, R, cfg) {
     const heads = R.heads;
     const stance = Math.abs(P('foot_l').x - P('foot_r').x) / Math.abs(P('thigh_l').x - P('thigh_r').x);
     return { lean, kneeL: knee('l'), kneeR: knee('r'), hipBack, heads, stance }; }
+  const toe0b = Math.atan2(R.P('foot_l').y - R.P('ball_l').y, R.P('ball_l').z - R.P('foot_l').z);
   const ankle0 = R.P('foot_l').y, lift = cfg.lift;                     // foot bone height in bind pose, + skate height
   const invM = new THREE.Matrix4(), objPos = (name) => { B[name].updateWorldMatrix(true, false); return B[name].getWorldPosition(tmp).applyMatrix4(invM); };
   return { cfg, reach, measure, apply(o = {}) {
@@ -143,19 +144,19 @@ function makeStance(THREE, R, cfg) {
     const dl = lean - up2('pelvis', 'neck_01');
     turn('pelvis', X, dl * .45); turn('spine_01', X, dl * .2); turn('spine_02', X, dl * .2); turn('spine_03', X, dl * .15);
     turn('neck_01', X, -lean * .5); turn('Head', X, -lean * .4);      // eyes up the ice
-    const toe0 = Math.atan2(R.P('foot_l').y - R.P('ball_l').y, R.P('ball_l').z - R.P('foot_l').z);
+    // F-H-002: toe0 was re-read from R.P every frame, but R.P uses the object matrix frozen at build time, so it changed with the skater's heading and clip frame and the skate flipped backwards. It is the BIND-pose toe angle: measure once (toe0b).
     for (const [sd, sg] of [['l', 1], ['r', -1]]) {
       const ph2 = ph + (sg > 0 ? 0 : Math.PI), push = sp * Math.max(0, Math.sin(ph2));   // skating stride: each leg pushes out to the side in turn
       const kn = knee + push * .2;
       turn('thigh_' + sd, X, -(kn * .55 + sp * .1 * Math.sin(ph2) - tilt('thigh_' + sd, 'calf_' + sd)));      // knee ahead of the hip
       turn('calf_' + sd, X, -(-kn * .45 - tilt('calf_' + sd, 'foot_' + sd)));                                // ankle back under the hip
       const tn = Math.atan2(objPos('foot_' + sd).y - objPos('ball_' + sd).y, objPos('ball_' + sd).z - objPos('foot_' + sd).z);
-      turn('foot_' + sd, X, toe0 - tn);                                                                       // blade flat on the ice
+      turn('foot_' + sd, X, toe0b - tn);                                                                       // blade flat on the ice
       turn('thigh_' + sd, Z, sg * (wide + push * .3));
       turn('calf_' + sd, Z, -sg * (wide * .55 + push * .2));
       // exact knee flex in 3D (the side-spread changes it a little): correct the calf, then flatten the blade again
       { const h = objPos('thigh_' + sd).clone(), k = objPos('calf_' + sd).clone(), f = objPos('foot_' + sd); const k3 = k.clone().sub(h).angleTo(f.clone().sub(k)); turn('calf_' + sd, X, kn - k3);
-        const tn2 = Math.atan2(objPos('foot_' + sd).y - objPos('ball_' + sd).y, objPos('ball_' + sd).z - objPos('foot_' + sd).z); turn('foot_' + sd, X, toe0 - tn2); }
+        const tn2 = Math.atan2(objPos('foot_' + sd).y - objPos('ball_' + sd).y, objPos('ball_' + sd).z - objPos('foot_' + sd).z); turn('foot_' + sd, X, toe0b - tn2); }
       turn('foot_' + sd, Z, -sg * (wide * .45 + push * .1));
     }
     if (cfg.arms) cfg.arms(turn, c, sp, ph, X, Z);
