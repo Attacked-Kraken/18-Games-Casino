@@ -1696,4 +1696,28 @@ export default [
       return bad.length ? 'F1 HUD: ' + bad.join(' | ') : true;
     },
   },
+  {
+    id: 'play-f1-lap-sign',
+    ask: 'F1: crossing the start/finish line to begin a new lap shows a big LAP n/N sign at the top (like Exotic Racer) - owner Nov 4 2026',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => { const t = window.__test; const m = t && t.race().mode; return m === 'race' || m === 'lights'; }).catch(() => false); }
+      if (!up) return { inconclusive: 'race never started' };
+      const r = await h.eval(() => {
+        const T = window.__test; if (!T || !T.simStep) return { err: 'no simStep' };
+        let n = 0; while (n < 9000 && !window.__f1lappop) { T.simStep(0.05, { skill: 'good' }); n++; }
+        const e = document.getElementById('lapPop');
+        return { n, count: window.__f1lappop || 0, txt: window.__f1lappopTxt || '', shown: e ? e.style.opacity : null, top: e ? e.getBoundingClientRect().top : null, h: innerHeight, lap: T.race().lap };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (!r.count) return { inconclusive: 'no lap finished in ' + (r.n * 0.05).toFixed(0) + ' game-seconds' };
+      if (!/^(LAP \d+\/\d+|FINAL LAP!)$/.test(r.txt)) return 'F1 LAP SIGN: shows "' + r.txt + '"';
+      if (String(r.shown) !== '1') return 'F1 LAP SIGN: not visible after crossing the line';
+      if (r.top > r.h * 0.2) return 'F1 LAP SIGN: sits at ' + Math.round(r.top) + ' px of ' + r.h + ' - not at the top';
+      return true;
+    },
+  },
 ];
