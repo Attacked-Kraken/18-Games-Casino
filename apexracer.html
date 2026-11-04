@@ -2690,7 +2690,7 @@ function drawHud() {
   const P = R.P, T = R.T, st = standings(), pos = st.indexOf(P) + 1, n = st.length;
   const lap = clamp(Math.floor(Math.max(0, P.prog) / T.N) + 1, 1, R.laps), tt = Math.max(0, R.t), fm = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(2).padStart(5, '0')}`;
   $('pos').innerHTML = `${pos}<small>${ord(pos).replace(/\d+/, '')}</small><em>/${n}</em>`;
-  $('lapT').innerHTML = `LAP <b>${lap}/${R.laps}</b><br>TIME <b>${fm(tt)}</b><br>BEST <b>${R.best ? fm(R.best) : '--'}</b><br><span style="opacity:.75">${R.place.flag} ${R.place.city}</span>`;
+  $('lapT').innerHTML = `LAP <b>${lap}/${R.laps}</b><br>TIME <b>${fm(tt)}</b><br>${R.type === 'trial' ? 'PAR <b>' + fm(R.par) + '</b>' : 'BEST <b>' + (R.best ? fm(R.best) : '--') + '</b>'}<br><span style="opacity:.75">${R.place.flag} ${R.place.city}</span>`;
   const m = $('mini'), g = m.getContext('2d'); g.clearRect(0, 0, 256, 256); g.drawImage(MINI.c, 0, 0);
   for (const t of R.traffic) { const [x, y] = MINI.pt(t.x, t.z); g.fillStyle = '#8a90a0'; g.fillRect(x - 2, y - 2, 4, 4); }
   for (const e of R.cars) { if (e === P) continue; const [x, y] = MINI.pt(e.x, e.z); g.fillStyle = e.remote && !e.bot ? '#7dff6a' : '#ff5a8a'; g.beginPath(); g.arc(x, y, 6, 0, TAU); g.fill(); }
