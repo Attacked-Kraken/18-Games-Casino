@@ -1547,7 +1547,7 @@ export default [
       if (!r) return 'could not read the race state at the grid';
       if (r.err) return r.err;
       if (Math.abs(r.L - 5627.2) > 1) return 'track length ' + r.L + ' is not the Grand Prix track (5627.2 m) - the kit track is not loaded';
-      if (r.n !== 20) return 'grid has ' + r.n + ' cars, not the kit\'s 20 slots';
+      if (r.n !== 6) return 'grid has ' + r.n + ' cars, not 6 (owner Nov 3 2026: 6 race cars)';
       if (!r.kit) return 'the kit GLB root is not in the scene (groundKit null) - the Grand Prix track is not loaded';
       if (Math.abs(r.w - 14) > 0.01) return 'track width ' + r.w + ' is not the kit\'s 14 m';
       return true;
@@ -1579,7 +1579,7 @@ export default [
       const { beginner: b, good: g } = res;
       const f = (r) => 'place ' + r.place + '/' + r.of + ', ' + Math.round(r.dist) + ' m';
       const note = 'after 100 s - good ' + f(g) + ', beginner ' + f(b) + '';
-      if (g.place > 10) return 'BALANCE: a good driver cannot hold a top-10 place - ' + note;
+      if (g.place > 3) return 'BALANCE: a good driver cannot hold a top-3 place of 6 - ' + note;
       if (g.dist <= b.dist + 50) return 'BALANCE: driving well does not pay - the good bot is not clearly farther along than the beginner - ' + note;
       if (b.dist < 300) return 'BALANCE: a beginner bot barely gets going (under 300 m in 100 s) - ' + note;
       return true;
