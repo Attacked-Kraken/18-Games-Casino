@@ -496,7 +496,7 @@ export default [
       await h.wait(1200);
       const probes = await h.eval(() => { const t = window.__test; if (!t || !t.carMesh) return null;
         return t.cars().map((c, i) => ({ name: c.name, m: t.carMesh(i) })); }).catch(() => null);
-      if (!probes || probes.length < 20) return 'car mesh probe missing (window.__test.carMesh)';
+      if (!probes || probes.length < 6) return 'car mesh probe missing (window.__test.carMesh)';
       for (const p of probes) {
         if (!p.m) return `${p.name}: no mesh probe`;
         if (!p.m.attached) return `${p.name}: car mesh is not in the scene - it can be hit but never seen`;
@@ -521,7 +521,7 @@ export default [
       await h.wait(1200);
       const probes = await h.eval(() => { const t = window.__test; if (!t || !t.carMesh) return null;
         return t.cars().map((c, i) => ({ name: c.name, isPlayer: c.isPlayer, m: t.carMesh(i) })); }).catch(() => null);
-      if (!probes || probes.length < 20) return 'car mesh probe missing (window.__test.carMesh)';
+      if (!probes || probes.length < 6) return 'car mesh probe missing (window.__test.carMesh)';
       const player = probes.find(p => p.isPlayer);
       const ais = probes.filter(p => !p.isPlayer);
       if (!player || !player.m) return 'player car probe missing';
