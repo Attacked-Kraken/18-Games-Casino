@@ -1922,4 +1922,70 @@ export default [
       return true;
     },
   },
+  {
+    id: 'tester-chk-r13', parts: ['wheels'],
+    cat: 'play',
+    name: 'checklist R13: every car rests on the ground — lowest point within [0, 0.03] m of the road at the grid',
+    ask: 'R13: world min-Y of every car (R.cars + R.traffic) minus road height T.y, at the grid, inside [0, 0.03] m — on main the Patriot-bodied cars sit at about -0.098 m, so the test fails naming them',
+    async test(page, h) {
+      const censusFn = () => {
+        const E = window.__erc;
+        if (!E || !E.R || !E.R.P || !E.R.cars || !E.R.traffic) return 'race not built';
+        const Ty = (E.R.T && typeof E.R.T.y === 'number') ? E.R.T.y : 0;
+        const seen = new Set(), out = [];
+        const push = (label, root) => {
+          if (!root || seen.has(root)) return;
+          seen.add(root);
+          root.updateMatrixWorld(true);
+          let n = 0, minY = Infinity;
+          root.traverse((q) => {
+            const g = q.geometry;
+            if (!g) return;
+            n++;
+            if (!g.boundingBox) g.computeBoundingBox();
+            const b = g.boundingBox, mw = q.matrixWorld.elements;
+            for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+              const wy = mw[1] * x + mw[5] * y + mw[9] * z + mw[13];
+              if (wy < minY) minY = wy;
+            }
+          });
+          if (!n) { out.push({ label, gap: null, note: 'no meshes yet' }); return; }
+          out.push({ label, gap: +(minY - Ty).toFixed(4) });
+        };
+        push('player', window.__reality ? window.__reality.player : null);
+        E.R.cars.forEach((e, i) => push(e.isP ? 'player' : ('car' + i + ':' + (e.name || '?')), e.car ? e.car.root : null));
+        E.R.traffic.forEach((t, i) => push('traffic' + i, t.car ? t.car.root : null));
+        return JSON.stringify(out);
+      };
+      const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+      if (!hasErc) return 'no __erc';
+      await h.eval(() => { const E = window.__erc; if (E.S) E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 8); });
+      const gridReady = await h.poll(() => h.eval(() => {
+        const E = window.__erc;
+        if (!(E && E.R && E.R.P && E.R.cars && E.R.cars.length === 8 && E.R.traffic)) return false;
+        let ok = true;
+        const roots = [window.__reality ? window.__reality.player : null]
+          .concat(E.R.cars.map((e) => e.car && e.car.root))
+          .concat(E.R.traffic.map((t) => t.car && t.car.root));
+        for (const r of roots) {
+          if (!r) { ok = false; break; }
+          let n = 0;
+          r.traverse((q) => { if (q.geometry) n++; });
+          if (!n) { ok = false; break; }
+        }
+        return ok;
+      }), (v) => !!v, 120000).catch(() => false);
+      if (!gridReady) return 'grid race never built';
+      const raw = await h.eval(censusFn);
+      let entries = null;
+      try { entries = JSON.parse(raw); } catch (e) { return String(raw); }
+      if (!Array.isArray(entries)) return String(raw);
+      const bad = entries.filter((e) => e.gap === null || e.gap < 0 || e.gap > 0.03);
+      if (bad.length) {
+        return 'R13: at the grid ' + bad.length + ' of ' + entries.length + ' cars out of [0, 0.03] m: ' +
+          bad.map((e) => e.label + ' ' + (e.gap === null ? 'no meshes' : e.gap + ' m')).join('; ');
+      }
+      return true;
+    },
+  },
 ];
