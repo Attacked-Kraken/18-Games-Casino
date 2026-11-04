@@ -825,6 +825,20 @@ const Track = {
       new THREE.MeshLambertMaterial({color:th.ground||0x3f7a3a}));
     grass.rotation.x=-Math.PI/2; grass.position.set((minX+maxX)/2,minY-0.4,(minZ+maxZ)/2); // G-27: ground below the whole loop, never over it
     grass.receiveShadow=true; g.add(grass); // Nov 2 2026: this line had been swallowed by the comment above - the built-in circuits had NO ground (the pale void under the cars)
+    // owner Nov 3 2026 6:40 PM 'why is the car in the air': the flat grass sits at the LOWEST road point, so on a hill the road and any car
+    // that left it floated over empty air. Grass verges now follow the road's own height on both sides and slope down to the ground.
+    if(minY<1e8 && this.samples.some(p=>p.y>minY+0.5)){
+      const vv=[], vi=[], gy=minY-0.4, SH=26;
+      for(let i=0;i<=N;i++){ const p=this.samples[i%N], h=Math.max(0,p.y-gy), out=SH+Math.max(20,h*3);
+        for(const sg of [1,-1]){ const nx=p.nx*sg, nz=p.nz*sg;
+          vv.push(p.x+nx*(W/2+0.2), p.y-0.03, p.z+nz*(W/2+0.2),  p.x+nx*(W/2+SH), p.y-0.05, p.z+nz*(W/2+SH),  p.x+nx*(W/2+out), gy, p.z+nz*(W/2+out)); } }
+      for(let i=0;i<N;i++){ const a=i*6, b=(i+1)*6;
+        for(const o of [0,3]){ const fl=o===0; // keep faces up on both sides
+          const q=(r,c)=>r+o+c; const t=(x,y,z)=>fl?vi.push(x,y,z):vi.push(x,z,y);
+          t(q(a,0),q(b,0),q(a,1)); t(q(a,1),q(b,0),q(b,1)); t(q(a,1),q(b,1),q(a,2)); t(q(a,2),q(b,1),q(b,2)); } }
+      const vg=new THREE.BufferGeometry(); vg.setAttribute('position', new THREE.Float32BufferAttribute(vv,3)); vg.setIndex(vi); vg.computeVertexNormals();
+      const verge=new THREE.Mesh(vg, new THREE.MeshLambertMaterial({color:th.ground||0x3f7a3a, side:THREE.DoubleSide})); verge.receiveShadow=true; g.add(verge);
+    }
     // asphalt ribbon
     const verts=[], idx=[], uvs=[];
     for(let i=0;i<=N;i++){ const p=this.samples[i%N];
