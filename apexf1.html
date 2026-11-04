@@ -535,7 +535,38 @@ const Aud = {
     }
   }
 };
+/* owner Nov 4 2026 'no music is playing on F1': the owner's music pack (sounds/pack/music/sports_arena) as decoded AudioBuffer loops (never hidden audio elements -
+   LESSONS: those garble). Menus / lobby / results = the menu track; lights + race = three layers crossfaded by the car's speed. A 250 ms sync follows Race.mode,
+   so every menu, the grid, EXIT and the results screen pick the right track without touching each screen's code. Mute = Aud.master (setMuted). */
+const FMus={ bufs:{}, els:null, mode:null, want:null, tried:false,
+  build(){ const c=Aud.ctx; this.bus=c.createGain(); this.bus.gain.value=0.8; this.bus.connect(Aud.master);
+    const mk=()=>{ const g=c.createGain(); g.gain.value=0; g.connect(this.bus); return {g,src:null}; };
+    this.els={menu:mk(),low:mk(),mid:mk(),high:mk()};
+    for(const [k,n] of [['menu','menu'],['low','gameplay_low'],['mid','gameplay_mid'],['high','gameplay_high']]){
+      fetch('sounds/pack/music/sports_arena/sports_arena_'+n+'.mp3').then(r=>r.arrayBuffer()).then(ab=>c.decodeAudioData(ab)).then(b=>{ this.bufs[k]=b; this.layer(k); }).catch(()=>{}); } },
+  layer(k){ const E=this.els&&this.els[k]; if(!E||E.src||!this.bufs[k]||!this.mode) return; if((this.mode==='menu')!==(k==='menu')) return;
+    const s=Aud.ctx.createBufferSource(); s.buffer=this.bufs[k]; s.loop=true; s.connect(E.g); s.start(); E.src=s; },
+  stopLayer(k){ const E=this.els[k]; if(E&&E.src){ try{E.src.stop();}catch(e){} E.src=null; } },
+  sync(){ try{
+    if(!Aud.ctx||!Aud.master||Aud.ctx.state!=='running') return; if(!this.els) this.build();
+    const want=(Race.mode==='race'||Race.mode==='lights')?'race':'menu', c=Aud.ctx, t=c.currentTime;
+    if(want!==this.mode){ this.mode=want;
+      if(want==='menu'){ for(const k of ['low','mid','high']){ this.els[k].g.gain.setTargetAtTime(0,t,0.3); this.stopLayer(k); } this.layer('menu'); this.els.menu.g.gain.setTargetAtTime(0.85,t,0.4); }
+      else { this.els.menu.g.gain.setTargetAtTime(0,t,0.3); this.stopLayer('menu'); for(const k of ['low','mid','high']) this.layer(k); } }
+    if(want==='race'){ let sp=Race.player&&Race.player.v; if(!isFinite(sp)) sp=0; const rpm=sp/97*80; // 0..80 m/s-ish scale of the pack's bands
+      const band=(x,a,b,d,e)=>x<a?0:x<b?(x-a)/(b-a):x<d?1:x<e?1-(x-d)/(e-d):0;
+      const tg={low:0.85*(1-band(rpm,16,34,1e9,1e9)),mid:0.85*band(rpm,16,34,52,70),high:0.85*band(rpm,52,70,1e9,1e9)};
+      for(const k of ['low','mid','high']) this.els[k].g.gain.setTargetAtTime(tg[k],t,0.25); }
+    window.__fmus={mode:this.mode,loaded:Object.keys(this.bufs),playing:Object.keys(this.els).filter(k=>this.els[k].src)};
+  }catch(e){} }
+};
+setInterval(()=>FMus.sync(),250);
+/* owner Nov 4 2026 'put back the sounds from clicking on things': one delegated UI click for every button/card in every menu (never per-screen code, so a screen fix can't drop it) */
+document.addEventListener('click',e=>{ try{ const t=e.target&&e.target.closest&&e.target.closest('button,.bigbtn,.btn,[role=button],.card,.opt,a'); if(!t||!Aud.ctx) return; const back=/exit|back|close/i.test(t.textContent||t.id||''); Aud.beep(back?440:760,0.06,0.16); }catch(x){} },true);
 document.addEventListener('pointerdown',()=>Aud.ensure());
+/* owner Nov 4 2026 'put back the sounds from clicking on things': one delegated UI click for every button/card in every menu (never per-screen code, so a screen fix can't drop it) */
+document.addEventListener('click',e=>{ try{ const t=e.target&&e.target.closest&&e.target.closest('button,.bigbtn,.btn,[role=button],.card,.opt,a'); if(!t||!Aud.ctx) return; const back=/exit|back|close/i.test(t.textContent||t.id||''); Aud.beep(back?440:760,0.06,0.16); }catch(x){} },true);
+
 /* ================= TRACK DATA (real circuits, stylized) =================
    Points are [x, y, z] loops. Builder interpolates, scales to lap length.
    DRS zones as fractions of lap distance. */
