@@ -3805,4 +3805,75 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'tester-chk-t13',
+    mode: 't13',
+    ask: 'CHECKLIST T13 (T10-5): the pole vault pole is 4.5-5.2 m long - REALITY.md. The held pole mesh length in the running game must be inside the 4.5-5.2 m band.',
+    async test(page, h) {
+      await h.eval(() => { for (const k of ['__drv', '__tfdrv', '__tfdrv2', '__tfdrv3', '__tfdrv4', '__tfdrv5', '__tfdrv6', '__tfdrvF', '__g68drv']) { if (window[k]) { clearInterval(window[k]); window[k] = null; } } location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu').catch(() => false); if (ready) break; await h.wait(500); }
+      const started = await h.eval(() => { const b = document.getElementById('bFree'); if (!b) return false; b.click(); return true; }).catch(() => false);
+      if (!started) return 'could not open free play (T13)';
+      await h.wait(800);
+      const carded = await h.eval(() => {
+        const bs = [...document.querySelectorAll('#gridEvents button')];
+        const b = bs[23];
+        if (!b || b.textContent.trim() !== 'Pole Vault') return false;
+        b.scrollIntoView({ block: 'center' }); b.click(); return true;
+      }).catch(() => false);
+      if (!carded) return 'could not open the Pole Vault card (T13)';
+      await h.wait(600);
+      await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+      for (let g = 0; g < 40; g++) { const has = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (has) break; await h.wait(400); }
+      // let the render loop run so the vault-pole mesh is created, then sample atomically
+      await h.eval(() => new Promise((res) => { let n = 0; const tick = () => { if (++n >= 5) res(true); else requestAnimationFrame(tick); }; requestAnimationFrame(tick); })).catch(() => {});
+      await h.wait(500);
+      const m = await h.eval(() => {
+        try {
+          const tf = window.__tf; if (!tf || !tf.eng) return { err: 'no engine' };
+          const eng = tf.eng();
+          const rigs = tf.rigs() || [];
+          let scene = null;
+          for (const r of rigs) { const g = r.group || null; if (g && !scene) { let o = g; while (o.parent) o = o.parent; scene = o; } }
+          if (!scene) return { err: 'no scene' };
+          const sample = () => {
+            const hits = [];
+            scene.traverse(o => {
+              if (!o.isMesh || !o.geometry || !o.geometry.parameters) return;
+              if (o.geometry.type !== 'CylinderGeometry') return;
+              if (Math.abs(o.geometry.parameters.height - 4.6) > 0.01) return;
+              if (!o.visible) return;
+              o.updateWorldMatrix(true, false);
+              const e = o.matrixWorld.elements;
+              const sy = Math.hypot(e[1], e[5], e[9]);
+              hits.push(+(4.6 * sy).toFixed(2));
+            });
+            return hits;
+          };
+          let side = 'L', lastStride = -99, steps = 0, seenApproach = false;
+          for (let i = 0; i < 3600; i++) {
+            if (eng.phase === 'approach') {
+              seenApproach = true;
+              const hits = sample();
+              if (hits.length === 1) return { len: hits[0], steps };
+              if (hits.length > 1) return { err: 'expected 1 held pole, found ' + hits.length };
+            } else if (seenApproach) {
+              break;
+            }
+            if (eng.done) break;
+            eng.update(1 / 60); steps++;
+            const t = steps / 60;
+            if (eng.phase === 'approach' && t - lastStride >= 0.12 && typeof eng.stride === 'function') { eng.stride(side); side = side === 'L' ? 'R' : 'L'; lastStride = t; }
+          }
+          return { err: 'no held pole sampled during approach (end phase ' + eng.phase + ', steps ' + steps + ')' };
+        } catch (e) { return { err: e.message }; }
+      }).catch(() => null);
+      if (!m) return 'pole measurement returned nothing (T13)';
+      if (m.err) return 'pole measurement: ' + m.err + ' (T13)';
+      if (m.len == null) return 'pole measurement found no length (T13)';
+      if (m.len < 4.5 || m.len > 5.2) return 'the pole vault pole measures ' + m.len + ' m but REALITY.md says 4.5-5.2 m (T13)';
+      return true;
+    }
+  },
 ];
