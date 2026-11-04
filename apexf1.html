@@ -186,6 +186,22 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     body.touch #btnERS { right:88px; bottom:calc(120px + env(safe-area-inset-bottom, 0px)); width:64px; height:52px; }
     body.touch #speedo { right:12px; bottom:calc(184px + env(safe-area-inset-bottom, 0px)); }
   }
+  /* owner Nov 4 2026 4:05 PM (green marks on his F1 photos): EXIT at the top, map under the position box, CAM + PIT top-right, the ERS bar no longer sits on the speed readout. Same on every track. */
+  #exitRace { left:112px; top:12px; }
+  body.touch #minimap { left:12px; top:112px; bottom:auto; width:84px; height:84px; }
+  body.touch #gapbox { top:76px; }
+  body.touch #btnCam { left:auto; right:12px; top:136px; bottom:auto; width:64px; height:48px; }
+  body.touch #btnPit { left:auto; right:84px; top:136px; bottom:auto; width:64px; height:48px; }
+  body.touch #ersbar { right:112px; top:auto; bottom:calc(196px + env(safe-area-inset-bottom, 0px)); width:104px; }
+  body.touch #speedo { bottom:calc(184px + env(safe-area-inset-bottom, 0px)); }
+  body.touch #gapbox { top:82px; }
+  body.touch #minimap { top:116px; }
+  @media (pointer:coarse) and (orientation:landscape) {
+    body.touch #speedo { left:50%; right:auto; transform:translateX(-50%); bottom:calc(10px + env(safe-area-inset-bottom, 0px)); }
+    body.touch #ersbar { left:calc(50% + 58px); right:auto; top:auto; bottom:calc(10px + env(safe-area-inset-bottom, 0px)); width:88px; }
+    body.touch #drsTag { bottom:112px; }
+  }
+  #tirebox .tcap { font-size:9px; letter-spacing:2px; color:#8fa8c8; font-weight:800; }
   /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
@@ -226,7 +242,7 @@ setTimeout(function(){
 <div id="hud" class="hidden">
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
   <div id="gapbox">GAP —</div>
-  <div id="tirebox"><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
+  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>

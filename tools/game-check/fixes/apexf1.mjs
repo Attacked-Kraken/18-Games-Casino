@@ -1614,4 +1614,35 @@ export default [
       return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
     },
   },
+  {
+    id: 'play-f1-hud-clear',
+    ask: 'F1: no HUD box sits on another (ERS bar vs speed readout, map vs position box, CAM/PIT vs weather) on the sideways and upright phone, and EXIT is at the top (owner Nov 4 2026)',
+    async test(page, h) {
+      let vp = null; try { vp = h.page.viewportSize(); } catch (e) {}
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let grid = false;
+      for (let i = 0; i < 40; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'grid') { grid = true; break; } await h.wait(300); }
+      if (!grid) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return { inconclusive: 'never reached the grid' }; }
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 40 && !racing; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); racing = (md === 'lights' || md === 'race'); if (!racing) await h.wait(300); }
+      if (!racing) { if (vp) await h.page.setViewportSize(vp).catch(() => {}); return { inconclusive: 'race never started' }; }
+      const bad = [];
+      for (const [name, w, hh] of [['sideways', 844, 390], ['upright', 390, 844]]) {
+        await h.page.setViewportSize({ width: w, height: hh }).catch(() => {});
+        await h.wait(800);
+        const r = await h.eval(() => { const ids = ['lapbox', 'gapbox', 'minimap', 'exitRace', 'tirebox', 'wxTag', 'btnCam', 'btnPit', 'ersbar', 'speedo', 'btnDRS', 'btnERS', 'btnGas', 'btnBrake', 'stick'];
+          const rs = []; for (const id of ids) { const e = document.getElementById(id); if (!e) continue; const b = e.getBoundingClientRect(); if (b.width < 2) continue; rs.push([id, b.left, b.top, b.right, b.bottom]); }
+          const ov = []; for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) { const a = rs[i], b = rs[j]; if (a[1] < b[3] - 1 && b[1] < a[3] - 1 && a[2] < b[4] - 1 && b[2] < a[4] - 1) ov.push(a[0] + ' on ' + b[0]); }
+          const ex = rs.find(x => x[0] === 'exitRace'); return { ov, exitTop: ex ? ex[2] : null }; }).catch(() => null);
+        if (!r) continue;
+        if (r.ov.length) bad.push(name + ': ' + r.ov.join(', '));
+        if (r.exitTop !== null && r.exitTop > 60) bad.push(name + ': EXIT is not at the top (top ' + Math.round(r.exitTop) + ' px)');
+      }
+      if (vp) await h.page.setViewportSize(vp).catch(() => {});
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return bad.length ? 'F1 HUD: ' + bad.join(' | ') : true;
+    },
+  },
 ];
