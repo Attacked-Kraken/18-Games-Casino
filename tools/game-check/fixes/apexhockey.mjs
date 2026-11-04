@@ -1479,4 +1479,28 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-skates-point-forward',
+  ask: 'F-H-002: while skating (turns included) the skates never flip - the toe is ahead of the ankle and the blade stays flat',
+  async test(page, h) {
+    try { await h.press('#playBtn'); } catch (e) {}
+    await h.wait(3000);
+    let bad = 0, n = 0, worst = 1;
+    for (let i = 0; i < 24; i++) {
+      await page.keyboard.down(i % 12 < 6 ? 'a' : 'd');
+      await h.wait(250);
+      const r = await h.eval(() => { const H = window.__hk; const s = H && H.skaters.find(x => x.team === 'home' && !x.goalie && x.ath);
+        if (!s) return null; const B = {}; s.ath.object.traverse(o => { if (o.isBone && /^(foot|ball)_[lr]$/.test(o.name)) B[o.name] = o; });
+        const V = s.pos.constructor, f = new V(), t = new V(), out = [];
+        for (const k of ['l', 'r']) { B['foot_' + k].getWorldPosition(f); B['ball_' + k].getWorldPosition(t); s.ath.object.worldToLocal(f); s.ath.object.worldToLocal(t); out.push([t.z - f.z, t.y - f.y]); }
+        return out; });
+      if (!r) continue;
+      for (const [dz, dy] of r) { n++; worst = Math.min(worst, dz); if (dz < 0.05 || dy > 0.02) bad++; }
+    }
+    try { await page.keyboard.up('a'); await page.keyboard.up('d'); } catch (e) {}
+    if (!n) return 'no skater athlete found to measure';
+    if (bad) return bad + ' of ' + n + ' skate readings had the toe behind the ankle or pointing up (worst toe offset ' + worst.toFixed(3) + ' m) - the skate flips backwards';
+    return true;
+  },
+},
 ];
