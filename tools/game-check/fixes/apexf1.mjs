@@ -1614,4 +1614,25 @@ export default [
       return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
     },
   },
+  {
+    id: 'play-f1-stuck-pair-freed',
+    ask: 'F1: two AI cars stopped on top of each other are freed within a few seconds and drive on - never stuck the whole race (owner Nov 4 2026)',
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => window.__test.race().mode === 'race').catch(() => false); }
+      if (!up) return { inconclusive: 'race never reached the racing state' };
+      const r = await h.eval(() => {
+        const T = window.__test; for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // get past the pack start
+        if (!T.stickPair) return { err: 'no stickPair hook' };
+        if (!T.stickPair()) return { err: 'no two AI cars to stick' };
+        for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // 20 game seconds
+        return { speeds: T.pairSpeeds(), freed: T.freedCount() };
+      });
+      if (!r || r.err) return (r && r.err) || 'no result';
+      return (r.speeds.length === 2 && r.speeds.every(v => v > 15)) ? true : 'two AI cars stopped on each other were still crawling after 20 s: speeds ' + JSON.stringify(r.speeds) + ' (stuck pair)';
+    },
+  },
 ];
