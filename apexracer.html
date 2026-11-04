@@ -256,7 +256,9 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
 
 <div id="sheet" class="scr" style="display:none"><div class="box glass">
   <h3 id="shT"></h3><div class="sub" id="shS"></div>
-  <div style="font:800 12px system-ui;opacity:.8">LAPS</div>
+  <div style="font:800 12px system-ui;opacity:.8">RACE TYPE</div>
+  <div class="chips" id="shType"></div>
+  <div style="font:800 12px system-ui;opacity:.8" id="shLapsT">LAPS</div>
   <div class="chips" id="shLaps"></div>
   <div class="sub" id="shP"></div>
   <div class="row"><button class="neo alt" id="shX">Cancel</button><button class="neo" id="shGo">Start Race</button></div>
@@ -2415,14 +2417,16 @@ function addEnt(o) {
   const e = Object.assign({ car, x: 0, z: 0, h: 0, vx: 0, vz: 0, prog: o.s0, s: o.s0, d: o.d0, dT: o.d0, v: 0, idx: 0, fin: null, nos: 0.3, nosOn: false, steer: 0, spd: 0, lapT: [], lap0: 0, lastLap: 0 }, o);
   R.T.at(o.s0, o.d0, tmpA); e.x = tmpA.x; e.z = tmpA.z; e.h = tmpA.h; e.idx = tmpA.i; R.cars.push(e); return e;
 }
-async function setupRace(place, laps, friend) {
+async function setupRace(place, laps, friend, type) {
+  type = friend ? 'circuit' : (type === 'sprint' || type === 'trial' ? type : 'circuit'); /* F-R-001 */
   endRace(); G.mode = 'loading';
   const W = await buildWorld(place), T = W.T, r = rng(Date.now() >>> 0); ldBar(45); await ldTick(1);
-  R = { place, laps, W, T, signTxt: 'START', cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
+  R = { place, laps: type === 'sprint' ? 1 : laps, type, fN: type === 'sprint' ? Math.round(T.N * 0.7) : laps * T.N, cp: 0, pl: type === 'sprint' ? 2 : laps, par: type === 'trial' ? Math.round((laps * T.N * T.ds / PAR_V + 3) * 100) / 100 : 0, W, T, signTxt: 'START', cars: [], traffic: [], t: -4.2, cd: 4, paused: false, shake: 0, near: 0, drift: 0, hits: 0, wrongT: 0, stuckT: 0, popT: 0, done: false, fw: null, best: 0, camMode: S.cam || 0, camP: new THREE.Vector3(), fov: 62, gear: 1 };
   setSign('START');
   const slot = (k) => ({ s0: -(9 + Math.floor(k / 2) * 9.5) / T.ds, d0: k % 2 ? 4 : -4 });
   const myCfg = S.cars[S.cur];
   for (let k = 0; k < 8; k++) { const sl = slot(k); if (k === 5) { R.P = addEnt(Object.assign({ name: user || 'You', carId: S.cur, cfg: myCfg, isP: true }, sl)); continue; }
+    if (type === 'trial') continue; /* time trial: only the player's car on the road */
     if (friend && k === 0) { const fc = friend.car, fcfg = Object.assign(defCfg(fc), { paint: friend.p || CAR[fc].col, fin: friend.f, rim: friend.ri, glow: friend.g });
       addEnt(Object.assign({ name: friend.n, carId: fc, cfg: fcfg, ai: true, friendR: friend.r }, sl)); continue; }
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
@@ -2435,7 +2439,7 @@ async function setupRace(place, laps, friend) {
     if (e.friendR != null) { const pr = playerRating(), ratio = clamp(e.friendR / Math.max(1, pr), 0.5, 2), pt = P.st.top;
       e.top = pt * clamp(0.8 + 0.2 * ratio, 0.7, 1.25); e.acc = (9 + place.tier * 1.4) * clamp(0.85 + 0.15 * ratio, 0.75, 1.2); e.react = 0.15; } } });
   ldBar(70); await ldTick(1);
-  if (W.traffic) { const n = W.traffic === 2 ? 9 : 10; for (let k = 0; k < n; k++) { const van = W.traffic === 2 ? r() < 0.7 : r() < 0.25;
+  if (W.traffic && type !== 'trial') { const n = W.traffic === 2 ? 9 : 10; for (let k = 0; k < n; k++) { const van = W.traffic === 2 ? r() < 0.7 : r() < 0.25;
     const cfg = Object.assign(defCfg('vanta'), { paint: brightPaint(['#e8e8ec', '#2a2c30', '#9aa0aa', '#ffd23a', '#1e4c8a', '#7a1020', '#f5f0e1', '#d4142a', '#1e8bff', '#16d07a', '#0b0c10', '#3a3f48', '#ff8a00', '#8a2be2'], r), fin: 'gloss', glow: '' });
     /* G-50: traffic cars are real fetched 3D models too, normal sedan size, each in its own paint */
     const car = makeCar('vanta', cfg, { glbKey: ['patriot', 'tokii', 'shc', 'lemans'][Math.floor(r() * 4)], prof: 'sedan' }); W.scene.add(car.root);
@@ -2595,7 +2599,8 @@ function updateRace(dt) {
     if (e.lap === undefined) e.lap = lap;
     if (lap > e.lap && lap >= 1 && !e.fin) { const lt = R.t - (e.lap0 || 0); e.lap0 = R.t; if (lap >= 1 && e.lap >= 0) e.lapT.push(lt); if (e.isP) { if (!R.best || lt < R.best) R.best = lt; if (lap < R.laps) { pop(lap === R.laps - 1 ? 'FINAL LAP!' : `LAP ${lap + 1}/${R.laps}`); sfx('coin'); const sl = lap === R.laps - 1 ? 'Finish' : lap + '/' + R.laps; R.signTxt = sl; setSign(sl); } } }
     e.lap = lap;
-    if (!e.fin && !e.remote && pr >= R.laps * T.N) { e.fin = R.t; if (e.isP) playerFinished(); }
+    if (e.isP && R.type === 'sprint') while (R.cp < 4 && pr >= R.fN * (R.cp + 1) / 5) { R.cp++; pop(`CHECKPOINT ${R.cp}/4`); sfx('coin'); } /* sprint: checkpoints count strictly in order */
+    if (!e.fin && !e.remote && pr >= R.fN && !(e.isP && R.type === 'sprint' && R.cp < 4)) { e.fin = R.t; if (e.isP) playerFinished(); }
   }
   if (P.fin) { P.auto = true; const i = ((P.idx + 14) % T.N), ax = T.px[i] - P.x, az = T.pz[i] - P.z, want = Math.atan2(ax, az); let dh = want - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; P.autoSteer = clamp(-dh * 2.5, -1, 1); P.st = Object.assign({}, P.st, { top: 30 }); }
   R.cars.forEach((e) => poseCar(e, dt)); R.traffic.forEach((t) => { t.car.root.position.set(t.x, T.y, t.z); t.car.root.rotation.y = t.h; posePool(t.car, t.x, t.z, t.h); poseWheels(t.car, t.v * dt, 0); });
@@ -2634,10 +2639,11 @@ function simRace(dt) {
   }
   if (R.t > 0 && !P.fin) { const inst = clamp((P.prog - (R.pProg === undefined ? P.prog : R.pProg)) * T.ds / Math.max(dt, 1e-4), 0, P.st.top * 1.3); R.pPace = R.pPace === undefined ? inst : R.pPace + (inst - R.pPace) * Math.min(1, dt / 5); }
   R.pProg = P.prog;
-  for (const e of R.cars) { const pr = e.isP ? e.prog : e.s; e.lap = Math.floor(pr / T.N); if (!e.fin && !e.remote && pr >= R.laps * T.N) e.fin = R.t; }
+  for (const e of R.cars) { const pr = e.isP ? e.prog : e.s; e.lap = Math.floor(pr / T.N); if (!e.fin && !e.remote && pr >= R.fN && !(e.isP && R.type === 'sprint' && R.cp < 4)) e.fin = R.t; }
 }
 function playerFinished() {
   const place = standings().findIndex((e) => e.isP) + 1; R.myPlace = place;
+  if (R.type === 'trial') { const beat = R.P.fin <= R.par; bigMsg(beat ? '⏱ BEAT THE CLOCK!' : '⏱ MISSED PAR'); setTimeout(() => { $('msg').style.opacity = 0; }, 2500); if (beat) R.fwOn = 6; musSting(beat); $('ctl').style.display = 'none'; setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200); return; }
   bigMsg(place === 1 ? '🏆 1ST!' : ord(place)); setTimeout(() => { $('msg').style.opacity = 0; }, 2500);
   if (place === 1) { R.fwOn = 6; } musSting(place === 1); /* G-80: victory sting on a win, game-over sting on a loss */
   $('ctl').style.display = 'none';
@@ -2743,39 +2749,44 @@ function renderPlaces() {
   $('plist').querySelectorAll('.pl').forEach((b) => { b.onclick = () => { sfx('tap'); const p = PLACES[+b.dataset.i]; openSheet(p); }; });
   $('plist').scrollTop = 0;
 }
-let SH = null;
+let SH = null; const PAR_V = 38; /* time trial par = lap length at 38 m/s average + 3 s standing start (F-R-001) */
 function openSheet(p) {
-  SH = { p, laps: Math.max(8, S.laps || 8) }; show('sheet'); G.mode = 'sheet'; sfx('popen');
+  SH = { p, laps: Math.max(8, S.laps || 8), type: G.pick === 'friend' ? 'circuit' : (S.rtype || 'circuit') }; show('sheet'); G.mode = 'sheet'; sfx('popen');
   $('shT').textContent = `${p.flag} ${p.city}`; $('shS').textContent = `${BNAME[p.biome]} · ${BIO[p.biome].hall ? 'Indoors' : BIO[p.biome].cave ? 'Underground' : TODN[p.tod]} · ${'★'.repeat(p.tier)} · 8 racers`;
-  const draw = () => { $('shLaps').innerHTML = [8, 10, 12, 15, 20].map((l) => `<button class="chip ${l === SH.laps ? 'on' : ''}" data-l="${l}">${l} laps</button>`).join('');
+  const draw = () => { /* F-R-001: race type = circuit (laps of the loop), sprint (point to point through 4 checkpoints), time trial (alone, beat the par time); friend races stay circuit */
+    const TYPES = G.pick === 'friend' ? [['circuit', 'Circuit']] : [['circuit', 'Circuit'], ['sprint', 'Sprint'], ['trial', 'Time trial']];
+    $('shType').innerHTML = TYPES.map(([k, l]) => `<button class="chip ${k === SH.type ? 'on' : ''}" data-t="${k}">${l}</button>`).join('');
+    $('shType').querySelectorAll('.chip').forEach((b) => { b.onclick = () => { SH.type = b.dataset.t; S.rtype = SH.type; save(); draw(); }; });
+    $('shLapsT').style.display = $('shLaps').style.display = SH.type === 'sprint' ? 'none' : '';
+    $('shLaps').innerHTML = [8, 10, 12, 15, 20].map((l) => `<button class="chip ${l === SH.laps ? 'on' : ''}" data-l="${l}">${l} laps</button>`).join('');
     $('shLaps').querySelectorAll('.chip').forEach((b) => { b.onclick = () => { SH.laps = +b.dataset.l; S.laps = SH.laps; save(); draw(); }; });
-    const tr = BIO[p.biome].traffic ? 'City traffic on the road. ' : ''; $('shP').textContent = `${tr}1st place pays ${fmt$(Math.round(p.prize * SH.laps / 8))}. Your car: ${CAR[S.cur].name}.`; };
+    const tr = BIO[p.biome].traffic ? 'City traffic on the road. ' : ''; $('shP').textContent = SH.type === 'sprint' ? `${tr}Point to point through 4 checkpoints, in order. 1st place pays ${fmt$(Math.round(p.prize * 2 / 8))}. Your car: ${CAR[S.cur].name}.` : SH.type === 'trial' ? `Alone on the road, no rivals, no traffic. Beat the par time (shown at the start) to get paid ${fmt$(Math.round(p.prize * SH.laps / 8))}. Your car: ${CAR[S.cur].name}.` : `${tr}1st place pays ${fmt$(Math.round(p.prize * SH.laps / 8))}. Your car: ${CAR[S.cur].name}.`; };
   draw();
 }
-$('shX').onclick = () => { sfx('pclose'); openWorld(G.pick === 'friend' ? 'friend' : null); }; $('shGo').onclick = () => { sfx('pclose'); startRace(SH.p, SH.laps); };
-function startRace(place, laps) {
+$('shX').onclick = () => { sfx('pclose'); openWorld(G.pick === 'friend' ? 'friend' : null); }; $('shGo').onclick = () => { sfx('pclose'); startRace(SH.p, SH.laps, SH.type); };
+function startRace(place, laps, type) {
   /* Oct 21 2026 (advisor): "R.skids is not iterable" - a second start while the first was still loading (the robot's go()
      retries after 6 s, PR #834, and the staged start awaits mid-setup, PR #754) let the frame loop run a half-built race. */
   if (G.mode === 'loading') return;
   S.lastPlace = place.i; save(); show('loading'); G.mode = 'loading'; $('ldT').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]}`; audioInit(); ldBar(8);
-  setTimeout(async () => { try { await setupRace(place, laps, G.friend); } catch (e) { console.error(e); toMenu(); } }, 60);
+  setTimeout(async () => { try { await setupRace(place, laps, G.friend, type); } catch (e) { console.error(e); toMenu(); } }, 60);
 }
 
 /* ------------------------------------------------------------------ results / pause */
 function showResults() {
-  if (!R) return; const T = R.T, st = standings(), P = R.P, pos = st.indexOf(P), place = R.place;
-  const est = (e) => (e.fin != null ? e.fin : R.t + ((R.laps * T.N - (e.isP ? e.prog : e.s)) * T.ds) / Math.max(25, Math.abs(e.spd) || 30));
+  if (!R) return; const T = R.T, st = standings(), P = R.P, tt = R.type === 'trial', beat = tt && P.fin != null && P.fin <= R.par, pos = tt ? (beat ? 0 : 7) : st.indexOf(P), place = R.place;
+  const est = (e) => (e.fin != null ? e.fin : R.t + ((R.fN - (e.isP ? e.prog : e.s)) * T.ds) / Math.max(25, Math.abs(e.spd) || 30));
   const fm = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(2).padStart(5, '0')}`;
   $('rTab').innerHTML = st.map((e, i) => `<tr class="${e.isP ? 'me' : ''}"><td>${ord(i + 1)}</td><td>${esc(e.name)}${e.remote && !e.bot ? ' 👥' : ''}</td><td style="opacity:.7">${CAR[e.carId].name}</td><td>${e.fin != null ? fm(e.fin) : '~' + fm(est(e))}</td></tr>`).join('');
-  $('rTitle').textContent = pos === 0 ? 'VICTORY!' : `${ord(pos + 1)} PLACE`;
-  $('rSub').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]} · ${R.laps} laps${R.best ? ' · best lap ' + fm(R.best) : ''}`;
+  $('rTitle').textContent = tt ? (beat ? 'BEAT THE CLOCK!' : 'MISSED PAR') : pos === 0 ? 'VICTORY!' : `${ord(pos + 1)} PLACE`;
+  $('rSub').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]} · ${R.type === 'sprint' ? 'sprint, 4 checkpoints' : tt ? 'time trial, ' + R.laps + ' laps, par ' + fm(R.par) : R.laps + ' laps'}${R.best ? ' · best lap ' + fm(R.best) : ''}`;
   /* pay1 2026-10-04 (owner): only 1st-6th get paid, biggest for 1st down to the smallest for 6th; 7th-8th get nothing just for racing */
-  const prize = Math.round((place.prize * R.laps) / 8), PAY = [1, 0.55, 0.32, 0.2, 0.12, 0.07], mult = PAY[pos] || 0, paidPos = pos < 6;
-  const coins = paidPos ? Math.round(prize * mult + R.near * 150 + R.drift * 2) : 0, rep = Math.round(([300, 200, 140, 100, 70, 50, 35, 25][pos] || 20) * place.tier * (R.laps / 8));
-  if (!R.paid) { R.paid = 1; S.cash += coins; S.rep += rep; S.races++; if (pos === 0) S.wins++; const b = S.best[place.i]; if (!b || pos + 1 < b) S.best[place.i] = pos + 1; save(); }
+  const prize = Math.round((place.prize * R.pl) / 8), PAY = [1, 0.55, 0.32, 0.2, 0.12, 0.07], mult = PAY[pos] || 0, paidPos = pos < 6;
+  const coins = paidPos ? Math.round(prize * mult + R.near * 150 + R.drift * 2) : 0, rep = Math.round(([300, 200, 140, 100, 70, 50, 35, 25][pos] || 20) * place.tier * (R.pl / 8));
+  if (!R.paid) { R.paid = 1; S.cash += coins; S.rep += rep; S.races++; if (pos === 0) S.wins++; const b = S.best[place.i]; if (!tt && (!b || pos + 1 < b)) S.best[place.i] = pos + 1; save(); }
   const MED = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅'], pp = (i) => fmt$(Math.round(prize * PAY[i]));
   $('rGain').innerHTML = `${paidPos ? MED[pos] + ' +' + fmt$(coins) : 'No prize — finish in the top 6 to get paid'} &nbsp;·&nbsp; +${rep.toLocaleString()} rep<div style="font:700 12px system-ui;color:#cfd3ff;margin-top:4px">🥇 ${pp(0)} · 🥈 ${pp(1)} · 🥉 ${pp(2)} · 🏅 4th ${pp(3)} · 5th ${pp(4)} · 6th ${pp(5)} · 7th–8th 🪙0</div><div style="font:700 12px system-ui;color:#cfd3ff;margin-top:2px">${paidPos ? R.near + ' near misses · drift ' + Math.round(R.drift) + ' pts · ' : ''}bank ${fmt$(S.cash)}</div><div id="rRec" style="font:800 13px system-ui;color:#ffd23a;margin-top:6px"></div>`;
-  if (P.fin != null && !R.recSent) { R.recSent = 1; const k = place.i + '_' + R.laps; S.bt = S.bt || {}; const nb = !S.bt[k] || P.fin < S.bt[k]; if (nb) { S.bt[k] = P.fin; save(); }
+  if (P.fin != null && !R.recSent) { R.recSent = 1; const k = place.i + '_' + R.laps + (R.type === 'circuit' ? '' : '_' + R.type); S.bt = S.bt || {}; const nb = !S.bt[k] || P.fin < S.bt[k]; if (nb) { S.bt[k] = P.fin; save(); }
     $('rRec').textContent = `⏱ Your time ${fm(P.fin)}${nb ? ' · NEW PERSONAL BEST' : ' · best ' + fm(S.bt[k])}`; }
   $('rNext').textContent = 'Next place ›';
   // rec1 2026-10-10 (owner: totals box): 1st place is a win, anything else a loss; once per race (R is new for every race)
@@ -2784,11 +2795,11 @@ function showResults() {
   if (!R.sndDone) { R.sndDone = 1; musicStart('menu'); if (pos === 0) sfx('win'); setTimeout(() => sfx(pos === 0 ? 'star3' : pos < 3 ? 'star2' : pos < 6 ? 'star1' : 'none'), 700); } /* G-80: win jingle + a star for the finish */
 }
 $('rGar').onclick = () => { endRace(); openGarage(); };
-$('rAgain').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
+$('rAgain').onclick = () => { const p = R.place, l = R.laps, t = R.type; startRace(p, l, t); };
 $('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length]; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); openSheet(p); };
 function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
 $('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
-$('pRe').onclick = () => { const p = R.place, l = R.laps; startRace(p, l); };
+$('pRe').onclick = () => { const p = R.place, l = R.laps, t = R.type; startRace(p, l, t); };
 $('pQuit').onclick = () => toMenu();
 
 /* ------------------------------------------------------------------ garage shop */
