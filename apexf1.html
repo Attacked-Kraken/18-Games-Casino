@@ -2041,13 +2041,16 @@ function aiDrive(car, dt){
   // pack fix: traffic - a car right ahead in the lane sets the speed early, so
   // arrivals inside the contact box happen matched instead of at full closing speed
   if(!car.inPits){ let vCap=Infinity;
-    for(const o of Race.cars){ if(o===car||o.finished) continue;
+    for(const o of Race.cars){ if(o===car||o.finished||o.inPits||car._free>0) continue; // Nov 4 2026: a car in the pits / a car being freed never holds the field
       let ds=(o.s-car.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
       if(ds>0 && ds<12 && Math.abs(o.d-car.d)<3.4) vCap=Math.min(vCap, o.v+(ds<6?0:(ds-6)*0.5)); }
     if(vCap<vt) vt=Math.max(vCap,0);
   }
   // rain mistakes: lift a touch more
   if(Race.weather.wet>0.3) vt*= (1-0.05*Race.weather.wet);
+  // Nov 4 2026 owner 'two racers just fighting each other stuck the whole race': a car crawling (<4 m/s) for 4 s on the road is FREED - for 3 s it ignores traffic and contact so the pair drives apart
+  if(!car.inPits && car.spin<=0 && Race.mode==='race' && car.v<4){ car._crawlT=(car._crawlT||0)+dt; if(car._crawlT>4){ car._free=3; car._crawlT=0; car.v=Math.max(car.v,6); window.__f1freed=(window.__f1freed||0)+1; } } else car._crawlT=0;
+  if(car._free>0) car._free-=dt;
   car.throttle = car.v<vt*1.18?1:0; // G-66: stay on the throttle into the corner like the player does - cutting it at vt coasted away the entry speed
   car.brake = car.v>vt*1.18?1:0; // G-66: brake later - at 1.05 the AI braked for corners far too early and the player just drove away
   // ERS: AI uses on straights
@@ -2103,6 +2106,7 @@ function carContact(cars, dt){
   for(let i=0;i<cars.length;i++) for(let j=i+1;j<cars.length;j++){
     const a=cars[i], b=cars[j];
     if(a.finished&&b.finished) continue;
+    if(a._free>0||b._free>0) continue; // freed cars pass through each other for a moment
     let ds=(a.s-b.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
     const dd=a.d-b.d;
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
@@ -3135,6 +3139,9 @@ window.__test = {
     Race.update(dt);
     return Race.mode;
   },
+  stickPair: () => { const ai=Race.cars.filter(c=>!c.isPlayer&&!c.inPits); if(ai.length<2) return false; const A=ai[0],B=ai[1]; B.s=A.s; B.d=A.d+0.3; A.v=B.v=0; A.spin=B.spin=0; window.__f1freed=0; window.__f1pair=[A,B]; return true; }, // test hook: two AI cars sitting on each other, stopped
+  freedCount: () => window.__f1freed||0,
+  pairSpeeds: () => (window.__f1pair||[]).map(c=>+c.v.toFixed(1)),
   simState: () => { const p = Race.player; if (!p) return null; const order = Race.positions(); return { mode: Race.mode, t: Race.raceT || 0, dist: p.raceDist, v: p.v, place: order.indexOf(p) + 1, of: order.length, finished: !!p.finished, lap: p.lap }; },
   // Test helper: place a car near the finish line to fast-forward lap tests
   // idx: car index in Race.cars, s: distance along track
