@@ -142,6 +142,7 @@
     <button class="bigbtn" id="btnAgain" type="button">REMATCH</button>
   </div>
 </div>
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { buildStadium } from './venues/kit/stadium.js';
@@ -1036,6 +1037,7 @@ function updateBall(dt){
 /* ================= procedural music (WebAudio, no files) + mute ================= */
 const Mus={ ac:null, mode:'menu', muted:(()=>{ try{return localStorage.getItem('apex_muted')==='1';}catch(e){return false;} })(),
   _timer:null, _step:0, _next:0, _noise:null };
+if(window.ApexMusic) Mus.pack=ApexMusic.follow({ctx:()=>Mus.ac,dest:()=>Mus.master,mode:()=>Mus.mode==='game'?'play':'menu',intensity:()=>0.5}); // shared gapless ogg pack
 Mus.init=function(){
   if(this.ac||!window.AudioContext&&!window.webkitAudioContext) return;
   try{
@@ -1071,6 +1073,7 @@ const MUS_BASS=[55,43.65,65.41,49];
 Mus.tick=function(){
   if(!this.ac) return;
   if(this.ac.state==='suspended'){ try{this.ac.resume();}catch(e){} }
+  if(this.pack&&this.pack.playing()){ this._next=this.ac.currentTime+0.1; return; } // gapless ogg pack is playing
   const game=this.mode==='game', spb=60/(game?132:92), ahead=this.ac.currentTime+0.15;
   while(this._next<ahead){
     const s=this._step, t=this._next, bar=(s>>4)%4;
