@@ -111,6 +111,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   input[type=text] { font:600 15px ui-monospace,Menlo,monospace; width:min(430px,88vw); padding:12px 14px; border-radius:12px; border:1px solid #3f6f9f; background:#08182b; color:#eaffea; margin-bottom:10px; }
   #friendErr,.err { color:#ff9a9a; font:600 13px ui-monospace,Menlo,monospace; min-height:18px; margin-bottom:8px; text-align:center; }
   /* HUD */
+  #exitRace { position:fixed; left:12px; top:136px; z-index:45; pointer-events:auto; background:#060b14dd; color:#fff; border:1px solid #ff6b6b; border-radius:10px; padding:8px 12px; font-size:13px; font-weight:900; letter-spacing:1px; font-family:inherit; }
+  #exitRace.sure { background:#d21f26; }
   #hud { position:fixed; inset:0; pointer-events:none; z-index:20; font-variant-numeric:tabular-nums; }
   #speedo { position:absolute; right:12px; bottom:86px; text-align:right; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; }
   #speedo .v { font-size:34px; font-weight:900; color:#fff; }
@@ -233,6 +235,7 @@ setTimeout(function(){
   <div id="warnTag" class="hidden"></div>
 </div>
 
+<button id="exitRace" class="hidden">✕ EXIT</button>
 <div id="touch" class="hidden">
   <div id="stick"><div id="stickKnob"></div></div>
   <div class="tbtn" id="btnGas">GAS</div>
@@ -2381,7 +2384,7 @@ const Race = {
   onPlayerFinish(order){
     Aud.cheer(true); Track.crowd.excite=1;
     const p=this.player;
-    setTimeout(()=>{
+    setTimeout(()=>{ if(this.mode==='menu') return; /* owner Nov 3 2026: player quit with EXIT - no results screen */
       // let others finish (simulate remaining)
       for(const c of this.cars) if(!c.finished){ c.finished=true; c.finishTime=this.raceT+rand(2,25)+c.penalty; }
       this.finishRace();
@@ -2740,6 +2743,11 @@ function initMenus(){
   };
   $('howBtn').onclick=()=>show('howMenu');
   $('backBtn').onclick=()=>{ location.href='sports.html'; };
+  // owner Nov 3 2026 9:10 PM "F1 has no back button ... to get out of races": EXIT during qualifying, grid, lights and the race.
+  // First tap = "TAP AGAIN TO QUIT" (3 s), second tap leaves to the main menu (no results, nothing saved).
+  $('exitRace').onclick=(e)=>{ e.stopPropagation(); const b=$('exitRace');
+    if(!b.classList.contains('sure')){ b.classList.add('sure'); b.textContent='TAP AGAIN TO QUIT'; clearTimeout(b._t); b._t=setTimeout(()=>{ b.classList.remove('sure'); b.textContent='✕ EXIT'; },3000); return; }
+    clearTimeout(b._t); b.classList.remove('sure'); b.textContent='✕ EXIT'; quitRace(); };
   $('howClose').onclick=()=>show('menu');
   $('trackBack').onclick=()=>show('menu');
   $('teamBack').onclick=()=>show('trackMenu');
@@ -2887,7 +2895,16 @@ function finishQuali(time){
 
 /* ================= MAIN LOOP ================= */
 let lastT=0;
+function quitRace(){
+  Race.mode='menu'; clearTimeout(Race._ltT);
+  try{ Aud.engine(0,0); Aud.skid(false); }catch(e){}
+  HUD.show(false); ['lights','countdown'].forEach(x=>$(x).classList.add('hidden'));
+  try{ $('banner').classList.remove('show'); }catch(e){}
+  show('menu'); renderMenuCode();
+}
+function exitTick(){ const on=['quali','grid','lights','race'].includes(Race.mode); const b=$('exitRace'); if(b && b.classList.contains('hidden')===on) b.classList.toggle('hidden',!on); }
 function loop(t){
+  exitTick();
   requestAnimationFrame(loop);
   let frameSec=(t-lastT)/1000||0.016; lastT=t;
   if(frameSec>0.25) frameSec=0.25; // slow screens: catch up in slices so game time stays real-time
