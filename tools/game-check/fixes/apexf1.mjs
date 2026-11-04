@@ -1614,4 +1614,15 @@ export default [
       return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
     },
   },
+  {
+    id: 'play-f1-warm-start',
+    ask: 'Owner Nov 4 2026: the menu start is slow and the car freezes a second at the lap line - every mesh must be uploaded to the GPU under the loading cover (one warm-up frame), not when it first comes into view.',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid'; }).catch(() => {});
+      let w = null;
+      for (let i = 0; i < 40 && !w; i++) { await h.wait(500); w = await h.eval(() => window.__f1warm || null).catch(() => null); }
+      if (!w) return 'F1 WARM START: no warm-up frame ran before the race (first sight of the grandstands will freeze)';
+      return w.objects > 50 ? true : 'F1 WARM START: the warm-up frame touched only ' + w.objects + ' objects';
+    },
+  },
 ];

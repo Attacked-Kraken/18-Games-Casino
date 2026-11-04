@@ -2854,6 +2854,10 @@ async function startWeekend(){
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
   CKAttach(); // G-48: the kit cockpit rides in the player's car
+  // owner Nov 4 2026 'so much delay on menu starting, and every time you pass the lap sign it freezes a second': three.js uploads a mesh's buffers + textures
+  // the first time it is DRAWN, so every grandstand / gantry / crowd near the start line uploaded the moment it came into view (measured: 109 buffer uploads,
+  // 6 textures in the first frame after the line). ONE warm-up frame with culling off, under the loading cover, pays all of that before the race starts.
+  try{ const off=[]; scene.traverse(o=>{ if(o.frustumCulled){ o.frustumCulled=false; off.push(o); } }); renderer.compile(scene,camera); renderer.render(scene,camera); for(const o of off) o.frustumCulled=true; window.__f1warm={ objects:off.length, t:performance.now() }; }catch(e){}
   ldOff();
   if(ta){ Race.player.qualiTime=0; Race.placeGrid(false); Race.mode='grid'; HUD.show(true); Race.beginRace(); try{ Race.updateCamera(1); }catch(e){} banner('TIME ATTACK', (TA.best(selTrack)?'Best: '+fmtTime(TA.best(selTrack)):'Set the first time')+' · '+selLaps+' laps', 2400, '#9fd8ff'); return; }
   runQuali();
