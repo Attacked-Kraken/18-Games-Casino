@@ -738,10 +738,11 @@ export default [
       const t0 = Date.now();
       while (Date.now() - t0 < 9000) {
         const st = await h.eval(`window.__test.kitAudio()`);
-        if (st && st.band >= 2 && st.rate > 1.0) { hot = st; break; }
+        if (st && st.band >= 2 && st.rate > 0.81) { hot = st; break; } // Nov 4 2026: the Racer's deep-growl rates (idle layer 0.8-0.84, accel layers 0.6-0.8) - never the old 0.85-1.15 whine
         await h.wait(400);
       }
       if (!hot) return 'the engine kit never sang under throttle: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
+      if (hot.rate > 0.9) return 'the engine kit is running too fast (rate ' + hot.rate + ') - that is the whine / helicopter sound: ' + JSON.stringify(hot);
       if (!(hot.shifts >= 1)) return 'no gear-shift sound fired while accelerating: ' + JSON.stringify(hot);
       await h.eval(`window.__test.setInput({ gas:true, steer:1 })`);
       let squeal = 0;

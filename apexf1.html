@@ -432,15 +432,20 @@ const Aud = {
     const kit=this.kit;
     if(kit && kit.ready){ // G-107: kit loops - crossfade by throttle, playbackRate 0.9-1.25 by speed (TOOLS.md)
       if(this.engineGain) this.engineGain.gain.setTargetAtTime(0,t,0.05); // synth engine off, the kit carries it
-      const x=Math.max(0,Math.min(1,throttle*0.7+rpm01*0.3)); // engine load
-      const level=0.08+0.12*x, centers={ idle:0, low:0.34, mid:0.67, high:1 }, order=['idle','low','mid','high'];
-      let band=0, bandW=-1;
-      for(const k of order){
-        const w=Math.max(0,1-Math.abs(x-centers[k])/0.36);
-        if(kit.gains[k]) kit.gains[k].gain.setTargetAtTime(w*level,t,0.06);
-        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.85+rpm01*0.3,t,0.1);
-        if(w>bandW){ bandW=w; band=order.indexOf(k); }
-      }
+      // owner Nov 4 2026 'turn off that helicopter sound': the F1 mix is now the Exotic Racer's own engine formula (G-240 deep growl): rate 0.6-0.8 (never the old
+      // 0.85-1.15 whine that beat against itself), idle + three accel layers crossfaded by load and rpm with the Racer's band shape, every layer through one 1.5 kHz low-pass.
+      const clampN=(v,a,b2)=>Math.max(a,Math.min(b2,v)); if(!isFinite(rpm01)) rpm01=0; if(!isFinite(throttle)) throttle=0;
+      const load=clampN(throttle,0,1), rpm=clampN(rpm01,0,1), x=load*0.7+rpm*0.3;
+      const bandF=(v,a,b2,c,d)=>v<a?0:v<b2?(v-a)/(b2-a):v<c?1:v<d?1-(v-c)/(d-c):0;
+      const rate=0.6+0.2*rpm;
+      if(kit.bus) kit.bus.frequency.setTargetAtTime(1500,t,0.05);
+      for(const k of ['low','mid','high']) if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(rate,t,0.05);
+      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime(0.8+0.04*rpm,t,0.05);
+      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(0.5*(1-load*0.8),t,0.07);
+      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
+      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
+      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
+      const band=x<0.17?0:x<0.5?1:x<0.84?2:3;
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
         this._kitShiftT=t; this.kitShifts++;
         const buf=band>this.kitBand?kit.bufs.shiftUp:kit.bufs.shiftDn;
@@ -473,7 +478,7 @@ const Aud = {
           if(!kit.bufs[k]) continue;
           const s=this.ctx.createBufferSource(); s.buffer=kit.bufs[k]; s.loop=true;
           const g=this.ctx.createGain(); g.gain.value=0;
-          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=3200; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
+          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=1500; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
           s.connect(g); g.connect(k==='squeal'?this.master:kit.bus); s.start();
           kit.srcs[k]=s; kit.gains[k]=g;
         }
