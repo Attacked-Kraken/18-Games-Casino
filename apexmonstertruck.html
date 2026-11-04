@@ -132,6 +132,7 @@
 <div id="rotHint"><div><b>ROTATE YOUR DEVICE</b><br>for the full arena view.<br>(You can still play in portrait.)</div></div>
 
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 
@@ -278,7 +279,7 @@ const Snd = {
 
 /* ================= J5: procedural music (menu + game) ================= */
 const Music = {
-  ctx:null, musGain:null, timer:null, step:0, mode:'off', nextT:0,
+  pack:null, ctx:null, musGain:null, timer:null, step:0, mode:'off', nextT:0,
   init(snd){
     if (this.ctx || !snd.ctx) return;
     this.ctx = snd.ctx;
@@ -322,6 +323,7 @@ const Music = {
   },
   schedule(s, t){
     if (this.snd.muted) return;
+    if (this.pack && this.pack.playing()) return; // gapless ogg pack is playing
     const C = this.ctx, g = this.musGain, game = this.mode === 'game', sd = this.stepDur;
     const bar = Math.floor(s / 16) % 4, q = s % 16;
     const ROOT = [164.8, 130.8, 196.0, 146.8][bar];               // E  C  G  D
@@ -382,6 +384,7 @@ const Music = {
   },
   setMuted(m){ if (this.musGain) this.musGain.gain.setTargetAtTime(m ? 0 : this.level(), this.ctx.currentTime, 0.05); }
 };
+if (window.ApexMusic) Music.pack = ApexMusic.follow({ ctx: () => Music.ctx, dest: () => Music.musGain, mode: () => Music.mode === 'menu' ? 'menu' : (Music.mode === 'game' ? 'play' : 'off'), intensity: () => 0.5 }); // shared gapless ogg pack
 
 /* ================= canvas texture helpers ================= */
 function makeTex(w, h, draw){

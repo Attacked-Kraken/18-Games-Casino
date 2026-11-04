@@ -255,6 +255,7 @@
   </div>
 </div>
 
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { loadHumans } from 'humans';
@@ -1864,7 +1865,7 @@ function crowdTick(t, dt){
 
 /* ---------------- procedural music (WebAudio, no files) ---------------- */
 const Mus = {
-  ctx:null, master:null, noiseBuf:null, mode:'menu', step:0, nextT:0,
+  pack:null, ctx:null, master:null, noiseBuf:null, mode:'menu', step:0, nextT:0,
   kit:{}, kitTried:false, ambGain:null, ambSrc:null, // G-36 (owner's kits): samples from sounds/stadium/baseball/
   muted: (function(){ try{ return localStorage.getItem('apex_muted')==='1'; }catch(e){ return false; } })(),
   init(){
@@ -1959,6 +1960,7 @@ const Mus = {
   pad(t, freqs, dur){ freqs.forEach(f=>this.tone('triangle', f*1.003, f*0.997, t, dur, 0.05)); },
   sched(){
     if(!this.ctx || this.ctx.state!=='running') return;
+    if(this.pack&&this.pack.playing()){ this.nextT=this.ctx.currentTime+0.1; return; } // gapless ogg pack is playing
     const menu = this.mode==='menu', bpm = menu?92:126, eighth = 60/bpm/2;
     while(this.nextT < this.ctx.currentTime + 0.18){ this.playStep(this.step, this.nextT, menu, eighth); this.step++; this.nextT += eighth; }
   },
@@ -1989,6 +1991,7 @@ const Mus = {
     }catch(e){}
   }
 };
+if(window.ApexMusic) Mus.pack=ApexMusic.follow({ctx:()=>Mus.ctx,dest:()=>Mus.master,mode:()=>Mus.mode==='menu'?'menu':'play',intensity:()=>0.5}); // shared gapless ogg pack
 window.__mus = Mus;
 
 /* ---------------- G-40: the owner's new ballpark (kit/stadiums/Night-Ballpark) ----------------

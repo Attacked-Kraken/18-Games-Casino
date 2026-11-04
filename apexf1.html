@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="kit/apex-music.js"></script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -431,15 +432,20 @@ const Aud = {
     const kit=this.kit;
     if(kit && kit.ready){ // G-107: kit loops - crossfade by throttle, playbackRate 0.9-1.25 by speed (TOOLS.md)
       if(this.engineGain) this.engineGain.gain.setTargetAtTime(0,t,0.05); // synth engine off, the kit carries it
-      const x=Math.max(0,Math.min(1,throttle*0.7+rpm01*0.3)); // engine load
-      const level=0.08+0.12*x, centers={ idle:0, low:0.34, mid:0.67, high:1 }, order=['idle','low','mid','high'];
-      let band=0, bandW=-1;
-      for(const k of order){
-        const w=Math.max(0,1-Math.abs(x-centers[k])/0.36);
-        if(kit.gains[k]) kit.gains[k].gain.setTargetAtTime(w*level,t,0.06);
-        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.85+rpm01*0.3,t,0.1);
-        if(w>bandW){ bandW=w; band=order.indexOf(k); }
-      }
+      // owner Nov 4 2026 'turn off that helicopter sound': the F1 mix is now the Exotic Racer's own engine formula (G-240 deep growl): rate 0.6-0.8 (never the old
+      // 0.85-1.15 whine that beat against itself), idle + three accel layers crossfaded by load and rpm with the Racer's band shape, every layer through one 1.5 kHz low-pass.
+      const clampN=(v,a,b2)=>Math.max(a,Math.min(b2,v)); if(!isFinite(rpm01)) rpm01=0; if(!isFinite(throttle)) throttle=0;
+      const load=clampN(throttle,0,1), rpm=clampN(rpm01,0,1), x=load*0.7+rpm*0.3;
+      const bandF=(v,a,b2,c,d)=>v<a?0:v<b2?(v-a)/(b2-a):v<c?1:v<d?1-(v-c)/(d-c):0;
+      const rate=0.6+0.2*rpm;
+      if(kit.bus) kit.bus.frequency.setTargetAtTime(1500,t,0.05);
+      for(const k of ['low','mid','high']) if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(rate,t,0.05);
+      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime(0.8+0.04*rpm,t,0.05);
+      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(0.5*(1-load*0.8),t,0.07);
+      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
+      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
+      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
+      const band=x<0.17?0:x<0.5?1:x<0.84?2:3;
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
         this._kitShiftT=t; this.kitShifts++;
         const buf=band>this.kitBand?kit.bufs.shiftUp:kit.bufs.shiftDn;
@@ -472,7 +478,7 @@ const Aud = {
           if(!kit.bufs[k]) continue;
           const s=this.ctx.createBufferSource(); s.buffer=kit.bufs[k]; s.loop=true;
           const g=this.ctx.createGain(); g.gain.value=0;
-          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=3200; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
+          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=1500; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
           s.connect(g); g.connect(k==='squeal'?this.master:kit.bus); s.start();
           kit.srcs[k]=s; kit.gains[k]=g;
         }
@@ -535,29 +541,12 @@ const Aud = {
     }
   }
 };
-/* owner Nov 4 2026 'no music is playing on F1': the owner's music pack (sounds/pack/music/sports_arena) as decoded AudioBuffer loops (never hidden audio elements -
-   LESSONS: those garble). Menus / lobby / results = the menu track; lights + race = three layers crossfaded by the car's speed. A 250 ms sync follows Race.mode,
-   so every menu, the grid, EXIT and the results screen pick the right track without touching each screen's code. Mute = Aud.master (setMuted). */
-const FMus={ bufs:{}, els:null, mode:null, want:null, tried:false,
-  build(){ const c=Aud.ctx; this.bus=c.createGain(); this.bus.gain.value=0.8; this.bus.connect(Aud.master);
-    const mk=()=>{ const g=c.createGain(); g.gain.value=0; g.connect(this.bus); return {g,src:null}; };
-    this.els={menu:mk(),low:mk(),mid:mk(),high:mk()};
-    for(const [k,n] of [['menu','menu'],['low','gameplay_low'],['mid','gameplay_mid'],['high','gameplay_high']]){
-      fetch('sounds/pack/music/sports_arena/sports_arena_'+n+'.mp3').then(r=>r.arrayBuffer()).then(ab=>c.decodeAudioData(ab)).then(b=>{ this.bufs[k]=b; this.layer(k); }).catch(()=>{}); } },
-  layer(k){ const E=this.els&&this.els[k]; if(!E||E.src||!this.bufs[k]||!this.mode) return; if((this.mode==='menu')!==(k==='menu')) return;
-    const s=Aud.ctx.createBufferSource(); s.buffer=this.bufs[k]; s.loop=true; s.connect(E.g); s.start(); E.src=s; },
-  stopLayer(k){ const E=this.els[k]; if(E&&E.src){ try{E.src.stop();}catch(e){} E.src=null; } },
+/* F1 music = the shared kit (kit/apex-music.js: gapless ogg, all layers start together, limiter - see its header). Menus / lobby / results = menu loop; lights + race = low/mid/high by speed. */
+const FMus={ m:null,
   sync(){ try{
-    if(!Aud.ctx||!Aud.master||Aud.ctx.state!=='running') return; if(!this.els) this.build();
-    const want=(Race.mode==='race'||Race.mode==='lights')?'race':'menu', c=Aud.ctx, t=c.currentTime;
-    if(want!==this.mode){ this.mode=want;
-      if(want==='menu'){ for(const k of ['low','mid','high']){ this.els[k].g.gain.setTargetAtTime(0,t,0.3); this.stopLayer(k); } this.layer('menu'); this.els.menu.g.gain.setTargetAtTime(0.85,t,0.4); }
-      else { this.els.menu.g.gain.setTargetAtTime(0,t,0.3); this.stopLayer('menu'); for(const k of ['low','mid','high']) this.layer(k); } }
-    if(want==='race'){ let sp=Race.player&&Race.player.v; if(!isFinite(sp)) sp=0; const rpm=sp/97*80; // 0..80 m/s-ish scale of the pack's bands
-      const band=(x,a,b,d,e)=>x<a?0:x<b?(x-a)/(b-a):x<d?1:x<e?1-(x-d)/(e-d):0;
-      const tg={low:0.85*(1-band(rpm,16,34,1e9,1e9)),mid:0.85*band(rpm,16,34,52,70),high:0.85*band(rpm,52,70,1e9,1e9)};
-      for(const k of ['low','mid','high']) this.els[k].g.gain.setTargetAtTime(tg[k],t,0.25); }
-    window.__fmus={mode:this.mode,loaded:Object.keys(this.bufs),playing:Object.keys(this.els).filter(k=>this.els[k].src)};
+    if(!Aud.ctx||!Aud.master||Aud.ctx.state!=='running'||!window.ApexMusic) return; if(!this.m) this.m=ApexMusic.attach(Aud.ctx,Aud.master,{style:'sports_arena'});
+    const race=(Race.mode==='race'||Race.mode==='lights'); let sp=Race.player&&Race.player.v; if(!isFinite(sp)) sp=0;
+    this.m.setIntensity(sp/97); this.m.setMode(race?'play':'menu'); const r=this.m.report(); window.__fmus={mode:r.mode,loaded:r.loaded,playing:r.audible};
   }catch(e){} }
 };
 setInterval(()=>FMus.sync(),250);
@@ -2870,6 +2859,10 @@ async function startWeekend(){
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
   CKAttach(); // G-48: the kit cockpit rides in the player's car
+  // owner Nov 4 2026 'so much delay on menu starting, and every time you pass the lap sign it freezes a second': three.js uploads a mesh's buffers + textures
+  // the first time it is DRAWN, so every grandstand / gantry / crowd near the start line uploaded the moment it came into view (measured: 109 buffer uploads,
+  // 6 textures in the first frame after the line). ONE warm-up frame with culling off, under the loading cover, pays all of that before the race starts.
+  try{ const off=[]; scene.traverse(o=>{ if(o.frustumCulled){ o.frustumCulled=false; off.push(o); } }); renderer.compile(scene,camera); renderer.render(scene,camera); for(const o of off) o.frustumCulled=true; window.__f1warm={ objects:off.length, t:performance.now() }; }catch(e){}
   ldOff();
   if(ta){ Race.player.qualiTime=0; Race.placeGrid(false); Race.mode='grid'; HUD.show(true); Race.beginRace(); try{ Race.updateCamera(1); }catch(e){} banner('TIME ATTACK', (TA.best(selTrack)?'Best: '+fmtTime(TA.best(selTrack)):'Set the first time')+' · '+selLaps+' laps', 2400, '#9fd8ff'); return; }
   runQuali();
