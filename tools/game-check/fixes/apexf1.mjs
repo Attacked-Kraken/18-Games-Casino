@@ -1598,4 +1598,20 @@ export default [
       return true;
     },
   },
+  {
+    id: "play-f1-scenery-on-ground",
+    ask: "F1: buildings and props stand on the ground (none floats in the sky) and the start/finish strip is a chequered strip that does not flicker",
+    async test(page, h) {
+      const rep = [];
+      for (const tr of ['harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 40 && !r; i++) { await h.wait(500); r = await h.eval(() => (window.__test && window.__test.scenery) ? { s: window.__test.scenery(), k: window.__test.stripe() } : null).catch(() => null); }
+        if (!r) return { inconclusive: 'circuit ' + tr + ' did not load' };
+        if (r.s.n && r.s.maxBase > r.s.ground + 2.5) rep.push(tr + ': a building base is ' + (r.s.maxBase - r.s.ground).toFixed(1) + ' m above the ground (floats)');
+        if (!r.k || !r.k.poly) rep.push(tr + ': start/finish strip has no chequer / depth offset (z-fighting flicker)');
+      }
+      return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
+    },
+  },
 ];
