@@ -181,6 +181,7 @@
 </div>
 <div id="rotOv">Rotate your device</div>
 <script src="sounds/commentary/hockey/commentary.js"></script>
+<script src="kit/apex-music.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // JOB J10: merge static scenery into single draw calls
@@ -915,6 +916,7 @@ function horn(){
 
 /* ================= procedural music (WebAudio, no files) ================= */
 const Mus = {
+  pack:null,
   ctx:null, master:null, nbuf:null, timer:null, kitAmb:null, // G-47: kit crowd loop element once it can play
   muted:false, mode:'menu', step:0, nextT:0,
   CH:[[57,60,64],[53,57,60],[55,60,64],[55,59,62]], // Am F C G
@@ -981,6 +983,7 @@ const Mus = {
   },
   sched(){
     if(!this.ctx) return;
+    if(this.pack&&this.pack.playing()){ this.nextT=this.ctx.currentTime+0.06; return; } // gapless ogg pack is playing
     const ahead=this.ctx.currentTime+0.15, bpm=this.mode==='game'?132:92, spb=60/bpm/4;
     while(this.nextT<ahead){ try{ this.playStep(this.step,this.nextT); }catch(e){}
       this.nextT+=spb; this.step=(this.step+1)%64; }
@@ -1013,6 +1016,7 @@ const Mus = {
     }catch(e){}
   }
 };
+if(window.ApexMusic) Mus.pack=ApexMusic.follow({ctx:()=>Mus.ctx,dest:()=>Mus.master,mode:()=>Mus.mode==='game'?'play':'menu',intensity:()=>0.5}); // shared gapless ogg pack
 window.__mus = Mus;
 
 /* ================= actions ================= */
