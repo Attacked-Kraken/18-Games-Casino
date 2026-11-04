@@ -1810,7 +1810,50 @@ export default [
         return true;
       });
       if (r !== true) return r;
-      return true;
+      /* F-R-001: the sprint chip starts its own kind of run - point to point, under one lap long, 4 checkpoints counted in order */
+      await h.eval(() => { document.querySelector('#shType [data-t="sprint"]').click(); document.querySelector('#shGo').click(); });
+      const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 80000).catch(() => false);
+      if (!inRace) return 'R11: the sprint start never reached the race';
+      return await h.eval(() => {
+        const R = window.__erc.R, P = R.P;
+        if (R.type !== 'sprint') return 'R11: sprint chip started a "' + R.type + '" run';
+        if (!(R.fN < R.T.N)) return 'R11: sprint is not point to point - finish at ' + R.fN + ' of a ' + R.T.N + ' segment lap';
+        R.t = 1;
+        for (const f of [0.25, 0.5, 0.75, 1.0]) { P.prog = f * R.fN - 0.01; window.__erc.step(2, 0.016); }
+        if (R.cp !== 4) return 'R11: sprint counted ' + R.cp + ' of 4 checkpoints in order';
+        P.prog = R.fN + 1; window.__erc.step(3, 0.016);
+        if (P.fin == null) return 'R11: sprint did not finish after the last checkpoint';
+        return true;
+      });
+    },
+  },
+  {
+    id: 'play-race-type-trial', parts: ['menu'],
+    cat: 'play',
+    name: 'F-R-001: the Time trial race type starts a run alone on the road with a par time, and finishing under par beats the clock',
+    ask: 'F-R-001: choose Time trial on the race sheet, start: one car only, no traffic, par time set; finishing under par ends in BEAT THE CLOCK (on main there is no Time trial chip, so the test fails)',
+    async test(page, h) {
+      await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+      const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+      if (!hasErc) return 'no __erc';
+      await h.eval(() => { document.querySelector('#mRace').click(); });
+      const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+      if (!hasPl) return 'no place button in #plist';
+      await h.eval(() => { document.querySelector('#plist .pl').click(); });
+      const chip = await h.poll(() => h.eval(() => !!document.querySelector('#shType [data-t="trial"]')), (v) => !!v, 10000).catch(() => false);
+      if (!chip) return 'F-R-001: no Time trial chip on the race sheet';
+      await h.eval(() => { document.querySelector('#shType [data-t="trial"]').click(); document.querySelector('#shGo').click(); });
+      const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 80000).catch(() => false);
+      if (!inRace) return 'F-R-001: the time trial start never reached the race';
+      return await h.eval(() => {
+        const R = window.__erc.R, P = R.P;
+        if (R.type !== 'trial') return 'time trial chip started a "' + R.type + '" run';
+        if (R.cars.length !== 1 || R.traffic.length !== 0) return 'time trial is not alone on the road: ' + R.cars.length + ' cars, ' + R.traffic.length + ' traffic';
+        if (!(R.par > 0)) return 'time trial has no par time';
+        R.t = 1; P.prog = R.fN + 1; window.__erc.step(3, 0.016);
+        if (P.fin == null || P.fin > R.par) return 'finishing a time trial at ' + P.fin + ' s against par ' + R.par + ' s was not counted as under par';
+        return true;
+      });
     },
   },
   {
