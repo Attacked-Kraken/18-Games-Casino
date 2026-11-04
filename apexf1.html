@@ -821,7 +821,7 @@ const Track = {
     // grass
     let minX=1e9,maxX=-1e9,minZ=1e9,maxZ=-1e9,minY=1e9;
     for(const p of this.samples){ minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z);minY=Math.min(minY,p.y); }
-    this.bounds={minX,maxX,minZ,maxZ};
+    this.bounds={minX,maxX,minZ,maxZ}; this.groundBase=minY-0.4; // F-F1: scenery stands on THIS height (the ground plane), never on the road's height
     const th=(this.cfg&&this.cfg.theme)||{};
     const pad=th.kind?2600:160; // a themed world needs ground out to the horizon
     const grass=new THREE.Mesh(new THREE.PlaneGeometry(maxX-minX+pad*2,maxZ-minZ+pad*2),
@@ -879,10 +879,14 @@ const Track = {
     }
     // start/finish checker strip
     const f0=this.frameAt(0);
+    // F-F1: was a flat white plane lying on the road = z-fighting flicker; now a real chequered strip pulled off the road by a depth offset
+    const ck=document.createElement('canvas'); ck.width=128; ck.height=16; { const cx=ck.getContext('2d'); for(let xx=0;xx<16;xx++) for(let yy=0;yy<2;yy++){ cx.fillStyle=(xx+yy)%2?'#111':'#fff'; cx.fillRect(xx*8,yy*8,8,8); } }
+    const ckT=new THREE.CanvasTexture(ck); ckT.magFilter=THREE.NearestFilter; ckT.colorSpace=THREE.SRGBColorSpace;
     const stripe=new THREE.Mesh(new THREE.PlaneGeometry(W,3),
-      new THREE.MeshBasicMaterial({color:0xffffff}));
+      new THREE.MeshBasicMaterial({map:ckT,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
+    stripe.renderOrder=2;
     stripe.rotation.x=-Math.PI/2; stripe.rotation.z=-Math.atan2(f0.tx,f0.tz);
-    stripe.position.set(f0.x, f0.y+0.05, f0.z); g.add(stripe);
+    stripe.position.set(f0.x, f0.y+0.09, f0.z); g.add(stripe);
     // DRS zone edge paint (green dashes on left edge)
     const drsMat=new THREE.MeshBasicMaterial({color:0x27e07a});
     for(const [z0,z1] of this.cfg.drs){
@@ -906,17 +910,17 @@ const Track = {
     for(let i=0;i<N;i+=40){ const p=this.samples[i]; if(Math.abs(p.curv)<0.004) continue; const side=p.curv>0?-1:1; const patch=new THREE.Mesh(new THREE.PlaneGeometry(26,16), gravelMat); patch.rotation.x=-Math.PI/2; patch.rotation.z=-Math.atan2(p.tx,p.tz); patch.position.set(p.x+p.nx*(W/2+9)*side, p.y+0.01, p.z+p.nz*(W/2+9)*side); g.add(patch); }
     if(th.kind==='desert'){
       const mesaMat=new THREE.MeshLambertMaterial({color:0xb5633c}); const mesaGeo=new THREE.CylinderGeometry(1,1.35,1,7);
-      inst(mesaGeo, mesaMat, 34, ()=>{ const t=spot(220,650,6); if(!t) return null; const h=R(25,90), w=R(40,140); return {x:t.x,y:h/2-1,z:t.z,sx:w,sy:h,sz:w*R(0.6,1.2),rot:R(0,6.3)}; });
+      inst(mesaGeo, mesaMat, 34, ()=>{ const t=spot(220,650,6); if(!t) return null; const h=R(25,90), w=R(40,140); return {x:t.x,y:this.groundBase+h/2-1,z:t.z,sx:w,sy:h,sz:w*R(0.6,1.2),rot:R(0,6.3)}; });
       const rockGeo=new THREE.DodecahedronGeometry(1,0); const rockMat=new THREE.MeshLambertMaterial({color:0x9c6b4a});
-      inst(rockGeo, rockMat, 120, ()=>{ const t=spot(40,200,4); if(!t) return null; const s=R(1.5,6); return {x:t.x,y:t.y+s*0.3,z:t.z,sx:s,sy:s*R(0.5,0.9),sz:s,rot:R(0,6.3)}; });
+      inst(rockGeo, rockMat, 120, ()=>{ const t=spot(40,200,4); if(!t) return null; const s=R(1.5,6); return {x:t.x,y:this.groundBase+s*0.3,z:t.z,sx:s,sy:s*R(0.5,0.9),sz:s,rot:R(0,6.3)}; });
       const cacGeo=new THREE.CylinderGeometry(0.35,0.45,1,7); const cacMat=new THREE.MeshLambertMaterial({color:0x3f7d3a});
-      inst(cacGeo, cacMat, 160, ()=>{ const t=spot(30,160,4); if(!t) return null; const h=R(2.5,6); return {x:t.x,y:t.y+h/2,z:t.z,sy:h,sx:R(0.8,1.3),sz:R(0.8,1.3)}; });
+      inst(cacGeo, cacMat, 160, ()=>{ const t=spot(30,160,4); if(!t) return null; const h=R(2.5,6); return {x:t.x,y:this.groundBase+h/2,z:t.z,sy:h,sx:R(0.8,1.3),sz:R(0.8,1.3)}; });
     } else if(th.kind==='city' || th.kind==='harbour'){
       const night=!!th.night; const cv=document.createElement('canvas'); cv.width=64; cv.height=128; const x=cv.getContext('2d'); x.fillStyle=night?'#0d1118':'#8a94a6'; x.fillRect(0,0,64,128); for(let yy=4;yy<128;yy+=8) for(let xx=4;xx<64;xx+=8){ x.fillStyle=night?(Math.random()<0.55?'#ffe9a8':'#1a2030'):(Math.random()<0.5?'#cfe3ff':'#5a6472'); x.fillRect(xx,yy,4,5); }
       const wtex=new THREE.CanvasTexture(cv); wtex.wrapS=wtex.wrapT=THREE.RepeatWrapping; wtex.colorSpace=THREE.SRGBColorSpace;
       const bMat=new THREE.MeshLambertMaterial({map:wtex, color:night?0xffffff:0xdde3ea}); if(night){ bMat.emissive=new THREE.Color(0xffffff); bMat.emissiveMap=wtex; bMat.emissiveIntensity=0.55; }
       const bGeo=new THREE.BoxGeometry(1,1,1); bGeo.translate(0,0.5,0);
-      inst(bGeo, bMat, 220, ()=>{ const t=spot(th.kind==='harbour'?36:40, th.kind==='harbour'?260:420, 6); if(!t) return null; const w=R(14,38), h=R(18,th.kind==='harbour'?70:120); return {x:t.x,y:t.y-0.5,z:t.z,sx:w,sy:h,sz:R(14,38),rot:R(0,6.3)}; });
+      inst(bGeo, bMat, 220, ()=>{ const t=spot(th.kind==='harbour'?36:40, th.kind==='harbour'?260:420, 6); if(!t) return null; const w=R(14,38), h=R(18,th.kind==='harbour'?70:120); return {x:t.x,y:this.groundBase-1,z:t.z,sx:w,sy:h+1+Math.max(0,t.y-this.groundBase),sz:R(14,38),rot:R(0,6.3)}; });
       const poleGeo=new THREE.CylinderGeometry(0.12,0.16,9,6); poleGeo.translate(0,4.5,0); const poleMat=new THREE.MeshLambertMaterial({color:0x3a4250});
       inst(poleGeo, poleMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y,z:p.z+p.nz*(W/2+6)*side}; });
       if(night){ const lampGeo=new THREE.BoxGeometry(2.2,0.5,1.2); const lampMat=new THREE.MeshBasicMaterial({color:0xfff2c0}); inst(lampGeo, lampMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y+9,z:p.z+p.nz*(W/2+6)*side}; }); }
@@ -924,7 +928,7 @@ const Track = {
         // palms along the coast side, yachts moored in the marina
         const ptrunk=new THREE.CylinderGeometry(0.22,0.35,7,6); ptrunk.translate(0,3.5,0); const pMat=new THREE.MeshLambertMaterial({color:0x6b4a2e});
         const pleaf=new THREE.ConeGeometry(2.8,1.2,7); pleaf.translate(0,7.2,0); const lMat=new THREE.MeshLambertMaterial({color:0x2f8a3a});
-        const pl=[]; for(let i=0;i<140;i++){ const t=spot(14,60,4); if(t) pl.push({x:t.x,y:t.y,z:t.z,sx:R(0.8,1.3),sy:R(0.9,1.5),sz:R(0.8,1.3)}); }
+        const pl=[]; for(let i=0;i<140;i++){ const t=spot(14,60,4); if(t) pl.push({x:t.x,y:this.groundBase,z:t.z,sx:R(0.8,1.3),sy:R(0.9,1.5),sz:R(0.8,1.3)}); }
         inst(ptrunk, pMat, pl.length, (i)=>pl[i]); inst(pleaf, lMat, pl.length, (i)=>pl[i]);
         const hull=new THREE.BoxGeometry(1,1,1); hull.translate(0,0.5,0); const hMat=new THREE.MeshLambertMaterial({color:0xf4f6f8});
         inst(hull, hMat, 40, ()=>{ const bb=this.bounds; return {x:R(bb.minX-200,bb.maxX+200), y:-0.3, z:bb.maxZ+170+R(30,500), sx:R(10,26), sy:R(2.5,5), sz:R(4,8), rot:R(0,6.3)}; }); const water=new THREE.Mesh(new THREE.PlaneGeometry(3000,1200), new THREE.MeshStandardMaterial({color:night?0x0a1a33:0x2a6fa8, roughness:0.15, metalness:0.6})); water.rotation.x=-Math.PI/2; water.position.set((b.minX+b.maxX)/2, -0.35, b.maxZ+170+600); g.add(water);
@@ -934,7 +938,7 @@ const Track = {
       inst(hillGeo, hillMat, 26, ()=>{ const t=spot(260,700,6); if(!t) return null; const r=R(120,320); return {x:t.x,y:-r*0.72,z:t.z,sx:r,sy:r*R(0.35,0.6),sz:r*R(0.7,1.3)}; });
       const trunkGeo=new THREE.CylinderGeometry(0.25,0.4,6,5); trunkGeo.translate(0,3,0); const trunkMat=new THREE.MeshLambertMaterial({color:0x4a3728});
       const coneGeo=new THREE.ConeGeometry(2.6,9,7); coneGeo.translate(0,9.5,0); const coneMat=new THREE.MeshLambertMaterial({color:0x1f5a2a});
-      const place=[]; for(let i=0;i<420;i++){ const t=spot(22,230,4); if(t){ const s=R(0.8,1.6); place.push({x:t.x,y:t.y,z:t.z,sx:s,sy:s,sz:s}); } }
+      const place=[]; for(let i=0;i<420;i++){ const t=spot(22,230,4); if(t){ const s=R(0.8,1.6); place.push({x:t.x,y:this.groundBase,z:t.z,sx:s,sy:s,sz:s}); } }
       inst(trunkGeo, trunkMat, place.length, (i)=>place[i]); inst(coneGeo, coneMat, place.length, (i)=>{ const t=place[i]; return {...t, col:new THREE.Color().setHSL(0.33,0.5,R(0.18,0.3))}; });
     }
   },
@@ -3051,6 +3055,9 @@ function GPPlay(name, vol){ if(GP.ev && GP.ev.play) GP.ev.play(name, vol); }
 GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
+  // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
+  scenery: () => { const gb = Track.groundBase, bases = []; Track.group.traverse(o => { if (o.isInstancedMesh && o.geometry.type === 'BoxGeometry') { o.geometry.computeBoundingBox(); if (Math.abs(o.geometry.boundingBox.min.y) < 1e-6) { const m = new THREE.Matrix4(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); bases.push(m.elements[13]); } } } }); return { ground: gb, n: bases.length, maxBase: bases.length ? Math.max(...bases) : null }; },
+  stripe: () => { let ok = null; Track.group.traverse(o => { if (o.isMesh && o.renderOrder === 2 && o.material.map) ok = { poly: !!o.material.polygonOffset, map: true }; }); return ok; },
   cars: () => Race.cars.map(c => ({
     name: c.name, s: c.s, d: c.d, v: c.v, lap: c.lap,
     finished: c.finished, isPlayer: c.isPlayer,
