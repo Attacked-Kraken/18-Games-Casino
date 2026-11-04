@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
 <title>Clip Notes</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,8 +57,6 @@ video{display:block;max-width:100%;max-height:36vh;background:var(--stage);point
 .dock-top .scrub{padding:10px 0 2px}
 .dock-bot{position:sticky;bottom:0;z-index:6;padding-bottom:max(8px,env(safe-area-inset-bottom,0px));background:var(--bg)}
 .dock-bot .panel{padding:8px 10px;gap:6px;box-shadow:0 -6px 14px color-mix(in srgb,var(--bg) 80%,transparent)}
-#rot{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);color:var(--fg);align-items:center;justify-content:center;text-align:center;padding:24px;font:700 22px/1.2 var(--f-ui)}
-@media (orientation:landscape) and (max-height:600px){#rot{display:flex}}
 .tc{font:500 15px var(--f-mono);font-variant-numeric:tabular-nums}
 .scrub{position:relative;padding:14px 0 6px}
 input[type=range]{width:100%;margin:0;accent-color:var(--accent);height:28px}
@@ -83,9 +81,24 @@ textarea{min-height:64px;resize:vertical}
 #status{min-height:20px;font-size:14px}
 .help{border-left:3px solid var(--line);padding-left:10px;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
-</style></head><body>
 
-<div id="rot">Turn your phone upright. Clip Notes works in portrait only.</div>
+/* Landscape: zoom everything out a notch and put the video beside the tools,
+   never on top of them, so the pencils stay reachable while drawing. */
+@media (orientation:landscape){
+  body{font-size:13px;padding-block:8px 16px}
+  h1{font:700 21px/1 var(--f-ui)}
+  button,.btn{font-size:14px;min-height:36px;padding:0 10px}
+  .sw{width:32px;min-width:32px;height:32px;min-height:32px}
+  #editor{display:flex;align-items:flex-start;gap:10px}
+  .dock-top{position:static;flex:0 1 54%;min-width:0;padding-bottom:0}
+  .stage,.frame,video{max-height:min(86vh,78vw)}
+  #side{flex:1 1 0;min-width:0;max-height:94vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    display:flex;flex-direction:column;gap:10px;padding-right:2px;padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+  .dock-bot{position:static}
+  .dock-bot .panel{box-shadow:none}
+}
+</style>
+
 <div class="wrap">
   <div class="top">
     <div>
@@ -135,6 +148,7 @@ textarea{min-height:64px;resize:vertical}
     </div>
     </div>
 
+    <div id="side">
     <div class="dock-bot"><div class="panel tools">
       <div class="row">
         <button data-tool="pen" aria-pressed="true">Pen</button>
@@ -196,6 +210,7 @@ textarea{min-height:64px;resize:vertical}
       <div class="help">Claude reads pictures and text, not video. The picture sheets (one picture with every marked frame, its time and your note) are the fastest handoff. Attach them, paste the copied notes, and send.</div>
       <div class="help">The marked-up video is recorded while the clip plays, so it takes as long as the clip. Keep this page open and the screen on until it finishes. Saved videos are mp4 where your phone allows it, otherwise webm.</div>
     </div>
+    </div>
   </section>
 </div>
 
@@ -217,7 +232,6 @@ textarea{min-height:64px;resize:vertical}
     if(v.src) { try{URL.revokeObjectURL(v.src);}catch(_){} }
     fileName=f.name||'video'; $('#fname').textContent=fileName;
     shapes=[]; findings=[]; editing=null; draftImg=null; renderList(); redraw();
-    try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('portrait').catch(function(){}); }catch(_){}
     v.src=URL.createObjectURL(f); v.load();
     $('#empty').hidden=true; $('#editor').hidden=false; say('');
   });
@@ -484,4 +498,5 @@ textarea{min-height:64px;resize:vertical}
   sheetButtons();
 })();
 </script>
+
 </body></html>
