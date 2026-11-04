@@ -18,8 +18,10 @@ without the HOW TO SEE IT steps - a finding that cannot be seen again is not a f
      `fix/<game>-F-<L>-<NNN>`, title `FIX F-<L>-<NNN> (PART: <part>): <one line>`, one part, one change, a play test that
      proves it. STATUS becomes `FIXED` with the PR number.
    - `CLAUDE` = anything 3D, a model, wheels, paint/wraps, a camera, physics, movement, a track, stadium, scenery, lighting,
-     a shared kit/ file, or a change that touches more than one part. STATUS becomes `FOR-CLAUDE`. The Mac mini sees the
-     word FOR-CLAUDE on main and puts it on Claude's list - nothing else to do.
+     a shared kit/ file, or a change that touches more than one part. **TURN IT IN:** in your AUDIT PR add `KIND: CLAUDE`,
+     one line `FIX NEEDED: <what must change, measured>` and `STATUS: FOR-CLAUDE`. That is the whole hand-in - do not send it
+     anywhere else. Once it is on main the Mac mini's own Claude Code wakes the fixing Claude within minutes; it fixes it with
+     before/after pictures (`findings/<game>/pics/<id>-before.jpg`, `-after.jpg`) and writes `STATUS: FIXED (Claude)`.
    Audit pull request: branch `test/audit-<game>-<date>`, title `AUDIT <game>: F-<L>-<NNN>, F-<L>-<NNN>` (notes only).
    The auditor also updates `library/open/<game>.md` "What's left" in the same PR.
 3. **Claude** fixes FOR-CLAUDE findings, writes `FIX: PR #N merged <time>` and STATUS `FIXED`.
@@ -40,7 +42,7 @@ HOW TO SEE IT:
 2. tap Garage > Rims > Deep Dish
 3. look at the front left wheel
 MEASURED: numbers with units (6.47 m long; 31 px button; 0 fps for 1.5 s) - 'looks wrong' alone is not a finding
-PROOF: findings/apexracer/pics/F-R-001.jpg and/or play test id tester-chk-r13 (fails on main)
+PROOF: findings/apexracer/pics/F-R-001.jpg (a picture of the problem - the owner sees it on his controller) and/or play test id tester-chk-r13 (fails on main)
 SEVERITY: BLOCKER (cannot play) | BAD (wrong, visible) | SMALL (polish)
 PART: <one part from tools/game-check/games.json 'parts' for this game>
 STATUS: NEW

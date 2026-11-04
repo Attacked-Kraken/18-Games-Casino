@@ -80,3 +80,10 @@ files on main are the hand-off (findings/, library/, jobs/HELP.md).
 - A SMALL fix is one part, one change, one play test, title `FIX F-<L>-<NNN> (PART: <part>): ...`.
 - The Mac mini sends only role work: a tester round, an audit round, a re-check - one at a time, when the window is free.
   No nudges, no reminders, no re-sends.
+
+## The flow - how a problem moves, who owns each step (owner Nov 3 2026 7:22 PM, LOCKED)
+1. **Tester files it** - one finding file per problem in `findings/<game>/`, a picture in `findings/<game>/pics/` (the owner sees it on his controller), all of one round in ONE batch PR `FIND <game>: F-x, F-y - <round id>`. Status `NEW`.
+2. **Auditor checks it** (within 60 min of landing) - AUDIT block: TRUE / FALSE / DUPLICATE. SMALL = the auditor fixes it itself (`FIX F-id (PART: x)`, status `FIXED PR #N`). FALSE = `CLOSED-FALSE`.
+3. **Turned in to Claude** - anything 3D / camera / physics / track / model / shared kit / more than one part: in the AUDIT PR write `KIND: CLAUDE`, `FIX NEEDED: <what, measured>`, `STATUS: FOR-CLAUDE`. That is the whole hand-in - nothing is sent anywhere else. When it is on main the Mac mini's own Claude Code wakes the fixing Claude within minutes; it fixes it on its own PR `FIX <id> (PART: x)` with before/after pictures and writes `STATUS: FIXED (Claude)` (target: 3 h).
+4. **Tester re-checks it** in its next round (target: 24 h) - `STATUS: DONE <date>` or back to `NEW` with `RE-OPENED: ...`.
+- The owner's controller (Flow tab) shows every finding in its step and turns a step RED when its oldest item waits past the target; open PRs turn red after 60 min, a round after 120 min. Nothing else reaches the owner.
