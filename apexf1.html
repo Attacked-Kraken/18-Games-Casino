@@ -1651,9 +1651,21 @@ function buildBoxBody(color, teamName, carNumber, accent){
    show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
 const CAR_LOD_NEAR = 70;
 function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; const ckHide=c.isPlayer && CK._bodyHidden; L.near.visible=near && !ckHide; L.far.visible=!near && !ckHide; /* owner Nov 3 2026: in COCKPIT cam the player's own body stays hidden (this per-frame LOD switch used to show it again) */ for(const w of c.mesh.userData.wheels||[]) if(w.userData.mw){ w.userData.mw.visible=near; w.userData.hideInst=near; } } }
+// owner Nov 4 2026 'my car is way small compared to others and it zooms big and small when people get close': the close-up model and the far box were different sizes
+// (the far box was 28% taller), and the classic cars were 9% longer than the modern ones. Now the far box is scaled onto the close-up's size, and every car is scaled to one length.
+const CAR_REF_LEN=5.247; // metres at scale 1 = the modern close-up model (7.43 m on the road with the game's 1.416)
+function matchCarSizes(g){ const L=g.userData.lod; if(!L||!L.near||!L.far) return; try{
+  g.updateMatrixWorld(true); const V=THREE.Vector3, bb=o=>new THREE.Box3().setFromObject(o);
+  const n=bb(L.near), f=bb(L.far), ns=n.getSize(new V()), fs=f.getSize(new V()); if(!(ns.x>0.5&&fs.x>0.5&&ns.y>0.2&&fs.y>0.2&&ns.z>0.2&&fs.z>0.2)) return;
+  L.far.scale.set(L.far.scale.x*ns.x/fs.x, L.far.scale.y*ns.y/fs.y, L.far.scale.z*ns.z/fs.z); L.far.updateMatrixWorld(true);
+  const f2=bb(L.far), nc=n.getCenter(new V()), fc=f2.getCenter(new V());
+  L.far.position.x+=nc.x-fc.x; L.far.position.z+=nc.z-fc.z; L.far.position.y+=n.min.y-f2.min.y;
+  g.userData.sizeK=CAR_REF_LEN/ns.x;
+}catch(e){} }
 function buildCarFromModel(body, spec, color, accent, box){
   const g=new THREE.Group(); g.add(body);
   if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
+  if(box) matchCarSizes(g);
   buildCarWheels(g, color, accent, spec);
   wheelInstRegister(g);
   scene.add(g);
@@ -1774,7 +1786,7 @@ class Car {
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
     this.skill=skill; // 0..1
     this.mesh=buildCarMesh(team.color, team.name, 1, team.accent, isPlayer ? (localStorage.getItem('f1_shape')||'modern') : (TEAMS.indexOf(team)%2 ? 'classic' : 'modern'), isPlayer ? (localStorage.getItem('f1_wrap')||'team') : 'team');
-    this.mesh.scale.setScalar(1.416); // G-73: the car about 20% bigger again (1.18 x 1.2)
+    this.mesh.scale.setScalar(1.416*(this.mesh.userData.sizeK||1)); // G-73 (x sizeK, Nov 4 2026: every car the same length): the car about 20% bigger again (1.18 x 1.2)
     this.s=0; this.d=0; this.v=0; this.yaw=0; this.headAngle=0;
     this.tire='SOFT'; this.wear=0; this.tireAge=0;
     this.ers=100; this.drsOpen=false; this.drsCount=0;
@@ -3111,6 +3123,7 @@ window.__test = {
   heading: (idx) => { const c=Race.cars[idx||0]; if(!c) return null;
     const f=Track.frameAt(c.s);
     return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
+  carSizes: () => Race.cars.map(c => { c.mesh.updateMatrixWorld(true); const L = c.mesh.userData.lod, m = o => { if(!o) return null; const q = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); return [q.x, q.y, q.z]; }; return { name: c.name, isPlayer: c.isPlayer, near: m(L && L.near), far: m(L && L.far) }; }), // Nov 4 2026: world size of each car's close-up model and far box
   trackWidth: () => Track.width,
   kitAudio: () => (Aud && Aud.kitState) ? Aud.kitState() : null, // G-107 probes
   groundKit: () => { if(!GP.lt || !GP.lt.root) return null; const out={};

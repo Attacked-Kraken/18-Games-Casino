@@ -1647,4 +1647,22 @@ export default [
       return (r.speeds.length === 2 && r.speeds.every(v => v > 15)) ? true : 'two AI cars stopped on each other were still crawling after 20 s: speeds ' + JSON.stringify(r.speeds) + ' (stuck pair)';
     },
   },
+  {
+    id: "play-f1-car-sizes-match",
+    ask: "F1: every car is the same size as the player (length within 4%), and a car does not change size when it swaps between close-up and far model (owner Nov 4 2026: my car is small and zooms big/small)",
+    async test(page, h) {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      let sizes = null;
+      for (let i = 0; i < 40 && !sizes; i++) { await h.wait(500); sizes = await h.eval(() => (window.__test && window.__test.carSizes && window.__test.race().mode === 'grid') ? window.__test.carSizes() : null).catch(() => null); }
+      if (!sizes || !sizes.length) return { inconclusive: 'grid never loaded' };
+      const me = sizes.find(c => c.isPlayer); if (!me || !me.near) return { inconclusive: 'player model not built' };
+      const bad = [];
+      for (const c of sizes) {
+        if (!c.near || !c.far) continue;
+        if (Math.abs(c.near[0] - me.near[0]) / me.near[0] > 0.04) bad.push(c.name + ' is ' + c.near[0].toFixed(2) + ' m long, you are ' + me.near[0].toFixed(2));
+        for (let k = 0; k < 3; k++) if (Math.abs(c.far[k] - c.near[k]) / c.near[k] > 0.08) { bad.push(c.name + ' changes size when far (axis ' + k + ': ' + c.near[k].toFixed(2) + ' to ' + c.far[k].toFixed(2) + ' m)'); break; }
+      }
+      return bad.length ? 'F1 CAR SIZE: ' + bad.slice(0, 4).join('; ') : true;
+    },
+  },
 ];
