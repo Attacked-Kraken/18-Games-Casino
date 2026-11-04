@@ -13,4 +13,4 @@ Checklist: checklists/apexf1.md · Short rules: rules/short/apexf1.md · Finding
 - (nothing)
 
 ## Checklist progress
-- 0 of ? items ticked (the auditor fills this after each round)
+- 9 of 10 items ticked (F05 dropped)
