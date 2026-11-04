@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="kit/apex-music.js"></script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -2356,48 +2357,23 @@ function engineSnd(rpm, load, on, nos, scr, spd) {
   AU.scr.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.2 : 0, t, 0.05);
 }
 
-/* ------------------------------------------------------------------ music: the owner's pack - sounds/pack/music/sports_arena/ (G-80)
-   menu track on the menus; a race plays the same track in three layers (low/mid/high)
-   crossfaded by the car's speed; a win or a loss ends the race with its sting. */
-const MUS = { want: 'menu', mode: null, els: null, bufs: null, mix: { low: -1, mid: -1, high: -1 } };
-function musBuild() {
-  /* owner fix (Oct 23): the pack used to play through HTMLAudio elements piped into WebAudio as media-element sources - on the owner's phone every track came out static and skipping: a media element keeps its own clock, drifts against the audio context, and garbles on pause/resume and at each loop seam. Every other sound in this game is a decoded buffer and plays clean, so the music is buffers too: fetch + decode once, loop as buffer sources (one clock, sample-accurate loops, layers start in phase). */
-  const c = AU.ctx;
-  MUS.bufs = {};
-  for (const [k, name] of [['menu', 'menu'], ['low', 'gameplay_low'], ['mid', 'gameplay_mid'], ['high', 'gameplay_high']]) {
-    fetch('sounds/pack/music/sports_arena/sports_arena_' + name + '.mp3').then((r) => r.arrayBuffer()).then((ab) => c.decodeAudioData(ab)).then((b) => { MUS.bufs[k] = b; musStartLayer(k); }).catch(() => {});
-  }
-  const mk = () => { const g = c.createGain(); g.gain.value = 0; g.connect(AU.music); return { g, src: null }; };
-  MUS.els = { menu: mk(), low: mk(), mid: mk(), high: mk() };
-}
-function musStartLayer(k) { /* start layer k's looping buffer source once its decode has landed and the current mode wants it */
-  if (!MUS.mode || !MUS.els || !MUS.bufs || !MUS.bufs[k]) return;
-  if (MUS.mode === 'menu' && k !== 'menu') return;
-  if (MUS.mode === 'race' && k === 'menu') return;
-  const E = MUS.els[k]; if (E.src) return;
-  const s = AU.ctx.createBufferSource(); s.buffer = MUS.bufs[k]; s.loop = true; s.connect(E.g); s.start(); E.src = s;
-}
-function musStopLayer(k) { const E = MUS.els && MUS.els[k]; if (E && E.src) { try { E.src.stop(); } catch (e) {} E.src = null; } }
+/* ------------------------------------------------------------------ music: the owner's pack through the shared kit (kit/apex-music.js)
+   Gapless ogg, all layers started together, only volumes change, limiter on the bus (Nov 4 2026: replaces the per-game layer start/stop code that glitched).
+   menu track on the menus; a race plays the same track in three layers (low/mid/high) crossfaded by the car's speed; a win or a loss ends the race with its sting. */
+const MUS = { want: 'menu', mode: null, m: null };
 function musicStart(mode) {
-  MUS.want = mode; const c = AU.ctx; if (!c) return;
+  MUS.want = mode; const c = AU.ctx; if (!c || !window.ApexMusic) return;
   if (!AU.music) { AU.music = c.createGain(); AU.music.gain.value = 0.9; AU.music.connect(AU.master); }
-  if (!MUS.els) musBuild();
-  MUS.mode = mode; const t = c.currentTime, E = MUS.els;
-  if (mode === 'menu') { for (const k of ['low', 'mid', 'high']) { E[k].g.gain.setTargetAtTime(0, t, 0.3); musStopLayer(k); } musStartLayer('menu'); E.menu.g.gain.setTargetAtTime(0.85, t, 0.4); }
-  else { E.menu.g.gain.setTargetAtTime(0, t, 0.3); musStopLayer('menu'); for (const k of ['low', 'mid', 'high']) musStartLayer(k); MUS.mix = { low: -1, mid: -1, high: -1 }; musRaceMix(0); }
+  if (!MUS.m) MUS.m = ApexMusic.attach(c, AU.music, { style: 'sports_arena' });
+  MUS.mode = mode; MUS.m.setMode(mode === 'menu' ? 'menu' : 'play');
 }
-function musicStop() { const c = AU.ctx; MUS.mode = null; if (!c || !MUS.els) return; const t = c.currentTime; for (const k in MUS.els) { MUS.els[k].g.gain.setTargetAtTime(0, t, 0.15); musStopLayer(k); } }
-function musRaceMix(sp) { /* crossfade the three race layers by speed - called every frame beside engineSnd */
-  if (MUS.mode !== 'race' || !MUS.els) return; const c = AU.ctx; if (!c) return;
-  if (!isFinite(sp)) sp = 0; /* same guard as engineSnd: a non-finite speed frame must never reach an AudioParam */
-  const band = (x, a, b, d, e) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < d ? 1 : x < e ? 1 - (x - d) / (e - d) : 0;
-  const tg = { low: 0.85 * (1 - band(sp, 16, 34, 1e9, 1e9)), mid: 0.85 * band(sp, 16, 34, 52, 70), high: 0.85 * band(sp, 52, 70, 1e9, 1e9) };
-  const t = c.currentTime;
-  for (const k of ['low', 'mid', 'high']) if (Math.abs(tg[k] - MUS.mix[k]) > 0.03) { MUS.mix[k] = tg[k]; MUS.els[k].g.gain.setTargetAtTime(tg[k], t, 0.25); }
+function musicStop() { MUS.mode = null; if (MUS.m) MUS.m.setMode('off'); }
+function musRaceMix(sp) { /* the car's speed picks the layer - called every frame beside engineSnd */
+  if (MUS.mode !== 'race' || !MUS.m) return; if (!isFinite(sp)) sp = 0; /* a non-finite speed frame must never reach an AudioParam */
+  MUS.m.setIntensity(sp / 70);
 }
-function musSting(win) { /* race over: stop the layers and play the win or game-over sting once, over the music bus */
-  musicStop(); const c = AU.ctx; if (!c || !AU.music || !S.snd) return; const b = AU.buf && AU.buf[win ? 'stingW' : 'stingL']; if (!b) return;
-  const s = c.createBufferSource(); s.buffer = b; s.connect(AU.music); s.start();
+function musSting(win) { /* race over: stop the layers and play the win or game-over sting once */
+  musicStop(); if (MUS.m && S.snd) MUS.m.sting(win);
 }
 
 /* ------------------------------------------------------------------ race */
