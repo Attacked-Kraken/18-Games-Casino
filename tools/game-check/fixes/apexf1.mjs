@@ -1614,4 +1614,21 @@ export default [
       return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
     },
   },
+  {
+    id: 'play-f1-trackside',
+    ask: 'F1: every circuit has real trackside - tyre walls on the corners, a catch fence, marshal posts and lamp posts (owner Nov 4 2026: everything is plain and boring)',
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 40 && !r; i++) { await h.wait(500); r = await h.eval(() => (window.__test && window.__test.trackside) ? window.__test.trackside() : null).catch(() => null); }
+        if (!r) { bad.push(tr + ': no trackside built'); continue; }
+        if (r.tyres < 40) bad.push(tr + ': only ' + r.tyres + ' tyres in walls');
+        if (r.posts < 100 || r.rails < 100) bad.push(tr + ': catch fence missing (' + r.posts + ' posts)');
+        if (r.huts < 5) bad.push(tr + ': only ' + r.huts + ' marshal posts');
+      }
+      return bad.length ? 'F1 TRACKSIDE: ' + bad.join('; ') : true;
+    },
+  },
 ];
