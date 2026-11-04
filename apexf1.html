@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="kit/apex-music.js"></script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -535,32 +536,12 @@ const Aud = {
     }
   }
 };
-/* owner Nov 4 2026 'no music is playing on F1' + 3:07 PM 'staticy glitching in and out': the pack's own rules (sounds/pack/MUSIC-README.md) - use .ogg for gapless loops
-   (mp3 only where the browser cannot play ogg), and START ALL FOUR LOOPS TOGETHER at one context time and only crossfade their volumes (never start/stop a layer:
-   late-started layers sat out of step = the glitch). Layer volumes always add to about one track (each file is already -16 LUFS) and a limiter sits on the bus, so
-   nothing clips. Menus / lobby / results = the menu loop; lights + race = low/mid/high by the car's speed. Mute = Aud.master. */
-const FMus={ bufs:{}, g:null, started:false, mode:null, bus:null, loading:false,
-  ext(){ try{ return new Audio().canPlayType('audio/ogg; codecs="vorbis"')?'ogg':'mp3'; }catch(e){ return 'mp3'; } },
-  build(){ if(this.loading) return; this.loading=true; const c=Aud.ctx;
-    const lim=c.createDynamicsCompressor(); lim.threshold.value=-8; lim.knee.value=6; lim.ratio.value=12; lim.attack.value=0.003; lim.release.value=0.2;
-    this.bus=c.createGain(); this.bus.gain.value=0.55; this.bus.connect(lim); lim.connect(Aud.master);
-    this.g={}; const ex=this.ext();
-    const names={menu:'menu',low:'gameplay_low',mid:'gameplay_mid',high:'gameplay_high'};
-    for(const k in names){ const g=c.createGain(); g.gain.value=0; g.connect(this.bus); this.g[k]=g;
-      fetch('sounds/pack/music/sports_arena/sports_arena_'+names[k]+'.'+ex).then(r=>r.arrayBuffer()).then(ab=>c.decodeAudioData(ab)).then(b=>{ this.bufs[k]=b; this.tryStart(); }).catch(()=>{}); } },
-  tryStart(){ if(this.started||Object.keys(this.bufs).length<4) return; const c=Aud.ctx, t0=c.currentTime+0.1; this.started=true;
-    for(const k in this.bufs){ const s=c.createBufferSource(); s.buffer=this.bufs[k]; s.loop=true; s.connect(this.g[k]); s.start(t0); } },
+/* F1 music = the shared kit (kit/apex-music.js: gapless ogg, all layers start together, limiter - see its header). Menus / lobby / results = menu loop; lights + race = low/mid/high by speed. */
+const FMus={ m:null,
   sync(){ try{
-    if(!Aud.ctx||!Aud.master||Aud.ctx.state!=='running') return; if(!this.g) this.build();
-    const want=(Race.mode==='race'||Race.mode==='lights')?'race':'menu', c=Aud.ctx, t=c.currentTime; this.mode=want;
-    let tg={menu:0,low:0,mid:0,high:0};
-    if(want==='menu') tg.menu=1;
-    else { let sp=Race.player&&Race.player.v; if(!isFinite(sp)) sp=0; const rpm=sp/97*80;
-      const band=(x,a,b,d,e)=>x<a?0:x<b?(x-a)/(b-a):x<d?1:x<e?1-(x-d)/(e-d):0;
-      const m=band(rpm,16,34,52,70), h=band(rpm,52,70,1e9,1e9);
-      tg.low=Math.max(0,1-m-h); tg.mid=m; tg.high=h; } // sums to 1 = one track's worth of loudness
-    for(const k in tg) this.g[k].gain.setTargetAtTime(this.started?tg[k]:0,t,0.4);
-    window.__fmus={mode:this.mode,loaded:Object.keys(this.bufs),playing:this.started?Object.keys(tg).filter(k=>tg[k]>0.02):[]};
+    if(!Aud.ctx||!Aud.master||Aud.ctx.state!=='running'||!window.ApexMusic) return; if(!this.m) this.m=ApexMusic.attach(Aud.ctx,Aud.master,{style:'sports_arena'});
+    const race=(Race.mode==='race'||Race.mode==='lights'); let sp=Race.player&&Race.player.v; if(!isFinite(sp)) sp=0;
+    this.m.setIntensity(sp/97); this.m.setMode(race?'play':'menu'); const r=this.m.report(); window.__fmus={mode:r.mode,loaded:r.loaded,playing:r.audible};
   }catch(e){} }
 };
 setInterval(()=>FMus.sync(),250);
