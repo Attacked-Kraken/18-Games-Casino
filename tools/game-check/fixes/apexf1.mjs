@@ -738,10 +738,11 @@ export default [
       const t0 = Date.now();
       while (Date.now() - t0 < 9000) {
         const st = await h.eval(`window.__test.kitAudio()`);
-        if (st && st.band >= 2 && st.rate > 1.0) { hot = st; break; }
+        if (st && st.band >= 2 && st.rate > 0.81) { hot = st; break; } // Nov 4 2026: the Racer's deep-growl rates (idle layer 0.8-0.84, accel layers 0.6-0.8) - never the old 0.85-1.15 whine
         await h.wait(400);
       }
       if (!hot) return 'the engine kit never sang under throttle: ' + JSON.stringify(await h.eval(`window.__test.kitAudio()`));
+      if (hot.rate > 0.9) return 'the engine kit is running too fast (rate ' + hot.rate + ') - that is the whine / helicopter sound: ' + JSON.stringify(hot);
       if (!(hot.shifts >= 1)) return 'no gear-shift sound fired while accelerating: ' + JSON.stringify(hot);
       await h.eval(`window.__test.setInput({ gas:true, steer:1 })`);
       let squeal = 0;
@@ -1615,8 +1616,40 @@ export default [
     },
   },
   {
-    id: 'play-f1-car-sizes-match',
-    ask: 'F1: every car is the same size as the player (length within 4%), and a car does not change size when it swaps between close-up and far model (owner Nov 4 2026: my car is small and zooms big/small)',
+    id: 'play-f1-warm-start',
+    ask: 'Owner Nov 4 2026: the menu start is slow and the car freezes a second at the lap line - every mesh must be uploaded to the GPU under the loading cover (one warm-up frame), not when it first comes into view.',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid'; }).catch(() => {});
+      let w = null;
+      for (let i = 0; i < 40 && !w; i++) { await h.wait(500); w = await h.eval(() => window.__f1warm || null).catch(() => null); }
+      if (!w) return 'F1 WARM START: no warm-up frame ran before the race (first sight of the grandstands will freeze)';
+      return w.objects > 50 ? true : 'F1 WARM START: the warm-up frame touched only ' + w.objects + ' objects';
+    },
+  },
+  {
+    id: "play-f1-stuck-pair-freed",
+    ask: "F1: two AI cars stopped on top of each other are freed within a few seconds and drive on - never stuck the whole race (owner Nov 4 2026)",
+    async test(page, h) {
+      if (!await g33Reset(page, h, null)) return { inconclusive: 'game did not return to the menu' };
+      await h.press('#careerBtn'); await h.press('#toTeamBtn'); await h.press('#startBtn'); await h.wait(1200);
+      await h.press('#qualiSkip'); await h.wait(800); await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => window.__test.race().mode === 'race').catch(() => false); }
+      if (!up) return { inconclusive: 'race never reached the racing state' };
+      const r = await h.eval(() => {
+        const T = window.__test; for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // get past the pack start
+        if (!T.stickPair) return { err: 'no stickPair hook' };
+        if (!T.stickPair()) return { err: 'no two AI cars to stick' };
+        for (let i = 0; i < 400; i++) T.simStep(0.05, { skill: 'good' }); // 20 game seconds
+        return { speeds: T.pairSpeeds(), freed: T.freedCount() };
+      });
+      if (!r || r.err) return (r && r.err) || 'no result';
+      return (r.speeds.length === 2 && r.speeds.every(v => v > 15)) ? true : 'two AI cars stopped on each other were still crawling after 20 s: speeds ' + JSON.stringify(r.speeds) + ' (stuck pair)';
+    },
+  },
+  {
+    id: "play-f1-car-sizes-match",
+    ask: "F1: every car is the same size as the player (length within 4%), and a car does not change size when it swaps between close-up and far model (owner Nov 4 2026: my car is small and zooms big/small)",
     async test(page, h) {
       await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
       let sizes = null;
