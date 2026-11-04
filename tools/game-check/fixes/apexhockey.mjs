@@ -1445,6 +1445,16 @@ export default [
   },
 },
 {
+  id: 'play-idle-human-passes-puck',
+  ask: 'F-H-001: an idle player does not freeze the home team - his skater passes the puck on',
+  async test(page, h) {
+    const src = await page.content();
+    if (!/_idleHoldT/.test(src) || !/aiPass\(s\)/.test(src)) return 'idle human skater still holds the puck (no pass-on rule in the carrier branch)';
+    if (!/_idleHoldT>=1\.0/.test(src)) return 'idle-pass timer missing - the idle skater would never give the puck up';
+    return true;
+  },
+},
+{
   id: 'tester-score-balance',
   ask: 'F-H-001: home AI scores competitively in a full match (not 62-2)',
   async test(page, h) {
