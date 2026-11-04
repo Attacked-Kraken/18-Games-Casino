@@ -1,6 +1,16 @@
 // Owner's fix list for Apex Track & Field (see README.md in this folder).
 export default [
   {
+    id: 'play-final-headline-grammar',
+    ask: "Final standings headline read 'YOU WINS THE APEX GAMES' (F-T-003)",
+    async test(page, h) {
+      const src = await page.content();
+      if (/champ\.n\s*\+\s*' WINS THE APEX GAMES'/.test(src)) return "headline always adds WINS, so the player reads 'YOU WINS THE APEX GAMES'";
+      if (!/champ\.n==='YOU'\?' WIN':' WINS'/.test(src)) return 'headline no longer uses WIN for YOU and WINS for rivals';
+      return true;
+    },
+  },
+  {
     id: 'touch-controls',
     ask: "I can't play Track & Field - no way to control it",
     async test(page, h) {
