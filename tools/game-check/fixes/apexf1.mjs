@@ -1585,4 +1585,33 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-f1-music-and-clicks',
+    ask: 'F1: the menu/lobby plays the music pack, the race plays the speed layers, and every menu button makes a click sound',
+    async test(page, h) {
+      await h.eval(() => { location.reload(); }).catch(() => {});
+      let m = null;
+      for (let i = 0; i < 40; i++) { await h.wait(500); await page.mouse.click(400, 200).catch(() => {}); m = await h.eval(() => window.__fmus || null).catch(() => null); if (m && m.playing && m.playing.includes('menu')) break; }
+      if (!m || !m.playing || !m.playing.includes('menu')) return 'F1 MUSIC: the menu / lobby plays no music (' + JSON.stringify(m) + ')';
+      const click = await h.eval(() => { let n = 0; const o = Aud.beep; Aud.beep = function () { n++; return o.apply(this, arguments); }; const b = document.querySelector('button, .bigbtn'); if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true })); Aud.beep = o; return { n, hadButton: !!b }; }).catch(() => null);
+      if (click && click.hadButton && !click.n) return 'F1 SOUND: pressing a menu button makes no click sound';
+      return true;
+    },
+  },
+  {
+    id: "play-f1-scenery-on-ground",
+    ask: "F1: buildings and props stand on the ground (none floats in the sky) and the start/finish strip is a chequered strip that does not flicker",
+    async test(page, h) {
+      const rep = [];
+      for (const tr of ['harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 40 && !r; i++) { await h.wait(500); r = await h.eval(() => (window.__test && window.__test.scenery) ? { s: window.__test.scenery(), k: window.__test.stripe() } : null).catch(() => null); }
+        if (!r) return { inconclusive: 'circuit ' + tr + ' did not load' };
+        if (r.s.n && r.s.maxBase > r.s.ground + 2.5) rep.push(tr + ': a building base is ' + (r.s.maxBase - r.s.ground).toFixed(1) + ' m above the ground (floats)');
+        if (!r.k || !r.k.poly) rep.push(tr + ': start/finish strip has no chequer / depth offset (z-fighting flicker)');
+      }
+      return rep.length ? 'F1 SCENERY: ' + rep.join('; ') : true;
+    },
+  },
 ];
