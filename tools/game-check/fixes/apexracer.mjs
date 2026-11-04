@@ -1813,4 +1813,70 @@ export default [
       return true;
     },
   },
+  {
+    id: 'tester-chk-r12', parts: ['body'],
+    cat: 'play',
+    name: 'checklist R12: the player car measures 4.5-4.8 long, 1.95 wide, 1.1-1.4 high (metres, +-15%) in the garage and on the grid',
+    ask: 'R12: Box3 size of the player car in the garage and on the grid, converted at 1 unit = 1 m (REALITY.md: no unitsPerMetre declaration = 1), inside the +-15% bands — on main the Goblin is 5.58 m long and 2.828 m wide, so the test fails naming length and width',
+    async test(page, h) {
+      const measureFn = () => {
+        const root = window.__reality ? window.__reality.player : null;
+        if (!root) return 'no __reality.player';
+        root.updateMatrixWorld(true);
+        let count = 0;
+        root.traverse((q) => { if (q.geometry) count++; });
+        if (!count) return 'player car has no meshes yet';
+        const inv = root.matrixWorld.clone().invert().elements;
+        const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+        const apply = (v, e) => [e[0] * v[0] + e[4] * v[1] + e[8] * v[2] + e[12], e[1] * v[0] + e[5] * v[1] + e[9] * v[2] + e[13], e[2] * v[0] + e[6] * v[1] + e[10] * v[2] + e[14]];
+        root.traverse((q) => {
+          const g = q.geometry;
+          if (!g) return;
+          if (!g.boundingBox) g.computeBoundingBox();
+          const b = g.boundingBox, mw = q.matrixWorld.elements;
+          for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
+            const l = apply(apply([x, y, z], mw), inv);
+            for (let i = 0; i < 3; i++) { if (l[i] < mn[i]) mn[i] = l[i]; if (l[i] > mx[i]) mx[i] = l[i]; }
+          }
+        });
+        return JSON.stringify({ width: +(mx[0] - mn[0]).toFixed(4), height: +(mx[1] - mn[1]).toFixed(4), length: +(mx[2] - mn[2]).toFixed(4) });
+      };
+      const bands = { length: [3.825, 5.52], width: [1.6575, 2.2425], height: [0.935, 1.61] };
+      const check = (where, raw) => {
+        let d = null;
+        try { d = JSON.parse(raw); } catch (e) { return String(raw); }
+        if (!d) return String(raw);
+        const bad = [];
+        for (const k of ['length', 'width', 'height']) {
+          if (d[k] < bands[k][0] || d[k] > bands[k][1]) bad.push(k + ' ' + d[k] + ' m outside [' + bands[k][0] + ', ' + bands[k][1] + ']');
+        }
+        if (bad.length) return 'R12: ' + where + ' car measures ' + d.length + ' long x ' + d.width + ' wide x ' + d.height + ' high m — ' + bad.join('; ');
+        return true;
+      };
+      const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+      if (!hasErc) return 'no __erc';
+      await h.eval(() => { const E = window.__erc; if (E.S) E.S.cur = 'goblin'; if (E.openGarage) E.openGarage(); });
+      const garageReady = await h.poll(() => h.eval(() => {
+        const r = window.__reality ? window.__reality.player : null;
+        if (!r) return false;
+        let n = 0;
+        r.traverse((q) => { if (q.geometry) n++; });
+        return n > 0;
+      }), (v) => !!v, 30000).catch(() => false);
+      if (!garageReady) return 'garage car never built';
+      const gRaw = await h.eval(measureFn);
+      const g = check('garage', gRaw);
+      if (g !== true) return g;
+      await h.eval(() => { const E = window.__erc; if (E.S) E.S.cur = 'goblin'; E.startRace(E.PLACES[0], 8); });
+      const gridReady = await h.poll(() => h.eval(() => {
+        const E = window.__erc;
+        return !!(E && E.R && E.R.skids && E.R.P);
+      }), (v) => !!v, 120000).catch(() => false);
+      if (!gridReady) return 'grid race never built';
+      const rRaw = await h.eval(measureFn);
+      const r = check('grid', rRaw);
+      if (r !== true) return r;
+      return true;
+    },
+  },
 ];
