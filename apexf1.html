@@ -540,9 +540,9 @@ const TRACKS = [
   tag:'The Apex Grand Prix circuit - 16 corners, two long straights, race day in full.',
   drs:[[0.005,0.115],[0.295,0.370]], pitIn:0.9414, pitOut:0.1137, gp:true },
 /* owner Nov 2 2026 8:06 PM: "I get no choices at course - add more" - four more circuits, each its own place (built by the game's own track builder; themes = sky, ground, night) */
-{ id:'harbour', name:'HARBOUR NIGHT', country:'Apex Marina · night', lapKm:6.2,
-  tag:'Night race on the waterfront - 1.1 km pit straight under the floodlights, a climb over the marina hill, the ocean-view bends, a hairpin, fast esses and a chicane.',
-  drs:[[0.0,0.15],[0.50,0.60]], pitIn:0.945, pitOut:0.08, theme:{ kind:'harbour', sky:0x0e1733, ground:0x3a4152, night:true },
+{ id:'harbour', name:'HARBOUR', country:'Apex Marina', lapKm:6.2,
+  tag:'Daytime race on the waterfront - 1.1 km pit straight along the marina, a climb over the marina hill, the ocean-view bends, a hairpin, fast esses and a chicane.',
+  drs:[[0.0,0.15],[0.50,0.60]], pitIn:0.945, pitOut:0.08, theme:{ kind:'harbour', sky:0x87b5e0, ground:0x7a8a6e } /* owner Nov 3 2026 6:21 PM 'no dark tracks': daylight like every other circuit */,
   pts:[[0,0,0],[1100,0,0],[1500,6,-200],[1800,21,-450],[1900,18,-850],[1600,0,-1400],[1000,0,-1600],[300,0,-1500],[-300,0,-1750],[-700,0,-1450],[-1100,0,-950],[-1300,0,-250],[-1100,0,300],[-700,0,550],[-400,0,500],[-100,0,300]] },
 { id:'mesa', name:'RED MESA GP', country:'Apex Desert', lapKm:6.4,
   tag:'Grand Prix layout in the desert - 1 km pit straight, a 30 m climb over a blind crest, a long downhill, a hairpin, the flat-out back straight, esses and a chicane.',
@@ -2115,10 +2115,10 @@ const Race = {
     // player
     const p=new Car(cfg.driver, cfg.team, true, cfg.skill);
     p.tire='SOFT'; this.player=p; this.cars.push(p);
-    // AI grid: 19 drivers
+    // AI grid: 5 drivers - owner Nov 3 2026 6:21 PM 'only have 6 race cars, there are too many' (was 19)
     const names=[...AI_NAMES];
     if(cfg.friend) names[0]='FRI';
-    for(let i=0;i<(cfg.solo?0:19);i++){
+    for(let i=0;i<(cfg.solo?0:5);i++){
       const nm = cfg.friend&&i===0 ? cfg.friend.tag : names[i%names.length]+(i>=names.length?' '+(Math.floor(i/names.length)+1):'');
       const tm=TEAMS[i%TEAMS.length];
       const skill = cfg.friend&&i===0 ? cfg.friend.str/100 : clamp(rand(0.86,0.97)+cfg.aiDelta,0.4,0.99); // G-66: the whole field is quick now - the old 0.62 floor left the back cars 20%+ off the player's pace
@@ -2516,7 +2516,7 @@ let career=null, pendingFriend=null, sessionCfg=null;
 function driverSkill(){ return clamp(0.70+(career?career.rating:0)*0.004,0.70,0.95); }
 function newCareer(name,team){
   career={ name, team, season:1, round:0, rating:50, wins:0, champs:0, friends:{w:0,l:0},
-    drivers:AI_NAMES.slice(0,12).map(n=>({n,pts:0,wins:0})) };
+    drivers:AI_NAMES.slice(0,5).map(n=>({n,pts:0,wins:0})) };
   Save.save(career);
 }
 function friendCode(){
@@ -2825,7 +2825,7 @@ function runQuali(){
   banner('QUALIFYING','One flying lap — cross the line to start it. Top-right: SKIP',2600,'#9fd8ff');
   const sk=document.createElement('button'); sk.className='bigbtn alt'; sk.id='qualiSkip';
   sk.style.cssText='position:fixed;left:50%;transform:translateX(-50%);top:104px;z-index:45;width:auto;padding:10px 16px;font-size:13px;min-height:44px;box-sizing:border-box;'; // G-224: SKIP QUALI is a full 44px tap target; G-239: top-centre - at right:12/top:150 it sat ON the speedometer and hid the speed in every frame of the owner's recordings
-  sk.textContent='SKIP QUALI → P12';
+  sk.textContent='SKIP QUALI → P'+(Math.floor((Race.cars.length-1)/2)+1);
   sk.onclick=()=>{ finishQuali(null); };
   document.body.appendChild(sk);
   Race._skipBtn=sk;
@@ -2854,7 +2854,7 @@ function updateQuali(dt){
 function finishQuali(time){
   if(Race._skipBtn){ Race._skipBtn.remove(); Race._skipBtn=null; }
   const p=Race.player;
-  p.qualiTime = time?? (function(){ const o=[...Race.cars].filter(c=>!c.isPlayer).sort((a,b)=>a.qualiTime-b.qualiTime); return o[Math.min(11,o.length-1)].qualiTime-0.05; })();
+  p.qualiTime = time?? (function(){ const o=[...Race.cars].filter(c=>!c.isPlayer).sort((a,b)=>a.qualiTime-b.qualiTime); return o[Math.min(Math.floor(o.length/2),o.length-1)].qualiTime-0.05; })();
   Race.placeGrid(false);
   // grid list UI
   const order=[...Race.cars].sort((a,b)=>a.qualiTime-b.qualiTime);
