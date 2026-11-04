@@ -13,4 +13,4 @@ Checklist: checklists/apexbaseball.md · Short rules: rules/short/apexbaseball.m
 - (nothing)
 
 ## Checklist progress
-- 5 of 5 items ticked (auditor window 1 first look, A1-1, main 6f661f4, Nov 3 2026: B01 bases 27.43 m, B02 mound 18.44 m, B03 ball 0.074 m / bat 0.86 m, B04 3-inning quick game, B05 9 batters — each re-measured on the running game; 0 findings filed)
+- 5 of 5 items ticked (A1-1 re-measured all 5 on main 6f661f4, Nov 3 2026; A1-2, Nov 4 2026: game + tests unchanged through main 450ea97, no findings filed)
