@@ -434,7 +434,7 @@ const Aud = {
       for(const k of order){
         const w=Math.max(0,1-Math.abs(x-centers[k])/0.36);
         if(kit.gains[k]) kit.gains[k].gain.setTargetAtTime(w*level,t,0.06);
-        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.85+rpm01*0.3,t,0.1);
+        if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(0.9+rpm01*0.35,t,0.1);
         if(w>bandW){ bandW=w; band=order.indexOf(k); }
       }
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
@@ -453,7 +453,7 @@ const Aud = {
   },
   kitLoad(){ // G-107: fetch + decode the grand_prix kit once; on any failure kit stays null and the synth engine remains
     if(this._kitTried || !this.ctx) return; this._kitTried=true;
-    const base='sounds/engines/supercar/supercar_'; // owner Nov 3 2026 6:29 PM 'sounds like a squeeze duck': the grand_prix pack's turbo whine is gone - the smooth V12 pack (the Racer's) carries the F1 engine
+    const base='sounds/engines/grand_prix/grand_prix_';
     const names={ idle:'idle_loop', low:'accel_low_loop', mid:'accel_mid_loop', high:'accel_high_loop', squeal:'tire_squeal_loop', shiftUp:'shift_up', shiftDn:'shift_down' };
     const kit={ bufs:{}, gains:{}, srcs:{}, ready:false };
     this.kit=kit;
@@ -469,8 +469,7 @@ const Aud = {
           if(!kit.bufs[k]) continue;
           const s=this.ctx.createBufferSource(); s.buffer=kit.bufs[k]; s.loop=true;
           const g=this.ctx.createGain(); g.gain.value=0;
-          if(!kit.bus){ kit.bus=this.ctx.createBiquadFilter(); kit.bus.type='lowpass'; kit.bus.frequency.value=3200; kit.bus.Q.value=0.5; kit.bus.connect(this.master); } // soft top end: no whistle
-          s.connect(g); g.connect(k==='squeal'?this.master:kit.bus); s.start();
+          s.connect(g); g.connect(this.master); s.start();
           kit.srcs[k]=s; kit.gains[k]=g;
         }
         kit.ready=true;
@@ -2034,7 +2033,8 @@ function aiDrive(car, dt){
   // defend: if a car is close behind, cover the inside
   const threat=car._threat;
   if(threat && !car.inPits){
-    dT = clamp(dT+(threat.d-dT)*0.35, -W/2+1.2, W/2-1.2); // owner Nov 3 2026: a gentle cover, no weaving at the car behind
+    dT = clamp(threat.d*0.85, -W/2+1.2, W/2-1.2);
+    if(Math.random()<dt*0.5) car.weave=(car.weave||0)+rand(-1,1); // cheeky weave
   }
   if(car.weave) { dT+=clamp(car.weave,-1.5,1.5); car.weave*= (1-dt*2); }
   // mistakes
@@ -2044,10 +2044,6 @@ function aiDrive(car, dt){
   if(car._mistT2>0){ car._mistT2-=dt; dT=clamp(dT+car._mistD, -W/2+1.2, W/2-1.2); } // G-66: offset from the line, not an absolute swerve
   // blue flag: being lapped — move off line, lift
   if(car._blue){ dT=Math.sign(dT||1)*(W/2-1.5); vt*=0.94; }
-  // owner Nov 3 2026 6:29 PM 'everybody fights': a car alongside gets room - the AI moves to the free side instead of leaning on it
-  for(const o of Race.cars){ if(o===car||o.finished) continue; let ds=(o.s-car.s)%Track.length; if(ds>Track.length/2)ds-=Track.length; if(ds<-Track.length/2)ds+=Track.length;
-    if(Math.abs(ds)<9 && Math.abs(o.d-car.d)<4.2){ const side=(car.d>=o.d)?1:-1; dT=car.d+side*1.2*(1-Math.abs(o.d-car.d)/4.2)+ (dT-car.d)*0.3; } }
-  dT=clamp(dT,-W/2+1.0,W/2-1.0); // never aim at the grass
   const dd=dT-car.d;
   car.steer=clamp(dd*0.5-car.headAngle*1.1,-1,1); // damped pursuit of the racing line (undamped, the AI slalomed wall to wall)
   // DRS for AI
@@ -2082,8 +2078,7 @@ function carContact(cars, dt){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
       const push=Math.min((3.8-Math.abs(dd))*dt*26, 0.35)*Math.sign(dd||0.1); // pack fix: separation is decisive at any frame rate but capped per step - the old push teleported cars in slow frames and was too weak to clear the box at 60 fps
-      { const lim=Track.width/2-0.8, a0=a.d, b0=b.d; a.d+=push; b.d-=push; // owner Nov 3 2026 6:29 PM 'everybody fights and is all over the grass': a shove never pushes a car past the road edge
-        if(Math.abs(a.d)>lim && Math.abs(a.d)>Math.abs(a0)) a.d=Math.sign(a.d)*Math.max(lim,Math.abs(a0)); if(Math.abs(b.d)>lim && Math.abs(b.d)>Math.abs(b0)) b.d=Math.sign(b.d)*Math.max(lim,Math.abs(b0)); }
+      a.d+=push; b.d-=push;
       if(Math.abs(dd)<2.9 && Math.abs(ds)<7.3 && Math.abs(ds)>0.01){
         const sN=((a.s%Track.length)+Track.length)%Track.length;
         if(sN>30 && sN<Track.length-30){ // keep clear of the lap line
@@ -2097,7 +2092,7 @@ function carContact(cars, dt){
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
       if(Math.abs(a.v-b.v)>hitLine){ // harder hit -> possible spin for the one behind
         const behind=ds>0?b:a;
-        if(Math.random()<0.08*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); if(a.isPlayer||b.isPlayer) banner('CONTACT!', behind.isPlayer?'You got turned around':'You were hit from behind', 1200, '#ff9a5a'); } // G-239: the headline is the PLAYER's news - two AI cars hitting each other no longer shouts on his screen
+        if(Math.random()<0.25*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); if(a.isPlayer||b.isPlayer) banner('CONTACT!', behind.isPlayer?'You got turned around':'You were hit from behind', 1200, '#ff9a5a'); } // G-239: the headline is the PLAYER's news - two AI cars hitting each other no longer shouts on his screen
         if(a.isPlayer) a._shoveT=2.0; if(b.isPlayer) b._shoveT=2.0; // G-239: a hard hit starts the limits grace - he is not fined for where a rival shoves him
       }
       const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
