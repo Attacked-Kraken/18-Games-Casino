@@ -186,10 +186,10 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
-  #banner { position:fixed; left:50%; top:34%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
+  #banner { position:fixed; left:50%; top:24%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
-  #banner .b1 { font-size:clamp(26px,6vw,52px); font-weight:900; letter-spacing:3px; text-shadow:0 3px 18px #000; }
-  #banner .b2 { font-size:15px; color:#cfe0ff; margin-top:6px; }
+  #banner .b1 { font-size:clamp(16px,3.2vw,26px); font-weight:900; letter-spacing:2px; text-shadow:0 2px 10px #000; } /* owner Nov 3 2026: PENALTY / CONTACT signs were too big - they covered the road */
+  #banner .b2 { font-size:12px; color:#cfe0ff; margin-top:3px; }
   #lights { position:fixed; left:50%; top:15%; transform:translateX(-50%); z-index:36; display:flex; gap:16px; background:#060b14d9; padding:14px 20px; border-radius:18px; border:1px solid #ffffff2a; }
   .light { width:56px; height:56px; border-radius:50%; background:#2a1214; border:2px solid #000; }
   .light.red { background:#ff2222; box-shadow:0 0 22px #ff2222; }
@@ -693,8 +693,8 @@ function buildSkyDome(){
 /* circuit themes (owner Nov 2 2026): sky + fog colour, ground colour, night lighting */
 const THEME = { sky:0x87b5e0, hemi:null, sun:null };
 function applyTheme(t){ t=t||{}; THEME.sky=t.sky||0x87b5e0; if(scene){ scene.background.setHex(THEME.sky); if(scene.fog) scene.fog.color.setHex(THEME.sky); }
-  if(THEME.hemi){ THEME.hemi.intensity = t.night?1.25:0.9; THEME.hemi.color.setHex(t.night?0x9fb4ff:0xcfe8ff); THEME.hemi.groundColor.setHex(t.ground||0x3a5f3a); }
-  if(THEME.sun){ THEME.sun.intensity = t.night?1.5:1.6; THEME.sun.color.setHex(t.night?0xcfd8ff:0xfff2dd); }
+  if(THEME.hemi){ THEME.hemi.intensity = t.night?2.1:0.9; THEME.hemi.color.setHex(t.night?0xdce4ff:0xcfe8ff); /* owner Nov 3 2026 'dark course, can't see nothing': night tracks lit like a floodlit street circuit */ THEME.hemi.groundColor.setHex(t.ground||0x3a5f3a); }
+  if(THEME.sun){ THEME.sun.intensity = t.night?2.2:1.6; THEME.sun.color.setHex(t.night?0xf0f2ff:0xfff2dd); }
   if(skyMat){ const u=skyMat.uniforms; if(t.night){ u.topColor.value.setHex(0x05081a); u.midColor.value.setHex(t.sky||0x0e1733); u.botColor.value.setHex(0x1a2244); u.sunColor.value.setHex(0x334466); }
     else { u.topColor.value.setHex(t.skyTop||0x2f6fd0); u.midColor.value.setHex(t.sky||0x87b5e0); u.botColor.value.setHex(t.skyBot||0xd8e8f5); u.sunColor.value.setHex(0xfff3d6); } } }
 const Track = {
@@ -1608,7 +1608,7 @@ function buildBoxBody(color, teamName, carNumber, accent){
 /* LOD: 20 model cars are ~1.4 M triangles - too many for a phone - so only cars within CAR_LOD_NEAR of the camera
    show the model; the rest show the light code body (same colour, same wheels). Swapped every frame in Car.update. */
 const CAR_LOD_NEAR = 70;
-function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; L.near.visible=near; L.far.visible=!near; for(const w of c.mesh.userData.wheels||[]) if(w.userData.mw){ w.userData.mw.visible=near; w.userData.hideInst=near; } } }
+function carLodUpdate(){ if(!Race.cars) return; let shown=0; for(const c of Race.cars){ const L=c.mesh&&c.mesh.userData.lod; if(!L) continue; const near=c.isPlayer || (shown<5 && c.mesh.position.distanceToSquared(camera.position) < CAR_LOD_NEAR*CAR_LOD_NEAR); if(near) shown++; const ckHide=c.isPlayer && CK._bodyHidden; L.near.visible=near && !ckHide; L.far.visible=!near && !ckHide; /* owner Nov 3 2026: in COCKPIT cam the player's own body stays hidden (this per-frame LOD switch used to show it again) */ for(const w of c.mesh.userData.wheels||[]) if(w.userData.mw){ w.userData.mw.visible=near; w.userData.hideInst=near; } } }
 function buildCarFromModel(body, spec, color, accent, box){
   const g=new THREE.Group(); g.add(body);
   if(box){ box.visible=false; mergeCarBody(box); g.add(box); g.userData.lod={near:body, far:box}; }
@@ -2154,7 +2154,7 @@ const Race = {
       const row=Math.floor(i/2), side=i%2?1:-1;
       const slot=(Track.gpData&&Track.gpData.grid)?Track.gpData.grid[i%Track.gpData.grid.length]:null;
       if(slot){ c.s=slot.distance; c.d=slot.lateral; } // G-45: the kit's grid slots
-      else { c.s=Track.length-12-row*8; c.d=side*2.2; }
+      else { c.s=Track.length-12-i*8; c.d=side*2.4; } /* owner Nov 3 2026 'all the cars pile up': a real F1 grid - 8 m between positions, 16 m between cars on the same side (was 8 m per ROW: cars nose-to-tail, touching) */
       c.v=0; c.lap=1; c.raceDist=0;
       c.position=i+1; // grid slot = starting position (fixes P1 HUD during lights)
       c.throttle=0; c.brake=0; c.steer=0; c.finished=false; c.lapTimes=[]; c.bestLap=Infinity;
@@ -2297,7 +2297,7 @@ const Race = {
     return order;
   },
   update(dt){
-    if(this.mode==='lights'){ this.updateLights(dt); this.updateCars(dt,true); return; }
+    if(this.mode==='lights'){ this.updateLights(dt); this.updateCars(dt,true); this.updateCamera(dt); return; } // owner Nov 3 2026: a camera picked during the lights (COCKPIT) takes effect at once
     if(this.mode!=='race') return;
     this.raceT+=dt; this.time+=dt;
     if(!this.drsEnabled && this.lap>=2){ this.drsEnabled=true; banner('DRS ENABLED','','1000','#37d67a'); }
@@ -2799,10 +2799,16 @@ async function startWeekend(){
     wxSeed:(Math.random()*1e9)|0 };
   sessionCfg={ career:isCareer, friend:!!friend, driver:name, team:selTeam, tournament:tourn||null, timeAttack:ta };
   show(null);
+  // owner Nov 3 2026 'each race starts with a grass screen': between the menu and the first race frame the idle orbit camera (150 m up, over grass)
+  // showed while the circuit loaded. A plain loading cover now sits over it until the first race frame is drawn.
+  let ldc=document.getElementById('ldCover'); if(!ldc){ ldc=document.createElement('div'); ldc.id='ldCover'; ldc.style.cssText='position:fixed;inset:0;z-index:60;background:radial-gradient(circle at 50% 40%,#1b2340,#05070d);color:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;font:900 20px system-ui;letter-spacing:2px;text-align:center;'; document.body.appendChild(ldc); }
+  ldc.innerHTML='LOADING<div style="font-size:13px;font-weight:600;letter-spacing:1px;opacity:.75;margin-top:6px">'+(((TRACKS.find(t=>t.id===selTrack)||{}).name)||'circuit')+'</div>'; ldc.style.display='flex';
+  const ldOff=()=>requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{ ldc.style.display='none'; })));
   initGL._done||(initGL(),RainFX.init(),HUD.initMinimap(),initInput(),initGL._done=true);
   await GPAttach(); // G-45: the Grand Prix kit (parsed at boot) joins the scene here
   Race.setup(cfg);
   CKAttach(); // G-48: the kit cockpit rides in the player's car
+  ldOff();
   if(ta){ Race.player.qualiTime=0; Race.placeGrid(false); Race.mode='grid'; HUD.show(true); Race.beginRace(); try{ Race.updateCamera(1); }catch(e){} banner('TIME ATTACK', (TA.best(selTrack)?'Best: '+fmtTime(TA.best(selTrack)):'Set the first time')+' · '+selLaps+' laps', 2400, '#9fd8ff'); return; }
   runQuali();
 }
@@ -2896,17 +2902,11 @@ function loop(t){
     // whole world ahead - the masher's "freeze" (HUD live, 3D void). Hide that
     // mesh while the cockpit cam is on; restore it on exit, nothing forced.
     if(Race.player && Race.player.mesh){
-      const cockpit = (Race.camMode===1 && (Race.mode==='race'||Race.mode==='lights'||Race.mode==='quali'));
-      let oc = null;
-      for(const ch of Race.player.mesh.children){
-        if(!ch.isMesh || !ch.material) continue;
-        const mats = Array.isArray(ch.material) ? ch.material : [ch.material];
-        if(mats.some(m=>m && m.color && m.color.getHex()===0x111318)){ oc = ch; break; }
-      }
-      if(oc){
-        if(cockpit && oc.visible){ oc.visible = false; CK._ocHidden = true; }
-        else if(!cockpit && CK._ocHidden){ oc.visible = true; CK._ocHidden = false; }
-      }
+      // owner Nov 3 2026 'can't see in cam mode in cockpit': the Sketchfab body is a full model - from the driver's eye its panels filled the
+      // whole screen. In cockpit cam EVERY part of the player's own car is hidden except the kit cockpit (wheel + dash); restored on exit.
+      const cockpit = (Race.camMode===1 && CK.attachedTo===Race.player && (Race.mode==='race'||Race.mode==='lights'||Race.mode==='quali'));
+      if(cockpit && !CK._bodyHidden){ CK._bodyHidden=[]; for(const ch of Race.player.mesh.children){ if(ch!==CK.root && ch.visible){ ch.visible=false; CK._bodyHidden.push(ch); } } }
+      else if(!cockpit && CK._bodyHidden){ for(const ch of CK._bodyHidden) ch.visible=true; CK._bodyHidden=null; }
     }
     if(Race.player){
       if(CK.wheel) CK.wheel.rotation.z = Race.player.steer*2.6;
@@ -3025,6 +3025,7 @@ window.__test = {
     hasResults: !!Race.results,
     playerFinished: !!(Race.player && Race.player.finished)
   }),
+  ckProbe: () => ({ loaded: !!CK.root, attached: CK.attachedTo === Race.player, visible: !!(CK.root && CK.root.visible), bodyHidden: CK._bodyHidden ? CK._bodyHidden.length : 0, carY: Race.player ? +Race.player.mesh.position.y.toFixed(2) : null, scale: Race.player ? +Race.player.mesh.scale.y.toFixed(2) : null, ckScale: CK.root ? +CK.root.scale.y.toFixed(2) : null, kids: Race.player ? Race.player.mesh.children.map(c => (c.name||c.type) + (c.visible?'':'(hid)')).join(',') : '' }), // owner Nov 3 2026: cockpit cam proof
   camAt: () => ({ x: camera.position.x, y: camera.position.y, z: camera.position.z }), // G-77: camera probe (start framing)
   steerProbe: () => { const p = Race.player; if(!p) return null; const look = p.s + p.v * 0.5 + 18; return { s: p.s, d: p.d, v: p.v, headAngle: p.headAngle, line: Track.rlDAt ? Track.rlDAt(look) : 0, maxV: Track.maxSpeedAt(look, p.gripNow()) }; }, // G-136: steering proof for the play test
   camProbe: () => { if(!Race.player || !camera) return null; // G-119: camera proof for the play test
