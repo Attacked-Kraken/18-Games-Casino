@@ -2421,4 +2421,145 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-chk-r24',
+  parts: ['menu', 'garage'],
+  cat: 'play',
+  name: 'R24: tap targets at least 32 px on garage, friend, credits and results screens',
+  ask: 'At 844x390 every displayed button on the garage, friend, credits and results screens is at least 32 px in its smaller dimension (robot mobile.mjs small threshold; DONE.md §2 counts < 36 px).',
+  async test(page, h) {
+    const bad = [];
+    // Direct rect measurement of every displayed button on the current screen.
+    const smallOnScreen = async (screen) => h.eval((sc) => {
+      const out = [];
+      for (const el of document.querySelectorAll('button')) {
+        const r = el.getBoundingClientRect();
+        if (r.width <= 0 || r.height <= 0) continue;
+        const m = Math.min(r.width, r.height);
+        if (m < 32) out.push(sc + ' ' + (el.id ? '#' + el.id : (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 20)) + ' (' + Math.round(r.width) + 'x' + Math.round(r.height) + ')');
+      }
+      return out;
+    }, screen).catch(() => []);
+    try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+    const vp = await h.eval(() => ({ w: window.innerWidth, h: window.innerHeight })).catch(() => null);
+    if (!vp || vp.w !== 844 || vp.h !== 390) return 'tester-chk-r24 FAIL: viewport is not 844x390 (got ' + (vp ? vp.w + 'x' + vp.h : 'unknown') + '), cannot measure R24';
+    // Friend screen needs a saved username (fresh profiles bounce to menu).
+    await h.eval(() => { try { localStorage.setItem('apexracer_username', 'Tester'); } catch (e) {} return true; }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+    if (!hasErc) return 'tester-chk-r24 FAIL: __erc never appeared (game did not boot)';
+    await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+    const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+    if (!hasRace) return 'tester-chk-r24 FAIL: #mRace never appeared';
+    // Main menu (passing control: buttons 36-37 px, none under 32).
+    bad.push(...(await smallOnScreen('menu')));
+    // Garage screen.
+    await h.eval(() => { document.querySelector('#mGarage').click(); }).catch(() => {});
+    const hasGarage = await h.poll(() => h.eval(() => { const g = document.querySelector('#garage'); return g && getComputedStyle(g).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasGarage) return 'tester-chk-r24 FAIL: garage screen never opened';
+    bad.push(...(await smallOnScreen('garage')));
+    await h.eval(() => { const el = document.querySelector('#gDone, #gX'); if (el) el.click(); return true; }).catch(() => {});
+    // Friend screen.
+    await h.eval(() => { document.querySelector('#mFriends').click(); }).catch(() => {});
+    const hasFriend = await h.poll(() => h.eval(() => { const f = document.querySelector('#friend'); return f && getComputedStyle(f).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasFriend) return 'tester-chk-r24 FAIL: friend screen never opened';
+    bad.push(...(await smallOnScreen('friend')));
+    await h.eval(() => { document.querySelector('#fX').click(); }).catch(() => {});
+    // Credits screen.
+    await h.eval(() => { document.querySelector('#mCredits').click(); }).catch(() => {});
+    const hasCredits = await h.poll(() => h.eval(() => { const c = document.querySelector('#credits'); return c && getComputedStyle(c).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasCredits) return 'tester-chk-r24 FAIL: credits screen never opened';
+    bad.push(...(await smallOnScreen('credits')));
+    await h.eval(() => { document.querySelector('#crBack').click(); }).catch(() => {});
+    // Race sheet + results (needs a race build).
+    await h.eval(() => { document.querySelector('#mRace').click(); }).catch(() => {});
+    const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+    if (!hasPl) return 'tester-chk-r24 FAIL: place list never appeared';
+    await h.eval(() => { document.querySelector('#plist .pl').click(); }).catch(() => {});
+    const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasSheet) return 'tester-chk-r24 FAIL: race sheet never appeared';
+    bad.push(...(await smallOnScreen('sheet')));
+    await h.eval(() => { document.querySelector('#shGo').click(); }).catch(() => {});
+    const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 240000).catch(() => false);
+    if (!inRace) return 'tester-chk-r24 FAIL: race never built (G.mode never became race)';
+    await h.eval(() => { if (window.__erc && window.__erc.showResults) window.__erc.showResults(); return true; }).catch(() => {});
+    const hasResults = await h.poll(() => h.eval(() => { const r = document.querySelector('#result'); return r && getComputedStyle(r).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasResults) return 'tester-chk-r24 FAIL: results screen never opened';
+    bad.push(...(await smallOnScreen('results')));
+    if (bad.length) return 'tester-chk-r24 FAIL: buttons under 32 px on a sideways phone (844x390): ' + bad.join('; ');
+    return true;
+  },
+},
+{
+  id: 'tester-chk-r24-trial-results',
+  parts: ['menu'],
+  cat: 'play',
+  name: 'R24: Race Again is tappable after a time trial finish',
+  ask: 'After a time trial finish the kit touch layer is hidden and the results buttons Race Again (#rAgain) and Garage (#rGar) are tappable: elementFromPoint at each button centre returns the button itself.',
+  async test(page, h) {
+    try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+    const vp = await h.eval(() => ({ w: window.innerWidth, h: window.innerHeight })).catch(() => null);
+    if (!vp || vp.w !== 844 || vp.h !== 390) return 'tester-chk-r24-trial-results FAIL: viewport is not 844x390 (got ' + (vp ? vp.w + 'x' + vp.h : 'unknown') + '), cannot measure R24';
+    const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+    if (!hasErc) return 'tester-chk-r24-trial-results FAIL: __erc never appeared (game did not boot)';
+    await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+    const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+    if (!hasRace) return 'tester-chk-r24-trial-results FAIL: #mRace never appeared';
+    await h.eval(() => { document.querySelector('#mRace').click(); }).catch(() => {});
+    const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+    if (!hasPl) return 'tester-chk-r24-trial-results FAIL: place list never appeared';
+    await h.eval(() => { const el = [...document.querySelectorAll('#ctys button')].find((e) => (e.textContent || '').includes('Japan')); if (el) el.click(); return true; }).catch(() => {});
+    await h.eval(() => { const el = [...document.querySelectorAll('#plist .pl')].find((e) => (e.textContent || '').includes('Tokyo')); if (el) el.click(); return true; }).catch(() => {});
+    const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasSheet) return 'tester-chk-r24-trial-results FAIL: race sheet never appeared';
+    await h.eval(() => { const el = [...document.querySelectorAll('#shType .chip')].find((e) => /time trial/i.test(e.textContent || '')); if (el) el.click(); return true; }).catch(() => {});
+    const isTrial = await h.eval(() => { const el = [...document.querySelectorAll('#shType .chip')].find((e) => /time trial/i.test(e.textContent || '')); return el ? el.classList.contains('on') : false; }).catch(() => false);
+    if (!isTrial) return 'tester-chk-r24-trial-results FAIL: Time trial chip did not turn on';
+    await h.eval(() => { document.querySelector('#shGo').click(); }).catch(() => {});
+    const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 240000).catch(() => false);
+    if (!inRace) return 'tester-chk-r24-trial-results FAIL: race never built (G.mode never became race)';
+    // Step through the countdown, place the car 5 segments before the line with prog+idx
+    // pinned to fN-5, then drive forward until the game's own detection sets P.fin.
+    const fin = await h.eval(() => {
+      const E = window.__erc, R = E.R, P = R.P, T = R.T, K = E.K;
+      let guard = 0;
+      while (R.t < 0.2 && guard++ < 400) { K.gas = 0; E.step(1, 1 / 30); }
+      if (R.t < 0.2) return { error: 'countdown never reached GO' };
+      const out = {};
+      T.at(R.fN - 5, 0, out);
+      P.x = out.x; P.z = out.z; P.h = out.h; P.d = 0;
+      P.vx = Math.sin(out.h) * 10; P.vz = Math.cos(out.h) * 10;
+      P.prog = R.fN - 5; P.idx = (((R.fN - 5) % T.N) + T.N) % T.N;
+      E.step(1, 1 / 30);
+      guard = 0;
+      while (!P.fin && guard++ < 300) { K.gas = 1; K.l = 0; K.r = 0; K.brake = 0; E.step(1, 1 / 30); }
+      if (!P.fin) return { error: 'P.fin never set (prog ' + P.prog + ', fN ' + R.fN + ')' };
+      return { fin: P.fin, type: R.type, fN: R.fN };
+    }).catch(() => ({ error: 'in-page finish step threw' }));
+    if (fin.error) return 'tester-chk-r24-trial-results FAIL: ' + fin.error;
+    if (fin.type !== 'trial') return 'tester-chk-r24-trial-results FAIL: race type is ' + fin.type + ', not trial';
+    const hasResults = await h.poll(() => h.eval(() => { const r = document.querySelector('#result'); return r && getComputedStyle(r).display !== 'none'; }), (v) => !!v, 30000).catch(() => false);
+    if (!hasResults) return 'tester-chk-r24-trial-results FAIL: results screen never opened after the trial finish';
+    const hits = await h.eval(() => {
+      const out = {};
+      const zone = document.querySelector('#apcZone');
+      out.apcZoneDisplay = zone ? getComputedStyle(zone).display : 'missing';
+      for (const id of ['rGar', 'rAgain', 'rMute', 'rNext']) {
+        const el = document.querySelector('#' + id);
+        if (!el) { out[id] = 'missing'; continue; }
+        const r = el.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        out[id] = hit ? (hit.id || hit.tagName) : 'none';
+      }
+      return out;
+    }).catch(() => null);
+    if (!hits) return 'tester-chk-r24-trial-results FAIL: could not read the results screen hit test';
+    const bad = [];
+    if (hits.apcZoneDisplay !== 'none') bad.push('#apcZone still ' + hits.apcZoneDisplay + ' after a trial finish (kit layer not hidden)');
+    if (hits.rAgain !== 'rAgain') bad.push('#rAgain centre hits ' + hits.rAgain + ' (not the button)');
+    if (hits.rGar !== 'rGar') bad.push('#rGar centre hits ' + hits.rGar + ' (not the button)');
+    if (bad.length) return 'tester-chk-r24-trial-results FAIL: results buttons untappable after a time trial finish: ' + bad.join('; ');
+    return true;
+  },
+},
 ];
