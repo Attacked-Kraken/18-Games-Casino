@@ -2195,7 +2195,7 @@ function carContact(cars, dt){
     if(Math.abs(ds)<7.9 && Math.abs(dd)<3.8){
       // G-24: separate to the cars' real visual size (2.54 wide) so bodies never interpenetrate,
       // and push fore-aft too so a car cannot sit inside the one ahead
-      const push=Math.min((3.8-Math.abs(dd))*dt*26, 0.35)*Math.sign(dd||0.1); // pack fix: separation is decisive at any frame rate but capped per step - the old push teleported cars in slow frames and was too weak to clear the box at 60 fps
+      const push=Math.min((3.8-Math.abs(dd))*dt*40, 0.5)*Math.sign(dd||0.1); // pack fix: separation is decisive at any frame rate but capped per step - the old push teleported cars in slow frames and was too weak to clear the box at 60 fps
       { const lim=Track.width/2-0.8, a0=a.d, b0=b.d; a.d+=push; b.d-=push; // owner Nov 3 2026 6:29 PM 'everybody fights and is all over the grass': a shove never pushes a car past the road edge
         if(Math.abs(a.d)>lim && Math.abs(a.d)>Math.abs(a0)) a.d=Math.sign(a.d)*Math.max(lim,Math.abs(a0)); if(Math.abs(b.d)>lim && Math.abs(b.d)>Math.abs(b0)) b.d=Math.sign(b.d)*Math.max(lim,Math.abs(b0)); }
       if(Math.abs(dd)<2.9 && Math.abs(ds)<7.3 && Math.abs(ds)>0.01){
@@ -2205,7 +2205,8 @@ function carContact(cars, dt){
           a.s+=drift; b.s-=drift;
         }
         const ahead=ds>0?a:b, behind=ds>0?b:a;
-        if(behind.v>ahead.v) behind.v=ahead.v; // no rear-ending into the car ahead
+        // owner Nov 4 2026 6:23 PM 'cars are still hanging onto each other fighting': only a car truly BEHIND (nose to tail, not alongside) is held back; side by side nobody is slowed, the lateral push does the separating
+        if(Math.abs(ds)>4.6 && Math.abs(dd)<2.0 && behind.v>ahead.v) behind.v=Math.max(ahead.v,behind.v-60*dt); // no rear-ending into the car ahead
       }
       const avg=(a.v+b.v)/2*0.985;
       const hitLine=(a.isPlayer||b.isPlayer)?8:14; // pack fix: AI-on-AI needs a much bigger hit to spin - in the pack the old line spun cars constantly and blocked the road
@@ -2214,8 +2215,10 @@ function carContact(cars, dt){
         if(Math.random()<0.08*dt*60 && behind.spin<=0){ behind.spin=rand(0.4,0.9); if(a.isPlayer||b.isPlayer) banner('CONTACT!', behind.isPlayer?'You got turned around':'You were hit from behind', 1200, '#ff9a5a'); } // G-239: the headline is the PLAYER's news - two AI cars hitting each other no longer shouts on his screen
         if(a.isPlayer) a._shoveT=2.0; if(b.isPlayer) b._shoveT=2.0; // G-239: a hard hit starts the limits grace - he is not fined for where a rival shoves him
       }
-      const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
-      a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
+      if(Math.abs(ds)>4.6 && Math.abs(dd)<2.0){ // glue only for a real nose-to-tail bump - alongside cars keep their own speed so they drive apart instead of being dragged together
+        const gl=1-Math.exp(-dt/0.045); // pack fix: the speed glue was per-call - at the phone's 60 fps it glued 3x harder than at 20 fps; now it is per-second
+        a.v=lerp(a.v,avg,gl); b.v=lerp(b.v,avg,gl);
+      }
       if(a.isPlayer||b.isPlayer){ Race.shake=Math.min(1,(Race.shake||0)+0.5); Aud.cheer(false); }
     }
   }
