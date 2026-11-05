@@ -1738,8 +1738,30 @@ export default [
     },
   },
   {
-    id: 'play-f1-city-life',
-    ask: 'F1: tracks are wider (18 m, narrow 15 m), the city and harbour have closed-off streets with barricades and street trees, buildings come in many colours, and crowds stand behind the fence (owner Nov 4 2026 6:23 PM)',
+    id: 'play-f1-no-hanging-on',
+    ask: 'F1: cars alongside each other drive apart instead of hanging on and dragging each other along (owner Nov 4 2026: cars are still fighting). Counts car-pair seconds in contact over 70 s of racing.',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=capital'; }).catch(() => {});
+      let grid = false;
+      for (let i = 0; i < 60 && !grid; i++) { await h.wait(500); grid = await h.eval(() => window.__test && window.__test.race().mode === 'grid').catch(() => false); }
+      if (!grid) return { inconclusive: 'never reached the grid' };
+      await h.press('#raceBtn');
+      let up = false;
+      for (let w = 0; w < 30 && !up; w++) { await h.wait(500); up = await h.eval(() => { const m = window.__test.race().mode; return m === 'race' || m === 'lights'; }).catch(() => false); }
+      if (!up) return { inconclusive: 'race never started' };
+      const r = await h.eval(() => {
+        const T = window.__test; const dt = 0.05; let contact = 0;
+        for (let i = 0; i < 1800; i++) { T.simStep(dt, { skill: 'good' }); if (i < 400) continue; const cs = T.cars();
+          for (let a = 0; a < cs.length; a++) for (let c = a + 1; c < cs.length; c++) { const A = cs[a], B = cs[c]; if (Math.abs(A.s - B.s) < 8 && Math.abs(A.d - B.d) < 3.8) contact += dt; } }
+        return { contact: +contact.toFixed(1) };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      return r.contact < 50 ? true : 'F1 FIGHTING: cars spent ' + r.contact + ' pair-seconds touching in 70 s of racing (limit 50; was 164 before the fix)';
+    },
+  },
+  {
+    id: "play-f1-city-life",
+    ask: "F1: tracks are wider (18 m, narrow 15 m), the city and harbour have closed-off streets with barricades and street trees, buildings come in many colours, and crowds stand behind the fence (owner Nov 4 2026 6:23 PM)",
     async test(page, h) {
       const bad = [];
       for (const tr of ['harbour', 'mesa', 'pinewood', 'capital']) {
