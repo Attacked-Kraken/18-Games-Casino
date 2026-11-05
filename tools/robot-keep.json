@@ -355,6 +355,21 @@
    "file": "PHASE-2.md",
    "needle": "| Exotic Racer Club | window 8 | window 6 |",
    "rule": "Phase 2 crews (owner Nov 3 2026): 5 testers + 5 auditors, fixed pairs; Claude fixes FOR-CLAUDE"
+  },
+  {
+   "file": "tools/game-check/look-guard.mjs",
+   "needle": "export function lookVerdict",
+   "rule": "LOOK GUARD: any game's changed screens are compared main vs the pull request (owner Nov 5 2026)"
+  },
+  {
+   "file": "tools/game-check/judge.mjs",
+   "needle": "LOOK GUARD (VP Nov 5 2026)",
+   "rule": "the verdict reads the look results"
+  },
+  {
+   "file": ".github/workflows/game-check-pr.yml",
+   "needle": "tools/game-check/look-guard.mjs",
+   "rule": "the PR check runs the look job for every changed game page"
   }
  ]
 }

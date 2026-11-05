@@ -226,6 +226,17 @@ if (process.argv[1] && /judge\.mjs$/.test(process.argv[1])) {
       for (const x of lp) { if (lpOn) blockers.push(x); else console.log('::warning title=Look picture (blocks from Nov 2)::' + x.slice(0, 300)); }
     }
   } catch (e) { console.log('::warning title=part-guard::' + String(e).slice(0, 200)); }
+  // LOOK GUARD (VP Nov 5 2026): the look job (tools/game-check/look-guard.mjs) wrote look-<game>.json = main's screens vs this pull request's screens.
+  // RED only for a screen that DECLARES its parts and a PR that is not that part; everything else is a yellow line. A missing file = nothing to judge.
+  try {
+    const od = outDir || 'game-check-out';
+    for (const f of fs.readdirSync(od).filter(x => /^look-apex[a-z0-9]*\.json$/.test(x))) {
+      const lr = JSON.parse(fs.readFileSync(path.join(od, f), 'utf8'));
+      console.log(`Look guard ${lr.file}: ${(lr.views || []).map(v => v.name + ' ' + v.status).join(', ') || lr.note || 'nothing'} - ${(lr.red || []).length ? 'BLOCKED' : 'ok'}`);
+      for (const x of lr.red || []) blockers.push(x);
+      for (const x of lr.yellow || []) console.log('::warning title=Look guard::' + x.slice(0, 300));
+    }
+  } catch (e) { console.log('::warning title=look-guard::' + String(e).slice(0, 200)); }
   fs.mkdirSync(outDir || 'game-check-out', { recursive: true });
   fs.writeFileSync(path.join(outDir || 'game-check-out', 'blockers.txt'), blockers.join('\n'));
   for (const b of blockers) console.log('::error title=Game check blocked::' + b.slice(0, 300).replace(/\n/g, ' '));

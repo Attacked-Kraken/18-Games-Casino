@@ -9,7 +9,8 @@ pr, parts = sys.argv[1], sys.argv[2]
 out = sys.argv[3] if len(sys.argv) > 3 else "game-check-out"
 repo = os.environ.get("GITHUB_REPOSITORY", "")
 items = sorted(glob.glob(os.path.join(parts, "*", "evidence", "*", "error.json")) + glob.glob(os.path.join(parts, "evidence", "*", "error.json")))
-if not items or not pr or pr == "null":
+look_dirs = sorted(d for d in glob.glob(os.path.join(out, "look", "*")) if glob.glob(os.path.join(d, "*.jpg")))   # LOOK GUARD pictures (before / after / diff)
+if (not items and not look_dirs) or not pr or pr == "null":
     sys.exit(0)
 os.makedirs(out, exist_ok=True)
 tmp = tempfile.mkdtemp()
@@ -55,6 +56,15 @@ for ej in items:
     pics = info.get("pics") or {}
     lines.append("- pictures: " + " · ".join("[%s](%s%s)" % (k, raw, v) for k, v in pics.items()) if pics else "- pictures: none could be taken")
     lines.append("- all files: https://github.com/%s/tree/pr-evidence/pr-%s/%s" % (repo, pr, slug))
+for d in look_dirs:
+    slug = os.path.basename(d); dd = os.path.join(dest_pr, "look", slug); os.makedirs(dd, exist_ok=True)
+    for f in os.listdir(d):
+        shutil.copy(os.path.join(d, f), os.path.join(dd, f))
+    raw = "https://raw.githubusercontent.com/%s/pr-evidence/pr-%s/look/%s/" % (repo, pr, slug)
+    names = sorted(set(f.rsplit("-", 1)[0] for f in os.listdir(d) if f.endswith(".jpg")))
+    lines.append("**Look guard - %s screens that look different from main** (red cells in the diff = what changed):" % slug)
+    for n in names:
+        lines.append("- %s: [before (main)](%s%s-before.jpg) · [after (this PR)](%s%s-after.jpg) · [difference](%s%s-diff.jpg)" % (n, raw, n, raw, n, raw, n))
 git("add", "-A")
 if git("status", "--porcelain").stdout.strip():
     git("commit", "-q", "-m", "evidence for PR #%s" % pr)
@@ -63,4 +73,4 @@ if git("status", "--porcelain").stdout.strip():
             break
         git("pull", "-q", "--rebase", "origin", "pr-evidence", check=False)
 open(os.path.join(out, "evidence.md"), "w").write("\n".join(lines) + "\n")
-print("evidence for PR #%s: %d game(s)" % (pr, len(items)))
+print("evidence for PR #%s: %d error(s), %d look set(s)" % (pr, len(items), len(look_dirs)))
