@@ -1759,4 +1759,26 @@ export default [
       return r.contact < 50 ? true : 'F1 FIGHTING: cars spent ' + r.contact + ' pair-seconds touching in 70 s of racing (limit 50; was 164 before the fix)';
     },
   },
+  {
+    id: "play-f1-city-life",
+    ask: "F1: tracks are wider (18 m, narrow 15 m), the city and harbour have closed-off streets with barricades and street trees, buildings come in many colours, and crowds stand behind the fence (owner Nov 4 2026 6:23 PM)",
+    async test(page, h) {
+      const bad = [];
+      for (const tr of ['harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 40 && !r; i++) { await h.wait(500); r = await h.eval(() => (window.__test && window.__test.cityLife && window.__test.cityLife()) ? { c: window.__test.cityLife(), w: window.__test.trackWidth() } : null).catch(() => null); }
+        if (!r) { bad.push(tr + ': no city life built'); continue; }
+        if (r.w < 15) bad.push(tr + ': track only ' + r.w + ' m wide');
+        if (r.c.people < 300) bad.push(tr + ': only ' + r.c.people + ' spectators');
+        if (tr === 'harbour' || tr === 'capital') {
+          if (r.c.roadM < 800 || r.c.streets < 8) bad.push(tr + ': only ' + Math.round(r.c.roadM) + ' m of streets');
+          if (r.c.barricades < 40 || r.c.gates < 8) bad.push(tr + ': streets not closed off (' + r.c.barricades + ' barricades)');
+          if (r.c.trees < 40) bad.push(tr + ': only ' + r.c.trees + ' street trees');
+          if (r.c.tones < 6) bad.push(tr + ': buildings use only ' + r.c.tones + ' colours');
+        }
+      }
+      return bad.length ? 'F1 CITY LIFE: ' + bad.join('; ') : true;
+    },
+  },
 ];

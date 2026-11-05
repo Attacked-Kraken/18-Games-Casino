@@ -782,7 +782,7 @@ const Track = {
     total=0; const cum2=[0];
     for(let i=1;i<=scaled.length;i++){ const a=scaled[i-1], b=scaled[i%scaled.length];
       total+=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]); cum2.push(total); }
-    this.length=total; this.width = cfg.narrow?10.5:13;
+    this.length=total; this.width = cfg.narrow?15:18; /* owner Nov 4 2026 6:23 PM 'make the track wider, all of them' (was 13 / 10.5) */
     const N=scaled.length;
     for(let i=0;i<N;i++){
       const p=scaled[i], q=scaled[(i+1)%N], r=scaled[(i+2)%N];
@@ -954,6 +954,7 @@ const Track = {
     }
     this.buildStands(g); this.buildPits(g); if(!(th.kind)) this.buildScenery(g); this.buildSponsorBoards(g);
     this.buildTrackside(g, th);
+    this.buildCityLife(g, th);
     if(th.kind) this.buildEnvironment(g, th);
   },
   /* owner Nov 2 2026 9:10 PM "use the layout but we need an environment": each circuit gets its own world - instanced, cheap on phones */
@@ -975,7 +976,16 @@ const Track = {
       const wtex=new THREE.CanvasTexture(cv); wtex.wrapS=wtex.wrapT=THREE.RepeatWrapping; wtex.colorSpace=THREE.SRGBColorSpace;
       const bMat=new THREE.MeshLambertMaterial({map:wtex, color:night?0xffffff:0xdde3ea}); if(night){ bMat.emissive=new THREE.Color(0xffffff); bMat.emissiveMap=wtex; bMat.emissiveIntensity=0.55; }
       const bGeo=new THREE.BoxGeometry(1,1,1); bGeo.translate(0,0.5,0);
-      inst(bGeo, bMat, 220, ()=>{ const t=spot(th.kind==='harbour'?36:40, th.kind==='harbour'?260:420, 6); if(!t) return null; const w=R(14,38), h=R(18,th.kind==='harbour'?70:120); return {x:t.x,y:this.groundBase-1,z:t.z,sx:w,sy:h+1+Math.max(0,t.y-this.groundBase),sz:R(14,38),rot:R(0,6.3)}; });
+      /* owner Nov 4 2026 6:23 PM 'buildings different colours and style, make it look better': a palette of facade colours, low wide blocks, slim towers and stepped tops; kept off the new streets */
+      const pal=[0xc96f4a,0xe0c48a,0x7fa6c9,0x5f8f87,0xb9bfc7,0xe8e2d4,0xa85a5a,0x8a7ab0,0xd9a441,0x4c6b8a,0xf2f2f2,0x6c7a89].map(c=>new THREE.Color(c));
+      if(!night) bMat.color.setHex(0xffffff);
+      const bl=[], cl=this.cityLife; const used=new Set();
+      for(let i=0;i<300;i++){ const t=spot(th.kind==='harbour'?56:62, th.kind==='harbour'?260:420, 6); if(!t) continue; if(cl && cl.near(t.x,t.z,30)) continue;
+        const k=Math.random(); let w,h,d; if(k<0.3){ w=R(28,50); d=R(24,40); h=R(8,17); } else if(k<0.45){ w=R(10,16); d=R(10,16); h=R(90,150); } else { w=R(14,38); d=R(14,38); h=R(18,th.kind==='harbour'?70:120); }
+        const ci=(Math.random()*pal.length)|0; used.add(ci); bl.push({x:t.x,y:this.groundBase-1,z:t.z,sx:w,sy:h+1+Math.max(0,t.y-this.groundBase),sz:d,rot:R(0,6.3),col:pal[ci],step:Math.random()<0.4,ci}); }
+      inst(bGeo, bMat, bl.length, (i)=>bl[i]);
+      const stp=bl.filter(o=>o.step); inst(bGeo, bMat, stp.length, (i)=>{ const o=stp[i]; return {x:o.x,y:this.groundBase-1+o.sy,z:o.z,sx:o.sx*0.6,sy:o.sy*0.3,sz:o.sz*0.6,rot:o.rot,col:pal[(o.ci+4)%pal.length]}; });
+      if(cl) cl.tones=used.size; if(cl) cl.buildings=bl.length;
       const poleGeo=new THREE.CylinderGeometry(0.12,0.16,9,6); poleGeo.translate(0,4.5,0); const poleMat=new THREE.MeshLambertMaterial({color:0x3a4250});
       inst(poleGeo, poleMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y,z:p.z+p.nz*(W/2+6)*side}; });
       if(night){ const lampGeo=new THREE.BoxGeometry(2.2,0.5,1.2); const lampMat=new THREE.MeshBasicMaterial({color:0xfff2c0}); inst(lampGeo, lampMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y+9,z:p.z+p.nz*(W/2+6)*side}; }); }
@@ -997,6 +1007,61 @@ const Track = {
       inst(trunkGeo, trunkMat, place.length, (i)=>place[i]); inst(coneGeo, coneMat, place.length, (i)=>{ const t=place[i]; return {...t, col:new THREE.Color().setHSL(0.33,0.5,R(0.18,0.3))}; });
     }
   },
+  /* owner Nov 4 2026 6:23 PM "make roads all over the city, make it look like roads closed off for the race, add more stuff trees people":
+     city + harbour: a ring street each side of the circuit and cross streets out into the city, closed off with striped barricades and gates; street trees; a crowd of spectators behind the fence on every circuit. All instanced, never on the circuit. */
+  buildCityLife(g, th){ try{
+    const W=this.width, S=this.samples, N=S.length; if(N<20) return;
+    const R=(a,b)=>a+Math.random()*(b-a), up=new THREE.Vector3(0,1,0), m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pos=new THREE.Vector3();
+    const cl={roadM:0,streets:0,gates:0,barricades:0,trees:0,people:0,tones:0,buildings:0,segs:[]}; this.cityLife=cl;
+    cl.near=(x,z,r)=>{ for(const s of cl.segs){ const dx=s[2]-s[0], dz=s[3]-s[1], l2=dx*dx+dz*dz||1; let t=((x-s[0])*dx+(z-s[1])*dz)/l2; t=Math.max(0,Math.min(1,t)); const ex=s[0]+dx*t-x, ez=s[1]+dz*t-z; if(ex*ex+ez*ez<r*r) return true; } return false; };
+    const mk=(geo,mat,max)=>{ const im=new THREE.InstancedMesh(geo,mat,max); im.count=0; im.frustumCulled=false; g.add(im); return im; };
+    const put=(im,x,y,z,rot,sx,sy,sz,col)=>{ if(im.count>=im.instanceMatrix.count) return false; q.setFromAxisAngle(up,rot||0); pos.set(x,y,z); sc.set(sx||1,sy||1,sz||1); m.compose(pos,q,sc); im.setMatrixAt(im.count,m); if(col!==undefined) im.setColorAt(im.count,col); im.count++; return true; };
+    const city=(th.kind==='city'||th.kind==='harbour'), gy=this.groundBase+0.05, spacing=this.length/N;
+    if(city){
+      const cv=document.createElement('canvas'); cv.width=64; cv.height=64; const x=cv.getContext('2d'); x.fillStyle='#2b2f36'; x.fillRect(0,0,64,64); x.fillStyle='#d8d8d8'; x.fillRect(2,0,2,64); x.fillRect(60,0,2,64); x.fillStyle='#f2c230'; x.fillRect(31,6,2,24);
+      const tex=new THREE.CanvasTexture(cv); tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.colorSpace=THREE.SRGBColorSpace;
+      const rm=new THREE.MeshLambertMaterial({map:tex, polygonOffset:true, polygonOffsetFactor:-1, polygonOffsetUnits:-1});
+      const pos3=[], uv=[], idx=[]; let vl=0;
+      const quad=(ax,az,bx,bz,cx,cz,dx,dz,v0,v1)=>{ const b0=pos3.length/3; pos3.push(ax,gy,az,bx,gy,bz,cx,gy,cz,dx,gy,dz); uv.push(0,v0,1,v0,1,v1,0,v1); idx.push(b0,b0+1,b0+2,b0,b0+2,b0+3); };
+      const hw=4, off=W/2+26, step=Math.max(1,Math.round(8/spacing));
+      const bars=mk(new THREE.BoxGeometry(1,0.9,0.45), new THREE.MeshLambertMaterial({map:(()=>{ const c=document.createElement('canvas'); c.width=64; c.height=16; const y=c.getContext('2d'); for(let i=0;i<8;i++){ y.fillStyle=i%2?'#ffffff':'#d21f26'; y.fillRect(i*8,0,8,16); } const t=new THREE.CanvasTexture(c); t.colorSpace=THREE.SRGBColorSpace; return t; })()}), 900); bars.geometry.translate(0,0.45,0);
+      const tT=new THREE.CylinderGeometry(0.2,0.28,3,6); tT.translate(0,1.5,0); const tF=new THREE.SphereGeometry(2.1,8,6); tF.translate(0,4.6,0);
+      const trunks=mk(tT,new THREE.MeshLambertMaterial({color:0x4a3728}),600), leaves=mk(tF,new THREE.MeshLambertMaterial({color:0xffffff}),600);
+      for(const side of [1,-1]){
+        let prev=null, acc=0, tr=0;
+        for(let i=0;i<=N;i+=step){ const p=S[i%N], X=p.x+p.nx*off*side, Z=p.z+p.nz*off*side;
+          const ok=this.distToLoop(X,Z)>=off-3 && Math.abs(X)<1100 && Math.abs(Z)<1100;
+          if(ok && prev){ const L=Math.hypot(X-prev.x,Z-prev.z); if(L<spacing*step*2.5){
+            const ax=prev.x+prev.px*hw, az=prev.z+prev.pz*hw, bx=prev.x-prev.px*hw, bz=prev.z-prev.pz*hw, cx=X-p.nx*side*hw, cz=Z-p.nz*side*hw, dx=X+p.nx*side*hw, dz=Z+p.nz*side*hw;
+            quad(ax,az,bx,bz,cx,cz,dx,dz,vl/20,(vl+L)/20); vl+=L; cl.roadM+=L; cl.segs.push([prev.x,prev.z,X,Z]);
+            acc+=L; if(acc>=20){ acc=0; const bx2=p.x+p.nx*(off-hw-0.7)*side, bz2=p.z+p.nz*(off-hw-0.7)*side; if(put(bars,bx2,gy,bz2,Math.atan2(-p.tz,p.tx),3,1,1)) cl.barricades++;
+              const tx2=p.x+p.nx*(off+hw+2.5)*side, tz2=p.z+p.nz*(off+hw+2.5)*side; if(((tr++)%1)===0){ const s2=R(0.8,1.35); if(put(trunks,tx2,gy,tz2,0,s2,s2,s2)){ put(leaves,tx2,gy,tz2,0,s2,s2,s2,new THREE.Color().setHSL(R(0.25,0.36),0.5,R(0.22,0.4))); cl.trees++; } } } } }
+          prev=ok?{x:X,z:Z,px:p.nx*side,pz:p.nz*side}:null; }
+      }
+      // cross streets out into the city, shut at the circuit end by a gate
+      let nextS=60;
+      for(let i=0;i<N;i+=step){ const p=S[i]; if(p.s<nextS) continue; nextS=p.s+170;
+        for(const side of [1,-1]){ const ox=p.x+p.nx*(off+hw)*side, oz=p.z+p.nz*(off+hw)*side; if(this.distToLoop(ox,oz)<off-3) continue;
+          let len=0, ex=ox, ez=oz; for(let k=1;k<=16;k++){ const nx2=p.x+p.nx*(off+hw+k*10)*side, nz2=p.z+p.nz*(off+hw+k*10)*side; if(this.distToLoop(nx2,nz2)<off-3 || Math.abs(nx2)>1100 || Math.abs(nz2)>1100) break; len=k*10; ex=nx2; ez=nz2; }
+          if(len<50) continue; const dxn=p.nx*side, dzn=p.nz*side, px=-dzn, pz=dxn;
+          for(let a=0;a<len;a+=10){ const x0=ox+dxn*a, z0=oz+dzn*a, x1=ox+dxn*(a+10), z1=oz+dzn*(a+10); quad(x0+px*hw,z0+pz*hw,x0-px*hw,z0-pz*hw,x1-px*hw,z1-pz*hw,x1+px*hw,z1+pz*hw,vl/20,(vl+10)/20); vl+=10; cl.roadM+=10; }
+          cl.segs.push([ox,oz,ex,ez]); cl.streets++;
+          // closed-off gate at the circuit end: two barricades across the street + cones
+          const gx=ox+dxn*3, gz=oz+dzn*3, rot=Math.atan2(-dzn,dxn)+Math.PI/2; if(put(bars,gx+px*2.2,gy,gz+pz*2.2,rot,3,1,1) & put(bars,gx-px*2.2,gy,gz-pz*2.2,rot,3,1,1)) { cl.gates++; cl.barricades+=2; } }
+      }
+      const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pos3,3)); geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals(); const road=new THREE.Mesh(geo,rm); road.frustumCulled=false; road.renderOrder=1; g.add(road);
+      for(const im of [bars,trunks,leaves]) im.instanceMatrix.needsUpdate=true; if(leaves.instanceColor) leaves.instanceColor.needsUpdate=true;
+    }
+    // spectators behind the catch fence, in groups, on every circuit
+    const body=mk(new THREE.CylinderGeometry(0.26,0.3,1.25,6),new THREE.MeshLambertMaterial({color:0xffffff}),1600), head=mk(new THREE.SphereGeometry(0.21,7,5),new THREE.MeshLambertMaterial({color:0xffffff}),1600);
+    body.geometry.translate(0,0.62,0); head.geometry.translate(0,1.45,0);
+    const shirts=[0xd21f26,0x1f6fd2,0xf2c230,0x2fa84f,0xffffff,0xff7a1a,0x7a3fd2,0x111111,0x19c6c6].map(c=>new THREE.Color(c)), skin=[0xf1c9a5,0xd9a47a,0xa8714a,0x6f4a30,0xe8b894].map(c=>new THREE.Color(c));
+    for(let grp=0;grp<150&&cl.people<1500;grp++){ const p=S[(Math.random()*N)|0], side=Math.random()<0.5?1:-1, o=W/2+R(10,12.5), cx=p.x+p.nx*o*side, cz=p.z+p.nz*o*side;
+      if(this.distToLoop(cx,cz)<W/2+8.5) continue; const n=5+((Math.random()*6)|0);
+      for(let k=0;k<n;k++){ const t=(k-n/2)*0.95, x=cx+p.tx*t+R(-0.3,0.3), z=cz+p.tz*t+R(-0.3,0.3), s=R(0.92,1.1);
+        if(put(body,x,this.groundBase,z,0,s,s,s,shirts[(Math.random()*shirts.length)|0])){ put(head,x,this.groundBase,z,0,s,s,s,skin[(Math.random()*skin.length)|0]); cl.people++; } } }
+    if(body.instanceColor) body.instanceColor.needsUpdate=true; if(head.instanceColor) head.instanceColor.needsUpdate=true; body.instanceMatrix.needsUpdate=true; head.instanceMatrix.needsUpdate=true;
+  }catch(e){ console.warn('cityLife', e); } },
   /* owner Nov 4 2026 4:05 PM "make more accessories in each track, everything is plain and boring - look how a real F1 track is and how it is surrounded":
      tyre walls on the outside of corners, a catch fence with posts + rails on both sides, marshal posts with flags, lamp posts, trees on the plain circuits. All instanced (cheap on phones),
      placed along the loop by distance, never on the road (same distToLoop test the barriers use). */
@@ -3208,7 +3273,8 @@ window.__test = {
   heading: (idx) => { const c=Race.cars[idx||0]; if(!c) return null;
     const f=Track.frameAt(c.s);
     return { dot: Math.cos(c.yaw)*f.tx + Math.sin(c.yaw)*f.tz, yaw: c.yaw, headAngle: c.headAngle, steer: c.steer }; },
-  trackside: () => Track.trackside || null, // Nov 4 2026: counts of the trackside accessories built
+  trackside: () => Track.trackside || null,
+  cityLife: () => { const c=Track.cityLife; return c?{roadM:c.roadM,streets:c.streets,gates:c.gates,barricades:c.barricades,trees:c.trees,people:c.people,tones:c.tones,buildings:c.buildings}:null; }, // Nov 4 2026: counts of the trackside accessories built
   carSizes: () => Race.cars.map(c => { c.mesh.updateMatrixWorld(true); const L = c.mesh.userData.lod, m = o => { if(!o) return null; const q = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()); return [q.x, q.y, q.z]; }; return { name: c.name, isPlayer: c.isPlayer, near: m(L && L.near), far: m(L && L.far) }; }), // Nov 4 2026: world size of each car's close-up model and far box
   trackWidth: () => Track.width,
   kitAudio: () => (Aud && Aud.kitState) ? Aud.kitState() : null, // G-107 probes
