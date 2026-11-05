@@ -122,16 +122,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   .cb { position:absolute; pointer-events:auto; border:0; border-radius:50%; color:#fff; font:900 15px system-ui; display:grid; place-items:center;
     background:radial-gradient(circle at 35% 30%,#ffffff3a,#0a082a77 75%); box-shadow:0 0 0 2px #ffffff55 inset, 0 0 18px #0006; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); touch-action:none; }
   .cb.dn { background:radial-gradient(circle at 35% 30%,#19e6ff88,#19e6ff22 70%); box-shadow:0 0 0 2px #19e6ff inset, 0 0 22px #19e6ff; }
-  /* owner: "make it a toggle stick to race, no auto gas, forward on the stick is gas" */
-  #stick { position:absolute; pointer-events:auto; left:calc(18px + var(--sal)); bottom:calc(18px + var(--sab)); width:128px; height:128px; border-radius:50%; touch-action:none;
-    background:radial-gradient(circle,#0a082a55 0 45%,#ffffff14 70%,#ffffff26); box-shadow:0 0 0 2px #ffffff55 inset, 0 0 22px #0008; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
-  #knob { position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#fff,#19e6ff 55%,#1a5a9a); box-shadow:0 0 18px #19e6ffaa, 0 4px 10px #0008; }
-  #stick .sl { position:absolute; left:0; right:0; text-align:center; font:900 10px system-ui; letter-spacing:.1em; color:#fffc; text-shadow:0 1px 2px #000; pointer-events:none; }
-  #stick .u { top:7px; } #stick .d { bottom:7px; }
-  #bBrk { right:calc(14px + var(--sar)); bottom:calc(18px + var(--sab)); width:78px; height:78px; }
-  #bDrf { right:calc(102px + var(--sar)); bottom:calc(22px + var(--sab)); width:70px; height:70px; font-size:12px; }
-  #bNos { right:calc(18px + var(--sar)); bottom:calc(108px + var(--sab)); width:80px; height:80px; font-size:13px; background:radial-gradient(circle at 35% 30%,#ff2bd6aa,#8a5cff55 70%); }
-  #bNos.dn { background:radial-gradient(circle at 35% 30%,#fff,#19e6ff 60%); color:#002; }
+  /* kit/controls.js draws the thumb stick (left) and the BRAKE / DRIFT / NITRO buttons (right); nitro glows while it burns */
+  .apc-btn.nosOn { background:radial-gradient(circle at 35% 30%,#fff,#19e6ff 60%); color:#002; }
   #bCam { right:calc(12px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:20px; }
   #bPause { right:calc(64px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:18px; }
   #bMute { right:calc(116px + var(--sar)); top:calc(144px + var(--sat)); width:46px; height:46px; font-size:18px; }
@@ -284,9 +276,6 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   <div id="msg"></div>
 </div>
 <div id="ctl">
-  <div id="stick"><div id="knob"></div><span class="sl u">GAS</span><span class="sl d">BRAKE</span></div>
-  <button class="cb" id="bBrk">BRAKE</button>
-  <button class="cb" id="bDrf">DRIFT</button><button class="cb" id="bNos">NITRO</button>
   <button class="cb" id="bCam">🎥</button><button class="cb" id="bPause">⏸</button><button class="cb" id="bMute">🔊</button>
 </div>
 
@@ -323,6 +312,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
 <div id="loading" class="scr"><div id="ldT">Loading…</div><div class="bar"><b></b></div></div>
 
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
+<script type="module" src="kit/controls.js"></script>
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
@@ -2452,10 +2442,10 @@ async function setupRace(place, laps, friend, type) {
   /* camera start: sweep in from above the grid */
   cam.position.set(P.x - Math.sin(P.h) * 30, T.y + 18, P.z - Math.cos(P.h) * 30); R.camP.copy(cam.position);
   renderer.toneMappingExposure = W.exp; post.bloom = W.bloom; post.th = W.th; post.vig = 0.5;
-  miniPrep(); G.mode = 'race'; show('hud'); $('ctl').style.display = 'block'; stickReset(); $('msg').style.opacity = 0;
+  miniPrep(); G.mode = 'race'; show('hud'); ctlShow(true); $('msg').style.opacity = 0;
   audioInit(); MUS.want = 'race'; musicStart('race');
 }
-function endRace() { if (!R) return; R.cars.forEach((e) => e.car.dispose()); R.traffic.forEach((t) => t.car.dispose()); R.W.dispose(); R = null; $('ctl').style.display = 'none'; engineSnd(0, 0, false, 0, 0, 0); }
+function endRace() { if (!R) return; R.cars.forEach((e) => e.car.dispose()); R.traffic.forEach((t) => t.car.dispose()); R.W.dispose(); R = null; ctlShow(false); engineSnd(0, 0, false, 0, 0, 0); }
 function spark(x, y, z, n, vx, vz) { const S2 = R.sparks; for (let k = 0; k < n; k++) { const i = S2.k = (S2.k + 1) % 240; S2.p.set([x, y, z], i * 3); S2.v.set([vx * 0.4 + (Math.random() - 0.5) * 8, 2 + Math.random() * 5, vz * 0.4 + (Math.random() - 0.5) * 8], i * 3); S2.life[i] = 0.4 + Math.random() * 0.4; } }
 function puff(x, y, z) { const f = R.smoke.find((q) => q.life <= 0); if (!f) return; f.life = 1.2; f.s.visible = true; f.s.position.set(x, y, z); f.s.scale.set(2, 2, 1); f.s.material.opacity = 0.5; }
 function firework(x, y, z) { const F = R.fw, col = new THREE.Color().setHSL(Math.random(), 1, 0.6).multiplyScalar(3), ca = F.pts.geometry.attributes.color;
@@ -2467,6 +2457,7 @@ function bigMsg(txt) { const e = $('msg'); e.textContent = txt; e.style.opacity 
 function stepPlayer(P, dt) {
   const T = R.T, st = P.st, W = R.W;
   /* owner: "better steering, it goes everywhere" - softer stick near the middle, smooth steering, and a light lane-keeping assist */
+  syncKit();
   const ks = K.sx || 0; let sIn = (K.r ? 1 : 0) - (K.l ? 1 : 0) + Math.sign(ks) * Math.pow(Math.abs(ks), 1.3); sIn = clamp(sIn, -1, 1); if (P.auto) sIn = P.autoSteer;
   /* sm1 2026-10-03 owner: "stop aiming at the back of each vehicle... more control, smoother turns" - no lane snapping, steering follows the stick smoothly */
   P.steer += (sIn - P.steer) * Math.min(1, dt * (Math.abs(sIn) > Math.abs(P.steer) ? 8 : 9)); /* G-76: the wheel follows the stick sooner - same smooth chase, less lag, both ways */
@@ -2639,7 +2630,7 @@ function playerFinished() {
   if (R.type === 'trial') { const beat = R.P.fin <= R.par; bigMsg(beat ? '⏱ BEAT THE CLOCK!' : '⏱ MISSED PAR'); setTimeout(() => { $('msg').style.opacity = 0; }, 2500); if (beat) R.fwOn = 6; musSting(beat); $('ctl').style.display = 'none'; setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200); return; }
   bigMsg(place === 1 ? '🏆 1ST!' : ord(place)); setTimeout(() => { $('msg').style.opacity = 0; }, 2500);
   if (place === 1) { R.fwOn = 6; } musSting(place === 1); /* G-80: victory sting on a win, game-over sting on a loss */
-  $('ctl').style.display = 'none';
+  ctlShow(false);
   setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200);
 }
 function standings() {
@@ -2700,7 +2691,7 @@ function drawHud() {
   q.strokeStyle = P.nos > 0.98 ? '#7dffb0' : '#19e6ff'; q.shadowColor = '#19e6ff'; q.shadowBlur = P.nosOn ? 20 : 6; q.beginPath(); q.arc(cx, cy, rad - 60, Math.PI * 0.8, Math.PI * 0.8 + Math.PI * 1.4 * P.nos); q.stroke(); q.shadowBlur = 0;
   q.font = 'italic 900 64px system-ui'; q.fillStyle = '#fff'; q.fillText(Math.round(mph), cx, cy - 4); q.font = '800 15px system-ui'; q.fillStyle = '#9fb0ff'; q.fillText('MPH', cx, cy + 34);
   q.font = '900 22px system-ui'; q.fillStyle = '#ff2bd6'; q.fillText(P.spd < -0.5 ? 'R' : R.gear > 6 ? '6' : String(R.gear), cx, cy + 66); q.font = '800 12px system-ui'; q.fillStyle = '#19e6ff'; q.fillText('NITRO', cx, cy + 96);
-  $('bNos').classList.toggle('dn', !!P.nosOn);
+  { const nb = document.getElementById('apcBtn-nos'); if (nb) nb.classList.toggle('nosOn', !!P.nosOn); }
 }
 function renderRace(now) {
   const dt = R._lt ? Math.min(0.05, (now - R._lt) / 1000) : 1 / 60; R._lt = now; updateCam(dt || 1 / 60);
@@ -2790,8 +2781,8 @@ function showResults() {
 $('rGar').onclick = () => { endRace(); openGarage(); };
 $('rAgain').onclick = () => { const p = R.place, l = R.laps, t = R.type; startRace(p, l, t); };
 $('rNext').onclick = () => { const p = PLACES[(R.place.i + 1) % PLACES.length]; endRace(); S.cty = COUNTRIES.findIndex((c) => c.name === p.country); openSheet(p); };
-function pause() { if (!R || G.mode !== 'race') return; R.paused = true; stickReset(); $('ctl').style.display = 'none'; show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
-$('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) $('ctl').style.display = 'block'; };
+function pause() { if (!R || G.mode !== 'race') return; R.paused = true; ctlShow(false); show('hud', 'pause'); G.mode = 'pause'; engineSnd(0, 0, false, 0, 0, 0); sfx('popen'); }
+$('pRes').onclick = () => { if (!R) return; sfx('pclose'); R.paused = false; G.mode = 'race'; show('hud'); if (!(R.P && R.P.fin)) ctlShow(true); };
 $('pRe').onclick = () => { const p = R.place, l = R.laps, t = R.type; startRace(p, l, t); };
 $('pQuit').onclick = () => toMenu();
 
@@ -2900,25 +2891,21 @@ $('fGo').onclick = () => { const f = parseFriendCode($('fIn').value);
 $('fX').onclick = () => toMenu();
 
 /* ------------------------------------------------------------------ controls */
-const bind = (id, key) => { const el = $(id), on = (e) => { e.preventDefault(); K[key] = 1; el.classList.add('dn'); audioInit(); try { el.setPointerCapture(e.pointerId); } catch (x) {} }, off = (e) => { e.preventDefault(); K[key] = 0; el.classList.remove('dn'); };
-  el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off); el.addEventListener('contextmenu', (e) => e.preventDefault()); };
-bind('bBrk', 'brake');
-/* joystick: left/right steers, forward is gas (push further = more gas), pull back brakes then reverses */
-const STK = { id: null };
-function stickReset() { K.sx = 0; K.sy = 0; STK.id = null; $('knob').style.transform = ''; }
-function stickMove(e) { const r = $('stick').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R0 = r.width * 0.36;
-  let dx = (e.clientX - cx) / R0, dy = (e.clientY - cy) / R0;
-  if (window.innerHeight > window.innerWidth) { const _t = dx; dx = dy; dy = -_t; } // LANDSCAPE LAW: rotated stage remap
-  const l = Math.hypot(dx, dy); if (l > 1) { dx /= l; dy /= l; }
-  K.sx = Math.abs(dx) < 0.1 ? 0 : (dx - Math.sign(dx) * 0.1) / 0.9; K.sy = -dy; $('knob').style.transform = `translate(${dx * R0}px,${dy * R0}px)`; }
-$('stick').addEventListener('pointerdown', (e) => { e.preventDefault(); STK.id = e.pointerId; try { $('stick').setPointerCapture(e.pointerId); } catch (x) {} audioInit(); stickMove(e); });
-$('stick').addEventListener('pointermove', (e) => { if (e.pointerId === STK.id) { e.preventDefault(); stickMove(e); } });
-for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) $('stick').addEventListener(ev, (e) => { if (e.pointerId === STK.id) stickReset(); }); bind('bDrf', 'drift'); bind('bNos', 'nos');
+/* kit/controls.js is the ONLY thumb control (STUDIO-STANDARD 9.2): the stick forward = gas, back = brake then reverse, plus BRAKE / DRIFT / NITRO; let go = stop */
+addEventListener('keydown', (e) => { if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) e.stopImmediatePropagation(); }, true); /* typing a friend code must not steer */
+const KIT = window.ApexControls.create({
+  buttons: [{ id: 'brake', label: 'BRAKE', key: 'KeyX' }, { id: 'drift', label: 'DRIFT', key: 'ShiftLeft' }, { id: 'nos', label: 'NITRO', key: 'Space' }],
+  rotated: () => window.innerHeight > window.innerWidth, /* LANDSCAPE LAW: rotated stage remap */
+  paused: () => !R || G.mode !== 'race' || !!R.paused,
+  onFirstTouch: () => audioInit(),
+});
+KIT.show(false);
+function ctlShow(on) { $('ctl').style.display = on ? 'block' : 'none'; KIT.show(on); if (!on) stickReset(); }
+function stickReset() { K.sx = 0; K.sy = 0; K.brake = 0; K.drift = 0; K.nos = 0; KIT.release(); }
+function syncKit() { const c = KIT.read(), x = c.x; K.sx = Math.abs(x) < 0.1 ? 0 : (x - Math.sign(x) * 0.1) / 0.9; K.sy = -c.y; K.brake = c.buttons.brake ? 1 : 0; K.drift = c.buttons.drift ? 1 : 0; K.nos = c.buttons.nos ? 1 : 0; }
 $('bCam').onclick = () => { if (!R) return; R.camMode = (R.camMode + 1) % 3; S.cam = R.camMode; save(); };
 $('bPause').onclick = () => pause();
-const KM = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'gas', KeyW: 'gas', ArrowDown: 'brake', KeyS: 'brake', Space: 'nos', ShiftLeft: 'drift', ShiftRight: 'drift' };
-addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (KM[e.code]) { K[KM[e.code]] = 1; e.preventDefault(); audioInit(); } if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
-addEventListener('keyup', (e) => { if (KM[e.code]) K[KM[e.code]] = 0; });
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
 /* owner Nov 1 2026: "an easier way to rotate the car, it doesn't spin correctly" - on a portrait phone the stage is turned 90 degrees, so a finger sweep along the screen has to be turned the same way (like the stick), and a sweep now turns the car faster */
 function dragStage(e, d) { let x = e.clientX - d.x, y = e.clientY - d.y; if (window.innerHeight > window.innerWidth) { const t = x; x = y; y = -t; } return { x, y }; }
 canvas.addEventListener('pointerdown', (e) => { if (G.mode !== 'garage' && G.mode !== 'menu') return; gOrb.drag = { x: e.clientX, y: e.clientY, th: gOrb.th, ph: gOrb.ph }; gOrb.auto = 0; audioInit(); });
