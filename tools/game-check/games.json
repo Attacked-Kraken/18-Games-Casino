@@ -8,6 +8,10 @@
         "#startBtn"
       ],
       "people": true,
+      "views": [
+        { "name": "menu", "steps": [], "wait": 5000, "parts": ["hud", "career"] },
+        { "name": "play", "steps": ["#startBtn"], "wait": 4000 }
+      ],
       "parts": [
         {
           "part": "pitching",
@@ -136,6 +140,10 @@
         "#thrUp",
         "#thrUp"
       ],
+      "views": [
+        { "name": "menu", "steps": [], "wait": 5000 },
+        { "name": "play", "steps": ["text=FREE FLIGHT", "#thrUp", "#thrUp", "#thrUp", "#thrUp"], "wait": 4000 }
+      ],
       "parts": [
         {
           "part": "traffic",
@@ -184,6 +192,10 @@
         "#playBtn"
       ],
       "people": true,
+      "views": [
+        { "name": "menu", "steps": [], "wait": 5000, "parts": ["career"] },
+        { "name": "play", "steps": ["#playBtn"], "wait": 4000 }
+      ],
       "parts": [
         {
           "part": "ai",
@@ -383,6 +395,10 @@
         "#bCardStart"
       ],
       "people": true,
+      "views": [
+        { "name": "menu", "steps": [], "wait": 5000, "parts": ["menus", "career"] },
+        { "name": "play", "steps": ["#bFree", "#grid button", "#bCardStart"], "wait": 4000 }
+      ],
       "parts": [
         {
           "part": "events",
