@@ -2279,4 +2279,63 @@ export default [
     return bad.length ? 'F-R-004 FAIL: wheels off the road at rest (m): ' + bad.join(' | ') : true;
   },
 },
+// DRAFT — tester-chk-r19 (T8-19, checklist R19: controls come from kit/controls.js only).
+// INSERT as a new object at the end of the exported array in
+// tools/game-check/fixes/apexracer.mjs (after the last test object), adjusting
+// commas. Follows this file's convention: return a failure string on
+// failure, return true on pass (same as tester-chk-r11/r12/r13/r15).
+// Gate: the kit-controls half of R19 (this finding, F-R-006). The let-go=stop
+// half already passes and is verified by measurement, not by this test:
+// T8-19 probe D, centered release at 12.434 m/s (28 mph) on the longest
+// straight, decelerated on pure coast drag to exactly 0 m/s in 7.0
+// game-seconds, stayed 0 for a 5.0 s hold, no creep, no rollback, 0 hits.
+// FAILS on main: the game never loads kit/controls.js (no script tag, no
+// import, no ApexControls/createControls/__controls reference) and wires its
+// own #stick + buttons (apexracer.html lines 2902-2921). PASSES after the
+// migration: the shared file is loaded and live (window.__controls.shared),
+// the kit's stick/buttons are in the DOM, and the game's own #stick is gone.
+{
+  id: 'tester-chk-r19',
+  parts: ['hud'],
+  cat: 'play',
+  name: 'R19: driving controls come from kit/controls.js only',
+  ask: 'In a race, the shared kit controls are live (window.__controls.shared), the kit stick/buttons are in the DOM, and the game own #stick is gone.',
+  async test(page, h) {
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+    const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+    if (!hasErc) return 'tester-chk-r19 FAIL: __erc never appeared (game did not boot)';
+    const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+    if (!hasRace) return 'tester-chk-r19 FAIL: #mRace never appeared';
+    await h.eval(() => { document.querySelector('#mRace').click(); }).catch(() => {});
+    const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+    if (!hasPl) return 'tester-chk-r19 FAIL: place list never appeared';
+    await h.eval(() => { document.querySelector('#plist .pl').click(); }).catch(() => {});
+    const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasSheet) return 'tester-chk-r19 FAIL: race sheet never appeared';
+    await h.eval(() => { document.querySelector('#shGo').click(); }).catch(() => {});
+    const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 120000).catch(() => false);
+    if (!inRace) return 'tester-chk-r19 FAIL: race never built (G.mode never became race)';
+    const res = await h.eval(() => {
+      const live = !!(window.__controls && window.__controls.shared === true);
+      const kitEls = document.querySelectorAll('.apc-joy, .apc-btn, #apcZone, #apcPad, #apcZoneR').length;
+      const kitScript = [...document.scripts].some((s) => /controls\.js/.test(s.src || ''));
+      const apex = typeof window.ApexControls;
+      const ownStick = !!document.getElementById('stick');
+      const ownKnob = !!document.getElementById('knob');
+      const ctl = [...(document.getElementById('ctl')?.children || [])].map((e) => e.id).join(',');
+      return { live, kitEls, kitScript, apex, ownStick, ownKnob, ctl };
+    }).catch(() => null);
+    if (!res) return 'tester-chk-r19 FAIL: could not read the controls state in the race';
+    const bad = [];
+    if (!res.live) bad.push('kit not live (window.__controls.shared is not true)');
+    if (!res.kitScript) bad.push('kit/controls.js script not loaded');
+    if (res.apex === 'undefined') bad.push('window.ApexControls undefined');
+    if (res.kitEls === 0) bad.push('no kit stick/button elements (.apc-joy/.apc-btn/#apcZone/#apcPad) in the DOM');
+    if (res.ownStick) bad.push('game own #stick still present');
+    if (res.ownKnob) bad.push('game own #knob still present');
+    if (bad.length) return 'tester-chk-r19 FAIL: controls are not kit/controls.js only: ' + bad.join('; ') + ' (ctl children: ' + res.ctl + ')';
+    return true;
+  },
+},
 ];
