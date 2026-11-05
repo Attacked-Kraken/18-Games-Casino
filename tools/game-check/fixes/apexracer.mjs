@@ -2338,4 +2338,72 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-chk-r21',
+  parts: ['menu'],
+  cat: 'play',
+  name: 'R21: every menu fits a sideways phone (844x390) with no scrolling',
+  ask: 'At 844x390 the menu, friend, credits and results screens all fit: every primary control is fully inside the 390 px viewport without scrolling.',
+  async test(page, h) {
+    const bad = [];
+    const rect = async (sel) => h.eval((s) => {
+      const el = document.querySelector(s);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { top: +r.top.toFixed(1), bottom: +r.bottom.toFixed(1), visible: getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0 };
+    }, sel).catch(() => null);
+    const check = async (screen, sel, label) => {
+      const r = await rect(sel);
+      if (!r) { bad.push(screen + ' ' + label + ' (' + sel + ') missing'); return; }
+      if (!r.visible) { bad.push(screen + ' ' + label + ' (' + sel + ') not visible'); return; }
+      if (r.bottom > 390) bad.push(screen + ' ' + label + ' bottom ' + r.bottom + ' px (> 390)');
+    };
+    // 844x390 viewport (the checklist measure).
+    try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+    const vp = await h.eval(() => ({ w: window.innerWidth, h: window.innerHeight })).catch(() => null);
+    if (!vp || vp.w !== 844 || vp.h !== 390) return 'tester-chk-r21 FAIL: viewport is not 844x390 (got ' + (vp ? vp.w + 'x' + vp.h : 'unknown') + '), cannot measure R21';
+    // Friend screen needs a saved username (fresh profiles bounce to menu).
+    await h.eval(() => { try { localStorage.setItem('apexracer_username', 'Tester'); } catch (e) {} return true; }).catch(() => {});
+    await page.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
+    const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+    if (!hasErc) return 'tester-chk-r21 FAIL: __erc never appeared (game did not boot)';
+    await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+    const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+    if (!hasRace) return 'tester-chk-r21 FAIL: #mRace never appeared';
+    // Main menu (passing control).
+    await check('menu', '#mRace', 'PLAY');
+    // Friend screen.
+    await h.eval(() => { document.querySelector('#mFriends').click(); }).catch(() => {});
+    const hasFriend = await h.poll(() => h.eval(() => { const f = document.querySelector('#friend'); return f && getComputedStyle(f).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasFriend) return 'tester-chk-r21 FAIL: friend screen never opened';
+    await check('friend', '#fGo', 'Race this friend');
+    await check('friend', '#fX', 'Back');
+    await h.eval(() => { document.querySelector('#fX').click(); }).catch(() => {});
+    // Credits screen.
+    await h.eval(() => { document.querySelector('#mCredits').click(); }).catch(() => {});
+    const hasCredits = await h.poll(() => h.eval(() => { const c = document.querySelector('#credits'); return c && getComputedStyle(c).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasCredits) return 'tester-chk-r21 FAIL: credits screen never opened';
+    await check('credits', '#crBack', 'Back');
+    await h.eval(() => { document.querySelector('#crBack').click(); }).catch(() => {});
+    // Race sheet + results (needs a race build).
+    await h.eval(() => { document.querySelector('#mRace').click(); }).catch(() => {});
+    const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+    if (!hasPl) return 'tester-chk-r21 FAIL: place list never appeared';
+    await h.eval(() => { document.querySelector('#plist .pl').click(); }).catch(() => {});
+    const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasSheet) return 'tester-chk-r21 FAIL: race sheet never appeared';
+    await check('race-sheet', '#shGo', 'Start Race');
+    await h.eval(() => { document.querySelector('#shGo').click(); }).catch(() => {});
+    const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 120000).catch(() => false);
+    if (!inRace) return 'tester-chk-r21 FAIL: race never built (G.mode never became race)';
+    await h.eval(() => { if (window.__erc && window.__erc.showResults) window.__erc.showResults(); return true; }).catch(() => {});
+    const hasResults = await h.poll(() => h.eval(() => { const r = document.querySelector('#result'); return r && getComputedStyle(r).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasResults) return 'tester-chk-r21 FAIL: results screen never opened';
+    await check('results', '#rAgain', 'Race again');
+    await check('results', '#rNext', 'Next place');
+    await check('results', '#rGar', 'Garage');
+    if (bad.length) return 'tester-chk-r21 FAIL: menus overflow a sideways phone (844x390): ' + bad.join('; ');
+    return true;
+  },
+},
 ];
