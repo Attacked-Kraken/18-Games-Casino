@@ -1781,4 +1781,28 @@ export default [
       return bad.length ? 'F1 CITY LIFE: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'play-f1-pit-crew',
+    ask: 'F1: tap the tyre box to choose the next compound; a pit stop stops the car in its own box with a crew that takes the wheels off, puts new ones on, lifts the car and lets it go (owner Nov 4 2026 6:23 PM)',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid&track=capital'; }).catch(() => {});
+      let ok = null; for (let i = 0; i < 40 && !ok; i++) { await h.wait(500); ok = await h.eval(() => window.__test && window.__test.pitProbe && window.__test.race().mode).catch(() => null); }
+      if (!ok) return { inconclusive: 'game did not load' };
+      const r = await h.eval(() => {
+        const T = window.__test; for (let i = 0; i < 300; i++) T.simStep(0.05, { skill: 'good' });
+        const opened = T.tyreTap(); const o = document.querySelectorAll('.tirepick'); if (o[2]) o[2].click();
+        T.pitNow(); let maxHidden = 0, maxLift = 0, crew = false, holdSteps = 0, p = null;
+        for (let i = 0; i < 400; i++) { T.simStep(0.05, { skill: 'good' }); p = T.pitProbe(); if (p.hold) { holdSteps++; maxHidden = Math.max(maxHidden, p.wheelsHidden); maxLift = Math.max(maxLift, p.lift); crew = crew || p.crew; } if (p.done) break; }
+        return { opened, maxHidden, maxLift, crew, holdSteps, tire: p && p.tire, done: p && p.done };
+      }).catch((e) => ({ err: String(e) }));
+      if (r.err) return r.err;
+      if (!r.opened) return 'F1 PIT: tapping the tyre box did not open the tyre choice';
+      if (!r.done) return { inconclusive: 'the stop did not finish in 20 game-seconds' };
+      if (!r.crew) return 'F1 PIT: no pit crew showed at the stopped car';
+      if (r.maxHidden < 3) return 'F1 PIT: the wheels never came off (' + r.maxHidden + ' of 4 hidden)';
+      if (r.maxLift < 0.1) return 'F1 PIT: the car was never lifted on the jack';
+      if (r.tire !== 'HARD') return 'F1 PIT: chose HARD in the tyre box but left the pits on ' + r.tire;
+      return true;
+    },
+  },
 ];

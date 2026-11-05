@@ -122,7 +122,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #lapbox { position:absolute; left:12px; top:12px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; font-size:14px; font-weight:700; }
   #lapbox .pos { font-size:26px; font-weight:900; color:#ffd76a; }
   #gapbox { position:absolute; left:12px; top:96px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:10px; padding:6px 10px; font-size:12px; color:#9fd8ff; }
-  #tirebox { position:absolute; right:12px; top:12px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
+  #tirebox { cursor:pointer; pointer-events:auto; position:absolute; right:12px; top:12px; background:#060b14cc; border:1px solid #2a3f5f; border-radius:12px; padding:8px 12px; text-align:right; font-size:13px; }
   #tirebox .cmp { font-weight:900; font-size:16px; }
   .wearbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
   .wearbar i { display:block; height:100%; background:linear-gradient(90deg,#37d67a,#ffd76a 60%,#ff5a5a); }
@@ -258,7 +258,7 @@ setTimeout(function(){
 <div id="hud" class="hidden">
   <div id="lapbox"><span class="pos">P1</span><br><span id="lapTxt">LAP 1/10</span></div>
   <div id="gapbox">GAP —</div>
-  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div></div>
+  <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
@@ -1917,6 +1917,39 @@ function mergeCarBody(g){
 }
 
 
+/* owner Nov 4 2026 6:23 PM 'pit needs to show the cars stop in their pit lane and the crews changing tires and fueling and the driver taking off': a crew of 9 around the stopped car - four tyre gunners (old wheel off, new compound on), a jack man (car lifts), a fuel man with a hose, a lollipop man (red while stopped, green to go) */
+const PitCrew = {
+  hits:0, done:0,
+  mk(car){
+    const m=car.mesh, g=new THREE.Group(), k=1/m.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color}), skin=new THREE.MeshLambertMaterial({color:0xe8b894}), helm=new THREE.MeshLambertMaterial({color:0xffffff});
+    g.scale.setScalar(k); g.userData.tyres=[]; g.userData.guns=[];
+    const man=(x,z,rot)=>{ const p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; };
+    const wh=m.userData.wheels||[];
+    wh.forEach((w,i)=>{ const wp=w.position, side=wp.z>=0?1:-1, wx=wp.x;
+      const gun=man(wx,side*1.5,0); g.userData.guns.push({p:gun,home:new THREE.Vector3(wx,0,side*1.5),side,wx,wy:wp.y});
+      const t=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.3,14),new THREE.MeshLambertMaterial({color:0x111111})); t.rotation.x=Math.PI/2; const band=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.03,6,14),new THREE.MeshBasicMaterial({color:0xffffff})); band.position.z=0.16*side; t.add(band); t.userData.band=band; t.visible=false; g.add(t); g.userData.tyres.push(t); });
+    const jack=man(-1.8,0,0); g.userData.jack=jack;
+    const fuel=man(-3.4,1.4,0); g.userData.fuel=fuel; const hose=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.9,6),new THREE.MeshLambertMaterial({color:0x222222})); hose.rotation.z=Math.PI/2.8; hose.position.set(-2.6,0.8,0.7); g.add(hose);
+    const lol=man(2.6,-1.1,0); g.userData.lol=lol; const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.7,5),new THREE.MeshLambertMaterial({color:0x888888})); pole.position.set(0.3,1.1,0); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.05,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(0.3,2.0,0); lol.add(pole,disc); lol.userData.disc=disc;
+    m.add(g); return g;
+  },
+  start(car){ try{ if(!car.crew) car.crew=this.mk(car); car.crew.visible=true; car.crew.userData.disc=car.crew.userData.lol.userData.disc; car.crew.userData.disc.material.color.setHex(0xd21f26); car._crewLift=0; this.hits++; window.__f1pitcrew=(window.__f1pitcrew||0)+1; }catch(e){ console.warn('pitcrew',e); } },
+  update(car,dt){ const g=car.crew; if(!g||!car.pitHold) return; try{
+    const u=1-Math.max(0,car.pitTimer)/(car.pitT0||2.4), wh=car.mesh.userData.wheels||[], ease=x=>Math.max(0,Math.min(1,x));
+    const rush=ease(u/0.15), off=ease((u-0.15)/0.25), onn=ease((u-0.45)/0.3), go=u>0.9;
+    car._crewLift=0.22*Math.min(ease(u/0.12),1-ease((u-0.85)/0.12));
+    car.mesh.position.y+=car._crewLift;
+    g.userData.guns.forEach((gu,i)=>{ const w=wh[i], t=g.userData.tyres[i]; if(!w) return;
+      const reach=gu.side*(1.5-0.5*rush*(1-ease((u-0.8)/0.15))); gu.p.position.set(gu.wx, 0, reach);
+      // wheel is off between 40% of the 'off' phase and the start of 'on'
+      const wheelOff=off>0.4 && onn<0.5; w.visible=!wheelOff;
+      t.visible=off>0.15 && onn<0.95; t.position.set(gu.wx, gu.wy+0.1, gu.side*(1.15+ (1-onn)*0.0)); t.userData.band.material.color.set(onn>0.5?TIRES[car.pitTireChoice&&car.isPlayer?car.pitTireChoice:(car.pitChoice||'MEDIUM')].color:'#888888'); });
+    g.userData.fuel.position.z=1.4-0.3*Math.sin(u*40)*0.1;
+    g.userData.lol.userData.disc.material.color.setHex(go?0x2fa84f:0xd21f26);
+  }catch(e){ console.warn('pitcrew upd',e); } },
+  end(car){ try{ const g=car.crew; if(!g) return; for(const w of (car.mesh.userData.wheels||[])) w.visible=true; g.userData.tyres.forEach(t=>t.visible=false); g.userData.lol.userData.disc.material.color.setHex(0x2fa84f); this.done++; window.__f1pitdone=(window.__f1pitdone||0)+1; setTimeout(()=>{ if(g) g.visible=false; },900); }catch(e){} }
+};
+
 class Car {
   constructor(name, team, isPlayer, skill){
     this.name=name; this.team=team; this.isPlayer=!!isPlayer;
@@ -1957,7 +1990,7 @@ class Car {
     const pitInS=Track.cfg.pitIn*Track.length, pitOutS=Track.cfg.pitOut*Track.length;
     if(this.pitIntent && !this.inPits && !this.finished){
       const sN=((this.s%Track.length)+Track.length)%Track.length;
-      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this.pitBoxS=pitInS+110; this.pitStopDone=false;
+      if(sN>pitInS-40 && sN<pitInS+120){ this.inPits=true; this.pitHold=false; this.pitBoxS=pitInS+30+(Math.max(0,TEAMS.indexOf(this.team))%10)*(170/9); { const L0=Track.length, dEnt=((this.pitBoxS-sN+L0*1.5)%L0)-L0/2; if(dEnt<4) this.pitBoxS=sN+6; } this.pitStopDone=false;
         if(this.isPlayer) $('pitMenu').classList.add('hidden'); }
     }
     if(this.inPits){
@@ -1965,18 +1998,20 @@ class Car {
       const targetV=22;
       if(this.pitHold){
         this.pitTimer-=dt; this.v=0;
-        if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); }
+        if(this.pitTimer<=0){ this.pitHold=false; this.applyPitStop(); PitCrew.end(this); }
       } else {
         this.v += clamp(targetV-this.v, -30*dt, 12*dt);
       }
-      this.d = lerp(this.d, Track.pitDAt(this.s), Math.min(1,dt*2.5));
+      { const L0=Track.length, sM=((this.s%L0)+L0)%L0, toBox=((this.pitBoxS-sM+L0*1.5)%L0)-L0/2; // passing lane 3.5 m nearer the track, the car swings into its own box only to stop (Nov 4 2026: cars no longer drive through a stopped car)
+        const lane=Track.gp?0:3.5*(this.pitStopDone?1:clamp(toBox/25,0,1));
+        this.d = lerp(this.d, Track.pitDAt(this.s)-lane, Math.min(1,dt*2.5)); }
       this.s+=this.v*dt;
       const sN=((this.s%Track.length)+Track.length)%Track.length;
-      if(!this.pitStopDone && sN>=this.pitBoxS && sN<this.pitBoxS+40){
-        this.pitStopDone=true; this.pitHold=true; this.pitTimer=Race.PIT_TIME;
+      if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
+        this.pitStopDone=true; this.pitHold=true; this.pitTimer=Race.PIT_TIME; this.pitT0=Race.PIT_TIME; PitCrew.start(this);
       }
       if(sN>pitOutS && sN<pitOutS+60){ this.inPits=false; this.pitIntent=false; }
-      this.placeMesh(dt); return;
+      this.placeMesh(dt); PitCrew.update(this,dt); return;
     }
     // --- normal driving ---
     const grip=this.gripNow();
@@ -2153,6 +2188,7 @@ function initInput(){
   Input.keys=keys;
   $('btnDRS').addEventListener('touchstart',e=>{e.preventDefault();Race.toggleDRS();},{passive:false});
   $('btnDRS').addEventListener('mousedown',e=>{e.preventDefault();Race.toggleDRS();});
+  { const tb=$('tirebox'); const open=e=>{ e.preventDefault(); e.stopPropagation(); Race.openTyreChoice(); }; tb.addEventListener('touchstart',open,{passive:false}); tb.addEventListener('mousedown',open); } // owner Nov 4 2026: tap the tyre box to choose the compound for the next stop
   $('btnPit').addEventListener('touchstart',e=>{e.preventDefault();Race.wantPit();},{passive:false});
   $('btnPit').addEventListener('mousedown',e=>{e.preventDefault();Race.wantPit();});
   $('btnCam').addEventListener('touchstart',e=>{e.preventDefault();Race.cycleCam();},{passive:false});
@@ -2418,6 +2454,7 @@ const Race = {
     }
     else banner('PIT ENTRY AHEAD','Arm it near the pit entry',1100,'#8fa8c8');
   },
+  openTyreChoice(){ if(!this.player||this.mode!=='race'||this.player.inPits) return; this.showPitMenu(); },
   showPitMenu(){
     const opts=this.weather.wet>0.25?['INTER','WET']:['SOFT','MEDIUM','HARD'];
     const box=$('pitTires'); box.innerHTML='';
@@ -2425,11 +2462,12 @@ const Race = {
       const d=document.createElement('div'); d.className='tirepick'+(t===this.player.pitTireChoice?' sel':'');
       d.innerHTML=`<span style="color:${TIRES[t].color}">●</span> ${t}`;
       d.onclick=()=>{ this.player.pitTireChoice=t;
-        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
+        [...box.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); const n=$('tireNext'); if(n){ n.textContent='NEXT STOP: '+t; n.style.color=TIRES[t].color; } banner('NEXT STOP: '+t,'Tyres change when you pit',1100,TIRES[t].color);
         setTimeout(()=>$('pitMenu').classList.add('hidden'),350); };
       box.appendChild(d);
     }
     $('pitMenu').classList.remove('hidden');
+    if(!this._pmClose){ this._pmClose=true; $('pitMenu').addEventListener('click',e=>{ if(e.target===$('pitMenu')) $('pitMenu').classList.add('hidden'); }); }
   },
   cycleCam(){ this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
   noteOffTrack(dt){
@@ -3245,6 +3283,9 @@ function GPPlay(name, vol){ if(GP.ev && GP.ev.play) GP.ev.play(name, vol); }
 GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
+  pitProbe: () => { const p=Race.player; return p?{inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
+  pitNow: (t) => { const p=Race.player; if(!p) return false; if(t) p.pitTireChoice=t; p.pitIntent=true; p.s=Track.cfg.pitIn*Track.length-60; p.v=30; return true; },
+  tyreTap: () => { $('tirebox').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return !$('pitMenu').classList.contains('hidden'); },
   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
   scenery: () => { const gb = Track.groundBase, bases = []; Track.group.traverse(o => { if (o.isInstancedMesh && o.geometry.type === 'BoxGeometry') { o.geometry.computeBoundingBox(); if (Math.abs(o.geometry.boundingBox.min.y) < 1e-6) { const m = new THREE.Matrix4(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); bases.push(m.elements[13]); } } } }); return { ground: gb, n: bases.length, maxBase: bases.length ? Math.max(...bases) : null }; },
   stripe: () => { let ok = null; Track.group.traverse(o => { if (o.isMesh && o.renderOrder === 2 && o.material.map) ok = { poly: !!o.material.polygonOffset, map: true }; }); return ok; },
