@@ -1444,6 +1444,23 @@ function makeGlbCar(id, cfg, o = {}) {
     model.updateWorldMatrix(true, true); const tb = new THREE.Box3(); let anyT = false;
     model.traverse((q) => { if (q.isMesh && q.material === tireMat) { tb.expandByObject(q); anyT = true; } });
     if (anyT && isFinite(tb.min.y) && Math.abs(tb.min.y) > 0.01) model.position.y -= tb.min.y; }
+  { /* F-R-004 (PART: wheels): the box above is the tyre meshes' BOUNDING box, which reads 0 where the tyre VERTICES sit 0.04-0.08 m higher (tokii, Goblin, Muscle floated). Settle on the rendered tyre vertices; if the front axle is higher than the rear (Muscle nose-up), level the car on its tyres first. */
+    model.updateWorldMatrix(true, true);
+    const pinv = new THREE.Matrix4(); if (model.parent) { model.parent.updateWorldMatrix(true, false); pinv.copy(model.parent.matrixWorld).invert(); }
+    const tyreLow = () => { const v = new THREE.Vector3(), m4 = new THREE.Matrix4(); let lo = Infinity, fr = Infinity, rr = Infinity, fx = 0, rx = 0;
+      model.traverse((q) => { if (!q.isMesh || q.material !== tireMat || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; m4.multiplyMatrices(pinv, q.matrixWorld);
+        for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(m4); if (v.y < lo) lo = v.y; if (v.x > 0) { if (v.y < fr) { fr = v.y; fx = v.x; } } else if (v.y < rr) { rr = v.y; rx = v.x; } } });
+      return { lo, fr, rr, fx, rx }; };
+    let tl = tyreLow();
+    if (isFinite(tl.fr) && isFinite(tl.rr) && Math.abs(tl.fr - tl.rr) > 0.01 && tl.fx - tl.rx > 1) {
+      model.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.atan2(tl.fr - tl.rr, tl.fx - tl.rx)));
+      model.updateWorldMatrix(true, true); tl = tyreLow(); }
+    if (isFinite(tl.lo) && Math.abs(tl.lo) > 0.001) model.position.y -= tl.lo;
+    { /* a body part a few mm under the tyres (Muscle) must not sink into the road: lift by it, at most 1 cm */
+      model.updateWorldMatrix(true, true); const v = new THREE.Vector3(), m4 = new THREE.Matrix4(); let all = Infinity;
+      model.traverse((q) => { if (!q.isMesh || !q.geometry || !q.geometry.attributes.position) return; const pa = q.geometry.attributes.position; m4.multiplyMatrices(pinv, q.matrixWorld);
+        for (let i = 0; i < pa.count; i++) { v.fromBufferAttribute(pa, i).applyMatrix4(m4); if (v.y < all) all = v.y; } });
+      if (isFinite(all) && all < -0.001 && all > -0.01) model.position.y -= all; } }
   /* G-145 (owner): the G-70 light bars are GONE - the cars' OWN headlights, brighter.
      Light-named meshes (Patriot Lights, Tokii Headlight/TailLight, SHC Led_light) get
      lamp-glow materials, split front/rear by where they sit. */
