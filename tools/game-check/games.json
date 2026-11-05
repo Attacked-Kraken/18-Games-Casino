@@ -249,6 +249,7 @@
     {
       "file": "apexracer.html",
       "name": "Exotic Racer Club",
+      "controls": "shared",
       "start": [
         "#mRace",
         "#plist .pl",

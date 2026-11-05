@@ -182,6 +182,34 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #menu #mbtns .neo { min-height:36px; padding-top:4px; padding-bottom:4px; } #menu #mbtns { gap:1px; }
   /* Oct 27 2026 VP: short sideways phone (844x390) - six 44 px buttons + the name row do not fit in one column (Save was 26 px off the screen), so the column becomes two columns: every control stays 44 px and fully on screen */
   @media (max-height:500px) { #mcol { width:min(340px,46vw); top:calc(96px + var(--sat)); } #menu #mbtns { display:grid; grid-template-columns:1fr 1fr; gap:4px; } #menu #mbtns .wide { grid-column:1/3; order:0; padding:6px; font-size:17px; } #menu #mbtns #mRace { order:0; } #menu #mbtns #mCredits { grid-column:1/3; } #menu #who { margin-top:4px; } }
+  /* F-R-007 (PART: menu): Friend, Credits and Results fit a sideways phone (844x390) with no scrolling (STUDIO-STANDARD "Fits the screen", R21). Portrait phones show the stage turned 90 degrees, so the same rules apply there. */
+  @media (max-height:420px) and (orientation:landscape), (orientation:portrait) and (max-width:420px) {
+    #credits, #friend, #result { padding:6px; }
+    #credits .box { width:min(820px,100%); max-width:none !important; padding:8px 12px; display:flex; flex-direction:column; gap:4px; }
+    #credits h2 { margin:0; font-size:17px; line-height:1.1; text-align:center; }
+    #credits .box > div { column-count:3; column-gap:14px; font-size:10px !important; line-height:1.28 !important; }
+    #credits .box > div > div { margin-top:3px !important; break-inside:avoid; overflow-wrap:anywhere; }
+    #credits .row { margin:0; } #credits #crBack { padding:7px 10px; font-size:12px; border-radius:10px; }
+    #friend .box { width:min(560px,100%); padding:8px 14px; gap:3px; }
+    #friend h3 { font-size:17px !important; line-height:1.1; }
+    #friend .box > div { font-size:11px !important; line-height:1.2; }
+    #friend #fCode { font-size:17px; margin:0; line-height:1.2; }
+    #friend input.code { font-size:18px; padding:5px; }
+    #friend .neo { padding:8px 10px; font-size:13px; border-radius:11px; }
+    #friend #fErr { min-height:0; font-size:11px; }
+    #result .box { width:min(560px,100%); padding:8px 14px; max-height:none; overflow:visible; }
+    #rTitle { font-size:24px; margin:0; line-height:1.15; }
+    #rSub { font-size:11px !important; }
+    #result .rt { font-size:11px; margin:3px 0; }
+    #result .rt td { padding:2px 5px; }
+    #rGain { font-size:14px; margin:2px 0 4px; }
+    #result .row { gap:6px; margin-top:0 !important; }
+    #result .neo { padding:8px 6px; font-size:12px; border-radius:10px; }
+    #result .box .row:nth-last-child(2) { display:contents; }
+    #result .box .row:nth-last-child(1) { display:contents; }
+    #result .box { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    #result .box > #rTitle, #result .box > #rSub, #result .box > #rTab, #result .box > #rGain { grid-column:1/5; }
+  }
 </style>
 </head>
 <body>
@@ -2905,8 +2933,8 @@ function stickReset() { K.sx = 0; K.sy = 0; K.brake = 0; K.drift = 0; K.nos = 0;
 function syncKit() { const c = KIT.read(), x = c.x; K.sx = Math.abs(x) < 0.1 ? 0 : (x - Math.sign(x) * 0.1) / 0.9; K.sy = -c.y; K.brake = c.buttons.brake ? 1 : 0; K.drift = c.buttons.drift ? 1 : 0; K.nos = c.buttons.nos ? 1 : 0; }
 $('bCam').onclick = () => { if (!R) return; R.camMode = (R.camMode + 1) % 3; S.cam = R.camMode; save(); };
 $('bPause').onclick = () => pause();
-addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); });
-/* owner Nov 1 2026: "an easier way to rotate the car, it doesn't spin correctly" - on a portrait phone the stage is turned 90 degrees, so a finger sweep along the screen has to be turned the same way (like the stick), and a sweep now turns the car faster */
+addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); if (e.code === 'Escape') { const b = ['fX', 'crBack'].map($).find((x) => x && x.offsetParent !== null); if (b) b.click(); } });
+/* owner Nov 1 2026: "an easier way to rotate the car, it doesn't spin correctly" - on a portrait phone the stage is turned 90 degrees, so a finger sweep along the screen has to be turned the same way (like the driving pad), and a sweep now turns the car faster */
 function dragStage(e, d) { let x = e.clientX - d.x, y = e.clientY - d.y; if (window.innerHeight > window.innerWidth) { const t = x; x = y; y = -t; } return { x, y }; }
 canvas.addEventListener('pointerdown', (e) => { if (G.mode !== 'garage' && G.mode !== 'menu') return; gOrb.drag = { x: e.clientX, y: e.clientY, th: gOrb.th, ph: gOrb.ph }; gOrb.auto = 0; audioInit(); });
 addEventListener('pointermove', (e) => { const d = gOrb.drag; if (!d) return; if (G.mode === 'menu') { const dx = dragStage(e, d).x; d.x = e.clientX; d.y = e.clientY; G.mSpin = (G.mSpin || 0) + dx * 0.012; G.mSpinV = clamp(dx * 0.9, -9, 9); return; } const ds = dragStage(e, d); gOrb.th = d.th - ds.x * 0.012; gOrb.ph = clamp(d.ph + ds.y * 0.005, 0.03, 0.9); gOrb.tt = null; });

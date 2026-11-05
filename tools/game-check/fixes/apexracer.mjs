@@ -2406,4 +2406,19 @@ export default [
     return true;
   },
 },
+{
+  id: 'play-no-own-stick-code-f-r-006',
+  parts: ['hud'],
+  cat: 'play',
+  name: 'F-R-006: the robot own-stick detector finds no own stick code in the page',
+  ask: 'The page loads kit/controls.js and no pointerdown/touchstart handler sits near the words stick/joy/knob/thumb (the garage orbit-drag comment must not trip the detector).',
+  async test(page, h) {
+    const src = await h.eval(() => fetch(location.pathname).then((r) => r.text())).catch(() => '');
+    if (!src) return 'play-no-own-stick-code-f-r-006 FAIL: could not read the page source';
+    const re = /addEventListener\(\s*['"](pointerdown|touchstart)['"]/g; let m; const hits = [];
+    while ((m = re.exec(src))) { const near = src.slice(Math.max(0, m.index - 500), m.index + 300); if (/stick|joy|knob|thumb/i.test(near)) hits.push(src.slice(0, m.index).split('\n').length); }
+    if (hits.length) return 'play-no-own-stick-code-f-r-006 FAIL: own-stick detector fires at line(s) ' + hits.join(', ');
+    return true;
+  },
+},
 ];
