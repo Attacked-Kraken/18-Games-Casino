@@ -82,6 +82,10 @@
         "#qualiSkip",
         "#raceBtn"
       ],
+      "views": [
+        { "name": "menu", "steps": [], "wait": 5000, "parts": ["menus", "weekend"] },
+        { "name": "play", "steps": ["#quickBtn", "#toTeamBtn", "#startBtn", "#qualiSkip", "#raceBtn"], "wait": 4000 }
+      ],
       "parts": [
         {
           "part": "car",
@@ -336,12 +340,14 @@
       "pictures": [
         {
           "name": "garage",
+          "parts": ["garage", "rims", "wheels", "wraps", "paint", "body", "menu"],
           "steps": [
             "#mGarage"
           ]
         },
         {
           "name": "garage-rims",
+          "parts": ["garage", "rims", "wheels", "wraps", "paint", "body", "menu"],
           "steps": [
             "#mGarage",
             ".gt[data-t=\"rim\"]",
@@ -350,6 +356,7 @@
         },
         {
           "name": "garage-rimred",
+          "parts": ["garage", "rims", "wheels", "wraps", "paint", "body", "menu"],
           "steps": [
             "#mGarage",
             ".gt[data-t=\"rimCol\"]",
