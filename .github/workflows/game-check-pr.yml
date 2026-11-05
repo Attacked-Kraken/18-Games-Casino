@@ -23,6 +23,7 @@ jobs:
       games: ${{ steps.pick.outputs.games }}
       list: ${{ steps.pick.outputs.list }}
       mode: ${{ steps.pick.outputs.mode }}
+      looks: ${{ steps.pick.outputs.looks }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,6 +95,11 @@ jobs:
           # backs out a merge that breaks a game. To play PRs again the owner must say so (set PLAY_PRS=1 here).
           if [ "${PLAY_PRS:-}" != "1" ]; then LIST=$(echo "$LIST" | tr ',' '\n' | grep -x 'models' | paste -sd ',' || true); MODE="no-play"; fi
           JSON=$(echo "$LIST" | tr ',' '\n' | grep -v '^$' | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
+          # LOOK GUARD (VP Nov 5 2026, owner "build our own ... any and all games"): every game PAGE this pull request changes is LOOKED at - main's
+          # version and this one side by side, same pictures, no playing (tools/game-check/look-guard.mjs). Pull requests are still not played.
+          LOOKS=$(echo "$CH" | grep -E '^apex[a-z0-9]*\.html$' | sort -u | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.stringify(s.split('\n').filter(Boolean))))")
+          [ "${{ github.event_name }}" = "pull_request" ] || LOOKS='[]'
+          echo "looks=$LOOKS" >> $GITHUB_OUTPUT
           echo "games=$JSON" >> $GITHUB_OUTPUT
           echo "list=$LIST" >> $GITHUB_OUTPUT
           echo "mode=$MODE" >> $GITHUB_OUTPUT
@@ -197,9 +203,47 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node tools/game-check/progress-update.mjs
 
+  look:
+    needs: plan
+    if: needs.plan.outputs.looks != '[]' && needs.plan.outputs.looks != ''
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.48.2-noble
+      options: --ipc=host
+    timeout-minutes: 12      # a look is ~2 min per game; it never plays
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        game: ${{ fromJson(needs.plan.outputs.looks) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4          # main's version of the same game, to look at side by side
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+      - name: Test browser (already in the image)
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+        run: npm install --no-save --no-package-lock playwright@1.48.2
+      - name: Look at ${{ matrix.game }} (main vs this pull request)
+        continue-on-error: true      # a robot problem here is yellow, never a failed check - look-guard writes its own verdict file
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BRANCH: ${{ github.head_ref || github.ref_name }}
+        run: |
+          mkdir -p look-out
+          node tools/game-check/look-guard.mjs "${{ matrix.game }}" base . look-out "$PR_TITLE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: look-${{ matrix.game }}
+          path: look-out
+          if-no-files-found: ignore
+
   check:
     name: check
-    needs: [plan, play]
+    needs: [plan, play, look]
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -224,6 +268,12 @@ jobs:
         with:
           pattern: play-*
           path: parts
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: look-*
+          path: look-parts
+          merge-multiple: true
       - name: Put the results together and judge
         env:
           PR_BRANCH: ${{ github.head_ref || github.ref_name }}
@@ -234,6 +284,7 @@ jobs:
         run: |
           node tools/game-check/merge-results.mjs parts game-check-out "${{ needs.plan.outputs.list }}"
           echo "Mode: ${{ needs.plan.outputs.mode }} (played side by side)"
+          [ -d look-parts ] && cp -r look-parts/. game-check-out/ || true     # look guard verdict files + before / after pictures
           node tools/game-check/judge.mjs game-check-out/results.json base-results.json changed.txt game-check-out
       - name: Check status - PASSED / FAILED + reason (one readout the Muse reads)
         if: always()      # also on a robot re-run (workflow_dispatch): #1616's passed re-run left a stale ROBOT comment (Oct 24 9:00 PM)
