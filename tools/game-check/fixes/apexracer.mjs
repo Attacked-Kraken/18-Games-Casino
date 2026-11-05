@@ -2224,4 +2224,59 @@ export default [
     return true;
   },
 },
+// F-R-004 (PART: wheels): cars rested 0.04-0.08 m ABOVE the road because makeGlbCar settled them on the tyres' bounding box, not their vertices.
+{
+  id: 'play-wheels-settle-on-tyres',
+  parts: ['wheels'],
+  cat: 'play',
+  name: 'F-R-004: every car with wheels rests on the road in the garage (tyre vertices within [0, 0.03] m)',
+  ask: 'Garage census of the 12 wheeled models: each wheel quadrant lowest vertex within [0, 0.03] m of the floor at rest (the Hover Racer has no wheels by design and is left to F-R-005).',
+  async test(page, h) {
+    const IDS = ['vanta', 'kestrel', 'brute', 'nova', 'zenith', 'phantom', 'goblin', 'phoenix', 'duke', 'muscle', 'titan', 'vortex'];
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    await h.eval(() => {
+      window.__f4q = (root) => {
+        root.updateMatrixWorld(true);
+        const e = root.matrixWorld.elements, quads = { LF: null, RF: null, LRr: null, RRr: null };
+        root.traverse((m) => {
+          if (!m.geometry || !m.geometry.attributes || !m.geometry.attributes.position) return;
+          const p = m.geometry.attributes.position, mw = m.matrixWorld.elements;
+          let mnY = 1e9, mxY = -1e9, mnX = 1e9, mxX = -1e9, mnZ = 1e9, mxZ = -1e9;
+          const W = [];
+          for (let i = 0; i < p.count; i++) {
+            const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+            const w = [mw[0] * x + mw[4] * y + mw[8] * z + mw[12], mw[1] * x + mw[5] * y + mw[9] * z + mw[13], mw[2] * x + mw[6] * y + mw[10] * z + mw[14]];
+            W.push(w); mnY = Math.min(mnY, w[1]); mxY = Math.max(mxY, w[1]); mnX = Math.min(mnX, w[0]); mxX = Math.max(mxX, w[0]); mnZ = Math.min(mnZ, w[2]); mxZ = Math.max(mxZ, w[2]);
+          }
+          if ((mxY - mnY) < 0.002 && (mxX - mnX) > 1 && (mxZ - mnZ) > 1) return; /* the flat fake shadow blob */
+          for (const w of W) {
+            const ox = w[0] - e[12], oy = w[1] - e[13], oz = w[2] - e[14];
+            const f = ox * e[8] + oy * e[9] + oz * e[10], r = ox * e[0] + oy * e[1] + oz * e[2];
+            const q = f >= 0 ? (r < 0 ? 'LF' : 'RF') : (r < 0 ? 'LRr' : 'RRr');
+            if (quads[q] === null || w[1] < quads[q]) quads[q] = w[1];
+          }
+        });
+        return quads;
+      };
+    });
+    const bad = [];
+    for (const id of IDS) {
+      await h.eval((id) => {
+        const E = window.__erc; E.S.cur = id;
+        if (!E.S.cars[id]) E.S.cars[id] = { paint: '#9d0f1f', fin: 'metal', rim: 0, rimCol: '#c9cdd6', tire: 0, wheel: 0, eng: 0, turbo: 0, nos: 0, aero: 0, kit: 0, glow: '', tint: 1, cal: '#e01b2b', wrap: 'none' };
+        E.openGarage();
+      }, id);
+      let prev = -1, stable = 0;
+      for (let i = 0; i < 60 && stable < 2; i++) {
+        const n = await h.eval(() => { const r = window.__reality && window.__reality.player; let c = 0; if (r) r.traverse((q) => { if (q.geometry) c++; }); return c; }).catch(() => 0);
+        if (n > 0 && n === prev) stable++; else { stable = 0; prev = n; }
+        await sleep(700);
+      }
+      const q = await h.eval(() => window.__f4q(window.__reality.player));
+      const off = Object.entries(q).filter(([, v]) => v === null || v < -0.001 || v > 0.03).map(([k, v]) => k + '=' + (v === null ? 'none' : v.toFixed(4)));
+      if (off.length) bad.push(id + ' ' + off.join(' '));
+    }
+    return bad.length ? 'F-R-004 FAIL: wheels off the road at rest (m): ' + bad.join(' | ') : true;
+  },
+},
 ];
