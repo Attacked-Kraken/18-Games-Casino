@@ -901,6 +901,7 @@ function setPhase(p){
   $('batUI').style.display = (p==='flight' && playerBatting()) ? 'flex' : 'none';
   $('aimWrap').style.display = (p==='aim') ? 'flex' : 'none';
   musPhase(p);
+  try { if (viewMode==='close' && camMode==='pitch') { applyCam(targetCam()); camBlend = 0; } } catch (e) {}   // F-B-002: CLOSE cuts to its pose the moment the phase changes
 }
 
 /* ---------- PLAYER PITCHING ---------- */
@@ -1610,6 +1611,10 @@ function loop(){
     camLook.lerp(_camTmp.set(ball.position.x, 1, ball.position.z), 0.08);
     camTgtP.set(ball.position.x*0.55, 24, 26 + ball.position.z*0.35);   // G-151: rides on the new FIELD_CAM height/depth
     camera.position.lerp(camTgtP, 0.05);
+  }
+  // F-B-002: CLOSE view re-reads the pose every frame (setCam runs in 'call'/'bip'/'start', never in a pitching or batting phase, so a pose picked there was always FIELD_CAM); it cuts to PITCH_CLOSE_CAM / BAT_CAM as soon as the phase is pitching / batting
+  if (viewMode==='close' && camMode==='pitch'){
+    applyCam(targetCam()); camBlend = 0;      // cuts to the pose like every other phase change
   }
   // view-button transitions glide to their target
   if (camBlend>0){
