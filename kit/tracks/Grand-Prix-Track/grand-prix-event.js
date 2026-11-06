@@ -176,12 +176,21 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
   };
   // ---------- audio (positional crowd per stand, helicopter, one-shots) ----------
   const A = { on: false, buffers: {}, loops: [], listener: null, html: false };
+  // owner Nov 6 2026: one-shots are REUSED, never built fresh while the car is passing the start grandstand (a new audio node / <audio> element at the line made the game hitch every lap)
+  const pool = {};
   function play(name, vol = 1, pos = null) {
     if (!A.on) return;
-    if (A.html) { const a = new Audio(soundBase + name + '.mp3'); a.volume = Math.min(1, vol * (pos ? distGain(pos, 400) : 1)); a.play().catch(() => { }); return; }
+    if (A.html) {
+      const p = pool[name] || (pool[name] = []); let a = p.find(x => x.paused || x.ended);
+      if (!a) { if (p.length >= 3) return; a = new Audio(soundBase + name + '.mp3'); p.push(a); }
+      a.volume = Math.min(1, vol * (pos ? distGain(pos, 400) : 1)); try { a.currentTime = 0; } catch (e) { } a.play().catch(() => { }); return;
+    }
     const b = A.buffers[name]; if (!b) return;
-    const s = pos ? new THREE.PositionalAudio(A.listener) : new THREE.Audio(A.listener); s.setBuffer(b); s.setVolume(vol);
-    if (pos) { s.setRefDistance(60); s.position.copy(pos); root.add(s); } s.play(); s.onEnded = () => { s.isPlaying = false; s.parent && s.parent.remove(s); };
+    const key = name + (pos ? ':p' : ':n'); const p = pool[key] || (pool[key] = []);
+    let s = p.find(x => !x.isPlaying);
+    if (!s) { if (p.length >= 4) return; s = pos ? new THREE.PositionalAudio(A.listener) : new THREE.Audio(A.listener); s.setBuffer(b); p.push(s); }
+    s.setVolume(vol);
+    if (pos) { s.setRefDistance(60); s.position.copy(pos); if (!s.parent) root.add(s); } s.play();
   }
   ev.play = play;
   const distGain = (p, ref) => { const d = camera.position.distanceTo(p); return Math.max(0, Math.min(1, ref / (ref + d * 2))); };
@@ -193,6 +202,7 @@ export function createEvent({ scene, track, camera, soundBase = '../Grand-Prix-T
     try { await Promise.all(names.map(n => loader.loadAsync(soundBase + n + '.mp3').then(b => A.buffers[n] = b))); }
     catch (e) { A.html = true; }    // file:// in some browsers blocks fetch: fall back to simple <audio> one-shots
     A.on = true;
+    if (!A.html) { for (const n of ['crowd_roar_pass', 'crowd_big_cheer', 'crowd_cheer_1']) { const key = n + ':p'; pool[key] = pool[key] || []; for (let i = 0; i < 2; i++) { const w = new THREE.PositionalAudio(A.listener); w.setBuffer(A.buffers[n]); pool[key].push(w); } } }
     if (!A.html) {
       EV.grandstands.forEach((st, si) => {
         const c = new THREE.Vector3(...st.rows[3]);
