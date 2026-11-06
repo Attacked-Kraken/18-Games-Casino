@@ -939,7 +939,7 @@ const Track = {
     const stripe=new THREE.Mesh(new THREE.PlaneGeometry(W,3),
       new THREE.MeshBasicMaterial({map:ckT,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
     stripe.renderOrder=2;
-    stripe.rotation.x=-Math.PI/2; stripe.rotation.z=-Math.atan2(f0.tx,f0.tz);
+    stripe.rotation.order='YXZ'; stripe.rotation.x=-Math.PI/2; stripe.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI; // owner Nov 6 2026: the old z-spin only matched the road when it ran due north/east - the strip lay crooked; now its width runs exactly across the road
     stripe.position.set(f0.x, f0.y+0.09, f0.z); g.add(stripe);
     // DRS zone edge paint (green dashes on left edge)
     const drsMat=new THREE.MeshBasicMaterial({color:0x27e07a});
@@ -1151,7 +1151,7 @@ const Track = {
     }
     const beam=new THREE.Mesh(new THREE.BoxGeometry(20,2,1.5), trussMat);
     beam.position.set(f0.x, f0.y+11, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2; gantry.add(beam);
+    beam.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */ gantry.add(beam);
     const bcv=document.createElement('canvas'); bcv.width=1024; bcv.height=128;
     const bc=bcv.getContext('2d');
     bc.fillStyle='#0a0e1a'; bc.fillRect(0,0,1024,128);
@@ -1162,9 +1162,9 @@ const Track = {
     const btexF=btex.clone(); btexF.wrapS=THREE.RepeatWrapping; btexF.repeat.x=-1; btexF.needsUpdate=true; // G-239: the back face carries a pre-flipped print - APEX ARCADE reads correctly from BOTH sides (a DoubleSide plane mirrored it, video1-01)
     const bannerEdge=new THREE.MeshBasicMaterial({color:0x0a0e1a});
     const banner=new THREE.Mesh(new THREE.BoxGeometry(18,2.2,0.12),
-      [bannerEdge,bannerEdge,bannerEdge,bannerEdge,new THREE.MeshBasicMaterial({map:btex}),new THREE.MeshBasicMaterial({map:btexF})]);
+      [bannerEdge,bannerEdge,bannerEdge,bannerEdge,new THREE.MeshBasicMaterial({map:btexF}),new THREE.MeshBasicMaterial({map:btex})]);
     banner.position.set(f0.x, f0.y+9.5, f0.z);
-    banner.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2; gantry.add(banner);
+    banner.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */ gantry.add(banner);
     g.add(gantry);
     // barriers along track
     const barGeo=new THREE.BoxGeometry(4,1.1,0.6);
@@ -1307,9 +1307,9 @@ const Track = {
     const gtexF=gtex.clone(); gtexF.wrapS=THREE.RepeatWrapping; gtexF.repeat.x=-1; gtexF.needsUpdate=true; // G-239: same two-way print on the gantry beam
     const beamEdge=new THREE.MeshBasicMaterial({color:0x0a0e16});
     const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
-      [beamEdge,beamEdge,beamEdge,beamEdge,new THREE.MeshBasicMaterial({map:gtex}),new THREE.MeshBasicMaterial({map:gtexF})]);
+      [beamEdge,beamEdge,beamEdge,beamEdge,new THREE.MeshBasicMaterial({map:gtexF}),new THREE.MeshBasicMaterial({map:gtex})]);
     beam.position.set(f0.x, f0.y+9.5, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2;
+    beam.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */
     g.add(beam);
   },
   setWeather(wet01){ // darken track + fog when wet
@@ -2413,7 +2413,7 @@ const Race = {
   },
   updateLights(dt){
     this.stateT+=dt;
-    const n=Math.min(5,Math.floor(this.stateT/0.8)); // G-77: reds come on one by one - a beat before lamp 1 (was lit from t=0)
+    const n=Math.min(5,Math.floor(this.stateT/0.55)); // owner Nov 6 2026: lamps every 0.55 s (was 0.8) so the wait on the start line is shorter; G-77: reds come on one by one - a beat before lamp 1 (was lit from t=0)
     if(n!==this._lampN){ this._lampN=n; GPSetLights(n); if(n>0) GPPlay('start_light_beep',0.8); }
     const lights=$('lights').children;
     for(let i=0;i<5;i++) lights[i].className='light'+(i<n?' red':'');
@@ -2422,7 +2422,7 @@ const Race = {
       this.jumpStart=true; this.player.penalty+=5;
       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
     }
-    if(this.stateT>4.2+this._holdT){
+    if(this.stateT>3.0+this._holdT){
       for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
       this._ltT=setTimeout(()=>$('lights').classList.add('hidden'),600);
       this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
@@ -2431,7 +2431,7 @@ const Race = {
       Aud.cheer(true);
     }
   },
-  beginRace(){ this._holdT=rand(0.4,1.8); this.startLights();
+  beginRace(){ this._holdT=rand(0.3,1.0); this.startLights();
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -3423,7 +3423,7 @@ window.__reality={
   go: (on)=>{ try{
     if(!on){ Input.gas=false; return; }
     if(Race.mode==='grid'){ try{ Race.beginRace(); }catch(e){} }
-    if(Race.mode==='lights' && Race.stateT<4.2+(Race._holdT||0)) Race.stateT=4.2+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
+    if(Race.mode==='lights' && Race.stateT<3.0+(Race._holdT||0)) Race.stateT=3.0+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
     Input.gas=true;
   }catch(e){} },
   // no expect override: the robot's own-axes box reads this car at 5.47 m long (the G-73 mesh scale cancels
