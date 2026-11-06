@@ -2793,7 +2793,8 @@ function showResults() {
   if (!R) return; const T = R.T, st = standings(), P = R.P, tt = R.type === 'trial', beat = tt && P.fin != null && P.fin <= R.par, pos = tt ? (beat ? 0 : 7) : st.indexOf(P), place = R.place;
   const est = (e) => (e.fin != null ? e.fin : R.t + ((R.fN - (e.isP ? e.prog : e.s)) * T.ds) / Math.max(25, Math.abs(e.spd) || 30));
   const fm = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(2).padStart(5, '0')}`;
-  $('rTab').innerHTML = st.map((e, i) => `<tr class="${e.isP ? 'me' : ''}"><td>${ord(i + 1)}</td><td>${esc(e.name)}${e.remote && !e.bot ? ' 👥' : ''}</td><td style="opacity:.7">${CAR[e.carId].name}</td><td>${e.fin != null ? fm(e.fin) : '~' + fm(est(e))}</td></tr>`).join('');
+  let prevT = -Infinity; const dispT = st.map((e) => { let t = est(e); if (e.fin == null) t = Math.max(t, prevT + 0.01); prevT = Math.max(prevT, t); return t; }); /* F-R-010: places stay by progress, but a displayed '~' estimate never runs against the order - each unfinished row shows at least 0.01 s more than the row above */
+  $('rTab').innerHTML = st.map((e, i) => `<tr class="${e.isP ? 'me' : ''}"><td>${ord(i + 1)}</td><td>${esc(e.name)}${e.remote && !e.bot ? ' 👥' : ''}</td><td style="opacity:.7">${CAR[e.carId].name}</td><td>${e.fin != null ? fm(e.fin) : '~' + fm(dispT[i])}</td></tr>`).join('');
   $('rTitle').textContent = tt ? (beat ? 'BEAT THE CLOCK!' : 'MISSED PAR') : pos === 0 ? 'VICTORY!' : `${ord(pos + 1)} PLACE`;
   $('rSub').textContent = `${place.flag} ${place.city} · ${BNAME[place.biome]} · ${R.type === 'sprint' ? 'sprint, 4 checkpoints' : tt ? 'time trial, ' + R.laps + ' laps, par ' + fm(R.par) : R.laps + ' laps'}${R.best ? ' · best lap ' + fm(R.best) : ''}`;
   /* pay1 2026-10-04 (owner): only 1st-6th get paid, biggest for 1st down to the smallest for 6th; 7th-8th get nothing just for racing */
