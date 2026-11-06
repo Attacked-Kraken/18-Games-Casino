@@ -1577,4 +1577,34 @@ export default [
       return true;
     },
   },
+  // F-B-001 (tester window 3, audited TRUE by window 1, 2026-11-05): CAM-WIDE showed a uniform gray void.
+  {
+    id: 'tester-wide-camera-shows-field',
+    ask: 'In the WIDE camera view the 3D area shows the ballpark and field (colourful), never a uniform gray void',
+    async test(page, h) {
+      try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+      const t0 = Date.now();
+      while (Date.now() - t0 < 30000) {
+        const s = await h.eval(() => { const T = window.__test; if (!T || !T.cam) return null; if (T.phase === 'start') { const b = document.getElementById('startBtn'); if (b) b.click(); } return { phase: T.phase, view: T.cam.view }; });
+        if (s && s.phase !== 'start') break;
+        await h.wait(250);
+      }
+      await h.eval(() => { const b = document.getElementById('viewBtn'); if (b && window.__test.cam.view !== 'wide') b.click(); return true; });
+      await h.wait(4000);
+      const view = await h.eval(() => window.__test.cam.view);
+      if (view !== 'wide') return 'could not switch to the WIDE view (view is ' + view + ')';
+      let buf;
+      try { buf = await page.screenshot({ timeout: 20000 }); } catch (e) { return { inconclusive: 'no screenshot could be taken: ' + String(e).slice(0, 80) }; }
+      const chroma = await h.eval(async (b64) => {
+        const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+        const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d'); x.drawImage(img, 0, 0);
+        const y0 = Math.round(img.height * 70 / 390), y1 = Math.round(img.height * 320 / 390);
+        const d = x.getImageData(0, y0, img.width, y1 - y0).data; let sum = 0, n = 0;
+        for (let i = 0; i < d.length; i += 4) { sum += Math.max(d[i], d[i + 1], d[i + 2]) - Math.min(d[i], d[i + 1], d[i + 2]); n++; }
+        return sum / n;
+      }, buf.toString('base64'));
+      if (chroma < 30) return 'WIDE camera shows a uniform gray void: colourfulness ' + chroma.toFixed(1) + ' in the 3D band (AUTO view shows 70+, threshold 30)';
+      return true;
+    },
+  },
 ];
