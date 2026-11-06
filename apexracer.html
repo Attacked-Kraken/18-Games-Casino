@@ -2659,7 +2659,7 @@ function simRace(dt) {
 }
 function playerFinished() {
   const place = standings().findIndex((e) => e.isP) + 1; R.myPlace = place;
-  if (R.type === 'trial') { const beat = R.P.fin <= R.par; bigMsg(beat ? '⏱ BEAT THE CLOCK!' : '⏱ MISSED PAR'); setTimeout(() => { $('msg').style.opacity = 0; }, 2500); if (beat) R.fwOn = 6; musSting(beat); $('ctl').style.display = 'none'; setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200); return; }
+  if (R.type === 'trial') { const beat = R.P.fin <= R.par; bigMsg(beat ? '⏱ BEAT THE CLOCK!' : '⏱ MISSED PAR'); setTimeout(() => { $('msg').style.opacity = 0; }, 2500); if (beat) R.fwOn = 6; musSting(beat); ctlShow(false); /* F-R-009: hide the kit touch layer too, or #apcZone covers Race Again / Garage */ setTimeout(() => { if (R && R.P.fin) showResults(); }, 4200); return; }
   bigMsg(place === 1 ? '🏆 1ST!' : ord(place)); setTimeout(() => { $('msg').style.opacity = 0; }, 2500);
   if (place === 1) { R.fwOn = 6; } musSting(place === 1); /* G-80: victory sting on a win, game-over sting on a loss */
   ctlShow(false);
