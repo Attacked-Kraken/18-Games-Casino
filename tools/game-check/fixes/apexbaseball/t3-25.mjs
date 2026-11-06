@@ -27,16 +27,17 @@ export default [
       if (!wide) return 'the camera never switched to WIDE (viewBtn did not cycle auto -> wide)';
       // wait for the camera glide to SETTLE at the wide position: a fixed
       // wait screenshots mid-glide (the camera passes over the visible field
-      // on its way up) and reads high. Settled = within 5 units of [0,48,76];
-      // the view is already the gray void there, and the glide ends at 0.1.
+      // on its way up) and reads high. Settled = within 5 units of [0,48,40]
+      // (F-B-001 fix, main 5607141: the old pose [0,48,76] sat behind the
+      // stands shell; the view is the field there, and the glide ends at 0.1).
       const t1 = Date.now();
       let settled = false;
       while (Date.now() - t1 < 20000) {
         const p = await h.eval(() => { const T = window.__test; return T && T.cam ? T.cam.pos : null; });
-        if (p && Math.hypot(p[0], p[1] - 48, p[2] - 76) < 5) { settled = true; break; }
+        if (p && Math.hypot(p[0], p[1] - 48, p[2] - 40) < 5) { settled = true; break; }
         await h.wait(300);
       }
-      if (!settled) return 'the camera never settled at the WIDE position [0,48,76]';
+      if (!settled) return 'the camera never settled at the WIDE position [0,48,40]';
       await h.wait(500); // let the VIEW: WIDE banner fade
       // the 3D band (below the HUD, above the bottom buttons) must show the
       // ballpark, not a uniform gray: measure its colourfulness. Take three
