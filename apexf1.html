@@ -829,6 +829,13 @@ const Track = {
     this.asphaltMat = (this.lt && this.lt.meshes && this.lt.meshes['road']) ? this.lt.meshes['road'].material : null;
     this.clearGroup();
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
+    this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
+    if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
+      const f0=this.frameAt(0);
+      for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
+        for(let t=0;t<idx.length;t+=3){ let cx=0,cz=0; for(let k=0;k<3;k++){ v.fromBufferAttribute(pos,idx[t+k]).applyMatrix4(m.matrixWorld); cx+=v.x; cz+=v.z; } cx/=3; cz/=3; if(Math.hypot(cx-f0.x,cz-f0.z)>90) keep.push(idx[t],idx[t+1],idx[t+2]); }
+        if(keep.length<idx.length){ g.setIndex(keep); g.computeBoundingSphere(); window.__f1lineClip=(window.__f1lineClip||0)+(idx.length-keep.length)/3; } }catch(e){ console.warn('lineclip',nm,e); } }
+    }
     if(scene && scene.userData && scene.userData.sun && data.render && data.render.sunDirection){
       const sd=data.render.sunDirection; scene.userData.sun.position.set(sd[0]*600, sd[1]*600, sd[2]*600);
     }
@@ -931,16 +938,7 @@ const Track = {
       cg.setAttribute('color', new THREE.Float32BufferAttribute(cols,3));
       curb.material.vertexColors=true; g.add(curb);
     }
-    // start/finish checker strip
-    const f0=this.frameAt(0);
-    // F-F1: was a flat white plane lying on the road = z-fighting flicker; now a real chequered strip pulled off the road by a depth offset
-    const ck=document.createElement('canvas'); ck.width=128; ck.height=16; { const cx=ck.getContext('2d'); for(let xx=0;xx<16;xx++) for(let yy=0;yy<2;yy++){ cx.fillStyle=(xx+yy)%2?'#111':'#fff'; cx.fillRect(xx*8,yy*8,8,8); } }
-    const ckT=new THREE.CanvasTexture(ck); ckT.magFilter=THREE.NearestFilter; ckT.colorSpace=THREE.SRGBColorSpace;
-    const stripe=new THREE.Mesh(new THREE.PlaneGeometry(W,3),
-      new THREE.MeshBasicMaterial({map:ckT,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-    stripe.renderOrder=2;
-    stripe.rotation.order='YXZ'; stripe.rotation.x=-Math.PI/2; stripe.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI; // owner Nov 6 2026: the old z-spin only matched the road when it ran due north/east - the strip lay crooked; now its width runs exactly across the road
-    stripe.position.set(f0.x, f0.y+0.09, f0.z); g.add(stripe);
+    // owner Nov 6 2026: nothing at all sits on the road at the start/finish line any more (the checkered strip is gone); floating signs only, see buildLineSigns
     // DRS zone edge paint (green dashes on left edge)
     const drsMat=new THREE.MeshBasicMaterial({color:0x27e07a});
     for(const [z0,z1] of this.cfg.drs){
@@ -1141,31 +1139,7 @@ const Track = {
       g.add(stand);
       this.crowd.list.push({inst,seeds,m4:new THREE.Matrix4()});
     }
-    // start gantry with APEX ARCADE banner
-    const f0=this.frameAt(0);
-    const gantry=new THREE.Group();
-    const trussMat=new THREE.MeshStandardMaterial({color:0x333a45,roughness:0.6,metalness:0.4});
-    for(const sd of [-1,1]){
-      const leg=new THREE.Mesh(new THREE.BoxGeometry(1.2,12,1.2), trussMat);
-      leg.position.set(f0.x+f0.nx*9*sd, f0.y+6, f0.z+f0.nz*9*sd); gantry.add(leg);
-    }
-    const beam=new THREE.Mesh(new THREE.BoxGeometry(20,2,1.5), trussMat);
-    beam.position.set(f0.x, f0.y+11, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */ gantry.add(beam);
-    const bcv=document.createElement('canvas'); bcv.width=1024; bcv.height=128;
-    const bc=bcv.getContext('2d');
-    bc.fillStyle='#0a0e1a'; bc.fillRect(0,0,1024,128);
-    bc.fillStyle='#d21f26'; bc.fillRect(0,0,1024,16); bc.fillRect(0,112,1024,16);
-    bc.fillStyle='#ffd76a'; bc.font='bold 72px Arial'; bc.textAlign='center'; bc.textBaseline='middle';
-    bc.fillText('APEX ARCADE', 512, 64);
-    const btex=new THREE.CanvasTexture(bcv);
-    const btexF=btex.clone(); btexF.wrapS=THREE.RepeatWrapping; btexF.repeat.x=-1; btexF.needsUpdate=true; // G-239: the back face carries a pre-flipped print - APEX ARCADE reads correctly from BOTH sides (a DoubleSide plane mirrored it, video1-01)
-    const bannerEdge=new THREE.MeshBasicMaterial({color:0x0a0e1a});
-    const banner=new THREE.Mesh(new THREE.BoxGeometry(18,2.2,0.12),
-      [bannerEdge,bannerEdge,bannerEdge,bannerEdge,new THREE.MeshBasicMaterial({map:btexF}),new THREE.MeshBasicMaterial({map:btex})]);
-    banner.position.set(f0.x, f0.y+9.5, f0.z);
-    banner.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */ gantry.add(banner);
-    g.add(gantry);
+    this.buildLineSigns(g); // owner Nov 6 2026: START / FINISH / lap number floating in the air, replacing the gantry
     // barriers along track
     const barGeo=new THREE.BoxGeometry(4,1.1,0.6);
     const barMatW=new THREE.MeshLambertMaterial({color:0xf2f2f2});
@@ -1266,6 +1240,18 @@ const Track = {
       stack.position.set(x,p.y+0.8,z); g.add(stack);
     }
   },
+  buildLineSigns(g){ // owner Nov 6 2026: START, FINISH and the lap number hang in the air over the line - no arch, strip or banner for the car to hit or the GPU to stall on
+    const mk=(txt,col,w,h,fs)=>{ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const c=cv.getContext('2d');
+      c.font='900 '+fs+'px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.lineWidth=fs/9; c.strokeStyle='#000'; c.strokeText(txt,w/2,h/2); c.fillStyle=col; c.fillText(txt,w/2,h/2);
+      const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
+    const f0=this.frameAt(0);
+    const sp=(tex,sx,sy,y)=>{ const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false})); m.scale.set(sx,sy,1); m.position.set(f0.x,f0.y+y,f0.z); g.add(m); return m; };
+    sp(mk('START','#37d67a',512,160,120),16,5,15);
+    sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5);
+    this._lapTex=[null]; for(let n=1;n<=10;n++) this._lapTex.push(mk('LAP '+n,'#ffd76a',384,128,96));
+    this._lapSign=sp(this._lapTex[1],10,3.3,4.2);
+  },
+  setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
     // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
     const cv=document.createElement('canvas'); cv.width=512; cv.height=72;
@@ -1290,28 +1276,6 @@ const Track = {
       m.rotation.y=Math.atan2(-p.nx*side,-p.nz*side);
       g.add(m);
     }
-    // start/finish gantry
-    const f0=this.frameAt(0), W=this.width;
-    const postM=new THREE.MeshLambertMaterial({color:0x1a2436});
-    for(const sd of [-1,1]){
-      const post=new THREE.Mesh(new THREE.BoxGeometry(0.9,10,0.9), postM);
-      post.position.set(f0.x+f0.nx*(W/2+3)*sd, f0.y+5, f0.z+f0.nz*(W/2+3)*sd);
-      post.castShadow=!isTouch; g.add(post);
-    }
-    const gcv=document.createElement('canvas'); gcv.width=1024; gcv.height=96;
-    const gc=gcv.getContext('2d');
-    gc.fillStyle='#0a0e16'; gc.fillRect(0,0,1024,96);
-    gc.fillStyle='#d21f26'; gc.fillRect(0,0,1024,12); gc.fillRect(0,84,1024,12);
-    gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
-    gc.fillStyle='#ffd76a'; gc.fillText('★ APEX ARCADE ★', 512, 50);
-    const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
-    const gtexF=gtex.clone(); gtexF.wrapS=THREE.RepeatWrapping; gtexF.repeat.x=-1; gtexF.needsUpdate=true; // G-239: same two-way print on the gantry beam
-    const beamEdge=new THREE.MeshBasicMaterial({color:0x0a0e16});
-    const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
-      [beamEdge,beamEdge,beamEdge,beamEdge,new THREE.MeshBasicMaterial({map:gtexF}),new THREE.MeshBasicMaterial({map:gtex})]);
-    beam.position.set(f0.x, f0.y+9.5, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz); /* owner Nov 6 2026: spans the road, faces the drivers (was turned edge-on) */
-    g.add(beam);
   },
   setWeather(wet01){ // darken track + fog when wet
     if(this.asphaltMat && !this.gp) this.asphaltMat.color.setHex(wet01>0.5?0x5a5e66:0x9a9da2);
@@ -2432,7 +2396,7 @@ const Race = {
       Aud.cheer(true);
     }
   },
-  beginRace(){ this._holdT=rand(0.3,1.0); this.startLights();
+  beginRace(){ this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); }catch(e){}
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -2691,6 +2655,7 @@ const RainFX={
 /* ================= HUD ================= */
 /* owner Nov 4 2026: big LAP sign at the top each time the player crosses the line (same as Exotic Racer) */
 function lapPop(lap,total){
+  try{ Track.setLapSign(lap); }catch(e){}
   if(lap>total) return;
   const e=$('lapPop'); if(!e) return;
   e.textContent = lap===total ? 'FINAL LAP!' : `LAP ${lap}/${total}`;
