@@ -1395,7 +1395,7 @@ const _camTmp = new THREE.Vector3();
 let ALLFIGS = null;
 /* view options: AUTO (broadcast behavior), WIDE (whole stadium), CLOSE (behind the action) */
 let viewMode = 'auto';            // 'auto' | 'wide' | 'close'
-const WIDE_CAM = { pos:[0,48,76], look:[0,0,-44] };
+const WIDE_CAM = { pos:[0,48,40], look:[0,0,-44] };   // F-B-001: the old pose [0,48,76] sat behind the stands shell (uniform gray, chroma 7); from z=40 the whole field shows (chroma 85)
 const PITCH_CLOSE_CAM = { pos:[0,11,-38], look:[0,1.2,2] };  // G-65: the same centre-field broadcast angle, closer
 const BAT_CAM = { pos:[-3.6,1.9,5.8], look:[0,1.8,-20] };     // G-65: behind the plate at catcher height, just off to the side
 const camTgtP = new THREE.Vector3(), camTgtL = new THREE.Vector3();
