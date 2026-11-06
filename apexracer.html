@@ -100,6 +100,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     #gopts { min-height:0; gap:5px; }
     .go { min-width:70px; padding:4px 6px; font:800 10px system-ui; gap:2px; border-radius:10px; }
     .go .p { font:800 9px system-ui; } .go .sw { width:20px; height:20px; }
+    /* F-R-008: every garage button at least 32 px tall (robot tap size) - tabs, Done / Race, mute - the panel grows 9 px, the car stays in view */
+    .gt { min-height:32px; } #gbtm button, #gMute { min-height:32px; }
     #gbtm { margin-top:4px; gap:6px; } #gbtm button { padding:6px 8px; font-size:12px; }
     #gstats { width:130px; top:calc(44px + var(--sat)); padding:6px 8px; font-size:9px; } #gstats .s { margin:1px 0 4px; } #gstats .bar { height:5px; }
     #gname { font-size:16px; } .cash { font-size:13px; padding:5px 10px; }
@@ -190,6 +192,8 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
     #credits .box > div { column-count:3; column-gap:14px; font-size:10px !important; line-height:1.28 !important; }
     #credits .box > div > div { margin-top:3px !important; break-inside:avoid; overflow-wrap:anywhere; }
     #credits .row { margin:0; } #credits #crBack { padding:7px 10px; font-size:12px; border-radius:10px; }
+    /* F-R-008: Friend / Credits / Results buttons at least 32 px tall */
+    #credits #crBack, #friend .neo, #result .neo { min-height:32px; }
     #friend .box { width:min(560px,100%); padding:8px 14px; gap:3px; }
     #friend h3 { font-size:17px !important; line-height:1.1; }
     #friend .box > div { font-size:11px !important; line-height:1.2; }
