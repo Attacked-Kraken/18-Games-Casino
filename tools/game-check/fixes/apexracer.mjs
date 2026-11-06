@@ -2562,4 +2562,77 @@ export default [
     return true;
   },
 },
+{
+  id: 'tester-chk-r27',
+  parts: ['menu'],
+  cat: 'play',
+  name: 'R27: sprint results rows are in ascending time order',
+  ask: 'After a genuine sprint finish the results table lists 8 rows whose displayed times are non-decreasing from 1st to 8th (the winner exact, the rest ~ estimates).',
+  async test(page, h) {
+    try { await page.setViewportSize({ width: 844, height: 390 }); } catch (e) {}
+    const vp = await h.eval(() => ({ w: window.innerWidth, h: window.innerHeight })).catch(() => null);
+    if (!vp || vp.w !== 844 || vp.h !== 390) return 'tester-chk-r27 FAIL: viewport is not 844x390 (got ' + (vp ? vp.w + 'x' + vp.h : 'unknown') + '), cannot measure R27';
+    const hasErc = await h.poll(() => h.eval(() => !!window.__erc), (v) => !!v, 30000).catch(() => false);
+    if (!hasErc) return 'tester-chk-r27 FAIL: __erc never appeared (game did not boot)';
+    await h.eval(() => { const E = window.__erc; if (E && E.toMenu) E.toMenu(); return true; }).catch(() => {});
+    const hasRace = await h.poll(() => h.eval(() => !!document.querySelector('#mRace')), (v) => !!v, 10000).catch(() => false);
+    if (!hasRace) return 'tester-chk-r27 FAIL: #mRace never appeared';
+    await h.eval(() => { document.querySelector('#mRace').click(); }).catch(() => {});
+    const hasPl = await h.poll(() => h.eval(() => !!document.querySelector('#plist .pl')), (v) => !!v, 10000).catch(() => false);
+    if (!hasPl) return 'tester-chk-r27 FAIL: place list never appeared';
+    await h.eval(() => { const el = [...document.querySelectorAll('#ctys button')].find((e) => /german/i.test(e.textContent || '')); if (el) el.click(); return true; }).catch(() => {});
+    await h.eval(() => { const el = [...document.querySelectorAll('#plist .pl')].find((e) => (e.textContent || '').includes('Berlin')); if (el) el.click(); return true; }).catch(() => {});
+    const hasSheet = await h.poll(() => h.eval(() => { const s = document.querySelector('#sheet'); return s && getComputedStyle(s).display !== 'none'; }), (v) => !!v, 10000).catch(() => false);
+    if (!hasSheet) return 'tester-chk-r27 FAIL: race sheet never appeared';
+    await h.eval(() => { const el = [...document.querySelectorAll('#shType .chip')].find((e) => /sprint/i.test(e.textContent || '')); if (el) el.click(); return true; }).catch(() => {});
+    const isSprint = await h.eval(() => { const el = [...document.querySelectorAll('#shType .chip')].find((e) => /sprint/i.test(e.textContent || '')); return el ? el.classList.contains('on') : false; }).catch(() => false);
+    if (!isSprint) return 'tester-chk-r27 FAIL: Sprint chip did not turn on';
+    await h.eval(() => { document.querySelector('#shGo').click(); }).catch(() => {});
+    const inRace = await h.poll(() => h.eval(() => window.__erc.G.mode), (v) => v === 'race', 240000).catch(() => false);
+    if (!inRace) return 'tester-chk-r27 FAIL: race never built (G.mode never became race)';
+    // Genuine sprint drive: look-ahead follower, 150-step chunks, until the game's
+    // own detection sets P.fin. (A pin-method finish does not reproduce F-R-010.)
+    const fin = await h.eval(() => {
+      const E = window.__erc, R = E.R, T = R.T, P = R.P, K = E.K;
+      let guard = 0;
+      while (R.t < 0.2 && guard++ < 400) { K.gas = 0; E.step(1, 1 / 30); }
+      if (R.t < 0.2) return { error: 'countdown never reached GO' };
+      for (let chunk = 0; chunk < 40; chunk++) {
+        for (let i = 0; i < 150; i++) {
+          if (P.fin) break;
+          const idx = (((Math.round(P.idx) + 15) % T.N) + T.N) % T.N;
+          const th = Math.atan2(T.tx[idx], T.tz[idx]);
+          const hh = Math.atan2(Math.sin(P.h), Math.cos(P.h));
+          let dh = th - hh;
+          while (dh > Math.PI) dh -= 2 * Math.PI;
+          while (dh < -Math.PI) dh += 2 * Math.PI;
+          K.l = dh > 0.06 ? 1 : 0; K.r = dh < -0.06 ? 1 : 0;
+          K.brake = Math.abs(dh) > 0.9 ? 1 : 0;
+          K.gas = R.t >= 0 ? 1 : 0;
+          E.step(1, 1 / 30);
+        }
+        if (P.fin) return { fin: P.fin, type: R.type, cp: R.cp, fN: R.fN };
+      }
+      return { error: 'P.fin never set (prog ' + P.prog + ', fN ' + R.fN + ')' };
+    }).catch(() => ({ error: 'in-page drive step threw' }));
+    if (fin.error) return 'tester-chk-r27 FAIL: ' + fin.error;
+    if (fin.type !== 'sprint') return 'tester-chk-r27 FAIL: race type is ' + fin.type + ', not sprint';
+    const hasResults = await h.poll(() => h.eval(() => { const r = document.querySelector('#result'); return r && getComputedStyle(r).display !== 'none'; }), (v) => !!v, 30000).catch(() => false);
+    if (!hasResults) return 'tester-chk-r27 FAIL: results screen never opened after the sprint finish';
+    const rows = await h.eval(() => [...document.querySelectorAll('#result tbody tr, #result .rt tr')].map((tr) => (tr.textContent || '').trim().replace(/\s+/g, ' '))).catch(() => null);
+    if (!rows || rows.length !== 8) return 'tester-chk-r27 FAIL: expected 8 results rows, got ' + (rows ? rows.length : 'none');
+    const times = [];
+    for (const r of rows) {
+      const m = r.match(/~?(\d+):(\d+\.\d+)\s*$/);
+      if (!m) return 'tester-chk-r27 FAIL: no time found in results row "' + r.slice(0, 60) + '"';
+      times.push(parseInt(m[1], 10) * 60 + parseFloat(m[2]));
+    }
+    const bad = [];
+    for (let i = 1; i < times.length; i++) {
+      if (times[i] < times[i - 1] - 0.005) bad.push('row ' + (i + 1) + ' ' + times[i].toFixed(2) + 's is faster than row ' + i + ' ' + times[i - 1].toFixed(2) + 's');
+    }
+    if (bad.length) return 'tester-chk-r27 FAIL: sprint results times out of order: ' + bad.join('; ') + ' (rows: ' + times.map((t) => t.toFixed(2)).join(', ') + ')';
+    return true;
+  },
+},
 ];
