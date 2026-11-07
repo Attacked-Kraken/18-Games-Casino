@@ -37,20 +37,6 @@
   const emit = (ev, a) => (listeners[ev] || []).forEach(f => { try { f(a); } catch (e) { console.warn('studio listener', e); } });
   const on = () => { if (window.__apxTest) return false; try { return /[?&]studio=1/.test(location.search) || localStorage.getItem('apexStudioOn') === '1'; } catch (e) { return false; } };
   if (/[?&]studio=1/.test(location.search)) { try { localStorage.setItem('apexStudioOn', '1'); } catch (e) {} }
-  /* owner Nov 7 2026 'I want to see code of how the finish line and track are set in that specific spot': while Studio is on, every 3D thing remembers
-     WHERE IN THE CODE it was made (the call chain when three.js built it). Scene tab -> 'Show the code that made this' opens those lines in the Code tab. */
-  const BORN = new WeakMap();
-  if (on()) try { Error.stackTraceLimit = Math.max(Error.stackTraceLimit || 10, 30);
-    Object.defineProperty(Object.prototype, 'isObject3D', { configurable: true, get() { return undefined; },
-      set(v) { Object.defineProperty(this, 'isObject3D', { value: v, writable: true, configurable: true, enumerable: true }); try { BORN.set(this, new Error().stack || ''); } catch (e) {} } });
-  } catch (e) {}
-  function bornAt(o) {                          // [{file, line, fn}] - the game's own code first, three.js itself left out
-    const st = BORN.get(o) || '', out = [], me = (location.pathname.split('/').pop() || '');
-    st.split('\n').forEach(l => { const m = l.match(/(?:at\s+(?:new\s+)?([^\s(]+)\s+\()?([^\s()@]*?\/([^\/\s()?#]+?\.(?:html?|js|mjs)))(?:\?[^:\s)]*)?:(\d+):\d+/) || null;
-      if (!m) return; const file = m[3]; if (/three\.module|studio\.js|GLTFLoader|meshopt|vendor/.test(m[2])) return;
-      const fn = m[1] || (l.split('@')[0] || '').trim(); out.push({ file, line: +m[4], fn: fn && !/^(https?|async|eval)/.test(fn) ? fn.replace(/^Object\./, '') : '', mine: file === me }); });
-    return out.slice(0, 6);
-  }
 
   function declare(list) { (list || []).forEach(d => reg(d.key, d.def, d, d.kind || 'num')); }      // a game lists its sliders up front, so they show before they are used
   function reg(key, def, opt, kind) {
@@ -329,8 +315,6 @@
           h += `<div class="row"><label>Size <b>${o.scale.x.toFixed(2)}</b></label><input type="range" data-scl="1" min="0.05" max="5" step="0.01" value="${o.scale.x.toFixed(2)}"></div>`;
           h += `<div class="row"><label>Colour <input type="color" data-col="1" value="${ed.col || '#ffffff'}"></label></div>`;
           h += `<div><button data-hide="1">${o.visible ? '🙈 Hide' : '👁 Show'}</button><button data-del="1">🗑️ Delete</button><button data-up="1">⬆ Bigger group</button><button data-reset="1">↩️ Put it back</button><button data-swap="1">📦 Swap for a model…</button></div>`;
-          { const bt = bornAt(o) .length ? bornAt(o) : (o.parent ? bornAt(o.parent) : []);
-            h += `<h3>💻 The code that made this</h3>` + (bt.length ? bt.map(f => `<div><button data-born="${f.mine ? f.line : ''}" ${f.mine ? '' : 'disabled'} style="text-align:left;width:100%;font:11px ui-monospace,Menlo,monospace">${esc(f.file)} line ${f.line}${f.fn ? ' · ' + esc(f.fn) : ''}${f.mine ? ' →' : ' (shared kit file)'}</button></div>`).join('') + '<p class="sub">Top line = where it was built; the lines under it = what called that. Tap one to open it in the Code tab.</p>' : '<p class="sub">No record of where this was made (it was built before Studio was on - reload the game with Studio on).</p>'); }
           if (ui.swapOpen) { const ms = E.models; h += `<div class="row">${ms === null || !ms ? '<span class="sub">reading the model list…</span>' : (ms.length ? ms.map(m => `<button data-model="${esc(m)}">${esc(m)}</button>`).join('') : '<span class="sub">no models/fetched/*.glb found</span>')}</div>`; if (!E.models) modelList().then(() => ui.draw()); }
         } else {
           const lvl = E.level || W.scene, list = lvl.children.filter(c => !skip(c)).slice(0, 80);
@@ -359,8 +343,7 @@
         h += `<textarea data-con="1" spellcheck="false" style="min-height:70px">${esc(C.console)}</textarea><button data-conrun="1">▶ Run now</button><button data-conkeep="1">📌 Keep it in the game</button>`;
         if (C.out) h += `<pre style="white-space:pre-wrap;font:11px ui-monospace,Menlo,monospace;background:#05070b;padding:6px;border-radius:8px;max-height:160px;overflow:auto">${esc(C.out)}</pre>`;
         const kept = D().code || []; if (kept.length) { h += `<p class="sub">Kept (run every time the game loads; Save tab → Publish sends them):</p>`; kept.forEach((c, i) => { h += `<div class="sub" style="font:11px ui-monospace,Menlo,monospace">${esc(c.slice(0, 140))} <button data-condel="${i}">🗑️</button></div>`; }); }
-        h += `<h3>Edit the game's code</h3><input type="search" data-cq="1" placeholder="find in the code (or a line number): frameAt, lapCrossed, jump, 2140…" value="${esc(C.q)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
-        if (C.hit < 0 && /^\d+$/.test(C.q.trim()) && +C.q > 0) C.hit = Math.min(C.lines.length - 1, +C.q - 1);
+        h += `<h3>Edit the game's code</h3><input type="search" data-cq="1" placeholder="find in the code: buildTrackside, jump, PIT…" value="${esc(C.q)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
         if (C.hit >= 0) {
           const a = Math.max(0, C.hit - 6), b = Math.min(C.lines.length - 1, C.hit + 24), mineK = CE.chunks.find(k => k.a === a);
           h += `<p class="sub">Lines ${a + 1}-${b + 1} of ${C.lines.length}. Change anything, then "Use this change".</p><textarea data-chunk="${a}:${b}" spellcheck="false" style="min-height:300px;white-space:pre;overflow:auto">${esc(mineK ? mineK.text : C.lines.slice(a, b + 1).map((l, i) => CE.nums[a + i] ? lineNow(a + i) : l).join('\n'))}</textarea>`;
@@ -412,7 +395,6 @@
       h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
     ui.el.innerHTML = h;
-    ui.el.querySelectorAll('[data-born]').forEach(b => b.onclick = () => { const n = +b.dataset.born; if (!n) return; ui.tab = 'code'; C.hit = n - 1; C.q = ''; ui.draw(); const ta = ui.el.querySelector('[data-chunk]'); if (ta) ta.scrollIntoView({ block: 'start' }); });
     const rn = ui.el.querySelector('[data-run]'); if (rn) rn.onclick = runMine;
     const sd = ui.el.querySelector('[data-send]'); if (sd) sd.onclick = sendFix;
     const ua = ui.el.querySelector('[data-undoall]'); if (ua) ua.onclick = () => { if (!ua.dataset.sure) { ua.dataset.sure = 1; ua.textContent = 'Tap again to undo all code changes'; return; } CE = { nums: {}, chunks: [] }; saveCE(); ui.draw(); };
@@ -428,7 +410,7 @@
     const ck = ui.el.querySelector('[data-conkeep]'); if (ck) ck.onclick = () => { const t = C.console.trim(); if (!t) return; const r = runConsole(t); if (r[0] === '✗') { C.out = 'Not kept - it has an error: ' + r; ui.draw(); return; } const m = ensure(); (m.code = m.code || []).push(t); saveLocal(); C.out = 'Kept. It runs every time the game loads on this phone; Save → Publish sends it to everyone.'; ui.draw(); };
     ui.el.querySelectorAll('[data-condel]').forEach(b => b.onclick = () => { const m = ensure(); (m.code || []).splice(+b.dataset.condel, 1); saveLocal(); ui.draw(); });
     const cq = ui.el.querySelector('[data-cq]'); if (cq) cq.oninput = () => { C.q = cq.value; C.hit = -1; const p = cq.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-cq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
-    ui.el.querySelectorAll('[data-hit]').forEach(b => b.onclick = () => { C.hit = +b.dataset.hit; ui.draw(); const ta = ui.el.querySelector('[data-chunk]'); if (ta) ta.scrollIntoView({ block: 'start' }); });
+    ui.el.querySelectorAll('[data-hit]').forEach(b => b.onclick = () => { C.hit = +b.dataset.hit; ui.draw(); });
     const cu = ui.el.querySelector('[data-chunkuse]'); if (cu) cu.onclick = () => { const ta = ui.el.querySelector('[data-chunk]'), [a, b] = ta.dataset.chunk.split(':').map(Number), old = C.lines.slice(a, b + 1).join('\n');
       CE.chunks = CE.chunks.filter(k => k.b < a || k.a > b); for (let i = a; i <= b; i++) delete CE.nums[i]; if (ta.value !== old) CE.chunks.push({ a, b, old, text: ta.value }); saveCE(); ui.msg = ta.value !== old ? 'Change kept. ▶ Run to try it, 📤 Send to make it real.' : 'No change in those lines.'; C.hit = -1; ui.draw(); };
     const cup = ui.el.querySelector('[data-chunkup]'); if (cup) cup.onclick = () => { C.hit = Math.max(6, C.hit - 25); ui.draw(); };
@@ -477,5 +459,5 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
-    code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, bornAt, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
+    code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();

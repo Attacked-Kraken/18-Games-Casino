@@ -883,12 +883,9 @@ const Track = {
     s=((s%this.length)+this.length)%this.length;
     const sm=this.samples; let lo=0, hi=sm.length-1;
     while(lo<hi){ const mid=(lo+hi)>>1; if(sm[mid].s<s) lo=mid+1; else hi=mid; }
-    let b=sm[lo], a=sm[(lo-1+sm.length)%sm.length], span, t;
-    const last=sm[sm.length-1];
-    if(s>=last.s || s<sm[0].s){ // owner Nov 7 2026 'track glitchy every lap ... hung up on the finish line': the last stretch before the line (last sample -> line, 4-17 m) used to freeze the car on the last sample, then jump it over the line. It now blends from the last sample round to the first.
-      a=last; b=sm[0]; span=(this.length-last.s+sm[0].s)||1; t=((s>=last.s?s-last.s:s+this.length-last.s))/span;
-    } else { span=(b.s-a.s)||1; t=(s-a.s)/span; }
-    if(t<0)t=0; if(t>1)t=1;
+    const b=sm[lo], a=sm[(lo-1+sm.length)%sm.length];
+    const span=(b.s-a.s)||1; let t=(s-a.s)/span; if(t<0)t=0; if(t>1)t=1;
+    if(b.s<a.s) t=0; // wrap guard
     return { x:lerp(a.x,b.x,t), y:lerp(a.y,b.y,t), z:lerp(a.z,b.z,t),
       tx:lerp(a.tx,b.tx,t), tz:lerp(a.tz,b.tz,t), nx:lerp(a.nx,b.nx,t), nz:lerp(a.nz,b.nz,t),
       curv:lerp(a.curv,b.curv,t), bank:lerp(a.bank||0,b.bank||0,t) };
@@ -3325,8 +3322,6 @@ window.__test = {
   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
   scenery: () => { const gb = Track.groundBase, bases = []; Track.group.traverse(o => { if (o.isInstancedMesh && o.geometry.type === 'BoxGeometry') { o.geometry.computeBoundingBox(); if (Math.abs(o.geometry.boundingBox.min.y) < 1e-6) { const m = new THREE.Matrix4(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); bases.push(m.elements[13]); } } } }); return { ground: gb, n: bases.length, maxBase: bases.length ? Math.max(...bases) : null }; },
   stripe: () => { let ok = null; Track.group.traverse(o => { if (o.isMesh && o.renderOrder === 2 && o.material.map) ok = { poly: !!o.material.polygonOffset, map: true }; }); return ok; },
-  seam: () => { const sm=Track.samples, n=sm.length, L=Track.length, a=Track.frameAt(L-0.5), b=Track.frameAt(0.5), q=Track.frameAt(sm[n-1].s); return { n, first:+sm[0].s.toFixed(2), last:+sm[n-1].s.toFixed(2), L:+L.toFixed(2), gap:+(L-sm[n-1].s+sm[0].s).toFixed(2), stuck:+Math.hypot(a.x-q.x,a.z-q.z).toFixed(3), jumpAtLine:+Math.hypot(a.x-b.x,a.z-b.z).toFixed(2) }; },
-  carPose: () => Race.cars.map(c => ({ s: +c.s.toFixed(2), d: +c.d.toFixed(2), v: +c.v.toFixed(2), x: +c.mesh.position.x.toFixed(2), y: +c.mesh.position.y.toFixed(3), z: +c.mesh.position.z.toFixed(2), h: +c.mesh.rotation.y.toFixed(3), L: +Track.length.toFixed(1) })), // owner Nov 7 2026: finish-line hang-up probe
   cars: () => Race.cars.map(c => ({
     name: c.name, s: c.s, d: c.d, v: c.v, lap: c.lap,
     finished: c.finished, isPlayer: c.isPlayer,
