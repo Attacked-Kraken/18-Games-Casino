@@ -847,6 +847,7 @@ const Track = {
     this.clearGroup();
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
     this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
+    try{ this.buildPitSigns(this.group); }catch(e){}
     if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
       const f0=this.frameAt(0);
       for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
@@ -1158,6 +1159,7 @@ const Track = {
       this.crowd.list.push({inst,seeds,m4:new THREE.Matrix4()});
     }
     this.buildLineSigns(g); // owner Nov 6 2026: START / FINISH / lap number floating in the air, replacing the gantry
+    try{ this.buildPitSigns(g); }catch(e){}
     // barriers along track
     const barGeo=new THREE.BoxGeometry(4,1.1,0.6);
     const barMatW=new THREE.MeshLambertMaterial({color:0xf2f2f2});
@@ -1268,6 +1270,18 @@ const Track = {
     sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5);
     this._lapTex=[null]; for(let n=1;n<=10;n++) this._lapTex.push(mk('LAP '+n,'#ffd76a',384,128,96));
     this._lapSign=sp(this._lapTex[1],10,3.3,4.2);
+  },
+  buildPitSigns(g){ // owner Nov 6 2026: a big PIT ENTRY sign hangs in the air over the pit entry, and PIT over the boxes - you can see where to go in
+    const mk=(txt,col,w,h,fs)=>{ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const c=cv.getContext('2d');
+      c.fillStyle='rgba(10,14,22,0.82)'; c.fillRect(0,0,w,h); c.strokeStyle=col; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8);
+      c.font='900 '+fs+'px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col; c.fillText(txt,w/2,h/2+4);
+      const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
+    const pin=this.cfg.pitIn*this.length, side=this.pitSide||1;
+    const sp=(tex,sx,sy,s,y)=>{ const f=this.frameAt(s); const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false}));
+      m.scale.set(sx,sy,1); m.position.set(f.x+f.nx*side*this.width*0.3,f.y+y,f.z+f.nz*side*this.width*0.3); g.add(m); return m; };
+    sp(mk('PIT ENTRY','#9fd8ff',640,160,96),22,5.5,pin-30,11);
+    sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),18,4.5,pin-300,9);
+    sp(mk('PIT','#ffd76a',320,160,120),10,5,pin+100,8);
   },
   setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
@@ -1470,6 +1484,8 @@ function apexWordTex(){ // the lettering lives on its own sheet so the car only 
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
   const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
+  // owner Nov 6 2026 'colours not working': a wrap now takes the picked team colour (the wrap's own pattern stays, tinted toward the team) instead of ignoring it
+  if(wrap && wrap!=='team'){ const tc=new THREE.Color(color), mx=Math.max(tc.r,tc.g,tc.b,0.001); tc.multiplyScalar(1/mx); m.color.set(0xffffff).lerp(tc,0.6); }
   m.customProgramCacheKey = ()=>'apexLivery';
   m.onBeforeCompile = sh=>{
     sh.uniforms.livTex={value:tex}; sh.uniforms.wordTex={value:apexWordTex()}; sh.uniforms.bMin={value:M.bmin}; sh.uniforms.bSize={value:M.bsize};
@@ -1573,7 +1589,11 @@ function studioTick(S){
   if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ S.r.setSize(w,h,false); S.cam.aspect=w/h; S.cam.updateProjectionMatrix(); }
   S.t+=0.006; if(S.plate) S.plate.rotation.y+=S.big?0.004:0.006;
   if(S.big){ const port=h>w; const a=0.55+Math.sin(S.t*0.35)*0.5; const R=port?14:7.6; S.cam.position.set(Math.cos(a)*R+(port?0:1.8), port?3.2:1.7, Math.sin(a)*R); S.cam.lookAt(port?0:-2.2, port?-2.4:0.55, 0); S.car.rotation.y=-0.3; }
-  else { const d=S.canvas.id==='teamPrev'?4.7:6.2; S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
+  else { let d=S.canvas.id==='teamPrev'?4.7:6.2;
+    // owner Nov 6 2026 'Classic is big, Modern is small': the camera backs off in proportion to the car's real length, so every shape fills the picture the same
+    if(S._fitCar!==S.car){ S._fitCar=S.car; try{ const bb=new THREE.Box3().setFromObject(S.car), z=bb.getSize(new THREE.Vector3()); S._fit=Math.max(z.x,z.z); window.__prevFit=window.__prevFit||[]; window.__prevFit.push(+S._fit.toFixed(2)); }catch(e){ S._fit=0; } }
+    if(S._fit>0.5) d*=Math.max(0.6,Math.min(1.8,S._fit/4.6));
+    S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
   S.r.render(S.scene, S.cam);
 }
 const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }, TP = { s:null }; window.__st = ST; window.__cp = CP;
@@ -2431,13 +2451,11 @@ const Race = {
   },
   wantPit(){
     const p=this.player; if(!p||this.mode!=='race'||p.inPits) return;
-    const sN=((p.s%Track.length)+Track.length)%Track.length;
-    const pitInS=Track.cfg.pitIn*Track.length;
-    if(sN>pitInS-600&&sN<pitInS){
-      p.pitIntent=true; banner('PIT ARMED','Box this lap — pick tires',900,'#9fd8ff');
-      this.showPitMenu();
-    }
-    else banner('PIT ENTRY AHEAD','Arm it near the pit entry',1100,'#8fa8c8');
+    // owner Nov 6 2026 'there is no pit': PIT works from anywhere on the lap - it arms the stop and tells you how far the pit entry sign is
+    if(p.pitIntent){ p.pitIntent=false; banner('PIT CANCELLED','',800,'#8fa8c8'); return; }
+    const L=Track.length, sN=((p.s%L)+L)%L, pitInS=Track.cfg.pitIn*L, dist=Math.round(((pitInS-sN)%L+L)%L);
+    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tyres',1400,'#9fd8ff');
+    this.showPitMenu();
   },
   openTyreChoice(){ if(!this.player||this.mode!=='race'||this.player.inPits) return; this.showPitMenu(); },
   showPitMenu(){
