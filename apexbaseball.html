@@ -6,6 +6,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Apex Baseball · Apex Arcade</title>
+<script src="kit/studio.js"></script><!-- owner Nov 7 2026: 🎛️ Studio - his no-code editor (?studio=1 or the Game Development page's STUDIO switch) -->
+<script>/* owner Nov 7 2026: every Studio slider of this game, listed up front. PLAYER EDITOR = the Teams + Players groups (colours change at once; height / build / skin / hair at the next game) */
+try{ Studio.declare([
+ {key:'team.home.uni',def:'#1e3fae',kind:'color',label:'Comets (you) - jersey',group:'Teams'},
+ {key:'team.home.cap',def:'#16307a',kind:'color',label:'Comets - cap and helmet',group:'Teams'},
+ {key:'team.away.uni',def:'#0e7c7b',kind:'color',label:'Sharks - jersey',group:'Teams'},
+ {key:'team.away.cap',def:'#083f3e',kind:'color',label:'Sharks - cap and helmet',group:'Teams'},
+ {key:'team.pants',def:'#e8e8e8',kind:'color',label:'Pants (both teams)',group:'Teams'},
+ {key:'team.shoes',def:'#222222',kind:'color',label:'Shoes (both teams)',group:'Teams'},
+ {key:'player.height',def:1.85,min:1.6,max:2.1,step:0.01,label:'Player height in metres (next game)',group:'Players'},
+ {key:'player.build',def:1,min:0.8,max:1.3,step:0.01,label:'Build: thin - wide (next game)',group:'Players'},
+ {key:'player.skin',def:0,min:0,max:6,step:1,label:'Skin tone: 0 = mixed, 1 light ... 6 dark (next game)',group:'Players'},
+ {key:'player.hair',def:0,min:0,max:9,step:1,label:'Hair colour: 0 = mixed, 1-9 one colour for all (next game)',group:'Players'},
+ {key:'pitch.speed',def:1,min:0.6,max:1.6,step:0.01,label:'Pitch speed, both teams (1 = real)',group:'Play'},
+ {key:'swing.window',def:1,min:0.5,max:2,step:0.01,label:'Batting timing window (bigger = easier to hit)',group:'Play'},
+ {key:'field.speed',def:1,min:0.6,max:1.6,step:0.01,label:'Fielders run speed',group:'Play'},
+ {key:'cam.fov',def:42,min:25,max:80,step:1,label:'Field of view (zoom)',group:'Camera'}
+]); }catch(e){}</script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; background:#0a0e14; font-family:ui-monospace,Menlo,Consolas,monospace; color:#eaffef; }
@@ -283,6 +301,16 @@ const TEAMS = {
   away:{ name:'Sharks', short:'SHK', uni:0x0e7c7b, trim:0x111111, cap:0x083f3e, skin:[0xe8b07e,0xc98a5a,0x9c6633] },
   ump:{ name:'Umpire', short:'UMP', uni:0x191b21, trim:0x26272c, cap:0x0b0b0e, skin:[0xd9a066,0xb57748,0x8c5a2b] },
 };
+/* owner Nov 7 2026: Studio player editor - team colours, pants, shoes (read now and again whenever he changes one) */
+const SC_ = (k, d) => window.Studio ? parseInt(Studio.color(k, d).slice(1), 16) : parseInt(d.slice(1), 16);
+const SN_ = (k, d) => window.Studio ? Studio.num(k, d) : d;
+const hex6 = n => '#' + (n >>> 0).toString(16).padStart(6, '0');
+const TEAM_DEF = { home: { uni: hex6(TEAMS.home.uni), cap: hex6(TEAMS.home.cap) }, away: { uni: hex6(TEAMS.away.uni), cap: hex6(TEAMS.away.cap) } };
+function studioTeams(){
+  try { for (const t of ['home', 'away']) { TEAMS[t].uni = SC_('team.' + t + '.uni', TEAM_DEF[t].uni); TEAMS[t].cap = SC_('team.' + t + '.cap', TEAM_DEF[t].cap); }
+        if (typeof PANT_COL !== 'undefined') { PANT_COL = SC_('team.pants', '#e8e8e8'); SHOE_COL = SC_('team.shoes', '#222222'); } } catch (e) {}
+}
+studioTeams();
 
 /* ---------------- game state ---------------- */
 const G = {
@@ -585,7 +613,7 @@ function parseFriendCode(code){
    the game sets still applies; primitive meshes are hidden. Visuals only. */
 let H = null;
 const athletes = [];
-const PANT_COL = 0xe8e8e8;
+let PANT_COL = 0xe8e8e8, SHOE_COL = 0x222222;   // owner Nov 7 2026: Studio player editor can change both
 /* G-82 fix (owner): the six hair GLBs are the loader's SECOND wave - they start only
    after the big base bodies arrive, so on a busy phone their downloads can still be
    running when the game check reloads the page, and an aborted download is counted
@@ -602,6 +630,8 @@ try {
 
 const HAIR_M = ['parted','buzzed','parted_beard','long','curly','quiff','bald_beard','buzzed_beard'];
 const HAIR_C = [0x1a1210,0x2e1c12,0x5a3a2e,0xc8a060,0x3a1a4a];
+const HAIR_ALL = [0x1a1210, 0x2e1c12, 0x5a3a1e, 0x8a5a2e, 0xc8a060, 0xe8d0a0, 0x7a2a14, 0x9a9a9a, 0x3a1a4a];   // Studio 'Hair colour' 1-9
+studioTeams();   // PANT_COL / SHOE_COL exist from here on
 /* REALITY robot drive (G-100; re-run after the robot's game-time ground-contact fix, PR #929): go(true) sends the batter on a home-run trot
    around the bases until go(false) - the robot measures that he really moves,
    faces the way he travels and keeps his feet on the ground. He runs the real
@@ -647,11 +677,11 @@ function attachAthlete(p, slotIdx){
     const T = TEAMS[p.team] || TEAMS.home;
     const a = H.make({
       g:'m',
-      skin: slotIdx % 6,
+      skin: SN_('player.skin', 0) >= 1 ? Math.min(5, Math.round(SN_('player.skin', 0)) - 1) : slotIdx % 6,
       hair: HAIR_M[slotIdx % HAIR_M.length],
-      hairCol: HAIR_C[slotIdx % HAIR_C.length],
+      hairCol: SN_('player.hair', 0) >= 1 ? HAIR_ALL[Math.min(8, Math.round(SN_('player.hair', 0)) - 1)] : HAIR_C[slotIdx % HAIR_C.length],
       outfit:'baseball_kit',
-      cols:{ top: T.uni, bottom: PANT_COL, shoes: 0x222222 },
+      cols:{ top: T.uni, bottom: PANT_COL, shoes: SHOE_COL },
     }, 1.82);
     a.object.rotation.y = 0;                    // rig bind pose faces +z, same as primitives
     a.object.traverse(o => { if (o.isMesh || o.isSkinnedMesh) o.castShadow = !isTouch; });
@@ -670,7 +700,8 @@ function attachAthlete(p, slotIdx){
     const bb = new THREE.Box3(), bt = new THREE.Box3();
     a.object.traverse(o => { if (o.isSkinnedMesh){ bt.setFromObject(o); bb.union(bt); } });
     const hb = bb.getSize(new THREE.Vector3()).y;
-    if (hb > 0.5) a.object.scale.multiplyScalar(2.02/hb);
+    if (hb > 0.5) a.object.scale.multiplyScalar((2.02 * SN_('player.height', 1.85) / 1.85)/hb);   // owner Nov 7 2026: Studio height (1.85 m = 2.02 units, the real size)
+    { const bw = SN_('player.build', 1); if (bw !== 1){ a.object.scale.x *= bw; a.object.scale.z *= bw; } }        // Studio build (wider / thinner)
     // VP sole fix (robot PR #1027 measures the real soles from the body): the
     // posed soles sit ~5 cm under the ground. Measure this athlete's lowest
     // point and lift the model inside its group until the soles touch the
@@ -699,9 +730,9 @@ function attachAthlete(p, slotIdx){
         brim.position.set(0,0.015,0.155); capGrp.add(crown, brim);
         capGrp.position.set(0,0.045,0);
       }
-      bones['Head'].add(capGrp);
+      bones['Head'].add(capGrp); p.capGrp = capGrp;   // Studio recolours it live
     }
-    const kS = a.object.scale.x || 1;           // G-65: hand props are sized in world units via the rig's real scale
+    const kS = a.object.scale.y || 1;           // (y: Studio 'build' may widen x/z) G-65: hand props are sized in world units via the rig's real scale
     if (p.bat){                                 // batter: real bat in the right hand
       p.bat.visible = false;
       const bg = new THREE.Group();
@@ -952,7 +983,7 @@ function plateCrossing(){
 /* launch the ball toward the plate */
 function deliverPitch(type, tx, ty, byPlayer){
   const P = PITCHES[type];
-  flight.active = true; flight.t = 0; flight.T = P.T; flight.type = type;
+  flight.active = true; flight.t = 0; flight.T = P.T / Math.max(0.3, SN_('pitch.speed', 1)); flight.type = type;   // owner Nov 7 2026: Studio pitch speed
   flight.p0 = [0,5.1,-19.2]; flight.p1 = [tx, ty, 0.4];
   flight.breakDir = tx >= 0 ? -1 : 1;   // curve breaks away from aim side
   flight.arrived = false; flight.onArrive = null; flight.swingAt = null;
@@ -1054,7 +1085,8 @@ function contactRoll(q, dt){
 function swingVerdict(dt, ay){
   const heightPenalty = Math.abs(ay-2.2) > 1.2 ? 0.05 : 0;
   const eff = Math.abs(dt) + heightPenalty;
-  return eff > 0.17 ? { miss:true } : { miss:false, q: 1 - eff/0.17 };
+  const W = 0.17 * SN_('swing.window', 1);   // owner Nov 7 2026: Studio timing window (1 = today's 0.17 s)
+  return eff > W ? { miss:true } : { miss:false, q: 1 - eff/W };
 }
 
 /* ---------- count events ---------- */
@@ -1214,7 +1246,7 @@ function decideBattedBall(p, lx, lz, isHR){
   if (p.kind==='grounder'){
     const ix = lx*0.8, iz = lz*0.8;                        // intercept point (infield depth)
     const F = nearestFielder(ix, iz, true);
-    const tField = (F? F.d/FIELDER_SPEED : 99) + 0.25;
+    const tField = (F? F.d/(FIELDER_SPEED * SN_('field.speed', 1)) : 99) + 0.25;
     const tGrass = p.dist/14;                              // ball decelerates on the dirt
     if (tField > tGrass + 0.15) return { type:'single', why:'through' };   // through the infield
     if (Math.random() < 0.05) return { type:'error', why:'bobble' };        // 5% bobble
@@ -1229,7 +1261,7 @@ function decideBattedBall(p, lx, lz, isHR){
   }
   // air ball
   const F = nearestFielder(lx, lz, false);
-  const tArrive = F ? F.d/FIELDER_SPEED : 99;
+  const tArrive = F ? F.d/(FIELDER_SPEED * SN_('field.speed', 1)) : 99;
   if (infield){ return { type:'flyout', fielder:F?F.k:'P' }; }               // infield fly: routine
   if (tArrive < bip.tf - 0.08 && Math.random() > 0.06) return { type:'flyout', fielder:F?F.k:'CF' };
   // lands: hit by depth
@@ -1422,6 +1454,10 @@ function setCam(mode){
   applyCam(targetCam());
 }
 $('viewBtn').addEventListener('click', ()=>{
+  if (window.Studio){ const mine = (Studio.data().cams || []).length;   // owner Nov 7 2026: after the game's 3 views come his own Studio views
+    if (Studio.camView() || (viewMode === 'close' && mine)){ const v = Studio.camNext();
+      if (v){ $('viewBtn').textContent = 'CAM·MINE'; banner('CAMERA', String(v.name || 'MY VIEW').toUpperCase(), 900); return; }
+      viewMode = 'close'; } }
   viewMode = viewMode==='auto' ? 'wide' : viewMode==='wide' ? 'close' : 'auto';
   $('viewBtn').textContent = 'CAM·' + viewMode.toUpperCase();
   const t = targetCam();
@@ -1623,6 +1659,10 @@ function loop(){
     if (camera.position.distanceToSquared(camTgtP) < 0.02 && camLook.distanceToSquared(camTgtL) < 0.02) camBlend = 0;
   }
   crowdTick(now/1000, dt);
+  if (window.Studio && Studio.ownsCamera()){ fx.render(renderer, scene, camera); return; }   // owner Nov 7 2026: Studio 'Place' = map view from above
+  { const myCam = window.Studio && Studio.camView(), fov = myCam ? myCam.fov : SN_('cam.fov', 42);
+    if (Math.abs(camera.fov - fov) > 0.01){ camera.fov = fov; camera.updateProjectionMatrix(); }
+    if (myCam){ camera.position.set(myCam.side || 0, Math.max(0.5, myCam.up), myCam.back); camLook.set(0, 1.5, -(myCam.ahead || 0)); } }   // his own view: from home plate (behind = +), looking out toward the mound
   camera.lookAt(camLook);
   fx.render(renderer, scene, camera);
 }
@@ -1634,6 +1674,16 @@ $('back').addEventListener('click', ()=>{ location.href='sports.html'; });
 $('helpBtn').addEventListener('click', ()=>{ $('helpOv').style.display='flex'; });
   $('helpHud').addEventListener('click', ()=>{ $('helpOv').style.display='flex'; });
 $('helpClose').addEventListener('click', ()=>{ $('helpOv').style.display='none'; });
+/* owner Nov 7 2026: Studio - colours change at once, things he places stay in the park, his camera views */
+try { if (window.Studio){
+  Studio.on('change', key => { if (/^team\./.test(String(key)) || key === '*'){ studioTeams();
+    for (const p of new Set([...lineup, pitcherMesh, catcherMesh, ...runnerMeshes, ...Object.values(fielders)])){
+      if (!p || !p.team || p.team === 'ump') continue; dress(p, p.team);
+      if (p.athleteU && p.athleteU.uShoe) p.athleteU.uShoe.value.set(SHOE_COL);
+      if (p.capGrp) p.capGrp.traverse(o => { if (o.isMesh) o.material = M(TEAMS[p.team].cap); }); } } });
+  Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), scope: () => 'park',
+    center: () => ({ x: 0, z: -30 }), camDefault: { back: 12, up: 5, side: 0, ahead: 20, fov: 42 } });
+} } catch (e) { console.warn('studio', e); }
 function startGame(){
   $('startOv').style.display='none';
   dressDefense('home');

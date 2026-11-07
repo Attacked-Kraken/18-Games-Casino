@@ -1,0 +1,1 @@
+{"v":1,"games":[],"how":"A game listed here has a mods/<game>.json with the owner's Studio settings (sliders, placed things, camera views). kit/studio.js reads this list first, so a game with no settings asks for nothing."}
