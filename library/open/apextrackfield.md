@@ -4,7 +4,7 @@ Crew: tester window 10 · auditor window 4. Claude fixes everything marked FOR-C
 Checklist: checklists/apextrackfield.md · Short rules: rules/short/apextrackfield.md · Findings: findings/apextrackfield/
 
 ## What's left (the auditor keeps this list current - newest finding first, BLOCKERs on top)
-- F-T-004 (BAD, career): season-4 championship final can be LOST after winning every event — meet standings are computed from rivalMark() draws, not the marks actually achieved. Auditor reproduced 2026-11-07 on main a2cc6fd: 5 firsts, 5733 PTS, meet NOT WON, J. Osei credited 5738 PTS. STATUS: NEW, audit pending (round A4-9).
+- F-T-004 (BAD, career): season-4 championship final can be LOST after winning every event — meet standings are computed from rivalMark() draws, not the marks actually achieved. Auditor reproduced 2026-11-07 on main a2cc6fd: 5 firsts, 5733 PTS, meet NOT WON, J. Osei credited 5738 PTS. STATUS: FOR-CLAUDE (round A4-9).
 
 ## Fixed this week
 - F-T-001 (SMALL, menus): MUTE button 44px touch target — FIXED PR #2403, merged 2026-11-07T07:24:53Z, verified on main b41d69b.
