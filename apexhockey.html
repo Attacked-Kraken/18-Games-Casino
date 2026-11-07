@@ -5,6 +5,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Apex Ice Hockey · Apex Arcade</title>
+<script src="kit/studio.js"></script><!-- owner Nov 7 2026: 🎛️ Studio - his no-code editor (?studio=1 or the Game Development page's STUDIO switch) -->
+<script>/* owner Nov 7 2026: every Studio slider of this game, listed up front (team colours apply when the game is opened again) */
+try{ Studio.declare([
+ {key:'team.home.jersey',def:'#1f6fd6',kind:'color',label:'Wolves (you) - jersey (reopen the game)',group:'Teams'},
+ {key:'team.home.pants',def:'#123c73',kind:'color',label:'Wolves - pants, gloves, yoke',group:'Teams'},
+ {key:'team.home.helmet',def:'#1f6fd6',kind:'color',label:'Wolves - helmet',group:'Teams'},
+ {key:'team.home.goalie',def:'#ffd34d',kind:'color',label:'Wolves - goalie jersey',group:'Teams'},
+ {key:'team.away.jersey',def:'#0e7c7b',kind:'color',label:'Sharks - jersey (quick match)',group:'Teams'},
+ {key:'team.away.pants',def:'#0a4443',kind:'color',label:'Sharks - pants, gloves, yoke',group:'Teams'},
+ {key:'team.away.helmet',def:'#123a3a',kind:'color',label:'Sharks - helmet',group:'Teams'},
+ {key:'skate.home',def:1,min:0.6,max:1.5,step:0.01,label:'Skating speed - your team',group:'Play'},
+ {key:'skate.away',def:1,min:0.6,max:1.5,step:0.01,label:'Skating speed - other team',group:'Play'},
+ {key:'skate.accel',def:1,min:0.5,max:2,step:0.01,label:'How fast skaters speed up / turn',group:'Play'},
+ {key:'shot.power',def:1,min:0.6,max:1.6,step:0.01,label:'Your shot power',group:'Play'},
+ {key:'cam.fov',def:57,min:30,max:90,step:1,label:'Field of view (zoom)',group:'Camera'}
+]); }catch(e){}</script>
 <link rel="icon" href="data:,">
 <link rel="icon" href="apexhockey-icon.svg">
 <style>
@@ -205,6 +221,10 @@ const TEAMS = {
   home: { name:'WOLVES', dir: 1, jersey:0x1f6fd6, trim:0xffffff, helmet:0x1f6fd6, pads:0x1f6fd6 },
   away: { name:'SHARKS', dir:-1, jersey:0x0e7c7b, trim:0xffffff, helmet:0x123a3a, pads:0x0e7c7b },
 };
+/* owner Nov 7 2026: Studio team colours (read before any skater or material is built; a career / friend match still re-skins the visitors) */
+const SC_ = (k, d) => window.Studio ? parseInt(Studio.color(k, d).slice(1), 16) : parseInt(d.slice(1), 16);
+const SN_ = (k, d) => window.Studio ? Studio.num(k, d) : d;
+try { for (const [t, j, h] of [['home', '#1f6fd6', '#1f6fd6'], ['away', '#0e7c7b', '#123a3a']]) { TEAMS[t].jersey = TEAMS[t].pads = SC_('team.' + t + '.jersey', j); TEAMS[t].helmet = SC_('team.' + t + '.helmet', h); } } catch (e) {}
 /* career / friend match override: a pending match (set from the career hub)
    re-skins the visitors BEFORE any skater or material is built from TEAMS. */
 window.__awayBoost = 1; window.__starBoost = 1; window.__starShot = 1;
@@ -665,6 +685,8 @@ const KIT = {
   home: { top:0x1f6fd6, bottom:0x123c73, goalieTop:0xffd34d },
   away: { top:0x0e7c7b, bottom:0x0a4443, goalieTop:0xff7a59 },
 };
+try { KIT.home.top = TEAMS.home.jersey; KIT.home.bottom = SC_('team.home.pants', '#123c73'); KIT.home.goalieTop = SC_('team.home.goalie', '#ffd34d');   // owner Nov 7 2026: Studio
+      KIT.away.top = TEAMS.away.jersey; KIT.away.bottom = SC_('team.away.pants', '#0a4443'); } catch (e) {}
 const ATH_H = 5.9, ATH_K = ATH_H/1.81; // match the primitive figure's ~5.9-unit height
 let HK = null;
 async function attachAthletes(H){
@@ -803,6 +825,8 @@ let statShots={home:0,away:0}, statSaves={home:0,away:0}, statFO={home:0,away:0}
 let pendingFaceoff=null;
 let delayedPen=null; // G-273 round 1 (G-228): an armed DELAYED penalty {off, why, major} - play goes on until the penalised team touches the puck (rules/hockey.md)
 let controlled = homeSkaters[0];
+try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'rink', // owner Nov 7 2026: things he places in Studio
+  center: () => (controlled ? { x: controlled.pos.x, z: controlled.pos.z } : { x: 0, z: 0 }), camDefault: { back: 6, up: 4, side: 0, ahead: 4, fov: 57 } }); } catch (e) { console.warn('studio', e); }
 /* G-37: the career play tests read and set the live game through this hook
    (the same __hk peek the other play tests use for the puck and the skaters).
    A test starts a career match for real, then puts it in its last seconds
@@ -1060,7 +1084,7 @@ function shootFrom(s, power, aimed){
     if(Math.sign(jx)===dir||Math.abs(jx)>0.7) aimZ=clamp(jz*8,-2.6,2.6);
   }
   const dx=gx-puck.pos.x, dz=aimZ-puck.pos.z, d=Math.hypot(dx,dz)||1;
-  const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1);
+  const sp=(42+40*clamp(power,0.15,1)) * (s.star ? (window.__starShot || 1) : 1) * (s.team==='home' ? SN_('shot.power', 1) : 1);
   puck.vel.set(dx/d*sp,0,dz/d*sp); puck.owner=null;
   puck.shot={team:s.team,t:0,by:s,ox:puck.pos.x,oz:puck.pos.z}; statShots[s.team]++; // G-78: origin, so a defender in the lane near the shooter can block it; G-257: the shot counts for the intermission card
   commSay(power>=0.8?'slapshot':'wrist_shot'); // G-44
@@ -1449,7 +1473,7 @@ function stepSkater(s,dt){
     if(keys.KeyW||keys.ArrowUp)iy-=1; if(keys.KeyS||keys.ArrowDown)iy+=1;
     if(keys.KeyA||keys.ArrowLeft)ix-=1; if(keys.KeyD||keys.ArrowRight)ix+=1;
     const m=Math.hypot(ix,iy);
-    if(m>0.12){ const sp=Math.min(m,1)*24;
+    if(m>0.12){ const sp=Math.min(m,1)*24*SN_('skate.home', 1);
       // JOB J10 NEW (owner Oct 18): joystick is SCREEN-relative, never flips.
       // CLOSE camera looks along the attacking X axis: screen-right = +Z, screen-up = attacking direction.
       if(camMode===2){ const ad=TEAMS.home.dir; des.set(-iy/m*sp*ad,0,ix/m*sp); }
@@ -1468,11 +1492,11 @@ function stepSkater(s,dt){
       des.set(Math.sin(gameNow*1.15+s.phase*2.1)*1.6,0,Math.cos(gameNow*0.95+s.phase*1.7)*1.6);
     }
   }
-  const k=(des.lengthSq()>0.01)?2.2:1.0; // JOB J10: smoother accel, longer glide (hockey skates, doesn't run)
+  const k=((des.lengthSq()>0.01)?2.2:1.0)*SN_('skate.accel', 1); // (Studio: owner Nov 7 2026) JOB J10: smoother accel, longer glide (hockey skates, doesn't run)
   s.vel.x+=(des.x-s.vel.x)*Math.min(1,k*dt);
   s.vel.z+=(des.z-s.vel.z)*Math.min(1,k*dt);
   const sp=Math.hypot(s.vel.x,s.vel.z);
-  const cap = (s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24)) * (0.8+0.2*(s.stam??1)); // tired legs are slower legs
+  const cap = (s.star ? 24*(window.__starBoost||1) : (s.team==='away' ? 24*(window.__awayBoost||1) : 24)) * (0.8+0.2*(s.stam??1)) * SN_(s.team==='away' ? 'skate.away' : 'skate.home', 1); // tired legs are slower legs
   if(sp>cap){ s.vel.x*=cap/sp; s.vel.z*=cap/sp; }
   if(state==='play' && !s.inBox && !s.goalie){ s.stam=Math.max(0.45,(s.stam??1)-dt*(sp>16?0.020:0.010)); }
   s.pos.x+=s.vel.x*dt; s.pos.z+=s.vel.z*dt;
@@ -1727,6 +1751,10 @@ const CAMSUB=['TV BROADCAST','FULL RINK','FOLLOWING YOUR SKATER','ON THE ICE','B
 let camMode=0, lastControlledRef=null, camEase=0;
 let leadCur=0; // G-72: broadcast lead, eased toward the puck-velocity lead so a save never snaps the camera back
 function cycleView(){
+  if(window.Studio){ const mine=(Studio.data().cams||[]).length; // owner Nov 7 2026: after the game's 5 views come his own Studio views
+    if(Studio.camView() || (camMode===CAMNAMES.length-1 && mine)){ const v=Studio.camNext();
+      if(v){ $('viewBtn').textContent='VIEW · MINE'; banner('VIEW: '+String(v.name||'MY VIEW').toUpperCase(), 'YOUR STUDIO VIEW', 700); return; }
+      camMode=CAMNAMES.length-1; } }
   camMode=(camMode+1)%CAMNAMES.length;
   $('viewBtn').textContent='VIEW · '+CAMNAMES[camMode];
   banner('VIEW: '+CAMNAMES[camMode], CAMSUB[camMode], 700);
@@ -1756,6 +1784,9 @@ function stepCamera(dt){
     const h=camMode===1?62:25-4*deep, d=camMode===1?100:42-6*deep; // G-214: broadcast sat ~91 units out (h47/d78) and the skaters read ~20px tall - numbers and stance invisible; a closer TV framing puts them at ~39px
     camTgt.set(px,h,d+Math.abs(pz)*0.35); lookTgt.set(px,0,pz);
   }
+  { const myCam=window.Studio && Studio.camView(), U=3.26; // owner Nov 7 2026: his own Studio view - along the attacking axis like CLOSE (metres -> rink units)
+    if(myCam){ const ad=TEAMS.home.dir; camTgt.set(s.pos.x-ad*myCam.back*U, Math.max(CAM_MIN_Y, myCam.up*U), s.pos.z+(myCam.side||0)*U); lookTgt.set(s.pos.x+ad*(myCam.ahead||0)*U, 1, s.pos.z); }
+    const fov=myCam?myCam.fov:SN_('cam.fov', 57); if(Math.abs(camera.fov-fov)>0.01){ camera.fov=fov; camera.updateProjectionMatrix(); } }
   if(state==='goal'){ // G-266 REPLAY: two broadcast cuts around the goal just scored - a side close-up, then behind the net. The cut is HARD (the camera is placed on the angle the moment it changes): the >60 glide-cut rule below cannot be relied on - the camera mode persists across the robot's shared page, and from a close/end view the replay spot can sit within gliding distance, so the first robot run measured a 3.3 u glide instead of a cut
     const gx = lastGoalX || GOAL_LINE, out = Math.sign(gx) || 1;
     const ang = stateT > 1.6 ? 1 : 2;
@@ -1917,6 +1948,7 @@ function tick(now){
   let frameSec=Math.min(1.0,(now-lastT)/1000); if(!(frameSec>0)) frameSec=0.016; lastT=now; gameNow+=frameSec; // slow screens: catch up in slices so game time stays real-time. (Notes go on their OWN line: on Oct 21 a note pasted onto this line commented out lastT=now, so every frame was 1 s of game time - the clock ran 6-7x fast and the game played itself.)
   // G-110 note: a 0.25 s catch-up cap was tried and reverted - it halved the worst hitch but starved game time in the robot staged tests (faceoff/goal/save/defender went red); the full catch-up stays
   const steps=Math.max(1,Math.ceil(frameSec/0.033)), dt=frameSec/steps;
+  if(window.Studio && Studio.ownsCamera()){ renderer.render(scene,camera); return; } // owner Nov 7 2026: Studio 'Place' = map view from above (play waits)
   Mus.setMode(state==='play'?'game':'menu');
   if(!ARENA) crowd.update(frameSec); Mus.crowdTick(frameSec); // G-110: while the kit arena is up the built-in crowd is hidden - skip its per-frame instance uploads
   if(ARENA){ if(crowdExcite>0.3) ARENA.crowd.excite(crowdExcite); ARENA.update(frameSec); }
