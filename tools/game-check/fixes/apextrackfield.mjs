@@ -3876,4 +3876,88 @@ async test(page, h) {
       return true;
     }
   },
+  {
+    id: 'tester-career-final-sweep-loss',
+    mode: 'f-t-004',
+    ask: 'FIND F-T-004 (T10-36): the career season-4 championship final can be LOST after winning most events - the meet standings are computed from rivalMark() draws, not from the marks actually achieved in the events (DONE.md section 8: results must match reality). A final lost with 3+ firsts must not happen.',
+    async test(page, h) {
+      const SAVE = { name: 'YOU', colA: '#2456c8', colB: '#ffd34d', season: 4, meet: 13, tp: 350, up: { spd: 5, stam: 5, tech: 5 }, stats: { meets: 49, wins: 100, tpEarned: 400 }, done: false };
+      const screenIs = (id) => h.eval((w) => (document.querySelector('.screen.on') || {}).id === w, id).catch(() => false);
+      const waitScreen = async (id, tries) => { for (let i = 0; i < (tries || 40); i++) { if (await screenIs(id)) return true; await h.wait(150); } return false; };
+      const waitMenu = async () => { for (let g = 0; g < 80; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(150); } return true; };
+      // one synchronous drive chunk (20 game-seconds), same contracts as ~/pwtest/drive.mjs
+      const driveChunk = () => {
+        const T = window.__tf, e = T && T.eng();
+        if (!e) return { state: 'no-engine' };
+        const kind = (e.ev && e.ev.eng) || '';
+        if (!window.__fp) window.__fp = { steps: 0, side: 'L', lastStride: -99, acted: {} };
+        const S = window.__fp;
+        const stride = () => { if (typeof e.stride === 'function') { e.stride(S.side); S.side = S.side === 'L' ? 'R' : 'L'; } };
+        const act = () => { if (typeof e.action === 'function') e.action(); else if (typeof e.act === 'function') e.act(); else if (typeof e.press === 'function') e.press(); };
+        const actDown = () => { if (typeof e.actionDown === 'function') e.actionDown(); else act(); };
+        const actUp = () => { if (typeof e.actionUp === 'function') e.actionUp(); else act(); };
+        let n = 0; const MAX = 60 * 20;
+        while (n < MAX && !e.done) {
+          e.update(1 / 60); n++; S.steps++;
+          const t = S.steps / 60, ph = e.phase || '', r = e.r || {};
+          if (kind === 'sprint' || kind === 'hurdles' || kind === 'relay') { if (ph === 'run' && t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } }
+          else if (kind === 'distance') { if (ph === 'run' && t - S.lastStride >= 0.3) { stride(); S.lastStride = t; } }
+          else if (kind === 'longjump') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const pos = r.pos || 0; if (!S.acted[A('to')] && pos >= 36.2 && pos <= 39.6) { if (typeof e.action === 'function') e.action(); S.acted[A('to')] = 1; } } else if (ph === 'angle') { const a = e.ang; if (!S.acted[A('ang')] && a != null && a >= 40.5 && a <= 43.5) { if (typeof e.action === 'function') e.action(); S.acted[A('ang')] = 1; } } }
+          else if (kind === 'triplejump') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const pos = r.pos || 0; if (!S.acted[A('to')] && pos >= 36.2 && pos <= 39.6) { if (typeof e.action === 'function') e.action(); S.acted[A('to')] = 1; } } else if (ph === 'phase') { const sub = e.sub || 0, m = e.marker; if (!S.acted[A('ph' + sub)] && m != null && m >= 0.42 && m <= 0.58) { if (typeof e.action === 'function') e.action(); S.acted[A('ph' + sub)] = 1; } } }
+          else if (kind === 'highjump' || kind === 'polevault') { const key = (e.hi || 0) + ':' + (e.attLeft || 0), pos = r.pos || 0; if (ph === 'approach') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const lo = (e.zoneLo != null ? e.zoneLo : 12.8), hi2 = (e.zoneHi != null ? e.zoneHi : 15.2); if (!S.acted['vj' + key] && pos >= lo + 0.15 && pos <= hi2 - 0.3) { if (typeof e.action === 'function') e.action(); S.acted['vj' + key] = 1; } } else if (ph === 'bar') { const m = e.marker; if (!S.acted['bar' + key] && m != null && Math.abs(m - 0.5) <= 0.06) { if (typeof e.action === 'function') e.action(); S.acted['bar' + key] = 1; } } }
+          else if (kind === 'throw') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } } else if (ph === 'hold') { if (!S.acted[A('hold')]) { actDown(); S.acted[A('hold')] = 1; } } else if (ph === 'spinning') { if (!S.acted[A('rel')] && (e.spinT || 0) >= 1.52) { actUp(); S.acted[A('rel')] = 1; } } else if (ph === 'spin') { const idx = e.spinIdx || 0; if (!S.acted[A('spin' + idx)] && (e.spinT || 0) >= (idx + 1) * 0.6 - 0.02) { if (typeof e.action === 'function') e.action(); S.acted[A('spin' + idx)] = 1; } } else if (ph === 'power') { if (!S.acted[A('power')] && (e.power || 0) >= 0.97) { if (typeof e.action === 'function') e.action(); S.acted[A('power')] = 1; } } else if (ph === 'angle') { const a = e.ang; if (!S.acted[A('angle')] && a != null && a >= 40.5 && a <= 43.5) { if (typeof e.action === 'function') e.action(); S.acted[A('angle')] = 1; } } }
+          else { if (ph === 'run' && t - S.lastStride >= 0.125) { stride(); S.lastStride = t; } if (ph && ph !== 'run' && ph !== 'intro' && ph !== 'marks' && ph !== 'set' && !S.acted['k_' + ph]) { act(); S.acted['k_' + ph] = 1; } }
+        }
+        return { state: e.done ? 'done' : 'going' };
+      };
+      for (let att = 1; att <= 4; att++) {
+        await h.eval((s) => { localStorage.setItem('tfapex_career', JSON.stringify(s)); location.reload(); return true; }, SAVE).catch(() => {});
+        await waitMenu();
+        const entered = await h.eval(() => { const b = document.getElementById('bCareer'); if (!b) return false; b.click(); return true; }).catch(() => false);
+        if (!entered) return 'could not open career (F-T-004)';
+        await h.wait(900);
+        const lbl = await h.eval(() => { const b = document.getElementById('bCareerMeet'); return b ? b.textContent.trim() : null; }).catch(() => null);
+        if (lbl !== 'PLAY CHAMPIONSHIP') return 'career save did not land on the season-4 final, meet button="' + lbl + '" (F-T-004)';
+        await h.eval(() => { const b = document.getElementById('bCareerMeet'); if (b) b.click(); return true; }).catch(() => {});
+        const marks = [];
+        for (let ev = 0; ev < 5; ev++) {
+          if (!await waitScreen('card', 60)) return 'final attempt ' + att + ': card screen never appeared for event ' + (ev + 1) + ' (F-T-004)';
+          await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+          let hasEng = false;
+          for (let i = 0; i < 40 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(400); }
+          if (!hasEng) return 'final attempt ' + att + ': no engine for event ' + (ev + 1) + ' (F-T-004)';
+          await h.eval(() => { window.__fp = null; return true; }).catch(() => {});
+          let done = false;
+          const t0 = Date.now();
+          while (!done && Date.now() - t0 < 120000) {
+            const r = await h.eval(driveChunk).catch(() => null);
+            if (r && r.state === 'done') { done = true; break; }
+            if (r && r.state === 'no-engine') break;
+            await h.wait(60);
+          }
+          if (!done) return 'final attempt ' + att + ': event ' + (ev + 1) + ' never finished (F-T-004)';
+          await h.wait(700);
+          if (!await waitScreen('results', 60)) return 'final attempt ' + att + ': results screen never appeared after event ' + (ev + 1) + ' (F-T-004)';
+          const mark = await h.eval(() => { const el = document.getElementById('resMark'); return el ? el.textContent : ''; }).catch(() => '');
+          marks.push(mark);
+          await h.wait(400);
+          if (ev < 4) { await h.eval(() => { const b = document.getElementById('bResNext'); if (b) b.click(); return true; }).catch(() => {}); await h.wait(700); }
+        }
+        await h.eval(() => { const b = document.getElementById('bResNext'); if (b) b.click(); return true; }).catch(() => {});
+        let endTitle = '', endMark = '';
+        for (let i = 0; i < 20; i++) {
+          const info = await h.eval(() => ({ t: (document.getElementById('resTitle') || {}).textContent || '', m: (document.getElementById('resMark') || {}).textContent || '' })).catch(() => null);
+          if (info && (/NOT WON/.test(info.t) || /CAREER COMPLETE/.test(info.t))) { endTitle = info.t; endMark = info.m; break; }
+          await h.wait(300);
+        }
+        if (!endTitle) return 'final attempt ' + att + ': meet-end screen never appeared (F-T-004)';
+        const firsts = marks.filter((m) => /\(1st\)/.test(m)).length;
+        if (/NOT WON/.test(endTitle)) {
+          if (firsts >= 3) return 'career season-4 final LOST (' + endTitle + ' — ' + endMark + ') after winning ' + firsts + ' of 5 events (' + marks.join(' ; ') + ') but DONE.md section 8 says results must match reality (F-T-004)';
+          continue;
+        }
+      }
+      return true;
+    },
+  },
 ];
