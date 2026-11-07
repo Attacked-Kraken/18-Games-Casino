@@ -22,7 +22,7 @@
   const GAME = (location.pathname.split('/').pop() || 'game').replace(/\.html?$/, '') || 'game';
   const KEY = 'apexStudio_' + GAME;
   const defs = {}, order = [], listeners = {};
-  let pub = { v: 1, nums: {}, colors: {}, props: [], cams: [], points: {} };      // published (mods/<game>.json)
+  let pub = { v: 1, nums: {}, colors: {}, props: [], cams: [], points: {}, edits: {} };      // edits = the Scene tab: changes to the game's OWN objects, by path      // published (mods/<game>.json)
   let mine = null;                                                                 // this phone's draft
   /* Nov 7 2026: mods/index.json (always on main) lists the games that HAVE a mods/<game>.json - a game without one asks for nothing,
      so the robot never sees a 404 'Missing file' (F1's main check showed 'Missing file: mods/apexf1.json' after the Nov 6 Studio) */
@@ -84,7 +84,9 @@
     if (W.root.parent !== o.scene) o.scene.add(W.root);
     rebuildProps();
     W.cv = o.canvas || (o.renderer && o.renderer.domElement);
-    if (!window.__studioTaps) { window.__studioTaps = 1; window.addEventListener('pointerdown', tapStart, true); window.addEventListener('pointerup', tapEnd, true); window.addEventListener('pointermove', tapMove, true); }
+    if (!window.__studioTaps) { window.__studioTaps = 1; window.addEventListener('pointerdown', tapStart, true); window.addEventListener('pointerup', tapEnd, true); window.addEventListener('pointermove', tapMove, true);
+      window.addEventListener('pointerdown', sceneTapStart, true); window.addEventListener('pointerup', sceneTapEnd, true); window.addEventListener('pointermove', sceneTapMove, true); }
+    applyAll(); E.tries = 0; const re = setInterval(() => { applyAll(); if (++E.tries > 20) clearInterval(re); }, 1500);    // objects a game builds a little later still get their edits
   }
   let tap = null;
   function inPanel(e) { return ui.el && (ui.el.contains(e.target) || (ui.btn && ui.btn.contains(e.target))); }
@@ -104,9 +106,82 @@
     m.props.push(p); saveLocal(); buildProp(p); ui.draw();
   }
   function ownsCamera() {
+    if (ownsCameraScene()) return true;
     if (!W.placing || !W.ok) return false;
     const c = W.camera, gy = W.groundY ? W.groundY(W.cam.x, W.cam.z) : 0;
     c.position.set(W.cam.x, gy + W.cam.h, W.cam.z + W.cam.h * 0.35); c.lookAt(W.cam.x, gy, W.cam.z); return true;
+  }
+
+  /* ---------- SCENE: the game's OWN objects (owner Nov 7 2026 7:31 AM "look over games and move and delete and change out things") ----------
+     Tap anything in the live scene -> it is picked (box drawn round it), its name + numbers show, drag to move / lift / turn / resize,
+     hide, delete (= hidden), recolour, swap it for a model. Every change is saved by the object's PATH in the scene (name#index/...),
+     re-applied when the game loads, and published like every other Studio change (mods/<game>.json). */
+  const E = { sel: null, tool: 'pick', helper: null, drag: null, level: null, freeze: false, applied: 0, tries: 0, loader: null, models: null };
+  const pathOf = (o) => { const parts = []; let x = o; while (x && x !== W.scene) { const p = x.parent; if (!p) return null; parts.unshift((x.name || x.type) + '#' + p.children.indexOf(x)); x = p; } return x === W.scene ? parts.join('/') : null; };
+  const byPath = (path) => { let x = W.scene; for (const seg of String(path).split('/')) { const i = +seg.slice(seg.lastIndexOf('#') + 1), nm = seg.slice(0, seg.lastIndexOf('#')); let c = x.children[i]; if (!c || (c.name || c.type) !== nm) c = x.children.find(k => (k.name || k.type) === nm); if (!c) return null; x = c; } return x; };
+  const skip = (o) => { let x = o; while (x) { if (x === W.root || x.userData.studioHelper || x.isLight || x.isCamera) return true; x = x.parent; } return false; };
+  const sizeOf = (o) => { try { const b = new W.THREE.Box3().setFromObject(o), v = b.getSize(new W.THREE.Vector3()); return Math.max(v.x, v.y, v.z) || 0; } catch (e) { return 0; } };
+  function pickTarget(mesh) {            // the mesh -> the THING it belongs to (a tree group, a car), never the whole stadium
+    let x = mesh; while (x.parent && x.parent !== W.scene && x.parent.children.length <= 16 && sizeOf(x.parent) <= 60) x = x.parent; return x;
+  }
+  const label = (o) => (o.name || o.type) + (o.children.length ? ' (' + o.children.length + ' inside)' : '');
+  const listLabel = (o) => { const sz = sizeOf(o); let col = ''; o.traverse(m => { if (!col && m.isMesh && m.material && m.material.color) col = '#' + m.material.color.getHexString(); }); return (col ? `<i style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${col};margin-right:4px"></i>` : '') + esc(o.name || (o.isMesh ? 'shape' : o.type)) + ` <span class="sub">${sz >= 1000 ? (sz / 1000).toFixed(1) + 'k' : sz.toFixed(sz < 10 ? 1 : 0)}</span>` + (o.children.length ? ' ▸' : ''); };
+  function select(o) {
+    E.sel = o || null;
+    if (E.helper) { W.scene.remove(E.helper); E.helper = null; }
+    if (o) { const T = W.THREE; E.helper = new T.BoxHelper(o, 0xffd23a); E.helper.userData.studioHelper = 1; E.helper.renderOrder = 999; W.scene.add(E.helper);
+      if (!o.userData.studioOrig) o.userData.studioOrig = { p: o.position.toArray(), r: o.rotation.toArray().slice(0, 3), s: o.scale.toArray(), v: o.visible }; }
+    if (ui.open) ui.draw();
+  }
+  function editOf(o, make) { const m = make ? ensure() : D(); m.edits = m.edits || {}; const k = pathOf(o); if (!k) return null; if (make && !m.edits[k]) m.edits[k] = {}; return m.edits[k] || null; }
+  function record(o, patch) { const e = editOf(o, true); if (!e) return; Object.assign(e, patch); saveLocal(); if (E.helper) E.helper.update(); emit('change', 'scene'); }
+  function recordTransform(o) { record(o, { p: o.position.toArray().map(v => +v.toFixed(3)), r: o.rotation.toArray().slice(0, 3).map(v => +v.toFixed(4)), s: o.scale.toArray().map(v => +v.toFixed(3)) }); }
+  function applyEdit(o, e) {
+    if (!o || !e) return; const key = JSON.stringify(e); if (o.userData.studioApplied === key) return; o.userData.studioApplied = key;
+    if (!o.userData.studioOrig) o.userData.studioOrig = { p: o.position.toArray(), r: o.rotation.toArray().slice(0, 3), s: o.scale.toArray(), v: o.visible };
+    if (e.p) o.position.fromArray(e.p); if (e.r) o.rotation.set(e.r[0], e.r[1], e.r[2]); if (e.s) o.scale.fromArray(e.s);
+    o.visible = !(e.hide || e.del);
+    if (e.col) o.traverse(m => { if (m.isMesh && m.material && m.material.color) { if (!m.userData.studioMat) m.userData.studioMat = m.material; m.material = m.material.clone(); m.material.color.set(e.col); } });
+    if (e.model) swapModel(o, e.model, false);
+  }
+  function applyAll() { if (!W.ok) return; const ed = D().edits || {}; for (const k in ed) { const o = byPath(k); if (o) applyEdit(o, ed[k]); } E.applied++; }
+  function resetSel() { const o = E.sel; if (!o) return; const m = ensure(); const k = pathOf(o); if (m.edits) delete m.edits[k]; saveLocal();
+    const g = o.userData.studioOrig; if (g) { o.position.fromArray(g.p); o.rotation.set(g.r[0], g.r[1], g.r[2]); o.scale.fromArray(g.s); o.visible = g.v; }
+    o.traverse(x => { if (x.userData.studioMat) { x.material = x.userData.studioMat; delete x.userData.studioMat; } }); if (o.userData.studioSwap) { o.remove(o.userData.studioSwap); delete o.userData.studioSwap; o.traverse(x => { if (x.userData.studioHidden) { x.visible = true; delete x.userData.studioHidden; } }); }
+    delete o.userData.studioApplied; if (E.helper) E.helper.update(); emit('change', 'scene'); ui.draw(); }
+  async function loader() { if (E.loader) return E.loader; try { const m = await import(new URL('vendor/GLTFLoader.js', location.href.replace(/\/templates\/[^/]*$/, '/x')).href); E.loader = new m.GLTFLoader(); } catch (e) { E.loader = null; } return E.loader; }
+  async function swapModel(o, name, rec) {      // the thing keeps its spot; its own meshes hide and the model is shown in their place, scaled to the same size
+    const L = await loader(); if (!L || !o) return; const size = sizeOf(o) || 2;
+    L.load((/\/templates\//.test(location.pathname) ? '../' : '') + 'models/fetched/' + name + '.glb', g => {
+      if (o.userData.studioSwap) o.remove(o.userData.studioSwap);
+      o.children.forEach(c => { if (c !== o.userData.studioSwap && !c.userData.studioHelper) { c.visible = false; c.userData.studioHidden = 1; } });
+      const T = W.THREE, m = g.scene, b = new T.Box3().setFromObject(m), v = b.getSize(new T.Vector3()), k = size / (Math.max(v.x, v.y, v.z) || 1);
+      m.scale.setScalar(k); b.setFromObject(m); m.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2); o.add(m); o.userData.studioSwap = m;
+      if (rec) record(o, { model: name }); if (E.helper) E.helper.update(); ui.draw();
+    }, undefined, () => { if (ui.el) ui.msg = 'Could not load models/fetched/' + name + '.glb'; ui.draw(); });
+  }
+  async function modelList() { if (E.models) return E.models; E.models = []; try { const r = await fetch('https://api.github.com/repos/Attacked-Kraken/18-Games-Casino/git/trees/main?recursive=1'); const j = await r.json();
+    E.models = (j.tree || []).map(x => x.path).filter(p => /^models\/fetched\/[^/]+\.glb$/.test(p)).map(p => p.slice(15, -4)); } catch (e) {} return E.models; }
+  function editing() { return ui.open && ui.tab === 'scene' && W.ok; }
+  function ownsCameraScene() { return E.freeze && editing(); }      // freeze = the game's camera stays put while he works
+  function sceneTapStart(e) { if (!editing() || inPanel(e)) return; E.drag = { x: e.clientX, y: e.clientY, moved: false, p: E.sel && E.sel.position.clone(), ry: E.sel && E.sel.rotation.y, sc: E.sel && E.sel.scale.clone() }; e.stopPropagation(); e.preventDefault(); }
+  function sceneTapMove(e) {
+    if (!editing() || !E.drag) return; const d = E.drag, dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 6) d.moved = true; e.stopPropagation(); e.preventDefault();
+    const o = E.sel; if (!o || E.tool === 'pick' || !d.moved) return;
+    if (E.tool === 'move') { const T = W.THREE, r = (W.cv || e.target).getBoundingClientRect(), v = new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), rc = new T.Raycaster(); rc.setFromCamera(v, W.camera);
+      const wp = o.getWorldPosition(new T.Vector3()), pt = new T.Vector3(); if (rc.ray.intersectPlane(new T.Plane(new T.Vector3(0, 1, 0), -wp.y), pt)) { const lp = o.parent.worldToLocal(pt.clone()); o.position.x = lp.x; o.position.z = lp.z; } }
+    else if (E.tool === 'lift') o.position.y = d.p.y - dy * 0.02 * Math.max(0.2, sizeOf(o) / 4);
+    else if (E.tool === 'turn') o.rotation.y = d.ry + dx * 0.01;
+    else if (E.tool === 'size') { const k = Math.max(0.05, 1 - dy * 0.005); o.scale.set(d.sc.x * k, d.sc.y * k, d.sc.z * k); }
+    if (E.helper) E.helper.update();
+  }
+  function sceneTapEnd(e) {
+    if (!editing() || !E.drag) return; const d = E.drag; E.drag = null; e.stopPropagation(); e.preventDefault();
+    if (d.moved) { if (E.sel && E.tool !== 'pick') { recordTransform(E.sel); ui.draw(); } return; }
+    const T = W.THREE, r = (W.cv || e.target).getBoundingClientRect(), v = new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), rc = new T.Raycaster(); rc.setFromCamera(v, W.camera);
+    const hits = rc.intersectObjects(W.scene.children, true).filter(h => h.object.visible && !skip(h.object) && !(h.object.isLine) && !(h.object.isPoints));
+    if (!hits.length) return select(null);
+    const tg = hits.slice(0, 6).map(h => pickTarget(h.object)); select(tg.find(t => sizeOf(t) < 150) || tg[0]);   // a tap on the field picks the thing, not the whole park under it
   }
 
   /* ---------- the owner's own camera views ---------- */
@@ -116,13 +191,13 @@
   function camNext() { const n = (D().cams || []).length; camPick = n ? (camPick + 1 >= n ? -1 : camPick + 1) : -1; try { localStorage.setItem(KEY + '_cam', camPick); } catch (e) {} return camView(); }
 
   /* ---------- the panel ---------- */
-  const ui = { open: false, tab: 'tune', size: 1, el: null, btn: null };
+  const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
-#apxStudio{position:fixed;right:0;top:0;bottom:0;width:min(400px,92vw);z-index:99999;background:#0e1219f2;color:#eef1f5;font:14px system-ui,sans-serif;overflow:auto;padding:10px 12px 60px;box-shadow:-4px 0 18px #0008}
+#apxStudio{text-align:left;position:fixed;right:0;top:0;bottom:0;width:min(400px,92vw);z-index:99999;background:#0e1219f2;color:#eef1f5;font:14px system-ui,sans-serif;overflow:auto;padding:10px 12px 60px;box-shadow:-4px 0 18px #0008}
 #apxStudio h3{margin:12px 0 4px;font-size:14px;color:#ffd23a}#apxStudio .tabs{display:flex;gap:4px;flex-wrap:wrap}#apxStudio button{font:inherit;border-radius:9px;border:1px solid #39424f;background:#1b2230;color:#eef1f5;padding:7px 10px;margin:2px}
 #apxStudio button.on{background:#ffd23a;color:#111;border-color:#ffd23a}#apxStudio .row{margin:6px 0}#apxStudio .row label{display:flex;justify-content:space-between;font-size:13px}
 #apxStudio input[type=range]{width:100%}#apxStudio .sub{color:#9aa3b2;font-size:12px}#apxStudio textarea{width:100%;min-height:110px;font:11px ui-monospace,Menlo,monospace;background:#05070b;color:#cfe;border:1px solid #39424f;border-radius:8px}
-#apxStudio .chg{color:#ffd23a}`;
+#apxStudio .chg{color:#ffd23a}#apxStudio .xyz{display:flex;gap:6px}#apxStudio .xyz input{width:30%;font:13px ui-monospace,Menlo,monospace;background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px;padding:5px}`;
   ui.mount = function () {
     if (ui.btn || !on()) return;
     const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
@@ -131,14 +206,45 @@
     ui.el = document.createElement('div'); ui.el.id = 'apxStudio'; ui.el.hidden = true; document.body.appendChild(ui.el);
     ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'keydown', 'click'].forEach(ev => ui.el.addEventListener(ev, e => e.stopPropagation()));
   };
+  function openCtl(pathHash) {     // opens a page of the owner's controller: the Mac mini's away link from ntfy (learned on sports.html), else the home address; the PIN rides in the #
+    const w = window.open('about:blank', '_blank');
+    let t = '', pin = '', home = 'http://192.168.1.231:8765'; try { t = localStorage.getItem('apexLinkTopic') || ''; pin = localStorage.getItem('apexLinkPin') || ''; home = (localStorage.getItem('apexCtlUrl') || home).replace(/\/$/, ''); } catch (e) {}
+    const go = u => { const url = u + pathHash + (pin ? (pathHash.includes('#') ? '&' : '#') + 'pin=' + encodeURIComponent(pin) : ''); if (w) w.location = url; else location.href = url; };
+    if (!t) go(home); else fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(r => r.text()).then(x => { let u = '';
+      x.trim().split('\n').forEach(l => { try { const m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} }); go(u || home); }).catch(() => go(home));
+  }
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   ui.draw = function () {
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
     if (!ui.open) { W.placing = false; return; }
-    const tabs = [['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
+    const tabs = [['scene', 'Scene'], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
-    if (ui.tab === 'tune') {
+    if (ui.tab === 'scene') {
+      if (!W.ok) h += '<p class="sub">This game has no 3D world hooked up yet.</p>';
+      else {
+        const o = E.sel, nEd = Object.keys(D().edits || {}).length;
+        h += `<p class="sub"><b>Tap anything in the game</b> to pick it. Then pick a tool and <b>drag</b> on the screen. ${nEd} change${nEd === 1 ? '' : 's'} saved on this phone.</p>`;
+        h += `<div>${[['pick', '👆 Pick'], ['move', '✥ Move'], ['lift', '↕ Lift'], ['turn', '↻ Turn'], ['size', '⤢ Size']].map(([k, n]) => `<button class="${E.tool === k ? 'on' : ''}" data-tool="${k}">${n}</button>`).join('')}<button class="${E.freeze ? 'on' : ''}" data-freeze="1">📷 ${E.freeze ? 'Camera frozen' : 'Freeze camera'}</button></div>`;
+        if (ui.msg) { h += `<p class="sub chg">${esc(ui.msg)}</p>`; ui.msg = ''; }
+        if (o) {
+          const ed = editOf(o) || {}, deg = (o.rotation.y * 180 / Math.PI).toFixed(0);
+          h += `<h3>${esc(label(o))}</h3><p class="sub">${esc(pathOf(o) || '')} · ${sizeOf(o).toFixed(1)} units big${o.userData.studioApplied ? ' · <span class="chg">changed</span>' : ''}</p>`;
+          h += `<div class="row"><label>Position (x · up · z)</label><div class="xyz">${['x', 'y', 'z'].map(a => `<input type="number" step="0.1" data-pos="${a}" value="${o.position[a].toFixed(2)}">`).join('')}</div></div>`;
+          h += `<div class="row"><label>Turn (degrees) <b>${deg}</b></label><input type="range" data-rot="1" min="-180" max="180" step="1" value="${deg}"></div>`;
+          h += `<div class="row"><label>Size <b>${o.scale.x.toFixed(2)}</b></label><input type="range" data-scl="1" min="0.05" max="5" step="0.01" value="${o.scale.x.toFixed(2)}"></div>`;
+          h += `<div class="row"><label>Colour <input type="color" data-col="1" value="${ed.col || '#ffffff'}"></label></div>`;
+          h += `<div><button data-hide="1">${o.visible ? '🙈 Hide' : '👁 Show'}</button><button data-del="1">🗑️ Delete</button><button data-up="1">⬆ Bigger group</button><button data-reset="1">↩️ Put it back</button><button data-swap="1">📦 Swap for a model…</button></div>`;
+          if (ui.swapOpen) { const ms = E.models; h += `<div class="row">${ms === null || !ms ? '<span class="sub">reading the model list…</span>' : (ms.length ? ms.map(m => `<button data-model="${esc(m)}">${esc(m)}</button>`).join('') : '<span class="sub">no models/fetched/*.glb found</span>')}</div>`; if (!E.models) modelList().then(() => ui.draw()); }
+        } else {
+          const lvl = E.level || W.scene, list = lvl.children.filter(c => !skip(c)).slice(0, 80);
+          h += `<h3>What is in the scene${lvl !== W.scene ? ': ' + esc(label(lvl)) : ''}</h3>${lvl !== W.scene ? '<button data-lvlup="1">⬆ back out</button>' : ''}`;
+          h += '<div>' + list.map((c, i) => `<button data-lvl="${lvl.children.indexOf(c)}">${listLabel(c)}</button>`).join('') + '</div>';
+          h += `<p class="sub">Tap a name to pick it (▸ = has things inside: pick it, then "⬆ Bigger group" / tap inside it in the game).</p>`;
+        }
+        h += `<div style="margin-top:10px"><button data-fixit="1">🔧 Fix a bug in this game (opens your controller)</button></div>`;
+      }
+    } else if (ui.tab === 'tune') {
       const groups = {}; order.forEach(k => { (groups[defs[k].group] = groups[defs[k].group] || []).push(k); });
       if (!order.length) h += '<p class="sub">Nothing to tune yet - play a bit (things appear as the game uses them).</p>';
       for (const g of Object.keys(groups)) {
@@ -176,9 +282,24 @@
       h += `<button data-pub="1">📤 Publish (opens your controller)</button> <button data-clear="1">↩️ Undo ALL my changes</button>`;
       h += `<p class="sub">Publish opens your controller's Paste a fix page with it filled in: tap Check, then Send. A Muse window saves it to mods/${GAME}.json; after the robot check every player gets it.</p>`;
       h += `<textarea id="apxPub" readonly placeholder="tap Make the publish code">${ui.pubText || ''}</textarea><div class="sub" id="apxPubMsg"></div>`;
-      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
+      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
     ui.el.innerHTML = h;
+    ui.el.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { E.tool = b.dataset.tool; ui.draw(); });
+    const fz = ui.el.querySelector('[data-freeze]'); if (fz) fz.onclick = () => { E.freeze = !E.freeze; ui.draw(); };
+    ui.el.querySelectorAll('[data-pos]').forEach(i => i.onchange = () => { const o = E.sel; if (!o) return; o.position[i.dataset.pos] = +i.value || 0; recordTransform(o); });
+    const rt = ui.el.querySelector('[data-rot]'); if (rt) { rt.oninput = () => { const o = E.sel; if (!o) return; o.rotation.y = +rt.value * Math.PI / 180; rt.previousElementSibling.querySelector('b').textContent = rt.value; if (E.helper) E.helper.update(); }; rt.onchange = () => { if (E.sel) recordTransform(E.sel); ui.draw(); }; }
+    const sl = ui.el.querySelector('[data-scl]'); if (sl) { sl.oninput = () => { const o = E.sel; if (!o) return; o.scale.setScalar(+sl.value); sl.previousElementSibling.querySelector('b').textContent = (+sl.value).toFixed(2); if (E.helper) E.helper.update(); }; sl.onchange = () => { if (E.sel) recordTransform(E.sel); ui.draw(); }; }
+    const cc = ui.el.querySelector('[data-col]'); if (cc) cc.oninput = () => { const o = E.sel; if (!o) return; record(o, { col: cc.value }); delete o.userData.studioApplied; applyEdit(o, editOf(o)); };
+    const hd = ui.el.querySelector('[data-hide]'); if (hd) hd.onclick = () => { const o = E.sel; if (!o) return; o.visible = !o.visible; record(o, { hide: o.visible ? 0 : 1 }); ui.draw(); };
+    const dl = ui.el.querySelector('[data-del]'); if (dl) dl.onclick = () => { const o = E.sel; if (!o) return; o.visible = false; record(o, { del: 1 }); ui.msg = 'Deleted (hidden from the game). "Put it back" undoes it.'; select(null); };
+    const up = ui.el.querySelector('[data-up]'); if (up) up.onclick = () => { const o = E.sel; if (o && o.parent && o.parent !== W.scene) select(o.parent); else ui.msg = 'That is already a top-level thing.', ui.draw(); };
+    const rs = ui.el.querySelector('[data-reset]'); if (rs) rs.onclick = resetSel;
+    const sw = ui.el.querySelector('[data-swap]'); if (sw) sw.onclick = () => { ui.swapOpen = !ui.swapOpen; ui.draw(); };
+    ui.el.querySelectorAll('[data-model]').forEach(b => b.onclick = () => { if (E.sel) { ui.msg = 'Loading ' + b.dataset.model + '…'; swapModel(E.sel, b.dataset.model, true); ui.swapOpen = false; ui.draw(); } });
+    ui.el.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const lvl = E.level || W.scene, c = lvl.children[+b.dataset.lvl]; if (c) select(c); });
+    const lu = ui.el.querySelector('[data-lvlup]'); if (lu) lu.onclick = () => { E.level = (E.level && E.level.parent !== W.scene) ? E.level.parent : null; ui.draw(); };
+    const fx = ui.el.querySelector('[data-fixit]'); if (fx) fx.onclick = () => openCtl('/fixit#game=' + encodeURIComponent(GAME + '.html'));
     ui.el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; if (ui.tab === 'place' && W.center) { const c = W.center(); if (c) { W.cam.x = c.x; W.cam.z = c.z; } } ui.draw(); });
     ui.el.querySelectorAll('[data-num]').forEach(r => { r.oninput = () => { set('num', r.dataset.num, +r.value); r.previousElementSibling.querySelector('b').textContent = (+r.value).toFixed(+r.step < 1 ? 2 : 0); }; r.onchange = () => ui.draw(); });
     ui.el.querySelectorAll('[data-color]').forEach(r => r.oninput = () => set('color', r.dataset.color, r.value));
@@ -198,11 +319,7 @@
       const ta = document.getElementById('apxPub'); const msg = document.getElementById('apxPubMsg');
       try { navigator.clipboard.writeText(ui.pubText).catch(() => {}); } catch (e) {}
       const b64 = btoa(unescape(encodeURIComponent(ui.pubText))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      const w = window.open('about:blank', '_blank');
-      let t = '', pin = '', home = 'http://192.168.1.231:8765'; try { t = localStorage.getItem('apexLinkTopic') || ''; pin = localStorage.getItem('apexLinkPin') || ''; home = (localStorage.getItem('apexCtlUrl') || home).replace(/\/$/, ''); } catch (e) {}
-      const open = u => { const url = u + '/fix#fp=' + b64 + (pin ? '&pin=' + encodeURIComponent(pin) : ''); if (w) w.location = url; else location.href = url; msg.textContent = 'Opening your controller...'; };
-      if (!t) open(home); else fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(r => r.text()).then(x => { let u = '';
-        x.trim().split('\n').forEach(l => { try { const m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} }); open(u || home); }).catch(() => open(home));
+      msg.textContent = 'Opening your controller...'; openCtl('/fix#fp=' + b64);
     };
     const cl = ui.el.querySelector('[data-clear]'); if (cl) cl.onclick = () => { if (cl.dataset.sure) { mine = null; try { localStorage.removeItem(KEY); } catch (e) {} rebuildProps(); emit('change', '*'); ui.draw(); } else { cl.dataset.sure = 1; cl.textContent = 'Tap again to undo everything'; } };
   };
@@ -210,5 +327,5 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
-    data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); } };
+    data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();
