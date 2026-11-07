@@ -49,7 +49,7 @@ export function judge({ results = [], models = [], base0 = {}, changed = [], bra
     const NOTES = /^(jobs\/[^/]+\.md|needs\/[^/]+\.md|reviews\/.+|plans\/.+|looks\/.+|ideas\/.+|findings\/.+|library\/.+|checklists\/[a-z0-9-]+\.md|CLAIMS\.md|LESSONS\.md|NEWS\.md|MODEL-SEARCH\.md|MODEL-REQUESTS\.md|ASSETS\.md|MODELS\.md|SCORES\.md|PLAYBOOK\.md|TOOLS\.md|README\.md)$/;
     const isGame = f => /^apex[a-z0-9]*\.html$/.test(f);
     const isFix = f => FIXF.test(f);
-    const isShared = f => /^(kit|venues|models|characters|sounds)\//.test(f);
+    const isShared = f => /^(kit|venues|models|characters|sounds|pieces|mods|templates)\//.test(f);   // owner Nov 6 2026: Workshop pieces, Studio settings and starter games change in their own PR
     const games = [...new Set(changed.filter(isGame))];
     const fixes = changed.filter(isFix);
     const sharedF = changed.filter(isShared);

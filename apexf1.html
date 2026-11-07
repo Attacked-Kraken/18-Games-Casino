@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <script src="kit/apex-music.js"></script>
+<script src="kit/studio.js"></script><!-- owner Nov 6 2026: 🎛️ Studio - his no-code editor (open with ?studio=1) -->
+<script>/* owner Nov 6 2026: every Studio slider of this game, listed up front so the Tune tab shows them before the race starts */
+try{ Studio.declare([
+ {key:'engine.pitch',def:1,min:0.5,max:2,step:0.01,label:'Engine pitch (higher = whinier)',group:'Engine sound'},
+ {key:'engine.rev',def:0.2,min:0,max:0.8,step:0.01,label:'How much the pitch rises with revs',group:'Engine sound'},
+ {key:'engine.volume',def:1,min:0,max:2,step:0.01,label:'Engine loudness',group:'Engine sound'},
+ {key:'engine.tone',def:1500,min:400,max:6000,step:50,label:'Brightness (Hz, low = muffled)',group:'Engine sound'},
+ {key:'engine.idle',def:1,min:0,max:2,step:0.01,label:'Idle loudness',group:'Engine sound'},
+ {key:'car.top',def:1,min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'},
+ {key:'car.grip',def:1,min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'},
+ {key:'cam.chase.back',def:11,min:4,max:30,step:0.5,label:'Chase camera: distance behind (m)',group:'Camera'},
+ {key:'cam.chase.up',def:3.4,min:0.8,max:15,step:0.1,label:'Chase camera: height (m)',group:'Camera'},
+ {key:'cam.fov',def:62,min:30,max:100,step:1,label:'Field of view (game cameras)',group:'Camera'}
+]); }catch(e){}</script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -220,7 +234,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   /* cinematic vignette + subtle grade — free UE5-style finish */
   #vignette { position:fixed; inset:0; z-index:15; pointer-events:none;
     background:radial-gradient(ellipse at center, transparent 58%, rgba(4,8,16,0.42) 100%); }
-  #lapPop { position:fixed; top:9%; left:0; right:0; text-align:center; font:italic 900 clamp(22px,4.5vw,34px) system-ui; color:#fff; text-shadow:0 0 16px #ff3b3b, 0 2px 0 #000; opacity:0; transform:scale(1); transition:opacity .25s, transform .25s; pointer-events:none; z-index:36; }
+  #lapPop { position:fixed; top:9%; left:0; right:0; text-align:center; font:italic 900 clamp(22px,4.5vw,34px) system-ui; color:#fff; text-shadow:0 0 16px #ff3b3b, 0 2px 0 #000; opacity:0; transform:scale(1); transition:opacity .25s, transform .25s; pointer-events:none; z-index:36; will-change:opacity,transform; }
   #banner { position:fixed; left:50%; top:24%; transform:translate(-50%,-50%) scale(.9); z-index:35; text-align:center; opacity:0; transition:opacity .25s; pointer-events:none; }
   #banner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
   #banner .b1 { font-size:clamp(16px,3.2vw,26px); font-weight:900; letter-spacing:2px; text-shadow:0 2px 10px #000; } /* owner Nov 3 2026: PENALTY / CONTACT signs were too big - they covered the road */
@@ -470,14 +484,17 @@ const Aud = {
       const clampN=(v,a,b2)=>Math.max(a,Math.min(b2,v)); if(!isFinite(rpm01)) rpm01=0; if(!isFinite(throttle)) throttle=0;
       const load=clampN(throttle,0,1), rpm=clampN(rpm01,0,1), x=load*0.7+rpm*0.3;
       const bandF=(v,a,b2,c,d)=>v<a?0:v<b2?(v-a)/(b2-a):v<c?1:v<d?1-(v-c)/(d-c):0;
-      const rate=0.6+0.2*rpm;
-      if(kit.bus) kit.bus.frequency.setTargetAtTime(1500,t,0.05);
+      const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d; // owner Nov 6 2026: Studio sliders - engine sound he tunes himself
+      const ePitch=SN('engine.pitch',1,{min:0.5,max:2,step:0.01,label:'Engine pitch (higher = whinier)',group:'Engine sound'}), eRev=SN('engine.rev',0.2,{min:0,max:0.8,step:0.01,label:'How much the pitch rises with revs',group:'Engine sound'});
+      const eVol=SN('engine.volume',1,{min:0,max:2,step:0.01,label:'Engine loudness',group:'Engine sound'}), eTone=SN('engine.tone',1500,{min:400,max:6000,step:50,label:'Brightness (Hz, low = muffled)',group:'Engine sound'}), eIdle=SN('engine.idle',1,{min:0,max:2,step:0.01,label:'Idle loudness',group:'Engine sound'});
+      const rate=(0.6+eRev*rpm)*ePitch;
+      if(kit.bus) kit.bus.frequency.setTargetAtTime(eTone,t,0.05);
       for(const k of ['low','mid','high']) if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(rate,t,0.05);
-      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime(0.8+0.04*rpm,t,0.05);
-      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(0.5*(1-load*0.8),t,0.07);
-      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
-      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
-      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
+      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime((0.8+0.04*rpm)*ePitch,t,0.05);
+      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(eIdle*eVol*0.5*(1-load*0.8),t,0.07);
+      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(eVol*0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
+      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(eVol*0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
+      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(eVol*0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
       const band=x<0.17?0:x<0.5?1:x<0.84?2:3;
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
         this._kitShiftT=t; this.kitShifts++;
@@ -829,6 +846,14 @@ const Track = {
     this.asphaltMat = (this.lt && this.lt.meshes && this.lt.meshes['road']) ? this.lt.meshes['road'].material : null;
     this.clearGroup();
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
+    this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
+    try{ this.buildPitSigns(this.group); }catch(e){}
+    if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
+      const f0=this.frameAt(0);
+      for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
+        for(let t=0;t<idx.length;t+=3){ let cx=0,cz=0; for(let k=0;k<3;k++){ v.fromBufferAttribute(pos,idx[t+k]).applyMatrix4(m.matrixWorld); cx+=v.x; cz+=v.z; } cx/=3; cz/=3; if(Math.hypot(cx-f0.x,cz-f0.z)>90) keep.push(idx[t],idx[t+1],idx[t+2]); }
+        if(keep.length<idx.length){ g.setIndex(keep); g.computeBoundingSphere(); window.__f1lineClip=(window.__f1lineClip||0)+(idx.length-keep.length)/3; } }catch(e){ console.warn('lineclip',nm,e); } }
+    }
     if(scene && scene.userData && scene.userData.sun && data.render && data.render.sunDirection){
       const sd=data.render.sunDirection; scene.userData.sun.position.set(sd[0]*600, sd[1]*600, sd[2]*600);
     }
@@ -866,8 +891,9 @@ const Track = {
   maxSpeedAt(s, grip){ // physics: corner speed from curvature
     const ahead=this.frameAt(s+18).curv*0.5+this.frameAt(s+45).curv*0.3+this.frameAt(s).curv*0.2;
     const c=Math.abs(ahead);
-    const vLat=Math.sqrt(Math.max(8, 42*grip/Math.max(c,1e-5))); // lateral accel limit
-    return Math.min(92, vLat); // 92 m/s ~ 331 km/h
+    const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d; // owner Nov 6 2026: Studio sliders (all cars)
+    const vLat=Math.sqrt(Math.max(8, 42*grip*SN('car.grip',1,{min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'})/Math.max(c,1e-5))); // lateral accel limit
+    return Math.min(92*SN('car.top',1,{min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'}), vLat); // 92 m/s ~ 331 km/h
   },
   clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); },
   buildMeshes(){
@@ -931,16 +957,7 @@ const Track = {
       cg.setAttribute('color', new THREE.Float32BufferAttribute(cols,3));
       curb.material.vertexColors=true; g.add(curb);
     }
-    // start/finish checker strip
-    const f0=this.frameAt(0);
-    // F-F1: was a flat white plane lying on the road = z-fighting flicker; now a real chequered strip pulled off the road by a depth offset
-    const ck=document.createElement('canvas'); ck.width=128; ck.height=16; { const cx=ck.getContext('2d'); for(let xx=0;xx<16;xx++) for(let yy=0;yy<2;yy++){ cx.fillStyle=(xx+yy)%2?'#111':'#fff'; cx.fillRect(xx*8,yy*8,8,8); } }
-    const ckT=new THREE.CanvasTexture(ck); ckT.magFilter=THREE.NearestFilter; ckT.colorSpace=THREE.SRGBColorSpace;
-    const stripe=new THREE.Mesh(new THREE.PlaneGeometry(W,3),
-      new THREE.MeshBasicMaterial({map:ckT,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}));
-    stripe.renderOrder=2;
-    stripe.rotation.x=-Math.PI/2; stripe.rotation.z=-Math.atan2(f0.tx,f0.tz);
-    stripe.position.set(f0.x, f0.y+0.09, f0.z); g.add(stripe);
+    // owner Nov 6 2026: nothing at all sits on the road at the start/finish line any more (the checkered strip is gone); floating signs only, see buildLineSigns
     // DRS zone edge paint (green dashes on left edge)
     const drsMat=new THREE.MeshBasicMaterial({color:0x27e07a});
     for(const [z0,z1] of this.cfg.drs){
@@ -1141,31 +1158,8 @@ const Track = {
       g.add(stand);
       this.crowd.list.push({inst,seeds,m4:new THREE.Matrix4()});
     }
-    // start gantry with APEX ARCADE banner
-    const f0=this.frameAt(0);
-    const gantry=new THREE.Group();
-    const trussMat=new THREE.MeshStandardMaterial({color:0x333a45,roughness:0.6,metalness:0.4});
-    for(const sd of [-1,1]){
-      const leg=new THREE.Mesh(new THREE.BoxGeometry(1.2,12,1.2), trussMat);
-      leg.position.set(f0.x+f0.nx*9*sd, f0.y+6, f0.z+f0.nz*9*sd); gantry.add(leg);
-    }
-    const beam=new THREE.Mesh(new THREE.BoxGeometry(20,2,1.5), trussMat);
-    beam.position.set(f0.x, f0.y+11, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2; gantry.add(beam);
-    const bcv=document.createElement('canvas'); bcv.width=1024; bcv.height=128;
-    const bc=bcv.getContext('2d');
-    bc.fillStyle='#0a0e1a'; bc.fillRect(0,0,1024,128);
-    bc.fillStyle='#d21f26'; bc.fillRect(0,0,1024,16); bc.fillRect(0,112,1024,16);
-    bc.fillStyle='#ffd76a'; bc.font='bold 72px Arial'; bc.textAlign='center'; bc.textBaseline='middle';
-    bc.fillText('APEX ARCADE', 512, 64);
-    const btex=new THREE.CanvasTexture(bcv);
-    const btexF=btex.clone(); btexF.wrapS=THREE.RepeatWrapping; btexF.repeat.x=-1; btexF.needsUpdate=true; // G-239: the back face carries a pre-flipped print - APEX ARCADE reads correctly from BOTH sides (a DoubleSide plane mirrored it, video1-01)
-    const bannerEdge=new THREE.MeshBasicMaterial({color:0x0a0e1a});
-    const banner=new THREE.Mesh(new THREE.BoxGeometry(18,2.2,0.12),
-      [bannerEdge,bannerEdge,bannerEdge,bannerEdge,new THREE.MeshBasicMaterial({map:btex}),new THREE.MeshBasicMaterial({map:btexF})]);
-    banner.position.set(f0.x, f0.y+9.5, f0.z);
-    banner.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2; gantry.add(banner);
-    g.add(gantry);
+    this.buildLineSigns(g); // owner Nov 6 2026: START / FINISH / lap number floating in the air, replacing the gantry
+    try{ this.buildPitSigns(g); }catch(e){}
     // barriers along track
     const barGeo=new THREE.BoxGeometry(4,1.1,0.6);
     const barMatW=new THREE.MeshLambertMaterial({color:0xf2f2f2});
@@ -1184,6 +1178,7 @@ const Track = {
   updateCrowd(dt, excite){
     this.crowd.excite=Math.max(excite, this.crowd.excite-dt*0.4);
     const e=this.crowd.excite;
+    this._cwT=(this._cwT||0)+dt; if(this._cwT<0.05 && this._cwDone) return; this._cwT=0; this._cwDone=true; // owner Nov 6 2026: crowd bounce rewritten 20x a second, not every frame
     for(const c of this.crowd.list){
       for(let i=0;i<c.seeds.length;i++){ const s=c.seeds[i];
         const amp=0.06+0.5*e;
@@ -1265,6 +1260,30 @@ const Track = {
       stack.position.set(x,p.y+0.8,z); g.add(stack);
     }
   },
+  buildLineSigns(g){ // owner Nov 6 2026: START, FINISH and the lap number hang in the air over the line - no arch, strip or banner for the car to hit or the GPU to stall on
+    const mk=(txt,col,w,h,fs)=>{ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const c=cv.getContext('2d');
+      c.font='900 '+fs+'px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.lineWidth=fs/9; c.strokeStyle='#000'; c.strokeText(txt,w/2,h/2); c.fillStyle=col; c.fillText(txt,w/2,h/2);
+      const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
+    const f0=this.frameAt(0);
+    const sp=(tex,sx,sy,y)=>{ const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false})); m.scale.set(sx,sy,1); m.position.set(f0.x,f0.y+y,f0.z); g.add(m); return m; };
+    sp(mk('START','#37d67a',512,160,120),16,5,15);
+    sp(mk('FINISH','#ffffff',512,160,120),16,5,9.5);
+    this._lapTex=[null]; for(let n=1;n<=10;n++) this._lapTex.push(mk('LAP '+n,'#ffd76a',384,128,96));
+    this._lapSign=sp(this._lapTex[1],10,3.3,4.2);
+  },
+  buildPitSigns(g){ // owner Nov 6 2026: a big PIT ENTRY sign hangs in the air over the pit entry, and PIT over the boxes - you can see where to go in
+    const mk=(txt,col,w,h,fs)=>{ const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const c=cv.getContext('2d');
+      c.fillStyle='rgba(10,14,22,0.82)'; c.fillRect(0,0,w,h); c.strokeStyle=col; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8);
+      c.font='900 '+fs+'px Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=col; c.fillText(txt,w/2,h/2+4);
+      const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; try{ if(typeof renderer!=='undefined'&&renderer.initTexture) renderer.initTexture(t); }catch(e){} return t; };
+    const pin=this.cfg.pitIn*this.length, side=this.pitSide||1;
+    const sp=(tex,sx,sy,s,y)=>{ const f=this.frameAt(s); const m=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,fog:false,depthWrite:false}));
+      m.scale.set(sx,sy,1); m.position.set(f.x+f.nx*side*this.width*0.3,f.y+y,f.z+f.nz*side*this.width*0.3); g.add(m); return m; };
+    sp(mk('PIT ENTRY','#9fd8ff',640,160,96),22,5.5,pin-30,11);
+    sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),18,4.5,pin-300,9);
+    sp(mk('PIT','#ffd76a',320,160,120),10,5,pin+100,8);
+  },
+  setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
     // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
     const cv=document.createElement('canvas'); cv.width=512; cv.height=72;
@@ -1289,28 +1308,6 @@ const Track = {
       m.rotation.y=Math.atan2(-p.nx*side,-p.nz*side);
       g.add(m);
     }
-    // start/finish gantry
-    const f0=this.frameAt(0), W=this.width;
-    const postM=new THREE.MeshLambertMaterial({color:0x1a2436});
-    for(const sd of [-1,1]){
-      const post=new THREE.Mesh(new THREE.BoxGeometry(0.9,10,0.9), postM);
-      post.position.set(f0.x+f0.nx*(W/2+3)*sd, f0.y+5, f0.z+f0.nz*(W/2+3)*sd);
-      post.castShadow=!isTouch; g.add(post);
-    }
-    const gcv=document.createElement('canvas'); gcv.width=1024; gcv.height=96;
-    const gc=gcv.getContext('2d');
-    gc.fillStyle='#0a0e16'; gc.fillRect(0,0,1024,96);
-    gc.fillStyle='#d21f26'; gc.fillRect(0,0,1024,12); gc.fillRect(0,84,1024,12);
-    gc.font='900 56px Arial, sans-serif'; gc.textAlign='center'; gc.textBaseline='middle';
-    gc.fillStyle='#ffd76a'; gc.fillText('★ APEX ARCADE ★', 512, 50);
-    const gtex=new THREE.CanvasTexture(gcv); gtex.colorSpace=THREE.SRGBColorSpace;
-    const gtexF=gtex.clone(); gtexF.wrapS=THREE.RepeatWrapping; gtexF.repeat.x=-1; gtexF.needsUpdate=true; // G-239: same two-way print on the gantry beam
-    const beamEdge=new THREE.MeshBasicMaterial({color:0x0a0e16});
-    const beam=new THREE.Mesh(new THREE.BoxGeometry(W+8,2.2,0.6),
-      [beamEdge,beamEdge,beamEdge,beamEdge,new THREE.MeshBasicMaterial({map:gtex}),new THREE.MeshBasicMaterial({map:gtexF})]);
-    beam.position.set(f0.x, f0.y+9.5, f0.z);
-    beam.rotation.y=Math.atan2(f0.tx,f0.tz)+Math.PI/2;
-    g.add(beam);
   },
   setWeather(wet01){ // darken track + fog when wet
     if(this.asphaltMat && !this.gp) this.asphaltMat.color.setHex(wet01>0.5?0x5a5e66:0x9a9da2);
@@ -1487,6 +1484,8 @@ function apexWordTex(){ // the lettering lives on its own sheet so the car only 
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
   const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
+  // owner Nov 6 2026 'colours not working': a wrap now takes the picked team colour (the wrap's own pattern stays, tinted toward the team) instead of ignoring it
+  if(wrap && wrap!=='team'){ const tc=new THREE.Color(color), mx=Math.max(tc.r,tc.g,tc.b,0.001); tc.multiplyScalar(1/mx); m.color.set(0xffffff).lerp(tc,0.6); }
   m.customProgramCacheKey = ()=>'apexLivery';
   m.onBeforeCompile = sh=>{
     sh.uniforms.livTex={value:tex}; sh.uniforms.wordTex={value:apexWordTex()}; sh.uniforms.bMin={value:M.bmin}; sh.uniforms.bSize={value:M.bsize};
@@ -1590,7 +1589,11 @@ function studioTick(S){
   if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ S.r.setSize(w,h,false); S.cam.aspect=w/h; S.cam.updateProjectionMatrix(); }
   S.t+=0.006; if(S.plate) S.plate.rotation.y+=S.big?0.004:0.006;
   if(S.big){ const port=h>w; const a=0.55+Math.sin(S.t*0.35)*0.5; const R=port?14:7.6; S.cam.position.set(Math.cos(a)*R+(port?0:1.8), port?3.2:1.7, Math.sin(a)*R); S.cam.lookAt(port?0:-2.2, port?-2.4:0.55, 0); S.car.rotation.y=-0.3; }
-  else { const d=S.canvas.id==='teamPrev'?4.7:6.2; S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
+  else { let d=S.canvas.id==='teamPrev'?4.7:6.2;
+    // owner Nov 6 2026 'Classic is big, Modern is small': the camera backs off in proportion to the car's real length, so every shape fills the picture the same
+    if(S._fitCar!==S.car){ S._fitCar=S.car; try{ const bb=new THREE.Box3().setFromObject(S.car), z=bb.getSize(new THREE.Vector3()); S._fit=Math.max(z.x,z.z); window.__prevFit=window.__prevFit||[]; window.__prevFit.push(+S._fit.toFixed(2)); }catch(e){ S._fit=0; } }
+    if(S._fit>0.5) d*=Math.max(0.6,Math.min(1.8,S._fit/4.6));
+    S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
   S.r.render(S.scene, S.cam);
 }
 const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }, TP = { s:null }; window.__st = ST; window.__cp = CP;
@@ -2342,6 +2345,8 @@ const Race = {
     this.laps=cfg.laps; this.cheatLevel=cfg.cheat;
     if(this.track.gp && GP.data) Track.buildGP(GP.data, GP.lt); else Track.build(this.track.gp?LEGACY_TRACK:this.track);
     applyTheme(this.track.theme||null);
+    try{ if(window.Studio){ const trk=this.track; Studio.world({THREE, scene, camera, renderer, canvas:renderer.domElement, groundY:(x,z)=>trackGroundY(x,z), scope:()=>trk.id,
+      center:()=>{ const pl=Race.player&&Race.player.mesh; return pl?{x:pl.position.x,z:pl.position.z}:{x:0,z:0}; }, camDefault:{back:14,up:5,side:0,ahead:12,fov:62} }); Studio.refresh(); } }catch(e){ console.warn('studio', e); } // owner Nov 6 2026: things he places in Studio
     if(GP.lt && GP.lt.root) GP.lt.root.visible = !!this.track.gp; // the Grand Prix kit's world (ground, stands, buildings) only on its own circuit
     const evRoot=scene.getObjectByName('grand_prix_event'); if(evRoot) evRoot.visible = !!this.track.gp;
     this.buildWeather(cfg.wxSeed);
@@ -2413,7 +2418,7 @@ const Race = {
   },
   updateLights(dt){
     this.stateT+=dt;
-    const n=Math.min(5,Math.floor(this.stateT/0.8)); // G-77: reds come on one by one - a beat before lamp 1 (was lit from t=0)
+    const n=Math.min(5,Math.floor(this.stateT/0.55)); // owner Nov 6 2026: lamps every 0.55 s (was 0.8) so the wait on the start line is shorter; G-77: reds come on one by one - a beat before lamp 1 (was lit from t=0)
     if(n!==this._lampN){ this._lampN=n; GPSetLights(n); if(n>0) GPPlay('start_light_beep',0.8); }
     const lights=$('lights').children;
     for(let i=0;i<5;i++) lights[i].className='light'+(i<n?' red':'');
@@ -2422,7 +2427,7 @@ const Race = {
       this.jumpStart=true; this.player.penalty+=5;
       banner('JUMP START','+5 second penalty',1600,'#ff9a5a'); Aud.beep(220,0.4,0.3);
     }
-    if(this.stateT>4.2+this._holdT){
+    if(this.stateT>3.0+this._holdT){
       for(let i=0;i<5;i++) lights[i].className='light green'; // G-77: lights out / green = GO
       this._ltT=setTimeout(()=>$('lights').classList.add('hidden'),600);
       this.mode='race'; this.raceT=0; this.contactGrace=5; // no-contact grace at the start
@@ -2431,7 +2436,7 @@ const Race = {
       Aud.cheer(true);
     }
   },
-  beginRace(){ this._holdT=rand(0.4,1.8); this.startLights();
+  beginRace(){ this._holdT=rand(0.3,1.0); this.startLights(); try{ Track.setLapSign(1); }catch(e){}
     if(GP.lt){ for(const c of this.cars) c._lc=GP.lt.createLapCounter({ laps:this.laps }); } },
   drsZoneAt(s){
     const f=(((s%Track.length)+Track.length)%Track.length)/Track.length;
@@ -2446,13 +2451,11 @@ const Race = {
   },
   wantPit(){
     const p=this.player; if(!p||this.mode!=='race'||p.inPits) return;
-    const sN=((p.s%Track.length)+Track.length)%Track.length;
-    const pitInS=Track.cfg.pitIn*Track.length;
-    if(sN>pitInS-600&&sN<pitInS){
-      p.pitIntent=true; banner('PIT ARMED','Box this lap — pick tires',900,'#9fd8ff');
-      this.showPitMenu();
-    }
-    else banner('PIT ENTRY AHEAD','Arm it near the pit entry',1100,'#8fa8c8');
+    // owner Nov 6 2026 'there is no pit': PIT works from anywhere on the lap - it arms the stop and tells you how far the pit entry sign is
+    if(p.pitIntent){ p.pitIntent=false; banner('PIT CANCELLED','',800,'#8fa8c8'); return; }
+    const L=Track.length, sN=((p.s%L)+L)%L, pitInS=Track.cfg.pitIn*L, dist=Math.round(((pitInS-sN)%L+L)%L);
+    p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tyres',1400,'#9fd8ff');
+    this.showPitMenu();
   },
   openTyreChoice(){ if(!this.player||this.mode!=='race'||this.player.inPits) return; this.showPitMenu(); },
   showPitMenu(){
@@ -2469,7 +2472,10 @@ const Race = {
     $('pitMenu').classList.remove('hidden');
     if(!this._pmClose){ this._pmClose=true; $('pitMenu').addEventListener('click',e=>{ if(e.target===$('pitMenu')) $('pitMenu').classList.add('hidden'); }); }
   },
-  cycleCam(){ this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
+  cycleCam(){
+    if(window.Studio){ const mine=(Studio.data().cams||[]).length; // owner Nov 6 2026: after the game's 4 views come his own Studio views
+      if(Studio.camView() || (this.camMode===3 && mine)){ const v=Studio.camNext(); if(v){ banner(String(v.name||'MY VIEW').toUpperCase(),'','700'); return; } this.camMode=0; banner('CHASE CAM','','700'); return; } }
+    this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
   noteOffTrack(dt){
     const p=this.player;
     p._offT=(p._offT||0)+dt;
@@ -2623,7 +2629,9 @@ const Race = {
     if(GP.ev){ try{ GP.ev.finish(order[0]); GP.ev.podium(); }catch(e){} } // G-45: horn, cheer, fireworks + fanfare
   },
   updateCamera(dt){
+    if(window.Studio && Studio.ownsCamera()) return; // owner Nov 6 2026: Studio 'Place' = map view from above
     const p=this.player, m=p.mesh;
+    if(this._fov0==null) this._fov0=camera.fov;
     const wantNear = this.camMode===1 ? 0.08 : 0.5; // cockpit: the wheel is ~0.55 m from the eye
     if(camera.near!==wantNear){ camera.near=wantNear; camera.updateProjectionMatrix(); }
     if(this.camMode===1){ // G-48: cockpit - the driver's eye in the kit cockpit
@@ -2640,9 +2648,18 @@ const Race = {
     const tf=Track.frameAt(p.s);
     const fwd=new THREE.Vector3(tf.tx,0,tf.tz); // track direction, stable
     let cp=new THREE.Vector3(), lk=new THREE.Vector3(pp.x,pp.y+1.3,pp.z); // G-119: aim at the car, at ITS height (was a fixed world y=1.5)
-    if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
-      const back=Track.posAt(p.s-11,p.d,0);
-      cp.set(pp.x-fwd.x*11, back.y+3.4, pp.z-fwd.z*11); // G-119: height rides the road behind the car (was fixed y=5.2 - under the crests)
+    const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d;
+    const myCam=window.Studio && Studio.camView(); // owner Nov 6 2026: his own camera views from Studio
+    const wantFov = myCam ? myCam.fov : SN('cam.fov',this._fov0,{min:30,max:100,step:1,label:'Field of view (game cameras)',group:'Camera'});
+    if(Math.abs(camera.fov-wantFov)>0.01){ camera.fov=wantFov; camera.updateProjectionMatrix(); }
+    if(myCam){
+      const sx=-fwd.z, sz=fwd.x, back=Track.posAt(p.s-myCam.back,p.d,0);
+      cp.set(pp.x-fwd.x*myCam.back+sx*myCam.side, back.y+myCam.up, pp.z-fwd.z*myCam.back+sz*myCam.side);
+      lk.set(pp.x+fwd.x*myCam.ahead, pp.y+1.2, pp.z+fwd.z*myCam.ahead);
+    } else if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
+      const cb=SN('cam.chase.back',11,{min:4,max:30,step:0.5,label:'Chase camera: distance behind (m)',group:'Camera'}), cu=SN('cam.chase.up',3.4,{min:0.8,max:15,step:0.1,label:'Chase camera: height (m)',group:'Camera'});
+      const back=Track.posAt(p.s-cb,p.d,0);
+      cp.set(pp.x-fwd.x*cb, back.y+cu, pp.z-fwd.z*cb); // G-119: height rides the road behind the car (was fixed y=5.2 - under the crests)
     } else if(this.camMode===2){ // G-239 (owner: 'helicopter noise... a camera that doesn't jitter and shake'): STEADY broadcast - it rides behind/above the car in the car's own frame and looks down the road. The old target was a fixed point 26 m to the side: as the road turned, that arm swung the whole picture around the car
       const back=Track.posAt(p.s-26, p.d*0.5, 0);
       cp.set(back.x, back.y+16, back.z);
@@ -2690,6 +2707,7 @@ const RainFX={
 /* ================= HUD ================= */
 /* owner Nov 4 2026: big LAP sign at the top each time the player crosses the line (same as Exotic Racer) */
 function lapPop(lap,total){
+  try{ Track.setLapSign(lap); }catch(e){}
   if(lap>total) return;
   const e=$('lapPop'); if(!e) return;
   e.textContent = lap===total ? 'FINAL LAP!' : `LAP ${lap}/${total}`;
@@ -2734,7 +2752,7 @@ const HUD={
     if(p.penalty>0){ w.classList.remove('hidden'); w.textContent=`⚠ ${p.penalty}s PENALTY`; }
     else if(p.warnings>0){ w.classList.remove('hidden'); w.textContent=`TRACK LIMITS ${p.warnings}/3`; }
     else w.classList.add('hidden');
-    this.minimap(order);
+    { const nowMm=performance.now(); if(!(nowMm-(this._mmT||0)<80)){ this._mmT=nowMm; this.minimap(order); } } // owner Nov 6 2026: minimap redraw ~12x a second, not every frame
   },
   minimap(order){
     const c=this.mm; if(!c) return; const B=Track.bounds;
@@ -2908,8 +2926,13 @@ function initMenus(){
   const tm=$('teamRow'); tm.innerHTML='';
   for(const t of TEAMS){
     const d=document.createElement('div'); d.className='pick'+(t.id===selTeam.id?' sel':'');
-    d.innerHTML=`<div class="swatch" style="background:${t.accent}"></div><div class="t">${t.name}</div><div class="s">${t.pace===0?'Top pace':t.pace===-0.15?'Midfield':'Backmarker'}</div>`;
-    d.onclick=()=>{ selTeam=t; try{ localStorage.setItem('f1_team',t.id); }catch(e){} [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); carSavedFlash(); };
+    // owner Nov 6 2026 "colours not working": the stripe showed only the team's 2nd colour (Shadow = red stripe, near-black car) -> show the car colour + the stripe colour
+    const bodyHex='#'+(t.color>>>0).toString(16).padStart(6,'0');
+    d.innerHTML=`<div class="swatch" style="background:linear-gradient(90deg,${bodyHex} 0 62%,${t.accent} 62% 100%)"></div><div class="t">${t.name}</div><div class="s">${t.pace===0?'Top pace':t.pace===-0.15?'Midfield':'Backmarker'}</div>`;
+    // owner Nov 6 2026: a wrap (e.g. Volcanic Flame) paints over the team colour, so tapping a team did nothing - picking a team now puts the car back on Team Paint
+    d.onclick=()=>{ selTeam=t; try{ localStorage.setItem('f1_team',t.id); localStorage.setItem('f1_wrap','team'); }catch(e){} [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
+      try{ const wr=$('wrapRow'); [...wr.children].forEach((x,i)=>x.classList.toggle('sel', WRAPS[i] && WRAPS[i].id==='team')); }catch(e){}
+      carPreviewBuild(); carSavedFlash(); };
     tm.appendChild(d);
   }
   // difficulty = how much the AI cheats
@@ -3423,7 +3446,7 @@ window.__reality={
   go: (on)=>{ try{
     if(!on){ Input.gas=false; return; }
     if(Race.mode==='grid'){ try{ Race.beginRace(); }catch(e){} }
-    if(Race.mode==='lights' && Race.stateT<4.2+(Race._holdT||0)) Race.stateT=4.2+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
+    if(Race.mode==='lights' && Race.stateT<3.0+(Race._holdT||0)) Race.stateT=3.0+(Race._holdT||0)+0.05; // the robot measures driving, not the countdown
     Input.gas=true;
   }catch(e){} },
   // no expect override: the robot's own-axes box reads this car at 5.47 m long (the G-73 mesh scale cancels

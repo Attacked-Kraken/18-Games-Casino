@@ -124,6 +124,12 @@
   <div class="eyebrow">APEX ARCADE</div>
   <h1>GAME DEVELOPMENT</h1>
 </header>
+<!-- owner Nov 6 2026 11:17 PM "the whole system of creating the games ... options in depth ... a new game a Muse builds, I want to put in game development" -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:4px 14px 10px">
+  <a href="workshop.html" style="flex:1 1 160px;text-align:center;padding:12px;border-radius:12px;background:#ffd23a;color:#111;font-weight:900;text-decoration:none">&#128736;&#65039; WORKSHOP<br><span style="font-weight:600;font-size:12px">build · track · code · new game</span></a>
+  <button id="studioSw" type="button" style="flex:1 1 160px;padding:12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408;color:#ffd23a;font:900 15px inherit;cursor:pointer">&#127899;&#65039; STUDIO <span id="studioSt">OFF</span><br><span style="font-weight:600;font-size:12px">tune any game while you play it</span></button>
+  <a href="workshop.html#help" style="flex:1 1 160px;text-align:center;padding:12px;border-radius:12px;background:#141b26;border:1px solid #2a3444;color:#eef1f5;font-weight:900;text-decoration:none">&#127981; HOW IT ALL WORKS<br><span style="font-weight:600;font-size:12px">the whole game-making system</span></a>
+</div>
 
 <nav class="tabs" id="tabs">
   <button class="refresh" id="refresh" type="button" aria-label="Refresh - load the newest builds">&#10227; Refresh</button>
@@ -226,6 +232,25 @@
 
 
 </div>
+
+<!-- owner Nov 6 2026: any game page in the repo that has no card yet (a Muse's new game, a Workshop starter game) shows here by itself -->
+<div id="newGames" style="display:none;padding:0 14px 10px"><h3 style="letter-spacing:.12em;font-size:13px;color:#ffd23a;margin:14px 0 8px">&#127381; NEW GAMES</h3><div class="grid" id="newGrid" style="padding:0"></div></div>
+<script>(function(){
+  var sw = document.getElementById('studioSw'), st = document.getElementById('studioSt');
+  function on(){ try { return localStorage.getItem('apexStudioOn') === '1'; } catch (e) { return false; } }
+  function draw(){ st.textContent = on() ? 'ON' : 'OFF'; sw.style.background = on() ? '#ffd23a' : '#1a1408'; sw.style.color = on() ? '#111' : '#ffd23a'; }
+  sw.onclick = function(){ try { localStorage.setItem('apexStudioOn', on() ? '0' : '1'); } catch (e) {} draw(); }; draw();
+  if (location.hash === '#help') location.href = 'workshop.html#help';
+  var have = {}; document.querySelectorAll('#grid a.go').forEach(function(a){ have[(a.getAttribute('href') || '').split('?')[0]] = 1; });
+  fetch('https://api.github.com/repos/Attacked-Kraken/18-Games-Casino/contents/', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(list){
+    var add = (list || []).filter(function(f){ return f.type === 'file' && /^apex[a-z0-9]+\.html$/.test(f.name) && !have[f.name]; });
+    if (!add.length) return; var g = document.getElementById('newGrid');
+    add.forEach(function(f){ var nm = f.name.replace(/^apex|\.html$/g, ''); var d = document.createElement('div'); d.className = 'gcard'; d.style.setProperty('--acc', '#ffd23a');
+      d.innerHTML = '<div style="font-size:34px;line-height:64px">&#127918;</div><h4>' + nm.charAt(0).toUpperCase() + nm.slice(1) + '</h4><p>' + f.name + '</p><div class="row"><span class="bld">NEW</span><a class="go" href="' + f.name + '">PLAY</a></div>';
+      g.appendChild(d); });
+    document.getElementById('newGames').style.display = '';
+  }).catch(function(){});
+})();</script>
 
 <div style="padding:6px 14px 18px"><a href="tools/clip-notes.html" style="display:block;text-align:center;padding:14px;border-radius:10px;background:#0b6b5c;color:#fff;font:700 16px/1 system-ui,sans-serif;letter-spacing:.04em;text-decoration:none">&#127909; CLIP NOTES - mark up a video</a></div>
 
