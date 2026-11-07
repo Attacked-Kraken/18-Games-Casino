@@ -73,13 +73,13 @@ canvas.gl{position:absolute;inset:0;width:100%;height:100%;touch-action:none;dis
 <h2 style="margin:4px 0">&#127918; Make a new game</h2>
 <div class="sub">A full working game from a starter: your track from the Track tab, your scenery pieces, a car, rivals, laps, phone controls, engine sound and 🎛️ Studio sliders inside. After the robot check it shows on the Game Development page by itself. Then tune it with Studio, change it in Code, or give a Muse a job on it.</div>
 <div class="row"><label>Game name</label><input type="text" id="ng_name" placeholder="e.g. Desert Rally"></div>
-<div class="row"><label>Starter</label><select id="ng_tpl"><option value="templates/racer.html">Racer - cars on a track, laps, rivals</option></select></div>
+<div class="row"><label>Starter</label><select id="ng_tpl"><option value="templates/racer.html">Racer - cars on a track, laps, rivals</option><option value="templates/ballsport.html">Ball game - a field, two goals, teams, pass + shoot</option></select></div>
 <div class="row"><label>Track (a piece from the Track tab, already sent; empty = built-in oval)</label><input type="text" id="ng_track" placeholder="my-track"></div>
 <div class="row"><label>Scenery pieces (from the Build tab, already sent; commas)</label><input type="text" id="ng_scen" placeholder="my-piece, pit-lane"></div>
 <div class="row"><label>Car model (empty = simple car; or a models/....glb path from Build → Models)</label><input type="text" id="ng_car" placeholder="models/fetched/....glb"></div>
 <div class="row"><label>Car colour <input type="color" id="ng_col" value="#ff2d20"></label><label>Sky <input type="color" id="ng_sky" value="#8fb8e0"></label><label>Ground <input type="color" id="ng_gr" value="#4f8a43"></label></div>
-<div class="row"><label>Laps <b id="ng_lv">3</b></label><input type="range" id="ng_laps" min="1" max="20" value="3"></div>
-<div class="row"><label>Rivals <b id="ng_rv">3</b></label><input type="range" id="ng_riv" min="0" max="11" value="3"></div>
+<div class="row"><label><span id="ng_ll">Laps</span> <b id="ng_lv">3</b></label><input type="range" id="ng_laps" min="1" max="20" value="3"></div>
+<div class="row"><label><span id="ng_rl">Rivals</span> <b id="ng_rv">3</b></label><input type="range" id="ng_riv" min="0" max="11" value="3"></div>
 <button class="btn go" id="ng_make">&#128228; Make it (goes to Send)</button>
 <p class="sub">Order that works: 1) build + send your track and pieces, 2) wait for them to merge (a few minutes), 3) make the game here.</p>
 </div></section>
@@ -339,6 +339,9 @@ function fixFromCode(file, a, b){
   return { old: oldT, neu: newT, lines: (ea - s + 1) + ' line(s) around line ' + (s + 1) };
 }
 function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24); }
+$('ng_tpl').onchange = () => { const ball = /ballsport/.test($('ng_tpl').value); /* owner Nov 7 2026: ball-game starter - same boxes, ball words */
+  $('ng_ll').textContent = ball ? 'Minutes per match' : 'Laps'; $('ng_rl').textContent = ball ? 'Players per team' : 'Rivals'; $('ng_riv').min = ball ? 1 : 0; $('ng_riv').max = ball ? 6 : 11;
+  for (const id of ['ng_track', 'ng_car']) { const row = $(id).closest('.row'); if (row) row.style.display = ball ? 'none' : ''; } };
 $('ng_laps').oninput = e => { $('ng_lv').textContent = e.target.value; }; $('ng_riv').oninput = e => { $('ng_rv').textContent = e.target.value; };
 $('ng_make').onclick = () => { const name = $('ng_name').value.trim(); if (!slug(name)) { $('ng_name').focus(); $('ng_name').placeholder = 'type a name first'; return; }
   window.__newgame = { name, file: 'apex' + slug(name) + '.html', tpl: $('ng_tpl').value, cfg: { name, track: slug2($('ng_track').value), scenery: $('ng_scen').value.split(',').map(slug2).filter(Boolean), car: $('ng_car').value.trim(),
