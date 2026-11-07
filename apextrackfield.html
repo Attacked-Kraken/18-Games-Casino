@@ -3242,7 +3242,7 @@ const rows=Object.keys(G.totals).map(n=>({n:n,p:G.totals[n]})).sort((a,b)=>b.p-a
 const champ=rows[0], myTotal=G.totals[athleteName]||0;
 if(myTotal>champBest){ champBest=myTotal; Store.set('champBest',champBest); }
 $('resTitle').textContent='APEX GAMES — CHAMPIONSHIP FINAL STANDINGS';
-$('resMark').textContent=champ.n+' WINS THE APEX GAMES';
+$('resMark').textContent=champ.n+(champ.n==='YOU'?' WIN':' WINS')+' THE APEX GAMES';
 $('resPoints').textContent='Your total: '+myTotal+' PTS · Best: '+champBest+' PTS';
 $('resMedals').innerHTML=''; // JOB G-68 (owner): ONE table on the final screen - the medal table repeated the standings below it
 $('resBoard').innerHTML='<table class="board"><tr><th>#</th><th>ATHLETE</th><th>PTS</th></tr>'+
