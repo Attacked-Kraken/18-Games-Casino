@@ -2886,8 +2886,13 @@ function initMenus(){
   const tm=$('teamRow'); tm.innerHTML='';
   for(const t of TEAMS){
     const d=document.createElement('div'); d.className='pick'+(t.id===selTeam.id?' sel':'');
-    d.innerHTML=`<div class="swatch" style="background:${t.accent}"></div><div class="t">${t.name}</div><div class="s">${t.pace===0?'Top pace':t.pace===-0.15?'Midfield':'Backmarker'}</div>`;
-    d.onclick=()=>{ selTeam=t; try{ localStorage.setItem('f1_team',t.id); }catch(e){} [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); carPreviewBuild(); carSavedFlash(); };
+    // owner Nov 6 2026 "colours not working": the stripe showed only the team's 2nd colour (Shadow = red stripe, near-black car) -> show the car colour + the stripe colour
+    const bodyHex='#'+(t.color>>>0).toString(16).padStart(6,'0');
+    d.innerHTML=`<div class="swatch" style="background:linear-gradient(90deg,${bodyHex} 0 62%,${t.accent} 62% 100%)"></div><div class="t">${t.name}</div><div class="s">${t.pace===0?'Top pace':t.pace===-0.15?'Midfield':'Backmarker'}</div>`;
+    // owner Nov 6 2026: a wrap (e.g. Volcanic Flame) paints over the team colour, so tapping a team did nothing - picking a team now puts the car back on Team Paint
+    d.onclick=()=>{ selTeam=t; try{ localStorage.setItem('f1_team',t.id); localStorage.setItem('f1_wrap','team'); }catch(e){} [...tm.children].forEach(x=>x.classList.remove('sel')); d.classList.add('sel');
+      try{ const wr=$('wrapRow'); [...wr.children].forEach((x,i)=>x.classList.toggle('sel', WRAPS[i] && WRAPS[i].id==='team')); }catch(e){}
+      carPreviewBuild(); carSavedFlash(); };
     tm.appendChild(d);
   }
   // difficulty = how much the AI cheats
