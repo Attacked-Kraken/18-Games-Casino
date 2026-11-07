@@ -168,8 +168,8 @@
     } else {
       const js = JSON.stringify(mine || pub);
       h += `<p class="sub">${mine ? 'You have changes saved on THIS phone only.' : 'No changes on this phone.'}</p>`;
-      h += `<button data-pub="1">📤 Make the publish code</button> <button data-clear="1">↩️ Undo ALL my changes</button>`;
-      h += `<p class="sub">Publish = copy the code, open the Mac mini controller → 🎛️ Studio publish, paste, Send. A Muse window saves it to mods/${GAME}.json; after the robot check every player gets it.</p>`;
+      h += `<button data-pub="1">📤 Publish (opens your controller)</button> <button data-clear="1">↩️ Undo ALL my changes</button>`;
+      h += `<p class="sub">Publish opens your controller's Paste a fix page with it filled in: tap Check, then Send. A Muse window saves it to mods/${GAME}.json; after the robot check every player gets it.</p>`;
       h += `<textarea id="apxPub" readonly placeholder="tap Make the publish code">${ui.pubText || ''}</textarea><div class="sub" id="apxPubMsg"></div>`;
       h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
@@ -191,7 +191,13 @@
     const pb = ui.el.querySelector('[data-pub]'); if (pb) pb.onclick = () => {
       ui.pubText = 'STUDIO ' + GAME + ' ' + JSON.stringify(mine || pub); ui.draw();
       const ta = document.getElementById('apxPub'); const msg = document.getElementById('apxPubMsg');
-      try { navigator.clipboard.writeText(ui.pubText).then(() => { msg.textContent = 'Copied. Paste it into the Mac mini controller → 🎛️ Studio publish.'; }, () => { ta.select(); msg.textContent = 'Select the text and copy it.'; }); } catch (e) { ta.select(); }
+      try { navigator.clipboard.writeText(ui.pubText).catch(() => {}); } catch (e) {}
+      const b64 = btoa(unescape(encodeURIComponent(ui.pubText))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      const w = window.open('about:blank', '_blank');
+      let t = '', pin = '', home = 'http://192.168.1.231:8765'; try { t = localStorage.getItem('apexLinkTopic') || ''; pin = localStorage.getItem('apexLinkPin') || ''; home = (localStorage.getItem('apexCtlUrl') || home).replace(/\/$/, ''); } catch (e) {}
+      const open = u => { const url = u + '/fix#fp=' + b64 + (pin ? '&pin=' + encodeURIComponent(pin) : ''); if (w) w.location = url; else location.href = url; msg.textContent = 'Opening your controller...'; };
+      if (!t) open(home); else fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(r => r.text()).then(x => { let u = '';
+        x.trim().split('\n').forEach(l => { try { const m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} }); open(u || home); }).catch(() => open(home));
     };
     const cl = ui.el.querySelector('[data-clear]'); if (cl) cl.onclick = () => { if (cl.dataset.sure) { mine = null; try { localStorage.removeItem(KEY); } catch (e) {} rebuildProps(); emit('change', '*'); ui.draw(); } else { cl.dataset.sure = 1; cl.textContent = 'Tap again to undo everything'; } };
   };
