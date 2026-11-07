@@ -2,6 +2,22 @@
 <html lang="en">
 <head>
 <script src="kit/apex-music.js"></script>
+<script src="kit/studio.js"></script><!-- owner Nov 7 2026: 🎛️ Studio - his no-code editor (open with ?studio=1 or the Game Development page's STUDIO switch) -->
+<script>/* owner Nov 7 2026: every Studio slider of this game, listed up front so the Tune tab shows them before the race starts */
+try{ Studio.declare([
+ {key:'engine.pitch',def:1,min:0.5,max:2,step:0.01,label:'Engine pitch (higher = whinier)',group:'Engine sound'},
+ {key:'engine.volume',def:1,min:0,max:2,step:0.01,label:'Engine loudness',group:'Engine sound'},
+ {key:'engine.tone',def:1500,min:400,max:6000,step:50,label:'Brightness (Hz, low = deep / muffled)',group:'Engine sound'},
+ {key:'car.top',def:1,min:0.5,max:1.6,step:0.01,label:'Top speed (your car, 1 = normal)',group:'Driving'},
+ {key:'car.acc',def:1,min:0.5,max:2,step:0.01,label:'Acceleration (your car)',group:'Driving'},
+ {key:'car.grip',def:1,min:0.5,max:2,step:0.01,label:'Corner grip (your car)',group:'Driving'},
+ {key:'car.steer',def:1,min:0.5,max:1.8,step:0.01,label:'Steering quickness',group:'Driving'},
+ {key:'cam.chase.back',def:6.2,min:2,max:25,step:0.1,label:'Chase camera: distance behind (m)',group:'Camera'},
+ {key:'cam.chase.up',def:2.25,min:0.6,max:12,step:0.05,label:'Chase camera: height (m)',group:'Camera'},
+ {key:'cam.chase.look',def:5,min:0,max:40,step:0.5,label:'Chase camera: looks ahead (m)',group:'Camera'},
+ {key:'cam.fov',def:60,min:30,max:100,step:1,label:'Field of view at a standstill',group:'Camera'},
+ {key:'cam.fovspeed',def:1,min:0,max:2,step:0.05,label:'How much the view widens with speed',group:'Camera'}
+]); }catch(e){}</script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -2370,14 +2386,16 @@ function engKitStart() { /* start the kit's five loops once, gains at 0 - engine
 }
 function engineSnd(rpm, load, on, nos, scr, spd) {
   const c = AU.ctx; if (!c) return; const t = c.currentTime;
+  const SN = (k, d) => window.Studio ? Studio.num(k, d) : d, ePitch = SN('engine.pitch', 1), eVol = SN('engine.volume', 1), eTone = SN('engine.tone', 1500); /* owner Nov 7 2026: Studio engine sliders */
   if (!isFinite(rpm)) rpm = 0; if (!isFinite(load)) load = 0; if (!isFinite(scr)) scr = 0; if (!isFinite(spd)) spd = 0; /* one bad physics frame must never reach an AudioParam - setTargetAtTime throws on a non-finite value and the harness counts it as a script error (PR #1614) */
   AU.nos.gain.setTargetAtTime(on && nos ? 0.22 : 0, t, 0.05); AU.wind.gain.setTargetAtTime(on ? clamp(spd / 80, 0, 1) * 0.25 : 0, t, 0.1);
   engKitStart();
   if (kitLive()) { /* G-240: the owner's supercar recordings carry the engine - idle + accel layers crossfaded by throttle, playbackRate by rpm, kit shift/backfire one-shots, kit tire squeal */
-    const G = AU.kitG, band = (x, a, b, cc, d) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < cc ? 1 : x < d ? 1 - (x - cc) / (d - cc) : 0, eg = on ? 1 : 0;
-    const rate = 0.6 + 0.2 * clamp(rpm, 0, 1); /* G-240 fix 1: deep growl - measured: at the old 1.25 top rate the accel layers' spectral centroids sat at 1650-2323 Hz (a whine); at 0.8 through the 1500 Hz lowpass they sit at 683-812 Hz, target <= 850 Hz */
+    const G = AU.kitG, band = (x, a, b, cc, d) => x < a ? 0 : x < b ? (x - a) / (b - a) : x < cc ? 1 : x < d ? 1 - (x - cc) / (d - cc) : 0, eg = on ? eVol : 0;
+    if (AU.kitFil) AU.kitFil.frequency.setTargetAtTime(eTone, t, 0.1);
+    const rate = (0.6 + 0.2 * clamp(rpm, 0, 1)) * ePitch; /* G-240 fix 1: deep growl - measured: at the old 1.25 top rate the accel layers' spectral centroids sat at 1650-2323 Hz (a whine); at 0.8 through the 1500 Hz lowpass they sit at 683-812 Hz, target <= 850 Hz */
     for (const k of ['low', 'mid', 'high']) AU.kitSrc[k].playbackRate.setTargetAtTime(rate, t, 0.05);
-    AU.kitSrc.idle.playbackRate.setTargetAtTime(0.8 + 0.04 * clamp(rpm, 0, 1), t, 0.05);
+    AU.kitSrc.idle.playbackRate.setTargetAtTime((0.8 + 0.04 * clamp(rpm, 0, 1)) * ePitch, t, 0.05);
     G.idle.gain.setTargetAtTime(eg * 0.5 * (1 - load * 0.8), t, 0.07);
     G.low.gain.setTargetAtTime(eg * 0.62 * load * (1 - band(rpm, 0.38, 0.62, 1e9, 1e9)), t, 0.06);
     G.mid.gain.setTargetAtTime(eg * 0.62 * load * band(rpm, 0.3, 0.55, 0.75, 0.95), t, 0.06);
@@ -2390,9 +2408,9 @@ function engineSnd(rpm, load, on, nos, scr, spd) {
     KP.gear = gear; KP.load = load;
     return;
   }
-  const b = 42 + rpm * 165;
+  const b = (42 + rpm * 165) * ePitch;
   AU.eng.o1.frequency.setTargetAtTime(b, t, 0.03); AU.eng.o2.frequency.setTargetAtTime(b * 0.5, t, 0.03); AU.eng.o3.frequency.setTargetAtTime(b * 2.01, t, 0.03);
-  AU.eng.f.frequency.setTargetAtTime(380 + rpm * 2200 * (0.45 + load * 0.55), t, 0.05); AU.eng.g.gain.setTargetAtTime(on ? 0.07 + load * 0.08 : 0, t, 0.08);
+  AU.eng.f.frequency.setTargetAtTime((380 + rpm * 2200 * (0.45 + load * 0.55)) * eTone / 1500, t, 0.05); AU.eng.g.gain.setTargetAtTime(on ? (0.07 + load * 0.08) * eVol : 0, t, 0.08);
   AU.scr.gain.setTargetAtTime(on ? clamp(scr, 0, 1) * 0.2 : 0, t, 0.05);
 }
 
@@ -2446,6 +2464,8 @@ async function setupRace(place, laps, friend, type) {
       addEnt(Object.assign({ name: friend.n, carId: fc, cfg: fcfg, ai: true, friendR: friend.r }, sl)); continue; }
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
+  try { if (window.Studio) { Studio.world({ THREE, scene: W.scene, camera: cam, renderer, canvas: renderer.domElement, groundY: () => T.y, scope: () => 'place' + place.i,
+    center: () => (R && R.P ? { x: R.P.x, z: R.P.z } : { x: 0, z: 0 }), camDefault: { back: 6.2, up: 2.25, side: 0, ahead: 5, fov: 62 } }); Studio.refresh(); } } catch (e) { console.warn('studio', e); } /* owner Nov 7 2026: things he places in Studio, per race place */
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
   const stk = stats(S.cur, defCfg(S.cur)), UB = 0.5; /* OWNER Nov 3 2026 4:35 PM 'all upgrades get the same treatment ... fair on all': rivals follow the player's CAR CLASS (stock stats) plus HALF of the player's upgrade gains - so an engine / turbo / spoiler / tyre upgrade keeps a real edge while the field still keeps up, the same for every car */
   const anchorTop = stk.top + UB * (P.st.top - stk.top), anchorAcc = stk.acc + UB * (P.st.acc - stk.acc), anchorGrip = stk.grip + UB * (P.st.grip - stk.grip);
@@ -2488,6 +2508,7 @@ function bigMsg(txt) { const e = $('msg'); e.textContent = txt; e.style.opacity 
 
 function stepPlayer(P, dt) {
   const T = R.T, st = P.st, W = R.W;
+  const SN = (k, d) => window.Studio ? Studio.num(k, d) : d, sTop = SN('car.top', 1), sAcc = SN('car.acc', 1), sGrip = SN('car.grip', 1), sSteer = SN('car.steer', 1); /* owner Nov 7 2026: Studio driving sliders (his car only) */
   /* owner: "better steering, it goes everywhere" - softer stick near the middle, smooth steering, and a light lane-keeping assist */
   syncKit();
   const ks = K.sx || 0; let sIn = (K.r ? 1 : 0) - (K.l ? 1 : 0) + Math.sign(ks) * Math.pow(Math.abs(ks), 1.3); sIn = clamp(sIn, -1, 1); if (P.auto) sIn = P.autoSteer;
@@ -2496,21 +2517,21 @@ function stepPlayer(P, dt) {
   const thr = P.auto ? 1 : R.t < 0 ? 0 : Math.max(K.gas ? 1 : 0, clamp(((K.sy || 0) - 0.12) / 0.6, 0, 1)), gas = thr > 0, brake = !P.auto && R.t >= 0 && (K.brake || (K.sy || 0) < -0.35);
   let fx = Math.sin(P.h), fz = Math.cos(P.h), rx = -fz, rz = fx, vF = P.vx * fx + P.vz * fz;
   const sp = Math.abs(vF), drift = !P.auto && K.drift && sp > 12;
-  const sf = clamp(sp / 6, 0, 1); let yaw = P.steer * 2.25 * (sf * sf * (3 - 2 * sf)) / (1 + sp / 55); if (drift) yaw *= 1.55; if (W.grip < 1) yaw *= 0.88; if (vF < 0) yaw = -yaw; /* G-76: turning power eases in smoothly off the line (no snap) and holds up at speed, so the car turns where it is pointed instead of sliding wide */
+  const sf = clamp(sp / 6, 0, 1); let yaw = P.steer * 2.25 * sSteer * (sf * sf * (3 - 2 * sf)) / (1 + sp / 55); if (drift) yaw *= 1.55; if (W.grip < 1) yaw *= 0.88; if (vF < 0) yaw = -yaw; /* G-76: turning power eases in smoothly off the line (no snap) and holds up at speed, so the car turns where it is pointed instead of sliding wide */
   P.h -= yaw * dt;
   if (!P.auto && !ks && !K.l && !K.r && Math.abs(P.steer) < 0.02 && sp > 8 && !drift && P.idx !== undefined) { let dh = Math.atan2(R.T.tx[P.idx], R.T.tz[P.idx]) - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; if (Math.abs(dh) < 0.35) P.h += dh * Math.min(1, dt * 0.5); }
   fx = Math.sin(P.h); fz = Math.cos(P.h); rx = -fz; rz = fx;
   vF = P.vx * fx + P.vz * fz; let vL = P.vx * rx + P.vz * rz;
   const nosOn = (K.nos || P.autoNos) && P.nos > 0.01 && vF > 5 && R.t >= 0; if (nosOn && !P.nosOn) sfx('nos'); P.nosOn = nosOn; if (nosOn) P.nos = Math.max(0, P.nos - dt * 0.3 / st.nosCap);
-  const top = st.top * (nosOn ? (st.nosTop || 1.24) : 1);
+  const top = st.top * sTop * (nosOn ? (st.nosTop || 1.24) : 1);
   let a = 0;
-  if (gas) a = (st.acc * (1 - Math.min(1, Math.pow(Math.max(0, vF) / top, 2))) + (nosOn ? 13 * (st.nosK || 1) : 0)) * thr;
+  if (gas) a = (st.acc * sAcc * (1 - Math.min(1, Math.pow(Math.max(0, vF) / top, 2))) + (nosOn ? 13 * (st.nosK || 1) : 0)) * thr;
   if (brake) a = vF > 1 ? -34 : vF > -11 ? -8 : 0;
   if (!gas && !brake) a = vF > 0 ? -1.8 - vF * 0.015 : vF < 0 ? Math.min(6, -vF * 4) : 0; /* OWNER Nov 1 9:36 PM: the car rolled BACKWARDS by itself with no gas (coast drag stayed -1.8 at a standstill) - coasting now only slows the car to a stop, never past it */
   if (vF > top) a = Math.min(a, -(vF - top) * 1.5);
   if (R.t < 0) { a = 0; vF *= 0.9; }
   { const vF0 = vF; vF += a * dt; if (!gas && !brake && vF0 >= 0 && vF < 0) vF = 0; }
-  const gk = (drift ? 1.8 : 12.5 * st.grip) * (W.grip < 1 ? 0.45 : W.grip); /* G-76: firmer side grip while driving normally, so the car tracks its nose through the turn - the drift branch keeps its loose 1.8, untouched */
+  const gk = (drift ? 1.8 : 12.5 * st.grip * sGrip) * (W.grip < 1 ? 0.45 : W.grip); /* G-76: firmer side grip while driving normally, so the car tracks its nose through the turn - the drift branch keeps its loose 1.8, untouched */
   vL *= Math.exp(-gk * dt); if (Math.abs(vL) > 2) vF -= Math.abs(vL) * 0.06 * dt * Math.sign(vF);
   P.vx = fx * vF + rx * vL; P.vz = fz * vF + rz * vL; P.x += P.vx * dt; P.z += P.vz * dt;
   P.slide = Math.abs(vL); P.spd = vF;
@@ -2669,22 +2690,25 @@ function standings() {
   const T = R.T; return R.cars.slice().sort((a, b) => { if (a.fin != null && b.fin != null) return a.fin - b.fin; if (a.fin != null) return -1; if (b.fin != null) return 1; return (b.isP ? b.prog : b.s) - (a.isP ? a.prog : a.s); });
 }
 function updateCam(dt) {
+  if (window.Studio && Studio.ownsCamera()) { const W0 = R.W; if (W0.sky) W0.sky.position.copy(cam.position); return; } /* owner Nov 7 2026: Studio 'Place' = map view from above */
   const P = R.P, T = R.T, sp = Math.abs(P.spd), fx = Math.sin(P.h), fz = Math.cos(P.h), y = T.y;
+  const SN = (k, d) => window.Studio ? Studio.num(k, d) : d, myCam = window.Studio && Studio.camView(); /* his own camera views from Studio */
   const vh = sp > 3 ? Math.atan2(P.vx, P.vz) : P.h; let dh = vh - P.h; while (dh > Math.PI) dh -= TAU; while (dh < -Math.PI) dh += TAU; const ch = P.h + dh * 0.45;
   const cx = Math.sin(ch), cz = Math.cos(ch);
   const pre = R.t < -1.5 ? clamp((-R.t - 1.5) / 2.7, 0, 1) : 0;
-  let back, up, look;
-  if (R.camMode === 2 && !P.fin) { back = -0.6; up = 1.25; look = 30; }
+  let back, up, look, side = 0;
+  if (myCam && !P.fin) { back = myCam.back; up = myCam.up; look = myCam.ahead; side = myCam.side || 0; }
+  else if (R.camMode === 2 && !P.fin) { back = -0.6; up = 1.25; look = 30; }
   else if (R.camMode === 1) { back = 10 + sp * 0.03; up = 3.8; look = 6; }
-  else { back = 6.2 + sp * 0.022; up = 2.25 + sp * 0.004; look = 5; }
+  else { back = SN('cam.chase.back', 6.2) + sp * 0.022; up = SN('cam.chase.up', 2.25) + sp * 0.004; look = SN('cam.chase.look', 5); }
   if (P.fin) { const a = R.t * 0.35; back = 9; up = 3; cam.position.lerp(new THREE.Vector3(P.x + Math.sin(P.h + 2.4 + a) * back, y + up, P.z + Math.cos(P.h + 2.4 + a) * back), 1 - Math.exp(-3 * dt)); cam.lookAt(P.x, y + 0.9, P.z); }
   else {
-    const want = new THREE.Vector3(P.x - cx * back + pre * (-cx * 22 + cz * 8), y + up + pre * 14, P.z - cz * back + pre * (-cz * 22 - cx * 8));
+    const want = new THREE.Vector3(P.x - cx * back - cz * side + pre * (-cx * 22 + cz * 8), y + up + pre * 14, P.z - cz * back + cx * side + pre * (-cz * 22 - cx * 8));
     if (R.camMode === 2) cam.position.copy(want); else cam.position.lerp(want, 1 - Math.exp(-(R.t < 0 ? 3 : 9) * dt));
     cam.lookAt(P.x + fx * look, y + (R.camMode === 2 ? 1.1 : 1.0), P.z + fz * look);
   }
   if (R.shake > 0) { cam.position.x += (Math.random() - 0.5) * R.shake * 0.5; cam.position.y += (Math.random() - 0.5) * R.shake * 0.4; R.shake = Math.max(0, R.shake - dt * 2.5); }
-  const fov = 60 + Math.min(26, sp * 0.26) + (P.nosOn ? 9 : 0); R.fov += (fov - R.fov) * Math.min(1, dt * 4); cam.fov = R.fov; cam.updateProjectionMatrix();
+  const fov = myCam ? myCam.fov : SN('cam.fov', 60) + (Math.min(26, sp * 0.26) + (P.nosOn ? 9 : 0)) * SN('cam.fovspeed', 1); R.fov += (fov - R.fov) * Math.min(1, dt * 4); cam.fov = R.fov; cam.updateProjectionMatrix();
   post.spd = clamp((sp - 30) / 60, 0, 1) * 0.022 + (P.nosOn ? 0.018 : 0); post.ca = P.nosOn ? 0.012 : sp > 50 ? 0.005 : 0;
   const W = R.W; if (W.sky) W.sky.position.copy(cam.position);
   if (W.sun.castShadow) { W.sun.position.set(P.x + W.sunD.x * 120, y + W.sunD.y * 120, P.z + W.sunD.z * 120); W.sun.target.position.set(P.x, y, P.z); }
@@ -2936,7 +2960,10 @@ KIT.show(false);
 function ctlShow(on) { $('ctl').style.display = on ? 'block' : 'none'; KIT.show(on); if (!on) stickReset(); }
 function stickReset() { K.sx = 0; K.sy = 0; K.brake = 0; K.drift = 0; K.nos = 0; KIT.release(); }
 function syncKit() { const c = KIT.read(), x = c.x; K.sx = Math.abs(x) < 0.1 ? 0 : (x - Math.sign(x) * 0.1) / 0.9; K.sy = -c.y; K.brake = c.buttons.brake ? 1 : 0; K.drift = c.buttons.drift ? 1 : 0; K.nos = c.buttons.nos ? 1 : 0; }
-$('bCam').onclick = () => { if (!R) return; R.camMode = (R.camMode + 1) % 3; S.cam = R.camMode; save(); };
+$('bCam').onclick = () => { if (!R) return;
+  if (window.Studio) { const mine = (Studio.data().cams || []).length; /* owner Nov 7 2026: after the game's 3 views come his own Studio views */
+    if (Studio.camView() || (R.camMode === 2 && mine)) { const v = Studio.camNext(); if (v) { bigMsg(String(v.name || 'MY VIEW').toUpperCase()); return; } R.camMode = 0; S.cam = 0; save(); bigMsg('CHASE CAM'); return; } }
+  R.camMode = (R.camMode + 1) % 3; S.cam = R.camMode; save(); };
 $('bPause').onclick = () => pause();
 addEventListener('keydown', (e) => { if (e.target && e.target.tagName === 'INPUT') return; if (e.code === 'KeyC' && R) $('bCam').onclick(); if ((e.code === 'Escape' || e.code === 'KeyP') && G.mode === 'race') pause(); if (e.code === 'Escape') { const b = ['fX', 'crBack'].map($).find((x) => x && x.offsetParent !== null); if (b) b.click(); } });
 /* owner Nov 1 2026: "an easier way to rotate the car, it doesn't spin correctly" - on a portrait phone the stage is turned 90 degrees, so a finger sweep along the screen has to be turned the same way (like the driving pad), and a sweep now turns the car faster */
