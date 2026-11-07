@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Starter Ball Game</title>
+<!-- STARTER GAME TEMPLATE - BALL SPORTS (owner Nov 7 2026 "a second starter for ball sports").
+     A new game = a copy of this file at the repo root as apex<name>.html with the CONFIG block changed (the Workshop's New game tab does it).
+     Already inside: a field with two goals, two teams (you + teammates vs rivals), a ball with rolling / bouncing physics, pass + shoot,
+     a match clock, score, results, phone controls (kit/controls.js), crowd + kick sounds, scenery pieces, and 🎛️ Studio sliders
+     (open with ?studio=1) - Studio's SCENE tab can move / swap / delete anything on the field. -->
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font:600 15px system-ui,sans-serif;color:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;left:50%;transform:translateX(-50%);top:max(8px,env(safe-area-inset-top,0px));z-index:40;text-shadow:0 1px 3px #000;pointer-events:none;text-align:center}
+#score{font-size:24px;letter-spacing:.06em;background:#0008;padding:4px 14px;border-radius:10px}#clock{font-size:14px;margin-top:3px}#say{font-size:30px;margin-top:20px;color:#ffd23a}
+#back{position:fixed;right:max(10px,env(safe-area-inset-right,0px));top:max(8px,env(safe-area-inset-top,0px));z-index:61;font:inherit;padding:8px 12px;border-radius:10px;border:1px solid #fff6;background:#0009;color:#fff}
+#menu{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(circle at 50% 40%,#173a26,#05070c)}
+#menu h1{margin:0;font-size:min(9vw,46px);letter-spacing:.04em;text-align:center}#menu button{font:800 18px system-ui;padding:14px 34px;border-radius:14px;border:0;background:#ffd23a;color:#111;min-height:48px}
+#menu .sub{color:#a8c4b0;font-weight:500;text-align:center;padding:0 16px}.hidden{display:none!important}
+</style>
+<script src="kit/studio.js"></script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js","three/addons/loaders/GLTFLoader.js":"./vendor/GLTFLoader.js","three/addons/libs/meshopt_decoder.module.js":"./vendor/meshopt_decoder.module.js"}}</script>
+</head><body>
+<div id="hud"><div id="score"></div><div id="clock"></div><div id="say"></div></div>
+<button id="back">&#8249; Back</button>
+<div id="menu"><h1 id="mtitle">STARTER BALL GAME</h1><div class="sub" id="msub"></div><button id="go">KICK OFF</button></div>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { loadPiece } from './kit/pieces.js';
+import { createControls } from './kit/controls.js';
+/* ======== CONFIG - the Workshop's New game tab writes this block. Everything else can stay as it is. ======== */
+const CONFIG = /*CONFIG*/{"name":"Starter Ball Game","players":3,"minutes":3,"teamColor":"#ff2d20","rivalColor":"#2266ff","ballColor":"#ffffff","sky":"#8fb8e0","ground":"#3f8f3a","fieldLength":90,"fieldWidth":55,"goalWidth":12,"scenery":[]}/*END CONFIG*/;
+/* ===================================================================================================================== */
+// the Workshop's racer fields also work here: rivals = players per team, laps = minutes, carColor = your team colour
+const NPL = Math.max(1, Math.min(6, CONFIG.players || CONFIG.rivals || 3)), MINUTES = Math.max(1, CONFIG.minutes || CONFIG.laps || 3);
+const FL = CONFIG.fieldLength || 90, FW = CONFIG.fieldWidth || 55, GW = CONFIG.goalWidth || 12, HL = FL / 2, HW = FW / 2;
+const SN = (k, d, o) => window.Studio ? Studio.num(k, d, o) : d;
+try { Studio.declare([
+  { key: 'pl.speed', def: 9, min: 3, max: 20, step: 0.1, label: 'Your player speed (m/s)', group: 'Players' },
+  { key: 'pl.sprint', def: 1.4, min: 1, max: 2.5, step: 0.05, label: 'Sprint (x speed)', group: 'Players' },
+  { key: 'pl.size', def: 1, min: 0.5, max: 2, step: 0.05, label: 'Player size', group: 'Players' },
+  { key: 'ai.speed', def: 0.82, min: 0.3, max: 1.4, step: 0.01, label: 'Rival speed (x your speed)', group: 'Rivals' },
+  { key: 'ai.aim', def: 0.7, min: 0, max: 1, step: 0.05, label: 'Rival shooting skill', group: 'Rivals' },
+  { key: 'ball.kick', def: 26, min: 8, max: 60, step: 0.5, label: 'Shot power', group: 'Ball' },
+  { key: 'ball.pass', def: 16, min: 5, max: 40, step: 0.5, label: 'Pass power', group: 'Ball' },
+  { key: 'ball.roll', def: 0.55, min: 0.05, max: 2, step: 0.05, label: 'Rolling slowdown', group: 'Ball' },
+  { key: 'ball.bounce', def: 0.55, min: 0, max: 0.95, step: 0.05, label: 'Bounce', group: 'Ball' },
+  { key: 'ball.lift', def: 4, min: 0, max: 14, step: 0.5, label: 'Shot lift', group: 'Ball' },
+  { key: 'cam.back', def: 22, min: 6, max: 60, step: 0.5, label: 'Camera distance behind', group: 'Camera' },
+  { key: 'cam.up', def: 16, min: 2, max: 60, step: 0.5, label: 'Camera height', group: 'Camera' },
+  { key: 'cam.fov', def: 55, min: 30, max: 100, step: 1, label: 'Field of view', group: 'Camera' },
+  { key: 'snd.volume', def: 0.6, min: 0, max: 1.5, step: 0.01, label: 'Sound loudness', group: 'Sound' },
+]); } catch (e) {}
+const SC = (k, d, label) => window.Studio ? Studio.color(k, d, { label, group: 'Colours' }) : d;
+const $ = id => document.getElementById(id);
+const r = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true }); r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); const sky = new THREE.Color(CONFIG.sky || '#8fb8e0'); scene.background = sky; scene.fog = new THREE.Fog(sky, 200, 900);
+const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 3000);
+scene.add(new THREE.HemisphereLight(0xeef6ff, 0x3a5a30, 1.4)); const sun = new THREE.DirectionalLight(0xffffff, 1.7); sun.position.set(60, 120, 40); scene.add(sun);
+function size() { const w = innerWidth, h = innerHeight; r.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); } addEventListener('resize', size); size();
+$('mtitle').textContent = (CONFIG.name || 'Starter Ball Game').toUpperCase(); $('back').onclick = () => { location.href = 'sports.html'; };
+/* ---- the field: grass, stripes, lines, goals, a low wall round it ---- */
+const field = new THREE.Group(); field.name = 'field'; scene.add(field);
+const outer = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshLambertMaterial({ color: new THREE.Color(CONFIG.ground || '#3f8f3a').multiplyScalar(0.7) })); outer.name = 'outside'; outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02; field.add(outer);
+const grassMat = new THREE.MeshLambertMaterial({ color: new THREE.Color(SC('col.grass', CONFIG.ground || '#3f8f3a', 'Grass')) });
+const grass = new THREE.Mesh(new THREE.PlaneGeometry(FL + 8, FW + 8), grassMat); grass.name = 'grass'; grass.rotation.x = -Math.PI / 2; field.add(grass);
+for (let i = 0; i < 10; i += 2) { const s = new THREE.Mesh(new THREE.PlaneGeometry(FL / 10, FW), new THREE.MeshLambertMaterial({ color: new THREE.Color(SC('col.grass', CONFIG.ground || '#3f8f3a', 'Grass')).multiplyScalar(1.12) })); s.name = 'stripe'; s.rotation.x = -Math.PI / 2; s.position.set(-HL + FL / 20 + i * FL / 10, 0.005, 0); field.add(s); }
+const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+function line(x, z, w, d) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), lineMat); m.name = 'line'; m.rotation.x = -Math.PI / 2; m.position.set(x, 0.01, z); field.add(m); }
+line(0, -HW, FL, 0.25); line(0, HW, FL, 0.25); line(-HL, 0, 0.25, FW); line(HL, 0, 0.25, FW); line(0, 0, 0.25, FW);
+{ const ring = new THREE.Mesh(new THREE.RingGeometry(8.9, 9.15, 48), lineMat); ring.name = 'centre circle'; ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01; field.add(ring); }
+for (const sx of [-1, 1]) { line(sx * (HL - 8), 0, 0.25, GW + 16); line(sx * (HL - 4), -(GW / 2 + 8), 8, 0.25); line(sx * (HL - 4), GW / 2 + 8, 8, 0.25); }
+const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }), netMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+function goal(sx) { const g = new THREE.Group(); g.name = sx < 0 ? 'your goal' : 'rival goal'; const H = 2.44;
+  for (const z of [-GW / 2, GW / 2]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, H, 10), postMat); p.name = 'post'; p.position.set(0, H / 2, z); g.add(p); }
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, GW, 10), postMat); bar.name = 'crossbar'; bar.rotation.x = Math.PI / 2; bar.position.y = H; g.add(bar);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(GW, H), netMat); back.name = 'net'; back.rotation.y = Math.PI / 2; back.position.set(sx * 2, H / 2, 0); g.add(back);
+  g.position.x = sx * HL; field.add(g); return g; }
+goal(-1); goal(1);
+const wallMat = new THREE.MeshLambertMaterial({ color: 0x1d3b8a });
+for (const [x, z, w, d] of [[0, -HW - 4, FL + 8, 0.4], [0, HW + 4, FL + 8, 0.4], [-HL - 4, 0, 0.4, FW + 8], [HL - -4, 0, 0.4, FW + 8]]) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d), wallMat); m.name = 'boards'; m.position.set(x, 0.5, z); field.add(m); }
+// a simple crowd stand on each long side (Studio's Scene tab can move, swap or delete it)
+for (const sz of [-1, 1]) { const st = new THREE.Group(); st.name = 'stand'; for (let row = 0; row < 5; row++) { const b = new THREE.Mesh(new THREE.BoxGeometry(FL + 10, 1, 2.2), new THREE.MeshLambertMaterial({ color: 0x55606e })); b.name = 'step'; b.position.set(0, 0.5 + row, sz * (HW + 7 + row * 2.2)); st.add(b);
+  for (let i = 0; i < 26; i++) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.5), new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(Math.random(), 0.6, 0.55) })); f.name = 'fan'; f.position.set(-FL / 2 + (i + Math.random() * 0.6) * (FL / 26), 1.45 + row, sz * (HW + 7 + row * 2.2)); st.add(f); } } scene.add(st); }
+for (const s of CONFIG.scenery || []) { try { await loadPiece(s, { THREE, scene, GLTFLoader, meshopt: MeshoptDecoder }); } catch (e) { console.warn(e); } }
+/* ---- players ---- */
+function playerMesh(color, name) { const g = new THREE.Group(); g.name = name; const shirt = new THREE.MeshStandardMaterial({ color, roughness: 0.6 });
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.38, 0.9, 4, 10), shirt); body.name = 'shirt'; body.position.y = 1.15; g.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 10), new THREE.MeshStandardMaterial({ color: 0xe0b48f })); head.name = 'head'; head.position.y = 1.95; g.add(head);
+  const sm = new THREE.MeshStandardMaterial({ color: 0x15181d }); for (const x of [-0.16, 0.16]) { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.1, 0.62, 8), sm); l.name = 'leg'; l.position.set(x, 0.31, 0); g.add(l); }
+  return g; }
+const TEAM = new THREE.Color(SC('col.team', CONFIG.teamColor || CONFIG.carColor || '#ff2d20', 'Your team')), RIVAL = new THREE.Color(SC('col.rival', CONFIG.rivalColor || '#2266ff', 'Rival team'));
+const ALL = [];
+function home(side, i) { // spread players over their half: side -1 = yours (defends x<0), +1 = rivals
+  const n = NPL, lane = n === 1 ? 0 : (i / (n - 1) - 0.5) * FW * 0.6, depth = n === 1 ? 0.35 : 0.2 + 0.45 * ((i % 2) ? 0.3 : 0.75);
+  return { x: side * HL * depth, z: lane }; }
+for (const side of [-1, 1]) for (let i = 0; i < NPL; i++) { const me = side < 0 && i === 0;
+  const o = playerMesh(side < 0 ? TEAM : RIVAL, me ? 'you' : (side < 0 ? 'teammate ' : 'rival ') + (i + 1)); scene.add(o);
+  if (me) { const ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.8, 24), new THREE.MeshBasicMaterial({ color: 0xffd23a, side: THREE.DoubleSide })); ring.name = 'you marker'; ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; o.add(ring); }
+  ALL.push({ o, side, i, me, h: side < 0 ? Math.PI / 2 : -Math.PI / 2, vx: 0, vz: 0, cool: 0 }); }
+const ME = ALL[0];
+/* ---- ball ---- */
+const BR = 0.22;
+const ball = new THREE.Mesh(new THREE.SphereGeometry(BR, 20, 14), new THREE.MeshStandardMaterial({ color: new THREE.Color(SC('col.ball', CONFIG.ballColor || '#ffffff', 'Ball')), roughness: 0.4 })); ball.name = 'ball'; scene.add(ball);
+const B = { p: new THREE.Vector3(), v: new THREE.Vector3() };
+/* ---- sound: kick, whistle, crowd ---- */
+let AC = null, crowd = null;
+function sound() { if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)();
+  const len = AC.sampleRate * 2, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true; const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 700; f.Q.value = 0.5; crowd = AC.createGain(); crowd.gain.value = 0.02; src.connect(f); f.connect(crowd); crowd.connect(AC.destination); src.start(); } catch (e) {} }
+function blip(freq, dur, type, vol) { if (!AC) return; try { const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain(); o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(Math.max(30, freq * 0.4), t + dur);
+  g.gain.setValueAtTime(Math.max(0.0001, (vol || 0.3) * SN('snd.volume', 0.6)), t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + 0.02); } catch (e) {} }
+const kickSnd = () => blip(180, 0.12, 'triangle', 0.5), whistle = () => { blip(2600, 0.35, 'square', 0.12); };
+function cheer() { if (crowd && AC) { const t = AC.currentTime; crowd.gain.cancelScheduledValues(t); crowd.gain.setValueAtTime(0.25 * SN('snd.volume', 0.6), t); crowd.gain.exponentialRampToValueAtTime(0.02, t + 3); } }
+/* ---- controls ---- */
+const input = createControls({ buttons: [{ id: 'shoot', label: 'SHOOT', key: 'Space' }, { id: 'pass', label: 'PASS', key: 'KeyX' }, { id: 'sprint', label: 'SPRINT', key: 'ShiftLeft' }], onFirstTouch: sound });
+input.show(false);
+/* ---- match ---- */
+let MODE = 'menu', SCORE = [0, 0], LEFT = MINUTES * 60, PAUSE = 0, lastToucher = null;
+function kickoff(toSide) { B.p.set(0, BR, 0); B.v.set(0, 0, 0); for (const a of ALL) { const h = home(a.side, a.i); a.o.position.set(h.x, 0, h.z); a.vx = a.vz = 0; a.h = a.side < 0 ? Math.PI / 2 : -Math.PI / 2; a.cool = 0.4; }
+  const taker = ALL.find(a => a.side === toSide && a.i === 0); taker.o.position.set(-toSide * 1.2, 0, 0); input.release && input.release(); }
+function start() { MODE = 'play'; sound(); $('menu').classList.add('hidden'); input.show(true); SCORE = [0, 0]; LEFT = MINUTES * 60; PAUSE = 0; kickoff(-1); whistle(); say('KICK OFF', 1.2); }
+$('go').onclick = start;
+$('msub').textContent = NPL + ' v ' + NPL + ' · ' + MINUTES + ' min' + (window.Studio && Studio.active() ? ' · 🎛️ Studio on' : '') + ' · stick = run, SHOOT, PASS, SPRINT';
+let sayT = 0; function say(t, s) { $('say').textContent = t; sayT = s || 1.5; }
+function kick(a, tx, tz, power, lift) { const dx = tx - B.p.x, dz = tz - B.p.z, d = Math.hypot(dx, dz) || 1; B.v.set(dx / d * power, lift, dz / d * power); a.cool = 0.35; lastToucher = a; kickSnd(); }
+function nearestTeammate(a) { let best = null, bd = 1e9; for (const b of ALL) if (b !== a && b.side === a.side) { const ahead = (b.o.position.x - a.o.position.x) * -a.side; const d = Math.hypot(b.o.position.x - a.o.position.x, b.o.position.z - a.o.position.z) - ahead * 0.5; if (d < bd) { bd = d; best = b; } } return best; }
+function goalScored(side) { // side = the team that scored
+  SCORE[side < 0 ? 0 : 1]++; say(side < 0 ? 'GOAL!' : 'RIVAL GOAL', 2); cheer(); whistle(); PAUSE = 2; MODE = 'goal'; setTimeout(() => { if (MODE === 'goal') { MODE = 'play'; kickoff(-side); } }, 2000); }
+let lastT = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  const spd = SN('pl.speed', 9), psz = SN('pl.size', 1);
+  for (const a of ALL) a.o.scale.setScalar(psz);
+  if (MODE === 'play') {
+    LEFT -= dt; const c = input.read();
+    // you
+    const run = spd * (c.buttons.sprint ? SN('pl.sprint', 1.4) : 1), mx = c.x, mz = c.y; // screen up = toward the rival goal (+x)
+    let wx = -mz * run, wz = mx * run; ME.vx += (wx - ME.vx) * Math.min(1, dt * 8); ME.vz += (wz - ME.vz) * Math.min(1, dt * 8);
+    if (Math.hypot(wx, wz) > 0.5) ME.h = Math.atan2(ME.vx, ME.vz);
+    // everyone else
+    const aiS = spd * SN('ai.speed', 0.82);
+    for (const side of [-1, 1]) { let chaser = null, cd = 1e9; for (const a of ALL) if (a.side === side && !a.me) { const d = a.o.position.distanceTo(B.p); if (d < cd) { cd = d; chaser = a; } }
+      if (side < 0 && ME.o.position.distanceTo(B.p) < cd) chaser = null; // you are closer: teammates hold shape
+      for (const a of ALL) { if (a.side !== side || a.me) continue; let tx, tz;
+        if (a === chaser) { tx = B.p.x + side * 0.8; tz = B.p.z; } else { const h = home(side, a.i); tx = h.x + B.p.x * 0.4; tz = h.z + B.p.z * 0.3; }
+        const dx = tx - a.o.position.x, dz = tz - a.o.position.z, d = Math.hypot(dx, dz), sp = a === chaser ? aiS : aiS * 0.7;
+        const vx = d > 0.3 ? dx / d * Math.min(sp, d * 3) : 0, vz = d > 0.3 ? dz / d * Math.min(sp, d * 3) : 0; a.vx += (vx - a.vx) * Math.min(1, dt * 5); a.vz += (vz - a.vz) * Math.min(1, dt * 5);
+        if (Math.hypot(a.vx, a.vz) > 0.3) a.h = Math.atan2(a.vx, a.vz); } }
+    for (const a of ALL) { a.o.position.x = Math.max(-HL - 3, Math.min(HL + 3, a.o.position.x + a.vx * dt)); a.o.position.z = Math.max(-HW - 3, Math.min(HW + 3, a.o.position.z + a.vz * dt)); a.o.rotation.y = a.h; a.cool -= dt;
+      a.o.children.forEach(ch => { if (ch.name === 'leg') ch.rotation.x = Math.sin(now / 90 + (ch.position.x > 0 ? Math.PI : 0)) * Math.min(0.7, Math.hypot(a.vx, a.vz) / 10); }); }
+    // touches: dribble, shoot, pass
+    for (const a of ALL) { const dx = B.p.x - a.o.position.x, dz = B.p.z - a.o.position.z, d = Math.hypot(dx, dz); if (d > 0.9 * psz || a.cool > 0 || B.p.y > 1.2) continue;
+      const goalX = -a.side * HL;
+      if (a.me) { if (input.pressed('shoot')) { kick(a, goalX, B.p.z * 0.3 + (Math.random() - 0.5) * 2, SN('ball.kick', 26), SN('ball.lift', 4)); continue; }
+        if (input.pressed('pass')) { const t = nearestTeammate(a); if (t) { kick(a, t.o.position.x + t.vx * 0.5, t.o.position.z + t.vz * 0.5, SN('ball.pass', 16), 0.6); continue; } } }
+      else { const dg = Math.abs(goalX - a.o.position.x); if (dg < 30 && Math.random() < dt * 6) { const miss = (1 - SN('ai.aim', 0.7)) * GW * 1.2; kick(a, goalX, (Math.random() - 0.5) * (GW * 0.7 + miss), SN('ball.kick', 26) * 0.9, SN('ball.lift', 4) * 0.8); continue; }
+        if (a.side > 0 && Math.random() < dt * 0.6) { const t = nearestTeammate(a); if (t) { kick(a, t.o.position.x, t.o.position.z, SN('ball.pass', 16), 0.5); continue; } } }
+      // dribble: the ball stays a step in front of the player
+      const fx = Math.sin(a.h), fz = Math.cos(a.h), want = new THREE.Vector3(a.o.position.x + fx * 0.75, BR, a.o.position.z + fz * 0.75);
+      B.v.x += (want.x - B.p.x) * 18 * dt + (a.vx - B.v.x) * Math.min(1, dt * 10); B.v.z += (want.z - B.p.z) * 18 * dt + (a.vz - B.v.z) * Math.min(1, dt * 10); lastToucher = a; }
+    // ball physics: gravity, bounce, rolling slowdown, boards
+    B.v.y -= 9.8 * dt; B.p.addScaledVector(B.v, dt);
+    if (B.p.y < BR) { B.p.y = BR; if (B.v.y < -1.5) B.v.y = -B.v.y * SN('ball.bounce', 0.55); else B.v.y = 0; const k = Math.max(0, 1 - SN('ball.roll', 0.55) * dt); B.v.x *= k; B.v.z *= k; }
+    if (Math.abs(B.p.z) > HW + 3.6) { B.p.z = Math.sign(B.p.z) * (HW + 3.6); B.v.z *= -0.6; }
+    for (const sx of [-1, 1]) if (B.p.x * sx > HL) { if (Math.abs(B.p.z) < GW / 2 && B.p.y < 2.44) { if (B.p.x * sx > HL + 0.3) { goalScored(-sx); break; } }
+      else if (B.p.x * sx > HL + 3.6) { B.p.x = sx * (HL + 3.6); B.v.x *= -0.6; } }
+    ball.rotation.x += B.v.z * dt / BR; ball.rotation.z -= B.v.x * dt / BR;
+    if (LEFT <= 0) { MODE = 'menu'; input.show(false); whistle(); $('menu').classList.remove('hidden'); const w = SCORE[0] > SCORE[1] ? 'YOU WIN!' : SCORE[0] < SCORE[1] ? 'YOU LOSE' : 'DRAW';
+      $('mtitle').textContent = w + '  ' + SCORE[0] + ' - ' + SCORE[1]; $('msub').textContent = NPL + ' v ' + NPL + ' · ' + MINUTES + ' min'; $('go').textContent = 'PLAY AGAIN'; }
+  }
+  ball.position.copy(B.p);
+  sayT -= dt; if (sayT <= 0) $('say').textContent = '';
+  $('score').textContent = 'YOU ' + SCORE[0] + ' - ' + SCORE[1] + ' RIVALS'; const s = Math.max(0, Math.ceil(LEFT)); $('clock').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  if (!(window.Studio && Studio.ownsCamera())) {
+    const my = window.Studio && Studio.camView(); const back = my ? my.back : SN('cam.back', 22), up = my ? my.up : SN('cam.up', 16), side = my ? my.side : 0, ahead = my ? my.ahead : 6, fov = my ? my.fov : SN('cam.fov', 55);
+    const fx = MODE === 'menu' ? Math.cos(now / 6000) : 1, fz = MODE === 'menu' ? Math.sin(now / 6000) : 0, focus = MODE === 'menu' ? new THREE.Vector3() : new THREE.Vector3((ME.o.position.x + B.p.x) / 2, 0, (ME.o.position.z + B.p.z) / 2);
+    const want = new THREE.Vector3(focus.x - fx * back - fz * side, up, focus.z - fz * back + fx * side); camera.position.lerp(want, 1 - Math.exp(-dt * 5));
+    camera.lookAt(focus.x + fx * ahead, 0.5, focus.z + fz * ahead); if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  }
+  r.render(scene, camera); requestAnimationFrame(frame);
+}
+kickoff(-1); camera.position.set(-40, 30, 0);
+try { Studio.world({ THREE, scene, camera, renderer: r, canvas: r.domElement, groundY: () => 0, center: () => ({ x: ME.o.position.x, z: ME.o.position.z }), camDefault: { back: 22, up: 16, side: 0, ahead: 6, fov: 55 } }); Studio.refresh(); } catch (e) {}
+requestAnimationFrame(frame);
+window.__game = { CONFIG, ALL, ME, B, start, score: () => SCORE.slice(), mode: () => MODE, kickoff };
+window.__reality = { kind: 'person', player: () => ME.o, time: () => performance.now() / 1000, speed: () => Math.hypot(ME.vx, ME.vz), camera };
+</script>
+</body></html>
