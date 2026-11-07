@@ -841,6 +841,7 @@ const Track = {
         this._pitLane.push([q.distance, q.lateral]); }
       this._pitLane.sort((a,b)=>a[0]-b[0]);
       if(this._pitLane.length) pitLat=this._pitLane[Math.floor(this._pitLane.length/2)][1];
+      this.setPitPts(data.pitLane.path.map(pp=>[pp[0],pp[2]])); // owner Nov 7 2026 'pipes in the middle of the road to the pit': trackside things keep off the pit lane
     }
     this.pitSide=Math.sign(pitLat)||1; this.pitD=pitLat||this.width/2+5;
     this.asphaltMat = (this.lt && this.lt.meshes && this.lt.meshes['road']) ? this.lt.meshes['road'].material : null;
@@ -858,6 +859,10 @@ const Track = {
       const sd=data.render.sunDirection; scene.userData.sun.position.set(sd[0]*600, sd[1]*600, sd[2]*600);
     }
   },
+  setPitPts(raw){ // the pit lane's centre line every ~3 m, for distToPit
+    const out=[]; for(let i=0;i<raw.length;i++){ const a=raw[i], b=raw[i+1]; out.push(a); if(!b) break; const d=Math.hypot(b[0]-a[0],b[1]-a[1]), n=Math.floor(d/3); for(let k=1;k<n;k++) out.push([a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n]); }
+    this._pitPts=out; },
+  distToPit(x,z){ const P=this._pitPts; if(!P||!P.length) return 1e9; let best=1e18; for(const q of P){ const d=(q[0]-x)*(q[0]-x)+(q[1]-z)*(q[1]-z); if(d<best) best=d; } return Math.sqrt(best); },
   pitDAt(s){ // lateral offset of the pit lane at arclength s (constant pitD on built-in tracks)
     const pl=this._pitLane; if(!pl || !pl.length) return this.pitD;
     s=((s%this.length)+this.length)%this.length;
@@ -1004,8 +1009,9 @@ const Track = {
       const stp=bl.filter(o=>o.step); inst(bGeo, bMat, stp.length, (i)=>{ const o=stp[i]; return {x:o.x,y:this.groundBase-1+o.sy,z:o.z,sx:o.sx*0.6,sy:o.sy*0.3,sz:o.sz*0.6,rot:o.rot,col:pal[(o.ci+4)%pal.length]}; });
       if(cl) cl.tones=used.size; if(cl) cl.buildings=bl.length;
       const poleGeo=new THREE.CylinderGeometry(0.12,0.16,9,6); poleGeo.translate(0,4.5,0); const poleMat=new THREE.MeshLambertMaterial({color:0x3a4250});
-      inst(poleGeo, poleMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y,z:p.z+p.nz*(W/2+6)*side}; });
-      if(night){ const lampGeo=new THREE.BoxGeometry(2.2,0.5,1.2); const lampMat=new THREE.MeshBasicMaterial({color:0xfff2c0}); inst(lampGeo, lampMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return {x:p.x+p.nx*(W/2+6)*side,y:p.y+9,z:p.z+p.nz*(W/2+6)*side}; }); }
+      const offPit=o=>(this.distToPit(o.x,o.z)<9?(o.y-500,{...o,y:o.y-500}):o); /* owner Nov 7 2026: street poles on the pit lane are sunk out of sight */
+      inst(poleGeo, poleMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return offPit({x:p.x+p.nx*(W/2+6)*side,y:p.y,z:p.z+p.nz*(W/2+6)*side}); });
+      if(night){ const lampGeo=new THREE.BoxGeometry(2.2,0.5,1.2); const lampMat=new THREE.MeshBasicMaterial({color:0xfff2c0}); inst(lampGeo, lampMat, 90, (i)=>{ const p=this.samples[(i*Math.floor(N/90))%N], side=i%2?1:-1; return offPit({x:p.x+p.nx*(W/2+6)*side,y:p.y+9,z:p.z+p.nz*(W/2+6)*side}); }); }
       if(th.kind==='harbour'){ const b=this.bounds;
         // palms along the coast side, yachts moored in the marina
         const ptrunk=new THREE.CylinderGeometry(0.22,0.35,7,6); ptrunk.translate(0,3.5,0); const pMat=new THREE.MeshLambertMaterial({color:0x6b4a2e});
@@ -1082,7 +1088,7 @@ const Track = {
   /* owner Nov 4 2026 4:05 PM "make more accessories in each track, everything is plain and boring - look how a real F1 track is and how it is surrounded":
      tyre walls on the outside of corners, a catch fence with posts + rails on both sides, marshal posts with flags, lamp posts, trees on the plain circuits. All instanced (cheap on phones),
      placed along the loop by distance, never on the road (same distToLoop test the barriers use). */
-  buildTrackside(g, th){ try{
+  buildTrackside(g, th){ try{ const PIT_CLEAR_M=9;
     const W=this.width, S=this.samples, N=S.length; if(N<20) return;
     const cnt={tyres:0,posts:0,rails:0,huts:0,flags:0,lamps:0,trees:0}; this.trackside=cnt;
     const up=new THREE.Vector3(0,1,0), m=new THREE.Matrix4(), q=new THREE.Quaternion(), sc=new THREE.Vector3(), pos=new THREE.Vector3();
@@ -1097,7 +1103,7 @@ const Track = {
     for(let i=1;i<=N;i++){ const p=S[i%N], pp=S[i-1], dd=Math.hypot(p.x-pp.x,p.z-pp.z); acc+=dd; accF+=dd; accM+=dd; accL+=dd;
       const rot=Math.atan2(p.tx,p.tz), corner=Math.abs(p.curv)>0.003, out=p.curv>0?-1:1;
       const at=(off,sd)=>({x:p.x+p.nx*off*sd, z:p.z+p.nz*off*sd});
-      const clear=(x,z,extra)=>this.distToLoop(x,z)>=W/2+extra;
+      const clear=(x,z,extra)=>this.distToLoop(x,z)>=W/2+extra && this.distToPit(x,z)>=PIT_CLEAR_M; // PIT_CLEAR_M: how far fences / lamp poles / marshal posts stay from the pit lane's centre line
       if(acc>=1.15){ acc=0; // tyre wall: 3 layers, outside of every corner
         if(corner){ const o=at(W/2+5.2,out); if(clear(o.x,o.z,3.6)) for(let L=0;L<3;L++){ const c=(k++%5===0)?(L===1?cBlue:cWhite):((k%7===0)?cRed:cDark); if(put(tyres,o.x,p.y+0.25+L*0.5,o.z,0,1,1,1,c)) cnt.tyres++; } } }
       if(accF>=8){ accF=0; // catch fence on both sides: post + two rails to the next post
@@ -1203,6 +1209,7 @@ const Track = {
     bld.position.set(px,p.y+5,pz); bld.rotation.y=Math.atan2(p.tx,p.tz)+Math.PI/2;
     bld.castShadow=!isTouch; g.add(bld);
     this.pitSide = 1; this.pitD = this.width/2+5;
+    { const L=this.length, pts=[]; for(let ds=-80; ds<=300; ds+=4){ const bp=this.frameAt(((s0+ds)%L+L)%L); pts.push([bp.x+bp.nx*this.pitD, bp.z+bp.nz*this.pitD]); } this.setPitPts(pts); }
     // pit boxes: white outlines on pit lane
     const boxMat=new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.7});
     for(let i=0;i<10;i++){
@@ -2450,14 +2457,14 @@ const Race = {
     p.drsOpen=!p.drsOpen; Aud.beep(p.drsOpen?990:660,0.12,0.2);
   },
   wantPit(){
-    const p=this.player; if(!p||this.mode!=='race'||p.inPits) return;
+    const p=this.player; if(!p||!(this.mode==='race'||this.mode==='quali')||p.inPits) return; // owner Nov 7 2026 'can't enter pit either': PIT works in qualifying too
     // owner Nov 6 2026 'there is no pit': PIT works from anywhere on the lap - it arms the stop and tells you how far the pit entry sign is
     if(p.pitIntent){ p.pitIntent=false; banner('PIT CANCELLED','',800,'#8fa8c8'); return; }
     const L=Track.length, sN=((p.s%L)+L)%L, pitInS=Track.cfg.pitIn*L, dist=Math.round(((pitInS-sN)%L+L)%L);
     p.pitIntent=true; banner('PIT ARMED','Pit entry sign in '+dist+' m — pick tyres',1400,'#9fd8ff');
     this.showPitMenu();
   },
-  openTyreChoice(){ if(!this.player||this.mode!=='race'||this.player.inPits) return; this.showPitMenu(); },
+  openTyreChoice(){ if(!this.player||!(this.mode==='race'||this.mode==='quali')||this.player.inPits) return; this.showPitMenu(); },
   showPitMenu(){
     const opts=this.weather.wet>0.25?['INTER','WET']:['SOFT','MEDIUM','HARD'];
     const box=$('pitTires'); box.innerHTML='';
@@ -3306,7 +3313,10 @@ function GPPlay(name, vol){ if(GP.ev && GP.ev.play) GP.ev.play(name, vol); }
 GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
-  pitProbe: () => { const p=Race.player; return p?{inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
+  pitClutter: (r) => { r=r||4; const P=Track._pitPts||[], m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0, near=[]; const g=Track.group; if(!g||!P.length) return {pts:P.length,n:-1}; // owner Nov 7 2026: fence posts / lamp poles standing on the pit lane
+    g.traverse(o=>{ if(!o.isInstancedMesh) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
+    return {pts:P.length,n,near}; },
+  pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
   pitNow: (t) => { const p=Race.player; if(!p) return false; if(t) p.pitTireChoice=t; p.pitIntent=true; p.s=Track.cfg.pitIn*Track.length-60; p.v=30; return true; },
   tyreTap: () => { $('tirebox').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return !$('pitMenu').classList.contains('hidden'); },
   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
@@ -3460,7 +3470,7 @@ if(!$('menu').classList.contains('hidden')) stageShow(true);
 requestAnimationFrame(loop);
 // G-204: owner check link - apexf1.html?test=grid opens straight at the starting grid
 // with LIGHTS OUT on screen (skips the menus); no ?test = the normal game.
-(function(){ try{ const qs=new URLSearchParams(location.search), q=qs.get('test'); const tr=qs.get('track'); if(tr && TRACKS.find(t=>t.id===tr)) selTrack=tr; /* ?track=<id> opens a given circuit (owner check links) */ if(q!=='grid') return;
+(function(){ try{ const qs=new URLSearchParams(location.search), q=qs.get('test'); const tr=qs.get('track'); if(tr && TRACKS.find(t=>t.id===tr)) selTrack=tr; /* ?track=<id> opens a given circuit (owner check links) */ if(q==='quali'){ CMBoot().then(()=>startWeekend()); return; } /* owner Nov 7 2026: ?test=quali opens straight in qualifying (pit check) */ if(q!=='grid') return;
   CMBoot().then(()=>startWeekend()).then(()=>{ for(const c of Race.cars) if(!c.isPlayer && !(c.qualiTime>0)) c.qualiTime=80+Math.random()*8; finishQuali(null); });
 }catch(e){} })();
 </script>
