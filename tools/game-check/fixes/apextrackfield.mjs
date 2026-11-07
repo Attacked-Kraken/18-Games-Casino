@@ -4010,4 +4010,57 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'tester-champ-results-btns-viewport',
+    mode: 'f-t-002',
+    ask: 'FIND F-T-002 (T10-38 RE-OPENED): the championship results MENU and NEXT EVENT buttons stick out past the viewport - DONE.md says no interactive element is off-screen. The free-play proof test passes, but championship event-1 buttons measure bottom 509 px in a 390 px viewport (119 px past). Both buttons must sit fully inside the viewport on the championship results screen.',
+    async test(page, h) {
+      await h.eval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      for (let g = 0; g < 120; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(500); }
+      const entered = await h.eval(() => { const b = document.getElementById('bChamp'); if (!b) return false; b.click(); return true; }).catch(() => false);
+      if (!entered) return 'could not open championship (F-T-002)';
+      await h.wait(900);
+      let onCard = false;
+      for (let i = 0; i < 60 && !onCard; i++) { onCard = await h.eval(() => (document.querySelector('.screen.on') || {}).id === 'card').catch(() => false); if (!onCard) await h.wait(500); }
+      if (!onCard) return 'championship card screen never appeared (F-T-002)';
+      await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+      let hasEng = false;
+      for (let i = 0; i < 60 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(500); }
+      if (!hasEng) return 'no live engine after card start (F-T-002)';
+      await h.eval(() => {
+        const e = window.__tf.eng();
+        let side = 'L', last = -99, n = 0;
+        while (!e.done && n < 60 * 40) {
+          e.update(1 / 60); n++;
+          const t = n / 60;
+          if (e.phase === 'run' && t - last >= 0.12) { if (typeof e.stride === 'function') e.stride(side); side = side === 'L' ? 'R' : 'L'; last = t; }
+        }
+        return e.done;
+      }).catch(() => false);
+      let shown = false;
+      for (let i = 0; i < 150 && !shown; i++) {
+        shown = await h.eval(() => { const el = document.getElementById('results'); if (!el) return false; const cs = getComputedStyle(el); const r = el.getBoundingClientRect(); return cs.display !== 'none' && r.width > 0; }).catch(() => false);
+        if (!shown) await h.wait(500);
+      }
+      if (!shown) return 'results overlay never appeared after finishing the race (F-T-002)';
+      const m = await h.eval(() => {
+        const vw = innerWidth, vh = innerHeight;
+        const out = { vw, vh, btns: [] };
+        for (const id of ['bResMenu', 'bResNext']) {
+          const b = document.getElementById(id);
+          if (!b) { out.btns.push({ id, missing: true }); continue; }
+          const r = b.getBoundingClientRect();
+          out.btns.push({ id, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) });
+        }
+        return out;
+      }).catch(() => null);
+      if (!m) return 'could not measure the results buttons (F-T-002)';
+      for (const b of m.btns) {
+        if (b.missing) return 'results button ' + b.id + ' is missing (F-T-002)';
+        if (b.x < 0 || b.y < 0 || b.x + b.w > m.vw || b.y + b.h > m.vh) return 'championship results button ' + b.id + ' measures ' + b.w + 'x' + b.h + ' px at ' + b.x + ',' + b.y + ' in a ' + m.vw + 'x' + m.vh + ' viewport - it sticks out past the screen edge (F-T-002)';
+      }
+      return true;
+    },
+  },
 ];
