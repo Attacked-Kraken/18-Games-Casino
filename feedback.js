@@ -31,8 +31,9 @@
   }
   /* owner Oct 21 2026 10:36 PM: the page's top-left "‹ ENTRANCE" became "‹ Controller" - it goes back to his controller
      (away link from anywhere, else the Mac mini's home address) */
-  window.apexController = function () {
-    awayCtl(function (u) { location.href = u ? u.replace('/?note=1', '/') : ctl(); });
+  window.apexController = function (path) {        /* owner Nov 7 2026: path opens one controller page (e.g. '/prs' = his pull requests) */
+    var pg = /^\/[a-z]+$/.test(path || '') ? path : '/';
+    awayCtl(function (u) { location.href = u ? u.replace('/?note=1', pg) : ctl().replace(/\/?$/, pg); });
   };
   var css = document.createElement('style');
   css.textContent =
