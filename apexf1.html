@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <script src="kit/apex-music.js"></script>
+<script src="kit/studio.js"></script><!-- owner Nov 6 2026: 🎛️ Studio - his no-code editor (open with ?studio=1) -->
+<script>/* owner Nov 6 2026: every Studio slider of this game, listed up front so the Tune tab shows them before the race starts */
+try{ Studio.declare([
+ {key:'engine.pitch',def:1,min:0.5,max:2,step:0.01,label:'Engine pitch (higher = whinier)',group:'Engine sound'},
+ {key:'engine.rev',def:0.2,min:0,max:0.8,step:0.01,label:'How much the pitch rises with revs',group:'Engine sound'},
+ {key:'engine.volume',def:1,min:0,max:2,step:0.01,label:'Engine loudness',group:'Engine sound'},
+ {key:'engine.tone',def:1500,min:400,max:6000,step:50,label:'Brightness (Hz, low = muffled)',group:'Engine sound'},
+ {key:'engine.idle',def:1,min:0,max:2,step:0.01,label:'Idle loudness',group:'Engine sound'},
+ {key:'car.top',def:1,min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'},
+ {key:'car.grip',def:1,min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'},
+ {key:'cam.chase.back',def:11,min:4,max:30,step:0.5,label:'Chase camera: distance behind (m)',group:'Camera'},
+ {key:'cam.chase.up',def:3.4,min:0.8,max:15,step:0.1,label:'Chase camera: height (m)',group:'Camera'},
+ {key:'cam.fov',def:62,min:30,max:100,step:1,label:'Field of view (game cameras)',group:'Camera'}
+]); }catch(e){}</script>
 <script>/* owner Nov 3 2026 "make sure these don't show black screens": if the phone drops this game's 3D drawing (WebGL context lost - happens when the phone runs low on graphics memory) and does not give it back in 2.5 s, the game reloads itself once (never more than once a minute) instead of sitting black */
 (function(){var K='apexGlLost:'+location.pathname;function hook(c){if(c.__glg)return;c.__glg=1;c.addEventListener('webglcontextlost',function(e){e.preventDefault();var t=setTimeout(function(){var last=0;try{last=+sessionStorage.getItem(K)||0}catch(_){}if(Date.now()-last>60000){try{sessionStorage.setItem(K,String(Date.now()))}catch(_){}location.reload();}},2500);c.addEventListener('webglcontextrestored',function(){clearTimeout(t)},{once:true});},false);}
 function all(){var cs=document.getElementsByTagName('canvas');for(var i=0;i<cs.length;i++)hook(cs[i]);}
@@ -470,14 +484,17 @@ const Aud = {
       const clampN=(v,a,b2)=>Math.max(a,Math.min(b2,v)); if(!isFinite(rpm01)) rpm01=0; if(!isFinite(throttle)) throttle=0;
       const load=clampN(throttle,0,1), rpm=clampN(rpm01,0,1), x=load*0.7+rpm*0.3;
       const bandF=(v,a,b2,c,d)=>v<a?0:v<b2?(v-a)/(b2-a):v<c?1:v<d?1-(v-c)/(d-c):0;
-      const rate=0.6+0.2*rpm;
-      if(kit.bus) kit.bus.frequency.setTargetAtTime(1500,t,0.05);
+      const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d; // owner Nov 6 2026: Studio sliders - engine sound he tunes himself
+      const ePitch=SN('engine.pitch',1,{min:0.5,max:2,step:0.01,label:'Engine pitch (higher = whinier)',group:'Engine sound'}), eRev=SN('engine.rev',0.2,{min:0,max:0.8,step:0.01,label:'How much the pitch rises with revs',group:'Engine sound'});
+      const eVol=SN('engine.volume',1,{min:0,max:2,step:0.01,label:'Engine loudness',group:'Engine sound'}), eTone=SN('engine.tone',1500,{min:400,max:6000,step:50,label:'Brightness (Hz, low = muffled)',group:'Engine sound'}), eIdle=SN('engine.idle',1,{min:0,max:2,step:0.01,label:'Idle loudness',group:'Engine sound'});
+      const rate=(0.6+eRev*rpm)*ePitch;
+      if(kit.bus) kit.bus.frequency.setTargetAtTime(eTone,t,0.05);
       for(const k of ['low','mid','high']) if(kit.srcs[k]) kit.srcs[k].playbackRate.setTargetAtTime(rate,t,0.05);
-      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime(0.8+0.04*rpm,t,0.05);
-      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(0.5*(1-load*0.8),t,0.07);
-      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
-      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
-      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
+      if(kit.srcs.idle) kit.srcs.idle.playbackRate.setTargetAtTime((0.8+0.04*rpm)*ePitch,t,0.05);
+      if(kit.gains.idle) kit.gains.idle.gain.setTargetAtTime(eIdle*eVol*0.5*(1-load*0.8),t,0.07);
+      if(kit.gains.low) kit.gains.low.gain.setTargetAtTime(eVol*0.62*load*(1-bandF(rpm,0.38,0.62,1e9,1e9)),t,0.06);
+      if(kit.gains.mid) kit.gains.mid.gain.setTargetAtTime(eVol*0.62*load*bandF(rpm,0.3,0.55,0.75,0.95),t,0.06);
+      if(kit.gains.high) kit.gains.high.gain.setTargetAtTime(eVol*0.66*load*bandF(rpm,0.68,0.9,1e9,1e9),t,0.06);
       const band=x<0.17?0:x<0.5?1:x<0.84?2:3;
       if(this.kitBand>=0 && band!==this.kitBand && t-this._kitShiftT>0.25){ // a gear shift as the load band changes
         this._kitShiftT=t; this.kitShifts++;
@@ -873,8 +890,9 @@ const Track = {
   maxSpeedAt(s, grip){ // physics: corner speed from curvature
     const ahead=this.frameAt(s+18).curv*0.5+this.frameAt(s+45).curv*0.3+this.frameAt(s).curv*0.2;
     const c=Math.abs(ahead);
-    const vLat=Math.sqrt(Math.max(8, 42*grip/Math.max(c,1e-5))); // lateral accel limit
-    return Math.min(92, vLat); // 92 m/s ~ 331 km/h
+    const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d; // owner Nov 6 2026: Studio sliders (all cars)
+    const vLat=Math.sqrt(Math.max(8, 42*grip*SN('car.grip',1,{min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'})/Math.max(c,1e-5))); // lateral accel limit
+    return Math.min(92*SN('car.top',1,{min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'}), vLat); // 92 m/s ~ 331 km/h
   },
   clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); },
   buildMeshes(){
@@ -2307,6 +2325,8 @@ const Race = {
     this.laps=cfg.laps; this.cheatLevel=cfg.cheat;
     if(this.track.gp && GP.data) Track.buildGP(GP.data, GP.lt); else Track.build(this.track.gp?LEGACY_TRACK:this.track);
     applyTheme(this.track.theme||null);
+    try{ if(window.Studio){ const trk=this.track; Studio.world({THREE, scene, camera, renderer, canvas:renderer.domElement, groundY:(x,z)=>trackGroundY(x,z), scope:()=>trk.id,
+      center:()=>{ const pl=Race.player&&Race.player.mesh; return pl?{x:pl.position.x,z:pl.position.z}:{x:0,z:0}; }, camDefault:{back:14,up:5,side:0,ahead:12,fov:62} }); Studio.refresh(); } }catch(e){ console.warn('studio', e); } // owner Nov 6 2026: things he places in Studio
     if(GP.lt && GP.lt.root) GP.lt.root.visible = !!this.track.gp; // the Grand Prix kit's world (ground, stands, buildings) only on its own circuit
     const evRoot=scene.getObjectByName('grand_prix_event'); if(evRoot) evRoot.visible = !!this.track.gp;
     this.buildWeather(cfg.wxSeed);
@@ -2434,7 +2454,10 @@ const Race = {
     $('pitMenu').classList.remove('hidden');
     if(!this._pmClose){ this._pmClose=true; $('pitMenu').addEventListener('click',e=>{ if(e.target===$('pitMenu')) $('pitMenu').classList.add('hidden'); }); }
   },
-  cycleCam(){ this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
+  cycleCam(){
+    if(window.Studio){ const mine=(Studio.data().cams||[]).length; // owner Nov 6 2026: after the game's 4 views come his own Studio views
+      if(Studio.camView() || (this.camMode===3 && mine)){ const v=Studio.camNext(); if(v){ banner(String(v.name||'MY VIEW').toUpperCase(),'','700'); return; } this.camMode=0; banner('CHASE CAM','','700'); return; } }
+    this.camMode=(this.camMode+1)%4; banner(['CHASE','COCKPIT','BROADCAST','ONBOARD'][this.camMode]+' CAM','','700'); },
   noteOffTrack(dt){
     const p=this.player;
     p._offT=(p._offT||0)+dt;
@@ -2588,7 +2611,9 @@ const Race = {
     if(GP.ev){ try{ GP.ev.finish(order[0]); GP.ev.podium(); }catch(e){} } // G-45: horn, cheer, fireworks + fanfare
   },
   updateCamera(dt){
+    if(window.Studio && Studio.ownsCamera()) return; // owner Nov 6 2026: Studio 'Place' = map view from above
     const p=this.player, m=p.mesh;
+    if(this._fov0==null) this._fov0=camera.fov;
     const wantNear = this.camMode===1 ? 0.08 : 0.5; // cockpit: the wheel is ~0.55 m from the eye
     if(camera.near!==wantNear){ camera.near=wantNear; camera.updateProjectionMatrix(); }
     if(this.camMode===1){ // G-48: cockpit - the driver's eye in the kit cockpit
@@ -2605,9 +2630,18 @@ const Race = {
     const tf=Track.frameAt(p.s);
     const fwd=new THREE.Vector3(tf.tx,0,tf.tz); // track direction, stable
     let cp=new THREE.Vector3(), lk=new THREE.Vector3(pp.x,pp.y+1.3,pp.z); // G-119: aim at the car, at ITS height (was a fixed world y=1.5)
-    if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
-      const back=Track.posAt(p.s-11,p.d,0);
-      cp.set(pp.x-fwd.x*11, back.y+3.4, pp.z-fwd.z*11); // G-119: height rides the road behind the car (was fixed y=5.2 - under the crests)
+    const SN=(k,d,o)=>window.Studio?Studio.num(k,d,o):d;
+    const myCam=window.Studio && Studio.camView(); // owner Nov 6 2026: his own camera views from Studio
+    const wantFov = myCam ? myCam.fov : SN('cam.fov',this._fov0,{min:30,max:100,step:1,label:'Field of view (game cameras)',group:'Camera'});
+    if(Math.abs(camera.fov-wantFov)>0.01){ camera.fov=wantFov; camera.updateProjectionMatrix(); }
+    if(myCam){
+      const sx=-fwd.z, sz=fwd.x, back=Track.posAt(p.s-myCam.back,p.d,0);
+      cp.set(pp.x-fwd.x*myCam.back+sx*myCam.side, back.y+myCam.up, pp.z-fwd.z*myCam.back+sz*myCam.side);
+      lk.set(pp.x+fwd.x*myCam.ahead, pp.y+1.2, pp.z+fwd.z*myCam.ahead);
+    } else if(this.camMode===0 || this.camMode===1){ // chase (also the cockpit fallback)
+      const cb=SN('cam.chase.back',11,{min:4,max:30,step:0.5,label:'Chase camera: distance behind (m)',group:'Camera'}), cu=SN('cam.chase.up',3.4,{min:0.8,max:15,step:0.1,label:'Chase camera: height (m)',group:'Camera'});
+      const back=Track.posAt(p.s-cb,p.d,0);
+      cp.set(pp.x-fwd.x*cb, back.y+cu, pp.z-fwd.z*cb); // G-119: height rides the road behind the car (was fixed y=5.2 - under the crests)
     } else if(this.camMode===2){ // G-239 (owner: 'helicopter noise... a camera that doesn't jitter and shake'): STEADY broadcast - it rides behind/above the car in the car's own frame and looks down the road. The old target was a fixed point 26 m to the side: as the road turned, that arm swung the whole picture around the car
       const back=Track.posAt(p.s-26, p.d*0.5, 0);
       cp.set(back.x, back.y+16, back.z);

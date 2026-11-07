@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Workshop</title>
+<!-- owner Nov 6 2026 11:15 PM "create me a real three.js coding system ... a page in game development, a menu at top, it connects to this
+     system and sends through the controller". BUILD = 3D scene editor, TRACK = road/track builder with splits, CODE = edit any game's real
+     code and run it live, SEND = the change becomes a FIX PACK that opens in his controller (Mac mini) -> a Muse puts it on GitHub -> robot. -->
+<style>
+:root{--bg:#0b0f16;--card:#141b26;--ink:#eef1f5;--sub:#9aa3b2;--line:#2a3444;--acc:#ffd23a;--blue:#4f8cff;--red:#ff6b6b;--grn:#52d18b}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px -apple-system,system-ui,sans-serif;overflow:hidden}
+#top{position:fixed;left:0;right:0;top:0;height:calc(46px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:4px;background:#070a10;border-bottom:1px solid var(--line);z-index:10;overflow-x:auto}
+#top a,#top button{font:inherit;font-weight:700;white-space:nowrap;padding:8px 11px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+#top button.on{background:var(--acc);color:#111;border-color:var(--acc)}
+.view{position:fixed;left:0;right:0;bottom:0;top:calc(46px + env(safe-area-inset-top,0px));display:none}.view.on{display:block}
+canvas.gl{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(340px,46vw);background:#0e1420ee;border-left:1px solid var(--line);overflow:auto;padding:8px 10px 40px}
+.panel h3{margin:10px 0 4px;font-size:13px;color:var(--acc);text-transform:uppercase;letter-spacing:.05em}
+.panel button,.btn{font:inherit;padding:7px 9px;margin:2px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.panel button.on{background:var(--acc);color:#111}.panel .go,.btn.go{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+.row{margin:5px 0}.row label{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}.row input[type=range]{width:100%}
+.sub{color:var(--sub);font-size:12px}input[type=text],select{font:inherit;width:100%;padding:7px;border-radius:8px;border:1px solid var(--line);background:#05080d;color:var(--ink)}
+#hint{position:absolute;left:8px;top:8px;right:calc(min(340px,46vw) + 8px);font-size:12px;color:#dfe6f0;background:#0008;padding:5px 8px;border-radius:8px;pointer-events:none}
+/* code */
+#v-code{display:none;flex-direction:column}#v-code.on{display:flex}
+.cbar{display:flex;gap:4px;flex-wrap:wrap;padding:6px 8px;background:#0e1420;border-bottom:1px solid var(--line)}
+.cbar select,.cbar input{width:auto;min-width:120px;flex:1}
+#cwrap{flex:1;display:flex;min-height:0}#gut{width:52px;overflow:hidden;background:#070a10;color:#55607a;font:12px/18px ui-monospace,Menlo,monospace;text-align:right;padding:6px 6px 0 0;white-space:pre}
+#ed{flex:1;resize:none;border:0;outline:0;background:#05080d;color:#d8e2f0;font:12px/18px ui-monospace,Menlo,monospace;padding:6px 8px;white-space:pre;overflow:auto;tab-size:2}
+#prev{position:fixed;inset:calc(46px + env(safe-area-inset-top,0px)) 0 0 0;background:#000;z-index:20;display:none}#prev iframe{width:100%;height:100%;border:0}
+#prevx{position:absolute;right:10px;top:10px;z-index:2}
+/* send */
+#v-send{overflow:auto;padding:12px max(16px,env(safe-area-inset-left,0px))}#v-send .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;max-width:820px}
+#v-send textarea{width:100%;min-height:200px;background:#05080d;color:#d8e2f0;border:1px solid var(--line);border-radius:8px;font:11px ui-monospace,Menlo,monospace}
+.ok{color:var(--grn)}.bad{color:var(--red)}
+@media (max-width:560px){.panel{width:100%;top:auto;height:46%;border-left:0;border-top:1px solid var(--line)}#hint{right:8px}}
+</style>
+<script type="importmap">{"imports":{"three":"./three.module.min.js","three/addons/loaders/GLTFLoader.js":"./vendor/GLTFLoader.js","three/addons/libs/meshopt_decoder.module.js":"./vendor/meshopt_decoder.module.js"}}</script>
+</head><body>
+<nav id="top">
+  <a href="sports.html">&#8249; Games</a>
+  <button data-v="build" class="on">&#129521; Build</button>
+  <button data-v="track">&#128739;&#65039; Track</button>
+  <button data-v="code">&#128187; Code</button>
+  <button data-v="newgame">&#127918; New game</button>
+  <button data-v="send">&#128228; Send</button>
+  <button data-v="help">&#10067; How</button>
+</nav>
+
+<!-- BUILD -->
+<section class="view on" id="v-build"><canvas class="gl" id="cb"></canvas><div id="hint">Drag = turn the view · two fingers = zoom/move · tap a thing to pick it</div>
+<div class="panel" id="pb"></div></section>
+<!-- TRACK -->
+<section class="view" id="v-track"><canvas class="gl" id="ct"></canvas><div id="hint2" class="sub" style="position:absolute;left:8px;top:8px;background:#0008;padding:5px 8px;border-radius:8px;color:#dfe6f0">Tap the ground to add a point · drag a point to move it</div>
+<div class="panel" id="pt"></div></section>
+<!-- CODE -->
+<section class="view" id="v-code">
+  <div class="cbar"><select id="cfile"></select><button class="btn" id="cload">Open</button><input id="cfind" type="text" placeholder="find (e.g. TEAMS, camera, exitRace)"><button class="btn" id="cnext">Find next</button>
+    <input id="cline" type="text" placeholder="line" style="max-width:70px;min-width:60px"><button class="btn" id="cgo">Go</button>
+    <button class="btn go" id="crun">&#9654; Run my version</button><button class="btn" id="cundo">&#8617;&#65039; Undo all</button><span class="sub" id="cstat"></span></div>
+  <div id="cwrap"><div id="gut"></div><textarea id="ed" spellcheck="false" autocapitalize="off" autocorrect="off" wrap="off"></textarea></div>
+</section>
+<div id="prev"><button class="btn go" id="prevx">&#10005; Close the test run</button><iframe id="pf" title="test run"></iframe></div>
+<!-- SEND -->
+<section class="view" id="v-send">
+  <div class="card"><b>What you changed</b><div class="sub" id="sumry">Nothing yet.</div></div>
+  <div class="card"><b>The fix that goes out</b> <span class="sub">(made by the page - you don't have to read it)</span><textarea id="fp" readonly></textarea>
+    <div><button class="btn go" id="sendctl">&#128228; Send to my controller</button><button class="btn" id="copyfp">&#128203; Copy</button></div>
+    <div class="sub" id="smsg">Your controller opens on its Paste a fix page with this filled in: tap Check, then Send. A Muse window puts it on GitHub, the robot checks it, the merge robot merges it.</div></div>
+</section>
+<!-- NEW GAME -->
+<section class="view" id="v-newgame" style="overflow:auto;padding:12px max(16px,env(safe-area-inset-left,0px))">
+<div style="max-width:720px">
+<h2 style="margin:4px 0">&#127918; Make a new game</h2>
+<div class="sub">A full working game from a starter: your track from the Track tab, your scenery pieces, a car, rivals, laps, phone controls, engine sound and 🎛️ Studio sliders inside. After the robot check it shows on the Game Development page by itself. Then tune it with Studio, change it in Code, or give a Muse a job on it.</div>
+<div class="row"><label>Game name</label><input type="text" id="ng_name" placeholder="e.g. Desert Rally"></div>
+<div class="row"><label>Starter</label><select id="ng_tpl"><option value="templates/racer.html">Racer - cars on a track, laps, rivals</option></select></div>
+<div class="row"><label>Track (a piece from the Track tab, already sent; empty = built-in oval)</label><input type="text" id="ng_track" placeholder="my-track"></div>
+<div class="row"><label>Scenery pieces (from the Build tab, already sent; commas)</label><input type="text" id="ng_scen" placeholder="my-piece, pit-lane"></div>
+<div class="row"><label>Car model (empty = simple car; or a models/....glb path from Build → Models)</label><input type="text" id="ng_car" placeholder="models/fetched/....glb"></div>
+<div class="row"><label>Car colour <input type="color" id="ng_col" value="#ff2d20"></label><label>Sky <input type="color" id="ng_sky" value="#8fb8e0"></label><label>Ground <input type="color" id="ng_gr" value="#4f8a43"></label></div>
+<div class="row"><label>Laps <b id="ng_lv">3</b></label><input type="range" id="ng_laps" min="1" max="20" value="3"></div>
+<div class="row"><label>Rivals <b id="ng_rv">3</b></label><input type="range" id="ng_riv" min="0" max="11" value="3"></div>
+<button class="btn go" id="ng_make">&#128228; Make it (goes to Send)</button>
+<p class="sub">Order that works: 1) build + send your track and pieces, 2) wait for them to merge (a few minutes), 3) make the game here.</p>
+</div></section>
+<!-- HOW: the whole game-making system -->
+<section class="view" id="v-help" style="overflow:auto;padding:12px max(16px,env(safe-area-inset-left,0px)) 40px">
+<div style="max-width:820px;line-height:1.5">
+<h2>&#127981; The whole game-making system</h2>
+<p class="sub">Everything you can do yourself, fastest first. Nothing here needs Claude or code knowledge.</p>
+<h3 style="color:#ffd23a">1. Make a brand-new game - 10 minutes</h3>
+<ol><li><b>&#128739;&#65039; Track</b>: tap the points, close the loop, split off a branch if you want, name it, <b>Send</b>.</li>
+<li><b>&#129521; Build</b>: scenery (trees, stands, arches, rocks, lights, models), name it, <b>Send</b>.</li>
+<li><b>&#127918; New game</b>: name, your track + pieces, car, colours, laps, rivals - <b>Make it</b> - <b>Send</b>.</li>
+<li>Controller: Check, Send. A Muse makes the file, the robot checks, the merge robot merges. It shows on the <b>Game Development</b> page by itself ("New games").</li></ol>
+<h3 style="color:#ffd23a">2. Tune any game - seconds, live</h3>
+<p>Open the game with <b>&#127899;&#65039; Studio</b> on (Game Development page → <i>Studio on</i>, or add <code>?studio=1</code>). The 🎛️ button at the top opens: <b>Tune</b> (speed, grip, steering, rivals, camera distance/height/zoom, engine pitch/loudness/brightness, colours), <b>Place</b> (map from above - tap to drop trees, rocks, cones, tyres, lights, buildings, road pieces, fences, people; drag to move around; erase), <b>Cameras</b> (add your own views: behind / height / side / ahead / zoom - the game's camera button steps through them), <b>Save</b> (only you see it at once; <i>Publish</i> sends it to every player through the controller). <i>F1 and every new starter game have Studio now; the other games get it next.</i></p>
+<h3 style="color:#ffd23a">3. Change the real code - minutes</h3>
+<p><b>&#128187; Code</b>: pick the game, Open, Find the part (the controller's 📘 Manual lists every part of every game and what it does), change it, <b>▶ Run my version</b> plays your version here. <b>Send</b> works out exactly what you changed by itself.</p>
+<h3 style="color:#ffd23a">4. Not sure how to change it? - minutes</h3>
+<p>Controller → <b>&#128295; Fix it</b>: say it in your words ("colours don't change the car", "add a horn button"). The Mac mini finds the code and writes one message for free ChatGPT; paste its answer back; Check; Send.</p>
+<h3 style="color:#ffd23a">5. Big work - hours, by the factory</h3>
+<p>Muse windows: one job, one part, one pull request. Testers find problems, auditors check them. Give a Muse a job from the controller, or let it build on top of your starter game ("make my Desert Rally cars jump on the ramps").</p>
+<h3 style="color:#ffd23a">How everything connects</h3>
+<pre style="white-space:pre-wrap;font-size:12px;background:#05080d;border:1px solid #2a3444;border-radius:8px;padding:8px">Workshop / Studio / Code / Fix it  →  a FIX PACK
+      → your controller (Mac mini): Check = it matches the real file on GitHub, no keys, no never-words
+      → Send = a Muse window types it into a pull request
+      → the robot checks it (paperwork) → the merge robot merges it (minutes)
+      → the game on the Game Development page has it (refresh)
+Undo: Studio "Undo ALL my changes" · Code "Undo all" · Mac mini's own files: Paste a fix → Undo · a game: send the old version back the same way.</pre>
+<h3 style="color:#ffd23a">Where things live (game repo)</h3>
+<p class="sub"><code>apex&lt;name&gt;.html</code> each game · <code>pieces/</code> your tracks and 3D pieces · <code>mods/&lt;game&gt;.json</code> your published Studio settings · <code>templates/</code> starter games · <code>kit/studio.js</code> the Studio · <code>kit/pieces.js</code> loads your pieces into a game · <code>models/</code> 3D models · <code>sounds/</code> sounds.</p>
+</div></section>
+
+<script>
+/* ---------- tabs ---------- */
+const $ = id => document.getElementById(id);
+let VIEW = 'build';
+document.querySelectorAll('#top button[data-v]').forEach(b => b.onclick = () => go(b.dataset.v));
+function go(v){ VIEW = v; document.querySelectorAll('#top button[data-v]').forEach(x => x.classList.toggle('on', x.dataset.v === v));
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('on', x.id === 'v-' + v)); if (v === 'send') makeSend(); window.dispatchEvent(new Event('resize')); }
+const store = { get(k, d){ try { const v = localStorage.getItem('apexWorkshop_' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v){ try { localStorage.setItem('apexWorkshop_' + k, JSON.stringify(v)); } catch (e) {} } };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+/* ======================= shared: a 3D view with orbit ======================= */
+function makeView(canvas){
+  const V = { r: new THREE.WebGLRenderer({ canvas, antialias: true }), scene: new THREE.Scene(), cam: new THREE.PerspectiveCamera(55, 1, 0.1, 5000),
+    target: new THREE.Vector3(0, 0, 0), yaw: 0.8, pitch: 0.75, dist: 60 };
+  V.r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); V.r.outputColorSpace = THREE.SRGBColorSpace;
+  V.scene.background = new THREE.Color(0x8fb8e0); V.scene.fog = new THREE.Fog(0x8fb8e0, 400, 2200);
+  V.scene.add(new THREE.HemisphereLight(0xeef6ff, 0x4a6040, 1.4)); const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(120, 200, 80); V.scene.add(sun);
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.MeshLambertMaterial({ color: 0x4f8a43 })); g.rotation.x = -Math.PI / 2; g.name = 'ground'; V.scene.add(g); V.ground = g;
+  const grid = new THREE.GridHelper(400, 40, 0x2e5a2a, 0x3d6f37); grid.position.y = 0.02; V.scene.add(grid);
+  V.place = () => { const cp = Math.cos(V.pitch); V.cam.position.set(V.target.x + V.dist * cp * Math.sin(V.yaw), V.target.y + V.dist * Math.sin(V.pitch), V.target.z + V.dist * cp * Math.cos(V.yaw)); V.cam.lookAt(V.target); };
+  V.resize = () => { const w = canvas.clientWidth, h = canvas.clientHeight; if (!w || !h) return; V.r.setSize(w, h, false); V.cam.aspect = w / h; V.cam.updateProjectionMatrix(); };
+  addEventListener('resize', V.resize);
+  V.ray = (x, y) => { const rc = canvas.getBoundingClientRect(); const v = new THREE.Vector2(((x - rc.left) / rc.width) * 2 - 1, -((y - rc.top) / rc.height) * 2 + 1); const R = new THREE.Raycaster(); R.setFromCamera(v, V.cam); return R; };
+  V.groundAt = (x, y) => { const p = new THREE.Vector3(); return V.ray(x, y).ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), p) ? p : null; };
+  // touch / mouse: one finger = orbit (or the tool's drag), two = pinch zoom + pan
+  const pts = new Map(); let last = null, moved = 0, pinch = null;
+  canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); moved = 0; last = { x: e.clientX, y: e.clientY };
+    if (pts.size === 1 && V.onDown) V.dragging = V.onDown(e); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), dist: V.dist, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; V.dragging = false; } });
+  canvas.addEventListener('pointermove', e => { if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2 && pinch) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); V.dist = Math.max(3, Math.min(1500, pinch.dist * pinch.d / Math.max(10, d)));
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, k = V.dist / 600, f = new THREE.Vector3(Math.sin(V.yaw), 0, Math.cos(V.yaw)), r = new THREE.Vector3(f.z, 0, -f.x);
+      V.target.addScaledVector(r, -(mx - pinch.mx) * k).addScaledVector(f, -(my - pinch.my) * k); pinch.mx = mx; pinch.my = my; return; }
+    const dx = e.clientX - last.x, dy = e.clientY - last.y; moved += Math.abs(dx) + Math.abs(dy); last = { x: e.clientX, y: e.clientY };
+    if (V.dragging && V.onDrag) { V.onDrag(e); return; }
+    if (moved > 4) { V.yaw -= dx * 0.006; V.pitch = Math.max(0.08, Math.min(1.5, V.pitch + dy * 0.005)); } });
+  canvas.addEventListener('pointerup', e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (moved < 8 && V.onTap && !pinch) V.onTap(e); V.dragging = false; });
+  canvas.addEventListener('wheel', e => { e.preventDefault(); V.dist = Math.max(3, Math.min(1500, V.dist * (e.deltaY > 0 ? 1.1 : 0.9))); }, { passive: false });
+  V.loop = () => { if (canvas.offsetParent !== null) { V.resize(); V.place(); V.r.render(V.scene, V.cam); } requestAnimationFrame(V.loop); };
+  requestAnimationFrame(V.loop); return V;
+}
+
+/* ======================= BUILD: 3D scene editor ======================= */
+const B = makeView(document.getElementById('cb'));
+const KINDS = {
+  box: { label: 'Box', make: c => new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), mat(c, 0xc9a27e)), y: 2 },
+  ball: { label: 'Ball', make: c => new THREE.Mesh(new THREE.SphereGeometry(2, 20, 14), mat(c, 0xd9534f)), y: 2 },
+  cyl: { label: 'Pillar', make: c => new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 6, 16), mat(c, 0xb8c0c8)), y: 3 },
+  cone: { label: 'Cone', make: c => new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 14), mat(c, 0xff6a00)), y: 0.6 },
+  wall: { label: 'Wall', make: c => new THREE.Mesh(new THREE.BoxGeometry(12, 3, 0.6), mat(c, 0xdfe3e8)), y: 1.5 },
+  ramp: { label: 'Ramp', make: c => { const g = new THREE.BoxGeometry(8, 0.5, 12); const m = new THREE.Mesh(g, mat(c, 0x8a8f96)); m.rotation.x = -0.25; return m; }, y: 1.4 },
+  floor: { label: 'Floor', make: c => new THREE.Mesh(new THREE.BoxGeometry(20, 0.2, 20), mat(c, 0x3a3d42)), y: 0.1 },
+  tree: { label: 'Tree', make: c => { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 3, 7), mat(null, 0x5a3d26)); t.position.y = 1.5; g.add(t);
+    for (const [y, r] of [[4, 2.2], [5.4, 1.6], [6.5, 1]]) { const b = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), mat(c, 0x2f7a35)); b.position.y = y; g.add(b); } return g; }, y: 0 },
+  pine: { label: 'Pine', make: c => { const g = new THREE.Group(); const t = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.4, 2, 7), mat(null, 0x4a3322)); t.position.y = 1; g.add(t);
+    const k = new THREE.Mesh(new THREE.ConeGeometry(2, 6, 10), mat(c, 0x1f5a2a)); k.position.y = 5; g.add(k); return g; }, y: 0 },
+  rock: { label: 'Rock', make: c => new THREE.Mesh(new THREE.DodecahedronGeometry(1.4, 0), mat(c, 0x80868c)), y: 0.8 },
+  pole: { label: 'Light pole', make: c => { const g = new THREE.Group(); const p = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 9, 8), mat(null, 0x9aa3ad)); p.position.y = 4.5; g.add(p);
+    const h = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 0.6), new THREE.MeshBasicMaterial({ color: c || 0xfff6d0 })); h.position.y = 9; g.add(h); return g; }, y: 0 },
+  stand: { label: 'Grandstand', make: c => { const g = new THREE.Group(); for (let i = 0; i < 6; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(24, 0.8, 1.6), mat(c, 0x6b7a90)); s.position.set(0, 0.4 + i * 0.8, -i * 1.6); g.add(s); } return g; }, y: 0 },
+  arch: { label: 'Arch / gate', make: c => { const g = new THREE.Group(); const m = mat(c, 0xe94560); for (const x of [-7, 7]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.8, 7, 0.8), m); p.position.set(x, 3.5, 0); g.add(p); }
+    const top = new THREE.Mesh(new THREE.BoxGeometry(15, 1.4, 0.8), m); top.position.y = 7.4; g.add(top); return g; }, y: 0 },
+};
+function mat(c, d){ return new THREE.MeshStandardMaterial({ color: c != null ? c : d, roughness: 0.6, metalness: 0.1 }); }
+const S = store.get('scene', { name: 'my-piece', items: [] });
+let SEL = null, MOVE = false, uid = Date.now() % 100000;
+const root = new THREE.Group(); B.scene.add(root);
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+const sel = new THREE.BoxHelper(undefined, 0xffd23a); sel.visible = false; B.scene.add(sel);
+function build(it){
+  let o;
+  if (it.kind === 'model') { o = new THREE.Group(); loader.load(it.model, g => { o.add(g.scene); if (SEL === it) sel.setFromObject(o); }, undefined, () => { o.add(new THREE.Mesh(new THREE.BoxGeometry(2, 2, 2), mat(0xff00ff))); }); }
+  else o = (KINDS[it.kind] || KINDS.box).make(it.color ? parseInt(it.color.slice(1), 16) : null);
+  const w = new THREE.Group(); w.add(o); o.position.y = (KINDS[it.kind] || { y: 0 }).y || 0;
+  w.position.set(it.x, it.y || 0, it.z); w.rotation.y = it.ry || 0; w.scale.setScalar(it.s || 1); w.userData.it = it; return w;
+}
+function rebuild(){ while (root.children.length) root.remove(root.children[0]); S.items.forEach(it => root.add(build(it))); refreshSel(); store.set('scene', S); }
+function refreshSel(){ const w = root.children.find(c => c.userData.it === SEL); sel.visible = !!w; if (w) sel.setFromObject(w); }
+function add(kind, model){ const t = B.target; const it = { id: ++uid, kind, x: Math.round(t.x * 10) / 10, z: Math.round(t.z * 10) / 10, y: 0, ry: 0, s: 1 }; if (model) it.model = model; S.items.push(it); SEL = it; rebuild(); drawB(); }
+B.onTap = e => { const h = B.ray(e.clientX, e.clientY).intersectObjects(root.children, true)[0];
+  if (h) { let o = h.object; while (o.parent && o.parent !== root) o = o.parent; SEL = o.userData.it; } else SEL = null; refreshSel(); drawB(); };
+B.onDown = e => { if (!MOVE || !SEL) return false; return true; };
+B.onDrag = e => { const p = B.groundAt(e.clientX, e.clientY); if (!p || !SEL) return; SEL.x = Math.round(p.x * 10) / 10; SEL.z = Math.round(p.z * 10) / 10; const w = root.children.find(c => c.userData.it === SEL); if (w) { w.position.x = SEL.x; w.position.z = SEL.z; sel.setFromObject(w); } store.set('scene', S); };
+let MODELS = store.get('models', null);
+async function listModels(){
+  try { const r = await fetch('https://api.github.com/repos/Attacked-Kraken/18-Games-Casino/git/trees/main?recursive=1'); const j = await r.json();
+    MODELS = (j.tree || []).map(x => x.path).filter(p => /^models\/.*\.glb$/i.test(p) && !/-raw\.glb$/.test(p)).slice(0, 400); store.set('models', MODELS); } catch (e) { MODELS = MODELS || []; }
+  drawB();
+}
+function drawB(){
+  const P = document.getElementById('pb'); let h = `<h3>Piece</h3><input type="text" id="bname" value="${esc(S.name)}"><div class="sub">${S.items.length} things</div><h3>Add</h3>`;
+  h += Object.keys(KINDS).map(k => `<button data-add="${k}">${KINDS[k].label}</button>`).join('');
+  h += `<button data-models="1">&#128230; Models...</button>`;
+  if (MODELS && window.__showModels) h += `<div><input type="text" id="mfilter" placeholder="filter models (car, tree, stadium...)" value="${esc(window.__mf || '')}"></div><div style="max-height:180px;overflow:auto">${MODELS.filter(m => !window.__mf || m.toLowerCase().includes(window.__mf.toLowerCase())).slice(0, 80).map(m => `<button data-model="${esc(m)}" style="font-size:11px">${esc(m.replace(/^models\//, ''))}</button>`).join('')}</div>`;
+  if (SEL) {
+    h += `<h3>Picked: ${esc(SEL.kind === 'model' ? SEL.model.split('/').pop() : KINDS[SEL.kind].label)}</h3><button data-move="1" class="${MOVE ? 'on' : ''}">&#10021; Move (drag on the ground)</button>`;
+    for (const [f, lab, mn, mx, st] of [['y', 'Height', -5, 40, 0.1], ['ry', 'Turn', 0, 6.28, 0.01], ['s', 'Size', 0.1, 20, 0.05], ['x', 'Left / right', -500, 500, 0.5], ['z', 'Forward / back', -500, 500, 0.5]])
+      h += `<div class="row"><label>${lab}<b>${(+(SEL[f] || 0)).toFixed(f === 'ry' ? 2 : 1)}</b></label><input type="range" data-f="${f}" min="${mn}" max="${mx}" step="${st}" value="${SEL[f] || 0}"></div>`;
+    if (SEL.kind !== 'model') h += `<div class="row"><label>Colour <input type="color" id="bcol" value="${SEL.color || '#cccccc'}"></label></div>`;
+    h += `<button data-dup="1">&#10133; Copy</button><button data-del="1">&#128465;&#65039; Delete</button>`;
+  } else h += `<p class="sub">Tap a thing to pick it. New things appear in the middle of the view.</p>`;
+  h += `<h3>Save</h3><button class="go" data-tosend="1">&#128228; Send this piece</button> <button data-clear="1">New empty piece</button>`;
+  P.innerHTML = h;
+  P.querySelectorAll('[data-add]').forEach(b => b.onclick = () => add(b.dataset.add));
+  P.querySelector('[data-models]').onclick = () => { window.__showModels = !window.__showModels; if (!MODELS) listModels(); drawB(); };
+  P.querySelectorAll('[data-model]').forEach(b => b.onclick = () => add('model', b.dataset.model));
+  const mf = document.getElementById('mfilter'); if (mf) mf.oninput = () => { window.__mf = mf.value; drawB(); document.getElementById('mfilter').focus(); };
+  const bn = document.getElementById('bname'); bn.onchange = () => { S.name = bn.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'my-piece'; store.set('scene', S); drawB(); };
+  const mv = P.querySelector('[data-move]'); if (mv) mv.onclick = () => { MOVE = !MOVE; drawB(); };
+  P.querySelectorAll('[data-f]').forEach(r => r.oninput = () => { SEL[r.dataset.f] = +r.value; r.previousElementSibling.querySelector('b').textContent = (+r.value).toFixed(r.dataset.f === 'ry' ? 2 : 1); const w = root.children.find(c => c.userData.it === SEL);
+    if (w) { w.position.set(SEL.x, SEL.y || 0, SEL.z); w.rotation.y = SEL.ry || 0; w.scale.setScalar(SEL.s || 1); sel.setFromObject(w); } store.set('scene', S); });
+  const bc = document.getElementById('bcol'); if (bc) bc.oninput = () => { SEL.color = bc.value; rebuild(); };
+  const du = P.querySelector('[data-dup]'); if (du) du.onclick = () => { const c = Object.assign({}, SEL, { id: ++uid, x: SEL.x + 4 }); S.items.push(c); SEL = c; rebuild(); drawB(); };
+  const de = P.querySelector('[data-del]'); if (de) de.onclick = () => { S.items = S.items.filter(x => x !== SEL); SEL = null; rebuild(); drawB(); };
+  P.querySelector('[data-tosend]').onclick = () => { window.__sendWhat = 'piece'; go('send'); };
+  P.querySelector('[data-clear]').onclick = e => { if (e.target.dataset.sure) { S.items = []; SEL = null; rebuild(); drawB(); } else { e.target.dataset.sure = 1; e.target.textContent = 'Tap again to clear'; } };
+}
+rebuild(); drawB();
+
+/* ======================= TRACK: road / circuit builder with splits ======================= */
+const T = makeView(document.getElementById('ct')); T.pitch = 1.25; T.dist = 220;
+const TR = store.get('track', { name: 'my-track', width: 12, closed: true, kerbs: true, roads: [{ pts: [] }] });
+let RI = 0, PI = -1, DRAG = false;
+const tRoot = new THREE.Group(); T.scene.add(tRoot);
+function roadMesh(pts, closed, width, color){
+  if (pts.length < 2) return null;
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p.x, 0, p.z)), closed && pts.length > 2, 'centripetal');
+  const n = Math.max(20, Math.round(curve.getLength() / 2)), P = curve.getSpacedPoints(n), pos = [], idx = [];
+  for (let i = 0; i <= n; i++) { const a = P[Math.max(0, i - 1)], b = P[Math.min(n, i + 1)], d = new THREE.Vector3().subVectors(b, a).normalize(), s = new THREE.Vector3(-d.z, 0, d.x).multiplyScalar(width / 2), c = P[i];
+    pos.push(c.x + s.x, 0.06, c.z + s.z, c.x - s.x, 0.06, c.z - s.z); if (i < n) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: color || 0x3a3d42, side: THREE.DoubleSide })); m.userData.P = P; m.userData.n = n; return m;
+}
+function kerb(m, width){ const P = m.userData.P, grp = new THREE.Group(); const red = new THREE.MeshLambertMaterial({ color: 0xd32f2f }), wht = new THREE.MeshLambertMaterial({ color: 0xffffff });
+  for (let i = 0; i < P.length - 1; i += 2) { const a = P[i], b = P[i + 1], d = new THREE.Vector3().subVectors(b, a); const len = d.length(); d.normalize(); const s = new THREE.Vector3(-d.z, 0, d.x);
+    for (const side of [1, -1]) { const k = new THREE.Mesh(new THREE.BoxGeometry(len, 0.12, 1), (i / 2) % 2 ? red : wht); k.position.set((a.x + b.x) / 2 + s.x * side * (width / 2 + 0.5), 0.08, (a.z + b.z) / 2 + s.z * side * (width / 2 + 0.5)); k.rotation.y = -Math.atan2(d.z, d.x); grp.add(k); } }
+  return grp; }
+function drawTrack(){
+  while (tRoot.children.length) tRoot.remove(tRoot.children[0]);
+  TR.roads.forEach((rd, ri) => {
+    const pts = rd.from ? [TR.roads[rd.from.r].pts[rd.from.i]].concat(rd.pts) : rd.pts;
+    const m = roadMesh(pts, ri === 0 && TR.closed, TR.width, rd.color ? parseInt(rd.color.slice(1), 16) : null); if (m) { tRoot.add(m); if (TR.kerbs) tRoot.add(kerb(m, TR.width)); }
+    rd.pts.forEach((p, i) => { const d = new THREE.Mesh(new THREE.SphereGeometry(ri === RI && i === PI ? 3 : 2, 12, 8), new THREE.MeshBasicMaterial({ color: ri === RI && i === PI ? 0xffd23a : ri === 0 ? 0xffffff : 0x66ccff }));
+      d.position.set(p.x, 1, p.z); d.userData.pt = { r: ri, i }; tRoot.add(d); });
+  });
+  store.set('track', TR);
+}
+T.onTap = e => { const h = T.ray(e.clientX, e.clientY).intersectObjects(tRoot.children.filter(c => c.userData.pt), false)[0];
+  if (h) { RI = h.object.userData.pt.r; PI = h.object.userData.pt.i; drawTrack(); drawT(); return; }
+  const p = T.groundAt(e.clientX, e.clientY); if (!p) return; const rd = TR.roads[RI]; rd.pts.splice(PI >= 0 ? PI + 1 : rd.pts.length, 0, { x: Math.round(p.x), z: Math.round(p.z) }); PI = PI >= 0 ? PI + 1 : rd.pts.length - 1; drawTrack(); drawT(); };
+T.onDown = e => { const h = T.ray(e.clientX, e.clientY).intersectObjects(tRoot.children.filter(c => c.userData.pt), false)[0]; if (!h) return false; RI = h.object.userData.pt.r; PI = h.object.userData.pt.i; return true; };
+T.onDrag = e => { const p = T.groundAt(e.clientX, e.clientY); if (!p || PI < 0) return; const q = TR.roads[RI].pts[PI]; q.x = Math.round(p.x); q.z = Math.round(p.z); drawTrack(); };
+function drawT(){
+  const P = document.getElementById('pt'); const rd = TR.roads[RI];
+  let h = `<h3>Track</h3><input type="text" id="tname" value="${esc(TR.name)}"><div class="sub">${TR.roads.length} road(s) · this road ${rd.pts.length} points ${PI >= 0 ? '· point ' + (PI + 1) + ' picked' : ''}</div>`;
+  h += `<div class="row"><label>Road width<b>${TR.width} m</b></label><input type="range" id="tw" min="4" max="30" step="1" value="${TR.width}"></div>`;
+  h += `<button id="tclose" class="${TR.closed ? 'on' : ''}">&#11093; Close the loop</button><button id="tkerb" class="${TR.kerbs ? 'on' : ''}">Kerbs</button>`;
+  h += `<h3>Points</h3><button id="tdel">&#128465;&#65039; Delete picked point</button><button id="tnone">Add at the end</button><button id="tundo">&#8617;&#65039; Undo last point</button>`;
+  h += `<h3>Split</h3><button id="tsplit">&#129683; Split from the picked point</button>`;
+  if (TR.roads.length > 1) h += `<div>${TR.roads.map((r, i) => `<button data-road="${i}" class="${i === RI ? 'on' : ''}">${i === 0 ? 'Main track' : 'Branch ' + i}</button>`).join('')}</div>` + (RI > 0 ? `<div class="row"><label>Branch colour <input type="color" id="tcol" value="${rd.color || '#3a3d42'}"></label></div><button id="tdelroad">&#128465;&#65039; Delete this branch</button>` : '');
+  h += `<h3>Save</h3><button class="go" id="tsend">&#128228; Send this track</button><button id="tnew">New empty track</button>`;
+  P.innerHTML = h;
+  $('tname').onchange = e => { TR.name = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'my-track'; drawTrack(); drawT(); };
+  $('tw').oninput = e => { TR.width = +e.target.value; drawTrack(); e.target.previousElementSibling.querySelector('b').textContent = TR.width + ' m'; };
+  $('tclose').onclick = () => { TR.closed = !TR.closed; drawTrack(); drawT(); }; $('tkerb').onclick = () => { TR.kerbs = !TR.kerbs; drawTrack(); drawT(); };
+  $('tdel').onclick = () => { if (PI >= 0) { rd.pts.splice(PI, 1); PI = Math.min(PI, rd.pts.length - 1); drawTrack(); drawT(); } };
+  $('tnone').onclick = () => { PI = -1; drawTrack(); drawT(); }; $('tundo').onclick = () => { rd.pts.pop(); PI = -1; drawTrack(); drawT(); };
+  $('tsplit').onclick = () => { if (PI < 0) { alertT('Tap a point first.'); return; } TR.roads.push({ from: { r: RI, i: PI }, pts: [] }); RI = TR.roads.length - 1; PI = -1; drawTrack(); drawT(); alertT('Now tap the ground to lay the branch.'); };
+  P.querySelectorAll('[data-road]').forEach(b => b.onclick = () => { RI = +b.dataset.road; PI = -1; drawTrack(); drawT(); });
+  const tc = $('tcol'); if (tc) tc.oninput = () => { rd.color = tc.value; drawTrack(); };
+  const tdr = $('tdelroad'); if (tdr) tdr.onclick = () => { TR.roads.splice(RI, 1); RI = 0; PI = -1; drawTrack(); drawT(); };
+  $('tsend').onclick = () => { window.__sendWhat = 'track'; go('send'); };
+  $('tnew').onclick = e => { if (e.target.dataset.sure) { TR.roads = [{ pts: [] }]; RI = 0; PI = -1; drawTrack(); drawT(); } else { e.target.dataset.sure = 1; e.target.textContent = 'Tap again'; } };
+}
+function alertT(t){ const h = $('hint2'); h.textContent = t; setTimeout(() => { h.textContent = 'Tap the ground to add a point · drag a point to move it'; }, 3500); }
+drawTrack(); drawT();
+window.__ws = { S, TR, B, T };
+if (location.hash === '#help') go('help');
+</script>
+
+<script>
+/* ======================= CODE: edit the real game, run it live ======================= */
+const FILES = [['apexf1.html', 'F1'], ['apexracer.html', 'Exotic Racer'], ['apexhockey.html', 'Hockey'], ['apexbaseball.html', 'Baseball'], ['apextrackfield.html', 'Track & Field'], ['apexflight.html', 'Flight'], ['kit/studio.js', 'Studio kit'], ['kit/apex-kit.js', 'Shared kit']];
+const ed = $('ed'), gut = $('gut'), cfile = $('cfile');
+FILES.forEach(([f, n]) => { const o = document.createElement('option'); o.value = f; o.textContent = n + '  (' + f + ')'; cfile.appendChild(o); });
+let ORIG = {}, CUR = store.get('codefile', 'apexf1.html');
+cfile.value = CUR;
+function gutter(){ const n = ed.value.split('\n').length; let s = ''; for (let i = 1; i <= n; i++) s += i + '\n'; gut.textContent = s; gut.scrollTop = ed.scrollTop; }
+ed.addEventListener('scroll', () => { gut.scrollTop = ed.scrollTop; });
+ed.addEventListener('input', () => { gutter(); store.set('code_' + CUR, ed.value); stat(); });
+async function openFile(f){
+  CUR = f; store.set('codefile', f); $('cstat').textContent = 'loading...';
+  try { if (!ORIG[f]) ORIG[f] = await (await fetch(f + '?v=' + Date.now(), { cache: 'no-store' })).text(); } catch (e) { $('cstat').textContent = 'could not load ' + f; return; }
+  const mine = store.get('code_' + f, null); ed.value = mine != null ? mine : ORIG[f]; gutter(); stat();
+}
+function stat(){ const ch = ORIG[CUR] != null && ed.value !== ORIG[CUR]; $('cstat').innerHTML = ch ? '<span style="color:#ffd23a">changed - not saved to the game yet</span>' : 'no changes'; }
+$('cload').onclick = () => openFile(cfile.value);
+cfile.onchange = () => openFile(cfile.value);
+function gotoPos(pos, len){ ed.focus(); ed.setSelectionRange(pos, pos + (len || 0)); const line = ed.value.slice(0, pos).split('\n').length; ed.scrollTop = Math.max(0, (line - 6) * 18); gutter(); }
+$('cnext').onclick = () => { const q = $('cfind').value; if (!q) return; let i = ed.value.indexOf(q, ed.selectionEnd); if (i < 0) i = ed.value.indexOf(q); if (i >= 0) gotoPos(i, q.length); else $('cstat').textContent = 'not found'; };
+$('cfind').addEventListener('keydown', e => { if (e.key === 'Enter') $('cnext').onclick(); });
+$('cgo').onclick = () => { const n = +$('cline').value; if (!n) return; const ls = ed.value.split('\n'); let p = 0; for (let i = 0; i < n - 1 && i < ls.length; i++) p += ls[i].length + 1; gotoPos(p, 0); };
+$('cundo').onclick = e => { if (!e.target.dataset.sure) { e.target.dataset.sure = 1; e.target.textContent = 'Tap again to undo all'; return; } delete e.target.dataset.sure; e.target.textContent = '↩️ Undo all'; ed.value = ORIG[CUR] || ''; store.set('code_' + CUR, null); gutter(); stat(); };
+$('crun').onclick = () => { if (!/\.html$/.test(CUR)) { $('cstat').textContent = 'Run works on game pages (.html)'; return; }
+  const base = location.href.replace(/[^/]*$/, ''); let html = ed.value;
+  html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '">');
+  const pf = $('pf'); pf.srcdoc = html; $('prev').style.display = 'block'; };
+$('prevx').onclick = () => { $('prev').style.display = 'none'; $('pf').srcdoc = ''; };
+openFile(CUR);
+
+/* ======================= SEND: what changed -> FIX PACK -> controller ======================= */
+function fixFromCode(file, a, b){
+  // smallest changed region(s): compare line by line, group runs, add 2 context lines and grow until OLD is found once
+  const A = a.split('\n'), Bl = b.split('\n'); let s = 0; while (s < A.length && s < Bl.length && A[s] === Bl[s]) s++;
+  let ea = A.length - 1, eb = Bl.length - 1; while (ea >= s && eb >= s && A[ea] === Bl[eb]) { ea--; eb--; }
+  if (s > ea && s > eb) return null;
+  let c = 2, oldT, newT;
+  for (; c < 60; c++) { const a0 = Math.max(0, s - c), a1 = Math.min(A.length - 1, ea + c), b1 = Math.min(Bl.length - 1, eb + c);
+    oldT = A.slice(a0, a1 + 1).join('\n'); newT = Bl.slice(a0, b1 + 1).join('\n'); if (a.split(oldT).length === 2 && oldT.trim()) break; }
+  return { old: oldT, neu: newT, lines: (ea - s + 1) + ' line(s) around line ' + (s + 1) };
+}
+function slug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24); }
+$('ng_laps').oninput = e => { $('ng_lv').textContent = e.target.value; }; $('ng_riv').oninput = e => { $('ng_rv').textContent = e.target.value; };
+$('ng_make').onclick = () => { const name = $('ng_name').value.trim(); if (!slug(name)) { $('ng_name').focus(); $('ng_name').placeholder = 'type a name first'; return; }
+  window.__newgame = { name, file: 'apex' + slug(name) + '.html', tpl: $('ng_tpl').value, cfg: { name, track: slug2($('ng_track').value), scenery: $('ng_scen').value.split(',').map(slug2).filter(Boolean), car: $('ng_car').value.trim(),
+    carColor: $('ng_col').value, laps: +$('ng_laps').value, rivals: +$('ng_riv').value, sky: $('ng_sky').value, ground: $('ng_gr').value } };
+  window.__sendWhat = 'newgame'; go('send'); };
+function slug2(s){ return String(s || '').trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, ''); }
+function makeSend(){
+  const W = window.__ws || {}; const what = window.__sendWhat || 'code'; let fp = '', sum = '';
+  if (what === 'newgame' && window.__newgame) { const n = window.__newgame; fp = 'FIX PACK\nFILE: ' + n.file + '\nWHY: owner new game from the Workshop: ' + n.name + '\nCOPY FROM: ' + n.tpl + '\nCONFIG:\n' + JSON.stringify(n.cfg) + '\nEND';
+    sum = 'A new game <b>' + esc(n.name) + '</b> as ' + esc(n.file) + ' (from ' + esc(n.tpl) + ').'; }
+  else if (what === 'piece' && W.S) { fp = 'FIX PACK\nFILE: pieces/' + W.S.name + '.json\nWHY: owner piece from the Workshop (' + W.S.items.length + ' things)\nNEW FILE:\n' + JSON.stringify({ kind: 'piece', v: 1, items: W.S.items }) + '\nEND'; sum = 'The 3D piece <b>' + esc(W.S.name) + '</b> (' + W.S.items.length + ' things) as pieces/' + esc(W.S.name) + '.json.'; }
+  else if (what === 'track' && W.TR) { fp = 'FIX PACK\nFILE: pieces/' + W.TR.name + '.json\nWHY: owner track from the Workshop (' + W.TR.roads.length + ' road(s))\nNEW FILE:\n' + JSON.stringify({ kind: 'track', v: 1, width: W.TR.width, closed: W.TR.closed, kerbs: W.TR.kerbs, roads: W.TR.roads }) + '\nEND'; sum = 'The track <b>' + esc(W.TR.name) + '</b> (' + W.TR.roads.length + ' road(s)) as pieces/' + esc(W.TR.name) + '.json.'; }
+  else { const o = ORIG[CUR], n = ed.value; const d = o != null ? fixFromCode(CUR, o, n) : null;
+    if (!d) { sum = 'No code changes yet - change something on the Code tab (or send a piece / track from their tabs).'; }
+    else { fp = 'FIX PACK\nFILE: ' + CUR + '\nWHY: owner change from the Workshop code editor (' + d.lines + ')\nOLD:\n' + d.old + '\nNEW:\n' + d.neu + '\nEND'; sum = 'Your code change in <b>' + esc(CUR) + '</b>: ' + d.lines + '.'; } }
+  $('sumry').innerHTML = sum + ' <span class="sub">(Send what: <a href="#" onclick="window.__sendWhat=\'newgame\';makeSend();return false">new game</a> · <a href="#" onclick="window.__sendWhat=\'code\';makeSend();return false">code</a> · <a href="#" onclick="window.__sendWhat=\'piece\';makeSend();return false">3D piece</a> · <a href="#" onclick="window.__sendWhat=\'track\';makeSend();return false">track</a>)</span>';
+  $('fp').value = fp; window.__sendWhat = what;
+}
+function ctlBase(done){ // the controller: the Mac mini's away link from anywhere (learned by the Game Development page), else home Wi-Fi
+  let t = '', pin = ''; try { t = localStorage.getItem('apexLinkTopic') || ''; pin = localStorage.getItem('apexLinkPin') || ''; } catch (e) {}
+  const home = (() => { try { return (localStorage.getItem('apexCtlUrl') || 'http://192.168.1.231:8765/').replace(/\/$/, ''); } catch (e) { return 'http://192.168.1.231:8765'; } })();
+  if (!t) return done(home, pin);
+  fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(r => r.text()).then(txt => { let u = '';
+    txt.trim().split('\n').forEach(l => { try { const m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} }); done(u || home, pin); }).catch(() => done(home, pin));
+}
+$('sendctl').onclick = () => { const v = $('fp').value; if (!v) { $('smsg').className = 'bad'; $('smsg').textContent = 'Nothing to send yet.'; return; }
+  const b64 = btoa(unescape(encodeURIComponent(v))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const w = window.open('about:blank', '_blank');
+  ctlBase((u, pin) => { const url = u + '/fix#fp=' + b64 + (pin ? '&pin=' + encodeURIComponent(pin) : ''); if (w) w.location = url; else location.href = url; }); };
+$('copyfp').onclick = () => { const v = $('fp').value; navigator.clipboard.writeText(v).then(() => { $('smsg').textContent = 'Copied - paste it into your controller → Paste a fix.'; }, () => { $('fp').select(); }); };
+</script>
+</body></html>
