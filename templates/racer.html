@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Starter Racer</title>
+<!-- STARTER GAME TEMPLATE (owner Nov 6 2026 "a setup that's the whole system of creating the games ... quicker, even a new game a Muse builds").
+     A new game = a copy of this file at the repo root as apex<name>.html with the CONFIG block changed (the Workshop's New game tab does it).
+     Already inside: a track from the Workshop (pieces/<track>.json), scenery pieces, a car (box or any models/*.glb), rivals, laps, timer,
+     results, phone controls (kit/controls.js), engine sound, and 🎛️ Studio sliders for everything (open with ?studio=1). -->
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font:600 15px system-ui,sans-serif;color:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;left:max(10px,env(safe-area-inset-left,0px));top:max(8px,env(safe-area-inset-top,0px));z-index:40;text-shadow:0 1px 3px #000;pointer-events:none}
+#hud b{font-size:22px}#back{position:fixed;right:max(10px,env(safe-area-inset-right,0px));top:max(8px,env(safe-area-inset-top,0px));z-index:61;font:inherit;padding:8px 12px;border-radius:10px;border:1px solid #fff6;background:#0009;color:#fff}
+#menu{position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(circle at 50% 40%,#1b2a44,#05070c)}
+#menu h1{margin:0;font-size:min(9vw,46px);letter-spacing:.04em}#menu button{font:800 18px system-ui;padding:14px 34px;border-radius:14px;border:0;background:#ffd23a;color:#111}
+#menu .sub{color:#9fb0c8;font-weight:500}.hidden{display:none!important}
+</style>
+<script src="kit/studio.js"></script>
+<script type="importmap">{"imports":{"three":"./three.module.min.js","three/addons/loaders/GLTFLoader.js":"./vendor/GLTFLoader.js","three/addons/libs/meshopt_decoder.module.js":"./vendor/meshopt_decoder.module.js"}}</script>
+</head><body>
+<div id="hud"><div id="hlap"></div><div><b id="hpos"></b> <span id="htime"></span></div><div id="hspd"></div></div>
+<button id="back">&#8249; Back</button>
+<div id="menu"><h1 id="mtitle">STARTER RACER</h1><div class="sub" id="msub"></div><button id="go">START</button></div>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { loadPiece, buildPiece } from './kit/pieces.js';
+import { createControls } from './kit/controls.js';
+/* ======== CONFIG - the Workshop's New game tab writes this block. Everything else can stay as it is. ======== */
+const CONFIG = /*CONFIG*/{"name":"Starter Racer","track":"","scenery":[],"car":"","carColor":"#ff2d20","laps":3,"rivals":3,"sky":"#8fb8e0","ground":"#4f8a43"}/*END CONFIG*/;
+/* ===================================================================================================================== */
+const SN = (k, d, o) => window.Studio ? Studio.num(k, d, o) : d;
+try { Studio.declare([
+  { key: 'car.top', def: 70, min: 20, max: 160, step: 1, label: 'Top speed (m/s)', group: 'Driving' },
+  { key: 'car.accel', def: 18, min: 4, max: 60, step: 0.5, label: 'Acceleration', group: 'Driving' },
+  { key: 'car.steer', def: 1.6, min: 0.4, max: 4, step: 0.05, label: 'Steering', group: 'Driving' },
+  { key: 'car.grip', def: 1, min: 0.3, max: 2.5, step: 0.05, label: 'Grip (low = slides)', group: 'Driving' },
+  { key: 'car.offroad', def: 0.55, min: 0.1, max: 1, step: 0.05, label: 'Speed kept on the grass', group: 'Driving' },
+  { key: 'ai.speed', def: 0.85, min: 0.3, max: 1.4, step: 0.01, label: 'Rival speed (x your top speed)', group: 'Rivals' },
+  { key: 'cam.back', def: 9, min: 3, max: 30, step: 0.5, label: 'Camera distance behind', group: 'Camera' },
+  { key: 'cam.up', def: 3.5, min: 0.8, max: 20, step: 0.1, label: 'Camera height', group: 'Camera' },
+  { key: 'cam.fov', def: 65, min: 30, max: 110, step: 1, label: 'Field of view', group: 'Camera' },
+  { key: 'engine.pitch', def: 1, min: 0.3, max: 3, step: 0.01, label: 'Engine pitch', group: 'Engine sound' },
+  { key: 'engine.volume', def: 0.5, min: 0, max: 1.5, step: 0.01, label: 'Engine loudness', group: 'Engine sound' },
+  { key: 'engine.tone', def: 900, min: 200, max: 5000, step: 50, label: 'Brightness (Hz)', group: 'Engine sound' },
+]); } catch (e) {}
+const $ = id => document.getElementById(id);
+const r = new THREE.WebGLRenderer({ canvas: $('c'), antialias: true }); r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); const sky = new THREE.Color(CONFIG.sky || '#8fb8e0'); scene.background = sky; scene.fog = new THREE.Fog(sky, 300, 1600);
+const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 4000);
+scene.add(new THREE.HemisphereLight(0xeef6ff, 0x4a6040, 1.4)); const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(120, 200, 80); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.MeshLambertMaterial({ color: new THREE.Color(CONFIG.ground || '#4f8a43') })); ground.rotation.x = -Math.PI / 2; scene.add(ground);
+function size() { const w = innerWidth, h = innerHeight; r.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); } addEventListener('resize', size); size();
+$('mtitle').textContent = (CONFIG.name || 'Starter Racer').toUpperCase(); $('back').onclick = () => { location.href = 'sports.html'; };
+/* ---- the track: the owner's Workshop track, else a built-in oval ---- */
+const DEFAULT = { kind: 'track', width: 14, closed: true, kerbs: true, roads: [{ pts: [{ x: -120, z: -40 }, { x: 0, z: -90 }, { x: 120, z: -40 }, { x: 140, z: 40 }, { x: 40, z: 90 }, { x: -100, z: 70 }] }] };
+let TRACK;
+try { TRACK = CONFIG.track ? await loadPiece(CONFIG.track, { THREE, scene }) : buildPiece(THREE, DEFAULT, { scene }); } catch (e) { console.warn(e); TRACK = buildPiece(THREE, DEFAULT, { scene }); }
+for (const s of CONFIG.scenery || []) { try { await loadPiece(s, { THREE, scene, GLTFLoader, meshopt: MeshoptDecoder }); } catch (e) { console.warn(e); } }
+const curve = TRACK.curves[0], LEN = curve.getLength(), WIDTH = TRACK.data.width || 12, SAMPLES = curve.getSpacedPoints(400);
+function nearest(x, z) { let bi = 0, bd = 1e18; for (let i = 0; i < SAMPLES.length; i++) { const p = SAMPLES[i], d = (p.x - x) ** 2 + (p.z - z) ** 2; if (d < bd) { bd = d; bi = i; } } return { t: bi / (SAMPLES.length - 1), d: Math.sqrt(bd) }; }
+/* ---- cars ---- */
+function carMesh(color) { const g = new THREE.Group(); const body = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.6, 4.2), new THREE.MeshStandardMaterial({ color, roughness: 0.35, metalness: 0.5 })); body.position.y = 0.6; g.add(body);
+  const cab = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.45, 1.8), new THREE.MeshStandardMaterial({ color: 0x15181d })); cab.position.set(0, 1.1, -0.2); g.add(cab);
+  const wm = new THREE.MeshStandardMaterial({ color: 0x111111 }); for (const [x, z] of [[-1, 1.4], [1, 1.4], [-1, -1.4], [1, -1.4]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.35, 14), wm); w.rotation.z = Math.PI / 2; w.position.set(x, 0.42, z); g.add(w); } return g; }
+function placeAt(o, t, side) { const p = curve.getPointAt(t % 1), d = curve.getTangentAt(t % 1); o.position.set(p.x - d.z * side, 0, p.z + d.x * side); o.rotation.y = Math.atan2(d.x, d.z); }
+const P = { o: carMesh(new THREE.Color(window.Studio ? Studio.color('car.color', CONFIG.carColor || '#ff2d20', { label: 'Your car colour', group: 'Car' }) : CONFIG.carColor)), v: 0, h: 0, lap: 0, last: 0, prog: 0 };
+if (CONFIG.car) { new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load(CONFIG.car, g => { while (P.o.children.length) P.o.remove(P.o.children[0]); const m = g.scene; const b = new THREE.Box3().setFromObject(m), s = 4.4 / Math.max(0.1, b.max.z - b.min.z, b.max.x - b.min.x); m.scale.setScalar(s); m.position.y = -b.min.y * s; P.o.add(m); }); }
+scene.add(P.o);
+const RIV = []; const COLS = [0x2266ff, 0x00c853, 0xffd500, 0x9d4edd, 0xff7b00, 0x00d4ff];
+for (let i = 0; i < (CONFIG.rivals || 0); i++) { const o = carMesh(COLS[i % COLS.length]); scene.add(o); RIV.push({ o, t: 0, lap: 0, spd: 0, side: (i % 2 ? 1 : -1) * WIDTH * 0.22, jitter: 0.92 + Math.random() * 0.12 }); }
+/* ---- controls + sound ---- */
+let AC = null, osc = null, flt = null, gn = null;
+function sound() { if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); osc = AC.createOscillator(); osc.type = 'sawtooth'; flt = AC.createBiquadFilter(); flt.type = 'lowpass'; gn = AC.createGain(); gn.gain.value = 0; osc.connect(flt); flt.connect(gn); gn.connect(AC.destination); osc.start(); } catch (e) {} }
+const input = createControls({ buttons: [{ id: 'gas', label: 'GAS', key: 'ArrowUp' }, { id: 'brake', label: 'BRAKE', key: 'ArrowDown' }], onFirstTouch: sound });
+input.show(false);
+/* ---- race ---- */
+let MODE = 'menu', T0 = 0, NOW = 0, RESULT = null;
+function start() { MODE = 'race'; sound(); $('menu').classList.add('hidden'); input.show(true); placeAt(P.o, 0.995, 0); P.v = 0; P.h = P.o.rotation.y; P.lap = 0; P.prog = nearest(P.o.position.x, P.o.position.z).t; P.dist = 0;
+  RIV.forEach((a, i) => { a.t = 0.99 - (i + 1) * 0.008; a.lap = 0; a.dist = -((i + 1) * 0.008); a.spd = 0; }); T0 = performance.now(); }
+$('go').onclick = start;
+$('msub').textContent = (CONFIG.laps || 3) + ' laps · ' + (CONFIG.rivals || 0) + ' rivals' + (window.Studio && Studio.active() ? ' · 🎛️ Studio on' : '');
+let lastT = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; NOW = now;
+  if (MODE === 'race') {
+    const c = input.read(), gas = c.buttons.gas || c.y < -0.5, brake = c.buttons.brake || c.y > 0.5;
+    const top = SN('car.top', 70), acc = SN('car.accel', 18), steer = SN('car.steer', 1.6), grip = SN('car.grip', 1);
+    const near = nearest(P.o.position.x, P.o.position.z), off = near.d > WIDTH / 2 + 1, lim = top * (off ? SN('car.offroad', 0.55) : 1);
+    P.v += (gas ? acc : -acc * 0.35) * dt; if (brake) P.v -= acc * 2.2 * dt; P.v = Math.max(0, Math.min(lim, P.v)); if (P.v > lim) P.v -= acc * 3 * dt;
+    P.h -= c.x * steer * dt * Math.min(1, P.v / 12) * Math.min(1.5, grip + 0.3);
+    P.o.rotation.y = P.h; P.o.position.x += Math.sin(P.h) * P.v * dt; P.o.position.z += Math.cos(P.h) * P.v * dt;
+    // progress + laps (forward only)
+    let dtp = near.t - P.prog; if (dtp < -0.5) dtp += 1; if (dtp > 0.5) dtp -= 1; if (Math.abs(dtp) < 0.05) { P.dist += dtp; P.prog = near.t; }
+    P.lap = Math.floor(P.dist + 0.005);
+    for (const a of RIV) { a.spd += (top * SN('ai.speed', 0.85) * a.jitter - a.spd) * dt * 0.6; a.dist += a.spd * dt / LEN; a.t = ((a.dist % 1) + 1) % 1; placeAt(a.o, a.t, a.side); a.lap = Math.floor(a.dist + 0.005); }
+    const laps = CONFIG.laps || 3, order = [{ me: 1, d: P.dist }].concat(RIV.map(a => ({ d: a.dist }))).sort((x, y) => y.d - x.d), pos = order.findIndex(x => x.me) + 1;
+    $('hlap').textContent = 'LAP ' + Math.min(laps, P.lap + 1) + ' / ' + laps; $('hpos').textContent = 'P' + pos + ' / ' + order.length; $('htime').textContent = ((now - T0) / 1000).toFixed(1) + ' s'; $('hspd').textContent = Math.round(P.v * 3.6) + ' km/h' + (off ? ' · off the road' : '');
+    if (P.lap >= laps) { MODE = 'menu'; input.show(false); $('menu').classList.remove('hidden'); $('mtitle').textContent = pos === 1 ? 'YOU WIN!' : 'FINISHED P' + pos; $('msub').textContent = ((now - T0) / 1000).toFixed(2) + ' s · ' + laps + ' laps'; $('go').textContent = 'RACE AGAIN'; }
+    if (AC && osc) { const t = AC.currentTime; osc.frequency.setTargetAtTime((55 + P.v * 3.2) * SN('engine.pitch', 1), t, 0.05); flt.frequency.setTargetAtTime(SN('engine.tone', 900), t, 0.05); gn.gain.setTargetAtTime(0.05 + 0.12 * SN('engine.volume', 0.5) * (gas ? 1 : 0.5), t, 0.08); }
+  } else if (AC && gn) gn.gain.setTargetAtTime(0, AC.currentTime, 0.1);
+  if (!(window.Studio && Studio.ownsCamera())) {
+    const my = window.Studio && Studio.camView(); const back = my ? my.back : SN('cam.back', 9), up = my ? my.up : SN('cam.up', 3.5), side = my ? my.side : 0, ahead = my ? my.ahead : 8, fov = my ? my.fov : SN('cam.fov', 65);
+    const h = MODE === 'race' ? P.h : P.o.rotation.y + now / 3000, f = new THREE.Vector3(Math.sin(h), 0, Math.cos(h)), s = new THREE.Vector3(f.z, 0, -f.x);
+    const want = new THREE.Vector3().copy(P.o.position).addScaledVector(f, -back).addScaledVector(s, side); want.y = up; camera.position.lerp(want, 1 - Math.exp(-dt * 8));
+    camera.lookAt(P.o.position.x + f.x * ahead, 1, P.o.position.z + f.z * ahead); if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  }
+  r.render(scene, camera); requestAnimationFrame(frame);
+}
+placeAt(P.o, 0.995, 0); P.h = P.o.rotation.y; camera.position.set(0, 30, 60);
+try { Studio.world({ THREE, scene, camera, renderer: r, canvas: r.domElement, groundY: () => 0, center: () => ({ x: P.o.position.x, z: P.o.position.z }), camDefault: { back: 12, up: 5, side: 0, ahead: 10, fov: 65 } }); Studio.refresh(); } catch (e) {}
+requestAnimationFrame(frame);
+window.__game = { CONFIG, P, RIV, start, mode: () => MODE };
+</script>
+</body></html>
