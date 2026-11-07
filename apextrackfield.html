@@ -3308,6 +3308,22 @@ const ai=ENG.aiBest||[];
 if(ev.timed && ENG.place) return clamp(ENG.place,1,4);
 return 1+ai.filter(b=>b>res.value).length;
 }
+// F-T-004: the meet standings used rivalMark() draws made at meet start, but the event placements come from the marks the rivals
+// really got in the event (ENG.aiBest / ai[i].tTarget / relay teams). Score each rival from that actual mark; fall back to the
+// precomputed draw only when the engine kept none (skip). A player who placed 1st can never be out-scored by a rival in that event.
+function careerRivalPoints(ev,res,i,rv,place,fallback){
+let m=null;
+try{
+if(ENG){
+if(Array.isArray(ENG.aiBest)&&typeof ENG.aiBest[i]==='number') m=ENG.aiBest[i];
+else if(ENG.teams&&ENG.teams[i+1]) m=ENG.teams[i+1].finished?ENG.teams[i+1].total:ENG.teams[i+1].tTarget;
+else if(ENG.ai&&ENG.ai[i]) m=(typeof ENG.ai[i].tTarget==='number')?ENG.ai[i].tTarget:ENG.ai[i].t;
+}
+}catch(e){ m=null; }
+let p=(typeof m==='number'&&isFinite(m)&&m>0)?pointsFor(ev,m):fallback;
+if(place===1&&res&&isFinite(res.points)) p=Math.min(p,res.points);
+return p;
+}
 function careerEventDone(ev,res,newBest){
 const C=G.car, place=careerPlace(ev,res);
 const tp=C.champ?[6,4,2,1][place-1]||0:[3,2,1,0][place-1]||0;
@@ -3315,7 +3331,7 @@ CAR.tp+=tp; CAR.stats.tpEarned+=tp;
 C.results.push({ev:ev.name,place,pts:res.points,tp});
 if(C.champ){
 C.totals[athleteName]+=res.points;
-G.carRivals.forEach((r,i)=>{ C.totals[r.name]+=C.rivalTotals[r.name][C.evIdx]; });
+G.carRivals.forEach((r,i)=>{ C.totals[r.name]+=careerRivalPoints(ev,res,i,r,place,C.rivalTotals[r.name][C.evIdx]); }); // F-T-004: rivals score the mark they actually achieved in this event
 }
 saveCareer();
 C.evIdx++;
@@ -3778,6 +3794,7 @@ window.__tf={
 hurdleTilt:()=>{ const im=W3D.hurdlesMesh, M=new THREE.Matrix4(), out=[]; for(let k=0;k<im.count;k++){ im.getMatrixAt(k,M); out.push(+M.elements[5].toFixed(2)); } return out; }, // 1 = standing, ~0 = knocked flat
 // owner 2026-10-17: lets the play tests run any event's real engine quickly (no rendering)
 engines:()=>({EV_BY_ID,EVENTS,freeRivals,sprint:createSprintEngine,distance:createDistanceEngine,hurdles:createHurdlesEngine,relay:createRelayEngine,longjump:createLongJumpEngine,triplejump:createTripleJumpEngine,throw:createThrowEngine,career:{SEASON_MEETS,CAREER_MEETS,meetName}}),
+carTotals:()=> G&&G.car&&G.car.totals? JSON.parse(JSON.stringify(G.car.totals)) : null, // F-T-004: read-only career meet totals for the play test
 stadium:()=> W3D.stadium? W3D.stadium.report(): null,
 lanePoint:(s,l)=>lanePoint(s,laneOff(l)),
 laneOff:(l)=>laneOff(l),

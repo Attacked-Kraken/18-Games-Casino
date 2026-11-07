@@ -3970,4 +3970,44 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'tester-career-final-rival-actual-marks',
+    mode: 'f-t-004',
+    ask: 'FIX F-T-004: the career championship standings must score each rival from the mark they actually achieved in the event (not a fresh rivalMark() draw made at meet start). Forces every rival to a hopeless mark in event 1 and fails if any rival is still credited with hundreds of points.',
+    async test(page, h) {
+      const SAVE = { name: 'YOU', colA: '#2456c8', colB: '#ffd34d', season: 4, meet: 13, tp: 350, up: { spd: 5, stam: 5, tech: 5 }, stats: { meets: 49, wins: 100, tpEarned: 400 }, done: false };
+      const screenIs = (id) => h.eval((w) => (document.querySelector('.screen.on') || {}).id === w, id).catch(() => false);
+      const waitScreen = async (id, tries) => { for (let i = 0; i < (tries || 40); i++) { if (await screenIs(id)) return true; await h.wait(150); } return false; };
+      await h.eval((s) => { localStorage.setItem('tfapex_career', JSON.stringify(s)); location.reload(); return true; }, SAVE).catch(() => {});
+      for (let g = 0; g < 80; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(150); }
+      if (!await h.eval(() => { const b = document.getElementById('bCareer'); if (!b) return false; b.click(); return true; }).catch(() => false)) return 'could not open career (F-T-004)';
+      await h.wait(900);
+      await h.eval(() => { const b = document.getElementById('bCareerMeet'); if (b) b.click(); return true; }).catch(() => {});
+      if (!await waitScreen('card', 60)) return 'card screen never appeared for event 1 (F-T-004)';
+      await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+      let hasEng = false;
+      for (let i = 0; i < 40 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(400); }
+      if (!hasEng) return 'no engine for event 1 (F-T-004)';
+      // every rival really does badly in this event: worst possible mark for the event type
+      const forced = await h.eval(() => {
+        const e = window.__tf.eng(), timed = !!(e.ev && e.ev.timed);
+        if (Array.isArray(e.aiBest)) e.aiBest = e.aiBest.map(() => 0.01);
+        if (e.teams) e.teams.slice(1).forEach((t) => { t.tTarget = 9999; t.finished = false; });
+        else if (Array.isArray(e.ai)) e.ai.forEach((a) => { if (typeof a.tTarget === 'number') a.tTarget = 9999; if (typeof a.t === 'number') a.t = 9999; });
+        return { timed, n: (e.aiBest || e.ai || []).length };
+      }).catch(() => null);
+      if (!forced || !forced.n) return 'could not force the rivals marks (F-T-004)';
+      await h.eval(() => { window.__tf.eng().done = true; window.__tf.eng().finishT = 0; return true; }).catch(() => {});
+      // finish the event through the game's own driver
+      const driveChunk = () => { const e = window.__tf.eng(); if (!e) return 'no-engine'; let n = 0; while (n < 1200 && !e.done) { e.update(1 / 60); n++; } return e.done ? 'done' : 'going'; };
+      await h.eval(driveChunk).catch(() => {});
+      if (!await waitScreen('results', 80)) return 'results screen never appeared after event 1 (F-T-004)';
+      const tot = await h.eval(() => window.__tf.carTotals && window.__tf.carTotals()).catch(() => null);
+      if (!tot) return 'career totals hook missing (F-T-004)';
+      const rv = await h.eval((t) => Object.keys(t).filter((n) => n !== 'YOU').map((n) => [n, t[n]]), tot).catch(() => []);
+      const bad = rv.filter((x) => x[1] > 150);
+      if (bad.length) return 'rivals were credited with points for marks they never got in event 1 (hopeless mark forced): ' + bad.map((x) => x[0] + ' ' + x[1] + ' PTS').join(', ') + ' - standings must come from the actual event marks (F-T-004)';
+      return true;
+    },
+  },
 ];
