@@ -1805,4 +1805,34 @@ export default [
       return true;
     },
   },
+  // owner Nov 7 2026 10:20 AM (photo): fence posts / poles stood in the middle of the road to the pit, and PIT did nothing in qualifying
+  {
+    id: 'play-pit-lane-clear', mode: 'race',
+    ask: 'Nothing (fence posts, lamp poles, tyre walls, marshal posts) stands on the pit lane - owner photo Nov 7 2026',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let r = null;
+      for (let i = 0; i < 60; i++) { r = await h.eval(() => window.__test && window.__test.pitClutter ? window.__test.pitClutter(4) : null).catch(() => null); if (r && r.pts) break; await h.wait(400); }
+      if (!r || !r.pts) return 'the pit lane line never loaded (no pitClutter / no pit points)';
+      if (r.n > 0) return r.n + ' trackside thing(s) stand on the pit lane, e.g. at ' + JSON.stringify(r.near.slice(0, 2));
+      return true;
+    },
+  },
+  {
+    id: 'play-pit-in-quali', mode: 'quali',
+    ask: 'PIT works in qualifying: a tap arms the stop - owner Nov 7 2026 "can\'t enter pit either"',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=quali'; }).catch(() => {});
+      await h.wait(1500);
+      let md = '?';
+      for (let i = 0; i < 60; i++) { md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'quali') break; await h.wait(400); }
+      if (md !== 'quali') return 'never reached qualifying at ?test=quali (mode ' + md + ')';
+      await h.wait(800);
+      await h.eval(() => { const b = document.getElementById('btnPit'); b && b.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); });
+      const pr = await h.eval(() => window.__test.pitProbe());
+      if (!pr || !pr.armed) return 'tapped PIT in qualifying but the stop was not armed';
+      return true;
+    },
+  },
 ];
