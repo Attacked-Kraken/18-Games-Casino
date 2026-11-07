@@ -35,7 +35,7 @@
   const ensure = () => { if (!mine) mine = JSON.parse(JSON.stringify(pub)); return mine; };
   const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(mine)); } catch (e) {} };
   const emit = (ev, a) => (listeners[ev] || []).forEach(f => { try { f(a); } catch (e) { console.warn('studio listener', e); } });
-  const on = () => { try { return /[?&]studio=1/.test(location.search) || localStorage.getItem('apexStudioOn') === '1'; } catch (e) { return false; } };
+  const on = () => { if (window.__apxTest) return false; try { return /[?&]studio=1/.test(location.search) || localStorage.getItem('apexStudioOn') === '1'; } catch (e) { return false; } };
   if (/[?&]studio=1/.test(location.search)) { try { localStorage.setItem('apexStudioOn', '1'); } catch (e) {} }
 
   function declare(list) { (list || []).forEach(d => reg(d.key, d.def, d, d.kind || 'num')); }      // a game lists its sliders up front, so they show before they are used
@@ -86,6 +86,7 @@
     W.cv = o.canvas || (o.renderer && o.renderer.domElement);
     if (!window.__studioTaps) { window.__studioTaps = 1; window.addEventListener('pointerdown', tapStart, true); window.addEventListener('pointerup', tapEnd, true); window.addEventListener('pointermove', tapMove, true);
       window.addEventListener('pointerdown', sceneTapStart, true); window.addEventListener('pointerup', sceneTapEnd, true); window.addEventListener('pointermove', sceneTapMove, true); }
+    if (!W.keptRan) { W.keptRan = 1; setTimeout(runKept, 1500); }   // console lines the owner kept (mods/<game>.json "code")
     applyAll(); E.tries = 0; const re = setInterval(() => { applyAll(); if (++E.tries > 20) clearInterval(re); }, 1500);    // objects a game builds a little later still get their edits
   }
   let tap = null;
@@ -190,6 +191,85 @@
   function camView() { const c = D().cams || []; return camPick >= 0 && c[camPick] ? c[camPick] : null; }
   function camNext() { const n = (D().cams || []).length; camPick = n ? (camPick + 1 >= n ? -1 : camPick + 1) : -1; try { localStorage.setItem(KEY + '_cam', camPick); } catch (e) {} return camView(); }
 
+
+  /* ---------- CODE + PHYSICS (owner Nov 7 2026 'I want coding control! And three.js physics control in game development'):
+     Physics = every number next to a physics word in the game's REAL code (gravity, grip, mass, speed, friction, bounce...), change it, ▶ run the game with it,
+     📤 send it as a real code fix (OLD/NEW) through the controller. Code = edit any part of the game's code, run it, send it; and a live three.js console
+     (THREE, scene, camera, renderer, game, find('name')) - a line you like can be kept in the game for everyone. ---------- */
+  const C = { lines: null, loading: false, err: '', q: '', pq: '', out: '', hit: -1, chunk: '', console: '' };
+  const CKEY = 'apexStudioCode_' + GAME;
+  let CE = { nums: {}, chunks: [] };          // nums: {line: {col: {old, neu}}}  chunks: [{a, b, old, text}] (lines a..b replaced)
+  try { const s = localStorage.getItem(CKEY); if (s) CE = Object.assign(CE, JSON.parse(s)); } catch (e) {}
+  const saveCE = () => { try { localStorage.setItem(CKEY, JSON.stringify(CE)); } catch (e) {} };
+  const PHYS = /(gravity|grav|grip|mass|weight|friction|drag|damp|accel|acc|speed|spd|top|vmax|maxv|brake|steer|turn|bounce|restitution|elastic|jump|lift|spring|stiff|force|power|torque|thrust|impulse|kick|throw|launch|wind|slide|slip|traction|downforce|aero|inertia|rpm|gear|boost|velocity|vel|decel|roll)/i;
+  function loadSrc() {
+    if (C.lines || C.loading) return; C.loading = true;
+    fetch(location.pathname + '?src=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : Promise.reject('HTTP ' + r.status)).then(t => {
+      C.lines = t.split('\n'); C.loading = false;
+      for (const i of Object.keys(CE.nums)) for (const c of Object.keys(CE.nums[i])) { const e = CE.nums[i][c]; if ((C.lines[i] || '').substr(+c, e.old.length) !== e.old) delete CE.nums[i][c]; }  // the file changed since: drop stale edits
+      CE.chunks = CE.chunks.filter(k => C.lines.slice(k.a, k.b + 1).join('\n') === k.old); saveCE(); ui.draw();
+    }).catch(e => { C.loading = false; C.err = String(e); ui.draw(); });
+  }
+  let NUMS = null;
+  function physNums() {                         // every number with a physics word right before it (same line, within 40 letters)
+    if (NUMS || !C.lines) return NUMS || [];
+    const out = [], re = /(^|[^\w.#$])(-?\d+(?:\.\d+)?)(?![\w.])/g;
+    let inJs = false;
+    C.lines.forEach((ln, i) => { const wasJs = inJs; if (/<script(?![^>]*\bsrc=)[^>]*>/i.test(ln) && !/type="importmap"/i.test(ln)) inJs = true; if (/<\/script>/i.test(ln)) inJs = false; if (!wasJs && !inJs) return;   // only the game's own JavaScript, never CSS / HTML
+      if (!PHYS.test(ln) || /^\s*(\/\/|\*|<)/.test(ln) && !/<script/.test(ln)) return; let m; re.lastIndex = 0;
+      while ((m = re.exec(ln))) { const col = m.index + m[1].length, before = ln.slice(Math.max(0, col - 40), col), ws = before.match(new RegExp('[\\w.]*' + PHYS.source + '\\w*', 'gi')), w = ws && [ws[ws.length - 1]];
+        const cm = ln.search(/(^|[^:])\/\//); if (cm >= 0 && col > cm) continue;        // inside a // comment
+        if (!w || /0x$/i.test(before) || /['"][^'"]*$/.test(before.slice(-12))) continue;
+        const kk = before.match(/(\w+)\s*[:=]\s*\(?\s*$/), wd = w[0].replace(/[^\w.]+$/, '');
+        out.push({ i, col, old: m[2], word: wd + (kk && kk[1] !== wd.split('.').pop() ? ' · ' + kk[1] : ''), ctx: ln.slice(Math.max(0, col - 46), col).replace(/^\s+/, ''), after: ln.slice(col + m[2].length, col + m[2].length + 18) }); if (out.length >= 1500) break; } });
+    return (NUMS = out);
+  }
+  function lineNow(i) { const ln = C.lines[i], ed = CE.nums[i]; if (!ed) return ln; let t = ln; Object.keys(ed).map(Number).sort((a, b) => b - a).forEach(c => { const e = ed[c]; t = t.slice(0, c) + e.neu + t.slice(c + e.old.length); }); return t; }
+  function sourceNow() {                        // the game's code with all of my changes in it
+    const L = C.lines.map((ln, i) => CE.nums[i] ? lineNow(i) : ln);
+    CE.chunks.slice().sort((x, y) => y.a - x.a).forEach(k => L.splice(k.a, k.b - k.a + 1, ...k.text.split('\n')));
+    return L.join('\n');
+  }
+  function changeCount() { let n = CE.chunks.length; for (const i in CE.nums) n += Object.keys(CE.nums[i]).length; return n; }
+  function runMine() {                          // the changed game runs over the page in a frame; the original stays underneath
+    let html = sourceNow(); const base = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
+    html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__apxTest=1<\/script>');
+    let box = document.getElementById('apxRun'); if (box) box.remove();
+    box = document.createElement('div'); box.id = 'apxRun'; box.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#000';
+    box.innerHTML = '<iframe style="border:0;width:100%;height:100%" allow="autoplay; fullscreen"></iframe><div style="position:fixed;left:50%;transform:translateX(-50%);bottom:max(6px,env(safe-area-inset-bottom,0px));display:flex;gap:6px;font:700 14px system-ui"><button data-x="back" style="padding:9px 12px;border-radius:10px;border:1px solid #fff6;background:#000c;color:#fff">✕ Back to the real game</button><button data-x="send" style="padding:9px 12px;border-radius:10px;border:0;background:#ffd23a;color:#111">📤 Send this as a code fix</button></div>';
+    document.body.appendChild(box); box.querySelector('iframe').srcdoc = html;
+    box.querySelector('[data-x=back]').onclick = () => box.remove(); box.querySelector('[data-x=send]').onclick = () => { box.remove(); sendFix(); };
+  }
+  function fixPack() {                          // OLD/NEW pairs, each OLD made unique in the file by adding the lines around it
+    const src = C.lines.join('\n'), regions = [];
+    for (const i in CE.nums) if (Object.keys(CE.nums[i]).length && !CE.chunks.some(k => +i >= k.a && +i <= k.b)) regions.push({ a: +i, b: +i, text: lineNow(+i) });
+    CE.chunks.forEach(k => regions.push({ a: k.a, b: k.b, text: k.text }));
+    regions.sort((x, y) => x.a - y.a); const pairs = [];
+    for (const r of regions) { let a = r.a, b = r.b, pre = [], post = [];
+      for (let k = 0; k < 8; k++) { const old = pre.concat(C.lines.slice(r.a, r.b + 1), post).join('\n'); if (old.trim() && src.split(old).length === 2) break;
+        if (k % 2 === 0 && a > 0) pre.unshift(C.lines[--a]); else if (b < C.lines.length - 1) post.push(C.lines[++b]); }
+      pairs.push('OLD:\n' + pre.concat(C.lines.slice(r.a, r.b + 1), post).join('\n') + '\nNEW:\n' + pre.concat(r.text.split('\n'), post).join('\n')); }
+    return 'FIX PACK\nFILE: ' + GAME + '.html\nWHY: owner code change from the in-game Studio (' + changeCount() + ' change' + (changeCount() === 1 ? '' : 's') + ')\n' + pairs.join('\n') + '\nEND';
+  }
+  function sendFix() { if (!changeCount()) { ui.msg = 'No code changes yet.'; ui.draw(); return; } const fp = fixPack();
+    try { navigator.clipboard.writeText(fp).catch(() => {}); } catch (e) {}
+    const b64 = btoa(unescape(encodeURIComponent(fp))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); openCtl('/fix#fp=' + b64); }
+  function runConsole(code) {                   // live three.js console against the running game
+    const find = n => { let f = null; W.scene && W.scene.traverse(o => { if (!f && o.name && o.name.toLowerCase().includes(String(n).toLowerCase())) f = o; }); return f; };
+    if (!W.scene) return '✗ The 3D world is not up yet - start playing (or press START), then run it again.';
+    try { const r = new Function('THREE', 'scene', 'camera', 'renderer', 'game', 'find', 'Studio', '"use strict";\n' + (/^\s*(return|const|let|var|for|if|\{)/.test(code) || code.includes(';') || code.includes('\n') ? code : 'return (' + code + ')'))(W.THREE, W.scene, W.camera, W.renderer, window.__game || window.__test, find, window.Studio);
+      let t; try { t = r && r.isObject3D ? (r.type + ' "' + (r.name || '') + '" at ' + ['x', 'y', 'z'].map(a => r.position[a].toFixed(2)).join(', ')) : JSON.stringify(r, (k, v) => typeof v === 'number' ? +v.toFixed(4) : v, 1); } catch (e) { t = String(r); }
+      return '✓ ' + (t === undefined ? 'done' : String(t).slice(0, 1200)); } catch (e) { return '✗ ' + e.message; }
+  }
+  function runKept() { (D().code || []).forEach(c => { try { runConsole(c); } catch (e) {} }); }
+  function liveNums() {                         // numbers inside the running game's own objects (window.__game): change them while you play
+    const g = window.__game, out = []; if (!g || typeof g !== 'object') return out;
+    const walk = (o, path, d) => { if (!o || typeof o !== 'object' || d > 2 || out.length > 60 || o.isObject3D || o.isVector3) return;
+      for (const k of Object.keys(o)) { const v = o[k]; if (typeof v === 'number' && isFinite(v)) out.push({ path: path + k, v }); else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, path + k + '.', d + 1); } };
+    walk(g, '', 0); return out;
+  }
+  function setLive(path, v) { const ks = path.split('.'); let o = window.__game; for (let i = 0; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
+
   /* ---------- the panel ---------- */
   const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
@@ -216,8 +296,8 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   ui.draw = function () {
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
-    if (!ui.open) { W.placing = false; return; }
-    const tabs = [['scene', 'Scene'], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
+    if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code') ? 'min(720px,98vw)' : '';
+    const tabs = [['scene', 'Scene'], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -243,6 +323,36 @@
           h += `<p class="sub">Tap a name to pick it (▸ = has things inside: pick it, then "⬆ Bigger group" / tap inside it in the game).</p>`;
         }
         h += `<div style="margin-top:10px"><button data-fixit="1">🔧 Fix a bug in this game (opens your controller)</button></div>`;
+      }
+    } else if (ui.tab === 'phys' || ui.tab === 'code') {
+      const n = changeCount();
+      h += `<div style="position:sticky;top:-10px;background:#0e1219;padding:6px 0;z-index:2"><b class="${n ? 'chg' : ''}">${n} code change${n === 1 ? '' : 's'}</b> <button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with them</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button>${n ? '<button data-undoall="1">↩️ Undo all</button>' : ''}</div>`;
+      if (ui.msg) { h += `<p class="sub chg">${esc(ui.msg)}</p>`; ui.msg = ''; }
+      if (!C.lines) { h += C.err ? `<p class="sub">Could not read the game's code: ${esc(C.err)}</p>` : '<p class="sub">Reading the game\'s code…</p>'; loadSrc(); }
+      else if (ui.tab === 'phys') {
+        const L = liveNums();
+        if (L.length) { h += `<h3>Live - changes the game right now</h3>`; L.slice(0, 40).forEach(x => { h += `<div class="row"><label><span>${esc(x.path)}</span><input type="number" step="any" data-live="${esc(x.path)}" value="${+x.v.toFixed(4)}" style="width:110px;font:13px ui-monospace,Menlo,monospace;background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px;padding:4px"></label></div>`; }); }
+        const all = physNums(), q = C.pq.toLowerCase(), list = all.filter(x => !q || (x.word + ' ' + x.ctx + ' ' + (x.i + 1)).toLowerCase().includes(q));
+        h += `<h3>In the code (${all.length} physics numbers)</h3><input type="search" data-pq="1" placeholder="filter: grip, gravity, jump, line 1200…" value="${esc(C.pq)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
+        list.slice(0, 120).forEach(x => { const ed = (CE.nums[x.i] || {})[x.col], v = ed ? ed.neu : x.old;
+          h += `<div class="row" style="border-bottom:1px solid #222a36;padding-bottom:4px"><div class="sub" style="font:11px ui-monospace,Menlo,monospace;word-break:break-all">line ${x.i + 1}: …${esc(x.ctx)}<b class="chg">${esc(x.old)}</b>${esc(x.after)}</div><label><span class="${ed ? 'chg' : ''}">${esc(x.word)}</span><span><button data-nstep="${x.i}:${x.col}:-1">−</button><input type="number" step="any" data-n="${x.i}:${x.col}" value="${esc(v)}" style="width:96px;font:13px ui-monospace,Menlo,monospace;background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px;padding:4px"><button data-nstep="${x.i}:${x.col}:1">+</button></span></label></div>`; });
+        if (list.length > 120) h += `<p class="sub">${list.length - 120} more - type in the filter to narrow it.</p>`;
+        h += `<p class="sub">− / + changes the number by 10%. Then ▶ Run to drive it, 📤 Send to make it real (a Muse window puts it in the code, the robot checks it).</p>`;
+      } else {
+        h += `<h3>Live three.js console</h3><p class="sub">Runs inside the game now. You have <b>THREE, scene, camera, renderer, game, find('name')</b>. Try: <code>find('ball').scale.setScalar(3)</code> · <code>scene.fog = null</code> · <code>camera.fov = 90; camera.updateProjectionMatrix()</code></p>`;
+        h += `<textarea data-con="1" spellcheck="false" style="min-height:70px">${esc(C.console)}</textarea><button data-conrun="1">▶ Run now</button><button data-conkeep="1">📌 Keep it in the game</button>`;
+        if (C.out) h += `<pre style="white-space:pre-wrap;font:11px ui-monospace,Menlo,monospace;background:#05070b;padding:6px;border-radius:8px;max-height:160px;overflow:auto">${esc(C.out)}</pre>`;
+        const kept = D().code || []; if (kept.length) { h += `<p class="sub">Kept (run every time the game loads; Save tab → Publish sends them):</p>`; kept.forEach((c, i) => { h += `<div class="sub" style="font:11px ui-monospace,Menlo,monospace">${esc(c.slice(0, 140))} <button data-condel="${i}">🗑️</button></div>`; }); }
+        h += `<h3>Edit the game's code</h3><input type="search" data-cq="1" placeholder="find in the code: buildTrackside, jump, PIT…" value="${esc(C.q)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
+        if (C.hit >= 0) {
+          const a = Math.max(0, C.hit - 6), b = Math.min(C.lines.length - 1, C.hit + 24), mineK = CE.chunks.find(k => k.a === a);
+          h += `<p class="sub">Lines ${a + 1}-${b + 1} of ${C.lines.length}. Change anything, then "Use this change".</p><textarea data-chunk="${a}:${b}" spellcheck="false" style="min-height:300px;white-space:pre;overflow:auto">${esc(mineK ? mineK.text : C.lines.slice(a, b + 1).map((l, i) => CE.nums[a + i] ? lineNow(a + i) : l).join('\n'))}</textarea>`;
+          h += `<button data-chunkuse="1">✓ Use this change</button><button data-chunkup="1">⬆ Earlier lines</button><button data-chunkdn="1">⬇ Later lines</button><button data-chunkx="1">✕ Close</button>`;
+        } else if (C.q.length >= 2) {
+          const q = C.q.toLowerCase(), hits = []; C.lines.forEach((l, i) => { if (hits.length < 40 && l.toLowerCase().includes(q)) hits.push(i); });
+          h += hits.length ? hits.map(i => `<div><button data-hit="${i}" style="text-align:left;width:100%;font:11px ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i + 1}: ${esc(C.lines[i].trim().slice(0, 90))}</button></div>`).join('') : '<p class="sub">not found</p>';
+        }
+        if (CE.chunks.length) { h += `<h3>My code changes</h3>`; CE.chunks.forEach((k, i) => { h += `<div class="sub">lines ${k.a + 1}-${k.b + 1} <button data-chunkdel="${i}">↩️ undo</button></div>`; }); }
       }
     } else if (ui.tab === 'tune') {
       const groups = {}; order.forEach(k => { (groups[defs[k].group] = groups[defs[k].group] || []).push(k); });
@@ -285,6 +395,28 @@
       h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
     ui.el.innerHTML = h;
+    const rn = ui.el.querySelector('[data-run]'); if (rn) rn.onclick = runMine;
+    const sd = ui.el.querySelector('[data-send]'); if (sd) sd.onclick = sendFix;
+    const ua = ui.el.querySelector('[data-undoall]'); if (ua) ua.onclick = () => { if (!ua.dataset.sure) { ua.dataset.sure = 1; ua.textContent = 'Tap again to undo all code changes'; return; } CE = { nums: {}, chunks: [] }; saveCE(); ui.draw(); };
+    const pq = ui.el.querySelector('[data-pq]'); if (pq) pq.oninput = () => { C.pq = pq.value; const p = pq.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-pq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
+    const setN = (key, v) => { const [i, col] = key.split(':').map(Number), x = (NUMS || []).find(z => z.i === i && z.col === col); if (!x) return; v = String(v).trim();
+      CE.nums[i] = CE.nums[i] || {}; if (v === x.old || v === '' || isNaN(+v)) delete CE.nums[i][col]; else CE.nums[i][col] = { old: x.old, neu: v }; if (!Object.keys(CE.nums[i]).length) delete CE.nums[i]; saveCE(); };
+    ui.el.querySelectorAll('[data-n]').forEach(inp => inp.onchange = () => { setN(inp.dataset.n, inp.value); ui.draw(); });
+    ui.el.querySelectorAll('[data-nstep]').forEach(b => b.onclick = () => { const [i, col, dir] = b.dataset.nstep.split(':'), inp = ui.el.querySelector(`[data-n="${i}:${col}"]`), v = +inp.value || 0, dec = (inp.value.split('.')[1] || '').length;
+      let nv = v === 0 ? (+dir) * 0.1 : v * (1 + 0.1 * dir); nv = +nv.toFixed(Math.max(dec, Math.abs(nv) < 10 ? 2 : 1)); setN(i + ':' + col, String(nv)); ui.draw(); });
+    ui.el.querySelectorAll('[data-live]').forEach(inp => inp.onchange = () => { if (inp.value !== '' && isFinite(+inp.value)) setLive(inp.dataset.live, +inp.value); });
+    const con = ui.el.querySelector('[data-con]'); if (con) con.oninput = () => { C.console = con.value; };
+    const cr = ui.el.querySelector('[data-conrun]'); if (cr) cr.onclick = () => { C.out = runConsole(C.console) + (C.out ? '\n' + C.out : ''); C.out = C.out.slice(0, 3000); ui.draw(); };
+    const ck = ui.el.querySelector('[data-conkeep]'); if (ck) ck.onclick = () => { const t = C.console.trim(); if (!t) return; const r = runConsole(t); if (r[0] === '✗') { C.out = 'Not kept - it has an error: ' + r; ui.draw(); return; } const m = ensure(); (m.code = m.code || []).push(t); saveLocal(); C.out = 'Kept. It runs every time the game loads on this phone; Save → Publish sends it to everyone.'; ui.draw(); };
+    ui.el.querySelectorAll('[data-condel]').forEach(b => b.onclick = () => { const m = ensure(); (m.code || []).splice(+b.dataset.condel, 1); saveLocal(); ui.draw(); });
+    const cq = ui.el.querySelector('[data-cq]'); if (cq) cq.oninput = () => { C.q = cq.value; C.hit = -1; const p = cq.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-cq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
+    ui.el.querySelectorAll('[data-hit]').forEach(b => b.onclick = () => { C.hit = +b.dataset.hit; ui.draw(); });
+    const cu = ui.el.querySelector('[data-chunkuse]'); if (cu) cu.onclick = () => { const ta = ui.el.querySelector('[data-chunk]'), [a, b] = ta.dataset.chunk.split(':').map(Number), old = C.lines.slice(a, b + 1).join('\n');
+      CE.chunks = CE.chunks.filter(k => k.b < a || k.a > b); for (let i = a; i <= b; i++) delete CE.nums[i]; if (ta.value !== old) CE.chunks.push({ a, b, old, text: ta.value }); saveCE(); ui.msg = ta.value !== old ? 'Change kept. ▶ Run to try it, 📤 Send to make it real.' : 'No change in those lines.'; C.hit = -1; ui.draw(); };
+    const cup = ui.el.querySelector('[data-chunkup]'); if (cup) cup.onclick = () => { C.hit = Math.max(6, C.hit - 25); ui.draw(); };
+    const cdn = ui.el.querySelector('[data-chunkdn]'); if (cdn) cdn.onclick = () => { C.hit = Math.min(C.lines.length - 1, C.hit + 25); ui.draw(); };
+    const cx = ui.el.querySelector('[data-chunkx]'); if (cx) cx.onclick = () => { C.hit = -1; ui.draw(); };
+    ui.el.querySelectorAll('[data-chunkdel]').forEach(b => b.onclick = () => { CE.chunks.splice(+b.dataset.chunkdel, 1); saveCE(); ui.draw(); });
     ui.el.querySelectorAll('[data-tool]').forEach(b => b.onclick = () => { E.tool = b.dataset.tool; ui.draw(); });
     const fz = ui.el.querySelector('[data-freeze]'); if (fz) fz.onclick = () => { E.freeze = !E.freeze; ui.draw(); };
     ui.el.querySelectorAll('[data-pos]').forEach(i => i.onchange = () => { const o = E.sel; if (!o) return; o.position[i.dataset.pos] = +i.value || 0; recordTransform(o); });
@@ -327,5 +459,5 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
-    data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
+    code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();
