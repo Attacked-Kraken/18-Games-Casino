@@ -6,6 +6,17 @@
   <link rel="icon" href="data:,">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Apex Flight · Apex Arcade</title>
+<script src="kit/studio.js"></script><!-- owner Nov 7 2026: 🎛️ Studio - his no-code editor (?studio=1 or the Game Development page's STUDIO switch) -->
+<script>/* owner Nov 7 2026: every Studio slider of this game, listed up front */
+try{ Studio.declare([
+ {key:'jet.thrust',def:1,min:0.5,max:2,step:0.01,label:'Engine power (1 = today)',group:'Flying'},
+ {key:'jet.lift',def:1,min:0.5,max:2,step:0.01,label:'Lift (easier to climb)',group:'Flying'},
+ {key:'jet.pitch',def:1,min:0.4,max:2,step:0.01,label:'Pitch quickness (nose up/down)',group:'Flying'},
+ {key:'jet.roll',def:1,min:0.4,max:2,step:0.01,label:'Roll quickness',group:'Flying'},
+ {key:'cam.chase.back',def:17,min:5,max:60,step:0.5,label:'Chase camera: distance behind (m)',group:'Camera'},
+ {key:'cam.chase.up',def:4.5,min:0,max:30,step:0.1,label:'Chase camera: height (m)',group:'Camera'},
+ {key:'cam.fov',def:62,min:30,max:100,step:1,label:'Field of view',group:'Camera'}
+]); }catch(e){}</script>
 <script type="importmap">{"imports":{"three":"./three.module.min.js"}}</script>
 <style>
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -177,6 +188,7 @@ const KLIFT  = 0.024;       // lift coefficient - raised 2026-10-23 (at the old 
 const GRAV   = 9.81;
 const RWY_HALF = 700, RWY_W = 12;
 const MS2KT = 1.94384, M2FT = 3.28084, MS2FPM = 196.85;
+const SN_ = (k, d) => window.Studio ? Studio.num(k, d) : d;   // owner Nov 7 2026: Studio sliders (default = today's number)
 
 /* ================= state ================= */
 let phase = 'menu';            // menu | fly | crashed | scored
@@ -790,7 +802,12 @@ window.addEventListener('touchcancel', resetInputs);
 document.addEventListener('visibilitychange', () => { if (document.hidden) resetInputs(); });
 
 /* ================= buttons ================= */
-function toggleView() { cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
+function toggleView() {
+  if (window.Studio) { const mine = (Studio.data().cams || []).length;   // owner Nov 7 2026: after chase + cockpit come his own Studio views
+    if (Studio.camView() || (cockpit && mine)) { const v = Studio.camNext(); if (v) { cockpit = false; plane.visible = true; flashMsg(String(v.name || 'MY VIEW').toUpperCase(), 1200); return; } cockpit = true; } }
+  cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
+try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'world',
+  center: () => ({ x: P.pos.x, z: P.pos.z }), camDefault: { back: 17, up: 4.5, side: 0, ahead: 12, fov: 62 } }); } catch (e) { console.warn('studio', e); }   // owner Nov 7 2026: things he places
 $('back').addEventListener('click', () => { location.href = 'sports.html'; });
 $('viewBtn').addEventListener('click', toggleView);
 $('jetBtn').addEventListener('click', cyclePaint);
@@ -871,8 +888,8 @@ function step(dt) {
       // Speed-based pitch limit: prevents steep climbs at low speed that cause instant stalls
       // At liftoff (~26 m/s), max climb is gentle; full authority comes with speed
       const maxPitch = clamp((v - 18) / 22, 0.12, 0.62);
-      P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * auth * dt, -0.55, maxPitch);
-      P.roll = clamp(P.roll + inp.rollRight * 1.7 * auth * dt, -1.05, 1.05);
+      P.pitch = clamp(P.pitch + inp.pitchUp * 1.5 * SN_('jet.pitch', 1) * auth * dt, -0.55, maxPitch);
+      P.roll = clamp(P.roll + inp.rollRight * 1.7 * SN_('jet.roll', 1) * auth * dt, -1.05, 1.05);
       if (Math.abs(inp.rollRight) < 0.06) P.roll *= Math.max(0, 1 - 0.6 * dt);
       // Forgiving stall: only when you really pull up too slow. Normal level flying
       // (or gentle maneuvers) below VSTALL keeps lift - recover with throttle.
@@ -907,7 +924,7 @@ function step(dt) {
 
   // forces
   ACC.set(0, -GRAV, 0);
-  ACC.addScaledVector(F, THRUST * P.thr * (padBoost ? 1.9 : 1));   // BOOST pad button = afterburner (G-90)
+  ACC.addScaledVector(F, THRUST * SN_('jet.thrust', 1) * P.thr * (padBoost ? 1.9 : 1));   // BOOST pad button = afterburner (G-90)
   if (v > 0.01) ACC.addScaledVector(P.vel, -(0.00022 * v + 0.005));  // drag - higher top speed (~210 kt)
   if (padBrake && !P.ground && v > 0.01) ACC.addScaledVector(P.vel, -0.006 * v);   // BRAKE pad button = airbrake (G-90, G-115, G-116, retuned G-117)
   if (!P.ground) {
@@ -919,7 +936,7 @@ function step(dt) {
     const aoa = clamp(1 + (P.pitch - fpa) * 2.5, 0, 1.5);
     // Stall: lift fades only when really pulling up too slow (stallNow), and gentler than before
     const stallFade = stallNow ? Math.max(0.45, v / VSTALL) : 1.0;
-    ACC.addScaledVector(U, Math.min(KLIFT * v * v, LIFTCAP) * aoa * stallFade * (padBrake ? 0.1 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116, deepened G-117 so the descent finishes well inside the robot's 30 s test clock)
+    ACC.addScaledVector(U, Math.min(KLIFT * SN_('jet.lift', 1) * v * v, LIFTCAP * SN_('jet.lift', 1)) * aoa * stallFade * (padBrake ? 0.1 : 1)); }      // lift, capped; BRAKE spoilers dump lift so the jet descends without gaining speed (G-116, deepened G-117 so the descent finishes well inside the robot's 30 s test clock)
   P.vel.addScaledVector(ACC, dt);
   P.pos.addScaledVector(P.vel, dt);
   if (!P.ground) peakAir = Math.max(peakAir, P.pos.y);   // G-232 r1: arms the bounce-vs-landing call below
@@ -979,10 +996,15 @@ function updateCamera(dt) {
   sun.target.position.copy(P.pos);
   /* speed feel: FOV eases 62 -> 68 as airspeed passes ~120kt (shared by both views) */
   const kt = P.vel.length() * MS2KT;
-  const targetFov = 62 + 6 * clamp((kt - 90) / 30, 0, 1);
+  const myCam = window.Studio && Studio.camView();   // owner Nov 7 2026: Studio camera
+  if (window.Studio && Studio.ownsCamera()) return;   // Studio 'Place' / frozen camera
+  const targetFov = myCam ? myCam.fov : SN_('cam.fov', 62) + 6 * clamp((kt - 90) / 30, 0, 1);
   fovCur += (targetFov - fovCur) * Math.min(1, 3 * dt);
   if (Math.abs(camera.fov - fovCur) > 0.1) { camera.fov = fovCur; camera.updateProjectionMatrix(); }
-  if (cockpit) {
+  if (myCam) {
+    camPos.copy(P.pos).addScaledVector(F, -myCam.back).addScaledVector(U, myCam.up).addScaledVector(R, myCam.side || 0);
+    camera.position.lerp(camPos, Math.min(1, 5 * dt)); camLook.copy(P.pos).addScaledVector(F, myCam.ahead || 0); camLookS.lerp(camLook, Math.min(1, 6 * dt)); camera.lookAt(camLookS);
+  } else if (cockpit) {
     // step 5 cockpit eye: over the canopy, at the canopy's own station
     const eyeUp = jet.canopyY + 0.42;
     const eyeFwd = (JET_STYLES[jet.style] && JET_STYLES[jet.style].canopy) ? JET_STYLES[jet.style].canopy.z : 3.15;
@@ -994,7 +1016,7 @@ function updateCamera(dt) {
     /* chase: the pack's offset (INSTRUCTIONS step 5) - 17 m back plus a
        little more with speed, 4.5 m up; the game's easing stays */
     const spd = P.vel.length();
-    camPos.copy(P.pos).addScaledVector(F, -17 - spd * 0.012).addScaledVector(U, 4.5);
+    camPos.copy(P.pos).addScaledVector(F, -SN_('cam.chase.back', 17) - spd * 0.012).addScaledVector(U, SN_('cam.chase.up', 4.5));
     camera.position.lerp(camPos, Math.min(1, 5 * dt));
     camLook.copy(P.pos).addScaledVector(F, 12).addScaledVector(P.vel, 0.18);
     camLookS.lerp(camLook, Math.min(1, 6 * dt));
