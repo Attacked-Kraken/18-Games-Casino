@@ -1835,4 +1835,19 @@ export default [
       return true;
     },
   },
+  // owner Nov 7 2026 2:31 PM 'the track glitchy every lap ... they shouldn't get hung up on the finish line': the last 4-17 m before the line froze every car, then jumped it
+  {
+    id: 'play-finish-line-smooth', mode: 'race',
+    ask: 'Cars move smoothly over the finish line: no frozen stretch before it, no jump over it - owner Nov 7 2026',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let r = null;
+      for (let i = 0; i < 60; i++) { r = await h.eval(() => window.__test && window.__test.seam ? window.__test.seam() : null).catch(() => null); if (r && r.n > 10) break; await h.wait(400); }
+      if (!r || !(r.n > 10)) return 'the track never loaded (no seam probe)';
+      if (r.jumpAtLine > 2) return 'a car jumps ' + r.jumpAtLine + ' m over the finish line (1 m of track should be 1 m)';
+      if (r.gap > 1 && r.stuck < r.gap * 0.5) return 'the last ' + r.gap + ' m before the line are frozen (moved only ' + r.stuck + ' m)';
+      return true;
+    },
+  },
 ];
