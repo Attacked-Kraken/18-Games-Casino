@@ -1466,6 +1466,8 @@ function apexWordTex(){ // the lettering lives on its own sheet so the car only 
 function liveryMaterial(M, color, accent, wrap){
   const tex = apexLivTex(color, accent, wrap);
   const m = new THREE.MeshStandardMaterial({ color:0xffffff, roughness: wrap&&wrap!=='team' ? 0.3 : 0.22, metalness: wrap&&wrap!=='team' ? 0.45 : 0.6 });
+  // owner Nov 6 2026 'colours not working': a wrap now takes the picked team colour (the wrap's own pattern stays, tinted toward the team) instead of ignoring it
+  if(wrap && wrap!=='team'){ const tc=new THREE.Color(color), mx=Math.max(tc.r,tc.g,tc.b,0.001); tc.multiplyScalar(1/mx); m.color.set(0xffffff).lerp(tc,0.6); }
   m.customProgramCacheKey = ()=>'apexLivery';
   m.onBeforeCompile = sh=>{
     sh.uniforms.livTex={value:tex}; sh.uniforms.wordTex={value:apexWordTex()}; sh.uniforms.bMin={value:M.bmin}; sh.uniforms.bSize={value:M.bsize};
@@ -1569,7 +1571,11 @@ function studioTick(S){
   if(w&&h&&(cv.width!==(w*pr|0)||cv.height!==(h*pr|0))){ S.r.setSize(w,h,false); S.cam.aspect=w/h; S.cam.updateProjectionMatrix(); }
   S.t+=0.006; if(S.plate) S.plate.rotation.y+=S.big?0.004:0.006;
   if(S.big){ const port=h>w; const a=0.55+Math.sin(S.t*0.35)*0.5; const R=port?14:7.6; S.cam.position.set(Math.cos(a)*R+(port?0:1.8), port?3.2:1.7, Math.sin(a)*R); S.cam.lookAt(port?0:-2.2, port?-2.4:0.55, 0); S.car.rotation.y=-0.3; }
-  else { const d=S.canvas.id==='teamPrev'?4.7:6.2; S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
+  else { let d=S.canvas.id==='teamPrev'?4.7:6.2;
+    // owner Nov 6 2026 'Classic is big, Modern is small': the camera backs off in proportion to the car's real length, so every shape fills the picture the same
+    if(S._fitCar!==S.car){ S._fitCar=S.car; try{ const bb=new THREE.Box3().setFromObject(S.car), z=bb.getSize(new THREE.Vector3()); S._fit=Math.max(z.x,z.z); window.__prevFit=window.__prevFit||[]; window.__prevFit.push(+S._fit.toFixed(2)); }catch(e){ S._fit=0; } }
+    if(S._fit>0.5) d*=Math.max(0.6,Math.min(1.8,S._fit/4.6));
+    S.cam.position.set(d,d*0.36,d); S.cam.lookAt(0,0.45,0); }
   S.r.render(S.scene, S.cam);
 }
 const CP = { get on(){ return !!(CP.s && CP.s.on); }, s:null }, ST = { s:null }, TP = { s:null }; window.__st = ST; window.__cp = CP;
