@@ -5,6 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="icon" href="apextrackfield-icon.svg" type="image/svg+xml">
 <title>Apex Track &amp; Field 3D</title>
+<script src="kit/studio.js"></script><!-- owner Nov 7 2026: 🎛️ Studio - his no-code editor (?studio=1 or the Game Development page's STUDIO switch) -->
+<script>/* owner Nov 7 2026: every Studio slider of this game, listed up front (your own kit colours stay on the game's College screen) */
+try{ Studio.declare([
+ {key:'kit.rival1',def:'#d23c3c',kind:'color',label:'Rival kit 1 (D. Carter)',group:'Athletes'},
+ {key:'kit.rival2',def:'#2e9e5b',kind:'color',label:'Rival kit 2 (J. Osei)',group:'Athletes'},
+ {key:'kit.rival3',def:'#e6a02e',kind:'color',label:'Rival kit 3 (M. Reyes)',group:'Athletes'},
+ {key:'athlete.height',def:1.78,min:1.55,max:2.05,step:0.01,label:'Athlete height in metres (reopen the game)',group:'Athletes'},
+ {key:'run.top',def:1,min:0.6,max:1.4,step:0.01,label:'Your top running speed',group:'Play'},
+ {key:'run.tap',def:1,min:0.5,max:2,step:0.01,label:'Speed from each tap',group:'Play'},
+ {key:'rival.speed',def:1,min:0.7,max:1.3,step:0.01,label:'Rivals speed (lower = easier to win)',group:'Play'},
+ {key:'cam.fov',def:58,min:30,max:90,step:1,label:'Field of view (zoom)',group:'Camera'}
+]); }catch(e){}</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;background:#060b16}
@@ -316,6 +328,8 @@ body.playing:not(.touch) .kbdhint{display:block}
 'use strict';
 import * as THREE from 'three';
 let HM = null;
+const SN_ = (k, d) => window.Studio ? Studio.num(k, d) : d;   // owner Nov 7 2026: Studio sliders (default = today's number)
+const SC_ = (k, d) => window.Studio ? Studio.color(k, d) : d;
 const humansReady = import('humans').then(m=>m.loadHumans(THREE, './characters/base-human-v2/')).then(h=>{ HM=h; return h; }).catch(()=>null);
 let hmState='pending'; humansReady.then(h=>{ hmState=h?'ready':'failed'; });
 const $ = id => document.getElementById(id);
@@ -753,11 +767,12 @@ const t=r.simT||0;
 if(t-r.tapWinStart>1){ r.tapWinStart=t; r.tapCount=0; }
 r.tapCount++;
 const gov = r.tapCount>12 ? 0.45 : 1;
-r.speed += impulse*(alt?1:0.42)*(0.55+0.40*(r.stamina/100))*gov;
+r.speed += impulse*SN_('run.tap', 1)*(alt?1:0.42)*(0.55+0.40*(r.stamina/100))*gov;
 r.lastSide=side;
 return alt;
 }
 function updateRunner(r, dt, maxSpd, drain){
+maxSpd*=SN_('run.top', 1);   // owner Nov 7 2026: Studio top speed
 r.simT=(r.simT||0)+dt;
 const over2=Math.max(0,(r.tapCount||0)-12);
 const capX=1/(1+over2*0.02);
@@ -789,7 +804,7 @@ return {name:rv.name, kit:rv.kit, tTarget:t, pos:0, speed:0, phase:rnd(0,6), el:
 }
 function updateLiveRival(a, dt, dist, kick){
 a.el+=dt;
-let vmax=(dist/a.tTarget)*1.04;
+let vmax=(dist/a.tTarget)*1.04*SN_('rival.speed', 1);
 if(kick && a.pos>dist-400) vmax*=1.07;
 const target=vmax*Math.min(1, 0.25+a.el*1.4);
 a.speed += (target*(1+0.03*Math.sin(a.el*0.7))-a.speed)*Math.min(1,3*dt);
@@ -1758,6 +1773,8 @@ if(!COARSE){const q=new THREE.DirectionalLight(0x7fb2ff,.55);q.position.set(70,2
 this.buildSky();
 this.buildGround();
 this.buildTrack();
+try{ if(window.Studio) Studio.world({ THREE, scene, camera:cam, renderer:r, canvas:r.domElement, groundY:()=>0, scope:()=>'stadium', // owner Nov 7 2026: things he places in Studio
+  center:()=>{ const g=this.rigs[0]&&this.rigs[0].group; return g?{x:g.position.x, z:g.position.z}:{x:-40, z:0}; }, camDefault:{back:7, up:2.8, side:0, ahead:6, fov:58} }); }catch(e){ console.warn('studio', e); }
 await this.buildStadiumBowl();
 this.buildBanners();
 this.buildCauldron();
@@ -2218,9 +2235,9 @@ jump:pick('jump'), throw:pick('throw'), cheer:pick('cheer','celebrat','victory',
 };
 const KITS=[
 {top:collegeCols.a, bottom:'#14141c', name:athleteName},
-{top:'#d23c3c', bottom:'#14141c', name:'D. Carter'},
-{top:'#2e9e5b', bottom:'#f2f2f2', name:'J. Osei'},
-{top:'#e6a02e', bottom:'#14141c', name:'M. Reyes'},
+{top:SC_('kit.rival1', '#d23c3c'), bottom:'#14141c', name:'D. Carter'},
+{top:SC_('kit.rival2', '#2e9e5b'), bottom:'#f2f2f2', name:'J. Osei'},
+{top:SC_('kit.rival3', '#e6a02e'), bottom:'#14141c', name:'M. Reyes'},
 ];
 for(let i=0;i<8;i++) this.rigs.push(this.makeRig(KITS[i%KITS.length], i)); // JOB J7: the full field is 7 runners + a spare. Rigs 5-8 used to appear only because boot() ran twice (pre-J39); with the boot guard they never existed, styleRigsFor() skipped them, and every full-field draw3 threw on R[4] before the follow camera and render - the race ran headless behind a frozen menu frame.
 humansReady.then(()=>{ if(HM) this.upgradeAthletes(); });
@@ -2245,7 +2262,7 @@ rig.group.clear();
 const g=rig.idx%2? 'f':'m';
 const h=HM.make({g, outfit:'track_kit',
 cols:{top:new THREE.Color(rig.kit.top).getHex(), bottom:new THREE.Color(rig.kit.bottom).getHex(), shoes:0xffffff},
-skin:rig.idx%6, hair:['parted','buzzed','ponytail','long'][rig.idx%4]}, 1.78);
+skin:rig.idx%6, hair:['parted','buzzed','ponytail','long'][rig.idx%4]}, SN_('athlete.height', 1.78));
 rig.group.add(h.object);
 rig.human=true; rig.h=h; rig.parts=null;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
@@ -2263,7 +2280,7 @@ try{
 const g=idx%2? 'f':'m';
 const h=HM.make({g, outfit:'track_kit',
 cols:{top:new THREE.Color(kit.top).getHex(), bottom:new THREE.Color(kit.bottom).getHex(), shoes:0xffffff},
-skin:idx%6, hair:['parted','buzzed','ponytail','long'][idx%4]}, 1.78);
+skin:idx%6, hair:['parted','buzzed','ponytail','long'][idx%4]}, SN_('athlete.height', 1.78));
 group.add(h.object);
 rig.human=true; rig.h=h;
 h.object.traverse(o=>{ if(o.isMesh){ o.castShadow=!COARSE; } });
@@ -2453,6 +2470,13 @@ const a=1-Math.exp(-dt*(k||3.2));
 this.camPos.lerp(_v1,a); this.camLook.lerp(_v2,a);
 },
 camApply(){
+if(window.Studio && Studio.ownsCamera()) return; // owner Nov 7 2026: Studio 'Place' = map view from above
+const myCam=window.Studio && Studio.camView(), pr=this.rigs[0];
+const fov=myCam?myCam.fov:SN_('cam.fov', 58); if(Math.abs(this.camera.fov-fov)>0.01){ this.camera.fov=fov; this.camera.updateProjectionMatrix(); }
+if(myCam && ENG && pr && pr.group.visible){ // his own Studio view, behind your athlete in the way he faces
+const h=pr.group.rotation.y, fx=Math.sin(h), fz=Math.cos(h), p=pr.group.position;
+this.camera.position.set(p.x-fx*myCam.back+fz*(myCam.side||0), Math.max(0.3, myCam.up), p.z-fz*myCam.back-fx*(myCam.side||0));
+this.camera.lookAt(p.x+fx*(myCam.ahead||0), 1.2, p.z+fz*(myCam.ahead||0)); return; }
 this.camera.position.copy(this.camPos);
 this.camera.lookAt(this.camLook);
 },

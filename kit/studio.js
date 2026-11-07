@@ -15,7 +15,7 @@
 
    WHERE IT SAVES: this phone first (instant, only you see it), then "Publish" makes a code you paste into the Mac mini's
    controller (🎛️ Studio publish) - a Muse window writes it to mods/<game>.json on GitHub, the robot checks it, and every
-   player gets it. mods/<game>.json is read by this file when the game loads.
+   player gets it. mods/<game>.json is read by this file when the game loads - only when mods/index.json lists the game (no 404s).
 */
 (function () {
   if (window.Studio) return;
@@ -24,7 +24,12 @@
   const defs = {}, order = [], listeners = {};
   let pub = { v: 1, nums: {}, colors: {}, props: [], cams: [], points: {} };      // published (mods/<game>.json)
   let mine = null;                                                                 // this phone's draft
-  try { const x = new XMLHttpRequest(); x.open('GET', 'mods/' + GAME + '.json?' + Date.now(), false); x.send(); if (x.status === 200) pub = Object.assign(pub, JSON.parse(x.responseText)); } catch (e) {}
+  /* Nov 7 2026: mods/index.json (always on main) lists the games that HAVE a mods/<game>.json - a game without one asks for nothing,
+     so the robot never sees a 404 'Missing file' (F1's main check showed 'Missing file: mods/apexf1.json' after the Nov 6 Studio) */
+  const getJSON = (u) => { try { const x = new XMLHttpRequest(); x.open('GET', u + '?' + Date.now(), false); x.send(); return x.status === 200 ? JSON.parse(x.responseText) : null; } catch (e) { return null; } };
+  const MODS_BASE = /\/templates\//.test(location.pathname) ? '../mods/' : 'mods/';
+  const IDX = getJSON(MODS_BASE + 'index.json');
+  if (IDX && Array.isArray(IDX.games) && IDX.games.indexOf(GAME) >= 0) { const m = getJSON(MODS_BASE + GAME + '.json'); if (m) pub = Object.assign(pub, m); }
   try { const s = localStorage.getItem(KEY); if (s) mine = JSON.parse(s); } catch (e) {}
   const D = () => mine || pub;
   const ensure = () => { if (!mine) mine = JSON.parse(JSON.stringify(pub)); return mine; };
