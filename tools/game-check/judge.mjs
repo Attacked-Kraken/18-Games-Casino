@@ -138,8 +138,8 @@ export function partOfLines(parts, headSrc, ranges) {
   }
   return res.filter(r => r.hits.length).map(r => ({ part: r.part, where: [...new Set(r.hits)].slice(0, 4) }));
 }
-export function partGuard(game, touched, title = '', branch = '') {
-  if (!game || !(game.parts || []).length || /^(vp-|claude-|0[345]-|robot\/|test\/|auto-undo-)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
+export function partGuard(game, touched, title = '', branch = '') { // owner-restore/: the owner's own 'put this version back' (controller Versions page, Nov 7 2026) rolls a whole page back on purpose, so it passes like vp- branches
+  if (!game || !(game.parts || []).length || /^(vp-|claude-|0[345]-|robot\/|test\/|auto-undo-|owner-restore\/)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
   const names = game.parts.map(p => p.part), m = String(title).match(/\bPART:\s*([A-Za-z0-9_-]+)/i), named = m ? m[1].toLowerCase() : '';
   if (!touched.length) return [];
   const list = touched.map(t => `${t.part} (${t.where.join(', ')})`).join('; ');
@@ -158,7 +158,7 @@ function prBody() { try { return process.env.PR_BODY || JSON.parse(fs.readFileSy
 export const LOOK_PIC_FROM = '2026-11-02T06:00:00Z';
 const LOOK_PART_RE = /rim|wheel|wrap|paint|body|hud|skin|look|colou?r|model|camera|stadium|park|venue|menu|glow|light/i;
 export function lookPictureRule(game, touched, title = '', branch = '', body = '') {
-  if (!game || /^(vp-|claude-|0[345]-|robot\/|test\/|auto-undo-)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
+  if (!game || /^(vp-|claude-|0[345]-|robot\/|test\/|auto-undo-|owner-restore\/)/.test(branch) || /^\s*TEST\b/i.test(title)) return [];
   const looks = (touched || []).filter(t => (game.lookParts || []).length ? game.lookParts.includes(t.part) : LOOK_PART_RE.test(t.part));
   if (!looks.length) return [];
   const pic = (label) => new RegExp('(^|\\n)\\s*[*_>-]*\\s*' + label + '\\s*[*_]*\\s*:?[^\\n]*(https?://\\S+|!\\[[^\\]]*\\]\\([^)]+\\))', 'i');
