@@ -395,6 +395,47 @@
         const file = new File([blob], name, { type }); const share = navigator.canShare && navigator.canShare({ files: [file] });
         REC.url = URL.createObjectURL(blob); REC.name = name; REC.msg = Math.round(blob.size / 1024) + ' KB clip ready' + (share ? ' - tap Save / share' : ' - tap the link'); REC.file = share ? file : null; ui.draw(); };
       REC.r.start(250); REC.at = Date.now(); REC.msg = 'Recording ' + sec + ' s…'; setTimeout(() => { try { REC.r && REC.r.stop(); } catch (e) {} }, sec * 1000); } catch (e) { REC.r = null; REC.msg = 'Could not record: ' + e.message; } }
+
+  /* ---------- 🛡️ RULES - the owner's own robot checks, no code (master list #140, owner Nov 7 2026 9:47 PM):
+     tap a thing, pick a rule (stays there / stays above the ground / stays this size / stays near another thing / keeps its colour / shows on screen /
+     count of things named X), see it measured NOW, then 📤 Send: the rules become play tests in tools/game-check/fixes/<game>.mjs (a FIX PACK the
+     controller checks), and from then on the robot fails any pull request that breaks them. The robot's page runs the same Studio.measure(). ---------- */
+  function measure(path) { const o = byPath(path); if (!o || !W.THREE) return { exists: false }; const T = W.THREE, b = new T.Box3().setFromObject(o); if (b.isEmpty()) return { exists: true, visible: o.visible, empty: true, name: o.name };
+    const c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3()); let col = ''; o.traverse(m => { if (!col && m.isMesh && m.material && m.material.color) col = '#' + m.material.color.getHexString(); });
+    let vis = true, q = o; while (q) { if (!q.visible) vis = false; q = q.parent; } let ground = 0; try { ground = W.groundY ? +W.groundY(c.x, c.z) || 0 : 0; } catch (e) {}
+    let onScreen = null; try { const v = c.clone().project(W.camera); onScreen = vis && v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1; } catch (e) {}
+    const r = v => +(+v).toFixed(3); return { exists: true, visible: vis, box: { min: b.min.toArray().map(r), max: b.max.toArray().map(r) }, size: sz.toArray().map(r), center: c.toArray().map(r), color: col, ground: r(ground), onScreen, name: o.name || '' }; }
+  function countNamed(name) { let n = 0; const q = String(name || '').toLowerCase(); if (!q || !W.scene) return 0; W.scene.traverse(o => { if (o.name && o.name.toLowerCase().includes(q) && !skip(o)) n++; }); return n; }
+  const RK = 'apexStudioRules_' + GAME; let RULES = []; try { RULES = JSON.parse(localStorage.getItem(RK) || '[]'); } catch (e) {}
+  const saveRules = () => { try { localStorage.setItem(RK, JSON.stringify(RULES)); } catch (e) {} };
+  const RU = { kind: 'exists', n: 0.5, n2: 0, other: '', name: '', mode: '', msg: '' };
+  const RULE_KINDS = [['exists', 'stays in the game (never disappears)'], ['ground', 'stays above the ground'], ['size', 'stays this size (±%)'], ['near', 'stays within N m of another thing'], ['color', 'keeps this colour'], ['screen', 'shows on the screen'], ['count', 'there are exactly N things named …']];
+  function ruleWords(r) { const nm = r.label || r.path; return r.kind === 'exists' ? nm + ' must stay in the game' : r.kind === 'ground' ? nm + ' must stay above the ground (lowest point no more than ' + r.n + ' m under it)' : r.kind === 'size' ? nm + ' must stay ' + r.size.map(v => v.toFixed(2)).join(' x ') + ' m (±' + r.n + '%)' : r.kind === 'near' ? nm + ' must stay within ' + r.n + ' m of ' + (r.otherLabel || r.other) : r.kind === 'color' ? nm + ' must keep its colour ' + r.color : r.kind === 'screen' ? nm + ' must show on the screen' : 'there must be exactly ' + r.n + ' things named "' + r.name + '"'; }
+  function ruleCheckNow(r) {                    // the same judgement the robot test makes, run in the live game
+    if (r.kind === 'count') { const c = countNamed(r.name); return c === r.n ? true : 'found ' + c + ' named "' + r.name + '", wanted ' + r.n; }
+    const m = measure(r.path); if (!m.exists) return 'not in the scene'; if (m.empty) return r.kind === 'exists' ? true : 'it has no size to measure';
+    if (r.kind === 'exists') return true; if (r.kind === 'ground') return m.box.min[1] >= m.ground - r.n ? true : 'lowest point ' + (m.ground - m.box.min[1]).toFixed(2) + ' m under the ground';
+    if (r.kind === 'size') { for (let i = 0; i < 3; i++) if (r.size[i] > 0.01 && Math.abs(m.size[i] - r.size[i]) > r.size[i] * r.n / 100) return 'size now ' + m.size.map(v => v.toFixed(2)).join(' x ') + ' m, wanted ' + r.size.map(v => v.toFixed(2)).join(' x '); return true; }
+    if (r.kind === 'near') { const o2 = measure(r.other); if (!o2.exists) return (r.otherLabel || r.other) + ' not in the scene'; const d = Math.hypot(m.center[0] - o2.center[0], m.center[1] - o2.center[1], m.center[2] - o2.center[2]); return d <= r.n ? true : d.toFixed(2) + ' m away, wanted within ' + r.n; }
+    if (r.kind === 'color') return m.color === r.color ? true : 'colour now ' + m.color + ', wanted ' + r.color; if (r.kind === 'screen') return m.onScreen ? true : 'not on the screen (hidden or outside the picture)'; return 'unknown rule'; }
+  function ruleTestCode(r, i) {                 // one play test for tools/game-check/fixes/<game>.mjs - plain JS, no AI, the robot runs it on every pull request
+    const id = 'owner-rule-' + (r.id || i + 1), J = JSON.stringify, w = ruleWords(r).replace(/'/g, "\\'");
+    const read = r.kind === 'count' ? `const c = await h.eval(() => window.Studio ? Studio.count(${J(r.name)}) : -1);` : `let m = null; for (let k = 0; k < 20; k++) { m = await h.eval(() => window.Studio ? Studio.measure(${J(r.path)}) : null); if (m && m.exists${r.kind === 'exists' ? '' : ' && !m.empty'}) break; await h.wait(500); }`;
+    const judge = r.kind === 'count' ? `if (c < 0) return 'Studio is not in this page'; if (c !== ${r.n}) return 'found ' + c + ' named ${J(r.name).slice(1, -1)}, wanted ${r.n} (owner rule)';`
+      : `if (!m || !m.exists) return ${J(r.label || r.path)} + ' is gone from the scene (owner rule)';` + (r.kind === 'exists' ? '' : ` if (m.empty) return ${J(r.label || r.path)} + ' has nothing to measure (owner rule)';`)
+      + (r.kind === 'ground' ? ` if (m.box.min[1] < m.ground - ${r.n}) return ${J(r.label || r.path)} + ' sinks ' + (m.ground - m.box.min[1]).toFixed(2) + ' m under the ground (owner rule: max ${r.n})';`
+      : r.kind === 'size' ? ` const want = ${J(r.size)}; for (let i = 0; i < 3; i++) if (want[i] > 0.01 && Math.abs(m.size[i] - want[i]) > want[i] * ${r.n} / 100) return ${J(r.label || r.path)} + ' is ' + m.size.map(v => v.toFixed(2)).join(' x ') + ' m, the owner locked ' + want.map(v => v.toFixed(2)).join(' x ') + ' m (±${r.n}%)';`
+      : r.kind === 'near' ? ` const o2 = await h.eval(() => Studio.measure(${J(r.other)})); if (!o2 || !o2.exists) return ${J(r.otherLabel || r.other)} + ' is gone from the scene (owner rule)'; const d = Math.hypot(m.center[0] - o2.center[0], m.center[1] - o2.center[1], m.center[2] - o2.center[2]); if (d > ${r.n}) return ${J(r.label || r.path)} + ' is ' + d.toFixed(2) + ' m from ' + ${J(r.otherLabel || r.other)} + ', the owner wants within ${r.n} m';`
+      : r.kind === 'color' ? ` if (m.color !== ${J(r.color)}) return ${J(r.label || r.path)} + ' is ' + m.color + ', the owner locked ${r.color}';`
+      : r.kind === 'screen' ? ` if (!m.onScreen) return ${J(r.label || r.path)} + ' is not on the screen (owner rule)';` : '');
+    return `  // OWNER RULE made in Studio (no code): ${ruleWords(r)} - ${r.when || ''}\n  {\n    id: '${id}',${r.mode ? ` mode: ${J(r.mode)},` : ''}\n    ask: '${w} (owner rule)',\n    test: async (page, h) => {\n      await h.wait(1500);\n      ${read}\n      ${judge}\n      return true;\n    },\n  },\n`; }
+  const FIXES_RAW = 'https://raw.githubusercontent.com/Attacked-Kraken/18-Games-Casino/main/tools/game-check/fixes/' + GAME + '.mjs';
+  async function rulesPack() {                   // FIX PACK: the fixes file's last lines (OLD, found once) + the rules inserted before the closing ];
+    const r = await fetch(FIXES_RAW + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('could not read the robot test file (HTTP ' + r.status + ')');
+    const src = (await r.text()).replace(/\r/g, ''), lines = src.replace(/\s+$/, '').split('\n'); let end = lines.length - 1; while (end > 0 && !/^\s*\];\s*$/.test(lines[end])) end--; if (end <= 0) throw new Error('the test file does not end with ];');
+    let a = end; const old = () => lines.slice(a, end + 1).join('\n'); while (a > 0 && src.split(old()).length !== 2) a--;    // enough lines above ]; to be unique in the file
+    const tests = RULES.filter(x => !x.sent).map((x, i) => ruleTestCode(x, RULES.indexOf(x))).join(''), neu = lines.slice(a, end).join('\n') + '\n' + tests + lines[end];
+    return 'FIX PACK\nFILE: tools/game-check/fixes/' + GAME + '.mjs\nGAME: ' + GAME + '.html\nWHY: the owner made ' + RULES.filter(x => !x.sent).length + ' robot rule(s) in Studio - from now on the robot fails any pull request that breaks them\nOLD:\n' + old() + '\nNEW:\n' + neu + '\nEND'; }
   /* ---------- the panel ---------- */
   const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
@@ -423,7 +464,7 @@
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
     if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log' || ui.tab === 'track') ? 'min(720px,98vw)' : '';
     const nErr = LOG.filter(l => l.kind === 'error').length;
-    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['lights', '💡 Lights'], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
+    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['lights', '💡 Lights'], ['rules', '🛡️ Rules' + (RULES.length ? ' ' + RULES.length : '')], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -500,6 +541,22 @@
       h += `<button data-gradereset="1">↩️ Normal look</button>`;
       h += `<h3>📈 Performance</h3><label><input type="checkbox" data-perf="1" ${PERF.on ? 'checked' : ''}> show fps · triangles · draw calls on the screen</label><p class="sub">${esc(perfLine())}</p>`;
       h += `<h3>🎥 Record a clip</h3><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-rec="10" ${REC.r ? 'disabled' : ''}>🎥 Record 10 s</button><button data-rec="30" ${REC.r ? 'disabled' : ''}>🎥 30 s</button>${REC.url ? (REC.file ? `<button data-recshare="1">💾 Save / share the clip</button>` : `<a href="${REC.url}" download="${esc(REC.name)}" style="color:#ffd23a;align-self:center">⬇️ ${esc(REC.name)}</a>`) : ''}</div>${REC.msg ? `<p class="sub chg">${esc(REC.msg)}</p>` : ''}<p class="sub">Records the game picture only (not this panel). Close the panel after tapping to see the game while it records.</p>`;
+    } else if (ui.tab === 'rules') {
+      const o = E.sel, path = o ? pathOf(o) : '', m = path ? measure(path) : null, lab = o ? (o.name || path) : '';
+      h += `<h3>🛡️ Rules - my own robot checks, no code</h3><p class="sub">Tap a thing in the game (Scene tab, Pick), pick a rule, see it measured now, add it. 📤 Send makes them robot tests: every pull request that breaks one fails - for good.</p>`;
+      h += `<h3>Thing: ${o ? esc(lab) : '<span class="sub">none picked - go to the Scene tab and tap something</span>'}</h3>`;
+      if (m && m.exists && !m.empty) h += `<p class="sub">now: ${m.size.map(v => v.toFixed(2)).join(' x ')} m · lowest point ${(m.box.min[1] - m.ground).toFixed(2)} m ${m.box.min[1] >= m.ground ? 'above' : 'UNDER'} the ground · colour ${esc(m.color || '-')} · ${m.onScreen ? 'on screen' : 'off screen'}</p>`;
+      h += `<div class="row"><select data-rkind="1" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">${RULE_KINDS.map(([k, n]) => `<option value="${k}" ${RU.kind === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+      if (RU.kind === 'ground') h += `<div class="row"><label>allowed under the ground (m)<b>${RU.n}</b></label><input type="range" min="0" max="2" step="0.05" value="${RU.n}" data-rn="1"></div>`;
+      if (RU.kind === 'size') h += `<div class="row"><label>allowed change (%)<b>${RU.n2 || 10}</b></label><input type="range" min="1" max="50" step="1" value="${RU.n2 || 10}" data-rn2="1"></div>`;
+      if (RU.kind === 'near') { const names = []; if (W.scene) W.scene.traverse(x => { if (x.name && !skip(x) && x !== o && names.length < 80 && !names.some(y => y[1] === x.name)) names.push([pathOf(x), x.name]); });
+        h += `<div class="row"><label>within (m)<b>${RU.n2 || 5}</b></label><input type="range" min="0.5" max="200" step="0.5" value="${RU.n2 || 5}" data-rn2="1"></div><div class="row"><select data-rother="1" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"><option value="">other thing…</option>${names.map(([p, n]) => `<option value="${esc(p)}" ${RU.other === p ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>`; }
+      if (RU.kind === 'count') h += `<div class="row"><input type="text" data-rname="1" placeholder="name (part of it): cone, lamp, fan…" value="${esc(RU.name)}" style="width:60%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"> <span class="sub">now: ${RU.name ? countNamed(RU.name) : '-'}</span></div>`;
+      h += `<div class="row"><input type="text" data-rmode="1" placeholder="when (robot mode, optional: race, batting, menu…)" value="${esc(RU.mode)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div>`;
+      h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-radd="1" ${(RU.kind === 'count' ? RU.name : (o && m && m.exists)) ? '' : 'disabled'}>➕ Add this rule</button></div>`;
+      if (RU.msg) { h += `<p class="sub chg">${esc(RU.msg)}</p>`; RU.msg = ''; }
+      if (RULES.length) { h += `<h3>My rules (${RULES.length})</h3>`; RULES.forEach((r, i) => { const ok = ruleCheckNow(r); h += `<div class="row" style="border-top:1px solid #222a36;padding-top:4px"><div>${ok === true ? '✅' : '❌'} ${esc(ruleWords(r))}${r.sent ? ' <span class="sub">(sent ' + esc(r.sent) + ')</span>' : ''}</div>${ok !== true ? `<div class="sub chg">now: ${esc(ok)}</div>` : ''}<div><button data-rcode="${i}">💻 the test</button><button data-rdel="${i}">🗑️</button></div>${RU.showCode === i ? `<textarea readonly style="min-height:150px">${esc(ruleTestCode(r, i))}</textarea>` : ''}</div>`; });
+        const unsent = RULES.filter(r => !r.sent).length; h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-rsend="1" ${unsent ? '' : 'disabled'}>📤 Send ${unsent} rule${unsent === 1 ? '' : 's'} to the robot</button></div><p class="sub">Send builds a fix pack for tools/game-check/fixes/${esc(GAME)}.mjs and opens your controller: Check, then Send. A window puts it in, the robot merges it, and every later pull request is judged by your rules.</p>`; }
     } else if (ui.tab === 'phys' || ui.tab === 'code') {
       const n = changeCount();
       h += `<div style="position:sticky;top:-10px;background:#0e1219;padding:6px 0;z-index:2"><b class="${n ? 'chg' : ''}">${n} code change${n === 1 ? '' : 's'}</b> <button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with them</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button>${n ? '<button data-undoall="1">↩️ Undo all</button>' : ''}</div>`;
@@ -608,6 +665,22 @@
     const pf = ui.el.querySelector('[data-perf]'); if (pf) pf.onchange = () => { PERF.on = pf.checked; try { localStorage.setItem('apexStudioPerf', PERF.on ? '1' : '0'); } catch (e) {} drawWatchHud(); };
     ui.el.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => { recordClip(+b.dataset.rec); ui.open = false; ui.draw(); setTimeout(() => { ui.open = true; ui.tab = 'lights'; ui.draw(); }, (+b.dataset.rec) * 1000 + 800); });
     const rsh = ui.el.querySelector('[data-recshare]'); if (rsh) rsh.onclick = () => { if (REC.file && navigator.share) navigator.share({ files: [REC.file], title: REC.name }).catch(() => {}); };
+    const rk = ui.el.querySelector('[data-rkind]'); if (rk) rk.onchange = () => { RU.kind = rk.value; ui.draw(); };
+    const rnn = ui.el.querySelector('[data-rn]'); if (rnn) rnn.oninput = () => { RU.n = +rnn.value; rnn.previousElementSibling.querySelector('b').textContent = rnn.value; };
+    const rn2 = ui.el.querySelector('[data-rn2]'); if (rn2) rn2.oninput = () => { RU.n2 = +rn2.value; rn2.previousElementSibling.querySelector('b').textContent = rn2.value; };
+    const ro = ui.el.querySelector('[data-rother]'); if (ro) ro.onchange = () => { RU.other = ro.value; };
+    const rnm = ui.el.querySelector('[data-rname]'); if (rnm) rnm.onchange = () => { RU.name = rnm.value.trim(); ui.draw(); };
+    const rmd = ui.el.querySelector('[data-rmode]'); if (rmd) rmd.onchange = () => { RU.mode = rmd.value.trim(); };
+    const ra = ui.el.querySelector('[data-radd]'); if (ra) ra.onclick = () => { const o = E.sel, path = o ? pathOf(o) : '', m = path ? measure(path) : null, when = new Date().toLocaleString();
+      const r = { id: Date.now().toString(36), kind: RU.kind, path, label: o ? (o.name || path) : '', when, mode: RU.mode };
+      if (RU.kind === 'ground') r.n = RU.n; if (RU.kind === 'size') { r.n = RU.n2 || 10; r.size = m.size; } if (RU.kind === 'near') { if (!RU.other) { RU.msg = 'Pick the other thing first.'; ui.draw(); return; } r.n = RU.n2 || 5; r.other = RU.other; const oo = byPath(RU.other); r.otherLabel = oo ? (oo.name || RU.other) : RU.other; }
+      if (RU.kind === 'color') { if (!m.color) { RU.msg = 'That thing has no colour to lock.'; ui.draw(); return; } r.color = m.color; } if (RU.kind === 'count') { r.n = countNamed(RU.name); r.name = RU.name; r.label = RU.name; }
+      const ok = ruleCheckNow(r); if (ok !== true) { RU.msg = 'This rule fails right now (' + ok + ') - a rule must pass on today\'s game, or the robot would fail every pull request.'; ui.draw(); return; }
+      RULES.push(r); saveRules(); RU.msg = 'Added. ' + ruleWords(r); ui.draw(); };
+    ui.el.querySelectorAll('[data-rdel]').forEach(b => b.onclick = () => { RULES.splice(+b.dataset.rdel, 1); saveRules(); ui.draw(); });
+    ui.el.querySelectorAll('[data-rcode]').forEach(b => b.onclick = () => { RU.showCode = RU.showCode === +b.dataset.rcode ? -1 : +b.dataset.rcode; ui.draw(); });
+    const rsd = ui.el.querySelector('[data-rsend]'); if (rsd) rsd.onclick = async () => { RU.msg = 'Reading the robot test file…'; ui.draw(); try { const fp = await rulesPack(); try { navigator.clipboard.writeText(fp).catch(() => {}); } catch (e) {} const stamp = new Date().toLocaleString(); RULES.forEach(r => { if (!r.sent) r.sent = stamp; }); saveRules();
+        const b64 = btoa(unescape(encodeURIComponent(fp))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); RU.msg = 'Opening your controller with the fix pack (' + fp.length + ' letters).'; ui.draw(); openCtl('/fix#fp=' + b64); } catch (e) { RU.msg = 'Could not build it: ' + e.message; ui.draw(); } };
     const lc = ui.el.querySelector('[data-logclear]'); if (lc) lc.onclick = () => { LOG.length = 0; ui.btn.textContent = '✕ Close Studio'; ui.draw(); };
     const lcp = ui.el.querySelector('[data-logcopy]'); if (lcp) lcp.onclick = () => { const t = LOG.map(l => new Date(l.at).toLocaleTimeString() + ' ' + l.kind + ' ' + l.text + (l.file ? ' (' + l.file + ':' + l.line + ')' : '')).join('\n'); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied.'; ui.draw(); }).catch(() => {}); } catch (e) {} };
     const wqi = ui.el.querySelector('[data-wq]'); if (wqi) wqi.oninput = () => { wq.q = wqi.value; const p = wqi.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-wq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
@@ -682,6 +755,7 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
+    measure, count: countNamed, rules: { list: () => RULES, add: r => { RULES.push(r); saveRules(); }, check: ruleCheckNow, code: ruleTestCode, pack: rulesPack, words: ruleWords },
     lights: { all: lightsAll, apply: lightsApply, grade: gradeApply, perf: perfLine, record: recordClip },
     track: { load: trackLoad, state: () => TK, finishHere: trackFinishHere, apply: trackApply, lines: trackCodeLines },
     log: () => LOG.slice(), watch: { list: () => WATCH.slice(), pin: p => { if (!WATCH.includes(p)) WATCH.push(p); saveWatch(); }, all: liveAll, get: liveGet },
