@@ -105,7 +105,7 @@
     o.userData.studio = p; W.root.add(o); return o;
   }
   function scopeNow() { try { return W.scope ? String(W.scope()) : ''; } catch (e) { return ''; } }      // e.g. the track id: things belong to the track they were placed on
-  function rebuildProps() { if (!W.ok) return; while (W.root.children.length) W.root.remove(W.root.children[0]); const sc = scopeNow(); (D().props || []).filter(p => !p.t || p.t === sc).forEach(buildProp); }
+  function rebuildProps() { if (!W.ok) return; while (W.root.children.length) W.root.remove(W.root.children[0]); const sc = scopeNow(); (D().props || []).filter(p => !p.t || p.t === sc).forEach(buildProp); W.addedLights = []; try { lightsApply(); } catch (e) {} }
   function world(o) {
     Object.assign(W, o); W.ok = !!(o.THREE && o.scene && o.camera);
     if (!W.ok) return;
@@ -174,7 +174,7 @@
     if (e.col) o.traverse(m => { if (m.isMesh && m.material && m.material.color) { if (!m.userData.studioMat) m.userData.studioMat = m.material; m.material = m.material.clone(); m.material.color.set(e.col); } });
     if (e.model) swapModel(o, e.model, false);
   }
-  function applyAll() { if (!W.ok) return; const ed = D().edits || {}; for (const k in ed) { const o = byPath(k); if (o) applyEdit(o, ed[k]); } E.applied++; }
+  function applyAll() { if (!W.ok) return; const ed = D().edits || {}; for (const k in ed) { const o = byPath(k); if (o) applyEdit(o, ed[k]); } try { lightsApply(); gradeApply(); } catch (e) { console.warn('studio lights', e); } E.applied++; }
   function resetSel() { const o = E.sel; if (!o) return; const m = ensure(); const k = pathOf(o); if (m.edits) delete m.edits[k]; saveLocal();
     const g = o.userData.studioOrig; if (g) { o.position.fromArray(g.p); o.rotation.set(g.r[0], g.r[1], g.r[2]); o.scale.fromArray(g.s); o.visible = g.v; }
     o.traverse(x => { if (x.userData.studioMat) { x.material = x.userData.studioMat; delete x.userData.studioMat; } }); if (o.userData.studioSwap) { o.remove(o.userData.studioSwap); delete o.userData.studioSwap; o.traverse(x => { if (x.userData.studioHidden) { x.visible = true; delete x.userData.studioHidden; } }); }
@@ -315,9 +315,9 @@
   function liveSet(path, v) { const ks = path.split('.'), roots = liveRoots(); let o = roots[ks[0]]; for (let i = 1; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
   const fmt = v => typeof v === 'number' ? (Number.isInteger(v) ? String(v) : v.toFixed(Math.abs(v) < 10 ? 3 : 1)) : typeof v === 'boolean' ? (v ? 'ON' : 'off') : v == null ? '-' : String(v).slice(0, 40);
   let hud = null;
-  function drawWatchHud() { if (!WATCH.length) { if (hud) { hud.remove(); hud = null; } return; }
+  function drawWatchHud() { if (!WATCH.length && !PERF.on) { if (hud) { hud.remove(); hud = null; } return; }
     if (!hud) { hud = document.createElement('div'); hud.id = 'apxWatch'; hud.style.cssText = 'position:fixed;left:max(6px,env(safe-area-inset-left,0px));bottom:max(6px,env(safe-area-inset-bottom,0px));z-index:99997;background:#000a;color:#ffd23a;font:11px ui-monospace,Menlo,monospace;padding:4px 7px;border-radius:8px;pointer-events:none;max-width:46vw;white-space:pre;line-height:1.35'; document.body.appendChild(hud); }
-    hud.textContent = WATCH.map(p => p.split('.').slice(-2).join('.') + ' ' + fmt(liveGet(p))).join('\n'); }
+    hud.textContent = (PERF.on ? perfLine() + '\n' : '') + WATCH.map(p => p.split('.').slice(-2).join('.') + ' ' + fmt(liveGet(p))).join('\n'); }
   setInterval(() => { try { drawWatchHud(); } catch (e) {} }, 200);
   function setLive(path, v) { const ks = path.split('.'); let o = window.__game; for (let i = 0; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
 
@@ -364,6 +364,78 @@
     const a = Math.min(r.i1, r.i2), b = Math.max(r.i1, r.i2), text = C.lines.slice(a, b + 1).map((l, k) => (a + k === r.i1 ? r.l1 : a + k === r.i2 ? r.l2 : l)).join('\n'), old = C.lines.slice(a, b + 1).join('\n');
     CE.chunks = CE.chunks.filter(k => k.b < a || k.a > b); for (let i = a; i <= b; i++) delete CE.nums[i]; if (text !== old) CE.chunks.push({ a, b, old, text }); saveCE(); TK.dirty = false;
     TK.msg = text !== old ? 'In the code (lines ' + (a + 1) + '-' + (b + 1) + '). ▶ Run the game with it, then 📤 Send as a code fix.' : 'Nothing changed.'; }
+
+  /* ---------- 💡 LIGHTS + 🎨 LOOK + FPS + 🎥 RECORD (owner Nov 7 2026 10:04 PM video of a desktop three.js editor: "why can't I have like video"):
+     every light in the scene (type, on/off, brightness, colour, place, shadow, reach) and new point / spot / sun / sky lights, saved in
+     mods/<game>.json "lights" (by scene path) + "lightsAdd"; colour grading (saturation / contrast / brightness / hue / warmth) as a filter on the
+     game's canvas, saved in "grade"; an FPS / triangles / draw-calls counter on the screen; a 10-second video clip of the canvas. ---------- */
+  function lightsAll() { const out = []; if (!W.scene) return out; W.scene.traverse(o => { if (o.isLight && !o.userData.studioHelper) out.push(o); }); return out; }
+  function lightKind(o) { return o.isAmbientLight ? 'ambient' : o.isHemisphereLight ? 'sky' : o.isDirectionalLight ? 'sun' : o.isSpotLight ? 'spot' : o.isPointLight ? 'point' : o.isRectAreaLight ? 'panel' : 'light'; }
+  function lightOrig(o) { if (!o.userData.studioLOrig) o.userData.studioLOrig = { i: o.intensity, c: o.color ? '#' + o.color.getHexString() : '', p: o.position.toArray(), v: o.visible, sh: !!o.castShadow, d: o.distance || 0 }; return o.userData.studioLOrig; }
+  function lightApply(o, e) { if (!o || !e) return; lightOrig(o); if (e.i != null) o.intensity = +e.i; if (e.c && o.color) o.color.set(e.c); if (e.p) o.position.fromArray(e.p); if (e.on != null) o.visible = !!e.on; if (e.sh != null && 'castShadow' in o) o.castShadow = !!e.sh; if (e.d != null && 'distance' in o) o.distance = +e.d; if (e.g && o.groundColor) o.groundColor.set(e.g); }
+  function lightsApply() { if (!W.ok) return; const L = D().lights || {}; for (const k in L) { const o = byPath(k); if (o && o.isLight) lightApply(o, L[k]); }
+    const adds = D().lightsAdd || []; W.addedLights = W.addedLights || []; while (W.addedLights.length > adds.length) { const o = W.addedLights.pop(); if (o.parent) o.parent.remove(o); if (o.target && o.target.parent) o.target.parent.remove(o.target); }
+    adds.forEach((a, i) => { let o = W.addedLights[i]; const T = W.THREE; if (!o || o.userData.studioKind !== a.k) { if (o && o.parent) o.parent.remove(o);
+        o = a.k === 'spot' ? new T.SpotLight(0xffffff, 2, 60, Math.PI / 5, 0.4) : a.k === 'sun' ? new T.DirectionalLight(0xffffff, 1.5) : a.k === 'sky' ? new T.HemisphereLight(0xffffff, 0x444444, 1) : new T.PointLight(0xffffff, 2, 40);
+        o.name = 'studio ' + a.k + ' light ' + (i + 1); o.userData.studioKind = a.k; o.userData.studioAdded = 1; W.root.add(o); if (o.target) { W.root.add(o.target); } W.addedLights[i] = o; }
+      if (W.root.parent !== W.scene) W.scene.add(W.root); if (o.parent !== W.root) W.root.add(o);
+      o.position.fromArray(a.p || [0, 10, 0]); o.intensity = +(a.i == null ? 2 : a.i); if (a.c) o.color.set(a.c); o.visible = a.on !== false; if ('castShadow' in o) o.castShadow = !!a.sh; if ('distance' in o) o.distance = +(a.d || 0);
+      if (o.target) { o.target.position.fromArray(a.t || [a.p ? a.p[0] : 0, 0, a.p ? a.p[2] : 0]); o.target.updateMatrixWorld(); } if (a.g && o.groundColor) o.groundColor.set(a.g); }); }
+  function lightRecord(o, patch) { const m = ensure(); m.lights = m.lights || {}; const k = pathOf(o); if (!k) return; m.lights[k] = Object.assign(m.lights[k] || {}, patch); saveLocal(); lightApply(o, m.lights[k]); emit('change', 'lights'); }
+  function gradeApply() { const g = D().grade; const cv = W.cv || (W.renderer && W.renderer.domElement); if (!cv) return; if (!g) { cv.style.filter = ''; return; }
+    const f = []; if (g.sat != null && g.sat !== 1) f.push('saturate(' + g.sat + ')'); if (g.con != null && g.con !== 1) f.push('contrast(' + g.con + ')'); if (g.bri != null && g.bri !== 1) f.push('brightness(' + g.bri + ')'); if (g.hue) f.push('hue-rotate(' + g.hue + 'deg)'); if (g.warm) f.push('sepia(' + g.warm + ')'); cv.style.filter = f.join(' '); }
+  const PERF = { on: false, fps: 0, n: 0, t: performance.now() }; try { PERF.on = localStorage.getItem('apexStudioPerf') === '1'; } catch (e) {}
+  (function tick() { PERF.n++; const now = performance.now(); if (now - PERF.t >= 1000) { PERF.fps = Math.round(PERF.n * 1000 / (now - PERF.t)); PERF.n = 0; PERF.t = now; } requestAnimationFrame(tick); })();
+  function perfLine() { const r = W.renderer && W.renderer.info; return PERF.fps + ' fps' + (r ? ' · ' + (r.render.triangles >= 1000 ? (r.render.triangles / 1000).toFixed(0) + 'k' : r.render.triangles) + ' tris · ' + r.render.calls + ' draws · ' + r.memory.geometries + ' geo · ' + r.memory.textures + ' tex' : ''); }
+  const REC = { r: null, chunks: [], at: 0, msg: '' };
+  function recordClip(sec) { if (REC.r) { REC.msg = 'Already recording.'; return; } const cv = W.cv || (W.renderer && W.renderer.domElement); if (!cv || !cv.captureStream || !window.MediaRecorder) { REC.msg = 'This browser cannot record the canvas.'; return; }
+    let mime = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m)) || ''; try { const st = cv.captureStream(30); REC.chunks = []; REC.r = new MediaRecorder(st, mime ? { mimeType: mime, videoBitsPerSecond: 6e6 } : undefined);
+      REC.r.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+      REC.r.onstop = () => { const type = REC.r.mimeType || mime || 'video/webm', ext = /mp4/.test(type) ? 'mp4' : 'webm', blob = new Blob(REC.chunks, { type }), name = GAME + '-clip-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.' + ext; REC.r = null;
+        const file = new File([blob], name, { type }); const share = navigator.canShare && navigator.canShare({ files: [file] });
+        REC.url = URL.createObjectURL(blob); REC.name = name; REC.msg = Math.round(blob.size / 1024) + ' KB clip ready' + (share ? ' - tap Save / share' : ' - tap the link'); REC.file = share ? file : null; ui.draw(); };
+      REC.r.start(250); REC.at = Date.now(); REC.msg = 'Recording ' + sec + ' s…'; setTimeout(() => { try { REC.r && REC.r.stop(); } catch (e) {} }, sec * 1000); } catch (e) { REC.r = null; REC.msg = 'Could not record: ' + e.message; } }
+
+  /* ---------- 🛡️ RULES - the owner's own robot checks, no code (master list #140, owner Nov 7 2026 9:47 PM):
+     tap a thing, pick a rule (stays there / stays above the ground / stays this size / stays near another thing / keeps its colour / shows on screen /
+     count of things named X), see it measured NOW, then 📤 Send: the rules become play tests in tools/game-check/fixes/<game>.mjs (a FIX PACK the
+     controller checks), and from then on the robot fails any pull request that breaks them. The robot's page runs the same Studio.measure(). ---------- */
+  function measure(path) { const o = byPath(path); if (!o || !W.THREE) return { exists: false }; const T = W.THREE, b = new T.Box3().setFromObject(o); if (b.isEmpty()) return { exists: true, visible: o.visible, empty: true, name: o.name };
+    const c = b.getCenter(new T.Vector3()), sz = b.getSize(new T.Vector3()); let col = ''; o.traverse(m => { if (!col && m.isMesh && m.material && m.material.color) col = '#' + m.material.color.getHexString(); });
+    let vis = true, q = o; while (q) { if (!q.visible) vis = false; q = q.parent; } let ground = 0; try { ground = W.groundY ? +W.groundY(c.x, c.z) || 0 : 0; } catch (e) {}
+    let onScreen = null; try { const v = c.clone().project(W.camera); onScreen = vis && v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1; } catch (e) {}
+    const r = v => +(+v).toFixed(3); return { exists: true, visible: vis, box: { min: b.min.toArray().map(r), max: b.max.toArray().map(r) }, size: sz.toArray().map(r), center: c.toArray().map(r), color: col, ground: r(ground), onScreen, name: o.name || '' }; }
+  function countNamed(name) { let n = 0; const q = String(name || '').toLowerCase(); if (!q || !W.scene) return 0; W.scene.traverse(o => { if (o.name && o.name.toLowerCase().includes(q) && !skip(o)) n++; }); return n; }
+  const RK = 'apexStudioRules_' + GAME; let RULES = []; try { RULES = JSON.parse(localStorage.getItem(RK) || '[]'); } catch (e) {}
+  const saveRules = () => { try { localStorage.setItem(RK, JSON.stringify(RULES)); } catch (e) {} };
+  const RU = { kind: 'exists', n: 0.5, n2: 0, other: '', name: '', mode: '', msg: '' };
+  const RULE_KINDS = [['exists', 'stays in the game (never disappears)'], ['ground', 'stays above the ground'], ['size', 'stays this size (±%)'], ['near', 'stays within N m of another thing'], ['color', 'keeps this colour'], ['screen', 'shows on the screen'], ['count', 'there are exactly N things named …']];
+  function ruleWords(r) { const nm = r.label || r.path; return r.kind === 'exists' ? nm + ' must stay in the game' : r.kind === 'ground' ? nm + ' must stay above the ground (lowest point no more than ' + r.n + ' m under it)' : r.kind === 'size' ? nm + ' must stay ' + r.size.map(v => v.toFixed(2)).join(' x ') + ' m (±' + r.n + '%)' : r.kind === 'near' ? nm + ' must stay within ' + r.n + ' m of ' + (r.otherLabel || r.other) : r.kind === 'color' ? nm + ' must keep its colour ' + r.color : r.kind === 'screen' ? nm + ' must show on the screen' : 'there must be exactly ' + r.n + ' things named "' + r.name + '"'; }
+  function ruleCheckNow(r) {                    // the same judgement the robot test makes, run in the live game
+    if (r.kind === 'count') { const c = countNamed(r.name); return c === r.n ? true : 'found ' + c + ' named "' + r.name + '", wanted ' + r.n; }
+    const m = measure(r.path); if (!m.exists) return 'not in the scene'; if (m.empty) return r.kind === 'exists' ? true : 'it has no size to measure';
+    if (r.kind === 'exists') return true; if (r.kind === 'ground') return m.box.min[1] >= m.ground - r.n ? true : 'lowest point ' + (m.ground - m.box.min[1]).toFixed(2) + ' m under the ground';
+    if (r.kind === 'size') { for (let i = 0; i < 3; i++) if (r.size[i] > 0.01 && Math.abs(m.size[i] - r.size[i]) > r.size[i] * r.n / 100) return 'size now ' + m.size.map(v => v.toFixed(2)).join(' x ') + ' m, wanted ' + r.size.map(v => v.toFixed(2)).join(' x '); return true; }
+    if (r.kind === 'near') { const o2 = measure(r.other); if (!o2.exists) return (r.otherLabel || r.other) + ' not in the scene'; const d = Math.hypot(m.center[0] - o2.center[0], m.center[1] - o2.center[1], m.center[2] - o2.center[2]); return d <= r.n ? true : d.toFixed(2) + ' m away, wanted within ' + r.n; }
+    if (r.kind === 'color') return m.color === r.color ? true : 'colour now ' + m.color + ', wanted ' + r.color; if (r.kind === 'screen') return m.onScreen ? true : 'not on the screen (hidden or outside the picture)'; return 'unknown rule'; }
+  function ruleTestCode(r, i) {                 // one play test for tools/game-check/fixes/<game>.mjs - plain JS, no AI, the robot runs it on every pull request
+    const id = 'owner-rule-' + (r.id || i + 1), J = JSON.stringify, w = ruleWords(r).replace(/'/g, "\\'");
+    const read = r.kind === 'count' ? `const c = await h.eval(() => window.Studio ? Studio.count(${J(r.name)}) : -1);` : `let m = null; for (let k = 0; k < 20; k++) { m = await h.eval(() => window.Studio ? Studio.measure(${J(r.path)}) : null); if (m && m.exists${r.kind === 'exists' ? '' : ' && !m.empty'}) break; await h.wait(500); }`;
+    const judge = r.kind === 'count' ? `if (c < 0) return 'Studio is not in this page'; if (c !== ${r.n}) return 'found ' + c + ' named ${J(r.name).slice(1, -1)}, wanted ${r.n} (owner rule)';`
+      : `if (!m || !m.exists) return ${J(r.label || r.path)} + ' is gone from the scene (owner rule)';` + (r.kind === 'exists' ? '' : ` if (m.empty) return ${J(r.label || r.path)} + ' has nothing to measure (owner rule)';`)
+      + (r.kind === 'ground' ? ` if (m.box.min[1] < m.ground - ${r.n}) return ${J(r.label || r.path)} + ' sinks ' + (m.ground - m.box.min[1]).toFixed(2) + ' m under the ground (owner rule: max ${r.n})';`
+      : r.kind === 'size' ? ` const want = ${J(r.size)}; for (let i = 0; i < 3; i++) if (want[i] > 0.01 && Math.abs(m.size[i] - want[i]) > want[i] * ${r.n} / 100) return ${J(r.label || r.path)} + ' is ' + m.size.map(v => v.toFixed(2)).join(' x ') + ' m, the owner locked ' + want.map(v => v.toFixed(2)).join(' x ') + ' m (±${r.n}%)';`
+      : r.kind === 'near' ? ` const o2 = await h.eval(() => Studio.measure(${J(r.other)})); if (!o2 || !o2.exists) return ${J(r.otherLabel || r.other)} + ' is gone from the scene (owner rule)'; const d = Math.hypot(m.center[0] - o2.center[0], m.center[1] - o2.center[1], m.center[2] - o2.center[2]); if (d > ${r.n}) return ${J(r.label || r.path)} + ' is ' + d.toFixed(2) + ' m from ' + ${J(r.otherLabel || r.other)} + ', the owner wants within ${r.n} m';`
+      : r.kind === 'color' ? ` if (m.color !== ${J(r.color)}) return ${J(r.label || r.path)} + ' is ' + m.color + ', the owner locked ${r.color}';`
+      : r.kind === 'screen' ? ` if (!m.onScreen) return ${J(r.label || r.path)} + ' is not on the screen (owner rule)';` : '');
+    return `  // OWNER RULE made in Studio (no code): ${ruleWords(r)} - ${r.when || ''}\n  {\n    id: '${id}',${r.mode ? ` mode: ${J(r.mode)},` : ''}\n    ask: '${w} (owner rule)',\n    test: async (page, h) => {\n      await h.wait(1500);\n      ${read}\n      ${judge}\n      return true;\n    },\n  },\n`; }
+  const FIXES_RAW = 'https://raw.githubusercontent.com/Attacked-Kraken/18-Games-Casino/main/tools/game-check/fixes/' + GAME + '.mjs';
+  async function rulesPack() {                   // FIX PACK: the fixes file's last lines (OLD, found once) + the rules inserted before the closing ];
+    const r = await fetch(FIXES_RAW + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) throw new Error('could not read the robot test file (HTTP ' + r.status + ')');
+    const src = (await r.text()).replace(/\r/g, ''), lines = src.replace(/\s+$/, '').split('\n'); let end = lines.length - 1; while (end > 0 && !/^\s*\];\s*$/.test(lines[end])) end--; if (end <= 0) throw new Error('the test file does not end with ];');
+    let a = end; const old = () => lines.slice(a, end + 1).join('\n'); while (a > 0 && src.split(old()).length !== 2) a--;    // enough lines above ]; to be unique in the file
+    const tests = RULES.filter(x => !x.sent).map((x, i) => ruleTestCode(x, RULES.indexOf(x))).join(''), neu = lines.slice(a, end).join('\n') + '\n' + tests + lines[end];
+    return 'FIX PACK\nFILE: tools/game-check/fixes/' + GAME + '.mjs\nGAME: ' + GAME + '.html\nWHY: the owner made ' + RULES.filter(x => !x.sent).length + ' robot rule(s) in Studio - from now on the robot fails any pull request that breaks them\nOLD:\n' + old() + '\nNEW:\n' + neu + '\nEND'; }
   /* ---------- the panel ---------- */
   const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
@@ -392,7 +464,7 @@
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
     if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log' || ui.tab === 'track') ? 'min(720px,98vw)' : '';
     const nErr = LOG.filter(l => l.kind === 'error').length;
-    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
+    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['lights', '💡 Lights'], ['rules', '🛡️ Rules' + (RULES.length ? ' ' + RULES.length : '')], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -450,6 +522,41 @@
         h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkapply="1" class="${TK.dirty ? 'on' : ''}">✍️ Put it in the code</button><button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with it</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button></div>`;
         h += `<p class="sub">The map is in the circuit's own point units; the game scales the shape to ${t.lapKm} km. The road, kerbs and scenery are rebuilt when the changed game runs.</p>`;
       }
+    } else if (ui.tab === 'lights') {
+      const Ls = lightsAll(), L = D().lights || {}, g = D().grade || {};
+      h += `<h3>💡 Lights (${Ls.length} in the scene)</h3><p class="sub">Every light the game made. Turn it off, dim it, recolour it, move it, give it shadows. Changes save on this phone; Save → Publish sends them to everyone.</p>`;
+      if (!W.ok) h += '<p class="sub">The 3D world is not up yet - start playing, then come back.</p>';
+      Ls.forEach((o, i) => { const k = lightKind(o), path = pathOf(o) || ('light ' + i), e = L[pathOf(o)] || {}, mx = Math.max(5, Math.ceil((lightOrig(o).i || 1) * 3)), chg = Object.keys(e).length;
+        h += `<div class="row" style="border-top:1px solid #222a36;padding-top:6px"><label><span><b class="${chg ? 'chg' : ''}">${esc(k)}</b> <span class="sub">${esc(o.name || path)}</span></span><span><button data-lon="${i}">${o.visible ? 'ON → off' : 'off → ON'}</button>${o.color ? `<input type="color" data-lcol="${i}" value="${'#' + o.color.getHexString()}" style="width:34px;height:28px;border:0;background:none;vertical-align:middle">` : ''}${chg ? `<button data-lreset="${i}">↩️</button>` : ''}</span></label>`;
+        h += `<label><span>brightness <b>${(+o.intensity).toFixed(2)}</b></span></label><input type="range" min="0" max="${mx}" step="0.05" value="${o.intensity}" data-lint="${i}">`;
+        if (k === 'point' || k === 'spot' || k === 'sun') h += `<div class="xyz"><input type="number" step="0.5" data-lpos="${i}:0" value="${+o.position.x.toFixed(2)}"><input type="number" step="0.5" data-lpos="${i}:1" value="${+o.position.y.toFixed(2)}"><input type="number" step="0.5" data-lpos="${i}:2" value="${+o.position.z.toFixed(2)}"></div><p class="sub" style="margin:2px 0">x · height · z ${k === 'sun' ? '(a sun shines from this direction toward the middle)' : ''}</p>`;
+        if (k === 'point' || k === 'spot') h += `<label><span>reach (m, 0 = everywhere) <b>${+(o.distance || 0).toFixed(1)}</b></span></label><input type="range" min="0" max="400" step="1" value="${o.distance || 0}" data-ldist="${i}">`;
+        if ('castShadow' in o && k !== 'ambient' && k !== 'sky') h += `<label><span>casts shadows</span><input type="checkbox" data-lsh="${i}" ${o.castShadow ? 'checked' : ''}></label>`;
+        h += `</div>`; });
+      const adds = D().lightsAdd || [];
+      h += `<h3>➕ Add a light</h3><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-ladd="point">💡 Point</button><button data-ladd="spot">🔦 Spot</button><button data-ladd="sun">☀️ Sun</button><button data-ladd="sky">🌤️ Sky</button></div>`;
+      if (adds.length) { h += `<p class="sub">Your lights (${adds.length}) - they are in the list above as 'studio … light'; <button data-ldelall="1">🗑️ remove all mine</button></p>`; }
+      h += `<h3>🎨 Look (colour grade)</h3><p class="sub">A filter over the whole picture - like the video's saturation / contrast / tint.</p>`;
+      [['sat', 'Saturation', 0, 3, 0.05, 1], ['con', 'Contrast', 0.3, 2.5, 0.05, 1], ['bri', 'Brightness', 0.3, 2, 0.05, 1], ['hue', 'Hue shift (°)', -180, 180, 1, 0], ['warm', 'Warmth (sepia)', 0, 1, 0.02, 0]].forEach(([k, lab, mn, mx, st, def]) => { const v = g[k] == null ? def : g[k]; h += `<div class="row"><label>${lab}<b>${v}</b></label><input type="range" data-grade="${k}" min="${mn}" max="${mx}" step="${st}" value="${v}"></div>`; });
+      h += `<button data-gradereset="1">↩️ Normal look</button>`;
+      h += `<h3>📈 Performance</h3><label><input type="checkbox" data-perf="1" ${PERF.on ? 'checked' : ''}> show fps · triangles · draw calls on the screen</label><p class="sub">${esc(perfLine())}</p>`;
+      h += `<h3>🎥 Record a clip</h3><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-rec="10" ${REC.r ? 'disabled' : ''}>🎥 Record 10 s</button><button data-rec="30" ${REC.r ? 'disabled' : ''}>🎥 30 s</button>${REC.url ? (REC.file ? `<button data-recshare="1">💾 Save / share the clip</button>` : `<a href="${REC.url}" download="${esc(REC.name)}" style="color:#ffd23a;align-self:center">⬇️ ${esc(REC.name)}</a>`) : ''}</div>${REC.msg ? `<p class="sub chg">${esc(REC.msg)}</p>` : ''}<p class="sub">Records the game picture only (not this panel). Close the panel after tapping to see the game while it records.</p>`;
+    } else if (ui.tab === 'rules') {
+      const o = E.sel, path = o ? pathOf(o) : '', m = path ? measure(path) : null, lab = o ? (o.name || path) : '';
+      h += `<h3>🛡️ Rules - my own robot checks, no code</h3><p class="sub">Tap a thing in the game (Scene tab, Pick), pick a rule, see it measured now, add it. 📤 Send makes them robot tests: every pull request that breaks one fails - for good.</p>`;
+      h += `<h3>Thing: ${o ? esc(lab) : '<span class="sub">none picked - go to the Scene tab and tap something</span>'}</h3>`;
+      if (m && m.exists && !m.empty) h += `<p class="sub">now: ${m.size.map(v => v.toFixed(2)).join(' x ')} m · lowest point ${(m.box.min[1] - m.ground).toFixed(2)} m ${m.box.min[1] >= m.ground ? 'above' : 'UNDER'} the ground · colour ${esc(m.color || '-')} · ${m.onScreen ? 'on screen' : 'off screen'}</p>`;
+      h += `<div class="row"><select data-rkind="1" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">${RULE_KINDS.map(([k, n]) => `<option value="${k}" ${RU.kind === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
+      if (RU.kind === 'ground') h += `<div class="row"><label>allowed under the ground (m)<b>${RU.n}</b></label><input type="range" min="0" max="2" step="0.05" value="${RU.n}" data-rn="1"></div>`;
+      if (RU.kind === 'size') h += `<div class="row"><label>allowed change (%)<b>${RU.n2 || 10}</b></label><input type="range" min="1" max="50" step="1" value="${RU.n2 || 10}" data-rn2="1"></div>`;
+      if (RU.kind === 'near') { const names = []; if (W.scene) W.scene.traverse(x => { if (x.name && !skip(x) && x !== o && names.length < 80 && !names.some(y => y[1] === x.name)) names.push([pathOf(x), x.name]); });
+        h += `<div class="row"><label>within (m)<b>${RU.n2 || 5}</b></label><input type="range" min="0.5" max="200" step="0.5" value="${RU.n2 || 5}" data-rn2="1"></div><div class="row"><select data-rother="1" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"><option value="">other thing…</option>${names.map(([p, n]) => `<option value="${esc(p)}" ${RU.other === p ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>`; }
+      if (RU.kind === 'count') h += `<div class="row"><input type="text" data-rname="1" placeholder="name (part of it): cone, lamp, fan…" value="${esc(RU.name)}" style="width:60%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"> <span class="sub">now: ${RU.name ? countNamed(RU.name) : '-'}</span></div>`;
+      h += `<div class="row"><input type="text" data-rmode="1" placeholder="when (robot mode, optional: race, batting, menu…)" value="${esc(RU.mode)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div>`;
+      h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-radd="1" ${(RU.kind === 'count' ? RU.name : (o && m && m.exists)) ? '' : 'disabled'}>➕ Add this rule</button></div>`;
+      if (RU.msg) { h += `<p class="sub chg">${esc(RU.msg)}</p>`; RU.msg = ''; }
+      if (RULES.length) { h += `<h3>My rules (${RULES.length})</h3>`; RULES.forEach((r, i) => { const ok = ruleCheckNow(r); h += `<div class="row" style="border-top:1px solid #222a36;padding-top:4px"><div>${ok === true ? '✅' : '❌'} ${esc(ruleWords(r))}${r.sent ? ' <span class="sub">(sent ' + esc(r.sent) + ')</span>' : ''}</div>${ok !== true ? `<div class="sub chg">now: ${esc(ok)}</div>` : ''}<div><button data-rcode="${i}">💻 the test</button><button data-rdel="${i}">🗑️</button></div>${RU.showCode === i ? `<textarea readonly style="min-height:150px">${esc(ruleTestCode(r, i))}</textarea>` : ''}</div>`; });
+        const unsent = RULES.filter(r => !r.sent).length; h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-rsend="1" ${unsent ? '' : 'disabled'}>📤 Send ${unsent} rule${unsent === 1 ? '' : 's'} to the robot</button></div><p class="sub">Send builds a fix pack for tools/game-check/fixes/${esc(GAME)}.mjs and opens your controller: Check, then Send. A window puts it in, the robot merges it, and every later pull request is judged by your rules.</p>`; }
     } else if (ui.tab === 'phys' || ui.tab === 'code') {
       const n = changeCount();
       h += `<div style="position:sticky;top:-10px;background:#0e1219;padding:6px 0;z-index:2"><b class="${n ? 'chg' : ''}">${n} code change${n === 1 ? '' : 's'}</b> <button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with them</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button>${n ? '<button data-undoall="1">↩️ Undo all</button>' : ''}</div>`;
@@ -516,11 +623,12 @@
       h += `<div><button data-addcam="1">➕ Add a camera view</button> ${camPick >= 0 ? '<button data-usecam="-1">Back to the game\'s views</button>' : ''}</div>`;
     } else {
       const js = JSON.stringify(mine || pub);
-      h += `<p class="sub">${mine ? 'You have changes saved on THIS phone only.' : 'No changes on this phone.'}</p>`;
+      h += `<p class="sub">${mine ? 'You have changes saved on THIS phone only.' : 'No changes on this phone.'}</p>`; if (ui.msg) { h += `<p class="sub chg">${esc(ui.msg)}</p>`; ui.msg = ''; }
       h += `<button data-pub="1">📤 Publish (opens your controller)</button> <button data-clear="1">↩️ Undo ALL my changes</button>`;
       h += `<p class="sub">Publish opens your controller's Paste a fix page with it filled in: tap Check, then Send. A Muse window saves it to mods/${GAME}.json; after the robot check every player gets it.</p>`;
       h += `<textarea id="apxPub" readonly placeholder="tap Make the publish code">${ui.pubText || ''}</textarea><div class="sub" id="apxPubMsg"></div>`;
-      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
+      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${Object.keys(D().lights || {}).length + (D().lightsAdd || []).length} light changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
+      h += `<h3>Export / import</h3><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-exp="1">📋 Copy my changes</button><button data-imp="1">📥 Load pasted changes</button></div><textarea id="apxImp" placeholder="paste changes copied from another phone or game here, then tap Load"></textarea>`;
     }
     ui.el.innerHTML = h;
     const tkc = ui.el.querySelector('#apxTrackMap'); if (tkc && TK.t) { trackDraw(); const pos = e => { const r = tkc.getBoundingClientRect(); return [(e.clientX - r.left) * tkc.width / r.width, (e.clientY - r.top) * tkc.height / r.height]; };
@@ -542,6 +650,37 @@
     const tkpout = ui.el.querySelector('[data-tkpout]'); if (tkpout) tkpout.oninput = () => { TK.t.pitOut = +tkpout.value; TK.dirty = true; trackDraw(); tkpout.previousElementSibling.querySelector('b').textContent = Math.round(TK.t.pitOut * 100) + '%'; };
     ui.el.querySelectorAll('[data-tkdrs]').forEach(inp => inp.oninput = () => { const [i, k] = inp.dataset.tkdrs.split(':').map(Number); TK.t.drs[i][k] = +inp.value; TK.dirty = true; trackDraw(); });
     const tka = ui.el.querySelector('[data-tkapply]'); if (tka) tka.onclick = () => { trackApply(); ui.draw(); };
+    const LA = lightsAll(); const lref = b => LA[+String(b.dataset.lon ?? b.dataset.lcol ?? b.dataset.lreset ?? b.dataset.lint ?? b.dataset.ldist ?? b.dataset.lsh ?? '').split(':')[0]];
+    ui.el.querySelectorAll('[data-lon]').forEach(b => b.onclick = () => { const o = lref(b); if (o) { lightRecord(o, { on: !o.visible }); ui.draw(); } });
+    ui.el.querySelectorAll('[data-lcol]').forEach(b => b.oninput = () => { const o = lref(b); if (o) lightRecord(o, { c: b.value }); });
+    ui.el.querySelectorAll('[data-lint]').forEach(b => { b.oninput = () => { const o = lref(b); if (o) { lightRecord(o, { i: +b.value }); b.previousElementSibling.querySelector('b').textContent = (+b.value).toFixed(2); } }; });
+    ui.el.querySelectorAll('[data-ldist]').forEach(b => { b.oninput = () => { const o = lref(b); if (o) { lightRecord(o, { d: +b.value }); b.previousElementSibling.querySelector('b').textContent = b.value; } }; });
+    ui.el.querySelectorAll('[data-lsh]').forEach(b => b.onchange = () => { const o = lref(b); if (o) lightRecord(o, { sh: b.checked }); });
+    ui.el.querySelectorAll('[data-lpos]').forEach(inp => inp.onchange = () => { const [i, k] = inp.dataset.lpos.split(':').map(Number), o = LA[i]; if (o && inp.value !== '' && isFinite(+inp.value)) { const p = o.position.toArray(); p[k] = +inp.value; lightRecord(o, { p: p.map(v => +v.toFixed(3)) }); } });
+    ui.el.querySelectorAll('[data-lreset]').forEach(b => b.onclick = () => { const o = lref(b); if (!o) return; const m = ensure(); if (m.lights) delete m.lights[pathOf(o)]; const g0 = lightOrig(o); o.intensity = g0.i; if (g0.c) o.color.set(g0.c); o.position.fromArray(g0.p); o.visible = g0.v; if ('castShadow' in o) o.castShadow = g0.sh; if ('distance' in o) o.distance = g0.d; saveLocal(); ui.draw(); });
+    ui.el.querySelectorAll('[data-ladd]').forEach(b => b.onclick = () => { const m = ensure(); m.lightsAdd = m.lightsAdd || []; const c = (W.center && W.center()) || { x: 0, z: 0 }, k = b.dataset.ladd; m.lightsAdd.push({ k, p: [+(c.x || 0).toFixed(1), k === 'sun' ? 80 : 12, +(c.z || 0).toFixed(1)], i: k === 'sky' ? 1 : 2, c: '#ffffff', d: k === 'point' ? 40 : k === 'spot' ? 60 : 0, sh: false, on: true }); saveLocal(); lightsApply(); ui.draw(); });
+    const ldel = ui.el.querySelector('[data-ldelall]'); if (ldel) ldel.onclick = () => { const m = ensure(); m.lightsAdd = []; saveLocal(); lightsApply(); ui.draw(); };
+    ui.el.querySelectorAll('[data-grade]').forEach(r => r.oninput = () => { const m = ensure(); m.grade = m.grade || {}; m.grade[r.dataset.grade] = +r.value; saveLocal(); gradeApply(); r.previousElementSibling.querySelector('b').textContent = r.value; });
+    const gr = ui.el.querySelector('[data-gradereset]'); if (gr) gr.onclick = () => { const m = ensure(); delete m.grade; saveLocal(); gradeApply(); ui.draw(); };
+    const pf = ui.el.querySelector('[data-perf]'); if (pf) pf.onchange = () => { PERF.on = pf.checked; try { localStorage.setItem('apexStudioPerf', PERF.on ? '1' : '0'); } catch (e) {} drawWatchHud(); };
+    ui.el.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => { recordClip(+b.dataset.rec); ui.open = false; ui.draw(); setTimeout(() => { ui.open = true; ui.tab = 'lights'; ui.draw(); }, (+b.dataset.rec) * 1000 + 800); });
+    const rsh = ui.el.querySelector('[data-recshare]'); if (rsh) rsh.onclick = () => { if (REC.file && navigator.share) navigator.share({ files: [REC.file], title: REC.name }).catch(() => {}); };
+    const rk = ui.el.querySelector('[data-rkind]'); if (rk) rk.onchange = () => { RU.kind = rk.value; ui.draw(); };
+    const rnn = ui.el.querySelector('[data-rn]'); if (rnn) rnn.oninput = () => { RU.n = +rnn.value; rnn.previousElementSibling.querySelector('b').textContent = rnn.value; };
+    const rn2 = ui.el.querySelector('[data-rn2]'); if (rn2) rn2.oninput = () => { RU.n2 = +rn2.value; rn2.previousElementSibling.querySelector('b').textContent = rn2.value; };
+    const ro = ui.el.querySelector('[data-rother]'); if (ro) ro.onchange = () => { RU.other = ro.value; };
+    const rnm = ui.el.querySelector('[data-rname]'); if (rnm) rnm.onchange = () => { RU.name = rnm.value.trim(); ui.draw(); };
+    const rmd = ui.el.querySelector('[data-rmode]'); if (rmd) rmd.onchange = () => { RU.mode = rmd.value.trim(); };
+    const ra = ui.el.querySelector('[data-radd]'); if (ra) ra.onclick = () => { const o = E.sel, path = o ? pathOf(o) : '', m = path ? measure(path) : null, when = new Date().toLocaleString();
+      const r = { id: Date.now().toString(36), kind: RU.kind, path, label: o ? (o.name || path) : '', when, mode: RU.mode };
+      if (RU.kind === 'ground') r.n = RU.n; if (RU.kind === 'size') { r.n = RU.n2 || 10; r.size = m.size; } if (RU.kind === 'near') { if (!RU.other) { RU.msg = 'Pick the other thing first.'; ui.draw(); return; } r.n = RU.n2 || 5; r.other = RU.other; const oo = byPath(RU.other); r.otherLabel = oo ? (oo.name || RU.other) : RU.other; }
+      if (RU.kind === 'color') { if (!m.color) { RU.msg = 'That thing has no colour to lock.'; ui.draw(); return; } r.color = m.color; } if (RU.kind === 'count') { r.n = countNamed(RU.name); r.name = RU.name; r.label = RU.name; }
+      const ok = ruleCheckNow(r); if (ok !== true) { RU.msg = 'This rule fails right now (' + ok + ') - a rule must pass on today\'s game, or the robot would fail every pull request.'; ui.draw(); return; }
+      RULES.push(r); saveRules(); RU.msg = 'Added. ' + ruleWords(r); ui.draw(); };
+    ui.el.querySelectorAll('[data-rdel]').forEach(b => b.onclick = () => { RULES.splice(+b.dataset.rdel, 1); saveRules(); ui.draw(); });
+    ui.el.querySelectorAll('[data-rcode]').forEach(b => b.onclick = () => { RU.showCode = RU.showCode === +b.dataset.rcode ? -1 : +b.dataset.rcode; ui.draw(); });
+    const rsd = ui.el.querySelector('[data-rsend]'); if (rsd) rsd.onclick = async () => { RU.msg = 'Reading the robot test file…'; ui.draw(); try { const fp = await rulesPack(); try { navigator.clipboard.writeText(fp).catch(() => {}); } catch (e) {} const stamp = new Date().toLocaleString(); RULES.forEach(r => { if (!r.sent) r.sent = stamp; }); saveRules();
+        const b64 = btoa(unescape(encodeURIComponent(fp))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); RU.msg = 'Opening your controller with the fix pack (' + fp.length + ' letters).'; ui.draw(); openCtl('/fix#fp=' + b64); } catch (e) { RU.msg = 'Could not build it: ' + e.message; ui.draw(); } };
     const lc = ui.el.querySelector('[data-logclear]'); if (lc) lc.onclick = () => { LOG.length = 0; ui.btn.textContent = '✕ Close Studio'; ui.draw(); };
     const lcp = ui.el.querySelector('[data-logcopy]'); if (lcp) lcp.onclick = () => { const t = LOG.map(l => new Date(l.at).toLocaleTimeString() + ' ' + l.kind + ' ' + l.text + (l.file ? ' (' + l.file + ':' + l.line + ')' : '')).join('\n'); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied.'; ui.draw(); }).catch(() => {}); } catch (e) {} };
     const wqi = ui.el.querySelector('[data-wq]'); if (wqi) wqi.oninput = () => { wq.q = wqi.value; const p = wqi.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-wq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
@@ -601,6 +740,8 @@
     ui.el.querySelectorAll('[data-usecam]').forEach(b => b.onclick = () => { camPick = +b.dataset.usecam; try { localStorage.setItem(KEY + '_cam', camPick); } catch (e) {} emit('change', 'cam'); ui.draw(); });
     ui.el.querySelectorAll('[data-delcam]').forEach(b => b.onclick = () => { const m = ensure(); m.cams.splice(+b.dataset.delcam, 1); camPick = -1; saveLocal(); ui.draw(); });
     const ac = ui.el.querySelector('[data-addcam]'); if (ac) ac.onclick = () => { const m = ensure(); const c = W.camDefault || { back: 12, up: 4, side: 0, ahead: 10, fov: 60 }; m.cams.push(Object.assign({ name: 'My view ' + (m.cams.length + 1) }, c)); camPick = m.cams.length - 1; saveLocal(); emit('change', 'cam'); ui.draw(); };
+    const ex = ui.el.querySelector('[data-exp]'); if (ex) ex.onclick = () => { const t = JSON.stringify(mine || pub); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied ' + t.length + ' letters.'; ui.draw(); }).catch(() => { const ta = document.getElementById('apxImp'); if (ta) ta.value = t; }); } catch (e) {} };
+    const im = ui.el.querySelector('[data-imp]'); if (im) im.onclick = () => { const ta = document.getElementById('apxImp'); let j = null; try { j = JSON.parse((ta.value || '').replace(/^STUDIO\s+\S+\s+/, '')); } catch (e) { j = null; } if (!j || typeof j !== 'object') { ui.msg = 'That is not a changes code.'; ui.draw(); return; } mine = Object.assign(JSON.parse(JSON.stringify(pub)), j); saveLocal(); rebuildProps(); applyAll(); emit('change', '*'); ui.msg = 'Loaded.'; ui.draw(); };
     const pb = ui.el.querySelector('[data-pub]'); if (pb) pb.onclick = () => {
       ui.pubText = 'STUDIO ' + GAME + ' ' + JSON.stringify(mine || pub); ui.draw();
       const ta = document.getElementById('apxPub'); const msg = document.getElementById('apxPubMsg');
@@ -614,6 +755,8 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
+    measure, count: countNamed, rules: { list: () => RULES, add: r => { RULES.push(r); saveRules(); }, check: ruleCheckNow, code: ruleTestCode, pack: rulesPack, words: ruleWords },
+    lights: { all: lightsAll, apply: lightsApply, grade: gradeApply, perf: perfLine, record: recordClip },
     track: { load: trackLoad, state: () => TK, finishHere: trackFinishHere, apply: trackApply, lines: trackCodeLines },
     log: () => LOG.slice(), watch: { list: () => WATCH.slice(), pin: p => { if (!WATCH.includes(p)) WATCH.push(p); saveWatch(); }, all: liveAll, get: liveGet },
     code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, bornAt, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
