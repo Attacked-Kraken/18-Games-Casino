@@ -307,3 +307,8 @@ line (a solved bug leaves its test + one line of cause). Per-game short lists: r
 
 ## 2026-10-29 help desk
 - When a NO CHANGE report proves a QUEUE.md line is already on main, tick the line and cite the report, or the Mac re-sends it.
+
+## Nov 8 2026 VP (F1, Nov 6-7 fixes locked - full text UNIVERSAL.md "F1 LESSONS Nov 6-7 2026")
+- An action that only works at one spot needs a visible sign there and a distance everywhere else (PIT, #2396); an option button that changes nothing on screen under another option is a bug (team colour under a wrap, #2395/#2397).
+- A preview camera fits each model's measured size (#2397); a texture projected onto a body must be isotropic or it streaks (#2420); nothing heavy runs in the frame the car crosses the line (#2386/#2387).
+
