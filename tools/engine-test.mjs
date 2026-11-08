@@ -33,4 +33,18 @@ ok(Math.abs(T.time() - T.steps / 60) < 1e-9, 'time() is game time = steps x step
 T.stop();
 /* 6) a replay with the wrong sheet speaks */
 const W = make(1); let mism = 0; W.on('replay-mismatch', () => mism++); W.replay(Object.assign({}, rec, { sheetHash: 'nope' }), { now: true }); ok(mism === 1, 'replay-mismatch event when the sheet changed');
+/* 7) WHEN / THEN blocks: state actions inside the step are replay-exact, looks/sounds go to fx handlers, timers run on game time */
+const K = make(11); let banners = [], sounds = 0;
+K.onFx('banner', a => banners.push(a.text)); K.onFx('sound', () => sounds++);
+K.blocks.set([{ when: 'lap', then: [{ do: 'score', n: 10 }, { do: 'banner', text: 'LAP {lap}!' }, { do: 'sound', kind: 'cheer' }] },
+  { when: 'lap', if: { field: 'lap', op: '>=', value: 3 }, then: [{ do: 'banner', text: 'HALF WAY' }] },
+  { when: 'every', sec: 5, then: [{ do: 'banner', text: 'tick {sec}' }] },
+  { when: 'at', sec: 1, then: [{ do: 'set', field: 'flag', value: 1 }] }]);
+K.record.start(); drive(K, 1200); const krec = K.record.stop();
+const L = K.state.lap;
+ok(L >= 3 && (K.state.score || 0) === L * 10 && K.state.flag === 1, 'blocks: ' + L + ' laps -> score ' + K.state.score + ' (10 a lap, inside the step); at 1 s -> flag set');
+ok(banners.filter(b => b.startsWith('LAP')).length === L && banners.includes('LAP 1!') && banners.filter(b => b === 'HALF WAY').length === Math.max(0, L - 2), 'banner text filled from the event ({lap}) and IF lap >= 3 obeyed (' + banners.filter(b => b === 'HALF WAY').length + ' of ' + Math.max(0, L - 2) + ')');
+ok(banners.filter(b => b.startsWith('tick')).length === 4 && sounds === L, 'every 5 s fired 4 times in 20 s of game time; one cheer per lap (' + sounds + ')');
+const K2 = make(1); K2.blocks.set(K.blocks.list); K2.replay(krec, { now: true }); ok(K2.hash() === krec.hash && K2.state.score === L * 10, 'replay with the same blocks -> same hash and score');
+const K3 = make(1); let bm = 0; K3.on('replay-mismatch', d => { if (d.what === 'blocks') bm++; }); K3.replay(krec, { now: true }); ok(bm === 1 && (K3.state.score || 0) === 0, 'replay without the blocks speaks (replay-mismatch: blocks) and scores nothing');
 console.log(fails ? ('FAILED ' + fails) : 'ALL PASS'); process.exit(fails ? 1 : 0);

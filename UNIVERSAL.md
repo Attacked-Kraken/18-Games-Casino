@@ -160,6 +160,11 @@ For ANY game in tools/game-check/games.json (2D or 3D, new games too) the robot 
   `E.on('lap' | 'finish' | 'offtrack' | 'race-start' | 'step', fn)` - the hooks the When/Then blocks (#163) will use.
 - RULE: a NEW game is a sheet on the engine (`templates/racer.html` is the worked example: the START tap is an input, so it is
   recorded too). The six locked games are NOT rebuilt now; after they are done they move onto the engine one PART at a time.
+- WHEN / THEN BLOCKS (#163, built Nov 8 2026): Studio's ⚡ Blocks tab = WHEN an event (lap, finish, offtrack, race-start, every N s, at N s,
+  or any event a game emits) [IF field op value] THEN actions - banner, sound, slow motion, shake, say (looks and sounds, draw side)
+  and score / end / set (state, inside the step, so a replay repeats them; a recording carries the blocks' hash and speaks if they
+  changed). Saved in mods/<game>.json `blocks`, published through Paste a fix like every Studio change; `E.blocks.set(list)` loads them.
+  A game on the engine gets the tab by passing `engine: E` to `Studio.world`. The starter's `__game.autopilot()` steers toward the
+  road so the robot can drive laps in any engine racer.
 - RULE: nothing in `sim` may read the clock, `Math.random`, the screen or Studio sliders directly - those go into the state at
   `init` (the starter keeps its tuning in `S.tune`), or the replay is not exact.
-

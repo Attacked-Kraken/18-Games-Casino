@@ -103,16 +103,16 @@ const E = Engine.create({
     if (off && !S.wasOff) E.emit('offtrack', { x: P.x, z: P.z }); S.wasOff = off;
     for (const a of S.riv) { a.spd += (T.top * T.ai * a.jitter - a.spd) * dt * 0.6; a.dist += a.spd * dt / LEN; a.t = ((a.dist % 1) + 1) % 1; a.lap = Math.floor(a.dist + 0.005); }
     const order = [{ me: 1, d: P.dist }].concat(S.riv.map(a => ({ d: a.dist }))).sort((x, y) => y.d - x.d); S.pos = order.findIndex(x => x.me) + 1;
-    if (P.lap >= S.laps) { S.mode = 'done'; S.endStep = E.steps; E.emit('finish', { pos: S.pos, time: (E.steps - S.startStep) * dt }); }
+    if (P.lap >= S.laps || S.endText) { S.mode = 'done'; S.endStep = E.steps; E.emit('finish', { pos: S.pos, time: (E.steps - S.startStep) * dt, score: S.score || 0 }); }
   },
   draw: (S, alpha, E) => {
     const now = performance.now(), dt = 1 / 60;
     if (S.mode !== drawnMode) { drawnMode = S.mode; const racing = S.mode === 'race'; $('menu').classList.toggle('hidden', racing); input.show(racing);
-      if (S.mode === 'done') { $('mtitle').textContent = S.pos === 1 ? 'YOU WIN!' : 'FINISHED P' + S.pos; $('msub').textContent = ((S.endStep - S.startStep) / 60).toFixed(2) + ' s · ' + S.laps + ' laps'; $('go').textContent = 'RACE AGAIN'; } }
+      if (S.mode === 'done') { $('mtitle').textContent = S.endText ? S.endText : (S.pos === 1 ? 'YOU WIN!' : 'FINISHED P' + S.pos); $('msub').textContent = ((S.endStep - S.startStep) / 60).toFixed(2) + ' s · ' + S.laps + ' laps'; $('go').textContent = 'RACE AGAIN'; } }
     P.o.position.set(S.p.x, 0, S.p.z); P.o.rotation.y = S.p.h;
     S.riv.forEach((a, i) => { if (RIV[i]) placeAt(RIV[i].o, a.t, a.side); });
     if (S.mode === 'race') {
-      $('hlap').textContent = 'LAP ' + Math.min(S.laps, S.p.lap + 1) + ' / ' + S.laps; $('hpos').textContent = 'P' + S.pos + ' / ' + (S.riv.length + 1); $('htime').textContent = ((E.steps - S.startStep) / 60).toFixed(1) + ' s'; $('hspd').textContent = Math.round(S.p.v * 3.6) + ' km/h' + (S.off ? ' · off the road' : '') + (E.replaying ? ' · ▶ replay' : '');
+      $('hlap').textContent = 'LAP ' + Math.min(S.laps, S.p.lap + 1) + ' / ' + S.laps; $('hpos').textContent = 'P' + S.pos + ' / ' + (S.riv.length + 1); $('htime').textContent = ((E.steps - S.startStep) / 60).toFixed(1) + ' s'; $('hspd').textContent = Math.round(S.p.v * 3.6) + ' km/h' + (S.off ? ' · off the road' : '') + (S.score ? ' · ' + S.score + ' pts' : '') + (E.replaying ? ' · ▶ replay' : '');
       if (AC && osc) { const t = AC.currentTime, gas = input.read().buttons.gas; osc.frequency.setTargetAtTime((55 + S.p.v * 3.2) * SN('engine.pitch', 1), t, 0.05); flt.frequency.setTargetAtTime(SN('engine.tone', 900), t, 0.05); gn.gain.setTargetAtTime(0.05 + 0.12 * SN('engine.volume', 0.5) * (gas ? 1 : 0.5), t, 0.08); }
     } else if (AC && gn) gn.gain.setTargetAtTime(0, AC.currentTime, 0.1);
     if (!(window.Studio && Studio.ownsCamera())) {
@@ -120,6 +120,7 @@ const E = Engine.create({
       const h = S.mode === 'race' ? S.p.h : S.p.h + now / 3000, f = new THREE.Vector3(Math.sin(h), 0, Math.cos(h)), sd = new THREE.Vector3(f.z, 0, -f.x);
       const want = new THREE.Vector3().copy(P.o.position).addScaledVector(f, -back).addScaledVector(sd, side); want.y = up; camera.position.lerp(want, 1 - Math.exp(-dt * 8));
       camera.lookAt(P.o.position.x + f.x * ahead, 1, P.o.position.z + f.z * ahead); if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+      const sh = E.fxState; if (sh.shakeUntil > now) { const k = sh.shake * (sh.shakeUntil - now) / 600; camera.position.x += (Math.random() - 0.5) * k; camera.position.y += (Math.random() - 0.5) * k * 0.6; } else sh.shake = 0;   /* blocks: shake (draw side only, never the sim) */
     }
     r.render(scene, camera);
   },
@@ -131,11 +132,13 @@ $('go').onclick = start;
 $('msub').textContent = (CONFIG.laps || 3) + ' laps · ' + (CONFIG.rivals || 0) + ' rivals' + (window.Studio && Studio.active() ? ' · 🎛️ Studio on' : '');
 E.on('finish', () => { try { if (E.record.active()) E.save(E.record.stop()); } catch (e) {} });   /* a finished recorded race is kept on this phone (apexReplay:<name>) */
 camera.position.set(0, 30, 60);
-try { Studio.world({ THREE, scene, camera, renderer: r, canvas: r.domElement, groundY: () => 0, center: () => ({ x: P.o.position.x, z: P.o.position.z }), camDefault: { back: 12, up: 5, side: 0, ahead: 10, fov: 65 }, live: () => ({ state: E.state, engine: { steps: E.steps, time: E.time(), paused: E.paused, replaying: E.replaying } }) }); Studio.refresh(); } catch (e) {}
+try { Studio.world({ THREE, scene, camera, renderer: r, canvas: r.domElement, engine: E, groundY: () => 0, center: () => ({ x: P.o.position.x, z: P.o.position.z }), camDefault: { back: 12, up: 5, side: 0, ahead: 10, fov: 65 }, live: () => ({ state: E.state, engine: { steps: E.steps, time: E.time(), paused: E.paused, replaying: E.replaying } }) }); Studio.refresh(); } catch (e) {}
 E.start();
 /* ?replay=1 plays the recording kept on this phone; ?seed=N fixes the random; the robot drives E through window.__engine */
 try { const q = new URLSearchParams(location.search); if (q.get('seed')) E.reset(+q.get('seed')); if (q.get('replay')) { const d = E.load(); if (d) E.replay(d, { hold: true }); } } catch (e) {}
 window.__engine = E;
-window.__game = { CONFIG, SHEET, P, RIV, start, mode: () => (E.state || {}).mode, state: () => E.state };
+/* autopilot = steer toward the road ahead (the robot drives any engine game with it: E.input.use(() => ({ x: __game.autopilot(), buttons: { gas: true } }))) */
+function autopilot(look) { const S = E.state; if (!S) return 0; const n = nearest(S.p.x, S.p.z), tg = spawn(n.t + (look || 0.015), 0); const want = Math.atan2(tg.x - S.p.x, tg.z - S.p.z); let d = want - S.p.h; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return Math.max(-1, Math.min(1, -d * 2)); }
+window.__game = { CONFIG, SHEET, P, RIV, start, mode: () => (E.state || {}).mode, state: () => E.state, autopilot, track: { length: LEN, width: WIDTH, nearest, point: (t) => spawn(t, 0) } };
 </script>
 </body></html>
