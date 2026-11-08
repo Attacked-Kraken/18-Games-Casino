@@ -370,6 +370,36 @@
    "file": ".github/workflows/game-check-pr.yml",
    "needle": "tools/game-check/look-guard.mjs",
    "rule": "the PR check runs the look job for every changed game page"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "buildPitSigns(g){",
+   "rule": "F1: floating PIT ENTRY signs over the pit entry (owner Nov 6 2026, PR #2396)"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "PIT ARMED",
+   "rule": "F1: PIT arms from anywhere on the lap, banner shows the distance (PR #2396)"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "lerp(tc,0.6)",
+   "rule": "F1: a wrap is tinted toward the picked team colour - colour buttons always change the car (PR #2397)"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "S._fitCar",
+   "rule": "F1: garage preview camera fits each car's length so Classic and Modern read the same size (PR #2397)"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "torn and streaky",
+   "rule": "F1: Volcanic Flame wrap is isotropic (round glows), no streaks (PR #2420)"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "buildLineSigns(g",
+   "rule": "F1: start/finish line stays bare with floating START/FINISH/lap signs (PR #2388)"
   }
  ]
 }
