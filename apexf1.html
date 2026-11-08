@@ -2355,7 +2355,7 @@ const Race = {
     this.laps=cfg.laps; this.cheatLevel=cfg.cheat;
     if(this.track.gp && GP.data) Track.buildGP(GP.data, GP.lt); else Track.build(this.track.gp?LEGACY_TRACK:this.track);
     applyTheme(this.track.theme||null);
-    try{ if(window.Studio){ const trk=this.track; Studio.world({THREE, scene, camera, renderer, canvas:renderer.domElement, groundY:(x,z)=>trackGroundY(x,z), scope:()=>trk.id,
+    try{ if(window.Studio){ const trk=this.track; Studio.world({THREE, scene, camera, renderer, canvas:renderer.domElement, groundY:(x,z)=>trackGroundY(x,z), scope:()=>trk.id, live:()=>({ player:Race.player, race:Race, track:Track, input:Input, weather:Race.weather }), /* Studio 👁️ Watch (owner Nov 7 2026) */
       center:()=>{ const pl=Race.player&&Race.player.mesh; return pl?{x:pl.position.x,z:pl.position.z}:{x:0,z:0}; }, camDefault:{back:14,up:5,side:0,ahead:12,fov:62} }); Studio.refresh(); } }catch(e){ console.warn('studio', e); } // owner Nov 6 2026: things he places in Studio
     if(GP.lt && GP.lt.root) GP.lt.root.visible = !!this.track.gp; // the Grand Prix kit's world (ground, stands, buildings) only on its own circuit
     const evRoot=scene.getObjectByName('grand_prix_event'); if(evRoot) evRoot.visible = !!this.track.gp;

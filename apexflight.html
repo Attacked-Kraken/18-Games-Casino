@@ -806,7 +806,7 @@ function toggleView() {
   if (window.Studio) { const mine = (Studio.data().cams || []).length;   // owner Nov 7 2026: after chase + cockpit come his own Studio views
     if (Studio.camView() || (cockpit && mine)) { const v = Studio.camNext(); if (v) { cockpit = false; plane.visible = true; flashMsg(String(v.name || 'MY VIEW').toUpperCase(), 1200); return; } cockpit = true; } }
   cockpit = !cockpit; plane.visible = !cockpit; flashMsg(cockpit ? 'COCKPIT VIEW' : 'CHASE VIEW', 1200); }
-try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'world',
+try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'world', live: () => ({ plane: P, game: { mode } }), /* Studio 👁️ Watch (owner Nov 7 2026) */
   center: () => ({ x: P.pos.x, z: P.pos.z }), camDefault: { back: 17, up: 4.5, side: 0, ahead: 12, fov: 62 } }); } catch (e) { console.warn('studio', e); }   // owner Nov 7 2026: things he places
 $('back').addEventListener('click', () => { location.href = 'sports.html'; });
 $('viewBtn').addEventListener('click', toggleView);

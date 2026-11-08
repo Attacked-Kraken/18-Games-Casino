@@ -825,7 +825,7 @@ let statShots={home:0,away:0}, statSaves={home:0,away:0}, statFO={home:0,away:0}
 let pendingFaceoff=null;
 let delayedPen=null; // G-273 round 1 (G-228): an armed DELAYED penalty {off, why, major} - play goes on until the penalised team touches the puck (rules/hockey.md)
 let controlled = homeSkaters[0];
-try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'rink', // owner Nov 7 2026: things he places in Studio
+try { if (window.Studio) Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: () => 0, scope: () => 'rink', live: () => ({ puck, you: skaters[0], skaters, game: { state, paused } }), /* Studio 👁️ Watch (owner Nov 7 2026) */ // owner Nov 7 2026: things he places in Studio
   center: () => (controlled ? { x: controlled.pos.x, z: controlled.pos.z } : { x: 0, z: 0 }), camDefault: { back: 6, up: 4, side: 0, ahead: 4, fov: 57 } }); } catch (e) { console.warn('studio', e); }
 /* G-37: the career play tests read and set the live game through this hook
    (the same __hk peek the other play tests use for the puck and the skaters).
