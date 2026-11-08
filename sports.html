@@ -124,14 +124,53 @@
   <div class="eyebrow">APEX ARCADE</div>
   <h1>GAME DEVELOPMENT</h1>
 </header>
-<!-- owner Nov 6 2026 11:17 PM "the whole system of creating the games ... options in depth ... a new game a Muse builds, I want to put in game development" -->
-<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:4px 14px 10px">
-  <a href="workshop.html" style="flex:1 1 160px;text-align:center;padding:12px;border-radius:12px;background:#ffd23a;color:#111;font-weight:900;text-decoration:none">&#128736;&#65039; WORKSHOP<br><span style="font-weight:600;font-size:12px">build · track · code · new game</span></a>
-  <button id="studioSw" type="button" style="flex:1 1 160px;padding:12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408;color:#ffd23a;font:900 15px inherit;cursor:pointer">&#127899;&#65039; STUDIO <span id="studioSt">OFF</span><br><span style="font-weight:600;font-size:12px">tune any game while you play it</span></button>
-  <!-- owner Nov 7 2026 7:06 AM "a way to merge PRs and stuff myself": opens HIS controller's Pull requests page (PIN there - nothing here can merge) -->
-  <button type="button" onclick="if(window.apexController){apexController('/prs')}" style="flex:1 1 160px;padding:12px;border-radius:12px;border:1px solid #16a34a;background:#0f2a18;color:#7ee2a0;font:900 15px inherit;cursor:pointer">&#128256; PULL REQUESTS<br><span style="font-weight:600;font-size:12px">merge · send back · close</span></button>
-  <a href="workshop.html#help" style="flex:1 1 160px;text-align:center;padding:12px;border-radius:12px;background:#141b26;border:1px solid #2a3444;color:#eef1f5;font-weight:900;text-decoration:none">&#127981; HOW IT ALL WORKS<br><span style="font-weight:600;font-size:12px">the whole game-making system</span></a>
+<!-- owner Nov 8 2026 1:11 PM "I told you to make it a menu for the tabs, you stick the tabs for everything on top of page - fix":
+     ONE ☰ Tools button; every tool is a tab inside the panel (same ids as before, the scripts below still work). -->
+<style>
+  .toolsbar { display:flex; justify-content:center; padding:2px 14px 10px }
+  .toolsbar button { font:900 15px/1 inherit; letter-spacing:.06em; color:#111; background:#ffd23a; border:0; border-radius:999px; padding:12px 22px; cursor:pointer; box-shadow:0 6px 20px rgba(255,210,58,.25) }
+  #toolsPanel { display:none; position:fixed; inset:0; z-index:60; background:#0b0f16; overflow:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top)) 14px 30px }
+  #toolsPanel.open { display:block }
+  #toolsPanel .tp-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+  #toolsPanel .tp-top b { font-size:18px; letter-spacing:.1em; color:#ffd23a }
+  #toolsPanel .tp-back { font:800 14px inherit; color:#eef1f5; background:#1b2433; border:1px solid #2a3444; border-radius:999px; padding:9px 14px; cursor:pointer }
+  #toolsPanel .tp-sec { font-size:12px; letter-spacing:.16em; color:#9aa6b8; margin:14px 2px 6px }
+  #toolsPanel .tab { display:flex; align-items:center; gap:12px; width:100%; text-align:left; text-decoration:none; color:#eef1f5; background:#131a26; border:1px solid #243043; border-radius:14px; padding:13px 14px; margin:0 0 7px; font:inherit; cursor:pointer }
+  #toolsPanel .tab .ic { font-size:22px; width:30px; text-align:center } #toolsPanel .tab b { display:block; font-size:16px } #toolsPanel .tab span.d { display:block; font-size:12px; color:#9aa6b8 }
+  #toolsPanel .tab.y { background:#1a1408; border-color:#5a4a12 } #toolsPanel .tab.g { background:#0f2a18; border-color:#1f5a35 }
+  #toolsPanel #studioSw { all:unset; cursor:pointer; display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; color:#ffd23a; background:#1a1408; border:1px solid #ffd23a; border-radius:14px; padding:13px 14px; margin:0 0 7px }
+  #toolsPanel #studioSw b { display:block; font-size:16px } #toolsPanel #studioSw span.d { display:block; font-size:12px; color:#9aa6b8 }
+  #toolsPanel .tab > span:last-child, #toolsPanel #studioSw > span:last-child { flex:1; min-width:0; display:block }
+  #toolsPanel button.tab, #toolsPanel #studioSw { white-space:normal; -webkit-appearance:none; appearance:none; box-sizing:border-box }
+</style>
+<div class="toolsbar"><button type="button" id="toolsBtn" aria-controls="toolsPanel">&#9776; TOOLS</button></div>
+<div id="toolsPanel" role="dialog" aria-label="Tools">
+  <div class="tp-top"><button type="button" class="tp-back" id="toolsBack">&#8249; Back</button><b>TOOLS</b><span style="width:70px"></span></div>
+  <div class="tp-sec">MAKE &amp; TUNE</div>
+  <a class="tab y" href="workshop.html"><span class="ic">&#128736;&#65039;</span><span><b>Workshop</b><span class="d">build · track · code · new game</span></span></a>
+  <button id="studioSw" type="button"><span class="ic">&#127899;&#65039;</span><span><b>Studio <span id="studioSt">OFF</span></b><span class="d">the editor inside every game - tune, place, lights, rules, log, watch</span></span></button>
+  <div class="tp-sec">LEARN</div>
+  <a class="tab" href="glossary.html"><span class="ic">&#128214;</span><span><b>Glossary</b><span class="d">what does what · how to use everything</span></span></a>
+  <a class="tab" href="workshop.html#help"><span class="ic">&#127981;</span><span><b>How it all works</b><span class="d">the whole game-making system</span></span></a>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/manual')}"><span class="ic">&#128216;</span><span><b>Manual</b><span class="d">fix anything, add a feature, index of every game file</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/map')}"><span class="ic">&#128506;&#65039;</span><span><b>System map</b><span class="d">every part, where to change what</span></span></button>
+  <div class="tp-sec">FIX &amp; SHIP</div>
+  <button class="tab g" type="button" onclick="if(window.apexController){apexController('/prs')}"><span class="ic">&#128256;</span><span><b>Pull requests</b><span class="d">merge · send back · fix conflict · close</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/fixit')}"><span class="ic">&#128295;</span><span><b>Fix it</b><span class="d">your words → the code → a ChatGPT message → Check → Send</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/fix')}"><span class="ic">&#129657;</span><span><b>Paste a fix</b><span class="d">paste a FIX PACK, Check against GitHub, Send to the window</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/versions')}"><span class="ic">&#128344;</span><span><b>Versions</b><span class="d">every merge of a game · play it · put it back</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/code')}"><span class="ic">&#128196;</span><span><b>Code</b><span class="d">read + search the games and the Mac script</span></span></button>
+  <div class="tp-sec">CONTROL</div>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/master')}"><span class="ic">&#128203;</span><span><b>Master list</b><span class="d">everything left to build or prove</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/settings')}"><span class="ic">&#9881;&#65039;</span><span><b>My settings</b><span class="d">mouse, clicks, courier, waits - your numbers</span></span></button>
+  <button class="tab" type="button" onclick="if(window.apexController){apexController('/')}"><span class="ic">&#127911;</span><span><b>Controller</b><span class="d">the Mac mini's home page</span></span></button>
 </div>
+<script>(function(){
+  var p = document.getElementById('toolsPanel'), b = document.getElementById('toolsBtn'), k = document.getElementById('toolsBack');
+  function open(o){ p.classList.toggle('open', o); document.body.style.overflow = o ? 'hidden' : ''; if (o) p.scrollTop = 0; }
+  b.onclick = function(){ open(true); }; k.onclick = function(){ open(false); };
+  if (location.hash === '#tools') open(true);
+})();</script>
 
 <nav class="tabs" id="tabs">
   <button class="refresh" id="refresh" type="button" aria-label="Refresh - load the newest builds">&#10227; Refresh</button>
@@ -240,7 +279,7 @@
 <script>(function(){
   var sw = document.getElementById('studioSw'), st = document.getElementById('studioSt');
   function on(){ try { return localStorage.getItem('apexStudioOn') === '1'; } catch (e) { return false; } }
-  function draw(){ st.textContent = on() ? 'ON' : 'OFF'; sw.style.background = on() ? '#ffd23a' : '#1a1408'; sw.style.color = on() ? '#111' : '#ffd23a'; }
+  function draw(){ st.textContent = on() ? 'ON' : 'OFF'; sw.style.background = on() ? '#ffd23a' : '#1a1408'; sw.style.color = on() ? '#111' : '#ffd23a'; sw.style.borderColor = '#ffd23a'; }
   sw.onclick = function(){ try { localStorage.setItem('apexStudioOn', on() ? '0' : '1'); } catch (e) {} draw(); }; draw();
   if (location.hash === '#help') location.href = 'workshop.html#help';
   var have = {}; document.querySelectorAll('#grid a.go').forEach(function(a){ have[(a.getAttribute('href') || '').split('?')[0]] = 1; });

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Glossary - what does what</title>
+<!-- owner Nov 8 2026 1:11 PM "give me a glossary for what does what and how to use everything" - one page, plain words, every tool.
+     Static, public, no secrets. Controller links use the same saved away link the Game Development page uses (feedback.js keys). -->
+<style>
+  :root { --bg:#0b0f16; --card:#131a26; --line:#243043; --ink:#eef1f5; --dim:#9aa6b8; --y:#ffd23a; --g:#7ee2a0; --b:#8fc2ff; --r:#ff7b6b; }
+  * { box-sizing:border-box } body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.45 -apple-system,system-ui,sans-serif; padding-bottom:40px }
+  header { padding:14px 14px 6px } .eyebrow { font-size:12px; letter-spacing:.2em; color:var(--y) } h1 { margin:2px 0 6px; font-size:26px; letter-spacing:.04em }
+  .sub { color:var(--dim); font-size:14px; margin:0 0 8px }
+  .top { display:flex; gap:8px; padding:0 14px 8px; align-items:center; flex-wrap:wrap }
+  .top a, .top button { font:800 13px inherit; color:var(--ink); background:#1b2433; border:1px solid var(--line); border-radius:999px; padding:8px 12px; text-decoration:none; cursor:pointer }
+  #q { width:100%; margin:0 14px 6px; width:calc(100% - 28px); font:16px inherit; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#0f1521; color:var(--ink) }
+  nav.jump { display:flex; gap:6px; overflow-x:auto; padding:4px 14px 10px; -webkit-overflow-scrolling:touch }
+  nav.jump a { white-space:nowrap; font:700 12px inherit; color:var(--b); background:#111a28; border:1px solid var(--line); border-radius:999px; padding:6px 10px; text-decoration:none }
+  section { padding:4px 14px } h2 { font-size:15px; letter-spacing:.14em; color:var(--y); margin:18px 0 8px; text-transform:uppercase }
+  .e { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin:0 0 8px }
+  .e h3 { margin:0 0 4px; font-size:17px } .e h3 small { color:var(--dim); font-weight:600; font-size:12px; margin-left:6px }
+  .e p { margin:4px 0; font-size:14px } .e p b { color:var(--g) } .e p i { color:var(--dim); font-style:normal }
+  .e .w { color:var(--dim); font-size:13px } .e a { color:var(--b) } .e.hide { display:none }
+  .how { background:#0f2a18; border-color:#1f5a35 } .how h3 { color:var(--g) }
+  .note { color:var(--dim); font-size:13px; padding:0 14px 8px }
+  #none { display:none; color:var(--dim); padding:20px 14px; text-align:center }
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">APEX ARCADE · GAME DEVELOPMENT</div>
+  <h1>📖 Glossary</h1>
+  <p class="sub">What does what, and how to use it. Everything you can touch, in plain words. Type a word to find it.</p>
+</header>
+<div class="top">
+  <a href="sports.html">‹ Game Development</a>
+  <a href="#" id="ctlLink">🎛️ Controller</a>
+  <a href="workshop.html">🛠️ Workshop</a>
+  <a href="workshop.html#help">🏭 How it all works</a>
+</div>
+<input id="q" type="search" placeholder="Find: pit, colour, merge, track, model, roll back …" autocomplete="off">
+<nav class="jump">
+  <a href="#g-flow">The loop</a><a href="#g-dev">Game Development</a><a href="#g-studio">Studio</a><a href="#g-workshop">Workshop</a>
+  <a href="#g-ctl">Controller</a><a href="#g-fix">Fixing</a><a href="#g-robots">Robots</a><a href="#g-crews">Crews</a><a href="#g-words">Words</a><a href="#g-howto">How do I…</a><a href="#g-engine">Apex Engine</a>
+</nav>
+<div id="none">Nothing with that word. Try another word, or clear the box.</div>
+
+<section id="g-flow">
+<h2>The loop - how a fix travels</h2>
+<div class="e"><h3>Your words → a PR → the robot → live</h3>
+<p><b>What:</b> Every change to a game, by you, a Muse or a Claude, goes the same road: a branch + a <i>pull request (PR)</i> → the robot's paperwork checks (file guard, part guard, look guard) → green = the <i>merge robot</i> merges it into <i>main</i> → the live site updates in a minute or two. Red = the exact red lines go back to the window that made it.</p>
+<p><b>How you use it:</b> you never run commands. You tap Send on a tool (Studio, Workshop, Fix it, Paste a fix, Versions) or message a window; the system does the rest and the PR page shows where it is.</p></div>
+</section>
+
+<section id="g-dev">
+<h2>Game Development page (sports.html)</h2>
+<div class="e"><h3>Game cards · Play</h3><p><b>What:</b> the live lineup - every game, newest build, one tap to play. <i>NEW GAMES</i> shows any game page that landed in the repo (a Muse's, or one from Workshop) by itself.</p><p><b>How:</b> tap a game tab at the top to jump to its card; Play opens it. <i>Refresh</i> loads the newest builds.</p></div>
+<div class="e"><h3>✏️ Pencil · 🎥 Record · 📸 Snap · 📤 Send</h3><p><b>What:</b> while a game runs here you can circle a problem, record the screen with your drawing, snap a picture and send it all to your controller, which turns it into a note for the crews.</p><p><b>How:</b> the small bar at the top of a running game. The 📤 opens your controller through its away link, so it works from anywhere.</p></div>
+<div class="e"><h3>☰ Tools menu</h3><p><b>What:</b> one button at the top of the page with every tool as a tab: Workshop, Studio on/off, Pull requests, Glossary, How it all works, Fix it, Paste a fix, Manual, Versions, Code, My settings, System map, Master list.</p><p><b>How:</b> tap ☰, tap a tab, "‹ Back" closes it. Nothing else sits piled on top of the page.</p></div>
+<div class="e"><h3>🎛️ Studio ON / OFF</h3><p><b>What:</b> the switch that puts the in-game editor (Studio) into every game you play from this page.</p><p><b>How:</b> in the ☰ menu. ON = a small Studio button appears in the game; OFF = the plain game. The switch is remembered on this phone.</p></div>
+</section>
+
+<section id="g-studio">
+<h2>Studio - the editor inside every game</h2>
+<div class="e"><h3>Scene <small>tab</small></h3><p><b>What:</b> tap anything in the live game → its name, where it sits, its numbers. Tools: Pick, Move, Lift, Turn, Size by dragging; colour, Hide, Delete, Put it back, Swap for a model, Freeze camera; a list of everything in the scene; "the code that made this".</p><p><b>How:</b> tap the Studio button in the game, tap a thing, drag or use the sliders. Changes are saved on this phone first; Save → Publish sends them as a fix.</p></div>
+<div class="e"><h3>🛣️ Track <small>tab (F1, Racer)</small></h3><p><b>What:</b> the circuit as a map: points, the FINISH line (first point), pit in/out, DRS, you. Drag points, move the finish line, add/remove points, heights, road width.</p><p><b>How:</b> edit → "✍️ Put it in the code" → ▶ Run drives your version → Send. "Save as a NEW circuit" adds a whole new track to F1 (Owner circuits).</p></div>
+<div class="e"><h3>💡 Lights <small>tab</small></h3><p><b>What:</b> every light in the scene: on/off, brightness, colour, place, reach, shadows; add point, spot, sun or sky lights.</p><p><b>How:</b> slide, look, Save. Reset puts the game's own lights back.</p></div>
+<div class="e"><h3>🎨 Look · 🎥 Record</h3><p><b>What:</b> Look = saturation, contrast, brightness, hue, warmth over the whole picture. Record = 10 or 30 seconds of the game as a video (share sheet on the phone).</p></div>
+<div class="e"><h3>🛡️ Rules <small>tab = the check builder</small></h3><p><b>What:</b> tap a thing + pick a rule (stays, above ground, size ±%, within N m of another thing, colour, on screen, count). The rule is measured live; it must PASS today before it is added. Send turns it into a robot test the game must keep passing forever.</p><p><b>How:</b> this is how a complaint becomes a permanent check without code.</p></div>
+<div class="e"><h3>⚙️ Physics · Tune · Place · Cameras</h3><p><b>What:</b> Physics/Tune = the game's declared sliders (speed, grip, engine sound, fov…). Place = drop trees, stands, poles, rocks on a map from above. Cameras = your own camera views (back/up/side/ahead/fov); the game's camera button steps through them.</p></div>
+<div class="e"><h3>💻 Code · 🐞 Log · 👁️ Watch</h3><p><b>What:</b> Code = read and edit this game's code, ▶ Run my version, link to the exact line on GitHub and GitHub's editor. Log = the game's errors and console lines with file:line (the phone has no developer console - this is it; the Studio button shows 🐞N while errors sit). Watch = pin any live number or switch of the running game on screen and change it live.</p></div>
+<div class="e"><h3>Save · Publish</h3><p><b>What:</b> Save keeps your Studio changes on this phone. Publish sends them through the controller's Paste-a-fix as mods/&lt;game&gt;.json, so the game loads them for everyone.</p></div>
+</section>
+
+<section id="g-workshop">
+<h2>Workshop - build outside the game</h2>
+<div class="e"><h3>🧱 Build</h3><p><b>What:</b> a scene editor: shapes, trees, pines, rocks, walls, ramps, floors, poles, stands, arches, any model in the repo; tap, drag, sliders, colour, copy, delete.</p><p><b>How:</b> build → name it → Send (it becomes a pieces/ file any game can load).</p></div>
+<div class="e"><h3>🛣️ Track</h3><p><b>What:</b> tap points to draw a track, drag, width, kerbs, close the loop, split a branch. "F1 circuit" box = put it into F1 as a new circuit.</p></div>
+<div class="e"><h3>💻 Code</h3><p><b>What:</b> open any game, find, go to line, edit, ▶ Run my version in a frame, Undo all.</p></div>
+<div class="e"><h3>🎮 New game</h3><p><b>What:</b> name + starter + track + scenery + car + colours + laps + rivals → Make it → Send. The starter (templates/racer.html) is a working game: laps, rivals, timer, results, engine sound, Studio sliders.</p></div>
+<div class="e"><h3>📤 Send · ❓ How</h3><p><b>What:</b> Send builds the FIX PACK for you and opens the controller's Paste-a-fix with it filled in. How = the whole game-making system explained.</p></div>
+</section>
+
+<section id="g-ctl">
+<h2>Controller (home Wi-Fi or the AWAY icon)</h2>
+<div class="e"><h3>🧪 Phase 2 <small>button</small></h3><p><b>What:</b> the crews page: findings by stage (filed → with Claude → fixed → re-checked → done), testers' and auditors' numbers, each finding with its measured lines and pictures, open PRs by kind, last Claude wake.</p></div>
+<div class="e"><h3>🆘 Help desk · 🔒 Public repo · 🛡️ Safety · ✋ Learned</h3><p><b>What:</b> open HELP lines from windows (a Claude answers them), who touched the public repo, Mac safety events, cards the Mac learned from your taps.</p></div>
+<div class="e"><h3>📲 Open jobs <small>one line per window</small></h3><p><b>What:</b> windows 1-10, each with its Phase 2 role (🧪 Tester / 🔎 Auditor + game), its round id, idle or ⏸ OFFLINE.</p></div>
+<div class="e"><h3>📋 Master list (live)</h3><p><b>What:</b> the ONE list of everything left to build or prove, who is on it, what counts as proof. "What else" is always answered from here.</p><p><b>How:</b> filters Not done / All / Done, a search box; done rows are struck through.</p></div>
+<div class="e"><h3>🧰 My tools</h3><p><b>What:</b> Pull requests, Workshop + games, Fix it, Paste a fix, Manual, My settings, Code, Versions, System map, Glossary - everything that works without Claude.</p></div>
+<div class="e"><h3>🔀 Pull requests <small>/prs</small></h3><p><b>What:</b> every open PR in plain words: 🟢 green (the merge robot merges it; .github ones never), 🔴 red with the robot's exact Reason lines, 🟠 conflict, ⏳ checking, 📝 draft, ⏩ behind; its window, age, ▶ Play it, 🔗 GitHub.</p><p><b>How:</b> buttons = Merge it · Send back the red lines · Fix the conflict · Update from main · Close it (two taps) · Tell its window (your words). Each tap is ONE order typed to that window; a red PR is refused before anything is typed.</p></div>
+<div class="e"><h3>🕘 Versions <small>/versions</small></h3><p><b>What:</b> every merge of a game (date, title, PR, who, 📍 LIVE NOW). ▶ Play that version. ↩️ Put this version back (two taps) = a roll-back order to the game's auditor window, followed to its PR and merge.</p></div>
+<div class="e"><h3>🔧 Fix it <small>/fixit</small></h3><p><b>What:</b> 5 steps: pick the game → Broken or Add new → your words → the system finds the code that matches your words → one ChatGPT message is made for you (problem, why first, the FIX PACK format, the code, an index of the file) → paste the answer → Check → Send.</p></div>
+<div class="e"><h3>🩹 Paste a fix <small>/fix</small></h3><p><b>What:</b> you paste a FIX PACK (GAME / FILE / WHY / TEST / OLD: / NEW: / END). Check reads the real file on GitHub and every OLD block must be found exactly once. Send types it to the game's builder window as an exact order; the window makes a normal PR the robot must pass. 🧭 My fixes shows where each one is. "Copy the ChatGPT prompt" gives ChatGPT the format.</p></div>
+<div class="e"><h3>📘 Manual <small>/manual</small></h3><p><b>What:</b> how to fix anything / add a feature, the worked colours example, and a live index of each game file (parts, lists, ids, test links) - tap a name, you land on that line in the Code page.</p></div>
+<div class="e"><h3>📖 Code <small>/code</small></h3><p><b>What:</b> search and read the approver script, the pages and the 6 game files; "Make a ChatGPT prompt" copies the section + your words + the FIX PACK format; Edit on GitHub opens the exact line.</p></div>
+<div class="e"><h3>⚙️ My settings <small>/settings</small></h3><p><b>What:</b> the numbers you may change yourself: hands-off seconds, pick-one time, card-sit, frozen, mouse speed and click rest, card scan speed, courier routes (GPT on/off, who gets what), Claude wake cap. "normal" resets one. Safety locks are not settings on purpose.</p></div>
+<div class="e"><h3>🗺️ System map <small>/map</small></h3><p><b>What:</b> every part of the system on one page: how a game gets fixed without Claude, where to change what, the words to search for, what stays locked, what to do if something goes wrong.</p></div>
+<div class="e"><h3>💬 Message a Muse · Message all · ⏸ Pause</h3><p><b>What:</b> type to one window or all 12; your messages are never held by the automatic switches. Pause stops the Mac's hands for 5 / 15 / 60 min or until Resume.</p></div>
+<div class="e"><h3>🎚️ Automation level · Cards only · All automatic messages off</h3><p><b>What:</b> per window 0-5 (0 = cards only … 5 = everything). The two master switches are ON (Oct 30): the Mac presses approval cards and types nothing by itself; Phase 2 rounds and your own taps still go.</p></div>
+<div class="e"><h3>🪟 Windows · 🔑 Sign-ins · 📺 Live Mac mini · 📜 Mac log 30 days · 💬 Team talk</h3><p><b>What:</b> windows online/offline, each window's account, the live screen, every Mac log line for 30 days with search, and the running conversation between the Mac, the robots and the Claudes.</p></div>
+</section>
+
+<section id="g-fix">
+<h2>Fixing - the formats</h2>
+<div class="e"><h3>FIX PACK</h3><p><b>What:</b> the one format every tool speaks. <i>GAME:</i> which game · <i>FILE:</i> the file · <i>WHY:</i> plain words + "PART: x" · <i>TEST:</i> how to see it · <i>OLD:</i> the exact lines now · <i>NEW:</i> the lines instead · <i>END</i>. Several OLD/NEW pairs allowed. Special kinds: STUDIO publish, NEW FILE (pieces/ mods/ JSON), COPY FROM a starter + CONFIG (a new game).</p><p><b>How:</b> Workshop, Studio and Fix it write it for you; Paste a fix checks it; the window applies it exactly.</p></div>
+<div class="e"><h3>PART</h3><p><b>What:</b> every game is split into named parts (menus, track, car, garage, hud, sounds…). A job names ONE part in its PR title ("PART: car"); the robot fails a PR that touches another part. Fix one thing, break nothing else.</p></div>
+<div class="e"><h3>OWNER CHECK IN 30 SECONDS · ?test= links</h3><p><b>What:</b> every fix comes with one link that opens the game straight at the changed spot (apexf1.html?test=grid, ?test=rims…) so you judge it in 30 seconds, no menus.</p></div>
+<div class="e"><h3>mods/ · pieces/ · templates/ · looks/</h3><p><b>What:</b> mods/&lt;game&gt;.json = your Studio changes the game loads; pieces/ = Workshop scenes and tracks any game can load; templates/ = starter games; looks/&lt;game&gt;.md = the WHERE THINGS ARE map, KEEP/NEVER lists, references; looks/refs/ = the 5 reference pictures per game.</p></div>
+</section>
+
+<section id="g-robots">
+<h2>Robots (GitHub, no AI, always on)</h2>
+<div class="e"><h3>Merge robot</h3><p><b>What:</b> merges every green PR by itself, merges main into a PR that fell behind, keeps both sides of notes files, writes missing CC-BY credits, never merges a draft or a .github change.</p></div>
+<div class="e"><h3>Game check · paperwork checks</h3><p><b>What:</b> on a PR: file guard (only the files the job may touch), PART GUARD (one part), LOOK GUARD (main vs PR pictures of menu/play per part - a changed part the title did not name = red), checklist lint, notes rules. Main gets the full play check; a merge that newly breaks a game is undone (auto-undo) with fair blame.</p><p><b>How to read it:</b> ONE "🤖 Check status" comment on the PR: RUNNING / PASSED / FAILED + the Reason lines + evidence (error, 3 code lines, console, pictures).</p></div>
+<div class="e"><h3>Robot auditor · known faults · notes batch</h3><p><b>What:</b> auditor merges clean robot-file PRs (.github allow-list); known faults = robot-side measuring errors shown yellow (never a Muse's job) with an expiry; notes batch joins notes-only PRs hourly into one.</p></div>
+<div class="e"><h3>Model fetch + acceptance</h3><p><b>What:</b> a line in MODEL-REQUESTS.md (free Sketchfab link, real size in metres, no brand names) → the robot downloads, shrinks, measures (empty / stray piece / size / huge / tiny / blank pictures), rejects and re-asks by itself, takes 4 pictures; a nightly audit measures every model. Only a 3D model to pick ever reaches your phone.</p></div>
+<div class="e"><h3>Record 60 · play testers · branch sweeper</h3><p><b>What:</b> nightly one-minute recordings of every game with measured numbers; night play robots that mash, swipe and hold gas; a daily sweep of merged branches.</p></div>
+</section>
+
+<section id="g-crews">
+<h2>Phase 2 crews (the Muse windows)</h2>
+<div class="e"><h3>Tester · Auditor · fixed pairs</h3><p><b>What:</b> Racer tester 8 / auditor 6, F1 7/5, Hockey 9/2, Track &amp; Field 10/4, Baseball 3/1. A TESTER plays and measures and files ONE finding file per problem (how to see it, measured numbers, proof, STATUS: NEW) in one batch PR per round; an AUDITOR checks each NEW finding on main, fixes small ones itself (one part, one PR "FIX F-id (PART: x)"), marks 3D / engine / camera / physics / multi-part FOR-CLAUDE.</p></div>
+<div class="e"><h3>Rounds · T8-3 / A6-2 · ROUND DONE</h3><p><b>What:</b> the Mac sends each free window one round at a time (a checklist item or full play; an audit when its game has NEW findings). Round ids are T&lt;window&gt;-n / A&lt;window&gt;-n; a round is over when the window's chat says ROUND DONE.</p></div>
+<div class="e"><h3>FOR-CLAUDE · HELP-VP lines</h3><p><b>What:</b> a finding marked FOR-CLAUDE wakes a Claude through the mini to fix it (one PR each, before/after pictures). A window that is stuck writes ONE "HELP-VP: window N · what's wrong" line in jobs/HELP.md; a Claude answers "FIXED:" under it and the Mac types the answer back.</p></div>
+<div class="e"><h3>Owner's part</h3><p><b>What:</b> you play, send pictures + notes in a batch, tap thumbs, pick 3D models. Nothing else is supposed to reach you.</p></div>
+</section>
+
+<section id="g-words">
+<h2>Words you will see</h2>
+<div class="e"><h3>main · branch · PR · merge · green / red</h3><p><b>main</b> = the live code. A <b>branch</b> = a copy to work on. A <b>PR</b> (pull request) = "please put my branch into main". <b>Merge</b> = it went in. <b>Green</b> = the robot passed it; <b>red</b> = it failed, with the exact lines why.</p></div>
+<div class="e"><h3>UNIVERSAL.md · LESSONS.md · checklists/ · REALITY hook</h3><p><b>UNIVERSAL.md</b> = every lesson any window or Claude learned, read by all. <b>LESSONS.md</b> = the short live rules. <b>checklists/&lt;game&gt;.md</b> = real-sport measurements testers tick off. <b>REALITY hook</b> = numbers each game hands the robot (sizes, speed, ground contact) so it can measure instead of guess.</p></div>
+<div class="e"><h3>Ledger · proof · UNPROVEN</h3><p><b>What:</b> every Mac rule has a line that shows the time it last really fired. "UNPROVEN" = installed, never fired for real yet. Nobody may call a rule working before its line shows a time.</p></div>
+<div class="e"><h3>Away link · AWAY icon · PIN</h3><p><b>What:</b> the Mac mini opens a changing https link to its controller and posts it to a secret channel; your AWAY icon reads it and opens the real controller from anywhere. The PIN guards every page.</p></div>
+</section>
+
+<section id="g-howto">
+<h2>How do I…</h2>
+<div class="e how"><h3>…fix a colour, a size, a word?</h3><p>Controller → 🔧 Fix it → the game → Broken → say it in your words → copy the message to ChatGPT (or Grok) → paste the answer → Check → Send. Or message the game's builder window directly with your words and a picture. Judge it with the ?test= link in the report.</p></div>
+<div class="e how"><h3>…add a tree, a stand, a light?</h3><p>Play the game with Studio ON → Place (drop it) or Scene (pick + move) or Lights → Save → Publish.</p></div>
+<div class="e how"><h3>…change a track or add a circuit?</h3><p>F1 / Racer with Studio ON → 🛣️ Track → drag points, move the finish line → Put it in the code → ▶ Run → Send. New circuit: "Save as a NEW circuit". Or Workshop → Track.</p></div>
+<div class="e how"><h3>…roll a game back to yesterday?</h3><p>Controller → 🕘 Versions → the game → ▶ Play that version to be sure → ↩️ Put this version back (two taps). Watch it on the PR page until merged.</p></div>
+<div class="e how"><h3>…merge or send back a PR myself?</h3><p>Controller → 🔀 Pull requests → the row → Merge it (green only) · Send back the red lines · Fix the conflict · Close it.</p></div>
+<div class="e how"><h3>…make a problem a permanent check?</h3><p>Studio → 🛡️ Rules → tap the thing → pick the rule → it must pass now → Send. From then on the robot fails any PR that breaks it.</p></div>
+<div class="e how"><h3>…report a bug with proof?</h3><p>On the Game Development page: ✏️ circle it, 🎥 record, 📤 send. Or Studio → 🐞 Log (errors with the line) and 👁️ Watch (the numbers) and say what you saw.</p></div>
+<div class="e how"><h3>…make a new game?</h3><p>Workshop → 🎮 New game → name, starter, track, scenery, car, colours, laps, rivals → Make it → Send. It shows under NEW GAMES by itself once merged.</p></div>
+<div class="e how"><h3>…get a 3D model?</h3><p>Message the game's builder: "add a line to MODEL-REQUESTS.md: &lt;free Sketchfab link&gt;, length N m, no brand names". The robot fetches, measures and shows you pictures to pick.</p></div>
+<div class="e how"><h3>…see what is left to build?</h3><p>Controller → 📋 Master list (live), filter Not done.</p></div>
+</section>
+
+<section id="g-engine">
+<h2>Apex Engine (being built - master list #161-#167)</h2>
+<div class="e"><h3>Engine core + game sheets</h3><p><b>What:</b> one engine file; each game is a sheet (scenes, parts, controls, cameras, rules, sounds, feel). Fixed-step simulation, seeded random, recorded inputs → any run replays frame-exact on your phone and in the robot. New games are sheets from a starter.</p></div>
+<div class="e"><h3>Parts library · When/Then blocks · Rules engine · Feel presets · Asset import · Starters</h3><p><b>What:</b> parts that carry their own checks and references; events → actions as blocks in Studio (no code); one rulebook per sport the opponents obey; camera/control presets the robot measures; models that drop into part slots; starters for ball sports, flight and athletics.</p></div>
+</section>
+<p class="note">Last updated Nov 8 2026. If a word is missing here, say it and it gets added.</p>
+
+<script>
+(function () {
+  /* controller link: same saved away link as the Game Development page (feedback.js keys), else the Mac mini at home */
+  var LT = 'apexLinkTopic', LP = 'apexLinkPin', CTL = 'apexCtlUrl', DEF = 'http://192.168.1.231:8765/';
+  function home() { try { return localStorage.getItem(CTL) || DEF; } catch (e) { return DEF; } }
+  document.getElementById('ctlLink').onclick = function (ev) {
+    ev.preventDefault(); var t = ''; try { t = localStorage.getItem(LT) || ''; } catch (e) {}
+    if (!t) { location.href = home(); return; }
+    fetch('https://ntfy.sh/' + encodeURIComponent(t) + '/json?poll=1&since=24h', { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (txt) {
+      var u = ''; txt.trim().split('\n').forEach(function (l) { try { var m = (JSON.parse(l).message || '').match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/); if (m) u = m[0]; } catch (e) {} });
+      var p = ''; try { p = localStorage.getItem(LP) || ''; } catch (e) {}
+      location.href = u ? u + '/' + (p ? '#pin=' + encodeURIComponent(p) : '') : home();
+    }).catch(function () { location.href = home(); });
+  };
+  /* search: hide entries that do not contain every typed word; hide empty sections */
+  var q = document.getElementById('q'), es = Array.prototype.slice.call(document.querySelectorAll('.e')), none = document.getElementById('none');
+  function norm(s) { return (s || '').toLowerCase().replace(/colour/g, 'color'); }
+  es.forEach(function (e) { e.dataset.t = norm(e.textContent); });
+  function run() {
+    var ws = norm(q.value).split(/\s+/).filter(Boolean), shown = 0;
+    es.forEach(function (e) { var ok = ws.every(function (w) { return e.dataset.t.indexOf(w) >= 0; }); e.classList.toggle('hide', !ok); if (ok) shown++; });
+    document.querySelectorAll('section').forEach(function (s) { s.style.display = s.querySelector('.e:not(.hide)') ? '' : 'none'; });
+    none.style.display = shown ? 'none' : 'block';
+  }
+  q.addEventListener('input', run);
+  try { var h = new URLSearchParams(location.hash.slice(1)).get('q'); if (h) { q.value = h; run(); } } catch (e) {}
+})();
+</script>
+</body>
+</html>
