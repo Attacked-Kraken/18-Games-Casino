@@ -400,6 +400,26 @@
    "file": "apexf1.html",
    "needle": "buildLineSigns(g",
    "rule": "F1: start/finish line stays bare with floating START/FINISH/lap signs (PR #2388)"
+  },
+  {
+   "file": "kit/apex-engine.js",
+   "needle": "export const Engine",
+   "rule": "APEX ENGINE core (owner Nov 8 2026): one engine, games as sheets"
+  },
+  {
+   "file": "kit/apex-engine.js",
+   "needle": "rec.state0 = copy(E.state)",
+   "rule": "a recording carries its starting state + random state so a replay is exact whatever Studio says later"
+  },
+  {
+   "file": "kit/apex-engine.js",
+   "needle": "const p = play.at(E.steps - play.from)",
+   "rule": "replay feeds the recorded input for the step, never live input"
+  },
+  {
+   "file": "templates/racer.html",
+   "needle": "Engine.create({",
+   "rule": "the starter racer runs on the engine (init / sim / draw, recorded START)"
   }
  ]
 }

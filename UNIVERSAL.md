@@ -148,3 +148,18 @@ For ANY game in tools/game-check/games.json (2D or 3D, new games too) the robot 
 - **Testing F1 from a script:** `Track` / `Race` are not globals - drive it through `window.__test` (`pitNow`, `pitProbe`, `simStep`, `race()`) and open with `?test=grid`; `#raceBtn` is not clickable for Playwright (click it from page code). Render checks: `python3 -m http.server 8899` in the repo + Playwright with the swiftshader flags.
 - Locked by needles in tools/robot-keep.json: `buildPitSigns(g){`, `PIT ARMED`, `lerp(tc,0.6)`, `S._fitCar`, `torn and streaky`, `buildLineSigns(g`.
 
+## APEX ENGINE (owner Nov 8 2026 11:55 AM "my own specialized engine to create my games"; master list #161-#167) - LOCKED
+- `kit/apex-engine.js` is the engine core: a game is a SHEET (plain data: name, laps, rivals, track, controls, cameras, feel, sounds) plus
+  three functions - `init(E)` makes the starting state (numbers only, never THREE objects), `sim(S, input, dt, E)` is ONE fixed step
+  (1/60 s of GAME time), `draw(S, alpha, E)` puts the state on meshes / HUD / sound. Random comes only from `E.random()` (seeded).
+- Every input sample is recorded per step; a recording keeps the starting state + random state, so `E.replay(rec)` reproduces the run
+  frame-exact on any phone and in the robot - a bug report becomes a replay file, a robot test becomes a replay. Proof:
+  `node tools/engine-test.mjs` (same seed + inputs = same hash, replay = same hash at every 300th step, mid-run recording, pause /
+  step one frame / slow motion) and the starter racer in Chromium (1500 recorded steps replayed to the same hash, PR #2445).
+- Built in for Studio debug mode (#155): `E.pause()`, `E.stepOnce()`, `E.speed(0.25)`, `E.time()` = game seconds, events
+  `E.on('lap' | 'finish' | 'offtrack' | 'race-start' | 'step', fn)` - the hooks the When/Then blocks (#163) will use.
+- RULE: a NEW game is a sheet on the engine (`templates/racer.html` is the worked example: the START tap is an input, so it is
+  recorded too). The six locked games are NOT rebuilt now; after they are done they move onto the engine one PART at a time.
+- RULE: nothing in `sim` may read the clock, `Math.random`, the screen or Studio sliders directly - those go into the state at
+  `init` (the starter keeps its tuning in `S.tune`), or the replay is not exact.
+
