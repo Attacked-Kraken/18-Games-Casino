@@ -262,7 +262,8 @@
   function changeCount() { let n = CE.chunks.length; for (const i in CE.nums) n += Object.keys(CE.nums[i]).length; return n; }
   function runMine() {                          // the changed game runs over the page in a frame; the original stays underneath
     let html = sourceNow(); const base = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
-    html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__apxTest=1<\/script>');
+    const qs = location.search.replace(/[?&]studio=1/g, '').replace(/^&/, '?');   // the frame opens the SAME mode / track (?test=grid&track=...): the page's location.search reads become this
+    html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__apxTest=1;window.__apxSearch=' + JSON.stringify(qs) + '<\/script>').replace(/\blocation\.search\b/g, '(window.__apxSearch||location.search)');
     let box = document.getElementById('apxRun'); if (box) box.remove();
     box = document.createElement('div'); box.id = 'apxRun'; box.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#000';
     box.innerHTML = '<iframe style="border:0;width:100%;height:100%" allow="autoplay; fullscreen"></iframe><div style="position:fixed;left:50%;transform:translateX(-50%);bottom:max(6px,env(safe-area-inset-bottom,0px));display:flex;gap:6px;font:700 14px system-ui"><button data-x="back" style="padding:9px 12px;border-radius:10px;border:1px solid #fff6;background:#000c;color:#fff">✕ Back to the real game</button><button data-x="send" style="padding:9px 12px;border-radius:10px;border:0;background:#ffd23a;color:#111">📤 Send this as a code fix</button></div>';
@@ -320,6 +321,49 @@
   setInterval(() => { try { drawWatchHud(); } catch (e) {} }, 200);
   function setLive(path, v) { const ks = path.split('.'); let o = window.__game; for (let i = 0; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
 
+
+  /* ---------- 🛣️ TRACK (owner Nov 7 2026 'the track glitchy ... I want to see code of how the finish line and track are set ... adjust all'):
+     a game hands Studio its track as numbers (world({ track: () => ({ id, file, pts:[[x,y,z]...], width, pitIn, pitOut, drs, k }) })).
+     The map draws the centre line from the points, the FINISH line (the first point), the pit entry / exit and the DRS zones; the owner drags
+     points, moves the finish line, adds / removes points, sets heights and the road width. 'Put it in the code' rewrites that circuit's own
+     lines in the game file (the Code tab's change list), so ▶ Run drives it and 📤 Send makes it real. ---------- */
+  const TK = { t: null, sel: 0, zoom: 1, cx: 0, cz: 0, drag: null, dirty: false, msg: '' };
+  function trackLoad(force) { if (!W.track) return null; if (TK.t && !force) return TK.t; let t = null; try { t = W.track(); } catch (e) { t = null; }
+    if (!t || !t.pts) { TK.t = null; return null; } TK.t = { id: t.id, file: t.file || ME_FILE, pts: t.pts.map(p => [+p[0], +(p[1] || 0), +(p[2] || 0)]), width: +t.width || 18, pitIn: +t.pitIn || 0.94, pitOut: +t.pitOut || 0.08, drs: (t.drs || []).map(d => [+d[0], +d[1]]), lapKm: t.lapKm, k: +t.k || 1, note: t.note || '' };
+    TK.sel = 0; TK.dirty = false; trackFit(); return TK.t; }
+  function catmull(P, SEG) { const out = [], n = P.length; for (let i = 0; i < n; i++) { const p0 = P[(i - 1 + n) % n], p1 = P[i], p2 = P[(i + 1) % n], p3 = P[(i + 2) % n];
+    for (let j = 0; j < SEG; j++) { const t = j / SEG, t2 = t * t, t3 = t2 * t, f = k => 0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3); out.push([f(0), f(1), f(2), i]); } } return out; }
+  function trackLine() { const L = catmull(TK.t.pts, 16), cum = [0]; for (let i = 1; i <= L.length; i++) { const a = L[i - 1], b = L[i % L.length]; cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[2] - a[2])); } return { L, cum, total: cum[cum.length - 1] }; }
+  function trackAt(f) { const { L, cum, total } = trackLine(); const s = ((f % 1) + 1) % 1 * total; let i = 0; while (i < cum.length - 2 && cum[i + 1] < s) i++; const a = L[i], b = L[(i + 1) % L.length], u = (s - cum[i]) / Math.max(1e-6, cum[i + 1] - cum[i]); return [a[0] + (b[0] - a[0]) * u, a[2] + (b[2] - a[2]) * u]; }
+  function trackFit() { const P = TK.t.pts; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; P.forEach(p => { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); }); TK.cx = (x0 + x1) / 2; TK.cz = (z0 + z1) / 2; TK.zoom = 300 / Math.max(60, x1 - x0, z1 - z0); }
+  const tkMap = (x, z, W_, H_) => [W_ / 2 + (x - TK.cx) * TK.zoom, H_ / 2 + (z - TK.cz) * TK.zoom];
+  function trackDraw() { const cv = ui.el.querySelector('#apxTrackMap'); if (!cv || !TK.t) return; const W_ = cv.width, H_ = cv.height, g = cv.getContext('2d'); g.clearRect(0, 0, W_, H_); g.fillStyle = '#0b1a0f'; g.fillRect(0, 0, W_, H_);
+    const { L, cum, total } = trackLine(); const wpx = Math.max(2, TK.t.width * TK.zoom);
+    g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = '#555c66'; g.lineWidth = wpx; g.beginPath(); L.forEach((p, i) => { const [x, y] = tkMap(p[0], p[2], W_, H_); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.stroke();
+    g.strokeStyle = '#2fbf5a'; g.lineWidth = Math.max(2, wpx * 0.5); (TK.t.drs || []).forEach(d => { g.beginPath(); for (let f = d[0]; f <= d[1] + 1e-9; f += 0.004) { const q = trackAt(f), [x, y] = tkMap(q[0], q[1], W_, H_); f === d[0] ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); });
+    g.strokeStyle = '#ffffff55'; g.lineWidth = 1; g.beginPath(); L.forEach((p, i) => { const [x, y] = tkMap(p[0], p[2], W_, H_); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.stroke();
+    const mark = (f, col, txt) => { const q = trackAt(f), q2 = trackAt(f + 0.002), dx = q2[0] - q[0], dz = q2[1] - q[1], d = Math.hypot(dx, dz) || 1, nx = -dz / d, nz = dx / d, [x, y] = tkMap(q[0], q[1], W_, H_), r = wpx * 0.9 + 4; g.strokeStyle = col; g.lineWidth = 3; g.beginPath(); g.moveTo(x - nx * r, y - nz * r); g.lineTo(x + nx * r, y + nz * r); g.stroke(); g.fillStyle = col; g.font = 'bold 11px system-ui'; g.fillText(txt, x + 6, y - 6); };
+    mark(0, '#ffd23a', 'FINISH'); mark(TK.t.pitIn, '#ff8a4c', 'PIT IN'); mark(TK.t.pitOut, '#6ea0ff', 'PIT OUT');
+    TK.t.pts.forEach((p, i) => { const [x, y] = tkMap(p[0], p[2], W_, H_); g.beginPath(); g.arc(x, y, i === TK.sel ? 8 : 5, 0, Math.PI * 2); g.fillStyle = i === 0 ? '#ffd23a' : i === TK.sel ? '#fff' : '#9ad0ff'; g.fill(); if (p[1]) { g.fillStyle = '#fff'; g.font = '10px system-ui'; g.fillText('+' + p[1] + 'm', x + 7, y + 4); } });
+    try { const c = W.center && W.center(); if (c) { const [x, y] = tkMap(c.x / TK.t.k, c.z / TK.t.k, W_, H_); g.fillStyle = '#ff3b3b'; g.beginPath(); g.arc(x, y, 5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ff3b3b'; g.font = 'bold 10px system-ui'; g.fillText('YOU', x + 7, y + 4); } } catch (e) {}
+    g.fillStyle = '#9aa3b2'; g.font = '11px system-ui'; g.fillText(Math.round(total) + ' map units round · ' + TK.t.pts.length + ' points · road ' + TK.t.width + ' m', 6, H_ - 6); }
+  function trackPick(mx, my, W_, H_) { let best = -1, bd = 18; TK.t.pts.forEach((p, i) => { const [x, y] = tkMap(p[0], p[2], W_, H_); const d = Math.hypot(x - mx, y - my); if (d < bd) { bd = d; best = i; } }); return best; }
+  function trackFraction(i) { const { L, cum, total } = trackLine(); const k = L.findIndex(p => p[3] === i); return k < 0 ? 0 : cum[k] / total; }
+  function trackFinishHere(i) { const t = TK.t, f0 = trackFraction(i); if (!i) return; t.pts = t.pts.slice(i).concat(t.pts.slice(0, i)); const sh = v => ((v - f0) % 1 + 1) % 1; t.pitIn = +sh(t.pitIn).toFixed(4); t.pitOut = +sh(t.pitOut).toFixed(4); t.drs = (t.drs || []).map(d => { let a = sh(d[0]), b = sh(d[1]); if (b < a) b = 1; return [+a.toFixed(4), +b.toFixed(4)]; }); TK.sel = 0; TK.dirty = true; }
+  function trackCodeLines() {                   // the circuit's two code lines rewritten: the id line (pitIn / pitOut / drs / width) and the pts line
+    const t = TK.t; if (!C.lines) return null; const idRe = new RegExp("\\bid:\\s*['\"]" + t.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "['\"]");
+    const i1 = C.lines.findIndex(l => idRe.test(l)); if (i1 < 0) return null; let i2 = -1; for (let k = i1; k < Math.min(C.lines.length, i1 + 10); k++) if (/^\s*pts\s*:\s*\[/.test(C.lines[k])) { i2 = k; break; }
+    if (i2 < 0) return null; let l1 = C.lines[i1];
+    const num = v => String(+(+v).toFixed(4)); l1 = l1.replace(/\bpitIn:\s*[\d.]+/, 'pitIn:' + num(t.pitIn)).replace(/\bpitOut:\s*[\d.]+/, 'pitOut:' + num(t.pitOut));
+    if (t.drs && t.drs.length) l1 = l1.replace(/\bdrs:\s*\[\[[^\]]*\](?:,\[[^\]]*\])*\]/, 'drs:[' + t.drs.map(d => '[' + num(d[0]) + ',' + num(d[1]) + ']').join(',') + ']');
+    if (/\bwidth:\s*[\d.]+/.test(l1)) l1 = l1.replace(/\bwidth:\s*[\d.]+/, 'width:' + num(t.width)); else l1 = l1.replace(/(\blapKm:\s*[\d.]+,)/, '$1 width:' + num(t.width) + ',');
+    const m = C.lines[i2].match(/^(\s*pts\s*:\s*\[)([\s\S]*)(\]\s*\}.*)$/); if (!m) return null;
+    const l2 = m[1] + t.pts.map(p => '[' + [p[0], p[1], p[2]].map(v => String(+(+v).toFixed(1))).join(',') + ']').join(',') + m[3];
+    return { i1, l1, i2, l2 }; }
+  function trackApply() { const r = trackCodeLines(); if (!r) { TK.msg = C.lines ? "Could not find this circuit's lines in the code (id:'" + TK.t.id + "' + a pts: line under it)." : 'Reading the code first - tap again in a moment.'; loadSrc(); return; }
+    const a = Math.min(r.i1, r.i2), b = Math.max(r.i1, r.i2), text = C.lines.slice(a, b + 1).map((l, k) => (a + k === r.i1 ? r.l1 : a + k === r.i2 ? r.l2 : l)).join('\n'), old = C.lines.slice(a, b + 1).join('\n');
+    CE.chunks = CE.chunks.filter(k => k.b < a || k.a > b); for (let i = a; i <= b; i++) delete CE.nums[i]; if (text !== old) CE.chunks.push({ a, b, old, text }); saveCE(); TK.dirty = false;
+    TK.msg = text !== old ? 'In the code (lines ' + (a + 1) + '-' + (b + 1) + '). ▶ Run the game with it, then 📤 Send as a code fix.' : 'Nothing changed.'; }
   /* ---------- the panel ---------- */
   const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
@@ -346,9 +390,9 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   ui.draw = function () {
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
-    if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log') ? 'min(720px,98vw)' : '';
+    if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log' || ui.tab === 'track') ? 'min(720px,98vw)' : '';
     const nErr = LOG.filter(l => l.kind === 'error').length;
-    const tabs = [['scene', 'Scene'], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
+    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -388,6 +432,24 @@
       const all = liveAll(); if (!all.length) h += '<p class="sub">The game shows no live values yet (it needs window.__game or window.__test - start playing, then come back).</p>';
       h += `<h3>All live values (${all.length})</h3><input type="search" data-wq="1" placeholder="filter: speed, lap, grip, on…" value="${esc(wq.q)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
       const q = wq.q.toLowerCase(); all.filter(x => !q || x.path.toLowerCase().includes(q)).slice(0, 80).forEach(x => { h += `<div class="row"><label><span style="font:12px ui-monospace,Menlo,monospace">${esc(x.path)}</span><span><b>${esc(fmt(x.v))}</b> ${x.t === 'b' ? `<button data-wflip="${esc(x.path)}">flip</button>` : ''}<button data-wpin="${esc(x.path)}" ${WATCH.includes(x.path) ? 'disabled' : ''}>📌</button></span></label></div>`; });
+    } else if (ui.tab === 'track') {
+      const t = trackLoad(); if (!C.lines) loadSrc();
+      if (!t) h += '<p class="sub">This circuit is not a list of points the editor can change (a kit / data-file circuit). Its shape lives in a data file - see the Code tab.</p>';
+      else {
+        const sel = t.pts[TK.sel] || t.pts[0], n = changeCount();
+        h += `<h3>🛣️ Track - ${esc(t.id)}</h3><p class="sub">${esc(t.note)}. Yellow = the FINISH line (first point), orange = pit entry, blue = pit exit, green = DRS. Tap a point, drag it. Red dot = you.</p>`;
+        h += `<canvas id="apxTrackMap" width="640" height="420" style="width:100%;max-width:640px;aspect-ratio:640/420;border-radius:10px;touch-action:none;display:block"></canvas>`;
+        h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkzoom="1.3">🔍+</button><button data-tkzoom="0.77">🔍−</button><button data-tkfit="1">fit</button><button data-tkreload="1">↺ reload from the game</button></div>`;
+        h += `<h3>Point ${TK.sel + 1} of ${t.pts.length}${TK.sel === 0 ? ' - the FINISH line' : ''}</h3><div class="xyz"><input type="number" step="1" data-tkp="0" value="${sel[0]}" title="x"><input type="number" step="0.5" data-tkp="1" value="${sel[1]}" title="height m"><input type="number" step="1" data-tkp="2" value="${sel[2]}" title="z"></div><p class="sub">x · height (m) · z</p>`;
+        h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkfinish="1" ${TK.sel ? '' : 'disabled'}>🏁 Finish line HERE</button><button data-tkadd="1">➕ Add a point after</button><button data-tkdel="1" ${t.pts.length > 4 ? '' : 'disabled'}>🗑️ Remove point</button><button data-tkprev="1">◀ prev</button><button data-tknext="1">next ▶</button></div>`;
+        h += `<div class="row"><label><span>Road width</span><b>${t.width} m</b></label><input type="range" min="8" max="40" step="0.5" value="${t.width}" data-tkw="1"></div>`;
+        h += `<div class="row"><label><span>Pit entry (how far round the lap)</span><b>${Math.round(t.pitIn * 100)}%</b></label><input type="range" min="0" max="1" step="0.005" value="${t.pitIn}" data-tkpin="1"></div>`;
+        h += `<div class="row"><label><span>Pit exit</span><b>${Math.round(t.pitOut * 100)}%</b></label><input type="range" min="0" max="1" step="0.005" value="${t.pitOut}" data-tkpout="1"></div>`;
+        (t.drs || []).forEach((d, i) => { h += `<div class="row"><label><span>DRS zone ${i + 1}</span><b>${Math.round(d[0] * 100)}% → ${Math.round(d[1] * 100)}%</b></label><div class="xyz"><input type="range" min="0" max="1" step="0.005" value="${d[0]}" data-tkdrs="${i}:0" style="width:49%"><input type="range" min="0" max="1" step="0.005" value="${d[1]}" data-tkdrs="${i}:1" style="width:49%"></div></div>`; });
+        if (TK.msg) { h += `<p class="sub chg">${esc(TK.msg)}</p>`; TK.msg = ''; }
+        h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkapply="1" class="${TK.dirty ? 'on' : ''}">✍️ Put it in the code</button><button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with it</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button></div>`;
+        h += `<p class="sub">The map is in the circuit's own point units; the game scales the shape to ${t.lapKm} km. The road, kerbs and scenery are rebuilt when the changed game runs.</p>`;
+      }
     } else if (ui.tab === 'phys' || ui.tab === 'code') {
       const n = changeCount();
       h += `<div style="position:sticky;top:-10px;background:#0e1219;padding:6px 0;z-index:2"><b class="${n ? 'chg' : ''}">${n} code change${n === 1 ? '' : 's'}</b> <button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with them</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button>${n ? '<button data-undoall="1">↩️ Undo all</button>' : ''}</div>`;
@@ -461,6 +523,25 @@
       h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
     ui.el.innerHTML = h;
+    const tkc = ui.el.querySelector('#apxTrackMap'); if (tkc && TK.t) { trackDraw(); const pos = e => { const r = tkc.getBoundingClientRect(); return [(e.clientX - r.left) * tkc.width / r.width, (e.clientY - r.top) * tkc.height / r.height]; };
+      tkc.onpointerdown = e => { const [mx, my] = pos(e); const i = trackPick(mx, my, tkc.width, tkc.height); if (i >= 0) { TK.sel = i; TK.drag = { i, mx, my, x: TK.t.pts[i][0], z: TK.t.pts[i][2] }; tkc.setPointerCapture(e.pointerId); } else { TK.drag = { pan: true, mx, my, cx: TK.cx, cz: TK.cz }; tkc.setPointerCapture(e.pointerId); } trackDraw(); e.preventDefault(); };
+      tkc.onpointermove = e => { if (!TK.drag) return; const [mx, my] = pos(e); if (TK.drag.pan) { TK.cx = TK.drag.cx - (mx - TK.drag.mx) / TK.zoom; TK.cz = TK.drag.cz - (my - TK.drag.my) / TK.zoom; } else { const p = TK.t.pts[TK.drag.i]; p[0] = Math.round(TK.drag.x + (mx - TK.drag.mx) / TK.zoom); p[2] = Math.round(TK.drag.z + (my - TK.drag.my) / TK.zoom); TK.dirty = true; } trackDraw(); };
+      tkc.onpointerup = tkc.onpointercancel = e => { const was = TK.drag; TK.drag = null; if (was && !was.pan) ui.draw(); };
+      if (!TK.tick) TK.tick = setInterval(() => { if (ui.open && ui.tab === 'track' && !TK.drag) trackDraw(); }, 500); }
+    ui.el.querySelectorAll('[data-tkzoom]').forEach(b => b.onclick = () => { TK.zoom *= +b.dataset.tkzoom; trackDraw(); });
+    const tkf = ui.el.querySelector('[data-tkfit]'); if (tkf) tkf.onclick = () => { trackFit(); trackDraw(); };
+    const tkr = ui.el.querySelector('[data-tkreload]'); if (tkr) tkr.onclick = () => { trackLoad(true); ui.draw(); };
+    ui.el.querySelectorAll('[data-tkp]').forEach(inp => inp.onchange = () => { const p = TK.t.pts[TK.sel]; if (p && inp.value !== '' && isFinite(+inp.value)) { p[+inp.dataset.tkp] = +inp.value; TK.dirty = true; ui.draw(); } });
+    const tkfin = ui.el.querySelector('[data-tkfinish]'); if (tkfin) tkfin.onclick = () => { trackFinishHere(TK.sel); ui.draw(); };
+    const tkadd = ui.el.querySelector('[data-tkadd]'); if (tkadd) tkadd.onclick = () => { const P = TK.t.pts, a = P[TK.sel], b = P[(TK.sel + 1) % P.length]; P.splice(TK.sel + 1, 0, [Math.round((a[0] + b[0]) / 2), +((a[1] + b[1]) / 2).toFixed(1), Math.round((a[2] + b[2]) / 2)]); TK.sel++; TK.dirty = true; ui.draw(); };
+    const tkdel = ui.el.querySelector('[data-tkdel]'); if (tkdel) tkdel.onclick = () => { if (TK.t.pts.length <= 4) return; TK.t.pts.splice(TK.sel, 1); TK.sel = Math.max(0, Math.min(TK.sel, TK.t.pts.length - 1)); TK.dirty = true; ui.draw(); };
+    const tkpv = ui.el.querySelector('[data-tkprev]'); if (tkpv) tkpv.onclick = () => { TK.sel = (TK.sel - 1 + TK.t.pts.length) % TK.t.pts.length; ui.draw(); };
+    const tknx = ui.el.querySelector('[data-tknext]'); if (tknx) tknx.onclick = () => { TK.sel = (TK.sel + 1) % TK.t.pts.length; ui.draw(); };
+    const tkw = ui.el.querySelector('[data-tkw]'); if (tkw) { tkw.oninput = () => { TK.t.width = +tkw.value; TK.dirty = true; trackDraw(); tkw.previousElementSibling.querySelector('b').textContent = tkw.value + ' m'; }; }
+    const tkpin = ui.el.querySelector('[data-tkpin]'); if (tkpin) tkpin.oninput = () => { TK.t.pitIn = +tkpin.value; TK.dirty = true; trackDraw(); tkpin.previousElementSibling.querySelector('b').textContent = Math.round(TK.t.pitIn * 100) + '%'; };
+    const tkpout = ui.el.querySelector('[data-tkpout]'); if (tkpout) tkpout.oninput = () => { TK.t.pitOut = +tkpout.value; TK.dirty = true; trackDraw(); tkpout.previousElementSibling.querySelector('b').textContent = Math.round(TK.t.pitOut * 100) + '%'; };
+    ui.el.querySelectorAll('[data-tkdrs]').forEach(inp => inp.oninput = () => { const [i, k] = inp.dataset.tkdrs.split(':').map(Number); TK.t.drs[i][k] = +inp.value; TK.dirty = true; trackDraw(); });
+    const tka = ui.el.querySelector('[data-tkapply]'); if (tka) tka.onclick = () => { trackApply(); ui.draw(); };
     const lc = ui.el.querySelector('[data-logclear]'); if (lc) lc.onclick = () => { LOG.length = 0; ui.btn.textContent = '✕ Close Studio'; ui.draw(); };
     const lcp = ui.el.querySelector('[data-logcopy]'); if (lcp) lcp.onclick = () => { const t = LOG.map(l => new Date(l.at).toLocaleTimeString() + ' ' + l.kind + ' ' + l.text + (l.file ? ' (' + l.file + ':' + l.line + ')' : '')).join('\n'); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied.'; ui.draw(); }).catch(() => {}); } catch (e) {} };
     const wqi = ui.el.querySelector('[data-wq]'); if (wqi) wqi.oninput = () => { wq.q = wqi.value; const p = wqi.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-wq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
@@ -533,6 +614,7 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
+    track: { load: trackLoad, state: () => TK, finishHere: trackFinishHere, apply: trackApply, lines: trackCodeLines },
     log: () => LOG.slice(), watch: { list: () => WATCH.slice(), pin: p => { if (!WATCH.includes(p)) WATCH.push(p); saveWatch(); }, all: liveAll, get: liveGet },
     code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, bornAt, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();

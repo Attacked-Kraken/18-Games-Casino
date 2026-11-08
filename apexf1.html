@@ -799,7 +799,7 @@ const Track = {
     total=0; const cum2=[0];
     for(let i=1;i<=scaled.length;i++){ const a=scaled[i-1], b=scaled[i%scaled.length];
       total+=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]); cum2.push(total); }
-    this.length=total; this.width = cfg.narrow?15:18; /* owner Nov 4 2026 6:23 PM 'make the track wider, all of them' (was 13 / 10.5) */
+    this.length=total; this.k=k; this.width = cfg.width || (cfg.narrow?15:18); /* cfg.width = the owner's own road width from Studio's Track tab (Nov 7 2026) */ /* owner Nov 4 2026 6:23 PM 'make the track wider, all of them' (was 13 / 10.5) */
     const N=scaled.length;
     for(let i=0;i<N;i++){
       const p=scaled[i], q=scaled[(i+1)%N], r=scaled[(i+2)%N];
@@ -2356,6 +2356,7 @@ const Race = {
     if(this.track.gp && GP.data) Track.buildGP(GP.data, GP.lt); else Track.build(this.track.gp?LEGACY_TRACK:this.track);
     applyTheme(this.track.theme||null);
     try{ if(window.Studio){ const trk=this.track; Studio.world({THREE, scene, camera, renderer, canvas:renderer.domElement, groundY:(x,z)=>trackGroundY(x,z), scope:()=>trk.id, live:()=>({ player:Race.player, race:Race, track:Track, input:Input, weather:Race.weather }), /* Studio 👁️ Watch (owner Nov 7 2026) */
+      track:()=>(Track.gp||!Track.cfg||!Track.cfg.pts)?null:({ id:Track.cfg.id, file:'apexf1.html', pts:Track.cfg.pts, width:Track.width, pitIn:Track.cfg.pitIn, pitOut:Track.cfg.pitOut, drs:Track.cfg.drs||[], lapKm:Track.cfg.lapKm, k:Track.k||1, note:'the finish line is the FIRST point; lap length stays '+Track.cfg.lapKm+' km (the shape is scaled to it)' }), /* Studio 🛣️ Track tab (owner Nov 7 2026) */
       center:()=>{ const pl=Race.player&&Race.player.mesh; return pl?{x:pl.position.x,z:pl.position.z}:{x:0,z:0}; }, camDefault:{back:14,up:5,side:0,ahead:12,fov:62} }); Studio.refresh(); } }catch(e){ console.warn('studio', e); } // owner Nov 6 2026: things he places in Studio
     if(GP.lt && GP.lt.root) GP.lt.root.visible = !!this.track.gp; // the Grand Prix kit's world (ground, stands, buildings) only on its own circuit
     const evRoot=scene.getObjectByName('grand_prix_event'); if(evRoot) evRoot.visible = !!this.track.gp;
