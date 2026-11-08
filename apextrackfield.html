@@ -1773,7 +1773,7 @@ if(!COARSE){const q=new THREE.DirectionalLight(0x7fb2ff,.55);q.position.set(70,2
 this.buildSky();
 this.buildGround();
 this.buildTrack();
-try{ if(window.Studio) Studio.world({ THREE, scene, camera:cam, renderer:r, canvas:r.domElement, groundY:()=>0, scope:()=>'stadium', // owner Nov 7 2026: things he places in Studio
+try{ if(window.Studio) Studio.world({ THREE, scene, camera:cam, renderer:r, canvas:r.domElement, groundY:()=>0, scope:()=>'stadium', live:()=>({ game:G, event:{ cur } }), /* Studio 👁️ Watch (owner Nov 7 2026) */ // owner Nov 7 2026: things he places in Studio
   center:()=>{ const g=this.rigs[0]&&this.rigs[0].group; return g?{x:g.position.x, z:g.position.z}:{x:-40, z:0}; }, camDefault:{back:7, up:2.8, side:0, ahead:6, fov:58} }); }catch(e){ console.warn('studio', e); }
 await this.buildStadiumBowl();
 this.buildBanners();

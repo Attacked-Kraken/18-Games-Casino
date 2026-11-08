@@ -2464,7 +2464,7 @@ async function setupRace(place, laps, friend, type) {
       addEnt(Object.assign({ name: friend.n, carId: fc, cfg: fcfg, ai: true, friendR: friend.r }, sl)); continue; }
     const ci = Math.min(5, Math.max(0, place.tier - 2 + Math.floor(r() * 3))), carId = CARS[ci].id; addEnt(Object.assign({ name: NAMES[(k + place.i) % NAMES.length], carId, cfg: randCfg(r, carId, place.tier), ai: true }, sl)); }
   const P = R.P; P.st = stats(S.cur, myCfg);
-  try { if (window.Studio) { Studio.world({ THREE, scene: W.scene, camera: cam, renderer, canvas: renderer.domElement, groundY: () => T.y, scope: () => 'place' + place.i,
+  try { if (window.Studio) { Studio.world({ THREE, scene: W.scene, camera: cam, renderer, canvas: renderer.domElement, groundY: () => T.y, scope: () => 'place' + place.i, live: () => ({ race: R, menu: G, settings: S, track: T }), /* Studio 👁️ Watch (owner Nov 7 2026) */
     center: () => (R && R.P ? { x: R.P.x, z: R.P.z } : { x: 0, z: 0 }), camDefault: { back: 6.2, up: 2.25, side: 0, ahead: 5, fov: 62 } }); Studio.refresh(); } } catch (e) { console.warn('studio', e); } /* owner Nov 7 2026: things he places in Studio, per race place */
   /* G-70: the field is as fast as the player - top speed, acceleration and cornering anchor to the player's own car, so nobody can just drive away from them */
   const stk = stats(S.cur, defCfg(S.cur)), UB = 0.5; /* OWNER Nov 3 2026 4:35 PM 'all upgrades get the same treatment ... fair on all': rivals follow the player's CAR CLASS (stock stats) plus HALF of the player's upgrade gains - so an engine / turbo / spoiler / tyre upgrade keeps a real edge while the field still keeps up, the same for every car */

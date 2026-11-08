@@ -39,6 +39,21 @@
   if (/[?&]studio=1/.test(location.search)) { try { localStorage.setItem('apexStudioOn', '1'); } catch (e) {} }
   /* owner Nov 7 2026 'I want to see code of how the finish line and track are set in that specific spot': while Studio is on, every 3D thing remembers
      WHERE IN THE CODE it was made (the call chain when three.js built it). Scene tab -> 'Show the code that made this' opens those lines in the Code tab. */
+  /* owner Nov 7 2026 9:47 PM 'more control of coding ... without AI': the iPhone has no developer console, so Studio keeps the game's own
+     errors and console lines (file + line) - the 🐞 Log tab shows them and a line in THIS game opens in the Code tab. Installed before the game runs. */
+  const LOG = []; const REPO = 'https://github.com/Attacked-Kraken/18-Games-Casino';
+  const ME_FILE = (location.pathname.split('/').pop() || '');
+  function logAdd(kind, text, file, line) { const t = String(text == null ? '' : text).slice(0, 600); const last = LOG[LOG.length - 1];
+    if (last && last.text === t && last.kind === kind) { last.n = (last.n || 1) + 1; last.at = Date.now(); } else { LOG.push({ kind, text: t, file: file || '', line: line || 0, at: Date.now(), n: 1 }); if (LOG.length > 300) LOG.shift(); }
+    try { if (kind === 'error' && ui.btn && !ui.open) ui.btn.textContent = '🎛️ Studio 🐞' + LOG.filter(l => l.kind === 'error').length; } catch (e) {} }
+  function whereFrom(st) { const m = String(st || '').match(/([^\s()@]+?\/([^\/\s()?#]+?\.(?:html?|js|mjs)))(?:\?[^:\s)]*)?:(\d+):\d+/); return m ? { file: m[2], line: +m[3] } : { file: '', line: 0 }; }
+  if (on()) try {
+    addEventListener('error', e => { const f = e.filename ? e.filename.split('/').pop().split('?')[0] : ''; logAdd('error', e.message + (f ? '  (' + f + ':' + e.lineno + ')' : ''), f, e.lineno || 0); });
+    addEventListener('unhandledrejection', e => { const r = e.reason, w = whereFrom(r && r.stack); logAdd('error', 'Promise failed: ' + (r && r.message || r), w.file, w.line); });
+    ['error', 'warn', 'log', 'info'].forEach(k => { const orig = console[k] && console[k].bind(console); console[k] = (...a) => { try { orig && orig(...a); } catch (e) {}
+      try { const err = a.find(x => x instanceof Error), w = whereFrom(err ? err.stack : (k === 'error' ? new Error().stack : '')); if (k !== 'error' && k !== 'warn' && LOG.length >= 300) return;
+        logAdd(k === 'info' ? 'log' : k, a.map(x => { if (x instanceof Error) return x.message; if (typeof x === 'object') { try { return JSON.stringify(x).slice(0, 200); } catch (e) { return String(x); } } return String(x); }).join(' '), w.file, w.line); } catch (e) {} }; });
+  } catch (e) {}
   const BORN = new WeakMap();
   if (on()) try { Error.stackTraceLimit = Math.max(Error.stackTraceLimit || 10, 30);
     Object.defineProperty(Object.prototype, 'isObject3D', { configurable: true, get() { return undefined; },
@@ -282,6 +297,27 @@
       for (const k of Object.keys(o)) { const v = o[k]; if (typeof v === 'number' && isFinite(v)) out.push({ path: path + k, v }); else if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, path + k + '.', d + 1); } };
     walk(g, '', 0); return out;
   }
+  /* 👁️ Watch (owner Nov 7 2026): any live value of the running game - number, on/off, text - pinned on the screen while playing; switches flip live */
+  const WKEY = 'apexStudioWatch_' + GAME; let WATCH = []; try { WATCH = JSON.parse(localStorage.getItem(WKEY) || '[]'); } catch (e) {}
+  const saveWatch = () => { try { localStorage.setItem(WKEY, JSON.stringify(WATCH)); } catch (e) {} };
+  const wq = { q: '' };
+  function liveRoots() { const r = {}; try { const lv = typeof W.live === 'function' ? W.live() : W.live; if (lv && typeof lv === 'object') for (const [k, v] of Object.entries(lv)) if (v && typeof v === 'object') r[k] = v; } catch (e) {} if (window.__game && typeof window.__game === 'object') r.game = window.__game; if (window.__test && typeof window.__test === 'object') r.test = window.__test; if (window.__reality && typeof window.__reality === 'object') r.reality = window.__reality; return r; }
+  function liveAll() {                          // every number / on-off / short text reachable 3 deep from the game's own objects
+    const out = [], roots = liveRoots(), seen = new Set();
+    const walk = (o, path, d) => { if (!o || typeof o !== 'object' || d > 3 || out.length > 400 || seen.has(o) || o.isObject3D || o.isVector3 || o.isColor || o.nodeType) return; seen.add(o);
+      for (const k of Object.keys(o)) { let v; try { v = o[k]; } catch (e) { continue; } const t = typeof v;
+        if (t === 'number' && isFinite(v)) out.push({ path: path + k, t: 'n', v }); else if (t === 'boolean') out.push({ path: path + k, t: 'b', v }); else if (t === 'string' && v.length < 60) out.push({ path: path + k, t: 's', v });
+        else if (v && t === 'object' && !Array.isArray(v)) walk(v, path + k + '.', d + 1); else if (Array.isArray(v) && v.length && v.length < 20 && typeof v[0] === 'object') walk(v, path + k + '.', d + 1); } };
+    for (const [n, r] of Object.entries(roots)) walk(r, n + '.', 0); return out;
+  }
+  function liveGet(path) { const ks = path.split('.'), roots = liveRoots(); let o = roots[ks[0]]; for (let i = 1; i < ks.length; i++) { if (o == null) return undefined; let v; try { v = o[ks[i]]; } catch (e) { return undefined; } o = (typeof v === 'function' && i === ks.length - 1) ? (() => { try { return v.call(o); } catch (e) { return '✗'; } })() : v; } return o; }
+  function liveSet(path, v) { const ks = path.split('.'), roots = liveRoots(); let o = roots[ks[0]]; for (let i = 1; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
+  const fmt = v => typeof v === 'number' ? (Number.isInteger(v) ? String(v) : v.toFixed(Math.abs(v) < 10 ? 3 : 1)) : typeof v === 'boolean' ? (v ? 'ON' : 'off') : v == null ? '-' : String(v).slice(0, 40);
+  let hud = null;
+  function drawWatchHud() { if (!WATCH.length) { if (hud) { hud.remove(); hud = null; } return; }
+    if (!hud) { hud = document.createElement('div'); hud.id = 'apxWatch'; hud.style.cssText = 'position:fixed;left:max(6px,env(safe-area-inset-left,0px));bottom:max(6px,env(safe-area-inset-bottom,0px));z-index:99997;background:#000a;color:#ffd23a;font:11px ui-monospace,Menlo,monospace;padding:4px 7px;border-radius:8px;pointer-events:none;max-width:46vw;white-space:pre;line-height:1.35'; document.body.appendChild(hud); }
+    hud.textContent = WATCH.map(p => p.split('.').slice(-2).join('.') + ' ' + fmt(liveGet(p))).join('\n'); }
+  setInterval(() => { try { drawWatchHud(); } catch (e) {} }, 200);
   function setLive(path, v) { const ks = path.split('.'); let o = window.__game; for (let i = 0; i < ks.length - 1; i++) o = o && o[ks[i]]; if (o) o[ks[ks.length - 1]] = v; }
 
   /* ---------- the panel ---------- */
@@ -310,8 +346,9 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   ui.draw = function () {
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
-    if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code') ? 'min(720px,98vw)' : '';
-    const tabs = [['scene', 'Scene'], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
+    if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log') ? 'min(720px,98vw)' : '';
+    const nErr = LOG.filter(l => l.kind === 'error').length;
+    const tabs = [['scene', 'Scene'], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']];
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -340,6 +377,17 @@
         }
         h += `<div style="margin-top:10px"><button data-fixit="1">🔧 Fix a bug in this game (opens your controller)</button></div>`;
       }
+    } else if (ui.tab === 'log') {
+      h += `<h3>🐞 The game's own log (${LOG.length} lines, ${nErr} errors)</h3><p class="sub">Script errors and console lines since the page loaded - what a developer sees in the console. A line of THIS game's code opens in the Code tab. <button data-logclear="1">🗑️ Clear</button> <button data-logcopy="1">📋 Copy all</button></p>`;
+      if (!LOG.length) h += '<p class="sub">Nothing logged yet. Play the game; an error shows up here with its line.</p>';
+      LOG.slice().reverse().slice(0, 120).forEach(l => { const mine = l.file && l.file === ME_FILE && l.line, when = new Date(l.at), ts = when.getHours() % 12 || 12, tm = ts + ':' + String(when.getMinutes()).padStart(2, '0') + ':' + String(when.getSeconds()).padStart(2, '0');
+        h += `<div style="border-bottom:1px solid #222a36;padding:4px 0;font:11px ui-monospace,Menlo,monospace;word-break:break-word"><span class="sub">${tm}</span> ${l.kind === 'error' ? '🔴' : l.kind === 'warn' ? '🟡' : '⚪'} ${esc(l.text)}${l.n > 1 ? ' <span class="sub">×' + l.n + '</span>' : ''}${l.file ? ' <span class="sub">' + esc(l.file) + ':' + l.line + '</span>' : ''}${mine ? ` <button data-born="${l.line}">line ${l.line} →</button>` : ''}</div>`; });
+    } else if (ui.tab === 'watch') {
+      h += `<h3>👁️ Watch - live values while you play</h3><p class="sub">Pinned values stay on the screen (bottom-left). Numbers and on/off switches can be changed here and the game takes it at once.</p>`;
+      if (WATCH.length) { h += '<h3>Pinned</h3>'; WATCH.forEach((p, i) => { const v = liveGet(p); h += `<div class="row"><label><span style="font:12px ui-monospace,Menlo,monospace">${esc(p)}</span><span>${typeof v === 'boolean' ? `<button data-wflip="${esc(p)}">${v ? 'ON → off' : 'off → ON'}</button>` : typeof v === 'number' ? `<input type="number" step="any" data-wset="${esc(p)}" value="${+v.toFixed(4)}" style="width:100px;font:12px ui-monospace,Menlo,monospace;background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px;padding:3px">` : `<b>${esc(fmt(v))}</b>`} <button data-wunpin="${i}">✕</button></span></label></div>`; }); }
+      const all = liveAll(); if (!all.length) h += '<p class="sub">The game shows no live values yet (it needs window.__game or window.__test - start playing, then come back).</p>';
+      h += `<h3>All live values (${all.length})</h3><input type="search" data-wq="1" placeholder="filter: speed, lap, grip, on…" value="${esc(wq.q)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5">`;
+      const q = wq.q.toLowerCase(); all.filter(x => !q || x.path.toLowerCase().includes(q)).slice(0, 80).forEach(x => { h += `<div class="row"><label><span style="font:12px ui-monospace,Menlo,monospace">${esc(x.path)}</span><span><b>${esc(fmt(x.v))}</b> ${x.t === 'b' ? `<button data-wflip="${esc(x.path)}">flip</button>` : ''}<button data-wpin="${esc(x.path)}" ${WATCH.includes(x.path) ? 'disabled' : ''}>📌</button></span></label></div>`; });
     } else if (ui.tab === 'phys' || ui.tab === 'code') {
       const n = changeCount();
       h += `<div style="position:sticky;top:-10px;background:#0e1219;padding:6px 0;z-index:2"><b class="${n ? 'chg' : ''}">${n} code change${n === 1 ? '' : 's'}</b> <button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with them</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button>${n ? '<button data-undoall="1">↩️ Undo all</button>' : ''}</div>`;
@@ -365,6 +413,7 @@
           const a = Math.max(0, C.hit - 6), b = Math.min(C.lines.length - 1, C.hit + 24), mineK = CE.chunks.find(k => k.a === a);
           h += `<p class="sub">Lines ${a + 1}-${b + 1} of ${C.lines.length}. Change anything, then "Use this change".</p><textarea data-chunk="${a}:${b}" spellcheck="false" style="min-height:300px;white-space:pre;overflow:auto">${esc(mineK ? mineK.text : C.lines.slice(a, b + 1).map((l, i) => CE.nums[a + i] ? lineNow(a + i) : l).join('\n'))}</textarea>`;
           h += `<button data-chunkuse="1">✓ Use this change</button><button data-chunkup="1">⬆ Earlier lines</button><button data-chunkdn="1">⬇ Later lines</button><button data-chunkx="1">✕ Close</button>`;
+          h += `<p class="sub">No AI at all: <a href="${REPO}/blob/main/${esc(ME_FILE)}#L${C.hit + 1}" target="_blank" rel="noopener" style="color:#ffd23a">👀 this line on GitHub</a> · <a href="${REPO}/edit/main/${esc(ME_FILE)}" target="_blank" rel="noopener" style="color:#ffd23a">✏️ edit on GitHub</a> - change it there, 'Propose changes' makes the pull request, the robot checks it and merges it green.</p>`;
         } else if (C.q.length >= 2) {
           const q = C.q.toLowerCase(), hits = []; C.lines.forEach((l, i) => { if (hits.length < 40 && l.toLowerCase().includes(q)) hits.push(i); });
           h += hits.length ? hits.map(i => `<div><button data-hit="${i}" style="text-align:left;width:100%;font:11px ui-monospace,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i + 1}: ${esc(C.lines[i].trim().slice(0, 90))}</button></div>`).join('') : '<p class="sub">not found</p>';
@@ -412,6 +461,13 @@
       h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
     }
     ui.el.innerHTML = h;
+    const lc = ui.el.querySelector('[data-logclear]'); if (lc) lc.onclick = () => { LOG.length = 0; ui.btn.textContent = '✕ Close Studio'; ui.draw(); };
+    const lcp = ui.el.querySelector('[data-logcopy]'); if (lcp) lcp.onclick = () => { const t = LOG.map(l => new Date(l.at).toLocaleTimeString() + ' ' + l.kind + ' ' + l.text + (l.file ? ' (' + l.file + ':' + l.line + ')' : '')).join('\n'); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied.'; ui.draw(); }).catch(() => {}); } catch (e) {} };
+    const wqi = ui.el.querySelector('[data-wq]'); if (wqi) wqi.oninput = () => { wq.q = wqi.value; const p = wqi.selectionStart; ui.draw(); const n = ui.el.querySelector('[data-wq]'); if (n) { n.focus(); n.setSelectionRange(p, p); } };
+    ui.el.querySelectorAll('[data-wpin]').forEach(b => b.onclick = () => { if (!WATCH.includes(b.dataset.wpin)) WATCH.push(b.dataset.wpin); saveWatch(); ui.draw(); });
+    ui.el.querySelectorAll('[data-wunpin]').forEach(b => b.onclick = () => { WATCH.splice(+b.dataset.wunpin, 1); saveWatch(); ui.draw(); });
+    ui.el.querySelectorAll('[data-wflip]').forEach(b => b.onclick = () => { liveSet(b.dataset.wflip, !liveGet(b.dataset.wflip)); ui.draw(); });
+    ui.el.querySelectorAll('[data-wset]').forEach(inp => inp.onchange = () => { if (inp.value !== '' && isFinite(+inp.value)) liveSet(inp.dataset.wset, +inp.value); });
     ui.el.querySelectorAll('[data-born]').forEach(b => b.onclick = () => { const n = +b.dataset.born; if (!n) return; ui.tab = 'code'; C.hit = n - 1; C.q = ''; ui.draw(); const ta = ui.el.querySelector('[data-chunk]'); if (ta) ta.scrollIntoView({ block: 'start' }); });
     const rn = ui.el.querySelector('[data-run]'); if (rn) rn.onclick = runMine;
     const sd = ui.el.querySelector('[data-send]'); if (sd) sd.onclick = sendFix;
@@ -477,5 +533,6 @@
 
   window.Studio = { declare, num, color, points, world, ownsCamera, camView, camNext, addKind, kinds: KINDS,
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
+    log: () => LOG.slice(), watch: { list: () => WATCH.slice(), pin: p => { if (!WATCH.includes(p)) WATCH.push(p); saveWatch(); }, all: liveAll, get: liveGet },
     code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, bornAt, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();

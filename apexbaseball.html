@@ -1681,7 +1681,7 @@ try { if (window.Studio){
       if (!p || !p.team || p.team === 'ump') continue; dress(p, p.team);
       if (p.athleteU && p.athleteU.uShoe) p.athleteU.uShoe.value.set(SHOE_COL);
       if (p.capGrp) p.capGrp.traverse(o => { if (o.isMesh) o.material = M(TEAMS[p.team].cap); }); } } });
-  Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), scope: () => 'park',
+  Studio.world({ THREE, scene, camera, renderer, canvas: renderer.domElement, groundY: (x, z) => (Math.hypot(x, z + 20.17) < 3 ? 0.3 : 0), scope: () => 'park', live: () => ({ game: G }), /* Studio 👁️ Watch (owner Nov 7 2026) */
     center: () => ({ x: 0, z: -30 }), camDefault: { back: 12, up: 5, side: 0, ahead: 20, fov: 42 } });
 } } catch (e) { console.warn('studio', e); }
 function startGame(){
