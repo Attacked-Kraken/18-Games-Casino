@@ -1850,4 +1850,31 @@ export default [
       return true;
     },
   },
+  {
+    id: 'play-asphalt-seam-texture', mode: 'race',
+    ask: 'The asphalt texture carries on over the start/finish line - no speckled band squeezed into the last metres before the line (owner Nov 8 2026 "studded glitch where the finish and start meet")',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid&track=harbour'; }).catch(() => {});
+      await h.wait(1500);
+      let r = null;
+      for (let i = 0; i < 60; i++) { r = await h.eval(() => window.__test && window.__test.seamUV ? window.__test.seamUV() : null).catch(() => null); if (r && r.L14 > 10) break; await h.wait(400); }
+      if (!r || !(r.L14 > 10)) return 'the built-in circuit never built its asphalt ribbon (no seamUV probe)';
+      if (r.jump > 2) return 'the last road piece before the line runs its texture ' + r.jump + ' repeats in one step (uPrev ' + r.uPrev + ' -> uLast ' + r.uLast + '): a speckled band at the finish line';
+      if (Math.abs(r.uLast - r.L14) > 1.5) return 'the closing road piece ends at texture ' + r.uLast + ' instead of the lap length ' + r.L14;
+      return true;
+    },
+  },
+  {
+    id: 'play-owner-circuit-list', mode: 'race',
+    ask: 'Every circuit in the list is well formed (a name, 4+ points unless it is the kit circuit) - an owner-made circuit from the Workshop / Studio cannot break the circuit menu (Nov 8 2026)',
+    test: async (page, h) => {
+      let L = null;
+      for (let i = 0; i < 30; i++) { L = await h.eval(() => window.__test && window.__test.tracks ? window.__test.tracks() : null).catch(() => null); if (L && L.length) break; await h.wait(400); }
+      if (!L || !L.length) return 'no circuit list (__test.tracks)';
+      const bad = L.filter(t => !t.id || !t.name || (!t.gp && !(t.pts >= 4)));
+      if (bad.length) return 'badly formed circuit entries: ' + bad.map(t => (t.id || '?') + ' (' + (t.pts || 0) + ' points)').join(', ');
+      const ids = L.map(t => t.id); if (new Set(ids).size !== ids.length) return 'two circuits share an id: ' + ids.join(', ');
+      return true;
+    },
+  },
 ];

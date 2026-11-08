@@ -260,9 +260,9 @@
     return L.join('\n');
   }
   function changeCount() { let n = CE.chunks.length; for (const i in CE.nums) n += Object.keys(CE.nums[i]).length; return n; }
-  function runMine() {                          // the changed game runs over the page in a frame; the original stays underneath
+  function runMine(qsWanted) {                  // the changed game runs over the page in a frame; the original stays underneath
     let html = sourceNow(); const base = location.href.replace(/[?#].*$/, '').replace(/[^/]*$/, '');
-    const qs = location.search.replace(/[?&]studio=1/g, '').replace(/^&/, '?');   // the frame opens the SAME mode / track (?test=grid&track=...): the page's location.search reads become this
+    const qs = typeof qsWanted === 'string' ? qsWanted : location.search.replace(/[?&]studio=1/g, '').replace(/^&/, '?');   // the frame opens the SAME mode / track (?test=grid&track=...): the page's location.search reads become this
     html = html.replace(/<head([^>]*)>/i, '<head$1><base href="' + base + '"><script>window.__apxTest=1;window.__apxSearch=' + JSON.stringify(qs) + '<\/script>').replace(/\blocation\.search\b/g, '(window.__apxSearch||location.search)');
     let box = document.getElementById('apxRun'); if (box) box.remove();
     box = document.createElement('div'); box.id = 'apxRun'; box.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#000';
@@ -331,6 +331,22 @@
   function trackLoad(force) { if (!W.track) return null; if (TK.t && !force) return TK.t; let t = null; try { t = W.track(); } catch (e) { t = null; }
     if (!t || !t.pts) { TK.t = null; return null; } TK.t = { id: t.id, file: t.file || ME_FILE, pts: t.pts.map(p => [+p[0], +(p[1] || 0), +(p[2] || 0)]), width: +t.width || 18, pitIn: +t.pitIn || 0.94, pitOut: +t.pitOut || 0.08, drs: (t.drs || []).map(d => [+d[0], +d[1]]), lapKm: t.lapKm, k: +t.k || 1, note: t.note || '' };
     TK.sel = 0; TK.dirty = false; trackFit(); return TK.t; }
+  /* ---- NEW circuits (owner Nov 8 2026 "how do I build a new track"): a copy of the circuit on screen, or a blank oval, becomes a brand-new
+     entry in the game's circuit list (two code lines above the game's "OWNER CIRCUITS" marker line). ▶ Drive opens the changed game on it. ---- */
+  const TK_THEMES = { none: null, harbour: { kind: 'harbour', sky: '0x87b5e0', ground: '0x7a8a6e' }, desert: { kind: 'desert', sky: '0xa9cdf0', skyTop: '0x2a66c8', skyBot: '0xf3dcb0', ground: '0xc6a269' }, forest: { kind: 'forest', sky: '0x8fbce8', ground: '0x2f6b35' }, city: { kind: 'city', sky: '0x9fb8d8', ground: '0x55606a' } };
+  const TK_OVAL = [[0, 0, 0], [500, 0, 0], [700, 0, -60], [760, 0, -200], [700, 0, -400], [500, 0, -520], [0, 0, -560], [-500, 0, -520], [-700, 0, -400], [-760, 0, -200], [-700, 0, -60], [-500, 0, 0]];
+  const tkSlug = n => String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 24) || 'mycircuit';
+  const tkText = (v, max) => String(v || '').replace(/[\\'"`<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, max || 60);
+  function trackNew(fromCurrent) { const cur = fromCurrent && TK.t ? TK.t : null, base = cur || { pts: TK_OVAL, width: 18, pitIn: 0.94, pitOut: 0.08, drs: [[0, 0.15]], lapKm: 4.5 };
+    const n = 'MY CIRCUIT' + (cur ? ' ' + String(cur.id || '').toUpperCase() : '');
+    TK.t = { id: tkSlug(n), name: n, place: 'Apex', lapKm: +(+base.lapKm || 4.5).toFixed(2), theme: cur && cur.theme || 'none', isNew: true, file: ME_FILE, pts: base.pts.map(p => [+p[0], +(p[1] || 0), +(p[2] || 0)]), width: +base.width || 18, pitIn: +base.pitIn || 0.94, pitOut: +base.pitOut || 0.08, drs: (base.drs || [[0, 0.15]]).map(d => [+d[0], +d[1]]), k: 1, note: 'a NEW circuit of yours - not in the game yet' };
+    TK.sel = 0; TK.dirty = true; trackFit(); TK.msg = 'A new circuit. Name it, drag the points, then ✍️ Put it in the code and ▶ Drive it.'; return TK.t; }
+  function trackIdFree(id) { if (!C.lines) return id; let k = id, n = 2; const has = x => C.lines.some(l => new RegExp("\\bid:\\s*['\"]" + x + "['\"]").test(l)); while (has(k)) k = id + (n++); return k; }
+  function trackEntryLines(t) {              // the two code lines of a circuit entry, in the game's own shape (id line, then pts line)
+    const num = v => String(+(+v).toFixed(4)), th = TK_THEMES[t.theme] || null, name = tkText(t.name, 24).toUpperCase() || 'MY CIRCUIT', place = tkText(t.place, 30) || 'Apex';
+    const l1 = "{ id:'" + t.id + "', name:'" + name + "', country:'" + place + "', lapKm:" + num(Math.max(1, Math.min(12, +t.lapKm || 4.5))) + ", width:" + num(t.width) + ", tag:'" + tkText(t.tag || 'Owner-made circuit - ' + t.pts.length + ' points.', 120) + "', drs:[" + (t.drs || []).map(d => '[' + num(d[0]) + ',' + num(d[1]) + ']').join(',') + '], pitIn:' + num(t.pitIn) + ', pitOut:' + num(t.pitOut) + (th ? ', theme:{ ' + Object.keys(th).map(k => k + ':' + (k === 'kind' ? "'" + th[k] + "'" : th[k])).join(', ') + ' }' : '') + ' /* owner-made circuit (Studio / Workshop) */,';
+    const l2 = '  pts:[' + t.pts.map(p => '[' + [p[0], p[1], p[2]].map(v => String(+(+v).toFixed(1))).join(',') + ']').join(',') + '] },';
+    return [l1, l2]; }
   function catmull(P, SEG) { const out = [], n = P.length; for (let i = 0; i < n; i++) { const p0 = P[(i - 1 + n) % n], p1 = P[i], p2 = P[(i + 1) % n], p3 = P[(i + 2) % n];
     for (let j = 0; j < SEG; j++) { const t = j / SEG, t2 = t * t, t3 = t2 * t, f = k => 0.5 * ((2 * p1[k]) + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3); out.push([f(0), f(1), f(2), i]); } } return out; }
   function trackLine() { const L = catmull(TK.t.pts, 16), cum = [0]; for (let i = 1; i <= L.length; i++) { const a = L[i - 1], b = L[i % L.length]; cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[2] - a[2])); } return { L, cum, total: cum[cum.length - 1] }; }
@@ -351,7 +367,9 @@
   function trackFraction(i) { const { L, cum, total } = trackLine(); const k = L.findIndex(p => p[3] === i); return k < 0 ? 0 : cum[k] / total; }
   function trackFinishHere(i) { const t = TK.t, f0 = trackFraction(i); if (!i) return; t.pts = t.pts.slice(i).concat(t.pts.slice(0, i)); const sh = v => ((v - f0) % 1 + 1) % 1; t.pitIn = +sh(t.pitIn).toFixed(4); t.pitOut = +sh(t.pitOut).toFixed(4); t.drs = (t.drs || []).map(d => { let a = sh(d[0]), b = sh(d[1]); if (b < a) b = 1; return [+a.toFixed(4), +b.toFixed(4)]; }); TK.sel = 0; TK.dirty = true; }
   function trackCodeLines() {                   // the circuit's two code lines rewritten: the id line (pitIn / pitOut / drs / width) and the pts line
-    const t = TK.t; if (!C.lines) return null; const idRe = new RegExp("\\bid:\\s*['\"]" + t.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "['\"]");
+    const t = TK.t; if (!C.lines) return null;
+    if (t.isNew) { const im = C.lines.findIndex(l => /OWNER CIRCUITS:/.test(l)); if (im < 0) return { noMarker: true }; t.id = trackIdFree(tkSlug(t.name)); const [l1, l2] = trackEntryLines(t); return { insert: true, i1: im, i2: im, l1: l1 + '\n' + l2 + '\n' + C.lines[im], l2: null }; }
+    const idRe = new RegExp("\\bid:\\s*['\"]" + t.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "['\"]");
     const i1 = C.lines.findIndex(l => idRe.test(l)); if (i1 < 0) return null; let i2 = -1; for (let k = i1; k < Math.min(C.lines.length, i1 + 10); k++) if (/^\s*pts\s*:\s*\[/.test(C.lines[k])) { i2 = k; break; }
     if (i2 < 0) return null; let l1 = C.lines[i1];
     const num = v => String(+(+v).toFixed(4)); l1 = l1.replace(/\bpitIn:\s*[\d.]+/, 'pitIn:' + num(t.pitIn)).replace(/\bpitOut:\s*[\d.]+/, 'pitOut:' + num(t.pitOut));
@@ -361,9 +379,10 @@
     const l2 = m[1] + t.pts.map(p => '[' + [p[0], p[1], p[2]].map(v => String(+(+v).toFixed(1))).join(',') + ']').join(',') + m[3];
     return { i1, l1, i2, l2 }; }
   function trackApply() { const r = trackCodeLines(); if (!r) { TK.msg = C.lines ? "Could not find this circuit's lines in the code (id:'" + TK.t.id + "' + a pts: line under it)." : 'Reading the code first - tap again in a moment.'; loadSrc(); return; }
-    const a = Math.min(r.i1, r.i2), b = Math.max(r.i1, r.i2), text = C.lines.slice(a, b + 1).map((l, k) => (a + k === r.i1 ? r.l1 : a + k === r.i2 ? r.l2 : l)).join('\n'), old = C.lines.slice(a, b + 1).join('\n');
+    if (r.noMarker) { TK.msg = 'This game has no "OWNER CIRCUITS" marker line yet (an older copy) - reload the game once it has updated, then tap again.'; return; }
+    const a = Math.min(r.i1, r.i2), b = Math.max(r.i1, r.i2), text = r.insert ? r.l1 : C.lines.slice(a, b + 1).map((l, k) => (a + k === r.i1 ? r.l1 : a + k === r.i2 ? r.l2 : l)).join('\n'), old = C.lines.slice(a, b + 1).join('\n');
     CE.chunks = CE.chunks.filter(k => k.b < a || k.a > b); for (let i = a; i <= b; i++) delete CE.nums[i]; if (text !== old) CE.chunks.push({ a, b, old, text }); saveCE(); TK.dirty = false;
-    TK.msg = text !== old ? 'In the code (lines ' + (a + 1) + '-' + (b + 1) + '). ▶ Run the game with it, then 📤 Send as a code fix.' : 'Nothing changed.'; }
+    TK.msg = text !== old ? (r.insert ? 'Added to the circuit list as "' + TK.t.id + '" (above line ' + (a + 1) + '). ▶ Drive my new circuit, then 📤 Send as a code fix - after the robot and the merge it is in the game\'s circuit menu for everyone.' : 'In the code (lines ' + (a + 1) + '-' + (b + 1) + '). ▶ Run the game with it, then 📤 Send as a code fix.') : 'Nothing changed.'; }
 
   /* ---------- 💡 LIGHTS + 🎨 LOOK + FPS + 🎥 RECORD (owner Nov 7 2026 10:04 PM video of a desktop three.js editor: "why can't I have like video"):
      every light in the scene (type, on/off, brightness, colour, place, shadow, reach) and new point / spot / sun / sky lights, saved in
@@ -506,10 +525,12 @@
       const q = wq.q.toLowerCase(); all.filter(x => !q || x.path.toLowerCase().includes(q)).slice(0, 80).forEach(x => { h += `<div class="row"><label><span style="font:12px ui-monospace,Menlo,monospace">${esc(x.path)}</span><span><b>${esc(fmt(x.v))}</b> ${x.t === 'b' ? `<button data-wflip="${esc(x.path)}">flip</button>` : ''}<button data-wpin="${esc(x.path)}" ${WATCH.includes(x.path) ? 'disabled' : ''}>📌</button></span></label></div>`; });
     } else if (ui.tab === 'track') {
       const t = trackLoad(); if (!C.lines) loadSrc();
-      if (!t) h += '<p class="sub">This circuit is not a list of points the editor can change (a kit / data-file circuit). Its shape lives in a data file - see the Code tab.</p>';
+      if (!t) h += `<p class="sub">This circuit is not a list of points the editor can change (a kit / data-file circuit). Its shape lives in a data file - see the Code tab.</p><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tknew="0" class="on">➕ New circuit (start from a blank oval)</button></div><p class="sub">A new circuit of yours goes into this game's circuit list - drag its points, name it, ▶ Drive it, 📤 Send it.</p>`;
       else {
         const sel = t.pts[TK.sel] || t.pts[0], n = changeCount();
-        h += `<h3>🛣️ Track - ${esc(t.id)}</h3><p class="sub">${esc(t.note)}. Yellow = the FINISH line (first point), orange = pit entry, blue = pit exit, green = DRS. Tap a point, drag it. Red dot = you.</p>`;
+        h += `<h3>🛣️ Track - ${esc(t.isNew ? t.name : t.id)}${t.isNew ? ' <span class="chg">NEW</span>' : ''}</h3><p class="sub">${esc(t.note)}. Yellow = the FINISH line (first point), orange = pit entry, blue = pit exit, green = DRS. Tap a point, drag it. Red dot = you.</p>`;
+        if (t.isNew) h += `<div class="row"><label><span>Name</span></label><input type="text" data-tkname="1" value="${esc(t.name)}" maxlength="24" style="width:100%;padding:6px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div><div class="xyz"><input type="text" data-tkplace="1" value="${esc(t.place)}" maxlength="30" placeholder="place" title="place"><input type="number" step="0.1" min="1" max="12" data-tkkm="1" value="${t.lapKm}" title="lap km"><select data-tktheme="1" title="look" style="background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px">${['none', 'harbour', 'desert', 'forest', 'city'].map(k => `<option value="${k}" ${t.theme === k ? 'selected' : ''}>${k === 'none' ? 'plain grass' : k}</option>`).join('')}</select></div><p class="sub">place · lap length km (the shape is scaled to it) · look</p>`;
+        else h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tknew="1">➕ Save as a NEW circuit (a copy of this one)</button><button data-tknew="0">➕ New circuit (blank oval)</button></div>`;
         h += `<canvas id="apxTrackMap" width="640" height="420" style="width:100%;max-width:640px;aspect-ratio:640/420;border-radius:10px;touch-action:none;display:block"></canvas>`;
         h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkzoom="1.3">🔍+</button><button data-tkzoom="0.77">🔍−</button><button data-tkfit="1">fit</button><button data-tkreload="1">↺ reload from the game</button></div>`;
         h += `<h3>Point ${TK.sel + 1} of ${t.pts.length}${TK.sel === 0 ? ' - the FINISH line' : ''}</h3><div class="xyz"><input type="number" step="1" data-tkp="0" value="${sel[0]}" title="x"><input type="number" step="0.5" data-tkp="1" value="${sel[1]}" title="height m"><input type="number" step="1" data-tkp="2" value="${sel[2]}" title="z"></div><p class="sub">x · height (m) · z</p>`;
@@ -519,8 +540,8 @@
         h += `<div class="row"><label><span>Pit exit</span><b>${Math.round(t.pitOut * 100)}%</b></label><input type="range" min="0" max="1" step="0.005" value="${t.pitOut}" data-tkpout="1"></div>`;
         (t.drs || []).forEach((d, i) => { h += `<div class="row"><label><span>DRS zone ${i + 1}</span><b>${Math.round(d[0] * 100)}% → ${Math.round(d[1] * 100)}%</b></label><div class="xyz"><input type="range" min="0" max="1" step="0.005" value="${d[0]}" data-tkdrs="${i}:0" style="width:49%"><input type="range" min="0" max="1" step="0.005" value="${d[1]}" data-tkdrs="${i}:1" style="width:49%"></div></div>`; });
         if (TK.msg) { h += `<p class="sub chg">${esc(TK.msg)}</p>`; TK.msg = ''; }
-        h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkapply="1" class="${TK.dirty ? 'on' : ''}">✍️ Put it in the code</button><button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with it</button><button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button></div>`;
-        h += `<p class="sub">The map is in the circuit's own point units; the game scales the shape to ${t.lapKm} km. The road, kerbs and scenery are rebuilt when the changed game runs.</p>`;
+        h += `<div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-tkapply="1" class="${TK.dirty ? 'on' : ''}">✍️ Put it in the code</button>${t.isNew ? `<button data-tkdrive="1" ${n && !TK.dirty ? '' : 'disabled'}>▶ Drive my new circuit</button>` : `<button data-run="1" ${n ? '' : 'disabled'}>▶ Run the game with it</button>`}<button data-send="1" ${n ? '' : 'disabled'}>📤 Send as a code fix</button></div>`;
+        h += `<p class="sub">The map is in the circuit's own point units; the game scales the shape to ${t.lapKm} km. The road, kerbs and scenery are rebuilt when the changed game runs.${t.isNew ? ' A new circuit is added above the game\'s "OWNER CIRCUITS" marker line - the circuit menu and the season pick it up by themselves.' : ''}</p>`;
       }
     } else if (ui.tab === 'lights') {
       const Ls = lightsAll(), L = D().lights || {}, g = D().grade || {};
@@ -650,6 +671,12 @@
     const tkpout = ui.el.querySelector('[data-tkpout]'); if (tkpout) tkpout.oninput = () => { TK.t.pitOut = +tkpout.value; TK.dirty = true; trackDraw(); tkpout.previousElementSibling.querySelector('b').textContent = Math.round(TK.t.pitOut * 100) + '%'; };
     ui.el.querySelectorAll('[data-tkdrs]').forEach(inp => inp.oninput = () => { const [i, k] = inp.dataset.tkdrs.split(':').map(Number); TK.t.drs[i][k] = +inp.value; TK.dirty = true; trackDraw(); });
     const tka = ui.el.querySelector('[data-tkapply]'); if (tka) tka.onclick = () => { trackApply(); ui.draw(); };
+    ui.el.querySelectorAll('[data-tknew]').forEach(b => b.onclick = () => { if (!C.lines) loadSrc(); trackNew(b.dataset.tknew === '1'); ui.draw(); });
+    const tknm = ui.el.querySelector('[data-tkname]'); if (tknm) tknm.onchange = () => { TK.t.name = tkText(tknm.value, 24) || 'MY CIRCUIT'; TK.t.id = tkSlug(TK.t.name); TK.dirty = true; ui.draw(); };
+    const tkpl = ui.el.querySelector('[data-tkplace]'); if (tkpl) tkpl.onchange = () => { TK.t.place = tkText(tkpl.value, 30) || 'Apex'; TK.dirty = true; };
+    const tkkm = ui.el.querySelector('[data-tkkm]'); if (tkkm) tkkm.onchange = () => { const v = +tkkm.value; if (isFinite(v) && v > 0) { TK.t.lapKm = +Math.max(1, Math.min(12, v)).toFixed(2); TK.dirty = true; ui.draw(); } };
+    const tkth = ui.el.querySelector('[data-tktheme]'); if (tkth) tkth.onchange = () => { TK.t.theme = tkth.value; TK.dirty = true; };
+    const tkdr = ui.el.querySelector('[data-tkdrive]'); if (tkdr) tkdr.onclick = () => runMine('?test=grid&track=' + encodeURIComponent(TK.t.id));
     const LA = lightsAll(); const lref = b => LA[+String(b.dataset.lon ?? b.dataset.lcol ?? b.dataset.lreset ?? b.dataset.lint ?? b.dataset.ldist ?? b.dataset.lsh ?? '').split(':')[0]];
     ui.el.querySelectorAll('[data-lon]').forEach(b => b.onclick = () => { const o = lref(b); if (o) { lightRecord(o, { on: !o.visible }); ui.draw(); } });
     ui.el.querySelectorAll('[data-lcol]').forEach(b => b.oninput = () => { const o = lref(b); if (o) lightRecord(o, { c: b.value }); });
@@ -757,7 +784,7 @@
     on: (ev, f) => { (listeners[ev] = listeners[ev] || []).push(f); }, active: on, game: GAME,
     measure, count: countNamed, rules: { list: () => RULES, add: r => { RULES.push(r); saveRules(); }, check: ruleCheckNow, code: ruleTestCode, pack: rulesPack, words: ruleWords },
     lights: { all: lightsAll, apply: lightsApply, grade: gradeApply, perf: perfLine, record: recordClip },
-    track: { load: trackLoad, state: () => TK, finishHere: trackFinishHere, apply: trackApply, lines: trackCodeLines },
+    track: { load: trackLoad, state: () => TK, finishHere: trackFinishHere, apply: trackApply, lines: trackCodeLines, newCircuit: trackNew, entry: trackEntryLines },
     log: () => LOG.slice(), watch: { list: () => WATCH.slice(), pin: p => { if (!WATCH.includes(p)) WATCH.push(p); saveWatch(); }, all: liveAll, get: liveGet },
     code: { run: runMine, pack: () => C.lines ? fixPack() : '', count: changeCount, console: runConsole, load: loadSrc, nums: () => physNums() }, bornAt, data: () => D(), placing: () => W.placing, debug: () => ({ world: W.ok, scope: scopeNow(), props: W.root ? W.root.children.length : 0 }), refresh: () => { if (W.ok && W.root.parent !== W.scene) W.scene.add(W.root); rebuildProps(); applyAll(); }, select, applyAll, edits: () => D().edits || {} };
 })();

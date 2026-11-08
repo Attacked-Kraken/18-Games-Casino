@@ -93,6 +93,8 @@ canvas.gl{position:absolute;inset:0;width:100%;height:100%;touch-action:none;dis
 <li><b>&#129521; Build</b>: scenery (trees, stands, arches, rocks, lights, models), name it, <b>Send</b>.</li>
 <li><b>&#127918; New game</b>: name, your track + pieces, car, colours, laps, rivals - <b>Make it</b> - <b>Send</b>.</li>
 <li>Controller: Check, Send. A Muse makes the file, the robot checks, the merge robot merges. It shows on the <b>Game Development</b> page by itself ("New games").</li></ol>
+<h3 style="color:#ffd23a">1b. A new F1 circuit, or fix a spot on one - minutes</h3>
+<p><b>New circuit:</b> draw the loop on the <b>&#128739;&#65039; Track</b> tab (the first point you tap is the START / FINISH line), fill in <b>F1 circuit</b> (name, place, lap km, look) and tap <b>Put it in F1 as a new circuit</b>. It is added to F1's circuit list; after the robot and the merge it is in the circuit menu and the season. <b>Fix a spot on a circuit that exists</b> (the finish line, a corner, the pit entry): open F1 with Studio on, 🎛️ → <b>&#128739;&#65039; Track</b>: drag the points, <b>Finish line HERE</b> moves the line, <b>Put it in the code</b>, <b>▶ Run</b> drives it, <b>Send</b>. The same tab has <b>➕ Save as a NEW circuit</b> (a copy you can change) and <b>➕ New circuit</b> (blank oval) - the GRAND PRIX circuit is a 3D file, so it has no points to drag; start a new circuit from there instead.</p>
 <h3 style="color:#ffd23a">2. Tune any game - seconds, live</h3>
 <p>Open the game with <b>&#127899;&#65039; Studio</b> on (Game Development page → <i>Studio on</i>, or add <code>?studio=1</code>). The 🎛️ button at the top opens: <b>Tune</b> (speed, grip, steering, rivals, camera distance/height/zoom, engine pitch/loudness/brightness, colours), <b>Place</b> (map from above - tap to drop trees, rocks, cones, tyres, lights, buildings, road pieces, fences, people; drag to move around; erase), <b>Cameras</b> (add your own views: behind / height / side / ahead / zoom - the game's camera button steps through them), <b>Save</b> (only you see it at once; <i>Publish</i> sends it to every player through the controller). <i>F1 and every new starter game have Studio now; the other games get it next.</i></p>
 <h3 style="color:#ffd23a">3. Change the real code - minutes</h3>
@@ -239,6 +241,15 @@ rebuild(); drawB();
 /* ======================= TRACK: road / circuit builder with splits ======================= */
 const T = makeView(document.getElementById('ct')); T.pitch = 1.25; T.dist = 220;
 const TR = store.get('track', { name: 'my-track', width: 12, closed: true, kerbs: true, roads: [{ pts: [] }] });
+if (!TR.f1) TR.f1 = { name: 'MY CIRCUIT', place: 'Apex', km: 0, theme: 'none' }; /* owner Nov 8 2026 "how do I build a new F1 track": this track can go into F1 as a NEW circuit */
+const F1_THEMES = { none: null, harbour: { kind: 'harbour', sky: '0x87b5e0', ground: '0x7a8a6e' }, desert: { kind: 'desert', sky: '0xa9cdf0', skyTop: '0x2a66c8', skyBot: '0xf3dcb0', ground: '0xc6a269' }, forest: { kind: 'forest', sky: '0x8fbce8', ground: '0x2f6b35' }, city: { kind: 'city', sky: '0x9fb8d8', ground: '0x55606a' } };
+function loopKm(){ const P = TR.roads[0].pts; if (P.length < 3) return 0; const c = new THREE.CatmullRomCurve3(P.map(p => new THREE.Vector3(p.x, 0, p.z)), true, 'centripetal'); return +(c.getLength() / 1000).toFixed(2); }
+function f1Lines(){ // the two code lines F1 keeps per circuit (id line, then pts line) - the same shape the in-game Studio writes
+  const P = TR.roads[0].pts, txt = (v, m) => String(v || '').replace(/[\\'"`<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, m), name = (txt(TR.f1.name, 24) || 'MY CIRCUIT').toUpperCase(), id = name.toLowerCase().replace(/[^a-z0-9]+/g, '') || 'mycircuit';
+  const km = Math.max(1, Math.min(12, +TR.f1.km || loopKm() || 4.5)), th = F1_THEMES[TR.f1.theme] || null, num = v => String(+(+v).toFixed(4));
+  const l1 = "{ id:'" + id + "', name:'" + name + "', country:'" + (txt(TR.f1.place, 30) || 'Apex') + "', lapKm:" + num(km) + ", width:" + num(TR.width) + ", tag:'Owner-made circuit from the Workshop - " + P.length + " points.', drs:[[0,0.15]], pitIn:0.94, pitOut:0.08" + (th ? ', theme:{ ' + Object.keys(th).map(k => k + ':' + (k === 'kind' ? "'" + th[k] + "'" : th[k])).join(', ') + ' }' : '') + ' /* owner-made circuit (Studio / Workshop) */,';
+  const l2 = '  pts:[' + P.map(p => '[' + [p.x, 0, p.z].map(v => String(+(+v).toFixed(1))).join(',') + ']').join(',') + '] },';
+  return { id, name, km, l1, l2 }; }
 let RI = 0, PI = -1, DRAG = false;
 const tRoot = new THREE.Group(); T.scene.add(tRoot);
 function roadMesh(pts, closed, width, color){
@@ -277,8 +288,17 @@ function drawT(){
   h += `<h3>Points</h3><button id="tdel">&#128465;&#65039; Delete picked point</button><button id="tnone">Add at the end</button><button id="tundo">&#8617;&#65039; Undo last point</button>`;
   h += `<h3>Split</h3><button id="tsplit">&#129683; Split from the picked point</button>`;
   if (TR.roads.length > 1) h += `<div>${TR.roads.map((r, i) => `<button data-road="${i}" class="${i === RI ? 'on' : ''}">${i === 0 ? 'Main track' : 'Branch ' + i}</button>`).join('')}</div>` + (RI > 0 ? `<div class="row"><label>Branch colour <input type="color" id="tcol" value="${rd.color || '#3a3d42'}"></label></div><button id="tdelroad">&#128465;&#65039; Delete this branch</button>` : '');
+  const km = loopKm(), mainOk = TR.roads[0].pts.length >= 4 && TR.closed;
+  h += `<h3>&#127950;&#65039; F1 circuit</h3><div class="sub">Put THIS loop into the F1 game as a new circuit in its circuit menu. The first point is the START / FINISH line; the loop is driven in the order you tapped. ${mainOk ? 'Loop: ' + km + ' km as drawn.' : 'Needs 4+ points on the main track and <b>Close the loop</b> on.'}</div>`;
+  h += `<div class="row"><label>Circuit name</label><input type="text" id="f1name" value="${esc(TR.f1.name)}" maxlength="24"></div><div class="row"><label>Place</label><input type="text" id="f1place" value="${esc(TR.f1.place)}" maxlength="30"></div>`;
+  h += `<div class="row"><label>Lap length km (0 = as drawn, ${km || '?'})</label><input type="number" id="f1km" step="0.1" min="0" max="12" value="${TR.f1.km || 0}"></div>`;
+  h += `<div class="row"><label>Look</label><select id="f1theme">${['none', 'harbour', 'desert', 'forest', 'city'].map(k => `<option value="${k}" ${TR.f1.theme === k ? 'selected' : ''}>${k === 'none' ? 'plain grass' : k}</option>`).join('')}</select></div>`;
+  h += `<button class="go" id="tf1" ${mainOk ? '' : 'disabled'}>&#127950;&#65039; Put it in F1 as a new circuit</button>`;
   h += `<h3>Save</h3><button class="go" id="tsend">&#128228; Send this track</button><button id="tnew">New empty track</button>`;
   P.innerHTML = h;
+  $('f1name').onchange = e => { TR.f1.name = e.target.value.slice(0, 24); drawTrack(); }; $('f1place').onchange = e => { TR.f1.place = e.target.value.slice(0, 30); drawTrack(); };
+  $('f1km').onchange = e => { TR.f1.km = Math.max(0, Math.min(12, +e.target.value || 0)); drawTrack(); }; $('f1theme').onchange = e => { TR.f1.theme = e.target.value; drawTrack(); };
+  $('tf1').onclick = () => { window.__sendWhat = 'f1track'; go('send'); };
   $('tname').onchange = e => { TR.name = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '') || 'my-track'; drawTrack(); drawT(); };
   $('tw').oninput = e => { TR.width = +e.target.value; drawTrack(); e.target.previousElementSibling.querySelector('b').textContent = TR.width + ' m'; };
   $('tclose').onclick = () => { TR.closed = !TR.closed; drawTrack(); drawT(); }; $('tkerb').onclick = () => { TR.kerbs = !TR.kerbs; drawTrack(); drawT(); };
@@ -293,7 +313,7 @@ function drawT(){
 }
 function alertT(t){ const h = $('hint2'); h.textContent = t; setTimeout(() => { h.textContent = 'Tap the ground to add a point · drag a point to move it'; }, 3500); }
 drawTrack(); drawT();
-window.__ws = { S, TR, B, T };
+window.__ws = { S, TR, B, T, f1Lines };
 if (location.hash === '#help') go('help');
 </script>
 
@@ -353,11 +373,14 @@ function makeSend(){
   if (what === 'newgame' && window.__newgame) { const n = window.__newgame; fp = 'FIX PACK\nFILE: ' + n.file + '\nWHY: owner new game from the Workshop: ' + n.name + '\nCOPY FROM: ' + n.tpl + '\nCONFIG:\n' + JSON.stringify(n.cfg) + '\nEND';
     sum = 'A new game <b>' + esc(n.name) + '</b> as ' + esc(n.file) + ' (from ' + esc(n.tpl) + ').'; }
   else if (what === 'piece' && W.S) { fp = 'FIX PACK\nFILE: pieces/' + W.S.name + '.json\nWHY: owner piece from the Workshop (' + W.S.items.length + ' things)\nNEW FILE:\n' + JSON.stringify({ kind: 'piece', v: 1, items: W.S.items }) + '\nEND'; sum = 'The 3D piece <b>' + esc(W.S.name) + '</b> (' + W.S.items.length + ' things) as pieces/' + esc(W.S.name) + '.json.'; }
+  else if (what === 'f1track' && W.TR && W.TR.roads[0].pts.length >= 4) { const f = W.f1Lines(); const MARK = '/* OWNER CIRCUITS: the Workshop\'s Track tab and the in-game Studio Track tab add new circuits right above this line (two lines each: the id line, then its pts line). Keep this line as it is. */';
+    fp = 'FIX PACK\nGAME: apexf1.html\nFILE: apexf1.html\nWHY: owner new F1 circuit ' + f.name + ' from the Workshop (' + W.TR.roads[0].pts.length + ' points, ' + f.km + ' km) - PART: menus (a new entry in the circuit list, nothing else changes)\nTEST: play-owner-circuit-' + f.id + ' (optional: it shows in __test.tracks() and drives)\nOLD:\n' + MARK + '\nNEW:\n' + f.l1 + '\n' + f.l2 + '\n' + MARK + '\nEND';
+    sum = 'A new F1 circuit <b>' + esc(f.name) + '</b> (' + W.TR.roads[0].pts.length + ' points, ' + f.km + ' km) added to apexf1.html\'s circuit list. ' + (W.TR.roads.length > 1 ? 'Only the main track goes to F1 (branches stay in the Workshop piece).' : ''); }
   else if (what === 'track' && W.TR) { fp = 'FIX PACK\nFILE: pieces/' + W.TR.name + '.json\nWHY: owner track from the Workshop (' + W.TR.roads.length + ' road(s))\nNEW FILE:\n' + JSON.stringify({ kind: 'track', v: 1, width: W.TR.width, closed: W.TR.closed, kerbs: W.TR.kerbs, roads: W.TR.roads }) + '\nEND'; sum = 'The track <b>' + esc(W.TR.name) + '</b> (' + W.TR.roads.length + ' road(s)) as pieces/' + esc(W.TR.name) + '.json.'; }
   else { const o = ORIG[CUR], n = ed.value; const d = o != null ? fixFromCode(CUR, o, n) : null;
     if (!d) { sum = 'No code changes yet - change something on the Code tab (or send a piece / track from their tabs).'; }
     else { fp = 'FIX PACK\nFILE: ' + CUR + '\nWHY: owner change from the Workshop code editor (' + d.lines + ')\nOLD:\n' + d.old + '\nNEW:\n' + d.neu + '\nEND'; sum = 'Your code change in <b>' + esc(CUR) + '</b>: ' + d.lines + '.'; } }
-  $('sumry').innerHTML = sum + ' <span class="sub">(Send what: <a href="#" onclick="window.__sendWhat=\'newgame\';makeSend();return false">new game</a> · <a href="#" onclick="window.__sendWhat=\'code\';makeSend();return false">code</a> · <a href="#" onclick="window.__sendWhat=\'piece\';makeSend();return false">3D piece</a> · <a href="#" onclick="window.__sendWhat=\'track\';makeSend();return false">track</a>)</span>';
+  $('sumry').innerHTML = sum + ' <span class="sub">(Send what: <a href="#" onclick="window.__sendWhat=\'newgame\';makeSend();return false">new game</a> · <a href="#" onclick="window.__sendWhat=\'code\';makeSend();return false">code</a> · <a href="#" onclick="window.__sendWhat=\'piece\';makeSend();return false">3D piece</a> · <a href="#" onclick="window.__sendWhat=\'track\';makeSend();return false">track</a> · <a href="#" onclick="window.__sendWhat=\'f1track\';makeSend();return false">F1 circuit</a>)</span>';
   $('fp').value = fp; window.__sendWhat = what;
 }
 function ctlBase(done){ // the controller: the Mac mini's away link from anywhere (learned by the Game Development page), else home Wi-Fi

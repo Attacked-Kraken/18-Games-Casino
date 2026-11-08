@@ -630,8 +630,9 @@ const TRACKS = [
   tag:'City ring - main straight into a sweeper, esses, a fast back section, a heavy-braking hairpin and a chicane onto the final curve.',
   drs:[[0.0,0.16],[0.44,0.54]], pitIn:0.94, pitOut:0.08, theme:{ kind:'city', sky:0x9fb8d8, ground:0x55606a },
   pts:[[0,0,0],[400,0,0],[550,0,-100],[600,0,-300],[450,0,-450],[300,0,-350],[100,0,-500],[-300,0,-500],[-500,0,-350],[-550,0,-150],[-450,0,100],[-300,0,250],[-150,0,200],[-50,0,350],[150,0,300]] },
+/* OWNER CIRCUITS: the Workshop's Track tab and the in-game Studio Track tab add new circuits right above this line (two lines each: the id line, then its pts line). Keep this line as it is. */
 ];
-const SEASON_ROUNDS=5; // owner Nov 2 2026: a season visits every circuit once (5 circuits = 5 rounds); keep this equal to TRACKS.length
+const SEASON_ROUNDS=TRACKS.length; // owner Nov 2 2026: a season visits every circuit once; Nov 8 2026: follows the list, so an owner-made circuit joins the season by itself
 // Emergency fallback only (never in the menu): if the Grand Prix kit files cannot load,
 // the game still starts on this built-in loop instead of a black screen.
 const LEGACY_TRACK = { id:'legacy', name:'LEGACY', country:'', lapKm:5.793, drs:[[0.02,0.14],[0.52,0.66]], pitIn:0.90, pitOut:0.06,
@@ -932,9 +933,9 @@ const Track = {
     }
     // asphalt ribbon
     const verts=[], idx=[], uvs=[];
-    for(let i=0;i<=N;i++){ const p=this.samples[i%N];
+    for(let i=0;i<=N;i++){ const p=this.samples[i%N], su=(i<N?p.s:this.length)/14; // owner Nov 8 2026 'studded glitch where the finish and start meet': the closing quad used to run its texture from s=L back to s=0 - the whole asphalt grain squeezed into the last metres before the line (a speckled band). The seam now carries on from L.
       verts.push(p.x+p.nx*W/2, p.y+0.02, p.z+p.nz*W/2, p.x-p.nx*W/2, p.y+0.02, p.z-p.nz*W/2);
-      uvs.push(p.s/14,0, p.s/14,1);
+      uvs.push(su,0, su,1);
       if(i<N){ const a=i*2; idx.push(a,a+1,a+2, a+1,a+3,a+2); } }
     const tg=new THREE.BufferGeometry();
     tg.setAttribute('position', new THREE.Float32BufferAttribute(verts,3));
@@ -947,6 +948,7 @@ const Track = {
     const atex=new THREE.CanvasTexture(acv); atex.wrapS=atex.wrapT=THREE.RepeatWrapping; atex.repeat.set(40,2);
     const asphalt=new THREE.Mesh(tg, new THREE.MeshStandardMaterial({color:0xb8bcc2, roughness:0.94, map:atex, side:THREE.DoubleSide}));
     asphalt.receiveShadow=true; g.add(asphalt); this.asphaltMat=asphalt.material;
+    this.asphaltGeo=tg; // Nov 8 2026: the seam probe (__test.seamUV) reads the ribbon's uv at the line
     // curbs: red/white strips at edges
     for(const side of [1,-1]){
       const cv=[], ci=[];
@@ -3326,6 +3328,8 @@ window.__test = {
   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
   scenery: () => { const gb = Track.groundBase, bases = []; Track.group.traverse(o => { if (o.isInstancedMesh && o.geometry.type === 'BoxGeometry') { o.geometry.computeBoundingBox(); if (Math.abs(o.geometry.boundingBox.min.y) < 1e-6) { const m = new THREE.Matrix4(); for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, m); bases.push(m.elements[13]); } } } }); return { ground: gb, n: bases.length, maxBase: bases.length ? Math.max(...bases) : null }; },
   stripe: () => { let ok = null; Track.group.traverse(o => { if (o.isMesh && o.renderOrder === 2 && o.material.map) ok = { poly: !!o.material.polygonOffset, map: true }; }); return ok; },
+  seamUV: () => { const g=Track.asphaltGeo; if(!g) return null; const uv=g.attributes.uv, n=uv.count; const uLast=uv.getX(n-2), uPrev=uv.getX(n-4), u0=uv.getX(0); return { uLast:+uLast.toFixed(3), uPrev:+uPrev.toFixed(3), u0:+u0.toFixed(3), L14:+(Track.length/14).toFixed(3), jump:+Math.abs(uLast-uPrev).toFixed(3) }; }, // Nov 8 2026: the asphalt texture must carry on over the line (uLast = L/14, not 0)
+  tracks: () => TRACKS.map(t=>({ id:t.id, name:t.name, pts:t.pts?t.pts.length:0, gp:!!t.gp })), // Nov 8 2026: the circuit list as the menu shows it (new owner circuits land here)
   seam: () => { const sm=Track.samples, n=sm.length, L=Track.length, a=Track.frameAt(L-0.5), b=Track.frameAt(0.5), q=Track.frameAt(sm[n-1].s); return { n, first:+sm[0].s.toFixed(2), last:+sm[n-1].s.toFixed(2), L:+L.toFixed(2), gap:+(L-sm[n-1].s+sm[0].s).toFixed(2), stuck:+Math.hypot(a.x-q.x,a.z-q.z).toFixed(3), jumpAtLine:+Math.hypot(a.x-b.x,a.z-b.z).toFixed(2) }; },
   carPose: () => Race.cars.map(c => ({ s: +c.s.toFixed(2), d: +c.d.toFixed(2), v: +c.v.toFixed(2), x: +c.mesh.position.x.toFixed(2), y: +c.mesh.position.y.toFixed(3), z: +c.mesh.position.z.toFixed(2), h: +c.mesh.rotation.y.toFixed(3), L: +Track.length.toFixed(1) })), // owner Nov 7 2026: finish-line hang-up probe
   cars: () => Race.cars.map(c => ({
