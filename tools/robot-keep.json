@@ -420,6 +420,16 @@
    "file": "templates/racer.html",
    "needle": "Engine.create({",
    "rule": "the starter racer runs on the engine (init / sim / draw, recorded START)"
+  },
+  {
+   "file": "kit/apex-engine.js",
+   "needle": "E.blocks.tick();",
+   "rule": "WHEN/THEN blocks run inside the fixed step (every/at timers) - replay-exact (owner Nov 8 2026, #163)"
+  },
+  {
+   "file": "kit/studio.js",
+   "needle": "ui.tab === 'blocks'",
+   "rule": "Studio ⚡ Blocks tab: behaviour without code (owner Nov 8 2026, #163)"
   }
  ]
 }

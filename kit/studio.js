@@ -116,6 +116,7 @@
     if (!window.__studioTaps) { window.__studioTaps = 1; window.addEventListener('pointerdown', tapStart, true); window.addEventListener('pointerup', tapEnd, true); window.addEventListener('pointermove', tapMove, true);
       window.addEventListener('pointerdown', sceneTapStart, true); window.addEventListener('pointerup', sceneTapEnd, true); window.addEventListener('pointermove', sceneTapMove, true); }
     if (!W.keptRan) { W.keptRan = 1; setTimeout(runKept, 1500); }   // console lines the owner kept (mods/<game>.json "code")
+    if (o.engine && o.engine.blocks) { try { o.engine.blocks.set(D().blocks || []); } catch (e) {} }   /* ⚡ When/Then blocks from mods / this phone's draft */
     applyAll(); E.tries = 0; const re = setInterval(() => { applyAll(); if (++E.tries > 20) clearInterval(re); }, 1500);    // objects a game builds a little later still get their edits
   }
   let tap = null;
@@ -457,6 +458,7 @@
     return 'FIX PACK\nFILE: tools/game-check/fixes/' + GAME + '.mjs\nGAME: ' + GAME + '.html\nWHY: the owner made ' + RULES.filter(x => !x.sent).length + ' robot rule(s) in Studio - from now on the robot fails any pull request that breaks them\nOLD:\n' + old() + '\nNEW:\n' + neu + '\nEND'; }
   /* ---------- the panel ---------- */
   const ui = { open: false, tab: 'scene', size: 1, el: null, btn: null, msg: '', swapOpen: false };
+  const BK = { draft: { when: 'lap', sec: 10, iff: '', op: '>=', val: '', do: 'banner', text: 'LAP {lap}!', kind: 'cheer', n: 10, x: 0.3, ms: 1500, field: '', value: '' }, msg: '' };   /* ⚡ Blocks tab form */
   const css = `#apxStudioBtn{position:fixed;left:50%;transform:translateX(-50%);top:max(6px,env(safe-area-inset-top,0px));z-index:99998;font:700 15px system-ui,sans-serif;padding:9px 12px;border-radius:12px;border:1px solid #ffd23a;background:#1a1408e6;color:#ffd23a}
 #apxStudio{text-align:left;position:fixed;right:0;top:0;bottom:0;width:min(400px,92vw);z-index:99999;background:#0e1219f2;color:#eef1f5;font:14px system-ui,sans-serif;overflow:auto;padding:10px 12px 60px;box-shadow:-4px 0 18px #0008}
 #apxStudio h3{margin:12px 0 4px;font-size:14px;color:#ffd23a}#apxStudio .tabs{display:flex;gap:4px;flex-wrap:wrap}#apxStudio button{font:inherit;border-radius:9px;border:1px solid #39424f;background:#1b2230;color:#eef1f5;padding:7px 10px;margin:2px}
@@ -483,7 +485,7 @@
     if (!ui.el) return; ui.el.hidden = !ui.open; ui.btn.textContent = ui.open ? '✕ Close Studio' : '🎛️ Studio';
     if (!ui.open) { W.placing = false; return; } ui.el.style.width = (ui.tab === 'phys' || ui.tab === 'code' || ui.tab === 'log' || ui.tab === 'track') ? 'min(720px,98vw)' : '';
     const nErr = LOG.filter(l => l.kind === 'error').length;
-    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat([['lights', '💡 Lights'], ['rules', '🛡️ Rules' + (RULES.length ? ' ' + RULES.length : '')], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
+    const tabs = [['scene', 'Scene']].concat(W.track ? [['track', '🛣️ Track']] : []).concat(W.engine ? [['blocks', '⚡ Blocks' + ((D().blocks || []).length ? ' ' + (D().blocks || []).length : '')]] : []).concat([['lights', '💡 Lights'], ['rules', '🛡️ Rules' + (RULES.length ? ' ' + RULES.length : '')], ['phys', '⚙️ Physics'], ['code', '💻 Code'], ['log', '🐞 Log' + (nErr ? ' ' + nErr : '')], ['watch', '👁️ Watch' + (WATCH.length ? ' ' + WATCH.length : '')], ['tune', 'Tune'], ['place', 'Place'], ['cam', 'Cameras'], ['save', 'Save']]);
     let h = `<div class="tabs">${tabs.map(([k, n]) => `<button class="${ui.tab === k ? 'on' : ''}" data-tab="${k}">${n}</button>`).join('')}</div>`;
     W.placing = ui.tab === 'place' && W.ok;
     if (ui.tab === 'scene') {
@@ -517,6 +519,31 @@
       if (!LOG.length) h += '<p class="sub">Nothing logged yet. Play the game; an error shows up here with its line.</p>';
       LOG.slice().reverse().slice(0, 120).forEach(l => { const mine = l.file && l.file === ME_FILE && l.line, when = new Date(l.at), ts = when.getHours() % 12 || 12, tm = ts + ':' + String(when.getMinutes()).padStart(2, '0') + ':' + String(when.getSeconds()).padStart(2, '0');
         h += `<div style="border-bottom:1px solid #222a36;padding:4px 0;font:11px ui-monospace,Menlo,monospace;word-break:break-word"><span class="sub">${tm}</span> ${l.kind === 'error' ? '🔴' : l.kind === 'warn' ? '🟡' : '⚪'} ${esc(l.text)}${l.n > 1 ? ' <span class="sub">×' + l.n + '</span>' : ''}${l.file ? ' <span class="sub">' + esc(l.file) + ':' + l.line + '</span>' : ''}${mine ? ` <button data-born="${l.line}">line ${l.line} →</button>` : ''}</div>`; });
+    } else if (ui.tab === 'blocks') {
+      /* ⚡ WHEN / THEN blocks (owner Nov 8 2026, master #163): behaviour without code - an event of the running game -> actions. Saved in mods blocks, run by the engine (kit/apex-engine.js). */
+      const En = W.engine, BL = D().blocks || [], ev = En.blocks.events(), acts = En.blocks.actions(), snd = En.blocks.sounds();
+      const ACT_HELP = { banner: 'big words on the screen', sound: 'a sound (beep, ding, cheer, horn, boo, click)', slowmo: 'slow motion for a moment', shake: 'camera shake', score: 'add points to the score', end: 'end the game with words', say: 'speak the words out loud', set: 'set a number in the game state' };
+      const EV_HELP = { lap: 'a lap is completed ({lap}, {time})', finish: 'the race ends ({pos}, {time})', offtrack: 'the car leaves the road', 'race-start': 'the race starts', every: 'every N seconds of play', at: 'once, N seconds after the start', 'end-game': 'a block ended the game' };
+      h += `<h3>⚡ When / Then - behaviour with no code</h3><p class="sub">WHEN something happens in the game, THEN do things. Words in {curly} are filled from the event: {lap}, {pos}, {time}, {score}. Blocks run inside the engine, so a replay repeats them exactly. ${En.blocks.fired} fired this session.</p>`;
+      BL.forEach((b, i) => {
+        h += `<div style="border:1px solid #2a3444;border-radius:10px;padding:8px;margin:6px 0"><div><b>WHEN</b> ${esc(b.when)}${b.when === 'every' || b.when === 'at' ? ' ' + esc(b.sec || 1) + ' s' : ''}${b.if && b.if.field ? ` <span class="sub">IF ${esc(b.if.field)} ${esc(b.if.op || '==')} ${esc(b.if.value)}</span>` : ''}</div>`;
+        (b.then || []).forEach((a, j) => { const d = a.do || a.action; h += `<div style="margin-left:10px">↳ <b>${esc(d)}</b> ${esc(d === 'score' ? '+' + (a.n || 0) : d === 'sound' ? (a.kind || 'beep') : d === 'slowmo' ? 'x' + (a.x == null ? 0.3 : a.x) + ' for ' + (a.ms || 1500) + ' ms' : d === 'shake' ? 'x' + (a.x == null ? 0.5 : a.x) : d === 'set' ? (a.field + ' = ' + a.value) : (a.text || ''))} <button data-bdela="${i}:${j}" style="padding:2px 6px">✕</button></div>`; });
+        h += `<div style="margin-top:4px"><button data-btest="${i}">▶ Test now</button> <button data-badda="${i}">➕ Then…</button> <button data-bdel="${i}">🗑️ Delete</button></div></div>`;
+      });
+      const nb = BK.draft;
+      h += `<h3>➕ New block</h3><div class="row"><label>WHEN</label><select data-bwhen style="width:100%;padding:7px;border-radius:8px;background:#05070b;color:#eef1f5;border:1px solid #39424f">${ev.map(e => `<option value="${esc(e)}" ${nb.when === e ? 'selected' : ''}>${esc(e)} - ${esc(EV_HELP[e] || 'the game\'s own event')}</option>`).join('')}</select></div>`;
+      if (nb.when === 'every' || nb.when === 'at') h += `<div class="row"><label>Seconds <b>${nb.sec}</b></label><input type="range" data-bsec min="1" max="120" step="1" value="${nb.sec}"></div>`;
+      h += `<div class="row"><label>IF (optional)</label><div style="display:flex;gap:4px"><input data-bif="field" placeholder="field e.g. lap, pos, score" value="${esc(nb.iff)}" style="flex:2;padding:6px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"><select data-bif="op" style="flex:1;padding:6px;border-radius:8px;background:#05070b;color:#eef1f5;border:1px solid #39424f">${['==', '!=', '>', '>=', '<', '<='].map(o => `<option ${nb.op === o ? 'selected' : ''}>${o}</option>`).join('')}</select><input data-bif="value" placeholder="value" value="${esc(nb.val)}" style="flex:1;padding:6px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div></div>`;
+      h += `<div class="row"><label>THEN</label><select data-bdo style="width:100%;padding:7px;border-radius:8px;background:#05070b;color:#eef1f5;border:1px solid #39424f">${acts.map(a => `<option value="${a}" ${nb.do === a ? 'selected' : ''}>${a} - ${ACT_HELP[a] || ''}</option>`).join('')}</select></div>`;
+      if (nb.do === 'banner' || nb.do === 'say' || nb.do === 'end') h += `<div class="row"><input data-bp="text" placeholder="the words, e.g. LAP {lap}!" value="${esc(nb.text)}" style="width:100%;padding:7px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div>`;
+      if (nb.do === 'sound') h += `<div class="row"><select data-bp="kind" style="width:100%;padding:7px;border-radius:8px;background:#05070b;color:#eef1f5;border:1px solid #39424f">${snd.map(k => `<option ${nb.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>`;
+      if (nb.do === 'score') h += `<div class="row"><label>Points <b>${nb.n}</b></label><input type="range" data-bp="n" min="-100" max="100" step="1" value="${nb.n}"></div>`;
+      if (nb.do === 'slowmo') h += `<div class="row"><label>Speed <b>${nb.x}</b> for <b>${nb.ms}</b> ms</label><input type="range" data-bp="x" min="0.05" max="1" step="0.05" value="${nb.x}"><input type="range" data-bp="ms" min="200" max="5000" step="100" value="${nb.ms}"></div>`;
+      if (nb.do === 'shake') h += `<div class="row"><label>Strength <b>${nb.x}</b></label><input type="range" data-bp="x" min="0.1" max="2" step="0.1" value="${nb.x}"></div>`;
+      if (nb.do === 'set') h += `<div class="row"><div style="display:flex;gap:4px"><input data-bp="field" placeholder="field e.g. laps" value="${esc(nb.field)}" style="flex:2;padding:6px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"><input data-bp="value" placeholder="value" value="${esc(nb.value)}" style="flex:1;padding:6px;border-radius:8px;border:1px solid #39424f;background:#05070b;color:#eef1f5"></div></div>`;
+      h += `<div><button data-badd="1" class="on">➕ Add this block</button> <button data-btryact="1">▶ Try the THEN now</button></div>`;
+      if (BK.msg) { h += `<p class="sub chg">${esc(BK.msg)}</p>`; BK.msg = ''; }
+      h += `<p class="sub">Blocks are saved on this phone first; Save → Publish puts them in mods/${esc(GAME)}.json for every player. The robot replays them, so a block can never make a run differ between two plays of the same inputs.</p>`;
     } else if (ui.tab === 'watch') {
       h += `<h3>👁️ Watch - live values while you play</h3><p class="sub">Pinned values stay on the screen (bottom-left). Numbers and on/off switches can be changed here and the game takes it at once.</p>`;
       if (WATCH.length) { h += '<h3>Pinned</h3>'; WATCH.forEach((p, i) => { const v = liveGet(p); h += `<div class="row"><label><span style="font:12px ui-monospace,Menlo,monospace">${esc(p)}</span><span>${typeof v === 'boolean' ? `<button data-wflip="${esc(p)}">${v ? 'ON → off' : 'off → ON'}</button>` : typeof v === 'number' ? `<input type="number" step="any" data-wset="${esc(p)}" value="${+v.toFixed(4)}" style="width:100px;font:12px ui-monospace,Menlo,monospace;background:#05070b;color:#eef1f5;border:1px solid #39424f;border-radius:6px;padding:3px">` : `<b>${esc(fmt(v))}</b>`} <button data-wunpin="${i}">✕</button></span></label></div>`; }); }
@@ -648,7 +675,7 @@
       h += `<button data-pub="1">📤 Publish (opens your controller)</button> <button data-clear="1">↩️ Undo ALL my changes</button>`;
       h += `<p class="sub">Publish opens your controller's Paste a fix page with it filled in: tap Check, then Send. A Muse window saves it to mods/${GAME}.json; after the robot check every player gets it.</p>`;
       h += `<textarea id="apxPub" readonly placeholder="tap Make the publish code">${ui.pubText || ''}</textarea><div class="sub" id="apxPubMsg"></div>`;
-      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${Object.keys(D().lights || {}).length + (D().lightsAdd || []).length} light changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
+      h += `<p class="sub">${esc(GAME)} · ${order.length} sliders · ${(D().props || []).length} things · ${Object.keys(D().edits || {}).length} scene changes · ${(D().blocks || []).length} blocks · ${Object.keys(D().lights || {}).length + (D().lightsAdd || []).length} light changes · ${(D().cams || []).length} camera views · ${js.length} letters</p>`;
       h += `<h3>Export / import</h3><div class="row" style="display:flex;gap:4px;flex-wrap:wrap"><button data-exp="1">📋 Copy my changes</button><button data-imp="1">📥 Load pasted changes</button></div><textarea id="apxImp" placeholder="paste changes copied from another phone or game here, then tap Load"></textarea>`;
     }
     ui.el.innerHTML = h;
@@ -753,6 +780,22 @@
     ui.el.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const lvl = E.level || W.scene, c = lvl.children[+b.dataset.lvl]; if (c) select(c); });
     const lu = ui.el.querySelector('[data-lvlup]'); if (lu) lu.onclick = () => { E.level = (E.level && E.level.parent !== W.scene) ? E.level.parent : null; ui.draw(); };
     const fx = ui.el.querySelector('[data-fixit]'); if (fx) fx.onclick = () => openCtl('/fixit#game=' + encodeURIComponent(GAME + '.html'));
+    if (ui.tab === 'blocks' && W.engine) {
+      const En = W.engine, nb = BK.draft, rd = () => ui.draw();
+      const bw = ui.el.querySelector('[data-bwhen]'); if (bw) bw.onchange = () => { nb.when = bw.value; rd(); };
+      const bs = ui.el.querySelector('[data-bsec]'); if (bs) bs.oninput = () => { nb.sec = +bs.value; bs.previousElementSibling.querySelector('b').textContent = nb.sec; };
+      ui.el.querySelectorAll('[data-bif]').forEach(x => x.onchange = () => { if (x.dataset.bif === 'field') nb.iff = x.value.trim(); else if (x.dataset.bif === 'op') nb.op = x.value; else nb.val = x.value.trim(); });
+      const bd = ui.el.querySelector('[data-bdo]'); if (bd) bd.onchange = () => { nb.do = bd.value; rd(); };
+      ui.el.querySelectorAll('[data-bp]').forEach(x => { const f = () => { const k = x.dataset.bp; nb[k] = x.type === 'range' ? +x.value : x.value; if (x.type === 'range') { const lb = x.parentElement.querySelector('label'); if (lb) { const bs2 = lb.querySelectorAll('b'); if (k === 'x' || k === 'n' || k === 'field') { if (bs2[0]) bs2[0].textContent = nb[k]; } else if (bs2[1]) bs2[1].textContent = nb[k]; } } }; x.oninput = f; x.onchange = f; });
+      const mk = () => { const a = { do: nb.do }; if (nb.do === 'banner' || nb.do === 'say' || nb.do === 'end') a.text = nb.text || (nb.do === 'end' ? 'THE END' : 'HELLO'); if (nb.do === 'sound') a.kind = nb.kind; if (nb.do === 'score') a.n = nb.n; if (nb.do === 'slowmo') { a.x = nb.x; a.ms = nb.ms; } if (nb.do === 'shake') a.x = nb.x; if (nb.do === 'set') { a.field = nb.field; a.value = nb.value; } return a; };
+      const sample = (when) => ({ lap: 1, pos: 1, time: 12.3, sec: nb.sec, score: (En.state && En.state.score) || 0 });
+      const ba = ui.el.querySelector('[data-badd]'); if (ba) ba.onclick = () => { const m = ensure(); m.blocks = m.blocks || []; const b = { when: nb.when, then: [mk()] }; if (nb.when === 'every' || nb.when === 'at') b.sec = nb.sec; if (nb.iff) b.if = { field: nb.iff, op: nb.op, value: isNaN(+nb.val) ? nb.val : +nb.val }; m.blocks.push(b); saveLocal(); En.blocks.set(m.blocks); BK.msg = 'Added. ' + m.blocks.length + ' block' + (m.blocks.length > 1 ? 's' : '') + ' live now.'; emit('change', 'blocks'); rd(); };
+      const bt = ui.el.querySelector('[data-btryact]'); if (bt) bt.onclick = () => { const keep = En.blocks.list; En.blocks.set([{ when: '__try', then: [mk()] }]); En.blocks.fire('__try', sample()); En.blocks.set(keep); BK.msg = 'Tried it.'; rd(); };
+      ui.el.querySelectorAll('[data-btest]').forEach(b => b.onclick = () => { const i = +b.dataset.btest, bl = (D().blocks || [])[i]; if (!bl) return; const keep = En.blocks.list; En.blocks.set([Object.assign({}, bl, { if: undefined })]); En.blocks.fire(bl.when, sample(bl.when)); En.blocks.set(keep); BK.msg = 'Fired block ' + (i + 1) + ' with sample numbers.'; rd(); });
+      ui.el.querySelectorAll('[data-bdel]').forEach(b => b.onclick = () => { const m = ensure(); (m.blocks || []).splice(+b.dataset.bdel, 1); saveLocal(); En.blocks.set(m.blocks || []); emit('change', 'blocks'); rd(); });
+      ui.el.querySelectorAll('[data-bdela]').forEach(b => b.onclick = () => { const [i, j] = b.dataset.bdela.split(':').map(Number); const m = ensure(); const bl = (m.blocks || [])[i]; if (bl && bl.then) bl.then.splice(j, 1); saveLocal(); En.blocks.set(m.blocks || []); rd(); });
+      ui.el.querySelectorAll('[data-badda]').forEach(b => b.onclick = () => { const m = ensure(); const bl = (m.blocks || [])[+b.dataset.badda]; if (bl) { bl.then = bl.then || []; bl.then.push(mk()); saveLocal(); En.blocks.set(m.blocks || []); BK.msg = 'Added the THEN from the form to block ' + (+b.dataset.badda + 1) + '.'; } rd(); });
+    }
     ui.el.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; if (ui.tab === 'place' && W.center) { const c = W.center(); if (c) { W.cam.x = c.x; W.cam.z = c.z; } } ui.draw(); });
     ui.el.querySelectorAll('[data-num]').forEach(r => { r.oninput = () => { set('num', r.dataset.num, +r.value); r.previousElementSibling.querySelector('b').textContent = (+r.value).toFixed(+r.step < 1 ? 2 : 0); }; r.onchange = () => ui.draw(); });
     ui.el.querySelectorAll('[data-color]').forEach(r => r.oninput = () => set('color', r.dataset.color, r.value));
@@ -768,7 +811,7 @@
     ui.el.querySelectorAll('[data-delcam]').forEach(b => b.onclick = () => { const m = ensure(); m.cams.splice(+b.dataset.delcam, 1); camPick = -1; saveLocal(); ui.draw(); });
     const ac = ui.el.querySelector('[data-addcam]'); if (ac) ac.onclick = () => { const m = ensure(); const c = W.camDefault || { back: 12, up: 4, side: 0, ahead: 10, fov: 60 }; m.cams.push(Object.assign({ name: 'My view ' + (m.cams.length + 1) }, c)); camPick = m.cams.length - 1; saveLocal(); emit('change', 'cam'); ui.draw(); };
     const ex = ui.el.querySelector('[data-exp]'); if (ex) ex.onclick = () => { const t = JSON.stringify(mine || pub); try { navigator.clipboard.writeText(t).then(() => { ui.msg = 'Copied ' + t.length + ' letters.'; ui.draw(); }).catch(() => { const ta = document.getElementById('apxImp'); if (ta) ta.value = t; }); } catch (e) {} };
-    const im = ui.el.querySelector('[data-imp]'); if (im) im.onclick = () => { const ta = document.getElementById('apxImp'); let j = null; try { j = JSON.parse((ta.value || '').replace(/^STUDIO\s+\S+\s+/, '')); } catch (e) { j = null; } if (!j || typeof j !== 'object') { ui.msg = 'That is not a changes code.'; ui.draw(); return; } mine = Object.assign(JSON.parse(JSON.stringify(pub)), j); saveLocal(); rebuildProps(); applyAll(); emit('change', '*'); ui.msg = 'Loaded.'; ui.draw(); };
+    const im = ui.el.querySelector('[data-imp]'); if (im) im.onclick = () => { const ta = document.getElementById('apxImp'); let j = null; try { j = JSON.parse((ta.value || '').replace(/^STUDIO\s+\S+\s+/, '')); } catch (e) { j = null; } if (!j || typeof j !== 'object') { ui.msg = 'That is not a changes code.'; ui.draw(); return; } mine = Object.assign(JSON.parse(JSON.stringify(pub)), j); saveLocal(); rebuildProps(); applyAll(); try { if (W.engine) W.engine.blocks.set(D().blocks || []); } catch (e) {} emit('change', '*'); ui.msg = 'Loaded.'; ui.draw(); };
     const pb = ui.el.querySelector('[data-pub]'); if (pb) pb.onclick = () => {
       ui.pubText = 'STUDIO ' + GAME + ' ' + JSON.stringify(mine || pub); ui.draw();
       const ta = document.getElementById('apxPub'); const msg = document.getElementById('apxPubMsg');
@@ -776,7 +819,7 @@
       const b64 = btoa(unescape(encodeURIComponent(ui.pubText))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       msg.textContent = 'Opening your controller...'; openCtl('/fix#fp=' + b64);
     };
-    const cl = ui.el.querySelector('[data-clear]'); if (cl) cl.onclick = () => { if (cl.dataset.sure) { mine = null; try { localStorage.removeItem(KEY); } catch (e) {} rebuildProps(); emit('change', '*'); ui.draw(); } else { cl.dataset.sure = 1; cl.textContent = 'Tap again to undo everything'; } };
+    const cl = ui.el.querySelector('[data-clear]'); if (cl) cl.onclick = () => { if (cl.dataset.sure) { mine = null; try { localStorage.removeItem(KEY); } catch (e) {} rebuildProps(); try { if (W.engine) W.engine.blocks.set(D().blocks || []); } catch (e) {} emit('change', '*'); ui.draw(); } else { cl.dataset.sure = 1; cl.textContent = 'Tap again to undo everything'; } };
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ui.mount); else ui.mount();
 
