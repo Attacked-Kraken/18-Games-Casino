@@ -567,3 +567,22 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-09 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "BELAZ" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/gamer-setup-pack-49aa58.glb
+- title: Gamer Setup_pack
+- maker: Phuc13b
+- source: https://sketchfab.com/3d-models/gamer-setup-pack-49aa58309ef64c3c8ba0be1a8fa1b84d
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Phuc13b" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/free-drawer-tool-cart-used-da8955.glb
+- title: [Free] Drawer Tool Cart (Used)
+- maker: Robert Prispilović
+- source: https://sketchfab.com/3d-models/free-drawer-tool-cart-used-da8955e5c8c448e58b013951f48148a0
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Robert Prispilović" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
