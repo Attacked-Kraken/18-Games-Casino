@@ -586,3 +586,4 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - used in: (not in a game yet - the game that uses it must name "Robert Prispilović" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
+
