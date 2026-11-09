@@ -587,3 +587,4 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 
+
