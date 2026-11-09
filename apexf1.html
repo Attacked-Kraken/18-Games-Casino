@@ -1293,7 +1293,7 @@ const Track = {
       }
     }
     // ---- 4. CREWS WORKING at three neighbour spots: a spare car at the back of the box, a man carrying tyres stack-to-car and back, a gunner working a hub, a fitter waiting with a tyre. Simple phase loops on the env clock - background life, not statues.
-    const plainMan=(suit)=>{ const m=mechMan(MECH.worldScale); if(m) return m; const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.95,8), suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), _pitHelmMat); h.position.y=1.22; f.add(b,h); return f; }; // owner Nov 8 2026 round 4: the working crews are the mechanic (the plain man is only the load-failure fallback)
+    const plainMan=(suit,kit)=>{ const m=mechMan(MECH.worldScale,kit); if(m) return m; const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.95,8), suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), _pitHelmMat); h.position.y=1.22; f.add(b,h); return f; }; // owner Nov 8 2026 round 4: the working crews are the mechanic (the plain man is only the load-failure fallback)
     [3,6,8].forEach(bi=>{ const sp=spotBase[bi], team=TEAMS[bi%TEAMS.length], suit=new THREE.MeshLambertMaterial({color:team?team.color:0x888888});
       const grp=new THREE.Group(); grp.position.set(sp.p.x,sp.p.y,sp.p.z); grp.rotation.y=-Math.atan2(sp.p.f.tz,sp.p.f.tx); root.add(grp);
       env.spots.push({bi, x:sp.p.x, y:sp.p.y, z:sp.p.z, ry:grp.rotation.y}); // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
@@ -1307,11 +1307,11 @@ const Track = {
       const wpost=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.5,0.1), dark); wpost.position.set(-2.0,0.7,0); carG.add(wpost);
       const fwing=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.07,2.0), dark); fwing.position.set(2.25,0.12,0); carG.add(fwing);
       [[1.5,0.98],[1.5,-0.98],[-1.5,0.98],[-1.5,-0.98]].forEach(([wx,wz])=>{ const w=pitTyre(null); w.scale.setScalar(1.15); w.position.set(wx,0.39,wz); carG.add(w); });
-      const carrier=plainMan(suit); const cTyre=pitTyre(null); if(carrier.userData.rig) cTyre.position.set(0,1.35,0.45); else cTyre.position.set(0,0.68,0.36); carrier.add(cTyre); carrier.position.set(3.0,0,1.55); grp.add(carrier); // the tyre rides at his chest (model units on the mechanic)
+      const carrier=plainMan(suit,bi); const cTyre=pitTyre(null); if(carrier.userData.rig) cTyre.position.set(0,1.35,0.45); else cTyre.position.set(0,0.68,0.36); carrier.add(cTyre); carrier.position.set(3.0,0,1.55); grp.add(carrier); // the tyre rides at his chest (model units on the mechanic)
       env.anims.push({k:'carry', fig:carrier, tyre:cTyre, z:1.55, x0:3.0, x1:-1.5, sp:0.16, ph:bi*0.37});
-      const gunner=plainMan(suit); gunner.position.set(1.2,0,0.35); grp.add(gunner);
+      const gunner=plainMan(suit,bi); gunner.position.set(1.2,0,0.35); grp.add(gunner);
       env.anims.push({k:'gun', fig:gunner, z0:0.35, z1:0.62, ph:bi*0.53});
-      const fitter=plainMan(suit); const fTyre=pitTyre(null); if(fitter.userData.rig) fTyre.position.set(0,1.35,0.45); else fTyre.position.set(0,0.68,0.36); fitter.add(fTyre); fitter.position.set(-1.9,0,1.0); fitter.rotation.y=Math.PI; grp.add(fitter);
+      const fitter=plainMan(suit,bi); const fTyre=pitTyre(null); if(fitter.userData.rig) fTyre.position.set(0,1.35,0.45); else fTyre.position.set(0,0.68,0.36); fitter.add(fTyre); fitter.position.set(-1.9,0,1.0); fitter.rotation.y=Math.PI; grp.add(fitter);
       env.anims.push({k:'sway', fig:fitter, x0:-1.9, ph:bi*0.71});
     });
     // ---- 5. TRAILERS: the transporters parked in a row behind the garages, on the pad - team colours, colour band, cab, glass, skirts for wheels.
@@ -1596,7 +1596,62 @@ CMBoot(); window.__cm = CM;
 // KHR_materials_pbrSpecularGlossiness diffuse textures, so they are wired by hand through
 // parser.getDependency('texture', ...) (the EXT_texture_webp route); the shirt back is
 // painted APEX ARCADE CREW onto the Top texture (bench paint test: legible, correct way up).
-const MECH = { ready:false, src:null, scale:2.63/1.863, worldScale:(2.63/1.863)*1.416, height:1.863, fitted:2.63, _boot:null };
+const MECH = { ready:false, src:null, scale:2.63/1.863, worldScale:(2.63/1.863)*1.416, height:1.863, fitted:2.63, _boot:null, _kits:{}, topImg:null, botImg:null, topMat:null, botMat:null };
+// ---- owner Nov 9 2026 COLOUR ROUND: bright team kits painted from the model's own atlases ----
+// Diagnosis, measured on the dumped atlases: the mechanic's navy sits at luminance ~0.20 sRGB
+// (trousers ~0.16) - in the game's light the lit side barely reads and the shadow side gets
+// almost no sun, so the crew went black. The fix is in the clothing itself, not the scene:
+// (a) repaint the two clothing atlases per team - navy cloth -> the team's main colour, the red
+// yoke / trouser stripes -> the trim colour, each pixel's own luminance carried over so folds
+// and seams still shade; skin, hair, boots, glasses and the pale details are classified OUT
+// and stay natural; (b) the clothing materials get emissiveMap = their own painted texture at
+// 0.5, so the kit colour reads on the shadow side too. Scene lighting is NOT touched.
+const MECH_KITS=[ // [main, trim] per TEAMS index - each team's own colours, brightened to read in shade
+  [[232,35,26],[245,245,245]], [[38,96,255],[245,245,245]], [[0,190,80],[245,245,245]],
+  [[158,70,230],[245,245,245]], [[255,116,0],[245,245,245]], [[255,40,140],[245,245,245]],
+  [[0,190,235],[10,35,70]], [[255,205,0],[18,18,18]], [[225,55,90],[245,245,245]], [[130,195,230],[245,245,245]] ];
+function mechKitCanvas(img, kit, isTop){
+  const cnv=document.createElement('canvas'); cnv.width=img.width; cnv.height=img.height;
+  const x=cnv.getContext('2d'); x.drawImage(img,0,0);
+  const id=x.getImageData(0,0,cnv.width,cnv.height), d=id.data, M=kit[0], T=kit[1];
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<128) continue;
+    const r=d[i], g=d[i+1], b=d[i+2], mx=Math.max(r,g,b), mn=Math.min(r,g,b), df=mx-mn;
+    if(!df||!mx) continue;
+    let h; if(mx===r) h=((g-b)/df)%6; else if(mx===g) h=(b-r)/df+2; else h=(r-g)/df+4; h*=60; if(h<0) h+=360;
+    const sat=df/mx, lum=(0.2126*r+0.7152*g+0.0722*b)/255;
+    let C=null, ref=0;
+    if((h<14||h>345)&&sat>0.45&&lum>0.03){ C=T; ref=0.27; }        // the red yoke + trouser stripes -> trim
+    else if(h>185&&h<268&&sat>0.10){ C=M; ref=0.20; }              // the navy cloth -> the team's main colour
+    if(!C) continue;
+    let t=Math.pow(lum/ref,0.9); if(t>2.6) t=2.6;
+    let R=C[0]*t, G=C[1]*t, B=C[2]*t; const pk=Math.max(R,G,B);
+    if(pk>255){ const f=255/pk; R*=f; G*=f; B*=f; }
+    d[i]=R; d[i+1]=G; d[i+2]=B;
+  }
+  x.putImageData(id,0,0);
+  if(isTop){ // shirt back (unchanged from the fit): navy name-tape over the old atlas text, then APEX / ARCADE / CREW
+    x.fillStyle='#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
+    x.save(); x.translate(670,745); x.scale(1,-1); x.textAlign='center'; x.textBaseline='middle';
+    x.font='900 54px Arial, sans-serif'; x.lineWidth=9; x.strokeStyle='#0c1118';
+    for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.strokeText(t,0,ly);
+    x.fillStyle='#ffffff';
+    for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.fillText(t,0,ly);
+    x.restore();
+  }
+  return cnv;
+}
+function mechKitMats(idx){
+  idx=((idx%10)+10)%10;
+  if(MECH._kits[idx]) return MECH._kits[idx];
+  if(!MECH.topMat||!MECH.topImg) return null;
+  const mk=(srcMat,img,isTop)=>{ if(!srcMat||!img) return srcMat||null;
+    const tex=new THREE.CanvasTexture(mechKitCanvas(img, MECH_KITS[idx], isTop));
+    tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
+    const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.5; m.needsUpdate=true; return m; };
+  const km={ top:mk(MECH.topMat,MECH.topImg,true), bot:mk(MECH.botMat,MECH.botImg,false) };
+  MECH._kits[idx]=km; return km;
+}
 function MechBoot(){
   if(MECH._boot) return MECH._boot;
   MECH._boot = (async()=>{
@@ -1612,30 +1667,20 @@ function MechBoot(){
         gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.name===m.name){ o.material.map=tex; o.material.needsUpdate=true; } });
       }catch(e){ console.warn('mech tex', m.name, e); }
     }
-    // shirt back: navy name-tape over the old atlas text, then APEX / ARCADE / CREW
-    // (the back panel maps flipped vertically, so the text is drawn with scale(1,-1))
-    try{
-      let topTex=null, topName=null;
-      gltf.scene.traverse(o=>{ if(o.isMesh && o.material && /Outfit_Top/.test(o.material.name||'') && o.material.map){ topTex=o.material.map; topName=o.material.name; } });
-      if(topTex && topTex.image){
-        const img=topTex.image, cnv=document.createElement('canvas'); cnv.width=img.width; cnv.height=img.height;
-        const x=cnv.getContext('2d'); x.drawImage(img,0,0);
-        x.fillStyle='#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
-        x.save(); x.translate(670,745); x.scale(1,-1); x.textAlign='center'; x.textBaseline='middle';
-        x.font='900 54px Arial, sans-serif'; x.lineWidth=9; x.strokeStyle='#0c1118';
-        for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.strokeText(t,0,ly);
-        x.fillStyle='#ffffff';
-        for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.fillText(t,0,ly);
-        x.restore();
-        const nt=new THREE.CanvasTexture(cnv); nt.colorSpace=THREE.SRGBColorSpace; nt.flipY=false;
-        try{ if(typeof renderer!=='undefined' && renderer.initTexture) renderer.initTexture(nt); }catch(e){}
-        gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.name===topName){ o.material.map=nt; o.material.needsUpdate=true; } });
-      // owner Nov 8 2026 round 4: the crew's backs face away from the game's sun and read as
-      // black silhouettes - a small emissive lift keeps the navy readable without changing the colours
-      gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.map && o.material.emissive){ o.material.emissive.setHex(0x1a1e24); } });
-      }
-    }catch(e){ console.warn('mech shirt', e); }
-    MECH.src=gltf.scene; MECH.ready=true; return MECH;
+    // owner Nov 9 2026 COLOUR ROUND: capture the clothing originals (kits are painted from
+    // these), put kit 0 (APEX red) on the source itself so every default clone wears the
+    // player's kit, and keep the old flat lift for the NON-clothing materials only - the
+    // clothing now lifts itself through its own emissiveMap (see mechKitMats).
+    gltf.scene.traverse(o=>{ if(o.isMesh && o.material){ const nm=o.material.name||'';
+      if(/Outfit_Top/.test(nm)){ MECH.topMat=o.material; if(o.material.map) MECH.topImg=o.material.map.image; }
+      if(/Outfit_Bottom/.test(nm)){ MECH.botMat=o.material; if(o.material.map) MECH.botImg=o.material.map.image; } } });
+    try{ const k0=mechKitMats(0);
+      if(k0) gltf.scene.traverse(o=>{ if(o.isMesh && o.material){ if(o.material===MECH.topMat&&k0.top) o.material=k0.top; else if(o.material===MECH.botMat&&k0.bot) o.material=k0.bot; } });
+    }catch(e){ console.warn('mech kit0', e); }
+    gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.map && o.material.emissive && !/Outfit_(Top|Bottom)/.test(o.material.name||'')) o.material.emissive.setHex(0x1a1e24); });
+    MECH.src=gltf.scene; MECH.ready=true;
+    (async()=>{ for(let i=1;i<10;i++){ await new Promise(r=>setTimeout(r,30)); try{ mechKitMats(i); }catch(e){} } })(); // warm the other teams' kits in the background
+    return MECH;
   })();
   return MECH._boot;
 }
@@ -1660,11 +1705,12 @@ function mechRig(root){
 // one mechanic: a clone of the fetched model (geometry/materials shared), rigged, real size.
 // scale is in the caller's units: MECH.scale (car-local, the pit crew) or MECH.worldScale (world, station/row/spots).
 // Falls back to null if the model has not landed - the caller keeps the old blocky figure, the stop never breaks on a load.
-function mechMan(scale){
+function mechMan(scale, kit){
   if(!MECH.ready || !MECH.src) return null;
   try{
     const c=SkeletonUtils.clone(MECH.src);
     c.scale.setScalar(scale||MECH.scale);
+    if(kit){ const km=mechKitMats(kit); if(km) c.traverse(o=>{ if(o.isMesh && o.material){ if(/Outfit_Top/.test(o.material.name||'')){ if(km.top) o.material=km.top; } else if(/Outfit_Bottom/.test(o.material.name||'')){ if(km.bot) o.material=km.bot; } } }); } // colour round: this crew wears its own team's kit
     c.userData.isFig=true; c.userData.rig=mechRig(c);
     return c;
   }catch(e){ console.warn('mechMan', e); return null; }
@@ -2166,7 +2212,8 @@ const PitCrew = {
   mk(car){
     const m=car.mesh, g=new THREE.Group(), k=1/m.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color});
     g.scale.setScalar(k); g.userData.tyres=[]; g.userData.old=[]; g.userData.corners=[]; g.userData.guns=[]; g.userData.spares=[]; g.userData.standby=[];
-    const fig=(pose)=>mechMan()||pitFigure(suit,pose); // owner Nov 8 2026 round 4: the fetched mechanic; the blocky figure is only the load-failure fallback
+    const kitI=Math.max(0,TEAMS.indexOf(car.team))%10;
+    const fig=(pose)=>mechMan(undefined,kitI)||pitFigure(suit,pose); // owner Nov 8 2026 round 4: the fetched mechanic; the blocky figure is only the load-failure fallback. Colour round: the crew wears its own team's kit (the player's is APEX red)
     const wh=m.userData.wheels||[];
     wh.forEach((w,i)=>{ const wp=w.position, side=wp.z>=0?1:-1, wx=wp.x, wz=wp.z, face=side>0?Math.PI:0;
       const gun=fig([-1.3,-1.3,0.8]); gun.position.set(wx,0,wz+side*1.55); gun.rotation.y=face; g.add(gun); // gunner: crouched at the hub, both arms forward
@@ -2270,7 +2317,7 @@ const PitCrew = {
       const beam=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.22,0.22),dark); beam.position.set(0,3.3,2.9); sub.add(beam);
       const panel=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.5,0.06),suit); panel.position.set(0,2.95,2.79); sub.add(panel);
       const board=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.05),new THREE.MeshBasicMaterial({map:this.mkNumTex(bi+1)})); board.position.set(3.6,2.4,2.9); board.rotation.y=Math.PI; sub.add(board);
-      const man=(x,z,rot)=>{ let f=mechMan(MECH.worldScale); if(!f){ f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; f.add(b,h); } f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); }; // owner Nov 8 2026 round 4: the neighbours are the mechanic too
+      const man=(x,z,rot)=>{ let f=mechMan(MECH.worldScale, bi); if(!f){ f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; f.add(b,h); } f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); }; // owner Nov 8 2026 round 4: the neighbours are the mechanic too (colour round: in their own box's team kit)
       man(-1.6,1.9,Math.PI); man(0.4,2.2,Math.PI); man(1.8,1.8,Math.PI); man(2.6,0.9,Math.PI);
       for(let j=0;j<3;j++){ const t=new THREE.Mesh(pitGeo().tyre,_pitTyreMat); t.position.set(-2.7,0.16+j*0.31,2.55); sub.add(t); }
       row.add(sub);
@@ -2280,7 +2327,7 @@ const PitCrew = {
   mkStation(car){ // owner Nov 4 2026 9:03 PM: the crew WAITS at the box while you roll in, like the real lane (the box gear and the neighbouring boxes are mkGear / mkLaneRow now) - hidden the moment the working crew takes over, standing there again as you pull away
     const S=car.mesh.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color}), helm=new THREE.MeshLambertMaterial({color:0xffffff});
     const g=new THREE.Group();
-    const man=(x,z,rot)=>{ let p=mechMan(MECH.worldScale); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at world scale (3.72 world units = 0.31 x the drawn car)
+    const man=(x,z,rot)=>{ let p=mechMan(MECH.worldScale, Math.max(0,TEAMS.indexOf(car.team))%10); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at world scale (3.72 world units = 0.31 x the drawn car); colour round: in the player's own team kit
     (car.mesh.userData.wheels||[]).forEach(w=>{ const side=w.position.z>=0?1:-1; man(w.position.x*S, w.position.z*S + side*1.6, side>0?Math.PI:0); }); // a gunner waiting at each corner
     man(-1.8*S,0,0); // jack man
     man(-3.4*S,2.1,Math.PI); // fuel man at the back
