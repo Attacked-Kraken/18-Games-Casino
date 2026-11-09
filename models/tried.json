@@ -35,9 +35,10 @@
  },
  "apexf1 pit booth pit board for each team box replacement first pick rejected hug": {
   "uids": [
-   "b109b216eed6453aac09f84e747f050c"
+   "b109b216eed6453aac09f84e747f050c",
+   "c722391b9ca64a2c8b62e35dd91eb189"
   ],
-  "tries": 1,
+  "tries": 2,
   "formats": [
    "b109b216eed6453aac09f84e747f050c"
   ]
