@@ -1,0 +1,308 @@
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -425,6 +425,7 @@
+     <b style="color:#ffd76a">CREDITS</b> · car shapes from Sketchfab (CC-BY), repainted in our own colours:
+     <div style="margin-top:6px"><b>"Rb16 (PIA 2022 s13)"</b> by formula models maker, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/rb16-pia-2022-s13-ea3789cc2b7c46d18864945fc8ec87f1" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
+     <div style="margin-top:6px"><b>"Williams FW16 + Ayrton Senna"</b> by GRIP420, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/williams-fw16-ayrton-senna-ba86f97de7184b6b836458815897156f" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: shrunk and optimized for phones (textures max 1024 px, WebP); liveries, logos, wheels and driver removed, body repainted.</div>
++    <div style="margin-top:6px"><b>"car mechanic"</b> by asset_for_games, CC-BY 4.0, <a href="https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077" target="_blank" rel="noopener" style="color:inherit">source</a>. Changes: used as the pit crew at real size, shirt back lettered APEX ARCADE CREW.</div>
+     <div class="row"></div>
+   </div>
+   <button class="bigbtn alt" id="howClose">CLOSE</button>
+@@ -434,6 +435,7 @@
+ <script type="module">
+ import * as THREE from 'three';
+ import { mergeGeometries } from './vendor/BufferGeometryUtils.js'; // G-54: car mesh merging
++import * as SkeletonUtils from './vendor/SkeletonUtils.js'; // owner Nov 8 2026 round 4: the pit crew is the fetched Sketchfab mechanic - clones share its geometry
+ /* ============================================================
+    APEX F1 RACING — realistic F1: rules, tracks, crowds, weather,
+    career, friend codes. Single-file Three.js game.
+@@ -1239,7 +1241,7 @@
+   buildPitComplex(g){ // owner Nov 8 2026 round 3 (owner: 'Still needs a whole concrete pad with stands and spots and crews working with trailers'): the pit stops being a strip of grass beside the road. One concrete apron under the whole pit area, a grandstand full of people across the track, every team's spot marked and gantry'd, neighbour crews actually WORKING at their spots, and the team transporters parked behind. Built once per track from the same pit geometry as everything else (frameAt / pitDAt / the 170/9 box spacing). Cost control: the row furniture is three InstancedMeshes, the pad is one ribbon, figures are the cheap two-mesh men - detail was cut, life was not.
+     const L=this.length, s0=this.cfg.pitIn*L, box0=s0+30, step=170/9, W=this.width;
+     const root=new THREE.Group(); g.add(root); this._pitEnvRoot=root;
+-    const env={ anims:[] }; this._pitEnv=env;
++    const env={ anims:[], spots:[] }; this._pitEnv=env;
+     const dark=new THREE.MeshLambertMaterial({color:0x232a33});
+     const M4=(x,y,z,ry)=>{ const m=new THREE.Matrix4().makeRotationY(ry||0); m.setPosition(x,y,z); return m; };
+     const spotBase=[]; for(let i=0;i<10;i++){ const bs=box0+i*step, p=this.posAt(bs, this.pitDAt(bs)); spotBase.push({bs, p, base:M4(p.x,p.y,p.z,-Math.atan2(p.f.tz,p.f.tx))}); }
+@@ -1291,9 +1293,10 @@
+       }
+     }
+     // ---- 4. CREWS WORKING at three neighbour spots: a spare car at the back of the box, a man carrying tyres stack-to-car and back, a gunner working a hub, a fitter waiting with a tyre. Simple phase loops on the env clock - background life, not statues.
+-    const plainMan=(suit)=>{ const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.95,8), suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), _pitHelmMat); h.position.y=1.22; f.add(b,h); return f; };
++    const plainMan=(suit)=>{ const m=mechMan(MECH.worldScale); if(m) return m; const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.95,8), suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), _pitHelmMat); h.position.y=1.22; f.add(b,h); return f; }; // owner Nov 8 2026 round 4: the working crews are the mechanic (the plain man is only the load-failure fallback)
+     [3,6,8].forEach(bi=>{ const sp=spotBase[bi], team=TEAMS[bi%TEAMS.length], suit=new THREE.MeshLambertMaterial({color:team?team.color:0x888888});
+       const grp=new THREE.Group(); grp.position.set(sp.p.x,sp.p.y,sp.p.z); grp.rotation.y=-Math.atan2(sp.p.f.tz,sp.p.f.tx); root.add(grp);
++      env.spots.push({bi, x:sp.p.x, y:sp.p.y, z:sp.p.z, ry:grp.rotation.y}); // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
+       const bench=new THREE.Mesh(new THREE.BoxGeometry(1.8,0.9,0.6), dark); bench.position.set(-2.6,0.45,3.0); grp.add(bench);
+       const carG=new THREE.Group(); carG.position.set(-0.3,0,2.0); grp.add(carG); // the spare car, tucked at the back of the box like the second chassis in a real garage
+       const floor=new THREE.Mesh(new THREE.BoxGeometry(4.6,0.14,1.9), new THREE.MeshLambertMaterial({color:0x14161a})); floor.position.y=0.18; carG.add(floor);
+@@ -1304,11 +1307,11 @@
+       const wpost=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.5,0.1), dark); wpost.position.set(-2.0,0.7,0); carG.add(wpost);
+       const fwing=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.07,2.0), dark); fwing.position.set(2.25,0.12,0); carG.add(fwing);
+       [[1.5,0.98],[1.5,-0.98],[-1.5,0.98],[-1.5,-0.98]].forEach(([wx,wz])=>{ const w=pitTyre(null); w.scale.setScalar(1.15); w.position.set(wx,0.39,wz); carG.add(w); });
+-      const carrier=plainMan(suit); const cTyre=pitTyre(null); cTyre.position.set(0,0.68,0.36); carrier.add(cTyre); carrier.position.set(3.0,0,1.55); grp.add(carrier);
++      const carrier=plainMan(suit); const cTyre=pitTyre(null); if(carrier.userData.rig) cTyre.position.set(0,1.35,0.45); else cTyre.position.set(0,0.68,0.36); carrier.add(cTyre); carrier.position.set(3.0,0,1.55); grp.add(carrier); // the tyre rides at his chest (model units on the mechanic)
+       env.anims.push({k:'carry', fig:carrier, tyre:cTyre, z:1.55, x0:3.0, x1:-1.5, sp:0.16, ph:bi*0.37});
+       const gunner=plainMan(suit); gunner.position.set(1.2,0,0.35); grp.add(gunner);
+       env.anims.push({k:'gun', fig:gunner, z0:0.35, z1:0.62, ph:bi*0.53});
+-      const fitter=plainMan(suit); const fTyre=pitTyre(null); fTyre.position.set(0,0.68,0.36); fitter.add(fTyre); fitter.position.set(-1.9,0,1.0); fitter.rotation.y=Math.PI; grp.add(fitter);
++      const fitter=plainMan(suit); const fTyre=pitTyre(null); if(fitter.userData.rig) fTyre.position.set(0,1.35,0.45); else fTyre.position.set(0,0.68,0.36); fitter.add(fTyre); fitter.position.set(-1.9,0,1.0); fitter.rotation.y=Math.PI; grp.add(fitter);
+       env.anims.push({k:'sway', fig:fitter, x0:-1.9, ph:bi*0.71});
+     });
+     // ---- 5. TRAILERS: the transporters parked in a row behind the garages, on the pad - team colours, colour band, cab, glass, skirts for wheels.
+@@ -1326,12 +1329,16 @@
+   updatePitEnv(dt){ // the neighbour crews' work loops (owner Nov 8 2026 round 3: crews WORKING, not frozen statues)
+     const env=this._pitEnv; if(!env) return; const t=performance.now()/1000;
+     for(const a of env.anims){ const f=a.fig; if(!f) continue;
++      const rig=f.userData&&f.userData.rig;
+       if(a.k==='carry'){ const p=(t*a.sp+a.ph)%1; let x, dir;
+         if(p<0.5){ const u=p*2; x=a.x0+(a.x1-a.x0)*u; dir=-1; } else { const u=(p-0.5)*2; x=a.x1+(a.x0-a.x1)*u; dir=1; }
+         f.position.set(x, Math.abs(Math.sin(t*7+a.ph*9))*0.05, a.z); f.rotation.y=dir>0?Math.PI/2:-Math.PI/2; if(a.tyre) a.tyre.visible=dir<0; // loaded toward the car, empty hands back to the stack
++        if(rig){ rig.reset(); MECH_POSE.walk(rig,t*7+a.ph*9,0.8); if(dir<0) MECH_POSE.carry(rig,1); } // owner Nov 8 2026 round 4: he walks the tyre, he does not glide it
+       } else if(a.k==='gun'){ const cy=(t*0.45+a.ph)%1, work=cy<0.55;
+-        f.scale.y=work?0.8:1; f.position.z=work?a.z1:a.z0; f.position.x=1.2+(work?Math.sin(t*40+a.ph*20)*0.008:0); // crouched on the hub with the gun buzzing, then stood clear, on a loop
+-      } else if(a.k==='sway'){ f.rotation.z=0.05*Math.sin(t*1.3+a.ph*9); f.position.x=a.x0+0.25*Math.sin(t*0.23+a.ph*7); }
++        f.position.z=work?a.z1:a.z0; f.position.x=1.2+(work?Math.sin(t*40+a.ph*20)*0.008:0); // crouched on the hub with the gun buzzing, then stood clear, on a loop
++        if(rig){ rig.reset(); if(work) MECH_POSE.crouch(rig,1); } else f.scale.y=work?0.8:1;
++      } else if(a.k==='sway'){ f.rotation.z=0.05*Math.sin(t*1.3+a.ph*9); f.position.x=a.x0+0.25*Math.sin(t*0.23+a.ph*7);
++        if(rig){ rig.reset(); MECH_POSE.lean(rig,0.5+0.3*Math.sin(t*1.3+a.ph*9)); } }
+     }
+   },
+   buildScenery(g){ const W=this.width; // track width (lost in a refactor)
+@@ -1582,6 +1589,95 @@
+   return CM._boot;
+ }
+ CMBoot(); window.__cm = CM;
++// ---- owner Nov 8 2026 round 4 (FIT): the pit crew is the fetched Sketchfab mechanic ----
++// 'car mechanic' by asset_for_games (CC-BY) - RIGGED Wolf3D avatar, 83 bones, 10 skinned meshes,
++// native height 1.863 m. Fitted at 2.63 m against the drawn car (8.47 m local-frame, ratio 0.31),
++// the real-adult size the owner ordered. The vendored GLTFLoader skips the model's
++// KHR_materials_pbrSpecularGlossiness diffuse textures, so they are wired by hand through
++// parser.getDependency('texture', ...) (the EXT_texture_webp route); the shirt back is
++// painted APEX ARCADE CREW onto the Top texture (bench paint test: legible, correct way up).
++const MECH = { ready:false, src:null, scale:2.63/1.863, worldScale:(2.63/1.863)*1.416, height:1.863, fitted:2.63, _boot:null };
++function MechBoot(){
++  if(MECH._boot) return MECH._boot;
++  MECH._boot = (async()=>{
++    const { GLTFLoader } = await import('./vendor/GLTFLoader.js');
++    const buf = await fetch('models/fetched/car-mechanic-0728fe.glb').then(r=>r.arrayBuffer());
++    const gltf = await new GLTFLoader().parseAsync(buf, '');
++    const J = gltf.parser.json;
++    for(const m of J.materials){
++      const ext = m.extensions && m.extensions.KHR_materials_pbrSpecularGlossiness;
++      if(!ext || !ext.diffuseTexture) continue;
++      try{ const tex = await gltf.parser.getDependency('texture', ext.diffuseTexture.index);
++        tex.colorSpace = THREE.SRGBColorSpace;
++        gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.name===m.name){ o.material.map=tex; o.material.needsUpdate=true; } });
++      }catch(e){ console.warn('mech tex', m.name, e); }
++    }
++    // shirt back: navy name-tape over the old atlas text, then APEX / ARCADE / CREW
++    // (the back panel maps flipped vertically, so the text is drawn with scale(1,-1))
++    try{
++      let topTex=null, topName=null;
++      gltf.scene.traverse(o=>{ if(o.isMesh && o.material && /Outfit_Top/.test(o.material.name||'') && o.material.map){ topTex=o.material.map; topName=o.material.name; } });
++      if(topTex && topTex.image){
++        const img=topTex.image, cnv=document.createElement('canvas'); cnv.width=img.width; cnv.height=img.height;
++        const x=cnv.getContext('2d'); x.drawImage(img,0,0);
++        x.fillStyle='#1a2333'; if(x.roundRect){ x.beginPath(); x.roundRect(500,662,340,168,18); x.fill(); } else x.fillRect(500,662,340,168);
++        x.save(); x.translate(670,745); x.scale(1,-1); x.textAlign='center'; x.textBaseline='middle';
++        x.font='900 54px Arial, sans-serif'; x.lineWidth=9; x.strokeStyle='#0c1118';
++        for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.strokeText(t,0,ly);
++        x.fillStyle='#ffffff';
++        for(const [t,ly] of [['APEX',-55],['ARCADE',0],['CREW',55]]) x.fillText(t,0,ly);
++        x.restore();
++        const nt=new THREE.CanvasTexture(cnv); nt.colorSpace=THREE.SRGBColorSpace; nt.flipY=false;
++        try{ if(typeof renderer!=='undefined' && renderer.initTexture) renderer.initTexture(nt); }catch(e){}
++        gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.name===topName){ o.material.map=nt; o.material.needsUpdate=true; } });
++      // owner Nov 8 2026 round 4: the crew's backs face away from the game's sun and read as
++      // black silhouettes - a small emissive lift keeps the navy readable without changing the colours
++      gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.map && o.material.emissive){ o.material.emissive.setHex(0x1a1e24); } });
++      }
++    }catch(e){ console.warn('mech shirt', e); }
++    MECH.src=gltf.scene; MECH.ready=true; return MECH;
++  })();
++  return MECH._boot;
++}
++MechBoot();
++// the rig: pose a bone about a MAN-LOCAL axis (man faces +Z, up +Y) by conjugating with the
++// chain of local quats from the rig root to the bone's parent - no matrixWorlds, always current.
++function mechRig(root){
++  const bones={}; root.traverse(o=>{ if(o.isBone) bones[o.name]=o; });
++  const bind={}, bindPos={};
++  for(const n in bones){ bind[n]=bones[n].quaternion.clone(); bindPos[n]=bones[n].position.clone(); }
++  const X=new THREE.Vector3(1,0,0), Z=new THREE.Vector3(0,0,1);
++  return { bones, bind, bindPos,
++    reset(){ for(const n in bones){ bones[n].quaternion.copy(bind[n]); bones[n].position.copy(bindPos[n]); } },
++    pose(name,axis,angle){ const b=bones[name]; if(!b||!angle) return;
++      const chain=[]; let n=b.parent; while(n && n!==root){ chain.unshift(n); n=n.parent; }
++      const rq=new THREE.Quaternion(); for(const a of chain) rq.multiply(a.quaternion);
++      const la=(axis==='x'?X:Z).clone().applyQuaternion(rq.clone().invert());
++      b.quaternion.setFromAxisAngle(la,angle).multiply(bind[name]); },
++    dropHips(d){ const h=bones['Hips_01']; if(h) h.position.z=bindPos['Hips_01'].z-d; },
++  };
++}
++// one mechanic: a clone of the fetched model (geometry/materials shared), rigged, real size.
++// scale is in the caller's units: MECH.scale (car-local, the pit crew) or MECH.worldScale (world, station/row/spots).
++// Falls back to null if the model has not landed - the caller keeps the old blocky figure, the stop never breaks on a load.
++function mechMan(scale){
++  if(!MECH.ready || !MECH.src) return null;
++  try{
++    const c=SkeletonUtils.clone(MECH.src);
++    c.scale.setScalar(scale||MECH.scale);
++    c.userData.isFig=true; c.userData.rig=mechRig(c);
++    return c;
++  }catch(e){ console.warn('mechMan', e); return null; }
++}
++// pose presets (bench-proven on the model: thigh - / knee + = a crouch with feet planted;
++// arm - = forward swing; the walk swings legs and arms, the carry overwrites the arms after it)
++const MECH_POSE = {
++  carry(r,a){ a=a==null?1:a; r.pose('LeftArm_011','x',-1.15*a); r.pose('RightArm_034','x',-1.15*a); r.pose('LeftForeArm_012','x',-0.85*a); r.pose('RightForeArm_035','x',-0.85*a); },
++  crouch(r,a){ a=a==null?1:a; r.dropHips(0.30*a); r.pose('LeftUpLeg_057','x',-1.15*a); r.pose('RightUpLeg_062','x',-1.15*a); r.pose('LeftLeg_058','x',1.6*a); r.pose('RightLeg_063','x',1.6*a); r.pose('Spine2_04','x',0.5*a); r.pose('LeftArm_011','x',-1.0*a); r.pose('RightArm_034','x',-1.0*a); r.pose('LeftForeArm_012','x',-0.3*a); r.pose('RightForeArm_035','x',-0.3*a); },
++  lean(r,a){ a=a==null?1:a; r.pose('Spine2_04','x',0.45*a); r.pose('LeftArm_011','x',-0.9*a); r.pose('RightArm_034','x',-0.9*a); r.pose('LeftForeArm_012','x',-0.5*a); r.pose('RightForeArm_035','x',-0.5*a); r.pose('LeftUpLeg_057','x',-0.25*a); r.pose('RightUpLeg_062','x',-0.25*a); },
++  lollipop(r,a){ a=a==null?1:a; r.pose('RightArm_034','x',-2.9*a); r.pose('LeftArm_011','x',-0.3*a); },
++  walk(r,ph,amp){ const s2=Math.sin(ph); r.pose('LeftUpLeg_057','x',-0.45*amp*s2); r.pose('RightUpLeg_062','x',0.45*amp*s2); r.pose('LeftLeg_058','x',0.5*amp*Math.max(0,-s2)); r.pose('RightLeg_063','x',0.5*amp*Math.max(0,s2)); r.pose('LeftArm_011','x',-0.5*amp*s2); r.pose('RightArm_034','x',0.5*amp*s2); },
++};
+ const __livCache = {};
+ function apexLivTex(color, accent, wrap){
+   const key = new THREE.Color(color).getHexString()+'|'+accent+'|'+(wrap||'team'); if(__livCache[key]) return __livCache[key];
+@@ -2069,33 +2165,36 @@
+   hits:0, done:0,
+   mk(car){
+     const m=car.mesh, g=new THREE.Group(), k=1/m.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color});
+-    g.scale.setScalar(k); g.userData.tyres=[]; g.userData.old=[]; g.userData.corners=[]; g.userData.guns=[]; g.userData.spares=[];
++    g.scale.setScalar(k); g.userData.tyres=[]; g.userData.old=[]; g.userData.corners=[]; g.userData.guns=[]; g.userData.spares=[]; g.userData.standby=[];
++    const fig=(pose)=>mechMan()||pitFigure(suit,pose); // owner Nov 8 2026 round 4: the fetched mechanic; the blocky figure is only the load-failure fallback
+     const wh=m.userData.wheels||[];
+     wh.forEach((w,i)=>{ const wp=w.position, side=wp.z>=0?1:-1, wx=wp.x, wz=wp.z, face=side>0?Math.PI:0;
+-      const gun=pitFigure(suit,[-1.3,-1.3,0.8]); gun.position.set(wx,0,wz+side*1.55); gun.rotation.y=face; g.add(gun); // gunner: crouched at the hub, both arms forward
++      const gun=fig([-1.3,-1.3,0.8]); gun.position.set(wx,0,wz+side*1.55); gun.rotation.y=face; g.add(gun); // gunner: crouched at the hub, both arms forward
+       const gunMesh=new THREE.Mesh(pitGeo().gun,_pitGunMat); gunMesh.position.set(wx,wp.y,wz+side*0.6); g.add(gunMesh); // the wheel gun itself, on the hub while he works
+-      const off=pitFigure(suit,[-0.5,-0.5]); off.position.set(wx,0,wz+side*1.85); off.rotation.y=face; g.add(off); // wheel-off man: takes the old tyre in his arms and carries it clear
+-      const on=pitFigure(suit,[-1.15,-1.15]); on.position.set(wx,0,wz+side*2.35); on.rotation.y=face; g.add(on); // wheel-on man: waits holding the fresh tyre, walks it in and fits it
++      const off=fig([-0.5,-0.5]); off.position.set(wx,0,wz+side*1.85); off.rotation.y=face; g.add(off); // wheel-off man: takes the old tyre in his arms and carries it clear
++      const on=fig([-1.15,-1.15]); on.position.set(wx,0,wz+side*2.35); on.rotation.y=face; g.add(on); // wheel-on man: waits holding the fresh tyre, walks it in and fits it
+       const t=pitTyre(new THREE.MeshBasicMaterial({color:0xffffff})); t.visible=false; g.add(t); g.userData.tyres.push(t);
+       if(t.userData.band) t.userData.band.position.z=0.16*side;
+       const ot=new THREE.Mesh(pitGeo().tyre,_pitOldMat); ot.rotation.x=Math.PI/2; ot.visible=false; g.add(ot); g.userData.old.push(ot);
+       g.userData.corners.push({gun,off,on,gunMesh,side,wx,wz});
+       g.userData.guns.push({p:gun,home:new THREE.Vector3(wx,0,side*1.55),side,wx,wy:wp.y}); // round-1 compat
+     });
+-    const jackF=pitFigure(suit,[-1.05,-1.05]); jackF.position.set(2.5,0,0); jackF.rotation.y=-Math.PI/2; g.add(jackF); g.userData.jackF=jackF; // front jack man, side-on to the nose so the jack reads in the shot
+-    const jackR=pitFigure(suit,[-1.05,-1.05]); jackR.position.set(-2.5,0,0); jackR.rotation.y=Math.PI/2; g.add(jackR); g.userData.jack=jackR; // rear jack man
++    const jackF=fig([-1.05,-1.05]); jackF.position.set(2.5,0,0); jackF.rotation.y=-Math.PI/2; g.add(jackF); g.userData.jackF=jackF; // front jack man, side-on to the nose so the jack reads in the shot
++    const jackR=fig([-1.05,-1.05]); jackR.position.set(-2.5,0,0); jackR.rotation.y=Math.PI/2; g.add(jackR); g.userData.jack=jackR; // rear jack man
+     const barG=new THREE.BoxGeometry(0.95,0.07,0.12), barM=new THREE.MeshLambertMaterial({color:0x333a44});
+     const barF=new THREE.Mesh(barG,barM); barF.position.set(2.08,0.1,0); g.add(barF); // the jack bars they work, under nose and tail
+     const barR=new THREE.Mesh(barG,barM); barR.position.set(-2.08,0.1,0); g.add(barR);
+-    const stA=pitFigure(suit,[-1.5,-1.5]); stA.position.set(0.1,0,1.5); stA.rotation.y=Math.PI; g.add(stA); // two stabilisers, hands on the car
+-    const stB=pitFigure(suit,[-1.5,-1.5]); stB.position.set(0.1,0,-1.5); stB.rotation.y=0; g.add(stB);
++    const stA=fig([-1.5,-1.5]); stA.position.set(0.1,0,1.5); stA.rotation.y=Math.PI; g.add(stA); // two stabilisers, hands on the car
++    const stB=fig([-1.5,-1.5]); stB.position.set(0.1,0,-1.5); stB.rotation.y=0; g.add(stB);
+     g.userData.stabs=[{p:stA,side:1},{p:stB,side:-1}];
+-    const fuel=pitFigure(suit,[-0.9,-0.9]); fuel.position.set(-1.7,0,1.35); fuel.rotation.y=Math.PI; g.add(fuel); g.userData.fuel=fuel; // fuel man
+-    const hose=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.7,6),new THREE.MeshLambertMaterial({color:0x222222})); hose.rotation.z=Math.PI/2.8; hose.position.set(-1.95,0.8,0.72); g.add(hose); // his hose, onto the car
+-    const lol=pitFigure(suit,[-0.2,-1.5]); lol.position.set(3.15,0,-0.85); lol.rotation.y=Math.PI*0.78; g.add(lol); // lollipop man ahead of the nose
+-    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.7,5),new THREE.MeshLambertMaterial({color:0x888888})); pole.position.set(0.3,1.1,0); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.05,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(0.3,2.0,0); lol.add(pole,disc); lol.userData.disc=disc; g.userData.lol=lol;
++    const fuel=fig([-0.9,-0.9]); fuel.position.set(-1.7,0,1.35); fuel.rotation.y=Math.PI; g.add(fuel); g.userData.fuel=fuel; // fuel man
++    const hose=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.7,6),new THREE.MeshLambertMaterial({color:0x222222})); hose.rotation.z=Math.PI/2.8; hose.position.set(-1.95,1.05,0.72); g.add(hose); // his hose, onto the car (raised: the real-size man's hands are at chest height now)
++    const lol=fig([-0.2,-1.5]); lol.position.set(3.15,0,-0.85); lol.rotation.y=Math.PI*0.78; g.add(lol); // lollipop man ahead of the nose
++    if(lol.userData.rig){ const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,1.2,5),new THREE.MeshLambertMaterial({color:0x888888})); pole.position.set(-0.25,1.9,0.1); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.28,0.28,0.04,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(-0.25,2.55,0.1); lol.add(pole,disc); lol.userData.disc=disc; } // model units: the pole sits in his raised right hand, the disc above his head
++    else { const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.7,5),new THREE.MeshLambertMaterial({color:0x888888})); pole.position.set(0.3,1.1,0); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.05,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(0.3,2.0,0); lol.add(pole,disc); lol.userData.disc=disc; }
++    g.userData.lol=lol;
+     const rearX=wh.length?Math.min(...wh.map(w=>w.position.x)):-1.4;
+-    [-1,1].forEach(side=>{ const sb=pitFigure(suit,[-1.15,-1.15]); sb.position.set(rearX,0,side*2.75); sb.rotation.y=side>0?Math.PI:0; g.add(sb); const sp=pitTyre(null); sp.position.set(rearX,0.62,side*2.41); g.add(sp); g.userData.spares.push(sp); }); // two standby men at the back corners, each holding a spare tyre
++    [-1,1].forEach(side=>{ const sb=fig([-1.15,-1.15]); sb.position.set(rearX,0,side*2.75); sb.rotation.y=side>0?Math.PI:0; g.add(sb); g.userData.standby.push(sb); const sp=pitTyre(null); sp.position.set(rearX,1.35,side*2.41); g.add(sp); g.userData.spares.push(sp); }); // two standby men at the back corners, each holding a spare tyre at chest height
+     m.add(g); return g;
+   },
+   start(car){ try{ clearTimeout(car._crewHideT); if(!car.crew) car.crew=this.mk(car); car.crew.visible=true; car.crew.userData.disc=car.crew.userData.lol.userData.disc; car.crew.userData.disc.material.color.setHex(0xd21f26); car._crewLift=0; car._fuelAtStop=car.fuel; if(car._station) car._station.visible=false; this.hits++; window.__f1pitcrew=(window.__f1pitcrew||0)+1; }catch(e){ console.warn('pitcrew',e); } }, // owner Nov 8 2026: fill from the level the car came in with; the waiting crew steps back as the working crew takes over
+@@ -2113,16 +2212,32 @@
+       const oIn=ease(off/0.5), oOut=ease((off-0.55)/0.45);
+       const oz=wz+side*(oOut>0?(0.52+(2.15-0.52)*oOut):(1.85-(1.85-0.52)*oIn));
+       C.off.position.set(C.wx,0,oz);
+-      if(ot){ const taken=off>=0.5; ot.visible=taken; if(taken) ot.position.set(C.wx,0.62,oz-side*0.34); } // old tyre carried out in his arms, chest height
++      if(ot){ const taken=off>=0.5; ot.visible=taken; if(taken) ot.position.set(C.wx,1.35,oz-side*0.34); } // old tyre carried out in his arms, chest height (1.35: the real-size man's chest)
+       const nIn=ease(onn/0.55), nOut=ease((onn-0.6)/0.4);
+       const nz=wz+side*(nOut>0?(0.52+(1.95-0.52)*nOut):(2.35-(2.35-0.52)*nIn));
+       C.on.position.set(C.wx,0,nz);
+-      if(t){ const fitted=onn>=0.55; t.visible=!fitted; if(t.userData.band) t.userData.band.material.color.set(bandCol); if(!fitted) t.position.set(C.wx,0.62,nz-side*0.34); } // fresh tyre carried in, in his arms, compound band showing
++      if(t){ const fitted=onn>=0.55; t.visible=!fitted; if(t.userData.band) t.userData.band.material.color.set(bandCol); if(!fitted) t.position.set(C.wx,1.35,nz-side*0.34); } // fresh tyre carried in, in his arms, compound band showing
+     });
+     (g.userData.stabs||[]).forEach(S=>{ S.p.position.z=S.side*(1.5-0.42*rush)+S.side*0.4*ret; }); // stabilisers lean in with the rush, step back at the launch
+     { const from=(car._fuelAtStop==null?car.fuel:car._fuelAtStop); car.fuel=from+(100-from)*ease((u-0.25)/0.6); } // fuel fills across the middle of the stop (round 1)
+     g.userData.fuel.position.z=1.35-0.3*ease((u-0.2)/0.2)*(1-ease((u-0.88)/0.1)); // fuel man steps in with the hose as filling starts, clears at the end
+     g.userData.lol.userData.disc.material.color.setHex(go?0x2fa84f:0xd21f26); // lollipop flips green for the launch
++    // owner Nov 8 2026 round 4: the rigged crew works the stop - poses follow the same phase clock
++    const off2=ease((u-0.15)/0.25), onn2=ease((u-0.45)/0.3);
++    const poseFig=(f,fn)=>{ const r=f&&f.userData&&f.userData.rig; if(!r) return; r.reset(); fn(r); };
++    const ramp=(a,b)=>Math.max(0,Math.min(1,(u-a)/0.06))-Math.max(0,Math.min(1,(u-b)/0.06));
++    (g.userData.corners||[]).forEach((C,i)=>{ const work=ramp(0.14,0.80), rushing=(u>0.02&&u<0.15)?1:0;
++      poseFig(C.gun,r=>{ if(work>0.05) MECH_POSE.crouch(r,work); else if(rushing) MECH_POSE.walk(r,u*40,0.8); });
++      const oI=ease(off2/0.5), oO=ease((off2-0.55)/0.45), nI=ease(onn2/0.55), nO=ease((onn2-0.6)/0.4);
++      poseFig(C.off,r=>{ if(oI>0&&oI<1) MECH_POSE.walk(r,u*40,0.7); if(oI>=1) MECH_POSE.carry(r,1-oO); });
++      poseFig(C.on,r=>{ if(nI>0&&nI<1) MECH_POSE.walk(r,u*40,0.7); if(nO<1) MECH_POSE.carry(r,1-nO); });
++    });
++    (g.userData.stabs||[]).forEach(S=>{ const w2=ramp(0.05,0.85); poseFig(S.p,r=>{ if(w2>0.05) MECH_POSE.lean(r,w2*0.8); }); });
++    poseFig(g.userData.jackF,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.lean(r,w2); });
++    poseFig(g.userData.jack,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.lean(r,w2); });
++    poseFig(g.userData.fuel,r=>{ const w2=ramp(0.20,0.85); if(w2>0.05) MECH_POSE.lean(r,w2); });
++    poseFig(g.userData.lol,r=>{ if(u>0.9) MECH_POSE.lollipop(r,1); });
++    (g.userData.standby||[]).forEach(f=>{ poseFig(f,r=>MECH_POSE.carry(r,0.9)); });
+   }catch(e){ console.warn('pitcrew upd',e); } }
+ ,
+   end(car){ try{ const g=car.crew; if(!g) return; for(const w of (car.mesh.userData.wheels||[])) w.visible=true; g.userData.tyres.forEach(t=>t.visible=false); (g.userData.old||[]).forEach(t=>t.visible=false); g.userData.lol.userData.disc.material.color.setHex(0x2fa84f); this.done++; window.__f1pitdone=(window.__f1pitdone||0)+1; car._crewHideT=setTimeout(()=>{ if(g && !car.pitHold) g.visible=false; },900); }catch(e){} }, // owner Nov 8 2026: a stale hide timer must never hide the crew of a stop that is live
+@@ -2155,7 +2270,7 @@
+       const beam=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.22,0.22),dark); beam.position.set(0,3.3,2.9); sub.add(beam);
+       const panel=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.5,0.06),suit); panel.position.set(0,2.95,2.79); sub.add(panel);
+       const board=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.05),new THREE.MeshBasicMaterial({map:this.mkNumTex(bi+1)})); board.position.set(3.6,2.4,2.9); board.rotation.y=Math.PI; sub.add(board);
+-      const man=(x,z,rot)=>{ const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; f.add(b,h); f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); };
++      const man=(x,z,rot)=>{ let f=mechMan(MECH.worldScale); if(!f){ f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; f.add(b,h); } f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); }; // owner Nov 8 2026 round 4: the neighbours are the mechanic too
+       man(-1.6,1.9,Math.PI); man(0.4,2.2,Math.PI); man(1.8,1.8,Math.PI); man(2.6,0.9,Math.PI);
+       for(let j=0;j<3;j++){ const t=new THREE.Mesh(pitGeo().tyre,_pitTyreMat); t.position.set(-2.7,0.16+j*0.31,2.55); sub.add(t); }
+       row.add(sub);
+@@ -2165,7 +2280,7 @@
+   mkStation(car){ // owner Nov 4 2026 9:03 PM: the crew WAITS at the box while you roll in, like the real lane (the box gear and the neighbouring boxes are mkGear / mkLaneRow now) - hidden the moment the working crew takes over, standing there again as you pull away
+     const S=car.mesh.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color}), helm=new THREE.MeshLambertMaterial({color:0xffffff});
+     const g=new THREE.Group();
+-    const man=(x,z,rot)=>{ const p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; };
++    const man=(x,z,rot)=>{ let p=mechMan(MECH.worldScale); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at world scale (3.72 world units = 0.31 x the drawn car)
+     (car.mesh.userData.wheels||[]).forEach(w=>{ const side=w.position.z>=0?1:-1; man(w.position.x*S, w.position.z*S + side*1.6, side>0?Math.PI:0); }); // a gunner waiting at each corner
+     man(-1.8*S,0,0); // jack man
+     man(-3.4*S,2.1,Math.PI); // fuel man at the back
+@@ -2871,6 +2986,7 @@
+     if(GP.ev){ try{ GP.ev.finish(order[0]); GP.ev.podium(); }catch(e){} } // G-45: horn, cheer, fireworks + fanfare
+   },
+   updateCamera(dt){
++    if(window.__camFixed){ const F=window.__camFixed; camera.position.set(F[0],F[1],F[2]); camera.lookAt(F[3],F[4],F[5]); return; } // owner Nov 8 2026 round 4: a fixed camera for the fit pictures (working-spot close-up) - test hook, like __camLock
+     if(window.Studio && Studio.ownsCamera()) return; // owner Nov 6 2026: Studio 'Place' = map view from above
+     const p=this.player, m=p.mesh;
+     if(this._fov0==null) this._fov0=camera.fov;
+@@ -2880,10 +2996,10 @@
+       const L0=Track.length, sN=((p.s%L0)+L0)%L0, toBox=((p.pitBoxS-sN+L0*1.5)%L0)-L0/2;
+       if(p.pitHold || (!p.pitStopDone && toBox<7 && toBox>-3)){
+         const fv=new THREE.Vector3(1,0,0).applyQuaternion(m.quaternion), rv=new THREE.Vector3(0,0,1).applyQuaternion(m.quaternion);
+-        const cp2=new THREE.Vector3(m.position.x+fv.x*5.6-rv.x*5.0, m.position.y+1.5, m.position.z+fv.z*5.6-rv.z*5.0);
++        const cp2=new THREE.Vector3(m.position.x+fv.x*8.0-rv.x*8.0, m.position.y+3.8, m.position.z+fv.z*8.0-rv.z*8.0); // owner Nov 8 2026 round 4: the real-size crew (2.63 m) stands taller than the old 1.2 m figures - the camera rides higher and further out so they frame the car instead of hiding it (9 m left the car small in a lot of empty lane; 7 m hid it behind the near-side men)
+         const minY=Math.max(m.position.y, trackGroundY(cp2.x,cp2.z))+1.1; if(cp2.y<minY) cp2.y=minY;
+         camera.position.lerp(cp2, 1-Math.exp(-dt/0.10));
+-        camera.lookAt(m.position.x, m.position.y+0.55, m.position.z);
++        camera.lookAt(m.position.x, m.position.y+1.1, m.position.z);
+         if(camera.fov!==48){ camera.fov=48; camera.updateProjectionMatrix(); }
+         if(scene.userData.skyDome) scene.userData.skyDome.position.copy(camera.position);
+         return;
+@@ -3319,6 +3435,7 @@
+ }
+ async function startWeekend(){
+   try{ await CMBoot(); }catch(e){} // the owner's car shapes (a few MB, usually loaded while he was in the menus)
++  try{ await MechBoot(); }catch(e){} // owner Nov 8 2026 round 4: the pit crew model loads with the cars, so the crew is ready before the first stop
+   const name=($('driverName').value||'YOU').toUpperCase().slice(0,16)||'YOU';
+   const cheat={ROOKIE:0.3,PRO:1.0,CHEAT:1.8}[selDiff];
+   const aiDelta={ROOKIE:-0.12,PRO:0,CHEAT:0.06}[selDiff];
+@@ -3567,6 +3684,7 @@
+     g.traverse(o=>{ if(!o.isInstancedMesh) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
+     return {pts:P.length,n,near}; },
+   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
++  pitSpot: (i) => { const sp=(Track._pitEnv&&Track._pitEnv.spots)||[]; return sp[i||0]||null; }, // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
+   pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; }, // owner Nov 8 2026 round 2: look-cost probe (figures / meshes / draw calls)
+   pitNow: (t) => { const p=Race.player; if(!p) return false; if(t) p.pitTireChoice=t; p.pitIntent=true; p.s=Track.cfg.pitIn*Track.length-60; p.v=30; return true; },
+   tyreTap: () => { $('tirebox').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return !$('pitMenu').classList.contains('hidden'); },
