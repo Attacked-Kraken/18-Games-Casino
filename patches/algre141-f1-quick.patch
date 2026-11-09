@@ -1,0 +1,228 @@
+diff --git a/apexf1.html b/apexf1.html
+index aa42e3c..126c3f5 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -404,7 +404,7 @@ setTimeout(function(){
+ <div class="overlay hidden" id="pitMenu" style="background:rgba(3,6,12,.55)">
+   <div class="card" style="text-align:center"><h3>PIT STOP — CHOOSE TIRES</h3>
+     <div class="pitopt" id="pitTires"></div>
+-    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~2.4s + pit-lane time</div>
++    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~2.0s + pit-lane time</div>
+   </div>
+ </div>
+ 
+@@ -2405,25 +2405,30 @@ const PitCrew = {
+     const barG=new THREE.BoxGeometry(0.95,0.07,0.12), barM=new THREE.MeshLambertMaterial({color:0x333a44});
+     const barF=new THREE.Mesh(barG,barM); barF.position.set(2.08,0.1,0); g.add(barF); // the jack bars they work, under nose and tail
+     const barR=new THREE.Mesh(barG,barM); barR.position.set(-2.08,0.1,0); g.add(barR);
+-    const stA=fig([-1.5,-1.5]); stA.position.set(0.35,0,1.35); stA.rotation.y=Math.PI; g.add(stA); // two stabilisers, hands on the car (fix-what-you-see: up at the cockpit side, not a pace behind it)
+-    const stB=fig([-1.5,-1.5]); stB.position.set(0.35,0,-1.35); stB.rotation.y=0; g.add(stB);
++    const stA=fig([-1.5,-1.5]); stA.position.set(-0.6,0,2.7); stA.rotation.y=Math.PI; g.add(stA); // QUICK+MOVING ROUND: the stabilisers leave the car - the at-car set is the working set only (4 tyre + 1 fuel + 2 jack + 1 lollipop). These two are the GANTRY men now, one each side under the beam on the garage side, working the air hoses (posed in update; hose props below)
++    const stB=fig([-1.5,-1.5]); stB.position.set(0.6,0,2.7); stB.rotation.y=Math.PI; g.add(stB);
+     g.userData.stabs=[{p:stA,side:1},{p:stB,side:-1}];
++    [-0.6,0.6].forEach(gx=>{ const hm=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.8,5),new THREE.MeshLambertMaterial({color:0x14161a})); hm.position.set(gx,2.02,2.84); hm.rotation.x=0.16; g.add(hm); }); // his air hose, hanging from the gantry beam down toward his hands
+     const fuel=fig([-0.9,-0.9]); fuel.position.set(-1.7,0,1.35); fuel.rotation.y=Math.PI; g.add(fuel); g.userData.fuel=fuel; // fuel man
+     const hose=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,1.7,6),new THREE.MeshLambertMaterial({color:0x222222})); hose.rotation.z=Math.PI/2.8; hose.position.set(-1.95,1.05,0.72); g.add(hose); // his hose, onto the car (raised: the real-size man's hands are at chest height now)
+     const lol=fig([-0.2,-1.5]); lol.position.set(3.15,0,-0.85); lol.rotation.y=Math.PI*0.78; g.add(lol); // lollipop man ahead of the nose
+     if(lol.userData.rig){ const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.85,6),new THREE.MeshLambertMaterial({color:0x23262b})); pole.position.set(-0.25,1.55,0.1); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.30,0.30,0.045,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(-0.25,2.02,0.1); lol.add(pole,disc); lol.userData.disc=disc; } // FIX-WHAT-YOU-SEE ROUND: the board hung at 2.55 model units (above his head) on a 2 cm grey pole - it read as a floating balloon. Now: a thick dark pole from his raised hand (~1.1) to a board centred at head height (2.02), and his arm stays up holding it for the whole hold (see the pose line in update)
+     else { const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.95,6),new THREE.MeshLambertMaterial({color:0x23262b})); pole.position.set(0.3,0.98,0); const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.34,0.34,0.05,14),new THREE.MeshBasicMaterial({color:0xd21f26})); disc.rotation.x=Math.PI/2; disc.position.set(0.3,1.52,0); lol.add(pole,disc); lol.userData.disc=disc; } // fallback figure: same fix - board at held height on a dark pole
+     g.userData.lol=lol;
+-    // FIX-WHAT-YOU-SEE ROUND: the support row stood in a line at the back of the box doing nothing visible, and the stop read tidy and thin. Now every support man works in the frame: a READY man with the next fresh tyre in his arms stands one step behind his own corner's tyre man, and four CARRIERS walk tyres from the stacks behind the car for the whole hold (animated in update). Headcount: 4 tyre + 1 fuel + 1 lollipop + 2 jack + 2 stabilisers + 4 ready + 4 carriers = 18.
+-    (g.userData.corners||[]).forEach(C=>{ const rm=fig([-1.15,-1.15]); rm.position.set(C.wx-0.85,0,C.wz+C.side*2.2); rm.rotation.y=C.side>0?Math.PI:0; g.add(rm);
+-      const sp=pitTyre(null); if(rm.userData.rig){ sp.scale.setScalar(1/MECH.scale); sp.position.set(0,1.35,0.45); } else sp.position.set(0,0.68,0.36); rm.add(sp); // his fresh tyre, at his chest, sized to match the crew's tyres
+-      g.userData.ready.push(rm); g.userData.standby.push(rm); }); // posed with the standby carry in update
+-    [ [[2.7,2.6],[0.2,2.92],[-2.9,2.6]], [[-2.7,2.6],[-0.4,2.95],[2.9,2.55]], [[-2.7,-2.6],[0.2,-2.92],[2.9,-2.6]], [[2.7,-2.6],[-0.4,-2.95],[-2.9,-2.55]] ].forEach((P,ci)=>{ const cm=fig([-1.15,-1.15]); const sp=pitTyre(null); if(cm.userData.rig){ sp.scale.setScalar(1/MECH.scale); sp.position.set(0,1.35,0.45); } else sp.position.set(0,0.68,0.36); cm.add(sp); cm.position.set(P[0][0],0,P[0][1]); g.add(cm); g.userData.carriers.push({man:cm,tyre:sp,path:P,off:ci*1.9,speed:1.5+0.13*ci}); }); // two shuttling each side, stack to stack behind the car
++    // QUICK+MOVING ROUND crew map (owner: quicker, moving, NOT piled at the car): AT the car only the working set - 4 tyre men, 1 fuel man, 2 jack men, 1 lollipop (8). Away from the car: 4 ready men working the two tyre stacks at the back of the box, 4 carriers on perimeter routes (one rolls his tyre), 2 gantry men on the hoses = 18 in the crew group - plus the crew chief on his perch by the gantry (mkChief, travels with the box gear). Nobody stands at the car's skirt without a job on the car.
++    [[-3.2,2.5],[-2.2,2.85],[2.2,2.85],[2.95,3.05]].forEach((RP,ri)=>{ const rm=fig([-1.15,-1.15]); rm.position.set(RP[0],0,RP[1]); rm.rotation.y=Math.PI; g.add(rm); // QUICK+MOVING ROUND: the ready men leave the car's skirts - two at each tyre stack (the gear stacks stand at (+-2.7, 2.6)), working the stack for the whole hold: crouch to a tyre, lift it to the chest, set it down, lift again (cycle driven in update)
++      const wt3=pitTyre(null); g.add(wt3); // the tyre he works - a loose group-level tyre, so it can sit on the ground and ride at his chest in turn
++      g.userData.ready.push({man:rm,tyre:wt3,ph:ri*1.7}); g.userData.standby.push(rm); });
++    [ [[3.35,3.3],[0.2,3.52],[-3.35,3.3]], [[-3.35,3.3],[-0.4,3.52],[3.35,3.3]], [[-3.3,-2.62],[0.2,-2.95],[3.3,-2.62]], [[3.3,-2.62],[-0.4,-2.95],[-3.3,-2.62]] ].forEach((P,ci)=>{ const cm=fig([-1.15,-1.15]); const sp=pitTyre(null); const roll=ci===2; // QUICK+MOVING ROUND: wider perimeter routes (the garage row runs behind the stacks now the ready men stand at them), a brisker walking pace matched to the 2.0 s stop - and carrier 3 ROLLS his tyre along the back of the box instead of carrying it
++      if(roll){ sp.rotation.set(0,0,Math.PI/2); g.add(sp); }
++      else if(cm.userData.rig){ sp.scale.setScalar(1/MECH.scale); sp.position.set(0,1.35,0.45); cm.add(sp); } else { sp.position.set(0,0.68,0.36); cm.add(sp); }
++      cm.position.set(P[0][0],0,P[0][1]); g.add(cm); g.userData.carriers.push({man:cm,tyre:sp,path:P,off:ci*1.9,speed:1.8+0.12*ci,roll}); }); // two shuttling each side, behind the car and behind the stacks - never through the working set at the car
+     m.add(g); return g;
+   },
+   start(car){ try{ clearTimeout(car._crewHideT); if(!car.crew) car.crew=this.mk(car); car.crew.visible=true; car.crew.userData.disc=car.crew.userData.lol.userData.disc; car.crew.userData.disc.material.color.setHex(0xd21f26); car._crewLift=0; car._fuelAtStop=car.fuel; if(car._station) car._station.visible=false; this.hits++; window.__f1pitcrew=(window.__f1pitcrew||0)+1; }catch(e){ console.warn('pitcrew',e); } }, // owner Nov 8 2026: fill from the level the car came in with; the waiting crew steps back as the working crew takes over
+   update(car,dt){ const g=car.crew; if(!g||!car.pitHold) return; try{
+-    const u=1-Math.max(0,car.pitTimer)/(car.pitT0||2.4), wh=car.mesh.userData.wheels||[], ease=x=>Math.max(0,Math.min(1,x));
++    const u=1-Math.max(0,car.pitTimer)/(car.pitT0||2.0), wh=car.mesh.userData.wheels||[], ease=x=>Math.max(0,Math.min(1,x));
++    g.userData.tAcc=(g.userData.tAcc||0)+dt; // QUICK+MOVING ROUND: a real-time clock for the men's work cycles (jack pumps, gantry reaches, stack lifts) - u runs the stop's phases, this runs the tempo inside them
+     const rush=ease(u/0.15), off=ease((u-0.15)/0.25), onn=ease((u-0.45)/0.3), go=u>0.9, ret=ease((u-0.88)/0.1); // same phase clock as round 1: rush in, off, on, go
+     car._crewLift=0.22*Math.min(ease(u/0.12),1-ease((u-0.85)/0.12));
+     car.mesh.position.y+=car._crewLift; // the jacks: the car rides up for the stop and drops for the launch
+@@ -2445,7 +2450,7 @@ const PitCrew = {
+       if(ot){ const taken=off>=0.5; ot.visible=taken; if(taken){ if(oOut<1) ot.position.set(C.wx,1.35,wz+side*az-side*0.34); else ot.position.set(C.wx,0.34,wz+side*2.0); } } // the old tyre: in his arms at chest height (1.35), then set down on the ground at his side
+       if(t){ const fitted=onn>=0.55; t.visible=!fitted; if(t.userData.band) t.userData.band.material.color.set(bandCol); if(!fitted){ if(onn>0.3) t.position.set(C.wx,1.35,wz+side*az-side*0.34); else t.position.set(C.wx,0.34,wz+side*2.1); } } // the fresh tyre: waits on the ground at his side, then in his arms to the hub, compound band showing
+     });
+-    (g.userData.stabs||[]).forEach(S=>{ S.p.position.z=S.side*(1.35-0.33*rush)+S.side*0.4*ret; }); // stabilisers lean in with the rush until their hands are on the car, step back at the launch
++    // (the gantry men hold their posts at the beam for the whole hold - they are posed, not moved, in the pose section below)
+     { const from=(car._fuelAtStop==null?car.fuel:car._fuelAtStop); car.fuel=from+(100-from)*ease((u-0.25)/0.6); } // fuel fills across the middle of the stop (round 1)
+     // ROLES: the ONE fuel man stays at the fuel flap for the WHOLE hold, hose plugged in - he does not step in late or clear early (his position is set once in mk and never moved here; the FUEL bar rising across the hold is his work, and his lean below runs the full hold)
+     g.userData.lol.userData.disc.material.color.setHex(go?0x2fa84f:0xd21f26); // lollipop flips green for the launch
+@@ -2456,19 +2461,24 @@ const PitCrew = {
+     (g.userData.corners||[]).forEach((C,i)=>{ const work=ramp(0.14,0.80), rushing=(u>0.02&&u<0.15)?1:0;
+       poseFig(C.man,r=>{ if(off2>=0.5&&onn2<0.3) MECH_POSE.carry(r,1); else if(onn2>=0.3&&onn2<0.55) MECH_POSE.carry(r,0.85); else if(work>0.05) MECH_POSE.crouch(r,work); else if(rushing) MECH_POSE.walk(r,u*40,0.8); }); // one man, one wheel: walks in, crouches on the gun, carries the old tyre out, carries the fresh one in, crouches on the gun again
+     });
+-    (g.userData.stabs||[]).forEach(S=>{ const w2=ramp(0.05,0.85); poseFig(S.p,r=>{ if(w2>0.05) MECH_POSE.lean(r,w2*0.8); }); });
+-    poseFig(g.userData.jackF,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.crouch(r,w2*0.85); }); // FIX-WHAT-YOU-SEE ROUND: the front jack man works crouched on his jack, not standing at it
+-    poseFig(g.userData.jack,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.lean(r,w2); });
+-    poseFig(g.userData.fuel,r=>{ const w2=ramp(0.02,0.95); if(w2>0.05) MECH_POSE.lean(r,w2); }); // leaned onto the filler for the whole hold
++    (g.userData.stabs||[]).forEach(S=>{ poseFig(S.p,r=>{ const up=0.5+0.5*Math.sin(g.userData.tAcc*1.7+(S.side>0?0:1.9)); MECH_POSE.lean(r,0.3+0.15*up); r.pose('RightArm_034','x',-0.7-1.4*up); r.pose('LeftArm_011','x',-0.55-0.35*up); }); }); // QUICK+MOVING ROUND: the gantry men work their hoses - reach up to the beam, ease off, reach again, the two of them out of phase
++    poseFig(g.userData.jackF,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.crouch(r,w2*(0.82+0.10*Math.sin(g.userData.tAcc*10))); }); // QUICK+MOVING ROUND: he PUMPS the jack - the crouch breathes at working tempo, no statue at the bar
++    poseFig(g.userData.jack,r=>{ const w2=ramp(0.10,0.85); if(w2>0.05) MECH_POSE.lean(r,w2*(0.9+0.08*Math.sin(g.userData.tAcc*10+1.4))); }); // rear jack pumps out of phase with the front
++    poseFig(g.userData.fuel,r=>{ const w2=ramp(0.02,0.95); if(w2>0.05) MECH_POSE.lean(r,w2*(0.93+0.07*Math.sin(g.userData.tAcc*6.3+0.7))); }); // leaned onto the filler for the whole hold, weight shifting as the fuel runs
+     poseFig(g.userData.lol,r=>{ MECH_POSE.lollipop(r, go?1:0.85); }); // FIX-WHAT-YOU-SEE ROUND: his arm is UP holding the board for the whole hold (full raise at the launch) - a board in the air with the hand down was what read as floating
+     { const wt=(g.userData.walkT=(g.userData.walkT||0)+dt); // FIX-WHAT-YOU-SEE ROUND: the carriers walk their routes behind the car for the whole hold - out with a tyre in their arms, back empty-handed, never standing in a line
+       (g.userData.carriers||[]).forEach(K=>{ const P=K.path; let L=0; const sg=[]; for(let i=0;i<P.length-1;i++){ const l=Math.hypot(P[i+1][0]-P[i][0],P[i+1][1]-P[i][1]); sg.push(l); L+=l; }
+         let dd=(wt*K.speed+K.off)%(2*L); const loaded=dd<L; if(!loaded) dd=2*L-dd;
+         let x=P[0][0], z=P[0][1], fx=0, fz=1, rem=dd;
+         for(let i=0;i<sg.length;i++){ if(rem<=sg[i]||i===sg.length-1){ const sm=sg[i]?Math.min(1,rem/sg[i]):0; x=P[i][0]+(P[i+1][0]-P[i][0])*sm; z=P[i][1]+(P[i+1][1]-P[i][1])*sm; fx=(P[i+1][0]-P[i][0])/(sg[i]||1); fz=(P[i+1][1]-P[i][1])/(sg[i]||1); if(!loaded){ fx=-fx; fz=-fz; } break; } rem-=sg[i]; }
+-        K.man.position.set(x,0,z); K.man.rotation.y=Math.atan2(fx,fz); if(K.tyre) K.tyre.visible=loaded;
+-        poseFig(K.man,r=>{ MECH_POSE.walk(r,wt*7+K.off*3,0.85); if(loaded) MECH_POSE.carry(r,1); }); }); }
+-    (g.userData.standby||[]).forEach(f=>{ poseFig(f,r=>MECH_POSE.carry(r,0.9)); });
++        K.man.position.set(x,0,z); K.man.rotation.y=Math.atan2(fx,fz);
++        if(K.roll){ if(K.tyre){ const ry2=K.man.rotation.y; K.tyre.position.set(x+Math.cos(ry2)*0.55,0.34,z-Math.sin(ry2)*0.55); K.tyre.rotation.x-=dt*K.speed/0.34; K.tyre.visible=true; } // the rolled tyre: on the ground at his side, spinning at rolling speed
++          poseFig(K.man,r=>{ MECH_POSE.walk(r,wt*9.5+K.off*3,0.85); r.pose('LeftArm_011','x',-0.5); r.pose('RightArm_034','x',-0.5); r.pose('LeftForeArm_012','x',-0.55); r.pose('RightForeArm_035','x',-0.55); }); } // hands down toward the tyre as he walks it along
++        else { if(K.tyre) K.tyre.visible=loaded;
++          poseFig(K.man,r=>{ MECH_POSE.walk(r,wt*9.5+K.off*3,0.85); if(loaded) MECH_POSE.carry(r,1); }); } }); }
++    (g.userData.ready||[]).forEach(R=>{ const cyc=0.5+0.5*Math.sin(g.userData.tAcc*1.35+R.ph), k=Math.max(0,Math.min(1,(cyc-0.32)/0.36)); // QUICK+MOVING ROUND: the stack lift cycle - crouch to the tyre, lift it to the chest, hold, set it down, smoothed so nothing pops; the four men run out of phase
++      if(R.tyre){ R.tyre.position.set(R.man.position.x,0.34+1.01*k,R.man.position.z-0.55+0.10*k); }
++      poseFig(R.man,r=>{ MECH_POSE.crouch(r,0.55*(1-k)); MECH_POSE.carry(r,0.9*k); }); });
+   }catch(e){ console.warn('pitcrew upd',e); } }
+ ,
+   end(car){ try{ const g=car.crew; if(!g) return; for(const w of (car.mesh.userData.wheels||[])) w.visible=true; g.userData.tyres.forEach(t=>t.visible=false); (g.userData.old||[]).forEach(t=>t.visible=false); g.userData.lol.userData.disc.material.color.setHex(0x2fa84f); this.done++; window.__f1pitdone=(window.__f1pitdone||0)+1; car._crewHideT=setTimeout(()=>{ if(g && !car.pitHold) g.visible=false; },900); }catch(e){} }, // owner Nov 8 2026: a stale hide timer must never hide the crew of a stop that is live
+@@ -2510,24 +2520,90 @@ const PitCrew = {
+     row.visible=false; return row;
+   },
+   mkStation(car){ // owner Nov 4 2026 9:03 PM: the crew WAITS at the box while you roll in, like the real lane (the box gear and the neighbouring boxes are mkGear / mkLaneRow now) - hidden the moment the working crew takes over, standing there again as you pull away
++    // QUICK+MOVING ROUND: the waiting men WORK now - corner men check their hubs and step in and out, a carrier walks the garage-side walkway with a tyre, a stack hand works the left stack (all animated in station()). Their SCALE is unchanged (MECH.worldScale - the oversized waiting men are the owner's separate call, untouched this round).
+     const S=car.mesh.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color}), helm=new THREE.MeshLambertMaterial({color:0xffffff});
+-    const g=new THREE.Group();
++    const g=new THREE.Group(); g.userData.figs=[];
+     let vn=0; const teamI=Math.max(0,TEAMS.indexOf(car.team))%10; // variety round: the waiting men are dealt mixed skins too (offset +2, so the station's mix differs from the stop crew's order)
+-    const man=(x,z,rot)=>{ let p=mechMan(MECH.worldScale, teamI, MECH_VARSEQ[(teamI+2+vn++)%6]); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at world scale (3.72 world units = 0.31 x the drawn car); colour round: in the player's own team kit
+-    (car.mesh.userData.wheels||[]).forEach(w=>{ const side=w.position.z>=0?1:-1; man(w.position.x*S, w.position.z*S + side*1.6, side>0?Math.PI:0); }); // a gunner waiting at each corner
+-    man(-1.8*S,0,0); // jack man
+-    man(-3.4*S,2.1,Math.PI); // fuel man at the back
+-    man(2.6*S+1.4,-1.2,0); // lollipop man ahead of the box
++    const man=(x,z,rot,role)=>{ let p=mechMan(MECH.worldScale, teamI, MECH_VARSEQ[(teamI+2+vn++)%6]); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); g.userData.figs.push({f:p,role:role||'idle',home:[x,z],ph:g.userData.figs.length*1.37}); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at world scale (3.72 world units = 0.31 x the drawn car); colour round: in the player's own team kit
++    (car.mesh.userData.wheels||[]).forEach(w=>{ const side=w.position.z>=0?1:-1; man(w.position.x*S, w.position.z*S + side*1.6, side>0?Math.PI:0, 'corner'); }); // a gunner waiting at each corner
++    man(-1.8*S,0,0,'jack'); // jack man
++    man(-3.4*S,2.1,Math.PI,'fuel'); // fuel man at the back
++    man(2.6*S+1.4,-1.2,0,'lol'); // lollipop man ahead of the box
++    const cm=man(-4.4,3.55,Math.PI/2,'carrier'); const cTyre=pitTyre(null); if(cm.userData.rig){ cTyre.scale.setScalar(1/MECH.worldScale); cTyre.position.set(0,1.35,0.45); } else cTyre.position.set(0,0.68,0.36); cm.add(cTyre); // the station carrier: walks the walkway behind the gantry with a tyre, across and back (animated in station())
++    g.userData.carrier={man:cm,tyre:cTyre,path:[[-4.4,3.55],[4.4,3.55],[4.4,4.45],[-4.4,4.45]],speed:1.5};
++    const sh=man(-2.7,3.15,Math.PI,'stack'); const sTyre=pitTyre(null); sTyre.position.set(-2.7,0.34,2.5); g.add(sTyre); g.userData.stackHand={man:sh,tyre:sTyre}; // the stack hand at the left tyre stack (the gear stack stands at (-2.7, 2.6)): lifts a tyre off the ground toward the stack, sets it back, lifts again
+     g.visible=false; return g;
+   },
++  mkChief(car){ // owner Nov 9 2026 QUICK+MOVING ROUND: the CREW CHIEF - one man running the stop, SEATED on a perch at the front corner of the box by the gantry, headset on, a monitor on a stand in front of him. He travels with the box gear (positioned in station()), so he is there on the roll-in, through the stop and on the way out - never hidden with the waiting men, never riding with the car. Scale: MECH.scale, the stop crew's true measure.
++    const kitI=Math.max(0,TEAMS.indexOf(car.team))%10;
++    const grp=new THREE.Group(); // gear-frame metres: +x = direction of travel, the gantry stands at z +2.95
++    const sub=new THREE.Group(); sub.position.set(3.85,0,2.35); sub.rotation.y=-2.12; grp.add(sub); // ahead of the box on the garage side, facing back across the box at the car
++    const fig=mechMan(MECH.scale, kitI, MECH_VARSEQ[(kitI+5)%6]);
++    const chief={grp,fig:null,drop:0.5,seatTop:0.62};
++    if(fig){ sub.add(fig); chief.fig=fig; const rig=fig.userData.rig;
++      // the HEADSET first (at bind, so the counter-rotation is measured square): band over the head, two ear cups, a mic boom to the mouth - parented to the Head bone in a frame counter-rotated to the figure's own axes, so the set stays on his head when it turns
++      try{ const hb=rig.bones['Head_06']; if(hb){ const hs=new THREE.Group(); const bw=new THREE.Quaternion(); hb.getWorldQuaternion(bw); const fq=new THREE.Quaternion(); fig.getWorldQuaternion(fq); hs.quaternion.copy(bw.invert().multiply(fq));
++        const teamM=new THREE.MeshLambertMaterial({color:car.team.color}), darkM=new THREE.MeshLambertMaterial({color:0x14161a});
++        const band=new THREE.Mesh(new THREE.TorusGeometry(0.115,0.018,6,14,Math.PI),teamM); band.position.set(0,0.115,0); hs.add(band);
++        [-1,1].forEach(sd=>{ const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.052,0.052,0.035,10),darkM); cup.rotation.z=Math.PI/2; cup.position.set(sd*0.108,0.10,0); hs.add(cup); const ring=new THREE.Mesh(new THREE.CylinderGeometry(0.057,0.057,0.012,10),teamM); ring.rotation.z=Math.PI/2; ring.position.set(sd*0.09,0.10,0); hs.add(ring); });
++        const boom=new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.17,5),darkM); boom.position.set(0.085,0.045,0.075); boom.rotation.set(0.5,0,-0.7); hs.add(boom);
++        const mic=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.02,0.05),darkM); mic.position.set(0.045,0.015,0.145); hs.add(mic);
++        hb.add(hs); chief.headset=hs; } }catch(e){ console.warn('chief headset',e); }
++      // calibrate the sit on the bones themselves: pose the legs, measure the boot height, solve the hip drop so the boots rest on the ground, then read the hip height for the perch top
++      const sitWith=d=>{ rig.reset(); rig.dropHips(d); rig.pose('LeftUpLeg_057','x',-1.5); rig.pose('RightUpLeg_062','x',-1.5); rig.pose('LeftLeg_058','x',1.45); rig.pose('RightLeg_063','x',1.45); fig.updateMatrixWorld(true); const v=new THREE.Vector3(); rig.bones['LeftFoot_059'].getWorldPosition(v); return v.y; };
++      const fLo=sitWith(0.40), fHi=sitWith(0.62);
++      let d=(fHi!==fLo)? 0.40+(0.07-fLo)*(0.62-0.40)/(fHi-fLo) : 0.5; d=Math.max(0.40,Math.min(0.62,d)); chief.drop=d;
++      sitWith(d); const hv=new THREE.Vector3(); rig.bones['Hips_01'].getWorldPosition(hv); chief.seatTop=Math.max(0.45,hv.y-0.10);
++    }
++    // the perch: a pedestal and a team-colour seat at the calibrated height
++    const top=chief.seatTop;
++    const pedM=new THREE.MeshLambertMaterial({color:0x232a33}), seatM=new THREE.MeshLambertMaterial({color:car.team.color});
++    const ped=new THREE.Mesh(new THREE.BoxGeometry(0.46,Math.max(0.1,top-0.05),0.42),pedM); ped.position.set(0,(top-0.05)/2,0); sub.add(ped);
++    const seat=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.06,0.5),seatM); seat.position.set(0,top-0.02,0.02); sub.add(seat);
++    // the monitor: a stand in front of him and a timing screen facing him
++    const mpole=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,1.02,6),pedM); mpole.position.set(0,0.51,0.62); sub.add(mpole);
++    const scrC=document.createElement('canvas'); scrC.width=256; scrC.height=160; { const x=scrC.getContext('2d'); x.fillStyle='#0a141f'; x.fillRect(0,0,256,160); x.fillStyle='#37d67a'; x.font='900 26px Arial'; x.fillText('PIT',14,34); x.fillStyle='#e8f2ff'; x.font='900 20px Arial'; x.fillText('APEX',176,34); x.fillStyle='#ffd76a'; x.font='700 16px Arial'; x.fillText('TYRES   FUEL',14,64); x.fillStyle='#57b6ff'; for(let i=0;i<4;i++) x.fillRect(14,84+i*17,140+((i*53)%70),8); }
++    const scrT=new THREE.CanvasTexture(scrC); scrT.colorSpace=THREE.SRGBColorSpace;
++    const scrB=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.46,0.03),pedM); scrB.position.set(0,1.12,0.615); sub.add(scrB);
++    const scr=new THREE.Mesh(new THREE.PlaneGeometry(0.66,0.42),new THREE.MeshBasicMaterial({map:scrT})); scr.position.set(0,1.12,0.598); scr.rotation.x=-0.16; scr.rotation.y=Math.PI; sub.add(scr); // the screen faces HIM, not the lane
++    grp.visible=false; grp.userData.chief=chief;
++    return grp;
++  },
++  chiefPose(car,tS){ try{ const ch=car._chief&&car._chief.userData.chief; if(!ch||!ch.fig) return; const r=ch.fig.userData.rig; if(!r) return; r.reset();
++    r.dropHips(ch.drop); r.pose('LeftUpLeg_057','x',-1.5); r.pose('RightUpLeg_062','x',-1.5); r.pose('LeftLeg_058','x',1.45); r.pose('RightLeg_063','x',1.45); // seated, boots on the ground
++    r.pose('Spine2_04','x',0.14);
++    const released=car.pitStopDone&&!car.pitHold&&car.inPits;
++    if(released){ r.pose('RightArm_034','x',-2.75); r.pose('RightForeArm_035','x',-0.25); r.pose('LeftArm_011','x',-0.55); r.pose('LeftForeArm_012','x',-0.95); } // the release signal: right arm up as his car launches
++    else { r.pose('LeftArm_011','x',-0.55); r.pose('RightArm_034','x',-0.4); r.pose('LeftForeArm_012','x',-0.95); r.pose('RightForeArm_035','x',-0.75); } // forearms up at the monitor, running the stop
++    // his head works: square on the car through the stop, scanning the lane on the roll-in and out - a yaw of the Head bone about the man-local up axis (the rig's pose() conjugates x/z; this is the same trick about Y)
++    const yaw=car.pitHold? 0.12*Math.sin(tS*0.9) : 0.38*Math.sin(tS*0.55);
++    const b=r.bones['Head_06']; if(b){ const chain=[]; let n=b.parent; while(n && n!==ch.fig){ chain.unshift(n); n=n.parent; } const rq=new THREE.Quaternion(); for(const a of chain) rq.multiply(a.quaternion); const la=new THREE.Vector3(0,1,0).applyQuaternion(rq.clone().invert()); b.quaternion.setFromAxisAngle(la,yaw).multiply(r.bind['Head_06']); }
++  }catch(e){} },
+   station(car,show){ try{ if(!car.isPlayer) return;
++    const tS=performance.now()/1000;
+     if(show){ if(!car._gear){ car._gear=this.mkGear(car); scene.add(car._gear); } if(!car._station){ car._station=this.mkStation(car); scene.add(car._station); }
++      if(!car._chief){ car._chief=this.mkChief(car); scene.add(car._chief); } // QUICK+MOVING ROUND: the chief sits with the box gear - there on the roll-in, through the stop, and on the way out
+       if(!car._laneRow || Math.abs((car._laneRow.userData.boxS||0)-car.pitBoxS)>1){ if(car._laneRow) scene.remove(car._laneRow); car._laneRow=this.mkLaneRow(car); car._laneRow.userData.boxS=car.pitBoxS; scene.add(car._laneRow); }
+       const p=Track.posAt(car.pitBoxS, Track.pitDAt(car.pitBoxS)), ry=-Math.atan2(p.f.tz,p.f.tx);
+       car._station.position.set(p.x,p.y,p.z); car._station.rotation.y=ry; car._station.visible=true; // waiting crew appears at the box as you roll in
+       car._gear.position.set(p.x,p.y,p.z); car._gear.rotation.y=ry; car._gear.visible=true;
++      car._chief.position.set(p.x,p.y,p.z); car._chief.rotation.y=ry; car._chief.visible=true;
+       car._laneRow.visible=true; const now=performance.now()/600; (car._laneRow.userData.figs||[]).forEach((f,i)=>{ f.rotation.z=0.045*Math.sin(now+i*1.7); }); // idle sway: the neighbours are alive, not statues
+-    } else { if(car._station) car._station.visible=false; if(!car.inPits){ if(car._gear) car._gear.visible=false; if(car._laneRow) car._laneRow.visible=false; } } // during the stop only the waiting men step aside; the gantry and the row stay up
++      // QUICK+MOVING ROUND: the waiting crew works while you roll in and out - nobody stands in a row
++      (car._station.userData.figs||[]).forEach(F=>{ if(F.role==='carrier'||F.role==='stack') return; const r=F.f.userData&&F.f.userData.rig; if(!r) return; r.reset();
++        if(F.role==='corner'){ const k=0.5+0.5*Math.sin(tS*1.9+F.ph); MECH_POSE.crouch(r,0.25+0.35*k); F.f.position.x=F.home[0]+0.12*Math.sin(tS*0.9+F.ph); } // checking his hub, stepping in and out
++        else if(F.role==='jack'){ MECH_POSE.lean(r,0.45+0.3*Math.sin(tS*2.3+F.ph)); }
++        else if(F.role==='fuel'){ const k=0.5+0.5*Math.sin(tS*1.4+F.ph); if(k>0.5) MECH_POSE.carry(r,0.85); else MECH_POSE.lean(r,0.4); }
++        else if(F.role==='lol'){ F.f.rotation.z=0.04*Math.sin(tS*1.3+F.ph); }
++      });
++      { const SH=car._station.userData.stackHand; if(SH){ const k=0.5-0.5*Math.cos(tS*1.35); if(SH.tyre) SH.tyre.position.set(-2.7,0.34+1.0*k,2.5-0.32*k); const r=SH.man.userData&&SH.man.userData.rig; if(r){ r.reset(); if(k>0.45) MECH_POSE.carry(r,0.9); else MECH_POSE.crouch(r,0.5); } } }
++      { const CR=car._station.userData.carrier; if(CR){ const P=CR.path, PP=[...P,P[0]]; let L=0; const sg=[]; for(let i=0;i<PP.length-1;i++){ const l=Math.hypot(PP[i+1][0]-PP[i][0],PP[i+1][1]-PP[i][1]); sg.push(l); L+=l; }
++        let dd=(tS*CR.speed)%L, x=P[0][0], z=P[0][1], fx=0, fz=1, seg=0;
++        for(let i=0;i<sg.length;i++){ if(dd<=sg[i]||i===sg.length-1){ const sm=sg[i]?Math.min(1,dd/sg[i]):0; x=PP[i][0]+(PP[i+1][0]-PP[i][0])*sm; z=PP[i][1]+(PP[i+1][1]-PP[i][1])*sm; fx=(PP[i+1][0]-PP[i][0])/(sg[i]||1); fz=(PP[i+1][1]-PP[i][1])/(sg[i]||1); seg=i; break; } dd-=sg[i]; }
++        CR.man.position.set(x,0,z); CR.man.rotation.y=Math.atan2(fx,fz); if(CR.tyre) CR.tyre.visible=(seg===0); // loaded across the front of the walkway, empty-handed on the way back
++        const r=CR.man.userData&&CR.man.userData.rig; if(r){ r.reset(); MECH_POSE.walk(r,tS*6.5,0.85); if(seg===0) MECH_POSE.carry(r,1); } } }
++      this.chiefPose(car,tS);
++    } else { if(car._station) car._station.visible=false; if(!car.inPits){ if(car._gear) car._gear.visible=false; if(car._laneRow) car._laneRow.visible=false; if(car._chief) car._chief.visible=false; } else this.chiefPose(car,tS); } // during the stop only the waiting men step aside; the gantry, the row and the chief stay up
+   }catch(e){} }
+ 
+ };
+@@ -2595,7 +2671,7 @@ class Car {
+       if(!this.pitStopDone && (((this.pitBoxS-sN+Track.length*1.5)%Track.length)-Track.length/2)<=0){
+         this.pitStopDone=true; this.pitHold=true; this.pitTimer=Race.PIT_TIME; this.pitT0=Race.PIT_TIME; PitCrew.start(this);
+       }
+-      if(sN>pitOutS && sN<pitOutS+60){ this.inPits=false; this.pitIntent=false; if(this.crew) this.crew.visible=false; if(this._station) this._station.visible=false; if(this._gear) this._gear.visible=false; if(this._laneRow) this._laneRow.visible=false; } // owner Nov 8 2026: the crew never rides out of the pits with the car - the station crew stays at the box
++      if(sN>pitOutS && sN<pitOutS+60){ this.inPits=false; this.pitIntent=false; if(this.crew) this.crew.visible=false; if(this._station) this._station.visible=false; if(this._gear) this._gear.visible=false; if(this._laneRow) this._laneRow.visible=false; if(this._chief) this._chief.visible=false; } // owner Nov 8 2026: the crew never rides out of the pits with the car - the station crew stays at the box
+       if(this.isPlayer) PitCrew.station(this, !this.pitHold); // owner Nov 8 2026: your crew waits at YOUR box while you roll in, and is standing there again as you pull away
+       this.placeMesh(dt); PitCrew.update(this,dt); return;
+     }
+@@ -2923,7 +2999,7 @@ const Race = {
+   mode:'menu', cars:[], player:null, track:null, laps:5, lap:1,
+   drsEnabled:false, time:0, stateT:0, qualiT:0, qualiDone:false,
+   weather:{ wet:0, target:0, state:'DRY', changeT:60, label:'☀ DRY' },
+-  cheatLevel:1, shake:0, camMode:0, PIT_TIME:2.4, results:null,
++  cheatLevel:1, shake:0, camMode:0, PIT_TIME:2.0, results:null, // owner Nov 9 2026 QUICK+MOVING ROUND: the stop itself is 2.0 s (was 2.4) - every phase is keyed to the hold fraction u in PitCrew.update and the HUD, so the wheel-off window, the fuel fill, the jack lift and the lollipop flip all scale inside the shorter hold
+   forecast:[],
+   setup(cfg){
+     this.track=TRACKS.find(t=>t.id===cfg.track);
+@@ -3348,7 +3424,7 @@ const HUD={
+       if(p.inPits && !p._pitWasIn){ p._pitPlaceIn=p.position; p._pitPlaceOut=0; } // owner Nov 9 2026 PLACE MARKER: the place he came in at, read from the game's OWN standings (Race.positions() sets car.position - the same number the HUD place box and the results use; no second ranking is invented)
+       if(!p.inPits && p._pitWasIn && p._pitPlaceIn){ p._pitPlaceOut=p.position; p._pitPlaceUntil=performance.now()+6000; } // released and rejoined (pit exit complete): the new place from the same standings - the pair then stays up 6 s so he sees what the stop cost or gained
+       p._pitWasIn=p.inPits;
+-      if(p.inPits){ pp.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||2.4):0; $('pitClock').textContent=p.pitHold?((p.pitT0||2.4)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
++      if(p.inPits){ pp.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||2.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||2.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
+       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
+       else { pp.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
+     $('tireAge').textContent=p.tireAge+' laps';
+@@ -3925,7 +4001,8 @@ window.__test = {
+     return {pts:P.length,n,near}; },
+   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
+   pitSpot: (i) => { const sp=(Track._pitEnv&&Track._pitEnv.spots)||[]; return sp[i||0]||null; }, // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
+-  pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; }, // owner Nov 8 2026 round 2: look-cost probe (figures / meshes / draw calls)
++  pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), chief:cnt(p._chief), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; },
++  chiefPos: () => { const p=Race.player; if(!p||!p._chief) return null; let fig=null; p._chief.traverse(o=>{ if(o.userData&&o.userData.isFig) fig=o; }); if(!fig) return null; const v=new THREE.Vector3(); fig.getWorldPosition(v); const q=new THREE.Quaternion(); fig.getWorldQuaternion(q); const f=new THREE.Vector3(0,0,1).applyQuaternion(q); return {fig:[+v.x.toFixed(2),+v.y.toFixed(2),+v.z.toFixed(2)], fwd:[+f.x.toFixed(2),+f.z.toFixed(2)], vis:p._chief.visible, drop:p._chief.userData.chief?p._chief.userData.chief.drop:null, seatTop:p._chief.userData.chief?p._chief.userData.chief.seatTop:null}; }, // owner Nov 8 2026 round 2: look-cost probe (figures / meshes / draw calls)
+   pitNow: (t) => { const p=Race.player; if(!p) return false; if(t) p.pitTireChoice=t; p.pitIntent=true; p.s=Track.cfg.pitIn*Track.length-60; p.v=30; return true; },
+   tyreTap: () => { $('tirebox').dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true})); return !$('pitMenu').classList.contains('hidden'); },
+   // F-F1: scenery base heights vs the ground plane (buildings = BoxGeometry whose pivot is its base)
