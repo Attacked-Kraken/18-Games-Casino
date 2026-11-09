@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/car-mechanic-0728fe.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 10,
+  "tris": 13140,
+  "size": [
+   2,
+   2,
+   2
+  ],
+  "mainSize": [
+   2,
+   2,
+   2
+  ],
+  "stray": 1,
+  "bytes": 633912
+ },
+ "pictures": [
+  {
+   "pic": "car-mechanic-0728fe-front.jpg",
+   "pct": 9.4
+  },
+  {
+   "pic": "car-mechanic-0728fe-side.jpg",
+   "pct": 7.2
+  },
+  {
+   "pic": "car-mechanic-0728fe-back.jpg",
+   "pct": 9.8
+  },
+  {
+   "pic": "car-mechanic-0728fe-top.jpg",
+   "pct": 2.7
+  }
+ ],
+ "asked": null,
+ "at": "2026-11-09T03:34:16.059Z"
+}

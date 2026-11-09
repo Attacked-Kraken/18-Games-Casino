@@ -558,3 +558,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
 - used in: apexf1.html (credits on its Rules & Controls screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/car-mechanic-0728fe.glb
+- title: car mechanic
+- maker: BELAZ
+- source: https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "BELAZ" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
