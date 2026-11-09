@@ -1652,6 +1652,35 @@ function mechKitMats(idx){
   const km={ top:mk(MECH.topMat,MECH.topImg,true), bot:mk(MECH.botMat,MECH.botImg,false) };
   MECH._kits[idx]=km; return km;
 }
+// ---- owner Nov 9 2026 FACES ROUND: the crew's faces and skin read as real skin ----
+// Diagnosis, measured (GLB + live material dump + rendered face close-ups in the game's own
+// lights): the face was never missing - the Skin atlas paints a full face (skin texels median
+// luminance 0.458 vs beard 0.121, a 3.8x contrast, eyes/brows/nostrils/lips all painted). It
+// rendered black for two material reasons: (1) the model's materials declare
+// KHR_materials_pbrSpecularGlossiness, which the vendored GLTFLoader does not implement, so
+// every material fell back to the metallic-roughness defaults metalness 1.0 / roughness 1.0 -
+// a fully metallic surface returns almost no diffuse light, and with no environment map in
+// the scene the skin's own texture never showed; (2) the only lift the skin got was the flat
+// emissive 0x1a1e24 (~10% grey, NO emissiveMap), a detail-free wash. The clothing escaped in
+// the colour round only because it carries its texture as emissiveMap at 0.5. A third, harder
+// black-out: the model's Wolf3D_Glasses are an opaque black visor band (atlas alpha 1.0
+// everywhere, mean RGB 0.19) strapped across the eyes. Fix, inside the crew only: Skin/Body
+// (head, neck, arms, hands) and Eye/Teeth become non-metal (metalness 0, roughness from the
+// glossiness the file declares) and carry their own texture as emissiveMap, the same trick
+// as the kits, so the face reads on the shadow side too; the visor is not worn. Bench proof
+// (head close-up, game's lights): face-box mean luminance 0.153 -> 0.345, near-black share
+// 61% -> 31% (what stays dark is beard, hair and the beanie, which may stay dark).
+// Scene lighting and the clothing are NOT touched.
+function mechSkinFix(root){
+  root.traverse(o=>{ if(!o.isMesh || !o.material || !o.material.map) return; const nm=o.material.name||'';
+    let inten=-1, rough=0.85;
+    if(/Wolf3D_Skin|Wolf3D_Body/.test(nm)) inten=0.45;
+    else if(/Wolf3D_Eye|Wolf3D_Teeth/.test(nm)){ inten=0.35; rough=0.55; }
+    if(inten<0) return; const m=o.material;
+    m.metalness=0; m.roughness=rough; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=m.map; m.emissiveIntensity=inten; m.needsUpdate=true;
+  });
+  root.traverse(o=>{ if(o.isMesh && o.material && /Wolf3D_Glasses/.test(o.material.name||'')) o.visible=false; }); // the opaque visor band is not worn - it covers the eyes completely
+}
 function MechBoot(){
   if(MECH._boot) return MECH._boot;
   MECH._boot = (async()=>{
@@ -1677,7 +1706,8 @@ function MechBoot(){
     try{ const k0=mechKitMats(0);
       if(k0) gltf.scene.traverse(o=>{ if(o.isMesh && o.material){ if(o.material===MECH.topMat&&k0.top) o.material=k0.top; else if(o.material===MECH.botMat&&k0.bot) o.material=k0.bot; } });
     }catch(e){ console.warn('mech kit0', e); }
-    gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.map && o.material.emissive && !/Outfit_(Top|Bottom)/.test(o.material.name||'')) o.material.emissive.setHex(0x1a1e24); });
+    try{ mechSkinFix(gltf.scene); }catch(e){ console.warn('mech skin', e); } // owner Nov 9 2026 FACES ROUND: faces/skin/eyes become readable (see mechSkinFix)
+    gltf.scene.traverse(o=>{ if(o.isMesh && o.material && o.material.map && o.material.emissive && !/(Outfit_(Top|Bottom)|Wolf3D_(Skin|Body|Eye|Teeth))/.test(o.material.name||'')) o.material.emissive.setHex(0x1a1e24); });
     MECH.src=gltf.scene; MECH.ready=true;
     (async()=>{ for(let i=1;i<10;i++){ await new Promise(r=>setTimeout(r,30)); try{ mechKitMats(i); }catch(e){} } })(); // warm the other teams' kits in the background
     return MECH;
