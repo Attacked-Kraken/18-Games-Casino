@@ -589,3 +589,12 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 
 
 
+
+## ASSET: models/fetched/chalkboard-model-c72239.glb
+- title: Funny chalkboard sign (game ready)
+- maker: TampaJoey
+- source: https://sketchfab.com/3d-models/funny-chalkboard-sign-game-ready-c722391b9ca64a2c8b62e35dd91eb189
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "TampaJoey" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
