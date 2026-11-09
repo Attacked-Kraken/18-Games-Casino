@@ -1,0 +1,5 @@
+PATCH DID NOT APPLY: patches/algre141-f1-booth.patch
+
+error: patch fragment without header at patches/algre141-f1-booth.patch:3: @@ -1872,7 +1872,7 @@
+
+What to do: pull the latest version of the big file on your branch, make your diff against THAT version (git diff format, with a few unchanged lines of context around each change), and push the .patch again.
