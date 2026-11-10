@@ -1923,6 +1923,73 @@ export default [
     },
   },
   {
+    id: 'fix-f1-pit-skip-button', mode: 'race',
+    ask: 'The SKIP STOP button (owner Nov 9 2026: "add a skip button player can press to jump back into game"): hidden on track, shown while the car is in the pits (shown/hidden by its hidden class, the pit HUD mechanism - offsetParent is always null in the ?test path, whose #hud stays class-hidden), and one press - during the 6 s hold OR on the roll-in - finishes the service at once (fresh tyres, full tank) and releases the car fully drivable, with no hold on the roll-in press',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
+      await h.wait(1500);
+      let racing = false;
+      for (let i = 0; i < 100; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } if (md === 'grid' || md === 'lights') await h.press('#raceBtn').catch(() => {}); await h.wait(300); }
+      if (!racing) return 'race never started at ?test=grid';
+      const btn0 = await h.eval(() => { const b = document.getElementById('pitSkip'); return b ? { text: b.textContent, hidden: b.classList.contains('hidden') } : null; });
+      if (!btn0) return 'no #pitSkip button in the DOM';
+      if (!/SKIP/.test(btn0.text)) return 'the pit button is not labelled as a skip button (\'' + btn0.text + '\')';
+      if (!btn0.hidden) return 'the SKIP STOP button is visible on track, before the car is anywhere near the pits';
+      const drive = () => h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
+      const gauges = () => h.eval(() => { const fe = document.getElementById('fuelPct'); const wf = document.getElementById('wearFill'); return { fuel: fe ? parseFloat(fe.textContent) : null, wear: wf ? parseFloat(wf.style.width) : null }; });
+      const burnLap = async () => { const b0 = await h.eval(() => { const t = window.__test; const L = t.trackLength(); const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, L - 40); return cs[pi].lap; }); for (let i = 0; i < 60; i++) { await drive(); await h.wait(120); const lap = await h.eval(() => window.__test.cars().find(c => c.isPlayer).lap); if (lap > b0) break; } };
+      // ---- part 1: press during the hold ----
+      await burnLap();
+      const g0 = await gauges(); if (g0.fuel === null || !(g0.fuel < 99)) return 'a lap of driving did not burn any fuel before the skip test (gauge ' + g0.fuel + '%)';
+      await h.eval(() => { const t = window.__test; const L = t.trackLength(); const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, 0.9414 * L - 550); });
+      await h.eval(() => { window.__test.setInput({ steer: 0.3, gas: true }); });
+      await h.eval(() => { document.getElementById('btnPit').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); });
+      let pressedAt = -1, doneAt = -1, visInHold = false;
+      for (let i = 0; i < 300; i++) {
+        const st = await h.eval(() => { const t = window.__test; const pr = t.pitProbe(); const pc = document.getElementById('pitClock'); const b = document.getElementById('pitSkip'); if (!pr.hold) { const p = t.cars().find(c => c.isPlayer); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); } return { pr, clock: pc ? parseFloat(pc.textContent) : 0, vis: b ? (!b.classList.contains('hidden')) : false }; });
+        if (st.pr.hold && st.clock >= 1.2 && pressedAt < 0) { if (st.vis) visInHold = true; pressedAt = st.clock; await h.eval(() => { document.getElementById('pitSkip').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); }); }
+        if (pressedAt >= 0 && st.pr.done > 0) { doneAt = st.clock; break; }
+        if (pressedAt >= 0 && i > 200) break;
+        await h.wait(120);
+      }
+      if (pressedAt < 0) return 'the car never held in the box to press SKIP during the stop';
+      if (!visInHold) return 'the SKIP STOP button was not visible during the hold';
+      if (doneAt < 0) return 'pressing SKIP STOP during the hold never completed the stop';
+      if (doneAt - pressedAt > 3.5) return 'the stop dragged on ' + (doneAt - pressedAt).toFixed(1) + ' s after the skip press - it should finish at once, not run out the 6 s hold';
+      let exited = false, fastV = 0;
+      for (let i = 0; i < 400; i++) { const st = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); const pr = t.pitProbe(); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); return { inPits: pr.inPits, v: p.v }; }); if (!st.inPits) exited = true; if (exited && st.v > fastV) fastV = st.v; if (exited && fastV > 32) break; await h.wait(120); }
+      if (!exited) return 'the car never left the pits after the skipped stop';
+      if (fastV <= 32) return 'the car would not accelerate after the skipped stop (max ' + fastV.toFixed(1) + ' m/s)';
+      const g1 = await gauges();
+      if (g1.fuel === null || g1.fuel < 99) return 'the skipped stop did not fill the fuel (gauge ' + g1.fuel + '%)';
+      if (g1.wear === null || g1.wear < 99) return 'the skipped stop did not fit fresh tyres (wear bar ' + g1.wear + '%)';
+      const btnAfter = await h.eval(() => { const b = document.getElementById('pitSkip'); return b ? (b.classList.contains('hidden')) : null; });
+      if (btnAfter !== true) return 'the SKIP STOP button stayed visible after the car left the pits';
+      // ---- part 2: press on the roll-in - serviced without ever holding ----
+      await burnLap(); await burnLap();
+      const g2 = await gauges(); if (g2.fuel === null || !(g2.fuel < 99)) return 'driving did not burn fuel before the roll-in skip (gauge ' + g2.fuel + '%)';
+      await h.eval(() => { window.__driver = setInterval(() => { try { const T = window.__test; const sp = T.steerProbe(); if (!sp) return; const steer = Math.max(-1, Math.min(1, (sp.line - sp.d) * 0.5 - sp.headAngle * 1.1)); T.setInput({ steer, gas: sp.v < sp.maxV * 1.05, brake: sp.v > sp.maxV * 1.18, reverse: false, ers: false }); } catch (e) {} }, 40); }).catch(() => {});
+      await h.eval(() => window.__test.pitNow()).catch(() => {});
+      let pressed2 = false, sawHold = false, outAgain = false;
+      for (let i = 0; i < 400; i++) {
+        const st = await h.eval(() => { const t = window.__test; const pr = t.pitProbe(); const b = document.getElementById('pitSkip'); return { pr, vis: b ? (!b.classList.contains('hidden')) : false }; });
+        if (st.pr.hold) sawHold = true;
+        if (!pressed2 && st.pr.inPits && !st.pr.hold) { if (!st.vis) { await h.eval(() => { clearInterval(window.__driver); }); return 'the SKIP STOP button was not visible on the roll-in'; } await h.eval(() => { document.getElementById('pitSkip').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); }); pressed2 = true; }
+        if (pressed2 && !st.pr.inPits) { outAgain = true; break; }
+        await h.wait(100);
+      }
+      await h.eval(() => { clearInterval(window.__driver); window.__test.setInput({ gas: false, steer: 0 }); }).catch(() => {});
+      if (!pressed2) return 'the car never rolled into the pits for the roll-in skip';
+      if (sawHold) return 'the car HELD in the box after a roll-in skip press - it should be serviced and drive through';
+      if (!outAgain) return 'the car never came back out of the pits after the roll-in skip';
+      const g3 = await gauges();
+      if (g3.fuel === null || g3.fuel < 99) return 'the roll-in skip did not fill the fuel (gauge ' + g3.fuel + '%)';
+      if (g3.wear === null || g3.wear < 99) return 'the roll-in skip did not fit fresh tyres (wear bar ' + g3.wear + '%)';
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return true;
+    },
+  },
+  {
     id: 'fix-f1-pit-quali-carryover', mode: 'race',
     ask: 'Arming a pit stop in qualifying must not follow the car onto the grid: no crew at the start line, no 49 MPH limiter trap with dead controls after GO (owner Nov 8 2026: "no pit stop happened, the pit crew showed up late around my car on the racetrack, then it would not let me drive - stuck in the grass at 49 MPH")',
     test: async (page, h) => {
