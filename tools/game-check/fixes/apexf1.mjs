@@ -2040,4 +2040,46 @@ export default [
       return bad.length ? 'F1 ALL-TRACKS PIT: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'fix-f1-pit-button-taps', mode: 'race',
+    ask: 'The pit buttons answer a real tap on the phone (owner Nov 9 2026: "fix Pit button cause it does not working"): PIT and SKIP STOP must be the top element at their own centre (nothing eats the tap), must answer a pointer-event tap the way some phone browsers and webviews deliver taps (they used to listen only for touchstart/mousedown), and SKIP STOP must sit above the touch-controls layer, clear of the phone home indicator (it used to live inside the lower HUD layer with no safe-area inset)',
+    test: async (page, h) => {
+      await h.eval(() => { location.href = location.pathname + '?test=grid&track=capital'; }).catch(() => {});
+      await h.wait(1500);
+      let booted = false;
+      for (let i = 0; i < 60; i++) { const ok = await h.eval(() => !!document.getElementById('raceBtn')).catch(() => false); if (ok) { booted = true; break; } await h.wait(300); }
+      if (!booted) return 'the grid menu never appeared at ?test=grid&track=capital';
+      await h.press('#raceBtn');
+      let racing = false;
+      for (let i = 0; i < 80; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } await h.wait(300); }
+      if (!racing) return 'the race never started';
+      const pitTop = await h.eval(() => { const e = document.getElementById('btnPit'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return t ? (t.id || t.tagName) : 'none'; });
+      if (pitTop !== 'btnPit') return 'the PIT button is covered at its centre by ' + pitTop + ' - a real thumb tap lands on that instead';
+      await h.eval(() => { const e = document.getElementById('btnPit'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || e; t.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch' })); });
+      let armed = false;
+      for (let i = 0; i < 16; i++) { const a = await h.eval(() => window.__test.pitProbe().armed).catch(() => false); if (a) { armed = true; break; } await h.wait(250); }
+      if (!armed) return 'the PIT button did not arm the stop when tapped - on the owner phone this button is dead';
+      await h.eval(() => { const b = document.querySelector('#pitTires .tirepick'); if (b) b.dispatchEvent(new MouseEvent('click', { bubbles: true })); }).catch(() => {});
+      await h.wait(600);
+      await h.eval(() => { window.__driver = setInterval(() => { try { const T = window.__test; const sp = T.steerProbe(); if (!sp) return; const steer = Math.max(-1, Math.min(1, (sp.line - sp.d) * 0.5 - sp.headAngle * 1.1)); T.setInput({ steer, gas: sp.v < sp.maxV * 1.05, brake: sp.v > sp.maxV * 1.18, reverse: false, ers: false }); } catch (e) {} }, 40); }).catch(() => {});
+      await h.eval(() => window.__test.pitNow()).catch(() => {});
+      let held = false;
+      for (let i = 0; i < 60; i++) { const hd = await h.eval(() => window.__test.pitProbe().hold).catch(() => false); if (hd) { held = true; break; } await h.wait(300); }
+      if (!held) { await h.eval(() => clearInterval(window.__driver)).catch(() => {}); return 'the car never reached its box for the button tap test'; }
+      const skipTop = await h.eval(() => { const e = document.getElementById('pitSkip'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return t ? (t.id || t.tagName) : 'none'; });
+      if (skipTop !== 'pitSkip') { await h.eval(() => clearInterval(window.__driver)).catch(() => {}); return 'SKIP STOP is covered at its centre by ' + skipTop + ' during the stop - a real thumb tap lands on that instead'; }
+      const clockAtTap = await h.eval(() => parseFloat(document.getElementById('pitClock').textContent));
+      await h.eval(() => { const e = document.getElementById('pitSkip'); const r = e.getBoundingClientRect(); const t = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || e; t.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 7, pointerType: 'touch' })); });
+      let doneAt = -1;
+      for (let i = 0; i < 40; i++) { const st = await h.eval(() => ({ done: window.__test.pitProbe().done, clock: parseFloat(document.getElementById('pitClock').textContent) })).catch(() => ({ done: 0, clock: 0 })); if (st.done >= 1) { doneAt = st.clock; break; } await h.wait(250); }
+      const gauges = await h.eval(() => { const f = document.getElementById('fuelPct'); const w = document.getElementById('wearFill'); return { fuel: f ? parseFloat(f.textContent) : 0, wear: w ? parseFloat(w.style.width) : 0 }; }).catch(() => ({ fuel: 0, wear: 0 }));
+      await h.eval(() => { clearInterval(window.__driver); window.__test.setInput({ gas: false, steer: 0 }); }).catch(() => {});
+      if (doneAt < 0) return 'the stop never completed after the SKIP tap';
+      if (doneAt - clockAtTap > 2.5) return 'SKIP STOP did not answer its tap - the stop ran on to ' + doneAt.toFixed(1) + 's after a tap at ' + clockAtTap.toFixed(1) + 's instead of releasing at once (owner phone: this button is dead)';
+      if (gauges.fuel < 99) return 'the skipped stop left the tank at ' + gauges.fuel + '%';
+      if (gauges.wear < 99) return 'the skipped stop left the tyres at ' + gauges.wear + '% wear-bar';
+      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
+      return true;
+    },
+  },
 ];
