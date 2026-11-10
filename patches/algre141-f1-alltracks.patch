@@ -1,0 +1,38 @@
+diff --git a/apexf1.html b/apexf1.html
+index ec83114..64a5c68 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -868,6 +868,7 @@ const Track = {
+     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
+     this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
+     try{ this.buildPitSigns(this.group); }catch(e){}
++    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
+     if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
+       const f0=this.frameAt(0);
+       for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
+diff --git a/tools/game-check/fixes/apexf1.mjs b/tools/game-check/fixes/apexf1.mjs
+index edf8955..b27810b 100644
+--- a/tools/game-check/fixes/apexf1.mjs
++++ b/tools/game-check/fixes/apexf1.mjs
+@@ -2023,4 +2023,21 @@ export default [
+       return true;
+     },
+   },
++  {
++    id: 'fix-f1-pit-complex-all-tracks', mode: 'race',
++    ask: 'The full pit complex (10 booths with seated desk chiefs, booth crews, dressed working spots, pad) stands on EVERY circuit in the menu: the Grand Prix kit circuit built none of it (0 booths, 0 env figures) while the built-in tracks got it from buildPits (owner Nov 9 2026: "This needs to be in all track options")',
++    test: async (page, h) => {
++      const bad = [];
++      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
++        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
++        let r = null;
++        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.pitLook) return null; const l = T.pitLook(); if (!l) return null; return { booths: l.booths, envFigs: l.env ? l.env.figs : 0, spot: !!T.pitSpot(0) }; }).catch(() => null); }
++        if (!r) { bad.push(tr + ': pitLook never answered'); continue; }
++        if (r.booths !== 10) bad.push(tr + ': only ' + r.booths + ' of 10 pit booths built');
++        if (r.envFigs < 30) bad.push(tr + ': only ' + r.envFigs + ' pit-env figures (booth crews / working crews missing)');
++        if (!r.spot) bad.push(tr + ': pit spot 0 is not dressed');
++      }
++      return bad.length ? 'F1 ALL-TRACKS PIT: ' + bad.join('; ') : true;
++    },
++  },
+ ];
