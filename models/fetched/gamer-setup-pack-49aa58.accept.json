@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/gamer-setup-pack-49aa58.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 11,
+  "tris": 16119,
+  "size": [
+   2.004,
+   1.254,
+   0.608
+  ],
+  "mainSize": [
+   2.004,
+   1.254,
+   0.608
+  ],
+  "stray": 1,
+  "bytes": 607212
+ },
+ "pictures": [
+  {
+   "pic": "gamer-setup-pack-49aa58-front.jpg",
+   "pct": 8.1
+  },
+  {
+   "pic": "gamer-setup-pack-49aa58-side.jpg",
+   "pct": 6.8
+  },
+  {
+   "pic": "gamer-setup-pack-49aa58-back.jpg",
+   "pct": 9.7
+  },
+  {
+   "pic": "gamer-setup-pack-49aa58-top.jpg",
+   "pct": 13.6
+  }
+ ],
+ "asked": null,
+ "at": "2026-11-09T22:22:31.969Z"
+}

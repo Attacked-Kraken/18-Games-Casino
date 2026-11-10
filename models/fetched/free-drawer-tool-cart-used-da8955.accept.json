@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/free-drawer-tool-cart-used-da8955.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 850,
+  "size": [
+   40.013,
+   40.532,
+   27.053
+  ],
+  "mainSize": [
+   40.013,
+   40.532,
+   27.053
+  ],
+  "stray": 1,
+  "bytes": 346064
+ },
+ "pictures": [
+  {
+   "pic": "free-drawer-tool-cart-used-da8955-front.jpg",
+   "pct": 43.3
+  },
+  {
+   "pic": "free-drawer-tool-cart-used-da8955-side.jpg",
+   "pct": 33.3
+  },
+  {
+   "pic": "free-drawer-tool-cart-used-da8955-back.jpg",
+   "pct": 34.9
+  },
+  {
+   "pic": "free-drawer-tool-cart-used-da8955-top.jpg",
+   "pct": 17.8
+  }
+ ],
+ "asked": null,
+ "at": "2026-11-09T22:22:31.658Z"
+}

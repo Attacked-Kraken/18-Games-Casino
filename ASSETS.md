@@ -558,3 +558,43 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-02 by the Sketchfab fetch robot
 - used in: apexf1.html (credits on its Rules & Controls screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/car-mechanic-0728fe.glb
+- title: car mechanic
+- maker: BELAZ
+- source: https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "BELAZ" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/gamer-setup-pack-49aa58.glb
+- title: Gamer Setup_pack
+- maker: Phuc13b
+- source: https://sketchfab.com/3d-models/gamer-setup-pack-49aa58309ef64c3c8ba0be1a8fa1b84d
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Phuc13b" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/free-drawer-tool-cart-used-da8955.glb
+- title: [Free] Drawer Tool Cart (Used)
+- maker: Robert Prispilović
+- source: https://sketchfab.com/3d-models/free-drawer-tool-cart-used-da8955e5c8c448e58b013951f48148a0
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Robert Prispilović" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+
+
+
+
+## ASSET: models/fetched/chalkboard-model-c72239.glb
+- title: Funny chalkboard sign (game ready)
+- maker: TampaJoey
+- source: https://sketchfab.com/3d-models/funny-chalkboard-sign-game-ready-c722391b9ca64a2c8b62e35dd91eb189
+- license: CC-BY 4.0
+- downloaded: 2026-11-09 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "TampaJoey" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)

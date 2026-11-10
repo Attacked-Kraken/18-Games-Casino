@@ -1,0 +1,41 @@
+{
+ "file": "models/fetched/chalkboard-model-c72239.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 17336,
+  "size": [
+   0.7,
+   1.203,
+   0.681
+  ],
+  "mainSize": [
+   0.7,
+   1.203,
+   0.681
+  ],
+  "stray": 1,
+  "bytes": 858660
+ },
+ "pictures": [
+  {
+   "pic": "chalkboard-model-c72239-front.jpg",
+   "pct": 22.7
+  },
+  {
+   "pic": "chalkboard-model-c72239-side.jpg",
+   "pct": 4.9
+  },
+  {
+   "pic": "chalkboard-model-c72239-back.jpg",
+   "pct": 22.9
+  },
+  {
+   "pic": "chalkboard-model-c72239-top.jpg",
+   "pct": 14.3
+  }
+ ],
+ "asked": null,
+ "at": "2026-11-09T23:24:01.232Z"
+}

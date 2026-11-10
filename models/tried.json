@@ -24,5 +24,23 @@
   ],
   "tries": 0,
   "formats": []
+ },
+ "apexf1 pit booth pit board for each team box pit board by alex werner": {
+  "uids": [
+   "42e680a0171246f8854918ac03e4c33c",
+   "2cbd2e661c4041c3b8c5dbaf321f06ab"
+  ],
+  "tries": 1,
+  "formats": []
+ },
+ "apexf1 pit booth pit board for each team box replacement first pick rejected hug": {
+  "uids": [
+   "b109b216eed6453aac09f84e747f050c",
+   "c722391b9ca64a2c8b62e35dd91eb189"
+  ],
+  "tries": 2,
+  "formats": [
+   "b109b216eed6453aac09f84e747f050c"
+  ]
  }
 }
