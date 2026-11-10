@@ -2102,4 +2102,24 @@ export default [
       return bad.length ? 'F1 PIT WALL: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'fix-f1-garage-doors-all-tracks', mode: 'race',
+    ask: 'Every pit box has its own garage door on the pit building face behind the boxes on EVERY circuit in the menu: ten roller-shutter doors aligned to the ten box centres, each in its team colour with its box number, a window band and an APEX ARCADE sign band above - the measured audit found no doors at all: the only pit building is a blank dark slab standing by the pit entry, and nothing stands behind the boxes but the booths (owner Nov 10 2026 missing-list item 3)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.garageDoors) return null; return T.garageDoors(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no garage face was built'); continue; }
+        if (r.doors !== 10) bad.push(tr + ': only ' + r.doors + ' of 10 garage doors');
+        if (r.maxOff > 1.0) bad.push(tr + ': a garage door stands ' + r.maxOff + ' m from its box centre');
+        if (r.faceOff < 5.5 || r.faceOff > 7.5) bad.push(tr + ': garage face stands ' + r.faceOff + ' m behind the box line (the booths end at about 5.4)');
+        if (r.h < 7.5 || r.h > 8.5) bad.push(tr + ': garage face is ' + r.h + ' m tall (the pit building face is 8)');
+        if (!r.hasMap) bad.push(tr + ': garage face has no painted finish (no texture - a blank slab again)');
+        if (!r.inScene) bad.push(tr + ': garage face is not in the scene');
+      }
+      return bad.length ? 'F1 GARAGE DOORS: ' + bad.join('; ') : true;
+    },
+  },
 ];
