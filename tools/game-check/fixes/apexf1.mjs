@@ -2082,4 +2082,24 @@ export default [
       return true;
     },
   },
+  {
+    id: 'fix-f1-pit-wall-all-tracks', mode: 'race',
+    ask: 'A continuous pit wall stands between the pit lane and the race track on EVERY circuit in the menu: about 1 m of concrete running the whole box stretch (15 m before the first box to 15 m past the last), tight against the road edge on the pit side, clear of the pit driving line - the audit found only low barrier panels at the box boundaries and no wall anywhere (owner Nov 9 2026 missing-list item 1)',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.pitWall) return null; return T.pitWall(); }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no pit wall was built'); continue; }
+        if (r.h < 0.9 || r.h > 1.1) bad.push(tr + ': wall height ' + r.h + ' m (a real pit wall is about 1 m)');
+        if (r.len < 195) bad.push(tr + ': wall runs only ' + r.len + ' m of the 200 m box stretch');
+        if (r.coverBefore < 10 || r.coverAfter < 10) bad.push(tr + ': wall does not cover the box stretch (starts ' + r.coverBefore + ' m before box 1, ends ' + r.coverAfter + ' m after box 10)');
+        if (r.stations < 40 || r.maxGap > 6) bad.push(tr + ': wall is not continuous (' + r.stations + ' stations, worst gap ' + r.maxGap + ' m)');
+        if (r.minLaneClear < 0.1) bad.push(tr + ': wall crowds the pit driving line (worst clearance ' + r.minLaneClear + ' m)');
+        if (Math.abs(r.dCentre) < r.W / 2 - 1.0) bad.push(tr + ': wall stands ' + Math.abs(r.dCentre) + ' m from the centre line - not up against the road edge (' + (r.W / 2) + ' m)');
+      }
+      return bad.length ? 'F1 PIT WALL: ' + bad.join('; ') : true;
+    },
+  },
 ];
