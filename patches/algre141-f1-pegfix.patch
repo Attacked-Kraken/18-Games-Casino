@@ -1,0 +1,226 @@
+diff --git a/apexf1.html b/apexf1.html
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -146,6 +146,8 @@
+   #placeChip { position:absolute; left:50%; top:10px; transform:translateX(-50%); background:#060b14e6; border:2px solid #ffd76a; border-radius:999px; padding:2px 20px 4px; font-size:32px; font-weight:900; color:#ffffff; letter-spacing:1px; z-index:6; }
+   #pitPanel .pbar { width:220px; height:8px; background:#1a2440; border-radius:4px; margin:5px auto; overflow:hidden; }
+   #pitPanel .pbar i { display:block; height:100%; }
++  #pitSkip { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); pointer-events:auto; z-index:6; background:#d21f26; color:#fff; border:2px solid #ffd76a; border-radius:14px; font-family:Arial, sans-serif; font-size:20px; font-weight:900; letter-spacing:1px; padding:16px 34px; min-height:60px; min-width:230px; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.55); }
++  #pitSkip:active { background:#ff3b42; } /* owner Nov 9 2026: SKIP STOP - a big thumb-sized button under the pit panel, up only while the car is in the pits */
+   .wearbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
+   .wearbar i { display:block; height:100%; background:linear-gradient(90deg,#37d67a,#ffd76a 60%,#ff5a5a); }
+   #drsTag { position:absolute; left:50%; bottom:170px; transform:translateX(-50%); font-weight:900; font-size:15px; letter-spacing:2px; color:#0a0f1a; background:#37d67a; border-radius:8px; padding:6px 14px; }
+@@ -284,6 +286,7 @@
+   <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
+   <div id="fuelbox"><div style="font-size:9px;letter-spacing:2px;color:#8fa8c8;font-weight:800">FUEL</div><div class="fbar"><i id="fuelFill" style="width:100%"></i></div><div id="fuelPct" style="font-size:11px;color:#9fd8ff">100%</div></div>
+   <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TYRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
++  <button id="pitSkip" class="hidden">SKIP STOP ⏩</button>
+   <div id="wxTag">☀ DRY</div>
+   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
+   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
+@@ -1279,10 +1282,14 @@
+       [posts,beams,panels,stacks].forEach(im=>{ im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true; im.frustumCulled=false; root.add(im); });
+     }
+     // ---- 2b. BOOTHS (BOOTH FIT ROUND, owner Nov 9 2026: 'Need a booth with there equipment. An all crews on each race team needs the same setup a booth and stuff'): every box gets the same pit-wall booth from the fetched models - the timing desk in the team's colours with our timing tower on its screen, the tool cart beside it, and the team's chief seated at it in a headset. mkBooth builds them (never hand-built geometry); if the models failed to load the lane simply stays booth-less and the chief keeps his perch. The player's chief is animation-driven by PitCrew.chiefPose while his car is in the pits; the other nine hold the seated base pose.
++    const boothMan=(i,v)=>{ const m=mechMan(MECH.scale, i, v); if(m) return m; const f=pitFigure(new THREE.MeshLambertMaterial({color:(TEAMS[i%TEAMS.length]||{}).color||0x888888}),[-1.15,-1.15]); f.scale.setScalar(2.19); return f; }; // PEGFIX ROUND: a booth crewman is the mechanic in his box's own kit (the scaled articulated figure is only the load-failure fallback)
+     env.booths = []; env.boothChiefs = [];
+     if(BOOTH.ready){ spotBase.forEach((sp, i)=>{ const b = mkBooth(i); if(!b) return;
+       const bg = new THREE.Group(); bg.position.set(sp.p.x, sp.p.y, sp.p.z); bg.rotation.y = -Math.atan2(sp.p.f.tz, sp.p.f.tx); bg.add(b.grp); root.add(bg);
+-      env.booths.push(bg); if(b.chief) env.boothChiefs[i] = b.chief; }); }
++      env.booths.push(bg); if(b.chief) env.boothChiefs[i] = b.chief;
++      const bdm=boothMan(i, MECH_VARSEQ[(i+1)%6]); if(bdm){ bdm.position.set(5.05,0,3.66); bdm.rotation.y=0.15; bg.add(bdm); env.anims.push({k:'booth', fig:bdm, ph:i*1.31, role:0}); } // PEGFIX ROUND (owner: the other crews should 'be out there in there booth also'): a crewman stands at the desk of EVERY booth, watching the screen and the lane - not just the seated chief (posed in updatePitEnv)
++      const bcm=boothMan(i, MECH_VARSEQ[(i+4)%6]); if(bcm){ bcm.position.set(7.52,0,3.58); bcm.rotation.y=0; bg.add(bcm); env.anims.push({k:'booth', fig:bcm, ph:i*1.31+0.7, role:1}); } // and a second crewman works the tool cart at every booth
++      }); }
+     // ---- 3. THE GRANDSTAND across the track from the boxes, full of people (same instanced crowd as the other stands, so it bounces with the race). Checked clear of the whole loop like buildStands does.
+     { const sMid=s0+115; let sd=-(W/2+17), cc=this.posAt(sMid,sd), guard=0;
+       const clear=(x,z)=>this.distToLoop(x,z)>=W/2+12;
+@@ -1303,7 +1310,7 @@
+     }
+     // ---- 4. CREWS WORKING at three neighbour spots: a spare car at the back of the box, a man carrying tyres stack-to-car and back, a gunner working a hub, a fitter waiting with a tyre. Simple phase loops on the env clock - background life, not statues. (Variety round: plainMan also deals each working-spot man a skin variant - see its signature and the three calls below.)
+     // FIX-WHAT-YOU-SEE ROUND: the working-spot men now use MECH.scale, not MECH.worldScale - worldScale double-counted the car's 1.416 (it was derived from a '12 m' car that never existed); measured on the bench these men stood 3.73 world units against the stop crew's 2.63 next to the same 8.47 car
+-    const plainMan=(suit,kit,v)=>{ const m=mechMan(MECH.scale,kit,v); if(m) return m; const f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.95,8), suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6), _pitHelmMat); h.position.y=1.22; f.add(b,h); return f; }; // owner Nov 8 2026 round 4: the working crews are the mechanic (the plain man is only the load-failure fallback)
++    const plainMan=(suit,kit,v)=>{ const m=mechMan(MECH.scale,kit,v); if(m) return m; const f=pitFigure(suit,[-1.15,-1.15]); f.scale.setScalar(2.19); return f; }; // owner Nov 8 2026 round 4: the working crews are the mechanic. PEGFIX ROUND: the load-failure fallback is the articulated pit figure scaled to stand 2.63 like the mechanic - the old cylinder+sphere man is abolished everywhere in the pit scene (a peg is never planted; in the real flow the model boots are awaited before the world builds, so this never fires)
+     [3,6,8].forEach(bi=>{ const sp=spotBase[bi], team=TEAMS[bi%TEAMS.length], suit=new THREE.MeshLambertMaterial({color:team?team.color:0x888888});
+       const grp=new THREE.Group(); grp.position.set(sp.p.x,sp.p.y,sp.p.z); grp.rotation.y=-Math.atan2(sp.p.f.tz,sp.p.f.tx); root.add(grp);
+       env.spots.push({bi, x:sp.p.x, y:sp.p.y, z:sp.p.z, ry:grp.rotation.y}); // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
+@@ -1373,6 +1380,7 @@
+         if(rig){ rig.reset(); if(work) MECH_POSE.crouch(rig,1); } else f.scale.y=work?0.8:1;
+       } else if(a.k==='sway'){ f.rotation.z=0.05*Math.sin(t*1.3+a.ph*9); f.position.x=a.x0+0.25*Math.sin(t*0.23+a.ph*7);
+         if(rig){ rig.reset(); MECH_POSE.lean(rig,0.5+0.3*Math.sin(t*1.3+a.ph*9)); } }
++      else if(a.k==='booth'){ if(rig){ rig.reset(); if(a.role===0) MECH_POSE.lean(rig,0.38+0.18*Math.sin(t*0.9+a.ph)); else MECH_POSE.crouch(rig,0.22+0.25*(0.5+0.5*Math.sin(t*0.55+a.ph))); } else f.rotation.z=0.04*Math.sin(t*1.2+a.ph*9); } // PEGFIX ROUND: the booth men work their posts - the desk man leans at the desk as he watches, the cart man bends to a drawer and straightens, both on slow loops
+     }
+   },
+   buildScenery(g){ const W=this.width; // track width (lost in a refactor)
+@@ -2579,7 +2587,7 @@
+   },
+   start(car){ try{ clearTimeout(car._crewHideT); if(!car.crew) car.crew=this.mk(car); car.crew.visible=true; car.crew.userData.disc=car.crew.userData.lol.userData.disc; car.crew.userData.disc.material.color.setHex(0xd21f26); car._crewLift=0; car._fuelAtStop=car.fuel; if(car._station) car._station.visible=false; this.hits++; window.__f1pitcrew=(window.__f1pitcrew||0)+1; }catch(e){ console.warn('pitcrew',e); } }, // owner Nov 8 2026: fill from the level the car came in with; the waiting crew steps back as the working crew takes over
+   update(car,dt){ const g=car.crew; if(!g||!car.pitHold) return; try{
+-    const u=1-Math.max(0,car.pitTimer)/(car.pitT0||2.0), wh=car.mesh.userData.wheels||[], ease=x=>Math.max(0,Math.min(1,x));
++    const u=1-Math.max(0,car.pitTimer)/(car.pitT0||6.0), wh=car.mesh.userData.wheels||[], ease=x=>Math.max(0,Math.min(1,x));
+     g.userData.tAcc=(g.userData.tAcc||0)+dt; // QUICK+MOVING ROUND: a real-time clock for the men's work cycles (jack pumps, gantry reaches, stack lifts) - u runs the stop's phases, this runs the tempo inside them
+     const rush=ease(u/0.15), off=ease((u-0.15)/0.25), onn=ease((u-0.45)/0.3), go=u>0.9, ret=ease((u-0.88)/0.1); // same phase clock as round 1: rush in, off, on, go
+     car._crewLift=0.22*Math.min(ease(u/0.12),1-ease((u-0.85)/0.12));
+@@ -2596,7 +2604,7 @@
+       if(onn>0) az=az+(1.02-az)*back;
+       if(onn>=0.55) az=1.02+(1.55-1.02)*nOut;
+       az+=0.55*ret;
+-      C.man.position.set(C.wx+(buzz?Math.sin(u*300+i*2)*0.012:0),0,wz+side*az); // the gun buzzes in his hands while the wheel comes off and while the fresh one goes on
++      C.man.position.set(C.wx+(buzz?Math.sin(g.userData.tAcc*95+i*2)*0.012:0),0,wz+side*az); // the gun buzzes in his hands while the wheel comes off and while the fresh one goes on (LONG STOP ROUND: the buzz rides the crew's real-time clock, not u - keyed to u it would slow to a wobble inside the 6 s hold)
+       C.gunMesh.visible=u<0.84; C.gunMesh.position.z=wz+side*(az-0.45);
+       w.visible=!(off>0.45 && onn<0.55); // the wheel is off the car between him taking it off and him fitting the fresh one
+       if(ot){ const taken=off>=0.5; ot.visible=taken; if(taken){ if(oOut<1) ot.position.set(C.wx,1.35,wz+side*az-side*0.34); else ot.position.set(C.wx,0.34,wz+side*2.0); } } // the old tyre: in his arms at chest height (1.35), then set down on the ground at his side
+@@ -2664,7 +2672,7 @@
+       const panel=new THREE.Mesh(new THREE.BoxGeometry(6.4,0.5,0.06),suit); panel.position.set(0,2.95,2.79); sub.add(panel);
+       const board=new THREE.Mesh(new THREE.PlaneGeometry(1.05,1.05),new THREE.MeshBasicMaterial({map:this.mkNumTex(bi+1)})); board.position.set(3.6,2.4,2.9); board.rotation.y=Math.PI; sub.add(board);
+       let vn=0; // variety round: each box's waiting men are a mix too, offset by box
+-      const man=(x,z,rot)=>{ let f=mechMan(MECH.scale, bi, MECH_VARSEQ[(bi+vn++)%6]); if(!f){ f=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; f.add(b,h); } f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); }; // owner Nov 8 2026 round 4: the neighbours are the mechanic too (colour round: in their own box's team kit)
++      const man=(x,z,rot)=>{ let f=mechMan(MECH.scale, bi, MECH_VARSEQ[(bi+vn++)%6]); if(!f){ f=pitFigure(suit,[-1.15,-1.15]); f.scale.setScalar(2.19); } f.position.set(x,0,z); f.rotation.y=rot||0; sub.add(f); row.userData.figs.push(f); }; // PEGFIX ROUND: the load-failure fallback is the articulated figure at crew height, never a cylinder peg; owner Nov 8 2026 round 4: the neighbours are the mechanic too (colour round: in their own box's team kit)
+       man(-1.6,1.9,Math.PI); man(0.4,2.2,Math.PI); man(1.8,1.8,Math.PI); man(2.6,0.9,Math.PI);
+       for(let j=0;j<3;j++){ const t=new THREE.Mesh(pitGeo().tyre,_pitTyreMat); t.position.set(-2.7,0.16+j*0.31,2.55); sub.add(t); }
+       row.add(sub);
+@@ -2676,7 +2684,7 @@
+     const S=car.mesh.scale.x, suit=new THREE.MeshLambertMaterial({color:car.team.color}), helm=new THREE.MeshLambertMaterial({color:0xffffff});
+     const g=new THREE.Group(); g.userData.figs=[];
+     let vn=0; const teamI=Math.max(0,TEAMS.indexOf(car.team))%10; // variety round: the waiting men are dealt mixed skins too (offset +2, so the station's mix differs from the stop crew's order)
+-    const man=(x,z,rot,role)=>{ let p=mechMan(MECH.scale, teamI, MECH_VARSEQ[(teamI+2+vn++)%6]); if(!p){ p=new THREE.Group(); const b=new THREE.Mesh(new THREE.CylinderGeometry(0.24,0.3,0.9,8),suit); b.position.y=0.55; const h=new THREE.Mesh(new THREE.SphereGeometry(0.2,8,6),helm); h.position.y=1.2; p.add(b,h); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); g.userData.figs.push({f:p,role:role||'idle',home:[x,z],ph:g.userData.figs.length*1.37}); return p; }; // owner Nov 8 2026 round 4: the waiting crew is the mechanic at the true crew scale (2.63 world units = 0.31 x the drawn car); colour round: in the player's own team kit
++    const man=(x,z,rot,role)=>{ let p=mechMan(MECH.scale, teamI, MECH_VARSEQ[(teamI+2+vn++)%6]); if(!p){ p=pitFigure(suit,[-1.15,-1.15]); p.scale.setScalar(2.19); } p.position.set(x,0,z); p.rotation.y=rot||0; g.add(p); g.userData.figs.push({f:p,role:role||'idle',home:[x,z],ph:g.userData.figs.length*1.37}); return p; }; // PEGFIX ROUND: the load-failure fallback is the articulated figure at crew height, never a cylinder peg; owner Nov 8 2026 round 4: the waiting crew is the mechanic at the true crew scale (2.63 world units = 0.31 x the drawn car); colour round: in the player's own team kit
+     (car.mesh.userData.wheels||[]).forEach(w=>{ const side=w.position.z>=0?1:-1; man(w.position.x*S, w.position.z*S + side*0.85, side>0?Math.PI:0, 'corner'); }); // a gunner waiting at each corner
+     man(-1.8*S,0,0,'jack'); // jack man
+     man(-3.4*S,2.1,Math.PI,'fuel'); // fuel man at the back
+@@ -2742,7 +2750,7 @@
+       car._station.position.set(p.x,p.y,p.z); car._station.rotation.y=ry; car._station.visible=true; // waiting crew appears at the box as you roll in
+       car._gear.position.set(p.x,p.y,p.z); car._gear.rotation.y=ry; car._gear.visible=true;
+       if(car._chief){ car._chief.position.set(p.x,p.y,p.z); car._chief.rotation.y=ry; car._chief.visible=true; }
+-      car._laneRow.visible=true; const now=performance.now()/600; (car._laneRow.userData.figs||[]).forEach((f,i)=>{ f.rotation.z=0.045*Math.sin(now+i*1.7); }); // idle sway: the neighbours are alive, not statues
++      car._laneRow.visible=true; const now=performance.now()/600; (car._laneRow.userData.figs||[]).forEach((f,i)=>{ const r=f.userData&&f.userData.rig; if(r){ r.reset(); const ph=i*1.93; if(i%4===0) MECH_POSE.crouch(r,0.3+0.3*(0.5+0.5*Math.sin(tS*1.6+ph))); else if(i%4===1) MECH_POSE.lean(r,0.4+0.25*Math.sin(tS*1.1+ph)); else if(i%4===2) MECH_POSE.carry(r,0.55); else MECH_POSE.lean(r,0.55+0.2*Math.sin(tS*0.8+ph)); } else f.rotation.z=0.045*Math.sin(now+i*1.7); }); // PEGFIX ROUND (owner Nov 9 2026: 'Make sure other crews don't look like pegs'): the neighbours are POSED and working like every other crew - a crouch-check, leans, one man's arms up as if at a tyre. They were never posed before (the model's stiff bind pose, four in a row, same facing) and that statue line is what read as pegs down the lane; the plain group sway remains only for a load-failure figure
+       // QUICK+MOVING ROUND: the waiting crew works while you roll in and out - nobody stands in a row
+       (car._station.userData.figs||[]).forEach(F=>{ if(F.role==='carrier'||F.role==='stack') return; const r=F.f.userData&&F.f.userData.rig; if(!r) return; r.reset();
+         if(F.role==='corner'){ const k=0.5+0.5*Math.sin(tS*1.9+F.ph); MECH_POSE.crouch(r,0.25+0.35*k); F.f.position.x=F.home[0]+0.12*Math.sin(tS*0.9+F.ph); } // checking his hub, stepping in and out
+@@ -2761,6 +2769,11 @@
+   }catch(e){} }
+ 
+ };
++
++function skipPitStop(){ try{ const p=Race.player; if(!p||!p.inPits||p.finished) return; // owner Nov 9 2026: SKIP STOP - one press finishes the service and releases the car, through the SAME completion a full stop uses (applyPitStop + PitCrew.end) - no second state path is forked
++  if(p.pitHold){ p.pitTimer=0; } // pressed in the hold: the countdown reaches zero on the next tick and the stop completes exactly as an unskipped one does
++  else if(!p.pitStopDone){ p.pitStopDone=true; p.applyPitStop(); PitCrew.end(p); } // pressed on the roll-in: serviced NOW (fresh tyres, full tank) and the car drives through its box and out without holding
++}catch(e){} }
+ 
+ class Car {
+   constructor(name, team, isPlayer, skill){
+@@ -3011,6 +3024,7 @@
+   $('btnPit').addEventListener('mousedown',e=>{e.preventDefault();Race.wantPit();});
+   $('btnCam').addEventListener('touchstart',e=>{e.preventDefault();Race.cycleCam();},{passive:false});
+   $('btnCam').addEventListener('mousedown',e=>{e.preventDefault();Race.cycleCam();});
++  { const sk=$('pitSkip'); if(sk){ const go=e=>{ e.preventDefault(); e.stopPropagation(); skipPitStop(); }; sk.addEventListener('touchstart',go,{passive:false}); sk.addEventListener('mousedown',go); } } // owner Nov 9 2026: the SKIP STOP button - the HUD shows it only while the car is in the pits (toggled with the pit panel)
+ }
+ function readInput(car){
+   const k=Input.keys||{};
+@@ -3153,7 +3167,7 @@
+   mode:'menu', cars:[], player:null, track:null, laps:5, lap:1,
+   drsEnabled:false, time:0, stateT:0, qualiT:0, qualiDone:false,
+   weather:{ wet:0, target:0, state:'DRY', changeT:60, label:'☀ DRY' },
+-  cheatLevel:1, shake:0, camMode:0, PIT_TIME:2.0, results:null, // owner Nov 9 2026 QUICK+MOVING ROUND: the stop itself is 2.0 s (was 2.4) - every phase is keyed to the hold fraction u in PitCrew.update and the HUD, so the wheel-off window, the fuel fill, the jack lift and the lollipop flip all scale inside the shorter hold
++  cheatLevel:1, shake:0, camMode:0, PIT_TIME:6.0, results:null, // owner Nov 9 2026 LONG STOP ROUND (owner: 'The pit stop should take long'): the hold is 6.0 s (was 2.0) - every phase is keyed to the hold fraction u in PitCrew.update and the HUD, so the phases stretch believably inside it: wheels off u .26-.62 (1.6-3.7 s), fuel fills u .25-.85 (1.5-5.1 s), lollipop flips at u .9 (5.4 s). The SKIP STOP button (skipPitStop) is the way out for a player who does not want to wait it out
+   forecast:[],
+   setup(cfg){
+     this.track=TRACKS.find(t=>t.id===cfg.track);
+@@ -3219,7 +3233,7 @@
+       c.inPits=false; c.pitIntent=false; c.pitHold=false; c.pitStopDone=false; c.pitTimer=0; c._pitPlaceIn=0; c._pitPlaceOut=0; c._pitWasIn=false; // place marker: a grid placement forgets the last stop's places // owner Nov 8 2026 'no pit stop, crew on the racetrack, controls dead at 49 MPH': a pit entry made in qualifying rode onto the grid - the stop then fired at the start line (crew round the car on the grid) and the car ran its race on the pit limiter with its controls ignored. A grid placement now cancels every pit state.
+       if(c.crew) c.crew.visible=false; if(c._crewHideT){ clearTimeout(c._crewHideT); c._crewHideT=null; }
+       for(const w of (c.mesh.userData.wheels||[])) w.visible=true; // a stop cut short by the grid must not leave a wheel hidden
+-      c.fuel=100; if(c._station) c._station.visible=false; if(c._gear) c._gear.visible=false; if(c._laneRow) c._laneRow.visible=false; { const pp=$('pitPanel'); if(pp) pp.classList.add('hidden'); } // owner Nov 8 2026: fresh tank on the grid; no station crew or pit panel left behind
++      c.fuel=100; if(c._station) c._station.visible=false; if(c._gear) c._gear.visible=false; if(c._laneRow) c._laneRow.visible=false; { const pp=$('pitPanel'); if(pp) pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); } // owner Nov 8 2026: fresh tank on the grid; no station crew or pit panel left behind
+       c.wear=0; c.tireAge=0; c.penalty=0; c.warnings=0; c._lapT=0; c._gridCross=true; c._offT=0;
+       // G-55: a placed car starts with a clean heading - no leftover steering angle
+       // from its last lap, and its nose snapped onto the track direction (a single
+@@ -3578,9 +3592,9 @@
+       if(p.inPits && !p._pitWasIn){ p._pitPlaceIn=p.position; p._pitPlaceOut=0; } // owner Nov 9 2026 PLACE MARKER: the place he came in at, read from the game's OWN standings (Race.positions() sets car.position - the same number the HUD place box and the results use; no second ranking is invented)
+       if(!p.inPits && p._pitWasIn && p._pitPlaceIn){ p._pitPlaceOut=p.position; p._pitPlaceUntil=performance.now()+6000; } // released and rejoined (pit exit complete): the new place from the same standings - the pair then stays up 6 s so he sees what the stop cost or gained
+       p._pitWasIn=p.inPits;
+-      if(p.inPits){ pp.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||2.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||2.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
+-      else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
+-      else { pp.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
++      if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
++      else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
++      else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
+     $('tireAge').textContent=p.tireAge+' laps';
+     document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
+     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
+diff --git a/tools/game-check/fixes/apexf1.mjs b/tools/game-check/fixes/apexf1.mjs
+--- a/tools/game-check/fixes/apexf1.mjs
++++ b/tools/game-check/fixes/apexf1.mjs
+@@ -1923,6 +1923,73 @@
+     },
+   },
+   {
++    id: 'fix-f1-pit-skip-button', mode: 'race',
++    ask: 'The SKIP STOP button (owner Nov 9 2026: "add a skip button player can press to jump back into game"): hidden on track, shown while the car is in the pits (shown/hidden by its hidden class, the pit HUD mechanism - offsetParent is always null in the ?test path, whose #hud stays class-hidden), and one press - during the 6 s hold OR on the roll-in - finishes the service at once (fresh tyres, full tank) and releases the car fully drivable, with no hold on the roll-in press',
++    test: async (page, h) => {
++      await h.eval(() => { location.href = location.pathname + '?test=grid'; }).catch(() => {});
++      await h.wait(1500);
++      let racing = false;
++      for (let i = 0; i < 100; i++) { const md = await h.eval(() => window.__test ? window.__test.race().mode : '?').catch(() => '?'); if (md === 'race') { racing = true; break; } if (md === 'grid' || md === 'lights') await h.press('#raceBtn').catch(() => {}); await h.wait(300); }
++      if (!racing) return 'race never started at ?test=grid';
++      const btn0 = await h.eval(() => { const b = document.getElementById('pitSkip'); return b ? { text: b.textContent, hidden: b.classList.contains('hidden') } : null; });
++      if (!btn0) return 'no #pitSkip button in the DOM';
++      if (!/SKIP/.test(btn0.text)) return 'the pit button is not labelled as a skip button (\'' + btn0.text + '\')';
++      if (!btn0.hidden) return 'the SKIP STOP button is visible on track, before the car is anywhere near the pits';
++      const drive = () => h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); });
++      const gauges = () => h.eval(() => { const fe = document.getElementById('fuelPct'); const wf = document.getElementById('wearFill'); return { fuel: fe ? parseFloat(fe.textContent) : null, wear: wf ? parseFloat(wf.style.width) : null }; });
++      const burnLap = async () => { const b0 = await h.eval(() => { const t = window.__test; const L = t.trackLength(); const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, L - 40); return cs[pi].lap; }); for (let i = 0; i < 60; i++) { await drive(); await h.wait(120); const lap = await h.eval(() => window.__test.cars().find(c => c.isPlayer).lap); if (lap > b0) break; } };
++      // ---- part 1: press during the hold ----
++      await burnLap();
++      const g0 = await gauges(); if (g0.fuel === null || !(g0.fuel < 99)) return 'a lap of driving did not burn any fuel before the skip test (gauge ' + g0.fuel + '%)';
++      await h.eval(() => { const t = window.__test; const L = t.trackLength(); const cs = t.cars(); const pi = cs.findIndex(c => c.isPlayer); t.setCarS(pi, 0.9414 * L - 550); });
++      await h.eval(() => { window.__test.setInput({ steer: 0.3, gas: true }); });
++      await h.eval(() => { document.getElementById('btnPit').dispatchEvent(new MouseEvent('mousedown', { bubbles: true })); });
++      let pressedAt = -1, doneAt = -1, visInHold = false;
++      for (let i = 0; i < 300; i++) {
++        const st = await h.eval(() => { const t = window.__test; const pr = t.pitProbe(); const pc = document.getElementById('pitClock'); const b = document.getElementById('pitSkip'); if (!pr.hold) { const p = t.cars().find(c => c.isPlayer); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); } return { pr, clock: pc ? parseFloat(pc.textContent) : 0, vis: b ? (!b.classList.contains('hidden')) : false }; });
++        if (st.pr.hold && st.clock >= 1.2 && pressedAt < 0) { if (st.vis) visInHold = true; pressedAt = st.clock; await h.eval(() => { document.getElementById('pitSkip').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); }); }
++        if (pressedAt >= 0 && st.pr.done > 0) { doneAt = st.clock; break; }
++        if (pressedAt >= 0 && i > 200) break;
++        await h.wait(120);
++      }
++      if (pressedAt < 0) return 'the car never held in the box to press SKIP during the stop';
++      if (!visInHold) return 'the SKIP STOP button was not visible during the hold';
++      if (doneAt < 0) return 'pressing SKIP STOP during the hold never completed the stop';
++      if (doneAt - pressedAt > 3.5) return 'the stop dragged on ' + (doneAt - pressedAt).toFixed(1) + ' s after the skip press - it should finish at once, not run out the 6 s hold';
++      let exited = false, fastV = 0;
++      for (let i = 0; i < 400; i++) { const st = await h.eval(() => { const t = window.__test; const p = t.cars().find(c => c.isPlayer); const pr = t.pitProbe(); t.setInput({ steer: Math.max(-1, Math.min(1, (0 - p.d) * 0.5)), gas: true }); return { inPits: pr.inPits, v: p.v }; }); if (!st.inPits) exited = true; if (exited && st.v > fastV) fastV = st.v; if (exited && fastV > 32) break; await h.wait(120); }
++      if (!exited) return 'the car never left the pits after the skipped stop';
++      if (fastV <= 32) return 'the car would not accelerate after the skipped stop (max ' + fastV.toFixed(1) + ' m/s)';
++      const g1 = await gauges();
++      if (g1.fuel === null || g1.fuel < 99) return 'the skipped stop did not fill the fuel (gauge ' + g1.fuel + '%)';
++      if (g1.wear === null || g1.wear < 99) return 'the skipped stop did not fit fresh tyres (wear bar ' + g1.wear + '%)';
++      const btnAfter = await h.eval(() => { const b = document.getElementById('pitSkip'); return b ? (b.classList.contains('hidden')) : null; });
++      if (btnAfter !== true) return 'the SKIP STOP button stayed visible after the car left the pits';
++      // ---- part 2: press on the roll-in - serviced without ever holding ----
++      await burnLap(); await burnLap();
++      const g2 = await gauges(); if (g2.fuel === null || !(g2.fuel < 99)) return 'driving did not burn fuel before the roll-in skip (gauge ' + g2.fuel + '%)';
++      await h.eval(() => { window.__driver = setInterval(() => { try { const T = window.__test; const sp = T.steerProbe(); if (!sp) return; const steer = Math.max(-1, Math.min(1, (sp.line - sp.d) * 0.5 - sp.headAngle * 1.1)); T.setInput({ steer, gas: sp.v < sp.maxV * 1.05, brake: sp.v > sp.maxV * 1.18, reverse: false, ers: false }); } catch (e) {} }, 40); }).catch(() => {});
++      await h.eval(() => window.__test.pitNow()).catch(() => {});
++      let pressed2 = false, sawHold = false, outAgain = false;
++      for (let i = 0; i < 400; i++) {
++        const st = await h.eval(() => { const t = window.__test; const pr = t.pitProbe(); const b = document.getElementById('pitSkip'); return { pr, vis: b ? (!b.classList.contains('hidden')) : false }; });
++        if (st.pr.hold) sawHold = true;
++        if (!pressed2 && st.pr.inPits && !st.pr.hold) { if (!st.vis) { await h.eval(() => { clearInterval(window.__driver); }); return 'the SKIP STOP button was not visible on the roll-in'; } await h.eval(() => { document.getElementById('pitSkip').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true })); }); pressed2 = true; }
++        if (pressed2 && !st.pr.inPits) { outAgain = true; break; }
++        await h.wait(100);
++      }
++      await h.eval(() => { clearInterval(window.__driver); window.__test.setInput({ gas: false, steer: 0 }); }).catch(() => {});
++      if (!pressed2) return 'the car never rolled into the pits for the roll-in skip';
++      if (sawHold) return 'the car HELD in the box after a roll-in skip press - it should be serviced and drive through';
++      if (!outAgain) return 'the car never came back out of the pits after the roll-in skip';
++      const g3 = await gauges();
++      if (g3.fuel === null || g3.fuel < 99) return 'the roll-in skip did not fill the fuel (gauge ' + g3.fuel + '%)';
++      if (g3.wear === null || g3.wear < 99) return 'the roll-in skip did not fit fresh tyres (wear bar ' + g3.wear + '%)';
++      await h.eval(() => { location.href = location.pathname; }).catch(() => {});
++      return true;
++    },
++  },
++  {
+     id: 'fix-f1-pit-quali-carryover', mode: 'race',
+     ask: 'Arming a pit stop in qualifying must not follow the car onto the grid: no crew at the start line, no 49 MPH limiter trap with dead controls after GO (owner Nov 8 2026: "no pit stop happened, the pit crew showed up late around my car on the racetrack, then it would not let me drive - stuck in the grass at 49 MPH")',
+     test: async (page, h) => {
