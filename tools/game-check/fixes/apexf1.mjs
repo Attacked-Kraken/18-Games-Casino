@@ -2023,4 +2023,21 @@ export default [
       return true;
     },
   },
+  {
+    id: 'fix-f1-pit-complex-all-tracks', mode: 'race',
+    ask: 'The full pit complex (10 booths with seated desk chiefs, booth crews, dressed working spots, pad) stands on EVERY circuit in the menu: the Grand Prix kit circuit built none of it (0 booths, 0 env figures) while the built-in tracks got it from buildPits (owner Nov 9 2026: "This needs to be in all track options")',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.pitLook) return null; const l = T.pitLook(); if (!l) return null; return { booths: l.booths, envFigs: l.env ? l.env.figs : 0, spot: !!T.pitSpot(0) }; }).catch(() => null); }
+        if (!r) { bad.push(tr + ': pitLook never answered'); continue; }
+        if (r.booths !== 10) bad.push(tr + ': only ' + r.booths + ' of 10 pit booths built');
+        if (r.envFigs < 30) bad.push(tr + ': only ' + r.envFigs + ' pit-env figures (booth crews / working crews missing)');
+        if (!r.spot) bad.push(tr + ': pit spot 0 is not dressed');
+      }
+      return bad.length ? 'F1 ALL-TRACKS PIT: ' + bad.join('; ') : true;
+    },
+  },
 ];

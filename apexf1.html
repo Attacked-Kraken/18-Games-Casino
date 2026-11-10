@@ -868,6 +868,7 @@ const Track = {
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
     this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
     try{ this.buildPitSigns(this.group); }catch(e){}
+    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
     if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
       const f0=this.frameAt(0);
       for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
