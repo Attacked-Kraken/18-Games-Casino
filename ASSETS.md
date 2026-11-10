@@ -565,7 +565,7 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - source: https://sketchfab.com/3d-models/car-mechanic-0728feefdd174869ac7d22017cb5a077
 - license: CC-BY 4.0
 - downloaded: 2026-11-09 by the Sketchfab fetch robot
-- used in: (not in a game yet - the game that uses it must name "BELAZ" on its credits screen)
+- used in: apexf1.html (credits screen names BELAZ)
 - changes: shrunk for phones (textures max 1024 px, WebP)
 
 ## ASSET: models/fetched/gamer-setup-pack-49aa58.glb
