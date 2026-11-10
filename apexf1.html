@@ -146,7 +146,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #placeChip { position:absolute; left:50%; top:10px; transform:translateX(-50%); background:#060b14e6; border:2px solid #ffd76a; border-radius:999px; padding:2px 20px 4px; font-size:32px; font-weight:900; color:#ffffff; letter-spacing:1px; z-index:6; }
   #pitPanel .pbar { width:220px; height:8px; background:#1a2440; border-radius:4px; margin:5px auto; overflow:hidden; }
   #pitPanel .pbar i { display:block; height:100%; }
-  #pitSkip { position:absolute; left:50%; bottom:26px; transform:translateX(-50%); pointer-events:auto; z-index:6; background:#d21f26; color:#fff; border:2px solid #ffd76a; border-radius:14px; font-family:Arial, sans-serif; font-size:20px; font-weight:900; letter-spacing:1px; padding:16px 34px; min-height:60px; min-width:230px; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.55); }
+  #pitSkip { position:fixed; left:50%; bottom:calc(26px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%); pointer-events:auto; z-index:34; touch-action:none; background:#d21f26; color:#fff; border:2px solid #ffd76a; border-radius:14px; font-family:Arial, sans-serif; font-size:20px; font-weight:900; letter-spacing:1px; padding:16px 34px; min-height:60px; min-width:230px; cursor:pointer; box-shadow:0 4px 18px rgba(0,0,0,.55); } /* owner Nov 9 2026 pit-button fix: was absolute inside #hud (z 20, UNDER the touch-controls layer z 30, no safe-area inset) - now a top-level fixed button above the touch layer, clear of the iPhone home indicator / browser bar, and touch-action:none so a tap is never read as a scroll or zoom gesture */
   #pitSkip:active { background:#ff3b42; } /* owner Nov 9 2026: SKIP STOP - a big thumb-sized button under the pit panel, up only while the car is in the pits */
   .wearbar { width:90px; height:7px; background:#1a2440; border-radius:4px; margin-top:5px; overflow:hidden; }
   .wearbar i { display:block; height:100%; background:linear-gradient(90deg,#37d67a,#ffd76a 60%,#ff5a5a); }
@@ -172,7 +172,7 @@ try{new MutationObserver(all).observe(document.documentElement,{childList:true,s
   #btnRev { right:218px; bottom:250px; width:72px; height:72px; font-size:13px; border-radius:16px; }
   #btnDRS { right:14px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   #btnERS { right:98px; bottom:170px; width:72px; height:60px; font-size:12px; border-radius:12px; }
-  #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
+  #btnPit { left:14px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; touch-action:none; }
   #btnCam { left:98px; bottom:270px; width:72px; height:60px; font-size:12px; border-radius:12px; }
   /* mobile: HUD elements move clear of the thumb zones */
   body.touch #minimap { left:12px; top:176px; bottom:auto; width:104px; height:104px; }
@@ -286,7 +286,6 @@ setTimeout(function(){
   <div id="tirebox"><div class="tcap">TYRE</div><span class="cmp" id="tireCmp">SOFT</span><div class="wearbar"><i id="wearFill" style="width:100%"></i></div><div id="tireAge" style="font-size:11px;color:#8fa8c8">0 laps</div><div id="tireNext" style="font-size:10px;color:#ffd76a;font-weight:800;letter-spacing:1px">TAP TO CHOOSE NEXT</div></div>
   <div id="fuelbox"><div style="font-size:9px;letter-spacing:2px;color:#8fa8c8;font-weight:800">FUEL</div><div class="fbar"><i id="fuelFill" style="width:100%"></i></div><div id="fuelPct" style="font-size:11px;color:#9fd8ff">100%</div></div>
   <div id="pitPanel" class="hidden"><div style="font-size:10px;letter-spacing:3px;color:#8fa8c8;font-weight:800">PIT STOP</div><div class="pc" id="pitClock">0.0s</div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">TYRES</div><div class="pbar"><i id="pitTyreFill" style="width:0%;background:#37d67a"></i></div><div style="font-size:10px;color:#8fa8c8;letter-spacing:1px">FUEL</div><div class="pbar"><i id="pitFuelFill" style="width:0%;background:#57b6ff"></i></div><div id="pitStatus" style="font-size:12px;font-weight:800;color:#ffd76a">-</div><div id="pitPlace" style="font-size:15px;font-weight:900;color:#ffffff;letter-spacing:1px;margin-top:2px"></div></div>
-  <button id="pitSkip" class="hidden">SKIP STOP ⏩</button>
   <div id="wxTag">☀ DRY</div>
   <div id="speedo"><div class="v">0</div><div class="u">MPH</div><div class="gear">N</div></div>
   <div id="ersbar">ERS<div class="track"><i id="ersFill" style="width:100%"></i></div></div>
@@ -307,6 +306,8 @@ setTimeout(function(){
   <div class="tbtn" id="btnPit">PIT</div>
   <div class="tbtn" id="btnCam">CAM</div>
 </div>
+
+<button id="pitSkip" class="hidden">SKIP STOP ⏩</button>
 
 <div id="vignette"></div>
 
@@ -2976,6 +2977,7 @@ function bindHold(el,down,up){
   el.addEventListener('touchcancel',off,{passive:false});
   el.addEventListener('mousedown',on); el.addEventListener('mouseup',off); el.addEventListener('mouseleave',()=>{el.classList.remove('on'); if(up)up();});
 }
+function bindTap(el,fn){ if(!el) return; let last=0; const go=e=>{ const n=performance.now(); if(n-last<700) return; last=n; if(e){ e.preventDefault(); e.stopPropagation(); } fn(); }; el.addEventListener('touchstart',go,{passive:false}); el.addEventListener('pointerdown',go); el.addEventListener('mousedown',go); el.addEventListener('click',go); } // owner Nov 9 2026 pit-button fix: one physical tap must equal one action on whichever event the phone's browser actually delivers (touchstart on most engines, pointerdown or click in some browsers/webviews) - repeats of the same tap inside 700 ms are the same tap, not a second press (on a toggle like PIT, a leaked second event used to arm the stop and cancel it in the same touch)
 function initInput(){
   bindHold($('btnGas'),()=>Input.gas=true,()=>Input.gas=false);
   bindHold($('btnBrake'),()=>Input.brake=true,()=>Input.brake=false);
@@ -3021,11 +3023,10 @@ function initInput(){
   $('btnDRS').addEventListener('touchstart',e=>{e.preventDefault();Race.toggleDRS();},{passive:false});
   $('btnDRS').addEventListener('mousedown',e=>{e.preventDefault();Race.toggleDRS();});
   { const tb=$('tirebox'); const open=e=>{ e.preventDefault(); e.stopPropagation(); Race.openTyreChoice(); }; tb.addEventListener('touchstart',open,{passive:false}); tb.addEventListener('mousedown',open); } // owner Nov 4 2026: tap the tyre box to choose the compound for the next stop
-  $('btnPit').addEventListener('touchstart',e=>{e.preventDefault();Race.wantPit();},{passive:false});
-  $('btnPit').addEventListener('mousedown',e=>{e.preventDefault();Race.wantPit();});
+  bindTap($('btnPit'),()=>Race.wantPit()); // owner Nov 9 2026 pit-button fix: was touchstart+mousedown only - a phone browser that delivers the tap as pointer/click events left PIT dead (owner: "fix Pit button cause it does not working")
   $('btnCam').addEventListener('touchstart',e=>{e.preventDefault();Race.cycleCam();},{passive:false});
   $('btnCam').addEventListener('mousedown',e=>{e.preventDefault();Race.cycleCam();});
-  { const sk=$('pitSkip'); if(sk){ const go=e=>{ e.preventDefault(); e.stopPropagation(); skipPitStop(); }; sk.addEventListener('touchstart',go,{passive:false}); sk.addEventListener('mousedown',go); } } // owner Nov 9 2026: the SKIP STOP button - the HUD shows it only while the car is in the pits (toggled with the pit panel)
+  bindTap($('pitSkip'),()=>skipPitStop()); // owner Nov 9 2026: the SKIP STOP button - the HUD shows it only while the car is in the pits (toggled with the pit panel). Nov 9 2026 pit-button fix: same every-engine tap binding as PIT (was touchstart+mousedown only)
 }
 function readInput(car){
   const k=Input.keys||{};
