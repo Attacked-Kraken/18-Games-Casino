@@ -1,0 +1,63 @@
+diff --git a/apexf1.html b/apexf1.html
+index d6f147a..df65393 100644
+--- a/apexf1.html
++++ b/apexf1.html
+@@ -1270,6 +1270,21 @@ const Track = {
+       const geo=new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv,2)); geo.setIndex(idx); geo.computeVertexNormals();
+       const pad=new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map:tex, side:THREE.DoubleSide})); root.add(pad);
+     }
++    // ---- 1b. THE PIT WALL (owner Nov 9 2026 missing-list item 1): one continuous concrete wall between the pit lane and the race track, running the whole box stretch - 15 m before box 1 to 15 m past box 10. Anchored to this track's own road edge on the pit side (centre pitSide*(W/2-0.42), 0.45 m thick, top at +1.0 m): the only anchor true on both build paths - built-ins pass at pitD-3.5 with the car's track-side edge at W/2-0.02, while the GP kit lane runs at its own offset where a pitD-based anchor would land mid-road. The only openings are the entry and exit blends themselves, which cross this line outside the span (bench-measured entry margin 37 m on all five tracks).
++    { const WALL_INSET=0.42, WALL_T=0.45, WALL_H=1.0, wsd=this.pitSide||1, wdC=wsd*(W/2-WALL_INSET), wdLane=wdC+wsd*WALL_T/2, wdRoad=wdC-wsd*WALL_T/2;
++      const wsts=[]; for(let ds=-15; ds<=185; ds+=4) wsts.push(((box0+ds)%L+L)%L);
++      const wpos=[], wcorner=(s,d,y)=>{ const p=this.posAt(s,d); return [p.x,p.y+y,p.z]; }, wquad=(a,b,c2,d2)=>{ wpos.push(a[0],a[1],a[2], b[0],b[1],b[2], c2[0],c2[1],c2[2], a[0],a[1],a[2], c2[0],c2[1],c2[2], d2[0],d2[1],d2[2]); };
++      for(let i=0;i<wsts.length-1;i++){ const sA=wsts[i], sB=wsts[i+1];
++        const rbA=wcorner(sA,wdRoad,-0.15), rtA=wcorner(sA,wdRoad,WALL_H), lbA=wcorner(sA,wdLane,-0.15), ltA=wcorner(sA,wdLane,WALL_H);
++        const rbB=wcorner(sB,wdRoad,-0.15), rtB=wcorner(sB,wdRoad,WALL_H), lbB=wcorner(sB,wdLane,-0.15), ltB=wcorner(sB,wdLane,WALL_H);
++        wquad(rbA,rbB,rtB,rtA); wquad(ltA,ltB,lbB,lbA); wquad(rtA,rtB,ltB,ltA);
++      }
++      wquad(wcorner(wsts[0],wdLane,-0.15), wcorner(wsts[0],wdRoad,-0.15), wcorner(wsts[0],wdRoad,WALL_H), wcorner(wsts[0],wdLane,WALL_H));
++      wquad(wcorner(wsts[wsts.length-1],wdRoad,-0.15), wcorner(wsts[wsts.length-1],wdLane,-0.15), wcorner(wsts[wsts.length-1],wdLane,WALL_H), wcorner(wsts[wsts.length-1],wdRoad,WALL_H));
++      const wgeo=new THREE.BufferGeometry(); wgeo.setAttribute('position', new THREE.Float32BufferAttribute(wpos,3)); wgeo.computeVertexNormals();
++      const wallMesh=new THREE.Mesh(wgeo, new THREE.MeshLambertMaterial({color:0xb7bbc0, side:THREE.DoubleSide})); root.add(wallMesh);
++      env.wall={ mesh:wallMesh, stations:wsts.map(s=>[s,wdC]), h:WALL_H, t:WALL_T };
++    }
+     // ---- 2. EVERY SPOT dressed: a tall gantry frame + team panel + number board + tyre stack at all ten boxes (round 2's lane row only dressed the boxes near the player's). Posts/beams/panels/stacks are one InstancedMesh each.
+     { const postG=new THREE.BoxGeometry(0.22,4.4,0.22), beamG=new THREE.BoxGeometry(7.6,0.26,0.26), panelG=new THREE.BoxGeometry(7.6,0.62,0.08);
+       const posts=new THREE.InstancedMesh(postG, dark, 20), beams=new THREE.InstancedMesh(beamG, dark, 10), panels=new THREE.InstancedMesh(panelG, new THREE.MeshLambertMaterial({color:0xffffff}), 10);
+@@ -4175,6 +4190,7 @@ window.__test = {
+   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
+   pitSpot: (i) => { const sp=(Track._pitEnv&&Track._pitEnv.spots)||[]; return sp[i||0]||null; }, // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
+   pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), chief:cnt((BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs && Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]) ? Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10].grp : p._chief), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), booths:(Track._pitEnv&&Track._pitEnv.booths)?Track._pitEnv.booths.length:0, drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; },
++  pitWall: () => { const w=Track._pitEnv&&Track._pitEnv.wall; if(!w) return null; const L=Track.length, st=w.stations, nrm=s=>((s%L)+L)%L; let len=0, maxGap=0; for(let i=0;i<st.length-1;i++){ const gg=nrm(st[i+1][0]-st[i][0]); len+=gg; if(gg>maxGap) maxGap=gg; } const box0=nrm(Track.cfg.pitIn*L+30); let minClear=1e9; for(let i=0;i<st.length;i++){ const tgt=Track.pitDAt(st[i][0])-(Track.gp?0:3.5); const cl=Math.abs(tgt)-1.52-(Math.abs(st[i][1])+w.t/2); if(cl<minClear) minClear=cl; } return { h:w.h, t:w.t, len:+len.toFixed(1), stations:st.length, maxGap:+maxGap.toFixed(2), coverBefore:+nrm(box0-st[0][0]).toFixed(1), coverAfter:+nrm(st[st.length-1][0]-nrm(box0+170)).toFixed(1), minLaneClear:+minClear.toFixed(3), dCentre:st[0][1], W:Track.width }; }, // owner Nov 9 2026 missing-list item 1: the continuous pit wall, measured at the road edge
+   chiefPos: () => { const p=Race.player; if(!p) return null; let fig=null, drop=null, seatTop=null, vis=true; // BOOTH FIT ROUND: the player's chief is the booth chief when booths are live
+     if(BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs){ const bc=Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]; if(bc&&bc.fig){ fig=bc.fig; drop=BOOTH.chiefDrop; seatTop=BOOTH.seatTop; } }
+     if(!fig){ if(!p._chief) return null; p._chief.traverse(o=>{ if(o.userData&&o.userData.isFig) fig=o; }); if(!fig) return null; const ch2=p._chief.userData.chief; drop=ch2?ch2.drop:null; seatTop=ch2?ch2.seatTop:null; vis=p._chief.visible; }
+diff --git a/tools/game-check/fixes/apexf1.mjs b/tools/game-check/fixes/apexf1.mjs
+index 2df8d0b..4ee29d6 100644
+--- a/tools/game-check/fixes/apexf1.mjs
++++ b/tools/game-check/fixes/apexf1.mjs
+@@ -2082,4 +2082,24 @@ export default [
+       return true;
+     },
+   },
++  {
++    id: 'fix-f1-pit-wall-all-tracks', mode: 'race',
++    ask: 'A continuous pit wall stands between the pit lane and the race track on EVERY circuit in the menu: about 1 m of concrete running the whole box stretch (15 m before the first box to 15 m past the last), tight against the road edge on the pit side, clear of the pit driving line - the audit found only low barrier panels at the box boundaries and no wall anywhere (owner Nov 9 2026 missing-list item 1)',
++    test: async (page, h) => {
++      const bad = [];
++      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
++        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
++        let r = null;
++        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.pitWall) return null; return T.pitWall(); }).catch(() => null); }
++        if (!r) { bad.push(tr + ': no pit wall was built'); continue; }
++        if (r.h < 0.9 || r.h > 1.1) bad.push(tr + ': wall height ' + r.h + ' m (a real pit wall is about 1 m)');
++        if (r.len < 195) bad.push(tr + ': wall runs only ' + r.len + ' m of the 200 m box stretch');
++        if (r.coverBefore < 10 || r.coverAfter < 10) bad.push(tr + ': wall does not cover the box stretch (starts ' + r.coverBefore + ' m before box 1, ends ' + r.coverAfter + ' m after box 10)');
++        if (r.stations < 40 || r.maxGap > 6) bad.push(tr + ': wall is not continuous (' + r.stations + ' stations, worst gap ' + r.maxGap + ' m)');
++        if (r.minLaneClear < 0.1) bad.push(tr + ': wall crowds the pit driving line (worst clearance ' + r.minLaneClear + ' m)');
++        if (Math.abs(r.dCentre) < r.W / 2 - 1.0) bad.push(tr + ': wall stands ' + Math.abs(r.dCentre) + ' m from the centre line - not up against the road edge (' + (r.W / 2) + ' m)');
++      }
++      return bad.length ? 'F1 PIT WALL: ' + bad.join('; ') : true;
++    },
++  },
+ ];
