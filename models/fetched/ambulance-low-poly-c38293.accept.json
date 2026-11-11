@@ -1,0 +1,27 @@
+{
+ "file": "models/fetched/ambulance-low-poly-c38293.glb",
+ "ok": true,
+ "why": [],
+ "facts": {
+  "meshes": 1,
+  "tris": 1874,
+  "size": [
+   2.395,
+   2.591,
+   5.2
+  ],
+  "mainSize": [
+   2.395,
+   2.591,
+   5.2
+  ],
+  "stray": 1,
+  "bytes": 115712
+ },
+ "pictures": null,
+ "asked": {
+  "kind": "length",
+  "m": 5.2
+ },
+ "at": "2026-11-11T16:30:24.803Z"
+}

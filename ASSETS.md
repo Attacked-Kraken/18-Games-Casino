@@ -598,3 +598,21 @@ One section per asset (or per folder - every file inside it is covered). Keep th
 - downloaded: 2026-11-09 by the Sketchfab fetch robot
 - used in: (not in a game yet - the game that uses it must name "TampaJoey" on its credits screen)
 - changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/ambulance-low-poly-c38293.glb
+- title: Ambulance - Low Poly
+- maker: calebcram
+- source: https://sketchfab.com/3d-models/ambulance-low-poly-c38293926711435d868dde2c389e748b
+- license: CC-BY 4.0
+- downloaded: 2026-11-11 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "calebcram" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
+
+## ASSET: models/fetched/generic-sport-car-low-poly-7ad3bf.glb
+- title: Generic Sport Car Low Poly
+- maker: Han66st
+- source: https://sketchfab.com/3d-models/generic-sport-car-low-poly-7ad3bfb2bd7449c19698fc7d0592a601
+- license: CC-BY 4.0
+- downloaded: 2026-11-11 by the Sketchfab fetch robot
+- used in: (not in a game yet - the game that uses it must name "Han66st" on its credits screen)
+- changes: shrunk for phones (textures max 1024 px, WebP)
