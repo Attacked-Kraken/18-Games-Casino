@@ -13,6 +13,7 @@ Feature → line numbers in apexf1.html (shifted +12 below line 126 for the G-28
 - Compact CSS: lines ~16-45 - landscape compact block at 16, portrait #teamMenu block at 36-45 (G-265 R1: the upright phone gets its own no-scroll fit); #raceBtn min-height 44px at line 29 (G-224: LIGHTS OUT is a full tap target); the main menu buttons pair up two per row so the whole menu fits 844x390 (G-136); touch buttons: base ~92-107, landscape compact block at 111, portrait compact block at 126 (G-286 R1)
 - Menu / overlay HTML (menu, track, team, grid, result, hub, friend): lines 204-306 (friend overlay #friendOv at 272)
 - Import map (three + vendor loaders): line 307
+- Race furniture (owner Nov 10 2026: braking / DRS / sector boards, pit limit signs + painted lines, podium, parc ferme, team motorhomes, the pit board): buildRaceFurniture line 1636, updatePitBoard line 1765, clearPaddock line 1784 - all Track methods; probe __test.furniture; test fix-f1-race-furniture-all-tracks
 - Audio: line 332 (engine() at 359 - grand_prix kit loops crossfaded by throttle + shift one-shots (G-107), kitLoad() at 388 (G-239: a missing band borrows its nearest decoded neighbour - the kit dies only when nothing decoded; kitRetry() at ~415 retries until loaded (4 s, then every 8 s; G-277); the synth fallback is de-squeaked: filter Q 0.8, sweep capped ~1.5 kHz), skid() at 445 - kit tire squeal loop; synth voices kept as fallback)
 - Data: TRACKS 460, TEAMS 478, AI_NAMES 490
 - Track (samples, buildGP for the kit circuit at 653): line 610

@@ -871,7 +871,7 @@ const Track = {
     this.buildTrackside(this.group, {kind:'gp'}); // Nov 4 2026: the kit circuit gets the same trackside accessories as the built-in ones
     this.buildLineSigns(this.group); // owner Nov 6 2026: floating START / FINISH / lap signs
     try{ this.buildPitSigns(this.group); }catch(e){}
-    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
+    try{ this.buildPitComplex(this.group); }catch(e){ console.warn('pitenv',e); } try{ this.buildRaceFurniture(this.group); this.clearPaddock(); }catch(e){ console.warn('furniture',e); } // W6 ALL-TRACKS (owner Nov 9 2026: 'This needs to be in all track options'): the GP kit path never built the pit complex - booths 0, no booth crews or desk chiefs, no working spots, pad, stand or trailers (bench-measured on the unpatched build) - while built-in tracks get it via buildPits. Build the same complex here from the kit lane frame (pitDAt / pitFrameAt read the kit lane points on this path). NOT buildPits itself: that would clobber the kit pitSide/pitD and drop the plain built-in pit building on top of the kit garages.
     if(this.lt && this.lt.meshes){ // owner Nov 6 2026 'remove everything from that checkpoint': the kit's arch / gantry / banner / screen triangles within 90 m of the line are cut out (the start lights stay for the countdown)
       const f0=this.frameAt(0);
       for(const nm of ['steel_structures','banners_apex_arcade','screens']){ try{ const m=this.lt.meshes[nm]; if(!m||!m.geometry) continue; const g=m.geometry, pos=g.attributes.position; const idx=g.index?Array.from(g.index.array):Array.from({length:pos.count},(_,k)=>k); const keep=[]; m.updateWorldMatrix(true,false); const v=new THREE.Vector3();
@@ -926,7 +926,7 @@ const Track = {
     const vLat=Math.sqrt(Math.max(8, 42*grip*SN('car.grip',1,{min:0.5,max:2,step:0.01,label:'Corner grip (all cars)',group:'Driving'})/Math.max(c,1e-5))); // lateral accel limit
     return Math.min(92*SN('car.top',1,{min:0.5,max:1.6,step:0.01,label:'Top speed (1 = 331 km/h)',group:'Driving'}), vLat); // 92 m/s ~ 331 km/h
   },
-  clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); },
+  clearGroup(){ if(this.group){ scene.remove(this.group); } this.group=new THREE.Group(); scene.add(this.group); this._stands=[]; this.furniture=null; this._pitBoard=null; },
   buildMeshes(){
     this.clearGroup(); const g=this.group, W=this.width, N=this.samples.length;
     // grass
@@ -1005,6 +1005,7 @@ const Track = {
     this.buildTrackside(g, th);
     this.buildCityLife(g, th);
     if(th.kind) this.buildEnvironment(g, th);
+    try{ this.clearPaddock(); }catch(e){ console.warn('paddock',e); } // after ALL the scenery is down: the pad, the podium strip and the motorhome paddock are swept clear of it
   },
   /* owner Nov 2 2026 9:10 PM "use the layout but we need an environment": each circuit gets its own world - instanced, cheap on phones */
   buildEnvironment(g, th){
@@ -1232,7 +1233,7 @@ const Track = {
       }
       inst.instanceMatrix.needsUpdate=true; if(inst.instanceColor) inst.instanceColor.needsUpdate=true;
       stand.add(inst);
-      stand.position.set(cx,cy,cz); stand.rotation.y=yaw+(side>0?Math.PI:0)+Math.PI/2;
+      stand.position.set(cx,cy,cz); stand.rotation.y=yaw+(side>0?Math.PI:0)+Math.PI/2; { const fl=Math.hypot(p.x-cx,p.z-cz)||1; (this._stands=this._stands||[]).push({x:cx,z:cz,fx:(p.x-cx)/fl,fz:(p.z-cz)/fl}); } // the race furniture keeps clear of every stand (centre + the way it faces)
       // face the track
       stand.lookAt(p.x,cy+4,p.z);
       g.add(stand);
@@ -1256,7 +1257,7 @@ const Track = {
     }
   },
   updateCrowd(dt, excite){
-    if(this._pitEnv) try{ this.updatePitEnv(dt); }catch(e){} // owner Nov 8 2026 round 3: neighbour crews at work
+    if(this._pitEnv) try{ this.updatePitEnv(dt); }catch(e){} try{ this.updatePitBoard(dt); }catch(e){} // owner Nov 8 2026 round 3: neighbour crews at work
     this.crowd.excite=Math.max(excite, this.crowd.excite-dt*0.4);
     const e=this.crowd.excite;
     this._cwT=(this._cwT||0)+dt; if(this._cwT<0.05 && this._cwDone) return; this._cwT=0; this._cwDone=true; // owner Nov 6 2026: crowd bounce rewritten 20x a second, not every frame
@@ -1294,7 +1295,7 @@ const Track = {
       box.rotation.x=-Math.PI/2; box.rotation.z=-Math.atan2(bp.tx,bp.tz);
       box.position.set(bx,bp.y+0.04,bz); g.add(box);
     }
-    try{ this.buildPitComplex(g); }catch(e){ console.warn('pitenv',e); } // owner Nov 8 2026 round 3: the whole pit complex (pad, stands, spots, working crews, trailers)
+    try{ this.buildPitComplex(g); }catch(e){ console.warn('pitenv',e); } try{ this.buildRaceFurniture(g); }catch(e){ console.warn('furniture',e); } // owner Nov 8 2026 round 3: the whole pit complex (pad, stands, spots, working crews, trailers)
   },
   buildPitComplex(g){ // owner Nov 8 2026 round 3 (owner: 'Still needs a whole concrete pad with stands and spots and crews working with trailers'): the pit stops being a strip of grass beside the road. One concrete apron under the whole pit area, a grandstand full of people across the track, every team's spot marked and gantry'd, neighbour crews actually WORKING at their spots, and the team transporters parked behind. Built once per track from the same pit geometry as everything else (frameAt / pitDAt / the 170/9 box spacing). Cost control: the row furniture is three InstancedMeshes, the pad is one ribbon, figures are the cheap two-mesh men - detail was cut, life was not.
     const L=this.length, s0=this.cfg.pitIn*L, box0=s0+30, step=170/9, W=this.width;
@@ -1622,6 +1623,171 @@ const Track = {
     sp(mk('PIT ENTRY 300 m','#9fd8ff',640,160,84),18,4.5,pin-300,9);
     sp(mk('PIT','#ffd76a',320,160,120),10,5,pin+100,8);
   },
+  /* owner Nov 10 2026 9:29 PM 'Yes do all them complete 1-6' (the rest of the missing list, built by Claude - window 6 was out of usage):
+     RACE FURNITURE, one build pass on every circuit (built-in, GP kit, owner circuits), everything placed from the track's own frames:
+     1 BRAKING BOARDS 150 / 100 / 50 before every real braking zone (found from maxSpeedAt, the same corner speeds the cars drive to) + a green DRS board where each DRS zone opens;
+     2 PIT LIMIT: the round limit sign (the limiter's own 22 m/s = 80) where the limit starts, the struck-out one where it ends, a white line across the lane at both, and on the built-in circuits the solid white entry and exit lines along the wall line;
+     3 PODIUM (1-2-3 steps, backdrop, carpet) + PARC FERME (fenced park, gate sign, three marked bays) on the pad past the last box;
+     4 TEAM MOTORHOMES: ten two-storey units in the teams' colours on their own paddock slab behind the transporters;
+     5 SECTOR BOARDS S1 / S2 / S3, a yellow pair either side of the road at each third of the lap;
+     6 THE PIT BOARD: hung over the pit wall at the player's own box, written once a lap as he comes onto the pit straight (place, gap, lap) and at once with BOX when he calls a stop.
+     Cost: ONE sign sheet (1024 canvas), ONE textured mesh for every sign face, ONE vertex-colour mesh for every post / box / painted line / slab, two small meshes for the pit board. Nothing ticks per frame except the board's 4-a-second check.
+     Every piece is recorded in Track.furniture (probe: __test.furniture). A piece that would land on the road elsewhere (the loop folding back) is skipped, never forced. */
+  buildRaceFurniture(g){
+    const T=this, L=this.length, W=this.width, sd0=this.pitSide||1, nrm=s=>((s%L)+L)%L, s0=this.cfg.pitIn*L, gp=!!this.gp;
+    const root=new THREE.Group(); g.add(root); this._furnRoot=root;
+    const rec={ brake:[], drs:[], sector:[], pitSigns:[], lines:[], podium:null, parc:null, motorhomes:[], zones:0 }; this.furniture=rec;
+    // ---- the one sign sheet
+    const AT=1024, lim=Math.round(22*3.6/10)*10; // lim: the pit limiter (22 m/s in Car.update) to the nearest ten = 80
+    if(!T._furnAtlas){ // drawn once and kept for every later circuit build (the sheet is the same on all of them) - no new picture memory when he changes track
+    const cv=document.createElement('canvas'); cv.width=cv.height=AT; const c=cv.getContext('2d'), cells={};
+    const cell=(name,x,y,w,h,draw)=>{ cells[name]=[x,y,w,h]; c.save(); c.translate(x,y); c.beginPath(); c.rect(0,0,w,h); c.clip(); draw(w,h); c.restore(); };
+    const txt=(s,x,y,px,colr)=>{ c.font='900 '+px+'px Arial Black, Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle'; c.fillStyle=colr; c.fillText(s,x,y); };
+    const plate=(w,h,bg,edge)=>{ c.fillStyle=bg; c.fillRect(0,0,w,h); if(edge){ c.strokeStyle=edge; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8); } };
+    ['150','100','50'].forEach((n,i)=>cell('b'+n,i*192,0,192,128,(w,h)=>{ plate(w,h,'#f4f4f4','#111'); txt(n,w/2,h/2+5,n.length>2?82:96,'#111'); }));
+    [1,2,3].forEach((n,i)=>cell('s'+n,576+i*144,0,144,128,(w,h)=>{ plate(w,h,'#f5d90a','#111'); txt('SECTOR',w/2,27,22,'#111'); txt(''+n,w/2,82,78,'#111'); }));
+    cell('lim',0,128,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#d21f26'; c.fill(); c.beginPath(); c.arc(w/2,h/2,57,0,7); c.fillStyle='#fff'; c.fill(); txt(''+lim,w/2,h/2+5,62,'#111'); });
+    cell('limEnd',160,128,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#111'; c.fill(); c.beginPath(); c.arc(w/2,h/2,68,0,7); c.fillStyle='#fff'; c.fill(); txt(''+lim,w/2,h/2+5,62,'#9aa0a8');
+      c.save(); c.beginPath(); c.arc(w/2,h/2,66,0,7); c.clip(); c.strokeStyle='#111'; c.lineWidth=7; for(const o of [-13,0,13]){ c.beginPath(); c.moveTo(w/2-60+o,h/2+60+o); c.lineTo(w/2+60+o,h/2-60+o); c.stroke(); } c.restore(); });
+    cell('drs',320,128,256,128,(w,h)=>{ plate(w,h,'#12a150','#fff'); txt('DRS',w/2,h/2+5,92,'#fff'); });
+    [1,2,3].forEach((n,i)=>cell('n'+n,576+i*128,128,128,128,(w,h)=>{ plate(w,h,'#101418'); txt(''+n,w/2,h/2+7,100,['#ffd76a','#d9dde2','#d08a4a'][i]); }));
+    cell('podium',0,288,640,192,(w,h)=>{ plate(w,h,'#0a0e16'); c.fillStyle='#d21f26'; c.fillRect(0,0,w,16); c.fillRect(0,h-16,w,16); txt('APEX ARCADE',w/2,78,74,'#fff'); txt('GRAND PRIX',w/2,144,42,'#ffd76a'); });
+    cell('parc',640,288,384,96,(w,h)=>{ plate(w,h,'#12305e','#fff'); txt('PARC FERMÉ',w/2,h/2+4,50,'#fff'); });
+    cell('pitlim',640,384,384,96,(w,h)=>{ plate(w,h,'#f4f4f4','#111'); txt('PIT LANE LIMIT',w/2,h/2+4,38,'#111'); });
+    TEAMS.slice(0,10).forEach((t,i)=>cell('t'+i,(i%4)*256,480+((i/4)|0)*64,256,64,(w,h)=>{ plate(w,h,'#0d1118'); c.fillStyle='#'+new THREE.Color(t.color).getHexString(); c.fillRect(0,0,w,8); c.fillRect(0,h-8,w,8); txt(t.name,w/2,h/2+3,t.name.length>8?30:36,'#fff'); }));
+    cell('dark',0,700,32,32,(w,h)=>plate(w,h,'#14181d'));
+    cell('disc',64,700,160,160,(w,h)=>{ c.beginPath(); c.arc(w/2,h/2,76,0,7); c.fillStyle='#3a4250'; c.fill(); });
+    const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace; tex.anisotropy=4; T._furnAtlas={tex,cells}; }
+    const cells=T._furnAtlas.cells, tex=T._furnAtlas.tex;
+    // ---- sign faces: one textured mesh. face() = a panel that reads when you look AGAINST its normal (Nx,Nz); its back is plain dark unless a cell is named
+    const AP=[],AU=[],AI=[];
+    const quad=(x,y,z,rx,rz,w,h,n)=>{ const q=cells[n], e=1.5, u0=(q[0]+e)/AT, u1=(q[0]+q[2]-e)/AT, vt=1-(q[1]+e)/AT, vb=1-(q[1]+q[3]-e)/AT, k=AP.length/3, hx=rx*w/2, hz=rz*w/2;
+      AP.push(x-hx,y-h/2,z-hz, x+hx,y-h/2,z+hz, x+hx,y+h/2,z+hz, x-hx,y+h/2,z-hz); AU.push(u0,vb,u1,vb,u1,vt,u0,vt); AI.push(k,k+1,k+2,k,k+2,k+3); };
+    const face=(x,y,z,Nx,Nz,w,h,n,back)=>{ quad(x,y,z,Nz,-Nx,w,h,n); if(back!==false) quad(x-Nx*0.04,y,z-Nz*0.04,-Nz,Nx,w,h,back||'dark'); };
+    // ---- solids: one vertex-colour mesh. box() = centred at (x,y,z), length lx along (ax,az); ribbon() = a flat strip along the lap between two lateral offsets (numbers or functions of s)
+    const BP=[],BN=[],BC=[],BI=[], col=new THREE.Color(), m4=new THREE.Matrix4();
+    const box=(x,y,z,ax,az,lx,ly,lz,hex)=>{ const gB=new THREE.BoxGeometry(lx,ly,lz); m4.makeRotationY(Math.atan2(-az,ax)); m4.setPosition(x,y,z); gB.applyMatrix4(m4); col.set(hex);
+      const k=BP.length/3, p=gB.attributes.position, n=gB.attributes.normal, ix=gB.index; for(let i=0;i<p.count;i++){ BP.push(p.getX(i),p.getY(i),p.getZ(i)); BN.push(n.getX(i),n.getY(i),n.getZ(i)); BC.push(col.r,col.g,col.b); }
+      for(let i=0;i<ix.count;i++) BI.push(k+ix.getX(i)); gB.dispose(); };
+    const ribbon=(sA,sB,dA,dB,yOff,hex)=>{ col.set(hex); const n=Math.max(1,Math.ceil((sB-sA)/4)), fA=typeof dA==='function'?dA:()=>dA, fB=typeof dB==='function'?dB:()=>dB, k0=BP.length/3;
+      for(let i=0;i<=n;i++){ const s=nrm(sA+(sB-sA)*i/n), a=T.posAt(s,fA(s)), b=T.posAt(s,fB(s)); BP.push(a.x,a.y+yOff,a.z, b.x,b.y+yOff,b.z); BN.push(0,1,0,0,1,0); BC.push(col.r,col.g,col.b,col.r,col.g,col.b);
+        if(i<n){ const k=k0+i*2; BI.push(k,k+1,k+2, k+1,k+3,k+2, k,k+2,k+1, k+1,k+2,k+3); } } };
+    const at=(s,d)=>{ const p=T.posAt(nrm(s),d), f=p.f, tl=Math.hypot(f.tx,f.tz)||1, nl=Math.hypot(f.nx,f.nz)||1; return { x:p.x, y:p.y, z:p.z, tx:f.tx/tl, tz:f.tz/tl, nx:f.nx/nl, nz:f.nz/nl, s:nrm(s), d }; };
+    const pitAt=(s,k)=>at(s, T.pitDAt(nrm(s))+sd0*k); // k metres further from the track than the pit lane's own line
+    const clear=(p,m)=>T.distToLoop(p.x,p.z)>=W/2+m, offPit=(p)=>T.distToPit(p.x,p.z)>=6.5;
+    const seg=(p,q,y,th,hex)=>{ const dx=q.x-p.x, dz=q.z-p.z, len=Math.hypot(dx,dz)||1; box((p.x+q.x)/2,(p.y+q.y)/2+y,(p.z+q.z)/2,dx/len,dz/len,len,th,th,hex); };
+    const POST=0x2b3038, WHITE=0xf2f2f2;
+    const round1=v=>+v.toFixed(1), note=(p,extra)=>Object.assign({s:round1(p.s), x:round1(p.x), y:round1(p.y), z:round1(p.z)}, extra||{});
+    const taken=[]; const free=(p)=>taken.every(q=>Math.hypot(q.x-p.x,q.z-p.z)>=9);
+    const standOK=(p,m)=>(T._stands||[]).every(q=>{ const dx=p.x-q.x, dz=p.z-q.z, mm=(m===undefined?2.5:m); return Math.abs(dx*q.fx+dz*q.fz)>=9+mm || Math.abs(dz*q.fx-dx*q.fz)>=24+mm; }); // a grandstand's roof is 48 x 18, turned to face the road: nothing of ours inside it
+    // a trackside board on a post, facing the oncoming cars
+    const board=(p,cellName,w,h,yMid)=>{ box(p.x+p.tx*0.1,p.y+(yMid+h/2)/2,p.z+p.tz*0.1,p.tx,p.tz,0.14,yMid+h/2,0.14,POST); face(p.x,p.y+yMid,p.z,-p.tx,-p.tz,w,h,cellName); taken.push(p); };
+    const beside=(s,sd,off,m)=>{ for(const side of [sd,-sd]){ const p=at(s,side*(W/2+off)); if(clear(p,m) && offPit(p) && free(p)){ p.side=side; return p; } } return null; };
+    // ---- 1a. BRAKING BOARDS
+    try{ const ST=6, n=Math.floor(L/ST), v=[]; for(let i=0;i<n;i++) v.push(T.maxSpeedAt(i*ST,1));
+      const zs=[];
+      for(let i=0;i<n;i++){ const vi=v[i]; if(vi>84) continue; let low=true; for(let k=-12;k<=12&&low;k++) if(v[(i+k+n)%n]<vi-0.01) low=false; if(!low) continue;
+        let j=i, st=0; const bite=Math.min(89,vi+Math.max(8,(92-vi)*0.6)); while(v[((j%n)+n)%n]<bite && st<90){ j--; st++; } // back to where the corner starts to bite
+        if(v[(((j-10)%n)+n)%n]<vi+10) continue; // no faster stretch before it: not a braking zone
+        zs.push({s:nrm(j*ST), out:(T.frameAt(i*ST).curv>0?-1:1)}); }
+      zs.sort((a,b)=>a.s-b.s); const keep=[]; for(const z of zs){ const pv=keep[keep.length-1]; if(pv && z.s-pv.s<260) continue; keep.push(z); }
+      if(keep.length>1 && nrm(keep[0].s-keep[keep.length-1].s)<260) keep.pop();
+      for(const z of keep.slice(0,10)){ let put=0; for(const dist of [150,100,50]){ const p=beside(z.s-dist, z.out, 3.6, 2.6); if(!p) continue; board(p,'b'+dist,3.8,2.55,3.3); rec.brake.push(note(p,{n:dist,side:p.side})); put++; } if(put) rec.zones++; }
+    }catch(e){ console.warn('furniture brake',e); }
+    // ---- 1b. DRS BOARDS: where each zone opens (a zone that opens on the line itself is signed 45 m after it - nothing new crowds the start line)
+    try{ for(const zn of (T.cfg.drs||[])){ let s=nrm(zn[0]*L); if(s<45||s>L-45) s=45; const p=beside(s,-sd0,4.3,2.6); if(!p) continue;
+        for(const o of [-2.3,2.3]) box(p.x-p.tz*o+p.tx*0.1,p.y+2.5,p.z+p.tx*o+p.tz*0.1,p.tx,p.tz,0.16,5.0,0.16,POST);
+        face(p.x,p.y+3.6,p.z,-p.tx,-p.tz,5.6,2.8,'drs'); taken.push(p); rec.drs.push(note(p,{side:p.side})); } }catch(e){ console.warn('furniture drs',e); }
+    // ---- 5. SECTOR BOARDS: a yellow pair at the start of each third of the lap
+    try{ [120,L/3,2*L/3].forEach((sS,i)=>{ for(const sd of [1,-1]){ let p=null; for(let tries=0;tries<5&&!p;tries++){ const q=at(sS+tries*14, sd*(W/2+3.4)); if(clear(q,2.6)&&offPit(q)&&free(q)) p=q; }
+          if(!p) continue; board(p,'s'+(i+1),3.2,2.85,3.5); rec.sector.push(note(p,{n:i+1,side:sd})); } }); }catch(e){ console.warn('furniture sector',e); }
+    // ---- 2. PIT LIMIT SIGNS + LINES
+    try{ const sL=s0+10, laneLen=nrm(T.cfg.pitOut*L-s0), sE=s0+laneLen-(gp?25:140), wallD=sd0*(W/2-0.42);
+      const limSign=(p,cellName,kind)=>{ box(p.x+p.tx*0.1,p.y+1.65,p.z+p.tz*0.1,p.tx,p.tz,0.14,3.3,0.14,POST); face(p.x,p.y+3.35,p.z,-p.tx,-p.tz,2.0,2.0,cellName,'disc'); if(kind==='start') face(p.x,p.y+1.95,p.z,-p.tx,-p.tz,2.4,0.6,'pitlim'); rec.pitSigns.push(note(p,{kind})); };
+      const pO=pitAt(sL, gp?4.2:2.8); if(clear(pO,0.8)) limSign(pO,'lim','start');
+      const pI=gp? pitAt(sL,-4.2) : at(s0+13.6, wallD); if(clear(pI,gp?0.8:-2)) limSign(pI,'lim','start');
+      const pE=gp? pitAt(sE,4.2) : at(sE, sd0*(W/2+4.7)); if(clear(pE,1.0)) limSign(pE,'limEnd','end');
+      if(gp){ ribbon(sL,sL+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); ribbon(sE,sE+0.5, s=>T.pitDAt(s)-3.2, s=>T.pitDAt(s)+3.2, 0.07, WHITE); }
+      else { ribbon(sL,sL+0.5, sd0*(W/2-0.1), s=>T.pitDAt(s)+sd0*3.0, 0.07, WHITE); ribbon(sE,sE+0.5, sd0*(W/2+0.1), sd0*(W/2+3.1), 0.07, WHITE);
+        ribbon(s0-12, s0+15, wallD-0.13, wallD+0.13, 0.07, WHITE); rec.lines.push({kind:'entryLine', s:round1(nrm(s0-12)), len:27});
+        const xA=s0+215, xB=s0+laneLen-108; if(xB-xA>20){ ribbon(xA, xB, wallD-0.13, wallD+0.13, 0.07, WHITE); rec.lines.push({kind:'exitLine', s:round1(nrm(xA)), len:round1(xB-xA)}); } }
+      rec.lines.push({kind:'limitStart', s:round1(nrm(sL))}, {kind:'limitEnd', s:round1(nrm(sE))}); rec.limit=lim;
+    }catch(e){ console.warn('furniture pit limit',e); }
+    // ---- 3. PODIUM + PARC FERME: a strip along the lane past the last box, the way a real pit straight has it - the top three park in line, nose to tail, and the podium stands beside them.
+    // Everything fits between the lane and 12 m behind it, because on the GP kit circuit the kit's own pit building stands 13 m back; on the built-in circuits the open pad is behind.
+    // Where: straight after the last box when the main grandstand leaves room there, otherwise on the pad just before the first box (48 m of clear strip either way; the first that fits wins).
+    try{ const okSpot=q=>clear(q,3)&&standOK(q), probe=(a,b)=>{ const o=[]; for(let s=a;s<=b+0.01;s+=5) for(const k of [4,12.5]) o.push(pitAt(s,k)); return o.every(okSpot); };
+      let base=null; for(const b of [s0+222, s0-58]) if(base===null && probe(b,b+48)) base=b;
+      const sP=(base===null?s0+229:base+7), bayL=10.2, sA=(base===null?0:base+16), sB=sA+3*bayL;
+      if(base!==null || probe(sP-7,sP+7)){
+        const P=pitAt(sP,9.6), Fx=-sd0*P.nx, Fz=-sd0*P.nz; // (Fx,Fz): from the podium toward the track
+        const rgt=(-sd0*P.nz)*P.tx+(sd0*P.nx)*P.tz>0?1:-1; // which way along the lap is the watcher's right (2nd stands on his left, 3rd on his right)
+        const st=(off,hgt,n)=>{ const x=P.x+P.tx*off, z=P.z+P.tz*off; box(x,P.y+hgt/2,z,P.tx,P.tz,3.0,hgt,2.6,0xf4f4f4); const fh=Math.min(0.95,hgt-0.12); face(x+Fx*1.32,P.y+hgt/2,z+Fz*1.32,Fx,Fz,fh,fh,'n'+n,false); };
+        st(0,1.2,1); st(-3.0*rgt,0.85,2); st(3.0*rgt,0.6,3);
+        box(P.x-Fx*2.05,P.y+2.8,P.z-Fz*2.05,P.tx,P.tz,11.6,5.6,0.3,0x14181d); face(P.x-Fx*1.88,P.y+3.75,P.z-Fz*1.88,Fx,Fz,11.0,3.3,'podium',false);
+        box(P.x+Fx*3.4,P.y+0.05,P.z+Fz*3.4,P.tx,P.tz,11.0,0.06,4.0,0xb0182a);
+        rec.podium=note(P,{steps:3, where:(base===null||base>s0)?'after the boxes':'before the boxes'});
+      }
+      if(base!==null){
+        for(const k of [4.0,8.4]) ribbon(sA,sB, s=>T.pitDAt(s)+sd0*(k-0.09), s=>T.pitDAt(s)+sd0*(k+0.09), 0.06, WHITE);
+        for(let b=0;b<=3;b++) ribbon(sA+b*bayL-0.09,sA+b*bayL+0.09, s=>T.pitDAt(s)+sd0*4.0, s=>T.pitDAt(s)+sd0*8.4, 0.06, WHITE);
+        const ring=[[sA-1,5.6],[sA-1,9.2]]; for(let s=sA+3;s<sB+0.5;s+=4) ring.push([s,9.2]); ring.push([sB+1,9.2],[sB+1,5.6]); // the fence: along the back and a short return at each end; the lane side stays open
+        for(let i=0;i<ring.length;i++){ const a=ring[i], pa=pitAt(a[0],a[1]); box(pa.x,pa.y+0.8,pa.z,pa.tx,pa.tz,0.12,1.6,0.12,POST); if(i+1<ring.length){ const pb=pitAt(ring[i+1][0],ring[i+1][1]); seg(pa,pb,0.65,0.07,0xc9ced6); seg(pa,pb,1.45,0.07,0xc9ced6); } }
+        for(let b=0;b<3;b++){ const q=pitAt(sA+(b+0.5)*bayL, 9.25), Fx=-sd0*q.nx, Fz=-sd0*q.nz; box(q.x-Fx*0.1,q.y+1.55,q.z-Fz*0.1,q.tx,q.tz,0.12,3.1,0.12,POST); face(q.x,q.y+2.3,q.z,Fx,Fz,1.5,1.5,'n'+(b+1)); } // 1 nearest the podium
+        const gM=pitAt((sA+sB)/2,9.3), GFx=-sd0*gM.nx, GFz=-sd0*gM.nz; for(const o of [-4,4]){ const q=pitAt((sA+sB)/2+o,9.4); box(q.x,q.y+2.9,q.z,q.tx,q.tz,0.16,5.8,0.16,POST); }
+        face(gM.x,gM.y+4.75,gM.z,GFx,GFz,7.6,1.9,'parc');
+        rec.parc=note(pitAt((sA+sB)/2,6.2),{bays:3, len:round1(sB-sA)});
+      } }catch(e){ console.warn('furniture podium',e); }
+    // ---- 4. TEAM MOTORHOMES: ten two-storey units behind the transporters, each on its own piece of paddock slab, fronts toward the pit building
+    try{ for(let i=0;i<10;i++){ const sM=s0+70+i*20, Cn=pitAt(sM,32), team=TEAMS[i%TEAMS.length], tc=team?team.color:0x888888;
+        if(![pitAt(sM-8,39.5),pitAt(sM+8,39.5),pitAt(sM-8,26),pitAt(sM+8,26)].every(q=>clear(q,5)&&standOK(q,2))) continue;
+        ribbon(sM-10,sM+10, s=>T.pitDAt(s)+sd0*24, s=>T.pitDAt(s)+sd0*39.5, 0.02, 0x8f9499);
+        const Fx=-sd0*Cn.nx, Fz=-sd0*Cn.nz, X=Cn.x, Z=Cn.z, Y=Cn.y;
+        box(X,Y+1.75,Z,Cn.tx,Cn.tz,13,3.5,7.5,tc); box(X,Y+5.0,Z,Cn.tx,Cn.tz,13,3.0,7.5,0xf2f2f2); box(X,Y+5.0,Z,Cn.tx,Cn.tz,13.08,1.5,7.58,0x27384a); box(X,Y+6.6,Z,Cn.tx,Cn.tz,14,0.22,8.6,tc);
+        box(X+Fx*4.5,Y+3.35,Z+Fz*4.5,Cn.tx,Cn.tz,9,0.14,1.6,0xf2f2f2); for(const o of [-4.3,4.3]) box(X+Fx*5.2+Cn.tx*o,Y+1.67,Z+Fz*5.2+Cn.tz*o,Cn.tx,Cn.tz,0.1,3.34,0.1,POST);
+        box(X+Fx*3.78,Y+1.2,Z+Fz*3.78,Cn.tx,Cn.tz,2.0,2.4,0.06,0x1b2028); // the door
+        box(X+Fx*3.5,Y+7.5,Z+Fz*3.5,Cn.tx,Cn.tz,6.8,1.7,0.2,0x14181d); face(X+Fx*3.62,Y+7.5,Z+Fz*3.62,Fx,Fz,6.2,1.55,'t'+(i%10),false); // the team's name on a roof board
+        rec.motorhomes.push(note(Cn,{team:team?team.id:''})); } }catch(e){ console.warn('furniture motorhomes',e); }
+    // ---- the two meshes
+    if(BP.length){ const bg=new THREE.BufferGeometry(); bg.setAttribute('position', new THREE.Float32BufferAttribute(BP,3)); bg.setAttribute('normal', new THREE.Float32BufferAttribute(BN,3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(BC,3)); bg.setIndex(BI);
+      const sm=new THREE.Mesh(bg, new THREE.MeshLambertMaterial({vertexColors:true})); sm.name='raceFurnitureSolids'; root.add(sm); rec.solids=sm; }
+    if(AP.length){ const ag=new THREE.BufferGeometry(); ag.setAttribute('position', new THREE.Float32BufferAttribute(AP,3)); ag.setAttribute('uv', new THREE.Float32BufferAttribute(AU,2)); ag.setIndex(AI);
+      const am=new THREE.Mesh(ag, new THREE.MeshBasicMaterial({map:tex, alphaTest:0.5})); am.name='raceFurnitureSigns'; root.add(am); rec.signs=am; }
+    // ---- 6. THE PIT BOARD: built hidden, hung at the player's own box by updatePitBoard once the race knows his team
+    try{ if(!T._pitBoardCv){ const bc0=document.createElement('canvas'); bc0.width=256; bc0.height=320; const bt0=new THREE.CanvasTexture(bc0); bt0.colorSpace=THREE.SRGBColorSpace; T._pitBoardCv={cv:bc0,tex:bt0}; } const bc=T._pitBoardCv.cv, bt=T._pitBoardCv.tex; // one small canvas, kept across circuit builds
+      const grp=new THREE.Group(); grp.visible=false; root.add(grp);
+      const fm=new THREE.Mesh(new THREE.PlaneGeometry(1.9,2.4), new THREE.MeshBasicMaterial({map:bt})); fm.position.z=0.05; grp.add(fm);
+      const dm=new THREE.Mesh(new THREE.BoxGeometry(2.0,2.5,0.08), new THREE.MeshBasicMaterial({color:0x14181d})); grp.add(dm);
+      const pole=new THREE.Mesh(new THREE.BoxGeometry(0.1,1,0.1), dm.material); root.add(pole); pole.visible=false;
+      this._pitBoard={ grp, pole, cv:bc, tex:bt, key:'', placed:-1, t:1, snap:null, armed:false };
+    }catch(e){ console.warn('furniture pit board',e); }
+  },
+  updatePitBoard(dt){ const B=this._pitBoard, p=(typeof Race!=='undefined')&&Race.player; if(!B||!p||!p.team) return;
+    B.t+=dt; if(B.t<0.25) return; B.t=0;
+    const L=this.length, nrm=s=>((s%L)+L)%L, idx=Math.max(0,TEAMS.indexOf(p.team))%10, sd=this.pitSide||1;
+    if(B.placed!==idx){ const sB=nrm(this.cfg.pitIn*L+30+idx*(170/9)+5), wd=sd*(this.width/2-0.42), w=this.posAt(sB,wd), q=this.posAt(sB,wd-sd*0.75), f=q.f, yB=q.y+2.95;
+      B.grp.position.set(q.x,yB,q.z); B.grp.lookAt(q.x-f.tx*10-f.nx*sd*4, yB, q.z-f.tz*10-f.nz*sd*4); // faces the oncoming cars, turned a little toward the racing line
+      B.pole.scale.set(1,2.2,1); B.pole.position.set(w.x,w.y+1.0+1.1,w.z); B.pole.visible=true; B.grp.visible=true; B.sB=sB; B.placed=idx; B.key=''; B.snap=null; }
+    const to=nrm(B.sB-nrm(p.s)); // metres until he reaches the board
+    if(B.snap && p.lap<B.snap.lap) B.snap=null; // a new race on the same circuit: write the board afresh
+    if(to>=700) B.armed=true;
+    if(!B.snap || (B.armed && to<700)){ B.armed=false; let ahead=null; try{ ahead=Race.positions()[p.position-2]||null; }catch(e){}
+      B.snap={ pos:p.position, gap:(p.position>1 && p._gapF1!=null)? '+'+p._gapF1.toFixed(1) : (p.position>1? (ahead?ahead.name:'') : 'LEAD'), lap:Math.min(p.lap,Race.laps||p.lap), laps:Race.laps||0 }; }
+    const S=B.snap; if(!S) return;
+    const box=!!(p.pitIntent && !p.inPits), quali=Race.mode==='quali', key=[S.pos,S.gap,S.lap,S.laps,box?1:0,quali?1:0].join('|'); if(key===B.key) return; B.key=key;
+    const c=B.cv.getContext('2d'), w=256, h=320; c.fillStyle='#0c0f14'; c.fillRect(0,0,w,h); c.strokeStyle='#f5d90a'; c.lineWidth=8; c.strokeRect(4,4,w-8,h-8);
+    c.textAlign='center'; c.textBaseline='middle'; c.font='900 104px Arial Black, Arial, sans-serif'; c.fillStyle='#f5d90a'; c.fillText('P'+S.pos,w/2,70);
+    if(box){ c.fillStyle='#d21f26'; c.fillRect(14,128,w-28,84); c.font='900 76px Arial Black, Arial, sans-serif'; c.fillStyle='#fff'; c.fillText('BOX',w/2,173); }
+    else { c.font='900 '+(String(S.gap).length>5?46:60)+'px Arial Black, Arial, sans-serif'; c.fillStyle='#fff'; c.fillText(String(S.gap),w/2,170); }
+    c.font='900 54px Arial Black, Arial, sans-serif'; c.fillStyle='#9fd8ff'; c.fillText(quali? 'QUALI' : ('L'+S.lap+(S.laps?'/'+S.laps:'')), w/2, 262);
+    B.tex.needsUpdate=true; },
+  clearPaddock(){ // owner Nov 10 2026: nothing from the random scenery (street trees, spectators, barricades, poles) may stand on the pit pad, the podium / parc ferme strip or the motorhome paddock - an instanced piece that landed there is sunk out of sight (the same trick as the street poles on the pit lane). Only the scenery meshes added straight to the track group are looked at: the pit complex, the furniture and the grandstands' own crowds are never touched.
+    const F=this.furniture, g=this.group; if(!F||!g) return; const L=this.length, s0=this.cfg.pitIn*L, sd=this.pitSide||1, fr=[];
+    for(let ds=10; ds<=290; ds+=3){ const s=((s0+ds)%L+L)%L, f=this.frameAt(s); fr.push({ds, x:f.x, z:f.z, tx:f.tx, tz:f.tz, nx:f.nx, nz:f.nz, pd:this.pitDAt(s)*sd}); }
+    const inside=(x,z)=>{ let best=null, bd=1e18; for(const f of fr){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if(d<bd){ bd=d; best=f; } } if(!best||bd>75*75) return false; const dx=x-best.x, dz=z-best.z; if(Math.abs(dx*best.tx+dz*best.tz)>6) return false; const lat=(dx*best.nx+dz*best.nz)*sd-best.pd; return lat<=41 && lat>=(best.ds>=218?2.8:7); };
+    const m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0; g.updateMatrixWorld(true);
+    for(const o of g.children){ if(!o.isInstancedMesh) continue; let ch=false; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y<-100) continue; v.applyMatrix4(o.matrixWorld); if(inside(v.x,v.z)){ m.elements[13]-=500; o.setMatrixAt(i,m); ch=true; n++; } } if(ch) o.instanceMatrix.needsUpdate=true; }
+    F.cleared=n; },
   setLapSign(n){ if(this._lapSign&&this._lapTex){ const t=this._lapTex[Math.max(1,Math.min(10,n))]; if(t&&this._lapSign.material.map!==t){ this._lapSign.material.map=t; } } },
   buildSponsorBoards(g){
     // APEX ARCADE — the eternal sponsor. Trackside banner boards + start gantry.
@@ -4345,13 +4511,15 @@ GPBoot();
 /* test hooks for game-check play tests (JOB J38) */
 window.__test = {
   pitClutter: (r) => { r=r||4; const P=Track._pitPts||[], m=new THREE.Matrix4(), v=new THREE.Vector3(); let n=0, near=[]; const g=Track.group; if(!g||!P.length) return {pts:P.length,n:-1}; // owner Nov 7 2026: fence posts / lamp poles standing on the pit lane
-    g.traverse(o=>{ if(!o.isInstancedMesh) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
+    const own=new Set(); for(const rt of [Track._pitEnvRoot,Track._furnRoot]) if(rt) rt.traverse(o=>own.add(o)); // Nov 10 2026: the pit complex's own pieces (gantry posts, the wall's fence posts) and the race furniture BELONG at the lane - this probe counts the trackside scenery that strays onto it
+    g.traverse(o=>{ if(!o.isInstancedMesh||own.has(o)) return; for(let i=0;i<o.count;i++){ o.getMatrixAt(i,m); v.setFromMatrixPosition(m); if(v.y>-100 && Track.distToPit(v.x,v.z)<r){ n++; if(near.length<5) near.push([+v.x.toFixed(1),+v.y.toFixed(1),+v.z.toFixed(1),o.geometry.type,o.count]); } } });
     return {pts:P.length,n,near}; },
   pitProbe: () => { const p=Race.player; return p?{armed:!!p.pitIntent,mode:Race.mode,inPits:p.inPits,hold:!!p.pitHold,box:p.pitBoxS,s:p.s,crew:!!(p.crew&&p.crew.visible),wheelsHidden:(p.mesh.userData.wheels||[]).filter(w=>!w.visible).length,lift:p._crewLift||0,tire:p.tire,hits:window.__f1pitcrew||0,done:window.__f1pitdone||0,tireNext:($('tireNext')||{}).textContent}:null; }, // owner Nov 4 2026: pit-crew proof
   pitSpot: (i) => { const sp=(Track._pitEnv&&Track._pitEnv.spots)||[]; return sp[i||0]||null; }, // owner Nov 8 2026 round 4: working-spot positions for the fit pictures
   pitLook: () => { const p=Race.player; if(!p) return null; const cnt=o=>{ let ms=0,fg=0; if(o) o.traverse(q=>{ if(q.isMesh) ms++; if(q.userData&&q.userData.isFig) fg++; }); return {meshes:ms,figs:fg}; }; let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { crew:cnt(p.crew), station:cnt(p._station), gear:cnt(p._gear), chief:cnt((BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs && Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]) ? Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10].grp : p._chief), row:cnt(p._laneRow), env:cnt(Track._pitEnvRoot), envAnims:(Track._pitEnv?Track._pitEnv.anims.map(a=>[a.k,+a.fig.position.x.toFixed(2),+a.fig.position.z.toFixed(2),+a.fig.scale.y.toFixed(2),a.tyre?a.tyre.visible:null]):null), booths:(Track._pitEnv&&Track._pitEnv.booths)?Track._pitEnv.booths.length:0, drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; },
   pitWall: () => { const w=Track._pitEnv&&Track._pitEnv.wall; if(!w) return null; const L=Track.length, st=w.stations, nrm=s=>((s%L)+L)%L; let len=0, maxGap=0; for(let i=0;i<st.length-1;i++){ const gg=nrm(st[i+1][0]-st[i][0]); len+=gg; if(gg>maxGap) maxGap=gg; } const box0=nrm(Track.cfg.pitIn*L+30); let minClear=1e9; for(let i=0;i<st.length;i++){ const tgt=Track.pitDAt(st[i][0])-(Track.gp?0:3.5); const cl=Math.abs(tgt)-1.52-(Math.abs(st[i][1])+w.t/2); if(cl<minClear) minClear=cl; } return { h:w.h, t:w.t, len:+len.toFixed(1), stations:st.length, maxGap:+maxGap.toFixed(2), coverBefore:+nrm(box0-st[0][0]).toFixed(1), coverAfter:+nrm(st[st.length-1][0]-nrm(box0+170)).toFixed(1), minLaneClear:+minClear.toFixed(3), dCentre:st[0][1], W:Track.width }; }, // owner Nov 9 2026 missing-list item 1: the continuous pit wall, measured at the road edge
   garageDoors: () => { const gd=Track._pitEnv&&Track._pitEnv.garages; if(!gd) return null; const L=Track.length, nrm=s=>((s%L)+L)%L; const box0=nrm(Track.cfg.pitIn*L+30), step=170/9; let maxOff=0; for(let i=0;i<gd.doors.length;i++){ const off=Math.abs(((gd.doors[i].s-nrm(box0+i*step)+L*1.5)%L)-L/2); if(off>maxOff) maxOff=off; } let inScene=false, n=gd.mesh; while(n){ if(n===scene){ inScene=true; break; } n=n.parent; } const st0=gd.stations&&gd.stations[0]; return { doors:gd.doors.length, maxOff:+maxOff.toFixed(3), faceOff:st0?+(st0[1]-Track.pitDAt(st0[0])).toFixed(2):gd.faceOff, h:gd.h, hasMap:!!(gd.mesh.material&&gd.mesh.material.map), inScene }; }, // owner Nov 10 2026 missing-list item 3: the garage doors on the pit building face, one per box, measured against the box centres
+  furniture: () => { const F=Track.furniture; if(!F) return null; const B=Track._pitBoard; let inScene=false, n=Track._furnRoot; while(n){ if(n===scene){ inScene=true; break; } n=n.parent; } const cnt=m=>m&&m.geometry&&m.geometry.index?m.geometry.index.count/3:0; return { track:Track.cfg&&Track.cfg.id, gp:!!Track.gp, zones:F.zones, brake:F.brake, drs:F.drs, sector:F.sector, pitSigns:F.pitSigns, lines:F.lines, limit:F.limit, podium:F.podium, parc:F.parc, motorhomes:F.motorhomes, cleared:F.cleared, minOff:(()=>{ let m=1e9; for(const q of [...F.brake,...F.drs,...F.sector]){ const d=Track.distToLoop(q.x,q.z)-Track.width/2; if(d<m) m=d; } return +m.toFixed(2); })(), drsZones:(Track.cfg.drs||[]).length, tris:{solids:cnt(F.solids), signs:cnt(F.signs)}, board:B?{ visible:B.grp.visible, key:B.key, pos:[+B.grp.position.x.toFixed(1),+B.grp.position.y.toFixed(1),+B.grp.position.z.toFixed(1)], sB:B.sB }:null, frame:(s,d)=>{ const q=Track.posAt(((s%Track.length)+Track.length)%Track.length,d||0); return [q.x,q.y,q.z,q.f.tx,q.f.tz,q.f.nx,q.f.nz]; }, pitD:(s)=>Track.pitDAt(((s%Track.length)+Track.length)%Track.length), pitIn:Track.cfg.pitIn*Track.length, L:Track.length, W:Track.width, side:Track.pitSide||1, inScene }; }, // owner Nov 10 2026 9:29 PM: the race furniture (braking / DRS / sector boards, pit limit signs + lines, podium, parc ferme, motorhomes, pit board)
   marshals: () => { const ps=Track.marshalPosts||[], fs=Track._marshalFigs||[]; if(!ps.length||!fs.length) return null; const v=new THREE.Vector3(); let worst=0, covered=0; for(const P of ps){ let best=1e9; for(const f of fs){ f.getWorldPosition(v); const d=Math.hypot(v.x-P.x, v.z-P.z); if(d<best) best=d; } if(best<=3) covered++; if(best>worst) worst=best; } let sm=0; scene.traverse(q=>{ if(q.isMesh) sm++; }); return { posts:ps.length, marshals:fs.length, covered, worstOff:+worst.toFixed(2), stand:fs.length?+(fs[0].scale.x*MECH.height).toFixed(2):0, posts0:ps.slice(0,6).map(P=>[+P.x.toFixed(1),+P.y.toFixed(1),+P.z.toFixed(1)]), drawCalls:renderer?renderer.info.render.calls:-1, sceneMeshes:sm }; }, // owner Nov 10 2026 missing-list item 2: a marshal at every marshal post, measured against the post record buildTrackside keeps
   chiefPos: () => { const p=Race.player; if(!p) return null; let fig=null, drop=null, seatTop=null, vis=true; // BOOTH FIT ROUND: the player's chief is the booth chief when booths are live
     if(BOOTH.ready && Track._pitEnv && Track._pitEnv.boothChiefs){ const bc=Track._pitEnv.boothChiefs[Math.max(0,TEAMS.indexOf(p.team))%10]; if(bc&&bc.fig){ fig=bc.fig; drop=BOOTH.chiefDrop; seatTop=BOOTH.seatTop; } }
