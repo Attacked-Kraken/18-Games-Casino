@@ -1757,7 +1757,7 @@ const Track = {
         for(const ds of [-16,-8,0,6,16,28]) for(const kk of [3,8,12,17,22.5]) { const q=pitAt(sA+ds,kk); if(!(clear(q,1.5)&&standOK(q,1))) return false; } return true; };
       for(const k of [17,14,20]){ for(let back=gp?30:60; back<=gp?150:240 && !put; back+=10){ const sA=sEnd-back, A=pitAt(sA,k), B=pitAt(sA-9,k);
           if(apronOK(sA)&&[A,B,pitAt(sA+3,k+3),pitAt(sA-12,k+3),pitAt(sA+3,k-3),pitAt(sA-12,k-3)].every(q=>clear(q,4)&&standOK(q,2)&&T.distToPit(q.x,q.z)>=4.5)) put={A,B,k,sA}; } if(put) break; }
-      if(put) T._buildApron(root, put.sA, sd0, pitAt, ribbon, WHITE, put.k);
+      if(put) T._buildApron(root, put.sA, sd0, pitAt, ribbon, WHITE, put.k, box);
       rec.emergency=put?{ safety:note(put.A,{kind:'safety'}), medical:note(put.B,{kind:'medical'}), loaded:0, apron:{ s:round1(nrm(put.sA-16)), len:58, k0:11.5, k1:22.5 } }:null;
       if(put) T._loadEmergency(root, put.A, put.B);
     }catch(e){ console.warn('furniture emergency',e); }
@@ -1782,7 +1782,7 @@ const Track = {
       const t=new THREE.CanvasTexture(cv); t.mapping=THREE.EquirectangularReflectionMapping; t.colorSpace=THREE.SRGBColorSpace;
       const pm=new THREE.PMREMGenerator(renderer); this._emEnvTex=pm.fromEquirectangular(t).texture; pm.dispose(); t.dispose(); }catch(e){ this._emEnvTex=null; } return this._emEnvTex; },
   _glowTex(){ if(this._glowT) return this._glowT; const cv=document.createElement('canvas'); cv.width=cv.height=64; const x=cv.getContext('2d'), g=x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.18,'rgba(255,255,255,0.65)'); g.addColorStop(0.5,'rgba(255,255,255,0.14)'); g.addColorStop(1,'rgba(255,255,255,0)'); x.fillStyle=g; x.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return this._glowT=t; },
-  _buildApron(root, sA, sd0, pitAt, ribbon, WHITE, kC){ // the paved apron the safety car + medical car stand on, and the angled road they drive out of / back into the pit lane by
+  _buildApron(root, sA, sd0, pitAt, ribbon, WHITE, kC, boxFn){ // the paved apron the safety car + medical car stand on, and the angled road they drive out of / back into the pit lane by
     try{ const T=this, tex=T._apronTex||(()=>{ const cv=document.createElement('canvas'); cv.width=cv.height=256; const x=cv.getContext('2d'); x.fillStyle='#34363a'; x.fillRect(0,0,256,256);
         for(let k=0;k<5200;k++){ const v=40+Math.random()*34|0; x.fillStyle='rgba('+v+','+v+','+(v+3)+',0.55)'; x.fillRect(Math.random()*256,Math.random()*256,1+Math.random()*2,1+Math.random()*2); }
         for(let k=0;k<7;k++){ x.strokeStyle='rgba(18,18,20,0.35)'; x.lineWidth=1; x.beginPath(); let px=Math.random()*256, py=Math.random()*256; x.moveTo(px,py); for(let q=0;q<6;q++){ px+=Math.random()*40-20; py+=Math.random()*40-20; x.lineTo(px,py); } x.stroke(); }
@@ -1801,12 +1801,12 @@ const Track = {
       // painted: white edge lines (apron back + link road both sides), a white box round each car, a yellow dashed guide down the link road
       ln(sA0,sA1,22.1,22.35,WHITE); ln(sA0,sA1,11.9,12.15,WHITE); ln(sA0-0.2,sA0+0.05,11.9,22.35,WHITE);
       ln(sA1,sB1,s=>kHi(s)-0.4,s=>kHi(s)-0.15,WHITE); ln(sA1,sB1,s=>kLo(s)+0.15,s=>kLo(s)+0.4,WHITE);
-      for(const c of [sA-9,sA]){ ln(c-2.9,c+2.9,kC-1.55,kC-1.43,WHITE); ln(c-2.9,c+2.9,kC+1.43,kC+1.55,WHITE); ln(c-2.9,c-2.8,kC-1.55,kC+1.55,WHITE); ln(c+2.8,c+2.9,kC-1.55,kC+1.55,WHITE); }
+      for(const c of [sA-9,sA]){ const p=pitAt(c,kC), nx=-sd0*p.nx, nz=-sd0*p.nz, bx=(a,b,lx,lz)=>{ const X=p.x+p.tx*a+nx*b, Z=p.z+p.tz*a+nz*b; boxFn(X,p.y+0.07,Z,p.tx,p.tz,lx,0.02,lz,WHITE); }; bx(0,-1.7,6.0,0.12); bx(0,1.7,6.0,0.12); bx(-3.0,0,0.12,3.4); bx(3.0,0,0.12,3.4); } // each car's bay: a straight painted rectangle in the car's own frame
       for(let s=sA1+1; s<sB1-3; s+=3.2) ln(s,s+1.6,s2=>(kLo(s2)+kHi(s2))/2-0.1,s2=>(kLo(s2)+kHi(s2))/2+0.1,YEL);
     }catch(e){ console.warn('emergency apron',e); } },
   _loadEmergency(root, A, B){ // owner Nov 11 2026: parked safety car (Han66st, CC-BY 4.0, 'Generic Sport Car Low Poly', the orange car cut out) and medical car (calebcram, CC-BY 4.0); each is measured, scaled to its real length, stood on the ground, given clear-coat paint + dark glass, head / tail lamps and a real LED light bar with glow
     const T=this, rec=this.furniture; if(!rec||!rec.emergency) return;
-    const parts=[ {key:'safety', P:A, file:'models/fetched/f1-safety-car-orange.glb', len:4.6, axis:'x', rot:0, kind:'safety'}, {key:'medical', P:B, file:'models/fetched/ambulance-low-poly-c38293.glb', len:5.2, axis:'z', rot:Math.PI/2, kind:'medical'} ];
+    const parts=[ {key:'safety', P:A, file:'models/fetched/f1-safety-car-orange.glb', len:6.95, bl:4.5, bw:1.9, bh:1.2, axis:'x', rot:0, kind:'safety'}, {key:'medical', P:B, file:'models/fetched/ambulance-low-poly-c38293.glb', len:5.2, axis:'z', rot:Math.PI/2, kind:'medical'} ];
     T._emCache=T._emCache||{}; const lights=[], env=T._emEnv(), gtex=T._glowTex();
     const glow=(parent,x,y,z,sz,hex,op)=>{ const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:gtex,color:hex,transparent:true,opacity:op,depthWrite:false,blending:THREE.AdditiveBlending})); sp.position.set(x,y,z); sp.scale.setScalar(sz); parent.add(sp); return sp; };
     const finish=(gl,key)=>{ if(gl._emFin) return; gl._emFin=true; const names=[]; // paint -> clear coat, glass -> dark and shiny, tyres -> rubber
@@ -1826,16 +1826,18 @@ const Track = {
         if(!root.parent) return; // the circuit was rebuilt while this loaded
         finish(gl,it.key);
         const car=gl.scene.clone(true); car.updateMatrixWorld(true);
-        const bb=new THREE.Box3().setFromObject(car), sz=bb.getSize(new THREE.Vector3()), ctr=bb.getCenter(new THREE.Vector3());
+        const all=new THREE.Box3().setFromObject(car,true), bb=new THREE.Box3(); // the car's true body: flat stray pieces in the file (shadow planes, ground cut-outs) are left out of the measure, they pushed the lamps off the car
+        car.traverse(o=>{ if(o.isMesh&&o.geometry){ const b=new THREE.Box3().setFromObject(o,true), h=b.max.y-b.min.y; if(h>0.12*(all.max.y-all.min.y)) bb.union(b); } }); if(bb.isEmpty()) bb.copy(all);
+        const sz=bb.getSize(new THREE.Vector3()), ctr=bb.getCenter(new THREE.Vector3());
         const ln=it.axis==='x'?sz.x:sz.z, k=it.len/ln; // real length along the model's own long axis (named per model: the safety car file carries stray flat pieces that make its other axis look longer)
         const hold=new THREE.Group(); const inner=new THREE.Group(); inner.add(car); car.position.set(-ctr.x,-bb.min.y,-ctr.z); inner.scale.setScalar(k); hold.add(inner);
         inner.rotation.y=it.rot; // turns the model's nose to +X (the direction of travel)
         const P=it.P, yaw=Math.atan2(-P.tz,P.tx); // forward = the direction of travel along the lap (the way the cars leave the pits)
         hold.rotation.y=yaw; hold.position.set(P.x,P.y+0.04,P.z); hold.name='emergency-'+it.key;
-        const hh=sz.y*k, med=it.key==='medical', wd=(it.axis==='x'?(med?sz.z:Math.min(sz.z,sz.y*2.1)):sz.x)*k, half=it.len/2;
+        const med=it.key==='medical', hh=it.bh||sz.y*k, wd=it.bw||(it.axis==='x'?sz.z:sz.x)*k, half=(it.bl||it.len)/2, bodyL=it.bl||it.len; // the safety car's file carries invisible stray pieces that inflate its measured box, so its real body size is stated (3.0 x 1.3 m rendered at the old scale)
         // contact shadow
         { const cv=document.createElement('canvas'); cv.width=cv.height=64; const x=cv.getContext('2d'), g=x.createRadialGradient(32,32,4,32,32,32); g.addColorStop(0,'rgba(0,0,0,0.62)'); g.addColorStop(0.7,'rgba(0,0,0,0.28)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle=g; x.fillRect(0,0,64,64);
-          const sh=new THREE.Mesh(new THREE.PlaneGeometry(it.len*1.22,wd*1.45),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3})); sh.rotation.x=-Math.PI/2; sh.position.y=0.012; hold.add(sh); }
+          const sh=new THREE.Mesh(new THREE.PlaneGeometry(bodyL*1.22,wd*1.45),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3})); sh.rotation.x=-Math.PI/2; sh.position.y=0.012; hold.add(sh); }
         // head + tail lamps (lit, dim) and brake-light red
         for(const sd of [-1,1]){
           const hx=half-(med?0.06:0.1), hy=hh*(med?0.30:0.30), hz=sd*wd*(med?0.34:0.33);
@@ -1855,7 +1857,7 @@ const Track = {
         // grille / windscreen strobes (front) and rear flashers
         const strobe=(x,y,z,hex)=>{ const m=new THREE.MeshBasicMaterial({color:hex}); const b=new THREE.Mesh(new THREE.BoxGeometry(0.05,0.05,0.2),m); b.position.set(x,y,z); hold.add(b); const g=glow(hold,x+(x>0?0.1:-0.1),y,z,0.55,hex===0xff2a2a?0xff4040:(hex===0xffa000?0xffb050:0x5a90ff),0); return {m,g,hex}; };
         const st=[ strobe(half-0.03,hh*(med?0.46:0.38),-wd*0.18,cols[0]), strobe(half-0.03,hh*(med?0.46:0.38), wd*0.18,med?0xff2a2a:cols[1]), strobe(-half+0.03,hh*(med?0.72:0.5),-wd*0.3,0xffa000), strobe(-half+0.03,hh*(med?0.72:0.5),wd*0.3,0xffa000) ];
-        const pool=new THREE.Mesh(new THREE.PlaneGeometry(it.len*2.4,wd*2.6),new THREE.MeshBasicMaterial({map:gtex,color:cols[0]===0x2b6bff?0x2a5cff:0xff8a00,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4})); pool.rotation.x=-Math.PI/2; pool.position.y=0.02; hold.add(pool);
+        const pool=new THREE.Mesh(new THREE.PlaneGeometry(bodyL*2.4,wd*2.6),new THREE.MeshBasicMaterial({map:gtex,color:cols[0]===0x2b6bff?0x2a5cff:0xff8a00,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4})); pool.rotation.x=-Math.PI/2; pool.position.y=0.02; hold.add(pool);
         lights.push({mats,gA,st,pool,t:Math.random()*0.6,base:cols,med});
         root.add(hold); rec.emergency[it.key+'Size']=[+(sz.x*k).toFixed(2),+(sz.y*k).toFixed(2),+(sz.z*k).toFixed(2)]; rec.emergency.loaded++;
         T._emGroups=(T._emGroups||[]); T._emGroups.push(hold);
@@ -1865,7 +1867,7 @@ const Track = {
   },
   tickEmergency(dt){ const L=this._emLights; if(!L||!L.length) return; // a real emergency pattern: each side of the bar flashes twice, then the other side does, a second-long cycle; LEDs fade a hair, they do not blink like bulbs
     for(const o of L){ o.t=(o.t+dt)%1.0; const t=o.t, on=(a)=>(t>=a&&t<a+0.085)||(t>=a+0.15&&t<a+0.235), iA=on(0)?1:0, iB=on(0.5)?1:0, I=[iA,iB]; o.i=o.i||[0,0]; o.i[0]+=(iA-o.i[0])*Math.min(1,dt*30); o.i[1]+=(iB-o.i[1])*Math.min(1,dt*30);
-      for(let sd=0;sd<2;sd++){ const v=o.i[sd], c=o.base[sd], r=((c>>16)&255)/255, g=((c>>8)&255)/255, b=(c&255)/255, f=0.1+0.9*v; for(const m of o.mats[sd]) m.color.setRGB(r*f,g*f,b*f); o.gA[sd].material.opacity=0.9*v; }
+      for(let sd=0;sd<2;sd++){ const v=o.i[sd], c=o.base[sd], r=((c>>16)&255)/255, g=((c>>8)&255)/255, b=(c&255)/255, f=0.06+0.94*v; for(const m of o.mats[sd]) m.color.setRGB(r*f,g*f,b*f); o.gA[sd].material.opacity=0.9*v; }
       const sv=[o.i[0],o.i[1],o.i[1],o.i[0]]; o.st.forEach((q,i)=>{ const v=sv[i], c=q.hex, f=0.12+0.88*v; q.m.color.setRGB(((c>>16)&255)/255*f,((c>>8)&255)/255*f,(c&255)/255*f); q.g.material.opacity=0.85*v; });
       o.pool.material.opacity=0.34*Math.max(o.i[0],o.i[1]); } },
   updatePitBoard(dt){ const B=this._pitBoard, p=(typeof Race!=='undefined')&&Race.player; if(!B||!p||!p.team) return;
