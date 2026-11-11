@@ -4151,4 +4151,98 @@ async test(page, h) {
       return true;
     },
   },
+  {
+    id: 'tester-tourn-second-champion',
+    mode: 'f-t-006',
+    ask: 'FIND F-T-006 (T10-79): a tournament head-to-head can CROWN the player CHAMPION after they LOSE the race - tournMatchDone still decides advancement from a fresh rivalMark() draw on sprint events, because the sprint/distance/hurdles engines have no ENG.aiBest for the F-T-005 fix to read (only field engines do), so the fresh draw is the fallback. Losing a head-to-head round must eliminate you (DONE.md section 8: results must match reality; the tournament hint says Win your head-to-head each round); a results screen reading TOURNAMENT CHAMPION after a (2nd)-place finish must never appear. Proof test forces the worst case in the final: the live rival target time is set to 40.0 s (he wins) and the player points are scored at 1100 (above any fresh draw at 1025, below the 1200 the rival scores from his achieved mark).',
+    async test(page, h) {
+      const screenIs = (id) => h.eval((w) => (document.querySelector('.screen.on') || {}).id === w, id).catch(() => false);
+      const waitScreen = async (id, tries) => { for (let i = 0; i < (tries || 40); i++) { if (await screenIs(id)) return true; await h.wait(150); } return false; };
+      const waitMenu = async () => { for (let g = 0; g < 80; g++) { const ready = await h.eval(() => !!(window.__tf) && (document.querySelector('.screen.on') || {}).id === 'menu' && !document.body.classList.contains('playing')).catch(() => false); if (ready) break; await h.wait(150); } return true; };
+      // one synchronous drive chunk (20 game-seconds), same contracts as ~/pwtest/drive.mjs
+      const driveChunk = () => {
+        const T = window.__tf, e = T && T.eng();
+        if (!e) return { state: 'no-engine' };
+        const kind = (e.ev && e.ev.eng) || '';
+        if (!window.__fp) window.__fp = { steps: 0, side: 'L', lastStride: -99, acted: {} };
+        const S = window.__fp;
+        const stride = () => { if (typeof e.stride === 'function') { e.stride(S.side); S.side = S.side === 'L' ? 'R' : 'L'; } };
+        const act = () => { if (typeof e.action === 'function') e.action(); else if (typeof e.act === 'function') e.act(); else if (typeof e.press === 'function') e.press(); };
+        const actDown = () => { if (typeof e.actionDown === 'function') e.actionDown(); else act(); };
+        const actUp = () => { if (typeof e.actionUp === 'function') e.actionUp(); else act(); };
+        let n = 0; const MAX = 60 * 20;
+        while (n < MAX && !e.done) {
+          e.update(1 / 60); n++; S.steps++;
+          const t = S.steps / 60, ph = e.phase || '', r = e.r || {};
+          if (kind === 'sprint' || kind === 'hurdles' || kind === 'relay') { if (ph === 'run' && t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } }
+          else if (kind === 'distance') { if (ph === 'run' && t - S.lastStride >= 0.3) { stride(); S.lastStride = t; } }
+          else if (kind === 'longjump') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const pos = r.pos || 0; if (!S.acted[A('to')] && pos >= 36.2 && pos <= 39.6) { if (typeof e.action === 'function') e.action(); S.acted[A('to')] = 1; } } else if (ph === 'angle') { const a = e.ang; if (!S.acted[A('ang')] && a != null && a >= 40.5 && a <= 43.5) { if (typeof e.action === 'function') e.action(); S.acted[A('ang')] = 1; } } }
+          else if (kind === 'triplejump') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const pos = r.pos || 0; if (!S.acted[A('to')] && pos >= 36.2 && pos <= 39.6) { if (typeof e.action === 'function') e.action(); S.acted[A('to')] = 1; } } else if (ph === 'phase') { const sub = e.sub || 0, m = e.marker; if (!S.acted[A('ph' + sub)] && m != null && m >= 0.42 && m <= 0.58) { if (typeof e.action === 'function') e.action(); S.acted[A('ph' + sub)] = 1; } } }
+          else if (kind === 'highjump' || kind === 'polevault') { const key = (e.hi || 0) + ':' + (e.attLeft || 0), pos = r.pos || 0; if (ph === 'approach') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } const lo = (e.zoneLo != null ? e.zoneLo : 12.8), hi2 = (e.zoneHi != null ? e.zoneHi : 15.2); if (!S.acted['vj' + key] && pos >= lo + 0.15 && pos <= hi2 - 0.3) { if (typeof e.action === 'function') e.action(); S.acted['vj' + key] = 1; } } else if (ph === 'bar') { const m = e.marker; if (!S.acted['bar' + key] && m != null && Math.abs(m - 0.5) <= 0.06) { if (typeof e.action === 'function') e.action(); S.acted['bar' + key] = 1; } } }
+          else if (kind === 'throw') { const att = e.attempt || 1, A = (x) => att + ':' + x; if (ph === 'runup') { if (t - S.lastStride >= 0.12) { stride(); S.lastStride = t; } } else if (ph === 'hold') { if (!S.acted[A('hold')]) { actDown(); S.acted[A('hold')] = 1; } } else if (ph === 'spinning') { if (!S.acted[A('rel')] && (e.spinT || 0) >= 1.52) { actUp(); S.acted[A('rel')] = 1; } } else if (ph === 'spin') { const idx = e.spinIdx || 0; if (!S.acted[A('spin' + idx)] && (e.spinT || 0) >= (idx + 1) * 0.6 - 0.02) { if (typeof e.action === 'function') e.action(); S.acted[A('spin' + idx)] = 1; } } else if (ph === 'power') { if (!S.acted[A('power')] && (e.power || 0) >= 0.97) { if (typeof e.action === 'function') e.action(); S.acted[A('power')] = 1; } } else if (ph === 'angle') { const a = e.ang; if (!S.acted[A('angle')] && a != null && a >= 40.5 && a <= 43.5) { if (typeof e.action === 'function') e.action(); S.acted[A('angle')] = 1; } } }
+          else { if (ph === 'run' && t - S.lastStride >= 0.125) { stride(); S.lastStride = t; } if (ph && ph !== 'run' && ph !== 'intro' && ph !== 'marks' && ph !== 'set' && !S.acted['k_' + ph]) { act(); S.acted['k_' + ph] = 1; } }
+        }
+        return { state: e.done ? 'done' : 'going' };
+      };
+      const bodyHas = (s) => h.eval((t) => { const el = document.getElementById('tournBody'); return el ? el.textContent.includes(t) : false; }, s).catch(() => false);
+      await h.eval(() => { try { localStorage.clear(); sessionStorage.clear(); } catch (e) {} location.reload(); return true; }).catch(() => {});
+      await h.wait(1500);
+      await waitMenu();
+      await h.eval(() => { window.__origRandom = Math.random; return true; }).catch(() => {});
+      for (let entry = 1; entry <= 6; entry++) {
+        await h.eval(() => { if (window.__origRandom) Math.random = window.__origRandom; return true; }).catch(() => {});
+        const entered = await h.eval(() => { const b = document.getElementById('bTourn'); if (!b) return false; b.click(); return true; }).catch(() => false);
+        if (!entered) return 'could not open tournament (entry ' + entry + ', F-T-006)';
+        await h.wait(900);
+        let guard = 0;
+        while (guard++ < 60) {
+          if (await bodyHas('CHAMPION')) break;
+          if (await bodyHas('ELIMINATED')) break;
+          const lbl = await h.eval(() => { const b = document.getElementById('bTournPlay'); if (!b) return null; return b.style.display !== 'none' ? b.textContent.trim() : null; }).catch(() => null);
+          if (!lbl) { await h.wait(600); continue; }
+          if (/FINAL/.test(lbl)) { await h.eval(() => { Math.random = () => 0; return true; }).catch(() => {}); }
+          await h.eval(() => { const b = document.getElementById('bTournPlay'); if (b) b.click(); return true; }).catch(() => {});
+          await h.wait(900);
+          if (!await waitScreen('card', 60)) return 'entry ' + entry + ' ' + lbl + ': card screen never appeared (F-T-006)';
+          await h.eval(() => { const b = document.getElementById('bCardStart'); if (b) b.click(); return true; }).catch(() => {});
+          let hasEng = false;
+          for (let i = 0; i < 40 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(400); }
+          if (!hasEng) return 'entry ' + entry + ' ' + lbl + ': no engine (F-T-006)';
+          // deterministic worst case for the LOSING side (F-T-006), FINAL only: the live rival's target time is set to 40.0 s
+          // (he wins the race outright, so the player places 2nd) and the player's points are scored at 1100 - above the
+          // slowest fresh rivalMark() draw any tournament rival can make (1025 at the top rating 0.93) and below the 1200 the
+          // rival scores from his achieved 40.0 s mark on a fixed build. The fresh draw is forced slowest (random = 1). Losing
+          // the head-to-head must eliminate the player, but on main the slow fresh draw scores fewer points than the player, so
+          // he advances and is crowned CHAMPION. On a fixed build the rival is scored from his achieved mark (1200, beats 1100)
+          // or the place decides, and the player is ELIMINATED.
+          await h.eval((isF) => { const e = window.__tf.eng(); if (isF && e && e.ai && e.ai[0]) e.ai[0].tTarget = 40.0; if (isF && e) { const g = e.getResult.bind(e); e.getResult = () => Object.assign({}, g(), { points: 1100 }); } Math.random = () => 1; return true; }, lbl === 'PLAY FINAL').catch(() => {});
+          await h.eval(() => { window.__fp = null; return true; }).catch(() => {});
+          let done = false;
+          const t0 = Date.now();
+          while (!done && Date.now() - t0 < 180000) {
+            const r = await h.eval(driveChunk).catch(() => null);
+            if (r && r.state === 'done') { done = true; break; }
+            if (r && r.state === 'no-engine') break;
+            await h.wait(60);
+          }
+          if (!done) return 'entry ' + entry + ' ' + lbl + ': event never finished (F-T-006)';
+          await h.wait(700);
+          if (!await waitScreen('results', 60)) return 'entry ' + entry + ' ' + lbl + ': results screen never appeared (F-T-006)';
+          const info = await h.eval(() => { const e = window.__tf && window.__tf.eng(); let disp = ''; try { disp = e ? e.getResult().display : ''; } catch (err) {} return { m: (document.getElementById('resMark') || {}).textContent || '', b: (document.getElementById('resBoard') || {}).innerText || '', disp, place: e ? e.place : null }; }).catch(() => null);
+          if (!info) return 'entry ' + entry + ' ' + lbl + ': could not read results (F-T-006)';
+          if (/\(2nd\)|\(3rd\)|\(4th\)/.test(info.disp) && !/ELIMINATED/.test(info.m)) {
+            // save the results screen as the finding screenshot (harmless no-op on other checkouts)
+            await page.screenshot({ path: '/home/hatch/workspace/window10/wt-t179/findings/apextrackfield/pics/F-T-006.jpg', type: 'jpeg', quality: 75, timeout: 60000 }).catch(() => {});
+            return 'tournament entry ' + entry + ' ' + lbl + ': player placed ' + info.disp + ' (place ' + info.place + ') but ADVANCED - resMark="' + info.m + '" board="' + info.b.replace(/\s+/g, ' ').slice(0, 200) + '" - losing a head-to-head must eliminate (F-T-006: sprint engines have no ENG.aiBest, so tournMatchDone still decides from a fresh rivalMark() draw)';
+          }
+          await h.wait(400);
+          await h.eval(() => { const b = document.getElementById('bResNext'); if (b) b.click(); return true; }).catch(() => {});
+          await h.wait(700);
+        }
+        await h.eval(() => { const b = document.getElementById('bTournBack'); if (b) b.click(); return true; }).catch(() => {});
+        await h.wait(800);
+      }
+      return true;
+    },
+  },
 ];
