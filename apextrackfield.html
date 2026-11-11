@@ -3500,8 +3500,14 @@ showCard(ev);
 }
 function tournMatchDone(ev,res,newBest){
 const T=G.trn, opp=T.myOpp;
-const oppMark=rivalMark(ev,opp.rating), oppPts=pointsFor(ev,oppMark);
-const won=res.points>=oppPts;
+// F-T-005: the rival is scored from the mark he really got in the race just run (ENG.aiBest[0], the head-to-head field is [singleRival]),
+// like careerRivalPoints(); the fresh rivalMark() draw is only the fallback (skip). A 1st-place finish always advances.
+const place=careerPlace(ev,res);
+let oppMark=rivalMark(ev,opp.rating);
+try{ if(ENG&&Array.isArray(ENG.aiBest)&&typeof ENG.aiBest[0]==='number'&&isFinite(ENG.aiBest[0])&&ENG.aiBest[0]>0) oppMark=ENG.aiBest[0]; }catch(e){}
+let oppPts=pointsFor(ev,oppMark);
+if(place===1&&isFinite(res.points)) oppPts=Math.min(oppPts,res.points);
+const won=place===1||res.points>=oppPts;
 $('resTitle').textContent=ev.name.toUpperCase()+' — '+TRN_ROUNDS[T.round];
 const rows=[
 {n:athleteName+' — '+res.display,p:res.points},

@@ -4117,6 +4117,11 @@ async test(page, h) {
           let hasEng = false;
           for (let i = 0; i < 40 && !hasEng; i++) { hasEng = await h.eval(() => !!(window.__tf && window.__tf.eng())).catch(() => false); if (!hasEng) await h.wait(400); }
           if (!hasEng) return 'entry ' + entry + ' ' + lbl + ': no engine (F-T-005)';
+          // deterministic worst case: the fresh rivalMark() draw made when the match ends is the fastest the game can draw (random = 0);
+          // the engine was already built with its own draws. Winning the race must still advance the player.
+          // and the player is a NARROW winner: he still crosses first, but his points are scored low (100), so a fresh rival draw out-scores him
+          // on main (resMark "(1st) - ELIMINATED"); after the fix the rival is scored from the race just run and place 1 always advances.
+          await h.eval(() => { Math.random = () => 0; const e = window.__tf.eng(), g = e.getResult.bind(e); e.getResult = () => Object.assign({}, g(), { points: 100 }); return true; }).catch(() => {});
           await h.eval(() => { window.__fp = null; return true; }).catch(() => {});
           let done = false;
           const t0 = Date.now();
