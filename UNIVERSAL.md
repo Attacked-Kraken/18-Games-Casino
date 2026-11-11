@@ -168,3 +168,8 @@ For ANY game in tools/game-check/games.json (2D or 3D, new games too) the robot 
   road so the robot can drive laps in any engine racer.
 - RULE: nothing in `sim` may read the clock, `Math.random`, the screen or Studio sliders directly - those go into the state at
   `init` (the starter keeps its tuning in `S.tune`), or the replay is not exact.
+
+## HEAVINESS IS CLAUDE'S JOB - LOCKED (owner Nov 10 2026 6:38 PM)
+- Windows (window 6 first) build the STRUCTURE the way they like: the look, the parts, the placement. Claude slims it down after: picture memory, draw calls, per-team copies, so every game fits a phone and is ready for multiplayer.
+- Why: F1 reached ~547 MB of pictures on Nov 10 (crews, booths, carts copied full size per team) and iPhone Safari threw the page out ('A problem repeatedly occurred'). Fixed in #2491 (texCap, ~388 MB).
+- The robot measures picture memory on every game check and posts a yellow 'Heavy for phones: about N MB of pictures' line over 300 MB (games.json `maxTexMB` to change one game). A window does not have to stop for it - Claude picks it up.

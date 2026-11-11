@@ -430,6 +430,21 @@
    "file": "kit/studio.js",
    "needle": "ui.tab === 'blocks'",
    "rule": "Studio ⚡ Blocks tab: behaviour without code (owner Nov 8 2026, #163)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "window.__texs = new Set()",
+   "rule": "picture memory is measured per game (owner Nov 10 2026: heaviness is Claude's job)"
+  },
+  {
+   "file": "tools/game-check/check.mjs",
+   "needle": "MB of pictures (textures",
+   "rule": "over-budget picture memory speaks as a yellow line"
+  },
+  {
+   "file": "apexf1.html",
+   "needle": "function texCap(",
+   "rule": "F1 per-team repaints stay capped (iPhone crash Nov 10 2026)"
   }
  ]
 }
