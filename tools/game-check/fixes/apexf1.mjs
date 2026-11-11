@@ -2166,6 +2166,7 @@ export default [
         if (!r.board) bad.push(tr + ': no pit board at the pit wall');
         if (!r.emergency) bad.push(tr + ': no parked safety car + medical car (no clear spot found beside the pit exit)');
         else { for (let i = 0; i < 80 && r.emergency.loaded < 2 && !r.emergency.safetyError && !r.emergency.medicalError; i++) { await h.wait(500); r.emergency = await h.eval(() => { const q = window.__test.furniture(); return q && q.emergency ? JSON.parse(JSON.stringify(q.emergency)) : null; }).catch(() => r.emergency) || r.emergency; }
+          if (!r.emergency.apron || !(r.emergency.apron.len > 30)) bad.push(tr + ': no asphalt apron for the emergency cars to drive out of and into');
           if (r.emergency.loaded < 2) bad.push(tr + ': the emergency cars did not load (' + (r.emergency.safetyError || r.emergency.medicalError || 'timed out') + ')');
           else { const sz = r.emergency.safetySize, mz = r.emergency.medicalSize; if (!(sz[0] > 3.5 && sz[0] < 5.5)) bad.push(tr + ': the safety car is ' + sz[0] + ' m long (a sports car is about 4.6 m)'); if (!(mz[2] > 4.5 && mz[2] < 6)) bad.push(tr + ': the medical car is ' + mz[2] + ' m long (about 5.2 m)'); } }
         if (r.minOff < 1.5) bad.push(tr + ': a board stands ' + r.minOff + ' m from the road edge (nothing may stand on the road; boards keep 1.5 m off it)');
