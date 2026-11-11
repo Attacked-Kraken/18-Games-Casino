@@ -2141,4 +2141,33 @@ export default [
       return bad.length ? 'F1 MARSHALS: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'fix-f1-race-furniture-all-tracks', mode: 'race',
+    ask: 'Owner Nov 10 2026 9:29 PM "Yes do all them complete 1-6": EVERY circuit in the menu carries the race furniture, placed from its own track - braking boards 150 / 100 / 50 before each real braking zone, a DRS board where each DRS zone opens, a pair of sector boards for sectors 1, 2 and 3, the pit limit sign (80, the limiter\'s own speed) where the limit starts and the struck-out one where it ends with a white line across the lane at both (and on the built-in circuits the solid entry and exit lines), a podium and a parc ferme with three bays, the ten team motorhomes, and the pit board at the pit wall. No board stands on the road.',
+    test: async (page, h) => {
+      const bad = [];
+      for (const tr of ['grandprix', 'harbour', 'mesa', 'pinewood', 'capital']) {
+        await h.eval((t) => { location.href = 'apexf1.html?test=grid&track=' + t; }, tr).catch(() => {});
+        let r = null;
+        for (let i = 0; i < 80 && !r; i++) { await h.wait(500); r = await h.eval(() => { const T = window.__test; if (!T || !T.furniture) return null; const f = T.furniture(); return f ? JSON.parse(JSON.stringify(f)) : null; }).catch(() => null); }
+        if (!r) { bad.push(tr + ': no race furniture was built'); continue; }
+        if (!r.inScene) bad.push(tr + ': the furniture is not in the scene');
+        if (r.brake.length < 3) bad.push(tr + ': only ' + r.brake.length + ' braking boards (every circuit has at least one braking zone = 150, 100, 50)');
+        if (r.brake.some(b => ![150, 100, 50].includes(b.n))) bad.push(tr + ': a braking board carries a number that is not 150 / 100 / 50');
+        if (r.drs.length !== r.drsZones) bad.push(tr + ': ' + r.drs.length + ' DRS boards for ' + r.drsZones + ' DRS zones');
+        for (const n of [1, 2, 3]) if (!r.sector.some(q => q.n === n)) bad.push(tr + ': no board for sector ' + n);
+        if (!r.pitSigns.some(q => q.kind === 'start')) bad.push(tr + ': no pit limit sign where the limit starts');
+        if (!r.pitSigns.some(q => q.kind === 'end')) bad.push(tr + ': no end-of-limit sign at the pit exit');
+        if (r.limit !== 80) bad.push(tr + ': the pit limit sign says ' + r.limit + ' (the limiter holds 22 m/s = 80)');
+        for (const k of (r.gp ? ['limitStart', 'limitEnd'] : ['limitStart', 'limitEnd', 'entryLine', 'exitLine'])) if (!r.lines.some(l => l.kind === k)) bad.push(tr + ': the painted ' + k + ' is missing');
+        if (!r.podium) bad.push(tr + ': no podium');
+        if (!r.parc) bad.push(tr + ': no parc ferme'); else if (r.parc.bays !== 3) bad.push(tr + ': parc ferme has ' + r.parc.bays + ' bays, not 3');
+        if (r.motorhomes.length < 8) bad.push(tr + ': only ' + r.motorhomes.length + ' of the ten team motorhomes');
+        if (!r.board) bad.push(tr + ': no pit board at the pit wall');
+        if (r.minOff < 1.5) bad.push(tr + ': a board stands ' + r.minOff + ' m from the road edge (nothing may stand on the road; boards keep 1.5 m off it)');
+        if (!(r.tris.signs > 0 && r.tris.solids > 0)) bad.push(tr + ': the furniture has no geometry');
+      }
+      return bad.length ? 'F1 RACE FURNITURE: ' + bad.join('; ') : true;
+    },
+  },
 ];
