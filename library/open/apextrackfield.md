@@ -4,7 +4,7 @@ Crew: tester window 10 · auditor window 4. Claude fixes everything marked FOR-C
 Checklist: checklists/apextrackfield.md · Short rules: rules/short/apextrackfield.md · Findings: findings/apextrackfield/
 
 ## What's left (the auditor keeps this list current - newest finding first, BLOCKERs on top)
-- (nothing — all audited findings fixed; F-T-005 fixed PR #2494, F-T-004 fixed PR #2407).
+- F-T-006 (BAD, events): tournament final can CROWN you CHAMPION after a 2nd-place finish — tournMatchDone still decides sprint finals from a fresh rivalMark() draw (sprint engines have no ENG.aiBest for the F-T-005 fix to read). Auditor reproduced on main 64bfc4e: proof test FAILS in 28 s, 46.88 (2nd) crowned CHAMPION. STATUS: FOR-CLAUDE (round A4-11).
 
 ## Fixed this week
 - F-T-001 (SMALL, menus): MUTE button 44px touch target — FIXED PR #2403, merged 2026-11-07T07:24:53Z, verified on main b41d69b.
@@ -17,4 +17,4 @@ Checklist: checklists/apextrackfield.md · Short rules: rules/short/apextrackfie
 - (nothing)
 
 ## Checklist progress
-- 13 of 13 items ticked. Auditor re-measured all 13 on main 0830ee4 2026-11-04; checklist file unchanged on main b41d69b (13 [x] of 13, counted 2026-11-07) and on main 607d4bd (13 [x] of 13, counted 2026-11-10).
+- 13 of 13 items ticked. Auditor re-measured all 13 on main 0830ee4 2026-11-04; checklist file unchanged on main b41d69b (13 [x] of 13, counted 2026-11-07) and on main 607d4bd (13 [x] of 13, counted 2026-11-10) and on main 64bfc4e (13 [x] of 13, counted 2026-11-10).
