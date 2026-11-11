@@ -4,7 +4,7 @@ Crew: tester window 10 · auditor window 4. Claude fixes everything marked FOR-C
 Checklist: checklists/apextrackfield.md · Short rules: rules/short/apextrackfield.md · Findings: findings/apextrackfield/
 
 ## What's left (the auditor keeps this list current - newest finding first, BLOCKERs on top)
-- F-T-006 (BAD, events): tournament final can CROWN you CHAMPION after a 2nd-place finish — tournMatchDone still decides sprint finals from a fresh rivalMark() draw (sprint engines have no ENG.aiBest for the F-T-005 fix to read). Auditor reproduced on main 64bfc4e: proof test FAILS in 28 s, 46.88 (2nd) crowned CHAMPION. STATUS: FOR-CLAUDE (round A4-11).
+- (nothing — all audited findings fixed; F-T-006 fixed PR #2503, F-T-005 fixed PR #2494, F-T-004 fixed PR #2407).
 
 ## Fixed this week
 - F-T-001 (SMALL, menus): MUTE button 44px touch target — FIXED PR #2403, merged 2026-11-07T07:24:53Z, verified on main b41d69b.
@@ -12,6 +12,7 @@ Checklist: checklists/apextrackfield.md · Short rules: rules/short/apextrackfie
 - F-T-003 (SMALL, menus): championship headline "YOU WIN THE APEX GAMES" — FIXED PR #2304, merged 2026-11-07T07:37:24Z, verified on main b41d69b.
 - F-T-004 (BAD, career): season-4 championship final lost after winning every event — FIXED PR #2407, merged 2026-11-07T08:07:08Z, verified present on main 607d4bd (careerRivalPoints, line 3338).
 - F-T-005 (BAD, events): tournament final eliminated you after a 1st-place finish — FIXED PR #2494, merged 2026-11-11T00:27:13Z, verified present on main 7e904ed (tournMatchDone scores rival from ENG.aiBest[0], 1st always advances).
+- F-T-006 (BAD, events): tournament final crowned you CHAMPION after a 2nd-place finish — FIXED PR #2503, merged 2026-11-11T02:32:45Z, verified present on main a6579c9 (tournMatchDone scores rival from ENG.ai[0].tTarget, place decides timed events).
 
 ## Waiting on the owner
 - (nothing)
