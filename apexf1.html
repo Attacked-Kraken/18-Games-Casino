@@ -408,7 +408,7 @@ setTimeout(function(){
 <div class="overlay hidden" id="pitMenu" style="background:rgba(3,6,12,.55)">
   <div class="card" style="text-align:center"><h3>PIT STOP — CHOOSE TIRES</h3>
     <div class="pitopt" id="pitTires"></div>
-    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~2.0s + pit-lane time</div>
+    <div style="font-size:12px;color:#8fa8c8;margin-top:8px">Stop takes ~6s + pit-lane time</div>
   </div>
 </div>
 
@@ -1859,7 +1859,7 @@ function mechKitMats(idx){
   if(MECH._kits[idx]) return MECH._kits[idx];
   if(!MECH.topMat||!MECH.topImg) return null;
   const mk=(srcMat,img,isTop)=>{ if(!srcMat||!img) return srcMat||null;
-    const tex=new THREE.CanvasTexture(texCap(mechKitCanvas(img, MECH_KITS[idx], isTop, idx===10), 512)); // idx 10 = the marshal kit: plain back, no crew lettering // owner Nov 10 2026 'kicks me out': per-team copies kept at 512 so iPhone Safari keeps the page
+    const tex=new THREE.CanvasTexture(texCap(mechKitCanvas(img, MECH_KITS[idx], isTop, idx===10), isTop?512:256)); // idx 10 = the marshal kit: plain back, no crew lettering // owner Nov 10 2026 'kicks me out': per-team copies kept at 512 so iPhone Safari keeps the page
     tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
     const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.5; m.needsUpdate=true; return m; };
   const km={ top:mk(MECH.topMat,MECH.topImg,true), bot:mk(MECH.botMat,MECH.botImg,false) };
@@ -1929,7 +1929,7 @@ function mechVarMats(v){
   if(MECH._vars[v]) return MECH._vars[v];
   if(!MECH.skinMat||!MECH.skinImg) return null;
   const mk=(srcMat,img,isBody)=>{ if(!srcMat||!img) return srcMat||null;
-    const tex=new THREE.CanvasTexture(texCap(mechSkinCanvas(img, MECH_VARS[v], isBody), 512));
+    const tex=new THREE.CanvasTexture(texCap(mechSkinCanvas(img, MECH_VARS[v], isBody), 256));
     tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
     const m=srcMat.clone(); m.map=tex; m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.45; m.needsUpdate=true; return m; };
   const vm={ skin:mk(MECH.skinMat,MECH.skinImg,false), body:mk(MECH.bodyMat,MECH.bodyImg,true) };
@@ -1968,7 +1968,7 @@ function mechHwMats(kit, style){
   if(MECH._hw[key]) return MECH._hw[key];
   if(!MECH.hwMat||!MECH.hwImg) return null;
   const target= style===0? MECH_KITS[k10][0] : style===1? [52,55,63] : null;
-  const tex=new THREE.CanvasTexture(mechHwCanvas(MECH.hwImg, target));
+  const tex=new THREE.CanvasTexture(texCap(mechHwCanvas(MECH.hwImg, target), 256)); // owner Nov 10 2026: car paint stays sharp, crew clothing copies slimmed for the phone
   tex.colorSpace=THREE.SRGBColorSpace; tex.flipY=false;
   const m=MECH.hwMat.clone(); m.map=tex;
   if(style<2){ m.emissive=new THREE.Color(0xffffff); m.emissiveMap=tex; m.emissiveIntensity=0.4; } // coloured cloth lifts itself in shade, like the kits
@@ -2069,6 +2069,7 @@ function BoothBoot(){
     dg.scene.traverse(o=>{ if(o.isMesh && o.material){ if(!BOOTH._palBase && o.material.map) BOOTH._palBase = o.material.map.image; if(!BOOTH._palEmis && o.material.emissiveMap) BOOTH._palEmis = o.material.emissiveMap.image; } }); // the palette originals - every team repaint is painted from these
     const dw = wrap(dg.scene); BOOTH.deskScale = 2.0/dw.sz.x; dw.g.scale.setScalar(BOOTH.deskScale); BOOTH.deskSrc = dw.g; // the desk fitted to exactly 2.0 m long (native 2.004)
     const cg = await load('models/fetched/free-drawer-tool-cart-used-da8955.glb');
+    texShrink(cg.scene, 512);
     cg.scene.traverse(o=>{ if(o.isMesh && o.material){ BOOTH.cartMat0 = o.material; if(o.material.map) BOOTH._cartImg = o.material.map.image; } });
     const cw = wrap(cg.scene); BOOTH.cartScale = 1.05/cw.sz.y; cw.g.scale.setScalar(BOOTH.cartScale); BOOTH.cartSrc = cw.g; // the cart fitted to stand 1.05 m tall (native 40.53 of its own units)
     const pg = new THREE.PlaneGeometry(0.72, 0.34, 24, 1), pa = pg.attributes.position, R = 2.02; // the timing screen, bent to the monitor's own measured curve (2000R)
@@ -2116,7 +2117,7 @@ function boothCartMat(i){
   i = ((i%10)+10)%10;
   if(BOOTH._cm[i]) return BOOTH._cm[i];
   if(!BOOTH._cartImg || !BOOTH.cartMat0) return null;
-  const tex = new THREE.CanvasTexture(texCap(boothCartCanvas(BOOTH._cartImg, i), 512)); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
+  const tex = new THREE.CanvasTexture(texCap(boothCartCanvas(BOOTH._cartImg, i), 256)); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
   const m = BOOTH.cartMat0.clone(); m.map = tex; m.needsUpdate = true; BOOTH._cm[i] = m; return m;
 }
 function boothTimingTex(i){ // our own timing tower on the booth's screen: a team-colour header, the standings, this box's team highlighted
@@ -2207,6 +2208,10 @@ function mechRig(root){
 // Falls back to null if the model has not landed - the caller keeps the old blocky figure, the stop never breaks on a load.
 // owner Nov 10 2026 5:10 PM 'every time I play F1 it kicks me out' (iPhone Safari: 'A problem repeatedly occurred'): the per-team repaints were full 1024x1024 copies
 // (crew kits x20, skins x6, carts x10) = ~550 MB of textures. texCap draws a canvas into a smaller one (same picture, same UVs) before it becomes a texture.
+function texShrink(root, max){ // owner Nov 10 2026: a fetched crew/prop model's own pictures shrunk once at load (shapes, colours and UVs unchanged); never used on the cars
+  const done=new Set(); root.traverse(o=>{ if(!o.isMesh||!o.material) return; for(const m of (Array.isArray(o.material)?o.material:[o.material])) for(const k of ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','specularMap']){
+    const t=m[k], im=t&&t.image; if(!im||done.has(t)||!im.width||Math.max(im.width,im.height)<=max) continue; done.add(t);
+    try{ const c=texCap(im, max); if(c!==im){ t.image=c; t.needsUpdate=true; } }catch(e){} } }); }
 function texCap(cv, max){ try{ const w=cv.width, h=cv.height, k=Math.min(1, max/Math.max(w,h)); if(k>=1) return cv; const o=document.createElement('canvas'); o.width=Math.max(1,Math.round(w*k)); o.height=Math.max(1,Math.round(h*k)); o.getContext('2d').drawImage(cv,0,0,o.width,o.height); return o; }catch(e){ return cv; } }
 function mechMan(scale, kit, variant){
   if(!MECH.ready || !MECH.src) return null;
