@@ -1902,19 +1902,25 @@ export default [
         const inv = root.matrixWorld.clone().invert().elements;
         const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
         const apply = (v, e) => [e[0] * v[0] + e[4] * v[1] + e[8] * v[2] + e[12], e[1] * v[0] + e[5] * v[1] + e[9] * v[2] + e[13], e[2] * v[0] + e[6] * v[1] + e[10] * v[2] + e[14]];
+        const bmn = [Infinity, Infinity, Infinity], bmx = [-Infinity, -Infinity, -Infinity];
         root.traverse((q) => {
           const g = q.geometry;
           if (!g) return;
+          const mt = q.material || {};
+          if (mt.isMeshBasicMaterial && mt.transparent && mt.depthWrite === false) return; // the ground shadow blob is not the car
+          const wheel = /wheel|tire|tyre/i.test((q.name || '') + ' ' + (mt.name || ''));
           if (!g.boundingBox) g.computeBoundingBox();
           const b = g.boundingBox, mw = q.matrixWorld.elements;
           for (const x of [b.min.x, b.max.x]) for (const y of [b.min.y, b.max.y]) for (const z of [b.min.z, b.max.z]) {
             const l = apply(apply([x, y, z], mw), inv);
             for (let i = 0; i < 3; i++) { if (l[i] < mn[i]) mn[i] = l[i]; if (l[i] > mx[i]) mx[i] = l[i]; }
+            if (!wheel) for (let i = 0; i < 3; i++) { if (l[i] < bmn[i]) bmn[i] = l[i]; if (l[i] > bmx[i]) bmx[i] = l[i]; }
           }
         });
-        return JSON.stringify({ width: +(mx[0] - mn[0]).toFixed(4), height: +(mx[1] - mn[1]).toFixed(4), length: +(mx[2] - mn[2]).toFixed(4) });
+        return JSON.stringify({ width: +(bmx[0] - bmn[0]).toFixed(4), height: +(mx[1] - mn[1]).toFixed(4), length: +(mx[2] - mn[2]).toFixed(4) });
       };
-      const bands = { length: [3.825, 5.52], width: [1.6575, 2.2425], height: [0.935, 1.61] };
+      // owner Nov 10 2026 6:31 PM 'Leave goblin as is': every car wears his +20% (G-01), so the REALITY.md bands are x1.2; width is the BODY width (no wheels, no shadow) like a real car's listed width
+      const G01 = 1.2, bands = { length: [3.825 * G01, 5.52 * G01], width: [1.6575 * G01, 2.2425 * G01], height: [0.935 * G01, 1.61 * G01] };
       const check = (where, raw) => {
         let d = null;
         try { d = JSON.parse(raw); } catch (e) { return String(raw); }
