@@ -689,6 +689,8 @@ const TIRES = {
   INTER: { name:'INTER', color:'#1c9e4a', pace:-1.6,  deg:0.045, maxAge:20, wet:true },
   WET:   { name:'WET',   color:'#1c5fe8', pace:-2.4,  deg:0.05,  maxAge:20, wet:true },
 };
+// owner Nov 11 2026: laps are short, so tyre wear is scaled to the race length - a Soft set hits the cliff (wear 0.6) at about two thirds of a 5-lap race, so a pit stop is worth making at any length
+function wearPerLap(tire, laps, wet){ const k=Math.max(1,Math.min(6,28/Math.max(1,laps||5))); return TIRES[tire].deg*k*(wet>0.4?0.7:1); }
 /* ================= TRACK BUILDER ================= */
 let renderer, scene, camera;
 const isTouch = matchMedia('(pointer: coarse)').matches;
@@ -3342,7 +3344,7 @@ class Car {
     const lt=this.lapTimes[this.lapTimes.length-1];
     if(lt<this.bestLap&&lt>0) this.bestLap=lt;
     this.lap++; this.tireAge++;
-    this.wear=Math.min(1,this.wear+TIRES[this.tire].deg*(Race.weather.wet>0.4?0.7:1));
+    this.wear=Math.min(1,this.wear+wearPerLap(this.tire,Race.laps,Race.weather.wet));
     if(Race.mode==='race') this.fuel=Math.max(0,this.fuel-88/(Race.laps+2)); // owner Nov 8 2026: a lap of fuel - a full tank lasts the race with a small margin
   }
 }
@@ -3493,7 +3495,7 @@ function aiPit(car, dt){
   if(needWet) return;
   // planned stop: wear cliff or max age, but only after lap 2 and not last 2 laps
   if(Race.lap>2 && Race.lap<Race.laps-1 && !car.pitted){
-    if(car.wear>0.62 || car.tireAge>=t.maxAge*0.8){
+    if(car.wear>0.55 || car.tireAge>=t.maxAge*0.8){
       // don't stack with a car already pitting right ahead
       car.pitIntent=true; car.pitChoice=Race.baseTire(car,true); car.pitted=true;
     }
@@ -3977,7 +3979,7 @@ const HUD={
       if(p.inPits){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.remove('hidden'); const u=p.pitHold?1-Math.max(0,p.pitTimer)/(p.pitT0||6.0):0; $('pitClock').textContent=p.pitHold?((p.pitT0||6.0)-Math.max(0,p.pitTimer)).toFixed(1)+'s':'-'; $('pitTyreFill').style.width=Math.round((p.pitStopDone?1:Math.max(0,Math.min(1,u/0.75)))*100)+'%'; $('pitFuelFill').style.width=Math.round(p.fuel)+'%'; $('pitStatus').textContent=!p.pitHold?(p.pitStopDone?'RELEASED - GO!':'ROLLING TO YOUR BOX'):(u<0.15?'JACKS UP':u<0.45?'TYRES OFF':u<0.75?'FRESH TYRES ON + FUELING':u<0.9?'FUELING':'JACKS DOWN - GO!'); if(ppl) ppl.textContent=p._pitPlaceIn?('CAME IN: P'+p._pitPlaceIn):''; }
       else if(p._pitPlaceOut && performance.now()<(p._pitPlaceUntil||0)){ pp.classList.remove('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(ppl) ppl.textContent='PLACE: P'+p._pitPlaceIn+' -> P'+p._pitPlaceOut; $('pitStatus').textContent='BACK ON TRACK'; }
       else { pp.classList.add('hidden'); const psk=$('pitSkip'); if(psk) psk.classList.add('hidden'); if(p._pitPlaceOut){ p._pitPlaceIn=0; p._pitPlaceOut=0; } } } // owner Nov 8 2026: the stop, readable on a phone - clock, tyre bar, fuel bar, status; Nov 9 2026: + the place marker, through the stop and just after the exit
-    $('tireAge').textContent=p.tireAge+' laps';
+    { const tl=Math.max(0,Math.round(100-p.wear*100)); $('tireAge').textContent='TYRES '+tl+'% · '+p.tireAge+(p.tireAge===1?' lap':' laps'); $('tireAge').style.color=tl<30?'#ff5a5a':'#8fa8c8'; $('tireAge').style.fontWeight=tl<30?'900':''; } // owner Nov 11 2026: the wear as a number, red under 30%
     document.querySelector('#speedo .v').textContent=Math.round(p.v*MPH);
     document.querySelector('#speedo .gear').textContent=p.v<2?'N':(1+Math.floor(p.v/97*7))+'';
     $('ersFill').style.width=p.ers+'%';
@@ -4578,6 +4580,7 @@ window.__test = {
     finished: c.finished, isPlayer: c.isPlayer,
     throttle: c.throttle, brake: c.brake
   })),
+  wearPerLap: (tire, laps) => wearPerLap(tire, laps, 0),
   race: () => ({
     mode: Race.mode, lap: Race.lap, laps: Race.laps,
     hasResults: !!Race.results,
