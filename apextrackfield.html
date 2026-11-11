@@ -3505,9 +3505,14 @@ const T=G.trn, opp=T.myOpp;
 const place=careerPlace(ev,res);
 let oppMark=rivalMark(ev,opp.rating);
 try{ if(ENG&&Array.isArray(ENG.aiBest)&&typeof ENG.aiBest[0]==='number'&&isFinite(ENG.aiBest[0])&&ENG.aiBest[0]>0) oppMark=ENG.aiBest[0]; }catch(e){}
+// F-T-006: timed events (sprint / distance / hurdles) have no ENG.aiBest, so the rival's mark is the one he really ran to
+// (ENG.ai[0].tTarget) and the finishing place decides - a 2nd-place finish can never advance.
+const timedPlace=!!(ev.timed&&ENG&&ENG.place);
+try{ if(timedPlace&&ENG.ai&&ENG.ai[0]&&isFinite(ENG.ai[0].tTarget)&&ENG.ai[0].tTarget>0) oppMark=ENG.ai[0].tTarget; }catch(e){}
 let oppPts=pointsFor(ev,oppMark);
 if(place===1&&isFinite(res.points)) oppPts=Math.min(oppPts,res.points);
-const won=place===1||res.points>=oppPts;
+if(timedPlace&&place>1&&isFinite(res.points)) oppPts=Math.max(oppPts,res.points);
+const won=timedPlace?place===1:(place===1||res.points>=oppPts);
 $('resTitle').textContent=ev.name.toUpperCase()+' — '+TRN_ROUNDS[T.round];
 const rows=[
 {n:athleteName+' — '+res.display,p:res.points},

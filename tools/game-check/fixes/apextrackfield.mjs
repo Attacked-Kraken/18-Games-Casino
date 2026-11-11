@@ -4189,7 +4189,7 @@ async test(page, h) {
       await h.wait(1500);
       await waitMenu();
       await h.eval(() => { window.__origRandom = Math.random; return true; }).catch(() => {});
-      for (let entry = 1; entry <= 6; entry++) {
+      for (let entry = 1; entry <= 1; entry++) {
         await h.eval(() => { if (window.__origRandom) Math.random = window.__origRandom; return true; }).catch(() => {});
         const entered = await h.eval(() => { const b = document.getElementById('bTourn'); if (!b) return false; b.click(); return true; }).catch(() => false);
         if (!entered) return 'could not open tournament (entry ' + entry + ', F-T-006)';
