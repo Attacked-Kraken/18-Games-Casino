@@ -2175,4 +2175,18 @@ export default [
       return bad.length ? 'F1 RACE FURNITURE: ' + bad.join('; ') : true;
     },
   },
+  {
+    id: 'play-tyre-wear-scaled-to-race-length',
+    ask: 'Laps are short, so tyre wear is scaled to the race length: on a 5-lap race a Soft set must reach the wear cliff (60%) by lap 3 and a Hard set must not run out; the tyre box shows TYRES N%',
+    async test(page, h) {
+      await h.eval(() => { location.href = 'apexf1.html?test=grid'; }).catch(() => {});
+      let w = null;
+      for (let i = 0; i < 80 && !w; i++) { await h.wait(500); w = await h.eval(() => { const T = window.__test; if (!T || !T.wearPerLap) return null; return { soft5: T.wearPerLap('SOFT', 5) * 3, hard5: T.wearPerLap('HARD', 5) * 5, soft20: T.wearPerLap('SOFT', 20) * 3, txt: (document.getElementById('tireAge') || {}).textContent || '' }; }).catch(() => null); }
+      if (!w) return 'no wear probe on the test hook';
+      if (w.soft5 < 0.6) return 'a Soft set after 3 laps of a 5-lap race is only ' + Math.round(w.soft5 * 100) + '% worn (should be past the 60% cliff)';
+      if (w.hard5 > 0.7) return 'a Hard set is ' + Math.round(w.hard5 * 100) + '% worn after a whole 5-lap race (should last)';
+      if (w.soft20 > 0.3) return 'a long race got the short-race wear scale (Soft after 3 of 20 laps: ' + Math.round(w.soft20 * 100) + '%)';
+      return true;
+    },
+  },
 ];
